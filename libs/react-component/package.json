@@ -1,0 +1,10 @@
+{
+  "name": "@clickvote/react",
+  "version": "0.0.1",
+  "dependencies": {
+    "clsx": "^1.2.1",
+    "dayjs": "^1.11.9",
+    "react-hooks-global-state": "^2.1.0",
+    "socket.io-client": "^4.7.1"
+  }
+}

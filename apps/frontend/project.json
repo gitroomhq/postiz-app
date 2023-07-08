@@ -10,7 +10,8 @@
       "defaultConfiguration": "production",
       "options": {
         "root": "apps/frontend",
-        "outputPath": "dist/apps/frontend"
+        "outputPath": "dist/apps/frontend",
+        "postcssConfig": "apps/frontend/postcss.config.js"
       },
       "configurations": {
         "development": {
@@ -24,6 +25,7 @@
       "defaultConfiguration": "development",
       "options": {
         "buildTarget": "frontend:build",
+        "postcssConfig": "apps/frontend/postcss.config.js",
         "dev": true
       },
       "configurations": {

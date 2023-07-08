@@ -23,7 +23,8 @@
     }
   ],
   "rules": {
-    "@next/next/no-html-link-for-pages": "off"
+    "@next/next/no-html-link-for-pages": "off",
+    "@nx/enforce-module-boundaries": "off"
   },
   "env": {
     "jest": true

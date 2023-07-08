@@ -1,0 +1,28 @@
+.flex {
+  display: flex;
+  font-family: Arial;
+  user-select: none;
+}
+.flexCol {
+  flex-direction: column;
+}
+
+.center {
+  align-items: center;
+  text-align: left;
+}
+
+.rotate {
+  transform: rotate(180deg);
+}
+
+.selected {
+  path[data-border] {
+    fill: #FF4400;
+  }
+}
+
+.selectedText {
+  color: #FF4400;
+  font-weight: bold;
+}
