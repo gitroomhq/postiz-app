@@ -1,7 +1,7 @@
 
 ![clickvoteanything](https://github.com/clickvote/clickvote/assets/100117126/518864ee-db35-46aa-bd3f-10d561dc1858)
 
-<h1 align="center">Attach upvotes, likes, and reviews to any context</h1>
+<h1 align="center">Add upvotes, likes, and reviews to any context</h1>
 
 Clickvote takes the hassle of building your own reaction components around your content.
 
