@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 
 import { AppController } from './app.controller';
-import { BigdataModule } from '@clickvote/nest-libraries';
+import {BigdataModule, MongooseModule} from '@clickvote/nest-libraries';
 
 @Module({
-  imports: [BigdataModule],
+  imports: [MongooseModule, BigdataModule],
   controllers: [AppController],
   providers: [],
 })

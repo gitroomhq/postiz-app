@@ -12,15 +12,44 @@ export class EnvService {
     });
   }
 
+  async cachedVotes(
+    key: string,
+    voteId: string,
+    voteToId: string,
+    userId: string,
+    type: 'single' | 'range',
+    newValue: number
+  ) {
+    return this.connection.collection('cached_votes').updateOne(
+      {
+        voteId: voteId,
+        voteToId,
+        userId,
+      },
+      {
+        $set: {
+          key,
+          voteId: voteId,
+          voteToId,
+          userId,
+          total: newValue,
+        },
+      },
+      {
+        upsert: true,
+      }
+    );
+  }
+
   async getVoteByEnvAndId(keyId: string, voteTo: string) {
     try {
       const data = await this.connection.collection('votes').findOne({
-        env: new mongoose.Types.ObjectId(keyId), name: voteTo
+        env: new mongoose.Types.ObjectId(keyId),
+        name: voteTo,
       });
 
       return data;
-    }
-    catch (err) {
+    } catch (err) {
       return false;
     }
   }

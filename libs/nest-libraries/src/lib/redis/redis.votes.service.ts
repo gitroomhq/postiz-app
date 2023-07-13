@@ -90,7 +90,6 @@ export class RedisVotesService {
         }
 
         multi.hSet(`vote:${key}:${voteId}:${voteToId}`, userId, newValue.toString());
-
         return multi.exec();
       });
     }

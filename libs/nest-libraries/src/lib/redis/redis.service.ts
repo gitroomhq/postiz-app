@@ -1,5 +1,10 @@
 import { Injectable, Module, OnModuleInit } from '@nestjs/common';
 import { createClient } from 'redis';
+import { Redis } from 'ioredis';
+
+export const ioRedis = new Redis(process.env.REDIS_URL!, {
+  maxRetriesPerRequest: null,
+});
 
 const client = createClient({
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment

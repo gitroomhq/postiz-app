@@ -6,6 +6,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import {
+  BullMqClient,
   EncryptionService,
   RedisVotesService,
   VoteServiceProducer,
@@ -17,7 +18,6 @@ import dayjs from 'dayjs';
 import { UseGuards } from '@nestjs/common';
 import { AuthGuard } from './auth.guard';
 import { IdFromClient, KeyFromClient } from '../helpers/key.from.client';
-import { ClientKafka } from '@nestjs/microservices';
 import { v4 as uuidv4 } from 'uuid';
 
 @WebSocketGateway({
@@ -30,7 +30,7 @@ export class EventsGateway {
     private _redisVotesService: RedisVotesService,
     private _encryptionService: EncryptionService,
     private _envService: EnvService,
-    @VoteServiceProducer() private _voteServiceProducer: ClientKafka
+    @VoteServiceProducer() private _voteServiceProducer: BullMqClient
   ) {}
   @WebSocketServer()
   server: Server;
@@ -81,17 +81,17 @@ export class EventsGateway {
       return false;
     }
 
+    const total = await this._redisVotesService.getRedisTotalVotes(
+      key,
+      params.id,
+      params.voteTo
+    );
+
     const voted = await this._redisVotesService.userVoted(
       key,
       params.id,
       params.voteTo,
       params.userId
-    );
-
-    const total = await this._redisVotesService.getRedisTotalVotes(
-      key,
-      params.id,
-      params.voteTo
     );
 
     client.emit(`get-votes-${params.id}-${params.voteTo}`, {
@@ -101,7 +101,7 @@ export class EventsGateway {
       startEnd: {
         start: getVoteElements.start,
         end: getVoteElements.end,
-      }
+      },
     });
   }
 
@@ -128,11 +128,10 @@ export class EventsGateway {
         to: params.voteTo,
         user: params.userId,
         value: params.value,
-        time: new Date(),
         ref: '',
         geo_location: {
-          latitude: 49.34868,
-          longitude: -50.25415,
+          type: 'Point',
+          coordinates: [-50.25415, 49.34868],
         },
         device: 'Android',
         browser: 'Firefox',
@@ -147,6 +146,7 @@ export class EventsGateway {
       params.type,
       params.value
     );
+
     client.broadcast.emit(`get-votes-${params.id}-${params.voteTo}`, {
       total,
       poster: {

@@ -1,5 +1,3 @@
-import { Point } from '../types/point';
-
 export class VotesInterface {
   uuid?: string;
 
@@ -9,9 +7,10 @@ export class VotesInterface {
 
   to!: string;
 
-  time!: Date;
-
-  geo_location!: Point;
+  geo_location!: {
+    type: 'Point',
+    coordinates: [number, number]
+  };
 
   device!: string;
 

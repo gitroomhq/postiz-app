@@ -1,9 +1,16 @@
-import { EntityRepository } from '@mikro-orm/postgresql';
-import { VotesEntity } from './votes.entity';
-import { VotesInterface } from './votes.interface'; // or any other driver package
+import { VotesInterface } from './votes.interface';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { VotesList } from './votes.list.document';
 
-export class VotesRepository extends EntityRepository<VotesEntity> {
+export class VotesRepository {
+  constructor(
+    @InjectModel(VotesList.name) private _votesListModel: Model<VotesList>
+  ) {}
   addRow(data: VotesInterface) {
-    return this.em.fork().persistAndFlush(new VotesEntity(data));
+    return this._votesListModel.create({
+      ...data,
+      time: new Date(),
+    });
   }
 }

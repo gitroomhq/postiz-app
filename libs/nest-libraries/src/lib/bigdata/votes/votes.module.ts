@@ -1,11 +1,16 @@
-import { MikroOrmModule } from '@mikro-orm/nestjs';
-import { VotesEntity } from './votes.entity';
-import { VotesService } from './votes.service';
 import { Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
+import { VotesList, VotesListSchema } from './votes.list.document';
+import { VotesService } from './votes.service';
+import { VotesRepository } from './votes.repository';
 
 @Module({
-  imports: [MikroOrmModule.forFeature([VotesEntity])],
-  providers: [VotesService],
+  imports: [
+    MongooseModule.forFeature([
+      { name: VotesList.name, schema: VotesListSchema },
+    ]),
+  ],
+  providers: [VotesService, VotesRepository],
   get exports() {
     return [...this.imports, ...this.providers];
   },

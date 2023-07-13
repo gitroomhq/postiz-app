@@ -6,19 +6,23 @@
 import { NestFactory } from '@nestjs/core';
 
 import { AppModule } from './app/app.module';
-import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import { kafkaOptions } from '@clickvote/nest-libraries';
+import { MicroserviceOptions } from '@nestjs/microservices';
+import { BullMqTransport } from '@clickvote/nest-libraries';
 
 async function bootstrap() {
+  const strategy = new BullMqTransport();
+
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
     AppModule,
     {
-      transport: Transport.KAFKA,
-      ...kafkaOptions,
+      strategy,
     }
   );
 
   await app.listen();
+
+  // Let's make sure everything runs first!
+  await strategy.activate();
 }
 
 bootstrap();
