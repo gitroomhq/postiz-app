@@ -16,6 +16,7 @@ Please make sure you have installed:
 
 <h2>Quickstart</h2>
 Clone the project, run:
+
 ```bash
 npm run setup
 ```
