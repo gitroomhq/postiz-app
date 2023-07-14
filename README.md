@@ -19,6 +19,7 @@ Clone the project, run:
 ```bash
 npm run setup
 ```
+
 It will ask you add your environment variables, in most cases you can just use the default option
 
 To run the backend and frontend, run:
