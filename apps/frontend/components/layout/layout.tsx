@@ -12,8 +12,8 @@ const Layout: FC<{ children: ReactNode; user: UserFromRequest }> = (props) => {
   return (
     <UserContext.Provider value={user}>
       <QueryClientProvider client={queryClient}>
-        <div className="flex min-h-[100vh] flex-col max-w-[1920px] w-full mx-auto">
-          <div className="flex py-4 text-2xl">
+        <div className="bg-[#05050B] flex min-h-[100vh] flex-col max-w-[1920px] w-full mx-auto">
+          <div className="flex py-4 text-2xl p-4">
             <div className="flex-1">ClickVote</div>
             <div className="text-sm flex items-center">
               <div className="flex items-center">
@@ -24,7 +24,7 @@ const Layout: FC<{ children: ReactNode; user: UserFromRequest }> = (props) => {
           </div>
           <div className="flex-1 flex">
             <LeftMenu />
-            <div className="p-4 bg-[#0E0F14] flex-1 border-r border-[#ffffff]/20 border-y">
+            <div className="p-4 bg-[#05050B] flex-1 border-r border-[#ffffff]/20 border-y">
               {children}
             </div>
           </div>

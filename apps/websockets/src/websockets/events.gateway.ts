@@ -70,7 +70,6 @@ export class EventsGateway {
       userId: string;
       type: 'single' | 'range';
     },
-    @KeyFromClient() key: string,
     @IdFromClient() id: string
   ) {
     const getVoteElements = await this._envService.getVoteByEnvAndId(
@@ -82,13 +81,13 @@ export class EventsGateway {
     }
 
     const total = await this._redisVotesService.getRedisTotalVotes(
-      key,
+      id,
       params.id,
       params.voteTo
     );
 
     const voted = await this._redisVotesService.userVoted(
-      key,
+      id,
       params.id,
       params.voteTo,
       params.userId
@@ -117,13 +116,13 @@ export class EventsGateway {
       type: 'single' | 'range';
       value: number;
     },
-    @KeyFromClient() key: string
+    @IdFromClient() envId: string
   ) {
     this._voteServiceProducer.emit(
       'new_vote',
       JSON.stringify({
         uuid: uuidv4(),
-        env: key,
+        env: envId,
         id: params.id,
         to: params.voteTo,
         user: params.userId,
@@ -139,11 +138,21 @@ export class EventsGateway {
     );
 
     const total = await this._redisVotesService.redisVote(
-      key,
+      envId,
       params.id,
       params.voteTo,
       params.userId,
       params.type,
+      params.value
+    );
+
+    await this._envService.persistentNumbers(
+      envId,
+      params.id,
+      params.voteTo,
+      params.userId,
+      params.type,
+      +(total?.initial || 0),
       params.value
     );
 

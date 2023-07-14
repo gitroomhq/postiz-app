@@ -4,6 +4,7 @@ export interface UserFromRequest {
   currentEnv: {
     id: string;
     name: string;
+    public_key: string;
   };
   env: Array<{
     id: string;

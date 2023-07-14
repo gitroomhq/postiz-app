@@ -37,7 +37,7 @@ export const Input: FC<
         {...allOther}
         {...all}
         onChange={onChangeFunc}
-        className={clsx(`p-2 w-full text-black`, className)}
+        className={clsx(`p-2 w-full bg-[#fff0fd]/10 text-[#EBECED] border border-[#EBECED]/20 rounded-md`, className)}
       />
       <div className="text-red-500">
         {!hideErrors ? (

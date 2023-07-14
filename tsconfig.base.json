@@ -15,13 +15,15 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
+      "@clickvote/angular": ["libs/angular-component/src/index.ts"],
       "@clickvote/backend/*": ["apps/backend/*"],
       "@clickvote/frontend/*": ["apps/frontend/*"],
       "@clickvote/interfaces": ["libs/interfaces/src/index.ts"],
       "@clickvote/nest-libraries": ["libs/nest-libraries/src/index.ts"],
       "@clickvote/react": ["libs/react-component/src/index.ts"],
       "@clickvote/validations": ["libs/validations/src/index.ts"]
-    }
+    },
+    "resolveJsonModule": true
   },
   "exclude": ["node_modules", "tmp"]
 }

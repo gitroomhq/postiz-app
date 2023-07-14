@@ -24,6 +24,7 @@ export const ClickVoteComponent: FC<{
   children: (props: Selection & SelectionMethods) => ReactNode;
 }> = (props) => {
   const { children, id, voteTo } = props;
+  console.log(children);
   const { emit, userId, socket, loaded } = useSocketIo();
   const [data, setData] = useState<undefined | Selection>(undefined);
 

@@ -27,6 +27,12 @@ export class Votes {
 
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Environment' })
   env: Environment;
+
+  @Prop({ index: true })
+  sum: number;
+
+  @Prop({ index: true })
+  count: number;
 }
 
 export const VotesSchema = SchemaFactory.createForClass(Votes);

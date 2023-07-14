@@ -33,7 +33,7 @@ const LeftMenu = () => {
   };
 
   return (
-    <div className="border border-[#ffffff]/20 px-4 w-60 bg-gradient-to-r from-[#212226] via-[#212226]/95 to-[#212226]/90 flex flex-col">
+    <div className="border border-[#ffffff]/20 px-4 w-60 bg-gradient-to-r bg-[#05050B] flex flex-col">
       <div className="flex-1 flex flex-col">
         <ActiveLink
           activeClassName="underline font-bold"

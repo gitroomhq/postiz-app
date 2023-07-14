@@ -53,6 +53,7 @@ export class AuthMiddleware implements NestMiddleware {
       currentEnv: {
         id: currentEnv._id.toString(),
         name: currentEnv.name,
+        public_key: currentEnv.apiKey
       },
       env: environments.map((e) => ({
         name: e.name,

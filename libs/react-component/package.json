@@ -1,10 +1,28 @@
 {
   "name": "@clickvote/react",
-  "version": "0.0.1",
+  "version": "0.0.6",
+  "description": "Clickvote react component",
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "react",
+    "websockets"
+  ],
+  "author": {
+    "name": "Nevo David"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/clickvote/clickvote/tree/main/libs/react-component"
+  },
   "dependencies": {
     "clsx": "^1.2.1",
     "dayjs": "^1.11.9",
     "react-hooks-global-state": "^2.1.0",
     "socket.io-client": "^4.7.1"
+  },
+  "devDependencies": {
+    "typescript": "~5.0.2"
   }
 }

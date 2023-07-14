@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/mongoose';
-import mongoose, { Connection } from 'mongoose';
+import mongoose, { Connection, Types } from 'mongoose';
 
 @Injectable()
 export class EnvService {
@@ -12,31 +12,53 @@ export class EnvService {
     });
   }
 
-  async cachedVotes(
+  private calculateCount(
+    type: 'single' | 'range',
+    previousValue: number,
+    newValue: number
+  ) {
+    if (type === 'range') {
+      if (+previousValue === +newValue) {
+        return 0;
+      }
+      if (+previousValue === 0 && +newValue > 0) {
+        return 1;
+      }
+      if (+previousValue > 0 && newValue === 0) {
+        return -1;
+      }
+      return 0;
+    }
+    if (type === 'single') {
+      return +newValue > +previousValue
+        ? 1
+        : +newValue < +previousValue
+        ? -1
+        : newValue === previousValue
+        ? 0
+        : 0;
+    }
+  }
+
+  async persistentNumbers(
     key: string,
     voteId: string,
     voteToId: string,
     userId: string,
     type: 'single' | 'range',
+    previousValue: number,
     newValue: number
   ) {
-    return this.connection.collection('cached_votes').updateOne(
+    return this.connection.collection('votes').updateOne(
       {
-        voteId: voteId,
-        voteToId,
-        userId,
+        env: new Types.ObjectId(key),
+        name: voteId,
       },
       {
-        $set: {
-          key,
-          voteId: voteId,
-          voteToId,
-          userId,
-          total: newValue,
+        $inc: {
+          sum: -previousValue + newValue,
+          count: this.calculateCount(type, previousValue, newValue),
         },
-      },
-      {
-        upsert: true,
       }
     );
   }
