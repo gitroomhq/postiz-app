@@ -38,7 +38,7 @@ To modify the react component, run:
 npm run dev:react-component
 ```
 
-<h2>Add your react component to the client</h2>
+<h2>Add your react component to the user application</h2>
 
 You can find examples of how to use the React component here:
 
