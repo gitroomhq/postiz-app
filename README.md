@@ -11,6 +11,7 @@ Clickvote takes the hassle of building your own reaction components around your 
 
 <h2>Requirements</h2>
 Please make sure you have installed:
+
 - Redis
 - Mongodb
 
