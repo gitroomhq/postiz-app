@@ -27,6 +27,11 @@ export class AuthMiddleware implements NestMiddleware {
 
     const user = await this._userService.getById(auth.id);
 
+    if (!user) {
+      res.status(401).json({ message: 'Unauthorized' });
+      return;
+    }
+
     const findOrg = viewOrg
       ? // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
