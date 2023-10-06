@@ -35,6 +35,7 @@
     "@nestjs/websockets": "^10.0.5",
     "@nx/next": "16.2.2",
     "@tanstack/react-query": "^4.29.19",
+    "@tremor/react": "^3.8.2",
     "@types/bcrypt": "^5.0.0",
     "@types/react-copy-to-clipboard": "^5.0.4",
     "@types/react-syntax-highlighter": "^15.5.7",

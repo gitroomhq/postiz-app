@@ -3,13 +3,15 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Counter } from '@clickvote/backend/src/packages/votes/counter.document';
 import { Votes } from '@clickvote/backend/src/packages/votes/vote.document';
+import { VotesList } from 'libs/nest-libraries/src/lib/bigdata/votes/votes.list.document';
 import { VotesValidation } from '@clickvote/validations';
 
 @Injectable()
 export class VotesRepository {
   constructor(
     @InjectModel(Counter.name) private counterDocument: Model<Counter>,
-    @InjectModel(Votes.name) private voteDocument: Model<Votes>
+    @InjectModel(Votes.name) private voteDocument: Model<Votes>,
+    @InjectModel(VotesList.name) private votesListModel: Model<VotesList>
   ) {}
 
   getVoteByIdAndOrg(org: string, id: string) {
@@ -74,4 +76,32 @@ export class VotesRepository {
       identity: userId,
     });
   }
+
+ // get all unique votesTo for a vote
+  async getVotesUniqueVotesTo(voteId: string) {
+  return this.votesListModel.distinct('to', {
+    _id: new Types.ObjectId(voteId),
+  });
+}
+
+  // Add this method to the VotesRepository
+async getVoteAnalytics(voteId: string) {
+  return this.voteDocument.aggregate([
+    { $match: { _id: new Types.ObjectId(voteId) } },
+    {
+      $group: {
+        _id: {
+          $toDate: {
+            $subtract: [
+              { $toLong: "$createdAt" },
+              { $mod: [{ $toLong: "$createdAt" }, 1000 * 60 * 60] },
+            ],
+          },
+        },
+        count: { $sum: 1 },
+      },
+    },
+    { $sort: { _id: 1 } },
+  ]);
+}
 }

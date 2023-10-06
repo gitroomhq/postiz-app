@@ -52,4 +52,21 @@ export class VotesController {
       body
     );
   }
+
+  // Add this method to the VotesController
+  @Get('/:id/analytics')
+  async getVoteAnalytics(
+    @GetUserFromRequest() user: UserFromRequest,
+    @ValidateId('id') id: string
+  ) {
+    return this._votesService.getVoteAnalytics(id);
+  }
+
+  @Get('/:id/to')
+  async getVotesUniqueVotesTo(
+    @GetUserFromRequest() user: UserFromRequest,
+    @ValidateId('id') id: string
+  ) {
+    return this._votesService.getVotesUniqueVotesTo(id);
+  }
 }

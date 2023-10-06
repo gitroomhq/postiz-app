@@ -5,7 +5,8 @@ import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { useForm, Resolver, FormProvider } from 'react-hook-form';
 import { Input } from '@clickvote/frontend/components/form/input';
 import { useRouter } from 'next/router';
-import {useState} from "react";
+import { useState } from 'react';
+import Logo from '../common/Logo';
 
 type FormValues = {
   email: string;
@@ -27,34 +28,26 @@ function Login() {
       try {
         await axiosInstance.post('/auth/login', values);
         return router.push('/');
-      }
-      catch (err) {
+      } catch (err) {
         setErr('Wrong email or password');
       }
     }
   );
 
   return (
-    <div className="flex h-screen flex-row-reverse">
-      <div className="w-1/2 bg-black">
-        {/* Right side (image) */}
-        <div className="flex justify-center items-center h-full">
-          <img
-            src="your-image-url.jpg"
-            alt="Nice Picture"
-            className="w-3/4 rounded shadow-lg"
-          />
-        </div>
-      </div>
-      <div className="w-1/2 bg-[#212226]">
+    <div className={`flex w-full h-screen justify-center`}>
+      <div className="w-1/2 bg-gradient-black">
         <div className="flex-col flex justify-center items-center h-full">
-          <div className="flex">
+          <Logo responsive={false} />
+          <div className="flex mt-8">
             <FormProvider {...methods}>
               <form
-                className="p-8 border border-[#ffffff]/20 bg-black rounded shadow w-[500px] max-w-[100%]"
+                className="p-8 border border-[#ffffff]/20 bg-gradient-purple rounded shadow w-[500px] max-w-[100%]"
                 onSubmit={registerSubmit}
               >
-                <h2 className="text-2xl font-bold mb-6">Login</h2>
+                <h2 className="text-2xl font-bold mb-6 bg-words-purple bg-clip-text text-transparent">
+                  Login
+                </h2>
                 <div className="mb-2">
                   <Input
                     label="Email"
@@ -62,30 +55,38 @@ function Login() {
                     id="email"
                     name="email"
                     className="text-black"
+                    labelClassName="bg-words-purple bg-clip-text text-transparent"
                   />
                 </div>
                 <div>
                   <Input
-                    label="password"
+                    label="Password"
                     type="password"
                     id="password"
                     name="password"
+                    className="text-black"
+                    labelClassName="bg-words-purple bg-clip-text text-transparent"
                   />
                 </div>
-                <div className="mt-3 mb-3 text-red-500">
-                  {err}
+                <div className="mt-3 mb-3 text-red-500">{err}</div>
+                <div className="w-full flex justify-center">
+                  <button
+                    type="submit"
+                    className="py-4 px-12 font-semibold rounded-md shadow bg-button-purple text-white w-56 backdrop-blur-lg"
+                  >
+                    Login
+                  </button>
                 </div>
-                <button
-                  type="submit"
-                  className="w-full py-2 px-4 font-semibold rounded shadow bg-gradient-to-br from-[#BADC58] to-[#F1C40F] text-black"
-                >
-                  Sign In
-                </button>
               </form>
             </FormProvider>
           </div>
-          <div className="text-left mt-2">
-            <Link href="/auth/register">Register</Link>
+          <div className="text-left mt-4">
+            <Link
+              href="/auth/register"
+              className="bg-words-purple bg-clip-text text-transparent border-b border-words-purple"
+            >
+              Register
+            </Link>
           </div>
         </div>
       </div>

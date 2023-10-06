@@ -28,4 +28,13 @@ export class VotesService {
   async addCounter(voteId: string, voteToId: string, userId: string) {
     return this._votesRepository.addCounter(voteId, voteToId, userId);
   }
+
+  // Add this method to the VotesService
+  async getVoteAnalytics(voteId: string) {
+    return this._votesRepository.getVoteAnalytics(voteId);
+  }
+
+  async getVotesUniqueVotesTo(voteId: string) {
+    return this._votesRepository.getVotesUniqueVotesTo(voteId);
+  }
 }
