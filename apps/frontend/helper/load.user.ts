@@ -10,13 +10,11 @@ export const loadUser = async (
   },
   func: (axios: AxiosInstance, user: UserFromRequest) => Promise<any>
 ) => {
-  console.log(req.headers);
+
   const { data: user } = await axiosInstance.get('/users/self', {
-    get headers() {
-      return {
-        ...req.headers,
-      };
-    },
+      headers: {
+        cookie: req.headers.cookie,
+      }
   });
 
   const newInstance = axios.create({
