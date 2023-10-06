@@ -18,11 +18,13 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response
   ) {
     const sign = await this._registrationLoginService.register(register);
-
+    const domain = process.env.NEXT_PUBLIC_BACKEND_PATH;
+    const domainAttribute = domain.indexOf('localhost') > -1 ? {} : { domain: "." + new URL(domain).hostname, sameSite: 'none' as const };
     response.cookie('auth', sign, {
       httpOnly: false,
       sameSite: 'strict',
       path: '/',
+      ...domainAttribute
     });
   }
 
@@ -32,11 +34,14 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response
   ) {
     const sign = await this._registrationLoginService.login(login);
+    const domain = process.env.NEXT_PUBLIC_BACKEND_PATH;
+    const domainAttribute = domain.indexOf('localhost') > -1 ? {} : { domain: "." + new URL(domain).hostname, sameSite: 'none' as const };
 
     response.cookie('auth', sign, {
       httpOnly: false,
       sameSite: 'strict',
       path: '/',
+      ...domainAttribute
     });
   }
 }
