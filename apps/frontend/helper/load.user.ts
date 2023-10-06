@@ -20,7 +20,7 @@ export const loadUser = async (
   const newInstance = axios.create({
     baseURL: axiosInstance.defaults.baseURL,
     headers: {
-      ...req.headers
+      cookie: req.headers.cookie,
     }
   });
 
