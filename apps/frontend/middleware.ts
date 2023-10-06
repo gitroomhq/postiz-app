@@ -4,6 +4,7 @@ import type { NextRequest } from 'next/server';
 // This function can be marked `async` if using `await` inside
 export function middleware(request: NextRequest) {
   const auth = request.cookies.get('auth');
+  console.log('auth', auth);
   if (!auth && !request.nextUrl.pathname.startsWith('/auth')) {
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
