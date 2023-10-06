@@ -15,16 +15,17 @@ import clsx from 'clsx';
 
 const options = {
   single: [
-    { name: 'Likes', component: LikeStyle },
-    { name: 'Upvote', component: UpvoteStyle },
+    { name: 'Likes', component: LikeStyle, componentName: 'LikeStyle'},
+    { name: 'Upvote', component: UpvoteStyle, componentName: 'UpvoteStyle' },
   ],
-  range: [{ name: 'Stars', component: RangeStyle }],
+  range: [{ name: 'Stars', component: RangeStyle, componentName: 'RangeStyle' }],
 };
 const componentConverter = (
   style: any,
   info: VoteValues,
   user: UserFromRequest,
-  finalComponent: any
+  finalComponent: any,
+  componentName: string
 ) => {
   const template = `import {
   ClickVoteComponent,
@@ -42,7 +43,7 @@ function RenderComponent () {
         }}
       >
         <ClickVoteComponent id="${info.name}" voteTo="VOTE_TO">
-          {(props) => <${(finalComponent as any).name} {...props} />}
+          {(props) => <${componentName} {...props} />}
         </ClickVoteComponent>
       </ClickVoteProvider>
     );
@@ -88,7 +89,7 @@ export const RenderComponent: FC<VoteValues> = (params) => {
   });
   const user = useContext(UserContext)!;
   const info = useMemo(() => {
-    return componentConverter(style, params, user, currentOption.component);
+    return componentConverter(style, params, user, currentOption.component, currentOption.componentName);
   }, [params, user, style, currentOption]);
 
   return (
