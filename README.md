@@ -47,10 +47,6 @@ https://github.com/clickvote/clickvote/tree/main/libs/react-component/src/lib/ex
 
 ![image](https://github.com/clickvote/clickvote/assets/100117126/4596c634-4924-4e75-957e-e78aa046980f)
 
-You can read the full article here:
-
-https://dev.to/github20k/clickvote-open-source-upvotes-likes-and-reviews-to-any-context-3ef9
-
 
 <b>STILL UNDER DEVELOPMENT</b>
 <hr />
