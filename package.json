@@ -6,6 +6,7 @@
     "setup": "node create-env.js && npm install",
     "web": "nx run-many --target=serve --projects=backend,frontend",
     "build:frontend": "nx run frontend:build:production",
+    "build:backend": "nx run backend:build:production",
     "upvotes": "nx run-many --target=serve --projects=websockets,consumers",
     "dev:frontend": "nx run frontend:serve:development",
     "dev:backend": "nx run backend:serve:development",
