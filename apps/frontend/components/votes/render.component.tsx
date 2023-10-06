@@ -30,7 +30,7 @@ const componentConverter = (
   const template = `import {
   ClickVoteComponent,
   ClickVoteProvider,
-  ${(finalComponent as any).name},
+  ${componentName},
 } from '@clickvote/react';
 
 function RenderComponent () {
