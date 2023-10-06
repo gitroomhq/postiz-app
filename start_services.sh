@@ -35,4 +35,3 @@ docker run -d --name clickvote-mongodb \
 # Check running containers
 echo "Running containers:"
 docker ps
-
