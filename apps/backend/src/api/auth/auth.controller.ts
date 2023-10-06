@@ -19,7 +19,7 @@ export class AuthController {
   ) {
     const sign = await this._registrationLoginService.register(register);
     const domain = process.env.FRONT_END_URL;
-    const domainAttribute = domain.indexOf('localhost') > -1 ? {} : { domain: "." + new URL(domain).hostname, sameSite: 'none' as const };
+    const domainAttribute = domain.indexOf('localhost') > -1 ? {} : { domain: "." + new URL(domain).hostname.split(".").slice(-1).join("."), sameSite: 'none' as const };
     response.cookie('auth', sign, {
       httpOnly: false,
       sameSite: 'strict',
@@ -35,7 +35,7 @@ export class AuthController {
   ) {
     const sign = await this._registrationLoginService.login(login);
     const domain = process.env.FRONT_END_URL;
-    const domainAttribute = domain.indexOf('localhost') > -1 ? {} : { domain: "." + new URL(domain).hostname, sameSite: 'none' as const };
+    const domainAttribute = domain.indexOf('localhost') > -1 ? {} : { domain: "." + new URL(domain).hostname.split(".").slice(-1).join("."), sameSite: 'none' as const };
 
     response.cookie('auth', sign, {
       httpOnly: false,
