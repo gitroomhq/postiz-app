@@ -17,6 +17,7 @@
     "url": "https://github.com/clickvote/clickvote/tree/main/libs/react-component"
   },
   "dependencies": {
+    "@types/socket.io-client": "^3.0.0",
     "clsx": "^1.2.1",
     "dayjs": "^1.11.9",
     "react-hooks-global-state": "^2.1.0",
