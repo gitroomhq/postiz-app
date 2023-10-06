@@ -2,6 +2,7 @@ import {Logger, ValidationPipe} from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { MainModule } from '@clickvote/backend/src/main.module';
 import cookieParser from 'cookie-parser';
+import morgan from 'morgan';
 
 async function bootstrap() {
   const app = await NestFactory.create(MainModule);
@@ -10,6 +11,8 @@ async function bootstrap() {
     origin: [process.env.FRONT_END_URL],
     credentials: true
   });
+
+  app.use(morgan('combined'));
 
   app.useGlobalPipes(new ValidationPipe());
   app.use(cookieParser());
