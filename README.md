@@ -1,7 +1,23 @@
-![ClickVote](https://github.com/clickvote/clickvote/assets/100117126/429f8cb9-a525-4da5-bf62-f56ca44ba34a)
+<a href="https://clickvote.dev" rel="dofollow">
+  <img src="https://github.com/clickvote/clickvote/assets/100117126/429f8cb9-a525-4da5-bf62-f56ca44ba34a" />
+</a>
 
 
 <h1 align="center">Add upvotes, likes, and reviews to any context</h1>
+
+  <p align="center">
+    <a href="https://docs.clickvote.dev" rel="dofollow"><strong>Explore the docs »</strong></a>
+    <br />
+
+  <br/>
+    <a href="https://clickvote.dev">Visit the website</a>
+    ·
+    <a href="https://app.clickvote.dev">Register to the cloud</a>
+    ·
+    <a href="https://docs.clickvote.dev">Read the docs</a>
+    ·
+    <a href="https://docs.clickvote.dev/quickstart">Self-hosting quick start guide</a>
+  </p>
 
 Clickvote takes the hassle of building your own reaction components around your content.
 
