@@ -1,5 +1,5 @@
+![ClickVote](https://github.com/clickvote/clickvote/assets/100117126/429f8cb9-a525-4da5-bf62-f56ca44ba34a)
 
-![clickvoteanything](https://github.com/clickvote/clickvote/assets/100117126/518864ee-db35-46aa-bd3f-10d561dc1858)
 
 <h1 align="center">Add upvotes, likes, and reviews to any context</h1>
 
