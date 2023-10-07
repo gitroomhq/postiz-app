@@ -79,11 +79,19 @@ export class VotesRepository {
 
  // get all unique votesTo for a vote
   async getVotesUniqueVotesTo(voteId: string) {
-  return this.votesListModel.distinct('to', {
-    _id: new Types.ObjectId(voteId),
-  });
+  // return this.votesListModel.distinct('to', {
+  //   _id: new Types.ObjectId(voteId),
+  // });
+  return this.votesListModel.find();
 }
 
+async getVoteByName(envId: string, orgId: string, name: string) {
+  return this.voteDocument.findOne({
+    env: new Types.ObjectId(envId),
+    org: new Types.ObjectId(orgId),
+    name,
+  });
+}
   // Add this method to the VotesRepository
 async getVoteAnalytics(voteId: string) {
   return this.voteDocument.aggregate([

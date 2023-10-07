@@ -3,7 +3,7 @@ export class VotesInterface {
 
   env!: string;
 
-  id!: string;
+  voteId!: string;
 
   to!: string;
 

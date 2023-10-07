@@ -4,6 +4,7 @@ import { UserFromRequest } from '@clickvote/interfaces';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { UserContext } from '@clickvote/frontend/helper/user.context';
 import { Env } from '@clickvote/frontend/components/layout/env';
+import Logo from '../common/Logo';
 
 const queryClient = new QueryClient();
 
@@ -14,7 +15,9 @@ const Layout: FC<{ children: ReactNode; user: UserFromRequest }> = (props) => {
       <QueryClientProvider client={queryClient}>
         <div className="bg-[#05050B] flex min-h-[100vh] flex-col max-w-[1920px] w-full mx-auto">
           <div className="flex py-4 text-2xl p-4">
-            <div className="flex-1">ClickVote</div>
+            <div className="flex-1">
+              <Logo responsive={false} />
+            </div>
             <div className="text-sm flex items-center">
               <div className="flex items-center">
                 <Env />

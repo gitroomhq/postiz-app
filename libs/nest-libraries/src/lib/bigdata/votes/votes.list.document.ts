@@ -55,6 +55,9 @@ export class VotesList {
 
   @Prop()
   user: string;
+
+  @Prop()
+  voteId: string;
 }
 
 export const VotesListSchema = SchemaFactory.createForClass(VotesList);
