@@ -1,7 +1,6 @@
 <a href="https://clickvote.dev" rel="dofollow">
-  <img src="https://github.com/clickvote/clickvote/assets/100117126/429f8cb9-a525-4da5-bf62-f56ca44ba34a" />
+  <img src="https://github.com/clickvote/clickvote/assets/100117126/8a81b669-970d-46b3-b97b-92f71087c391" />
 </a>
-
 
 <h1 align="center">Add upvotes, likes, and reviews to any context</h1>
 
