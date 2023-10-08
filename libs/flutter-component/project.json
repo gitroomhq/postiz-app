@@ -1,0 +1,114 @@
+{
+  "name": "flutter-component",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/flutter-component/src",
+  "projectType": "library",
+  "targets": {
+    "analyze": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "flutter analyze",
+        "cwd": "libs/flutter-component"
+      }
+    },
+    "clean": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "flutter clean",
+        "cwd": "libs/flutter-component"
+      }
+    },
+    "format": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "dart format libs/flutter-component/*",
+        "cwd": "libs/flutter-component"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "flutter test",
+        "cwd": "libs/flutter-component"
+      }
+    },
+    "doctor": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "flutter doctor",
+        "cwd": "libs/flutter-component"
+      }
+    },
+    "build-aar": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "flutter build aar",
+        "cwd": "libs/flutter-component"
+      },
+      "outputs": [
+        "{workspaceRoot}/libs/flutter-component/build"
+      ]
+    },
+    "build-apk": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "flutter build apk",
+        "cwd": "libs/flutter-component"
+      },
+      "outputs": [
+        "{workspaceRoot}/libs/flutter-component/build"
+      ]
+    },
+    "build-appbundle": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "flutter build appbundle",
+        "cwd": "libs/flutter-component"
+      },
+      "outputs": [
+        "{workspaceRoot}/libs/flutter-component/build"
+      ]
+    },
+    "build-bundle": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "flutter build bundle",
+        "cwd": "libs/flutter-component"
+      },
+      "outputs": [
+        "{workspaceRoot}/libs/flutter-component/build"
+      ]
+    },
+    "build-ios": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "flutter build ios",
+        "cwd": "libs/flutter-component"
+      },
+      "outputs": [
+        "{workspaceRoot}/libs/flutter-component/build"
+      ]
+    },
+    "build-ios-framework": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "flutter build ios-framework",
+        "cwd": "libs/flutter-component"
+      },
+      "outputs": [
+        "{workspaceRoot}/libs/flutter-component/build"
+      ]
+    },
+    "build-ipa": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "flutter build ipa",
+        "cwd": "libs/flutter-component"
+      },
+      "outputs": [
+        "{workspaceRoot}/libs/flutter-component/build"
+      ]
+    }
+  },
+  "tags": []
+}

@@ -107,6 +107,7 @@
     "@nx/web": "^16.4.3",
     "@nx/webpack": "16.5.0",
     "@nx/workspace": "16.2.2",
+    "@nxrocks/nx-flutter": "^7.1.0",
     "@rollup/plugin-url": "^7.0.0",
     "@samatech/postcss-basics": "^0.6.0",
     "@schematics/angular": "~16.1.0",
