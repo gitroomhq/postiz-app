@@ -5,7 +5,7 @@ import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { useForm, Resolver, FormProvider } from 'react-hook-form';
 import { Input } from '@clickvote/frontend/components/form/input';
 import { useRouter } from 'next/router';
-import {useState} from "react";
+import { useState } from 'react';
 
 type FormValues = {
   email: string;
@@ -27,66 +27,66 @@ function Register() {
       try {
         await axiosInstance.post('/auth/register', values);
         return router.push('/');
-      }
-      catch (err) {
+      } catch (err) {
         setErr('Email already exists');
       }
     }
   );
 
   return (
-    <div className="flex h-screen flex-row-reverse">
-      <div className="w-1/2 bg-[#212226]">
-        <div className="flex-col flex justify-center items-center h-full">
-          <div className="flex">
-            <FormProvider {...methods}>
-              <form
-                className="p-8 border border-[#ffffff]/20 bg-black rounded shadow w-[500px] max-w-[100%]"
-                onSubmit={registerSubmit}
-              >
-                <h2 className="text-2xl font-bold mb-6">Register</h2>
-                <div className="mb-2">
-                  <Input
-                    label="Email"
-                    type="text"
-                    id="email"
-                    name="email"
-                    className="text-black"
-                  />
-                </div>
-                <div>
-                  <Input
-                    label="password"
-                    type="password"
-                    id="password"
-                    name="password"
-                  />
-                </div>
-                <div className="mt-3 mb-3 text-red-500">
-                  {err}
-                </div>
-                <button
-                  type="submit"
-                  className="w-full py-2 px-4 font-semibold rounded shadow bg-gradient-to-br from-[#BADC58] to-[#F1C40F] text-black"
-                >
-                  Sign Up
-                </button>
-              </form>
-            </FormProvider>
-          </div>
-          <div className="text-left mt-2">
-            <Link href="/auth/login">Login</Link>
-          </div>
-        </div>
-      </div>
+    <div className="flex h-screen">
       <div className="w-1/2 bg-black">
-        {/* Right side (image) */}
+        {/* Left side (image) */}
         <div className="flex justify-center items-center h-full">
           <img
-            src="your-image-url.jpg"
+            src="https://img.freepik.com/free-photo/view-3d-boy-spacesuit_23-2150710070.jpg"
             alt="Nice Picture"
             className="w-3/4 rounded shadow-lg"
           />
+        </div>
+      </div>
+      <div className="w-1/2 bg-[#212226] flex justify-center items-center">
+        <FormProvider {...methods}>
+          <form
+            className="p-8 border border-[#ffffff]/20 bg-black rounded shadow w-[350px] max-w-[100%]"
+            onSubmit={registerSubmit}
+          >
+            <h2 className="text-3xl font-bold text-white mb-6">Register</h2>
+            <div className="mb-4">
+              <Input
+                label="Email"
+                type="text"
+                id="email"
+                name="email"
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#BADC58] placeholder-gray-500"
+                placeholder="Enter your email"
+              />
+            </div>
+            <div className="mb-6">
+              <Input
+                label="Password"
+                type="password"
+                id="password"
+                name="password"
+                placeholder="Create a password"
+              />
+            </div>
+            <div className="mb-4 text-red-500">{err}</div>
+            <button
+              type="submit"
+              className="w-full py-3 bg-gradient-to-br from-[#BADC58] to-[#F1C40F] text-black font-semibold rounded hover:bg-[#F1C40F]"
+            >
+              Sign Up
+            </button>
+          </form>
+        </FormProvider>
+        <div className="text-white mt-4">
+          Already have an account?{' '}
+          <Link href="/auth/login">
+            <a className="text-[#BADC58] hover:underline font-semibold">
+              Login
+            </a>
+          </Link>
         </div>
       </div>
     </div>
