@@ -20,7 +20,7 @@
 
 <br />
 <h2 align="center">Clickvote participate in Hacktoberfest 2023!</h2>
-<p align="center">Make three valuable PRs (no typo) and win this awesome Clickvote tee! Maximum ten tees! So hurry up!</p>
+<p align="center">Make three valuable PRs (no typo) and win this awesome Clickvote tee!<br /><strong>Maximum ten tees! So hurry up!</strong></p>
 
 <p align="center">
 <img src="https://github.com/clickvote/clickvote/assets/100117126/96058f9a-72ca-4c15-8026-449efcf6b964" align="center" width="300" />
