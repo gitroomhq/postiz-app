@@ -1,0 +1,6 @@
+{
+  "name": "@clickvote/svelte",
+  "version": "0.0.1",
+  "description": "Clickvote svelte component",
+  "type": "commonjs"
+}
