@@ -17,6 +17,7 @@ const resolver: Resolver<FormValues> = classValidatorResolver(AuthValidator);
 
 function Register() {
   const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [err, setErr] = useState('');
   const methods = useForm<FormValues>({
     mode: 'all',
@@ -25,12 +26,14 @@ function Register() {
 
   const registerSubmit = methods.handleSubmit(
     async (values: { email: string; password: string }) => {
+      setIsSubmitting(true);
       try {
         await axiosInstance.post('/auth/register', values);
         return router.push('/');
       } catch (err) {
         setErr('Email already exists');
       }
+      setIsSubmitting(false);
     }
   );
 
@@ -71,10 +74,11 @@ function Register() {
                 <div className="mt-3 mb-3 text-red-500">{err}</div>
                 <div className="w-full flex justify-center">
                   <button
+                    disabled={isSubmitting}
                     type="submit"
                     className="py-4 px-12 font-semibold rounded-md shadow bg-button-purple text-white w-56 backdrop-blur-lg hover:opacity-70"
                   >
-                    Get Started
+                    {isSubmitting ? "Redirecting ..." : "Get Started"}
                   </button>
                 </div>
               </form>
