@@ -1,0 +1,43 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+
+int main() {
+  int n,m;
+  cin>>n>>m;
+  int arr1[n], arr2[m];
+  vector<int>v;
+  int cnt=0;
+  for(int i=0;i<n;i++){
+    cin>>arr1[i];
+  }
+  for(int i=0;i<m;i++){
+    cin>>arr2[i];
+  }
+  for(int i=0;i<n;i++){
+    for(int j=0;j<m;j++){
+        if(arr1[i]==arr2[j]){
+            cnt++;
+            arr2[j]=0;
+            v.push_back(arr1[i]);
+            break;
+        }
+    }
+  }
+  cout<<cnt<<endl;
+
+  for(auto it:v)
+  cout<<it<<" ";
+
+  cout<<endl;
+
+
+  
+
+  
+
+
+
+      
+    return 0;
+}
