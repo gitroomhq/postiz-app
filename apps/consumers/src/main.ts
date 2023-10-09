@@ -11,7 +11,7 @@ import { BullMqTransport } from '@clickvote/nest-libraries';
 
 async function bootstrap() {
   const strategy = new BullMqTransport();
-
+  // some comment
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
     AppModule,
     {
