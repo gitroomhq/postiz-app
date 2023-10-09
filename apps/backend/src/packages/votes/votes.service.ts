@@ -43,11 +43,11 @@ export class VotesService {
   }
 
   // Add this method to the VotesService
-  async getVoteAnalytics(voteId: string) {
-    return this._votesRepository.getVoteAnalytics(voteId);
+  async getVoteAnalytics(envId, voteName: string, dateRange?: string, voteTo?: string) {
+    return this._votesRepository.getVoteAnalytics(envId, voteName, dateRange, voteTo);
   }
 
-  async getVotesUniqueVotesTo(voteId: string) {
-    return this._votesRepository.getVotesUniqueVotesTo(voteId);
+  async getVotesUniqueVotesTo(envId: string, voteName: string) {
+    return this._votesRepository.getVotesUniqueVotesTo(envId, voteName);
   }
 }

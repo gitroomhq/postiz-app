@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Put } from '@nestjs/common';
+import { Body, Controller, Get, Post, Put, Param, Query } from '@nestjs/common';
 import { VotesService } from '@clickvote/backend/src/packages/votes/votes.service';
 import { GetUserFromRequest } from '@clickvote/backend/src/helpers/user.from.request';
 import { UserFromRequest } from '@clickvote/interfaces';
@@ -54,19 +54,30 @@ export class VotesController {
   }
 
   // Add this method to the VotesController
-  @Get('/:id/analytics')
+  @Get('/:voteName/analytics')
   async getVoteAnalytics(
     @GetUserFromRequest() user: UserFromRequest,
-    @ValidateId('id') id: string
+    @Param('voteName') voteName: string,
+    @Query('dateRange') dateRange?: string,
+    @Query('voteTo') voteTo?: string
   ) {
-    return this._votesService.getVoteAnalytics(id);
+
+    return this._votesService.getVoteAnalytics(
+      user.currentEnv.id,
+      voteName,
+      dateRange,
+      voteTo
+    );
   }
 
-  @Get('/:id/to')
+  @Get('/:voteName/to')
   async getVotesUniqueVotesTo(
     @GetUserFromRequest() user: UserFromRequest,
-    @ValidateId('id') id: string
+    @Param('voteName') voteName: string
   ) {
-    return this._votesService.getVotesUniqueVotesTo(id);
+    return this._votesService.getVotesUniqueVotesTo(
+      user.currentEnv.id,
+      voteName
+    );
   }
 }

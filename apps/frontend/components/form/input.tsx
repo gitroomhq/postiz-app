@@ -41,7 +41,7 @@ export const Input: FC<
         {...all}
         onChange={onChangeFunc}
         className={clsx(
-          `p-2 w-full bg-[#fff0fd]/10 text-[#EBECED] border border-[#EBECED]/20 rounded-md`,
+          `p-2 w-full bg-[#fff0fd]/10 text-[#EBECED] border border-[#EBECED]/20 rounded-md focus:ring-2 focus:ring-light-purple focus:outline-none`,
           className
         )}
       />

@@ -78,11 +78,12 @@ export class VotesRepository {
   }
 
  // get all unique votesTo for a vote
-  async getVotesUniqueVotesTo(voteId: string) {
-  // return this.votesListModel.distinct('to', {
-  //   _id: new Types.ObjectId(voteId),
-  // });
-  return this.votesListModel.find();
+  async getVotesUniqueVotesTo(envId: string, voteName: string) {
+
+  return this.votesListModel.distinct('to', {
+    env: envId,
+    voteId: voteName,
+  });
 }
 
 async getVoteByName(envId: string, orgId: string, name: string) {
@@ -92,17 +93,39 @@ async getVoteByName(envId: string, orgId: string, name: string) {
     name,
   });
 }
-  // Add this method to the VotesRepository
-async getVoteAnalytics(voteId: string) {
-  return this.voteDocument.aggregate([
-    { $match: { _id: new Types.ObjectId(voteId) } },
+
+async getVoteAnalytics(envId: string, voteName: string, dateRange?: string, voteTo?: string) {
+
+  console.log('envId', envId)
+
+  const matchQuery: any = { voteId: voteName, env: envId };
+
+  if (voteTo) {
+    matchQuery.to = voteTo;
+  }
+
+  const dateRangeInMilliseconds = {
+    '1d': 24 * 60 * 60 * 1000,
+    '7d': 7 * 24 * 60 * 60 * 1000,
+    '30d': 30 * 24 * 60 * 60 * 1000,
+    '1y': 365 * 24 * 60 * 60 * 1000,
+  };
+
+  const range = dateRangeInMilliseconds[dateRange];
+
+  if (range) {
+    matchQuery.time = { $gte: new Date(Date.now() - range) };
+  }
+
+  return this.votesListModel.aggregate([
+    { $match: matchQuery },
     {
       $group: {
         _id: {
           $toDate: {
             $subtract: [
-              { $toLong: "$createdAt" },
-              { $mod: [{ $toLong: "$createdAt" }, 1000 * 60 * 60] },
+              { $toLong: "$time" },
+              { $mod: [{ $toLong: "$time" }, 1000 * 60 * 60] },
             ],
           },
         },

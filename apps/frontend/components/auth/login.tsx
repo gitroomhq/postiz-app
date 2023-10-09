@@ -54,7 +54,7 @@ function Login() {
                     type="text"
                     id="email"
                     name="email"
-                    className="text-black"
+                    className="text-white"
                     labelClassName="bg-words-purple bg-clip-text text-transparent"
                   />
                 </div>
@@ -64,7 +64,7 @@ function Login() {
                     type="password"
                     id="password"
                     name="password"
-                    className="text-black"
+                    className="text-white"
                     labelClassName="bg-words-purple bg-clip-text text-transparent"
                   />
                 </div>

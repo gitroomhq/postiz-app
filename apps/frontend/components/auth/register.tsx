@@ -54,7 +54,7 @@ function Register() {
                     type="text"
                     id="email"
                     name="email"
-                    className="text-black"
+                    className="text-white"
                     labelClassName="bg-words-purple bg-clip-text text-transparent"
                   />
                 </div>
@@ -64,7 +64,7 @@ function Register() {
                     type="password"
                     id="password"
                     name="password"
-                    className="text-black"
+                    className="text-white"
                     labelClassName="bg-words-purple bg-clip-text text-transparent"
                   />
                 </div>
@@ -72,7 +72,7 @@ function Register() {
                 <div className="w-full flex justify-center">
                   <button
                     type="submit"
-                    className="py-4 px-12 font-semibold rounded-md shadow bg-button-purple text-white w-56 backdrop-blur-lg"
+                    className="py-4 px-12 font-semibold rounded-md shadow bg-button-purple text-white w-56 backdrop-blur-lg hover:opacity-70"
                   >
                     Get Started
                   </button>

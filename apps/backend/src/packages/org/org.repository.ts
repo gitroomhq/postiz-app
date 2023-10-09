@@ -14,4 +14,15 @@ export class OrgRepository {
     const org = new this.orgModel({ name });
     return org.save();
   }
+
+  async updateOrg(id, name: string) {
+    this.orgModel.updateOne(
+      { _id: id },
+      {
+        $set: {
+          name,
+        },
+      }
+    )
+  }
 }
