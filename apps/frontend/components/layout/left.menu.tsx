@@ -33,24 +33,24 @@ const LeftMenu = () => {
   };
 
   return (
-    <div className="border border-[#ffffff]/20 px-4 w-60 bg-gradient-to-r bg-[#05050B] flex flex-col">
-      <div className="flex-1 flex flex-col">
+    <div className="border border-[#ffffff]/20 px-4 pl-8 w-60 bg-gradient-to-r bg-[#05050B] flex flex-col">
+      <div className="flex-1 flex flex-col pt-7">
         <ActiveLink
-          activeClassName="underline font-bold"
+          activeClassName="underline font-bold bg-words-purple bg-clip-text text-transparent"
           href="/analytics"
           className="py-4"
         >
           Analytics
         </ActiveLink>
         <ActiveLink
-          activeClassName="underline font-bold"
+          activeClassName="underline font-bold bg-words-purple bg-clip-text text-transparent"
           href="/votes"
           className="py-4"
         >
           Votes
         </ActiveLink>
         <ActiveLink
-          activeClassName="underline font-bold"
+          activeClassName="underline font-bold bg-words-purple bg-clip-text text-transparent"
           href="/settings"
           className="py-4"
         >

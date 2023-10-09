@@ -123,7 +123,7 @@ export class EventsGateway {
       JSON.stringify({
         uuid: uuidv4(),
         env: envId,
-        id: params.id,
+        voteId: params.id,
         to: params.voteTo,
         user: params.userId,
         value: params.value,

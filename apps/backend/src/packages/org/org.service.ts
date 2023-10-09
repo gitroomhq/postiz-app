@@ -13,4 +13,8 @@ export class OrgService {
   async createOrg(name: string) {
     return this._orgRepository.createOrg(name);
   }
+
+  async updateOrg(id: string, name: string) {
+    return this._orgRepository.updateOrg(id, name);
+  }
 }

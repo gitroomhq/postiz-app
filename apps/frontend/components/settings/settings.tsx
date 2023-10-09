@@ -5,6 +5,8 @@ import { Input } from '@clickvote/frontend/components/form/input';
 import { UserContext } from '@clickvote/frontend/helper/user.context';
 import { Button } from '@clickvote/frontend/components/form/button';
 import CopyToClipboard from 'react-copy-to-clipboard';
+import { Title } from '@tremor/react';
+import { Copy } from 'lucide-react';
 
 export const Settings: FC<{ settings: SettingsInterface }> = (props) => {
   const user = useContext(UserContext);
@@ -19,53 +21,61 @@ export const Settings: FC<{ settings: SettingsInterface }> = (props) => {
   });
 
   return (
-    <FormProvider {...methods}>
-      <h2 className="text-3xl mb-5">Settings</h2>
-      <Input
-        label="Organization Name"
-        name="name"
-        value={user?.currentOrg.name}
-      />
-      <Button type="submit" className="mb-10">
-        Update
-      </Button>
+    <div className="p-4">
+      <FormProvider {...methods}>
+        <Title className="bg-words-purple bg-clip-text text-transparent text-4xl">
+          Settings
+        </Title>
+        <Input
+          label="Organization Name"
+          name="name"
+          value={user?.currentOrg.name}
+          labelClassName="mt-7"
+        />
+        <Button type="submit" className="mb-10">
+          Update
+        </Button>
 
-      <h2 className="text-3xl mb-5">API Keys</h2>
-      <CopyToClipboard text={settings.publicKey}>
-        <div className="flex mb-5">
-          <div className="flex-1">
-            <Input
-              hideErrors={true}
-              label="Public Key"
-              name="publicKey"
-              value={settings.publicKey}
-              readOnly={true}
-              className="cursor-pointer"
-            />
+        <Title className="bg-words-purple bg-clip-text text-transparent text-4xl">
+          API Keys
+        </Title>
+        <CopyToClipboard text={settings.publicKey}>
+          <div className="flex mb-5">
+            <div className="flex-1">
+              <Input
+                hideErrors={true}
+                label="Public Key"
+                name="publicKey"
+                value={settings.publicKey}
+                readOnly={true}
+                className="cursor-pointer"
+                labelClassName="mt-7"
+              />
+            </div>
+            <div className="flex items-end ml-2 hover:opacity-70">
+              <Copy />
+            </div>
           </div>
-          <div className="flex items-end ml-2">
-            <Button>Copy</Button>
+        </CopyToClipboard>
+        <CopyToClipboard text={settings.secretKey}>
+          <div className="flex">
+            <div className="flex-1">
+              <Input
+                hideErrors={true}
+                label="Secret Key"
+                name="secretKey"
+                type="password"
+                value={settings.secretKey}
+                readOnly={true}
+                className="cursor-pointer"
+              />
+            </div>
+            <div className="flex items-end ml-2 hover:opacity-70">
+              <Copy />
+            </div>
           </div>
-        </div>
-      </CopyToClipboard>
-      <CopyToClipboard text={settings.secretKey}>
-        <div className="flex">
-          <div className="flex-1">
-            <Input
-              hideErrors={true}
-              label="Secret Key"
-              name="secretKey"
-              type="password"
-              value={settings.secretKey}
-              readOnly={true}
-              className="cursor-pointer"
-            />
-          </div>
-          <div className="flex items-end ml-2">
-            <Button>Copy</Button>
-          </div>
-        </div>
-      </CopyToClipboard>
-    </FormProvider>
+        </CopyToClipboard>
+      </FormProvider>
+    </div>
   );
 };
