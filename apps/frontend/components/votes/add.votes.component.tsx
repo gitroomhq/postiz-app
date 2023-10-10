@@ -11,6 +11,7 @@ import { useRouter } from 'next/router';
 import { Button } from '@clickvote/frontend/components/form/button';
 import { toast } from 'react-toastify';
 import { RenderComponent } from '@clickvote/frontend/components/votes/render.component';
+import { useState } from 'react';
 
 export type VoteValues = {
   _id?: string;
@@ -42,6 +43,8 @@ export const AddVotesComponent: FC<{ initialValues?: VoteValues }> = (
       ).data
   );
 
+  const [err, setErr] = useState('');
+
   const methods = useForm<VoteValues>({
     mode: 'all',
     values: initialValues || {
@@ -69,6 +72,9 @@ export const AddVotesComponent: FC<{ initialValues?: VoteValues }> = (
         toast.success(!initialValues ? 'Vote Created!' : 'Vote Updated!');
         !!_id && router.push(`/votes/${_id}`);
       },
+      onError: (err) => {
+        setErr('Vote name already exists');
+      },
     });
   });
 
@@ -84,6 +90,7 @@ export const AddVotesComponent: FC<{ initialValues?: VoteValues }> = (
                 onChange={changeEvent}
                 disabled={!!initialValues}
               />
+              <div className="mt-3 mb-3 text-red-500">{err}</div>
               <Select name="type" label="Type" disabled={!!initialValues}>
                 <option value="">--Select--</option>
                 <option value="single">Single</option>

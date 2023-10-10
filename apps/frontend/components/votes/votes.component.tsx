@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { axiosInstance } from '@clickvote/frontend/helper/axios';
 import { LinkButton } from '@clickvote/frontend/components/form/link.button';
 import Link from 'next/link';
+import { Title } from '@tremor/react';
 
 export const VotesComponent: FC = () => {
   const { data, isLoading } = useQuery({
@@ -12,22 +13,27 @@ export const VotesComponent: FC = () => {
     },
   });
   return (
-    <>
-      <LinkButton href="/votes/add">Add Vote</LinkButton>
+    <div className="p-4">
+      <Title className="bg-words-purple bg-clip-text text-transparent text-4xl">
+        Votes
+      </Title>
+      <LinkButton href="/votes/add" className="py-5 mt-5">
+        Add Vote
+      </LinkButton>
       {!isLoading && !!data.votes.length && (
-        <table className="w-full mt-5 border border-white/20">
-          <thead>
-            <tr>
-              <th className="text-left bg-black p-3 border border-white/20">
+        <table className="max-w-5xl w-full mt-7 border border-bright-purple/70 bg-dark-purple">
+          <thead className="bg-dark-purple">
+            <tr className="">
+              <th className="text-left p-3 border border-bright-purple/70">
                 Vote
               </th>
-              <th className="text-left bg-black p-3 border border-white/20">
+              <th className="text-left p-3 border border-bright-purple/70">
                 Type
               </th>
-              <th className="text-left bg-black p-3 border border-white/20">
+              <th className="text-left p-3 border border-bright-purple/70">
                 Clicks
               </th>
-              <th className="text-left bg-black p-3 border border-white/20">
+              <th className="text-left p-3 border border-bright-purple/70">
                 Score
               </th>
             </tr>
@@ -35,12 +41,16 @@ export const VotesComponent: FC = () => {
           <tbody>
             {data.votes.map((vote: any) => (
               <tr key={vote.id}>
-                <td className="p-3 border border-white/20">
+                <td className="p-3 border border-bright-purple/70">
                   <Link href={`/votes/${vote._id}`}>{vote.name}</Link>
                 </td>
-                <td className="p-3 border border-white/20">{vote.type}</td>
-                <td className="p-3 border border-white/20">{vote.count || 0}</td>
-                <td className="p-3 border border-white/20">
+                <td className="p-3 border border-bright-purple/70">
+                  {vote.type}
+                </td>
+                <td className="p-3 border border-bright-purple/70">
+                  {vote.count || 0}
+                </td>
+                <td className="p-3 border border-bright-purple/70">
                   {vote.type === 'single'
                     ? vote.count
                     : ((vote.sum || 1) / (vote.count || 1)).toFixed(2)}
@@ -50,6 +60,6 @@ export const VotesComponent: FC = () => {
           </tbody>
         </table>
       )}
-    </>
+    </div>
   );
 };

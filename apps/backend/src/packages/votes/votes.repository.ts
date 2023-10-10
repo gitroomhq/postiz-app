@@ -3,13 +3,15 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Counter } from '@clickvote/backend/src/packages/votes/counter.document';
 import { Votes } from '@clickvote/backend/src/packages/votes/vote.document';
+import { VotesList } from 'libs/nest-libraries/src/lib/bigdata/votes/votes.list.document';
 import { VotesValidation } from '@clickvote/validations';
 
 @Injectable()
 export class VotesRepository {
   constructor(
     @InjectModel(Counter.name) private counterDocument: Model<Counter>,
-    @InjectModel(Votes.name) private voteDocument: Model<Votes>
+    @InjectModel(Votes.name) private voteDocument: Model<Votes>,
+    @InjectModel(VotesList.name) private votesListModel: Model<VotesList>
   ) {}
 
   getVoteByIdAndOrg(org: string, id: string) {
@@ -74,4 +76,63 @@ export class VotesRepository {
       identity: userId,
     });
   }
+
+ // get all unique votesTo for a vote
+  async getVotesUniqueVotesTo(envId: string, voteName: string) {
+
+  return this.votesListModel.distinct('to', {
+    env: envId,
+    voteId: voteName,
+  });
+}
+
+async getVoteByName(envId: string, orgId: string, name: string) {
+  return this.voteDocument.findOne({
+    env: new Types.ObjectId(envId),
+    org: new Types.ObjectId(orgId),
+    name,
+  });
+}
+
+async getVoteAnalytics(envId: string, voteName: string, dateRange?: string, voteTo?: string) {
+
+  console.log('envId', envId)
+
+  const matchQuery: any = { voteId: voteName, env: envId };
+
+  if (voteTo) {
+    matchQuery.to = voteTo;
+  }
+
+  const dateRangeInMilliseconds = {
+    '1d': 24 * 60 * 60 * 1000,
+    '7d': 7 * 24 * 60 * 60 * 1000,
+    '30d': 30 * 24 * 60 * 60 * 1000,
+    '1y': 365 * 24 * 60 * 60 * 1000,
+  };
+
+  const range = dateRangeInMilliseconds[dateRange];
+
+  if (range) {
+    matchQuery.time = { $gte: new Date(Date.now() - range) };
+  }
+
+  return this.votesListModel.aggregate([
+    { $match: matchQuery },
+    {
+      $group: {
+        _id: {
+          $toDate: {
+            $subtract: [
+              { $toLong: "$time" },
+              { $mod: [{ $toLong: "$time" }, 1000 * 60 * 60] },
+            ],
+          },
+        },
+        count: { $sum: 1 },
+      },
+    },
+    { $sort: { _id: 1 } },
+  ]);
+}
 }

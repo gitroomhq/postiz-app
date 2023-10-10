@@ -77,6 +77,12 @@
     },
     "@nx/angular:component": {
       "style": "css"
+    },
+    "@nx/svelte:component": {
+      "style": "scss",
+      "linter": "eslint",
+      "unitTestRunner": "jest",
+      "e2eTestRunner": "none"
     }
   }
 }

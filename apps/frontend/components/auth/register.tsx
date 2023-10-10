@@ -5,7 +5,8 @@ import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { useForm, Resolver, FormProvider } from 'react-hook-form';
 import { Input } from '@clickvote/frontend/components/form/input';
 import { useRouter } from 'next/router';
-import {useState} from "react";
+import { useState } from 'react';
+import Logo from '../common/Logo';
 
 type FormValues = {
   email: string;
@@ -16,6 +17,7 @@ const resolver: Resolver<FormValues> = classValidatorResolver(AuthValidator);
 
 function Register() {
   const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [err, setErr] = useState('');
   const methods = useForm<FormValues>({
     mode: 'all',
@@ -24,69 +26,72 @@ function Register() {
 
   const registerSubmit = methods.handleSubmit(
     async (values: { email: string; password: string }) => {
+      setIsSubmitting(true);
       try {
         await axiosInstance.post('/auth/register', values);
         return router.push('/');
-      }
-      catch (err) {
+      } catch (err) {
         setErr('Email already exists');
       }
+      setIsSubmitting(false);
     }
   );
 
   return (
-    <div className="flex h-screen flex-row-reverse">
-      <div className="w-1/2 bg-[#212226]">
+    <div className="flex w-full h-screen justify-center">
+      <div className="w-1/2 bg-gradient-black">
         <div className="flex-col flex justify-center items-center h-full">
-          <div className="flex">
+          <Logo responsive={false} />
+          <div className="flex mt-8">
             <FormProvider {...methods}>
               <form
-                className="p-8 border border-[#ffffff]/20 bg-black rounded shadow w-[500px] max-w-[100%]"
+                className="p-8 border border-[#ffffff]/20 bg-gradient-purple rounded shadow w-[500px] max-w-[100%]"
                 onSubmit={registerSubmit}
               >
-                <h2 className="text-2xl font-bold mb-6">Register</h2>
+                <h2 className="text-2xl font-bold mb-6 bg-words-purple bg-clip-text text-transparent">
+                  Register
+                </h2>
                 <div className="mb-2">
                   <Input
                     label="Email"
                     type="text"
                     id="email"
                     name="email"
-                    className="text-black"
+                    className="text-white"
+                    labelClassName="bg-words-purple bg-clip-text text-transparent"
                   />
                 </div>
                 <div>
                   <Input
-                    label="password"
+                    label="Password"
                     type="password"
                     id="password"
                     name="password"
+                    className="text-white"
+                    labelClassName="bg-words-purple bg-clip-text text-transparent"
                   />
                 </div>
-                <div className="mt-3 mb-3 text-red-500">
-                  {err}
+                <div className="mt-3 mb-3 text-red-500">{err}</div>
+                <div className="w-full flex justify-center">
+                  <button
+                    disabled={isSubmitting}
+                    type="submit"
+                    className="py-4 px-12 font-semibold rounded-md shadow bg-button-purple text-white w-56 backdrop-blur-lg hover:opacity-70"
+                  >
+                    {isSubmitting ? "Redirecting ..." : "Get Started"}
+                  </button>
                 </div>
-                <button
-                  type="submit"
-                  className="w-full py-2 px-4 font-semibold rounded shadow bg-gradient-to-br from-[#BADC58] to-[#F1C40F] text-black"
-                >
-                  Sign Up
-                </button>
               </form>
             </FormProvider>
           </div>
-          <div className="text-left mt-2">
-            <Link href="/auth/login">Login</Link>
+          <div className="text-left mt-4">
+            <Link
+              href="/auth/login"
+              className="bg-words-purple bg-clip-text text-transparent border-b border-words-purple"
+            >
+              Login
+            </Link>
           </div>
-        </div>
-      </div>
-      <div className="w-1/2 bg-black">
-        {/* Right side (image) */}
-        <div className="flex justify-center items-center h-full">
-          <img
-            src="your-image-url.jpg"
-            alt="Nice Picture"
-            className="w-3/4 rounded shadow-lg"
-          />
         </div>
       </div>
     </div>

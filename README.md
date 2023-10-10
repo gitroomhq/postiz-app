@@ -1,7 +1,32 @@
-
-![clickvoteanything](https://github.com/clickvote/clickvote/assets/100117126/518864ee-db35-46aa-bd3f-10d561dc1858)
+<a href="https://clickvote.dev" rel="dofollow">
+  <img src="https://github.com/clickvote/clickvote/assets/100117126/8a81b669-970d-46b3-b97b-92f71087c391" />
+</a>
 
 <h1 align="center">Add upvotes, likes, and reviews to any context</h1>
+
+  <p align="center">
+    <a href="https://docs.clickvote.dev" rel="dofollow"><strong>Explore the docs »</strong></a>
+    <br />
+
+  <br/>
+    <a href="https://clickvote.dev">Visit the website</a>
+    ·
+    <a href="https://app.clickvote.dev">Register to the cloud</a>
+    ·
+    <a href="https://docs.clickvote.dev">Read the docs</a>
+    ·
+    <a href="https://docs.clickvote.dev/quickstart">Self-hosting quick start guide</a>
+  </p>
+
+<br />
+<h2 align="center">Clickvote participate in Hacktoberfest 2023!</h2>
+<p align="center">Make three valuable PRs (no typo) and win this awesome Clickvote tee!<br /><strong>Maximum ten tees! So hurry up!</strong></p>
+
+<p align="center">
+<img src="https://github.com/clickvote/clickvote/assets/100117126/96058f9a-72ca-4c15-8026-449efcf6b964" align="center" width="300" />
+</p>
+
+<h2>Clickvote</h2>
 
 Clickvote takes the hassle of building your own reaction components around your content.
 
