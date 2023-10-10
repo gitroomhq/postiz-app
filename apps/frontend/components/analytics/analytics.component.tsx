@@ -59,7 +59,7 @@ const Chart = ({
   }, [data]);
 
   if (!showData) {
-    return <div className="text-black">No data</div>;
+    return <div className="text-violet-200">No data</div>;
   }
 
   return (
