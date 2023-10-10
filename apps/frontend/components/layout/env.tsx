@@ -36,7 +36,7 @@ export const Env = () => {
       <form className="mr-4">
         <Select hideErrors={true} name="env" label="" postChange={methods.handleSubmit(submit)}>
           {user?.env.map((env) => (
-            <option key={env.id} value={env.id}>
+            <option key={env.id} value={env.id} className='text-purple-500'>
               {env.name}
             </option>
           ))}
