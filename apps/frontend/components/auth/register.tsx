@@ -1,12 +1,12 @@
-import Link from 'next/link';
-import { AuthValidator } from '@clickvote/validations';
-import { axiosInstance } from '@clickvote/frontend/helper/axios';
-import { classValidatorResolver } from '@hookform/resolvers/class-validator';
-import { useForm, Resolver, FormProvider } from 'react-hook-form';
-import { Input } from '@clickvote/frontend/components/form/input';
-import { useRouter } from 'next/router';
-import { useState } from 'react';
-import Logo from '../common/Logo';
+import Link from "next/link";
+import { AuthValidator } from "@clickvote/validations";
+import { axiosInstance } from "@clickvote/frontend/helper/axios";
+import { classValidatorResolver } from "@hookform/resolvers/class-validator";
+import { FormProvider, Resolver, useForm } from "react-hook-form";
+import { Input } from "@clickvote/frontend/components/form/input";
+import { useRouter } from "next/router";
+import { useState } from "react";
+import Logo from "../common/Logo";
 
 type FormValues = {
   email: string;
@@ -18,9 +18,9 @@ const resolver: Resolver<FormValues> = classValidatorResolver(AuthValidator);
 function Register() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [err, setErr] = useState('');
+  const [err, setErr] = useState("");
   const methods = useForm<FormValues>({
-    mode: 'all',
+    mode: "all",
     resolver,
   });
 
@@ -28,13 +28,26 @@ function Register() {
     async (values: { email: string; password: string }) => {
       setIsSubmitting(true);
       try {
-        await axiosInstance.post('/auth/register', values);
-        return router.push('/');
+        // Register the user
+        await axiosInstance.post("/auth/register", values);
+
+        // Add the user to the newsletter (same logic as in your Subscribe component)
+        await axios.post("https://substackapi.com/api/subscribe", {
+          email: values.email,
+          domain: new URL(process?.env?.NEXT_PUBLIC_SUBSTACK_NEWSLETTER_URL!)
+            .hostname,
+        }, {
+          headers: {
+            "Cache-Length": 0,
+          },
+        });
+
+        return router.push("/");
       } catch (err) {
-        setErr('Email already exists');
+        setErr("Email already exists");
       }
       setIsSubmitting(false);
-    }
+    },
   );
 
   return (
