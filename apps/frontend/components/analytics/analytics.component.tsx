@@ -1,25 +1,25 @@
 import {
+  AreaChart,
+  Card,
   SearchSelect,
   SearchSelectItem,
-  Title,
-  Text,
-  Card,
-  AreaChart,
+  Tab,
   TabGroup,
   TabList,
-  Tab,
-} from '@tremor/react';
-import { useQuery } from '@tanstack/react-query';
-import { axiosInstance } from '@clickvote/frontend/helper/axios';
-import { useState, useEffect, useMemo } from 'react';
+  Text,
+  Title,
+} from "@tremor/react";
+import { useQuery } from "@tanstack/react-query";
+import { axiosInstance } from "@clickvote/frontend/helper/axios";
+import { useEffect, useMemo, useState } from "react";
 
 const dateFormatter = (data: string) => {
   const date = new Date(data);
 
   const year = date.getUTCFullYear();
-  const month = String(date.getUTCMonth() + 1).padStart(2, '0'); // Months are 0-indexed in JS
-  const day = String(date.getUTCDate()).padStart(2, '0');
-  const hour = String(date.getUTCHours()).padStart(2, '0');
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0"); // Months are 0-indexed in JS
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  const hour = String(date.getUTCHours()).padStart(2, "0");
 
   const formattedDate = `${year}-${month}-${day} ${hour}:00`;
   return formattedDate;
@@ -35,7 +35,7 @@ const Chart = ({
   dateRange?: string;
 }) => {
   const { data, isLoading } = useQuery({
-    queryKey: ['analytics', voteName, voteTo, dateRange],
+    queryKey: ["analytics", voteName, voteTo, dateRange],
     enabled: !!voteName,
     queryFn: async () => {
       return (
@@ -59,7 +59,7 @@ const Chart = ({
   }, [data]);
 
   if (!showData) {
-    return <div className="text-black">No data</div>;
+    return <div className="text-violet-200">No data</div>;
   }
 
   return (
@@ -67,28 +67,28 @@ const Chart = ({
       className="h-72 mt-4"
       data={formatedData}
       index="_id"
-      categories={['count']}
+      categories={["count"]}
       showLegend={false}
-      colors={['purple']}
+      colors={["purple"]}
     />
   );
 };
 
 export default function Dashboard() {
   const { data, isLoading } = useQuery({
-    queryKey: ['votes'],
+    queryKey: ["votes"],
     queryFn: async () => {
-      return (await axiosInstance.get('/votes')).data;
+      return (await axiosInstance.get("/votes")).data;
     },
   });
 
-  const [voteId, setvoteId] = useState('');
-  const [voteTo, setVoteTo] = useState('');
+  const [voteId, setvoteId] = useState("");
+  const [voteTo, setVoteTo] = useState("");
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [dateIndex, setDateIndex] = useState<number>(0);
 
   const { data: data2, isLoading: isLoading2 } = useQuery({
-    queryKey: ['votesTo', voteId],
+    queryKey: ["votesTo", voteId],
     queryFn: async () => {
       return (await axiosInstance.get(`/votes/${voteId}/to`)).data;
     },
@@ -118,15 +118,15 @@ export default function Dashboard() {
             value={voteId}
             onValueChange={setvoteId}
           >
-            {showData ? (
-              data.votes.map((vote: any) => (
-                <SearchSelectItem key={vote._id} value={vote.name}>
-                  {vote.name}
-                </SearchSelectItem>
-              ))
-            ) : (
-              <SearchSelectItem value="1">No votes</SearchSelectItem>
-            )}
+            {showData
+              ? (
+                data.votes.map((vote: any) => (
+                  <SearchSelectItem key={vote._id} value={vote.name}>
+                    {vote.name}
+                  </SearchSelectItem>
+                ))
+              )
+              : <SearchSelectItem value="1">No votes</SearchSelectItem>}
           </SearchSelect>
         </div>
         <div>
@@ -136,15 +136,15 @@ export default function Dashboard() {
             value={voteTo}
             onValueChange={setVoteTo}
           >
-            {showData2 ? (
-              data2?.map((voteTo: string) => (
-                <SearchSelectItem key={voteTo} value={voteTo}>
-                  {voteTo}
-                </SearchSelectItem>
-              ))
-            ) : (
-              <SearchSelectItem value="1">No votesTo</SearchSelectItem>
-            )}
+            {showData2
+              ? (
+                data2?.map((voteTo: string) => (
+                  <SearchSelectItem key={voteTo} value={voteTo}>
+                    {voteTo}
+                  </SearchSelectItem>
+                ))
+              )
+              : <SearchSelectItem value="1">No votesTo</SearchSelectItem>}
           </SearchSelect>
         </div>
         <div className="pt-8 ml-auto">
@@ -177,7 +177,7 @@ export default function Dashboard() {
           <Chart
             voteName={voteId}
             voteTo={voteTo}
-            dateRange={['1d', '7d', '30d', '1y'][dateIndex]}
+            dateRange={["1d", "7d", "30d", "1y"][dateIndex]}
           />
         </Card>
       </div>
