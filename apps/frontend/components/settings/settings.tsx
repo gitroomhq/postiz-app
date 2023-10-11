@@ -29,7 +29,7 @@ export const Settings: FC<{ settings: SettingsInterface }> = (props) => {
         <Input
           label="Organization Name"
           name="name"
-          value={user?.currentOrg.name}
+          defaultValue={user?.currentOrg.name}
           labelClassName="mt-7"
         />
         <Button type="submit" className="mb-10">
