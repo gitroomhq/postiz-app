@@ -62,6 +62,7 @@
     "mongoose": "^7.3.1",
     "morgan": "^1.10.0",
     "next": "~13.2.4",
+    "next-seo": "^6.1.0",
     "react": "18.2.0",
     "react-copy-to-clipboard": "^5.1.0",
     "react-dom": "18.2.0",
