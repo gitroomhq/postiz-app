@@ -4,6 +4,15 @@ import { axiosInstance } from '@clickvote/frontend/helper/axios';
 import { LinkButton } from '@clickvote/frontend/components/form/link.button';
 import Link from 'next/link';
 import { Title } from '@tremor/react';
+import {
+  Table,
+  TableHead,
+  TableHeaderCell,
+  TableBody,
+  TableRow,
+  TableCell,
+  Card,
+} from '@tremor/react';
 
 export const VotesComponent: FC = () => {
   const { data, isLoading } = useQuery({
@@ -21,44 +30,41 @@ export const VotesComponent: FC = () => {
         Add Vote
       </LinkButton>
       {!isLoading && !!data.votes.length && (
-        <table className="max-w-5xl w-full mt-7 border border-bright-purple/70 bg-dark-purple">
-          <thead className="bg-dark-purple">
-            <tr className="">
-              <th className="text-left p-3 border border-bright-purple/70">
-                Vote
-              </th>
-              <th className="text-left p-3 border border-bright-purple/70">
-                Type
-              </th>
-              <th className="text-left p-3 border border-bright-purple/70">
-                Clicks
-              </th>
-              <th className="text-left p-3 border border-bright-purple/70">
-                Score
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.votes.map((vote: any) => (
-              <tr key={vote.id}>
-                <td className="p-3 border border-bright-purple/70">
-                  <Link href={`/votes/${vote._id}`}>{vote.name}</Link>
-                </td>
-                <td className="p-3 border border-bright-purple/70">
-                  {vote.type}
-                </td>
-                <td className="p-3 border border-bright-purple/70">
-                  {vote.count || 0}
-                </td>
-                <td className="p-3 border border-bright-purple/70">
-                  {vote.type === 'single'
-                    ? vote.count
-                    : ((vote.sum || 1) / (vote.count || 1)).toFixed(2)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <Card className="mt-7 max-w-4xl bg-dark-purple ring-bright-purple/80">
+          <Table className="max-w-4xl w-full">
+            <TableHead className="">
+              <TableRow className="">
+                <TableHeaderCell className="text-white">Vote</TableHeaderCell>
+                <TableHeaderCell className="text-white">Type</TableHeaderCell>
+                <TableHeaderCell className="text-white">Clicks</TableHeaderCell>
+                <TableHeaderCell className="text-white">Score</TableHeaderCell>
+              </TableRow>
+            </TableHead>
+            <TableBody className="divide-bright-purple/80">
+              {data.votes.map((vote: any) => (
+                <TableRow key={vote.id} className="">
+                  <TableCell className="text-white ">
+                    <Link
+                      href={`/votes/${vote._id}`}
+                      className=" hover:underline hover:underline-offset-4"
+                    >
+                      {vote.name}
+                    </Link>
+                  </TableCell>
+                  <TableCell className="text-white">{vote.type}</TableCell>
+                  <TableCell className="text-white">
+                    {vote.count || 0}
+                  </TableCell>
+                  <TableCell className="text-white">
+                    {vote.type === 'single'
+                      ? vote.count
+                      : ((vote.sum || 1) / (vote.count || 1)).toFixed(2)}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
       )}
     </div>
   );
