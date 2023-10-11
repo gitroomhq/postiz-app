@@ -106,6 +106,11 @@ https://github.com/clickvote/clickvote/tree/main/libs/react-component/src/lib/ex
   <img src="https://github.com/clickvote/clickvote/assets/100117126/de390e5b-e0b7-4845-a38d-a538ee14c8bd" />
 </p>
 
+
+## Contributing
+
+Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file for information about how to get involved.
+
 ## All Thanks To Our contributors
 
 <a href="https://github.com/clickvote/clickvote/graphs/contributors">
