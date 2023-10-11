@@ -21,7 +21,7 @@
       <img src="https://img.shields.io/github/issues/clickvote/clickvote.svg?style=for-the-badge&logo=appveyor" alt="Click Vote Issue"/>
     </a>
     <a href="https://github.com/clickvote/clickvote/pulls" target="blank">
-      <img src=" 	https://img.shields.io/github/issues-pr/clickvote/clickvote.svg?style=for-the-badge&logo=appveyor" alt="Click Vote Open Pull Request"/>
+      <img src="https://img.shields.io/github/issues-pr/clickvote/clickvote.svg?style=for-the-badge&logo=appveyor" alt="Click Vote Open Pull Request"/>
     </a>
   </p>
 
