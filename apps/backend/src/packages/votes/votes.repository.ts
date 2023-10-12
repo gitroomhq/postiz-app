@@ -45,6 +45,19 @@ export class VotesRepository {
     );
   }
 
+  async deleteVote(envId: string, id: string, orgId: string) {
+    await this.voteDocument.updateOne(
+      {
+        org: new Types.ObjectId(orgId),
+        env: new Types.ObjectId(envId),
+        _id: new Types.ObjectId(id)
+      },
+      {
+        deleted: new Date().getTime()
+      }
+    );
+  }
+
   async createVote(envId: string, orgId: string, body: VotesValidation) {
     return this.voteDocument.create({
       org: new Types.ObjectId(orgId),
