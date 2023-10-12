@@ -2,5 +2,12 @@
   "name": "@clickvote/svelte",
   "version": "0.0.1",
   "description": "Clickvote svelte component",
-  "type": "commonjs"
+  "type": "module",
+  "dependencies": {
+    "dayjs": "^1.11.10",
+    "socket.io-client": "^4.7.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.2.2"
+  }
 }
