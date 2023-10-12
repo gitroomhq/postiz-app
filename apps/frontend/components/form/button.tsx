@@ -1,9 +1,8 @@
-import { ButtonHTMLAttributes, DetailedHTMLProps, FC } from 'react';
+import { FC } from 'react';
+import { ButtonProps } from '@tremor/react';
 import clsx from 'clsx';
 
-export const Button: FC<
-  DetailedHTMLProps<ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement>
-> = (props) => {
+export const Button: FC<ButtonProps> = (props) => {
   return (
     <button
       {...props}
