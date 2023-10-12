@@ -104,6 +104,7 @@ async getVoteByName(envId: string, orgId: string, name: string) {
     env: new Types.ObjectId(envId),
     org: new Types.ObjectId(orgId),
     name,
+    deleted: { $exists: false }
   });
 }
 

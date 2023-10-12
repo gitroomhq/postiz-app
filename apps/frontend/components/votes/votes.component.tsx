@@ -5,7 +5,17 @@ import { LinkButton } from '@clickvote/frontend/components/form/link.button';
 import { Button } from '@clickvote/frontend/components/form/button';
 import Link from 'next/link';
 import { Title } from '@tremor/react';
+import {
+  Table,
+  TableHead,
+  TableHeaderCell,
+  TableBody,
+  TableRow,
+  TableCell,
+  Card,
+} from '@tremor/react';
 import { Dialog, Transition } from '@headlessui/react';
+import { Trash2 } from 'lucide-react';
 
 type VoteProps = {
   _id: string;
@@ -32,36 +42,30 @@ export const VotesComponent: FC = () => {
         Add Vote
       </LinkButton>
       {!isLoading && !!data?.votes.length && (
-        <table className="max-w-5xl w-full mt-7 border border-bright-purple/70 bg-dark-purple">
-          <thead className="bg-dark-purple">
-            <tr className="">
-              <th className="text-left p-3 border border-bright-purple/70">
-                Vote
-              </th>
-              <th className="text-left p-3 border border-bright-purple/70">
-                Type
-              </th>
-              <th className="text-left p-3 border border-bright-purple/70">
-                Clicks
-              </th>
-              <th className="text-left p-3 border border-bright-purple/70">
-                Score
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.votes.map((vote) => (
-              <Vote
-                key={vote._id}
-                _id={vote._id}
-                name={vote.name}
-                count={vote.count}
-                sum={vote.sum}
-                type={vote.type}
-              />
-            ))}
-          </tbody>
-        </table>
+        <Card className="mt-7 max-w-4xl bg-dark-purple ring-bright-purple/80">
+          <Table className="max-w-4xl w-full">
+            <TableHead>
+              <TableRow>
+                <TableHeaderCell className="text-white">Vote</TableHeaderCell>
+                <TableHeaderCell className="text-white">Type</TableHeaderCell>
+                <TableHeaderCell className="text-white">Clicks</TableHeaderCell>
+                <TableHeaderCell className="text-white">Score</TableHeaderCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {data.votes.map((vote) => (
+                <Vote
+                  key={vote._id}
+                  _id={vote._id}
+                  name={vote.name}
+                  count={vote.count}
+                  sum={vote.sum}
+                  type={vote.type}
+                />
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
       )}
     </div>
   );
@@ -88,32 +92,32 @@ const Vote: FC<VoteProps> = ({ _id, name, count, sum, type }) => {
 
   return (
     <>
-      <tr key={_id}>
-        <td className="p-3 border border-bright-purple/70">
+      <TableRow key={_id}>
+        <TableCell className="text-white">
           <Link href={`/votes/${_id}`}>{name}</Link>
-        </td>
-        <td className="p-3 border border-bright-purple/70">
+        </TableCell>
+        <TableCell className="text-white">
           {type}
-        </td>
-        <td className="p-3 border border-bright-purple/70">
+        </TableCell>
+        <TableCell className="text-white">
           {count || 0}
-        </td>
-        <td className="p-3 border border-bright-purple/70">
+        </TableCell>
+        <TableCell className="text-white">
           {type === 'single'
             ? count
             : ((sum || 1) / (count || 1)).toFixed(2)}
-        </td>
-        <td className="p-3 border border-bright-purple/70 w-[140px] text-center">
+        </TableCell>
+        <TableCell>
           <Button
             disabled={isLoading}
-            loading={true}
-            loadingText="Deleting..."
+            loading={isLoading}
             onClick={handleToggleAlertVisibility}
+            className="w-[44px] h-[44px]"
           >
-            Delete Vote
+            <Trash2 size={24} color='#FFFFFF' />
           </Button>
-        </td>
-      </tr>
+        </TableCell>
+      </TableRow>
 
       <Transition appear show={isAlertVisible} as={Fragment}>
         <Dialog as="div" className="relative z-10" onClose={handleToggleAlertVisibility}>
