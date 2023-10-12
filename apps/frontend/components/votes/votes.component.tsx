@@ -113,8 +113,9 @@ const Vote: FC<VoteProps> = ({ _id, name, count, sum, type }) => {
             loading={isLoading}
             onClick={handleToggleAlertVisibility}
             className="w-[44px] h-[44px]"
+            aria-label={`Delete ${name} vote`}
           >
-            <Trash2 size={24} color='#FFFFFF' />
+            <Trash2 size={24} color='#FFFFFF' aria-hidden />
           </Button>
         </TableCell>
       </TableRow>
