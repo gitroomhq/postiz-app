@@ -18,20 +18,21 @@ const resolver: Resolver<FormValues> = classValidatorResolver(AuthValidator);
 function Register() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [err, setErr] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const methods = useForm<FormValues>({
-    mode: 'all',
+    mode: 'onBlur', // Real-time validation
     resolver,
   });
 
-  const registerSubmit = methods.handleSubmit(
-    async (values: { email: string; password: string }) => {
+  const handleRegister = methods.handleSubmit(
+    async (values: FormValues) => {
       setIsSubmitting(true);
       try {
+        setError(null);
         await axiosInstance.post('/auth/register', values);
-        return router.push('/');
+        router.push('/'); // Redirect after successful registration
       } catch (err) {
-        setErr('Email already exists');
+        setError('Email already exists. Please login or use another email.');
       }
       setIsSubmitting(false);
     }
@@ -46,7 +47,7 @@ function Register() {
             <FormProvider {...methods}>
               <form
                 className="p-8 border border-[#ffffff]/20 bg-gradient-purple rounded shadow w-[500px] max-w-[100%]"
-                onSubmit={registerSubmit}
+                onSubmit={handleRegister}
               >
                 <h2 className="text-2xl font-bold mb-6 bg-words-purple bg-clip-text text-transparent">
                   Register
@@ -71,14 +72,14 @@ function Register() {
                     labelClassName="bg-words-purple bg-clip-text text-transparent"
                   />
                 </div>
-                <div className="mt-3 mb-3 text-red-500">{err}</div>
+                <div className="mt-3 mb-3 text-red-500">{error}</div>
                 <div className="w-full flex justify-center">
                   <button
                     disabled={isSubmitting}
                     type="submit"
                     className="py-4 px-12 font-semibold rounded-md shadow bg-button-purple text-white w-56 backdrop-blur-lg hover:opacity-70"
                   >
-                    {isSubmitting ? "Redirecting ..." : "Get Started"}
+                    {isSubmitting ? "Registering..." : "Get Started"}
                   </button>
                 </div>
               </form>
