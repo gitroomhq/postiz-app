@@ -1,22 +1,23 @@
-import { FC, useContext } from 'react';
+import { FC } from 'react';
 import { SettingsInterface } from '@clickvote/interfaces';
 import { FormProvider, useForm } from 'react-hook-form';
 import { Input } from '@clickvote/frontend/components/form/input';
-import { UserContext } from '@clickvote/frontend/helper/user.context';
+import { useUserContext } from '@clickvote/frontend/helper/user.context';
 import { Button } from '@clickvote/frontend/components/form/button';
 import CopyToClipboard from 'react-copy-to-clipboard';
 import { Title } from '@tremor/react';
 import { Copy } from 'lucide-react';
-import {useMutation} from "@tanstack/react-query";
-import {axiosInstance} from "@clickvote/frontend/helper/axios";
-import {toast} from "react-toastify";
+import { useMutation } from "@tanstack/react-query";
+import { axiosInstance } from "@clickvote/frontend/helper/axios";
+import { toast } from "react-toastify";
+import { Prettify } from "@clickvote/frontend/helper/types";
 
-type FormValues = SettingsInterface & {
+type FormValues = Prettify<SettingsInterface & {
   orgName: string;
-}
+}>;
 
 export const Settings: FC<{ settings: SettingsInterface }> = (props) => {
-  const user = useContext(UserContext);
+  const {user, updateUserOrgName} = useUserContext();
   const { settings } = props;
 
   const methods = useForm<FormValues>({
@@ -34,6 +35,7 @@ export const Settings: FC<{ settings: SettingsInterface }> = (props) => {
       onSuccess: () => {
         toast.success('Organization Name Updated!');
         methods.reset({ orgName: orgName });
+        updateUserOrgName(orgName);
       },
       onError: (err) => {
         console.error('Error updating organization name', err);
