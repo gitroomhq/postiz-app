@@ -4,8 +4,8 @@ import LogoSvg from '../../public/images/logo.svg';
 const DefaultSEO = () => {
   return (
     <DefaultSeo
-      title="Clickvote"
-      description="Seamlessly Integrate Like, Upvote, and Review Components into Your App."
+      title="Clickvote - Seamlessly Integrate Like, Upvote, and Review Components"
+      description="Enhance User Engagement with Clickvote - A Powerful Component Integration Platform."
       openGraph={{
         type: 'website',
         locale: 'en_US',
@@ -13,10 +13,10 @@ const DefaultSEO = () => {
         site_name: 'Clickvote',
         images: [
           {
-            url: LogoSvg,
+            url: 'LogoSvg',
             width: 1200,
             height: 630,
-            alt: 'Clickvote',
+            alt: 'Clickvote - Enhance User Engagement',
           },
         ],
       }}
@@ -25,3 +25,4 @@ const DefaultSEO = () => {
 };
 
 export default DefaultSEO;
+
