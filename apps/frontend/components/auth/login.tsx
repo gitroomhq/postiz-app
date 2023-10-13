@@ -17,25 +17,24 @@ const resolver: Resolver<FormValues> = classValidatorResolver(AuthValidator);
 
 function Login() {
   const router = useRouter();
-  const [err, setErr] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const methods = useForm<FormValues>({
-    mode: 'all',
+    mode: 'onTouched', // Real-time validation
     resolver,
   });
 
-  const registerSubmit = methods.handleSubmit(
-    async (values: { email: string; password: string }) => {
-      try {
-        await axiosInstance.post('/auth/login', values);
-        return router.push('/');
-      } catch (err) {
-        setErr('Wrong email or password');
-      }
+  const handleLogin = methods.handleSubmit(async (values: FormValues) => {
+    try {
+      setError(null);
+      await axiosInstance.post('/auth/login', values);
+      router.push('/'); // Redirect after successful login
+    } catch (err) {
+      setError('Invalid email or password. Please try again.');
     }
-  );
+  });
 
   return (
-    <div className={`flex w-full h-screen justify-center`}>
+    <div className="flex w-full h-screen justify-center">
       <div className="w-1/2 bg-gradient-black">
         <div className="flex-col flex justify-center items-center h-full">
           <Logo responsive={false} />
@@ -43,7 +42,7 @@ function Login() {
             <FormProvider {...methods}>
               <form
                 className="p-8 border border-[#ffffff]/20 bg-gradient-purple rounded shadow w-[500px] max-w-[100%]"
-                onSubmit={registerSubmit}
+                onSubmit={handleLogin}
               >
                 <h2 className="text-2xl font-bold mb-6 bg-words-purple bg-clip-text text-transparent">
                   Login
@@ -68,7 +67,7 @@ function Login() {
                     labelClassName="bg-words-purple bg-clip-text text-transparent"
                   />
                 </div>
-                <div className="mt-3 mb-3 text-red-500">{err}</div>
+                <div className="mt-3 mb-3 text-red-500">{error}</div>
                 <div className="w-full flex justify-center">
                   <button
                     type="submit"
