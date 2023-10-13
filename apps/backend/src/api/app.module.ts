@@ -8,11 +8,13 @@ import { MiddlewareModule } from '@clickvote/backend/src/middleware/middleware.m
 import { VotesController } from '@clickvote/backend/src/api/votes/votes.controller';
 import { VotesModule } from '@clickvote/backend/src/packages/votes/votes.module';
 import { EnvironmentModule } from '@clickvote/backend/src/packages/environment/environment.module';
+import { OrgController } from '@clickvote/backend/src/api/org/org.controller';
 import { SettingsController } from '@clickvote/backend/src/api/settings/settings.controller';
 
 const authenticatedControllers = [
-  UserController,
+  OrgController,
   SettingsController,
+  UserController,
   VotesController,
 ];
 
