@@ -18,7 +18,11 @@ export const UserContextProvider: FC<Props> = ({value, children}) => {
   const [user, setUser] = useState(value);
 
   const updateUserOrgName = useCallback((orgName: string) => {
-    setUser(user => ({...user, currentOrg: {...user.currentOrg, name: orgName}}));
+    setUser(user => ({
+      ...user,
+      currentOrg: {...user.currentOrg, name: orgName},
+      org: user.org.map(org => org.id === user.currentOrg.id ? {...org, name: orgName} : org)
+    }));
   }, []);
 
   return (
