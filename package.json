@@ -26,6 +26,8 @@
     "@angular/platform-browser": "~16.1.0",
     "@angular/platform-browser-dynamic": "~16.1.0",
     "@angular/router": "~16.1.0",
+    "@headlessui/react": "^1.7.17",
+    "@headlessui/tailwindcss": "^0.2.0",
     "@hookform/resolvers": "^3.1.1",
     "@mikro-orm/core": "^5.7.12",
     "@mikro-orm/nestjs": "^5.2.0",

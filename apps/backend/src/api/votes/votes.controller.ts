@@ -1,8 +1,9 @@
-import { Body, Controller, Get, Post, Put, Param, Query } from '@nestjs/common';
+import { Body, Controller, Get, Post, Put, Param, Query, Delete, Res, HttpStatus } from '@nestjs/common';
 import { VotesService } from '@clickvote/backend/src/packages/votes/votes.service';
 import { GetUserFromRequest } from '@clickvote/backend/src/helpers/user.from.request';
 import { UserFromRequest } from '@clickvote/interfaces';
 import { ValidateId, VotesValidation } from '@clickvote/validations';
+import { Response } from 'express';
 
 @Controller('/votes')
 export class VotesController {
@@ -51,6 +52,21 @@ export class VotesController {
       user.currentOrg.id,
       body
     );
+  }
+
+  @Delete('/:id')
+  async DeleteVote(
+    @GetUserFromRequest() user: UserFromRequest,
+    @ValidateId('id') id: string,
+    @Res() res: Response
+  ) {
+    await this._votesService.deleteVote(
+      user.currentEnv.id,
+      id,
+      user.currentOrg.id
+    );
+
+    res.status(HttpStatus.NO_CONTENT).json({});
   }
 
   // Add this method to the VotesController
