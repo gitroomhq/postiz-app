@@ -32,6 +32,7 @@ const componentConverter = (
   ClickVoteProvider,
   ${componentName},
 } from '@clickvote/react';
+import "/node_modules/@clickvote/react/index.css"
 
 function RenderComponent () {
     return (
