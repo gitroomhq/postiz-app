@@ -1,4 +1,4 @@
-import { FC, useContext, useEffect, useMemo, useState } from 'react';
+import { FC, useEffect, useMemo, useState } from 'react';
 import { VoteValues } from '@clickvote/frontend/components/votes/add.votes.component';
 import {
   ClickVoteComponent,
@@ -7,7 +7,7 @@ import {
   RangeStyle,
   UpvoteStyle,
 } from '@clickvote/react';
-import { UserContext } from '@clickvote/frontend/helper/user.context';
+import { useUserContext } from '@clickvote/frontend/helper/user.context';
 import { UserFromRequest } from '@clickvote/interfaces';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { Button } from '@clickvote/frontend/components/form/button';
@@ -87,7 +87,7 @@ export const RenderComponent: FC<VoteValues> = (params) => {
       setStyle(mod.default)
     );
   });
-  const user = useContext(UserContext)!;
+  const { user } = useUserContext();
   const info = useMemo(() => {
     return componentConverter(style, params, user, currentOption.component, currentOption.componentName);
   }, [params, user, style, currentOption]);

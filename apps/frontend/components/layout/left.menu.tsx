@@ -1,7 +1,5 @@
 import ActiveLink from '@clickvote/frontend/helper/active.link';
-import { UserFromRequest } from '@clickvote/interfaces';
-import { useContext } from 'react';
-import { UserContext } from '@clickvote/frontend/helper/user.context';
+import { useUserContext } from '@clickvote/frontend/helper/user.context';
 import { FormProvider, Resolver, useForm } from 'react-hook-form';
 import { Select } from '@clickvote/frontend/components/form/select';
 import { setCookie } from 'cookies-next';
@@ -18,7 +16,7 @@ const resolver: Resolver<FormValues> = async (values) => {
 };
 
 const LeftMenu = () => {
-  const user: UserFromRequest | undefined = useContext(UserContext);
+  const { user } = useUserContext();
   const methods = useForm<FormValues>({
     mode: 'all',
     values: {

@@ -1,6 +1,4 @@
-import { UserFromRequest } from '@clickvote/interfaces';
-import { useContext } from 'react';
-import { UserContext } from '@clickvote/frontend/helper/user.context';
+import { useUserContext } from '@clickvote/frontend/helper/user.context';
 import { FormProvider, Resolver, useForm } from 'react-hook-form';
 import { setCookie } from 'cookies-next';
 import { Select } from '@clickvote/frontend/components/form/select';
@@ -17,7 +15,7 @@ const resolver: Resolver<FormValues> = async (values) => {
 };
 
 export const Env = () => {
-  const user: UserFromRequest | undefined = useContext(UserContext);
+  const { user } = useUserContext();
   const methods = useForm<FormValues>({
     mode: 'all',
     values: {
