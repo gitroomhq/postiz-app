@@ -22,8 +22,9 @@
       "@clickvote/interfaces": ["libs/interfaces/src/index.ts"],
       "@clickvote/nest-libraries": ["libs/nest-libraries/src/index.ts"],
       "@clickvote/react": ["libs/react-component/src/index.ts"],
+      "@clickvote/svelte-component": ["libs/svelte-component/src/index.ts"],
       "@clickvote/validations": ["libs/validations/src/index.ts"],
-      "@clickvote/svelte-component": ["libs/svelte-component/src/index.ts"]
+      "@clickvote/vue-component": ["libs/vue-component/src/index.ts"]
     },
     "resolveJsonModule": true
   },
