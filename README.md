@@ -95,8 +95,6 @@ https://github.com/clickvote/clickvote/tree/main/libs/react-component/src/lib/ex
 
 Nevo - [nevo@clickvote.dev](mailto:nevo@clickvote.dev)
 
-Igor - [igor@clickvote.dev](mailto:igor@clickvote.dev)
-
 <b>STILL UNDER DEVELOPMENT</b>
 <hr />
 
