@@ -2,20 +2,38 @@
   <img src="https://github.com/clickvote/clickvote/assets/100117126/8a81b669-970d-46b3-b97b-92f71087c391" />
 </a>
 
+
+
+
 <h1 align="center">Add upvotes, likes, and reviews to any context</h1>
+
+  <p align="center">
+    <a href="https://github.com/clickvote/clickvote/blob/master/LICENSE" target="blank">
+      <img src="https://img.shields.io/github/license/clickvote/clickvote?style=for-the-badge&logo=appveyor" alt="License" />
+    </a>
+    <a href="https://github.com/clickvote/clickvote/fork" target="blank">
+      <img src="https://img.shields.io/github/forks/clickvote/clickvote?style=for-the-badge&logo=appveyor" alt="Forks"/>
+    </a>
+    <a href="https://github.com/clickvote/clickvote/stargazers" target="blank">
+    <img src="https://img.shields.io/github/stars/clickvote/clickvote?style=for-the-badge&logo=appveyor" alt="Star"/>
+    </a>
+    <a href="https://github.com/clickvote/clickvote/issues" target="blank">
+      <img src="https://img.shields.io/github/issues/clickvote/clickvote.svg?style=for-the-badge&logo=appveyor" alt="Click Vote Issue"/>
+    </a>
+    <a href="https://github.com/clickvote/clickvote/pulls" target="blank">
+      <img src="https://img.shields.io/github/issues-pr/clickvote/clickvote.svg?style=for-the-badge&logo=appveyor" alt="Click Vote Open Pull Request"/>
+    </a>
+  </p>
 
   <p align="center">
     <a href="https://docs.clickvote.dev" rel="dofollow"><strong>Explore the docs »</strong></a>
     <br />
-
-  <br/>
-    <a href="https://clickvote.dev">Visit the website</a>
-    ·
-    <a href="https://app.clickvote.dev">Register to the cloud</a>
-    ·
-    <a href="https://docs.clickvote.dev">Read the docs</a>
-    ·
-    <a href="https://docs.clickvote.dev/quickstart">Self-hosting quick start guide</a>
+    <p align="center">
+      <a href="https://clickvote.dev">Visit the website</a> | 
+      <a href="https://app.clickvote.dev">Register to the cloud</a> | 
+      <a href="https://docs.clickvote.dev">Read the docs</a> | 
+      <a href="https://docs.clickvote.dev/quickstart">Self-hosting quick start guide</a>
+    </p>
   </p>
 
 <br />
@@ -72,6 +90,12 @@ https://github.com/clickvote/clickvote/tree/main/libs/react-component/src/lib/ex
 
 ![image](https://github.com/clickvote/clickvote/assets/100117126/4596c634-4924-4e75-957e-e78aa046980f)
 
+
+<h2>Contact us</h2>
+
+Nevo - [nevo@clickvote.dev](mailto:nevo@clickvote.dev)
+
+Igor - [igor@clickvote.dev](mailto:igor@clickvote.dev)
 
 <b>STILL UNDER DEVELOPMENT</b>
 <hr />

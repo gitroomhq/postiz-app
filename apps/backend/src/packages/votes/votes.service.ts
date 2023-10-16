@@ -33,6 +33,10 @@ export class VotesService {
     return this._votesRepository.updateVote(envId, voteId, orgId, body);
   }
 
+  async deleteVote(envId: string, voteId: string, orgId: string) {
+    await this._votesRepository.deleteVote(envId, voteId, orgId);
+  }
+
   async createVote(envId: string, orgId: string, body: VotesValidation) {
     await this.checkVoteName(envId, orgId, body.name);
     return this._votesRepository.createVote(envId, orgId, body);

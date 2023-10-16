@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import {Model, Types} from 'mongoose';
 import {Org} from "@clickvote/backend/src/packages/org/org.document";
 
 @Injectable()
@@ -15,14 +15,10 @@ export class OrgRepository {
     return org.save();
   }
 
-  async updateOrg(id, name: string) {
-    this.orgModel.updateOne(
-      { _id: id },
-      {
-        $set: {
-          name,
-        },
-      }
-    )
+  async updateOrg(id: string, name: string) {
+    return this.orgModel.updateOne(
+      { _id: new Types.ObjectId(id) },
+      { name }
+    );
   }
 }
