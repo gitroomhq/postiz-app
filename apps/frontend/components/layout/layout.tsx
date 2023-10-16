@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { UserContext } from '@clickvote/frontend/helper/user.context';
 import { Env } from '@clickvote/frontend/components/layout/env';
 import Logo from '../common/Logo';
+import Logout from '../auth/logout';
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ const Layout: FC<{ children: ReactNode; user: UserFromRequest }> = (props) => {
                 <Env />
               </div>
               <div className="flex items-center">Welcome, {user.email}</div>
+              <Logout />
             </div>
           </div>
           <div className="flex-1 flex">
