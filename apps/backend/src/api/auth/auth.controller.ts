@@ -1,7 +1,7 @@
 import {
   Body,
   Controller,
-  Post,
+  Post,Get,
   Res,
 } from '@nestjs/common';
 import { AuthValidator } from '@clickvote/validations';
@@ -42,6 +42,15 @@ export class AuthController {
       sameSite: 'strict',
       path: '/',
       ...domainAttribute
+    });
+  }
+  @Get("/logout")
+  async logout(@Res({ passthrough: true }) response: Response) {
+    response.cookie("auth", "", {
+      httpOnly: false,
+      sameSite: "strict",
+      path: "/",
+      expires: new Date(0),
     });
   }
 }

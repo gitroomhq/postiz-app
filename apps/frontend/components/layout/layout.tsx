@@ -7,7 +7,7 @@ import { Env } from '@clickvote/frontend/components/layout/env';
 import Logo from '../common/Logo';
 
 const queryClient = new QueryClient();
-
+import PopOver from "./PopOver";
 const Layout: FC<{ children: ReactNode; user: UserFromRequest }> = (props) => {
   const { children, user } = props;
   return (
@@ -22,7 +22,7 @@ const Layout: FC<{ children: ReactNode; user: UserFromRequest }> = (props) => {
               <div className="flex items-center">
                 <Env />
               </div>
-              <div className="flex items-center">Welcome, {user.email}</div>
+              <PopOver user={user} />
             </div>
           </div>
           <div className="flex-1 flex">
