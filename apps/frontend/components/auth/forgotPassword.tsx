@@ -15,7 +15,7 @@ type FormValues = {
 
 const resolver: Resolver<FormValues> = classValidatorResolver(AuthValidator);
 
-function Login() {
+const ForgotPassword = () => {
   const router = useRouter();
   const [err, setErr] = useState('');
   const methods = useForm<FormValues>({
@@ -26,7 +26,7 @@ function Login() {
   const registerSubmit = methods.handleSubmit(
     async (values: { email: string; password: string }) => {
       try {
-        await axiosInstance.post('/auth/login', values);
+        await axiosInstance.post('/auth/forgot-password', values);
         return router.push('/');
       } catch (err) {
         setErr('Wrong email or password');
@@ -46,7 +46,7 @@ function Login() {
                 onSubmit={registerSubmit}
               >
                 <h2 className="text-2xl font-bold mb-6 bg-words-purple bg-clip-text text-transparent">
-                  Login
+                  Reset Password
                 </h2>
                 <div className="mb-2">
                   <Input
@@ -60,7 +60,7 @@ function Login() {
                 </div>
                 <div>
                   <Input
-                    label="Password"
+                    label="New Password"
                     type="password"
                     id="password"
                     name="password"
@@ -68,21 +68,13 @@ function Login() {
                     labelClassName="bg-words-purple bg-clip-text text-transparent"
                   />
                 </div>
-                <div className="w-full text-end mb-4">
-                  <Link
-                    href="/auth/forgot-password"
-                    className="text-sm text-white bg-clip-text text-transparent hover:border-b hover:border-words-purple"
-                  >
-                    Forgot Password ?
-                  </Link>
-                </div>
                 <div className="mt-3 mb-3 text-red-500">{err}</div>
                 <div className="w-full flex justify-center">
                   <button
                     type="submit"
                     className="py-4 px-12 font-semibold rounded-md shadow bg-button-purple text-white w-56 backdrop-blur-lg"
                   >
-                    Login
+                    Reset
                   </button>
                 </div>
               </form>
@@ -90,16 +82,16 @@ function Login() {
           </div>
           <div className="text-left mt-4">
             <Link
-              href="/auth/register"
+              href="/auth/login"
               className="bg-words-purple bg-clip-text text-transparent border-b border-words-purple"
             >
-              Register
+              Back to Login
             </Link>
           </div>
         </div>
       </div>
     </div>
   );
-}
+};
 
-export default Login;
+export default ForgotPassword;

@@ -1,9 +1,4 @@
-import {
-  Body,
-  Controller,
-  Post,
-  Res,
-} from '@nestjs/common';
+import { Body, Controller, Post, Res } from '@nestjs/common';
 import { AuthValidator } from '@clickvote/validations';
 import { Response } from 'express';
 import { RegistrationLoginService } from '@clickvote/backend/src/shared/auth/registration.login.service';
@@ -19,12 +14,20 @@ export class AuthController {
   ) {
     const sign = await this._registrationLoginService.register(register);
     const domain = process.env.FRONT_END_URL;
-    const domainAttribute = domain.indexOf('localhost') > -1 ? {} : { domain: "." + new URL(domain).hostname.split(".").slice(-2).join("."), sameSite: 'none' as const, secure: true };
+    const domainAttribute =
+      domain.indexOf('localhost') > -1
+        ? {}
+        : {
+            domain:
+              '.' + new URL(domain).hostname.split('.').slice(-2).join('.'),
+            sameSite: 'none' as const,
+            secure: true,
+          };
     response.cookie('auth', sign, {
       httpOnly: false,
       sameSite: 'strict',
       path: '/',
-      ...domainAttribute
+      ...domainAttribute,
     });
   }
 
@@ -35,13 +38,30 @@ export class AuthController {
   ) {
     const sign = await this._registrationLoginService.login(login);
     const domain = process.env.FRONT_END_URL;
-    const domainAttribute = domain.indexOf('localhost') > -1 ? {} : { domain: "." + new URL(domain).hostname.split(".").slice(-2).join("."), sameSite: 'none' as const, secure: true };
+    const domainAttribute =
+      domain.indexOf('localhost') > -1
+        ? {}
+        : {
+            domain:
+              '.' + new URL(domain).hostname.split('.').slice(-2).join('.'),
+            sameSite: 'none' as const,
+            secure: true,
+          };
 
     response.cookie('auth', sign, {
       httpOnly: false,
       sameSite: 'strict',
       path: '/',
-      ...domainAttribute
+      ...domainAttribute,
     });
+  }
+
+  @Post('/forgot-password')
+  async forgotPassword(@Body() resetPasswordBody: AuthValidator) {
+    await this._registrationLoginService.forgotPassword(resetPasswordBody);
+
+    return {
+      message: 'Password reset successfully',
+    };
   }
 }

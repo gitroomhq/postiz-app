@@ -3,13 +3,15 @@ import { UsersService } from '@clickvote/backend/src/packages/users/users.servic
 import { OrgService } from '@clickvote/backend/src/packages/org/org.service';
 import { AuthValidator } from '@clickvote/validations';
 import { EnvironmentService } from '@clickvote/backend/src/packages/environment/environment.service';
+import { EncryptionService } from '@clickvote/nest-libraries';
 
 @Injectable()
 export class RegistrationLoginService {
   constructor(
     private _userService: UsersService,
     private _orgService: OrgService,
-    private _environmentService: EnvironmentService
+    private _environmentService: EnvironmentService,
+    private readonly _encryptionService: EncryptionService
   ) {}
 
   async register(register: AuthValidator) {
@@ -43,5 +45,25 @@ export class RegistrationLoginService {
     }
 
     return this._userService.sign(user.id);
+  }
+
+  async forgotPassword(resetPasswordBody: AuthValidator) {
+    const { email, password } = resetPasswordBody;
+    const user = await this._userService.getByEmail(email);
+
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.BAD_REQUEST);
+    }
+
+    // send email with password reset link or some secret code
+    // verify the secret code
+
+    const encryptedPassword = await this._encryptionService.hashPassword(
+      password
+    );
+
+    user.password = encryptedPassword;
+
+    await user.save();
   }
 }
