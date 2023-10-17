@@ -1,6 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { UsersRepository } from '@clickvote/backend/src/packages/users/users.repository';
 import { AuthService } from '@clickvote/backend/src/shared/auth/auth.service';
+import { Org } from '@clickvote/backend/src/packages/org/org.document';
 import { Types } from 'mongoose';
 import { EncryptionService } from '@clickvote/nest-libraries';
 import { HttpService } from '@nestjs/axios';
@@ -81,5 +82,9 @@ export class UsersService {
     await this.subscribeToNewsletter(email);
 
     return this.sign(register.id);
+  }
+
+  async addOrg(id: string, org: Org) {
+    return this._userRepository.addOrg(id, org);
   }
 }
