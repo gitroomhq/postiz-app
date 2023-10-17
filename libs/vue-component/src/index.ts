@@ -1,1 +1,1 @@
-export * from './lib/vue-component';
+export * from './lib/HelloWorld.vue';

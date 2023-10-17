@@ -1,5 +1,6 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vite';
+import Vue from '@vitejs/plugin-vue';
 
 import viteTsConfigPaths from 'vite-tsconfig-paths';
 import dts from 'vite-plugin-dts';
@@ -18,6 +19,7 @@ export default defineConfig({
     viteTsConfigPaths({
       root: '../../',
     }),
+    Vue(),
   ],
 
   // Uncomment this if you are using workers.
@@ -52,7 +54,7 @@ export default defineConfig({
     cache: {
       dir: '../../node_modules/.vitest',
     },
-    environment: 'node',
+    environment: 'jsdom',
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
   },
 });
