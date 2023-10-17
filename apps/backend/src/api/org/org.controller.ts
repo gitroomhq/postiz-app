@@ -4,7 +4,7 @@ import { GetUserFromRequest } from '@clickvote/backend/src/helpers/user.from.req
 import {OrgService} from "@clickvote/backend/src/packages/org/org.service";
 
 @Controller('/org')
-export class SettingsController {
+export class OrgController {
   constructor(private _org: OrgService) {}
 
   @Put('/update')
