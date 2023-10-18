@@ -34,7 +34,12 @@ export const Input: FC<
   return (
     <>
       {!!label && (
-        <div className={clsx(`mb-2`, props.labelClassName)}>{label}</div>
+        <label
+          htmlFor={label.toLowerCase()}
+          className={clsx(`mb-2`, props.labelClassName)}
+        >
+          {label}
+        </label>
       )}
       <input
         {...allOther}

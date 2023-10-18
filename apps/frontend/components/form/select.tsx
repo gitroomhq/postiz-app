@@ -42,7 +42,11 @@ export const Select: FC<
   };
   return (
     <>
-      {!!label && <div className="mb-2">{label}</div>}
+      {!!label && (
+        <label htmlFor={label.toLowerCase()} className="mb-2">
+          {label}
+        </label>
+      )}
       <select
         {...allOther}
         {...all}
