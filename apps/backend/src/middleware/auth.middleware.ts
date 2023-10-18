@@ -16,11 +16,12 @@ export class AuthMiddleware implements NestMiddleware {
   ) {}
 
   async use(req: Request, res: Response, next: NextFunction) {
-    const auth = this._authService.validate(req.cookies.auth as string);
-    const viewOrg = req?.cookies?.org;
-    const viewEnv = req?.cookies?.env;
+    const { auth } = req.cookies;
+    const isValidAuth = this._authService.validate(auth as string)
+    const { org } = req.cookies;
+    const { env } = req.cookies;
 
-    if (!auth) {
+    if (!isValidAuth) {
       res.status(401).json({ message: 'Unauthorized' });
       return;
     }
@@ -32,10 +33,10 @@ export class AuthMiddleware implements NestMiddleware {
       return;
     }
 
-    const findOrg = viewOrg
+    const findOrg = org
       ? // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        user.org.find((o) => o._id.toString() === viewOrg)
+        user.org.find((o) => o._id.toString() === org)
       : null;
 
     const finalOrg = findOrg ? findOrg : user.org[0];
@@ -46,8 +47,8 @@ export class AuthMiddleware implements NestMiddleware {
       finalOrg._id.toString()
     );
 
-    const findEnv = viewEnv
-      ? environments?.find((o) => o._id.toString() === viewEnv)
+    const findEnv = env
+      ? environments?.find((o) => o._id.toString() === env)
       : null;
 
     const currentEnv = findEnv ? findEnv : environments[0];
