@@ -55,8 +55,8 @@ Clickvote takes the hassle of building your own reaction components around your 
 <h2>Requirements</h2>
 Please make sure you have installed:
 
-- Redis
-- Mongodb
+- [Redis](https://redis.io/docs/getting-started/installation/)
+- [MongoDB](https://www.mongodb.com/)
 
 <h2>Quickstart</h2>
 Clone the project, run:
