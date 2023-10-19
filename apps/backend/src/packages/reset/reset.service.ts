@@ -30,28 +30,29 @@ export class PasswordResetTokenService {
 
   async sendResetLinkToMail(email: string, token: string) {
     const resetUrl = `app.clickvote.dev/reset?token=${token}`;
-    await this._mailerService
-      .sendMail(
-        email,
-       'Clickvote Password Reset',
-        `Password reset url -> ${resetUrl}`,
-        `<strong>Password reset url -> ${resetUrl}<strong>`
-      );
+    await this._mailerService.sendMail(
+      email,
+      'Clickvote Password Reset',
+      `Password reset url -> ${resetUrl}`,
+      `<strong>Password reset url -> ${resetUrl}<strong>`
+    );
   }
 
   async setPassword(token: string, password: string) {
-    // Retrieve email through which reset request was raised
     const hashedToken = await this.hash(token);
-    const email = (await this._resetRepository.getByToken(hashedToken)).email;
-
-    // Update user object with new password
-    if (email) {
-      const hashedPassword = await this._encryptionService.hashPassword(
-        password
-      );
+    try {
+      // retreive email if token is valid
+      const email = (await this._resetRepository.getByToken(hashedToken)).email;
+      const hashedPassword = await this._encryptionService.hashPassword(password);
+      // Prune token(so that it can't be reused)
+      await this._resetRepository.deleteByToken(hashedToken);
+      // update password
       return await this._userService.updatePassword(email, hashedPassword);
+    } catch (err) {
+      throw new HttpException(
+        'Token Expired/Invalid. Try again with valid token',
+        HttpStatus.BAD_REQUEST
+      );
     }
-
-    throw new HttpException('User already exists', HttpStatus.BAD_REQUEST);
   }
 }
