@@ -1,9 +1,10 @@
 import { createContext, FC, useContext, PropsWithChildren, useCallback, useState } from 'react';
-import { UserFromRequest } from '@clickvote/interfaces';
+import { UserFromRequest, UserOrg } from '@clickvote/interfaces';
 
 type UserContextType = {
   user: UserFromRequest;
   updateUserOrgName: (name: string) => void;
+  addNewOrg: (org: UserOrg) => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(
@@ -25,8 +26,16 @@ export const UserContextProvider: FC<Props> = ({value, children}) => {
     }));
   }, []);
 
+  const addNewOrg = useCallback((org: UserOrg) => {
+    setUser(prevUserState => ({
+      ...prevUserState,
+      currentOrg: org,
+      org: [...prevUserState.org, org]
+    }));
+  }, []);
+
   return (
-    <UserContext.Provider value={{ user, updateUserOrgName }}>
+    <UserContext.Provider value={{ user, updateUserOrgName, addNewOrg }}>
       {children}
     </UserContext.Provider>
   );

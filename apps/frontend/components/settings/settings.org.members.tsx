@@ -65,6 +65,7 @@ const InviteMemberDialog: FC<{
       onSuccess: () => {
         toast.success('Member successfuly invited to organization');
         onClose();
+        methods.reset();
       },
       onError: (err: any) => {
         console.error('Error inviting member to organization', err);

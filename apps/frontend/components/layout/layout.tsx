@@ -1,9 +1,10 @@
 import { FC, ReactNode } from 'react';
-import LeftMenu from '@clickvote/frontend/components/layout/left.menu';
 import { UserFromRequest } from '@clickvote/interfaces';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { UserContextProvider } from '@clickvote/frontend/helper/user.context';
+import LeftMenu from '@clickvote/frontend/components/layout/left.menu';
 import { Env } from '@clickvote/frontend/components/layout/env';
+import { OrgInvite } from '@clickvote/frontend/components/layout/org.invite';
 import Logo from '../common/Logo';
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const Layout: FC<{ children: ReactNode; user: UserFromRequest }> = (props) => {
           <div className="flex-1 flex">
             <LeftMenu />
             <div className="p-4 bg-[#05050B] flex-1 border-r border-[#ffffff]/20 border-y">
+              <OrgInvite />
               {children}
             </div>
           </div>

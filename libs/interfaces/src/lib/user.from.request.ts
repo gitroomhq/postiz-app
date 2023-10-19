@@ -1,3 +1,8 @@
+export interface UserOrg {
+  id: string;
+  name: string;
+}
+
 export interface UserFromRequest {
   id: string;
   email: string;
@@ -10,12 +15,6 @@ export interface UserFromRequest {
     id: string;
     name: string;
   }>;
-  org: Array<{
-    id: string;
-    name: string;
-  }>;
-  currentOrg: {
-    id: string;
-    name: string;
-  };
+  org: Array<UserOrg>;
+  currentOrg: UserOrg;
 }
