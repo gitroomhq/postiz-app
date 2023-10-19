@@ -86,6 +86,8 @@ export const OrgInvite: FC = () => {
         appear
         show={isInviteVisible}
         as={Fragment}
+        // Note: We must invalidate the organization invitation query after the animation has completed to prevent
+        // the organization name from disappearing prematurely, especially before the component unmounts.
         afterLeave={invalidateOrgInviteQuery}
       >
         <Transition.Child
