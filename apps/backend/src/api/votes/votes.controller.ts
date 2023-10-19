@@ -4,21 +4,25 @@ import { GetUserFromRequest } from '@clickvote/backend/src/helpers/user.from.req
 import { UserFromRequest } from '@clickvote/interfaces';
 import { ValidateId, VotesValidation } from '@clickvote/validations';
 import { Response } from 'express';
+import { PosthogService } from '@clickvote/nest-libraries';
 
 @Controller('/votes')
 export class VotesController {
-  constructor(private _votesService: VotesService) {}
+  constructor(private _votesService: VotesService, private _posthogService:PosthogService) {}
 
   @Get('/:id')
   async getVote(
     @GetUserFromRequest() user: UserFromRequest,
     @ValidateId('id') id: string
   ) {
+    this._posthogService.trackEvent("votes_id", "getspecificvoteEvent", { login_type: "email", email: user.email })
     return this._votesService.getVote(user.currentOrg.id, id);
   }
 
   @Get('/')
   async getVotes(@GetUserFromRequest() user: UserFromRequest) {
+    this._posthogService.trackEvent("votes_id", "getallvoteEvent", { login_type: "email", email: user.email })
+
     return {
       votes: await this._votesService.getAllVotesForOrg(
         user.currentEnv.id,

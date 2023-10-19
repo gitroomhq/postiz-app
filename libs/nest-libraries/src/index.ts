@@ -9,3 +9,4 @@ export * from './lib/bigdata/votes/votes.interface';
 export * from './lib/bullmq-transport/bullmq-transport';
 export * from './lib/bullmq-transport/bullmq-client';
 export * from './lib/bullmq-transport/bullmq-register';
+export * from './lib/posthog/posthog.service';
