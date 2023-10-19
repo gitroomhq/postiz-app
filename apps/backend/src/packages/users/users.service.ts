@@ -82,4 +82,8 @@ export class UsersService {
 
     return this.sign(register.id);
   }
+
+  async updatePassword(email: string, password: string) {
+    return this._userRepository.updatePassword(email, password);
+  }
 }

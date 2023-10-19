@@ -17,4 +17,12 @@ export class UsersRepository {
   register(email: string, password: string, org: Types.ObjectId) {
     return this.userDocument.create({ email, password, org: [org] });
   }
+
+  async updatePassword(email: string, password: string) {
+    return this.userDocument.findOneAndUpdate(
+      { email: email },
+      { $set : { password: password }},
+      { new: true }
+    ).exec();
+  }
 }
