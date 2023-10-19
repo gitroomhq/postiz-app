@@ -84,7 +84,12 @@ export class UsersService {
     return this.sign(register.id);
   }
 
-  async addOrg(id: string, org: Org) {
+  async addOrg(id: string, org: Org & { _id: string }) {
+    const userExistsInOrganization = await this._userRepository.getByOrgId(id, org._id);
+    if (userExistsInOrganization) {
+      throw new HttpException('User is already a member of the organization', HttpStatus.BAD_REQUEST);
+    }
+
     return this._userRepository.addOrg(id, org);
   }
 }

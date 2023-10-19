@@ -15,6 +15,15 @@ export class UsersRepository {
     return this.userDocument.findOne<Omit<User, 'org'> & { id: string; org: string[]; }>({ email }).exec();
   }
 
+  getByOrgId(userId: string, orgId: string) {
+    return this.userDocument.findOne({
+      _id: new Types.ObjectId(userId),
+      org: {
+        _id: new Types.ObjectId(orgId)
+      }
+    })
+  }
+
   register(email: string, password: string, org: Types.ObjectId) {
     return this.userDocument.create({ email, password, org: [org] });
   }

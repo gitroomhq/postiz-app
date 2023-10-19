@@ -27,8 +27,12 @@ export class OrgService {
 
   async createOrgInvite(orgId: string, email: string) {
     const user = await this._usersService.getByEmail(email);
-    const isUserAlreadyInOrg = user.org.includes(orgId);
-    if (isUserAlreadyInOrg) {
+    if (!user) {
+      throw new HttpException('User does not exist', HttpStatus.BAD_REQUEST);
+    }
+
+    const userExistsInOrganization = user.org.includes(orgId);
+    if (userExistsInOrganization) {
       throw new HttpException('User is already a member of the organization', HttpStatus.BAD_REQUEST);
     }
 

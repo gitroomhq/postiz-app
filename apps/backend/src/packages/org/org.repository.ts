@@ -13,7 +13,7 @@ export class OrgRepository {
   ) {}
 
   async getById(id: string) {
-    return this.orgModel.findById(id);
+    return this.orgModel.findById<Org & { _id: string }>(id);
   }
   createOrg(name: string) {
     const org = new this.orgModel({ name });
