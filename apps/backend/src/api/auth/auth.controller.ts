@@ -1,16 +1,15 @@
-import {
-  Body,
-  Controller,
-  Post,
-  Res,
-} from '@nestjs/common';
-import { AuthValidator } from '@clickvote/validations';
+import { Body, Controller, Post, Res } from '@nestjs/common';
+import { AuthValidator, ResetConfirmValidator, ResetRequestValidator } from '@clickvote/validations';
 import { Response } from 'express';
 import { RegistrationLoginService } from '@clickvote/backend/src/shared/auth/registration.login.service';
+import { ResetPasswordService } from '@clickvote/backend/src/shared/auth/reset.service';
 
 @Controller('/auth')
 export class AuthController {
-  constructor(private _registrationLoginService: RegistrationLoginService) {}
+  constructor(
+    private _registrationLoginService: RegistrationLoginService,
+    private _resetPasswordService: ResetPasswordService
+  ) {}
 
   @Post('/register')
   async getData(
@@ -19,12 +18,20 @@ export class AuthController {
   ) {
     const sign = await this._registrationLoginService.register(register);
     const domain = process.env.FRONT_END_URL;
-    const domainAttribute = domain.indexOf('localhost') > -1 ? {} : { domain: "." + new URL(domain).hostname.split(".").slice(-2).join("."), sameSite: 'none' as const, secure: true };
+    const domainAttribute =
+      domain.indexOf('localhost') > -1
+        ? {}
+        : {
+            domain:
+              '.' + new URL(domain).hostname.split('.').slice(-2).join('.'),
+            sameSite: 'none' as const,
+            secure: true,
+          };
     response.cookie('auth', sign, {
       httpOnly: false,
       sameSite: 'strict',
       path: '/',
-      ...domainAttribute
+      ...domainAttribute,
     });
   }
 
@@ -35,13 +42,35 @@ export class AuthController {
   ) {
     const sign = await this._registrationLoginService.login(login);
     const domain = process.env.FRONT_END_URL;
-    const domainAttribute = domain.indexOf('localhost') > -1 ? {} : { domain: "." + new URL(domain).hostname.split(".").slice(-2).join("."), sameSite: 'none' as const, secure: true };
+    const domainAttribute =
+      domain.indexOf('localhost') > -1
+        ? {}
+        : {
+            domain:
+              '.' + new URL(domain).hostname.split('.').slice(-2).join('.'),
+            sameSite: 'none' as const,
+            secure: true,
+          };
 
     response.cookie('auth', sign, {
       httpOnly: false,
       sameSite: 'strict',
       path: '/',
-      ...domainAttribute
+      ...domainAttribute,
     });
+  }
+
+  @Post('/reset/request')
+  async reset(
+    @Body() reset: ResetRequestValidator,
+  ) {
+    return await this._resetPasswordService.generateResetToken(reset);
+  }
+
+  @Post('/reset/confirm')
+  async confirmReset(
+    @Body() reset: ResetConfirmValidator,
+  ){
+    return await this._resetPasswordService.setNewPassword(reset);
   }
 }
