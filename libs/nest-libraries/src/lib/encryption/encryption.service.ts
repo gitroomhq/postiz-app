@@ -1,6 +1,6 @@
 import {hash, compare} from 'bcrypt';
 import { Injectable } from '@nestjs/common';
-import { createCipheriv, scrypt, createDecipheriv, randomBytes } from 'crypto';
+import { createCipheriv, scrypt, createDecipheriv, randomBytes, createHash, randomUUID } from 'crypto';
 import { promisify } from 'util';
 
 @Injectable()
@@ -56,5 +56,14 @@ export class EncryptionService {
   }
   async comparePassword(password: string, hash: string) {
     return compare(password, hash);
+  }
+
+  async genPasswordResetToken() {
+    // Used for generating a temporary password reset token
+    return randomUUID();
+  }
+  
+  async hashPasswordResetToken(token: string) {
+    return createHash('sha256').update(token).digest('hex');
   }
 }
