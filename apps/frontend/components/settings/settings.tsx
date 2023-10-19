@@ -78,7 +78,7 @@ export const Settings: FC<{ settings: SettingsInterface }> = (props) => {
                 labelClassName="mt-7"
               />
             </div>
-            <div className="flex items-end ml-2 hover:opacity-70">
+            <div className="flex items-end ml-2 hover:opacity-70 cursor-pointer">
               <Copy />
             </div>
           </div>
@@ -96,7 +96,7 @@ export const Settings: FC<{ settings: SettingsInterface }> = (props) => {
                 className="cursor-pointer"
               />
             </div>
-            <div className="flex items-end ml-2 hover:opacity-70">
+            <div className="flex items-end ml-2 hover:opacity-70 cursor-pointer">
               <Copy />
             </div>
           </div>
