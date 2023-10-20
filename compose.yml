@@ -104,7 +104,9 @@ services:
       - 27017
     environment:
       - MONGO_INITDB_DATABASE=clickvote
+    volume:
+      - clickvote-mongo-data:/data
 
 volumes:
   clickvote-redis-data:
-
+  clickvote-mongo-data:
