@@ -2,7 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  background-color: #05050B;
-  color: #EBECED;
+/* Define CSS variables for background color and text color */
+:root {
+  --background-color-light: #FFFFFF; /* Light mode background color */
+  --text-color-light: #000000; /* Light mode text color */
+  --background-color-dark: #05050B; /* Dark mode background color */
+  --text-color-dark: #EBECED; /* Dark mode text color */
 }
+
+body {
+  background-color: var(--background-color-light);
+  color: var(--text-color-light);
+}
+
+/* Apply dark mode styles when the 'dark' class is present on the body */
+body.dark {
+  background-color: var(--background-color-dark);
+  color: var(--text-color-dark);
+}
+
