@@ -91,7 +91,7 @@ export const AddVotesComponent: FC<{ initialValues?: VoteValues }> = (
                 disabled={!!initialValues}
               />
               <div className="mt-3 mb-3 text-red-500">{err}</div>
-              <Select name="type" label="Type" disabled={!!initialValues}>
+              <Select className="bg-slate-900 text-white" name="type" label="Type" disabled={!!initialValues}>
                 <option value="">--Select--</option>
                 <option value="single">Single</option>
                 <option value="range">Range</option>
