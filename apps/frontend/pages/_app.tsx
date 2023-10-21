@@ -5,10 +5,28 @@ import type { AppProps } from 'next/app';
 import { Inter } from 'next/font/google';
 import DefaultSEO from '../components/seo/DefaultSeo';
 import Head from 'next/head';
+import Layout from './Layout'; // Import your Layout component
+import { useEffect, useState } from 'react';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export default function App({ Component, pageProps }: AppProps) {
+  const [darkMode, setDarkMode] = useState(false);
+
+  // Function to toggle dark mode
+  const toggleDarkMode = () => {
+    const newDarkMode = !darkMode;
+    setDarkMode(newDarkMode);
+    // Save the dark mode preference to localStorage
+    localStorage.setItem('darkMode', newDarkMode ? 'true' : 'false');
+  };
+
+  // Load dark mode preference from localStorage
+  useEffect(() => {
+    const isDarkMode = localStorage.getItem('darkMode') === 'true';
+    setDarkMode(isDarkMode);
+  }, []);
+
   return (
     <>
       <Head>
@@ -20,10 +38,10 @@ export default function App({ Component, pageProps }: AppProps) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </Head>
       <DefaultSEO />
-      <div className={inter.className}>
+      <Layout darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
         <Component {...pageProps} />
-        <ToastContainer theme="dark" position="bottom-right" />
-      </div>
+      </Layout>
+      <ToastContainer theme={darkMode ? 'dark' : 'light'} position="bottom-right" />
     </>
   );
 }
