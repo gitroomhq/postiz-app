@@ -37,14 +37,14 @@
   </p>
 
 <br />
-<h2 align="center">Clickvote participate in Hacktoberfest 2023!</h2>
+<h2 align="center">🅲🅻🅸🅲🅺🆅🅾🆃🅴 participate in Hacktoberfest 2023!</h2>
 <p align="center">Make three valuable PRs (no typo) and win this awesome Clickvote tee!<br /><strong>Maximum ten tees! So hurry up!</strong></p>
 
 <p align="center">
 <img src="https://github.com/clickvote/clickvote/assets/100117126/96058f9a-72ca-4c15-8026-449efcf6b964" align="center" width="300" />
 </p>
 
-<h2>Clickvote</h2>
+<h2>🅲🅻🅸🅲🅺🆅🅾🆃🅴 🖱️</h2>
 
 Clickvote takes the hassle of building your own reaction components around your content.
 
@@ -52,13 +52,13 @@ Clickvote takes the hassle of building your own reaction components around your 
 - Learn about your members through deep analytics.
 - Deal with an unlimited amount of clicks per second.
 
-<h2>Requirements</h2>
+<h2>🆁🅴🆀🆄🅸🆁🅴🅼🅴🅽🆃🆂 📝</h2>
 Please make sure you have installed:
 
 - Redis
 - Mongodb
 
-<h2>Quickstart</h2>
+<h2>🆀🆄🅸🅲🅺🆂🆃🅰🆁🆃🏃‍♂️💡</h2>
 Clone the project, run:
 
 ```bash
@@ -82,7 +82,7 @@ To modify the react component, run:
 npm run dev:react-component
 ```
 
-<h2>Add your react component to the user application</h2>
+<h2>Add your react component to the user application ➕</h2>
 
 You can find examples of how to use the React component here:
 
@@ -91,7 +91,7 @@ https://github.com/clickvote/clickvote/tree/main/libs/react-component/src/lib/ex
 ![image](https://github.com/clickvote/clickvote/assets/100117126/4596c634-4924-4e75-957e-e78aa046980f)
 
 
-<h2>Contact us</h2>
+<h2>🅲🅾🅽🆃🅰🅲🆃 🆄🆂 📞</h2>
 
 Nevo - [nevo@clickvote.dev](mailto:nevo@clickvote.dev)
 
