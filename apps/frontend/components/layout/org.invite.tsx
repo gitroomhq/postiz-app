@@ -25,7 +25,7 @@ export const OrgInvite: FC = () => {
   const { data } = useQuery<InviteProps>({
     queryKey: ['org_invite'],
     queryFn: async () => {
-      const { data } = await axiosInstance.get<InviteProps>('/org/invite');
+      const { data } = await axiosInstance.get<InviteProps>('/org/invites/user');
 
       if (data.invite) {
         setIsInviteVisible(true);
@@ -36,12 +36,12 @@ export const OrgInvite: FC = () => {
   });
   const { mutate: acceptOrgInviteMutate } = useMutation({
     mutationKey: ['accept_org_invite'],
-    mutationFn: (id: string) => axiosInstance.put(`org/invite/accept/${id}`),
+    mutationFn: (id: string) => axiosInstance.put(`org/invites/accept/${id}`),
   });
   const { mutate: declineOrgInviteMutate } = useMutation({
     mutationKey: ['decline_org_invite'],
     mutationFn: (id: string) =>
-      axiosInstance.delete(`org/invite/decline/${id}`),
+      axiosInstance.delete(`org/invites/decline/${id}`),
   });
 
   const invite = data?.invite;

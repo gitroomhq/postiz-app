@@ -57,7 +57,7 @@ const InviteMemberDialog: FC<{
     mode: 'all',
   });
   const { mutate } = useMutation(async (email: string) =>
-    axiosInstance.post('/org/invite/create', { email })
+    axiosInstance.post('/org/invites/create', { email })
   );
 
   const inviteMemberToOrg = ({ email }: InviteMemberFormValues) => {

@@ -14,7 +14,7 @@ export class OrgController {
     return this._org.updateOrg(user.currentOrg.id, name);
   }
 
-  @Get('/invite')
+  @Get('/invites/user')
   async getOrgInvite(
     @GetUserFromRequest() user: UserFromRequest,
   ) {
@@ -34,7 +34,7 @@ export class OrgController {
     }
   }
 
-  @Post('/invite/create')
+  @Post('/invites/create')
   async createOrgInvite(
     @GetUserFromRequest() user: UserFromRequest,
     @Body('email') email: string
@@ -42,7 +42,7 @@ export class OrgController {
     return this._org.createOrgInvite(user.currentOrg.id, email);
   }
 
-  @Delete('/invite/decline/:id')
+  @Delete('/invites/decline/:id')
   async declineOrgInvite(
     @GetUserFromRequest() user: UserFromRequest,
     @Param('id') id: string,
@@ -52,7 +52,7 @@ export class OrgController {
     res.status(HttpStatus.NO_CONTENT).json({});
   }
 
-  @Put('/invite/accept/:id')
+  @Put('/invites/accept/:id')
   async acceptOrgInvite(
     @GetUserFromRequest() user: UserFromRequest,
     @Param('id') id: string,

@@ -28,7 +28,7 @@ export class OrgRepository {
   }
 
   async getInvitesByOrgId(id: string) {
-    return this.orgInviteModel.find({ _id: new Types.ObjectId(id) });
+    return this.orgInviteModel.find({ org: { _id: new Types.ObjectId(id) } });
   }
 
   async createOrgInvite(org: Org, email: string) {
