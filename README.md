@@ -121,7 +121,7 @@ Nevo - [nevo@clickvote.dev](mailto:nevo@clickvote.dev)
   <img src="https://github.com/clickvote/clickvote/assets/100117126/de390e5b-e0b7-4845-a38d-a538ee14c8bd" />
 </p>
 
-p align="center">
+<p align="center">
   <img src="https://media.giphy.com/media/IwAZ6dvvvaTtdI8SD5/giphy.gif" height=200/>
   <img src="https://media.giphy.com/media/sVnKj2wDhUTsFKFWhx/giphy.gif" height=200/>
   
