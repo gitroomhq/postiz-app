@@ -10,10 +10,8 @@
     "build:websockets": "nx run websockets:build:production",
     "build:consumers": "nx run consumers:build:production",
     "upvotes": "nx run-many --target=serve --projects=websockets,consumers",
-    "serve:frontend-app": "nx serve frontend --hostname=0.0.0.0",
-    "serve:backend-app": "nx serve backend  ",
-    "serve:websockets-app": "nx serve websockets",
-    "serve:consumers-app": "nx serve consumers ",
+    "serve:frontend-app": "nx run frontend:serve:development --hostname=0.0.0.0",
+  
     "dev:frontend": "nx run frontend:serve:development",
     "dev:backend": "nx run backend:serve:development",
     "dev:websockets": "nx run websockets:serve:development",
