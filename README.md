@@ -67,7 +67,7 @@ Clickvote takes the hassle of building your own reaction components around your 
 Please make sure you have installed:
 
 - Redis
-- Mongodb
+- MongoDB
 
 <h2>Quickstart</h2>
 Clone the project, run:
@@ -76,14 +76,14 @@ Clone the project, run:
 npm run setup
 ```
 
-It will ask you add your environment variables, in most cases you can just use the default option
+It will ask you to add your environment variables; in most cases, you can just use the default option
 
 To run the backend and frontend, run:
 ```bash
 npm run web
 ```
 
-To run the websockets and worker, run:
+To run the WebSockets and worker, run:
 ```bash
 npm run upvotes
 ```
