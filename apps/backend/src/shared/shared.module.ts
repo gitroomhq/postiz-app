@@ -5,12 +5,20 @@ import { RegistrationLoginService } from '@clickvote/backend/src/shared/auth/reg
 import { OrgModule } from '@clickvote/backend/src/packages/org/org.module';
 import { EnvironmentModule } from '@clickvote/backend/src/packages/environment/environment.module';
 import { MongooseModule, RedisService } from '@clickvote/nest-libraries';
+import { MailService } from '@clickvote/backend/src/shared/mail/mail.service';
+import { MailModule } from '@clickvote/backend/src/shared/mail/mail.module';
 
 @Global()
 @Module({
-  imports: [MongooseModule, UsersModule, OrgModule, EnvironmentModule],
+  imports: [
+    MongooseModule,
+    UsersModule,
+    OrgModule,
+    EnvironmentModule,
+    MailModule,
+  ],
   controllers: [],
-  providers: [AuthService, RedisService, RegistrationLoginService],
+  providers: [AuthService, RedisService, RegistrationLoginService, MailService],
   get exports() {
     return this.providers;
   },

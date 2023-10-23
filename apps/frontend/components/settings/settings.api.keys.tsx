@@ -3,6 +3,7 @@ import { FormProvider, useForm } from 'react-hook-form';
 import CopyToClipboard from 'react-copy-to-clipboard';
 import { Title } from '@tremor/react';
 import { Copy } from 'lucide-react';
+import { toast } from 'react-toastify';
 import { Input } from '@clickvote/frontend/components/form/input';
 import { SettingsInterface } from "@clickvote/interfaces";
 
@@ -14,12 +15,19 @@ export const SettingsAPIKeys: FC<{ settings: SettingsInterface }> = (props) => {
     mode: 'all',
   });
 
+  const showToast = (message: string) => {
+    toast.success(message + '!');
+  };
+
   return (
     <FormProvider {...methods}>
       <Title className="bg-words-purple bg-clip-text text-transparent text-4xl">
         API Keys
       </Title>
-      <CopyToClipboard text={settings.publicKey}>
+      <CopyToClipboard
+        text={settings.publicKey}
+        onCopy={() => showToast('Public Key Copied')}
+      >
         <div className="flex mb-5">
           <div className="flex-1">
             <Input
@@ -37,7 +45,10 @@ export const SettingsAPIKeys: FC<{ settings: SettingsInterface }> = (props) => {
           </div>
         </div>
       </CopyToClipboard>
-      <CopyToClipboard text={settings.secretKey}>
+      <CopyToClipboard
+        text={settings.secretKey}
+        onCopy={() => showToast('Secret Key Copied')}
+      >
         <div className="flex">
           <div className="flex-1">
             <Input

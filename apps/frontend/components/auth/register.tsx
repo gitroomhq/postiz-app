@@ -78,7 +78,7 @@ function Register() {
                     type="submit"
                     className="py-4 px-12 font-semibold rounded-md shadow bg-button-purple text-white w-56 backdrop-blur-lg hover:opacity-70"
                   >
-                    {isSubmitting ? "Redirecting ..." : "Get Started"}
+                    {isSubmitting ? 'Redirecting ...' : 'Get Started'}
                   </button>
                 </div>
               </form>
