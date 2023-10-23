@@ -37,6 +37,17 @@
   </p>
 
 <br />
+<h2 align="center">Clickvote is on Product Hunt today!</h2>
+<p align="center">Can you help us with our launch? :)</strong></p>
+
+<p align="center">
+  <a href="https://www.producthunt.com/posts/clickvote?utm_source=badge-featured&utm_medium=badge&utm_souce=badge-clickvote" target="_blank" align="center">
+    <img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=421008&theme=light" alt="Clickvote" width="250" height="54" align="center" />
+  </a>
+</p>
+
+<br /><br/>
+
 <h2 align="center">Clickvote participate in Hacktoberfest 2023!</h2>
 <p align="center">Make three valuable PRs (no typo) and win this awesome Clickvote tee!<br /><strong>Maximum ten tees! So hurry up!</strong></p>
 
@@ -56,7 +67,7 @@ Clickvote takes the hassle of building your own reaction components around your 
 Please make sure you have installed:
 
 - Redis
-- Mongodb
+- MongoDB
 
 <h2>Quickstart</h2>
 Clone the project, run:
@@ -65,14 +76,14 @@ Clone the project, run:
 npm run setup
 ```
 
-It will ask you add your environment variables, in most cases you can just use the default option
+It will ask you to add your environment variables; in most cases, you can just use the default option
 
 To run the backend and frontend, run:
 ```bash
 npm run web
 ```
 
-To run the websockets and worker, run:
+To run the WebSockets and worker, run:
 ```bash
 npm run upvotes
 ```
