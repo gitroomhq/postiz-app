@@ -13,7 +13,8 @@ export class UsersService {
     private readonly _encryptionService: EncryptionService,
     private readonly _jwtService: AuthService,
     private readonly _httpService: HttpService
-  ) {}
+  ) {
+  }
 
   async getById(id: string) {
     return this._userRepository.getById(id);
@@ -81,5 +82,9 @@ export class UsersService {
     await this.subscribeToNewsletter(email);
 
     return this.sign(register.id);
+  }
+
+  getAllInOrg(orgId: string) {
+    return this._userRepository.getAllInOrg(orgId);
   }
 }
