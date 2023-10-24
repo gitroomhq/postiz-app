@@ -8,10 +8,10 @@ export class PasswordResetToken {
 
   @Prop()
   token: string;
+
+  @Prop({ type: Date, default: Date.now, index: { expires: '30m' } })
+  expireAt: Date;
 }
 
 export const PasswordResetTokensSchema =
   SchemaFactory.createForClass(PasswordResetToken);
-
-// TTL Index - Expires document after 30 minutes => Token expiry
-PasswordResetTokensSchema.index({ "createdAt": 1 }, { expireAfterSeconds: 1800 })
