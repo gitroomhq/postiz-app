@@ -55,7 +55,7 @@ function Login() {
                     id="email"
                     name="email"
                     className="text-white"
-                    labelClassName="bg-words-purple bg-clip-text text-transparent"
+                    labelclassname="bg-words-purple bg-clip-text text-transparent"
                   />
                 </div>
                 <div>
@@ -65,7 +65,7 @@ function Login() {
                     id="password"
                     name="password"
                     className="text-white"
-                    labelClassName="bg-words-purple bg-clip-text text-transparent"
+                    labelclassname="bg-words-purple bg-clip-text text-transparent"
                   />
                 </div>
                 <div className="mt-3 mb-3 text-red-500">{err}</div>

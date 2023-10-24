@@ -7,7 +7,7 @@ export const Input: FC<
     label?: string;
     postChange?: (event: ChangeEvent<HTMLInputElement>) => void;
     hideErrors?: boolean;
-    labelClassName?: string;
+    labelclassname?: string;
   }
 > = (props) => {
   const { label, postChange, hideErrors, className, onChange, ...all } = props;
@@ -34,7 +34,7 @@ export const Input: FC<
   return (
     <>
       {!!label && (
-        <div className={clsx(`mb-2`, props.labelClassName)}>{label}</div>
+        <div className={clsx(`mb-2`, props.labelclassname)}>{label}</div>
       )}
       <input
         {...allOther}
