@@ -24,6 +24,12 @@ export const loadUser = async (
     }
   });
 
+  newInstance.interceptors.request.use((value) => {
+  value.baseURL =
+    process.env.INTERNAL_BACKEND_PATH || process.env.NEXT_PUBLIC_BACKEND_PATH;
+  return value;
+});
+
   const data = await func(newInstance, user);
   const props = data?.props || {};
   const other = data || {};

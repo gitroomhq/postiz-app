@@ -7,17 +7,19 @@ import { Button } from '@clickvote/frontend/components/form/button';
 import CopyToClipboard from 'react-copy-to-clipboard';
 import { Title } from '@tremor/react';
 import { Copy } from 'lucide-react';
-import { useMutation } from "@tanstack/react-query";
-import { axiosInstance } from "@clickvote/frontend/helper/axios";
-import { toast } from "react-toastify";
-import { Prettify } from "@clickvote/frontend/helper/types";
+import { useMutation } from '@tanstack/react-query';
+import { axiosInstance } from '@clickvote/frontend/helper/axios';
+import { toast } from 'react-toastify';
+import { Prettify } from '@clickvote/frontend/helper/types';
 
-type FormValues = Prettify<SettingsInterface & {
-  orgName: string;
-}>;
+type FormValues = Prettify<
+  SettingsInterface & {
+    orgName: string;
+  }
+>;
 
 export const Settings: FC<{ settings: SettingsInterface }> = (props) => {
-  const {user, updateUserOrgName} = useUserContext();
+  const { user, updateUserOrgName } = useUserContext();
   const { settings } = props;
 
   const methods = useForm<FormValues>({
@@ -42,7 +44,11 @@ export const Settings: FC<{ settings: SettingsInterface }> = (props) => {
         toast.error('Ops, something went wrong!');
       },
     });
-  }
+  };
+
+  const showToast = (message: string) => {
+    toast.success(message + '!');
+  };
 
   return (
     <div className="p-4">
@@ -61,11 +67,13 @@ export const Settings: FC<{ settings: SettingsInterface }> = (props) => {
           </Button>
         </form>
 
-
         <Title className="bg-words-purple bg-clip-text text-transparent text-4xl">
           API Keys
         </Title>
-        <CopyToClipboard text={settings.publicKey}>
+        <CopyToClipboard
+          text={settings.publicKey}
+          onCopy={() => showToast('Public Key Copied')}
+        >
           <div className="flex mb-5">
             <div className="flex-1">
               <Input
@@ -83,7 +91,10 @@ export const Settings: FC<{ settings: SettingsInterface }> = (props) => {
             </div>
           </div>
         </CopyToClipboard>
-        <CopyToClipboard text={settings.secretKey}>
+        <CopyToClipboard
+          text={settings.secretKey}
+          onCopy={() => showToast('Secret Key Copied')}
+        >
           <div className="flex">
             <div className="flex-1">
               <Input
