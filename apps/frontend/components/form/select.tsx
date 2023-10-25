@@ -47,8 +47,10 @@ export const Select: FC<
         {...allOther}
         {...all}
         onChange={onChangeFunc}
-        className={clsx(`p-2 w-full bg-[#fff0fd]/10 border border-[#EBECED]/20 rounded-md`, className)}
+        className={clsx(`border rounded-lg font-medium w-full p-2 bg-[#1e1c24] border-[#EBECED]/20 placeholder-gray-400 text-white`, className)}
       >
+
+
         {children}
       </select>
       {!hideErrors ? (
