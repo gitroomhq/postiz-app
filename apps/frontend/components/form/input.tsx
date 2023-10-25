@@ -10,7 +10,15 @@ export const Input: FC<
     labelClassName?: string;
   }
 > = (props) => {
-  const { label, postChange, hideErrors, className, onChange, ...all } = props;
+  const {
+    label,
+    postChange,
+    hideErrors,
+    labelClassName,
+    className,
+    onChange,
+    ...all
+  } = props;
   const {
     register,
     formState: { errors },
@@ -34,7 +42,7 @@ export const Input: FC<
   return (
     <>
       {!!label && (
-        <div className={clsx(`mb-2`, props.labelClassName)}>{label}</div>
+        <div className={clsx(`mb-2`, labelClassName)}>{label}</div>
       )}
       <input
         {...allOther}
