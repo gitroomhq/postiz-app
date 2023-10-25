@@ -48,7 +48,7 @@
 
 <br /><br/>
 
-<h2 align="center">Clickvote participate in Hacktoberfest 2023!</h2>
+<h2 align="center">Clickvote participates in Hacktoberfest 2023!</h2>
 <p align="center">Make three valuable PRs (no typo) and win this awesome Clickvote tee!<br /><strong>Maximum ten tees! So hurry up!</strong></p>
 
 <p align="center">
