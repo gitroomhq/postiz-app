@@ -172,13 +172,10 @@ function Reset({ token }: { token: string }) {
             // Password reset was successful
             setErr('');
             setPasswordReset(true);
-          } else {
-            // Handle other error cases, if necessary
-            setErr('Invalid/Expired token! Password reset failed');
           }
         }
       } catch (err) {
-        setErr('Password reset failed. Please try again.');
+        setErr('Invalid/Expired token! Password reset failed');
       } finally {
         setDisabledButton(false);
       }
