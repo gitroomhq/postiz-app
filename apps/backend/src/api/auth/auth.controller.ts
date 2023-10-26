@@ -1,5 +1,9 @@
-import { Body, Controller, HttpCode, Post, Res } from '@nestjs/common';
-import { AuthValidator, ResetConfirmValidator, ResetRequestValidator } from '@clickvote/validations';
+import { Body, Controller, Post, Res } from '@nestjs/common';
+import {
+  AuthValidator,
+  ResetConfirmValidator,
+  ResetRequestValidator,
+} from '@clickvote/validations';
 import { Response } from 'express';
 import { RegistrationLoginService } from '@clickvote/backend/src/shared/auth/registration.login.service';
 import { ResetPasswordService } from '@clickvote/backend/src/shared/auth/reset.service';
@@ -61,22 +65,12 @@ export class AuthController {
   }
 
   @Post('/reset/request')
-  async reset(
-    @Body() reset: ResetRequestValidator,
-    @Res({ passthrough: true }) response: Response
-  ) {
+  async reset(@Body() reset: ResetRequestValidator) {
     await this._resetPasswordService.generateResetToken(reset);
-    response.status(201);
-    response.send('Reset URL sent to mail');
   }
 
   @Post('/reset/confirm')
-  async confirmReset(
-    @Body() reset: ResetConfirmValidator,
-    @Res({ passthrough: true }) response: Response
-  ){
+  async confirmReset(@Body() reset: ResetConfirmValidator) {
     await this._resetPasswordService.setNewPassword(reset);
-    response.status(204);
-    response.send('Password reset successful');
   }
 }

@@ -164,15 +164,10 @@ function Reset({ token }: { token: string }) {
             token: token,
             password: values.password,
           };
-          const response = await axiosInstance.post(
-            '/auth/reset/confirm',
-            data
-          );
-          if (response.status === 204) {
-            // Password reset was successful
-            setErr('');
-            setPasswordReset(true);
-          }
+          await axiosInstance.post('/auth/reset/confirm', data);
+          // Password reset was successful
+          setErr('');
+          setPasswordReset(true);
         }
       } catch (err) {
         setErr('Invalid/Expired token! Password reset failed');
