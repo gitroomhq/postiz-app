@@ -18,20 +18,16 @@ import {
       const user = await this._userService.getByEmail(reset.email);
       
       if (!user) {
-        throw new HttpException('User not found', HttpStatus.BAD_REQUEST);
+        throw new HttpException('User isn\'t registered', HttpStatus.BAD_REQUEST);
       }
       
       const token = await this._resetService.genResetToken(reset.email);
   
       await this._resetService.sendResetLinkToMail(reset.email, token);
-  
-      return {message: 'Reset link sent to mail'};
     }
   
     async setNewPassword(reset: ResetConfirmValidator) {
       await this._resetService.setPassword(reset.token, reset.password);
-  
-      return {message: 'Password reset successful'}
     }
   }
   
