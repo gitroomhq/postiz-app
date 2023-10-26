@@ -80,13 +80,23 @@ function Login() {
               </form>
             </FormProvider>
           </div>
-          <div className="text-left mt-4">
-            <Link
-              href="/auth/register"
-              className="bg-words-purple bg-clip-text text-transparent border-b border-words-purple"
-            >
-              Register
-            </Link>
+          <div className="text-left mt-4 flex gap-36">
+            <span>
+              <Link
+                href="/auth/reset"
+                className="bg-words-purple bg-clip-text text-transparent border-b border-words-purple"
+              >
+                Forgot password?
+              </Link>
+            </span>
+            <span>
+              <Link
+                href="/auth/register"
+                className="bg-words-purple bg-clip-text text-transparent border-b border-words-purple"
+              >
+                Register
+              </Link>
+            </span>
           </div>
         </div>
       </div>
