@@ -29,7 +29,7 @@ export class PasswordResetTokenService {
   }
 
   async sendResetLinkToMail(email: string, token: string) {
-    const resetUrl = `app.clickvote.dev/reset?token=${token}`;
+    const resetUrl = `app.clickvote.dev/auth/reset?token=${token}`;
     await this._mailerService.sendMail(
       email,
       'Clickvote Password Reset',
