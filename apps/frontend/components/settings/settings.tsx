@@ -28,15 +28,14 @@ export const Settings: FC<{ settings: SettingsInterface }> = (props) => {
   });
 
   const { mutate } = useMutation(
-    async (orgName: string) =>
-      (await axiosInstance.put('/org/update', { name: orgName })).data
+    async (orgName: string) => (await axiosInstance.put('/org/update', { name: orgName })).data,
   );
 
   const updateOrgName = ({ orgName }: FormValues) => {
     mutate(orgName, {
       onSuccess: () => {
         toast.success('Organization Name Updated!');
-        methods.reset({ orgName: orgName });
+        methods.reset({ orgName });
         updateUserOrgName(orgName);
       },
       onError: (err) => {
@@ -47,7 +46,7 @@ export const Settings: FC<{ settings: SettingsInterface }> = (props) => {
   };
 
   const showToast = (message: string) => {
-    toast.success(message + '!');
+    toast.success(`${message}!`);
   };
 
   return (
@@ -77,11 +76,11 @@ export const Settings: FC<{ settings: SettingsInterface }> = (props) => {
           <div className="flex mb-5">
             <div className="flex-1">
               <Input
-                hideErrors={true}
+                hideErrors
                 label="Public Key"
                 name="publicKey"
                 value={settings.publicKey}
-                readOnly={true}
+                readOnly
                 className="cursor-pointer"
                 labelClassName="mt-7"
               />
@@ -98,12 +97,12 @@ export const Settings: FC<{ settings: SettingsInterface }> = (props) => {
           <div className="flex">
             <div className="flex-1">
               <Input
-                hideErrors={true}
+                hideErrors
                 label="Secret Key"
                 name="secretKey"
                 type="password"
                 value={settings.secretKey}
-                readOnly={true}
+                readOnly
                 className="cursor-pointer"
               />
             </div>

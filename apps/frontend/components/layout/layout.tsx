@@ -22,7 +22,10 @@ const Layout: FC<{ children: ReactNode; user: UserFromRequest }> = (props) => {
               <div className="flex items-center">
                 <Env />
               </div>
-              <div className="flex items-center">Welcome, {user.email}</div>
+              <div className="flex items-center">
+                Welcome,
+                {user.email}
+              </div>
             </div>
           </div>
           <div className="flex-1 flex">

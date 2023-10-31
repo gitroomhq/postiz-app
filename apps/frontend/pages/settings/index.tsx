@@ -14,10 +14,8 @@ const Index: MainFC<{ settings: SettingsInterface }> = (props) => {
   );
 };
 
-export const getServerSideProps: GetServerSideProps = async ({ req }) => {
-  return loadUser(req, async (axios) => ({
-    props: { settings: (await axios.get('/settings')).data },
-  }));
-};
+export const getServerSideProps: GetServerSideProps = async ({ req }) => loadUser(req, async (axios) => ({
+  props: { settings: (await axios.get('/settings')).data },
+}));
 
 export default Index;

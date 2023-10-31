@@ -1,4 +1,6 @@
-import { createContext, FC, useContext, PropsWithChildren, useCallback, useState } from 'react';
+import {
+  createContext, FC, useContext, PropsWithChildren, useCallback, useState,
+} from 'react';
 import { UserFromRequest } from '@clickvote/interfaces';
 
 type UserContextType = {
@@ -7,21 +9,21 @@ type UserContextType = {
 }
 
 const UserContext = createContext<UserContextType | undefined>(
-  undefined
+  undefined,
 );
 
 type Props = PropsWithChildren<{
   value: UserFromRequest;
 }>
 
-export const UserContextProvider: FC<Props> = ({value, children}) => {
+export const UserContextProvider: FC<Props> = ({ value, children }) => {
   const [user, setUser] = useState(value);
 
   const updateUserOrgName = useCallback((orgName: string) => {
-    setUser(user => ({
+    setUser((user) => ({
       ...user,
-      currentOrg: {...user.currentOrg, name: orgName},
-      org: user.org.map(org => org.id === user.currentOrg.id ? {...org, name: orgName} : org)
+      currentOrg: { ...user.currentOrg, name: orgName },
+      org: user.org.map((org) => (org.id === user.currentOrg.id ? { ...org, name: orgName } : org)),
     }));
   }, []);
 
@@ -30,7 +32,7 @@ export const UserContextProvider: FC<Props> = ({value, children}) => {
       {children}
     </UserContext.Provider>
   );
-}
+};
 
 export const useUserContext = () => {
   const userContext = useContext(UserContext);
@@ -38,4 +40,4 @@ export const useUserContext = () => {
     throw new Error('useUserContext must be used within a UserContextProvider');
   }
   return userContext;
-}
+};

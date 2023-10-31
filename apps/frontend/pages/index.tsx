@@ -7,13 +7,11 @@ const Index: MainFC = (props) => {
   return <></>;
 };
 
-export const getServerSideProps: GetServerSideProps = async ({ req }) => {
-  return loadUser(req, async (user) => ({
-    redirect: {
-      destination: `/analytics`,
-      permanent: false,
-    }
-  }));
-};
+export const getServerSideProps: GetServerSideProps = async ({ req }) => loadUser(req, async (user) => ({
+  redirect: {
+    destination: '/analytics',
+    permanent: false,
+  },
+}));
 
 export default Index;

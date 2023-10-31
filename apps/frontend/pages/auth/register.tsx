@@ -1,8 +1,6 @@
 import { FC } from 'react';
-import Register from "@clickvote/frontend/components/auth/register";
+import Register from '@clickvote/frontend/components/auth/register';
 
-const RegisterPage: FC = () => {
-  return <Register />;
-};
+const RegisterPage: FC = () => <Register />;
 
 export default RegisterPage;

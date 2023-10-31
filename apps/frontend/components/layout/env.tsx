@@ -7,14 +7,12 @@ type FormValues = {
   env: string;
 };
 
-const resolver: Resolver<FormValues> = async (values) => {
-  return {
-    values: values.env ? values : {},
-    errors: {},
-  };
-};
+const resolver: Resolver<FormValues> = async (values) => ({
+  values: values.env ? values : {},
+  errors: {},
+});
 
-export const Env = () => {
+export function Env() {
   const { user } = useUserContext();
   const methods = useForm<FormValues>({
     mode: 'all',
@@ -32,9 +30,9 @@ export const Env = () => {
   return (
     <FormProvider {...methods}>
       <form className="mr-4">
-        <Select hideErrors={true} name="env" label="" postChange={methods.handleSubmit(submit)}>
+        <Select hideErrors name="env" label="" postChange={methods.handleSubmit(submit)}>
           {user?.env.map((env) => (
-            <option key={env.id} value={env.id} className='text-purple-500'>
+            <option key={env.id} value={env.id} className="text-purple-500">
               {env.name}
             </option>
           ))}
@@ -42,4 +40,4 @@ export const Env = () => {
       </form>
     </FormProvider>
   );
-};
+}

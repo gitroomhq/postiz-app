@@ -1,4 +1,6 @@
-import { FC, useEffect, useMemo, useState } from 'react';
+import {
+  FC, useEffect, useMemo, useState,
+} from 'react';
 import { VoteValues } from '@clickvote/frontend/components/votes/add.votes.component';
 import {
   ClickVoteComponent,
@@ -15,7 +17,7 @@ import clsx from 'clsx';
 
 const options = {
   single: [
-    { name: 'Likes', component: LikeStyle, componentName: 'LikeStyle'},
+    { name: 'Likes', component: LikeStyle, componentName: 'LikeStyle' },
     { name: 'Upvote', component: UpvoteStyle, componentName: 'UpvoteStyle' },
   ],
   range: [{ name: 'Stars', component: RangeStyle, componentName: 'RangeStyle' }],
@@ -25,7 +27,7 @@ const componentConverter = (
   info: VoteValues,
   user: UserFromRequest,
   finalComponent: any,
-  componentName: string
+  componentName: string,
 ) => {
   const template = `import {
   ClickVoteComponent,
@@ -79,18 +81,14 @@ function RenderComponent () {
 export const RenderComponent: FC<VoteValues> = (params) => {
   const [style, setStyle] = useState<any>(undefined);
   const [currentOption, setCurrentOption] = useState(
-    options[params.type as 'single' | 'range'][0]
+    options[params.type as 'single' | 'range'][0],
   );
 
   useEffect(() => {
-    import('react-syntax-highlighter/dist/esm/styles/prism/funky').then((mod) =>
-      setStyle(mod.default)
-    );
+    import('react-syntax-highlighter/dist/esm/styles/prism/funky').then((mod) => setStyle(mod.default));
   });
   const { user } = useUserContext();
-  const info = useMemo(() => {
-    return componentConverter(style, params, user, currentOption.component, currentOption.componentName);
-  }, [params, user, style, currentOption]);
+  const info = useMemo(() => componentConverter(style, params, user, currentOption.component, currentOption.componentName), [params, user, style, currentOption]);
 
   return (
     <div className="ml-10 flex flex-col">
@@ -101,7 +99,7 @@ export const RenderComponent: FC<VoteValues> = (params) => {
               'flex-1 hover:bg-[#22252D]',
               p.name === currentOption.name
                 ? 'bg-[#22252D] border-0 text-[#EDEEF0]'
-                : 'bg-transparent border-0 text-[#9FA4AC]'
+                : 'bg-transparent border-0 text-[#9FA4AC]',
             )}
             onClick={() => setCurrentOption(p)}
             key={p.name}

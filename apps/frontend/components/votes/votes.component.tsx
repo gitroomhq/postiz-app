@@ -4,8 +4,8 @@ import { axiosInstance } from '@clickvote/frontend/helper/axios';
 import { LinkButton } from '@clickvote/frontend/components/form/link.button';
 import { Button } from '@clickvote/frontend/components/form/button';
 import Link from 'next/link';
-import { Title } from '@tremor/react';
 import {
+  Title,
   Table,
   TableHead,
   TableHeaderCell,
@@ -14,6 +14,7 @@ import {
   TableCell,
   Card,
 } from '@tremor/react';
+
 import { Dialog, Transition } from '@headlessui/react';
 import { Trash2 } from 'lucide-react';
 
@@ -28,9 +29,7 @@ type VoteProps = {
 export const VotesComponent: FC = () => {
   const { data, isLoading } = useQuery<{ votes: VoteProps[] }>({
     queryKey: ['votes'],
-    queryFn: async () => {
-      return (await axiosInstance.get('/votes')).data;
-    },
+    queryFn: async () => (await axiosInstance.get('/votes')).data,
   });
 
   return (
@@ -71,14 +70,16 @@ export const VotesComponent: FC = () => {
   );
 };
 
-const Vote: FC<VoteProps> = ({ _id, name, count, sum, type }) => {
+const Vote: FC<VoteProps> = ({
+  _id, name, count, sum, type,
+}) => {
   const [isAlertVisible, setIsAlertVisible] = useState(false);
   const queryClient = useQueryClient();
   const { mutate, isLoading } = useMutation({
     mutationFn: async () => axiosInstance.delete(`/votes/${_id}`),
     onSuccess: () => {
       queryClient.invalidateQueries(['votes']);
-    }
+    },
   });
 
   function handleToggleAlertVisibility() {
@@ -115,7 +116,7 @@ const Vote: FC<VoteProps> = ({ _id, name, count, sum, type }) => {
             className="w-[44px] h-[44px]"
             aria-label={`Delete ${name} vote`}
           >
-            <Trash2 size={24} color='#FFFFFF' aria-hidden />
+            <Trash2 size={24} color="#FFFFFF" aria-hidden />
           </Button>
         </TableCell>
       </TableRow>
@@ -184,4 +185,4 @@ const Vote: FC<VoteProps> = ({ _id, name, count, sum, type }) => {
       </Transition>
     </>
   );
-}
+};

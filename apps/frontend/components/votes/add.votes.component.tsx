@@ -1,4 +1,6 @@
-import { ChangeEvent, FC, useCallback } from 'react';
+import {
+  ChangeEvent, FC, useCallback, useState,
+} from 'react';
 import { Input } from '@clickvote/frontend/components/form/input';
 import { FormProvider, Resolver, useForm } from 'react-hook-form';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
@@ -11,7 +13,6 @@ import { useRouter } from 'next/router';
 import { Button } from '@clickvote/frontend/components/form/button';
 import { toast } from 'react-toastify';
 import { RenderComponent } from '@clickvote/frontend/components/votes/render.component';
-import { useState } from 'react';
 
 export type VoteValues = {
   _id?: string;
@@ -24,23 +25,22 @@ export type VoteValues = {
 const resolver: Resolver<VoteValues> = classValidatorResolver(VotesValidation);
 
 export const AddVotesComponent: FC<{ initialValues?: VoteValues }> = (
-  props
+  props,
 ) => {
   const router = useRouter();
   const { initialValues } = props;
   const { mutate } = useMutation(
-    async (values: VoteValues) =>
-      (
-        await axiosInstance[initialValues ? 'put' : 'post'](
-          `/votes${initialValues ? `/${initialValues._id}` : ``}`,
-          {
-            name: values.name,
-            type: values.type,
-            start: values.start,
-            end: values.end,
-          }
-        )
-      ).data
+    async (values: VoteValues) => (
+      await axiosInstance[initialValues ? 'put' : 'post'](
+        `/votes${initialValues ? `/${initialValues._id}` : ''}`,
+        {
+          name: values.name,
+          type: values.type,
+          start: values.start,
+          end: values.end,
+        },
+      )
+    ).data,
   );
 
   const [err, setErr] = useState('');
@@ -79,55 +79,51 @@ export const AddVotesComponent: FC<{ initialValues?: VoteValues }> = (
   });
 
   return (
-    <>
-      <div className="flex">
-        <div className="flex-1">
-          <FormProvider {...methods}>
-            <form onSubmit={handleSubmit}>
-              <Input
-                name="name"
-                label="Name"
-                onChange={changeEvent}
-                disabled={!!initialValues}
-              />
-              <div className="mt-3 mb-3 text-red-500">{err}</div>
-              <Select name="type" label="Type" disabled={!!initialValues}>
-                <option value="">--Select--</option>
-                <option value="single">Single</option>
-                <option value="range">Range</option>
-              </Select>
-              <FormContextRender variablesToWatch={['type']}>
-                {({ type }) =>
-                  type === 'range' && (
-                    <div className="flex space-x-10">
-                      <div className="flex-1">
-                        <Input
-                          name="start"
-                          type="number"
-                          label="Range From"
-                          disabled={!!initialValues}
-                          postChange={() => methods.trigger('end')}
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <Input
-                          name="end"
-                          type="number"
-                          label="Range To"
-                          disabled={!!initialValues}
-                          postChange={() => methods.trigger('start')}
-                        />
-                      </div>
-                    </div>
-                  )
-                }
-              </FormContextRender>
-              {!initialValues && <Button type="submit">Save!</Button>}
-            </form>
-          </FormProvider>
-        </div>
-        {!!initialValues && <RenderComponent {...initialValues} />}
+    <div className="flex">
+      <div className="flex-1">
+        <FormProvider {...methods}>
+          <form onSubmit={handleSubmit}>
+            <Input
+              name="name"
+              label="Name"
+              onChange={changeEvent}
+              disabled={!!initialValues}
+            />
+            <div className="mt-3 mb-3 text-red-500">{err}</div>
+            <Select name="type" label="Type" disabled={!!initialValues}>
+              <option value="">--Select--</option>
+              <option value="single">Single</option>
+              <option value="range">Range</option>
+            </Select>
+            <FormContextRender variablesToWatch={['type']}>
+              {({ type }) => type === 'range' && (
+                <div className="flex space-x-10">
+                  <div className="flex-1">
+                    <Input
+                      name="start"
+                      type="number"
+                      label="Range From"
+                      disabled={!!initialValues}
+                      postChange={() => methods.trigger('end')}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <Input
+                      name="end"
+                      type="number"
+                      label="Range To"
+                      disabled={!!initialValues}
+                      postChange={() => methods.trigger('start')}
+                    />
+                  </div>
+                </div>
+              )}
+            </FormContextRender>
+            {!initialValues && <Button type="submit">Save!</Button>}
+          </form>
+        </FormProvider>
       </div>
-    </>
+      {!!initialValues && <RenderComponent {...initialValues} />}
+    </div>
   );
 };

@@ -19,10 +19,8 @@ const Index: MainFC<{ vote: VoteValues }> = (props) => {
 export const getServerSideProps: GetServerSideProps<
   object,
   { id: string }
-> = async ({ req, params }) => {
-  return loadUser(req, async (axios, user) => ({
-    props: { user, vote: (await axios.get(`/votes/${params?.id}`)).data },
-  }));
-};
+> = async ({ req, params }) => loadUser(req, async (axios, user) => ({
+  props: { user, vote: (await axios.get(`/votes/${params?.id}`)).data },
+}));
 
 export default Index;

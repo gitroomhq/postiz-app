@@ -2,7 +2,7 @@ import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { EncryptionService } from '@clickvote/nest-libraries';
 import dayjs from 'dayjs';
 
-@Injectable()
+Injectable()
 export class AuthGuard implements CanActivate {
   constructor(private _encryptionService: EncryptionService) {}
   async canActivate(context: ExecutionContext): Promise<boolean> {

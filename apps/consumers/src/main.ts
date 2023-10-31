@@ -5,14 +5,14 @@
 
 import { NestFactory } from '@nestjs/core';
 
-import { AppModule } from './app/app.module';
 import { MicroserviceOptions } from '@nestjs/microservices';
 import { BullMqTransport } from '@clickvote/nest-libraries';
+import { AppModule } from './app/app.module';
 
 async function bootstrap() {
   const strategy = new BullMqTransport();
   // some comment again
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
+  const app = await NestFactory.createMicroservice < MicroserviceOptions > (
     AppModule,
     {
       strategy,

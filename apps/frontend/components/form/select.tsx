@@ -1,4 +1,6 @@
-import { ChangeEvent, DetailedHTMLProps, FC, InputHTMLAttributes } from 'react';
+import {
+  ChangeEvent, DetailedHTMLProps, FC, InputHTMLAttributes,
+} from 'react';
 import { useFormContext } from 'react-hook-form';
 import clsx from 'clsx';
 
@@ -27,7 +29,7 @@ export const Select: FC<
   } = useFormContext();
 
   const { onChange: onChangeFromRegistration, ...allOther } = register(
-    all.name!
+    all.name!,
   );
   const onChangeFunc = async (event: ChangeEvent<HTMLSelectElement>) => {
     if (onChange) {
@@ -47,7 +49,7 @@ export const Select: FC<
         {...allOther}
         {...all}
         onChange={onChangeFunc}
-        className={clsx(`p-2 w-full bg-[#fff0fd]/10 border border-[#EBECED]/20 rounded-md`, className)}
+        className={clsx('p-2 w-full bg-[#fff0fd]/10 border border-[#EBECED]/20 rounded-md', className)}
       >
         {children}
       </select>

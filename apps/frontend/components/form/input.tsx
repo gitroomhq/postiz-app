@@ -1,4 +1,6 @@
-import { ChangeEvent, DetailedHTMLProps, FC, InputHTMLAttributes } from 'react';
+import {
+  ChangeEvent, DetailedHTMLProps, FC, InputHTMLAttributes,
+} from 'react';
 import { useFormContext } from 'react-hook-form';
 import clsx from 'clsx';
 
@@ -10,7 +12,9 @@ export const Input: FC<
     labelClassName?: string;
   }
 > = (props) => {
-  const { label, postChange, hideErrors, className, onChange, ...all } = props;
+  const {
+    label, postChange, hideErrors, className, onChange, ...all
+  } = props;
   const {
     register,
     formState: { errors },
@@ -18,7 +22,7 @@ export const Input: FC<
 
   const { onChange: onChangeFromRegistration, ...allOther } = register(
     all.name!,
-    all?.type === 'number' ? { setValueAs: (v) => +v } : {}
+    all?.type === 'number' ? { setValueAs: (v) => +v } : {},
   );
   const onChangeFunc = async (event: ChangeEvent<HTMLInputElement>) => {
     if (onChange) {
@@ -34,15 +38,15 @@ export const Input: FC<
   return (
     <>
       {!!label && (
-        <div className={clsx(`mb-2`, props.labelClassName)}>{label}</div>
+        <div className={clsx('mb-2', props.labelClassName)}>{label}</div>
       )}
       <input
         {...allOther}
         {...all}
         onChange={onChangeFunc}
         className={clsx(
-          `p-2 w-full bg-[#fff0fd]/10 text-[#EBECED] border border-[#EBECED]/20 rounded-md focus:ring-2 focus:ring-light-purple focus:outline-none`,
-          className
+          'p-2 w-full bg-[#fff0fd]/10 text-[#EBECED] border border-[#EBECED]/20 rounded-md focus:ring-2 focus:ring-light-purple focus:outline-none',
+          className,
         )}
       />
       <div className="text-red-500">

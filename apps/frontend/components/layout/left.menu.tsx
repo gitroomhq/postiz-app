@@ -8,14 +8,12 @@ type FormValues = {
   org: string;
 };
 
-const resolver: Resolver<FormValues> = async (values) => {
-  return {
-    values: values.org ? values : {},
-    errors: {},
-  };
-};
+const resolver: Resolver<FormValues> = async (values) => ({
+  values: values.org ? values : {},
+  errors: {},
+});
 
-const LeftMenu = () => {
+function LeftMenu() {
   const { user } = useUserContext();
   const methods = useForm<FormValues>({
     mode: 'all',
@@ -74,6 +72,6 @@ const LeftMenu = () => {
       </div>
     </div>
   );
-};
+}
 
 export default LeftMenu;

@@ -34,7 +34,7 @@ function Register() {
         setErr('Email already exists');
       }
       setIsSubmitting(false);
-    }
+    },
   );
 
   return (

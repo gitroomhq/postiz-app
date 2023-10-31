@@ -8,7 +8,7 @@ async function bootstrap() {
   const port = process.env.PORT || 3001;
   await app.listen(port);
   Logger.log(
-    `🚀 Websockets is running on: http://localhost:${port}`
+    `🚀 Websockets is running on: http://localhost:${port}`,
   );
 }
 

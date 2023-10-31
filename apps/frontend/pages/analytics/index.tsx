@@ -13,8 +13,6 @@ const Index: MainFC = (props) => {
   );
 };
 
-export const getServerSideProps: GetServerSideProps = async ({ req }) => {
-  return loadUser(req, async () => ({}));
-};
+export const getServerSideProps: GetServerSideProps = async ({ req }) => loadUser(req, async () => ({}));
 
 export default Index;

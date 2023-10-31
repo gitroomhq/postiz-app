@@ -31,11 +31,11 @@ function Login() {
       } catch (err) {
         setErr('Wrong email or password');
       }
-    }
+    },
   );
 
   return (
-    <div className={`flex w-full h-screen justify-center`}>
+    <div className="flex w-full h-screen justify-center">
       <div className="w-1/2 bg-gradient-black">
         <div className="flex-col flex justify-center items-center h-full">
           <Logo responsive={false} />

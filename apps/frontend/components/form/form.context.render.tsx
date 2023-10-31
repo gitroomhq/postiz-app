@@ -14,7 +14,7 @@ export const FormContextRender: FC<{
       ...all,
       [key]: a[index],
     }),
-    {}
+    {},
   );
 
   return <>{children(values)}</>;

@@ -1,4 +1,4 @@
-import {Logger, ValidationPipe} from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { MainModule } from '@clickvote/backend/src/main.module';
 import cookieParser from 'cookie-parser';
@@ -9,7 +9,7 @@ async function bootstrap() {
 
   app.enableCors({
     origin: [process.env.FRONT_END_URL],
-    credentials: true
+    credentials: true,
   });
 
   app.use(morgan('combined'));
@@ -20,7 +20,7 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   await app.listen(port);
   Logger.log(
-    `🚀 Application is running on: http://localhost:${port}`
+    `🚀 Application is running on: http://localhost:${port}`,
   );
 }
 

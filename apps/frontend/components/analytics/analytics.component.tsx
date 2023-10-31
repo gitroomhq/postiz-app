@@ -25,7 +25,7 @@ const dateFormatter = (data: string) => {
   return formattedDate;
 };
 
-const Chart = ({
+function Chart({
   voteName,
   voteTo,
   dateRange,
@@ -33,30 +33,26 @@ const Chart = ({
   voteName: string;
   voteTo?: string;
   dateRange?: string;
-}) => {
+}) {
   const { data, isLoading } = useQuery({
     queryKey: ['analytics', voteName, voteTo, dateRange],
     enabled: !!voteName,
-    queryFn: async () => {
-      return (
-        await axiosInstance.get(`/votes/${voteName}/analytics`, {
-          params: {
-            ...(voteTo ? { voteTo } : {}),
-            ...(dateRange ? { dateRange } : {}),
-          },
-        })
-      ).data;
-    },
+    queryFn: async () => (
+      await axiosInstance.get(`/votes/${voteName}/analytics`, {
+        params: {
+          ...(voteTo ? { voteTo } : {}),
+          ...(dateRange ? { dateRange } : {}),
+        },
+      })
+    ).data,
   });
 
   const showData = !isLoading && !!data?.length;
 
-  const formatedData = useMemo(() => {
-    return data?.map((item: any) => ({
-      _id: dateFormatter(item._id),
-      count: item.count,
-    }));
-  }, [data]);
+  const formatedData = useMemo(() => data?.map((item: any) => ({
+    _id: dateFormatter(item._id),
+    count: item.count,
+  })), [data]);
 
   if (!showData) {
     return <div className="text-violet-200">No data</div>;
@@ -72,14 +68,12 @@ const Chart = ({
       colors={['purple']}
     />
   );
-};
+}
 
 export default function Dashboard() {
   const { data, isLoading } = useQuery({
     queryKey: ['votes'],
-    queryFn: async () => {
-      return (await axiosInstance.get('/votes')).data;
-    },
+    queryFn: async () => (await axiosInstance.get('/votes')).data,
   });
 
   const [voteId, setvoteId] = useState('');
@@ -89,9 +83,7 @@ export default function Dashboard() {
 
   const { data: data2, isLoading: isLoading2 } = useQuery({
     queryKey: ['votesTo', voteId],
-    queryFn: async () => {
-      return (await axiosInstance.get(`/votes/${voteId}/to`)).data;
-    },
+    queryFn: async () => (await axiosInstance.get(`/votes/${voteId}/to`)).data,
   });
 
   useEffect(() => {

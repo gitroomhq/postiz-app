@@ -1,7 +1,7 @@
 import { DefaultSeo } from 'next-seo';
 import LogoSvg from '../../public/images/logo.svg';
 
-const DefaultSEO = () => {
+function DefaultSEO() {
   return (
     <DefaultSeo
       title="Clickvote"
@@ -22,6 +22,6 @@ const DefaultSEO = () => {
       }}
     />
   );
-};
+}
 
 export default DefaultSEO;

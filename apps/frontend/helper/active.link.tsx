@@ -7,12 +7,12 @@ type ActiveLinkProps = LinkProps & {
   activeClassName: string;
 };
 
-const ActiveLink = ({
+function ActiveLink({
   children,
   activeClassName,
   className,
   ...props
-}: PropsWithChildren<ActiveLinkProps>) => {
+}: PropsWithChildren<ActiveLinkProps>) {
   const { asPath, isReady } = useRouter();
   const [computedClassName, setComputedClassName] = useState(className);
 
@@ -23,17 +23,16 @@ const ActiveLink = ({
       // Static route will be matched via props.href
       const linkPathname = new URL(
         (props.as || props.href) as string,
-        location.href
+        location.href,
       ).pathname;
 
       // Using URL().pathname to get rid of query and hash
       const activePathname = new URL(asPath, location.href).pathname;
 
       console.log(linkPathname, activePathname);
-      const newClassName =
-        activePathname.indexOf(linkPathname) === 0
-          ? `${className} ${activeClassName}`.trim()
-          : className;
+      const newClassName = activePathname.indexOf(linkPathname) === 0
+        ? `${className} ${activeClassName}`.trim()
+        : className;
 
       if (newClassName !== computedClassName) {
         setComputedClassName(newClassName);
@@ -54,6 +53,6 @@ const ActiveLink = ({
       {children}
     </Link>
   );
-};
+}
 
 export default ActiveLink;

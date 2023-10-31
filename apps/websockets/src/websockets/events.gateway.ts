@@ -20,7 +20,7 @@ import { AuthGuard } from './auth.guard';
 import { IdFromClient, KeyFromClient } from '../helpers/key.from.client';
 import { v4 as uuidv4 } from 'uuid';
 
-@WebSocketGateway({
+WebSocketGateway({
   cors: {
     origin: '*',
   },
