@@ -106,7 +106,7 @@ https://github.com/clickvote/clickvote/tree/main/libs/react-component/src/lib/ex
 
 Nevo - [nevo@clickvote.dev](mailto:nevo@clickvote.dev)
 
-<b>STILL UNDER DEVELOPMENT</b>
+<b>STILL UNDER DEVELOPMENT 🚧</b>
 <hr />
 
 <p align="center">
