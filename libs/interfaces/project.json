@@ -1,21 +1,21 @@
 {
-  "name": "validations",
+  "name": "interfaces",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/validations/src",
+  "sourceRoot": "libs/interfaces/src",
   "projectType": "library",
   "targets": {
     "lint": {
       "executor": "@nx/linter:eslint",
       "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": ["libs/validations/**/*.ts"]
+        "lintFilePatterns": ["libs/interfaces/**/*.ts"]
       }
     },
     "test": {
       "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
-        "jestConfig": "libs/validations/jest.config.ts",
+        "jestConfig": "libs/interfaces/jest.config.ts",
         "passWithNoTests": true
       },
       "configurations": {
