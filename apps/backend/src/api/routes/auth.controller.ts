@@ -3,7 +3,7 @@ import {CreateOrgUserDto} from "@gitroom/nestjs-libraries/dtos/auth/create.org.u
 import {LoginUserDto} from "@gitroom/nestjs-libraries/dtos/auth/login.user.dto";
 import {AuthService} from "@gitroom/backend/services/auth/auth.service";
 
-@Controller()
+@Controller('/auth')
 export class AuthController {
   constructor(
       private _authService: AuthService
