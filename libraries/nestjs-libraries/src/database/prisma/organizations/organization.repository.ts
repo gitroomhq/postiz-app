@@ -24,6 +24,7 @@ export class OrganizationRepository {
                                 password: body.password ? AuthService.hashPassword(body.password) : '',
                                 providerName: body.provider,
                                 providerId: body.providerId || '',
+                                timezone: 0
                             }
                         }
                     }

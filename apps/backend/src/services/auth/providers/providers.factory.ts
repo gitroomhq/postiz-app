@@ -3,7 +3,7 @@ import {GithubProvider} from "@gitroom/backend/services/auth/providers/github.pr
 import {ProvidersInterface} from "@gitroom/backend/services/auth/providers.interface";
 
 export class ProvidersFactory {
-    static loadProviders(provider: Provider): ProvidersInterface {
+    static loadProvider(provider: Provider): ProvidersInterface {
         switch (provider) {
             case Provider.GITHUB:
                 return new GithubProvider();

@@ -21,7 +21,8 @@
       "@gitroom/frontend/*": ["apps/frontend/src/*"],
       "@gitroom/nestjs-libraries/*": ["libraries/nestjs-libraries/src/*"],
       "@gitroom/helpers/*": ["libraries/helpers/src/*"],
-      "@gitroom/workers/*": ["apps/workers/src/*"]
+      "@gitroom/workers/*": ["apps/workers/src/*"],
+      "@gitroom/cron/*": ["apps/cron/src/*"]
     }
   },
   "exclude": ["node_modules", "tmp"]

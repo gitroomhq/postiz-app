@@ -41,7 +41,7 @@ export class AuthService {
     }
 
     private async loginOrRegisterProvider(provider: Provider, body: LoginUserDto) {
-        const providerInstance = ProvidersFactory.loadProviders(provider);
+        const providerInstance = ProvidersFactory.loadProvider(provider);
         const providerUser = await providerInstance.getUser(body.providerToken);
         if (!providerUser) {
             throw new Error('Invalid provider token');

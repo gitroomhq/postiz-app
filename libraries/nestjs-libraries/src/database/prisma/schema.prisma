@@ -11,23 +11,33 @@ datasource db {
 }
 
 model Organization {
-  id          String       @id @default(uuid())
-  name        String
-  description String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  users       UserOrganization[]
+  id           String             @id @default(uuid())
+  name         String
+  description  String?
+  users        UserOrganization[]
+  media        Media[]
+  paymentId    String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  github       GitHub[]
+  subscription Subscription?
+  channel      Channel?
+  tags         Tag[]
+  postTags     PostTag[]
+  postMedia    PostMedia[]
+  post         Post[]
 }
 
 model User {
-  id            String       @id @default(uuid())
+  id            String             @id @default(uuid())
   email         String
   password      String?
   providerName  Provider
   providerId    String?
   organizations UserOrganization[]
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  timezone      Int
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
 
   @@unique([email, providerName])
 }
@@ -43,9 +53,178 @@ model UserOrganization {
   updatedAt      DateTime     @updatedAt
 }
 
+model GitHub {
+  id             String       @id @default(uuid())
+  login          String
+  name           String
+  token          String
+  jobId          String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  stars          Star[]
+
+  @@index([login])
+}
+
+model Trending {
+  id        String   @id @default(uuid())
+  login     String
+  feed      Int
+  language  Int
+  date      DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([login])
+}
+
+model Star {
+  id         String   @id @default(uuid())
+  githubId   String
+  github     GitHub   @relation(fields: [githubId], references: [id])
+  stars      Int
+  totalStars Int
+  date       DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Media {
+  id             String       @id @default(uuid())
+  name           String
+  url            String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
+  posts          PostMedia[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model Subscription {
+  id                String            @id @default(cuid())
+  organizationId    String            @unique
+  organization      Organization      @relation(fields: [organizationId], references: [id])
+  subscriptionTier  SubscriptionTier
+  subscriptionState SubscriptionState
+  identifier        String?
+  cancelAt          DateTime?
+  period            Period
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+}
+
+model Channel {
+  id              String          @id @default(cuid())
+  organizationId  String          @unique
+  organization    Organization    @relation(fields: [organizationId], references: [id])
+  channelProvider ChannelProvider
+  type            Type
+  token           String
+  refreshToken    String?
+  additionalData  Json?
+  posts           Post[]
+}
+
+model Tag {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  posts          PostTag[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model PostTag {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  postId         String
+  post           Post         @relation(fields: [postId], references: [id])
+  tagId          String
+  tag            Tag          @relation(fields: [tagId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model PostMedia {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  postId         String
+  post           Post         @relation(fields: [postId], references: [id])
+  mediaId        String
+  media          Media        @relation(fields: [mediaId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model Post {
+  id                String       @id @default(cuid())
+  state             State        @default(QUEUE)
+  queueId           String?
+  publishDate       DateTime
+  organizationId    String
+  channelId         String
+  organization      Organization @relation(fields: [organizationId], references: [id])
+  channel           Channel      @relation(fields: [channelId], references: [id])
+  title             String?
+  description       String?
+  canonicalUrl      String?
+  canonicalPostId   String?
+  parentPostId      String?
+  canonicalPost     Post?       @relation("canonicalPostId", fields: [canonicalPostId], references: [id])
+  parentPost        Post?       @relation("parentPostId", fields: [parentPostId], references: [id])
+  canonicalChildren Post[]      @relation("canonicalPostId")
+  childrenPost      Post[]      @relation("parentPostId")
+  tags              PostTag[]
+  media             PostMedia[]
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+}
+
+enum Type {
+  ARTICLE
+  SOCIAL
+}
+
+enum State {
+  QUEUE
+  SENT
+  DRAFT
+}
+
+enum ChannelProvider {
+  TWITTER
+  LINKEDIN
+  DEV
+  HASHNODE
+  MEDIUM
+  HACKERNOON
+  YOUTUBE
+  GITHUB
+  DISCORD
+}
+
+enum SubscriptionTier {
+  BASIC
+  PRO
+}
+
+enum SubscriptionState {
+  ACTIVE
+  INACTIVE
+}
+
+enum Period {
+  MONTHLY
+  YEARLY
+}
+
 enum Provider {
-    LOCAL
-    GITHUB
+  LOCAL
+  GITHUB
 }
 
 enum Role {
