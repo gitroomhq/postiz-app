@@ -26,6 +26,7 @@ model Organization {
   postTags     PostTag[]
   postMedia    PostMedia[]
   post         Post[]
+  slots        Slots[]
 }
 
 model User {
@@ -160,6 +161,14 @@ model PostMedia {
   updatedAt      DateTime     @updatedAt
 }
 
+model Slots {
+    id             String       @id @default(cuid())
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id])
+    day            Int
+    time           Int
+}
+
 model Post {
   id                String       @id @default(cuid())
   state             State        @default(QUEUE)
@@ -174,6 +183,7 @@ model Post {
   canonicalUrl      String?
   canonicalPostId   String?
   parentPostId      String?
+  releaseURL        String?
   canonicalPost     Post?       @relation("canonicalPostId", fields: [canonicalPostId], references: [id])
   parentPost        Post?       @relation("parentPostId", fields: [parentPostId], references: [id])
   canonicalChildren Post[]      @relation("canonicalPostId")

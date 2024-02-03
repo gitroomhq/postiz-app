@@ -1,23 +1,19 @@
-import { NestFactory } from '@nestjs/core';
+import {NestFactory} from '@nestjs/core';
 
-import { AppModule } from './app/app.module';
-import { MicroserviceOptions } from '@nestjs/microservices';
-import {BullMqTransport} from "@gitroom/nestjs-libraries/bullmq-transport/bullmq-transport";
+import {AppModule} from './app/app.module';
+import {MicroserviceOptions} from '@nestjs/microservices';
+import {BullMqServer} from "@gitroom/nestjs-libraries/bull-mq-transport/server/bull-mq.server";
 
 async function bootstrap() {
-  const strategy = new BullMqTransport();
-  // some comment again
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
-    AppModule,
-    {
-      strategy,
-    }
-  );
+    const load = await NestFactory.create(AppModule);
+    const strategy = load.get(BullMqServer);
 
-  await app.listen();
+    // some comment again
+    const app = await NestFactory.createMicroservice<MicroserviceOptions>(AppModule, {
+        strategy,
+    });
 
-  // Let's make sure everything runs first!
-  await strategy.activate();
+    await app.listen();
 }
 
 bootstrap();

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
-import {CheckTrending} from "./app/tasks/check.trending";
+import {CheckTrending} from "./tasks/check.trending";
 
 @Module({
     imports: [ScheduleModule.forRoot()],

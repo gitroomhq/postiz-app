@@ -6,6 +6,7 @@ import {UsersService} from "@gitroom/nestjs-libraries/database/prisma/users/user
 import {OrganizationService} from "@gitroom/nestjs-libraries/database/prisma/organizations/organization.service";
 import {AuthService as AuthChecker} from "@gitroom/helpers/auth/auth.service";
 import {ProvidersFactory} from "@gitroom/backend/services/auth/providers/providers.factory";
+import * as console from "console";
 
 @Injectable()
 export class AuthService {
