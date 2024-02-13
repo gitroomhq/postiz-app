@@ -21,7 +21,7 @@ model Organization {
   updatedAt    DateTime           @updatedAt
   github       GitHub[]
   subscription Subscription?
-  channel      Channel?
+  Integration  Integration[]
   tags         Tag[]
   postTags     PostTag[]
   postMedia    PostMedia[]
@@ -56,39 +56,46 @@ model UserOrganization {
 
 model GitHub {
   id             String       @id @default(uuid())
-  login          String
-  name           String
+  login          String?
+  name           String?
   token          String
-  jobId          String
+  jobId          String?
   organization   Organization @relation(fields: [organizationId], references: [id])
   organizationId String
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
-  stars          Star[]
 
   @@index([login])
 }
 
 model Trending {
-  id        String   @id @default(uuid())
-  login     String
-  feed      Int
-  language  Int
-  date      DateTime
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  @@index([login])
+  id           String   @id @default(uuid())
+  trendingList String
+  language     String?
+  hash         String
+  date         DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([language])
+}
+
+model TrendingLog {
+  id           String   @id @default(uuid())
+  language     String?
+  date         DateTime
 }
 
 model Star {
   id         String   @id @default(uuid())
-  githubId   String
-  github     GitHub   @relation(fields: [githubId], references: [id])
   stars      Int
   totalStars Int
-  date       DateTime @default(now())
+  login      String
+  date       DateTime @default(now()) @db.Date
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
+  @@unique([login, date])
 }
 
 model Media {
@@ -115,16 +122,20 @@ model Subscription {
   updatedAt         DateTime          @updatedAt
 }
 
-model Channel {
+model Integration {
   id              String          @id @default(cuid())
-  organizationId  String          @unique
+  internalId      String
+  organizationId  String
+  name            String
   organization    Organization    @relation(fields: [organizationId], references: [id])
-  channelProvider ChannelProvider
-  type            Type
+  providerIdentifier String
+  type            String
   token           String
+  tokenExpiration DateTime?
   refreshToken    String?
-  additionalData  Json?
   posts           Post[]
+
+  @@unique([organizationId, internalId])
 }
 
 model Tag {
@@ -175,9 +186,9 @@ model Post {
   queueId           String?
   publishDate       DateTime
   organizationId    String
-  channelId         String
+  IntegrationId     String
   organization      Organization @relation(fields: [organizationId], references: [id])
-  channel           Channel      @relation(fields: [channelId], references: [id])
+  Integration       Integration      @relation(fields: [IntegrationId], references: [id])
   title             String?
   description       String?
   canonicalUrl      String?
@@ -194,27 +205,10 @@ model Post {
   updatedAt         DateTime     @updatedAt
 }
 
-enum Type {
-  ARTICLE
-  SOCIAL
-}
-
 enum State {
   QUEUE
   SENT
   DRAFT
-}
-
-enum ChannelProvider {
-  TWITTER
-  LINKEDIN
-  DEV
-  HASHNODE
-  MEDIUM
-  HACKERNOON
-  YOUTUBE
-  GITHUB
-  DISCORD
 }
 
 enum SubscriptionTier {

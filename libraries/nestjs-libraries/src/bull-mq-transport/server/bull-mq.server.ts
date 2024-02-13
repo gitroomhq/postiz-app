@@ -52,6 +52,7 @@ export class BullMqServer extends Server implements CustomTransportStrategy {
           },
           {
             ...this.options,
+            ...handler?.extras
           },
         );
         this.workers.set(pattern, worker);

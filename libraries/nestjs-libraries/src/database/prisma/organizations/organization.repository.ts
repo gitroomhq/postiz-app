@@ -11,6 +11,26 @@ export class OrganizationRepository {
     ) {
     }
 
+    async getFirstOrgByUserId(userId: string) {
+        return this._organization.model.organization.findFirst({
+            where: {
+                users: {
+                    some: {
+                        userId
+                    }
+                }
+            }
+        });
+    }
+
+    async getOrgById(id: string) {
+        return this._organization.model.organization.findUnique({
+            where: {
+                id
+            }
+        });
+    }
+
     async createOrgAndUser(body: Omit<CreateOrgUserDto, 'providerToken'> & {providerId?: string}) {
         return this._organization.model.organization.create({
             data: {
@@ -31,6 +51,7 @@ export class OrganizationRepository {
                 }
             },
             select: {
+                id: true,
                 users: {
                     select: {
                         user: true

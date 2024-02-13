@@ -1,14 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import {Cron} from '@nestjs/schedule';
 import {StarsService} from "@gitroom/nestjs-libraries/database/prisma/stars/stars.service";
-import {BullMqClient} from "@gitroom/nestjs-libraries/bullmq-transport/bullmq-client";
-import {WorkerServiceProducer} from "@gitroom/nestjs-libraries/bullmq-transport/bullmq-register";
+import {BullMqClient} from "@gitroom/nestjs-libraries/bull-mq-transport/client/bull-mq.client";
 
 @Injectable()
 export class CheckStars {
     constructor(
         private _starsService: StarsService,
-        @WorkerServiceProducer() private _workerServiceProducer: BullMqClient
+        private _workerServiceProducer: BullMqClient
     ) {
     }
     @Cron('0 0 * * *')

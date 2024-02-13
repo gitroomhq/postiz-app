@@ -12,9 +12,9 @@ export const menuItems = [
         path: '/analytics',
     },
     {
-        name: 'Schedule',
-        icon: 'schedule',
-        path: '/schedule',
+        name: 'Launches',
+        icon: 'launches',
+        path: '/launches',
     },
     {
         name: 'Media',
@@ -33,22 +33,19 @@ export const menuItems = [
     },
 ];
 
-export const LeftMenu: FC = () => {
+export const TopMenu: FC = () => {
     const path = usePathname();
     return (
         <div className="flex flex-col h-full">
-            <ul className="gap-5 flex flex-col flex-1">
+            <ul className="gap-5 flex flex-1 items-center text-[18px]">
                 {menuItems.map((item, index) => (
                     <li key={item.name}>
-                        <Link href={item.path} className={clsx("flex gap-2 items-center", menuItems.map(p => p.path).indexOf(path) === index && 'font-bold')}>
-                            {item.name}
+                        <Link href={item.path} className={clsx("flex gap-2 items-center box", menuItems.map(p => p.path).indexOf(path) === index ? 'text-primary showbox' : 'text-gray')}>
+                            <span>{item.name}</span>
                         </Link>
                     </li>
                 ))}
             </ul>
-            <div>
-                <a href="/auth/logout">Logout</a>
-            </div>
         </div>
     );
 }

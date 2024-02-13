@@ -1,3 +1,58 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/*body, html {*/
+/*    overflow-x: hidden;*/
+/*}*/
+.box {
+    position: relative;
+    padding: 8px 24px;
+}
+.box span {
+    position: relative;
+    z-index: 2;
+}
+.box:after {
+    border-radius: 50px;
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+    content: "";
+    position: absolute;
+    background: white;
+    opacity: 0;
+    z-index: 1;
+    transition: all 0.3s ease-in-out;
+}
+
+.showbox {
+    color: black;
+}
+.showbox:after {
+    opacity: 1;
+    background: white;
+    transition: all 0.3s ease-in-out;
+}
+.table1 {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table1 thead {
+    background-color: #111423;
+    height: 44px;
+    font-size: 12px;
+    border-bottom: 1px solid #28344F;
+}
+.table1 thead th, .table1 tbody td {
+    text-align: left;
+    padding: 14px 24px;
+}
+
+.table1 tbody td {
+    padding: 16px 24px;
+    font-family: Inter;
+    font-size: 14px;
+}

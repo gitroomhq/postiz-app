@@ -9,6 +9,8 @@
     "strictPropertyInitialization": false,
     "experimentalDecorators": true,
     "noPropertyAccessFromIndexSignature": false,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "importHelpers": true,
     "target": "es2015",
     "module": "esnext",
@@ -20,6 +22,7 @@
       "@gitroom/backend/*": ["apps/backend/src/*"],
       "@gitroom/frontend/*": ["apps/frontend/src/*"],
       "@gitroom/nestjs-libraries/*": ["libraries/nestjs-libraries/src/*"],
+      "@gitroom/react/*": ["libraries/react-shared-libraries/src/*"],
       "@gitroom/helpers/*": ["libraries/helpers/src/*"],
       "@gitroom/workers/*": ["apps/workers/src/*"],
       "@gitroom/cron/*": ["apps/cron/src/*"]

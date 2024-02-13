@@ -22,10 +22,13 @@ export class AuthController {
         domain: '.' + new URL(process.env.FRONTEND_URL!).hostname,
         secure: true,
         httpOnly: true,
+        sameSite: 'none',
         expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
       });
       response.header('reload', 'true');
-      response.status(200).send();
+      response.status(200).json({
+        register: true
+      });
     }
     catch (e) {
       response.status(400).send(e.message);
@@ -44,10 +47,13 @@ export class AuthController {
         domain: '.' + new URL(process.env.FRONTEND_URL!).hostname,
         secure: true,
         httpOnly: true,
+        sameSite: 'none',
         expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
       });
       response.header('reload', 'true');
-      response.status(200).send();
+      response.status(200).json({
+        login: true
+      });
     }
     catch (e) {
       response.status(400).send(e.message);

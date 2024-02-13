@@ -18,8 +18,8 @@ export function Register() {
 
     const fetchData = useFetch();
 
-    const onSubmit: SubmitHandler<Inputs> = (data) => {
-        fetchData('/auth/register', {
+    const onSubmit: SubmitHandler<Inputs> = async (data) => {
+        await fetchData('/auth/register', {
             method: 'POST',
             body: JSON.stringify({...data, provider: 'LOCAL'})
         });
