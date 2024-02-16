@@ -11,15 +11,21 @@ import {PermissionsService} from "@gitroom/backend/services/auth/permissions/per
 import {IntegrationsController} from "@gitroom/backend/api/routes/integrations.controller";
 import {IntegrationManager} from "@gitroom/nestjs-libraries/integrations/integration.manager";
 import {SettingsController} from "@gitroom/backend/api/routes/settings.controller";
+import {BullMqModule} from "@gitroom/nestjs-libraries/bull-mq-transport/bull-mq.module";
+import {ioRedis} from "@gitroom/nestjs-libraries/redis/redis.service";
+import {PostsController} from "@gitroom/backend/api/routes/posts.controller";
 
 const authenticatedController = [
     UsersController,
     AnalyticsController,
     IntegrationsController,
-    SettingsController
+    SettingsController,
+    PostsController
 ];
 @Module({
-    imports: [],
+    imports: [BullMqModule.forRoot({
+        connection: ioRedis
+    })],
     controllers: [StripeController, AuthController, ...authenticatedController],
     providers: [
         AuthService,
@@ -27,7 +33,7 @@ const authenticatedController = [
         AuthMiddleware,
         PoliciesGuard,
         PermissionsService,
-        IntegrationManager
+        IntegrationManager,
     ],
     get exports() {
         return [...this.imports, ...this.providers];

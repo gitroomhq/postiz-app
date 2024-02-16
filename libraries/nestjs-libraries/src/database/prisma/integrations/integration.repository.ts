@@ -8,18 +8,27 @@ export class IntegrationRepository {
     ) {
     }
 
-    createIntegration(org: string, name: string, type: 'article' | 'social' , internalId: string, provider: string, token: string, refreshToken = '', expiresIn = 999999999) {
+    createIntegration(org: string, name: string, picture: string, type: 'article' | 'social' , internalId: string, provider: string, token: string, refreshToken = '', expiresIn = 999999999) {
         return this._integration.model.integration.create({
             data: {
                 type: type as any,
                 name,
                 providerIdentifier: provider,
                 token,
+                picture,
                 refreshToken,
                 ...expiresIn ? {tokenExpiration: new Date(Date.now() + expiresIn * 1000)} :{},
                 internalId,
                 organizationId: org,
             }
         })
+    }
+
+    getIntegrationsList(org: string) {
+        return this._integration.model.integration.findMany({
+            where: {
+                organizationId: org
+            }
+        });
     }
 }

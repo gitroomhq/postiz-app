@@ -3,9 +3,9 @@ import {ArticleIntegrationsInterface, ArticleProvider} from "@gitroom/nestjs-lib
 export class HashnodeProvider implements ArticleProvider {
     identifier = 'hashnode';
     name = 'Hashnode';
-    async authenticate(token: string): Promise<{ id: string; name: string; token: string; }> {
+    async authenticate(token: string) {
         try {
-            const {data: {me: {name, id}}} = await (await fetch('https://gql.hashnode.com', {
+            const {data: {me: {name, id, profilePicture}}} = await (await fetch('https://gql.hashnode.com', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -16,7 +16,8 @@ export class HashnodeProvider implements ArticleProvider {
                     query {
                       me {
                         name,
-                        id
+                        id,
+                        profilePicture
                       }
                     }
                 `
@@ -24,19 +25,23 @@ export class HashnodeProvider implements ArticleProvider {
             })).json();
 
             return {
-                id, name, token
+                id, name, token, picture: profilePicture
             }
         }
         catch (err) {
             return {
                 id: '',
                 name: '',
-                token: ''
+                token: '',
+                picture: ''
             }
         }
     }
 
-    async publishPost(token: string, content: string): Promise<string> {
-        return '';
+    async post(token: string, content: string, settings: object) {
+        return {
+            postId: '123',
+            releaseURL: 'https://dev.to'
+        }
     }
 }

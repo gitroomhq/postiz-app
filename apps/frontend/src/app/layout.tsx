@@ -1,3 +1,5 @@
+import './global.css';
+
 import LayoutContext from "@gitroom/frontend/components/layout/layout.context";
 import {ReactNode} from "react";
 import {Chakra_Petch} from "next/font/google";

@@ -41,7 +41,6 @@ export class AuthController {
       @Res({ passthrough: true }) response: Response
   ) {
     try {
-      console.log('heghefrgefg');
       const jwt = await this._authService.routeAuth(body.provider, body);
       response.cookie('auth', jwt, {
         domain: '.' + new URL(process.env.FRONTEND_URL!).hostname,

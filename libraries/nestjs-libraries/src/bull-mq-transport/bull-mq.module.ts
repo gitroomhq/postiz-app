@@ -1,9 +1,7 @@
-import { DynamicModule, Module } from '@nestjs/common';
+import { DynamicModule } from '@nestjs/common';
 import { BullMqCoreModule } from './bull-mq-core.module';
 import { IBullMqModuleOptionsAsync } from './interfaces/bull-mq-module-options-async.interface';
 import { IBullMqModuleOptions } from './interfaces/bull-mq-module-options.interface';
-
-@Module({})
 export class BullMqModule {
   static forRoot(options: IBullMqModuleOptions): DynamicModule {
     return {

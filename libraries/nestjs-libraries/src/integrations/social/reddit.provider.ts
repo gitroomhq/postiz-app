@@ -17,7 +17,7 @@ export class RedditProvider implements SocialProvider {
             })
         })).json();
 
-        const {name, id} = await (await fetch('https://oauth.reddit.com/api/v1/me', {
+        const {name, id, icon_img} = await (await fetch('https://oauth.reddit.com/api/v1/me', {
             headers: {
                 Authorization: `Bearer ${accessToken}`
             }
@@ -28,7 +28,8 @@ export class RedditProvider implements SocialProvider {
             name,
             accessToken,
             refreshToken: newRefreshToken,
-            expiresIn
+            expiresIn,
+            picture: icon_img.split('?')[0]
         }
     }
 
@@ -57,7 +58,7 @@ export class RedditProvider implements SocialProvider {
             })
         })).json();
 
-        const {name, id} = await (await fetch('https://oauth.reddit.com/api/v1/me', {
+        const {name, id, icon_img} = await (await fetch('https://oauth.reddit.com/api/v1/me', {
             headers: {
                 Authorization: `Bearer ${accessToken}`
             }
@@ -68,14 +69,28 @@ export class RedditProvider implements SocialProvider {
             name,
             accessToken,
             refreshToken,
-            expiresIn
+            expiresIn,
+            picture: icon_img.split('?')[0]
         }
     }
 
-    async schedulePost(accessToken: string, postDetails: PostDetails[]): Promise<PostResponse[]> {
-        return [{
-            postId: '123',
-            status: 'scheduled'
-        }];
+    async post(id: string, accessToken: string, postDetails: PostDetails[]): Promise<PostResponse[]> {
+        const [post, ...rest] = postDetails;
+        const response = await fetch('https://oauth.reddit.com/api/submit', {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams({
+                title: 'test',
+                kind: 'self',
+                text: post.message,
+                sr: '/r/gitroom'
+            })
+        });
+
+        console.log(response);
+        return [];
     }
 }

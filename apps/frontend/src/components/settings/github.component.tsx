@@ -3,15 +3,26 @@ import Image from "next/image";
 import {Button} from "@gitroom/react/form/button";
 import {FC, useCallback, useEffect, useState} from "react";
 import {useFetch} from "@gitroom/helpers/utils/custom.fetch";
+import {deleteDialog} from "@gitroom/react/helpers/delete.dialog";
 
-const ConnectedComponent: FC<{id: string, login: string}> = (props) => {
-    const {id, login} = props;
+const ConnectedComponent: FC<{id: string, login: string, deleteRepository: () => void}> = (props) => {
+    const {id, login, deleteRepository} = props;
+    const fetch = useFetch();
+    const disconnect = useCallback(async () => {
+        if (!await deleteDialog('Are you sure you want to disconnect this repository?')) {
+            return ;
+        }
+        deleteRepository();
+        await fetch(`/settings/repository/${id}`, {
+            method: 'DELETE'
+        });
+    }, []);
     return (
         <div className="my-[16px] mt-[16px] h-[90px] bg-sixth border-fifth border rounded-[4px] p-[24px]">
             <div className="flex items-center gap-[8px] font-[Inter]">
                 <div><Image src="/icons/github.svg" alt="GitHub" width={40} height={40}/></div>
                 <div className="flex-1"><strong>Connected:</strong> {login}</div>
-                <Button>Disconnect</Button>
+                <Button onClick={disconnect}>Disconnect</Button>
             </div>
         </div>
     );
@@ -93,10 +104,18 @@ export const GithubComponent: FC<{ organizations: Array<{ login: string, id: str
                 if (git.id === g.id) {
                     return {id: g.id, login: name};
                 }
-                return g;
+                return git;
             })
         });
-    }, []);
+    }, [githubState]);
+
+    const deleteConnect = useCallback((g: {id: string, login: string}) => () => {
+        setGithubState((gitlibs) => {
+            return gitlibs.filter((git, index) => {
+                return git.id !== g.id;
+            })
+        });
+    }, [githubState]);
 
     return (
         <>
@@ -105,7 +124,7 @@ export const GithubComponent: FC<{ organizations: Array<{ login: string, id: str
                     {!g.login ? (
                         <ConnectComponent setConnected={setConnected(g)} organizations={organizations} {...g} />
                     ): (
-                        <ConnectedComponent {...g} />
+                        <ConnectedComponent deleteRepository={deleteConnect(g)} {...g} />
                     )}
                 </>
             ))}

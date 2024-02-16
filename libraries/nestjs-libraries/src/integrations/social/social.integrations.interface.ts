@@ -16,22 +16,26 @@ export type AuthTokenDetails = {
     accessToken: string; // The obtained access token
     refreshToken?: string; // The refresh token, if applicable
     expiresIn?: number; // The duration in seconds for which the access token is valid
+    picture?: string;
 };
 
 export interface ISocialMediaIntegration {
-    schedulePost(accessToken: string, postDetails: PostDetails[]): Promise<PostResponse[]>; // Schedules a new post
+    post(id: string, accessToken: string, postDetails: PostDetails[]): Promise<PostResponse[]>; // Schedules a new post
 }
 
 export type PostResponse = {
+    id: string; // The db internal id of the post
     postId: string; // The ID of the scheduled post returned by the platform
+    releaseURL: string; // The URL of the post on the platform
     status: string; // Status of the operation or initial post status
 };
 
 export type PostDetails = {
+    id: string;
     message: string;
-    scheduledTime: Date; // The time when the post should be published
-    media?: MediaContent[]; // Optional array of media content to be attached with the post
-    poll?: PollDetails; // Optional poll details
+    settings: object;
+    media?: MediaContent[];
+    poll?: PollDetails;
 };
 
 export type PollDetails = {

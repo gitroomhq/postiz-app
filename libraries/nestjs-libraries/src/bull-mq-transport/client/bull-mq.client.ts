@@ -74,10 +74,21 @@ export class BullMqClient extends ClientProxy {
     return () => void 0;
   }
 
+  async delay(pattern: string, jobId: string, delay: number) {
+    const queue = this.getQueue(pattern);
+    return queue.getJob(jobId).then((job) => job?.changeDelay(delay));
+  }
+
+  async delete(pattern: string, jobId: string) {
+    const queue = this.getQueue(pattern);
+    return queue.getJob(jobId).then((job) => job?.remove());
+  }
+
   protected async dispatchEvent(
     packet: ReadPacket<IBullMqEvent<any>>,
   ): Promise<any> {
     const queue = this.getQueue(packet.pattern);
+    console.log(packet);
     await queue.add(packet.pattern, packet.data, {
       jobId: packet.data.id ?? v4(),
       ...packet.data.options,

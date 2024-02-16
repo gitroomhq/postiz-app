@@ -20,12 +20,20 @@ module.exports = {
         primary: '#000',
         secondary: '#090B13',
         third: '#080B13',
-        forth: '#262373',
-        fifth: '#172034',
+        forth: '#612AD5',
+        fifth: '#28344F',
         sixth: '#0B101B',
         gray: '#8C8C8C',
+        input: '#131B2C',
+        inputText: '#64748B',
+        tableBorder: '#1F2941'
+      },
+      gridTemplateColumns: {
+        '13': 'repeat(13, minmax(0, 1fr));'
       }
     },
   },
-  plugins: [],
+  plugins: [
+    require('tailwind-scrollbar')
+  ],
 };

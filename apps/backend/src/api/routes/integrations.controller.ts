@@ -5,6 +5,7 @@ import {IntegrationManager} from "@gitroom/nestjs-libraries/integrations/integra
 import {IntegrationService} from "@gitroom/nestjs-libraries/database/prisma/integrations/integration.service";
 import {GetOrgFromRequest} from "@gitroom/nestjs-libraries/user/org.from.request";
 import {Organization} from "@prisma/client";
+import {ApiKeyDto} from "@gitroom/nestjs-libraries/dtos/integrations/api.key.dto";
 
 @Controller('/integrations')
 export class IntegrationsController {
@@ -13,6 +14,18 @@ export class IntegrationsController {
         private _integrationService: IntegrationService
     ) {
     }
+    @Get('/')
+    getIntegration() {
+        return this._integrationManager.getAllIntegrations();
+    }
+
+    @Get('/list')
+    async getIntegrationList(
+        @GetOrgFromRequest() org: Organization,
+    ) {
+        return {integrations: (await this._integrationService.getIntegrationsList(org.id)).map(p => ({name: p.name, id: p.id, picture: p.picture, identifier: p.providerIdentifier, type: p.type}))};
+    }
+
     @Get('/social/:integration')
     async getIntegrationUrl(
         @Param('integration') integration: string
@@ -25,14 +38,14 @@ export class IntegrationsController {
         const {codeVerifier, state, url} = await integrationProvider.generateAuthUrl();
         await ioRedis.set(`login:${state}`, codeVerifier, 'EX', 300);
 
-        return url;
+        return {url};
     }
 
     @Post('/article/:integration/connect')
     async connectArticle(
         @GetOrgFromRequest() org: Organization,
         @Param('integration') integration: string,
-        @Body('code') api: string
+        @Body() api: ApiKeyDto
     ) {
         if (!this._integrationManager.getAllowedArticlesIntegrations().includes(integration)) {
             throw new Error('Integration not allowed');
@@ -43,13 +56,13 @@ export class IntegrationsController {
         }
 
         const integrationProvider = this._integrationManager.getArticlesIntegration(integration);
-        const {id, name, token} = await integrationProvider.authenticate(api);
+        const {id, name, token, picture} = await integrationProvider.authenticate(api.api);
 
         if (!id) {
             throw new Error('Invalid api key');
         }
 
-        return this._integrationService.createIntegration(org.id, name, 'article', String(id), integration, token);
+        return this._integrationService.createIntegration(org.id, name, picture,'article', String(id), integration, token);
     }
 
     @Post('/social/:integration/connect')
@@ -68,7 +81,7 @@ export class IntegrationsController {
         }
 
         const integrationProvider = this._integrationManager.getSocialIntegration(integration);
-        const {accessToken, expiresIn, refreshToken, id, name} = await integrationProvider.authenticate({
+        const {accessToken, expiresIn, refreshToken, id, name, picture} = await integrationProvider.authenticate({
             code: body.code,
             codeVerifier: getCodeVerifier
         });
@@ -77,6 +90,6 @@ export class IntegrationsController {
             throw new Error('Invalid api key');
         }
 
-        return this._integrationService.createIntegration(org.id, name, 'social', String(id), integration, accessToken, refreshToken, expiresIn);
+        return this._integrationService.createIntegration(org.id, name, picture, 'social', String(id), integration, accessToken, refreshToken, expiresIn);
     }
 }

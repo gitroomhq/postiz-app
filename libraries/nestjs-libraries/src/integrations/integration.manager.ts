@@ -22,6 +22,12 @@ const articleIntegrationList = [
 
 @Injectable()
 export class IntegrationManager {
+    getAllIntegrations() {
+        return {
+            social: socialIntegrationList.map(p => ({name: p.name, identifier: p.identifier})),
+            article: articleIntegrationList.map(p => ({name: p.name, identifier: p.identifier})),
+        };
+    }
     getAllowedSocialsIntegrations() {
         return socialIntegrationList.map(p => p.identifier);
     }

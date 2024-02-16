@@ -128,6 +128,7 @@ model Integration {
   organizationId  String
   name            String
   organization    Organization    @relation(fields: [organizationId], references: [id])
+  picture         String?
   providerIdentifier String
   type            String
   token           String
@@ -183,21 +184,19 @@ model Slots {
 model Post {
   id                String       @id @default(cuid())
   state             State        @default(QUEUE)
-  queueId           String?
   publishDate       DateTime
   organizationId    String
-  IntegrationId     String
+  integrationId     String
+  content           String
   organization      Organization @relation(fields: [organizationId], references: [id])
-  Integration       Integration      @relation(fields: [IntegrationId], references: [id])
+  integration       Integration  @relation(fields: [integrationId], references: [id])
   title             String?
   description       String?
-  canonicalUrl      String?
-  canonicalPostId   String?
   parentPostId      String?
+  releaseId         String?
   releaseURL        String?
-  canonicalPost     Post?       @relation("canonicalPostId", fields: [canonicalPostId], references: [id])
+  settings          String?
   parentPost        Post?       @relation("parentPostId", fields: [parentPostId], references: [id])
-  canonicalChildren Post[]      @relation("canonicalPostId")
   childrenPost      Post[]      @relation("parentPostId")
   tags              PostTag[]
   media             PostMedia[]
@@ -207,7 +206,8 @@ model Post {
 
 enum State {
   QUEUE
-  SENT
+  PUBLISHED
+  ERROR
   DRAFT
 }
 

@@ -1,6 +1,6 @@
 export interface ArticleIntegrationsInterface {
-    authenticate(token: string): Promise<{id: string, name: string, token: string}>;
-    publishPost(token: string, content: string): Promise<string>;
+    authenticate(token: string): Promise<{id: string, name: string, token: string, picture: string}>;
+    post(token: string, content: string, settings: object): Promise<{postId: string, releaseURL: string}>;
 }
 
 export interface ArticleProvider extends ArticleIntegrationsInterface {

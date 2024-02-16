@@ -4,7 +4,7 @@ import {chunk, groupBy} from "lodash";
 import dayjs from "dayjs";
 import {NotificationService} from "@gitroom/nestjs-libraries/notifications/notification.service";
 import {StarsListDto} from "@gitroom/nestjs-libraries/dtos/analytics/stars.list.dto";
-import * as console from "console";
+import {BullMqClient} from "@gitroom/nestjs-libraries/bull-mq-transport/client/bull-mq.client";
 enum Inform {
     Removed,
     New,
@@ -14,7 +14,8 @@ enum Inform {
 export class StarsService {
     constructor(
         private _starsRepository: StarsRepository,
-        private _notificationsService: NotificationService
+        private _notificationsService: NotificationService,
+        private _workerServiceProducer: BullMqClient
     ){}
 
     getGitHubRepositoriesByOrgId(org: string) {
@@ -49,7 +50,6 @@ export class StarsService {
     }
 
     async syncProcess(login: string, page = 1) {
-        console.log('processing', login, page);
         const starsRequest = await fetch(`https://api.github.com/repos/${login}/stargazers?page=${page}&per_page=100`, {
             headers: {
                 Accept: 'application/vnd.github.v3.star+json',
@@ -221,6 +221,7 @@ export class StarsService {
     }
 
     async updateGitHubLogin(orgId: string, id: string, login: string) {
+        this._workerServiceProducer.emit('sync_all_stars', {payload: {login}}).subscribe();
         return this._starsRepository.updateGitHubLogin(orgId, id, login);
     }
 

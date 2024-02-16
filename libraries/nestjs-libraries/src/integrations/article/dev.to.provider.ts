@@ -3,8 +3,8 @@ import {ArticleProvider} from "@gitroom/nestjs-libraries/integrations/article/ar
 export class DevToProvider implements ArticleProvider {
     identifier = 'devto';
     name = 'Dev.to';
-    async authenticate(token: string): Promise<{ id: string; name: string; token: string; }> {
-        const {name, id} = await (await fetch('https://dev.to/api/users/me', {
+    async authenticate(token: string) {
+        const {name, id, profile_image} = await (await fetch('https://dev.to/api/users/me', {
             headers: {
                 'api-key': token
             }
@@ -13,11 +13,15 @@ export class DevToProvider implements ArticleProvider {
         return {
             id,
             name,
-            token
+            token,
+            picture: profile_image
         }
     }
 
-    async publishPost(token: string, content: string): Promise<string> {
-        return '';
+    async post(token: string, content: string, settings: object) {
+        return {
+            postId: '123',
+            releaseURL: 'https://dev.to'
+        }
     }
 }

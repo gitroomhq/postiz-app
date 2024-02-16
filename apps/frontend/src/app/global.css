@@ -2,9 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-/*body, html {*/
-/*    overflow-x: hidden;*/
-/*}*/
+body, html {
+   background-color: black;
+}
 .box {
     position: relative;
     padding: 8px 24px;
@@ -41,7 +41,7 @@
 }
 
 .table1 thead {
-    background-color: #111423;
+    background-color: #0F1524;
     height: 44px;
     font-size: 12px;
     border-bottom: 1px solid #28344F;
@@ -55,4 +55,22 @@
     padding: 16px 24px;
     font-family: Inter;
     font-size: 14px;
+}
+
+.swal2-modal {
+    background-color: black !important;
+    border: 2px solid #0B101B;
+}
+
+.swal2-modal * {
+    color: white !important;
+}
+
+.swal2-icon {
+    color: white !important;
+    border-color: white !important;
+}
+
+.swal2-confirm {
+    background-color: #262373 !important;
 }

@@ -4,8 +4,8 @@ export class MediumProvider implements ArticleProvider {
     identifier = 'medium';
     name = 'Medium';
 
-    async authenticate(token: string): Promise<{ id: string; name: string; token: string; }> {
-        const {data: {name, id}} = await (await fetch('https://api.medium.com/v1/me', {
+    async authenticate(token: string) {
+        const {data: {name, id, imageUrl}} = await (await fetch('https://api.medium.com/v1/me', {
             headers: {
                 Authorization: `Bearer ${token}`
             }
@@ -14,11 +14,15 @@ export class MediumProvider implements ArticleProvider {
         return {
             id,
             name,
-            token
+            token,
+            picture: imageUrl
         }
     }
 
-    async publishPost(token: string, content: string): Promise<string> {
-        return '';
+    async post(token: string, content: string, settings: object) {
+        return {
+            postId: '123',
+            releaseURL: 'https://dev.to'
+        }
     }
 }

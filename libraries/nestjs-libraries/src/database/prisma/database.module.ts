@@ -11,6 +11,9 @@ import {SubscriptionRepository} from "@gitroom/nestjs-libraries/database/prisma/
 import {NotificationService} from "@gitroom/nestjs-libraries/notifications/notification.service";
 import {IntegrationService} from "@gitroom/nestjs-libraries/database/prisma/integrations/integration.service";
 import {IntegrationRepository} from "@gitroom/nestjs-libraries/database/prisma/integrations/integration.repository";
+import {PostsService} from "@gitroom/nestjs-libraries/database/prisma/posts/posts.service";
+import {PostsRepository} from "@gitroom/nestjs-libraries/database/prisma/posts/posts.repository";
+import {IntegrationManager} from "@gitroom/nestjs-libraries/integrations/integration.manager";
 
 @Global()
 @Module({
@@ -29,7 +32,10 @@ import {IntegrationRepository} from "@gitroom/nestjs-libraries/database/prisma/i
         SubscriptionRepository,
         NotificationService,
         IntegrationService,
-        IntegrationRepository
+        IntegrationRepository,
+        PostsService,
+        PostsRepository,
+        IntegrationManager
     ],
     get exports() {
         return this.providers;
