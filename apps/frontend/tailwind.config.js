@@ -23,6 +23,7 @@ module.exports = {
         forth: '#612AD5',
         fifth: '#28344F',
         sixth: '#0B101B',
+        seventh: '#7236f1',
         gray: '#8C8C8C',
         input: '#131B2C',
         inputText: '#64748B',
@@ -30,7 +31,18 @@ module.exports = {
       },
       gridTemplateColumns: {
         '13': 'repeat(13, minmax(0, 1fr));'
-      }
+      },
+      animation: {
+        fade: 'fadeOut 0.5s ease-in-out',
+      },
+
+      // that is actual animation
+      keyframes: theme => ({
+        fadeOut: {
+          '0%': { opacity: 0, transform: 'translateY(30px)' },
+          '100%': { opacity: 1, transform: 'translateY(0)' },
+        },
+      })
     },
   },
   plugins: [

@@ -2,75 +2,253 @@
 @tailwind components;
 @tailwind utilities;
 
-body, html {
-   background-color: black;
+body,
+html {
+  background-color: black;
 }
 .box {
-    position: relative;
-    padding: 8px 24px;
+  position: relative;
+  padding: 8px 24px;
 }
 .box span {
-    position: relative;
-    z-index: 2;
+  position: relative;
+  z-index: 2;
 }
 .box:after {
-    border-radius: 50px;
-    width: 100%;
-    height: 100%;
-    left: 0;
-    top: 0;
-    content: "";
-    position: absolute;
-    background: white;
-    opacity: 0;
-    z-index: 1;
-    transition: all 0.3s ease-in-out;
+  border-radius: 50px;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  content: '';
+  position: absolute;
+  background: white;
+  opacity: 0;
+  z-index: 1;
+  transition: all 0.3s ease-in-out;
 }
 
 .showbox {
-    color: black;
+  color: black;
 }
 .showbox:after {
-    opacity: 1;
-    background: white;
-    transition: all 0.3s ease-in-out;
+  opacity: 1;
+  background: white;
+  transition: all 0.3s ease-in-out;
 }
 .table1 {
-    width: 100%;
-    border-collapse: collapse;
+  width: 100%;
+  border-collapse: collapse;
 }
 
 .table1 thead {
-    background-color: #0F1524;
-    height: 44px;
-    font-size: 12px;
-    border-bottom: 1px solid #28344F;
+  background-color: #0f1524;
+  height: 44px;
+  font-size: 12px;
+  border-bottom: 1px solid #28344f;
 }
-.table1 thead th, .table1 tbody td {
-    text-align: left;
-    padding: 14px 24px;
+.table1 thead th,
+.table1 tbody td {
+  text-align: left;
+  padding: 14px 24px;
 }
 
 .table1 tbody td {
-    padding: 16px 24px;
-    font-family: Inter;
-    font-size: 14px;
+  padding: 16px 24px;
+  font-family: Inter;
+  font-size: 14px;
 }
 
 .swal2-modal {
-    background-color: black !important;
-    border: 2px solid #0B101B;
+  background-color: black !important;
+  border: 2px solid #0b101b;
 }
 
 .swal2-modal * {
-    color: white !important;
+  color: white !important;
 }
 
 .swal2-icon {
-    color: white !important;
-    border-color: white !important;
+  color: white !important;
+  border-color: white !important;
 }
 
 .swal2-confirm {
-    background-color: #262373 !important;
+  background-color: #262373 !important;
+}
+
+.w-md-editor-text {
+  min-height: 100% !important;
+}
+
+.react-tags {
+  position: relative;
+  border: 1px solid #28344f;
+  padding-left: 16px;
+  height: 44px;
+  border-radius: 4px;
+  background: #131b2c;
+  /* shared font styles */
+  font-size: 14px;
+  line-height: 1.2;
+  /* clicking anywhere will focus the input */
+  cursor: text;
+  display: flex;
+  align-items: center;
+}
+
+.react-tags.is-active {
+  border-color: #4f46e5;
+}
+
+.react-tags.is-disabled {
+  opacity: 0.75;
+  background-color: #eaeef2;
+  /* Prevent any clicking on the component */
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+.react-tags.is-invalid {
+  border-color: #fd5956;
+  box-shadow: 0 0 0 2px rgba(253, 86, 83, 0.25);
+}
+
+.react-tags__label {
+  position: absolute;
+  left: -10000px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.react-tags__list {
+  /* Do not use display: contents, it's too buggy */
+  display: inline;
+  padding: 0;
+}
+
+.react-tags__list-item {
+  display: inline;
+  list-style: none;
+}
+
+.react-tags__tag {
+  margin: 0 0.25rem 0 0;
+  padding: 0.15rem 0.5rem;
+  border: 0;
+  border-radius: 3px;
+  background: #7236f1;
+  /* match the font styles */
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.react-tags__tag:hover {
+  color: #ffffff;
+  background-color: #4f46e5;
+}
+
+.react-tags__tag::after {
+  content: '';
+  display: inline-block;
+  width: 0.65rem;
+  height: 0.65rem;
+  clip-path: polygon(
+    10% 0,
+    0 10%,
+    40% 50%,
+    0 90%,
+    10% 100%,
+    50% 60%,
+    90% 100%,
+    100% 90%,
+    60% 50%,
+    100% 10%,
+    90% 0,
+    50% 40%
+  );
+  margin-left: 0.5rem;
+  font-size: 0.875rem;
+  background-color: #7c7d86;
+}
+
+.react-tags__tag:hover::after {
+  background-color: #ffffff;
+}
+
+.react-tags__combobox {
+  display: inline-block;
+  /* match tag layout */
+  /* prevents autoresize overflowing the container */
+  max-width: 100%;
+}
+
+.react-tags__combobox-input {
+  /* prevent autoresize overflowing the container */
+  max-width: 100%;
+  /* remove styles and layout from this element */
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: none;
+  /* match the font styles */
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.react-tags__combobox-input::placeholder {
+  color: #7c7d86;
+  opacity: 1;
+}
+
+.react-tags__listbox {
+  position: absolute;
+  z-index: 1;
+  top: calc(100% + 5px);
+  /* Negate the border width on the container */
+  left: -2px;
+  right: -2px;
+  max-height: 12.5rem;
+  overflow-y: auto;
+  background: #131b2c;
+  border: 1px solid #afb8c1;
+  border-radius: 6px;
+  box-shadow: rgba(0, 0, 0, 0.1) 0 10px 15px -4px,
+    rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+}
+
+.react-tags__listbox-option {
+  padding: 0.375rem 0.5rem;
+}
+
+.react-tags__listbox-option:hover {
+  cursor: pointer;
+  background: #080b13;
+}
+
+.react-tags__listbox-option:not([aria-disabled='true']).is-active {
+  background: #4f46e5;
+  color: #ffffff;
+}
+
+.react-tags__listbox-option[aria-disabled='true'] {
+  color: #7c7d86;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.react-tags__listbox-option[aria-selected='true']::after {
+  content: '✓';
+  margin-left: 0.5rem;
+}
+
+.react-tags__listbox-option[aria-selected='true']:not(.is-active)::after {
+  color: #4f46e5;
+}
+
+.react-tags__listbox-option-highlight {
+  background-color: #ffdd00;
 }

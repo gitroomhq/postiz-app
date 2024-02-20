@@ -54,7 +54,7 @@ export class LinkedinProvider implements SocialProvider {
     }&redirect_uri=${encodeURIComponent(
       `${process.env.FRONTEND_URL}/integrations/social/linkedin`
     )}&state=${state}&scope=${encodeURIComponent(
-      'openid profile w_member_social r_liteprofile'
+      'openid profile w_member_social'
     )}`;
     return {
       url,

@@ -1,12 +1,24 @@
-import {ArrayMinSize, IsArray, IsDateString, IsDefined, IsString, ValidateNested} from "class-validator";
-import {Type} from "class-transformer";
-import {DevToSettingsDto} from "@gitroom/nestjs-libraries/dtos/posts/providers-settings/dev.to.settings.dto";
+import {
+  ArrayMinSize, IsArray, IsDateString, IsDefined, IsOptional, IsString, ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+import { DevToSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dev.to.settings.dto';
 
 export class EmptySettings {}
 export class Integration {
   @IsDefined()
   @IsString()
-  id: string
+  id: string;
+}
+
+export class PostContent {
+  @IsDefined()
+  @IsString()
+  content: string;
+
+  @IsOptional()
+  @IsString()
+  id: string;
 }
 
 export class Post {
@@ -18,19 +30,18 @@ export class Post {
   @IsDefined()
   @ArrayMinSize(1)
   @IsArray()
-  @IsString({ each: true })
-  value: string[];
+  @Type(() => PostContent)
+  @ValidateNested({ each: true })
+  value: PostContent[];
 
   @Type(() => EmptySettings, {
-    keepDiscriminatorProperty: true,
+    keepDiscriminatorProperty: false,
     discriminator: {
       property: '__type',
-      subTypes: [
-        { value: DevToSettingsDto, name: 'devto' },
-      ],
+      subTypes: [{ value: DevToSettingsDto, name: 'devto' }],
     },
   })
-  settings: DevToSettingsDto
+  settings: DevToSettingsDto;
 }
 
 export class CreatePostDto {
@@ -41,7 +52,7 @@ export class CreatePostDto {
   @IsDefined()
   @Type(() => Post)
   @IsArray()
-  @ValidateNested({each: true})
+  @ValidateNested({ each: true })
   @ArrayMinSize(1)
-  posts: Post[]
+  posts: Post[];
 }

@@ -14,4 +14,8 @@ export class IntegrationService {
     getIntegrationsList(org: string) {
         return this._integrationRepository.getIntegrationsList(org);
     }
+
+    getIntegrationById(org: string, id: string) {
+        return this._integrationRepository.getIntegrationById(org, id);
+    }
 }

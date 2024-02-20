@@ -1,24 +1,32 @@
-import {IsArray, IsDefined, IsOptional, IsString} from "class-validator";
+import {ArrayMaxSize, IsArray, IsDefined, IsOptional, IsString, Matches, MinLength, ValidateNested} from "class-validator";
+import {MediaDto} from "@gitroom/nestjs-libraries/dtos/media/media.dto";
+import {Type} from "class-transformer";
+import {DevToTagsSettings} from "@gitroom/nestjs-libraries/dtos/posts/providers-settings/dev.to.tags.settings";
 
 export class DevToSettingsDto {
     @IsString()
+    @MinLength(2)
     @IsDefined()
     title: string;
 
-    @IsString()
     @IsOptional()
-    main_image?: number;
+    @ValidateNested()
+    @Type(() => MediaDto)
+    main_image?: MediaDto;
 
+    @IsOptional()
     @IsString()
-    canonical: string;
-
-    @IsString({
-        each: true
+    @Matches(/^(|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})$/, {
+        message: 'Invalid URL'
     })
-    @IsArray()
-    tags: string[];
+    canonical?: string;
 
     @IsString()
     @IsOptional()
     organization?: string;
+
+    @IsArray()
+    @ArrayMaxSize(4)
+    @IsOptional()
+    tags: DevToTagsSettings[];
 }

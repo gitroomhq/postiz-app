@@ -1,24 +1,8 @@
 import { FC } from 'react';
 import { withProvider } from '@gitroom/frontend/components/launches/providers/high.order.provider';
-import localFont from 'next/font/local';
 import clsx from 'clsx';
 import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { useFormatting } from '@gitroom/frontend/components/launches/helpers/use.formatting';
-
-const chirp = localFont({
-  src: [
-    {
-      path: './fonts/x/Chirp-Regular.woff2',
-      weight: '400',
-      style: 'normal',
-    },
-    {
-      path: './fonts/x/Chirp-Bold.woff2',
-      weight: '700',
-      style: 'normal',
-    },
-  ],
-});
 
 const RedditPreview: FC = (props) => {
   const { value: topValue, integration } = useIntegration();
@@ -34,7 +18,6 @@ const RedditPreview: FC = (props) => {
     <div
       className={clsx(
         'max-w-[598px] px-[16px] border border-[#2E3336]',
-        chirp.className
       )}
     >
       <div className="w-full h-full relative flex flex-col pt-[12px]">
@@ -77,7 +60,7 @@ const RedditPreview: FC = (props) => {
                   @username
                 </div>
               </div>
-              <pre className={chirp.className}>{value.text}</pre>
+              <pre>{value.text}</pre>
             </div>
           </div>
         ))}

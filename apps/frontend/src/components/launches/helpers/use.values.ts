@@ -1,25 +1,24 @@
 import {useEffect, useMemo} from 'react';
-import { useForm } from 'react-hook-form';
-import { UseFormProps } from 'react-hook-form/dist/types';
-import {allProvidersSettings} from "@gitroom/nestjs-libraries/dtos/posts/providers-settings/all.providers.settings";
+import {useForm, useFormContext} from 'react-hook-form';
 import {classValidatorResolver} from "@hookform/resolvers/class-validator";
 
 const finalInformation = {} as {
-  [key: string]: { posts: string[]; settings: () => object; isValid: boolean };
+  [key: string]: { posts: Array<{id?: string, content: string, media?: Array<string>}>; settings: () => object; isValid: boolean };
 };
-export const useValues = (identifier: string, integration: string, value: string[]) => {
+export const useValues = (initialValues: object, integration: string, identifier: string, value: Array<{id?: string, content: string, media?: Array<string>}>, dto: any) => {
   const resolver = useMemo(() => {
-    const findValidator = allProvidersSettings.find((provider) => provider.identifier === identifier)!;
-    return classValidatorResolver(findValidator?.validator);
+    return classValidatorResolver(dto);
   }, [integration]);
 
   const form = useForm({
-    resolver
+    resolver,
+    values: initialValues,
+    mode: 'onChange'
   });
 
   const getValues = useMemo(() => {
-    return form.getValues;
-  }, [form]);
+    return () => ({...form.getValues(), __type: identifier});
+  }, [form, integration]);
 
   finalInformation[integration]= finalInformation[integration] || {};
   finalInformation[integration].posts = value;
@@ -35,20 +34,7 @@ export const useValues = (identifier: string, integration: string, value: string
   return form;
 };
 
-export const useSettings = (formProps?: Omit<UseFormProps, 'mode'>) => {
-  // const { integration } = useIntegration();
-  // const form = useForm({
-  //   ...formProps,
-  //   mode: 'onChange',
-  // });
-  //
-  // finalInformation[integration?.identifier!].settings = {
-  //   __type: integration?.identifier!,
-  //   ...form.getValues(),
-  // };
-  // return form;
-};
-
+export const useSettings = () => useFormContext();
 export const getValues = () => finalInformation;
 export const resetValues = () => {
   Object.keys(finalInformation).forEach((key) => {

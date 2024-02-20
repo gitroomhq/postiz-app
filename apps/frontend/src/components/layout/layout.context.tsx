@@ -23,6 +23,7 @@ function LayoutContextInner(params: {children: ReactNode}) {
             baseUrl={process.env.NEXT_PUBLIC_BACKEND_URL!}
             afterRequest={afterRequest}
         >
+
             {params?.children || <></>}
         </FetchWrapperComponent>
     )

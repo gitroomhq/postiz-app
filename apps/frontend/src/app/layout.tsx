@@ -1,4 +1,5 @@
 import './global.css';
+import 'react-tooltip/dist/react-tooltip.css'
 
 import LayoutContext from "@gitroom/frontend/components/layout/layout.context";
 import {ReactNode} from "react";

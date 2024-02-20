@@ -24,6 +24,15 @@ export class IntegrationRepository {
         })
     }
 
+    getIntegrationById(org: string, id: string) {
+        return this._integration.model.integration.findFirst({
+            where: {
+                organizationId: org,
+                id
+            }
+        });
+    }
+
     getIntegrationsList(org: string) {
         return this._integration.model.integration.findMany({
             where: {

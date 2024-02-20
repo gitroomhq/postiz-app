@@ -34,11 +34,21 @@ export async function middleware(request: NextRequest) {
     }
 
     try {
-        const user = await (await fetchBackend('/user/self', {
+        const userResponse = await fetchBackend('/user/self', {
             headers: {
                 auth: authCookie?.value!
             }
-        })).json();
+        });
+
+        if (userResponse.status === 401) {
+            return NextResponse.redirect(new URL('/auth/logout', nextUrl.href));
+        }
+
+        if ([200, 201].indexOf(userResponse.status) === -1) {
+            return NextResponse.redirect(new URL('/err', nextUrl.href));
+        }
+
+        const user = await userResponse.json();
 
         const next = NextResponse.next();
         next.headers.set('user', JSON.stringify(user));

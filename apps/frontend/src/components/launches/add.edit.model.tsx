@@ -22,6 +22,7 @@ import {
   useMoveToIntegration,
   useMoveToIntegrationListener,
 } from '@gitroom/frontend/components/launches/helpers/use.move.to.integration';
+import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 
 export const PickPlatforms: FC<{
   integrations: Integrations[];
@@ -157,7 +158,7 @@ export const PickPlatforms: FC<{
 
 export const PreviewComponent: FC<{
   integrations: Integrations[];
-  editorValue: string[];
+  editorValue: Array<{ id?: string; content: string }>;
 }> = (props) => {
   const { integrations, editorValue } = props;
   const [selectedIntegrations, setSelectedIntegrations] = useState([
@@ -201,7 +202,9 @@ export const AddEditModal: FC<{
   >([]);
 
   // value of each editor
-  const [value, setValue] = useState<string[]>(['']);
+  const [value, setValue] = useState<Array<{ content: string; id?: string }>>([
+    { content: '' },
+  ]);
 
   const fetch = useFetch();
 
@@ -217,6 +220,18 @@ export const AddEditModal: FC<{
   // hook to open a new modal
   const modal = useModals();
 
+  // are we in edit mode?
+  const existingData = useExistingData();
+
+  // if it's edit just set the current integration
+  useEffect(() => {
+    if (existingData.integration) {
+      setSelectedIntegrations([
+        integrations.find((p) => p.id === existingData.integration)!,
+      ]);
+    }
+  }, [existingData.integration]);
+
   // if the user exit the popup we reset the global variable with all the values
   useEffect(() => {
     return () => {
@@ -228,7 +243,7 @@ export const AddEditModal: FC<{
   const changeValue = useCallback(
     (index: number) => (newValue: string) => {
       return setValue((prev) => {
-        prev[index] = newValue;
+        prev[index].content = newValue;
         return [...prev];
       });
     },
@@ -239,7 +254,7 @@ export const AddEditModal: FC<{
   const addValue = useCallback(
     (index: number) => () => {
       setValue((prev) => {
-        prev.splice(index + 1, 0, '');
+        prev.splice(index + 1, 0, { content: '' });
         return [...prev];
       });
     },
@@ -307,20 +322,22 @@ export const AddEditModal: FC<{
         </svg>
       </button>
       <div className="flex flex-col gap-[20px]">
-        <PickPlatforms
-          integrations={integrations}
-          selectedIntegrations={[]}
-          singleSelect={false}
-          onChange={setSelectedIntegrations}
-        />
-        {!showHide.hideTopEditor ? (
+        {!existingData.integration && (
+          <PickPlatforms
+            integrations={integrations}
+            selectedIntegrations={[]}
+            singleSelect={false}
+            onChange={setSelectedIntegrations}
+          />
+        )}
+        {!existingData.integration && !showHide.hideTopEditor ? (
           <>
             {value.map((p, index) => (
               <>
                 <MDEditor
                   key={`edit_${index}`}
                   height={value.length > 1 ? 150 : 500}
-                  value={p}
+                  value={p.content}
                   preview="edit"
                   // @ts-ignore
                   onChange={changeValue(index)}
@@ -332,9 +349,11 @@ export const AddEditModal: FC<{
             ))}
           </>
         ) : (
-          <div className="h-[100px] flex justify-center items-center bg-sixth border-tableBorder border-2">
-            Global Editor Hidden
-          </div>
+          !existingData.integration && (
+            <div className="h-[100px] flex justify-center items-center bg-sixth border-tableBorder border-2">
+              Global Editor Hidden
+            </div>
+          )
         )}
         {!!selectedIntegrations.length && (
           <PreviewComponent

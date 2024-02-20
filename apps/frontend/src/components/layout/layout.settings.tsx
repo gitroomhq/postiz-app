@@ -5,12 +5,14 @@ import {ContextWrapper} from "@gitroom/frontend/components/layout/user.context";
 import {NotificationComponent} from "@gitroom/frontend/components/notifications/notification.component";
 import {TopMenu} from "@gitroom/frontend/components/layout/top.menu";
 import {MantineWrapper} from "@gitroom/react/helpers/mantine.wrapper";
+import {ToolTip} from "@gitroom/frontend/components/layout/top.tip";
 
 export const LayoutSettings = ({children}: {children: ReactNode}) => {
     const user = JSON.parse(headers().get('user')!);
     return (
         <ContextWrapper user={user}>
             <MantineWrapper>
+                <ToolTip />
                 <div className="min-h-[100vh] w-full max-w-[1440px] mx-auto bg-primary px-[12px] text-white flex flex-col">
                     <div className="px-[23px] flex h-[80px] items-center justify-between z-[200] sticky top-0 bg-primary">
                         <div className="text-2xl">

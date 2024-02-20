@@ -10,16 +10,18 @@ export const LaunchesComponent: FC<{
   integrations: Integrations[]
 }> = (props) => {
   const { integrations } = props;
+
   const sortedIntegrations = useMemo(() => {
     return orderBy(integrations, ['type', 'identifier'], ['desc', 'asc']);
   }, [integrations]);
+
   return (
     <CalendarWeekProvider integrations={sortedIntegrations}>
       <div className="flex flex-1 flex-col">
         <Filters />
         <div className="flex flex-1 relative">
           <div className="absolute w-full h-full flex flex-1 gap-[30px] overflow-hidden overflow-y-scroll scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary">
-            <div className="w-[330px] bg-third p-[16px] flex flex-col gap-[24px] sticky top-0">
+            <div className="w-[220px] bg-third p-[16px] flex flex-col gap-[24px] sticky top-0">
               <h2 className="text-[20px]">Channels</h2>
               <div className="gap-[16px] flex flex-col">
                 {sortedIntegrations.map((integration) => (

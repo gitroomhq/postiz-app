@@ -8,6 +8,11 @@ import { useHideTopEditor } from '@gitroom/frontend/components/launches/helpers/
 import { useValues } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { FormProvider } from 'react-hook-form';
 import { useMoveToIntegrationListener } from '@gitroom/frontend/components/launches/helpers/use.move.to.integration';
+import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
+import {
+  IntegrationContext,
+  useIntegration,
+} from '@gitroom/frontend/components/launches/helpers/use.integration';
 
 // This is a simple function that if we edit in place, we hide the editor on top
 export const EditorWrapper: FC = (props) => {
@@ -22,16 +27,28 @@ export const EditorWrapper: FC = (props) => {
   return null;
 };
 
-export const withProvider = (SettingsComponent: FC, PreviewComponent: FC) => {
+export const withProvider = (
+  SettingsComponent: FC,
+  PreviewComponent: FC,
+  dto?: any
+) => {
   return (props: {
     identifier: string;
     id: string;
-    value: string[];
+    value: Array<{ content: string; id?: string }>;
     show: boolean;
   }) => {
-    const [editInPlace, setEditInPlace] = useState(false);
-    const [InPlaceValue, setInPlaceValue] = useState(['']);
-    const [showTab, setShowTab] = useState(0);
+    const existingData = useExistingData();
+    const { integration } = useIntegration();
+    const [editInPlace, setEditInPlace] = useState(!!existingData.integration);
+    const [InPlaceValue, setInPlaceValue] = useState<
+      Array<{ id?: string; content: string }>
+    >(
+      existingData.integration
+        ? existingData.posts.map((p) => ({ id: p.id, content: p.content }))
+        : [{ content: '' }]
+    );
+    const [showTab, setShowTab] = useState(existingData.integration ? 1 : 0);
 
     // in case there is an error on submit, we change to the settings tab for the specific provider
     useMoveToIntegrationListener(true, (identifier) => {
@@ -42,16 +59,18 @@ export const withProvider = (SettingsComponent: FC, PreviewComponent: FC) => {
 
     // this is a smart function, it updates the global value without updating the states (too heavy) and set the settings validation
     const form = useValues(
-      props.identifier,
+      existingData.settings,
       props.id,
-      editInPlace ? InPlaceValue : props.value
+      props.identifier,
+      editInPlace ? InPlaceValue : props.value,
+      dto
     );
 
     // change editor value
     const changeValue = useCallback(
       (index: number) => (newValue: string) => {
         return setInPlaceValue((prev) => {
-          prev[index] = newValue;
+          prev[index].content = newValue;
           return [...prev];
         });
       },
@@ -62,7 +81,7 @@ export const withProvider = (SettingsComponent: FC, PreviewComponent: FC) => {
     const addValue = useCallback(
       (index: number) => () => {
         setInPlaceValue((prev) => {
-          prev.splice(index + 1, 0, '');
+          prev.splice(index + 1, 0, { content: '' });
           return [...prev];
         });
       },
@@ -85,12 +104,15 @@ export const withProvider = (SettingsComponent: FC, PreviewComponent: FC) => {
         setShowTab(editor ? 1 : 0);
         if (editor && !editInPlace) {
           setEditInPlace(true);
-          setInPlaceValue(props.value);
+          setInPlaceValue(
+            props.value.map((p) => ({ id: p.id, content: p.content }))
+          );
         }
       },
       [props.value, editInPlace]
     );
 
+    // this is a trick to prevent the data from being deleted, yet we don't render the elements
     if (!props.show) {
       return null;
     }
@@ -123,7 +145,7 @@ export const withProvider = (SettingsComponent: FC, PreviewComponent: FC) => {
                   <MDEditor
                     key={`edit_inner_${index}`}
                     height={InPlaceValue.length > 1 ? 200 : 500}
-                    value={val}
+                    value={val.content}
                     preview="edit"
                     // @ts-ignore
                     onChange={changeValue(index)}
@@ -135,8 +157,21 @@ export const withProvider = (SettingsComponent: FC, PreviewComponent: FC) => {
               ))}
             </div>
           )}
-          {showTab === 2 && <SettingsComponent />}
-          {showTab === 0 && <PreviewComponent />}
+          {showTab === 2 && (
+            <div className="mt-[20px]">
+              <SettingsComponent />
+            </div>
+          )}
+          {showTab === 0 && (
+            <IntegrationContext.Provider
+              value={{
+                value: editInPlace ? InPlaceValue : props.value,
+                integration,
+              }}
+            >
+              <PreviewComponent />
+            </IntegrationContext.Provider>
+          )}
         </div>
       </FormProvider>
     );

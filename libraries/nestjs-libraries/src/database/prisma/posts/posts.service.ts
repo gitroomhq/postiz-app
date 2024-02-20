@@ -5,6 +5,7 @@ import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport/client
 import dayjs from 'dayjs';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { Integration, Post } from '@prisma/client';
+import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 
 type PostWithConditionals = Post & {
   integration?: Integration;
@@ -21,15 +22,33 @@ export class PostsService {
 
   async getPostsRecursively(
     id: string,
-    includeIntegration = false
+    includeIntegration = false,
+    orgId?: string
   ): Promise<PostWithConditionals[]> {
-    const post = await this._postRepository.getPost(id, includeIntegration);
+    const post = await this._postRepository.getPost(
+      id,
+      includeIntegration,
+      orgId
+    );
     return [
       post!,
       ...(post?.childrenPost?.length
-        ? await this.getPostsRecursively(post.childrenPost[0].id)
+        ? await this.getPostsRecursively(post.childrenPost[0].id, false, orgId)
         : []),
     ];
+  }
+
+  getPosts(orgId: string, query: GetPostsDto) {
+    return this._postRepository.getPosts(orgId, query);
+  }
+
+  async getPost(orgId: string, id: string) {
+    const posts = await this.getPostsRecursively(id, false, orgId);
+    return {
+      posts,
+      integration: posts[0].integrationId,
+      settings: JSON.parse(posts[0].settings || '{}'),
+    };
   }
 
   async post(id: string) {
@@ -39,54 +58,90 @@ export class PostsService {
     }
 
     if (firstPost.integration?.type === 'article') {
-      return this.postArticle(firstPost.integration!, [firstPost, ...morePosts]);
+      return this.postArticle(firstPost.integration!, [
+        firstPost,
+        ...morePosts,
+      ]);
     }
 
     return this.postSocial(firstPost.integration!, [firstPost, ...morePosts]);
   }
 
   private async postSocial(integration: Integration, posts: Post[]) {
-      const getIntegration = this._integrationManager.getSocialIntegration(integration.providerIdentifier);
-      if (!getIntegration) {
-          return;
-      }
+    const getIntegration = this._integrationManager.getSocialIntegration(
+      integration.providerIdentifier
+    );
+    if (!getIntegration) {
+      return;
+    }
 
-      const publishedPosts = await getIntegration.post(integration.internalId, integration.token, posts.map(p => ({
+    const publishedPosts = await getIntegration.post(
+      integration.internalId,
+      integration.token,
+      posts.map((p) => ({
         id: p.id,
         message: p.content,
         settings: JSON.parse(p.settings || '{}'),
-      })));
+      }))
+    );
 
-      for (const post of publishedPosts) {
-          await this._postRepository.updatePost(post.id, post.postId, post.releaseURL);
-      }
+    for (const post of publishedPosts) {
+      await this._postRepository.updatePost(
+        post.id,
+        post.postId,
+        post.releaseURL
+      );
+    }
   }
 
   private async postArticle(integration: Integration, posts: Post[]) {
-      const getIntegration = this._integrationManager.getArticlesIntegration(integration.providerIdentifier);
-      if (!getIntegration) {
-          return;
-      }
-      const {postId, releaseURL} = await getIntegration.post(integration.token, posts.map(p => p.content).join('\n\n'), JSON.parse(posts[0].settings || '{}'));
-      await this._postRepository.updatePost(posts[0].id, postId, releaseURL);
+    const getIntegration = this._integrationManager.getArticlesIntegration(
+      integration.providerIdentifier
+    );
+    if (!getIntegration) {
+      return;
+    }
+    const { postId, releaseURL } = await getIntegration.post(
+      integration.token,
+      posts.map((p) => p.content).join('\n\n'),
+      JSON.parse(posts[0].settings || '{}')
+    );
+    await this._postRepository.updatePost(posts[0].id, postId, releaseURL);
   }
 
   async createPost(orgId: string, body: CreatePostDto) {
     for (const post of body.posts) {
-      const posts = await this._postRepository.createPost(
+      const posts = await this._postRepository.createOrUpdatePost(
         orgId,
         body.date,
         post
       );
+
+      await this._workerServiceProducer.delete('post', posts[0].id);
+
       this._workerServiceProducer.emit('post', {
         id: posts[0].id,
         options: {
-          delay: 0 // dayjs(posts[0].publishDate).diff(dayjs(), 'millisecond'),
+          delay: dayjs(posts[0].publishDate).diff(dayjs(), 'millisecond'),
         },
         payload: {
           id: posts[0].id,
         },
       });
     }
+  }
+
+  async changeDate(orgId: string, id: string, date: string) {
+    await this._workerServiceProducer.delete('post', id);
+    this._workerServiceProducer.emit('post', {
+      id: id,
+      options: {
+        delay: dayjs(date).diff(dayjs(), 'millisecond'),
+      },
+      payload: {
+        id: id,
+      },
+    });
+    return this._postRepository.changeDate(orgId, id, date);
   }
 }

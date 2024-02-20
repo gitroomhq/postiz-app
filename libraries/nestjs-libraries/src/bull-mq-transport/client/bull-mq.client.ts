@@ -74,7 +74,7 @@ export class BullMqClient extends ClientProxy {
     return () => void 0;
   }
 
-  async delay(pattern: string, jobId: string, delay: number) {
+  delay(pattern: string, jobId: string, delay: number) {
     const queue = this.getQueue(pattern);
     return queue.getJob(jobId).then((job) => job?.changeDelay(delay));
   }
@@ -82,6 +82,11 @@ export class BullMqClient extends ClientProxy {
   async delete(pattern: string, jobId: string) {
     const queue = this.getQueue(pattern);
     return queue.getJob(jobId).then((job) => job?.remove());
+  }
+
+  job(pattern: string, jobId: string) {
+    const queue = this.getQueue(pattern);
+    return queue.getJob(jobId);
   }
 
   protected async dispatchEvent(

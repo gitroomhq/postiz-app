@@ -11,7 +11,7 @@ async function bootstrap() {
     cors: {
       credentials: true,
       exposedHeaders: ['reload'],
-      origin: [process.env.FRONTEND_URL]
+      origin: [process.env.FRONTEND_URL],
     }
   });
 

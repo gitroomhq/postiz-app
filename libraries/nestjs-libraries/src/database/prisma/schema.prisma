@@ -101,7 +101,7 @@ model Star {
 model Media {
   id             String       @id @default(uuid())
   name           String
-  url            String
+  path           String
   organization   Organization @relation(fields: [organizationId], references: [id])
   organizationId String
   posts          PostMedia[]
