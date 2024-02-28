@@ -1,13 +1,11 @@
 import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
 import { Post as PostBody } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
-import { Integration, Post } from '@prisma/client';
+import { Post } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import { v4 as uuidv4 } from 'uuid';
-import {instanceToInstance, instanceToPlain} from "class-transformer";
-import {validate} from "class-validator";
 
 dayjs.extend(isoWeek);
 
@@ -28,6 +26,7 @@ export class PostsRepository {
           gte: startDate,
           lte: endDate,
         },
+        deletedAt: null,
         parentPostId: null,
       },
       select: {
@@ -46,11 +45,35 @@ export class PostsRepository {
     });
   }
 
+  async deletePost(orgId: string, group: string) {
+    await this._post.model.post.updateMany({
+      where: {
+        organizationId: orgId,
+        group,
+      },
+      data: {
+        deletedAt: new Date(),
+      },
+    });
+
+    return this._post.model.post.findFirst({
+      where: {
+        organizationId: orgId,
+        group,
+        parentPostId: null,
+      },
+      select: {
+        id: true,
+      },
+    });
+  }
+
   getPost(id: string, includeIntegration = false, orgId?: string) {
     return this._post.model.post.findUnique({
       where: {
         id,
         ...(orgId ? { organizationId: orgId } : {}),
+        deletedAt: null,
       },
       include: {
         ...(includeIntegration ? { integration: true } : {}),
@@ -84,11 +107,12 @@ export class PostsRepository {
     });
   }
 
-  async createOrUpdatePost(orgId: string, date: string, body: PostBody) {
+  async createOrUpdatePost(state: 'draft' | 'schedule', orgId: string, date: string, body: PostBody) {
     const posts: Post[] = [];
+    const uuid = uuidv4();
 
     for (const value of body.value) {
-      const updateData = {
+      const updateData = (type: 'create' | 'update') => ({
         publishDate: dayjs(date).toDate(),
         integration: {
           connect: {
@@ -96,7 +120,7 @@ export class PostsRepository {
             organizationId: orgId,
           },
         },
-        ...(posts.length
+        ...(posts?.[posts.length - 1]?.id
           ? {
               parentPost: {
                 connect: {
@@ -104,28 +128,64 @@ export class PostsRepository {
                 },
               },
             }
+          : type === 'update'
+          ? {
+              parentPost: {
+                disconnect: true,
+              },
+            }
           : {}),
         content: value.content,
+        group: uuid,
+        state: state === 'draft' ? 'DRAFT' as const : 'QUEUE' as const,
+        image: JSON.stringify(value.image),
         settings: JSON.stringify(body.settings),
         organization: {
           connect: {
             id: orgId,
           },
         },
-      };
-
+      });
 
       posts.push(
         await this._post.model.post.upsert({
           where: {
-            id: value.id || uuidv4()
+            id: value.id || uuidv4(),
           },
-          create: updateData,
-          update: updateData,
+          create: updateData('create'),
+          update: updateData('update'),
         })
       );
     }
 
-    return posts;
+    const previousPost = body.group
+      ? (
+          await this._post.model.post.findFirst({
+            where: {
+              group: body.group,
+              deletedAt: null,
+              parentPostId: null,
+            },
+            select: {
+              id: true,
+            },
+          })
+        )?.id!
+      : undefined;
+
+    if (body.group) {
+      await this._post.model.post.updateMany({
+        where: {
+          group: body.group,
+          deletedAt: null,
+        },
+        data: {
+          parentPostId: null,
+          deletedAt: new Date(),
+        },
+      });
+    }
+
+    return { previousPost, posts };
   }
 }

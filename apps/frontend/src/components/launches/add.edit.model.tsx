@@ -3,198 +3,37 @@
 import { FC, useCallback, useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
-import Image from 'next/image';
 import clsx from 'clsx';
-import MDEditor from '@uiw/react-md-editor';
+import MDEditor, { commands } from '@uiw/react-md-editor';
 import { usePreventWindowUnload } from '@gitroom/react/helpers/use.prevent.window.unload';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useModals } from '@mantine/modals';
-import { ShowAllProviders } from '@gitroom/frontend/components/launches/providers/show.all.providers';
 import { useHideTopEditor } from '@gitroom/frontend/components/launches/helpers/use.hide.top.editor';
 import { Button } from '@gitroom/react/form/button';
-import { IntegrationContext } from '@gitroom/frontend/components/launches/helpers/use.integration';
+// @ts-ignore
+import useKeypress from 'react-use-keypress';
 import {
   getValues,
   resetValues,
 } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import {
-  useMoveToIntegration,
-  useMoveToIntegrationListener,
-} from '@gitroom/frontend/components/launches/helpers/use.move.to.integration';
+import { useMoveToIntegration } from '@gitroom/frontend/components/launches/helpers/use.move.to.integration';
 import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
+import { newImage } from '@gitroom/frontend/components/launches/helpers/new.image.component';
+import { MultiMediaComponent } from '@gitroom/frontend/components/media/media.component';
+import { useExpend } from '@gitroom/frontend/components/launches/helpers/use.expend';
+import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
+import { PickPlatforms } from '@gitroom/frontend/components/launches/helpers/pick.platform.component';
+import { ProvidersOptions } from '@gitroom/frontend/components/launches/providers.options';
+import { v4 as uuidv4 } from 'uuid';
+import { useSWRConfig } from 'swr';
 
-export const PickPlatforms: FC<{
-  integrations: Integrations[];
-  selectedIntegrations: Integrations[];
-  onChange: (integrations: Integrations[]) => void;
-  singleSelect: boolean;
-}> = (props) => {
-  const { integrations, selectedIntegrations, onChange } = props;
-  const [selectedAccounts, setSelectedAccounts] =
-    useState<Integrations[]>(selectedIntegrations);
-
-  useEffect(() => {
-    if (
-      props.singleSelect &&
-      selectedAccounts.length &&
-      integrations.indexOf(selectedAccounts?.[0]) === -1
-    ) {
-      addPlatform(integrations[0])();
-    }
-  }, [integrations, selectedAccounts]);
-
-  useMoveToIntegrationListener(props.singleSelect, (identifier) => {
-    const findIntegration = integrations.find(
-      (p) => p.identifier === identifier
-    );
-    if (findIntegration) {
-      addPlatform(findIntegration)();
-    }
-  });
-
-  const addPlatform = useCallback(
-    (integration: Integrations) => async () => {
-      if (props.singleSelect) {
-        onChange([integration]);
-        setSelectedAccounts([integration]);
-        return;
-      }
-      if (selectedAccounts.includes(integration)) {
-        const changedIntegrations = selectedAccounts.filter(
-          ({ id }) => id !== integration.id
-        );
-
-        if (
-          !props.singleSelect &&
-          !(await deleteDialog(
-            'Are you sure you want to remove this platform?'
-          ))
-        ) {
-          return;
-        }
-        onChange(changedIntegrations);
-        setSelectedAccounts(changedIntegrations);
-      } else {
-        const changedIntegrations = [...selectedAccounts, integration];
-        onChange(changedIntegrations);
-        setSelectedAccounts(changedIntegrations);
-      }
-    },
-    [selectedAccounts]
-  );
-  return (
-    <div className="flex">
-      {integrations.map((integration) =>
-        !props.singleSelect ? (
-          <div
-            key={integration.id}
-            className="flex gap-[8px] items-center mr-[10px]"
-          >
-            <div
-              onClick={addPlatform(integration)}
-              className={clsx(
-                'cursor-pointer relative w-[34px] h-[34px] rounded-full flex justify-center items-center bg-fifth filter transition-all duration-500',
-                selectedAccounts.findIndex((p) => p.id === integration.id) ===
-                  -1
-                  ? 'grayscale opacity-65'
-                  : 'grayscale-0'
-              )}
-            >
-              <img
-                src={integration.picture}
-                className="rounded-full"
-                alt={integration.identifier}
-                width={32}
-                height={32}
-              />
-              <Image
-                src={`/icons/platforms/${integration.identifier}.png`}
-                className="rounded-full absolute z-10 -bottom-[5px] -right-[5px] border border-fifth"
-                alt={integration.identifier}
-                width={20}
-                height={20}
-              />
-            </div>
-          </div>
-        ) : (
-          <div key={integration.id} className="flex w-full">
-            <div
-              onClick={addPlatform(integration)}
-              className={clsx(
-                'cursor-pointer flex-1 relative h-[40px] flex justify-center items-center bg-fifth filter transition-all duration-500',
-                selectedAccounts.findIndex((p) => p.id === integration.id) ===
-                  -1
-                  ? 'bg-sixth'
-                  : 'bg-forth'
-              )}
-            >
-              <div className="flex items-center justify-center gap-[10px]">
-                <div className="relative">
-                  <img
-                    src={integration.picture}
-                    className="rounded-full"
-                    alt={integration.identifier}
-                    width={32}
-                    height={32}
-                  />
-                  <Image
-                    src={`/icons/platforms/${integration.identifier}.png`}
-                    className="rounded-full absolute z-10 -bottom-[5px] -right-[5px] border border-fifth"
-                    alt={integration.identifier}
-                    width={20}
-                    height={20}
-                  />
-                </div>
-                <div>{integration.name}</div>
-              </div>
-            </div>
-          </div>
-        )
-      )}
-    </div>
-  );
-};
-
-export const PreviewComponent: FC<{
-  integrations: Integrations[];
-  editorValue: Array<{ id?: string; content: string }>;
-}> = (props) => {
-  const { integrations, editorValue } = props;
-  const [selectedIntegrations, setSelectedIntegrations] = useState([
-    integrations[0],
-  ]);
-
-  useEffect(() => {
-    if (integrations.indexOf(selectedIntegrations[0]) === -1) {
-      setSelectedIntegrations([integrations[0]]);
-    }
-  }, [integrations, selectedIntegrations]);
-  return (
-    <div>
-      <PickPlatforms
-        integrations={integrations}
-        selectedIntegrations={selectedIntegrations}
-        onChange={setSelectedIntegrations}
-        singleSelect={true}
-      />
-      <IntegrationContext.Provider
-        value={{ value: editorValue, integration: selectedIntegrations?.[0] }}
-      >
-        <ShowAllProviders
-          value={editorValue}
-          integrations={integrations}
-          selectedProvider={selectedIntegrations?.[0]}
-        />
-      </IntegrationContext.Provider>
-    </div>
-  );
-};
 export const AddEditModal: FC<{
   date: dayjs.Dayjs;
   integrations: Integrations[];
 }> = (props) => {
   const { date, integrations } = props;
+  const { mutate } = useSWRConfig();
 
   // selected integrations to allow edit
   const [selectedIntegrations, setSelectedIntegrations] = useState<
@@ -202,9 +41,13 @@ export const AddEditModal: FC<{
   >([]);
 
   // value of each editor
-  const [value, setValue] = useState<Array<{ content: string; id?: string }>>([
-    { content: '' },
-  ]);
+  const [value, setValue] = useState<
+    Array<{
+      content: string;
+      id?: string;
+      image?: Array<{ id: string; path: string }>;
+    }>
+  >([{ content: '' }]);
 
   const fetch = useFetch();
 
@@ -217,11 +60,15 @@ export const AddEditModal: FC<{
   // hook to test if the top editor should be hidden
   const showHide = useHideTopEditor();
 
+  const [showError, setShowError] = useState(false);
+
   // hook to open a new modal
   const modal = useModals();
 
   // are we in edit mode?
   const existingData = useExistingData();
+
+  const expend = useExpend();
 
   // if it's edit just set the current integration
   useEffect(() => {
@@ -250,11 +97,43 @@ export const AddEditModal: FC<{
     [value]
   );
 
+  const changeImage = useCallback(
+    (index: number) =>
+      (newValue: {
+        target: { name: string; value?: Array<{ id: string; path: string }> };
+      }) => {
+        return setValue((prev) => {
+          prev[index].image = newValue.target.value;
+          return [...prev];
+        });
+      },
+    [value]
+  );
+
   // Add another editor
   const addValue = useCallback(
     (index: number) => () => {
       setValue((prev) => {
         prev.splice(index + 1, 0, { content: '' });
+        return [...prev];
+      });
+    },
+    [value]
+  );
+
+  // Delete post
+  const deletePost = useCallback(
+    (index: number) => async () => {
+      if (
+        !(await deleteDialog(
+          'Are you sure you want to delete this post?',
+          'Yes, delete it!'
+        ))
+      ) {
+        return;
+      }
+      setValue((prev) => {
+        prev.splice(index, 1);
         return [...prev];
       });
     },
@@ -273,95 +152,257 @@ export const AddEditModal: FC<{
     }
   }, []);
 
-  // function to send to the server and save
-  const schedule = useCallback(async () => {
-    const values = getValues();
-    const allKeys = Object.keys(values).map((v) => ({
-      integration: integrations.find((p) => p.id === v),
-      value: values[v].posts,
-      valid: values[v].isValid,
-      settings: values[v].settings(),
-    }));
+  // sometimes it's easier to click escape to close
+  useKeypress('Escape', askClose);
 
-    for (const key of allKeys) {
-      if (!key.valid) {
-        moveToIntegration(key?.integration?.identifier!);
+  // function to send to the server and save
+  const schedule = useCallback(
+    (type: 'draft' | 'now' | 'schedule' | 'delete') => async () => {
+      if (type === 'delete') {
+        if (!await deleteDialog('Are you sure you want to delete this post?', 'Yes, delete it!')) {
+          return ;
+        }
+        await fetch(`/posts/${existingData.group}`, {
+          method: 'DELETE',
+        });
+        mutate('/posts');
+        modal.closeAll();
         return;
       }
-    }
 
-    await fetch('/posts', {
-      method: 'POST',
-      body: JSON.stringify({
-        date: date.utc().format('YYYY-MM-DDTHH:mm:ss'),
-        posts: allKeys,
-      }),
-    });
-  }, []);
+      const values = getValues();
+      const allKeys = Object.keys(values).map((v) => ({
+        integration: integrations.find((p) => p.id === v),
+        value: values[v].posts,
+        valid: values[v].isValid,
+        group: existingData?.group,
+        trigger: values[v].trigger,
+        settings: values[v].settings(),
+      }));
+
+      for (const key of allKeys) {
+        if (key.value.some((p) => !p.content || p.content.length < 6)) {
+          setShowError(true);
+          return ;
+        }
+
+        if (!key.valid) {
+          await key.trigger();
+          moveToIntegration(key?.integration?.id!);
+          return;
+        }
+      }
+
+      await fetch('/posts', {
+        method: 'POST',
+        body: JSON.stringify({
+          type,
+          date: date.utc().format('YYYY-MM-DDTHH:mm:ss'),
+          posts: allKeys,
+        }),
+      });
+
+      existingData.group = uuidv4();
+
+      mutate('/posts');
+      modal.closeAll();
+    },
+    []
+  );
 
   return (
     <>
-      <button
-        onClick={askClose}
-        className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root bg-black hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
-        type="button"
-      >
-        <svg
-          viewBox="0 0 15 15"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
+      <div className="flex gap-[20px] bg-black">
+        <div
+          className={clsx(
+            'flex flex-col gap-[16px] transition-all duration-700 whitespace-nowrap',
+            !expend.expend
+              ? 'flex-1 w-1 animate-overflow'
+              : 'w-0 overflow-hidden'
+          )}
         >
-          <path
-            d="M11.7816 4.03157C12.0062 3.80702 12.0062 3.44295 11.7816 3.2184C11.5571 2.99385 11.193 2.99385 10.9685 3.2184L7.50005 6.68682L4.03164 3.2184C3.80708 2.99385 3.44301 2.99385 3.21846 3.2184C2.99391 3.44295 2.99391 3.80702 3.21846 4.03157L6.68688 7.49999L3.21846 10.9684C2.99391 11.193 2.99391 11.557 3.21846 11.7816C3.44301 12.0061 3.80708 12.0061 4.03164 11.7816L7.50005 8.31316L10.9685 11.7816C11.193 12.0061 11.5571 12.0061 11.7816 11.7816C12.0062 11.557 12.0062 11.193 11.7816 10.9684L8.31322 7.49999L11.7816 4.03157Z"
-            fill="currentColor"
-            fillRule="evenodd"
-            clipRule="evenodd"
-          ></path>
-        </svg>
-      </button>
-      <div className="flex flex-col gap-[20px]">
-        {!existingData.integration && (
-          <PickPlatforms
-            integrations={integrations}
-            selectedIntegrations={[]}
-            singleSelect={false}
-            onChange={setSelectedIntegrations}
-          />
-        )}
-        {!existingData.integration && !showHide.hideTopEditor ? (
-          <>
-            {value.map((p, index) => (
+          <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-[#172034] bg-[#0B101B] p-[16px] pt-0">
+            <TopTitle
+              title={existingData?.group ? 'Edit Post' : 'Create Post'}
+            />
+
+            <button
+              onClick={askClose}
+              className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+              type="button"
+            >
+              <svg
+                viewBox="0 0 15 15"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+              >
+                <path
+                  d="M11.7816 4.03157C12.0062 3.80702 12.0062 3.44295 11.7816 3.2184C11.5571 2.99385 11.193 2.99385 10.9685 3.2184L7.50005 6.68682L4.03164 3.2184C3.80708 2.99385 3.44301 2.99385 3.21846 3.2184C2.99391 3.44295 2.99391 3.80702 3.21846 4.03157L6.68688 7.49999L3.21846 10.9684C2.99391 11.193 2.99391 11.557 3.21846 11.7816C3.44301 12.0061 3.80708 12.0061 4.03164 11.7816L7.50005 8.31316L10.9685 11.7816C11.193 12.0061 11.5571 12.0061 11.7816 11.7816C12.0062 11.557 12.0062 11.193 11.7816 10.9684L8.31322 7.49999L11.7816 4.03157Z"
+                  fill="currentColor"
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                ></path>
+              </svg>
+            </button>
+
+            {!existingData.integration && (
+              <PickPlatforms
+                integrations={integrations}
+                selectedIntegrations={[]}
+                singleSelect={false}
+                onChange={setSelectedIntegrations}
+              />
+            )}
+            <div id="renderEditor" />
+            {!existingData.integration && !showHide.hideTopEditor ? (
               <>
-                <MDEditor
-                  key={`edit_${index}`}
-                  height={value.length > 1 ? 150 : 500}
-                  value={p.content}
-                  preview="edit"
-                  // @ts-ignore
-                  onChange={changeValue(index)}
-                />
-                <div>
-                  <Button onClick={addValue(index)}>Add post</Button>
-                </div>
+                <div>You are in global editing mode</div>
+                {value.map((p, index) => (
+                  <>
+                    <div>
+                      <MDEditor
+                        key={`edit_${index}`}
+                        height={value.length > 1 ? 150 : 250}
+                        commands={[
+                          ...commands
+                            .getCommands()
+                            .filter((f) => f.name !== 'image'),
+                          newImage,
+                        ]}
+                        value={p.content}
+                        preview="edit"
+                        // @ts-ignore
+                        onChange={changeValue(index)}
+                      />
+                      {showError && (!p.content || p.content.length < 6) && (
+                        <div className="my-[5px] text-[#F97066] text-[12px] font-[500]">
+                          The post should be at least 6 characters long
+                        </div>
+                      )}
+                      <div className="flex">
+                        <div className="flex-1">
+                          <MultiMediaComponent
+                            label="Attachments"
+                            description=""
+                            value={p.image}
+                            name="image"
+                            onChange={changeImage(index)}
+                          />
+                        </div>
+                        <div className="flex bg-[#121b2c] rounded-br-[8px] text-[#F97066]">
+                          {value.length > 1 && (
+                            <div
+                              className="flex cursor-pointer gap-[4px] justify-center items-center flex-1"
+                              onClick={deletePost(index)}
+                            >
+                              <div>
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 14 14"
+                                  fill="currentColor"
+                                >
+                                  <path
+                                    d="M11.8125 2.625H9.625V2.1875C9.625 1.8394 9.48672 1.50556 9.24058 1.25942C8.99444 1.01328 8.6606 0.875 8.3125 0.875H5.6875C5.3394 0.875 5.00556 1.01328 4.75942 1.25942C4.51328 1.50556 4.375 1.8394 4.375 2.1875V2.625H2.1875C2.07147 2.625 1.96019 2.67109 1.87814 2.75314C1.79609 2.83519 1.75 2.94647 1.75 3.0625C1.75 3.17853 1.79609 3.28981 1.87814 3.37186C1.96019 3.45391 2.07147 3.5 2.1875 3.5H2.625V11.375C2.625 11.6071 2.71719 11.8296 2.88128 11.9937C3.04538 12.1578 3.26794 12.25 3.5 12.25H10.5C10.7321 12.25 10.9546 12.1578 11.1187 11.9937C11.2828 11.8296 11.375 11.6071 11.375 11.375V3.5H11.8125C11.9285 3.5 12.0398 3.45391 12.1219 3.37186C12.2039 3.28981 12.25 3.17853 12.25 3.0625C12.25 2.94647 12.2039 2.83519 12.1219 2.75314C12.0398 2.67109 11.9285 2.625 11.8125 2.625ZM5.25 2.1875C5.25 2.07147 5.29609 1.96019 5.37814 1.87814C5.46019 1.79609 5.57147 1.75 5.6875 1.75H8.3125C8.42853 1.75 8.53981 1.79609 8.62186 1.87814C8.70391 1.96019 8.75 2.07147 8.75 2.1875V2.625H5.25V2.1875ZM10.5 11.375H3.5V3.5H10.5V11.375ZM6.125 5.6875V9.1875C6.125 9.30353 6.07891 9.41481 5.99686 9.49686C5.91481 9.57891 5.80353 9.625 5.6875 9.625C5.57147 9.625 5.46019 9.57891 5.37814 9.49686C5.29609 9.41481 5.25 9.30353 5.25 9.1875V5.6875C5.25 5.57147 5.29609 5.46019 5.37814 5.37814C5.46019 5.29609 5.57147 5.25 5.6875 5.25C5.80353 5.25 5.91481 5.29609 5.99686 5.37814C6.07891 5.46019 6.125 5.57147 6.125 5.6875ZM8.75 5.6875V9.1875C8.75 9.30353 8.70391 9.41481 8.62186 9.49686C8.53981 9.57891 8.42853 9.625 8.3125 9.625C8.19647 9.625 8.08519 9.57891 8.00314 9.49686C7.92109 9.41481 7.875 9.30353 7.875 9.1875V5.6875C7.875 5.57147 7.92109 5.46019 8.00314 5.37814C8.08519 5.29609 8.19647 5.25 8.3125 5.25C8.42853 5.25 8.53981 5.29609 8.62186 5.37814C8.70391 5.46019 8.75 5.57147 8.75 5.6875Z"
+                                    fill="#F97066"
+                                  />
+                                </svg>
+                              </div>
+                              <div className="text-[12px] font-[500] pr-[10px]">
+                                Delete Post
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <Button
+                        onClick={addValue(index)}
+                        className="!h-[24px] rounded-[3px] flex gap-[4px] w-[102px] text-[12px] font-[500]"
+                      >
+                        <div>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 14 14"
+                            fill="none"
+                          >
+                            <path
+                              d="M7 1.3125C5.87512 1.3125 4.7755 1.64607 3.8402 2.27102C2.90489 2.89597 2.17591 3.78423 1.74544 4.82349C1.31496 5.86274 1.20233 7.00631 1.42179 8.10958C1.64124 9.21284 2.18292 10.2263 2.97833 11.0217C3.77374 11.8171 4.78716 12.3588 5.89043 12.5782C6.99369 12.7977 8.13726 12.685 9.17651 12.2546C10.2158 11.8241 11.104 11.0951 11.729 10.1598C12.3539 9.2245 12.6875 8.12488 12.6875 7C12.6859 5.49207 12.0862 4.04636 11.0199 2.98009C9.95365 1.91382 8.50793 1.31409 7 1.3125ZM7 11.8125C6.04818 11.8125 5.11773 11.5303 4.32632 11.0014C3.53491 10.4726 2.91808 9.72103 2.55383 8.84166C2.18959 7.96229 2.09428 6.99466 2.27997 6.06113C2.46566 5.12759 2.92401 4.27009 3.59705 3.59705C4.27009 2.92401 5.1276 2.46566 6.06113 2.27997C6.99466 2.09428 7.9623 2.18958 8.84167 2.55383C9.72104 2.91808 10.4726 3.53491 11.0015 4.32632C11.5303 5.11773 11.8125 6.04818 11.8125 7C11.8111 8.27591 11.3036 9.49915 10.4014 10.4014C9.49915 11.3036 8.27591 11.8111 7 11.8125ZM9.625 7C9.625 7.11603 9.57891 7.22731 9.49686 7.30936C9.41481 7.39141 9.30353 7.4375 9.1875 7.4375H7.4375V9.1875C7.4375 9.30353 7.39141 9.41481 7.30936 9.49686C7.22731 9.57891 7.11603 9.625 7 9.625C6.88397 9.625 6.77269 9.57891 6.69064 9.49686C6.6086 9.41481 6.5625 9.30353 6.5625 9.1875V7.4375H4.8125C4.69647 7.4375 4.58519 7.39141 4.50314 7.30936C4.4211 7.22731 4.375 7.11603 4.375 7C4.375 6.88397 4.4211 6.77269 4.50314 6.69064C4.58519 6.60859 4.69647 6.5625 4.8125 6.5625H6.5625V4.8125C6.5625 4.69647 6.6086 4.58519 6.69064 4.50314C6.77269 4.42109 6.88397 4.375 7 4.375C7.11603 4.375 7.22731 4.42109 7.30936 4.50314C7.39141 4.58519 7.4375 4.69647 7.4375 4.8125V6.5625H9.1875C9.30353 6.5625 9.41481 6.60859 9.49686 6.69064C9.57891 6.77269 9.625 6.88397 9.625 7Z"
+                              fill="white"
+                            />
+                          </svg>
+                        </div>
+                        <div>Add post</div>
+                      </Button>
+                    </div>
+                  </>
+                ))}
               </>
-            ))}
-          </>
-        ) : (
-          !existingData.integration && (
-            <div className="h-[100px] flex justify-center items-center bg-sixth border-tableBorder border-2">
-              Global Editor Hidden
+            ) : null}
+          </div>
+          <div className="relative h-[68px] flex flex-col rounded-[4px] border border-[#172034] bg-[#0B101B]">
+            <div className="flex flex-1 gap-[10px] relative">
+              <div className="absolute w-full h-full flex gap-[10px] justify-end items-center right-[16px] overflow-hidden">
+                {!!existingData.integration && (
+                  <Button
+                    onClick={schedule('delete')}
+                    className="rounded-[4px] border-2 border-red-400 text-red-400"
+                    secondary={true}
+                  >
+                    Delete Post
+                  </Button>
+                )}
+                <Button
+                  onClick={schedule('draft')}
+                  className="rounded-[4px] border-2 border-[#506490]"
+                  secondary={true}
+                  disabled={selectedIntegrations.length === 0}
+                >
+                  Save as draft
+                </Button>
+
+                <Button
+                  onClick={schedule('schedule')}
+                  className="rounded-[4px]"
+                  disabled={selectedIntegrations.length === 0}
+                >
+                  {!existingData.integration ? 'Add to calendar' : 'Update'}
+                </Button>
+              </div>
             </div>
-          )
-        )}
-        {!!selectedIntegrations.length && (
-          <PreviewComponent
-            integrations={selectedIntegrations}
-            editorValue={value}
-          />
-        )}
-        <Button onClick={schedule}>Schedule</Button>
+          </div>
+        </div>
+        <div
+          className={clsx(
+            'flex gap-[20px] flex-col rounded-[4px] border-[#172034] bg-[#0B101B] flex-1 transition-all duration-700',
+            !selectedIntegrations.length
+              ? 'flex-grow-0 overflow-hidden'
+              : 'flex-grow-1 border animate-overflow'
+          )}
+        >
+          <div className="mx-[16px]">
+            <TopTitle
+              title=""
+              expend={expend.show}
+              collapse={expend.hide}
+              shouldExpend={expend.expend}
+            />
+          </div>
+          {!!selectedIntegrations.length && (
+            <div className="flex-1 flex flex-col p-[16px] pt-0">
+              <ProvidersOptions
+                integrations={selectedIntegrations}
+                editorValue={value}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </>
   );

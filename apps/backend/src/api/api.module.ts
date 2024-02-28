@@ -16,7 +16,8 @@ import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { PostsController } from '@gitroom/backend/api/routes/posts.controller';
 import { MediaController } from '@gitroom/backend/api/routes/media.controller';
 import { UploadModule } from '@gitroom/nestjs-libraries/upload/upload.module';
-import {ServeStaticModule} from "@nestjs/serve-static";
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { CommentsController } from '@gitroom/backend/api/routes/comments.controller';
 
 const authenticatedController = [
   UsersController,
@@ -25,6 +26,7 @@ const authenticatedController = [
   SettingsController,
   PostsController,
   MediaController,
+  CommentsController,
 ];
 @Module({
   imports: [
@@ -37,7 +39,7 @@ const authenticatedController = [
       serveRoot: '/' + process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY,
       serveStaticOptions: {
         index: false,
-      }
+      },
     }),
   ],
   controllers: [StripeController, AuthController, ...authenticatedController],

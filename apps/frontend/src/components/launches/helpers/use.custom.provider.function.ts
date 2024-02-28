@@ -6,7 +6,7 @@ export const useCustomProviderFunction = () => {
   const { integration } = useIntegration();
   const fetch = useFetch();
   const get = useCallback(
-    async (funcName: string, customData?: string) => {
+    async (funcName: string, customData?: any) => {
       return (
         await fetch('/integrations/function', {
           method: 'POST',

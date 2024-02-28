@@ -45,7 +45,11 @@ export class PostsService {
   async getPost(orgId: string, id: string) {
     const posts = await this.getPostsRecursively(id, false, orgId);
     return {
-      posts,
+      group: posts?.[0]?.group,
+      posts: posts.map((post) => ({
+        ...post,
+        image: JSON.parse(post.image || '[]'),
+      })),
       integration: posts[0].integrationId,
       settings: JSON.parse(posts[0].settings || '{}'),
     };
@@ -109,25 +113,40 @@ export class PostsService {
     await this._postRepository.updatePost(posts[0].id, postId, releaseURL);
   }
 
+  async deletePost(orgId: string, group: string) {
+    const post = await this._postRepository.deletePost(orgId, group);
+    if (post?.id) {
+      await this._workerServiceProducer.delete('post', post.id);
+    }
+  }
+
   async createPost(orgId: string, body: CreatePostDto) {
     for (const post of body.posts) {
-      const posts = await this._postRepository.createOrUpdatePost(
-        orgId,
-        body.date,
-        post
-      );
+      const { previousPost, posts } =
+        await this._postRepository.createOrUpdatePost(
+          body.type,
+          orgId,
+          body.date,
+          post
+        );
 
-      await this._workerServiceProducer.delete('post', posts[0].id);
-
-      this._workerServiceProducer.emit('post', {
-        id: posts[0].id,
-        options: {
-          delay: dayjs(posts[0].publishDate).diff(dayjs(), 'millisecond'),
-        },
-        payload: {
-          id: posts[0].id,
-        },
-      });
+      if (posts?.length) {
+        await this._workerServiceProducer.delete(
+          'post',
+          previousPost ? previousPost : posts?.[0]?.id
+        );
+        if (body.type === 'schedule') {
+          // this._workerServiceProducer.emit('post', {
+          //   id: posts[0].id,
+          //   options: {
+          //     delay: dayjs(posts[0].publishDate).diff(dayjs(), 'millisecond'),
+          //   },
+          //   payload: {
+          //     id: posts[0].id,
+          //   },
+          // });
+        }
+      }
     }
   }
 

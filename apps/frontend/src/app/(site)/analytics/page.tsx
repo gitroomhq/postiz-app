@@ -1,5 +1,11 @@
 import {AnalyticsComponent} from "@gitroom/frontend/components/analytics/analytics.component";
 import {internalFetch} from "@gitroom/helpers/utils/internal.fetch";
+import {Metadata} from "next";
+
+export const metadata: Metadata = {
+  title: 'Gitroom Analytics',
+  description: '',
+}
 
 export default async function Index() {
   const analytics = await (await internalFetch('/analytics')).json();

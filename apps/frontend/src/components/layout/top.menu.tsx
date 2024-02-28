@@ -40,7 +40,7 @@ export const TopMenu: FC = () => {
             <ul className="gap-5 flex flex-1 items-center text-[18px]">
                 {menuItems.map((item, index) => (
                     <li key={item.name}>
-                        <Link href={item.path} className={clsx("flex gap-2 items-center box", menuItems.map(p => p.path).indexOf(path) === index ? 'text-primary showbox' : 'text-gray')}>
+                        <Link prefetch={false} href={item.path} className={clsx("flex gap-2 items-center box", menuItems.map(p => p.path).indexOf(path) === index ? 'text-primary showbox' : 'text-gray')}>
                             <span>{item.name}</span>
                         </Link>
                     </li>

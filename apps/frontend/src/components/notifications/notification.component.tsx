@@ -3,7 +3,7 @@
 import {NotificationBell, NovuProvider, PopoverNotificationCenter} from "@novu/notification-center";
 import {useUser} from "@gitroom/frontend/components/layout/user.context";
 
-export const NotificationComponent = () => {
+const NotificationComponent = () => {
     const user = useUser();
     return (
         <NovuProvider
@@ -16,3 +16,5 @@ export const NotificationComponent = () => {
         </NovuProvider>
     )
 }
+
+export default NotificationComponent;

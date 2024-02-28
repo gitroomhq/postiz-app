@@ -23,6 +23,7 @@ export class AuthMiddleware implements NestMiddleware {
 
             delete user.password;
             const organization = await this._organizationService.getFirstOrgByUserId(user.id);
+
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-expect-error
             req.user = user;

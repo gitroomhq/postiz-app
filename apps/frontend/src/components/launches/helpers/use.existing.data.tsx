@@ -3,6 +3,7 @@ import {Post} from "@prisma/client";
 
 const ExistingDataContext = createContext({
     integration: '',
+    group: undefined as undefined | string,
     posts: [] as Post[],
     settings: {} as any
 });

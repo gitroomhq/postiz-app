@@ -22,11 +22,8 @@ model Organization {
   github       GitHub[]
   subscription Subscription?
   Integration  Integration[]
-  tags         Tag[]
-  postTags     PostTag[]
-  postMedia    PostMedia[]
   post         Post[]
-  slots        Slots[]
+  Comments     Comments[]
 }
 
 model User {
@@ -37,6 +34,7 @@ model User {
   providerId    String?
   organizations UserOrganization[]
   timezone      Int
+  comments      Comments[]
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
 
@@ -52,6 +50,9 @@ model UserOrganization {
   role           Role         @default(USER)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
+  @@index([userId])
 }
 
 model GitHub {
@@ -66,6 +67,7 @@ model GitHub {
   updatedAt      DateTime     @updatedAt
 
   @@index([login])
+  @@index([organizationId])
 }
 
 model Trending {
@@ -78,6 +80,7 @@ model Trending {
   updatedAt    DateTime @updatedAt
 
   @@unique([language])
+  @@index([hash])
 }
 
 model TrendingLog {
@@ -104,9 +107,10 @@ model Media {
   path           String
   organization   Organization @relation(fields: [organizationId], references: [id])
   organizationId String
-  posts          PostMedia[]
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
 }
 
 model Subscription {
@@ -120,6 +124,8 @@ model Subscription {
   period            Period
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
+
+  @@index([organizationId])
 }
 
 model Integration {
@@ -139,46 +145,26 @@ model Integration {
   @@unique([organizationId, internalId])
 }
 
-model Tag {
-  id             String       @id @default(cuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  name           String
-  posts          PostTag[]
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-}
+model Comments {
+  id                String     @id @default(uuid())
+  content           String
+  organizationId    String
+  organization      Organization @relation(fields: [organizationId], references: [id])
+  userId            String
+  user              User       @relation(fields: [userId], references: [id])
+  date              DateTime
+  parentCommentId   String?
+  parentComment     Comments?  @relation("parentCommentId", fields: [parentCommentId], references: [id])
+  childrenComment   Comments[] @relation("parentCommentId")
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  deletedAt         DateTime?
 
-model PostTag {
-  id             String       @id @default(cuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  postId         String
-  post           Post         @relation(fields: [postId], references: [id])
-  tagId          String
-  tag            Tag          @relation(fields: [tagId], references: [id])
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-}
-
-model PostMedia {
-  id             String       @id @default(cuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  postId         String
-  post           Post         @relation(fields: [postId], references: [id])
-  mediaId        String
-  media          Media        @relation(fields: [mediaId], references: [id])
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-}
-
-model Slots {
-    id             String       @id @default(cuid())
-    organizationId String
-    organization   Organization @relation(fields: [organizationId], references: [id])
-    day            Int
-    time           Int
+  @@index([createdAt])
+  @@index([organizationId])
+  @@index([date])
+  @@index([userId])
+  @@index([deletedAt])
 }
 
 model Post {
@@ -188,6 +174,7 @@ model Post {
   organizationId    String
   integrationId     String
   content           String
+  group             String
   organization      Organization @relation(fields: [organizationId], references: [id])
   integration       Integration  @relation(fields: [integrationId], references: [id])
   title             String?
@@ -198,10 +185,17 @@ model Post {
   settings          String?
   parentPost        Post?       @relation("parentPostId", fields: [parentPostId], references: [id])
   childrenPost      Post[]      @relation("parentPostId")
-  tags              PostTag[]
-  media             PostMedia[]
+  image             String?
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
+  deletedAt         DateTime?
+
+  @@index([group])
+  @@index([deletedAt])
+  @@index([publishDate])
+  @@index([state])
+  @@index([organizationId])
+  @@index([parentPostId])
 }
 
 enum State {

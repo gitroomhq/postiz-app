@@ -1,16 +1,30 @@
-import '../global.css';
-import {ReactNode} from "react";
+import { ReactNode } from 'react';
 
-export default async function AuthLayout({children}: {children: ReactNode}) {
-    return (
-        <div className="h-[100vh] w-[100vw] overflow-hidden bg-purple-400 flex justify-center items-center">
-            <div className="absolute w-60 h-60 rounded-xl bg-purple-300 -top-5 -left-16 z-0 transform rotate-45 hidden md:block"></div>
-            <div className="absolute w-48 h-48 rounded-xl bg-purple-300 -bottom-6 -right-10 transform rotate-12 hidden md:block"></div>
-            <div className="py-12 px-12 bg-white rounded-2xl shadow-xl z-20">
-                {children}
+export default async function AuthLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  return (
+    <>
+      <div className="absolute left-0 top-0 z-[0] h-[100vh] w-[100vw] overflow-hidden bg-loginBg bg-cover bg-left-top" />
+      <div className="relative z-[1] pr-[100px] flex justify-end items-center h-[100vh] w-[100vw] overflow-hidden">
+        <div className="w-[557px] flex h-[614px] bg-loginBox bg-contain">
+          <div className="p-[32px] absolute w-[557px] h-[614px] text-white">
+            {children}
+          </div>
+          <div className="flex flex-1 flex-col">
+            <div className="flex-1 flex justify-end">
+              <div className="absolute top-0 bg-gradient-to-t from-[#354258] w-[1px] translate-x-[22px] h-full" />
             </div>
-            <div className="w-40 h-40 absolute bg-purple-300 rounded-full top-0 right-12 hidden md:block"></div>
-            <div className="w-20 h-40 absolute bg-purple-300 rounded-full bottom-20 left-10 transform rotate-45 hidden md:block"></div>
+            <div>
+              <div className="absolute right-0 bg-gradient-to-l from-[#354258] h-[1px] translate-y-[22px] w-full" />
+            </div>
+          </div>
+          <div className="absolute top-0 bg-gradient-to-t from-[#354258] w-[1px] -translate-x-[22px] h-full" />
+          <div className="absolute right-0 bg-gradient-to-l from-[#354258] h-[1px] -translate-y-[22px] w-full" />
         </div>
-    );
+      </div>
+    </>
+  );
 }

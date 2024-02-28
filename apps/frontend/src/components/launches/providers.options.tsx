@@ -1,0 +1,41 @@
+import {FC, useEffect, useState} from "react";
+import {Integrations} from "@gitroom/frontend/components/launches/calendar.context";
+import {PickPlatforms} from "@gitroom/frontend/components/launches/helpers/pick.platform.component";
+import {IntegrationContext} from "@gitroom/frontend/components/launches/helpers/use.integration";
+import {ShowAllProviders} from "@gitroom/frontend/components/launches/providers/show.all.providers";
+
+export const ProvidersOptions: FC<{
+  integrations: Integrations[];
+  editorValue: Array<{ id?: string; content: string }>;
+}> = (props) => {
+  const { integrations, editorValue } = props;
+  const [selectedIntegrations, setSelectedIntegrations] = useState([
+    integrations[0],
+  ]);
+
+  useEffect(() => {
+    if (integrations.indexOf(selectedIntegrations[0]) === -1) {
+      setSelectedIntegrations([integrations[0]]);
+    }
+  }, [integrations, selectedIntegrations]);
+  return (
+    <div className="flex flex-1 flex-col">
+      <PickPlatforms
+        integrations={integrations}
+        selectedIntegrations={selectedIntegrations}
+        onChange={setSelectedIntegrations}
+        singleSelect={true}
+        hide={integrations.length === 1}
+      />
+      <IntegrationContext.Provider
+        value={{ value: editorValue, integration: selectedIntegrations?.[0] }}
+      >
+        <ShowAllProviders
+          value={editorValue}
+          integrations={integrations}
+          selectedProvider={selectedIntegrations?.[0]}
+        />
+      </IntegrationContext.Provider>
+    </div>
+  );
+};

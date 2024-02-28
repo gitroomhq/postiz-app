@@ -82,7 +82,6 @@ export class XProvider implements SocialProvider {
     accessToken: string,
     postDetails: PostDetails[],
   ): Promise<PostResponse[]> {
-    console.log('hello');
     const client = new TwitterApi(accessToken);
     const {data: {username}} = await client.v2.me({
       "user.fields": "username"

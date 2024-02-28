@@ -252,3 +252,29 @@ html {
 .react-tags__listbox-option-highlight {
   background-color: #ffdd00;
 }
+
+#renderEditor:not(:has(:first-child)) {
+    display: none;
+}
+.w-md-editor {
+  background-color: #131B2C !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  border-radius: 8px !important;
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+.w-md-editor-toolbar  {
+  height: 40px !important;
+  min-height: 40px !important;
+  background-color: #131B2C !important;
+  padding: 0 8px !important;
+  border-color: #28344F !important;
+}
+
+.wmde-markdown {
+  background: transparent !important;
+  font-size: 20px !important;
+  font-weight: 400 !important;
+}

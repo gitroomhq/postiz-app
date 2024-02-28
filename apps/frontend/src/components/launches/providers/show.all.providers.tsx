@@ -4,13 +4,19 @@ import DevtoProvider from "@gitroom/frontend/components/launches/providers/devto
 import XProvider from "@gitroom/frontend/components/launches/providers/x/x.provider";
 import LinkedinProvider from "@gitroom/frontend/components/launches/providers/linkedin/linkedin.provider";
 import RedditProvider from "@gitroom/frontend/components/launches/providers/reddit/reddit.provider";
+import MediumProvider from "@gitroom/frontend/components/launches/providers/medium/medium.provider";
+import HashnodeProvider from "@gitroom/frontend/components/launches/providers/hashnode/hashnode.provider";
 
 const Providers = [
     {identifier: 'devto', component: DevtoProvider},
     {identifier: 'x', component: XProvider},
     {identifier: 'linkedin', component: LinkedinProvider},
     {identifier: 'reddit', component: RedditProvider},
+    {identifier: 'medium', component: MediumProvider},
+    {identifier: 'hashnode', component: HashnodeProvider},
 ];
+
+
 
 export const ShowAllProviders: FC<{integrations: Integrations[], value: Array<{content: string, id?: string}>, selectedProvider?: Integrations}> = (props) => {
     const {integrations, value, selectedProvider} = props;

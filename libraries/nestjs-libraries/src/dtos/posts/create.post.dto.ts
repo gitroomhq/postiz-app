@@ -1,8 +1,13 @@
 import {
-  ArrayMinSize, IsArray, IsDateString, IsDefined, IsOptional, IsString, ValidateNested,
+  ArrayMinSize, IsArray, IsDateString, IsDefined, IsIn, IsOptional, IsString, MinLength, ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { DevToSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dev.to.settings.dto';
+import {MediaDto} from "@gitroom/nestjs-libraries/dtos/media/media.dto";
+import {AllProvidersSettings} from "@gitroom/nestjs-libraries/dtos/posts/providers-settings/all.providers.settings";
+import {MediumSettingsDto} from "@gitroom/nestjs-libraries/dtos/posts/providers-settings/medium.settings.dto";
+import {HashnodeSettingsDto} from "@gitroom/nestjs-libraries/dtos/posts/providers-settings/hashnode.settings.dto";
+import {RedditSettingsDto} from "@gitroom/nestjs-libraries/dtos/posts/providers-settings/reddit.dto";
 
 export class EmptySettings {}
 export class Integration {
@@ -14,11 +19,18 @@ export class Integration {
 export class PostContent {
   @IsDefined()
   @IsString()
+  @MinLength(6)
   content: string;
 
   @IsOptional()
   @IsString()
   id: string;
+
+  @IsArray()
+  @IsOptional()
+  @Type(() => MediaDto)
+  @ValidateNested({each: true})
+  image: MediaDto[]
 }
 
 export class Post {
@@ -34,17 +46,31 @@ export class Post {
   @ValidateNested({ each: true })
   value: PostContent[];
 
+  @IsOptional()
+  @IsString()
+  group: string;
+
+  @ValidateNested()
   @Type(() => EmptySettings, {
     keepDiscriminatorProperty: false,
     discriminator: {
       property: '__type',
-      subTypes: [{ value: DevToSettingsDto, name: 'devto' }],
+      subTypes: [
+          { value: DevToSettingsDto, name: 'devto' },
+          { value: MediumSettingsDto, name: 'medium' },
+          { value: HashnodeSettingsDto, name: 'hashnode' },
+          { value: RedditSettingsDto, name: 'reddit' },
+      ],
     },
   })
-  settings: DevToSettingsDto;
+  settings: AllProvidersSettings;
 }
 
 export class CreatePostDto {
+  @IsDefined()
+  @IsIn(['draft', 'schedule'])
+  type: 'draft' | 'schedule';
+
   @IsDefined()
   @IsDateString()
   date: string;

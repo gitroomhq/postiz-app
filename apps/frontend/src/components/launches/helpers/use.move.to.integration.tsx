@@ -1,7 +1,7 @@
 'use client';
 
 import EventEmitter from 'events';
-import {useCallback, useEffect} from 'react';
+import { useCallback, useEffect } from 'react';
 
 const emitter = new EventEmitter();
 export const useMoveToIntegration = () => {
@@ -11,6 +11,7 @@ export const useMoveToIntegration = () => {
 };
 
 export const useMoveToIntegrationListener = (
+  useEffectParams: any[],
   enabled: boolean,
   callback: (identifier: string) => void
 ) => {
@@ -19,12 +20,13 @@ export const useMoveToIntegrationListener = (
       return;
     }
     return load();
-  }, []);
+  }, useEffectParams);
 
   const load = useCallback(() => {
+    emitter.off('moveToIntegration', callback);
     emitter.on('moveToIntegration', callback);
     return () => {
       emitter.off('moveToIntegration', callback);
     };
-  }, []);
+  }, useEffectParams);
 };

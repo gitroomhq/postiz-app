@@ -28,9 +28,9 @@ export function Register() {
     return (
         <form onSubmit={handleSubmit(onSubmit)}>
             <div>
-                <h1 className="text-3xl font-bold text-center mb-4 cursor-pointer">Create An Account</h1>
+                <h1 className="text-3xl font-bold text-left mb-4 cursor-pointer">Create An Account</h1>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-4 text-black">
                 <input {...register('email')} type="email" placeholder="Email Addres" className="block text-sm py-3 px-4 rounded-lg w-full border outline-purple-500"/>
                 <input {...register('password')} autoComplete="off" type="password" placeholder="Password" className="block text-sm py-3 px-4 rounded-lg w-full border outline-purple-500"/>
                 <input {...register('company')} autoComplete="off" type="text" placeholder="Company" className="block text-sm py-3 px-4 rounded-lg w-full border outline-purple-500"/>

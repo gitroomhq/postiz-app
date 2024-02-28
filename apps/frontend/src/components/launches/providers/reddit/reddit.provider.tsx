@@ -1,76 +1,187 @@
-import { FC } from 'react';
+import { FC, useCallback } from 'react';
 import { withProvider } from '@gitroom/frontend/components/launches/providers/high.order.provider';
-import clsx from 'clsx';
 import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { useFormatting } from '@gitroom/frontend/components/launches/helpers/use.formatting';
+import { Subreddit } from '@gitroom/frontend/components/launches/providers/reddit/subreddit';
+import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
+import { useFieldArray, useWatch } from 'react-hook-form';
+import { Button } from '@gitroom/react/form/button';
+import {
+  RedditSettingsDto,
+  RedditSettingsValueDto,
+} from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/reddit.dto';
+import clsx from 'clsx';
+import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
+import {deleteDialog} from "@gitroom/react/helpers/delete.dialog";
 
-const RedditPreview: FC = (props) => {
-  const { value: topValue, integration } = useIntegration();
-  const newValues = useFormatting(topValue, {
+const RenderRedditComponent: FC<{
+  type: string;
+  images?: Array<{ id: string; path: string }>;
+}> = (props) => {
+  const { value: topValue } = useIntegration();
+  const showMedia = useMediaDirectory();
+
+  const { type, images } = props;
+
+  const [firstPost] = useFormatting(topValue, {
     removeMarkdown: true,
     saveBreaklines: true,
     specialFunc: (text: string) => {
-        return text.slice(0, 280);
-    }
+      return text.slice(0, 280);
+    },
   });
 
+  switch (type) {
+    case 'self':
+      return (
+        <pre className="font-['Inter'] text-[14px] text-wrap">
+          {firstPost?.text}
+        </pre>
+      );
+    case 'link':
+      return (
+        <div className="h-[375px] bg-primary rounded-[16px] flex justify-center items-center">
+          Link
+        </div>
+      );
+    case 'media':
+      return (
+        <div className="h-[375px] bg-primary rounded-[16px] flex justify-center items-center">
+          {!!images?.length &&
+            images.map((image, index) => (
+              <a
+                key={`image_${index}`}
+                href={showMedia.set(image.path)}
+                className="flex-1 h-full"
+                target="_blank"
+              >
+                <img
+                  className="w-full h-full object-cover"
+                  src={showMedia.set(image.path)}
+                />
+              </a>
+            ))}
+        </div>
+      );
+  }
+
+  return <></>;
+};
+
+const RedditPreview: FC = (props) => {
+  const { value: topValue, integration } = useIntegration();
+  const settings = useWatch({
+    name: 'subreddit',
+  }) as Array<RedditSettingsValueDto>;
+
+  const [, ...restOfPosts] = useFormatting(topValue, {
+    removeMarkdown: true,
+    saveBreaklines: true,
+    specialFunc: (text: string) => {
+      return text.slice(0, 280);
+    },
+  });
+  console.log(settings);
+
+  if (!settings || !settings.length) {
+    return <>Please add at least one Subreddit from the settings</>;
+  }
+
   return (
-    <div
-      className={clsx(
-        'max-w-[598px] px-[16px] border border-[#2E3336]',
-      )}
-    >
-      <div className="w-full h-full relative flex flex-col pt-[12px]">
-        {newValues.map((value, index) => (
+    <div className="flex flex-col gap-[40px] w-full">
+      {settings
+        .filter(({ value }) => value?.subreddit)
+        .map(({ value }, index) => (
           <div
-            key={`tweet_${index}`}
-            className={`flex gap-[8px] pb-[${
-              index === topValue.length - 1 ? '12px' : '24px'
-            }] relative`}
+            key={index}
+            className={clsx(
+              "bg-[#0B1416] w-full p-[10px] flex flex-col font-['Inter'] border-tableBorder border"
+            )}
           >
-            <div className="w-[40px] flex flex-col items-center">
-              <img
-                src={integration?.picture}
-                alt="x"
-                className="rounded-full relative z-[2]"
-              />
-              {index !== topValue.length - 1 && (
-                <div className="flex-1 w-[2px] h-[calc(100%-10px)] bg-[#2E3336] absolute top-[10px] z-[1]" />
-              )}
-            </div>
-            <div className="flex-1 flex flex-col gap-[4px]">
-              <div className="flex">
-                <div className="h-[22px] text-[15px] font-[700]">
-                  {integration?.name}
-                </div>
-                <div className="text-[15px] text-[#1D9BF0] mt-[1px] ml-[2px]">
-                  <svg
-                    viewBox="0 0 22 22"
-                    aria-label="Verified account"
-                    role="img"
-                    className="max-w-[20px] max-h-[20px] fill-current h-[1.25em]"
-                    data-testid="icon-verified"
-                  >
-                    <g>
-                      <path d="M20.396 11c-.018-.646-.215-1.275-.57-1.816-.354-.54-.852-.972-1.438-1.246.223-.607.27-1.264.14-1.897-.131-.634-.437-1.218-.882-1.687-.47-.445-1.053-.75-1.687-.882-.633-.13-1.29-.083-1.897.14-.273-.587-.704-1.086-1.245-1.44S11.647 1.62 11 1.604c-.646.017-1.273.213-1.813.568s-.969.854-1.24 1.44c-.608-.223-1.267-.272-1.902-.14-.635.13-1.22.436-1.69.882-.445.47-.749 1.055-.878 1.688-.13.633-.08 1.29.144 1.896-.587.274-1.087.705-1.443 1.245-.356.54-.555 1.17-.574 1.817.02.647.218 1.276.574 1.817.356.54.856.972 1.443 1.245-.224.606-.274 1.263-.144 1.896.13.634.433 1.218.877 1.688.47.443 1.054.747 1.687.878.633.132 1.29.084 1.897-.136.274.586.705 1.084 1.246 1.439.54.354 1.17.551 1.816.569.647-.016 1.276-.213 1.817-.567s.972-.854 1.245-1.44c.604.239 1.266.296 1.903.164.636-.132 1.22-.447 1.68-.907.46-.46.776-1.044.908-1.681s.075-1.299-.165-1.903c.586-.274 1.084-.705 1.439-1.246.354-.54.551-1.17.569-1.816zM9.662 14.85l-3.429-3.428 1.293-1.302 2.072 2.072 4.4-4.794 1.347 1.246z"></path>
-                    </g>
-                  </svg>
-                </div>
-                <div className="text-[15px] font-[400] text-[#71767b] ml-[4px]">
-                  @username
+            <div className="flex flex-col">
+              <div className="flex flex-row gap-[8px]">
+                <div className="w-[40px] h-[40px] bg-white rounded-full" />
+                <div className="flex flex-col">
+                  <div className="text-[12px] font-[700]">
+                    {value.subreddit}
+                  </div>
+                  <div className="text-[12px]">{integration?.name}</div>
                 </div>
               </div>
-              <pre>{value.text}</pre>
+              <div className="font-[600] text-[24px] mb-[16px]">
+                {value.title}
+              </div>
+              <RenderRedditComponent type={value.type} images={value.media} />
+              <div
+                className={clsx(
+                  restOfPosts.length && 'mt-[40px] flex flex-col gap-[20px]'
+                )}
+              >
+                {restOfPosts.map((p, index) => (
+                  <div className="flex gap-[8px]" key={index}>
+                    <div className="w-[32px] h-[32px]">
+                      <img
+                        src={integration?.picture}
+                        alt="x"
+                        className="rounded-full w-full h-full relative z-[2]"
+                      />
+                    </div>
+                    <div className="flex-1 flex flex-col leading-[16px] w-full pr-[64px] pb-[8px] rounded-[8px]">
+                      <div className="text-[14px] font-[600]">
+                        {integration?.name}
+                      </div>
+                      <pre className="font-['Inter'] text-[14px] mt-[8px] font-[400] text-white">
+                        {p.text}
+                      </pre>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         ))}
-      </div>
     </div>
   );
 };
 
 const RedditSettings: FC = () => {
-  return <div>asdfasd</div>;
+  const { register, control } = useSettings();
+  const { fields, append, remove } = useFieldArray({
+    control, // control props comes from useForm (optional: if you are using FormContext)
+    name: 'subreddit', // unique name for your Field Array
+  });
+
+  const addField = useCallback(() => {
+    append({});
+  }, [fields, append]);
+
+  const deleteField = useCallback((index: number) => async () => {
+    if (!await deleteDialog('Are you sure you want to delete this Subreddit?')) return;
+    remove(index);
+  }, [fields, remove]);
+
+  return (
+    <>
+      <div className="flex flex-col gap-[20px] mb-[20px]">
+        {fields.map((field, index) => (
+          <div key={field.id} className="flex flex-col relative">
+            <div onClick={deleteField(index)} className="absolute -left-[10px] justify-center items-center flex -top-[10px] w-[20px] h-[20px] bg-red-600 rounded-full text-white">
+              x
+            </div>
+            <Subreddit
+              {...register(`subreddit.${index}.value`)}
+            />
+          </div>
+        ))}
+      </div>
+      <Button onClick={addField}>Add Subreddit</Button>
+      {fields.length === 0 && (
+        <div className="text-red-500 text-[12px] mt-[10px]">
+          Please add at least one Subreddit
+        </div>
+      )}
+    </>
+  );
 };
 
-export default withProvider(RedditSettings, RedditPreview);
+export default withProvider(RedditSettings, RedditPreview, RedditSettingsDto);

@@ -21,6 +21,7 @@ export const customFetch = (params: Params, auth?: string) => {
         Accept: 'application/json',
         ...options?.headers,
       },
+      cache: options.cache || 'no-store',
     });
     await params?.afterRequest?.(url, options, fetchRequest);
     return fetchRequest;
