@@ -7,7 +7,6 @@ import clsx from "clsx";
 
 export const StarsAndForks: FC<StarsAndForksInterface> = (props) => {
     const {list} = props;
-    console.log(list);
     return (
         <>
             {list.map(item => (

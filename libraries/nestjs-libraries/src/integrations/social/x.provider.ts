@@ -5,6 +5,9 @@ import {
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { readFileSync } from 'fs';
+import { lookup } from 'mime-types';
+import sharp from 'sharp';
 
 export class XProvider implements SocialProvider {
   identifier = 'x';
@@ -35,66 +38,125 @@ export class XProvider implements SocialProvider {
 
   async generateAuthUrl() {
     const client = new TwitterApi({
-      clientId: process.env.TWITTER_CLIENT_ID!,
-      clientSecret: process.env.TWITTER_CLIENT_SECRET!,
+      // clientId: process.env.TWITTER_CLIENT_ID!,
+      // clientSecret: process.env.TWITTER_CLIENT_SECRET!,
+      appKey: process.env.X_API_KEY!,
+      appSecret: process.env.X_API_SECRET!,
     });
-    const { url, codeVerifier, state } = client.generateOAuth2AuthLink(
-      process.env.FRONTEND_URL + '/integrations/social/x',
-      { scope: ['tweet.read', 'users.read', 'tweet.write', 'offline.access'] }
-    );
+    const { url, oauth_token, oauth_token_secret } =
+      await client.generateAuthLink(
+        process.env.FRONTEND_URL + '/integrations/social/x',
+        {
+          authAccessType: 'write',
+          linkMode: 'authenticate',
+          forceLogin: false,
+        }
+      );
     return {
       url,
-      codeVerifier,
-      state,
+      codeVerifier: oauth_token + ':' + oauth_token_secret,
+      state: oauth_token,
     };
   }
 
   async authenticate(params: { code: string; codeVerifier: string }) {
-    const startingClient = new TwitterApi({
-      clientId: process.env.TWITTER_CLIENT_ID!,
-      clientSecret: process.env.TWITTER_CLIENT_SECRET!,
-    });
-    const { accessToken, refreshToken, expiresIn, client } =
-      await startingClient.loginWithOAuth2({
-        code: params.code,
-        codeVerifier: params.codeVerifier,
-        redirectUri: process.env.FRONTEND_URL + '/integrations/social/x',
-      });
+    const { code, codeVerifier } = params;
+    const [oauth_token, oauth_token_secret] = codeVerifier.split(':');
 
-    const {
-      data: { id, name, profile_image_url },
-    } = await client.v2.me({
-      'user.fields': 'profile_image_url',
+    const startingClient = new TwitterApi({
+      appKey: process.env.X_API_KEY!,
+      appSecret: process.env.X_API_SECRET!,
+      accessToken: oauth_token,
+      accessSecret: oauth_token_secret,
     });
+    const { accessToken, client, accessSecret } = await startingClient.login(
+      code
+    );
+
+    const { id, name, profile_image_url_https } = await client.currentUser(
+      true
+    );
 
     return {
-      id,
-      accessToken,
+      id: String(id),
+      accessToken: accessToken + ':' + accessSecret,
       name,
-      refreshToken,
-      expiresIn,
-      picture: profile_image_url,
+      refreshToken: '',
+      expiresIn: 999999999,
+      picture: profile_image_url_https,
     };
   }
 
   async post(
     id: string,
     accessToken: string,
-    postDetails: PostDetails[],
+    postDetails: PostDetails[]
   ): Promise<PostResponse[]> {
-    const client = new TwitterApi(accessToken);
-    const {data: {username}} = await client.v2.me({
-      "user.fields": "username"
+    const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
+    const client = new TwitterApi({
+      appKey: process.env.X_API_KEY!,
+      appSecret: process.env.X_API_SECRET!,
+      accessToken: accessTokenSplit,
+      accessSecret: accessSecretSplit,
     });
-    const ids: Array<{postId: string, id: string, releaseURL: string}> = [];
+    const {
+      data: { username },
+    } = await client.v2.me({
+      'user.fields': 'username',
+    });
+
+    // upload everything before, you don't want it to fail between the posts
+    const uploadAll = (
+      await Promise.all(
+        postDetails.flatMap((p) =>
+          p?.media?.flatMap(async (m) => {
+            return {
+              id: await client.v1.uploadMedia(
+                await sharp(readFileSync(m.path), {
+                  animated: lookup(m.path) === 'image/gif',
+                })
+                  .resize({
+                    width: 1000,
+                  })
+                  .gif()
+                  .toBuffer(),
+                {
+                  mimeType: lookup(m.path) || '',
+                }
+              ),
+              postId: p.id,
+            };
+          })
+        )
+      )
+    ).reduce((acc, val) => {
+      if (!val?.id) {
+        return acc;
+      }
+
+      acc[val.postId] = acc[val.postId] || [];
+      acc[val.postId].push(val.id);
+
+      return acc;
+    }, {} as Record<string, string[]>);
+
+    const ids: Array<{ postId: string; id: string; releaseURL: string }> = [];
     for (const post of postDetails) {
+      const media_ids = (uploadAll[post.id] || []).filter((f) => f);
+
       const { data }: { data: { id: string } } = await client.v2.tweet({
         text: post.message,
+        ...(media_ids.length ? { media: { media_ids } } : {}),
         ...(ids.length
           ? { reply: { in_reply_to_tweet_id: ids[ids.length - 1].postId } }
           : {}),
       });
-      ids.push({postId: data.id, id: post.id, releaseURL: `https://twitter.com/${username}/status/${data.id}`});
+
+      ids.push({
+        postId: data.id,
+        id: post.id,
+        releaseURL: `https://twitter.com/${username}/status/${data.id}`,
+      });
     }
 
     return ids.map((p) => ({

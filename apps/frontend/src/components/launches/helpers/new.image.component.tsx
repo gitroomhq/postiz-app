@@ -38,7 +38,8 @@ export const newImage: ICommand = {
 
     if (
       state1.selectedText.includes('http') ||
-      state1.selectedText.includes('www')
+      state1.selectedText.includes('www') ||
+      state1.selectedText.includes('(post:')
     ) {
       executeCommand({
         api,

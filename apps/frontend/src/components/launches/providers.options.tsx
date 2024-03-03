@@ -3,12 +3,14 @@ import {Integrations} from "@gitroom/frontend/components/launches/calendar.conte
 import {PickPlatforms} from "@gitroom/frontend/components/launches/helpers/pick.platform.component";
 import {IntegrationContext} from "@gitroom/frontend/components/launches/helpers/use.integration";
 import {ShowAllProviders} from "@gitroom/frontend/components/launches/providers/show.all.providers";
+import dayjs from "dayjs";
 
 export const ProvidersOptions: FC<{
   integrations: Integrations[];
   editorValue: Array<{ id?: string; content: string }>;
+  date: dayjs.Dayjs;
 }> = (props) => {
-  const { integrations, editorValue } = props;
+  const { integrations, editorValue, date } = props;
   const [selectedIntegrations, setSelectedIntegrations] = useState([
     integrations[0],
   ]);
@@ -28,7 +30,7 @@ export const ProvidersOptions: FC<{
         hide={integrations.length === 1}
       />
       <IntegrationContext.Provider
-        value={{ value: editorValue, integration: selectedIntegrations?.[0] }}
+        value={{ value: editorValue, integration: selectedIntegrations?.[0], date }}
       >
         <ShowAllProviders
           value={editorValue}

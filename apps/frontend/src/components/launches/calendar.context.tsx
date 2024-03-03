@@ -81,7 +81,6 @@ export const CalendarWeekProvider: FC<{
   const { isLoading } = swr;
   const { posts, comments } = swr?.data || { posts: [], comments: [] };
 
-  console.log(comments);
   const changeDate = useCallback(
     (id: string, date: dayjs.Dayjs) => {
       setInternalData((d) =>

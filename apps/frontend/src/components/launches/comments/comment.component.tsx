@@ -187,7 +187,7 @@ export const CommentComponent: FC<{ date: dayjs.Dayjs }> = (props) => {
         })
       ).json();
 
-      setCommentsList(list => ([
+      setCommentsList((list) => [
         {
           id,
           user: { email: user?.email!, id: user?.id! },
@@ -195,7 +195,7 @@ export const CommentComponent: FC<{ date: dayjs.Dayjs }> = (props) => {
           childrenComment: [],
         },
         ...list,
-      ]));
+      ]);
     },
     [commentsList, setCommentsList]
   );
@@ -298,8 +298,6 @@ export const CommentComponent: FC<{ date: dayjs.Dayjs }> = (props) => {
         </svg>
       </button>
 
-      <CommentBox type="textarea" onChange={addComment} />
-
       <div>
         {commentsList.map((comment, index) => (
           <>
@@ -374,6 +372,7 @@ export const CommentComponent: FC<{ date: dayjs.Dayjs }> = (props) => {
             </div>
           </>
         ))}
+        <CommentBox type="textarea" onChange={addComment} />
       </div>
     </div>
   );

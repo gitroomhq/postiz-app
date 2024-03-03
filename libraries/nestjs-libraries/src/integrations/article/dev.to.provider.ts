@@ -76,7 +76,6 @@ export class DevToProvider implements ArticleProvider {
           article: {
             title: settings.title,
             body_markdown: content,
-            published: false,
             main_image: settings?.main_image?.path
               ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/${process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY}${settings?.main_image?.path}`
               : undefined,

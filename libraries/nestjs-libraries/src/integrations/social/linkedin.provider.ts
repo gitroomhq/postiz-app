@@ -5,6 +5,9 @@ import {
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { readFileSync } from 'fs';
+import sharp from 'sharp';
+import { lookup } from 'mime-types';
 
 export class LinkedinProvider implements SocialProvider {
   identifier = 'linkedin';
@@ -110,13 +113,86 @@ export class LinkedinProvider implements SocialProvider {
     };
   }
 
+  private async uploadPicture(
+    accessToken: string,
+    personId: string,
+    picture: any
+  ) {
+    const {
+      value: { uploadUrl, image },
+    } = await (
+      await fetch(
+        'https://api.linkedin.com/rest/images?action=initializeUpload',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Restli-Protocol-Version': '2.0.0',
+            'LinkedIn-Version': '202402',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            initializeUploadRequest: {
+              owner: `urn:li:person:${personId}`,
+            },
+          }),
+        }
+      )
+    ).json();
+
+    await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: {
+        'X-Restli-Protocol-Version': '2.0.0',
+        'LinkedIn-Version': '202402',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: picture,
+    });
+
+    return image;
+  }
+
   async post(
     id: string,
     accessToken: string,
     postDetails: PostDetails[]
   ): Promise<PostResponse[]> {
     const [firstPost, ...restPosts] = postDetails;
-    console.log('posting');
+
+    const uploadAll = (
+      await Promise.all(
+        postDetails.flatMap((p) =>
+          p?.media?.flatMap(async (m) => {
+            return {
+              id: await this.uploadPicture(
+                accessToken,
+                id,
+                await sharp(readFileSync(m.path), {
+                  animated: lookup(m.path) === 'image/gif',
+                })
+                  .resize({
+                    width: 1000,
+                  })
+                  .toBuffer()
+              ),
+              postId: p.id,
+            };
+          })
+        )
+      )
+    ).reduce((acc, val) => {
+      if (!val?.id) {
+        return acc;
+      }
+      acc[val.postId] = acc[val.postId] || [];
+      acc[val.postId].push(val.id);
+
+      return acc;
+    }, {} as Record<string, string[]>);
+
+    const media_ids = (uploadAll[firstPost.id] || []).filter((f) => f);
+
     const data = await fetch('https://api.linkedin.com/v2/posts', {
       method: 'POST',
       headers: {
@@ -133,29 +209,25 @@ export class LinkedinProvider implements SocialProvider {
           targetEntities: [],
           thirdPartyDistributionChannels: [],
         },
+        content: {
+          ...(media_ids.length === 0
+            ? {}
+            : media_ids.length === 1
+            ? {
+                media: {
+                  id: media_ids[0],
+                },
+              }
+            : {
+                multiImage: {
+                  images: media_ids.map((id) => ({
+                    id,
+                  })),
+                },
+              }),
+        },
         lifecycleState: 'PUBLISHED',
         isReshareDisabledByAuthor: false,
-        // content: {
-        //   // contentEntities: [
-        //   //   {
-        //   //     entityLocation: 'URL_OF_THE_CONTENT_TO_SHARE',
-        //   //     thumbnails: [
-        //   //       {
-        //   //         resolvedUrl: 'URL_OF_THE_THUMBNAIL_IMAGE',
-        //   //       },
-        //   //     ],
-        //   //   },
-        //   // ],
-        //   title: firstPost.message,
-        // },
-        // distribution: {
-        //   linkedInDistributionTarget: {},
-        // },
-        // owner: `urn:li:person:${id}`,
-        // subject: firstPost.message,
-        // text: {
-        //   text: firstPost.message,
-        // },
       }),
     });
 
@@ -169,25 +241,27 @@ export class LinkedinProvider implements SocialProvider {
       },
     ];
     for (const post of restPosts) {
-      const {object} = await (await fetch(
-        `https://api.linkedin.com/v2/socialActions/${decodeURIComponent(
-          topPostId
-        )}/comments`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({
-            actor: `urn:li:person:${id}`,
-            object: topPostId,
-            message: {
-              text: post.message,
+      const { object } = await (
+        await fetch(
+          `https://api.linkedin.com/v2/socialActions/${decodeURIComponent(
+            topPostId
+          )}/comments`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${accessToken}`,
             },
-          }),
-        }
-      )).json()
+            body: JSON.stringify({
+              actor: `urn:li:person:${id}`,
+              object: topPostId,
+              message: {
+                text: post.message,
+              },
+            }),
+          }
+        )
+      ).json();
 
       ids.push({
         status: 'posted',

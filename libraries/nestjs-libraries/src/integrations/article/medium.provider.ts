@@ -39,7 +39,7 @@ export class MediumProvider implements ArticleProvider {
 
   async post(token: string, content: string, settings: MediumSettingsDto) {
     const { id } = await this.authenticate(token);
-    const { data, ...all } = await (
+    const { data } = await (
       await fetch(
         settings?.publication
           ? `https://api.medium.com/v1/publications/${settings?.publication}/posts`
@@ -64,7 +64,6 @@ export class MediumProvider implements ArticleProvider {
       )
     ).json();
 
-    console.log(all);
     return {
       postId: data.id,
       releaseURL: data.url,

@@ -1,7 +1,7 @@
 "use client";
 
 import {DetailedHTMLProps, FC, InputHTMLAttributes, useMemo} from "react";
-import clsx from "clsx";
+import {clsx} from "clsx";
 import {useFormContext} from "react-hook-form";
 
 export const Input: FC<DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement> & {error?: any, disableForm?: boolean, label: string, name: string}> = (props) => {

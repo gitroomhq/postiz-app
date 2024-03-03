@@ -13,6 +13,52 @@ dayjs.extend(isoWeek);
 export class PostsRepository {
   constructor(private _post: PrismaRepository<'post'>) {}
 
+  getOldPosts(orgId: string, date: string) {
+    return this._post.model.post.findMany({
+      where: {
+        organizationId: orgId,
+        publishDate: {
+          lte: dayjs(date).toDate(),
+        },
+        deletedAt: null,
+        parentPostId: null,
+      },
+      orderBy: {
+        publishDate: 'desc',
+      },
+      select: {
+        id: true,
+        content: true,
+        publishDate: true,
+        releaseURL: true,
+        state: true,
+        integration: {
+          select: {
+            id: true,
+            name: true,
+            providerIdentifier: true,
+            picture: true,
+          },
+        },
+      },
+    });
+  }
+
+  getPostUrls(orgId: string, ids: string[]) {
+    return this._post.model.post.findMany({
+      where: {
+        organizationId: orgId,
+        id: {
+          in: ids,
+        },
+      },
+      select: {
+        id: true,
+        releaseURL: true,
+      },
+    });
+  }
+
   getPosts(orgId: string, query: GetPostsDto) {
     const date = dayjs().year(query.year).isoWeek(query.week);
 
@@ -107,7 +153,12 @@ export class PostsRepository {
     });
   }
 
-  async createOrUpdatePost(state: 'draft' | 'schedule', orgId: string, date: string, body: PostBody) {
+  async createOrUpdatePost(
+    state: 'draft' | 'schedule',
+    orgId: string,
+    date: string,
+    body: PostBody
+  ) {
     const posts: Post[] = [];
     const uuid = uuidv4();
 
@@ -137,7 +188,7 @@ export class PostsRepository {
           : {}),
         content: value.content,
         group: uuid,
-        state: state === 'draft' ? 'DRAFT' as const : 'QUEUE' as const,
+        state: state === 'draft' ? ('DRAFT' as const) : ('QUEUE' as const),
         image: JSON.stringify(value.image),
         settings: JSON.stringify(body.settings),
         organization: {

@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
-import {CheckTrending} from "./tasks/check.trending";
+import {RefreshTokens} from "@gitroom/cron/tasks/refresh.tokens";
+import {CheckStars} from "@gitroom/cron/tasks/check.stars";
 
 @Module({
     imports: [ScheduleModule.forRoot()],
     controllers: [],
-    providers: [CheckTrending],
+    providers: [RefreshTokens, CheckStars],
 })
 export class CronModule {}

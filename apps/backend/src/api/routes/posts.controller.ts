@@ -42,6 +42,14 @@ export class PostsController {
     };
   }
 
+  @Get('/old')
+  oldPosts(
+      @GetOrgFromRequest() org: Organization,
+      @Query('date') date: string
+  ) {
+    return this._postsService.getOldPosts(org.id, date);
+  }
+
   @Get('/:id')
   getPost(@GetOrgFromRequest() org: Organization, @Param('id') id: string) {
     return this._postsService.getPost(org.id, id);

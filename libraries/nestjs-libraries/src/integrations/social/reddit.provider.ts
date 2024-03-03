@@ -5,6 +5,9 @@ import {
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { RedditSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/reddit.dto';
+import { timer } from '@gitroom/helpers/utils/timer';
+import { groupBy } from 'lodash';
 
 export class RedditProvider implements SocialProvider {
   identifier = 'reddit';
@@ -108,24 +111,107 @@ export class RedditProvider implements SocialProvider {
   async post(
     id: string,
     accessToken: string,
-    postDetails: PostDetails[]
+    postDetails: PostDetails<RedditSettingsDto>[]
   ): Promise<PostResponse[]> {
     const [post, ...rest] = postDetails;
-    const response = await fetch('https://oauth.reddit.com/api/submit', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
-        title: 'test',
-        kind: 'self',
-        text: post.message,
-        sr: '/r/gitroom',
-      }),
-    });
 
-    return [];
+    const valueArray: PostResponse[] = [];
+    for (const firstPostSettings of post.settings.subreddit) {
+      const {
+        json: {
+          data: { id, name, url },
+        },
+      } = await (
+        await fetch('https://oauth.reddit.com/api/submit', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            api_type: 'json',
+            title: firstPostSettings.value.type,
+            kind:
+              firstPostSettings.value.type === 'media'
+                ? 'image'
+                : firstPostSettings.value.type,
+            ...(firstPostSettings.value.flair
+              ? { flair_id: firstPostSettings.value.flair.id }
+              : {}),
+            ...(firstPostSettings.value.type === 'link'
+              ? {
+                  url: firstPostSettings.value.url,
+                }
+              : {}),
+            ...(firstPostSettings.value.type === 'media'
+              ? {
+                  url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/${process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY}${firstPostSettings.value.media[0].path}`,
+                }
+              : {}),
+            text: post.message,
+            sr: firstPostSettings.value.subreddit,
+          }),
+        })
+      ).json();
+
+      valueArray.push({
+        postId: id,
+        releaseURL: url,
+        id: post.id,
+        status: 'published',
+      });
+
+      for (const comment of rest) {
+        const {
+          json: {
+            data: {
+              things: [
+                {
+                  data: { id: commentId, permalink },
+                },
+              ],
+            },
+          },
+        } = await (
+          await fetch('https://oauth.reddit.com/api/comment', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+              text: comment.message,
+              thing_id: name,
+              api_type: 'json',
+            }),
+          })
+        ).json();
+
+        // console.log(JSON.stringify(allTop, null, 2), JSON.stringify(allJson, null, 2), JSON.stringify(allData, null, 2));
+
+        valueArray.push({
+          postId: commentId,
+          releaseURL: 'https://www.reddit.com' + permalink,
+          id: comment.id,
+          status: 'published',
+        });
+
+        if (rest.length > 1) {
+          await timer(5000);
+        }
+      }
+
+      if (post.settings.subreddit.length > 1) {
+        await timer(5000);
+      }
+    }
+
+    return Object.values(groupBy(valueArray, (p) => p.id)).map((p) => ({
+      id: p[0].id,
+      postId: p.map((p) => p.postId).join(','),
+      releaseURL: p.map((p) => p.releaseURL).join(','),
+      status: 'published',
+    }));
   }
 
   async subreddits(accessToken: string, data: any) {
@@ -144,12 +230,16 @@ export class RedditProvider implements SocialProvider {
       )
     ).json();
 
-    console.log(children);
-    return children.filter(({data} : {data: any}) => data.subreddit_type === "public").map(({ data: { title, url, id } }: any) => ({
-      title,
-      name: url,
-      id,
-    }));
+    return children
+      .filter(
+        ({ data }: { data: any }) =>
+          data.subreddit_type === 'public' && data.submission_type !== 'image'
+      )
+      .map(({ data: { title, url, id } }: any) => ({
+        title,
+        name: url,
+        id,
+      }));
   }
 
   private getPermissions(submissionType: string, allow_images: string) {
@@ -162,9 +252,9 @@ export class RedditProvider implements SocialProvider {
       permissions.push('link');
     }
 
-    if (submissionType === "any" || allow_images) {
-      permissions.push('media');
-    }
+    // if (submissionType === 'any' || allow_images) {
+    //   permissions.push('media');
+    // }
 
     return permissions;
   }
@@ -182,36 +272,43 @@ export class RedditProvider implements SocialProvider {
       })
     ).json();
 
-    const {
-      is_flair_required,
-    } = await (
-      await fetch(`https://oauth.reddit.com/api/v1/${data.subreddit.split('/r/')[1]}/post_requirements`, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      })
+    const { is_flair_required } = await (
+      await fetch(
+        `https://oauth.reddit.com/api/v1/${
+          data.subreddit.split('/r/')[1]
+        }/post_requirements`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        }
+      )
     ).json();
 
     const newData = await (
-      await fetch(`https://oauth.reddit.com/${data.subreddit}/api/link_flair_v2`, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      })
+      await fetch(
+        `https://oauth.reddit.com/${data.subreddit}/api/link_flair_v2`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        }
+      )
     ).json();
 
     return {
       subreddit: data.subreddit,
       allow: this.getPermissions(submission_type, allow_images),
       is_flair_required,
-      flairs: newData?.map?.((p: any) => ({
-        id: p.id,
-        name: p.text
-      })) || []
-    }
+      flairs:
+        newData?.map?.((p: any) => ({
+          id: p.id,
+          name: p.text,
+        })) || [],
+    };
   }
 }

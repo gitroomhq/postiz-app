@@ -9,6 +9,7 @@ import { useIntegration } from '@gitroom/frontend/components/launches/helpers/us
 import clsx from 'clsx';
 import MDEditor from '@uiw/react-md-editor';
 import localFont from 'next/font/local'
+import {Canonical} from "@gitroom/react/form/canonical";
 
 const charter = localFont({
   src: [
@@ -67,11 +68,12 @@ const MediumPreview: FC = () => {
 
 const MediumSettings: FC = () => {
   const form = useSettings();
+  const {date} = useIntegration();
   return (
     <>
       <Input label="Title" {...form.register('title')} />
       <Input label="Subtitle" {...form.register('subtitle')} />
-      <Input label="Canonical Link" {...form.register('canonical')} />
+      <Canonical date={date} label="Canonical Link" {...form.register('canonical')} />
       <div>
         <MediumPublications {...form.register('publication')} />
       </div>

@@ -141,7 +141,12 @@ model Integration {
   tokenExpiration DateTime?
   refreshToken    String?
   posts           Post[]
+  deletedAt       DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime?      @updatedAt
 
+  @@index([updatedAt])
+  @@index([deletedAt])
   @@unique([organizationId, internalId])
 }
 

@@ -11,6 +11,7 @@ import clsx from 'clsx';
 import localFont from 'next/font/local';
 import MDEditor from '@uiw/react-md-editor';
 import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
+import { Canonical } from '@gitroom/react/form/canonical';
 
 const font = localFont({
   src: [
@@ -21,7 +22,7 @@ const font = localFont({
 });
 
 const DevtoPreview: FC = () => {
-  const { value} = useIntegration();
+  const { value } = useIntegration();
   const settings = useSettings();
   const image = useMediaDirectory();
   const [coverPicture, title, tags] = settings.watch([
@@ -55,7 +56,12 @@ const DevtoPreview: FC = () => {
         </div>
       </div>
       <div className="px-[60px]">
-        <MDEditor.Markdown style={{ whiteSpace: 'pre-wrap' }}  className={font.className} skipHtml={true} source={value.map(p => p.content).join('\n')} />
+        <MDEditor.Markdown
+          style={{ whiteSpace: 'pre-wrap' }}
+          className={font.className}
+          skipHtml={true}
+          source={value.map((p) => p.content).join('\n')}
+        />
       </div>
     </div>
   );
@@ -63,10 +69,15 @@ const DevtoPreview: FC = () => {
 
 const DevtoSettings: FC = () => {
   const form = useSettings();
+  const { date } = useIntegration();
   return (
     <>
       <Input label="Title" {...form.register('title')} />
-      <Input label="Canonical Link" {...form.register('canonical')} />
+      <Canonical
+        date={date}
+        label="Canonical Link"
+        {...form.register('canonical')}
+      />
       <MediaComponent
         label="Cover picture"
         description="Add a cover picture"

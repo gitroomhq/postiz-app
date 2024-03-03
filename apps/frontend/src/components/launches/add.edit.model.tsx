@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useCallback, useEffect, useState } from 'react';
+import React, { FC, useCallback, useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
 import clsx from 'clsx';
@@ -27,6 +27,8 @@ import { PickPlatforms } from '@gitroom/frontend/components/launches/helpers/pic
 import { ProvidersOptions } from '@gitroom/frontend/components/launches/providers.options';
 import { v4 as uuidv4 } from 'uuid';
 import { useSWRConfig } from 'swr';
+import { useToaster } from '@gitroom/react/toaster/toaster';
+import { postSelector } from '@gitroom/frontend/components/post-url-selector/post.url.selector';
 
 export const AddEditModal: FC<{
   date: dayjs.Dayjs;
@@ -69,6 +71,8 @@ export const AddEditModal: FC<{
   const existingData = useExistingData();
 
   const expend = useExpend();
+
+  const toaster = useToaster();
 
   // if it's edit just set the current integration
   useEffect(() => {
@@ -159,8 +163,13 @@ export const AddEditModal: FC<{
   const schedule = useCallback(
     (type: 'draft' | 'now' | 'schedule' | 'delete') => async () => {
       if (type === 'delete') {
-        if (!await deleteDialog('Are you sure you want to delete this post?', 'Yes, delete it!')) {
-          return ;
+        if (
+          !(await deleteDialog(
+            'Are you sure you want to delete this post?',
+            'Yes, delete it!'
+          ))
+        ) {
+          return;
         }
         await fetch(`/posts/${existingData.group}`, {
           method: 'DELETE',
@@ -183,7 +192,7 @@ export const AddEditModal: FC<{
       for (const key of allKeys) {
         if (key.value.some((p) => !p.content || p.content.length < 6)) {
           setShowError(true);
-          return ;
+          return;
         }
 
         if (!key.valid) {
@@ -205,6 +214,11 @@ export const AddEditModal: FC<{
       existingData.group = uuidv4();
 
       mutate('/posts');
+      toaster.show(
+        !existingData.integration
+          ? 'Added successfully'
+          : 'Updated successfully'
+      );
       modal.closeAll();
     },
     []
@@ -270,6 +284,7 @@ export const AddEditModal: FC<{
                             .getCommands()
                             .filter((f) => f.name !== 'image'),
                           newImage,
+                          postSelector(date),
                         ]}
                         value={p.content}
                         preview="edit"
@@ -399,6 +414,7 @@ export const AddEditModal: FC<{
               <ProvidersOptions
                 integrations={selectedIntegrations}
                 editorValue={value}
+                date={date}
               />
             </div>
           )}

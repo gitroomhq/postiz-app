@@ -4,7 +4,7 @@ import { CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.
 import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport/client/bull-mq.client';
 import dayjs from 'dayjs';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
-import { Integration, Post } from '@prisma/client';
+import { Integration, Post, Media } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 
 type PostWithConditionals = Post & {
@@ -55,6 +55,10 @@ export class PostsService {
     };
   }
 
+  async getOldPosts(orgId: string, date: string) {
+    return this._postRepository.getOldPosts(orgId, date);
+  }
+
   async post(id: string) {
     const [firstPost, ...morePosts] = await this.getPostsRecursively(id, true);
     if (!firstPost) {
@@ -71,6 +75,25 @@ export class PostsService {
     return this.postSocial(firstPost.integration!, [firstPost, ...morePosts]);
   }
 
+  private async updateTags(orgId: string, post: Post[]): Promise<Post[]> {
+    const plainText = JSON.stringify(post);
+    const extract = Array.from(
+      plainText.match(/\(post:[a-zA-Z0-9-_]+\)/g) || []
+    );
+    if (!extract.length) {
+      return post;
+    }
+
+    const ids = extract.map((e) => e.replace('(post:', '').replace(')', ''));
+    const urls = await this._postRepository.getPostUrls(orgId, ids);
+    const newPlainText = ids.reduce((acc, value) => {
+      const findUrl = urls?.find?.((u) => u.id === value)?.releaseURL || '';
+      return acc.replace(new RegExp(`\\(post:${value}\\)`, 'g'), findUrl.split(',')[0]);
+    }, plainText);
+
+    return this.updateTags(orgId, JSON.parse(newPlainText) as Post[]);
+  }
+
   private async postSocial(integration: Integration, posts: Post[]) {
     const getIntegration = this._integrationManager.getSocialIntegration(
       integration.providerIdentifier
@@ -79,13 +102,24 @@ export class PostsService {
       return;
     }
 
+    const newPosts = await this.updateTags(integration.organizationId, posts);
+
     const publishedPosts = await getIntegration.post(
       integration.internalId,
       integration.token,
-      posts.map((p) => ({
+      newPosts.map((p) => ({
         id: p.id,
         message: p.content,
         settings: JSON.parse(p.settings || '{}'),
+        media: (JSON.parse(p.image || '[]') as Media[]).map((m) => ({
+          url:
+            process.env.FRONTEND_URL +
+            '/' +
+            process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
+            m.path,
+          type: 'image',
+          path: process.env.UPLOAD_DIRECTORY + m.path,
+        })),
       }))
     );
 
@@ -105,12 +139,15 @@ export class PostsService {
     if (!getIntegration) {
       return;
     }
+
+    const newPosts = await this.updateTags(integration.organizationId, posts);
+
     const { postId, releaseURL } = await getIntegration.post(
       integration.token,
-      posts.map((p) => p.content).join('\n\n'),
-      JSON.parse(posts[0].settings || '{}')
+      newPosts.map((p) => p.content).join('\n\n'),
+      JSON.parse(newPosts[0].settings || '{}')
     );
-    await this._postRepository.updatePost(posts[0].id, postId, releaseURL);
+    await this._postRepository.updatePost(newPosts[0].id, postId, releaseURL);
   }
 
   async deletePost(orgId: string, group: string) {
@@ -135,16 +172,16 @@ export class PostsService {
           'post',
           previousPost ? previousPost : posts?.[0]?.id
         );
-        if (body.type === 'schedule') {
-          // this._workerServiceProducer.emit('post', {
-          //   id: posts[0].id,
-          //   options: {
-          //     delay: dayjs(posts[0].publishDate).diff(dayjs(), 'millisecond'),
-          //   },
-          //   payload: {
-          //     id: posts[0].id,
-          //   },
-          // });
+        if (body.type === 'schedule' && dayjs(body.date).isAfter(dayjs())) {
+          this._workerServiceProducer.emit('post', {
+            id: posts[0].id,
+            options: {
+              delay: 0, //dayjs(posts[0].publishDate).diff(dayjs(), 'millisecond'),
+            },
+            payload: {
+              id: posts[0].id,
+            },
+          });
         }
       }
     }

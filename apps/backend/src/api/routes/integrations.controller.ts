@@ -55,8 +55,8 @@ export class IntegrationsController {
 
   @Post('/function')
   async functionIntegration(
-      @GetOrgFromRequest() org: Organization,
-      @Body() body: IntegrationFunctionDto
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: IntegrationFunctionDto
   ) {
     const getIntegration = await this._integrationService.getIntegrationById(
       org.id,
@@ -124,7 +124,7 @@ export class IntegrationsController {
       throw new Error('Invalid api key');
     }
 
-    return this._integrationService.createIntegration(
+    return this._integrationService.createOrUpdateIntegration(
       org.id,
       name,
       picture,
@@ -166,7 +166,7 @@ export class IntegrationsController {
       throw new Error('Invalid api key');
     }
 
-    return this._integrationService.createIntegration(
+    return this._integrationService.createOrUpdateIntegration(
       org.id,
       name,
       picture,

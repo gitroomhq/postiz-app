@@ -24,6 +24,7 @@ import { MultiMediaComponent } from '@gitroom/frontend/components/media/media.co
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 import { newImage } from '@gitroom/frontend/components/launches/helpers/new.image.component';
+import { postSelector } from '@gitroom/frontend/components/post-url-selector/post.url.selector';
 
 // Simple component to change back to settings on after changing tab
 export const SetTab: FC<{ changeTab: () => void }> = (props) => {
@@ -74,7 +75,7 @@ export const withProvider = (
     show: boolean;
   }) => {
     const existingData = useExistingData();
-    const { integration } = useIntegration();
+    const { integration, date } = useIntegration();
     const [editInPlace, setEditInPlace] = useState(!!existingData.integration);
     const [InPlaceValue, setInPlaceValue] = useState<
       Array<{
@@ -253,6 +254,7 @@ export const withProvider = (
                               .getCommands()
                               .filter((f) => f.name !== 'image'),
                             newImage,
+                            postSelector(date),
                           ]}
                           preview="edit"
                           // @ts-ignore
@@ -338,6 +340,7 @@ export const withProvider = (
             <div className="mt-[20px] flex flex-col items-center">
               <IntegrationContext.Provider
                 value={{
+                  date,
                   value: editInPlace ? InPlaceValue : props.value,
                   integration,
                 }}

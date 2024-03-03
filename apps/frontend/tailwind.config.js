@@ -3,14 +3,16 @@ const { join } = require('path');
 
 module.exports = {
   content: [
-    ...createGlobPatternsForDependencies(__dirname + '../../../libraries/react-shared-libraries'),
-    join(
-        __dirname + '../../../libraries/react-shared-libraries',
-        '{src,pages,components,app}/**/*!(*.stories|*.spec).{ts,tsx,html}'
+    ...createGlobPatternsForDependencies(
+      __dirname + '../../../libraries/react-shared-libraries'
     ),
     join(
-        __dirname,
-        '{src,pages,components,app}/**/*!(*.stories|*.spec).{ts,tsx,html}'
+      __dirname + '../../../libraries/react-shared-libraries',
+      '{src,pages,components,app}/**/*!(*.stories|*.spec).{ts,tsx,html}'
+    ),
+    join(
+      __dirname,
+      '{src,pages,components,app}/**/*!(*.stories|*.spec).{ts,tsx,html}'
     ),
     ...createGlobPatternsForDependencies(__dirname),
   ],
@@ -27,25 +29,27 @@ module.exports = {
         gray: '#8C8C8C',
         input: '#131B2C',
         inputText: '#64748B',
-        tableBorder: '#1F2941'
+        tableBorder: '#1F2941',
       },
       gridTemplateColumns: {
-        '13': 'repeat(13, minmax(0, 1fr));'
+        13: 'repeat(13, minmax(0, 1fr));',
       },
       backgroundImage: {
         loginBox: 'url(/auth/login-box.png)',
-        loginBg: 'url(/auth/bg-login.png)'
+        loginBg: 'url(/auth/bg-login.png)',
       },
       animation: {
         fade: 'fadeOut 0.5s ease-in-out',
         overflow: 'overFlow 0.5s ease-in-out forwards',
         overflowReverse: 'overFlowReverse 0.5s ease-in-out forwards',
+        fadeDown: 'fadeDown 4s ease-in-out forwards',
       },
       boxShadow: {
-        yellow: '0 0 60px 20px #6b6237'
+        yellow: '0 0 60px 20px #6b6237',
+        green: '0px 0px 50px rgba(60, 124, 90, 0.3)'
       },
       // that is actual animation
-      keyframes: theme => ({
+      keyframes: (theme) => ({
         fadeOut: {
           '0%': { opacity: 0, transform: 'translateY(30px)' },
           '100%': { opacity: 1, transform: 'translateY(0)' },
@@ -60,10 +64,15 @@ module.exports = {
           '99%': { overflow: 'visible' },
           '100%': { overflow: 'hidden' },
         },
-      })
+        fadeDown: {
+          '0%': { opacity: 0, transform: 'translateY(-30px)' },
+          '10%': { opacity: 1, transform: 'translateY(0)' },
+          '85%': { opacity: 1, transform: 'translateY(0)' },
+          '90%': { opacity: 1, transform: 'translateY(10px)' },
+          '100%': { opacity: 0, transform: 'translateY(-30px)' },
+        },
+      }),
     },
   },
-  plugins: [
-    require('tailwind-scrollbar')
-  ],
+  plugins: [require('tailwind-scrollbar')],
 };

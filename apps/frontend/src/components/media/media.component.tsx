@@ -77,7 +77,6 @@ export const MediaBox: FC<{
         })
       ).json();
 
-      console.log(data);
       setListMedia([...mediaList, data]);
     },
     [mediaList]

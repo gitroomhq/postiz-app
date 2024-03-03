@@ -30,10 +30,10 @@ export type PostResponse = {
     status: string; // Status of the operation or initial post status
 };
 
-export type PostDetails = {
+export type PostDetails<T = any> = {
     id: string;
     message: string;
-    settings: object;
+    settings: T;
     media?: MediaContent[];
     poll?: PollDetails;
 };
@@ -46,7 +46,7 @@ export type PollDetails = {
 export type MediaContent = {
     type: 'image' | 'video'; // Type of the media content
     url: string; // URL of the media file, if it's already hosted somewhere
-    file?: File; // The actual media file to upload, if not hosted
+    path: string;
 };
 
 export interface SocialProvider extends IAuthenticator, ISocialMediaIntegration {

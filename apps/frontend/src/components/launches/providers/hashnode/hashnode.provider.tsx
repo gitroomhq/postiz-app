@@ -11,6 +11,7 @@ import clsx from 'clsx';
 import MDEditor from '@uiw/react-md-editor';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import { MediaComponent } from '@gitroom/frontend/components/media/media.component';
+import {Canonical} from "@gitroom/react/form/canonical";
 
 const font = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -60,11 +61,12 @@ const HashnodePreview: FC = () => {
 
 const HashnodeSettings: FC = () => {
   const form = useSettings();
+  const {date} = useIntegration();
   return (
     <>
       <Input label="Title" {...form.register('title')} />
       <Input label="Subtitle" {...form.register('subtitle')} />
-      <Input label="Canonical Link" {...form.register('canonical')} />
+      <Canonical date={date} label="Canonical Link" {...form.register('canonical')} />
       <MediaComponent
         label="Cover picture"
         description="Add a cover picture"

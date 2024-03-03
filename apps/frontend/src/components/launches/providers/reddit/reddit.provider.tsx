@@ -12,7 +12,8 @@ import {
 } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/reddit.dto';
 import clsx from 'clsx';
 import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
-import {deleteDialog} from "@gitroom/react/helpers/delete.dialog";
+import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
+import MDEditor from '@uiw/react-md-editor';
 
 const RenderRedditComponent: FC<{
   type: string;
@@ -23,20 +24,16 @@ const RenderRedditComponent: FC<{
 
   const { type, images } = props;
 
-  const [firstPost] = useFormatting(topValue, {
-    removeMarkdown: true,
-    saveBreaklines: true,
-    specialFunc: (text: string) => {
-      return text.slice(0, 280);
-    },
-  });
+  const [firstPost] = topValue;
 
   switch (type) {
     case 'self':
       return (
-        <pre className="font-['Inter'] text-[14px] text-wrap">
-          {firstPost?.text}
-        </pre>
+        <MDEditor.Markdown
+          style={{ whiteSpace: 'pre-wrap', fontSize: '14px' }}
+          skipHtml={true}
+          source={firstPost?.content}
+        />
       );
     case 'link':
       return (
@@ -81,7 +78,6 @@ const RedditPreview: FC = (props) => {
       return text.slice(0, 280);
     },
   });
-  console.log(settings);
 
   if (!settings || !settings.length) {
     return <>Please add at least one Subreddit from the settings</>;
@@ -130,6 +126,11 @@ const RedditPreview: FC = (props) => {
                       <div className="text-[14px] font-[600]">
                         {integration?.name}
                       </div>
+                      <MDEditor.Markdown
+                        style={{ whiteSpace: 'pre-wrap' }}
+                        skipHtml={true}
+                        source={p.text}
+                      />
                       <pre className="font-['Inter'] text-[14px] mt-[8px] font-[400] text-white">
                         {p.text}
                       </pre>
@@ -155,22 +156,29 @@ const RedditSettings: FC = () => {
     append({});
   }, [fields, append]);
 
-  const deleteField = useCallback((index: number) => async () => {
-    if (!await deleteDialog('Are you sure you want to delete this Subreddit?')) return;
-    remove(index);
-  }, [fields, remove]);
+  const deleteField = useCallback(
+    (index: number) => async () => {
+      if (
+        !(await deleteDialog('Are you sure you want to delete this Subreddit?'))
+      )
+        return;
+      remove(index);
+    },
+    [fields, remove]
+  );
 
   return (
     <>
       <div className="flex flex-col gap-[20px] mb-[20px]">
         {fields.map((field, index) => (
           <div key={field.id} className="flex flex-col relative">
-            <div onClick={deleteField(index)} className="absolute -left-[10px] justify-center items-center flex -top-[10px] w-[20px] h-[20px] bg-red-600 rounded-full text-white">
+            <div
+              onClick={deleteField(index)}
+              className="absolute -left-[10px] justify-center items-center flex -top-[10px] w-[20px] h-[20px] bg-red-600 rounded-full text-white"
+            >
               x
             </div>
-            <Subreddit
-              {...register(`subreddit.${index}.value`)}
-            />
+            <Subreddit {...register(`subreddit.${index}.value`)} />
           </div>
         ))}
       </div>

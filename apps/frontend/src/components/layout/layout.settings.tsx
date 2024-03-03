@@ -8,6 +8,8 @@ import { ToolTip } from '@gitroom/frontend/components/layout/top.tip';
 import { ShowMediaBoxModal } from '@gitroom/frontend/components/media/media.component';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
+import { Toaster } from '@gitroom/react/toaster/toaster';
+import { ShowPostSelector } from '@gitroom/frontend/components/post-url-selector/post.url.selector';
 
 const NotificationComponent = dynamic(
   () =>
@@ -25,6 +27,8 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
       <MantineWrapper>
         <ToolTip />
         <ShowMediaBoxModal />
+        <Toaster />
+        <ShowPostSelector />
         <div className="min-h-[100vh] w-full max-w-[1440px] mx-auto bg-primary px-[12px] text-white flex flex-col">
           <div className="px-[23px] flex h-[80px] items-center justify-between z-[200] sticky top-0 bg-primary">
             <div className="text-2xl flex items-center gap-[10px]">
