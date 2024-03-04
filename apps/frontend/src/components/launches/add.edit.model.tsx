@@ -1,6 +1,6 @@
 'use client';
 
-import React, { FC, useCallback, useEffect, useState } from 'react';
+import React, {FC, MouseEventHandler, useCallback, useEffect, useState} from 'react';
 import dayjs from 'dayjs';
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
 import clsx from 'clsx';
@@ -158,6 +158,13 @@ export const AddEditModal: FC<{
 
   // sometimes it's easier to click escape to close
   useKeypress('Escape', askClose);
+
+  const postNow = useCallback(((e) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    return schedule('now')();
+  }) as MouseEventHandler<HTMLDivElement>, []);
 
   // function to send to the server and save
   const schedule = useCallback(
@@ -363,7 +370,7 @@ export const AddEditModal: FC<{
           </div>
           <div className="relative h-[68px] flex flex-col rounded-[4px] border border-[#172034] bg-[#0B101B]">
             <div className="flex flex-1 gap-[10px] relative">
-              <div className="absolute w-full h-full flex gap-[10px] justify-end items-center right-[16px] overflow-hidden">
+              <div className="absolute w-full h-full flex gap-[10px] justify-end items-center right-[16px]">
                 {!!existingData.integration && (
                   <Button
                     onClick={schedule('delete')}
@@ -384,10 +391,31 @@ export const AddEditModal: FC<{
 
                 <Button
                   onClick={schedule('schedule')}
-                  className="rounded-[4px]"
+                  className="rounded-[4px] relative"
                   disabled={selectedIntegrations.length === 0}
                 >
-                  {!existingData.integration ? 'Add to calendar' : 'Update'}
+                  <div className="flex justify-center items-center gap-[5px] h-full">
+                    <div className="h-full flex items-center">
+                      {!existingData.integration ? 'Add to calendar' : 'Update'}
+                    </div>
+                    <div className="group h-full flex items-center">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="18"
+                        height="18"
+                        viewBox="0 0 18 18"
+                        fill="none"
+                      >
+                        <path
+                          d="M15.0233 7.14804L9.39828 12.773C9.34604 12.8253 9.284 12.8668 9.21572 12.8951C9.14743 12.9234 9.07423 12.938 9.00031 12.938C8.92639 12.938 8.8532 12.9234 8.78491 12.8951C8.71662 12.8668 8.65458 12.8253 8.60234 12.773L2.97734 7.14804C2.8718 7.04249 2.8125 6.89934 2.8125 6.75007C2.8125 6.6008 2.8718 6.45765 2.97734 6.3521C3.08289 6.24655 3.22605 6.18726 3.37531 6.18726C3.52458 6.18726 3.66773 6.24655 3.77328 6.3521L9.00031 11.5798L14.2273 6.3521C14.2796 6.29984 14.3417 6.25838 14.4099 6.2301C14.4782 6.20181 14.5514 6.18726 14.6253 6.18726C14.6992 6.18726 14.7724 6.20181 14.8407 6.2301C14.909 6.25838 14.971 6.29984 15.0233 6.3521C15.0755 6.40436 15.117 6.46641 15.1453 6.53469C15.1736 6.60297 15.1881 6.67616 15.1881 6.75007C15.1881 6.82398 15.1736 6.89716 15.1453 6.96545C15.117 7.03373 15.0755 7.09578 15.0233 7.14804Z"
+                          fill="white"
+                        />
+                      </svg>
+                      <div onClick={postNow} className="hidden group-hover:flex hover:flex flex-col justify-center absolute left-0 top-[100%] w-full h-[40px] bg-[#B91C1C] border border-tableBorder">
+                        Post now
+                      </div>
+                    </div>
+                  </div>
                 </Button>
               </div>
             </div>

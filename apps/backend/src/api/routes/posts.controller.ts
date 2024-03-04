@@ -14,12 +14,14 @@ import { Organization } from '@prisma/client';
 import { CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { CommentsService } from '@gitroom/nestjs-libraries/database/prisma/comments/comments.service';
+import {StarsService} from "@gitroom/nestjs-libraries/database/prisma/stars/stars.service";
 
 @Controller('/posts')
 export class PostsController {
   constructor(
     private _postsService: PostsService,
-    private _commentsService: CommentsService
+    private _commentsService: CommentsService,
+    private _starsService: StarsService
   ) {}
 
   @Get('/')
@@ -40,6 +42,11 @@ export class PostsController {
       posts,
       comments,
     };
+  }
+
+  @Get('/predict-trending')
+  predictTrending() {
+    return this._starsService.predictTrending();
   }
 
   @Get('/old')

@@ -68,8 +68,8 @@ export class Post {
 
 export class CreatePostDto {
   @IsDefined()
-  @IsIn(['draft', 'schedule'])
-  type: 'draft' | 'schedule';
+  @IsIn(['draft', 'schedule', 'now'])
+  type: 'draft' | 'schedule' | 'now';
 
   @IsDefined()
   @IsDateString()

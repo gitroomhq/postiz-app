@@ -163,7 +163,7 @@ export class PostsService {
         await this._postRepository.createOrUpdatePost(
           body.type,
           orgId,
-          body.date,
+          body.type === 'now' ? dayjs().format('YYYY-MM-DDTHH:mm:00') : body.date,
           post
         );
 
@@ -172,11 +172,11 @@ export class PostsService {
           'post',
           previousPost ? previousPost : posts?.[0]?.id
         );
-        if (body.type === 'schedule' && dayjs(body.date).isAfter(dayjs())) {
+        if ((body.type === 'schedule' || body.type === 'now') && dayjs(body.date).isAfter(dayjs())) {
           this._workerServiceProducer.emit('post', {
             id: posts[0].id,
             options: {
-              delay: 0, //dayjs(posts[0].publishDate).diff(dayjs(), 'millisecond'),
+              delay: body.type === 'now' ? 0 : dayjs(posts[0].publishDate).diff(dayjs(), 'millisecond'),
             },
             payload: {
               id: posts[0].id,

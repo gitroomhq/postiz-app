@@ -23,6 +23,7 @@ export class TrendingService {
             });
 
             const hashedNames = md5(arr.map(p => p.name).join(''));
+            console.log(language, hashedNames);
             await this._starsService.updateTrending(language.name, hashedNames, arr);
         }
     }

@@ -154,7 +154,7 @@ export class PostsRepository {
   }
 
   async createOrUpdatePost(
-    state: 'draft' | 'schedule',
+    state: 'draft' | 'schedule' | 'now',
     orgId: string,
     date: string,
     body: PostBody

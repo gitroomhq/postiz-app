@@ -28,6 +28,7 @@ const CalendarContext = createContext({
   currentYear: dayjs().year(),
   comments: [] as Array<{ date: string; total: number }>,
   integrations: [] as Integrations[],
+  trendings: [] as string[],
   posts: [] as Array<Post & { integration: Integration }>,
   setFilters: (filters: { currentWeek: number; currentYear: number }) => {},
   changeDate: (id: string, date: dayjs.Dayjs) => {},
@@ -46,7 +47,14 @@ export const CalendarWeekProvider: FC<{
 }> = ({ children, integrations }) => {
   const fetch = useFetch();
   const [internalData, setInternalData] = useState([] as any[]);
+  const [trendings, setTrendings] = useState<string[]>([]);
   const { mutate } = useSWRConfig();
+
+  useEffect(() => {
+    (async () => {
+      setTrendings(await (await fetch('/posts/predict-trending')).json());
+    })();
+  }, []);
 
   const [filters, setFilters] = useState({
     currentWeek: dayjs().week(),
@@ -72,12 +80,18 @@ export const CalendarWeekProvider: FC<{
 
   const loadData = useCallback(
     async (url: string) => {
-      return (await fetch(`${url}?${params}`)).json();
+      const data = (await fetch(`${url}?${params}`)).json();
+      return data;
     },
     [filters]
   );
 
-  const swr = useSWR(`/posts`, loadData);
+  const swr = useSWR(`/posts`, loadData, {
+    refreshInterval: 3600000,
+    refreshWhenOffline: false,
+    refreshWhenHidden: false,
+    revalidateOnFocus: false,
+  });
   const { isLoading } = swr;
   const { posts, comments } = swr?.data || { posts: [], comments: [] };
 
@@ -86,7 +100,7 @@ export const CalendarWeekProvider: FC<{
       setInternalData((d) =>
         d.map((post: Post) => {
           if (post.id === id) {
-            return { ...post, publishDate: date.format('YYYY-MM-DDTHH:mm:ss') };
+            return { ...post, publishDate: date.utc().format('YYYY-MM-DDTHH:mm:ss') };
           }
           return post;
         })
@@ -101,9 +115,11 @@ export const CalendarWeekProvider: FC<{
     }
   }, [posts]);
 
+
   return (
     <CalendarContext.Provider
       value={{
+        trendings,
         ...filters,
         posts: isLoading ? [] : internalData,
         integrations,

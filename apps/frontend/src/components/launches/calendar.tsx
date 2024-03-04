@@ -1,11 +1,14 @@
 'use client';
 
-import { FC, useCallback, useMemo } from 'react';
+import { FC, useCallback, useEffect, useMemo, useState, JSX } from 'react';
 import {
   Integrations,
   useCalendar,
 } from '@gitroom/frontend/components/launches/calendar.context';
 import dayjs from 'dayjs';
+import isBetween from 'dayjs/plugin/isBetween';
+dayjs.extend(isBetween);
+
 import { openModal, useModals } from '@mantine/modals';
 import { AddEditModal } from '@gitroom/frontend/components/launches/add.edit.model';
 import clsx from 'clsx';
@@ -17,8 +20,9 @@ import { Integration, Post } from '@prisma/client';
 import { useAddProvider } from '@gitroom/frontend/components/launches/add.provider.component';
 import { CommentComponent } from '@gitroom/frontend/components/launches/comments/comment.component';
 import { useSWRConfig } from 'swr';
+import { useIntersectionObserver } from '@uidotdev/usehooks';
 
-const days = [
+export const days = [
   '',
   'Monday',
   'Tuesday',
@@ -28,7 +32,7 @@ const days = [
   'Saturday',
   'Sunday',
 ];
-const hours = [
+export const hours = [
   '00:00',
   '01:00',
   '02:00',
@@ -139,8 +143,67 @@ export const Calendar = () => {
 
 const CalendarColumn: FC<{ day: number; hour: string }> = (props) => {
   const { day, hour } = props;
-  const { currentWeek, currentYear, integrations, posts, changeDate } =
-    useCalendar();
+  const { currentWeek, currentYear } = useCalendar();
+
+  const getDate = useMemo(() => {
+    const date =
+      dayjs()
+        .year(currentYear)
+        .isoWeek(currentWeek)
+        .isoWeekday(day)
+        .format('YYYY-MM-DD') +
+      'T' +
+      hour +
+      ':00';
+    return dayjs(date);
+  }, [currentWeek]);
+
+  const isBeforeNow = useMemo(() => {
+    return getDate.isBefore(dayjs());
+  }, [getDate]);
+
+  const [ref, entry] = useIntersectionObserver({
+    threshold: 0.5,
+    root: null,
+    rootMargin: '0px',
+  });
+
+  return (
+    <div className="w-full h-full" ref={ref}>
+      {!entry?.isIntersecting ? (
+        <div
+          className={clsx(
+            'h-full flex justify-center items-center text-[12px]',
+            isBeforeNow && 'bg-secondary'
+          )}
+        >
+          {!isBeforeNow && (
+            <div
+              className={clsx(
+                'w-[20px] h-[20px] bg-forth rounded-full flex justify-center items-center hover:bg-seventh'
+              )}
+            >
+              +
+            </div>
+          )}
+        </div>
+      ) : (
+        <CalendarColumnRender {...props} />
+      )}
+    </div>
+  );
+};
+const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
+  const { day, hour } = props;
+  const {
+    currentWeek,
+    currentYear,
+    integrations,
+    posts,
+    trendings,
+    changeDate,
+  } = useCalendar();
+
   const modal = useModals();
   const fetch = useFetch();
 
@@ -159,9 +222,21 @@ const CalendarColumn: FC<{ day: number; hour: string }> = (props) => {
 
   const postList = useMemo(() => {
     return posts.filter((post) => {
-      return dayjs(post.publishDate).local().isSame(getDate);
+      return dayjs
+        .utc(post.publishDate)
+        .local()
+        .isBetween(getDate, getDate.add(10, 'minute'), 'minute', '[)');
     });
   }, [posts]);
+
+  const canBeTrending = useMemo(() => {
+    return !!trendings.find((trend) => {
+      return dayjs
+        .utc(trend)
+        .local()
+        .isBetween(getDate, getDate.add(10, 'minute'), 'minute', '[)');
+    });
+  }, [trendings]);
 
   const isBeforeNow = useMemo(() => {
     return getDate.isBefore(dayjs());
@@ -232,11 +307,18 @@ const CalendarColumn: FC<{ day: number; hour: string }> = (props) => {
     <div className="relative w-full h-full">
       <div className="absolute left-0 top-0 w-full h-full">
         <div
+          {...(canBeTrending
+            ? {
+                'data-tooltip-id': 'tooltip',
+                'data-tooltip-content': 'Predicted GitHub Trending Change',
+              }
+            : {})}
           ref={drop}
           className={clsx(
             'h-[calc(216px/6)] gap-[2.5px] text-[12px] pointer w-full overflow-hidden justify-center overflow-x-auto flex scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary',
             isBeforeNow && 'bg-secondary',
-            canDrop && 'bg-white/80'
+            canDrop && 'bg-white/80',
+            canBeTrending && 'bg-[#eaff00]'
           )}
         >
           {postList.map((post) => (
@@ -351,7 +433,13 @@ export const CommentBox: FC<{ totalComments: number; date: dayjs.Dayjs }> = (
   }, [date]);
 
   return (
-    <div className={totalComments === 0 ? 'transition-opacity opacity-0 group-hover:opacity-100' : ''}>
+    <div
+      className={
+        totalComments === 0
+          ? 'transition-opacity opacity-0 group-hover:opacity-100'
+          : ''
+      }
+    >
       <div
         onClick={openCommentsModal}
         data-tooltip-id="tooltip"
