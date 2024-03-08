@@ -153,6 +153,28 @@ export class PostsRepository {
     });
   }
 
+  countPostsFromDay(orgId: string, date: Date) {
+    return this._post.model.post.count({
+      where: {
+        organizationId: orgId,
+        publishDate: {
+          gte: date,
+        },
+        OR: [
+          {
+            deletedAt: null,
+            state: {
+              in: ['QUEUE'],
+            },
+          },
+          {
+            state: 'PUBLISHED',
+          },
+        ],
+      },
+    });
+  }
+
   async createOrUpdatePost(
     state: 'draft' | 'schedule' | 'now',
     orgId: string,

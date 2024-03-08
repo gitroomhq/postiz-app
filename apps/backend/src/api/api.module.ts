@@ -18,6 +18,8 @@ import { MediaController } from '@gitroom/backend/api/routes/media.controller';
 import { UploadModule } from '@gitroom/nestjs-libraries/upload/upload.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { CommentsController } from '@gitroom/backend/api/routes/comments.controller';
+import { BillingController } from '@gitroom/backend/api/routes/billing.controller';
+import { NotificationsController } from '@gitroom/backend/api/routes/notifications.controller';
 
 const authenticatedController = [
   UsersController,
@@ -27,6 +29,8 @@ const authenticatedController = [
   PostsController,
   MediaController,
   CommentsController,
+  BillingController,
+  NotificationsController,
 ];
 @Module({
   imports: [

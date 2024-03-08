@@ -24,6 +24,7 @@ model Organization {
   Integration  Integration[]
   post         Post[]
   Comments     Comments[]
+  notifications Notifications[]
 }
 
 model User {
@@ -37,8 +38,12 @@ model User {
   comments      Comments[]
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
+  lastReadNotifications DateTime   @default(now())
+  inviteId      String?
 
   @@unique([email, providerName])
+  @@index([lastReadNotifications])
+  @@index([inviteId])
 }
 
 model UserOrganization {
@@ -51,8 +56,7 @@ model UserOrganization {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
-  @@index([organizationId])
-  @@index([userId])
+  @@unique([userId, organizationId])
 }
 
 model GitHub {
@@ -118,14 +122,16 @@ model Subscription {
   organizationId    String            @unique
   organization      Organization      @relation(fields: [organizationId], references: [id])
   subscriptionTier  SubscriptionTier
-  subscriptionState SubscriptionState
   identifier        String?
   cancelAt          DateTime?
   period            Period
+  totalChannels     Int
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
+  deletedAt         DateTime?
 
   @@index([organizationId])
+  @@index([deletedAt])
 }
 
 model Integration {
@@ -203,6 +209,21 @@ model Post {
   @@index([parentPostId])
 }
 
+model Notifications {
+  id                String   @id @default(uuid())
+  organizationId    String
+  organization      Organization @relation(fields: [organizationId], references: [id])
+  content           String
+  link              String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  deletedAt         DateTime?
+
+  @@index([createdAt])
+  @@index([organizationId])
+  @@index([deletedAt])
+}
+
 enum State {
   QUEUE
   PUBLISHED
@@ -211,13 +232,8 @@ enum State {
 }
 
 enum SubscriptionTier {
-  BASIC
+  STANDARD
   PRO
-}
-
-enum SubscriptionState {
-  ACTIVE
-  INACTIVE
 }
 
 enum Period {

@@ -2,6 +2,7 @@
 
 import {ReactNode, useCallback} from "react";
 import {FetchWrapperComponent} from "@gitroom/helpers/utils/custom.fetch";
+import {deleteDialog} from "@gitroom/react/helpers/delete.dialog";
 
 export default async function LayoutContext(params: {children: ReactNode}) {
     if (params?.children) {
@@ -16,6 +17,15 @@ function LayoutContextInner(params: {children: ReactNode}) {
         if (response?.headers?.get('reload')) {
             window.location.reload();
         }
+
+        if (response.status === 402) {
+            if (await deleteDialog((await response.json()).message, 'Move to billing', 'Payment Required')) {
+                window.open('/billing', '_blank');
+            }
+            return false;
+        }
+
+        return true;
     }, []);
 
     return (

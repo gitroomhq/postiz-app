@@ -5,9 +5,13 @@ export interface Params {
     url: string,
     options: RequestInit,
     response: Response
-  ) => Promise<void>;
+  ) => Promise<boolean>;
 }
-export const customFetch = (params: Params, auth?: string) => {
+export const customFetch = (
+  params: Params,
+  auth?: string,
+  showorg?: string
+) => {
   return async function newFetch(url: string, options: RequestInit = {}) {
     const newRequestObject = await params?.beforeRequest?.(url, options);
     const fetchRequest = await fetch(params.baseUrl + url, {
@@ -15,16 +19,28 @@ export const customFetch = (params: Params, auth?: string) => {
       ...(newRequestObject || options),
       headers: {
         ...(auth ? { auth } : {}),
+        ...(showorg ? { showorg } : {}),
         ...(options.body instanceof FormData
           ? {}
           : { 'Content-Type': 'application/json' }),
         Accept: 'application/json',
         ...options?.headers,
       },
-      cache: options.cache || 'no-store',
+      // @ts-ignore
+      ...(!options.next && options.cache !== 'force-cache'
+        ? { cache: options.cache || 'no-store' }
+        : {}),
     });
-    await params?.afterRequest?.(url, options, fetchRequest);
-    return fetchRequest;
+
+    if (
+      !params?.afterRequest ||
+      (await params?.afterRequest?.(url, options, fetchRequest))
+    ) {
+      return fetchRequest;
+    }
+
+    // @ts-ignore
+    return new Promise((res) => {}) as Response;
   };
 };
 

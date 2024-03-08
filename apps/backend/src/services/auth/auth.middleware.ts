@@ -17,12 +17,16 @@ export class AuthMiddleware implements NestMiddleware {
         }
         try {
             const user = AuthService.verifyJWT(auth) as User | null;
+            const orgHeader = req.cookies.showorg || req.headers.showorg;
+
             if (!user) {
                 throw new Error('Unauthorized');
             }
 
             delete user.password;
-            const organization = await this._organizationService.getFirstOrgByUserId(user.id);
+            const organization = await this._organizationService.getOrgsByUserId(user.id);
+            const setOrg = organization.find((org) => org.id === orgHeader) || organization[0];
+
 
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-expect-error
@@ -30,7 +34,7 @@ export class AuthMiddleware implements NestMiddleware {
 
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-expect-error
-            req.org  = organization;
+            req.org  = setOrg;
         }
         catch (err) {
             throw new Error('Unauthorized');

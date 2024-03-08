@@ -8,7 +8,9 @@ const FetchProvider = createContext(customFetch(
     {
         baseUrl: '',
         beforeRequest: () => {},
-        afterRequest: () => {}
+        afterRequest: () => {
+            return true;
+        }
     } as Params));
 
 export const FetchWrapperComponent: FC<Params & {children: ReactNode}> = (props) => {

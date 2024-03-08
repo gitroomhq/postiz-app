@@ -1,60 +1,39 @@
+export interface PricingInnerInterface {
+  channel?: number;
+  posts_per_month: number;
+  team_members: boolean;
+  community_features: boolean;
+  featured_by_gitroom: boolean;
+  ai: boolean;
+  import_from_channels: boolean;
+}
 export interface PricingInterface {
-    [key: string]: {
-        pricing: {
-            monthly: number;
-            yearly: number;
-        },
-        friends: boolean;
-        crossPosting: boolean;
-        repository: number;
-        ai: boolean;
-        integrations: number;
-        totalPosts: number;
-        medias: number;
-        influencers: boolean;
-    }
+  [key: string]: PricingInnerInterface;
 }
 export const pricing: PricingInterface = {
-    FREE: {
-        pricing: {
-            monthly: 0,
-            yearly: 0,
-        },
-        friends: false,
-        crossPosting: false,
-        repository: 1,
-        ai: false,
-        integrations: 2,
-        totalPosts: 20,
-        medias: 2,
-        influencers: false,
-    },
-    BASIC: {
-        pricing: {
-            monthly: 50,
-            yearly: 500,
-        },
-        friends: false,
-        crossPosting: true,
-        repository: 2,
-        ai: false,
-        integrations: 4,
-        totalPosts: 100,
-        medias: 5,
-        influencers: true,
-    },
-    PRO: {
-        pricing: {
-            monthly: 100,
-            yearly: 1000,
-        },
-        friends: true,
-        crossPosting: true,
-        repository: 4,
-        ai: true,
-        integrations: 10,
-        totalPosts: 300,
-        medias: 10,
-        influencers: true,
-    }
-}
+  FREE: {
+    channel: 3,
+    posts_per_month: 30,
+    team_members: false,
+    community_features: false,
+    featured_by_gitroom: false,
+    ai: false,
+    import_from_channels: false,
+  },
+  STANDARD: {
+    posts_per_month: 400,
+    team_members: false,
+    ai: true,
+    community_features: false,
+    featured_by_gitroom: false,
+    import_from_channels: true,
+  },
+  PRO: {
+    posts_per_month: 1000000,
+    community_features: true,
+    team_members: true,
+    featured_by_gitroom: true,
+    ai: true,
+    import_from_channels: true,
+  },
+};

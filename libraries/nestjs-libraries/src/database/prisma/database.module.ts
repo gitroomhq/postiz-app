@@ -8,7 +8,7 @@ import { StarsService } from '@gitroom/nestjs-libraries/database/prisma/stars/st
 import { StarsRepository } from '@gitroom/nestjs-libraries/database/prisma/stars/stars.repository';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { SubscriptionRepository } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.repository';
-import { NotificationService } from '@gitroom/nestjs-libraries/notifications/notification.service';
+import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { IntegrationRepository } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.repository';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
@@ -18,6 +18,8 @@ import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/me
 import { MediaRepository } from '@gitroom/nestjs-libraries/database/prisma/media/media.repository';
 import { CommentsRepository } from '@gitroom/nestjs-libraries/database/prisma/comments/comments.repository';
 import { CommentsService } from '@gitroom/nestjs-libraries/database/prisma/comments/comments.service';
+import { NotificationsRepository } from '@gitroom/nestjs-libraries/database/prisma/notifications/notifications.repository';
+import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 
 @Global()
 @Module({
@@ -35,6 +37,7 @@ import { CommentsService } from '@gitroom/nestjs-libraries/database/prisma/comme
     SubscriptionService,
     SubscriptionRepository,
     NotificationService,
+    NotificationsRepository,
     IntegrationService,
     IntegrationRepository,
     PostsService,
@@ -44,6 +47,7 @@ import { CommentsService } from '@gitroom/nestjs-libraries/database/prisma/comme
     CommentsRepository,
     CommentsService,
     IntegrationManager,
+    EmailService,
   ],
   get exports() {
     return this.providers;

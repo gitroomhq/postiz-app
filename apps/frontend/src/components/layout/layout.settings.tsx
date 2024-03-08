@@ -7,18 +7,10 @@ import { MantineWrapper } from '@gitroom/react/helpers/mantine.wrapper';
 import { ToolTip } from '@gitroom/frontend/components/layout/top.tip';
 import { ShowMediaBoxModal } from '@gitroom/frontend/components/media/media.component';
 import Image from 'next/image';
-import dynamic from 'next/dynamic';
 import { Toaster } from '@gitroom/react/toaster/toaster';
 import { ShowPostSelector } from '@gitroom/frontend/components/post-url-selector/post.url.selector';
-
-const NotificationComponent = dynamic(
-  () =>
-    import('@gitroom/frontend/components/notifications/notification.component'),
-  {
-    loading: () => <></>,
-    ssr: false,
-  }
-);
+import { OrganizationSelector } from '@gitroom/frontend/components/layout/organization.selector';
+import NotificationComponent from "@gitroom/frontend/components/notifications/notification.component";
 
 export const LayoutSettings = ({ children }: { children: ReactNode }) => {
   const user = JSON.parse(headers().get('user')!);
@@ -38,8 +30,9 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
               <div className="mt-[12px]">Gitroom</div>
             </div>
             <TopMenu />
-            <div>
+            <div className="flex items-center gap-[8px]">
               <NotificationComponent />
+              <OrganizationSelector />
             </div>
           </div>
           <div className="flex-1 flex">

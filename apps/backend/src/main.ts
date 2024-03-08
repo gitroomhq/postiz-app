@@ -8,6 +8,7 @@ import {SubscriptionExceptionFilter} from "@gitroom/backend/services/auth/permis
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
+    rawBody: true,
     cors: {
       credentials: true,
       exposedHeaders: ['reload'],

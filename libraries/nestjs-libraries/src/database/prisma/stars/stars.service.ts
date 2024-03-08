@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { StarsRepository } from '@gitroom/nestjs-libraries/database/prisma/stars/stars.repository';
 import { chunk, groupBy } from 'lodash';
 import dayjs from 'dayjs';
-import { NotificationService } from '@gitroom/nestjs-libraries/notifications/notification.service';
+import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { StarsListDto } from '@gitroom/nestjs-libraries/dtos/analytics/stars.list.dto';
 import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport/client/bull-mq.client';
 import { mean } from 'simple-statistics';
@@ -189,33 +189,31 @@ export class StarsService {
       const getOrganizationsByGitHubLogin =
         await this._starsRepository.getOrganizationsByGitHubLogin(person.name);
       for (const org of getOrganizationsByGitHubLogin) {
-        const topic = `organization:${org.organizationId}`;
         switch (type) {
           case Inform.Removed:
-            return this._notificationsService.sendNotificationToTopic(
-              'trending',
-              topic,
-              { message: `You are not trending anymore in ${language}` }
+            return this._notificationsService.inAppNotification(
+              org.organizationId,
+              'You are not trending on GitHub anymore',
+              `You are not trending anymore in ${language}`,
+              true
             );
           case Inform.New:
-            return this._notificationsService.sendNotificationToTopic(
-              'trending',
-              topic,
-              {
-                message: `You are trending in ${
-                  language || 'On the main feed'
-                } position #${person.position}`,
-              }
+            return this._notificationsService.inAppNotification(
+              org.organizationId,
+              'You are trending on GitHub',
+              `You are trending in ${
+                language || 'On the main feed'
+              } position #${person.position}`,
+              true
             );
           case Inform.Changed:
-            return this._notificationsService.sendNotificationToTopic(
-              'trending',
-              topic,
-              {
-                message: `You changed position in ${
-                  language || 'On the main feed'
-                } position #${person.position}`,
-              }
+            return this._notificationsService.inAppNotification(
+              org.organizationId,
+              'You have changed trending position on GitHub',
+              `You changed position in ${
+                language || 'On the main feed'
+              } position #${person.position}`,
+              true
             );
         }
       }
@@ -336,10 +334,13 @@ export class StarsService {
   async predictTrending() {
     const trendings = (await this.getTrending('')).reverse();
     const dates = await this.predictTrendingLoop(trendings);
-    return dates.map(d => dayjs(d).format('YYYY-MM-DDTHH:mm:00'));
+    return dates.map((d) => dayjs(d).format('YYYY-MM-DDTHH:mm:00'));
   }
 
-  async predictTrendingLoop(trendings: Array<{ date: Date }>, current = 0): Promise<Date[]> {
+  async predictTrendingLoop(
+    trendings: Array<{ date: Date }>,
+    current = 0
+  ): Promise<Date[]> {
     const dates = trendings.map((result) => dayjs(result.date).toDate());
     const intervals = dates
       .slice(1)
@@ -357,7 +358,7 @@ export class StarsService {
         ).toDate();
 
     if (!nextTrendingDate) {
-        return [];
+      return [];
     }
 
     return [

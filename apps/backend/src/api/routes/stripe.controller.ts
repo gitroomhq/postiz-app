@@ -14,7 +14,7 @@ export class StripeController {
     const event = this._stripeService.validateRequest(
       req.rawBody,
       req.headers['stripe-signature'],
-      process.env.PAYMENT_SIGNING_SECRET
+      process.env.STRIPE_SIGNING_KEY
     );
 
     // Maybe it comes from another stripe webhook

@@ -7,6 +7,11 @@ import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.reque
 import { Organization } from '@prisma/client';
 import { ApiKeyDto } from '@gitroom/nestjs-libraries/dtos/integrations/api.key.dto';
 import { IntegrationFunctionDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.function.dto';
+import {
+  AuthorizationActions,
+  Sections,
+} from '@gitroom/backend/services/auth/permissions/permissions.service';
+import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 
 @Controller('/integrations')
 export class IntegrationsController {
@@ -15,6 +20,7 @@ export class IntegrationsController {
     private _integrationService: IntegrationService
   ) {}
   @Get('/')
+  @CheckPolicies([AuthorizationActions.Create, Sections.CHANNEL])
   getIntegration() {
     return this._integrationManager.getAllIntegrations();
   }
@@ -97,6 +103,7 @@ export class IntegrationsController {
   }
 
   @Post('/article/:integration/connect')
+  @CheckPolicies([AuthorizationActions.Create, Sections.CHANNEL])
   async connectArticle(
     @GetOrgFromRequest() org: Organization,
     @Param('integration') integration: string,
@@ -136,6 +143,7 @@ export class IntegrationsController {
   }
 
   @Post('/social/:integration/connect')
+  @CheckPolicies([AuthorizationActions.Create, Sections.CHANNEL])
   async connectSocialMedia(
     @GetOrgFromRequest() org: Organization,
     @Param('integration') integration: string,

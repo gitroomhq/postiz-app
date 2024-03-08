@@ -15,6 +15,8 @@ import { CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { CommentsService } from '@gitroom/nestjs-libraries/database/prisma/comments/comments.service';
 import {StarsService} from "@gitroom/nestjs-libraries/database/prisma/stars/stars.service";
+import {CheckPolicies} from "@gitroom/backend/services/auth/permissions/permissions.ability";
+import {AuthorizationActions, Sections} from "@gitroom/backend/services/auth/permissions/permissions.service";
 
 @Controller('/posts')
 export class PostsController {
@@ -63,6 +65,7 @@ export class PostsController {
   }
 
   @Post('/')
+  @CheckPolicies([AuthorizationActions.Create, Sections.POSTS_PER_MONTH])
   createPost(
     @GetOrgFromRequest() org: Organization,
     @Body() body: CreatePostDto

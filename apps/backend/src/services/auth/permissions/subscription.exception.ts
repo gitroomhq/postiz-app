@@ -30,15 +30,15 @@ export class SubscriptionExceptionFilter implements ExceptionFilter {
 
 const getErrorMessage = (error: {section: Sections, action: AuthorizationActions}) => {
   switch (error.section) {
-    case Sections.AI:
+    case Sections.POSTS_PER_MONTH:
       switch (error.action) {
         default:
-          return 'You have reached the maximum number of FAQ\'s for your subscription. Please upgrade your subscription to add more FAQ\'s.';
+          return 'You have reached the maximum number of posts for your subscription. Please upgrade your subscription to add more posts.';
       }
-    case Sections.CROSSPOSTING:
+    case Sections.CHANNEL:
       switch (error.action) {
         default:
-          return 'You have reached the maximum number of categories for your subscription. Please upgrade your subscription to add more categories.';
+          return 'You have reached the maximum number of channels for your subscription. Please upgrade your subscription to add more channels.';
       }
   }
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useCallback, useEffect, useMemo, useState, JSX } from 'react';
+import { FC, useCallback, useMemo } from 'react';
 import {
   Integrations,
   useCalendar,

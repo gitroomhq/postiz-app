@@ -157,6 +157,10 @@ export class PostsService {
     }
   }
 
+  async countPostsFromDay(orgId: string, date: Date) {
+    return this._postRepository.countPostsFromDay(orgId, date);
+  }
+
   async createPost(orgId: string, body: CreatePostDto) {
     for (const post of body.posts) {
       const { previousPost, posts } =

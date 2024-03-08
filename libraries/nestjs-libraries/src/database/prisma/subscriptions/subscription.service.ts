@@ -25,7 +25,7 @@ export class SubscriptionService {
     return this._subscriptionRepository.checkSubscription(organizationId, subscriptionId);
   }
 
-  async modifySubscription(customerId: string, billing: 'FREE' | 'BASIC' | 'PRO') {
+  async modifySubscription(customerId: string, billing: 'FREE' | 'STANDARD' | 'PRO') {
     const getCurrentSubscription = (await this._subscriptionRepository.getSubscriptionByCustomerId(customerId))!;
     const from = pricing[getCurrentSubscription?.subscriptionTier || 'FREE'];
     const to   = pricing[billing];
@@ -48,8 +48,12 @@ export class SubscriptionService {
     // }
   }
 
-  async createOrUpdateSubscription(identifier: string, customerId: string, billing: 'BASIC' | 'PRO', period: 'MONTHLY' | 'YEARLY', cancelAt: number | null) {
+  async createOrUpdateSubscription(identifier: string, customerId: string, totalChannels: number, billing: 'STANDARD' | 'PRO', period: 'MONTHLY' | 'YEARLY', cancelAt: number | null) {
     await this.modifySubscription(customerId, billing);
-    return this._subscriptionRepository.createOrUpdateSubscription(identifier, customerId, billing, period, cancelAt);
+    return this._subscriptionRepository.createOrUpdateSubscription(identifier, customerId, totalChannels, billing, period, cancelAt);
+  }
+
+  async getSubscription(organizationId: string) {
+    return this._subscriptionRepository.getSubscription(organizationId);
   }
 }
