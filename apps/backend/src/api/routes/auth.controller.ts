@@ -6,6 +6,7 @@ import { LoginUserDto } from '@gitroom/nestjs-libraries/dtos/auth/login.user.dto
 import { AuthService } from '@gitroom/backend/services/auth/auth.service';
 import { ForgotReturnPasswordDto } from '@gitroom/nestjs-libraries/dtos/auth/forgot-return.password.dto';
 import { ForgotPasswordDto } from '@gitroom/nestjs-libraries/dtos/auth/forgot.password.dto';
+import {removeSubdomain} from "@gitroom/helpers/subdomain/subdomain.management";
 
 @Controller('/auth')
 export class AuthController {
@@ -28,7 +29,7 @@ export class AuthController {
       );
 
       response.cookie('auth', jwt, {
-        domain: '.' + new URL(process.env.FRONTEND_URL!).hostname,
+        domain: '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
         secure: true,
         httpOnly: true,
         sameSite: 'none',
@@ -37,7 +38,7 @@ export class AuthController {
 
       if (typeof addedOrg !== 'boolean' && addedOrg?.organizationId) {
         response.cookie('showorg', addedOrg.organizationId, {
-          domain: '.' + new URL(process.env.FRONTEND_URL!).hostname,
+          domain: '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
           secure: true,
           httpOnly: true,
           sameSite: 'none',
@@ -72,7 +73,7 @@ export class AuthController {
       );
 
       response.cookie('auth', jwt, {
-        domain: '.' + new URL(process.env.FRONTEND_URL!).hostname,
+        domain: '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
         secure: true,
         httpOnly: true,
         sameSite: 'none',
@@ -81,7 +82,7 @@ export class AuthController {
 
       if (typeof addedOrg !== 'boolean' && addedOrg?.organizationId) {
         response.cookie('showorg', addedOrg.organizationId, {
-          domain: '.' + new URL(process.env.FRONTEND_URL!).hostname,
+          domain: '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
           secure: true,
           httpOnly: true,
           sameSite: 'none',

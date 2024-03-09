@@ -20,6 +20,7 @@ import {
   AuthorizationActions,
   Sections,
 } from '@gitroom/backend/services/auth/permissions/permissions.service';
+import {removeSubdomain} from "@gitroom/helpers/subdomain/subdomain.management";
 
 @Controller('/user')
 export class UsersController {
@@ -100,7 +101,7 @@ export class UsersController {
     @Res({ passthrough: true }) response: Response
   ) {
     response.cookie('showorg', id, {
-      domain: '.' + new URL(process.env.FRONTEND_URL!).hostname,
+      domain: '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
       secure: true,
       httpOnly: true,
       sameSite: 'none',
