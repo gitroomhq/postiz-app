@@ -1,16 +1,15 @@
 'use client';
 
 import { AddProviderButton } from '@gitroom/frontend/components/launches/add.provider.component';
-import { FC, useCallback, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import { orderBy } from 'lodash';
 import { Calendar } from '@gitroom/frontend/components/launches/calendar';
-import {
-  CalendarWeekProvider,
-} from '@gitroom/frontend/components/launches/calendar.context';
+import { CalendarWeekProvider } from '@gitroom/frontend/components/launches/calendar.context';
 import { Filters } from '@gitroom/frontend/components/launches/filters';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
+import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 
 export const LaunchesComponent = () => {
   const fetch = useFetch();
@@ -18,17 +17,17 @@ export const LaunchesComponent = () => {
     return (await (await fetch(path)).json()).integrations;
   }, []);
 
-  const { data: integrations } = useSWR(
-    '/integrations/list',
-    load,
-    {
-      fallbackData: [],
-    }
-  );
+  const { isLoading, data: integrations } = useSWR('/integrations/list', load, {
+    fallbackData: [],
+  });
 
   const sortedIntegrations = useMemo(() => {
     return orderBy(integrations, ['type', 'identifier'], ['desc', 'asc']);
   }, [integrations]);
+
+  if (isLoading) {
+    return <LoadingComponent />;
+  }
 
   return (
     <CalendarWeekProvider integrations={sortedIntegrations}>
