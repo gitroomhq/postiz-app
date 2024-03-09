@@ -166,7 +166,6 @@ export const TeamsComponent = () => {
 
   const remove = useCallback(
     (toRemove: { user: { id: string } }) => async () => {
-      console.log(toRemove);
       if (
         !(await deleteDialog(
           'Are you sure you want to remove this team member?'

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { fetchBackend } from '@gitroom/helpers/utils/custom.fetch.func';
-import {removeSubdomain} from "@gitroom/helpers/subdomain/subdomain.management";
+import { removeSubdomain } from '@gitroom/helpers/subdomain/subdomain.management';
 
 // This function can be marked `async` if using `await` inside
 export async function middleware(request: NextRequest) {
@@ -20,7 +20,8 @@ export async function middleware(request: NextRequest) {
       httpOnly: true,
       secure: true,
       maxAge: -1,
-      domain: '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
+      domain:
+        '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
     });
     return response;
   }
@@ -46,7 +47,8 @@ export async function middleware(request: NextRequest) {
         httpOnly: true,
         secure: true,
         expires: new Date(Date.now() + 15 * 60 * 1000),
-        domain: '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
+        domain:
+          '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
       });
       return redirect;
     }
@@ -77,15 +79,19 @@ export async function middleware(request: NextRequest) {
           httpOnly: true,
           secure: true,
           expires: new Date(Date.now() + 15 * 60 * 1000),
-          domain: '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
+          domain:
+            '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
         });
       }
 
       return redirect;
     }
 
-    return NextResponse.next();
+    if (nextUrl.pathname === '/') {
+      return NextResponse.redirect(new URL(`/analytics`, nextUrl.href));
+    }
 
+    return NextResponse.next();
   } catch (err) {
     return NextResponse.redirect(new URL('/auth/logout', nextUrl.href));
   }

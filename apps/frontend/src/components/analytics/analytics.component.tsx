@@ -47,7 +47,7 @@ export const AnalyticsComponent: FC = () => {
         <div className="flex flex-1 flex-col gap-[15px] min-h-[426px]">
           <h2 className="text-[24px]">Stars per day</h2>
           <div className="flex-1 bg-secondary">
-            <StarsTableComponent stars={stars.stars} />
+            {!!stars?.stars?.length ? <StarsTableComponent stars={stars.stars} /> : <div className="py-[24px] px-[16px]">Load your GitHub repository from settings to see analytics</div>}
           </div>
         </div>
       </div>

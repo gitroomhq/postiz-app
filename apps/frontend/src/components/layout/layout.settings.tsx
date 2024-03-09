@@ -23,10 +23,7 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
     return await (await fetch(path)).json();
   }, []);
 
-  const { data: user } = useSWR(
-    '/user/self',
-    load
-  );
+  const { data: user } = useSWR('/user/self', load);
 
   return (
     <ContextWrapper user={user}>
@@ -43,7 +40,7 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
               </div>
               <div className="mt-[12px]">Gitroom</div>
             </Link>
-            <TopMenu />
+            {user?.orgId ? <TopMenu /> : <div />}
             <div className="flex items-center gap-[8px]">
               <NotificationComponent />
               <OrganizationSelector />
