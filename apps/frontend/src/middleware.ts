@@ -84,27 +84,8 @@ export async function middleware(request: NextRequest) {
       return redirect;
     }
 
-    const userResponse = await fetchBackend('/user/self', {
-      headers: {
-        auth: authCookie?.value!,
-        ...(showorg?.value ? { showorg: showorg?.value! } : {}),
-      },
-    });
+    return NextResponse.next();
 
-    if (userResponse.status === 401) {
-      return NextResponse.redirect(new URL('/auth/logout', nextUrl.href));
-    }
-
-    if ([200, 201].indexOf(userResponse.status) === -1) {
-      return NextResponse.redirect(new URL('/err', nextUrl.href));
-    }
-
-    const user = await userResponse.json();
-
-    const next = NextResponse.next();
-    next.headers.set('user', JSON.stringify(user));
-
-    return next;
   } catch (err) {
     return NextResponse.redirect(new URL('/auth/logout', nextUrl.href));
   }

@@ -1,14 +1,29 @@
-import { FC } from 'react';
-import { Subscription } from '@prisma/client';
-import {
-  NoBillingComponent,
-  Tiers,
-} from '@gitroom/frontend/components/billing/no.billing.component';
+"use client";
 
-export const BillingComponent: FC<{
-  subscription?: Subscription;
-  tiers: Tiers;
-}> = (props) => {
-  const { subscription, tiers } = props;
-  return <NoBillingComponent tiers={tiers} sub={subscription} />;
+import { useCallback } from 'react';
+import { NoBillingComponent } from '@gitroom/frontend/components/billing/no.billing.component';
+import useSWR from 'swr';
+import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
+import {useFetch} from "@gitroom/helpers/utils/custom.fetch";
+
+export const BillingComponent = () => {
+  const fetch = useFetch();
+  const load = useCallback(async (path: string) => {
+    return await (await fetch(path)).json();
+  }, []);
+
+  const { isLoading: isLoadingTier, data: tiers } = useSWR(
+    '/user/subscription/tiers',
+    load
+  );
+  const { isLoading: isLoadingSubscription, data: subscription } = useSWR(
+    '/user/subscription',
+    load
+  );
+
+  if (isLoadingSubscription || isLoadingTier) {
+    return <LoadingComponent />;
+  }
+
+  return <NoBillingComponent tiers={tiers} sub={subscription?.subscription} />;
 };

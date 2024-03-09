@@ -22,16 +22,5 @@ export default async function Index({
     return redirect('/settings', RedirectType.replace);
   }
 
-  const { github } = await (await internalFetch('/settings/github')).json();
-  if (!github) {
-    return redirect('/');
-  }
-  const emptyOnes = github.find((p: { login: string }) => !p.login);
-  const { organizations } = emptyOnes
-    ? await (
-        await internalFetch(`/settings/organizations/${emptyOnes.id}`)
-      ).json()
-    : { organizations: [] };
-
-  return <SettingsComponent github={github} organizations={organizations} />;
+  return <SettingsComponent />;
 }

@@ -1,4 +1,6 @@
-import { ReactNode } from 'react';
+'use client';
+
+import { ReactNode, useCallback } from 'react';
 import { Title } from '@gitroom/frontend/components/layout/title';
 import { headers } from 'next/headers';
 import { ContextWrapper } from '@gitroom/frontend/components/layout/user.context';
@@ -10,11 +12,22 @@ import Image from 'next/image';
 import { Toaster } from '@gitroom/react/toaster/toaster';
 import { ShowPostSelector } from '@gitroom/frontend/components/post-url-selector/post.url.selector';
 import { OrganizationSelector } from '@gitroom/frontend/components/layout/organization.selector';
-import NotificationComponent from "@gitroom/frontend/components/notifications/notification.component";
-import Link from "next/link";
+import NotificationComponent from '@gitroom/frontend/components/notifications/notification.component';
+import Link from 'next/link';
+import useSWR from 'swr';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 
 export const LayoutSettings = ({ children }: { children: ReactNode }) => {
-  const user = JSON.parse(headers().get('user')!);
+  const fetch = useFetch();
+  const load = useCallback(async (path: string) => {
+    return await (await fetch(path)).json();
+  }, []);
+
+  const { data: user } = useSWR(
+    '/user/self',
+    load
+  );
+
   return (
     <ContextWrapper user={user}>
       <MantineWrapper>

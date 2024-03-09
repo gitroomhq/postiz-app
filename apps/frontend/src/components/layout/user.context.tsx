@@ -24,8 +24,9 @@ export const ContextWrapper: FC<{
   };
   children: ReactNode;
 }> = ({ user, children }) => {
+  const values = user ? { ...user, tier: pricing[user.tier] } : ({} as any);
   return (
-    <UserContext.Provider value={{ ...user, tier: pricing[user.tier] }}>
+    <UserContext.Provider value={values}>
       {children}
     </UserContext.Provider>
   );

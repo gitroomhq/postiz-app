@@ -1,18 +1,30 @@
+'use client';
+
 import { AddProviderButton } from '@gitroom/frontend/components/launches/add.provider.component';
-import { FC, useMemo } from 'react';
+import { FC, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import { orderBy } from 'lodash';
 import { Calendar } from '@gitroom/frontend/components/launches/calendar';
 import {
   CalendarWeekProvider,
-  Integrations,
 } from '@gitroom/frontend/components/launches/calendar.context';
 import { Filters } from '@gitroom/frontend/components/launches/filters';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import useSWR from 'swr';
 
-export const LaunchesComponent: FC<{
-  integrations: Integrations[];
-}> = (props) => {
-  const { integrations } = props;
+export const LaunchesComponent = () => {
+  const fetch = useFetch();
+  const load = useCallback(async (path: string) => {
+    return (await (await fetch(path)).json()).integrations;
+  }, []);
+
+  const { data: integrations } = useSWR(
+    '/integrations/list',
+    load,
+    {
+      fallbackData: [],
+    }
+  );
 
   const sortedIntegrations = useMemo(() => {
     return orderBy(integrations, ['type', 'identifier'], ['desc', 'asc']);
@@ -22,9 +34,7 @@ export const LaunchesComponent: FC<{
     <CalendarWeekProvider integrations={sortedIntegrations}>
       <div className="flex flex-1 flex-col">
         <div className="flex flex-1 relative">
-          <div
-            className="absolute w-full h-full flex flex-1 gap-[30px] overflow-hidden overflow-y-scroll scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary"
-          >
+          <div className="absolute w-full h-full flex flex-1 gap-[30px] overflow-hidden overflow-y-scroll scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary">
             <div className="w-[220px] bg-third p-[16px] flex flex-col gap-[24px] sticky top-0">
               <h2 className="text-[20px]">Channels</h2>
               <div className="gap-[16px] flex flex-col">
