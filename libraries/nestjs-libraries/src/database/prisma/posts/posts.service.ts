@@ -6,6 +6,7 @@ import dayjs from 'dayjs';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { Integration, Post, Media } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
+import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 
 type PostWithConditionals = Post & {
   integration?: Integration;
@@ -17,7 +18,8 @@ export class PostsService {
   constructor(
     private _postRepository: PostsRepository,
     private _workerServiceProducer: BullMqClient,
-    private _integrationManager: IntegrationManager
+    private _integrationManager: IntegrationManager,
+    private _notificationService: NotificationService
   ) {}
 
   async getPostsRecursively(
@@ -65,14 +67,25 @@ export class PostsService {
       return;
     }
 
-    if (firstPost.integration?.type === 'article') {
-      return this.postArticle(firstPost.integration!, [
-        firstPost,
-        ...morePosts,
-      ]);
-    }
+    try {
+      if (firstPost.integration?.type === 'article') {
+        await this.postArticle(firstPost.integration!, [
+          firstPost,
+          ...morePosts,
+        ]);
 
-    return this.postSocial(firstPost.integration!, [firstPost, ...morePosts]);
+        return ;
+      }
+
+      await this.postSocial(firstPost.integration!, [firstPost, ...morePosts]);
+    } catch (err: any) {
+      await this._notificationService.inAppNotification(
+        firstPost.organizationId,
+        `Error posting on ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
+        `An error occurred while posting on ${firstPost.integration?.providerIdentifier}: ${err.message}`,
+        true
+      );
+    }
   }
 
   private async updateTags(orgId: string, post: Post[]): Promise<Post[]> {
@@ -88,7 +101,10 @@ export class PostsService {
     const urls = await this._postRepository.getPostUrls(orgId, ids);
     const newPlainText = ids.reduce((acc, value) => {
       const findUrl = urls?.find?.((u) => u.id === value)?.releaseURL || '';
-      return acc.replace(new RegExp(`\\(post:${value}\\)`, 'g'), findUrl.split(',')[0]);
+      return acc.replace(
+        new RegExp(`\\(post:${value}\\)`, 'g'),
+        findUrl.split(',')[0]
+      );
     }, plainText);
 
     return this.updateTags(orgId, JSON.parse(newPlainText) as Post[]);
@@ -130,6 +146,13 @@ export class PostsService {
         post.releaseURL
       );
     }
+
+    await this._notificationService.inAppNotification(
+      integration.organizationId,
+      `Your social media post on ${integration.providerIdentifier} has been posted`,
+      `Your article has been posted at ${publishedPosts[0].releaseURL}`,
+      true
+    );
   }
 
   private async postArticle(integration: Integration, posts: Post[]) {
@@ -146,6 +169,13 @@ export class PostsService {
       integration.token,
       newPosts.map((p) => p.content).join('\n\n'),
       JSON.parse(newPosts[0].settings || '{}')
+    );
+
+    await this._notificationService.inAppNotification(
+      integration.organizationId,
+      `Your article on ${integration.providerIdentifier} has been posted`,
+      `Your article has been posted at ${releaseURL}`,
+      true
     );
     await this._postRepository.updatePost(newPosts[0].id, postId, releaseURL);
   }
@@ -167,7 +197,9 @@ export class PostsService {
         await this._postRepository.createOrUpdatePost(
           body.type,
           orgId,
-          body.type === 'now' ? dayjs().format('YYYY-MM-DDTHH:mm:00') : body.date,
+          body.type === 'now'
+            ? dayjs().format('YYYY-MM-DDTHH:mm:00')
+            : body.date,
           post
         );
 
@@ -176,11 +208,17 @@ export class PostsService {
           'post',
           previousPost ? previousPost : posts?.[0]?.id
         );
-        if ((body.type === 'schedule' || body.type === 'now') && dayjs(body.date).isAfter(dayjs())) {
+        if (
+          (body.type === 'schedule' || body.type === 'now') &&
+          dayjs(body.date).isAfter(dayjs())
+        ) {
           this._workerServiceProducer.emit('post', {
             id: posts[0].id,
             options: {
-              delay: body.type === 'now' ? 0 : dayjs(posts[0].publishDate).diff(dayjs(), 'millisecond'),
+              delay:
+                body.type === 'now'
+                  ? 0
+                  : dayjs(posts[0].publishDate).diff(dayjs(), 'millisecond'),
             },
             payload: {
               id: posts[0].id,

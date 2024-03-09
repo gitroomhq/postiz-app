@@ -6,6 +6,12 @@ import { FC, useCallback, useState } from 'react';
 import clsx from 'clsx';
 import { useClickAway } from '@uidotdev/usehooks';
 
+function replaceLinks(text: string) {
+  const urlRegex =
+    /(\bhttps?:\/\/[-A-Z0-9+&@#/%?=~_|!:,.;]*[-A-Z0-9+&@#/%=~_|])/gi;
+  return text.replace(urlRegex, '<a class="cursor-pointer underline font-bold" target="_blank" href="$1">$1</a>');
+}
+
 export const ShowNotification: FC<{
   notification: { createdAt: string; content: string };
   lastReadNotification: string;
@@ -18,12 +24,11 @@ export const ShowNotification: FC<{
   return (
     <div
       className={clsx(
-        "text-primary px-[16px] py-[10px] border-b border-primary/30 last:border-b-0 transition-colors font-['Inter']",
-        newNotification && 'font-bold bg-[#d7d7d7] animate-newMessages'
+        "text-white px-[16px] py-[10px] border-b border-tableBorder last:border-b-0 transition-colors font-['Inter'] overflow-hidden text-ellipsis",
+        newNotification && 'font-bold bg-[#7236f1] animate-newMessages'
       )}
-    >
-      {notification.content}
-    </div>
+      dangerouslySetInnerHTML={{ __html: replaceLinks(notification.content) }}
+    />
   );
 };
 export const NotificationOpenComponent = () => {
@@ -35,12 +40,17 @@ export const NotificationOpenComponent = () => {
   const { data, isLoading } = useSWR('notifications', loadNotifications);
 
   return (
-    <div className="opacity-0 animate-normalFadeDown mt-[10px] absolute w-[420px] pb-[16px] min-h-[200px] top-[100%] right-0 bg-third text-white rounded-[16px] flex flex-col border border-tableBorder">
+    <div className="opacity-0 animate-normalFadeDown mt-[10px] absolute w-[420px] min-h-[200px] top-[100%] right-0 bg-third text-white rounded-[16px] flex flex-col border border-tableBorder">
       <div className="p-[16px] border-b border-tableBorder font-['Inter'] font-bold">
         Notifications
       </div>
 
       <div className="flex flex-col">
+        {!isLoading && !data.notifications.length && (
+          <div className="text-center p-[16px] text-white flex-1 flex justify-center items-center mt-[20px]">
+            No notifications
+          </div>
+        )}
         {!isLoading &&
           data.notifications.map(
             (

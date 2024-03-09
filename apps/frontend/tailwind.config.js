@@ -78,9 +78,9 @@ module.exports = {
           '100%': { opacity: 1, transform: 'translateY(0)' },
         },
         newMessages: {
-          '0%': { backgroundColor: '#d7d7d7', fontWeight: 'bold' },
-          '99%': { backgroundColor: '#fff', fontWeight: 'bold' },
-          '100%': { backgroundColor: '#fff', fontWeight: 'normal' },
+          '0%': { backgroundColor: '#7236f1', fontWeight: 'bold' },
+          '99%': { backgroundColor: '#080B13', fontWeight: 'bold' },
+          '100%': { backgroundColor: '#080B13', fontWeight: 'normal' },
         },
       }),
     },

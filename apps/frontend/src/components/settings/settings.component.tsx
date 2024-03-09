@@ -21,12 +21,12 @@ export const SettingsComponent: FC<{
           Connect your GitHub repository to receive updates and analytics
         </div>
         <GithubComponent github={github} organizations={organizations} />
-        <div className="flex gap-[5px]">
-          <div>
-            <Checkbox disableForm={true} checked={true} name="Send Email" />
-          </div>
-          <div>Show news with everybody in Gitroom</div>
-        </div>
+        {/*<div className="flex gap-[5px]">*/}
+        {/*  <div>*/}
+        {/*    <Checkbox disableForm={true} checked={true} name="Send Email" />*/}
+        {/*  </div>*/}
+        {/*  <div>Show news with everybody in Gitroom</div>*/}
+        {/*</div>*/}
       </div>
       {!!user?.tier.team_members && <TeamsComponent />}
     </div>

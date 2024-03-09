@@ -441,14 +441,14 @@ export const AddEditModal: FC<{
 
                 <Button
                   onClick={schedule('schedule')}
-                  className="rounded-[4px] relative"
+                  className="rounded-[4px] relative group"
                   disabled={selectedIntegrations.length === 0}
                 >
                   <div className="flex justify-center items-center gap-[5px] h-full">
                     <div className="h-full flex items-center">
                       {!existingData.integration ? 'Add to calendar' : 'Update'}
                     </div>
-                    <div className="group h-full flex items-center">
+                    <div className="h-full flex items-center">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="18"

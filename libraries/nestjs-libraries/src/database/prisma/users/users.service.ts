@@ -1,18 +1,20 @@
-import {Injectable} from "@nestjs/common";
-import {UsersRepository} from "@gitroom/nestjs-libraries/database/prisma/users/users.repository";
-import {Provider} from "@prisma/client";
+import { Injectable } from '@nestjs/common';
+import { UsersRepository } from '@gitroom/nestjs-libraries/database/prisma/users/users.repository';
+import { Provider } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
-    constructor(
-        private _usersRepository: UsersRepository
-    ){}
+  constructor(private _usersRepository: UsersRepository) {}
 
-    getUserByEmail(email: string) {
-        return this._usersRepository.getUserByEmail(email);
-    }
+  getUserByEmail(email: string) {
+    return this._usersRepository.getUserByEmail(email);
+  }
 
-    getUserByProvider(providerId: string, provider: Provider) {
-        return this._usersRepository.getUserByProvider(providerId, provider);
-    }
+  getUserByProvider(providerId: string, provider: Provider) {
+    return this._usersRepository.getUserByProvider(providerId, provider);
+  }
+
+  updatePassword(id: string, password: string) {
+    return this._usersRepository.updatePassword(id, password);
+  }
 }

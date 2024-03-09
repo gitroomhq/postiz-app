@@ -1,8 +1,9 @@
-import {IsDefined, IsEmail, IsString, ValidateIf} from "class-validator";
+import {IsDefined, IsEmail, IsString, MinLength, ValidateIf} from "class-validator";
 import {Provider} from '@prisma/client';
 
 export class CreateOrgUserDto {
     @IsString()
+    @MinLength(3)
     @IsDefined()
     @ValidateIf(o => !o.providerToken)
     password: string;
@@ -22,5 +23,6 @@ export class CreateOrgUserDto {
 
     @IsString()
     @IsDefined()
+    @MinLength(3)
     company: string;
 }

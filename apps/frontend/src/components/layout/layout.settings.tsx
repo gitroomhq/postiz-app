@@ -11,6 +11,7 @@ import { Toaster } from '@gitroom/react/toaster/toaster';
 import { ShowPostSelector } from '@gitroom/frontend/components/post-url-selector/post.url.selector';
 import { OrganizationSelector } from '@gitroom/frontend/components/layout/organization.selector';
 import NotificationComponent from "@gitroom/frontend/components/notifications/notification.component";
+import Link from "next/link";
 
 export const LayoutSettings = ({ children }: { children: ReactNode }) => {
   const user = JSON.parse(headers().get('user')!);
@@ -23,12 +24,12 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
         <ShowPostSelector />
         <div className="min-h-[100vh] w-full max-w-[1440px] mx-auto bg-primary px-[12px] text-white flex flex-col">
           <div className="px-[23px] flex h-[80px] items-center justify-between z-[200] sticky top-0 bg-primary">
-            <div className="text-2xl flex items-center gap-[10px]">
+            <Link href="/" className="text-2xl flex items-center gap-[10px]">
               <div>
                 <Image src="/logo.svg" width={55} height={53} alt="Logo" />
               </div>
               <div className="mt-[12px]">Gitroom</div>
-            </div>
+            </Link>
             <TopMenu />
             <div className="flex items-center gap-[8px]">
               <NotificationComponent />
