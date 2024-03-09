@@ -13,7 +13,7 @@ export const OrganizationSelector = () => {
     return await (await fetch('/user/organizations')).json();
   }, []);
 
-  const { data } = useSWR('organizations', load, {
+  const { isLoading, data } = useSWR('organizations', load, {
     revalidateIfStale: false,
     revalidateOnFocus: false,
     refreshWhenOffline: false,
@@ -40,6 +40,10 @@ export const OrganizationSelector = () => {
     },
     []
   );
+
+  if (isLoading || !isLoading && data?.length === 0) {
+    return null;
+  }
 
   return (
     <div className="bg-third h-[48px] flex items-center min-w-[172px] select-none relative group">
