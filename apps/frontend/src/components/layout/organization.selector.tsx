@@ -41,7 +41,7 @@ export const OrganizationSelector = () => {
     []
   );
 
-  if (isLoading || !isLoading && data?.length === 0) {
+  if (isLoading || !isLoading && data?.length === 1) {
     return null;
   }
 
