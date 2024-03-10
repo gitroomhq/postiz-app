@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useMemo } from 'react';
+import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { UtcToLocalDateRender } from '@gitroom/react/helpers/utc.date.render';
 import { Button } from '@gitroom/react/form/button';
 import dayjs from 'dayjs';
@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
 import clsx from 'clsx';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import ReactLoading from 'react-loading';
 
 export const UpDown: FC<{ name: string; param: string }> = (props) => {
   const { name, param } = props;
@@ -85,14 +86,14 @@ export const StarsTableComponent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const page = +(searchParams.get('page') || 1);
+  const key = searchParams.get('key');
+  const state = searchParams.get('state');
+  const [loading, setLoading] = useState(false);
 
   const starsCallback = useCallback(
     async (path: string) => {
-      const key = searchParams.get('key');
-      const state = searchParams.get('state');
-      const page = +(searchParams.get('page') || 1);
-
-      return await (
+      setLoading(true);
+      const data = await (
         await fetch(path, {
           body: JSON.stringify({
             page,
@@ -101,8 +102,11 @@ export const StarsTableComponent = () => {
           method: 'POST',
         })
       ).json();
+      setLoading(false);
+
+      return data;
     },
-    [searchParams]
+    [page, key, state]
   );
 
   const {
@@ -111,6 +115,10 @@ export const StarsTableComponent = () => {
     mutate,
   } = useSWR('/analytics/stars', starsCallback, {
     revalidateOnMount: false,
+    revalidateOnReconnect: false,
+    revalidateOnFocus: false,
+    refreshWhenHidden: false,
+    revalidateIfStale: false,
   });
 
   useEffect(() => {
@@ -126,17 +134,13 @@ export const StarsTableComponent = () => {
 
   const changePage = useCallback(
     (type: 'increase' | 'decrease') => () => {
-      const key = searchParams.get('key');
-      const state = searchParams.get('state');
-      const page = +(searchParams.get('page') || 1);
-
       const newPage = type === 'increase' ? page + 1 : page - 1;
-      const keyAndState  = key && state ? `&key=${key}&state=${state}` : '';
+      const keyAndState = key && state ? `&key=${key}&state=${state}` : '';
       router.replace(`/analytics?page=${newPage}${keyAndState}`, {
         forceOptimisticNavigation: false,
       });
     },
-    [searchParams]
+    [page, key, state]
   );
 
   return (
@@ -144,7 +148,9 @@ export const StarsTableComponent = () => {
       <div className="text-white flex gap-[8px] items-center select-none">
         <div
           onClick={changePage('decrease')}
-          className={clsx(page === 1 && 'opacity-50 pointer-events-none')}
+          className={clsx(
+            (page === 1 || loading) && 'opacity-50 pointer-events-none'
+          )}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -164,7 +170,7 @@ export const StarsTableComponent = () => {
           onClick={changePage('increase')}
           className={clsx(
             !isLoadingStars &&
-              stars?.stars?.length < 10 &&
+              (loading || stars?.stars?.length < 10) &&
               'opacity-50 pointer-events-none'
           )}
         >
@@ -180,6 +186,11 @@ export const StarsTableComponent = () => {
               fill="#E9E9F1"
             />
           </svg>
+        </div>
+        <div>
+          {loading && (
+            <ReactLoading type="spin" color="#fff" width={20} height={20} />
+          )}
         </div>
       </div>
       <div className="flex-1 bg-secondary">
