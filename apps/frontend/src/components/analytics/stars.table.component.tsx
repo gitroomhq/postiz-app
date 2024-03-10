@@ -1,4 +1,11 @@
-import { FC, useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  FC,
+  startTransition,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { UtcToLocalDateRender } from '@gitroom/react/helpers/utc.date.render';
 import { Button } from '@gitroom/react/form/button';
 import dayjs from 'dayjs';
@@ -92,7 +99,9 @@ export const StarsTableComponent = () => {
 
   const starsCallback = useCallback(
     async (path: string) => {
-      setLoading(true);
+      startTransition(() => {
+        setLoading(true);
+      });
       const data = await (
         await fetch(path, {
           body: JSON.stringify({
@@ -102,7 +111,10 @@ export const StarsTableComponent = () => {
           method: 'POST',
         })
       ).json();
-      setLoading(false);
+
+      startTransition(() => {
+        setLoading(false);
+      });
 
       return data;
     },
