@@ -206,7 +206,7 @@ export class IntegrationsController {
     return this._integrationService.enableChannel(
       org.id,
       // @ts-ignore
-      org?.subscription?.totalChannels || pricing[org?.subscription?.subscriptionTier].channel,
+      org?.subscription?.totalChannels || pricing.FREE.channel,
       id
     );
   }
