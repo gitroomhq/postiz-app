@@ -48,6 +48,8 @@ export class SubscriptionService {
     totalChannels: number,
     billing: 'FREE' | 'STANDARD' | 'PRO'
   ) {
+    const getOrgByCustomerId = await this._subscriptionRepository.getOrganizationByCustomerId(customerId);
+
     const getCurrentSubscription =
       (await this._subscriptionRepository.getSubscriptionByCustomerId(
         customerId
@@ -57,27 +59,27 @@ export class SubscriptionService {
 
     const currentTotalChannels = (
       await this._integrationService.getIntegrationsList(
-        getCurrentSubscription.organizationId
+        getOrgByCustomerId?.id!
       )
     ).filter((f) => !f.disabled);
 
     if (currentTotalChannels.length > totalChannels) {
       await this._integrationService.disableIntegrations(
-        getCurrentSubscription.organizationId,
+        getOrgByCustomerId?.id!,
         currentTotalChannels.length - totalChannels
       );
     }
 
     if (from.team_members && !to.team_members) {
       await this._organizationService.disableOrEnableNonSuperAdminUsers(
-        getCurrentSubscription.organizationId,
+        getOrgByCustomerId?.id!,
         true
       );
     }
 
     if (!from.team_members && to.team_members) {
       await this._organizationService.disableOrEnableNonSuperAdminUsers(
-        getCurrentSubscription.organizationId,
+        getOrgByCustomerId?.id!,
         false
       );
     }
