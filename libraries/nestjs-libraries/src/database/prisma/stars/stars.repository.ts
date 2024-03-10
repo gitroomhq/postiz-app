@@ -138,7 +138,7 @@ export class StarsRepository {
                 }
             },
             take: 20,
-            skip: starsFilter.page * 10
+            skip: (starsFilter.page - 1) * 10
         });
     }
 
