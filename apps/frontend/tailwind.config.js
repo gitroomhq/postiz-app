@@ -48,7 +48,8 @@ module.exports = {
       },
       boxShadow: {
         yellow: '0 0 60px 20px #6b6237',
-        green: '0px 0px 50px rgba(60, 124, 90, 0.3)',
+        yellowToast: '0px 0px 50px rgba(252, 186, 3, 0.3)',
+        greenToast: '0px 0px 50px rgba(60, 124, 90, 0.3)',
       },
       // that is actual animation
       keyframes: (theme) => ({

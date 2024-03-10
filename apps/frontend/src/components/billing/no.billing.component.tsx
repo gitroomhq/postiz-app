@@ -3,7 +3,7 @@
 import { Slider } from '@gitroom/react/form/slider';
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@gitroom/react/form/button';
-import { sortBy } from 'lodash';
+import { isEqual, sortBy } from 'lodash';
 import { Track } from '@gitroom/react/form/track';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Subscription } from '@prisma/client';
@@ -14,8 +14,10 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import dayjs from 'dayjs';
 import clsx from 'clsx';
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
-import { useRouter } from 'next/navigation';
 import { FAQComponent } from '@gitroom/frontend/components/billing/faq.component';
+import { useSWRConfig } from 'swr';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { useRouter } from 'next/navigation';
 
 export interface Tiers {
   month: Array<{
@@ -153,13 +155,15 @@ export const NoBillingComponent: FC<{
   sub?: Subscription;
 }> = (props) => {
   const { tiers, sub } = props;
+  const { mutate } = useSWRConfig();
   const fetch = useFetch();
-  const router = useRouter();
   const toast = useToaster();
+  const user = useUser();
 
   const [subscription, setSubscription] = useState<Subscription | undefined>(
     sub
   );
+
   const [loading, setLoading] = useState<boolean>(false);
   const [period, setPeriod] = useState<'MONTHLY' | 'YEARLY'>(
     subscription?.period || 'MONTHLY'
@@ -169,9 +173,23 @@ export const NoBillingComponent: FC<{
   );
 
   const [initialChannels, setInitialChannels] = useState(
-    subscription?.totalChannels || 1
+    sub?.totalChannels || 1
   );
   const [totalChannels, setTotalChannels] = useState<number>(initialChannels);
+
+  useEffect(() => {
+    if (initialChannels !== sub?.totalChannels) {
+      setTotalChannels(sub?.totalChannels || 1);
+      setInitialChannels(sub?.totalChannels || 1);
+    }
+
+    if (period !== sub?.period) {
+      setPeriod(sub?.period || 'MONTHLY');
+      setMonthlyOrYearly(sub?.period === 'MONTHLY' ? 'off' : 'on');
+    }
+
+    setSubscription(sub);
+  }, [sub]);
 
   const currentPackage = useMemo(() => {
     if (!subscription) {
@@ -265,7 +283,17 @@ export const NoBillingComponent: FC<{
           subscriptionTier: billing,
           cancelAt: null,
         }));
-        router.refresh();
+        mutate(
+          '/user/self',
+          {
+            ...user,
+            totalChannels,
+            tier: billing,
+          },
+          {
+            revalidate: false,
+          }
+        );
         toast.show('Subscription updated successfully');
       }
 

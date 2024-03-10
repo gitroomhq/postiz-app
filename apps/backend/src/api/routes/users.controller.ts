@@ -21,6 +21,7 @@ import {
   Sections,
 } from '@gitroom/backend/services/auth/permissions/permissions.service';
 import {removeSubdomain} from "@gitroom/helpers/subdomain/subdomain.management";
+import {pricing} from "@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing";
 
 @Controller('/user')
 export class UsersController {
@@ -42,6 +43,8 @@ export class UsersController {
     return {
       ...user,
       orgId: organization.id,
+      // @ts-ignore
+      totalChannels: organization?.subscription?.totalChannels || pricing.FREE.channel,
       // @ts-ignore
       tier: organization?.subscription?.subscriptionTier || 'FREE',
       // @ts-ignore

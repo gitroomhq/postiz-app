@@ -33,7 +33,13 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
     return await (await fetch(path)).json();
   }, []);
 
-  const { data: user } = useSWR('/user/self', load);
+  const { data: user } = useSWR('/user/self', load, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    refreshWhenOffline: false,
+    refreshWhenHidden: false,
+  });
 
   return (
     <ContextWrapper user={user}>

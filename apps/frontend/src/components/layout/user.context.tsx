@@ -13,6 +13,7 @@ export const UserContext = createContext<
       orgId: string;
       tier: PricingInnerInterface;
       role: 'USER' | 'ADMIN' | 'SUPERADMIN';
+      totalChannels: number;
     })
 >(undefined);
 
@@ -21,15 +22,12 @@ export const ContextWrapper: FC<{
     orgId: string;
     tier: 'FREE' | 'STANDARD' | 'PRO';
     role: 'USER' | 'ADMIN' | 'SUPERADMIN';
+    totalChannels: number;
   };
   children: ReactNode;
 }> = ({ user, children }) => {
   const values = user ? { ...user, tier: pricing[user.tier] } : ({} as any);
-  return (
-    <UserContext.Provider value={values}>
-      {children}
-    </UserContext.Provider>
-  );
+  return <UserContext.Provider value={values}>{children}</UserContext.Provider>;
 };
 
 export const useUser = () => useContext(UserContext);

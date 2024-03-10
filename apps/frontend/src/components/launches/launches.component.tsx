@@ -1,7 +1,7 @@
 'use client';
 
 import { AddProviderButton } from '@gitroom/frontend/components/launches/add.provider.component';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { orderBy } from 'lodash';
 import { Calendar } from '@gitroom/frontend/components/launches/calendar';
@@ -10,22 +10,53 @@ import { Filters } from '@gitroom/frontend/components/launches/filters';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
+import clsx from 'clsx';
+import { useUser } from '../layout/user.context';
+import { Menu } from '@gitroom/frontend/components/launches/menu/menu';
 
 export const LaunchesComponent = () => {
   const fetch = useFetch();
+  const [reload, setReload] = useState(false);
   const load = useCallback(async (path: string) => {
     return (await (await fetch(path)).json()).integrations;
   }, []);
+  const user = useUser();
 
-  const { isLoading, data: integrations } = useSWR('/integrations/list', load, {
+  const {
+    isLoading,
+    data: integrations,
+    mutate,
+  } = useSWR('/integrations/list', load, {
     fallbackData: [],
   });
 
-  const sortedIntegrations = useMemo(() => {
-    return orderBy(integrations, ['type', 'identifier'], ['desc', 'asc']);
+  const totalNonDisabledChannels = useMemo(() => {
+    return (
+      integrations?.filter((integration: any) => !integration.disabled)
+        ?.length || 0
+    );
   }, [integrations]);
 
-  if (isLoading) {
+  const sortedIntegrations = useMemo(() => {
+    return orderBy(
+      integrations,
+      ['type', 'disabled', 'identifier'],
+      ['desc', 'asc', 'asc']
+    );
+  }, [integrations]);
+
+  const update = useCallback(async (shouldReload: boolean) => {
+    if (shouldReload) {
+      setReload(true);
+    }
+    await mutate();
+
+    if (shouldReload) {
+      setReload(false);
+    }
+  }, []);
+
+  if (isLoading || reload) {
     return <LoadingComponent />;
   }
 
@@ -45,7 +76,12 @@ export const LaunchesComponent = () => {
                     key={integration.id}
                     className="flex gap-[8px] items-center"
                   >
-                    <div className="relative w-[34px] h-[34px] rounded-full flex justify-center items-center bg-fifth">
+                    <div
+                      className={clsx(
+                        'relative w-[34px] h-[34px] rounded-full flex justify-center items-center bg-fifth',
+                        integration.disabled && 'opacity-50'
+                      )}
+                    >
                       <img
                         src={integration.picture}
                         className="rounded-full"
@@ -61,7 +97,31 @@ export const LaunchesComponent = () => {
                         height={20}
                       />
                     </div>
-                    <div className="flex-1">{integration.name}</div>
+                    <div
+                      {...(integration.disabled &&
+                      totalNonDisabledChannels === user?.totalChannels
+                        ? {
+                            'data-tooltip-id': 'tooltip',
+                            'data-tooltip-content':
+                              'This channel is disabled, please upgrade your plan to enable it.',
+                          }
+                        : {})}
+                      className={clsx(
+                        'flex-1',
+                        integration.disabled && 'opacity-50'
+                      )}
+                    >
+                      {integration.name}
+                    </div>
+                    <Menu
+                      onChange={update}
+                      id={integration.id}
+                      canEnable={
+                        user?.totalChannels! > totalNonDisabledChannels &&
+                        integration.disabled
+                      }
+                      canDisable={!integration.disabled}
+                    />
                   </div>
                 ))}
               </div>

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { ConnectIntegrationDto } from '@gitroom/nestjs-libraries/dtos/integrations/connect.integration.dto';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
@@ -33,6 +33,7 @@ export class IntegrationsController {
       ).map((p) => ({
         name: p.name,
         id: p.id,
+        disabled: p.disabled,
         picture: p.picture,
         identifier: p.providerIdentifier,
         type: p.type,
@@ -185,5 +186,35 @@ export class IntegrationsController {
       refreshToken,
       expiresIn
     );
+  }
+
+  @Post('/disable')
+  disableChannel(
+    @GetOrgFromRequest() org: Organization,
+    @Body('id') id: string
+  ) {
+    return this._integrationService.disableChannel(org.id, id);
+  }
+
+  @Post('/enable')
+  enableChannel(
+    @GetOrgFromRequest() org: Organization,
+    @Body('id') id: string
+  ) {
+    return this._integrationService.enableChannel(
+      org.id,
+      // @ts-ignore
+      org.subscription.totalChannels,
+      id
+    );
+  }
+
+  @Delete('/')
+  deleteChannel(
+    @GetOrgFromRequest() org: Organization,
+    @Body('id') id: string
+  ) {
+    // @ts-ignore
+    return this._integrationService.deleteChannel(org.id, id);
   }
 }

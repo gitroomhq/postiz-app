@@ -76,4 +76,8 @@ export class OrganizationService {
 
     return this._organizationRepository.deleteTeamMember(org.id, userId);
   }
+
+  disableOrEnableNonSuperAdminUsers(orgId: string, disable: boolean) {
+    return this._organizationRepository.disableOrEnableNonSuperAdminUsers(orgId, disable);
+  }
 }

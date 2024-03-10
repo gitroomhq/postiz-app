@@ -4,7 +4,10 @@ import dayjs from 'dayjs';
 
 @Injectable()
 export class IntegrationRepository {
-  constructor(private _integration: PrismaRepository<'integration'>) {}
+  constructor(
+    private _integration: PrismaRepository<'integration'>,
+    private _posts: PrismaRepository<'post'>
+  ) {}
 
   createOrUpdateIntegration(
     org: string,
@@ -77,7 +80,82 @@ export class IntegrationRepository {
     return this._integration.model.integration.findMany({
       where: {
         organizationId: org,
+        deletedAt: null,
       },
     });
+  }
+
+  async disableChannel(org: string, id: string) {
+    await this._integration.model.integration.update({
+      where: {
+        id,
+        organizationId: org,
+      },
+      data: {
+        disabled: true,
+      },
+    });
+  }
+
+  async enableChannel(org: string, id: string) {
+    await this._integration.model.integration.update({
+      where: {
+        id,
+        organizationId: org,
+      },
+      data: {
+        disabled: false,
+      },
+    });
+  }
+
+  countPostsForChannel(org: string, id: string) {
+    return this._posts.model.post.count({
+      where: {
+        organizationId: org,
+        integrationId: id,
+        deletedAt: null,
+        state: {
+          in: ['QUEUE', 'DRAFT'],
+        },
+      },
+    });
+  }
+
+  deleteChannel(org: string, id: string) {
+    return this._integration.model.integration.update({
+      where: {
+        id,
+        organizationId: org,
+      },
+      data: {
+        deletedAt: new Date(),
+      },
+    });
+  }
+
+  async disableIntegrations(org: string, totalChannels: number) {
+    const getChannels = await this._integration.model.integration.findMany({
+      where: {
+        organizationId: org,
+        disabled: false,
+        deletedAt: null,
+      },
+      take: totalChannels,
+      select: {
+        id: true,
+      },
+    });
+
+    for (const channel of getChannels) {
+      await this._integration.model.integration.update({
+        where: {
+          id: channel.id,
+        },
+        data: {
+          disabled: true,
+        },
+      });
+    }
   }
 }

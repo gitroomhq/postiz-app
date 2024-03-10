@@ -36,7 +36,7 @@ export const TopMenu: FC = () => {
   const user = useUser();
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full animate-normalFadeDown">
       <ul className="gap-5 flex flex-1 items-center text-[18px]">
         {menuItems
           .filter((f) => {
@@ -48,7 +48,7 @@ export const TopMenu: FC = () => {
           .map((item, index) => (
             <li key={item.name}>
               <Link
-                prefetch={true}
+                prefetch={false}
                 href={item.path}
                 className={clsx(
                   'flex gap-2 items-center box',

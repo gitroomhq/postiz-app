@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import {HttpException, HttpStatus, Injectable} from '@nestjs/common';
 import { IntegrationRepository } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.repository';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 
@@ -62,5 +62,33 @@ export class IntegrationService {
         expiresIn
       );
     }
+  }
+
+  async disableChannel(org: string, id: string) {
+    return this._integrationRepository.disableChannel(org, id);
+  }
+
+  async enableChannel(org: string, totalChannels: number, id: string) {
+    const integrations = (
+      await this._integrationRepository.getIntegrationsList(org)
+    ).filter((f) => !f.disabled);
+    if (integrations.length >= totalChannels) {
+      throw new Error('You have reached the maximum number of channels');
+    }
+
+    return this._integrationRepository.enableChannel(org, id);
+  }
+
+  async deleteChannel(org: string, id: string) {
+    const isTherePosts = await this._integrationRepository.countPostsForChannel(org, id);
+    if (isTherePosts) {
+      throw new HttpException('There are posts for this channel', HttpStatus.NOT_ACCEPTABLE);
+    }
+
+    return this._integrationRepository.deleteChannel(org, id);
+  }
+
+  async disableIntegrations(org: string, totalChannels: number) {
+    return this._integrationRepository.disableIntegrations(org, totalChannels);
   }
 }

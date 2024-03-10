@@ -33,6 +33,7 @@ export class OrganizationRepository {
         subscription: {
           select: {
             subscriptionTier: true,
+            totalChannels: true,
           },
         },
       },
@@ -183,6 +184,20 @@ export class OrganizationRepository {
           userId,
           organizationId: orgId,
         },
+      },
+    });
+  }
+
+  disableOrEnableNonSuperAdminUsers(orgId: string, disable: boolean) {
+    return this._userOrg.model.userOrganization.updateMany({
+      where: {
+        organizationId: orgId,
+        role: {
+          not: Role.SUPERADMIN,
+        },
+      },
+      data: {
+        disabled: disable,
       },
     });
   }

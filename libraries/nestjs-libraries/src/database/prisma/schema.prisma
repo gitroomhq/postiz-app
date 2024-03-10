@@ -52,6 +52,7 @@ model UserOrganization {
   userId         String
   organization   Organization @relation(fields: [organizationId], references: [id])
   organizationId String
+  disabled       Boolean      @default(false)
   role           Role         @default(USER)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
@@ -144,6 +145,7 @@ model Integration {
   providerIdentifier String
   type            String
   token           String
+  disabled        Boolean         @default(false)
   tokenExpiration DateTime?
   refreshToken    String?
   posts           Post[]
