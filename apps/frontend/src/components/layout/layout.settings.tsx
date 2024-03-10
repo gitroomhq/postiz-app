@@ -16,6 +16,16 @@ import NotificationComponent from '@gitroom/frontend/components/notifications/no
 import Link from 'next/link';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import weekOfYear from "dayjs/plugin/weekOfYear";
+import isoWeek from "dayjs/plugin/isoWeek";
+import isBetween from "dayjs/plugin/isBetween";
+
+dayjs.extend(utc);
+dayjs.extend(weekOfYear);
+dayjs.extend(isoWeek);
+dayjs.extend(isBetween);
 
 export const LayoutSettings = ({ children }: { children: ReactNode }) => {
   const fetch = useFetch();

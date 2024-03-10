@@ -19,5 +19,4 @@ export interface StarsAndForksInterface {
         last: string;
         predictions: string;
     };
-    stars: Stars[];
 }

@@ -6,6 +6,10 @@ export class StarsListDto {
     page: number;
 
     @IsOptional()
-    @IsIn(['totalStars', 'stars', 'date'])
-    sortBy: 'date' | 'stars' | 'totalStars';
+    @IsIn(['login', 'totalStars', 'stars', 'date'])
+    key: 'login' | 'date' | 'stars' | 'totalStars';
+
+    @IsOptional()
+    @IsIn(['desc', 'asc'])
+    state: 'desc' | 'asc';
 }

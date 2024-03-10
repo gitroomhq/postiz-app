@@ -130,7 +130,7 @@ export class StarsRepository {
     getStarsFilter(githubs: string[], starsFilter: StarsListDto) {
         return this._stars.model.star.findMany({
             orderBy: {
-                [starsFilter.sortBy || 'date']: 'desc'
+                [starsFilter.key || 'date']: starsFilter.state || 'desc'
             },
             where: {
                 login: {

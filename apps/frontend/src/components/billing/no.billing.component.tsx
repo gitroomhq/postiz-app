@@ -12,12 +12,10 @@ import ReactLoading from 'react-loading';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
 import clsx from 'clsx';
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
-import {useRouter} from "next/navigation";
-import {FAQComponent} from "@gitroom/frontend/components/billing/faq.component";
-dayjs.extend(utc);
+import { useRouter } from 'next/navigation';
+import { FAQComponent } from '@gitroom/frontend/components/billing/faq.component';
 
 export interface Tiers {
   month: Array<{

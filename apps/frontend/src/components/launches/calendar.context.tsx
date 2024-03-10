@@ -1,8 +1,5 @@
 'use client';
 import 'reflect-metadata';
-import weekOfYear from 'dayjs/plugin/weekOfYear';
-import isoWeek from 'dayjs/plugin/isoWeek';
-import utc from 'dayjs/plugin/utc';
 
 import {
   createContext,
@@ -18,10 +15,7 @@ import dayjs from 'dayjs';
 import useSWR, { useSWRConfig } from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Post, Integration } from '@prisma/client';
-
-dayjs.extend(weekOfYear);
-dayjs.extend(isoWeek);
-dayjs.extend(utc);
+import {useRouter, useSearchParams} from 'next/navigation';
 
 const CalendarContext = createContext({
   currentWeek: dayjs().week(),
@@ -49,6 +43,8 @@ export const CalendarWeekProvider: FC<{
   const [internalData, setInternalData] = useState([] as any[]);
   const [trendings, setTrendings] = useState<string[]>([]);
   const { mutate } = useSWRConfig();
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
   useEffect(() => {
     (async () => {
@@ -57,13 +53,16 @@ export const CalendarWeekProvider: FC<{
   }, []);
 
   const [filters, setFilters] = useState({
-    currentWeek: dayjs().week(),
-    currentYear: dayjs().year(),
+    currentWeek: +(searchParams.get('week') || dayjs().week()),
+    currentYear: +(searchParams.get('year') || dayjs().year()),
   });
 
   const setFiltersWrapper = useCallback(
     (filters: { currentWeek: number; currentYear: number }) => {
       setFilters(filters);
+      router.replace(`/launches?week=${filters.currentWeek}&year=${filters.currentYear}`, {
+          forceOptimisticNavigation: false,
+      })
       setTimeout(() => {
         mutate('/posts');
       });

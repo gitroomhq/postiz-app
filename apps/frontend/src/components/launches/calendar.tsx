@@ -6,9 +6,6 @@ import {
   useCalendar,
 } from '@gitroom/frontend/components/launches/calendar.context';
 import dayjs from 'dayjs';
-import isBetween from 'dayjs/plugin/isBetween';
-dayjs.extend(isBetween);
-
 import { openModal, useModals } from '@mantine/modals';
 import { AddEditModal } from '@gitroom/frontend/components/launches/add.edit.model';
 import clsx from 'clsx';
