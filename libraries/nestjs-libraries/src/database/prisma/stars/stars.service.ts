@@ -140,9 +140,11 @@ export class StarsService {
     const currentTrending = await this._starsRepository.getTrendingByLanguage(
       language
     );
+
     if (currentTrending?.hash === hash) {
       return;
     }
+
     await this.newTrending(language);
     if (currentTrending) {
       const list: Array<{ name: string; position: number }> = JSON.parse(
@@ -166,7 +168,7 @@ export class StarsService {
     }
 
     const informNewPeople = arr.filter(
-      (p) => currentTrending?.trendingList?.indexOf(p.name) === -1
+      (p) => !currentTrending?.trendingList || currentTrending?.trendingList?.indexOf(p.name) === -1
     );
 
     // let people know they are trending
@@ -193,15 +195,15 @@ export class StarsService {
           case Inform.Removed:
             return this._notificationsService.inAppNotification(
               org.organizationId,
-              'You are not trending on GitHub anymore',
-              `You are not trending anymore in ${language}`,
+              `${person.name} is not trending on GitHub anymore`,
+              `${person.name} is not trending anymore in ${language}`,
               true
             );
           case Inform.New:
             return this._notificationsService.inAppNotification(
               org.organizationId,
-              'You are trending on GitHub',
-              `You are trending in ${
+              `${person.name} is trending on GitHub`,
+              `${person.name} is trending in ${
                 language || 'On the main feed'
               } position #${person.position}`,
               true
@@ -209,9 +211,9 @@ export class StarsService {
           case Inform.Changed:
             return this._notificationsService.inAppNotification(
               org.organizationId,
-              'You have changed trending position on GitHub',
-              `You changed position in ${
-                language || 'On the main feed'
+              `${person.name} changed trending position on GitHub`,
+              `${person.name} changed position in ${
+                language || 'on the main feed to position'
               } position #${person.position}`,
               true
             );
