@@ -1,10 +1,5 @@
 import {
-  FC,
-  startTransition,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
+  FC, useCallback, useEffect, useMemo, useState, useTransition,
 } from 'react';
 import { UtcToLocalDateRender } from '@gitroom/react/helpers/utc.date.render';
 import { Button } from '@gitroom/react/form/button';
@@ -96,6 +91,7 @@ export const StarsTableComponent = () => {
   const key = searchParams.get('key');
   const state = searchParams.get('state');
   const [loading, setLoading] = useState(false);
+  const [, startTransition] = useTransition();
 
   const starsCallback = useCallback(
     async (path: string) => {
