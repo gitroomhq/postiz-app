@@ -12,6 +12,7 @@ import {
   Sections,
 } from '@gitroom/backend/services/auth/permissions/permissions.service';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
+import {pricing} from "@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing";
 
 @Controller('/integrations')
 export class IntegrationsController {
@@ -205,7 +206,7 @@ export class IntegrationsController {
     return this._integrationService.enableChannel(
       org.id,
       // @ts-ignore
-      org.subscription.totalChannels,
+      org?.subscription?.totalChannels || pricing[org?.subscription?.subscriptionTier].channel,
       id
     );
   }
