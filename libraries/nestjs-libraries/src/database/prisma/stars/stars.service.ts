@@ -39,54 +39,86 @@ export class StarsService {
     login: string,
     totalNewsStars: number,
     totalStars: number,
+    totalNewForks: number,
+    totalForks: number,
     date: Date
   ) {
     return this._starsRepository.createStars(
       login,
       totalNewsStars,
       totalStars,
+      totalNewForks,
+      totalForks,
       date
     );
   }
 
-  async sync(login: string) {
-    const loadAllStars = await this.syncProcess(login);
-    const sortedArray = Object.keys(loadAllStars).sort(
+  async sync(login: string, token?: string) {
+    const loadAllStars = await this.syncProcess(login, token);
+    const loadAllForks = await this.syncForksProcess(login, token);
+
+    const allDates = [
+      ...new Set([...Object.keys(loadAllStars), ...Object.keys(loadAllForks)]),
+    ];
+
+    console.log(allDates);
+    const sortedArray = allDates.sort(
       (a, b) => dayjs(a).unix() - dayjs(b).unix()
     );
+
     let addPreviousStars = 0;
+    let addPreviousForks = 0;
     for (const date of sortedArray) {
       const dateObject = dayjs(date).toDate();
-      addPreviousStars += loadAllStars[date];
+      addPreviousStars += loadAllStars[date] || 0;
+      addPreviousForks += loadAllForks[date] || 0;
+
       await this._starsRepository.createStars(
         login,
-        loadAllStars[date],
+        loadAllStars[date] || 0,
         addPreviousStars,
+        loadAllForks[date] || 0,
+        addPreviousForks,
         dateObject
       );
     }
   }
 
-  async syncProcess(login: string, page = 1) {
-    const starsRequest = await fetch(
-      `https://api.github.com/repos/${login}/stargazers?page=${page}&per_page=100`,
-      {
+  async findValidToken(login: string) {
+    return this._starsRepository.findValidToken(login);
+  }
+
+  async fetchWillFallback(url: string, userToken?: string): Promise<Response> {
+    if (userToken) {
+      const response = await fetch(url, {
         headers: {
           Accept: 'application/vnd.github.v3.star+json',
-          ...(process.env.GITHUB_AUTH
-            ? { Authorization: `token ${process.env.GITHUB_AUTH}` }
-            : {}),
+          Authorization: `Bearer ${userToken}`,
         },
+      });
+
+      if (response.status === 200) {
+        return response;
       }
-    );
+    }
+
+    const response2 = await fetch(url, {
+      headers: {
+        Accept: 'application/vnd.github.v3.star+json',
+        ...(process.env.GITHUB_AUTH
+          ? { Authorization: `token ${process.env.GITHUB_AUTH}` }
+          : {}),
+      },
+    });
+
     const totalRemaining = +(
-      starsRequest.headers.get('x-ratelimit-remaining') ||
-      starsRequest.headers.get('X-RateLimit-Remaining') ||
+      response2.headers.get('x-ratelimit-remaining') ||
+      response2.headers.get('X-RateLimit-Remaining') ||
       0
     );
     const resetTime = +(
-      starsRequest.headers.get('x-ratelimit-reset') ||
-      starsRequest.headers.get('X-RateLimit-Reset') ||
+      response2.headers.get('x-ratelimit-reset') ||
+      response2.headers.get('X-RateLimit-Reset') ||
       0
     );
 
@@ -94,7 +126,64 @@ export class StarsService {
       console.log('waiting for the rate limit');
       const delay = resetTime * 1000 - Date.now() + 1000;
       await new Promise((resolve) => setTimeout(resolve, delay));
+
+      return this.fetchWillFallback(url, userToken);
     }
+
+    return response2;
+  }
+
+  async syncForksProcess(login: string, userToken?: string, page = 1) {
+    console.log('processing forks');
+    const starsRequest = await this.fetchWillFallback(
+      `https://api.github.com/repos/${login}/forks?page=${page}&per_page=100`,
+      userToken
+    );
+
+    const data: Array<{ created_at: string }> = await starsRequest.json();
+    const mapDataToDate = groupBy(data, (p) =>
+      dayjs(p.created_at).format('YYYY-MM-DD')
+    );
+
+    // take all the forks from the page
+    const aggForks: { [key: string]: number } = Object.values(
+      mapDataToDate
+    ).reduce(
+      (acc, value) => ({
+        ...acc,
+        [dayjs(value[0].created_at).format('YYYY-MM-DD')]: value.length,
+      }),
+      {}
+    );
+
+    // if we have 100 stars, we need to fetch the next page and merge the results (recursively)
+    const nextOne: { [key: string]: number } =
+      data.length === 100
+        ? await this.syncForksProcess(login, userToken, page + 1)
+        : {};
+
+    // merge the results
+    const allKeys = [
+      ...new Set([...Object.keys(aggForks), ...Object.keys(nextOne)]),
+    ];
+
+    return {
+      ...allKeys.reduce(
+        (acc, key) => ({
+          ...acc,
+          [key]: (aggForks[key] || 0) + (nextOne[key] || 0),
+        }),
+        {} as { [key: string]: number }
+      ),
+    };
+  }
+
+  async syncProcess(login: string, userToken?: string, page = 1) {
+    console.log('processing stars');
+    const starsRequest = await this.fetchWillFallback(
+      `https://api.github.com/repos/${login}/stargazers?page=${page}&per_page=100`,
+      userToken
+    );
 
     const data: Array<{ starred_at: string }> = await starsRequest.json();
     const mapDataToDate = groupBy(data, (p) =>
@@ -107,14 +196,16 @@ export class StarsService {
     ).reduce(
       (acc, value) => ({
         ...acc,
-        [value[0].starred_at]: value.length,
+        [dayjs(value[0].starred_at).format('YYYY-MM-DD')]: value.length,
       }),
       {}
     );
 
     // if we have 100 stars, we need to fetch the next page and merge the results (recursively)
     const nextOne: { [key: string]: number } =
-      data.length === 100 ? await this.syncProcess(login, page + 1) : {};
+      data.length === 100
+        ? await this.syncProcess(login, userToken, page + 1)
+        : {};
 
     // merge the results
     const allKeys = [
@@ -168,7 +259,9 @@ export class StarsService {
     }
 
     const informNewPeople = arr.filter(
-      (p) => !currentTrending?.trendingList || currentTrending?.trendingList?.indexOf(p.name) === -1
+      (p) =>
+        !currentTrending?.trendingList ||
+        currentTrending?.trendingList?.indexOf(p.name) === -1
     );
 
     // let people know they are trending
@@ -241,8 +334,14 @@ export class StarsService {
       if (!gitHub.login) {
         continue;
       }
-      const stars = await this.getStarsByLogin(gitHub.login!);
+      const getAllByLogin = await this.getStarsByLogin(gitHub.login!);
+
+      const stars = getAllByLogin.filter((f) => f.stars);
       const graphSize = stars.length < 10 ? stars.length : stars.length / 10;
+
+      const forks = getAllByLogin.filter((f) => f.forks);
+      const graphForkSize =
+        forks.length < 10 ? forks.length : forks.length / 10;
 
       list.push({
         login: gitHub.login,
@@ -255,6 +354,15 @@ export class StarsService {
             },
           ];
         }, [] as Array<{ totalStars: number; date: Date }>),
+        forks: chunk(forks, graphForkSize).reduce((acc, chunkedForks) => {
+          return [
+            ...acc,
+            {
+              totalForks: chunkedForks[chunkedForks.length - 1].totalForks,
+              date: chunkedForks[chunkedForks.length - 1].date,
+            },
+          ];
+        }, [] as Array<{ totalForks: number; date: Date }>),
       });
     }
 

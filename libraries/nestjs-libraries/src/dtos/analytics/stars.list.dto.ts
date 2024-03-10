@@ -6,7 +6,7 @@ export class StarsListDto {
     page: number;
 
     @IsOptional()
-    @IsIn(['login', 'totalStars', 'stars', 'date'])
+    @IsIn(['login', 'totalStars', 'stars', 'date', 'forks', 'totalForks'])
     key: 'login' | 'date' | 'stars' | 'totalStars';
 
     @IsOptional()

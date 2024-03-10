@@ -98,6 +98,8 @@ model Star {
   id         String   @id @default(uuid())
   stars      Int
   totalStars Int
+  forks      Int
+  totalForks Int
   login      String
   date       DateTime @default(now()) @db.Date
   createdAt  DateTime @default(now())

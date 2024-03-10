@@ -82,8 +82,8 @@ export const StarsAndForks: FC<StarsAndForksInterface> = (props) => {
             </div>
             <div className="flex-1 relative">
               <div className="absolute w-full h-full left-0 top-0">
-                {item.stars.length ? (
-                  <Chart list={item.stars} />
+                {item.forks.length ? (
+                  <Chart list={item.forks} />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-3xl">
                     Processing stars...
@@ -92,7 +92,7 @@ export const StarsAndForks: FC<StarsAndForksInterface> = (props) => {
               </div>
             </div>
             <div className="text-[50px] leading-[60px]">
-              {item?.stars[item.stars.length - 1]?.totalStars}
+              {item?.forks[item.forks.length - 1]?.totalForks}
             </div>
           </div>
         </div>

@@ -1,5 +1,10 @@
 import {
-  FC, useCallback, useEffect, useMemo, useState, useTransition,
+  FC,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
 } from 'react';
 import { UtcToLocalDateRender } from '@gitroom/react/helpers/utc.date.render';
 import { Button } from '@gitroom/react/form/button';
@@ -211,10 +216,16 @@ export const StarsTableComponent = () => {
                   <UpDown name="Date" param="date" />
                 </th>
                 <th>
-                  <UpDown name="Total" param="totalStars" />
+                  <UpDown name="Total Stars" param="totalStars" />
+                </th>
+                <th>
+                  <UpDown name="Total Fork" param="totalForks" />
                 </th>
                 <th>
                   <UpDown name="Stars" param="stars" />
+                </th>
+                <th>
+                  <UpDown name="Forks" param="forks" />
                 </th>
                 <th>Media</th>
               </tr>
@@ -227,7 +238,10 @@ export const StarsTableComponent = () => {
                     <UtcToLocalDateRender date={p.date} format="DD/MM/YYYY" />
                   </td>
                   <td>{p.totalStars}</td>
+                  <td>{p.totalForks}</td>
+
                   <td>{p.stars}</td>
+                  <td>{p.forks}</td>
                   <td>
                     <Link href={renderMediaLink(p.date)}>
                       <Button>Check Launch</Button>
