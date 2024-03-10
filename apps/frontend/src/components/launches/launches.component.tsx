@@ -125,7 +125,7 @@ export const LaunchesComponent = () => {
                   </div>
                 ))}
               </div>
-              <AddProviderButton />
+              <AddProviderButton update={() => update(true)} />
             </div>
             <div className="flex-1 flex flex-col gap-[14px]">
               <Filters />

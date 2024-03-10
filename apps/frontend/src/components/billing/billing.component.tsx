@@ -1,10 +1,10 @@
 'use client';
 
-import {useCallback, useEffect, useState} from 'react';
-import { NoBillingComponent } from '@gitroom/frontend/components/billing/no.billing.component';
+import { useCallback } from 'react';
 import useSWR from 'swr';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { MainBillingComponent } from './main.billing.component';
 
 export const BillingComponent = () => {
   const fetch = useFetch();
@@ -26,5 +26,7 @@ export const BillingComponent = () => {
     return <LoadingComponent />;
   }
 
-  return <NoBillingComponent tiers={tiers} sub={subscription?.subscription} />;
+  return (
+    <MainBillingComponent tiers={tiers} sub={subscription?.subscription} />
+  );
 };

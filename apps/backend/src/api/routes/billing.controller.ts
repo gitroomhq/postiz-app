@@ -33,7 +33,7 @@ export class BillingController {
     return this._stripeService.subscribe(org.id, body);
   }
 
-  @Post('/modify')
+  @Get('/portal')
   async modifyPayment(@GetOrgFromRequest() org: Organization) {
     const customer = await this._stripeService.getCustomerByOrganizationId(
       org.id

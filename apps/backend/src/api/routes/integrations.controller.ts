@@ -132,6 +132,7 @@ export class IntegrationsController {
       throw new Error('Invalid api key');
     }
 
+    console.log('asd');
     return this._integrationService.createOrUpdateIntegration(
       org.id,
       name,

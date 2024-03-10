@@ -191,6 +191,12 @@ export class StripeService {
     return stripe.billingPortal.sessions.create({
       customer,
       flow_data: {
+        after_completion: {
+          type: 'redirect',
+          redirect: {
+            return_url: process.env['FRONTEND_URL'] + '/billing',
+          },
+        },
         type: 'payment_method_update',
       },
     });

@@ -150,7 +150,7 @@ export const Features: FC<{
   );
 };
 
-export const NoBillingComponent: FC<{
+export const MainBillingComponent: FC<{
   tiers: Tiers;
   sub?: Subscription;
 }> = (props) => {
@@ -191,6 +191,11 @@ export const NoBillingComponent: FC<{
     setSubscription(sub);
   }, [sub]);
 
+  const updatePayment = useCallback(async () => {
+    const { portal } = await (await fetch('/billing/portal')).json();
+    window.location.href = portal;
+  }, []);
+
   const currentPackage = useMemo(() => {
     if (!subscription) {
       return 'FREE';
@@ -226,9 +231,7 @@ export const NoBillingComponent: FC<{
       const beforeTotalChannels = pricing[billing].channel || initialChannels;
 
       if (totalChannels < beforeTotalChannels) {
-        messages.push(
-          `Some of the channels will be disabled`
-        );
+        messages.push(`Some of the channels will be disabled`);
       }
 
       if (
@@ -244,7 +247,9 @@ export const NoBillingComponent: FC<{
         if (
           subscription?.cancelAt ||
           (await deleteDialog(
-            `Are you sure you want to cancel your subscription? ${messages.join(', ')}`,
+            `Are you sure you want to cancel your subscription? ${messages.join(
+              ', '
+            )}`,
             'Yes, cancel',
             'Cancel Subscription'
           ))
@@ -266,8 +271,11 @@ export const NoBillingComponent: FC<{
         return;
       }
 
-      if (messages.length && !await deleteDialog(messages.join(', '), 'Yes, continue')) {
-        return ;
+      if (
+        messages.length &&
+        !(await deleteDialog(messages.join(', '), 'Yes, continue'))
+      ) {
+        return;
       }
 
       setLoading(true);
@@ -419,6 +427,11 @@ export const NoBillingComponent: FC<{
           </div>
         ))}
       </div>
+      {!!subscription?.id && (
+        <div className="flex justify-center mt-[20px]">
+          <Button onClick={updatePayment}>Update Payment Method</Button>
+        </div>
+      )}
       <FAQComponent />
     </div>
   );

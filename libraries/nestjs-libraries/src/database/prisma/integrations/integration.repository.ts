@@ -52,6 +52,7 @@ export class IntegrationRepository {
           : {}),
         internalId,
         organizationId: org,
+        deletedAt: null,
       },
     });
   }

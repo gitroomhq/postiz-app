@@ -265,7 +265,7 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
         closeOnEscape: false,
         withCloseButton: false,
         classNames: {
-          modal: 'bg-transparent text-white',
+          modal: 'bg-transparent text-white !w-[auto]',
         },
         children: (
           <ExistingDataContextProvider value={data}>
@@ -277,7 +277,7 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
             />
           </ExistingDataContextProvider>
         ),
-        size: '80%',
+        size: 'dynamic',
         title: ``,
       });
     },
@@ -293,7 +293,7 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
         modal: 'bg-transparent text-white',
       },
       children: <AddEditModal integrations={integrations} date={getDate} />,
-      size: '80%',
+      size: '80%'
       // title: `Adding posts for ${getDate.format('DD/MM/YYYY HH:mm')}`,
     });
   }, []);
