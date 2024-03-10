@@ -185,7 +185,7 @@ export const MainBillingComponent: FC<{
 
     if (period !== sub?.period) {
       setPeriod(sub?.period || 'MONTHLY');
-      setMonthlyOrYearly(sub?.period === 'MONTHLY' ? 'off' : 'on');
+      setMonthlyOrYearly((sub?.period || 'MONTHLY') === 'MONTHLY' ? 'off' : 'on');
     }
 
     setSubscription(sub);
