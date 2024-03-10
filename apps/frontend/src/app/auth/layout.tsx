@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { ReactNode } from 'react';
 
 export default async function AuthLayout({

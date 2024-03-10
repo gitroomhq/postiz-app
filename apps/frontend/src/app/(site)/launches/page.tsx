@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import {LaunchesComponent} from "@gitroom/frontend/components/launches/launches.component";
 import {Metadata} from "next";
 

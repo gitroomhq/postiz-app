@@ -15,7 +15,7 @@ import dayjs from 'dayjs';
 import useSWR, { useSWRConfig } from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Post, Integration } from '@prisma/client';
-import {useRouter, useSearchParams} from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const CalendarContext = createContext({
   currentWeek: dayjs().week(),
@@ -60,9 +60,9 @@ export const CalendarWeekProvider: FC<{
   const setFiltersWrapper = useCallback(
     (filters: { currentWeek: number; currentYear: number }) => {
       setFilters(filters);
-      router.replace(`/launches?week=${filters.currentWeek}&year=${filters.currentYear}`, {
-          forceOptimisticNavigation: false,
-      })
+      router.replace(
+        `/launches?week=${filters.currentWeek}&year=${filters.currentYear}`
+      );
       setTimeout(() => {
         mutate('/posts');
       });
@@ -99,7 +99,10 @@ export const CalendarWeekProvider: FC<{
       setInternalData((d) =>
         d.map((post: Post) => {
           if (post.id === id) {
-            return { ...post, publishDate: date.utc().format('YYYY-MM-DDTHH:mm:ss') };
+            return {
+              ...post,
+              publishDate: date.utc().format('YYYY-MM-DDTHH:mm:ss'),
+            };
           }
           return post;
         })
@@ -113,7 +116,6 @@ export const CalendarWeekProvider: FC<{
       setInternalData(posts);
     }
   }, [posts]);
-
 
   return (
     <CalendarContext.Provider

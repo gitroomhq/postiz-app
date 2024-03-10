@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import {internalFetch} from "@gitroom/helpers/utils/internal.fetch";
 import {redirect} from "next/navigation";
 

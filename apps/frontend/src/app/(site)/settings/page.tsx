@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { SettingsComponent } from '@gitroom/frontend/components/settings/settings.component';
 import { internalFetch } from '@gitroom/helpers/utils/internal.fetch';
 import { redirect } from 'next/navigation';

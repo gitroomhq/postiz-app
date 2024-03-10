@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import './global.css';
 import 'react-tooltip/dist/react-tooltip.css';
 

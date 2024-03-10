@@ -144,9 +144,7 @@ export const StarsTableComponent = () => {
     (type: 'increase' | 'decrease') => () => {
       const newPage = type === 'increase' ? page + 1 : page - 1;
       const keyAndState = key && state ? `&key=${key}&state=${state}` : '';
-      router.replace(`/analytics?page=${newPage}${keyAndState}`, {
-        forceOptimisticNavigation: false,
-      });
+      router.replace(`/analytics?page=${newPage}${keyAndState}`);
     },
     [page, key, state]
   );
