@@ -222,11 +222,29 @@ export const NoBillingComponent: FC<{
 
   const moveToCheckout = useCallback(
     (billing: 'STANDARD' | 'PRO' | 'FREE') => async () => {
+      const messages = [];
+      const beforeTotalChannels = pricing[billing].channel || initialChannels;
+
+      if (totalChannels < beforeTotalChannels) {
+        messages.push(
+          `Some of the channels will be disabled`
+        );
+      }
+
+      if (
+        !pricing[billing].team_members &&
+        pricing[subscription?.subscriptionTier!]?.team_members
+      ) {
+        messages.push(
+          `Your team members will be removed from your organization`
+        );
+      }
+
       if (billing === 'FREE') {
         if (
           subscription?.cancelAt ||
           (await deleteDialog(
-            'Are you sure you want to cancel your subscription?',
+            `Are you sure you want to cancel your subscription? ${messages.join(', ')}`,
             'Yes, cancel',
             'Cancel Subscription'
           ))
@@ -247,6 +265,11 @@ export const NoBillingComponent: FC<{
         }
         return;
       }
+
+      if (messages.length && !await deleteDialog(messages.join(', '), 'Yes, continue')) {
+        return ;
+      }
+
       setLoading(true);
       const { url, portal } = await (
         await fetch('/billing/subscribe', {
@@ -299,7 +322,7 @@ export const NoBillingComponent: FC<{
 
       setLoading(false);
     },
-    [monthlyOrYearly, totalChannels]
+    [monthlyOrYearly, totalChannels, subscription, user]
   );
 
   return (

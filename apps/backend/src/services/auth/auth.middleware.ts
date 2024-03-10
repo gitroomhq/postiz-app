@@ -24,7 +24,7 @@ export class AuthMiddleware implements NestMiddleware {
             }
 
             delete user.password;
-            const organization = await this._organizationService.getOrgsByUserId(user.id);
+            const organization = (await this._organizationService.getOrgsByUserId(user.id)).filter(f => !f.users[0].disabled);
             const setOrg = organization.find((org) => org.id === orgHeader) || organization[0];
 
 

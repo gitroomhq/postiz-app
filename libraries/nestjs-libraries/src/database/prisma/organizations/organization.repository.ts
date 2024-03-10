@@ -27,6 +27,7 @@ export class OrganizationRepository {
             userId,
           },
           select: {
+            disabled: true,
             role: true,
           },
         },

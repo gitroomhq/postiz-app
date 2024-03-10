@@ -67,6 +67,16 @@ export class PostsService {
       return;
     }
 
+    if (firstPost.integration?.disabled) {
+      await this._notificationService.inAppNotification(
+        firstPost.organizationId,
+        `We couldn't post to ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
+        `We couldn't post to ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name} because it's disabled. Please enable it and try again.`,
+        true
+      );
+      return;
+    }
+
     try {
       if (firstPost.integration?.type === 'article') {
         await this.postArticle(firstPost.integration!, [
@@ -74,7 +84,7 @@ export class PostsService {
           ...morePosts,
         ]);
 
-        return ;
+        return;
       }
 
       await this.postSocial(firstPost.integration!, [firstPost, ...morePosts]);
