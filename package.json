@@ -2,6 +2,9 @@
   "name": "gitroom",
   "version": "0.0.0",
   "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0 <21.0.0"
+  },
   "scripts": {
     "dev": "concurrently \"stripe listen --forward-to localhost:3000/stripe\" \"nx run-many --target=serve --projects=frontend,backend,workers --parallel=4\"",
     "docs-build": "nx run docs:build:development",

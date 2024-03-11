@@ -19,14 +19,10 @@ config();
 
   mkdirSync('./api-reference/custom', { recursive: true });
 
-  console.log(generate);
-
   prod.navigation.push(...generate.nav.map((item) => ({
     ...item,
     pages: item.pages.map((page) => 'api-reference/custom/' + page)
   })));
-
-  console.log(prod);
 
   writeFileSync('./mint.json', JSON.stringify(prod, null, 2));
   const text = await (await fetch('https://api.gitroom.com/docs-json')).text();
