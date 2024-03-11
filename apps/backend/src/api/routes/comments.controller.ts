@@ -4,7 +4,9 @@ import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.reque
 import { Organization, User } from '@prisma/client';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 import { AddCommentDto } from '@gitroom/nestjs-libraries/dtos/comments/add.comment.dto';
+import {ApiTags} from "@nestjs/swagger";
 
+@ApiTags('Comments')
 @Controller('/comments')
 export class CommentsController {
   constructor(private _commentsService: CommentsService) {}

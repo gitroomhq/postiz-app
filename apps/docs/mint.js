@@ -15,18 +15,18 @@ exports.default = {
       "to": "#9333EA"
     }
   },
-  "openapi": "https://api.crosspublic.com/docs-json",
+  "openapi": "https://api.gitroom.com/docs-json",
   "api": {
-    "baseUrl": "https://api.crosspublic.com",
+    "baseUrl": "https://api.gitroom.com",
   },
   "topbarLinks": [
     {
       "name": "Support",
-      "url": "mailto:nevo@crosspublic.com"
+      "url": "mailto:nevo@gitroom.com"
     },
     {
       "name": "Cloud",
-      "url": "https://panel.crosspublic.com"
+      "url": "https://platform.gitroom.com"
     }
   ],
   "modeToggle": {
@@ -34,7 +34,7 @@ exports.default = {
   },
   "topbarCtaButton": {
     "type": "github",
-    "url": "https://github.com/github-20k/crosspublic"
+    "url": "https://github.com/gitoomhq/gitroom"
   },
   "tabs": [
     {
@@ -50,7 +50,7 @@ exports.default = {
     {
       "name": "Documentation",
       "icon": "book-open-cover",
-      "url": "https://docs.crosspublic.com"
+      "url": "https://docs.gitroom.com"
     },
     {
       "name": "Community",
@@ -79,7 +79,7 @@ exports.default = {
   ],
   "footerSocials": {
     "twitter": "https://twitter.com/nevodavid",
-    "github": "https://github.com/github-20k/crosspublic",
+    "github": "https://github.com/gitroomhq/gitroom",
     "linkedin": "https://www.linkedin.com/nevodavid"
   }
 };

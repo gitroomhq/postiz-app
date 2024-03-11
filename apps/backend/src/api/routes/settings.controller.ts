@@ -9,7 +9,9 @@ import {
 } from '@gitroom/backend/services/auth/permissions/permissions.service';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import {AddTeamMemberDto} from "@gitroom/nestjs-libraries/dtos/settings/add.team.member.dto";
+import {ApiTags} from "@nestjs/swagger";
 
+@ApiTags('Settings')
 @Controller('/settings')
 export class SettingsController {
   constructor(

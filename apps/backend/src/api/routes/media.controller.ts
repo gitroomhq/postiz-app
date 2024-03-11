@@ -6,7 +6,9 @@ import { Express } from 'express';
 import {GetOrgFromRequest} from "@gitroom/nestjs-libraries/user/org.from.request";
 import {Organization} from "@prisma/client";
 import {MediaService} from "@gitroom/nestjs-libraries/database/prisma/media/media.service";
+import {ApiTags} from "@nestjs/swagger";
 
+@ApiTags('Media')
 @Controller('/media')
 export class MediaController {
   constructor(

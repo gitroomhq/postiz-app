@@ -7,7 +7,9 @@ import { AuthService } from '@gitroom/backend/services/auth/auth.service';
 import { ForgotReturnPasswordDto } from '@gitroom/nestjs-libraries/dtos/auth/forgot-return.password.dto';
 import { ForgotPasswordDto } from '@gitroom/nestjs-libraries/dtos/auth/forgot.password.dto';
 import {removeSubdomain} from "@gitroom/helpers/subdomain/subdomain.management";
+import {ApiTags} from "@nestjs/swagger";
 
+@ApiTags('Auth')
 @Controller('/auth')
 export class AuthController {
   constructor(private _authService: AuthService) {}

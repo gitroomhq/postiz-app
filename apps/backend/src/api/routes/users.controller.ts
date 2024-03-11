@@ -22,7 +22,9 @@ import {
 } from '@gitroom/backend/services/auth/permissions/permissions.service';
 import {removeSubdomain} from "@gitroom/helpers/subdomain/subdomain.management";
 import {pricing} from "@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing";
+import {ApiTags} from "@nestjs/swagger";
 
+@ApiTags('User')
 @Controller('/user')
 export class UsersController {
   constructor(

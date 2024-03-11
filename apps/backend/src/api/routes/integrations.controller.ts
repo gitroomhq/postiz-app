@@ -13,7 +13,9 @@ import {
 } from '@gitroom/backend/services/auth/permissions/permissions.service';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import {pricing} from "@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing";
+import {ApiTags} from "@nestjs/swagger";
 
+@ApiTags('Integrations')
 @Controller('/integrations')
 export class IntegrationsController {
   constructor(

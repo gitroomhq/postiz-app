@@ -4,7 +4,9 @@ import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization } from '@prisma/client';
 import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.subscribe.dto';
+import {ApiTags} from "@nestjs/swagger";
 
+@ApiTags('Billing')
 @Controller('/billing')
 export class BillingController {
   constructor(

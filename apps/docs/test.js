@@ -9,24 +9,26 @@ config();
 
   try {
     rmdirSync('./api-reference/custom', { recursive: true });
-    rmdirSync('./public-api-reference/custom', { recursive: true });
     await new Promise((resolve) => setTimeout(resolve, 2000));
   } catch (e) {
   }
 
-  await generateOpenApiPages(process.env.BACKEND_URL + '/docs-json', true, 'api-reference/custom');
-  const generate = await generateOpenApiPages(process.env.BACKEND_URL + '/docs-json');
+  await generateOpenApiPages('https://api.gitroom.com/docs-json', true, 'api-reference/custom');
+  const generate = await generateOpenApiPages('https://api.gitroom.com/docs-json');
   await new Promise((resolve) => setTimeout(resolve, 3000));
 
-  mkdirSync('./public-api-reference/custom', { recursive: true });
-  renameSync('./api-reference/custom/public', './public-api-reference/custom/public/');
+  mkdirSync('./api-reference/custom', { recursive: true });
+
+  console.log(generate);
 
   prod.navigation.push(...generate.nav.map((item) => ({
     ...item,
-    pages: item.pages.map((page) => (page.indexOf('public') >  -1 ? 'public-api-reference/custom/' : 'api-reference/custom/') + page)
+    pages: item.pages.map((page) => 'api-reference/custom/' + page)
   })));
 
+  console.log(prod);
+
   writeFileSync('./mint.json', JSON.stringify(prod, null, 2));
-  const text = await (await fetch(process.env.BACKEND_URL + '/docs-json')).text();
+  const text = await (await fetch('https://api.gitroom.com/docs-json')).text();
   writeFileSync('./openapi.json', text);
 })();

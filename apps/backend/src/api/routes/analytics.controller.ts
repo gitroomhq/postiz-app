@@ -5,7 +5,9 @@ import {StarsService} from "@gitroom/nestjs-libraries/database/prisma/stars/star
 import dayjs from "dayjs";
 import {mean} from 'simple-statistics';
 import {StarsListDto} from "@gitroom/nestjs-libraries/dtos/analytics/stars.list.dto";
+import {ApiTags} from "@nestjs/swagger";
 
+@ApiTags('Analytics')
 @Controller('/analytics')
 export class AnalyticsController {
     constructor(
