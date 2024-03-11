@@ -120,7 +120,7 @@ export class StripeService {
     );
     const pricesList = await stripe.prices.list({
       active: true,
-      product: findProduct!.id,
+      product: findProduct?.id,
     });
 
     const findPrice = pricesList.data.find(
@@ -136,23 +136,28 @@ export class StripeService {
       status: 'active',
     });
 
-    const price = await stripe.invoices.retrieveUpcoming({
-      customer,
-      subscription: currentUserSubscription.data[0].id,
-      subscription_proration_behavior: 'create_prorations',
-      subscription_billing_cycle_anchor: 'now',
-      subscription_items: [
-        {
-          id: currentUserSubscription.data[0].items.data[0].id,
-          price: findPrice!.id,
-          quantity: body.total,
-        },
-      ],
-      subscription_proration_date: proration_date,
-    });
+    try {
+      const price = await stripe.invoices.retrieveUpcoming({
+        customer,
+        subscription: currentUserSubscription?.data?.[0]?.id,
+        subscription_proration_behavior: 'create_prorations',
+        subscription_billing_cycle_anchor: 'now',
+        subscription_items: [
+          {
+            id: currentUserSubscription?.data?.[0]?.items?.data?.[0]?.id,
+            price: findPrice?.id!,
+            quantity: body?.total,
+          },
+        ],
+        subscription_proration_date: proration_date,
+      });
 
-    console.log(price);
-    return { price: price.amount_remaining / 100 };
+      return {
+        price: price?.amount_remaining ? price?.amount_remaining / 100 : 0,
+      };
+    } catch (err) {
+      return { price: 0 };
+    }
   }
 
   async setToCancel(organizationId: string) {
