@@ -11,6 +11,7 @@
     "noPropertyAccessFromIndexSignature": false,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
     "importHelpers": true,
     "target": "es2015",
     "module": "esnext",

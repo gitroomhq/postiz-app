@@ -15,7 +15,18 @@
         "main": "apps/backend/src/main.ts",
         "tsConfig": "apps/backend/tsconfig.app.json",
         "assets": ["apps/backend/src/assets"],
-        "webpackConfig": "apps/backend/webpack.config.js"
+        "webpackConfig": "apps/backend/webpack.config.js",
+        "transformers": [
+          {
+            "name": "@nestjs/swagger/plugin",
+            "options": {
+              "dtoFileNameSuffix": [".dto.ts"],
+              "controllerFileNameSuffix": [".controller.ts"],
+              "introspectComments": true,
+              "classValidatorShim": true
+            }
+          }
+        ]
       },
       "configurations": {
         "development": {},

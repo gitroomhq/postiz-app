@@ -1,3 +1,5 @@
+import {loadSwagger} from "@gitroom/helpers/swagger/load.swagger";
+
 process.env.TZ='UTC';
 
 import cookieParser from 'cookie-parser';
@@ -22,6 +24,8 @@ async function bootstrap() {
 
   app.use(cookieParser());
   app.useGlobalFilters(new SubscriptionExceptionFilter());
+
+  loadSwagger(app);
 
   const port = process.env.PORT || 3000;
   await app.listen(port);

@@ -1,0 +1,191 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "Starter Kit",
+  "logo": {
+    "dark": "/logo/dark.png",
+    "light": "/logo/light.png"
+  },
+  "favicon": "/favicon.png",
+  "colors": {
+    "primary": "#9333EA",
+    "light": "#9333EA",
+    "dark": "#9333EA",
+    "anchors": {
+      "from": "#9333EA",
+      "to": "#9333EA"
+    }
+  },
+  "openapi": "https://api.crosspublic.com/docs-json",
+  "api": {
+    "baseUrl": "https://api.crosspublic.com"
+  },
+  "topbarLinks": [
+    {
+      "name": "Support",
+      "url": "mailto:nevo@crosspublic.com"
+    }
+  ],
+  "modeToggle": {
+    "default": "light"
+  },
+  "topbarCtaButton": {
+    "type": "github",
+    "url": "https://github.com/github-20k/crosspublic"
+  },
+  "tabs": [
+    {
+      "name": "Public API Reference",
+      "url": "public-api-reference"
+    },
+    {
+      "name": "Internal API Reference (Self-Hosted)",
+      "url": "api-reference"
+    }
+  ],
+  "anchors": [
+    {
+      "name": "Documentation",
+      "icon": "book-open-cover",
+      "url": "https://docs.crosspublic.com"
+    },
+    {
+      "name": "Community",
+      "icon": "discord",
+      "url": "https://discord.gitroom.com"
+    },
+    {
+      "name": "Blog",
+      "icon": "newspaper",
+      "url": "https://gitroom.com/blog"
+    }
+  ],
+  "navigation": [
+    {
+      "group": "Get Started",
+      "pages": [
+        "introduction",
+        "quickstart",
+        "howitworks"
+      ]
+    },
+    {
+      "group": "API Documentation",
+      "pages": [
+        "api-reference/introduction"
+      ]
+    },
+    {
+      "group": "Public api Documentation",
+      "pages": [
+        "public-api-reference/introduction"
+      ]
+    },
+    {
+      "group": "Authentications",
+      "pages": [
+        "api-reference/custom/authentications/check-org-and-user",
+        "api-reference/custom/authentications/register-to-crosspublic",
+        "api-reference/custom/authentications/login-to-crosspublic"
+      ]
+    },
+    {
+      "group": "Stripe",
+      "pages": [
+        "api-reference/custom/stripe/post-stripe"
+      ]
+    },
+    {
+      "group": "Public",
+      "pages": [
+        "public-api-reference/custom/public/categories-list",
+        "public-api-reference/custom/public/faq-list",
+        "public-api-reference/custom/public/retrieve-faq",
+        "public-api-reference/custom/public/get-organization-style"
+      ]
+    },
+    {
+      "group": "Users",
+      "pages": [
+        "api-reference/custom/users/get-userssign-in",
+        "api-reference/custom/users/get-usersself",
+        "api-reference/custom/users/post-usersrevalidate"
+      ]
+    },
+    {
+      "group": "Faq",
+      "pages": [
+        "api-reference/custom/faq/get-faq",
+        "api-reference/custom/faq/put-faq",
+        "api-reference/custom/faq/delete-faq",
+        "api-reference/custom/faq/post-faqorder",
+        "api-reference/custom/faq/put-faq-category",
+        "api-reference/custom/faq/post-faq",
+        "api-reference/custom/faq/post-faqjob",
+        "api-reference/custom/faq/post-faqjobsquestions",
+        "api-reference/custom/faq/post-faqanswers",
+        "api-reference/custom/faq/get-faqjobs"
+      ]
+    },
+    {
+      "group": "Categories",
+      "pages": [
+        "api-reference/custom/categories/post-categoriesorder",
+        "api-reference/custom/categories/get-categories",
+        "api-reference/custom/categories/post-categories",
+        "api-reference/custom/categories/get-categoriesfaq",
+        "api-reference/custom/categories/get-categories-1",
+        "api-reference/custom/categories/put-categories",
+        "api-reference/custom/categories/delete-categories"
+      ]
+    },
+    {
+      "group": "Settings",
+      "pages": [
+        "api-reference/custom/settings/get-settings",
+        "api-reference/custom/settings/post-settingscheck-subdomain",
+        "api-reference/custom/settings/get-settingscheck-domain",
+        "api-reference/custom/settings/delete-settingsdelete-domain",
+        "api-reference/custom/settings/post-settingsdomain",
+        "api-reference/custom/settings/post-settingssubdomain"
+      ]
+    },
+    {
+      "group": "Billings",
+      "pages": [
+        "api-reference/custom/billings/get-billingcheck",
+        "api-reference/custom/billings/subscribe-to-a-plan",
+        "api-reference/custom/billings/post-billingmodify",
+        "api-reference/custom/billings/get-billing",
+        "api-reference/custom/billings/post-billingcancel"
+      ]
+    },
+    {
+      "group": "Styles",
+      "pages": [
+        "api-reference/custom/styles/get-styles",
+        "api-reference/custom/styles/put-styles"
+      ]
+    },
+    {
+      "group": "Integrations",
+      "pages": [
+        "api-reference/custom/integrations/get-integrations",
+        "api-reference/custom/integrations/post-integrations",
+        "api-reference/custom/integrations/get-integrations-add",
+        "api-reference/custom/integrations/delete-integrations"
+      ]
+    },
+    {
+      "group": "Invitations",
+      "pages": [
+        "api-reference/custom/invitations/post-invite",
+        "api-reference/custom/invitations/post-inviteadd"
+      ]
+    }
+  ],
+  "footerSocials": {
+    "twitter": "https://twitter.com/nevodavid",
+    "github": "https://github.com/github-20k/crosspublic",
+    "linkedin": "https://www.linkedin.com/nevodavid"
+  }
+}

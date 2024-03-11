@@ -1,0 +1,21 @@
+{
+  "name": "docs",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/docs",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "command": "node apps/docs/test.js",
+      "options": {
+        "type": "module"
+      }
+    },
+    "serve": {
+      "command": "cd apps/docs && npx mintlify dev",
+      "options": {
+        "type": "module"
+      }
+    }
+  },
+  "tags": []
+}

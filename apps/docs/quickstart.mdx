@@ -1,0 +1,109 @@
+---
+title: 'Quickstart'
+---
+
+## Prerequisites
+To run the project you need to have multiple things:
+- Node.js
+- PostgresSQL
+- Discord client id and token
+- Vercel Blob Store (optional)
+- Vercel Project ID, Team ID and Token (if you want to have multi-tenancy)
+- Stripe account (optional)
+- OpenAI API key (optional)
+- Algolia account (optional)
+
+### NodeJS
+A complete guide of how to install NodeJS can be found [here](https://nodejs.org/en/download/).
+
+### PostgresSQL
+Make sure you have PostgreSQL installed on your machine.<br />
+If you don't, you can install [Docker](https://www.docker.com/products/docker-desktop) and run:
+
+```bash
+docker run -e POSTGRES_USER=root -e POSTGRES_PASSWORD=your_password --name postgres -p 5432:5432 -d postgres
+```
+
+### Discord client id and token
+Head over to the [Discord Developer Portal](https://discord.com/developers/applications) and create a new application.<br />
+After that, go to the bot tab and create a new bot.<br />
+Save the token and client id for later.
+
+### Vercel Blob Store
+Head over to the [Vercel Blob Store](https://vercel.com/dashboard/stores) and create a new database.<br />
+Choose Blob (currently in beta) and save the token for later.
+
+### Vercel Project ID, Team ID and Token
+
+1. Create a new Vercel empty project.
+2. Head over to Vercel teams settings, scroll down to "Team ID" copy the id and save it for later.
+3. Head over to Vercel project settings, scroll down to "Project ID" copy the id and save it for later.
+4. Head over to Vercel account settings, scroll down to "Tokens" and create a new token, copy the token and save it for later.
+
+### Stripe account
+
+If you don't provide the Stripe `PAYMENT_PUBLIC_KEY`, you will be automatically granted all the features without limitations.
+
+1. Register a new account on [Stripe](https://stripe.com/).<br />
+2. Head over to the [Stripe API keys](https://dashboard.stripe.com/test/apikeys) and copy the Publishable and Secret key, save it for later.
+3. Head over to the [Stripe Webhooks](https://dashboard.stripe.com/test/webhooks) and create a new local webhook.<br />
+Copy the token and save it for later.
+
+### OpenAI API key
+Create a new [OpenAI](https://platform.openai.com) account, head over to the [API keys](https://platform.openai.com/api-keys), copy the key, and save it for later.
+
+### Algolia account
+Create a new [Algolia](https://www.algolia.com/) account, head over to the [API keys](https://www.algolia.com/api-keys), copy the APP ID, Search Key, and Admin API Key, and save it for later.
+
+## Installation
+
+### Clone the repository
+
+```bash
+git clone https://github.com/github-20k/crosspublic
+```
+
+### Copy environment variables
+Copy the `.env.example` file to `.env` and fill in the values
+
+```bash
+DISCORD_CLIENT=<copied discord client key>
+DISCORD_TOKEN=<copied discord token key>
+DATABASE_URL=postgres://root:your_password@localhost:5432/crosspublic
+BACKEND_URL=http://localhost:3000
+NEXT_PUBLIC_BACKEND_URL=http://localhost:3000
+BACKEND_TOKEN_PROTECTOR=<anything you want, better be long>
+OPENAI_API_KEY=<open_ai key>
+JWT_SECRET=<anything you want, better be long>
+FRONTEND_URL=http://localhost:4200
+BLOB_READ_WRITE_TOKEN=<copied blob store key>
+PROJECT_ID_VERCEL=<copied vercel project id>
+TEAM_ID_VERCEL=<copied vercel team id>
+PAYMENT_PUBLIC_KEY=<copied stripe publishable key>
+PAYMENT_SECRET_KEY=<copied stripe secret key>
+PAYMENT_SIGNING_SECRET=<copied stripe webhook token>
+MARKETING_WEBSITE_URL=http://localhost:4201
+DOCS_URL=https://localhost:3000
+NEXT_PUBLIC_ALGOLIA_APP_ID=<algolia id>
+NEXT_PUBLIC_ALGOLIA_SEARCH_KEY=<algolia search key>
+ALGOLIA_ADMIN_API_KEY=<algolia admin api>
+```
+
+### Install the dependencies
+
+```bash
+npm install
+```
+
+### Generate the prisma client and run the migrations
+
+```bash
+npm run update-prisma
+```
+
+### Run the project
+
+```bash
+npm run dev
+```
+
