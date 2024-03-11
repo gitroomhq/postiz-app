@@ -1,6 +1,5 @@
 import { Global, Module } from '@nestjs/common';
 import {MulterModule} from "@nestjs/platform-express";
-// @ts-ignore
 import {diskStorage} from "multer";
 import {mkdirSync} from 'fs';
 import {extname} from 'path';
