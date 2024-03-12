@@ -48,7 +48,7 @@ export const TopMenu: FC = () => {
           .map((item, index) => (
             <li key={item.name}>
               <Link
-                prefetch={false}
+                prefetch={true}
                 href={item.path}
                 className={clsx(
                   'flex gap-2 items-center box',
