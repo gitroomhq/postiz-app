@@ -5,7 +5,7 @@
   "projectType": "application",
   "targets": {
     "build": {
-      "command": "node apps/docs/test.js",
+      "command": "node apps/docs/generate-refrences.js",
       "options": {
         "type": "module"
       }

@@ -7,12 +7,12 @@
   },
   "favicon": "/favicon.png",
   "colors": {
-    "primary": "#9333EA",
-    "light": "#9333EA",
-    "dark": "#9333EA",
+    "primary": "#000",
+    "light": "#612ad5",
+    "dark": "#000",
     "anchors": {
-      "from": "#9333EA",
-      "to": "#9333EA"
+      "from": "#612ad5",
+      "to": "#612ad5"
     }
   },
   "openapi": "https://api.gitroom.com/docs-json",
@@ -36,16 +36,6 @@
     "type": "github",
     "url": "https://github.com/gitoomhq/gitroom"
   },
-  "tabs": [
-    {
-      "name": "Public API Reference",
-      "url": "public-api-reference"
-    },
-    {
-      "name": "Internal API Reference (Self-Hosted)",
-      "url": "api-reference"
-    }
-  ],
   "anchors": [
     {
       "name": "Documentation",
@@ -70,128 +60,6 @@
         "introduction",
         "quickstart",
         "howitworks"
-      ]
-    },
-    {
-      "group": "API Documentation",
-      "pages": [
-        "api-reference/introduction"
-      ]
-    },
-    {
-      "group": "Public api Documentation",
-      "pages": [
-        "public-api-reference/introduction"
-      ]
-    },
-    {
-      "group": "Stripe",
-      "pages": [
-        "api-reference/custom/stripe/post-stripe"
-      ]
-    },
-    {
-      "group": "Auth",
-      "pages": [
-        "api-reference/custom/auth/post-authregister",
-        "api-reference/custom/auth/post-authlogin",
-        "api-reference/custom/auth/post-authforgot",
-        "api-reference/custom/auth/post-authforgot-return"
-      ]
-    },
-    {
-      "group": "User",
-      "pages": [
-        "api-reference/custom/user/get-userself",
-        "api-reference/custom/user/get-usersubscription",
-        "api-reference/custom/user/get-usersubscriptiontiers",
-        "api-reference/custom/user/post-userjoin-org",
-        "api-reference/custom/user/get-userorganizations",
-        "api-reference/custom/user/post-userchange-org"
-      ]
-    },
-    {
-      "group": "Analytics",
-      "pages": [
-        "api-reference/custom/analytics/get-analytics",
-        "api-reference/custom/analytics/get-analyticstrending",
-        "api-reference/custom/analytics/post-analyticsstars"
-      ]
-    },
-    {
-      "group": "Integrations",
-      "pages": [
-        "api-reference/custom/integrations/get-integrations",
-        "api-reference/custom/integrations/delete-integrations",
-        "api-reference/custom/integrations/get-integrationslist",
-        "api-reference/custom/integrations/get-integrationssocial",
-        "api-reference/custom/integrations/post-integrationsfunction",
-        "api-reference/custom/integrations/post-integrationsarticle-connect",
-        "api-reference/custom/integrations/post-integrationssocial-connect",
-        "api-reference/custom/integrations/post-integrationsdisable",
-        "api-reference/custom/integrations/post-integrationsenable"
-      ]
-    },
-    {
-      "group": "Settings",
-      "pages": [
-        "api-reference/custom/settings/get-settingsgithub",
-        "api-reference/custom/settings/post-settingsgithub",
-        "api-reference/custom/settings/get-settingsgithuburl",
-        "api-reference/custom/settings/get-settingsorganizations",
-        "api-reference/custom/settings/post-settingsorganizations",
-        "api-reference/custom/settings/get-settingsorganizations-",
-        "api-reference/custom/settings/delete-settingsrepository",
-        "api-reference/custom/settings/get-settingsteam",
-        "api-reference/custom/settings/post-settingsteam",
-        "api-reference/custom/settings/delete-settingsteam"
-      ]
-    },
-    {
-      "group": "Posts",
-      "pages": [
-        "api-reference/custom/posts/get-posts",
-        "api-reference/custom/posts/post-posts",
-        "api-reference/custom/posts/get-postspredict-trending",
-        "api-reference/custom/posts/get-postsold",
-        "api-reference/custom/posts/get-posts-1",
-        "api-reference/custom/posts/delete-posts",
-        "api-reference/custom/posts/put-posts-date"
-      ]
-    },
-    {
-      "group": "Media",
-      "pages": [
-        "api-reference/custom/media/get-media",
-        "api-reference/custom/media/post-media"
-      ]
-    },
-    {
-      "group": "Comments",
-      "pages": [
-        "api-reference/custom/comments/post-comments",
-        "api-reference/custom/comments/put-comments",
-        "api-reference/custom/comments/post-comments-1",
-        "api-reference/custom/comments/delete-comments",
-        "api-reference/custom/comments/get-comments"
-      ]
-    },
-    {
-      "group": "Billing",
-      "pages": [
-        "api-reference/custom/billing/get-billingcheck",
-        "api-reference/custom/billing/post-billingsubscribe",
-        "api-reference/custom/billing/get-billingportal",
-        "api-reference/custom/billing/get-billing",
-        "api-reference/custom/billing/post-billingcancel",
-        "api-reference/custom/billing/post-billingprorate"
-      ]
-    },
-    {
-      "group": "Notifications",
-      "pages": [
-        "api-reference/custom/notifications/get-notifications",
-        "api-reference/custom/notifications/get-notificationslist"
       ]
     }
   ],
