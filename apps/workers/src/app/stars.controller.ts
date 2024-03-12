@@ -58,12 +58,11 @@ export class StarsController {
   @EventPattern('sync_all_stars', Transport.REDIS, { concurrency: 1 })
   async syncAllStars(data: { login: string }) {
     // if there is a sync in progress, it's better not to touch it
-    if ((await this._starsService.getStarsByLogin(data.login)).length) {
+    if (data?.login && (await this._starsService.getStarsByLogin(data?.login)).length) {
       return;
     }
 
-    const findValidToken = await this._starsService.findValidToken(data.login);
-    console.log(findValidToken?.token);
+    const findValidToken = await this._starsService.findValidToken(data?.login);
     await this._starsService.sync(data.login, findValidToken?.token);
   }
 
