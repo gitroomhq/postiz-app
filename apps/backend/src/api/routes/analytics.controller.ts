@@ -23,18 +23,15 @@ export class AnalyticsController {
 
     @Get('/trending')
     async getTrending() {
+        const stars = await this._starsService.predictTrending(10);
+        const findFirst = stars.find(star => dayjs(star).isBefore(dayjs()));
         const trendings = (await this._starsService.getTrending('')).reverse();
         const dates = trendings.map(result => dayjs(result.date).toDate());
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
-        const intervals = dates.slice(1).map((date, i) => (date - dates[i]) / (1000 * 60 * 60 * 24));
-        const nextInterval = intervals.length === 0 ? null : mean(intervals);
         const lastTrendingDate = dates[dates.length - 1];
-        const nextTrendingDate = !nextInterval ? 'Not possible yet' : dayjs(new Date(lastTrendingDate.getTime() + nextInterval * 24 * 60 * 60 * 1000)).format('YYYY-MM-DD HH:mm:ss');
 
         return {
             last: dayjs(lastTrendingDate).format('YYYY-MM-DD HH:mm:ss'),
-            predictions: nextTrendingDate
+            predictions: findFirst
         }
     }
 

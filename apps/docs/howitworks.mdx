@@ -3,7 +3,7 @@ title: How it works
 description: 'Learn the architecture of the project'
 ---
 
-crosspublic is a tool to convert private communication into public knowledge.<br />
+Gitroom is a tool to convert private communication into public knowledge.<br />
 The entire project is built under [NX](https://nx.dev/) to have a monorepo with multiple projects.<br /><br />
 Unlike other NX project, this project has one `.env` file that is shared between all the apps.<br />
 It makes it easier to develop and deploy the project.<br /><br />
@@ -20,7 +20,7 @@ When deploying to websites like [Railway](https://railway.app) or [Heroku](https
 
 <img
   src="/images/arch.png"
-  alt="Architecture of crosspublic"
+  alt="Architecture of Gitroom"
 />
 
 ## Architecture
@@ -49,7 +49,7 @@ It's the website for the end-users to see the FAQ.<br />
 It contains a simple search bar and a list of questions.<br />
 The search bar uses [Algolia](https://www.algolia.com/) to search through the questions.<br />
 It uses the style from the control panel to customize the website.<br />
-The tenants cache each pages on the `crosspublic.com/[domainName]` path, it uses a middleware to rewrite the Vercel apex domain or the custom domain to the route.<br />
+The tenants cache each pages on the `Gitroom.com/[domainName]` path, it uses a middleware to rewrite the Vercel apex domain or the custom domain to the route.<br />
 
 ### Discord
 The Discord bot is built with [Discord.JS](https://discord.js.org/) and [NestJS](https://nestjs.com/).<br />
