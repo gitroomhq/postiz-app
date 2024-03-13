@@ -27,6 +27,7 @@ import clsx from 'clsx';
 import { newImage } from '@gitroom/frontend/components/launches/helpers/new.image.component';
 import { postSelector } from '@gitroom/frontend/components/post-url-selector/post.url.selector';
 import { UpDownArrow } from '@gitroom/frontend/components/launches/up.down.arrow';
+import { arrayMoveImmutable } from 'array-move';
 
 // Simple component to change back to settings on after changing tab
 export const SetTab: FC<{ changeTab: () => void }> = (props) => {
@@ -145,36 +146,32 @@ export const withProvider = (
     const addValue = useCallback(
       (index: number) => () => {
         setInPlaceValue((prev) => {
-          prev.splice(index + 1, 0, { content: '' });
-          return [...prev];
+          return prev.reduce((acc, p, i) => {
+            acc.push(p);
+            if (i === index) {
+              acc.push({ content: '' });
+            }
+
+            return acc;
+          }, [] as Array<{ content: string }>);
         });
       },
-      [InPlaceValue]
+      []
     );
 
     const changePosition = useCallback(
       (index: number) => (type: 'up' | 'down') => {
         if (type === 'up' && index !== 0) {
           setInPlaceValue((prev) => {
-            const temp = prev[index];
-            prev[index] = prev[index - 1];
-            prev[index - 1] = temp;
-            return [...prev];
+            return arrayMoveImmutable(prev, index, index - 1);
           });
-        } else if (
-          type === 'down' &&
-          InPlaceValue.length !== 0 &&
-          InPlaceValue.length !== index + 1
-        ) {
+        } else if (type === 'down') {
           setInPlaceValue((prev) => {
-            const temp = prev[index];
-            prev[index] = prev[index + 1];
-            prev[index + 1] = temp;
-            return [...prev];
+            return arrayMoveImmutable(prev, index, index + 1);
           });
         }
       },
-      [InPlaceValue]
+      []
     );
 
     // Delete post
@@ -213,7 +210,7 @@ export const withProvider = (
       setInPlaceValue(
         editInPlace
           ? [{ content: '' }]
-          : props.value.map((p) => ({ id: p.id, content: p.content }))
+          : props.value.map((p) => ({ id: p.id, content: p.content, image: p.image}))
       );
     }, [props.value, editInPlace]);
 

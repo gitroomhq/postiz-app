@@ -213,28 +213,30 @@ export class PostsService {
           post
         );
 
-      if (posts?.length) {
-        await this._workerServiceProducer.delete(
-          'post',
-          previousPost ? previousPost : posts?.[0]?.id
-        );
-        if (
-          (body.type === 'schedule' || body.type === 'now') &&
-          dayjs(body.date).isAfter(dayjs())
-        ) {
-          this._workerServiceProducer.emit('post', {
+      if (!posts?.length) {
+        return;
+      }
+
+      await this._workerServiceProducer.delete(
+        'post',
+        previousPost ? previousPost : posts?.[0]?.id
+      );
+      if (
+        (body.type === 'schedule' || body.type === 'now') &&
+        dayjs(body.date).isAfter(dayjs())
+      ) {
+        this._workerServiceProducer.emit('post', {
+          id: posts[0].id,
+          options: {
+            delay:
+              body.type === 'now'
+                ? 0
+                : dayjs(posts[0].publishDate).diff(dayjs(), 'millisecond'),
+          },
+          payload: {
             id: posts[0].id,
-            options: {
-              delay:
-                body.type === 'now'
-                  ? 0
-                  : dayjs(posts[0].publishDate).diff(dayjs(), 'millisecond'),
-            },
-            payload: {
-              id: posts[0].id,
-            },
-          });
-        }
+          },
+        });
       }
     }
   }
