@@ -24,7 +24,7 @@ export class AnalyticsController {
     @Get('/trending')
     async getTrending() {
         const stars = await this._starsService.predictTrending(10);
-        const findFirst = stars.find(star => dayjs(star).isBefore(dayjs()));
+        const findFirst = stars.find(star => dayjs(star).isAfter(dayjs()));
         const trendings = (await this._starsService.getTrending('')).reverse();
         const dates = trendings.map(result => dayjs(result.date).toDate());
         const lastTrendingDate = dates[dates.length - 1];
