@@ -441,15 +441,16 @@ export class StarsService {
     return this._starsRepository.deleteRepository(orgId, id);
   }
 
-  async predictTrending() {
+  async predictTrending(max = 500) {
     const trendings = (await this.getTrending('')).reverse();
-    const dates = await this.predictTrendingLoop(trendings);
+    const dates = await this.predictTrendingLoop(trendings, 0, max);
     return dates.map((d) => dayjs(d).format('YYYY-MM-DDTHH:mm:00'));
   }
 
   async predictTrendingLoop(
     trendings: Array<{ date: Date }>,
-    current = 0
+    current = 0,
+    max = 500
   ): Promise<Date[]> {
     const dates = trendings.map((result) => dayjs(result.date).toDate());
     const intervals = dates
@@ -473,10 +474,11 @@ export class StarsService {
 
     return [
       nextTrendingDate,
-      ...(current < 500
+      ...(current < max
         ? await this.predictTrendingLoop(
             [...trendings, { date: nextTrendingDate }],
-            current + 1
+            current + 1,
+            max
           )
         : []),
     ];
