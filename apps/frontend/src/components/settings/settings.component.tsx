@@ -15,8 +15,6 @@ export const SettingsComponent = () => {
 
   const fetch = useFetch();
 
-  console.log(user);
-
   const load = useCallback(async (path: string) => {
     const { github } = await (await fetch('/settings/github')).json();
     if (!github) {
