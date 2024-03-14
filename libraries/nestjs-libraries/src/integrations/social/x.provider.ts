@@ -5,9 +5,9 @@ import {
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { readFileSync } from 'fs';
 import { lookup } from 'mime-types';
 import sharp from 'sharp';
+import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
 
 export class XProvider implements SocialProvider {
   identifier = 'x';
@@ -112,7 +112,7 @@ export class XProvider implements SocialProvider {
           p?.media?.flatMap(async (m) => {
             return {
               id: await client.v1.uploadMedia(
-                await sharp(readFileSync(m.path), {
+                await sharp(await readOrFetch(m.path), {
                   animated: lookup(m.path) === 'image/gif',
                 })
                   .resize({

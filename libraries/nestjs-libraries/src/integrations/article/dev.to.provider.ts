@@ -77,7 +77,11 @@ export class DevToProvider implements ArticleProvider {
             title: settings.title,
             body_markdown: content,
             main_image: settings?.main_image?.path
-              ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/${process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY}${settings?.main_image?.path}`
+              ? `${
+                  settings?.main_image?.path.indexOf('http') === -1
+                    ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/${process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY}`
+                    : ``
+                }${settings?.main_image?.path}`
               : undefined,
             tags: settings?.tags?.map((t) => t.label),
             organization_id: settings.organization,

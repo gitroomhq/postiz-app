@@ -145,7 +145,11 @@ export class RedditProvider implements SocialProvider {
               : {}),
             ...(firstPostSettings.value.type === 'media'
               ? {
-                  url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/${process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY}${firstPostSettings.value.media[0].path}`,
+                  url: `${
+                    firstPostSettings.value.media[0].path.indexOf('http') === -1
+                      ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/${process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY}`
+                      : ``
+                  }${firstPostSettings.value.media[0].path}`,
                 }
               : {}),
             text: post.message,

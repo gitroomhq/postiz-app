@@ -38,11 +38,6 @@
   },
   "anchors": [
     {
-      "name": "Documentation",
-      "icon": "book-open-cover",
-      "url": "https://docs.gitroom.com"
-    },
-    {
       "name": "Community",
       "icon": "discord",
       "url": "https://discord.gitroom.com"

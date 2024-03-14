@@ -49,7 +49,7 @@ export const newImage: ICommand = {
         suffix: state.command.suffix,
       });
 
-      return ;
+      return;
     }
 
     newSelectionRange = selectWord({
@@ -68,7 +68,11 @@ export const newImage: ICommand = {
             selectedText: state1.selectedText,
             selection: state.selection,
             prefix: '![',
-            suffix: `](${process.env.NEXT_PUBLIC_BACKEND_URL}/${process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY}${media.path})`,
+            suffix: `](${
+              media.path.indexOf('http') === -1
+                ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/${process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY}`
+                : ``
+            }${media.path})`,
           });
 
           return;
@@ -79,7 +83,11 @@ export const newImage: ICommand = {
           selectedText: state1.selectedText,
           selection: state.selection,
           prefix: '![image',
-          suffix: `](${process.env.NEXT_PUBLIC_BACKEND_URL}/${process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY}${media.path})`,
+          suffix: `](${
+            media.path.indexOf('http') === -1
+              ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/${process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY}`
+              : ``
+          }${media.path})`,
         });
       }
     });

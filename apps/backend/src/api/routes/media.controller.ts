@@ -1,23 +1,28 @@
 import {
-  Controller, FileTypeValidator, Get, MaxFileSizeValidator, ParseFilePipe, Post, Query, UploadedFile, UseInterceptors,
+  Controller,
+  FileTypeValidator,
+  Get,
+  MaxFileSizeValidator,
+  ParseFilePipe,
+  Post,
+  Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Express } from 'express';
-import {GetOrgFromRequest} from "@gitroom/nestjs-libraries/user/org.from.request";
-import {Organization} from "@prisma/client";
-import {MediaService} from "@gitroom/nestjs-libraries/database/prisma/media/media.service";
-import {ApiTags} from "@nestjs/swagger";
+import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
+import { Organization } from '@prisma/client';
+import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
+import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Media')
 @Controller('/media')
 export class MediaController {
-  constructor(
-      private _mediaService: MediaService
-  ) {
-  }
+  constructor(private _mediaService: MediaService) {}
   @Post('/')
   @UseInterceptors(FileInterceptor('file'))
-  uploadFile(
+  async uploadFile(
     @GetOrgFromRequest() org: Organization,
     @UploadedFile(
       'file',
@@ -36,8 +41,8 @@ export class MediaController {
 
   @Get('/')
   getMedia(
-      @GetOrgFromRequest() org: Organization,
-      @Query('page') page: number,
+    @GetOrgFromRequest() org: Organization,
+    @Query('page') page: number
   ) {
     return this._mediaService.getMedia(org.id, page);
   }

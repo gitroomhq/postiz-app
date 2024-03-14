@@ -95,35 +95,42 @@ export class HashnodeProvider implements ArticleProvider {
   }
 
   async post(token: string, content: string, settings: HashnodeSettingsDto) {
-    const query = jsonToGraphQLQuery({
-      mutation: {
-        publishPost: {
-          __args: {
-            input: {
-              title: settings.title,
-              publicationId: settings.publication,
-              ...(settings.canonical
-                ? { originalArticleURL: settings.canonical }
-                : {}),
-              contentMarkdown: content,
-              tags: settings.tags.map((tag) => ({ id: tag.value })),
-              ...(settings.subtitle ? { subtitle: settings.subtitle } : {}),
-              ...(settings.main_image
-                ? {
-                    coverImageOptions: {
-                      coverImageURL: `${process.env.NEXT_PUBLIC_BACKEND_URL}/${process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY}${settings?.main_image?.path}`,
-                    },
-                  }
-                : {}),
+    const query = jsonToGraphQLQuery(
+      {
+        mutation: {
+          publishPost: {
+            __args: {
+              input: {
+                title: settings.title,
+                publicationId: settings.publication,
+                ...(settings.canonical
+                  ? { originalArticleURL: settings.canonical }
+                  : {}),
+                contentMarkdown: content,
+                tags: settings.tags.map((tag) => ({ id: tag.value })),
+                ...(settings.subtitle ? { subtitle: settings.subtitle } : {}),
+                ...(settings.main_image
+                  ? {
+                      coverImageOptions: {
+                        coverImageURL: `${
+                          settings?.main_image?.path?.indexOf('http') === -1
+                            ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/${process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY}`
+                            : ``
+                        }${settings?.main_image?.path}`,
+                      },
+                    }
+                  : {}),
+              },
             },
-          },
-          post: {
-            id: true,
-            url: true,
+            post: {
+              id: true,
+              url: true,
+            },
           },
         },
       },
-    }, {pretty: true});
+      { pretty: true }
+    );
 
     const {
       data: {

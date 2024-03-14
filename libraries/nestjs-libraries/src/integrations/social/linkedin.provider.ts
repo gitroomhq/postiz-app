@@ -5,9 +5,9 @@ import {
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { readFileSync } from 'fs';
 import sharp from 'sharp';
 import { lookup } from 'mime-types';
+import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
 
 export class LinkedinProvider implements SocialProvider {
   identifier = 'linkedin';
@@ -168,7 +168,7 @@ export class LinkedinProvider implements SocialProvider {
               id: await this.uploadPicture(
                 accessToken,
                 id,
-                await sharp(readFileSync(m.path), {
+                await sharp(await readOrFetch(m.path), {
                   animated: lookup(m.path) === 'image/gif',
                 })
                   .resize({

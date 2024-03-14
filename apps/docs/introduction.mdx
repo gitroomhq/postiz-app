@@ -34,7 +34,8 @@ When deploying to websites like [Railway](https://railway.app) or [Heroku](https
 **It has four main components:**
 - `frontend` - NextJS control panel serving as the admin dashboard for the project.
 - `backend` - NestJS backend that serves as the API for the frontend.
-- `cron` - NestJS cron jobs that run every X to update the database with new trendings,
+- `cron` - NestJS cron jobs that run every X to update the database with new trending, refresh tokens and more.
+- `workers` - NestJS workers that run every X to process scheduled posts, sync GitHub stars and more.
 
 In the future there will also be a bot of Slack, Intercom, Telegram, and more.
 
