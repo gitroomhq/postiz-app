@@ -139,10 +139,12 @@ export class PostsService {
         settings: JSON.parse(p.settings || '{}'),
         media: (JSON.parse(p.image || '[]') as Media[]).map((m) => ({
           url:
-            process.env.FRONTEND_URL +
-            '/' +
-            process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
-            m.path,
+            m.path.indexOf('http') === -1
+              ? process.env.FRONTEND_URL +
+                '/' +
+                process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
+                m.path
+              : m.path,
           type: 'image',
           path: process.env.UPLOAD_DIRECTORY + m.path,
         })),
