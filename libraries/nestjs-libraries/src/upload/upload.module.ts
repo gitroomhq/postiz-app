@@ -9,8 +9,8 @@ const storage =
   process.env.CLOUDFLARE_ACCOUNT_ID &&
   process.env.CLOUDFLARE_ACCESS_KEY &&
   process.env.CLOUDFLARE_SECRET_ACCESS_KEY &&
-  process.env.CLOUDFLARE_BUCKETNAME &&
   process.env.CLOUDFLARE_REGION &&
+  process.env.CLOUDFLARE_BUCKETNAME &&
   process.env.CLOUDFLARE_BUCKET_URL
     ? new CloudflareStorage(
         process.env.CLOUDFLARE_ACCOUNT_ID,
