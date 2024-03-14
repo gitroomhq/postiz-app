@@ -8,6 +8,7 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import sharp from 'sharp';
 import { lookup } from 'mime-types';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
+import removeMd from "remove-markdown";
 
 export class LinkedinProvider implements SocialProvider {
   identifier = 'linkedin';
@@ -202,30 +203,34 @@ export class LinkedinProvider implements SocialProvider {
       },
       body: JSON.stringify({
         author: `urn:li:person:${id}`,
-        commentary: firstPost.message,
+        commentary: removeMd(firstPost.message.replace('\n', '𝔫𝔢𝔴𝔩𝔦𝔫𝔢')).replace('𝔫𝔢𝔴𝔩𝔦𝔫𝔢', '\n'),
         visibility: 'PUBLIC',
         distribution: {
           feedDistribution: 'MAIN_FEED',
           targetEntities: [],
           thirdPartyDistributionChannels: [],
         },
-        content: {
-          ...(media_ids.length === 0
-            ? {}
-            : media_ids.length === 1
-            ? {
-                media: {
-                  id: media_ids[0],
-                },
-              }
-            : {
-                multiImage: {
-                  images: media_ids.map((id) => ({
-                    id,
-                  })),
-                },
-              }),
-        },
+        ...(media_ids.length > 0
+          ? {
+              content: {
+                ...(media_ids.length === 0
+                  ? {}
+                  : media_ids.length === 1
+                  ? {
+                      media: {
+                        id: media_ids[0],
+                      },
+                    }
+                  : {
+                      multiImage: {
+                        images: media_ids.map((id) => ({
+                          id,
+                        })),
+                      },
+                    }),
+              },
+            }
+          : {}),
         lifecycleState: 'PUBLISHED',
         isReshareDisabledByAuthor: false,
       }),
@@ -256,7 +261,7 @@ export class LinkedinProvider implements SocialProvider {
               actor: `urn:li:person:${id}`,
               object: topPostId,
               message: {
-                text: post.message,
+                text: removeMd(post.message.replace('\n', '𝔫𝔢𝔴𝔩𝔦𝔫𝔢')).replace('𝔫𝔢𝔴𝔩𝔦𝔫𝔢', '\n'),
               },
             }),
           }

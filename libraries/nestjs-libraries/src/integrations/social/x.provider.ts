@@ -8,6 +8,7 @@ import {
 import { lookup } from 'mime-types';
 import sharp from 'sharp';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
+import removeMd from "remove-markdown";
 
 export class XProvider implements SocialProvider {
   identifier = 'x';
@@ -145,7 +146,7 @@ export class XProvider implements SocialProvider {
       const media_ids = (uploadAll[post.id] || []).filter((f) => f);
 
       const { data }: { data: { id: string } } = await client.v2.tweet({
-        text: post.message,
+        text: removeMd(post.message.replace('\n', '𝔫𝔢𝔴𝔩𝔦𝔫𝔢')).replace('𝔫𝔢𝔴𝔩𝔦𝔫𝔢', '\n'),
         ...(media_ids.length ? { media: { media_ids } } : {}),
         ...(ids.length
           ? { reply: { in_reply_to_tweet_id: ids[ids.length - 1].postId } }

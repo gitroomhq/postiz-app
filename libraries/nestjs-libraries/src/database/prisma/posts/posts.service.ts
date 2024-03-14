@@ -7,6 +7,7 @@ import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integ
 import { Integration, Post, Media } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
+import {capitalize} from "lodash";
 
 type PostWithConditionals = Post & {
   integration?: Integration;
@@ -161,8 +162,8 @@ export class PostsService {
 
     await this._notificationService.inAppNotification(
       integration.organizationId,
-      `Your social media post on ${integration.providerIdentifier} has been posted`,
-      `Your article has been posted at ${publishedPosts[0].releaseURL}`,
+      `Your post has been published on ${capitalize(integration.providerIdentifier)}`,
+      `Your post has been published at ${publishedPosts[0].releaseURL}`,
       true
     );
   }
@@ -185,8 +186,8 @@ export class PostsService {
 
     await this._notificationService.inAppNotification(
       integration.organizationId,
-      `Your article on ${integration.providerIdentifier} has been posted`,
-      `Your article has been posted at ${releaseURL}`,
+      `Your article has been published on ${capitalize(integration.providerIdentifier)}`,
+      `Your article has been published at ${releaseURL}`,
       true
     );
     await this._postRepository.updatePost(newPosts[0].id, postId, releaseURL);

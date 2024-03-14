@@ -32,6 +32,7 @@ const RenderRedditComponent: FC<{
         <MDEditor.Markdown
           style={{ whiteSpace: 'pre-wrap', fontSize: '14px' }}
           skipHtml={true}
+          disallowedElements={['img']}
           source={firstPost?.content}
         />
       );
@@ -130,10 +131,8 @@ const RedditPreview: FC = (props) => {
                         style={{ whiteSpace: 'pre-wrap' }}
                         skipHtml={true}
                         source={p.text}
+                        disallowedElements={['img']}
                       />
-                      <pre className="font-['Inter'] text-[14px] mt-[8px] font-[400] text-white">
-                        {p.text}
-                      </pre>
                     </div>
                   </div>
                 ))}
