@@ -5,24 +5,6 @@ import type { Request } from 'express';
 import {makeId} from "@gitroom/nestjs-libraries/services/make.is";
 import mime from 'mime-types';
 
-export interface CloudflareCDNUploadResponse<T = string[]> {
-  success: boolean;
-  errors: {
-    code: number;
-    message: string;
-  }[];
-  result: {
-    id: string;
-    filename: string;
-    metadata: {
-      meta: string;
-    };
-    requireSignedURLs: boolean;
-    variants: T;
-    uploaded: string;
-  };
-}
-
 type CallbackFunction = (
   error: Error | null,
   info?: Partial<Express.Multer.File>
@@ -35,11 +17,13 @@ class CloudflareStorage implements StorageEngine {
     accountID: string,
     accessKey: string,
     secretKey: string,
+    private region: string,
     private _bucketName: string,
-    private _uploadUrl: string
+    private _uploadUrl: string,
   ) {
     this._client = new S3Client({
       endpoint: `https://${accountID}.r2.cloudflarestorage.com`,
+      region,
       credentials: {
         accessKeyId: accessKey,
         secretAccessKey: secretKey,
@@ -77,7 +61,7 @@ class CloudflareStorage implements StorageEngine {
       Body: data,
     });
 
-    const upload = await this._client.send(command);
+    await this._client.send(command);
 
     return {
       filename: `${id}.${extension}`,
@@ -91,51 +75,12 @@ class CloudflareStorage implements StorageEngine {
       encoding: '7bit',
       stream: data as any,
     }
-
-    // const request = await fetch(this.destURL, {
-    //   method: 'POST',
-    //   headers: {
-    //     Authorization: `Bearer ${this.accountToken}`,
-    //     ...body.getHeaders(),
-    //   },
-    //   body,
-    // });
-    //
-    // const response: CloudflareCDNUploadResponse = await request.json();
-    // if (request.ok) {
-    //   return callback(null, {
-    //     path: response.result.variants[0],
-    //     filename: response.result.filename,
-    //     destination: response.result.id,
-    //   });
-    // }
-    //
-    // console.log(response);
-
-    // return callback(
-    //   new Error(
-    //     'There was an error in uploading an asset to Cloudflare Images.'
-    //   )
-    // );
   }
 
   private async _deleteFile(
     filedestination: string,
     callback: CallbackFunction
   ) {
-    // const request = await fetch(`${this.destURL}/${filedestination}`, {
-    //   method: 'DELETE',
-    //   headers: {
-    //     Authorization: `Bearer ${this.accountToken}`,
-    //   },
-    // });
-    //
-    // if (request.ok) return callback(null);
-    // return callback(
-    //   new Error(
-    //     'There was an error in deleting the asset from Cloudflare Images.'
-    //   )
-    // );
   }
 }
 
