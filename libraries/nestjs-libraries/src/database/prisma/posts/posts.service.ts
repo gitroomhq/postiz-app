@@ -146,7 +146,7 @@ export class PostsService {
                 m.path
               : m.path,
           type: 'image',
-          path: process.env.UPLOAD_DIRECTORY + m.path,
+          path: m.path.indexOf('http') === -1 ? process.env.UPLOAD_DIRECTORY + m.path : m.path,
         })),
       }))
     );
