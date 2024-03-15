@@ -71,7 +71,7 @@ export class StarsRepository {
   }
 
   async getStarsByLogin(login: string) {
-    return await this._stars.model.star.findMany({
+    return this._stars.model.star.findMany({
       where: {
         login,
       },

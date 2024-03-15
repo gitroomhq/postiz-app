@@ -43,16 +43,14 @@ export class StarsController {
     }
 
     // if there is stars in the database, sync the new stars
-    if (totalNewsStars > 0) {
-      return this._starsService.createStars(
-        data.login,
-        totalNewsStars,
-        totalStars,
-        totalNewsForks,
-        totalForks,
-        new Date()
-      );
-    }
+    return this._starsService.createStars(
+      data.login,
+      totalNewsStars,
+      totalStars,
+      totalNewsForks,
+      totalForks,
+      new Date()
+    );
   }
 
   @EventPattern('sync_all_stars', Transport.REDIS, { concurrency: 1 })

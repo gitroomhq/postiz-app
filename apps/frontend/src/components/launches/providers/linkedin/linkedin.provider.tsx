@@ -3,6 +3,7 @@ import { withProvider } from '@gitroom/frontend/components/launches/providers/hi
 import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { useFormatting } from '@gitroom/frontend/components/launches/helpers/use.formatting';
 import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
+import {afterLinkedinCompanyPreventRemove, linkedinCompanyPreventRemove} from "@gitroom/helpers/utils/linkedin.company.prevent.remove";
 
 const LinkedinPreview: FC = (props) => {
   const { value: topValue, integration } = useIntegration();
@@ -10,8 +11,11 @@ const LinkedinPreview: FC = (props) => {
   const newValues = useFormatting(topValue, {
     removeMarkdown: true,
     saveBreaklines: true,
+    beforeSpecialFunc: (text: string) => {
+      return linkedinCompanyPreventRemove(text);
+    },
     specialFunc: (text: string) => {
-      return text.slice(0, 280);
+      return afterLinkedinCompanyPreventRemove(text.slice(0, 280));
     },
   });
 
@@ -39,9 +43,7 @@ const LinkedinPreview: FC = (props) => {
         </div>
       </div>
       <div>
-        <pre className="font-['helvetica'] text-[14px] font-[400] text-wrap">
-          {firstPost?.text}
-        </pre>
+        <pre className="font-['helvetica'] text-[14px] font-[400] text-wrap" dangerouslySetInnerHTML={{__html: firstPost?.text}} />
 
         {!!firstPost?.images?.length && (
           <div className="-ml-[16px] -mr-[40px] flex-1 h-[555px] flex overflow-hidden mt-[12px] gap-[2px]">
