@@ -39,7 +39,7 @@
 <br />
 
 <p align="center">
-  <a href="https://pezzo.cc/demo-video-gh" target="_blank">
+  <a href="" target="_blank">
   <img src=".github/assets/gitroom-main-youtube.png">
   </a>
 </p>
