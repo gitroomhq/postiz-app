@@ -225,6 +225,7 @@ export class StripeService {
           uniqueId,
         },
       },
+      allow_promotion_codes: true,
       line_items: [
         {
           price: price,

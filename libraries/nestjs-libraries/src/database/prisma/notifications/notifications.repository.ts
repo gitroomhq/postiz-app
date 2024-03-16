@@ -65,7 +65,7 @@ export class NotificationsRepository {
         orderBy: {
           createdAt: 'desc',
         },
-        take: 20,
+        take: 10,
         where: {
           organizationId,
         },
