@@ -53,7 +53,7 @@ export class AuthService {
 
     const user = await this.loginOrRegisterProvider(
       provider,
-      body as LoginUserDto
+      body as CreateOrgUserDto
     );
 
     const addedOrg =
@@ -92,7 +92,7 @@ export class AuthService {
 
   private async loginOrRegisterProvider(
     provider: Provider,
-    body: LoginUserDto
+    body: CreateOrgUserDto
   ) {
     const providerInstance = ProvidersFactory.loadProvider(provider);
     const providerUser = await providerInstance.getUser(body.providerToken);
@@ -110,7 +110,7 @@ export class AuthService {
     }
 
     const create = await this._organizationService.createOrgAndUser({
-      company: '',
+      company: body.company,
       email: providerUser.email,
       password: '',
       provider,
