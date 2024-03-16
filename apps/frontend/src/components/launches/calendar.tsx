@@ -122,7 +122,6 @@ export const Calendar = () => {
                         .hour(+hour.split(':')[0] - 1)
                         .minute(0)}
                     />
-                    {console.log(currentWeek)}
                     {['00', '10', '20', '30', '40', '50'].map((num) => (
                       <CalendarColumn
                         key={day + hour + num + currentWeek + currentYear}

@@ -19,6 +19,7 @@ export class CreateOrgUserDto {
 
     @IsEmail()
     @IsDefined()
+    @ValidateIf(o => !o.providerToken)
     email: string;
 
     @IsString()

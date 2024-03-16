@@ -7,7 +7,6 @@ import { removeSubdomain } from '@gitroom/helpers/subdomain/subdomain.management
 export async function middleware(request: NextRequest) {
   const nextUrl = request.nextUrl;
   const authCookie = request.cookies.get('auth');
-  const showorg = request.cookies.get('showorg');
 
   // If the URL is logout, delete the cookie and redirect to login
   if (nextUrl.href.indexOf('/auth/logout') > -1) {
@@ -27,15 +26,15 @@ export async function middleware(request: NextRequest) {
   }
 
   const org = nextUrl.searchParams.get('org');
-  const orgUrl = org ? '?org=' + org : '';
+  const url = new URL(nextUrl).search;
 
   if (nextUrl.href.indexOf('/auth') === -1 && !authCookie) {
-    return NextResponse.redirect(new URL(`/auth${orgUrl}`, nextUrl.href));
+    return NextResponse.redirect(new URL(`/auth${url}`, nextUrl.href));
   }
 
   // If the url is /auth and the cookie exists, redirect to /
   if (nextUrl.href.indexOf('/auth') > -1 && authCookie) {
-    return NextResponse.redirect(new URL(`/${orgUrl}`, nextUrl.href));
+    return NextResponse.redirect(new URL(`/${url}`, nextUrl.href));
   }
 
   if (nextUrl.href.indexOf('/auth') > -1 && !authCookie) {

@@ -9,7 +9,7 @@ import { ProvidersFactory } from '@gitroom/backend/services/auth/providers/provi
 import dayjs from 'dayjs';
 import { NewsletterService } from '@gitroom/nestjs-libraries/services/newsletter.service';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
-import {ForgotReturnPasswordDto} from "@gitroom/nestjs-libraries/dtos/auth/forgot-return.password.dto";
+import { ForgotReturnPasswordDto } from '@gitroom/nestjs-libraries/dtos/auth/forgot-return.password.dto';
 
 @Injectable()
 export class AuthService {
@@ -96,11 +96,15 @@ export class AuthService {
   ) {
     const providerInstance = ProvidersFactory.loadProvider(provider);
     const providerUser = await providerInstance.getUser(body.providerToken);
+
     if (!providerUser) {
       throw new Error('Invalid provider token');
     }
 
-    const user = await this._userService.getUserByProvider(providerUser.id, provider);
+    const user = await this._userService.getUserByProvider(
+      providerUser.id,
+      provider
+    );
     if (user) {
       return user;
     }
@@ -137,12 +141,42 @@ export class AuthService {
   }
 
   forgotReturn(body: ForgotReturnPasswordDto) {
-    const user = AuthChecker.verifyJWT(body.token) as {id: string, expires: string};
+    const user = AuthChecker.verifyJWT(body.token) as {
+      id: string;
+      expires: string;
+    };
     if (dayjs(user.expires).isBefore(dayjs())) {
       return false;
     }
 
     return this._userService.updatePassword(user.id, body.password);
+  }
+
+  oauthLink(provider: string) {
+    const providerInstance = ProvidersFactory.loadProvider(
+      provider as Provider
+    );
+    return providerInstance.generateLink();
+  }
+
+  async checkExists(provider: string, code: string) {
+    const providerInstance = ProvidersFactory.loadProvider(
+      provider as Provider
+    );
+    const token = await providerInstance.getToken(code);
+    const user = await providerInstance.getUser(token);
+    if (!user) {
+      throw new Error('Invalid user');
+    }
+    const checkExists = await this._userService.getUserByProvider(
+      user.id,
+      provider as Provider
+    );
+    if (checkExists) {
+      return { jwt: await this.jwt(checkExists) };
+    }
+
+    return { token };
   }
 
   private async jwt(user: User) {

@@ -8,6 +8,7 @@ import { Input } from '@gitroom/react/form/input';
 import { useMemo, useState } from 'react';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { LoginUserDto } from '@gitroom/nestjs-libraries/dtos/auth/login.user.dto';
+import { GithubProvider } from '@gitroom/frontend/app/auth/providers/github.provider';
 
 type Inputs = {
   email: string;
@@ -53,10 +54,17 @@ export function Login() {
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <div>
           <h1 className="text-3xl font-bold text-left mb-4 cursor-pointer">
-            Create An Account
+            Sign In
           </h1>
         </div>
-        <div className="space-y-4 text-white">
+        <GithubProvider />
+        <div className="h-[20px] mb-[24px] mt-[24px] relative">
+          <div className="absolute w-full h-[1px] bg-[#28344F] top-[50%] -translate-y-[50%]" />
+          <div className="absolute z-[1] font-['Inter'] justify-center items-center w-full left-0 top-0 flex">
+            <div className="bg-[#0a0a0a] px-[16px]">OR</div>
+          </div>
+        </div>
+        <div className="text-white">
           <Input
             label="Email"
             {...form.register('email')}

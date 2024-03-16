@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Req, Res } from '@nestjs/common';
 import { Response, Request } from 'express';
 
 import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
@@ -6,8 +6,8 @@ import { LoginUserDto } from '@gitroom/nestjs-libraries/dtos/auth/login.user.dto
 import { AuthService } from '@gitroom/backend/services/auth/auth.service';
 import { ForgotReturnPasswordDto } from '@gitroom/nestjs-libraries/dtos/auth/forgot-return.password.dto';
 import { ForgotPasswordDto } from '@gitroom/nestjs-libraries/dtos/auth/forgot.password.dto';
-import {removeSubdomain} from "@gitroom/helpers/subdomain/subdomain.management";
-import {ApiTags} from "@nestjs/swagger";
+import { removeSubdomain } from '@gitroom/helpers/subdomain/subdomain.management';
+import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Auth')
 @Controller('/auth')
@@ -31,7 +31,8 @@ export class AuthController {
       );
 
       response.cookie('auth', jwt, {
-        domain: '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
+        domain:
+          '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
         secure: true,
         httpOnly: true,
         sameSite: 'none',
@@ -40,7 +41,8 @@ export class AuthController {
 
       if (typeof addedOrg !== 'boolean' && addedOrg?.organizationId) {
         response.cookie('showorg', addedOrg.organizationId, {
-          domain: '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
+          domain:
+            '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
           secure: true,
           httpOnly: true,
           sameSite: 'none',
@@ -75,7 +77,8 @@ export class AuthController {
       );
 
       response.cookie('auth', jwt, {
-        domain: '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
+        domain:
+          '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
         secure: true,
         httpOnly: true,
         sameSite: 'none',
@@ -84,7 +87,8 @@ export class AuthController {
 
       if (typeof addedOrg !== 'boolean' && addedOrg?.organizationId) {
         response.cookie('showorg', addedOrg.organizationId, {
-          domain: '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
+          domain:
+            '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
           secure: true,
           httpOnly: true,
           sameSite: 'none',
@@ -121,5 +125,37 @@ export class AuthController {
     return {
       reset: !!reset,
     };
+  }
+
+  @Get('/oauth/:provider')
+  async oauthLink(@Param('provider') provider: string) {
+    return this._authService.oauthLink(provider);
+  }
+
+  @Post('/oauth/:provider/exists')
+  async oauthExists(
+    @Body('code') code: string,
+    @Param('provider') provider: string,
+    @Res({ passthrough: true }) response: Response
+  ) {
+    const { jwt, token } = await this._authService.checkExists(provider, code);
+    if (token) {
+      return response.json({ token });
+    }
+
+    response.cookie('auth', jwt, {
+      domain:
+        '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
+      secure: true,
+      httpOnly: true,
+      sameSite: 'none',
+      expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
+    });
+
+    response.header('reload', 'true');
+
+    response.status(200).json({
+      login: true,
+    });
   }
 }
