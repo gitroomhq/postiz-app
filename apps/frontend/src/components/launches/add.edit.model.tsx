@@ -39,6 +39,7 @@ import { postSelector } from '@gitroom/frontend/components/post-url-selector/pos
 import { UpDownArrow } from '@gitroom/frontend/components/launches/up.down.arrow';
 import { DatePicker } from '@gitroom/frontend/components/launches/helpers/date.picker';
 import { arrayMoveImmutable } from 'array-move';
+import { linkedinCompany } from '@gitroom/frontend/components/launches/helpers/linkedin.component';
 
 export const AddEditModal: FC<{
   date: dayjs.Dayjs;

@@ -2,7 +2,6 @@
 
 import { ReactNode, useCallback } from 'react';
 import { Title } from '@gitroom/frontend/components/layout/title';
-import { headers } from 'next/headers';
 import { ContextWrapper } from '@gitroom/frontend/components/layout/user.context';
 import { TopMenu } from '@gitroom/frontend/components/layout/top.menu';
 import { MantineWrapper } from '@gitroom/react/helpers/mantine.wrapper';
@@ -16,11 +15,12 @@ import NotificationComponent from '@gitroom/frontend/components/notifications/no
 import Link from 'next/link';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
-import weekOfYear from "dayjs/plugin/weekOfYear";
-import isoWeek from "dayjs/plugin/isoWeek";
-import isBetween from "dayjs/plugin/isBetween";
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import weekOfYear from 'dayjs/plugin/weekOfYear';
+import isoWeek from 'dayjs/plugin/isoWeek';
+import isBetween from 'dayjs/plugin/isBetween';
+import { ShowLinkedinCompany } from '@gitroom/frontend/components/launches/helpers/linkedin.component';
 
 dayjs.extend(utc);
 dayjs.extend(weekOfYear);
@@ -46,6 +46,7 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
       <MantineWrapper>
         <ToolTip />
         <ShowMediaBoxModal />
+        <ShowLinkedinCompany />
         <Toaster />
         <ShowPostSelector />
         <div className="min-h-[100vh] w-full max-w-[1440px] mx-auto bg-primary px-[12px] text-white flex flex-col">

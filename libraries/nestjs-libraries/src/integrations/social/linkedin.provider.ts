@@ -9,6 +9,7 @@ import sharp from 'sharp';
 import { lookup } from 'mime-types';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
 import removeMd from 'remove-markdown';
+import { removeMarkdown } from '@gitroom/helpers/utils/remove.markdown';
 
 export class LinkedinProvider implements SocialProvider {
   identifier = 'linkedin';
@@ -114,6 +115,38 @@ export class LinkedinProvider implements SocialProvider {
     };
   }
 
+  async company(token: string, data: { url: string }) {
+    const { url } = data;
+    const getCompanyVanity = url.match(
+      /^https?:\/\/?www\.?linkedin\.com\/company\/([^/]+)\/$/
+    );
+    if (!getCompanyVanity || !getCompanyVanity?.length) {
+      throw new Error('Invalid LinkedIn company URL');
+    }
+
+    const { elements } = await (
+      await fetch(
+        `https://api.linkedin.com/rest/organizations?q=vanityName&vanityName=${getCompanyVanity[1]}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Restli-Protocol-Version': '2.0.0',
+            'LinkedIn-Version': '202402',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+    ).json();
+
+    return {
+      options: elements.map((e: { localizedName: string; id: string }) => ({
+        label: e.localizedName,
+        value: `@[${e.localizedName}](urn:li:organization:${e.id})`,
+      }))?.[0],
+    };
+  }
+
   private async uploadPicture(
     accessToken: string,
     personId: string,
@@ -203,9 +236,10 @@ export class LinkedinProvider implements SocialProvider {
       },
       body: JSON.stringify({
         author: `urn:li:person:${id}`,
-        commentary: removeMd(
-          firstPost.message.replace('\n', '𝔫𝔢𝔴𝔩𝔦𝔫𝔢')
-        ).replace('𝔫𝔢𝔴𝔩𝔦𝔫𝔢', '\n'),
+        commentary: removeMarkdown({
+          text: firstPost.message.replace('\n', '𝔫𝔢𝔴𝔩𝔦𝔫𝔢'),
+          except: [/@\[(.*?)]\(urn:li:organization:(\d+)\)/g],
+        }).replace('𝔫𝔢𝔴𝔩𝔦𝔫𝔢', '\n'),
         visibility: 'PUBLIC',
         distribution: {
           feedDistribution: 'MAIN_FEED',
@@ -238,6 +272,10 @@ export class LinkedinProvider implements SocialProvider {
       }),
     });
 
+    if (data.status !== 201 && data.status !== 200) {
+      throw new Error('Error posting to LinkedIn');
+    }
+
     const topPostId = data.headers.get('x-restli-id')!;
     const ids = [
       {
@@ -263,10 +301,10 @@ export class LinkedinProvider implements SocialProvider {
               actor: `urn:li:person:${id}`,
               object: topPostId,
               message: {
-                text: removeMd(post.message.replace('\n', '𝔫𝔢𝔴𝔩𝔦𝔫𝔢')).replace(
-                  '𝔫𝔢𝔴𝔩𝔦𝔫𝔢',
-                  '\n'
-                ),
+                text: removeMarkdown({
+                  text: post.message.replace('\n', '𝔫𝔢𝔴𝔩𝔦𝔫𝔢'),
+                  except: [/@\[(.*?)]\(urn:li:organization:(\d+)\)/g],
+                }).replace('𝔫𝔢𝔴𝔩𝔦𝔫𝔢', '\n'),
               },
             }),
           }

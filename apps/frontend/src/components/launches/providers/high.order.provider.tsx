@@ -28,6 +28,7 @@ import { newImage } from '@gitroom/frontend/components/launches/helpers/new.imag
 import { postSelector } from '@gitroom/frontend/components/post-url-selector/post.url.selector';
 import { UpDownArrow } from '@gitroom/frontend/components/launches/up.down.arrow';
 import { arrayMoveImmutable } from 'array-move';
+import { linkedinCompany } from '@gitroom/frontend/components/launches/helpers/linkedin.component';
 
 // Simple component to change back to settings on after changing tab
 export const SetTab: FC<{ changeTab: () => void }> = (props) => {
@@ -210,7 +211,11 @@ export const withProvider = (
       setInPlaceValue(
         editInPlace
           ? [{ content: '' }]
-          : props.value.map((p) => ({ id: p.id, content: p.content, image: p.image}))
+          : props.value.map((p) => ({
+              id: p.id,
+              content: p.content,
+              image: p.image,
+            }))
       );
     }, [props.value, editInPlace]);
 
@@ -280,6 +285,7 @@ export const withProvider = (
                                   .filter((f) => f.name !== 'image'),
                                 newImage,
                                 postSelector(date),
+                                ...linkedinCompany(integration?.identifier!, integration?.id!),
                               ]}
                               preview="edit"
                               // @ts-ignore
