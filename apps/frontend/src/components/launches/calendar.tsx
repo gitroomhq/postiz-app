@@ -109,6 +109,7 @@ export const Calendar = () => {
                               .local()
                               .format('YYYY-MM-DD HH:mm') ===
                             dayjs()
+                              .isoWeek(currentWeek)
                               .isoWeekday(index + 1)
                               .hour(+hour.split(':')[0] - 1)
                               .minute(0)
@@ -116,10 +117,12 @@ export const Calendar = () => {
                         )?.total || 0
                       }
                       date={dayjs()
+                        .isoWeek(currentWeek)
                         .isoWeekday(index + 1)
                         .hour(+hour.split(':')[0] - 1)
                         .minute(0)}
                     />
+                    {console.log(currentWeek)}
                     {['00', '10', '20', '30', '40', '50'].map((num) => (
                       <CalendarColumn
                         key={day + hour + num + currentWeek + currentYear}
