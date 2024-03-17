@@ -3,7 +3,6 @@ title: How it works
 description: 'Learn the architecture of the project'
 ---
 
-Gitroom is a tool to convert private communication into public knowledge.<br />
 The entire project is built under [NX](https://nx.dev/) to have a monorepo with multiple projects.<br /><br />
 Unlike other NX project, this project has one `.env` file that is shared between all the apps.<br />
 It makes it easier to develop and deploy the project.<br /><br />
@@ -12,10 +11,9 @@ When deploying to websites like [Railway](https://railway.app) or [Heroku](https
 **At the moment it has 6 project:**
 
 - **Backend** - NestJS based system
-- **Panel** - NextJS based control panel.
-- **Tenants** - NextJS based multi-tenant website.
-- **Discord** - NestJS based Discord bot.
-- **Marketing** - NextJS based marketing website.
+- **Workers** - NestJS based workers connected to a Redis Queue.
+- **Cron**    - NestJS scheduler to run cron jobs.
+- **Frontend** - NextJS based control panel.
 - **Docs** - Mintlify based documentation website.
 
 <img
@@ -24,42 +22,31 @@ When deploying to websites like [Railway](https://railway.app) or [Heroku](https
 />
 
 ## Architecture
+### Frontend
+The frontend is built with [NextJS](https://nextjs.org/) and [TailwindCSS](https://tailwindcss.com/).<br />
+It works directly with the Backend to:
+- Show analytics
+- Schedule posts
+- Manage users
+
 ### Backend
-The project has a centralized backend that both the bots and the client interact with.<br />
 The backend is built with [NestJS](https://nestjs.com/) with a basic architecture of controllers, services, repositories and dtos.<br /><br />
 It uses [Prisma](https://www.prisma.io/) as an ORM to interact with the database.<br />
 By default Prisma uses [Postgres](https://www.postgresql.org/) as a database, but it can be easily changed to any other database since there are no native queries.<br /><br />
-The project doesn't have a control panel login, it works with an SSO using the different bots.<br />
-Once somebody uses a command like `/add` or `/signin` the backend will receive the server id and the internal user id from the bot.<br /><br />
-The backend will auto-create an organization and a user if it doesn't exist.<br />
-It will return a URL with the JWT token embedded in the url to sign in into the control panel.
+It uses Redis to schedule posts and run background jobs.
 
-### Panel
-The panel is built with [NextJS](https://nextjs.org/) and [TailwindCSS](https://tailwindcss.com/).<br />
-The panel has 4 main pages:
-- The main control panel to create and manage the FAQ.
-- A style page to customize the FAQ.
-- A "Create an faq" page, it takes an entire conversation and converts it into an FAQ with OpenAI ChatGPT.
-- Domains page to manage the domains and subdomains that lead to the tenant website.
-- An integrations page to add bots to different platforms such as: Discord, Slack, Intercom, etc.
+### Cron
+The backend is built with [NestJS](https://nestjs.com/) and share components with the backend.<br />
+At the moment the use of the cron is:
+- Refresh tokens from different social media platforms.
+- Check for trending change every hour and inform users about it.
+- Sync the amount of stars for every repository at the end of the day.
 
-### Tenants
-The tenants is built with [NextJS](https://nextjs.org/) and [TailwindCSS](https://tailwindcss.com/).<br />
-It's the website for the end-users to see the FAQ.<br />
-It contains a simple search bar and a list of questions.<br />
-The search bar uses [Algolia](https://www.algolia.com/) to search through the questions.<br />
-It uses the style from the control panel to customize the website.<br />
-The tenants cache each pages on the `Gitroom.com/[domainName]` path, it uses a middleware to rewrite the Vercel apex domain or the custom domain to the route.<br />
-
-### Discord
-The Discord bot is built with [Discord.JS](https://discord.js.org/) and [NestJS](https://nestjs.com/).<br />
-It runs in a loop and listens to every message in every server it's in.<br />
-Once somebody runs a command such as `/add` or `/signin` it will send a request to the backend with the server id and the user id.<br />
-This is a simple server and in the future there will be many other bots for different platforms.
-
-### Marketing
-The marketing website is built with [NextJS](https://nextjs.org/) and [TailwindCSS](https://tailwindcss.com/).<br />
-It's a simple static websites with a few pages.
+### Worker
+The backend is built with [NestJS](https://nestjs.com/) and share components with the backend.<br />
+At the moment the use of the worker is:
+- Post scheduled posts to social media platforms.
+- Perform multiple jobs coming from the cron.
 
 ### Docs
 The documentation website is built with [Mintlify](https://www.mintlify.com/).<br />

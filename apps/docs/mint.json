@@ -50,11 +50,18 @@
   ],
   "navigation": [
     {
-      "group": "Get Started",
+      "group": "Developers",
       "pages": [
         "introduction",
         "quickstart",
-        "howitworks"
+        "howitworks",
+        "emails",
+        "github",
+        "providers/how-to-add-provider",
+        {
+          "group": "Providers",
+          "pages": ["providers/x/x", "providers/linkedin/linkedin", "providers/reddit/reddit", "providers/articles"]
+        }
       ]
     }
   ],

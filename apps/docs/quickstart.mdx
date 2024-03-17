@@ -3,17 +3,22 @@ title: 'Quickstart'
 ---
 
 ## Prerequisites
+
 To run the project you need to have multiple things:
+
 - Node.js (version 18+)
 - PostgresSQL (or any other SQL database)
 - Redis
 - Resend account
+- Cloudflare R2 for uploads (optional, can use local machine)
 - Social Media Client and Secret (more details later)
 
-### NodeJS
+### NodeJS (version 18+)
+
 A complete guide of how to install NodeJS can be found [here](https://nodejs.org/en/download/).
 
-### PostgresSQL
+### PostgresSQL (or any other SQL database)
+
 Make sure you have PostgreSQL installed on your machine.<br />
 If you don't, you can install [Docker](https://www.docker.com/products/docker-desktop) and run:
 
@@ -21,69 +26,51 @@ If you don't, you can install [Docker](https://www.docker.com/products/docker-de
 docker run -e POSTGRES_USER=root -e POSTGRES_PASSWORD=your_password --name postgres -p 5432:5432 -d postgres
 ```
 
-### Discord client id and token
-Head over to the [Discord Developer Portal](https://discord.com/developers/applications) and create a new application.<br />
-After that, go to the bot tab and create a new bot.<br />
-Save the token and client id for later.
+### Redis
 
-### Vercel Blob Store
-Head over to the [Vercel Blob Store](https://vercel.com/dashboard/stores) and create a new database.<br />
-Choose Blob (currently in beta) and save the token for later.
+Make sure you have Redis installed on your machine.<br />
+If you don't, you can install [Docker](https://www.docker.com/products/docker-desktop) and run:
 
-### Vercel Project ID, Team ID and Token
-
-1. Create a new Vercel empty project.
-2. Head over to Vercel teams settings, scroll down to "Team ID" copy the id and save it for later.
-3. Head over to Vercel project settings, scroll down to "Project ID" copy the id and save it for later.
-4. Head over to Vercel account settings, scroll down to "Tokens" and create a new token, copy the token and save it for later.
-
-### Stripe account
-
-If you don't provide the Stripe `PAYMENT_PUBLIC_KEY`, you will be automatically granted all the features without limitations.
-
-1. Register a new account on [Stripe](https://stripe.com/).<br />
-2. Head over to the [Stripe API keys](https://dashboard.stripe.com/test/apikeys) and copy the Publishable and Secret key, save it for later.
-3. Head over to the [Stripe Webhooks](https://dashboard.stripe.com/test/webhooks) and create a new local webhook.<br />
-Copy the token and save it for later.
-
-### OpenAI API key
-Create a new [OpenAI](https://platform.openai.com) account, head over to the [API keys](https://platform.openai.com/api-keys), copy the key, and save it for later.
-
-### Algolia account
-Create a new [Algolia](https://www.algolia.com/) account, head over to the [API keys](https://www.algolia.com/api-keys), copy the APP ID, Search Key, and Admin API Key, and save it for later.
+```bash
+docker run --name redis -p 6379:6379 -d redis
+```
 
 ## Installation
 
 ### Clone the repository
 
 ```bash
-git clone https://github.com/github-20k/Gitroom
+git clone https://github.com/gitroomhq/gitroom
 ```
 
 ### Copy environment variables
+
 Copy the `.env.example` file to `.env` and fill in the values
 
 ```bash
-DISCORD_CLIENT=<copied discord client key>
-DISCORD_TOKEN=<copied discord token key>
-DATABASE_URL=postgres://root:your_password@localhost:5432/Gitroom
-BACKEND_URL=http://localhost:3000
-NEXT_PUBLIC_BACKEND_URL=http://localhost:3000
-BACKEND_TOKEN_PROTECTOR=<anything you want, better be long>
-OPENAI_API_KEY=<open_ai key>
-JWT_SECRET=<anything you want, better be long>
-FRONTEND_URL=http://localhost:4200
-BLOB_READ_WRITE_TOKEN=<copied blob store key>
-PROJECT_ID_VERCEL=<copied vercel project id>
-TEAM_ID_VERCEL=<copied vercel team id>
-PAYMENT_PUBLIC_KEY=<copied stripe publishable key>
-PAYMENT_SECRET_KEY=<copied stripe secret key>
-PAYMENT_SIGNING_SECRET=<copied stripe webhook token>
-MARKETING_WEBSITE_URL=http://localhost:4201
-DOCS_URL=https://localhost:3000
-NEXT_PUBLIC_ALGOLIA_APP_ID=<algolia id>
-NEXT_PUBLIC_ALGOLIA_SEARCH_KEY=<algolia search key>
-ALGOLIA_ADMIN_API_KEY=<algolia admin api>
+DATABASE_URL="postgres database URL"
+REDIS_URL="redis database URL"
+JWT_SECRET="random string for your JWT secret, make it long"
+FRONTEND_URL="By default: http://localhost:4200"
+NEXT_PUBLIC_BACKEND_URL="By default: http://localhost:3000"
+BACKEND_INTERNAL_URL="If you use docker, you might want something like: http://backend:3000"
+X_API_KEY="Twitter API key for normal oAuth not oAuth2"
+X_API_SECRET="Twitter API secret for normal oAuth not oAuth2"
+LINKEDIN_CLIENT_ID="Linkedin Client ID"
+LINKEDIN_CLIENT_SECRET="Linkedin Client Secret"
+REDDIT_CLIENT_ID="Reddit Client ID"
+REDDIT_CLIENT_SECRET="Linkedin Client Secret"
+GITHUB_CLIENT_ID="GitHub Client ID"
+GITHUB_CLIENT_SECRET="GitHub Client Secret"
+RESEND_API_KEY="Resend API KEY"
+UPLOAD_DIRECTORY="optional: your upload directory path if you host your files locally"
+NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY="optional: your upload directory slug if you host your files locally"
+CLOUDFLARE_ACCOUNT_ID="Cloudflare R2 Account ID"
+CLOUDFLARE_ACCESS_KEY="Cloudflare R2 Access Key"
+CLOUDFLARE_SECRET_ACCESS_KEY="Cloudflare R2 Secret Access Key"
+CLOUDFLARE_BUCKETNAME="Cloudflare R2 Bucket Name"
+CLOUDFLARE_BUCKET_URL="Cloudflare R2 Backet URL"
+NX_ADD_PLUGINS=false
 ```
 
 ### Install the dependencies
@@ -95,7 +82,7 @@ npm install
 ### Generate the prisma client and run the migrations
 
 ```bash
-npm run update-prisma
+npm run prisma-db-push
 ```
 
 ### Run the project
@@ -104,3 +91,19 @@ npm run update-prisma
 npm run dev
 ```
 
+You have to follow all the tabs in the "Developers" menu to install Gitroom
+
+<CardGroup cols={2}>
+  <Card title="How it works" icon="screwdriver-wrench" href="/howitworks">
+    Learn the architecture of the project
+  </Card>
+  <Card title="Email notifications" icon="envelope" href="/emails">
+    Set up email for notifications
+  </Card>
+  <Card title="GitHub" icon="code-branch" href="/github">
+    Set up github for authentication and sync
+  </Card>
+  <Card title="Providers" icon="linkedin" href="/providers/x/x">
+    Set up providers such as Linkedin, X and Reddit
+  </Card>
+</CardGroup>

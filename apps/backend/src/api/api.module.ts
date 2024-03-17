@@ -38,13 +38,18 @@ const authenticatedController = [
     BullMqModule.forRoot({
       connection: ioRedis,
     }),
-    ServeStaticModule.forRoot({
-      rootPath: process.env.UPLOAD_DIRECTORY,
-      serveRoot: '/' + process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY,
-      serveStaticOptions: {
-        index: false,
-      },
-    }),
+    ...(!!process.env.UPLOAD_DIRECTORY &&
+    !!process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY
+      ? [
+          ServeStaticModule.forRoot({
+            rootPath: process.env.UPLOAD_DIRECTORY,
+            serveRoot: '/' + process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY,
+            serveStaticOptions: {
+              index: false,
+            },
+          }),
+        ]
+      : []),
   ],
   controllers: [StripeController, AuthController, ...authenticatedController],
   providers: [
