@@ -4,6 +4,8 @@ import { Button } from '@gitroom/react/form/button';
 import { FC, useCallback, useEffect, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
+import { Input } from '@gitroom/react/form/input';
+import { useToaster } from '@gitroom/react/toaster/toaster';
 
 const ConnectedComponent: FC<{
   id: string;
@@ -93,9 +95,9 @@ const ConnectComponent: FC<{
   deleteRepository: () => void;
 }> = (props) => {
   const { id, setConnected, deleteRepository } = props;
-  const [repo, setRepo] = useState<undefined | string>();
-  const [select, setSelect] = useState<undefined | string>();
+  const [url, setUrl] = useState('');
   const fetch = useFetch();
+  const toast = useToaster();
 
   const cancelConnection = useCallback(async () => {
     await (
@@ -108,42 +110,56 @@ const ConnectComponent: FC<{
   }, []);
 
   const completeConnection = useCallback(async () => {
+    const [select, repo] = url
+      .match(/https:\/\/github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)/)!
+      .slice(1);
+
+    const response = await fetch(`/settings/organizations/${id}`, {
+      method: 'POST',
+      body: JSON.stringify({ login: `${select}/${repo}` }),
+    });
+
+    if (response.status === 404) {
+      toast.show('Repository not found', 'warning');
+      return ;
+    }
+
     setConnected(`${select}/${repo}`);
-    await (
-      await fetch(`/settings/organizations/${id}`, {
-        method: 'POST',
-        body: JSON.stringify({ login: `${select}/${repo}` }),
-      })
-    ).json();
-  }, [repo, select]);
+  }, [url]);
 
   return (
-    <div className="my-[16px] mt-[16px] h-[90px] bg-sixth border-fifth border rounded-[4px] p-[24px]">
-      <div className="flex items-center gap-[8px] font-[Inter]">
+    <div className="my-[16px] mt-[16px] h-[100px] bg-sixth border-fifth border rounded-[4px] px-[24px] flex">
+      <div className="flex items-center gap-[8px] font-[Inter] flex-1">
         <div>
           <Image src="/icons/github.svg" alt="GitHub" width={40} height={40} />
         </div>
         <div className="flex-1">Connect your repository</div>
         <Button
-          className="bg-transparent border-0 text-gray"
+          className="bg-transparent border-0 text-gray mt-[7px]"
           onClick={cancelConnection}
         >
           Cancel
         </Button>
-        <select
-          className="border border-fifth bg-transparent h-[40px]"
-          value={select}
-          onChange={(e) => setSelect(e.target.value)}
+        <Input
+          value={url}
+          disableForm={true}
+          removeError={true}
+          onChange={(e) => setUrl(e.target.value)}
+          name="github"
+          label=""
+          placeholder="Full GitHub URL"
+        />
+        <Button
+          className="h-[44px] mt-[7px]"
+          disabled={
+            !url.match(
+              /https:\/\/github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)/
+            )
+          }
+          onClick={completeConnection}
         >
-          <option value="">Choose an organization</option>
-          {props.organizations.map((o) => (
-            <option key={o.id} value={o.login}>
-              {o.login}
-            </option>
-          ))}
-        </select>
-        <RepositoryComponent id={id} login={select} setRepo={setRepo} />
-        {!!repo && <Button onClick={completeConnection}>Connect</Button>}
+          Connect
+        </Button>
       </div>
     </div>
   );

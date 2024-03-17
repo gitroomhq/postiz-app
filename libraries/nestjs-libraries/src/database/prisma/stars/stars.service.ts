@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { StarsRepository } from '@gitroom/nestjs-libraries/database/prisma/stars/stars.repository';
 import { chunk, groupBy } from 'lodash';
 import dayjs from 'dayjs';
@@ -431,6 +431,11 @@ export class StarsService {
   }
 
   async updateGitHubLogin(orgId: string, id: string, login: string) {
+    const check = await fetch(`https://github.com/${login}`);
+    if (check.status === 404) {
+      throw new HttpException('GitHub repository not found', 404);
+    }
+
     this._workerServiceProducer
       .emit('sync_all_stars', { payload: { login } })
       .subscribe();
