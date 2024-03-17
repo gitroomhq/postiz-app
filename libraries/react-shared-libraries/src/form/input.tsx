@@ -3,6 +3,7 @@
 import { DetailedHTMLProps, FC, InputHTMLAttributes, useMemo } from 'react';
 import { clsx } from 'clsx';
 import { useFormContext } from 'react-hook-form';
+import interClass from '../helpers/inter.font';
 
 export const Input: FC<
   DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement> & {
@@ -23,7 +24,7 @@ export const Input: FC<
 
   return (
     <div className="flex flex-col gap-[6px]">
-      <div className="font-['Inter'] text-[14px]">{label}</div>
+      <div className={`${interClass} text-[14px]`}>{label}</div>
       <input
         {...(disableForm ? {} : form.register(props.name))}
         className={clsx(
