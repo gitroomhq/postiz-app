@@ -1,5 +1,6 @@
 import { FC, useCallback, useState } from 'react';
 import clsx from 'clsx';
+import interClass from '@gitroom/react/helpers/inter.font';
 
 const list = [
   {
@@ -55,7 +56,7 @@ export const FAQSection: FC<{ title: string; description: string }> = (
       className="bg-sixth p-[24px] border border-tableBorder rounded-[4px] flex flex-col"
       onClick={changeShow}
     >
-      <div className="text-[20px] text-['Inter'] cursor-pointer flex justify-center">
+      <div className={`text-[20px] ${interClass} cursor-pointer flex justify-center`}>
         <div className="flex-1">{title}</div>
         <div className="flex items-center justify-center w-[32px]">
           {!show ? (
@@ -101,7 +102,7 @@ export const FAQSection: FC<{ title: string; description: string }> = (
           onClick={(e) => {
             e.stopPropagation();
           }}
-          className="mt-[16px] w-full text-wrap font-['Inter'] font-[400] text-[16px] text-[#D3D3D3] select-text"
+          className={`mt-[16px] w-full text-wrap ${interClass} font-[400] text-[16px] text-[#D3D3D3] select-text`}
           dangerouslySetInnerHTML={{ __html: description }}
         />
       </div>

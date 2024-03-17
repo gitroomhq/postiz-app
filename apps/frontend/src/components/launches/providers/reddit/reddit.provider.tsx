@@ -14,6 +14,7 @@ import clsx from 'clsx';
 import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import MDEditor from '@uiw/react-md-editor';
+import interClass from '@gitroom/react/helpers/inter.font';
 
 const RenderRedditComponent: FC<{
   type: string;
@@ -92,7 +93,7 @@ const RedditPreview: FC = (props) => {
           <div
             key={index}
             className={clsx(
-              "bg-[#0B1416] w-full p-[10px] flex flex-col font-['Inter'] border-tableBorder border"
+              `bg-[#0B1416] w-full p-[10px] flex flex-col ${interClass} border-tableBorder border`
             )}
           >
             <div className="flex flex-col">

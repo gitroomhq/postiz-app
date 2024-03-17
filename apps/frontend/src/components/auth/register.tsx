@@ -11,6 +11,7 @@ import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org
 import { GithubProvider } from '@gitroom/frontend/app/auth/providers/github.provider';
 import { useSearchParams } from 'next/navigation';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
+import interClass from '@gitroom/react/helpers/inter.font';
 
 type Inputs = {
   email: string;
@@ -113,7 +114,7 @@ export function RegisterAfter({
         {!isAfterProvider && (
           <div className="h-[20px] mb-[24px] mt-[24px] relative">
             <div className="absolute w-full h-[1px] bg-[#28344F] top-[50%] -translate-y-[50%]" />
-            <div className="absolute z-[1] font-['Inter'] justify-center items-center w-full left-0 top-0 flex">
+            <div className={`absolute z-[1] ${interClass} justify-center items-center w-full left-0 top-0 flex`}>
               <div className="bg-[#0a0a0a] px-[16px]">OR</div>
             </div>
           </div>

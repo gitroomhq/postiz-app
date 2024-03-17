@@ -6,6 +6,7 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { Input } from '@gitroom/react/form/input';
 import { useToaster } from '@gitroom/react/toaster/toaster';
+import interClass from '@gitroom/react/helpers/inter.font';
 
 const ConnectedComponent: FC<{
   id: string;
@@ -29,7 +30,7 @@ const ConnectedComponent: FC<{
   }, []);
   return (
     <div className="my-[16px] mt-[16px] h-[90px] bg-sixth border-fifth border rounded-[4px] p-[24px]">
-      <div className="flex items-center gap-[8px] font-[Inter]">
+      <div className={`flex items-center gap-[8px] ${interClass}`}>
         <div>
           <Image src="/icons/github.svg" alt="GitHub" width={40} height={40} />
         </div>
@@ -130,7 +131,7 @@ const ConnectComponent: FC<{
 
   return (
     <div className="my-[16px] mt-[16px] h-[100px] bg-sixth border-fifth border rounded-[4px] px-[24px] flex">
-      <div className="flex items-center gap-[8px] font-[Inter] flex-1">
+      <div className={`flex items-center gap-[8px] ${interClass} flex-1`}>
         <div>
           <Image src="/icons/github.svg" alt="GitHub" width={40} height={40} />
         </div>
@@ -221,7 +222,7 @@ export const GithubComponent: FC<{
       ))}
       {githubState.filter((f) => !f.login).length === 0 && (
         <div className="my-[16px] mt-[16px] h-[90px] bg-sixth border-fifth border rounded-[4px] p-[24px]">
-          <div className="flex items-center gap-[8px] font-[Inter]">
+          <div className={`flex items-center gap-[8px] ${interClass}`}>
             <div>
               <Image
                 src="/icons/github.svg"

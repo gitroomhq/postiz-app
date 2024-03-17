@@ -10,6 +10,7 @@ import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.v
 import EventEmitter from 'events';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import clsx from 'clsx';
+import interClass from '@gitroom/react/helpers/inter.font';
 const showModalEmitter = new EventEmitter();
 
 export const ShowMediaBoxModal: FC = () => {
@@ -141,7 +142,7 @@ export const MediaBox: FC<{
                   accept="image/*"
                   onChange={uploadMedia}
                 />
-                <button className="cursor-pointer font-[500] flex justify-center items-center gap-[4px] text-[12px] rounded-[4px] w-[107px] h-[25px] bg-[#0b0f1c] text-white font-['Inter'] border-[2px] border-[#506490]">
+                <button className={`cursor-pointer font-[500] flex justify-center items-center gap-[4px] text-[12px] rounded-[4px] w-[107px] h-[25px] bg-[#0b0f1c] text-white ${interClass} border-[2px] border-[#506490]`}>
                   <div>
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -180,7 +181,7 @@ export const MediaBox: FC<{
                     accept="image/*"
                     onChange={uploadMedia}
                   />
-                  <button className="cursor-pointer font-[500] flex justify-center items-center gap-[4px] text-[12px] rounded-[4px] w-[107px] h-[25px] bg-[#0b0f1c] text-white font-['Inter'] border-[2px] border-[#506490]">
+                  <button className={`cursor-pointer font-[500] flex justify-center items-center gap-[4px] text-[12px] rounded-[4px] w-[107px] h-[25px] bg-[#0b0f1c] text-white ${interClass} border-[2px] border-[#506490]`}>
                     <div>
                       <svg
                         xmlns="http://www.w3.org/2000/svg"

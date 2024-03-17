@@ -18,6 +18,7 @@ import { FAQComponent } from '@gitroom/frontend/components/billing/faq.component
 import { useSWRConfig } from 'swr';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useRouter } from 'next/navigation';
+import interClass from '@gitroom/react/helpers/inter.font';
 
 export interface Tiers {
   month: Array<{
@@ -366,7 +367,7 @@ export const MainBillingComponent: FC<{
             <div className="text-[38px] flex gap-[2px] items-center">
               <div>{p.price ? '$' + totalChannels * p.price : p.name}</div>
               {!!p.price && (
-                <div className="text-[14px] font-['Inter'] text-[#AAA]">
+                <div className={`text-[14px] ${interClass} text-[#AAA]`}>
                   {monthlyOrYearly === 'on' ? '/year' : '/month'}
                 </div>
               )}

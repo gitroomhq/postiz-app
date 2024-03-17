@@ -15,6 +15,7 @@ import { AddTeamMemberDto } from '@gitroom/nestjs-libraries/dtos/settings/add.te
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import copy from 'copy-to-clipboard';
+import interClass from '@gitroom/react/helpers/inter.font';
 
 const roles = [
   {
@@ -207,7 +208,7 @@ export const TeamsComponent = () => {
               {+myLevel > +getLevel(p.role) ? (
                 <div className="flex-1 flex justify-end">
                   <Button
-                    className="!bg-[#0b0f1c] !h-[24px] border border-[#506490] rounded-[4px] text-[12px] font-['Inter']"
+                    className={`!bg-[#0b0f1c] !h-[24px] border border-[#506490] rounded-[4px] text-[12px] ${interClass}`}
                     onClick={remove(p)}
                   >
                     <div className="flex justify-center items-center gap-[4px]">

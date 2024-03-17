@@ -10,6 +10,7 @@ import clsx from 'clsx';
 import MDEditor from '@uiw/react-md-editor';
 import localFont from 'next/font/local'
 import {Canonical} from "@gitroom/react/form/canonical";
+import interClass from '@gitroom/react/helpers/inter.font';
 
 const charter = localFont({
   src: [
@@ -47,7 +48,7 @@ const MediumPreview: FC = () => {
   return (
     <div
       className={clsx(
-        'font-[800] flex h-[1000px] w-[699.8px] text-[#242424] font-[\'Inter\'] rounded-[10px] bg-white overflow-hidden overflow-y-auto flex-col gap-[56px]'
+        `font-[800] flex h-[1000px] w-[699.8px] text-[#242424] ${interClass} rounded-[10px] bg-white overflow-hidden overflow-y-auto flex-col gap-[56px]`
       )}
     >
       <div className="px-[60px] pt-[20px]">

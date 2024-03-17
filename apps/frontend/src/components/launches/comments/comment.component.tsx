@@ -9,6 +9,7 @@ import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { Input } from '@gitroom/react/form/input';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
+import interClass from '@gitroom/react/helpers/inter.font';
 
 export const CommentBox: FC<{
   value?: string;
@@ -310,7 +311,7 @@ export const CommentComponent: FC<{ date: dayjs.Dayjs }> = (props) => {
             >
               <div className="flex gap-[8px]">
                 <div className="w-[40px] flex flex-col items-center">
-                  <div className="rounded-full relative z-[2] text-blue-500 font-bold font-['Inter'] flex justify-center items-center w-[40px] h-[40px] bg-white border-tableBorder border">
+                  <div className={`rounded-full relative z-[2] text-blue-500 font-bold ${interClass} flex justify-center items-center w-[40px] h-[40px] bg-white border-tableBorder border`}>
                     {comment.user.email[0].toUpperCase()}
                   </div>
                   <div className="flex-1 w-[2px] h-[calc(100%-10px)] bg-[#2E3336] absolute top-[10px] z-[1]" />
@@ -336,7 +337,7 @@ export const CommentComponent: FC<{ date: dayjs.Dayjs }> = (props) => {
                     className={clsx(`flex gap-[8px] relative`)}
                   >
                     <div className="w-[40px] flex flex-col items-center">
-                      <div className="rounded-full relative z-[2] text-blue-500 font-bold font-['Inter'] flex justify-center items-center w-[40px] h-[40px] bg-white border-tableBorder border">
+                      <div className={`rounded-full relative z-[2] text-blue-500 font-bold ${interClass} flex justify-center items-center w-[40px] h-[40px] bg-white border-tableBorder border`}>
                         {childComment.user.email[0].toUpperCase()}
                       </div>
                     </div>

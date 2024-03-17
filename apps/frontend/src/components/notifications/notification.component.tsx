@@ -5,6 +5,7 @@ import useSWR from 'swr';
 import { FC, useCallback, useState } from 'react';
 import clsx from 'clsx';
 import { useClickAway } from '@uidotdev/usehooks';
+import interClass from '@gitroom/react/helpers/inter.font';
 
 function replaceLinks(text: string) {
   const urlRegex =
@@ -24,7 +25,7 @@ export const ShowNotification: FC<{
   return (
     <div
       className={clsx(
-        "text-white px-[16px] py-[10px] border-b border-tableBorder last:border-b-0 transition-colors font-['Inter'] overflow-hidden text-ellipsis",
+        `text-white px-[16px] py-[10px] border-b border-tableBorder last:border-b-0 transition-colors ${interClass} overflow-hidden text-ellipsis`,
         newNotification && 'font-bold bg-[#7236f1] animate-newMessages'
       )}
       dangerouslySetInnerHTML={{ __html: replaceLinks(notification.content) }}
@@ -41,7 +42,7 @@ export const NotificationOpenComponent = () => {
 
   return (
     <div className="opacity-0 animate-normalFadeDown mt-[10px] absolute w-[420px] min-h-[200px] top-[100%] right-0 bg-third text-white rounded-[16px] flex flex-col border border-tableBorder">
-      <div className="p-[16px] border-b border-tableBorder font-['Inter'] font-bold">
+      <div className={`p-[16px] border-b border-tableBorder ${interClass} font-bold`}>
         Notifications
       </div>
 

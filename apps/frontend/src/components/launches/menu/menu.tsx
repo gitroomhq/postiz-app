@@ -3,6 +3,7 @@ import { useClickOutside } from '@mantine/hooks';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useToaster } from '@gitroom/react/toaster/toaster';
+import interClass from '@gitroom/react/helpers/inter.font';
 
 export const Menu: FC<{
   canEnable: boolean;
@@ -100,7 +101,7 @@ export const Menu: FC<{
       {show && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className="absolute top-[100%] left-0 p-[8px] px-[20px] bg-fifth flex flex-col gap-[16px] z-[100] rounded-[8px] border border-tableBorder font-['Inter'] text-nowrap"
+          className={`absolute top-[100%] left-0 p-[8px] px-[20px] bg-fifth flex flex-col gap-[16px] z-[100] rounded-[8px] border border-tableBorder ${interClass} text-nowrap`}
         >
           {canEnable && (
             <div
