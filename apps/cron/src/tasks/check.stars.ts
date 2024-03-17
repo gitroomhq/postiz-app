@@ -9,7 +9,7 @@ export class CheckStars {
     private _starsService: StarsService,
     private _workerServiceProducer: BullMqClient
   ) {}
-  @Cron('0 0 * * *')
+  @Cron('30 0 * * *')
   async checkStars() {
     const allGitHubRepositories =
       await this._starsService.getAllGitHubRepositories();

@@ -34,7 +34,7 @@
   },
   "topbarCtaButton": {
     "type": "github",
-    "url": "https://github.com/gitoomhq/gitroom"
+    "url": "https://github.com/gitroomhq/gitroom"
   },
   "anchors": [
     {
@@ -50,7 +50,19 @@
   ],
   "navigation": [
     {
-      "group": "Developers",
+      "group": "How to use Gitroom",
+      "pages": [
+        "use/analytics",
+        {
+          "group": "Launches",
+          "pages": ["use/calendar", "use/scheduling"]
+        },
+        "use/settings",
+        "use/billing"
+      ]
+    },
+    {
+      "group": "Self Hosting",
       "pages": [
         "introduction",
         "quickstart",
@@ -60,7 +72,12 @@
         "providers/how-to-add-provider",
         {
           "group": "Providers",
-          "pages": ["providers/x/x", "providers/linkedin/linkedin", "providers/reddit/reddit", "providers/articles"]
+          "pages": [
+            "providers/x/x",
+            "providers/linkedin/linkedin",
+            "providers/reddit/reddit",
+            "providers/articles"
+          ]
         }
       ]
     }
