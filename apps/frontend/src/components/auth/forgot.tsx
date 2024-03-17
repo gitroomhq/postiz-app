@@ -53,7 +53,7 @@ export function Forgot() {
                 label="Email"
                 {...form.register('email')}
                 type="email"
-                placeholder="Email Addres"
+                placeholder="Email Address"
               />
             </div>
             <div className="text-center mt-6">

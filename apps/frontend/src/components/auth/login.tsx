@@ -70,7 +70,7 @@ export function Login() {
             label="Email"
             {...form.register('email')}
             type="email"
-            placeholder="Email Addres"
+            placeholder="Email Address"
           />
           <Input
             label="Password"

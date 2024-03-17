@@ -126,7 +126,7 @@ export function RegisterAfter({
                 label="Email"
                 {...form.register('email')}
                 type="email"
-                placeholder="Email Addres"
+                placeholder="Email Address"
               />
               <Input
                 label="Password"
