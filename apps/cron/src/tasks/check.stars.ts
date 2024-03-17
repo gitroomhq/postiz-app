@@ -13,11 +13,11 @@ export class CheckStars {
   async checkStars() {
     const allGitHubRepositories =
       await this._starsService.getAllGitHubRepositories();
+
     for (const repository of allGitHubRepositories) {
-      this._workerServiceProducer.emit(
-        'check_stars',
-        JSON.stringify({ payload: { login: repository.login } })
-      );
+      this._workerServiceProducer.emit('check_stars', {
+        payload: { login: repository.login },
+      });
     }
   }
 }

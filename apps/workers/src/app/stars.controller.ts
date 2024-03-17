@@ -3,6 +3,7 @@ import { EventPattern, Transport } from '@nestjs/microservices';
 import { JSDOM } from 'jsdom';
 import { StarsService } from '@gitroom/nestjs-libraries/database/prisma/stars/stars.service';
 import { TrendingService } from '@gitroom/nestjs-libraries/services/trending.service';
+import dayjs from 'dayjs';
 
 @Controller()
 export class StarsController {
@@ -32,6 +33,11 @@ export class StarsController {
     const lastValue = await this._starsService.getLastStarsByLogin(
       data.login
     );
+
+    if (dayjs(lastValue.date).format('YYYY-MM-DD') === dayjs().format('YYYY-MM-DD')) {
+      console.log('stars already synced for today');
+      return ;
+    }
 
     const totalNewsStars = totalStars - (lastValue?.totalStars || 0);
     const totalNewsForks = totalForks - (lastValue?.totalForks || 0);
