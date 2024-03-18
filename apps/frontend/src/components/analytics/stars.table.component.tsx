@@ -15,6 +15,7 @@ import useSWR from 'swr';
 import clsx from 'clsx';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import ReactLoading from 'react-loading';
+import interClass from '@gitroom/react/helpers/inter.font';
 
 export const UpDown: FC<{ name: string; param: string }> = (props) => {
   const { name, param } = props;
@@ -206,7 +207,7 @@ export const StarsTableComponent = () => {
       </div>
       <div className="flex-1 bg-secondary">
         {stars?.stars?.length ? (
-          <table className="table1">
+          <table className={`table1 ${interClass}`}>
             <thead>
               <tr>
                 <th>
