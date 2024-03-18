@@ -11,6 +11,7 @@ import EventEmitter from 'events';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import clsx from 'clsx';
 import interClass from '@gitroom/react/helpers/inter.font';
+import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 const showModalEmitter = new EventEmitter();
 
 export const ShowMediaBoxModal: FC = () => {
@@ -54,6 +55,7 @@ export const MediaBox: FC<{
   const { setMedia, closeModal } = props;
   const [pages, setPages] = useState(0);
   const [mediaList, setListMedia] = useState<Media[]>([]);
+  const [isLoading, setIsLoading] = useState(false)
   const fetch = useFetch();
   const mediaDirectory = useMediaDirectory();
 
@@ -69,6 +71,7 @@ export const MediaBox: FC<{
         file?.target?.files?.[0]?.size > maxFileSize
       )
         return;
+      setIsLoading(true)
       const formData = new FormData();
       formData.append('file', file?.target?.files?.[0]);
       const data = await (
@@ -79,6 +82,7 @@ export const MediaBox: FC<{
       ).json();
 
       setListMedia([...mediaList, data]);
+      setIsLoading(false)
     },
     [mediaList]
   );
@@ -101,6 +105,10 @@ export const MediaBox: FC<{
       setListMedia([...data.results]);
     }
   }, [data]);
+
+  if (isLoading) {
+    return <LoadingComponent />
+  }
 
   return (
     <div className="fixed left-0 top-0 bg-black/80 z-[300] w-full h-full p-[60px] animate-fade">
