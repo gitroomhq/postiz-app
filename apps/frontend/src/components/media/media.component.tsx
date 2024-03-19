@@ -71,7 +71,7 @@ export const MediaBox: FC<{
         file?.target?.files?.[0]?.size > maxFileSize
       )
         return;
-      setIsLoading(false)
+      setIsLoading(true)
       const formData = new FormData();
       formData.append('file', file?.target?.files?.[0]);
       const data = await (
@@ -82,7 +82,7 @@ export const MediaBox: FC<{
       ).json();
 
       setListMedia([...mediaList, data]);
-      setIsLoading(true)
+      setIsLoading(false)
     },
     [mediaList]
   );
@@ -206,13 +206,16 @@ export const MediaBox: FC<{
               </div>
             </div>
           )}
-          {isLoading && <LoadingComponent />}
+          {isLoading && (
+            <LoadingComponent />
+          )}
           {!isLoading && mediaList.map((media) => (
             <div
               key={media.id}
               className="w-[200px] h-[200px] border-tableBorder border-2 cursor-pointer"
               onClick={setNewMedia(media)}
             >
+
               <img
                 className="w-full h-full object-cover"
                 src={mediaDirectory.set(media.path)}
