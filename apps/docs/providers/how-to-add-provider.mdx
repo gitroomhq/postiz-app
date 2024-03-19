@@ -42,7 +42,7 @@ And add the new DTO.<br /><br />
 Head to `libraries/nestjs-libraries/src/dtos/posts/create.post.dto.ts`<br />
 look for the discriminator and add another line in the format of<br />
 
-```typescript
+```typescript create.post.dto.ts
 { value: DTOClassName, name: 'providerName' },
 ```
 
@@ -50,9 +50,8 @@ look for the discriminator and add another line in the format of<br />
 And create a new provider file `providerName.provider.ts`<br />
 The content of the file should look like this:
 
-### For oAuth2 providers
-
-```typescript
+<CodeGroup>
+```typescript For oAuth2 providers
 import {
   AuthTokenDetails,
   PostDetails,
@@ -84,11 +83,8 @@ export class XProvider implements SocialProvider {
   }
 }
 ```
-Take a look at the exising providers to see how to implement the methods.
 
-### For Token providers
-
-```typescript
+```typescript For Token providers
 import { ArticleProvider } from '@gitroom/nestjs-libraries/integrations/article/article.integrations.interface';
 
 export class DevToProvider implements ArticleProvider {
@@ -103,6 +99,9 @@ export class DevToProvider implements ArticleProvider {
   }
 }
 ```
+</CodeGroup>
+
+Take a look at the exising providers to see how to implement the methods.
 
 ### Custom functions
 You might want to create custom functions for the providers for example: get available orgs, get available pages, etc.<br />
@@ -121,7 +120,7 @@ Create a new folder with the providerName<br />
 Add a new file `providerName.provider.tsx`<br />
 The content of the file should look like this:
 
-```typescript
+```typescript providerName.provider.tsx
 import { FC } from 'react';
 import { withProvider } from '@gitroom/frontend/components/launches/providers/high.order.provider';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
@@ -168,6 +167,6 @@ You can look at the other integration to understand what data to put inside.
 
 2. Open `apps/frontend/src/components/launches/providers/show.all.providers.tsx`
 And add the new provider to the list.
-```typescript
+```typescript show.all.providers.tsx
     {identifier: 'providerName', component: DefaultImportFromHighOrderProvider},
 ```

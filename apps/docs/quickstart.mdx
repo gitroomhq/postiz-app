@@ -37,17 +37,17 @@ docker run --name redis -p 6379:6379 -d redis
 
 ## Installation
 
-### Clone the repository
-
-```bash
+<Steps>
+  <Step title="Clone the repository">
+```bash Terminal
 git clone https://github.com/gitroomhq/gitroom
 ```
+  </Step>
 
-### Copy environment variables
-
+  <Step title="Copy environment variables">
 Copy the `.env.example` file to `.env` and fill in the values
 
-```bash
+```bash .env
 DATABASE_URL="postgres database URL"
 REDIS_URL="redis database URL"
 JWT_SECRET="random string for your JWT secret, make it long"
@@ -72,25 +72,27 @@ CLOUDFLARE_BUCKETNAME="Cloudflare R2 Bucket Name"
 CLOUDFLARE_BUCKET_URL="Cloudflare R2 Backet URL"
 NX_ADD_PLUGINS=false
 ```
+  </Step>
 
-### Install the dependencies
+  <Step title="Install the dependencies">
 
-```bash
+```bash Terminal
 npm install
 ```
+  </Step>
 
-### Generate the prisma client and run the migrations
-
-```bash
+  <Step title="Generate the prisma client and run the migrations">
+```bash Terminal
 npm run prisma-db-push
 ```
+  </Step>
 
-### Run the project
-
-```bash
+  <Step title="Run the project">
+```bash Terminal
 npm run dev
 ```
-
+  </Step>
+</Steps>
 You have to follow all the tabs in the "Developers" menu to install Gitroom
 
 <CardGroup cols={2}>

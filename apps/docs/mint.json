@@ -69,7 +69,6 @@
         "howitworks",
         "emails",
         "github",
-        "providers/how-to-add-provider",
         {
           "group": "Providers",
           "pages": [
@@ -78,7 +77,8 @@
             "providers/reddit/reddit",
             "providers/articles"
           ]
-        }
+        },
+        "providers/how-to-add-provider"
       ]
     }
   ],
