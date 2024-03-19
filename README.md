@@ -27,6 +27,8 @@
   <br />
 
   <br/>
+    <a href="https://docs.gitroom.com/quickstart">Quick Start Guide</a>
+    ·
     <a href="https://platform.gitroom.com">Register to the cloud</a>
     ·
     <a href="https://gitroom.com">Join the newsletter</a>
@@ -110,6 +112,9 @@ That's where Gitroom shines; you can do all of it beforehand.
 - Prisma (Default to PostgreSQL)
 - Redis
 - Resend (emails notifications)
+
+## Quick Start
+To have the project up and running, please follow the [Quick Start Guide](https://docs.gitroom.com/quickstart)
 
 # License
 
