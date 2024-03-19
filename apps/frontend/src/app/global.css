@@ -280,3 +280,7 @@ html {
 .auto-width {
   width: auto !important;
 }
+
+.editor * {
+  color: white;
+}

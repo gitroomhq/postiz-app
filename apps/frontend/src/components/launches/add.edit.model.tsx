@@ -308,7 +308,7 @@ export const AddEditModal: FC<{
                   <Fragment key={`edit_${index}`}>
                     <div>
                       <div className="flex gap-[4px]">
-                        <div className="flex-1">
+                        <div className="flex-1 editor text-white">
                           <MDEditor
                             height={value.length > 1 ? 150 : 250}
                             commands={[

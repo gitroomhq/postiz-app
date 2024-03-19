@@ -275,7 +275,7 @@ export const withProvider = (
                     <Fragment key={`edit_inner_${index}`}>
                       <div>
                         <div className="flex gap-[4px]">
-                          <div className="flex-1">
+                          <div className="flex-1 text-white editor">
                             <MDEditor
                               height={InPlaceValue.length > 1 ? 200 : 250}
                               value={val.content}
