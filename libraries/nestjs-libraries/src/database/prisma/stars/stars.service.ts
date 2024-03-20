@@ -236,7 +236,6 @@ export class StarsService {
       return;
     }
 
-    await this.newTrending(language);
     if (currentTrending) {
       const list: Array<{ name: string; position: number }> = JSON.parse(
         currentTrending.trendingList
@@ -323,10 +322,6 @@ export class StarsService {
     return this._starsRepository.replaceOrAddTrending(language, hash, arr);
   }
 
-  async newTrending(language: string) {
-    return this._starsRepository.newTrending(language);
-  }
-
   async getStars(org: string) {
     const getGitHubs = await this.getGitHubRepositoriesByOrgId(org);
     const list = [];
@@ -367,10 +362,6 @@ export class StarsService {
     }
 
     return list;
-  }
-
-  async getTrending(language: string) {
-    return this._starsRepository.getLastTrending(language);
   }
 
   async getStarsFilter(orgId: string, starsFilter: StarsListDto) {
@@ -447,9 +438,13 @@ export class StarsService {
   }
 
   async predictTrending(max = 500) {
-    const trendings = (await this.getTrending('')).reverse();
-    const dates = await this.predictTrendingLoop(trendings, 0, max);
-    return dates.map((d) => dayjs(d).format('YYYY-MM-DDTHH:mm:00'));
+    const firstDate = dayjs().subtract(1, 'day');
+    return [
+      firstDate.format('YYYY-MM-DDT12:00:00'),
+      ...[...new Array(max)].map((p, index) => {
+        return firstDate.add(index, 'day').format('YYYY-MM-DDT12:00:00');
+      })
+    ];
   }
 
   async predictTrendingLoop(

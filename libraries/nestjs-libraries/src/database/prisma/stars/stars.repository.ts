@@ -8,7 +8,6 @@ export class StarsRepository {
     private _github: PrismaRepository<'gitHub'>,
     private _stars: PrismaRepository<'star'>,
     private _trending: PrismaRepository<'trending'>,
-    private _trendingLog: PrismaRepository<'trendingLog'>
   ) {}
   getGitHubRepositoriesByOrgId(org: string) {
     return this._github.model.gitHub.findMany({
@@ -36,15 +35,6 @@ export class StarsRepository {
         date: new Date(),
       },
       where: {
-        language,
-      },
-    });
-  }
-
-  newTrending(language: string) {
-    return this._trendingLog.model.trendingLog.create({
-      data: {
-        date: new Date(),
         language,
       },
     });
@@ -136,18 +126,6 @@ export class StarsRepository {
       where: {
         language,
       },
-    });
-  }
-
-  getLastTrending(language: string) {
-    return this._trendingLog.model.trendingLog.findMany({
-      where: {
-        language,
-      },
-      orderBy: {
-        date: 'desc',
-      },
-      take: 100,
     });
   }
 

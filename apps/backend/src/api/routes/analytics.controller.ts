@@ -3,7 +3,6 @@ import {Organization} from "@prisma/client";
 import {GetOrgFromRequest} from "@gitroom/nestjs-libraries/user/org.from.request";
 import {StarsService} from "@gitroom/nestjs-libraries/database/prisma/stars/stars.service";
 import dayjs from "dayjs";
-import {mean} from 'simple-statistics';
 import {StarsListDto} from "@gitroom/nestjs-libraries/dtos/analytics/stars.list.dto";
 import {ApiTags} from "@nestjs/swagger";
 
@@ -23,15 +22,13 @@ export class AnalyticsController {
 
     @Get('/trending')
     async getTrending() {
-        const stars = await this._starsService.predictTrending(10);
-        const findFirst = stars.find(star => dayjs(star).isAfter(dayjs()));
-        const trendings = (await this._starsService.getTrending('')).reverse();
-        const dates = trendings.map(result => dayjs(result.date).toDate());
-        const lastTrendingDate = dates[dates.length - 1];
+        const todayTrending = dayjs(dayjs().format('YYYY-MM-DDT12:00:00'));
+        const last = todayTrending.isAfter(dayjs()) ? todayTrending.subtract(1, 'day') : todayTrending;
+        const nextTrending = last.add(1, 'day');
 
         return {
-            last: dayjs(lastTrendingDate).format('YYYY-MM-DD HH:mm:ss'),
-            predictions: findFirst
+            last: last.format('YYYY-MM-DD HH:mm:ss'),
+            predictions: nextTrending.format('YYYY-MM-DD HH:mm:ss'),
         }
     }
 
