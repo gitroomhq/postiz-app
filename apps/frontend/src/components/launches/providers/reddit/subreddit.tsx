@@ -1,10 +1,4 @@
-import {
-  FC,
-  FormEvent,
-  useCallback,
-  useMemo,
-  useState,
-} from 'react';
+import { FC, FormEvent, useCallback, useMemo, useState } from 'react';
 import { useCustomProviderFunction } from '@gitroom/frontend/components/launches/helpers/use.custom.provider.function';
 import { Input } from '@gitroom/react/form/input';
 import { useDebouncedCallback } from 'use-debounce';
@@ -14,6 +8,8 @@ import { MultiMediaComponent } from '@gitroom/frontend/components/media/media.co
 import { useWatch } from 'react-hook-form';
 import { Select } from '@gitroom/react/form/select';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
+import { Canonical } from '@gitroom/react/form/canonical';
+import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 
 export const RenderOptions: FC<{
   options: Array<'self' | 'link' | 'media'>;
@@ -60,6 +56,7 @@ export const Subreddit: FC<{
   const { onChange, name } = props;
 
   const state = useSettings();
+  const { date } = useIntegration();
   const split = name.split('.');
   const [loading, setLoading] = useState(false);
   // @ts-ignore
@@ -225,7 +222,8 @@ export const Subreddit: FC<{
             ))}
           </Select>
           {value.type === 'link' && (
-            <Input
+            <Canonical
+              date={date}
               error={errors?.url?.message}
               value={value.url}
               label="URL"
@@ -267,7 +265,7 @@ export const Subreddit: FC<{
             }}
           />
           {!!results.length && !loading && (
-            <div className="w-full absolute bg-input -mt-[20px] outline-none border-fifth border cursor-pointer">
+            <div className="z-[400] w-full absolute bg-input -mt-[20px] outline-none border-fifth border cursor-pointer">
               {results.map((r: { id: string; name: string }) => (
                 <div
                   onClick={setResult(r)}

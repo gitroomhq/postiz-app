@@ -1,12 +1,5 @@
 import {
-  ArrayMinSize,
-  IsBoolean,
-  IsDefined,
-  IsString,
-  IsUrl,
-  MinLength,
-  ValidateIf,
-  ValidateNested,
+  ArrayMinSize, IsBoolean, IsDefined, IsString, IsUrl, Matches, MinLength, ValidateIf, ValidateNested
 } from 'class-validator';
 import { MediaDto } from '@gitroom/nestjs-libraries/dtos/media/media.dto';
 import { Type } from 'class-transformer';
@@ -37,9 +30,15 @@ export class RedditSettingsDtoInner {
   @IsDefined()
   type: string;
 
-  @ValidateIf((e) => e.type === 'link')
   @IsUrl()
   @IsDefined()
+  @ValidateIf((o) => o.type === 'link' && o?.url?.indexOf('(post:') === -1)
+  @Matches(
+    /^(|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})$/,
+    {
+      message: 'Invalid URL',
+    }
+  )
   url: string;
 
   @IsBoolean()
