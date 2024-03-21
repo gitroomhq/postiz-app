@@ -6,6 +6,7 @@ import { FC, useCallback, useState } from 'react';
 import clsx from 'clsx';
 import { useClickAway } from '@uidotdev/usehooks';
 import interClass from '@gitroom/react/helpers/inter.font';
+import ReactLoading from 'react-loading';
 
 function replaceLinks(text: string) {
   const urlRegex =
@@ -47,6 +48,11 @@ export const NotificationOpenComponent = () => {
       </div>
 
       <div className="flex flex-col">
+        {isLoading && (
+          <div className="flex-1 flex justify-center pt-12">
+            <ReactLoading type="spin" color="#fff" width={36} height={36} />
+          </div>
+        )}
         {!isLoading && !data.notifications.length && (
           <div className="text-center p-[16px] text-white flex-1 flex justify-center items-center mt-[20px]">
             No notifications
