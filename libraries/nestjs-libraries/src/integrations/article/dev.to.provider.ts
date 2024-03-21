@@ -76,6 +76,7 @@ export class DevToProvider implements ArticleProvider {
           article: {
             title: settings.title,
             body_markdown: content,
+            published: true,
             main_image: settings?.main_image?.path
               ? `${
                   settings?.main_image?.path.indexOf('http') === -1
