@@ -16,7 +16,7 @@
 
 <div align="center">
   <strong>
-  <h2>Your open-source launch week.</h2><br />
+  <h2>Maximize your launch.</h2><br />
   An alternative to: Buffer.com, Hypefury, Twitter Hunter, Etc...<br /><br />
   </strong>
   Schedule social media and articles.<br />Exchange or buy posts from other members.<br /> Monitor your GitHub trending, and so much more.<br />
