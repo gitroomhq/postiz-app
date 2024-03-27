@@ -41,7 +41,7 @@
 <br />
 
 <p align="center">
-  <a href="" target="_blank">
+  <a href="https://www.youtube.com/watch?v=vLpi6NPOXwU" target="_blank">
   <img src=".github/assets/gitroom-main-youtube.png">
   </a>
 </p>
