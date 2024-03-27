@@ -18,7 +18,8 @@
   <strong>
   <h2>Your open-source launch week.</h2>
   </strong>
-  Schedule social media and articles.<br />Exchange or buy posts from other members.<br /> Monitor your GitHub trending, and so much more.
+  Schedule social media and articles.<br />Exchange or buy posts from other members.<br /> Monitor your GitHub trending, and so much more.<br />
+  an alternative to: Buffer.com, Hypefury, Twitter Hunter, Etc...
 </div>
 
 <p align="center">
