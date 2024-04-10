@@ -1,17 +1,18 @@
 'use client';
-import { FC, useCallback, useState } from 'react';
+import { FC, forwardRef, useCallback, useState } from 'react';
 import clsx from 'clsx';
 import Image from 'next/image';
 import { useFormContext, useWatch } from 'react-hook-form';
 
-export const Checkbox: FC<{
+export const Checkbox = forwardRef<null, {
   checked?: boolean;
   disableForm?: boolean;
   name?: string;
   className?: string;
   onChange?: (event: { target: { name?: string, value: boolean } }) => void;
-}> = (props) => {
-  const { checked, className, disableForm } = props;
+  variant?: 'default' | 'hollow';
+}>((props, ref: any) => {
+  const { checked, className, disableForm, variant } = props;
   const form = useFormContext();
   const register = disableForm ? {} : form.register(props.name!);
 
@@ -31,10 +32,12 @@ export const Checkbox: FC<{
 
   return (
     <div
+      ref={ref}
       {...register}
       onClick={changeStatus}
       className={clsx(
-        'cursor-pointer rounded-[4px] select-none bg-forth w-[24px] h-[24px] flex justify-center items-center',
+        'cursor-pointer rounded-[4px] select-none w-[24px] h-[24px] justify-center items-center flex',
+        variant === 'default' || !variant ? ('bg-forth') : ('border-[#324264] border-2 bg-[#141c2c]'),
         className
       )}
     >
@@ -43,4 +46,4 @@ export const Checkbox: FC<{
       )}
     </div>
   );
-};
+});

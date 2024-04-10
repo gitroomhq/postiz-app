@@ -29,6 +29,11 @@ export const menuItems = [
     path: '/billing',
     role: ['ADMIN', 'SUPERADMIN'],
   },
+  {
+    name: 'Marketplace',
+    icon: 'marketplace',
+    path: '/marketplace',
+  },
 ];
 
 export const TopMenu: FC = () => {
@@ -59,8 +64,8 @@ export const TopMenu: FC = () => {
                       }
                       return true;
                     })
-                    .map((p) => p.path)
-                    .indexOf(path) === index
+                    .map((p) => path.indexOf(p.path) > -1 ? index : -1)
+                    .indexOf(index) === index
                     ? 'text-primary showbox'
                     : 'text-gray'
                 )}

@@ -7,7 +7,7 @@ import {menuItems} from "@gitroom/frontend/components/layout/top.menu";
 export const Title = () => {
     const path = usePathname();
     const currentTitle = useMemo(() => {
-        return menuItems.find(item => item.path === path)?.name;
+        return menuItems.find(item => path.indexOf(item.path) > -1)?.name;
     }, [path]);
 
     return (

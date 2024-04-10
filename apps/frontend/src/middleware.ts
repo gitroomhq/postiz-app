@@ -90,7 +90,26 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL(`/analytics`, nextUrl.href));
     }
 
-    return NextResponse.next();
+    const next = NextResponse.next();
+
+    if (
+      nextUrl.pathname === '/marketplace/seller' ||
+      nextUrl.pathname === '/marketplace/buyer'
+    ) {
+      const type = nextUrl.pathname.split('/marketplace/')[1].split('/')[0];
+
+      next.cookies.set('marketplace', type === 'seller' ? 'seller' : 'buyer', {
+        path: '/',
+        sameSite: false,
+        httpOnly: true,
+        secure: true,
+        expires: new Date(Date.now() + 15 * 60 * 1000),
+        domain:
+          '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
+      });
+    }
+
+    return next;
   } catch (err) {
     return NextResponse.redirect(new URL('/auth/logout', nextUrl.href));
   }

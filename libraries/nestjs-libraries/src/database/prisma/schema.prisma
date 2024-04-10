@@ -32,6 +32,10 @@ model User {
   email         String
   password      String?
   providerName  Provider
+  name          String?
+  lastName      String?
+  pictureId     String?
+  picture       Media?             @relation(fields: [pictureId], references: [id])
   providerId    String?
   organizations UserOrganization[]
   timezone      Int
@@ -40,6 +44,7 @@ model User {
   updatedAt     DateTime           @updatedAt
   lastReadNotifications DateTime   @default(now())
   inviteId      String?
+  tagUser       TagUser[]
 
   @@unique([email, providerName])
   @@index([lastReadNotifications])
@@ -94,6 +99,21 @@ model TrendingLog {
   date         DateTime
 }
 
+model TagUser {
+  id           String   @id @default(uuid())
+  user         User     @relation(fields: [userId], references: [id])
+  userId       String
+  tagOptions   TagOptions @relation(fields: [tagOptionsId], references: [id])
+  tagOptionsId String
+}
+
+model TagOptions {
+  id           String   @id @default(uuid())
+  key          String
+  value        String
+  tagUser      TagUser[]
+}
+
 model Star {
   id         String   @id @default(uuid())
   stars      Int
@@ -116,6 +136,7 @@ model Media {
   organizationId String
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+  userPicture    User[]
 
   @@index([organizationId])
 }
