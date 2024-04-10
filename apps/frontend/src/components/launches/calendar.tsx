@@ -13,7 +13,7 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { ExistingDataContextProvider } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { useDrag, useDrop } from 'react-dnd';
 import { DNDProvider } from '@gitroom/frontend/components/launches/helpers/dnd.provider';
-import { Integration, Post } from '@prisma/client';
+import { Integration, Post, State } from '@prisma/client';
 import { useAddProvider } from '@gitroom/frontend/components/launches/add.provider.component';
 import { CommentComponent } from '@gitroom/frontend/components/launches/comments/comment.component';
 import { useSWRConfig } from 'swr';
@@ -331,6 +331,7 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
               <div className="relative flex gap-[5px] items-center">
                 <CalendarItem
                   date={getDate}
+                  state={post.state}
                   editPost={editPost(post.id)}
                   post={post}
                   integrations={integrations}
@@ -369,9 +370,10 @@ const CalendarItem: FC<{
   date: dayjs.Dayjs;
   editPost: () => void;
   integrations: Integrations[];
+  state: State;
   post: Post & { integration: Integration };
 }> = (props) => {
-  const { editPost, post, date, integrations } = props;
+  const { editPost, post, date, integrations, state } = props;
   const [{ opacity }, dragRef] = useDrag(
     () => ({
       type: 'post',
@@ -386,10 +388,10 @@ const CalendarItem: FC<{
     <div
       ref={dragRef}
       onClick={editPost}
-      className="relative"
+      className={clsx("relative", state === 'DRAFT' && '!grayscale')}
       data-tooltip-id="tooltip"
       style={{ opacity }}
-      data-tooltip-content={`${
+      data-tooltip-content={`${state === 'DRAFT' ? 'Draft: ' : ''}${
         integrations.find(
           (p) => p.identifier === post.integration?.providerIdentifier
         )?.name
