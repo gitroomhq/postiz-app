@@ -300,7 +300,7 @@ export const AddEditModal: FC<{
                 onChange={setSelectedIntegrations}
               />
             )}
-            <div id="renderEditor" />
+            <div id="renderEditor" className={clsx(!showHide.hideTopEditor && 'hidden')} />
             {!existingData.integration && !showHide.hideTopEditor ? (
               <>
                 <div>You are in global editing mode</div>

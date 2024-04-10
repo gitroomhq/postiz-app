@@ -292,10 +292,10 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
       closeOnEscape: false,
       withCloseButton: false,
       classNames: {
-        modal: 'bg-transparent text-white',
+        modal: 'w-[100%] max-w-[1400px] bg-transparent text-white',
       },
       children: <AddEditModal integrations={integrations} date={getDate} />,
-      size: '80%',
+      size: 'auth',
       // title: `Adding posts for ${getDate.format('DD/MM/YYYY HH:mm')}`,
     });
   }, []);

@@ -252,9 +252,9 @@ html {
   background-color: #ffdd00;
 }
 
-#renderEditor:not(:has(:first-child)) {
-    display: none;
-}
+/*#renderEditor:not(:has(:first-child)) {*/
+/*    display: none;*/
+/*}*/
 .w-md-editor {
   background-color: #131B2C !important;
   border: 0 !important;
