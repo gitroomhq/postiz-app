@@ -1,0 +1,26 @@
+version: '3.9'
+
+services:
+  gitroom-postgres:
+    image: postgres:14.5
+    container_name: gitroom-postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: gitroom-local-pwd
+      POSTGRES_USER: gitroom-local
+      POSTGRES_DB: gitroom-db-local
+    volumes:
+      - postgres-volume:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+  gitroom-redis:
+    image: redis:7.2
+    container_name: gitroom-redis
+    restart: always
+    ports:
+      - 6379:6379
+
+
+volumes:
+  postgres-volume:
+    external: false
