@@ -20,9 +20,10 @@ import {
   AuthorizationActions,
   Sections,
 } from '@gitroom/backend/services/auth/permissions/permissions.service';
-import {removeSubdomain} from "@gitroom/helpers/subdomain/subdomain.management";
-import {pricing} from "@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing";
-import {ApiTags} from "@nestjs/swagger";
+import { removeSubdomain } from '@gitroom/helpers/subdomain/subdomain.management';
+import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
+import { ApiTags } from '@nestjs/swagger';
+import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 
 @ApiTags('User')
 @Controller('/user')
@@ -31,7 +32,8 @@ export class UsersController {
     private _subscriptionService: SubscriptionService,
     private _stripeService: StripeService,
     private _authService: AuthService,
-    private _orgService: OrganizationService
+    private _orgService: OrganizationService,
+    private _userService: UsersService
   ) {}
   @Get('/self')
   async getSelf(
@@ -52,6 +54,14 @@ export class UsersController {
       // @ts-ignore
       role: organization?.users[0]?.role,
     };
+  }
+
+  @Get('/personal')
+  async getPersonal(
+    @GetUserFromRequest() user: User,
+  ) {
+
+    return this._userService.getPersonal(user.id);
   }
 
   @Get('/subscription')
@@ -97,7 +107,9 @@ export class UsersController {
 
   @Get('/organizations')
   async getOrgs(@GetUserFromRequest() user: User) {
-    return (await this._orgService.getOrgsByUserId(user.id)).filter(f => !f.users[0].disabled);
+    return (await this._orgService.getOrgsByUserId(user.id)).filter(
+      (f) => !f.users[0].disabled
+    );
   }
 
   @Post('/change-org')
@@ -106,7 +118,8 @@ export class UsersController {
     @Res({ passthrough: true }) response: Response
   ) {
     response.cookie('showorg', id, {
-      domain: '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
+      domain:
+        '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
       secure: true,
       httpOnly: true,
       sameSite: 'none',

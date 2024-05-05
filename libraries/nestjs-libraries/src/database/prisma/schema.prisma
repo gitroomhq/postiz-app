@@ -34,6 +34,7 @@ model User {
   providerName  Provider
   name          String?
   lastName      String?
+  bio           String?
   pictureId     String?
   picture       Media?             @relation(fields: [pictureId], references: [id])
   providerId    String?
@@ -44,11 +45,15 @@ model User {
   updatedAt     DateTime           @updatedAt
   lastReadNotifications DateTime   @default(now())
   inviteId      String?
-  tagUser       TagUser[]
+  items         ItemUser[]
+  marketplace   Boolean            @default(true)
+  account       String?
+  connectedAccount Boolean         @default(false)
 
   @@unique([email, providerName])
   @@index([lastReadNotifications])
   @@index([inviteId])
+  @@index([account])
 }
 
 model UserOrganization {
@@ -99,19 +104,15 @@ model TrendingLog {
   date         DateTime
 }
 
-model TagUser {
+model ItemUser {
   id           String   @id @default(uuid())
   user         User     @relation(fields: [userId], references: [id])
   userId       String
-  tagOptions   TagOptions @relation(fields: [tagOptionsId], references: [id])
-  tagOptionsId String
-}
-
-model TagOptions {
-  id           String   @id @default(uuid())
   key          String
-  value        String
-  tagUser      TagUser[]
+
+  @@index([userId])
+  @@index([key])
+  @@unique([userId, key])
 }
 
 model Star {

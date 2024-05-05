@@ -20,6 +20,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { CommentsController } from '@gitroom/backend/api/routes/comments.controller';
 import { BillingController } from '@gitroom/backend/api/routes/billing.controller';
 import { NotificationsController } from '@gitroom/backend/api/routes/notifications.controller';
+import { MarketplaceController } from '@gitroom/backend/api/routes/marketplace.controller';
 
 const authenticatedController = [
   UsersController,
@@ -31,6 +32,7 @@ const authenticatedController = [
   CommentsController,
   BillingController,
   NotificationsController,
+  MarketplaceController
 ];
 @Module({
   imports: [

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { UsersRepository } from '@gitroom/nestjs-libraries/database/prisma/users/users.repository';
 import { Provider } from '@prisma/client';
+import { ItemsDto } from '@gitroom/nestjs-libraries/dtos/marketplace/items.dto';
 
 @Injectable()
 export class UsersService {
@@ -16,5 +17,17 @@ export class UsersService {
 
   updatePassword(id: string, password: string) {
     return this._usersRepository.updatePassword(id, password);
+  }
+
+  changeMarketplaceActive(userId: string, active: boolean) {
+    return this._usersRepository.changeMarketplaceActive(userId, active);
+  }
+
+  getMarketplacePeople(orgId: string, userId: string, body: ItemsDto) {
+    return this._usersRepository.getMarketplacePeople(orgId, userId, body);
+  }
+
+  getPersonal(userId: string) {
+    return this._usersRepository.getPersonal(userId);
   }
 }

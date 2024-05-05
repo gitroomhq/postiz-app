@@ -1,11 +1,53 @@
 'use client';
 
-import { FC, useCallback, useRef, useState } from 'react';
+import {
+  FC,
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { Checkbox } from '@gitroom/react/form/checkbox';
 import { useRouter, useSearchParams } from 'next/navigation';
 import clsx from 'clsx';
 import interClass from '@gitroom/react/helpers/inter.font';
 import { Button } from '@gitroom/react/form/button';
+import {
+  allTagsOptions,
+  tagsList,
+} from '@gitroom/nestjs-libraries/database/prisma/marketplace/tags.list';
+import { chunk, fill } from 'lodash';
+import useSWR from 'swr';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+
+export interface Root {
+  list: List[];
+  count: number;
+}
+
+export interface List {
+  name: any;
+  organizations: Organization[];
+  items: Item[];
+}
+
+export interface Organization {
+  organization: Organization2;
+}
+
+export interface Organization2 {
+  Integration: Integration[];
+}
+
+export interface Integration {
+  providerIdentifier: string;
+}
+
+export interface Item {
+  key: string;
+}
 
 export const LabelCheckbox: FC<{
   label: string;
@@ -47,13 +89,39 @@ export const LabelCheckbox: FC<{
 export const Options: FC<{
   title: string;
   options: Array<{ key: string; value: string }>;
-  query: string;
+  onChange?: (key: string, value: boolean) => void;
+  preSelected?: string[];
+  rows?: number;
+  search: boolean;
 }> = (props) => {
-  const { title, options, query } = props;
+  const { title, onChange, search, preSelected } = props;
+  const query = 'services';
+  const [selected, setPreSelected] = useState<string[]>(
+    preSelected?.slice(0) || []
+  );
+  const rows = props.rows || 1;
+  const optionsGroupList = chunk(
+    props.options,
+    Math.ceil(props.options.length / rows)
+  );
+  const optionsGroup =
+    optionsGroupList.length < rows
+      ? [
+          ...optionsGroupList,
+          ...fill(Array(rows - optionsGroupList.length), []),
+        ]
+      : optionsGroupList;
   const router = useRouter();
   const searchParams = (useSearchParams().get(query) || '')?.split(',') || [];
 
   const change = (value: string, state: boolean) => {
+    if (onChange) {
+      onChange(value, state);
+    }
+    if (!search) {
+      return;
+    }
+
     const getAll = new URLSearchParams(window.location.search).get(query);
     const splitAll = (getAll?.split(',') || []).filter((f) => f);
 
@@ -79,16 +147,26 @@ export const Options: FC<{
       <div className="h-[56px] text-[20px] font-[600] flex items-center px-[24px] bg-[#0F1524]">
         {title}
       </div>
-      <div className="bg-[#0b0f1c] flex flex-col gap-[16px] px-[32px] py-[24px]">
-        {options.map((option) => (
-          <div key={option.key} className="flex items-center gap-[10px]">
-            <LabelCheckbox
-              value={option.key}
-              label={option.value}
-              checked={searchParams.indexOf(option.key) > -1}
-              name={query}
-              onChange={change}
-            />
+      <div className="bg-[#0b0f1c] flex px-[32px] py-[24px]">
+        {optionsGroup.map((options, key) => (
+          <div
+            key={`options_` + key}
+            className="flex gap-[16px] flex-col flex-1 justify-start"
+          >
+            {options.map((option) => (
+              <div key={option.key} className="flex gap-[10px]">
+                <LabelCheckbox
+                  value={option.key}
+                  label={option.value}
+                  checked={
+                    selected?.indexOf(option.key) > -1 ||
+                    searchParams.indexOf(option.key) > -1
+                  }
+                  name={query}
+                  onChange={change}
+                />
+              </div>
+            ))}
           </div>
         ))}
       </div>
@@ -96,7 +174,29 @@ export const Options: FC<{
   );
 };
 
-export const Card = () => {
+export const Card: FC<{
+  data: List;
+}> = (props) => {
+  const { data } = props;
+
+  const tags = useMemo(() => {
+    return data.items
+      .filter((f) => !['content-writer', 'influencers'].includes(f.key))
+      .map((p) => {
+        return allTagsOptions?.find((t) => t.key === p.key)?.value;
+      });
+  }, [data]);
+
+  const identifier = useMemo(() => {
+    return [
+      ...new Set(
+        data.organizations.flatMap((p) =>
+          p.organization.Integration.flatMap((d) => d.providerIdentifier)
+        )
+      ),
+    ];
+  }, []);
+
   return (
     <div className="min-h-[155px] bg-[#0B101B] p-[24px] flex">
       <div className="flex gap-[16px] flex-1">
@@ -127,38 +227,37 @@ export const Card = () => {
         </div>
         <div className="flex flex-col gap-[8px]">
           <div className="flex gap-[14px] items-center">
-            <div className="text-[24px]">Nevo David</div>
+            <div className="text-[24px]">{data.name || 'Noname'}</div>
             <div className="flex gap-[3px]">
-              <div
-                className={clsx(
-                  'bg-[#172034] rounded-[34px] py-[8px] px-[12px] text-[12px]',
-                  interClass
-                )}
-              >
-                Content Writer
-              </div>
-              <div
-                className={clsx(
-                  'bg-[#172034] rounded-[34px] py-[8px] px-[12px] text-[12px]',
-                  interClass
-                )}
-              >
-                Influencer
-              </div>
+              {data.items.some((i) => i.key === 'content-writer') && (
+                <div
+                  className={clsx(
+                    'bg-[#172034] rounded-[34px] py-[8px] px-[12px] text-[12px]',
+                    interClass
+                  )}
+                >
+                  Content Writer
+                </div>
+              )}
+              {data.items.some((i) => i.key === 'influencers') && (
+                <div
+                  className={clsx(
+                    'bg-[#172034] rounded-[34px] py-[8px] px-[12px] text-[12px]',
+                    interClass
+                  )}
+                >
+                  Influencer
+                </div>
+              )}
             </div>
             <div className="flex gap-[10px]">
-              <img
-                src="/icons/platforms/devto.png"
-                className="w-[24px] h-[24px] rounded-full"
-              />
-              <img
-                src="/icons/platforms/hashnode.png"
-                className="w-[24px] h-[24px] rounded-full"
-              />
-              <img
-                src="/icons/platforms/linkedin.png"
-                className="w-[24px] h-[24px] rounded-full"
-              />
+              {identifier.map((i) => (
+                <img
+                  key={i}
+                  src={`/icons/platforms/${i}.png`}
+                  className="w-[24px] h-[24px] rounded-full"
+                />
+              ))}
             </div>
           </div>
           <div className="text-[18px] text-[#AAA] font-[400]">
@@ -171,15 +270,16 @@ export const Card = () => {
               interClass
             )}
           >
-            <div>AI</div>
-            <div>
-              <div className="w-[4px] h-[4px] bg-[#324264] rounded-full" />
-            </div>
-            <div>AI</div>
-            <div>
-              <div className="w-[4px] h-[4px] bg-[#324264] rounded-full" />
-            </div>
-            <div>AI</div>
+            {tags.map((tag, index) => (
+              <Fragment key={tag}>
+                <div>{tag}</div>
+                {index !== tags.length - 1 && (
+                  <div>
+                    <div className="w-[4px] h-[4px] bg-[#324264] rounded-full" />
+                  </div>
+                )}
+              </Fragment>
+            ))}
           </div>
         </div>
       </div>
@@ -191,44 +291,54 @@ export const Card = () => {
 };
 
 export const Buyer = () => {
+  const search = useSearchParams();
+  const services = search.get('services');
+  const page = +(search.get('page') || 1);
+  const router = useRouter();
+
+  const fetch = useFetch();
+
+  const marketplace = useCallback(async () => {
+    return await (
+      await fetch('/marketplace', {
+        method: 'POST',
+        body: JSON.stringify({
+          items: services?.split(',').filter((f) => f) || [],
+          page,
+        }),
+      })
+    ).json();
+  }, [services, page]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    params.set('page', '1');
+    router.replace('?' + params.toString());
+  }, [services]);
+
+  const { data: list } = useSWR<Root>('search' + services + page, marketplace);
   return (
     <div className="flex mt-[29px] w-full gap-[43px]">
       <div className="w-[330px]">
         <div className="flex flex-col gap-[16px]">
           <h2 className="text-[20px]">Filter</h2>
           <div className="flex flex-col">
-            <Options
-              options={[
-                { key: 'asd', value: 'asdfasdf' },
-                { key: 'asggggd', value: 'asdfassdfgsdfgdf' },
-              ]}
-              query="bla"
-              title="hello"
-            />
-            <Options
-              options={[
-                { key: 'asd', value: 'asdfasdf' },
-                { key: 'asggggd', value: 'asdfassdfgsdfgdf' },
-              ]}
-              query="blassss"
-              title="sdfgsdgdsfg"
-            />
+            {tagsList.map((tag) => (
+              <Options
+                search={true}
+                key={tag.key}
+                options={tag.options}
+                title={tag.name}
+              />
+            ))}
           </div>
         </div>
       </div>
       <div className="flex-1 gap-[16px] flex-col flex">
-        <div className="text-[20px] text-right">234 Result</div>
-        <Card />
-        <Card />
-        <Card />
-        <Card />
-        <Card />
-        <Card />
-        <Card />
-        <Card />
-        <Card />
-        <Card />
-        <Card />
+        <div className="text-[20px] text-right">{list?.count || 0} Result</div>
+        {list?.list?.map((item, index) => (
+          <Card key={String(index)} data={item} />
+        ))}
       </div>
     </div>
   );

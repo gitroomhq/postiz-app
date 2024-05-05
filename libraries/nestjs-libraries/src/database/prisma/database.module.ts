@@ -20,6 +20,8 @@ import { CommentsRepository } from '@gitroom/nestjs-libraries/database/prisma/co
 import { CommentsService } from '@gitroom/nestjs-libraries/database/prisma/comments/comments.service';
 import { NotificationsRepository } from '@gitroom/nestjs-libraries/database/prisma/notifications/notifications.repository';
 import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
+import { ItemUserRepository } from '@gitroom/nestjs-libraries/database/prisma/marketplace/item.user.repository';
+import { ItemUserService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/item.user.service';
 
 @Global()
 @Module({
@@ -45,6 +47,8 @@ import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
     MediaService,
     MediaRepository,
     CommentsRepository,
+    ItemUserRepository,
+    ItemUserService,
     CommentsService,
     IntegrationManager,
     EmailService,

@@ -8,7 +8,7 @@ import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/bill
 import { groupBy } from 'lodash';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16',
+  apiVersion: '2024-04-10',
 });
 
 @Injectable()
@@ -20,6 +20,17 @@ export class StripeService {
   validateRequest(rawBody: Buffer, signature: string, endpointSecret: string) {
     return stripe.webhooks.constructEvent(rawBody, signature, endpointSecret);
   }
+
+  async updateAccount(event: Stripe.AccountUpdatedEvent) {
+    if (!event.account) {
+      return ;
+    }
+
+    console.log(JSON.stringify(event.data.object, null, 2));
+    const accountCharges = event.data.object.payouts_enabled && event.data.object.payouts_enabled && !event?.data?.object?.requirements?.disabled_reason;
+    await this._subscriptionService.updateConnectedStatus(event.account!, accountCharges);
+  }
+
   createSubscription(event: Stripe.CustomerSubscriptionCreatedEvent) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
@@ -235,6 +246,48 @@ export class StripeService {
     });
 
     return { url };
+  }
+
+  async createAccountProcess(userId: string, email: string) {
+    const account =
+      (await this._subscriptionService.getUserAccount(userId))?.account ||
+      (await this.createAccount(userId, email));
+    return { url: await this.addBankAccount(account) };
+  }
+
+  async createAccount(userId: string, email: string) {
+    const account = await stripe.accounts.create({
+      controller: {
+        stripe_dashboard: {
+          type: 'express',
+        },
+        fees: {
+          payer: 'application',
+        },
+        losses: {
+          payments: 'application',
+        },
+      },
+      metadata: {
+        service: 'gitroom',
+      },
+      email
+    });
+
+    await this._subscriptionService.updateAccount(userId, account.id);
+
+    return account.id;
+  }
+
+  async addBankAccount(userId: string) {
+    const accountLink = await stripe.accountLinks.create({
+      account: userId,
+      refresh_url: process.env['FRONTEND_URL'] + '/marketplace/seller',
+      return_url: process.env['FRONTEND_URL'] + '/marketplace/seller',
+      type: 'account_onboarding',
+    });
+
+    return accountLink.url;
   }
 
   async subscribe(organizationId: string, body: BillingSubscribeDto) {

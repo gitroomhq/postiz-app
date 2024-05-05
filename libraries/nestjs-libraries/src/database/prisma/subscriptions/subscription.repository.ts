@@ -5,14 +5,48 @@ import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/pris
 export class SubscriptionRepository {
   constructor(
     private readonly _subscription: PrismaRepository<'subscription'>,
-    private readonly _organization: PrismaRepository<'organization'>
+    private readonly _organization: PrismaRepository<'organization'>,
+    private readonly _user: PrismaRepository<'user'>
   ) {}
+
+  getUserAccount(userId: string) {
+    return this._user.model.user.findFirst({
+      where: {
+        id: userId,
+      },
+      select: {
+        account: true,
+      },
+    });
+  }
+
+  updateAccount(userId: string, account: string) {
+    return this._user.model.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        account,
+      },
+    });
+  }
 
   getSubscriptionByOrganizationId(organizationId: string) {
     return this._subscription.model.subscription.findFirst({
       where: {
         organizationId,
         deletedAt: null,
+      },
+    });
+  }
+
+  updateConnectedStatus(account: string, accountCharges: boolean) {
+    return this._user.model.user.updateMany({
+      where: {
+        account
+      },
+      data: {
+        connectedAccount: accountCharges,
       },
     });
   }

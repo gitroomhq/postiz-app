@@ -21,6 +21,7 @@ import weekOfYear from 'dayjs/plugin/weekOfYear';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import isBetween from 'dayjs/plugin/isBetween';
 import { ShowLinkedinCompany } from '@gitroom/frontend/components/launches/helpers/linkedin.component';
+import { SettingsComponent } from '@gitroom/frontend/components/layout/settings.component';
 
 dayjs.extend(utc);
 dayjs.extend(weekOfYear);
@@ -59,6 +60,7 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
             </Link>
             {user?.orgId ? <TopMenu /> : <div />}
             <div className="flex items-center gap-[8px]">
+              <SettingsComponent />
               <NotificationComponent />
               <OrganizationSelector />
             </div>

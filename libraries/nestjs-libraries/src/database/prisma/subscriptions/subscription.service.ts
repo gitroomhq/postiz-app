@@ -18,6 +18,14 @@ export class SubscriptionService {
     );
   }
 
+  updateAccount(userId: string, account: string) {
+    return this._subscriptionRepository.updateAccount(userId, account);
+  }
+
+  getUserAccount(userId: string) {
+    return this._subscriptionRepository.getUserAccount(userId);
+  }
+
   async deleteSubscription(customerId: string) {
     await this.modifySubscription(
       customerId,
@@ -41,6 +49,10 @@ export class SubscriptionService {
       organizationId,
       subscriptionId
     );
+  }
+
+  updateConnectedStatus(account: string, accountCharges: boolean) {
+    return this._subscriptionRepository.updateConnectedStatus(account, accountCharges);
   }
 
   async modifySubscription(

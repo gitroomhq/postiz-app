@@ -27,6 +27,8 @@ export class StripeController {
     }
 
     switch (event.type) {
+      case 'account.updated':
+        return this._stripeService.updateAccount(event);
       case 'customer.subscription.created':
         return this._stripeService.createSubscription(event);
       case 'customer.subscription.updated':
