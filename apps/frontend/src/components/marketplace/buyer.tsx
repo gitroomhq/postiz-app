@@ -1,6 +1,6 @@
 'use client';
 
-import {
+import React, {
   FC,
   Fragment,
   useCallback,
@@ -21,6 +21,12 @@ import {
 import { chunk, fill } from 'lodash';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { useModals } from '@mantine/modals';
+import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
+import { Textarea } from '@gitroom/react/form/textarea';
+import { FormProvider, SubmitHandler, useForm } from 'react-hook-form';
+import { classValidatorResolver } from '@hookform/resolvers/class-validator';
+import { NewConversationDto } from '@gitroom/nestjs-libraries/dtos/marketplace/new.conversation.dto';
 
 export interface Root {
   list: List[];
@@ -28,7 +34,14 @@ export interface Root {
 }
 
 export interface List {
+  id: string;
   name: any;
+  bio: string;
+  audience: number;
+  picture: {
+    id: string;
+    path: string;
+  };
   organizations: Organization[];
   items: Item[];
 }
@@ -82,6 +95,100 @@ export const LabelCheckbox: FC<{
       >
         {label}
       </label>
+    </div>
+  );
+};
+
+const Pagination: FC<{ results: number }> = (props) => {
+  const { results } = props;
+  const router = useRouter();
+  const search = useSearchParams();
+  const page = +(parseInt(search.get('page')!) || 1) - 1;
+  const from = page * 8;
+  const to = (page + 1) * 8;
+  const pagesArray = useMemo(() => {
+    return Array.from({ length: Math.ceil(results / 8) }, (_, i) => i + 1);
+  }, [results]);
+
+  const changePage = useCallback(
+    (newPage: number) => () => {
+      const params = new URLSearchParams(window.location.search);
+      params.set('page', String(newPage));
+      router.replace('?' + params.toString(), {
+        scroll: true,
+      });
+    },
+    [page]
+  );
+
+  if (results < 8) {
+    return null;
+  }
+  return (
+    <div className="flex items-center relative">
+      <div className="absolute left-0">
+        Showing {from + 1} to {to > results ? results : to} from {results}{' '}
+        Results
+      </div>
+      <div className="flex mx-auto">
+        {page > 0 && (
+          <div>
+            <svg
+              width="41"
+              height="40"
+              viewBox="0 0 41 40"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              onClick={changePage(page)}
+            >
+              <g clipPath="url(#clip0_703_22324)">
+                <path
+                  d="M22.5 25L17.5 20L22.5 15"
+                  stroke="#64748B"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </g>
+              <defs>
+                <clipPath id="clip0_703_22324">
+                  <rect x="0.5" width="40" height="40" rx="8" fill="white" />
+                </clipPath>
+              </defs>
+            </svg>
+          </div>
+        )}
+        {pagesArray.map((p) => (
+          <div
+            key={p}
+            onClick={changePage(p)}
+            className={clsx(
+              'w-[40px] h-[40px] flex justify-center items-center rounded-[8px] cursor-pointer',
+              p === page + 1 ? 'bg-[#8155DD]' : 'text-[#64748B]'
+            )}
+          >
+            {p}
+          </div>
+        ))}
+        {page + 1 < pagesArray[pagesArray.length - 1] && (
+          <svg
+            onClick={changePage(page + 2)}
+            width="41"
+            height="40"
+            viewBox="0 0 41 40"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M18.5 15L23.5 20L18.5 25"
+              stroke="#64748B"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        )}
+      </div>
     </div>
   );
 };
@@ -174,10 +281,82 @@ export const Options: FC<{
   );
 };
 
+export const RequestService: FC<{ toId: string; name: string }> = (props) => {
+  const { toId, name } = props;
+  const router = useRouter();
+  const fetch = useFetch();
+  const modal = useModals();
+  const resolver = useMemo(() => {
+    return classValidatorResolver(NewConversationDto);
+  }, []);
+
+  const form = useForm({ resolver, values: { to: toId, message: '' } });
+  const close = useCallback(() => {
+    return modal.closeAll();
+  }, []);
+
+  const createConversation: SubmitHandler<NewConversationDto> = useCallback(async (data) => {
+    const {id} = await (await fetch('/marketplace/conversation', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })).json();
+    close();
+    router.push(`/messages/${id}`);
+  }, []);
+
+  return (
+    <form onSubmit={form.handleSubmit(createConversation)}>
+      <FormProvider {...form}>
+        <div className="w-full max-w-[920px] mx-auto bg-[#0B101B] px-[16px] rounded-[4px] border border-[#172034] gap-[24px] flex flex-col relative">
+          <button
+            onClick={close}
+            className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+            type="button"
+          >
+            <svg
+              viewBox="0 0 15 15"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+            >
+              <path
+                d="M11.7816 4.03157C12.0062 3.80702 12.0062 3.44295 11.7816 3.2184C11.5571 2.99385 11.193 2.99385 10.9685 3.2184L7.50005 6.68682L4.03164 3.2184C3.80708 2.99385 3.44301 2.99385 3.21846 3.2184C2.99391 3.44295 2.99391 3.80702 3.21846 4.03157L6.68688 7.49999L3.21846 10.9684C2.99391 11.193 2.99391 11.557 3.21846 11.7816C3.44301 12.0061 3.80708 12.0061 4.03164 11.7816L7.50005 8.31316L10.9685 11.7816C11.193 12.0061 11.5571 12.0061 11.7816 11.7816C12.0062 11.557 12.0062 11.193 11.7816 10.9684L8.31322 7.49999L11.7816 4.03157Z"
+                fill="currentColor"
+                fillRule="evenodd"
+                clipRule="evenodd"
+              ></path>
+            </svg>
+          </button>
+          <div className="text-[18px] font-[500] flex flex-col">
+            <TopTitle title={`Send a message to ${name}`} />
+            <Textarea
+              placeholder="Add a message like: I'm intrested in 3 posts for Linkedin... (min 50 chars)"
+              className="mt-[14px] resize-none h-[400px]"
+              name="message"
+              label=""
+            />
+            <div className="flex justify-end">
+              <Button
+                disabled={!form.formState.isValid}
+                type="submit"
+                className="w-[144px] mb-[16px] rounded-[4px] text-[14px]"
+              >
+                Send Message
+              </Button>
+            </div>
+          </div>
+        </div>
+      </FormProvider>
+    </form>
+  );
+};
+
 export const Card: FC<{
   data: List;
 }> = (props) => {
   const { data } = props;
+  const modal = useModals();
 
   const tags = useMemo(() => {
     return data.items
@@ -186,6 +365,17 @@ export const Card: FC<{
         return allTagsOptions?.find((t) => t.key === p.key)?.value;
       });
   }, [data]);
+
+  const requestService = useCallback(() => {
+    modal.openModal({
+      children: <RequestService toId={data.id} name={data.name || 'Noname'} />,
+      classNames: {
+        modal: 'bg-transparent text-white',
+      },
+      withCloseButton: false,
+      size: '100%',
+    });
+  }, []);
 
   const identifier = useMemo(() => {
     return [
@@ -202,10 +392,12 @@ export const Card: FC<{
       <div className="flex gap-[16px] flex-1">
         <div>
           <div className="h-[103px] w-[103px] bg-red-500/10 rounded-full relative">
-            <img
-              src="https://via.placeholder.com/103"
-              className="rounded-full w-full h-full"
-            />
+            {data?.picture?.path && (
+              <img
+                src={data?.picture?.path}
+                className="rounded-full w-full h-full"
+              />
+            )}
             <div className="w-[80px] h-[28px] bg-[#8155DD] absolute bottom-0 left-[50%] -translate-x-[50%] rounded-[30px] flex gap-[4px] justify-center items-center">
               <div>
                 <svg
@@ -221,7 +413,7 @@ export const Card: FC<{
                   />
                 </svg>
               </div>
-              <div className="text-[14px]">22,6K</div>
+              <div className="text-[14px]">{data?.audience}</div>
             </div>
           </div>
         </div>
@@ -261,8 +453,7 @@ export const Card: FC<{
             </div>
           </div>
           <div className="text-[18px] text-[#AAA] font-[400]">
-            Maecenas dignissim justo eget nulla rutrum molestie. Maecenas
-            lobortis sem dui,
+            {data.bio || 'No bio'}
           </div>
           <div
             className={clsx(
@@ -284,7 +475,7 @@ export const Card: FC<{
         </div>
       </div>
       <div className="ml-[100px] items-center flex">
-        <Button>Request Service</Button>
+        <Button onClick={requestService}>Request Service</Button>
       </div>
     </div>
   );
@@ -304,13 +495,16 @@ export const Buyer = () => {
         method: 'POST',
         body: JSON.stringify({
           items: services?.split(',').filter((f) => f) || [],
-          page,
+          page: page === 0 ? 1 : page,
         }),
       })
     ).json();
   }, [services, page]);
 
   useEffect(() => {
+    if (!services) {
+      return;
+    }
     const params = new URLSearchParams(window.location.search);
     params.set('page', '1');
     router.replace('?' + params.toString());
@@ -339,6 +533,7 @@ export const Buyer = () => {
         {list?.list?.map((item, index) => (
           <Card key={String(index)} data={item} />
         ))}
+        <Pagination results={list?.count || 0} />
       </div>
     </div>
   );

@@ -35,6 +35,7 @@ model User {
   name          String?
   lastName      String?
   bio           String?
+  audience      Int                @default(0)
   pictureId     String?
   picture       Media?             @relation(fields: [pictureId], references: [id])
   providerId    String?
@@ -48,7 +49,9 @@ model User {
   items         ItemUser[]
   marketplace   Boolean            @default(true)
   account       String?
-  connectedAccount Boolean         @default(false)
+  connectedAccount  Boolean         @default(false)
+  groupBuyer   MessagesGroup[]  @relation("groupBuyer")
+  groupSeller  MessagesGroup[] @relation("groupSeller")
 
   @@unique([email, providerName])
   @@index([lastReadNotifications])
@@ -248,6 +251,41 @@ model Notifications {
   @@index([createdAt])
   @@index([organizationId])
   @@index([deletedAt])
+}
+
+model MessagesGroup {
+  id                String   @id @default(uuid())
+  buyerId           String
+  buyer             User     @relation("groupBuyer", fields: [buyerId], references: [id])
+  sellerId          String
+  seller            User     @relation("groupSeller", fields: [sellerId], references: [id])
+  messages          Messages[]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([buyerId, sellerId])
+  @@index([createdAt])
+  @@index([updatedAt])
+}
+
+model Messages {
+  id                String   @id @default(uuid())
+  from              From
+  content           String?
+  groupId           String
+  group             MessagesGroup @relation(fields: [groupId], references: [id])
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  deletedAt         DateTime?
+
+  @@index([groupId])
+  @@index([createdAt])
+  @@index([deletedAt])
+}
+
+enum From {
+  BUYER
+  SELLER
 }
 
 enum State {

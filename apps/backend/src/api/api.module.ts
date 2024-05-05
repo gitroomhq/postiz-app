@@ -21,6 +21,7 @@ import { CommentsController } from '@gitroom/backend/api/routes/comments.control
 import { BillingController } from '@gitroom/backend/api/routes/billing.controller';
 import { NotificationsController } from '@gitroom/backend/api/routes/notifications.controller';
 import { MarketplaceController } from '@gitroom/backend/api/routes/marketplace.controller';
+import { MessagesController } from '@gitroom/backend/api/routes/messages.controller';
 
 const authenticatedController = [
   UsersController,
@@ -32,7 +33,8 @@ const authenticatedController = [
   CommentsController,
   BillingController,
   NotificationsController,
-  MarketplaceController
+  MarketplaceController,
+  MessagesController
 ];
 @Module({
   imports: [

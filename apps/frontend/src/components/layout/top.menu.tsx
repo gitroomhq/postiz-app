@@ -34,6 +34,11 @@ export const menuItems = [
     icon: 'marketplace',
     path: '/marketplace',
   },
+  {
+    name: 'Messages',
+    icon: 'messages',
+    path: '/messages',
+  },
 ];
 
 export const TopMenu: FC = () => {
@@ -64,7 +69,7 @@ export const TopMenu: FC = () => {
                       }
                       return true;
                     })
-                    .map((p) => path.indexOf(p.path) > -1 ? index : -1)
+                    .map((p) => (path.indexOf(p.path) > -1 ? index : -1))
                     .indexOf(index) === index
                     ? 'text-primary showbox'
                     : 'text-gray'

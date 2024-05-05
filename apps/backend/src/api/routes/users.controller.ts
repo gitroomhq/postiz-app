@@ -24,6 +24,7 @@ import { removeSubdomain } from '@gitroom/helpers/subdomain/subdomain.management
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { ApiTags } from '@nestjs/swagger';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
+import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
 
 @ApiTags('User')
 @Controller('/user')
@@ -57,11 +58,16 @@ export class UsersController {
   }
 
   @Get('/personal')
-  async getPersonal(
-    @GetUserFromRequest() user: User,
-  ) {
-
+  async getPersonal(@GetUserFromRequest() user: User) {
     return this._userService.getPersonal(user.id);
+  }
+
+  @Post('/personal')
+  async changePersonal(
+    @GetUserFromRequest() user: User,
+    @Body() body: UserDetailDto
+  ) {
+    return this._userService.changePersonal(user.id, body);
   }
 
   @Get('/subscription')

@@ -22,6 +22,8 @@ import { NotificationsRepository } from '@gitroom/nestjs-libraries/database/pris
 import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 import { ItemUserRepository } from '@gitroom/nestjs-libraries/database/prisma/marketplace/item.user.repository';
 import { ItemUserService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/item.user.service';
+import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
+import { MessagesRepository } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.repository';
 
 @Global()
 @Module({
@@ -44,11 +46,13 @@ import { ItemUserService } from '@gitroom/nestjs-libraries/database/prisma/marke
     IntegrationRepository,
     PostsService,
     PostsRepository,
+    MessagesRepository,
     MediaService,
     MediaRepository,
     CommentsRepository,
     ItemUserRepository,
     ItemUserService,
+    MessagesService,
     CommentsService,
     IntegrationManager,
     EmailService,

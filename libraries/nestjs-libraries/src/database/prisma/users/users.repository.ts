@@ -4,6 +4,8 @@ import { Provider } from '@prisma/client';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { ItemsDto } from '@gitroom/nestjs-libraries/dtos/marketplace/items.dto';
 import { allTagsOptions } from '@gitroom/nestjs-libraries/database/prisma/marketplace/tags.list';
+import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
+import { NewConversationDto } from '@gitroom/nestjs-libraries/dtos/marketplace/new.conversation.dto';
 
 @Injectable()
 export class UsersRepository {
@@ -13,6 +15,14 @@ export class UsersRepository {
     return this._user.model.user.findFirst({
       where: {
         email,
+      },
+      include: {
+        picture: {
+          select: {
+            id: true,
+            path: true,
+          },
+        },
       },
     });
   }
@@ -34,6 +44,17 @@ export class UsersRepository {
       },
       data: {
         password: AuthService.hashPassword(password),
+      },
+    });
+  }
+
+  changeAudienceSize(userId: string, audience: number) {
+    return this._user.model.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        audience,
       },
     });
   }
@@ -70,6 +91,27 @@ export class UsersRepository {
     return user;
   }
 
+  async changePersonal(userId: string, body: UserDetailDto) {
+    await this._user.model.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        name: body.fullname,
+        bio: body.bio,
+        picture: body.picture
+          ? {
+              connect: {
+                id: body.picture.id,
+              },
+            }
+          : {
+              disconnect: true,
+            },
+      },
+    });
+  }
+
   async getMarketplacePeople(orgId: string, userId: string, items: ItemsDto) {
     const info = {
       id: {
@@ -100,7 +142,16 @@ export class UsersRepository {
         ...info,
       },
       select: {
+        id: true,
         name: true,
+        bio: true,
+        audience: true,
+        picture: {
+          select: {
+            id: true,
+            path: true,
+          },
+        },
         organizations: {
           select: {
             organization: {
@@ -124,8 +175,8 @@ export class UsersRepository {
           },
         },
       },
-      skip: (items.page - 1) * 10,
-      take: 10,
+      skip: (items.page - 1) * 8,
+      take: 8,
     });
 
     const count = await this._user.model.user.count({

@@ -1,21 +1,32 @@
 import { useModals } from '@mantine/modals';
-import React, { FC, useCallback, useEffect } from 'react';
+import React, { FC, useCallback, useEffect, useMemo } from 'react';
 import { Input } from '@gitroom/react/form/input';
 import { Button } from '@gitroom/react/form/button';
 import { Textarea } from '@gitroom/react/form/textarea';
 import { FormProvider, useForm } from 'react-hook-form';
 import { showMediaBox } from '@gitroom/frontend/components/media/media.component';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { classValidatorResolver } from '@hookform/resolvers/class-validator';
+import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
+import { useToaster } from '@gitroom/react/toaster/toaster';
+import { useSWRConfig } from 'swr';
 
 const SettingsPopup: FC = () => {
   const fetch = useFetch();
-  const form = useForm({});
+  const toast = useToaster();
+  const swr = useSWRConfig();
+
+  const resolver = useMemo(() => {
+    return classValidatorResolver(UserDetailDto);
+  }, []);
+  const form = useForm({ resolver });
+  const picture = form.watch('picture');
   const modal = useModals();
   const close = useCallback(() => {
     return modal.closeAll();
   }, []);
 
-  const loadProfile = useCallback( async() => {
+  const loadProfile = useCallback(async () => {
     const personal = await (await fetch('/user/personal')).json();
     form.setValue('fullname', personal.name || '');
     form.setValue('bio', personal.bio || '');
@@ -24,12 +35,22 @@ const SettingsPopup: FC = () => {
 
   const openMedia = useCallback(() => {
     showMediaBox((values) => {
-      console.log(values);
-    })
+      form.setValue('picture', values);
+    });
   }, []);
 
-  const submit = useCallback((val: any) => {
-    console.log(val);
+  const remove = useCallback(() => {
+    form.setValue('picture', null);
+  }, []);
+
+  const submit = useCallback(async (val: any) => {
+    await fetch('/user/personal', {
+      method: 'POST',
+      body: JSON.stringify(val),
+    });
+    toast.show('Profile updated');
+    swr.mutate('/marketplace/account');
+    close();
   }, []);
 
   useEffect(() => {
@@ -73,11 +94,19 @@ const SettingsPopup: FC = () => {
                 <Input label="Full Name" name="fullname" />
               </div>
               <div className="flex gap-[8px] mb-[10px]">
-                <div className="w-[48px] h-[48px] rounded-full bg-[#D9D9D9]"></div>
+                <div className="w-[48px] h-[48px] rounded-full bg-[#D9D9D9]">
+                  {!!picture?.path && (
+                    <img
+                      src={picture?.path}
+                      alt="profile"
+                      className="w-full h-full rounded-full"
+                    />
+                  )}
+                </div>
                 <div className="flex flex-col gap-[2px]">
                   <div className="text-[14px]">Profile Picture</div>
                   <div className="flex gap-[8px]">
-                    <button className="h-[24px] w-[120px] bg-[#612AD5] rounded-[4px] flex justify-center gap-[4px] items-center cursor-pointer">
+                    <button className="h-[24px] w-[120px] bg-[#612AD5] rounded-[4px] flex justify-center gap-[4px] items-center cursor-pointer" type="button">
                       <div>
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -92,9 +121,11 @@ const SettingsPopup: FC = () => {
                           />
                         </svg>
                       </div>
-                      <div className="text-[12px]" onClick={openMedia}>Upload image</div>
+                      <div className="text-[12px]" onClick={openMedia}>
+                        Upload image
+                      </div>
                     </button>
-                    <button className="h-[24px] w-[88px] rounded-[4px] border-2 border-[#506490] flex justify-center items-center gap-[4px]">
+                    <button className="h-[24px] w-[88px] rounded-[4px] border-2 border-[#506490] flex justify-center items-center gap-[4px]" type="button">
                       <div>
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -109,7 +140,9 @@ const SettingsPopup: FC = () => {
                           />
                         </svg>
                       </div>
-                      <div className="text-[12px]">Remove</div>
+                      <div className="text-[12px]" onClick={remove}>
+                        Remove
+                      </div>
                     </button>
                   </div>
                 </div>
@@ -148,7 +181,7 @@ export const SettingsComponent = () => {
       viewBox="0 0 40 40"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className="cursor-pointer"
+      className="cursor-pointer relative z-[200]"
       onClick={openModal}
     >
       <path
