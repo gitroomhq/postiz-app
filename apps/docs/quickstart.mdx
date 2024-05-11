@@ -81,15 +81,15 @@ npm install
 ```
   </Step>
 
-  <Step title="Generate the prisma client and run the migrations">
-```bash Terminal
-npm run prisma-db-push
-```
-  </Step>
-
   <Step title="Setup postgres & redis via docker compose">
 ```bash Terminal
 docker compose -f "docker-compose.dev.yaml" up
+```
+  </Step>
+
+  <Step title="Generate the prisma client and run the migrations">
+```bash Terminal
+npm run prisma-db-push
 ```
   </Step>
 
