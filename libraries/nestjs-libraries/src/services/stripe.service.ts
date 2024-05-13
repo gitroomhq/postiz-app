@@ -1,11 +1,13 @@
 import Stripe from 'stripe';
 import { Injectable } from '@nestjs/common';
-import { Organization } from '@prisma/client';
+import { OrderItems, Organization, User } from '@prisma/client';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.subscribe.dto';
-import { groupBy } from 'lodash';
+import { capitalize, groupBy } from 'lodash';
+import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
+import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-04-10',
@@ -15,7 +17,8 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 export class StripeService {
   constructor(
     private _subscriptionService: SubscriptionService,
-    private _organizationService: OrganizationService
+    private _organizationService: OrganizationService,
+    private _messagesService: MessagesService
   ) {}
   validateRequest(rawBody: Buffer, signature: string, endpointSecret: string) {
     return stripe.webhooks.constructEvent(rawBody, signature, endpointSecret);
@@ -23,12 +26,17 @@ export class StripeService {
 
   async updateAccount(event: Stripe.AccountUpdatedEvent) {
     if (!event.account) {
-      return ;
+      return;
     }
 
-    console.log(JSON.stringify(event.data.object, null, 2));
-    const accountCharges = event.data.object.payouts_enabled && event.data.object.payouts_enabled && !event?.data?.object?.requirements?.disabled_reason;
-    await this._subscriptionService.updateConnectedStatus(event.account!, accountCharges);
+    const accountCharges =
+      event.data.object.payouts_enabled &&
+      event.data.object.charges_enabled &&
+      !event?.data?.object?.requirements?.disabled_reason;
+    await this._subscriptionService.updateConnectedStatus(
+      event.account!,
+      accountCharges
+    );
   }
 
   createSubscription(event: Stripe.CustomerSubscriptionCreatedEvent) {
@@ -46,7 +54,7 @@ export class StripeService {
     return this._subscriptionService.createOrUpdateSubscription(
       id,
       event.data.object.customer as string,
-      event?.data?.object?.items?.data?.[0]?.quantity || 0,
+      pricing[billing].channel!,
       billing,
       period,
       event.data.object.cancel_at
@@ -67,7 +75,7 @@ export class StripeService {
     return this._subscriptionService.createOrUpdateSubscription(
       id,
       event.data.object.customer as string,
-      event?.data?.object?.items?.data?.[0]?.quantity || 0,
+      pricing[billing].channel!,
       billing,
       period,
       event.data.object.cancel_at
@@ -121,24 +129,38 @@ export class StripeService {
   async prorate(organizationId: string, body: BillingSubscribeDto) {
     const org = await this._organizationService.getOrgById(organizationId);
     const customer = await this.createOrGetCustomer(org!);
-
+    const priceData = pricing[body.billing];
     const allProducts = await stripe.products.list({
       active: true,
       expand: ['data.prices'],
     });
+
     const findProduct = allProducts.data.find(
-      (product) => product.name.toLowerCase() === body.billing.toLowerCase()
-    );
+      (product) => product.name.toUpperCase() === body.billing.toUpperCase()
+    ) || await stripe.products.create({
+      active: true,
+      name: body.billing,
+    });
+
     const pricesList = await stripe.prices.list({
       active: true,
-      product: findProduct?.id,
+      product: findProduct!.id,
     });
 
     const findPrice = pricesList.data.find(
       (p) =>
-        p?.recurring?.interval?.toLowerCase() ===
-        body?.period?.toLowerCase().replace('ly', '')
-    );
+        p?.recurring?.interval?.toLowerCase() === (body.period === 'MONTHLY' ? 'month' : 'year') &&
+        p?.unit_amount === (body.period === 'MONTHLY' ? priceData.month_price : priceData.year_price) * 100
+    ) || await stripe.prices.create({
+      active: true,
+      product: findProduct!.id,
+      currency: 'usd',
+      nickname: body.billing + ' ' + body.period,
+      unit_amount: (body.period === 'MONTHLY' ? priceData.month_price : priceData.year_price) * 100,
+      recurring: {
+        interval: body.period === 'MONTHLY' ? 'month' : 'year',
+      },
+    });
 
     const proration_date = Math.floor(Date.now() / 1000);
 
@@ -157,7 +179,7 @@ export class StripeService {
           {
             id: currentUserSubscription?.data?.[0]?.items?.data?.[0]?.id,
             price: findPrice?.id!,
-            quantity: body?.total,
+            quantity: 1,
           },
         ],
         subscription_proration_date: proration_date,
@@ -221,9 +243,8 @@ export class StripeService {
   private async createCheckoutSession(
     uniqueId: string,
     customer: string,
-    metaData: any,
-    price: string,
-    quantity: number
+    body: BillingSubscribeDto,
+    price: string
   ) {
     const { url } = await stripe.checkout.sessions.create({
       customer,
@@ -232,15 +253,15 @@ export class StripeService {
       subscription_data: {
         metadata: {
           service: 'gitroom',
-          ...metaData,
+          ...body,
           uniqueId,
         },
       },
       allow_promotion_codes: true,
       line_items: [
         {
-          price: price,
-          quantity: quantity,
+          price,
+          quantity: 1,
         },
       ],
     });
@@ -271,7 +292,7 @@ export class StripeService {
       metadata: {
         service: 'gitroom',
       },
-      email
+      email,
     });
 
     await this._subscriptionService.updateAccount(userId, account.id);
@@ -290,18 +311,80 @@ export class StripeService {
     return accountLink.url;
   }
 
+  async payAccountStepOne(
+    userId: string,
+    organization: Organization,
+    seller: User,
+    orderId: string,
+    ordersItems: Array<{
+      integrationType: string;
+      quantity: number;
+      price: number;
+    }>,
+    groupId: string
+  ) {
+    const customer = (await this.createOrGetCustomer(organization))!;
+
+    const price = ordersItems.reduce((all, current) => {
+      return all + current.price * current.quantity;
+    }, 0);
+
+    const { url } = await stripe.checkout.sessions.create({
+      customer,
+      mode: 'payment',
+      currency: 'usd',
+      success_url: process.env['FRONTEND_URL'] + `/messages/${groupId}`,
+      metadata: {
+        orderId,
+        service: 'gitroom',
+        type: 'marketplace',
+      },
+      line_items: [
+        ...ordersItems,
+        {
+          integrationType: `Gitroom Fee (${+process.env.FEE_AMOUNT! * 100}%)`,
+          quantity: 1,
+          price: price * +process.env.FEE_AMOUNT!,
+        },
+      ].map((item) => ({
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            // @ts-ignore
+            name:
+              (!item.price ? 'Platform: ' : '') +
+              capitalize(item.integrationType),
+          },
+          // @ts-ignore
+          unit_amount: item.price * 100,
+        },
+        quantity: item.quantity,
+      })),
+      payment_intent_data: {
+        transfer_group: orderId,
+      },
+    });
+
+    return { url };
+  }
+
   async subscribe(organizationId: string, body: BillingSubscribeDto) {
     const id = makeId(10);
-
+    const priceData = pricing[body.billing];
     const org = await this._organizationService.getOrgById(organizationId);
     const customer = await this.createOrGetCustomer(org!);
     const allProducts = await stripe.products.list({
       active: true,
       expand: ['data.prices'],
     });
+
     const findProduct = allProducts.data.find(
-      (product) => product.name.toLowerCase() === body.billing.toLowerCase()
-    );
+      (product) => product.name.toUpperCase() === body.billing.toUpperCase()
+    ) || await stripe.products.create({
+      active: true,
+      name: body.billing,
+    });
+
     const pricesList = await stripe.prices.list({
       active: true,
       product: findProduct!.id,
@@ -309,22 +392,26 @@ export class StripeService {
 
     const findPrice = pricesList.data.find(
       (p) =>
-        p?.recurring?.interval?.toLowerCase() ===
-        body?.period?.toLowerCase().replace('ly', '')
-    );
+        p?.recurring?.interval?.toLowerCase() === (body.period === 'MONTHLY' ? 'month' : 'year') &&
+        p?.unit_amount === (body.period === 'MONTHLY' ? priceData.month_price : priceData.year_price) * 100
+    ) || await stripe.prices.create({
+      active: true,
+      product: findProduct!.id,
+      currency: 'usd',
+      nickname: body.billing + ' ' + body.period,
+      unit_amount: (body.period === 'MONTHLY' ? priceData.month_price : priceData.year_price) * 100,
+      recurring: {
+        interval: body.period === 'MONTHLY' ? 'month' : 'year',
+      },
+    });
+
     const currentUserSubscription = await stripe.subscriptions.list({
       customer,
       status: 'active',
     });
 
     if (!currentUserSubscription.data.length) {
-      return this.createCheckoutSession(
-        id,
-        customer,
-        body,
-        findPrice!.id,
-        body.total
-      );
+      return this.createCheckoutSession(id, customer, body, findPrice!.id);
     }
 
     try {
@@ -340,7 +427,7 @@ export class StripeService {
           {
             id: currentUserSubscription.data[0].items.data[0].id,
             price: findPrice!.id,
-            quantity: body.total,
+            quantity: 1,
           },
         ],
       });
@@ -352,5 +439,41 @@ export class StripeService {
         portal: url,
       };
     }
+  }
+
+  async updateOrder(event: Stripe.CheckoutSessionCompletedEvent) {
+    if (event?.data?.object?.metadata?.type !== 'marketplace') {
+      return { ok: true };
+    }
+
+    const { orderId } = event?.data?.object?.metadata || { orderId: '' };
+    if (!orderId) {
+      return;
+    }
+
+    const charge = (
+      await stripe.paymentIntents.retrieve(
+        event.data.object.payment_intent as string
+      )
+    ).latest_charge;
+    const id = typeof charge === 'string' ? charge : charge?.id;
+
+    await this._messagesService.changeOrderStatus(orderId, 'ACCEPTED', id);
+    return { ok: true };
+  }
+
+  async payout(
+    orderId: string,
+    charge: string,
+    account: string,
+    price: number
+  ) {
+    return stripe.transfers.create({
+      amount: price * 100,
+      currency: 'usd',
+      destination: account,
+      source_transaction: charge,
+      transfer_group: orderId,
+    });
   }
 }

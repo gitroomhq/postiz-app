@@ -8,12 +8,11 @@ export interface Root {
   sellerId: string;
   createdAt: string;
   updatedAt: string;
-  seller: SellerBuyer;
-  buyer: SellerBuyer;
   messages: Message[];
 }
 
 export interface SellerBuyer {
+  id: string;
   name?: string;
   picture: Picture;
 }
@@ -27,6 +26,7 @@ export interface Message {
   id: string;
   from: string;
   content: string;
+  special?: string;
   groupId: string;
   createdAt: string;
   updatedAt: string;
@@ -37,7 +37,16 @@ import { Textarea } from '@gitroom/react/form/textarea';
 import interClass from '@gitroom/react/helpers/inter.font';
 import clsx from 'clsx';
 import useSWR from 'swr';
-import { FC, UIEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  FC,
+  UIEventHandler,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useParams } from 'next/navigation';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { reverse } from 'lodash';
@@ -45,6 +54,11 @@ import { FormProvider, SubmitHandler, useForm } from 'react-hook-form';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { AddMessageDto } from '@gitroom/nestjs-libraries/dtos/messages/add.message';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { OrderTopActions } from '@gitroom/frontend/components/marketplace/order.top.actions';
+import { MarketplaceProvider } from '@gitroom/frontend/components/marketplace/marketplace.provider';
+import { SpecialMessage } from '@gitroom/frontend/components/marketplace/special.message';
+import { usePageVisibility } from '@gitroom/react/helpers/use.is.visible';
 
 export const Message: FC<{
   message: Message;
@@ -53,16 +67,40 @@ export const Message: FC<{
   scrollDown: () => void;
 }> = (props) => {
   const { message, seller, buyer, scrollDown } = props;
+  const user = useUser();
+
+  const amITheBuyerOrSeller = useMemo(() => {
+    return user?.id === buyer?.id ? 'BUYER' : 'SELLER';
+  }, [buyer, user]);
+
   useEffect(() => {
     scrollDown();
   }, []);
+
   const person = useMemo(() => {
-    return message.from === 'BUYER' ? buyer : seller;
+    if (message.from === 'BUYER') {
+      return buyer;
+    }
+
+    if (message.from === 'SELLER') {
+      return seller;
+    }
+  }, [amITheBuyerOrSeller, buyer, seller, message]);
+
+  const data = useMemo(() => {
+    if (!message.special) {
+      return false;
+    }
+
+    return JSON.parse(message.special);
   }, [message]);
 
   const isMe = useMemo(() => {
-    return message.from === 'BUYER';
-  }, []);
+    return (
+      (amITheBuyerOrSeller === 'BUYER' && message.from === 'BUYER') ||
+      (amITheBuyerOrSeller === 'SELLER' && message.from === 'SELLER')
+    );
+  }, [amITheBuyerOrSeller, message]);
 
   const time = useMemo(() => {
     return dayjs(message.createdAt).format('h:mm A');
@@ -71,7 +109,7 @@ export const Message: FC<{
     <div className="flex gap-[10px]">
       <div>
         <div className="w-[24px] h-[24px] rounded-full bg-amber-200">
-          {!!person.picture?.path && (
+          {!!person?.picture?.path && (
             <img
               src={person.picture.path}
               alt="person"
@@ -82,7 +120,7 @@ export const Message: FC<{
       </div>
       <div className="flex-1 flex flex-col max-w-[534px] gap-[10px]">
         <div className="flex gap-[10px] items-center">
-          <div>{isMe ? 'Me' : person.name}</div>
+          <div>{isMe ? 'Me' : person?.name}</div>
           <div className="w-[6px] h-[6px] bg-[#334155] rounded-full" />
           <div className="text-[14px] text-inputText">{time}</div>
         </div>
@@ -93,6 +131,7 @@ export const Message: FC<{
           )}
         >
           {message.content}
+          {data && <SpecialMessage data={data} id={message.id} />}
         </pre>
       </div>
     </div>
@@ -102,16 +141,28 @@ export const Message: FC<{
 const Page: FC<{ page: number; group: string; refChange: any }> = (props) => {
   const { page, group, refChange } = props;
   const fetch = useFetch();
+  const { message } = useContext(MarketplaceProvider);
+  const visible = usePageVisibility(page);
 
   const loadMessages = useCallback(async () => {
     return await (await fetch(`/messages/${group}/${page}`)).json();
   }, []);
 
-  const { data, mutate } = useSWR<Root>(`load-${page}-${group}`, loadMessages);
+  const { data, mutate } = useSWR<Root>(`load-${page}-${group}`, loadMessages, {
+    ...(page === 1
+      ? {
+          refreshInterval: visible ? 5000 : 0,
+          refreshWhenHidden: false,
+          refreshWhenOffline: false,
+          revalidateOnFocus: false,
+          revalidateIfStale: false,
+        }
+      : {}),
+  });
 
   const scrollDown = useCallback(() => {
     if (page > 1) {
-      return ;
+      return;
     }
     // @ts-ignore
     refChange.current?.scrollTo(0, refChange.current.scrollHeight);
@@ -123,12 +174,12 @@ const Page: FC<{ page: number; group: string; refChange: any }> = (props) => {
 
   return (
     <>
-      {messages.map((message) => (
+      {messages.map((m) => (
         <Message
-          key={message.id}
-          message={message}
-          seller={data?.seller!}
-          buyer={data?.buyer!}
+          key={m.id}
+          message={m}
+          seller={message?.seller!}
+          buyer={message?.buyer!}
           scrollDown={scrollDown}
         />
       ))}
@@ -138,9 +189,16 @@ const Page: FC<{ page: number; group: string; refChange: any }> = (props) => {
 
 export const Messages = () => {
   const [pages, setPages] = useState([makeId(3)]);
+  const user = useUser();
   const params = useParams();
   const fetch = useFetch();
   const ref = useRef(null);
+  const { message } = useContext(MarketplaceProvider);
+
+  const showFrom = useMemo(() => {
+    return user?.id === message?.buyerId ? message?.seller : message?.buyer;
+  }, [message, user]);
+
   const resolver = useMemo(() => {
     return classValidatorResolver(AddMessageDto);
   }, []);
@@ -154,7 +212,10 @@ export const Messages = () => {
     return await (await fetch(`/messages/${params.id}/1`)).json();
   }, []);
 
-  const { data, mutate, isLoading } = useSWR<Root>(`load-1-${params.id}`, loadMessages);
+  const { data, mutate, isLoading } = useSWR<Root>(
+    `load-1-${params.id}`,
+    loadMessages
+  );
 
   const submit: SubmitHandler<AddMessageDto> = useCallback(async (values) => {
     await fetch(`/messages/${params.id}`, {
@@ -165,14 +226,17 @@ export const Messages = () => {
     form.reset();
   }, []);
 
-  const changeScroll: UIEventHandler<HTMLDivElement> = useCallback((e) => {
-    // @ts-ignore
-    if (e.target.scrollTop === 0) {
+  const changeScroll: UIEventHandler<HTMLDivElement> = useCallback(
+    (e) => {
       // @ts-ignore
-      e.target.scrollTop = 1;
-      setPages((prev) => [...prev, makeId(3)]);
-    }
-  }, [pages, setPages]);
+      if (e.target.scrollTop === 0) {
+        // @ts-ignore
+        e.target.scrollTop = 1;
+        setPages((prev) => [...prev, makeId(3)]);
+      }
+    },
+    [pages, setPages]
+  );
 
   return (
     <form onSubmit={form.handleSubmit(submit)}>
@@ -180,15 +244,20 @@ export const Messages = () => {
         <div className="flex-1 flex flex-col rounded-[4px] border border-[#172034] bg-[#0b0f1c] pb-[16px]">
           <div className="bg-[#0F1524] h-[64px] px-[24px] py-[16px] flex gap-[10px] items-center">
             <div className="w-[32px] h-[32px] rounded-full bg-amber-200">
-              {!!data?.seller?.picture?.path && (
+              {!!showFrom?.picture?.path && (
                 <img
-                  src={data?.seller?.picture?.path}
+                  src={showFrom?.picture?.path}
                   alt="seller"
                   className="w-[32px] h-[32px] rounded-full"
                 />
               )}
             </div>
-            <div className="text-[20px]">{data?.seller?.name || 'Noname'}</div>
+            <div className="text-[20px] flex-1">
+              {showFrom?.name || 'Noname'}
+            </div>
+            <div>
+              <OrderTopActions />
+            </div>
           </div>
           <div className="flex-1 min-h-[658px] max-h-[658px] relative">
             <div
@@ -197,7 +266,12 @@ export const Messages = () => {
               ref={ref}
             >
               {pages.map((p, index) => (
-                <Page key={'page_' + (pages.length - index)} refChange={ref} page={pages.length - index} group={params.id as string} />
+                <Page
+                  key={'page_' + (pages.length - index)}
+                  refChange={ref}
+                  page={pages.length - index}
+                  group={params.id as string}
+                />
               ))}
             </div>
           </div>

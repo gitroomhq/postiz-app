@@ -27,6 +27,7 @@ import { Textarea } from '@gitroom/react/form/textarea';
 import { FormProvider, SubmitHandler, useForm } from 'react-hook-form';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { NewConversationDto } from '@gitroom/nestjs-libraries/dtos/marketplace/new.conversation.dto';
+import { OrderList } from '@gitroom/frontend/components/marketplace/order.list';
 
 export interface Root {
   list: List[];
@@ -295,14 +296,19 @@ export const RequestService: FC<{ toId: string; name: string }> = (props) => {
     return modal.closeAll();
   }, []);
 
-  const createConversation: SubmitHandler<NewConversationDto> = useCallback(async (data) => {
-    const {id} = await (await fetch('/marketplace/conversation', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    })).json();
-    close();
-    router.push(`/messages/${id}`);
-  }, []);
+  const createConversation: SubmitHandler<NewConversationDto> = useCallback(
+    async (data) => {
+      const { id } = await (
+        await fetch('/marketplace/conversation', {
+          method: 'POST',
+          body: JSON.stringify(data),
+        })
+      ).json();
+      close();
+      router.push(`/messages/${id}`);
+    },
+    []
+  );
 
   return (
     <form onSubmit={form.handleSubmit(createConversation)}>
@@ -512,29 +518,36 @@ export const Buyer = () => {
 
   const { data: list } = useSWR<Root>('search' + services + page, marketplace);
   return (
-    <div className="flex mt-[29px] w-full gap-[43px]">
-      <div className="w-[330px]">
-        <div className="flex flex-col gap-[16px]">
-          <h2 className="text-[20px]">Filter</h2>
-          <div className="flex flex-col">
-            {tagsList.map((tag) => (
-              <Options
-                search={true}
-                key={tag.key}
-                options={tag.options}
-                title={tag.name}
-              />
-            ))}
+    <>
+      <div>
+        <OrderList type="buyer" />
+      </div>
+      <div className="flex mt-[29px] w-full gap-[43px]">
+        <div className="w-[330px]">
+          <div className="flex flex-col gap-[16px]">
+            <h2 className="text-[20px]">Filter</h2>
+            <div className="flex flex-col">
+              {tagsList.map((tag) => (
+                <Options
+                  search={true}
+                  key={tag.key}
+                  options={tag.options}
+                  title={tag.name}
+                />
+              ))}
+            </div>
           </div>
         </div>
+        <div className="flex-1 gap-[16px] flex-col flex">
+          <div className="text-[20px] text-right">
+            {list?.count || 0} Result
+          </div>
+          {list?.list?.map((item, index) => (
+            <Card key={String(index)} data={item} />
+          ))}
+          <Pagination results={list?.count || 0} />
+        </div>
       </div>
-      <div className="flex-1 gap-[16px] flex-col flex">
-        <div className="text-[20px] text-right">{list?.count || 0} Result</div>
-        {list?.list?.map((item, index) => (
-          <Card key={String(index)} data={item} />
-        ))}
-        <Pagination results={list?.count || 0} />
-      </div>
-    </div>
+    </>
   );
 };

@@ -1,7 +1,7 @@
 import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
 import { Post as PostBody } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
-import { Post } from '@prisma/client';
+import { APPROVED_SUBMIT_FOR_ORDER, Post } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
@@ -114,7 +114,12 @@ export class PostsRepository {
     });
   }
 
-  getPost(id: string, includeIntegration = false, orgId?: string) {
+  getPost(
+    id: string,
+    includeIntegration = false,
+    orgId?: string,
+    isFirst?: boolean
+  ) {
     return this._post.model.post.findUnique({
       where: {
         id,
@@ -122,7 +127,11 @@ export class PostsRepository {
         deletedAt: null,
       },
       include: {
-        ...(includeIntegration ? { integration: true } : {}),
+        ...(includeIntegration
+          ? {
+              integration: true,
+            }
+          : {}),
         childrenPost: true,
       },
     });
@@ -210,6 +219,7 @@ export class PostsRepository {
           : {}),
         content: value.content,
         group: uuid,
+        approvedSubmitForOrder: APPROVED_SUBMIT_FOR_ORDER.NO,
         state: state === 'draft' ? ('DRAFT' as const) : ('QUEUE' as const),
         image: JSON.stringify(value.image),
         settings: JSON.stringify(body.settings),
@@ -225,8 +235,16 @@ export class PostsRepository {
           where: {
             id: value.id || uuidv4(),
           },
-          create: updateData('create'),
-          update: updateData('update'),
+          create: { ...updateData('create') },
+          update: {
+            ...updateData('update'),
+            lastMessage: {
+              disconnect: true,
+            },
+            submittedForOrder: {
+              disconnect: true,
+            },
+          },
         })
       );
     }
@@ -260,5 +278,65 @@ export class PostsRepository {
     }
 
     return { previousPost, posts };
+  }
+
+  async submit(id: string, order: string) {
+    return this._post.model.post.update({
+      where: {
+        id,
+      },
+      data: {
+        submittedForOrderId: order,
+        approvedSubmitForOrder: 'WAITING_CONFIRMATION',
+      },
+      select: {
+        id: true,
+        description: true,
+        submittedForOrder: {
+          select: {
+            messageGroupId: true,
+          },
+        },
+      },
+    });
+  }
+
+  updateMessage(id: string, messageId: string) {
+    return this._post.model.post.update({
+      where: {
+        id,
+      },
+      data: {
+        lastMessageId: messageId,
+      },
+    });
+  }
+
+  getPostById(id: string, org?: string) {
+    return this._post.model.post.findUnique({
+      where: {
+        id,
+        ...(org ? { organizationId: org } : {}),
+      },
+      include: {
+        integration: true,
+        submittedForOrder: {
+          include: {
+            posts: {
+              where: {
+                state: 'PUBLISHED',
+              },
+            },
+            ordersItems: true,
+            seller: {
+              select: {
+                id: true,
+                account: true
+              },
+            },
+          },
+        },
+      },
+    });
   }
 }

@@ -24,12 +24,6 @@ export const menuItems = [
     role: ['ADMIN', 'SUPERADMIN'],
   },
   {
-    name: 'Billing',
-    icon: 'billing',
-    path: '/billing',
-    role: ['ADMIN', 'SUPERADMIN'],
-  },
-  {
     name: 'Marketplace',
     icon: 'marketplace',
     path: '/marketplace',
@@ -38,6 +32,12 @@ export const menuItems = [
     name: 'Messages',
     icon: 'messages',
     path: '/messages',
+  },
+  {
+    name: 'Billing',
+    icon: 'billing',
+    path: '/billing',
+    role: ['ADMIN', 'SUPERADMIN'],
   },
 ];
 

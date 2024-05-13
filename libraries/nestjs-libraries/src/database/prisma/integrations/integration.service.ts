@@ -36,6 +36,10 @@ export class IntegrationService {
     return this._integrationRepository.getIntegrationsList(org);
   }
 
+  getIntegrationForOrder(id: string, order: string, user: string, org: string) {
+    return this._integrationRepository.getIntegrationForOrder(id, order, user, org);
+  }
+
   getIntegrationById(org: string, id: string) {
     return this._integrationRepository.getIntegrationById(org, id);
   }

@@ -1,16 +1,18 @@
-import {FC} from "react";
+import { FC, ReactNode } from 'react';
 
 export const TopTitle: FC<{
   title: string;
   shouldExpend?: boolean;
   expend?: () => void;
   collapse?: () => void;
+  children?: ReactNode;
 }> = (props) => {
-  const { title, shouldExpend, expend, collapse } = props;
+  const { title, children, shouldExpend, expend, collapse } = props;
 
   return (
     <div className="h-[57px] border-b flex items-center border-[#172034] px-[16px] -mx-[16px]">
       <div className="flex-1">{title}</div>
+      {children}
       {shouldExpend !== undefined && (
         <div className="cursor-pointer">
           {!shouldExpend ? (

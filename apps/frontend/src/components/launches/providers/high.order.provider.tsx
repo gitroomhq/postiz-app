@@ -76,6 +76,7 @@ export const withProvider = (
       id?: string;
       image?: Array<{ path: string; id: string }>;
     }>;
+    hideMenu?: boolean;
     show: boolean;
   }) => {
     const existingData = useExistingData();
@@ -228,40 +229,42 @@ export const withProvider = (
       <FormProvider {...form}>
         <SetTab changeTab={() => setShowTab(0)} />
         <div className="mt-[15px] w-full flex flex-col flex-1">
-          <div className="flex gap-[4px]">
-            <div className="flex-1 flex">
-              <Button
-                className="rounded-[4px] flex-1 overflow-hidden whitespace-nowrap"
-                secondary={showTab !== 0}
-                onClick={() => setShowTab(0)}
-              >
-                Preview
-              </Button>
-            </div>
-            {!!SettingsComponent && (
+          {!props.hideMenu && (
+            <div className="flex gap-[4px]">
               <div className="flex-1 flex">
                 <Button
-                  className={clsx(
-                    'flex-1 overflow-hidden whitespace-nowrap',
-                    showTab === 2 && 'rounded-[4px]'
-                  )}
-                  secondary={showTab !== 2}
-                  onClick={() => setShowTab(2)}
+                  className="rounded-[4px] flex-1 overflow-hidden whitespace-nowrap"
+                  secondary={showTab !== 0}
+                  onClick={() => setShowTab(0)}
                 >
-                  Settings
+                  Preview
                 </Button>
               </div>
-            )}
-            <div className="flex-1 flex">
-              <Button
-                className="rounded-[4px] flex-1 !bg-red-700 overflow-hidden whitespace-nowrap"
-                secondary={showTab !== 1}
-                onClick={changeToEditor}
-              >
-                {editInPlace ? 'Edit globally' : 'Edit only this'}
-              </Button>
+              {!!SettingsComponent && (
+                <div className="flex-1 flex">
+                  <Button
+                    className={clsx(
+                      'flex-1 overflow-hidden whitespace-nowrap',
+                      showTab === 2 && 'rounded-[4px]'
+                    )}
+                    secondary={showTab !== 2}
+                    onClick={() => setShowTab(2)}
+                  >
+                    Settings
+                  </Button>
+                </div>
+              )}
+              <div className="flex-1 flex">
+                <Button
+                  className="rounded-[4px] flex-1 !bg-red-700 overflow-hidden whitespace-nowrap"
+                  secondary={showTab !== 1}
+                  onClick={changeToEditor}
+                >
+                  {editInPlace ? 'Edit globally' : 'Edit only this'}
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
           {editInPlace &&
             createPortal(
               <EditorWrapper>
@@ -285,7 +288,10 @@ export const withProvider = (
                                   .filter((f) => f.name !== 'image'),
                                 newImage,
                                 postSelector(date),
-                                ...linkedinCompany(integration?.identifier!, integration?.id!),
+                                ...linkedinCompany(
+                                  integration?.identifier!,
+                                  integration?.id!
+                                ),
                               ]}
                               preview="edit"
                               // @ts-ignore

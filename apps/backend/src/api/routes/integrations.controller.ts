@@ -1,10 +1,10 @@
-import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Query } from '@nestjs/common';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { ConnectIntegrationDto } from '@gitroom/nestjs-libraries/dtos/integrations/connect.integration.dto';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
-import { Organization } from '@prisma/client';
+import { Organization, User } from '@prisma/client';
 import { ApiKeyDto } from '@gitroom/nestjs-libraries/dtos/integrations/api.key.dto';
 import { IntegrationFunctionDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.function.dto';
 import {
@@ -14,6 +14,7 @@ import {
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import {pricing} from "@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing";
 import {ApiTags} from "@nestjs/swagger";
+import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 
 @ApiTags('Integrations')
 @Controller('/integrations')
@@ -42,6 +43,16 @@ export class IntegrationsController {
         type: p.type,
       })),
     };
+  }
+
+  @Get('/:id')
+  getSingleIntegration(
+    @Param('id') id: string,
+    @Query('order') order: string,
+    @GetUserFromRequest() user: User,
+    @GetOrgFromRequest() org: Organization
+  ) {
+    return this._integrationService.getIntegrationForOrder(id, order, user.id, org.id);
   }
 
   @Get('/social/:integration')
@@ -135,7 +146,6 @@ export class IntegrationsController {
       throw new Error('Invalid api key');
     }
 
-    console.log('asd');
     return this._integrationService.createOrUpdateIntegration(
       org.id,
       name,

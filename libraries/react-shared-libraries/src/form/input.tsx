@@ -1,8 +1,10 @@
 'use client';
 
-import { DetailedHTMLProps, FC, InputHTMLAttributes, useMemo } from 'react';
+import {
+  DetailedHTMLProps, FC, InputHTMLAttributes, ReactNode, useEffect, useMemo
+} from 'react';
 import { clsx } from 'clsx';
-import { useFormContext } from 'react-hook-form';
+import { useFormContext, useWatch } from 'react-hook-form';
 import interClass from '../helpers/inter.font';
 
 export const Input: FC<
@@ -10,11 +12,22 @@ export const Input: FC<
     removeError?: boolean;
     error?: any;
     disableForm?: boolean;
+    customUpdate?: () => void;
     label: string;
     name: string;
+    icon?: ReactNode;
   }
 > = (props) => {
-  const { label, removeError, className, disableForm, error, ...rest } = props;
+  const {
+    label,
+    icon,
+    removeError,
+    customUpdate,
+    className,
+    disableForm,
+    error,
+    ...rest
+  } = props;
   const form = useFormContext();
   const err = useMemo(() => {
     if (error) return error;
@@ -22,18 +35,35 @@ export const Input: FC<
     return form?.formState?.errors?.[props?.name!]?.message! as string;
   }, [form?.formState?.errors?.[props?.name!]?.message, error]);
 
+  const watch = customUpdate ? form?.watch(props.name) : null;
+  useEffect(() => {
+    if (customUpdate) {
+      customUpdate();
+    }
+  }, [watch]);
+
   return (
     <div className="flex flex-col gap-[6px]">
       <div className={`${interClass} text-[14px]`}>{label}</div>
-      <input
-        {...(disableForm ? {} : form.register(props.name))}
+      <div
         className={clsx(
-          'bg-input h-[44px] px-[16px] outline-none border-fifth border rounded-[4px] text-inputText placeholder-inputText',
+          'bg-input h-[44px] border-fifth border rounded-[4px] text-inputText placeholder-inputText flex items-center justify-center',
           className
         )}
-        {...rest}
-      />
-      {!removeError && <div className="text-red-400 text-[12px]">{err || <>&nbsp;</>}</div>}
+      >
+        {icon && <div className="pl-[16px]">{icon}</div>}
+        <input
+          className={clsx(
+            'h-full bg-transparent outline-none flex-1',
+            icon ? 'pl-[8px] pr-[16px]' : 'px-[16px]'
+          )}
+          {...(disableForm ? {} : form.register(props.name))}
+          {...rest}
+        />
+      </div>
+      {!removeError && (
+        <div className="text-red-400 text-[12px]">{err || <>&nbsp;</>}</div>
+      )}
     </div>
   );
 };

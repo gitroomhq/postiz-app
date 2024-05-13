@@ -3,7 +3,7 @@
 import { Slider } from '@gitroom/react/form/slider';
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@gitroom/react/form/button';
-import { isEqual, sortBy } from 'lodash';
+import { sortBy } from 'lodash';
 import { Track } from '@gitroom/react/form/track';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Subscription } from '@prisma/client';
@@ -17,7 +17,6 @@ import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions
 import { FAQComponent } from '@gitroom/frontend/components/billing/faq.component';
 import { useSWRConfig } from 'swr';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
-import { useRouter } from 'next/navigation';
 import interClass from '@gitroom/react/helpers/inter.font';
 
 export interface Tiers {
@@ -34,11 +33,10 @@ export interface Tiers {
 }
 
 export const Prorate: FC<{
-  totalChannels: number;
   period: 'MONTHLY' | 'YEARLY';
   pack: 'STANDARD' | 'PRO';
 }> = (props) => {
-  const { totalChannels, period, pack } = props;
+  const { period, pack } = props;
   const fetch = useFetch();
   const [price, setPrice] = useState<number | false>(0);
   const [loading, setLoading] = useState(false);
@@ -51,7 +49,6 @@ export const Prorate: FC<{
           await fetch('/billing/prorate', {
             method: 'POST',
             body: JSON.stringify({
-              total: totalChannels,
               period,
               billing: pack,
             }),
@@ -65,7 +62,7 @@ export const Prorate: FC<{
   useEffect(() => {
     setPrice(false);
     calculatePrice();
-  }, [totalChannels, period, pack]);
+  }, [period, pack]);
 
   if (loading) {
     return (
@@ -88,12 +85,11 @@ export const Prorate: FC<{
 
 export const Features: FC<{
   pack: 'FREE' | 'STANDARD' | 'PRO';
-  channels: number;
 }> = (props) => {
-  const { pack, channels } = props;
+  const { pack } = props;
   const features = useMemo(() => {
     const currentPricing = pricing[pack];
-    const channelsOr = currentPricing.channel || channels;
+    const channelsOr = currentPricing.channel;
     const list = [];
     list.push(`${channelsOr} ${channelsOr === 1 ? 'channel' : 'channels'}`);
     list.push(
@@ -124,7 +120,7 @@ export const Features: FC<{
     }
 
     return list;
-  }, [pack, channels]);
+  }, [pack]);
 
   return (
     <div className="flex flex-col gap-[10px] justify-center text-[16px] text-[#AAA]">
@@ -152,10 +148,9 @@ export const Features: FC<{
 };
 
 export const MainBillingComponent: FC<{
-  tiers: Tiers;
   sub?: Subscription;
 }> = (props) => {
-  const { tiers, sub } = props;
+  const { sub } = props;
   const { mutate } = useSWRConfig();
   const fetch = useFetch();
   const toast = useToaster();
@@ -176,17 +171,17 @@ export const MainBillingComponent: FC<{
   const [initialChannels, setInitialChannels] = useState(
     sub?.totalChannels || 1
   );
-  const [totalChannels, setTotalChannels] = useState<number>(initialChannels);
 
   useEffect(() => {
     if (initialChannels !== sub?.totalChannels) {
-      setTotalChannels(sub?.totalChannels || 1);
       setInitialChannels(sub?.totalChannels || 1);
     }
 
     if (period !== sub?.period) {
       setPeriod(sub?.period || 'MONTHLY');
-      setMonthlyOrYearly((sub?.period || 'MONTHLY') === 'MONTHLY' ? 'off' : 'on');
+      setMonthlyOrYearly(
+        (sub?.period || 'MONTHLY') === 'MONTHLY' ? 'off' : 'on'
+      );
     }
 
     setSubscription(sub);
@@ -201,9 +196,6 @@ export const MainBillingComponent: FC<{
     if (!subscription) {
       return 'FREE';
     }
-    if (initialChannels !== totalChannels) {
-      return '';
-    }
 
     if (period === 'YEARLY' && monthlyOrYearly === 'off') {
       return '';
@@ -214,26 +206,11 @@ export const MainBillingComponent: FC<{
     }
 
     return subscription?.subscriptionTier;
-  }, [subscription, totalChannels, initialChannels, monthlyOrYearly, period]);
-
-  const currentDisplay = useMemo(() => {
-    return sortBy(
-      [
-        { name: 'Free', price: 0 },
-        ...(monthlyOrYearly === 'on' ? tiers.year : tiers.month),
-      ],
-      (p) => ['Free', 'Standard', 'Pro'].indexOf(p.name)
-    );
-  }, [monthlyOrYearly]);
+  }, [subscription, initialChannels, monthlyOrYearly, period]);
 
   const moveToCheckout = useCallback(
     (billing: 'STANDARD' | 'PRO' | 'FREE') => async () => {
       const messages = [];
-      const beforeTotalChannels = pricing[billing].channel || initialChannels;
-
-      if (totalChannels < beforeTotalChannels) {
-        messages.push(`Some of the channels will be disabled`);
-      }
 
       if (
         !pricing[billing].team_members &&
@@ -284,7 +261,6 @@ export const MainBillingComponent: FC<{
         await fetch('/billing/subscribe', {
           method: 'POST',
           body: JSON.stringify({
-            total: totalChannels,
             period: monthlyOrYearly === 'on' ? 'YEARLY' : 'MONTHLY',
             billing,
           }),
@@ -307,8 +283,6 @@ export const MainBillingComponent: FC<{
           window.open(portal);
         }
       } else {
-        setTotalChannels(totalChannels);
-        setInitialChannels(totalChannels);
         setPeriod(monthlyOrYearly === 'on' ? 'YEARLY' : 'MONTHLY');
         setSubscription((subs) => ({
           ...subs!,
@@ -319,7 +293,6 @@ export const MainBillingComponent: FC<{
           '/user/self',
           {
             ...user,
-            totalChannels,
             tier: billing,
           },
           {
@@ -331,7 +304,7 @@ export const MainBillingComponent: FC<{
 
       setLoading(false);
     },
-    [monthlyOrYearly, totalChannels, subscription, user]
+    [monthlyOrYearly, subscription, user]
   );
 
   return (
@@ -346,34 +319,26 @@ export const MainBillingComponent: FC<{
           <div>YEARLY</div>
         </div>
       </div>
-      <div className="flex flex-col items-center gap-[10px]">
-        <div>Total Channels</div>
-        <div className="w-[60%]">
-          <Track
-            min={1}
-            max={60}
-            value={totalChannels}
-            onChange={setTotalChannels}
-          />
-        </div>
-      </div>
       <div className="flex gap-[16px]">
-        {currentDisplay.map((p) => (
+        {Object.entries(pricing).map(([name, values]) => (
           <div
-            key={p.name}
+            key={name}
             className="flex-1 bg-sixth border border-[#172034] rounded-[4px] p-[24px] gap-[16px] flex flex-col"
           >
-            <div className="text-[18px]">{p.name}</div>
+            <div className="text-[18px]">{name}</div>
             <div className="text-[38px] flex gap-[2px] items-center">
-              <div>{p.price ? '$' + totalChannels * p.price : p.name}</div>
-              {!!p.price && (
-                <div className={`text-[14px] ${interClass} text-[#AAA]`}>
-                  {monthlyOrYearly === 'on' ? '/year' : '/month'}
-                </div>
-              )}
+              <div>
+                $
+                {monthlyOrYearly === 'on'
+                  ? values.year_price
+                  : values.month_price}
+              </div>
+              <div className={`text-[14px] ${interClass} text-[#AAA]`}>
+                {monthlyOrYearly === 'on' ? '/year' : '/month'}
+              </div>
             </div>
             <div className="text-[14px] flex gap-[10px]">
-              {currentPackage === p.name.toUpperCase() &&
+              {currentPackage === name.toUpperCase() &&
               subscription?.cancelAt ? (
                 <div className="gap-[3px] flex flex-col">
                   <div>
@@ -384,24 +349,24 @@ export const MainBillingComponent: FC<{
                 </div>
               ) : (
                 <Button
-                  loading={loading && !!p.price}
+                  loading={loading}
                   disabled={
                     (!!subscription?.cancelAt &&
-                      p.name.toUpperCase() === 'FREE') ||
-                    currentPackage === p.name.toUpperCase()
+                      name.toUpperCase() === 'FREE') ||
+                    currentPackage === name.toUpperCase()
                   }
                   className={clsx(
                     subscription &&
-                      p.name.toUpperCase() === 'FREE' &&
+                      name.toUpperCase() === 'FREE' &&
                       '!bg-red-500'
                   )}
                   onClick={moveToCheckout(
-                    p.name.toUpperCase() as 'STANDARD' | 'PRO'
+                    name.toUpperCase() as 'STANDARD' | 'PRO'
                   )}
                 >
-                  {currentPackage === p.name.toUpperCase()
+                  {currentPackage === name.toUpperCase()
                     ? 'Current Plan'
-                    : p.name.toUpperCase() === 'FREE'
+                    : name.toUpperCase() === 'FREE'
                     ? subscription?.cancelAt
                       ? `Downgrade on ${dayjs
                           .utc(subscription?.cancelAt)
@@ -412,18 +377,17 @@ export const MainBillingComponent: FC<{
                 </Button>
               )}
               {subscription &&
-                currentPackage !== p.name.toUpperCase() &&
-                !!p.price && (
+                currentPackage !== name.toUpperCase() &&
+                name !== 'FREE' &&
+                !!name && (
                   <Prorate
                     period={monthlyOrYearly === 'on' ? 'YEARLY' : 'MONTHLY'}
-                    pack={p.name.toUpperCase() as 'STANDARD' | 'PRO'}
-                    totalChannels={totalChannels}
+                    pack={name.toUpperCase() as 'STANDARD' | 'PRO'}
                   />
                 )}
             </div>
             <Features
-              pack={p.name.toUpperCase() as 'FREE' | 'STANDARD' | 'PRO'}
-              channels={totalChannels}
+              pack={name.toUpperCase() as 'FREE' | 'STANDARD' | 'PRO'}
             />
           </div>
         ))}

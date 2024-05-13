@@ -4,10 +4,12 @@ import { CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.
 import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport/client/bull-mq.client';
 import dayjs from 'dayjs';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
-import { Integration, Post, Media } from '@prisma/client';
+import { Integration, Post, Media, From } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
-import {capitalize} from "lodash";
+import { capitalize } from 'lodash';
+import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
+import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
 
 type PostWithConditionals = Post & {
   integration?: Integration;
@@ -20,23 +22,33 @@ export class PostsService {
     private _postRepository: PostsRepository,
     private _workerServiceProducer: BullMqClient,
     private _integrationManager: IntegrationManager,
-    private _notificationService: NotificationService
+    private _notificationService: NotificationService,
+    private _messagesService: MessagesService,
+    private _stripeService: StripeService
   ) {}
 
   async getPostsRecursively(
     id: string,
     includeIntegration = false,
-    orgId?: string
+    orgId?: string,
+    isFirst?: boolean
   ): Promise<PostWithConditionals[]> {
     const post = await this._postRepository.getPost(
       id,
       includeIntegration,
-      orgId
+      orgId,
+      isFirst
     );
+
     return [
       post!,
       ...(post?.childrenPost?.length
-        ? await this.getPostsRecursively(post.childrenPost[0].id, false, orgId)
+        ? await this.getPostsRecursively(
+            post.childrenPost[0].id,
+            false,
+            orgId,
+            false
+          )
         : []),
     ];
   }
@@ -46,7 +58,7 @@ export class PostsService {
   }
 
   async getPost(orgId: string, id: string) {
-    const posts = await this.getPostsRecursively(id, false, orgId);
+    const posts = await this.getPostsRecursively(id, false, orgId, true);
     return {
       group: posts?.[0]?.group,
       posts: posts.map((post) => ({
@@ -79,16 +91,29 @@ export class PostsService {
     }
 
     try {
-      if (firstPost.integration?.type === 'article') {
-        await this.postArticle(firstPost.integration!, [
-          firstPost,
-          ...morePosts,
-        ]);
+      const finalPost =
+        firstPost.integration?.type === 'article'
+          ? await this.postArticle(firstPost.integration!, [
+              firstPost,
+              ...morePosts,
+            ])
+          : await this.postSocial(firstPost.integration!, [
+              firstPost,
+              ...morePosts,
+            ]);
 
+      if (!finalPost?.postId || !finalPost?.releaseURL) {
         return;
       }
 
-      await this.postSocial(firstPost.integration!, [firstPost, ...morePosts]);
+      if (firstPost.submittedForOrderId) {
+        this._workerServiceProducer.emit('submit', {
+          payload: {
+            id: firstPost.id,
+            releaseURL: finalPost.releaseURL,
+          },
+        });
+      }
     } catch (err: any) {
       await this._notificationService.inAppNotification(
         firstPost.organizationId,
@@ -147,7 +172,10 @@ export class PostsService {
                 m.path
               : m.path,
           type: 'image',
-          path: m.path.indexOf('http') === -1 ? process.env.UPLOAD_DIRECTORY + m.path : m.path,
+          path:
+            m.path.indexOf('http') === -1
+              ? process.env.UPLOAD_DIRECTORY + m.path
+              : m.path,
         })),
       }))
     );
@@ -162,10 +190,17 @@ export class PostsService {
 
     await this._notificationService.inAppNotification(
       integration.organizationId,
-      `Your post has been published on ${capitalize(integration.providerIdentifier)}`,
+      `Your post has been published on ${capitalize(
+        integration.providerIdentifier
+      )}`,
       `Your post has been published at ${publishedPosts[0].releaseURL}`,
       true
     );
+
+    return {
+      postId: publishedPosts[0].postId,
+      releaseURL: publishedPosts[0].releaseURL,
+    };
   }
 
   private async postArticle(integration: Integration, posts: Post[]) {
@@ -186,11 +221,18 @@ export class PostsService {
 
     await this._notificationService.inAppNotification(
       integration.organizationId,
-      `Your article has been published on ${capitalize(integration.providerIdentifier)}`,
+      `Your article has been published on ${capitalize(
+        integration.providerIdentifier
+      )}`,
       `Your article has been published at ${releaseURL}`,
       true
     );
     await this._postRepository.updatePost(newPosts[0].id, postId, releaseURL);
+
+    return {
+      postId,
+      releaseURL,
+    };
   }
 
   async deletePost(orgId: string, group: string) {
@@ -202,6 +244,38 @@ export class PostsService {
 
   async countPostsFromDay(orgId: string, date: Date) {
     return this._postRepository.countPostsFromDay(orgId, date);
+  }
+
+  async submit(
+    id: string,
+    order: string,
+    message: string,
+    integrationId: string
+  ) {
+    if (!(await this._messagesService.canAddPost(id, order, integrationId))) {
+      console.log('hello');
+      throw new Error('You can not add a post to this publication');
+    }
+    const submit = await this._postRepository.submit(id, order);
+    const messageModel = await this._messagesService.createNewMessage(
+      submit?.submittedForOrder?.messageGroupId || '',
+      From.SELLER,
+      '',
+      {
+        type: 'post',
+        data: {
+          id: order,
+          postId: id,
+          status: 'PENDING',
+          integration: integrationId,
+          description: message.slice(0, 300) + '...',
+        },
+      }
+    );
+
+    await this._postRepository.updateMessage(id, messageModel.id);
+
+    return messageModel;
   }
 
   async createPost(orgId: string, body: CreatePostDto) {
@@ -224,6 +298,17 @@ export class PostsService {
         'post',
         previousPost ? previousPost : posts?.[0]?.id
       );
+
+      if (body.order && body.type !== 'draft') {
+        await this.submit(
+          posts[0].id,
+          body.order,
+          post.value[0].content,
+          post.integration.id
+        );
+        continue;
+      }
+
       if (
         (body.type === 'schedule' || body.type === 'now') &&
         dayjs(body.date).isAfter(dayjs())
@@ -245,16 +330,105 @@ export class PostsService {
   }
 
   async changeDate(orgId: string, id: string, date: string) {
+    const getPostById = await this._postRepository.getPostById(id, orgId);
+    if (
+      getPostById?.submittedForOrderId &&
+      getPostById.approvedSubmitForOrder !== 'NO'
+    ) {
+      throw new Error(
+        'You can not change the date of a post that has been submitted'
+      );
+    }
+
     await this._workerServiceProducer.delete('post', id);
-    this._workerServiceProducer.emit('post', {
-      id: id,
-      options: {
-        delay: dayjs(date).diff(dayjs(), 'millisecond'),
-      },
-      payload: {
+    if (getPostById?.state !== 'DRAFT' && !getPostById?.submittedForOrderId) {
+      this._workerServiceProducer.emit('post', {
         id: id,
-      },
-    });
+        options: {
+          delay: dayjs(date).diff(dayjs(), 'millisecond'),
+        },
+        payload: {
+          id: id,
+        },
+      });
+    }
+
     return this._postRepository.changeDate(orgId, id, date);
+  }
+
+  async payout(id: string, url: string) {
+    const getPost = await this._postRepository.getPostById(id);
+    if (!getPost || !getPost.submittedForOrder) {
+      return;
+    }
+
+    const findPrice = getPost.submittedForOrder.ordersItems.find(
+      (orderItem) => orderItem.integrationId === getPost.integrationId
+    )!;
+
+    await this._messagesService.createNewMessage(
+      getPost.submittedForOrder.messageGroupId,
+      From.SELLER,
+      '',
+      {
+        type: 'published',
+        data: {
+          id: getPost.submittedForOrder.id,
+          postId: id,
+          status: 'PUBLISHED',
+          integrationId: getPost.integrationId,
+          integration: getPost.integration.providerIdentifier,
+          picture: getPost.integration.picture,
+          name: getPost.integration.name,
+          url,
+        },
+      }
+    );
+
+    const totalItems = getPost.submittedForOrder.ordersItems.reduce(
+      (all, p) => all + p.quantity,
+      0
+    );
+    const totalPosts = getPost.submittedForOrder.posts.length;
+
+    if (totalItems === totalPosts) {
+      await this._messagesService.completeOrder(getPost.submittedForOrder.id);
+      await this._messagesService.createNewMessage(
+        getPost.submittedForOrder.messageGroupId,
+        From.SELLER,
+        '',
+        {
+          type: 'order-completed',
+          data: {
+            id: getPost.submittedForOrder.id,
+            postId: id,
+            status: 'PUBLISHED',
+          },
+        }
+      );
+    }
+
+    try {
+      await this._stripeService.payout(
+        getPost.submittedForOrder.id,
+        getPost.submittedForOrder.captureId!,
+        getPost.submittedForOrder.seller.account!,
+        findPrice.price
+      );
+
+      return this._notificationService.inAppNotification(
+        getPost.integration.organizationId,
+        'Payout completed',
+        `You have received a payout of $${findPrice.price}`,
+        true
+      );
+    } catch (err) {
+      await this._messagesService.payoutProblem(
+        getPost.submittedForOrder.id,
+        getPost.submittedForOrder.seller.id,
+        findPrice.price,
+        id
+      );
+    }
   }
 }

@@ -18,6 +18,7 @@ import { useAddProvider } from '@gitroom/frontend/components/launches/add.provid
 import { CommentComponent } from '@gitroom/frontend/components/launches/comments/comment.component';
 import { useSWRConfig } from 'swr';
 import { useIntersectionObserver } from '@uidotdev/usehooks';
+import { useToaster } from '@gitroom/react/toaster/toaster';
 
 export const days = [
   '',
@@ -203,6 +204,7 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
     changeDate,
   } = useCalendar();
 
+  const toaster = useToaster();
   const modal = useModals();
   const fetch = useFetch();
 
@@ -243,15 +245,21 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
 
   const [{ canDrop }, drop] = useDrop(() => ({
     accept: 'post',
-    drop: (item: any) => {
+    drop: async (item: any) => {
       if (isBeforeNow) return;
-      fetch(`/posts/${item.id}/date`, {
+      const { status } = await fetch(`/posts/${item.id}/date`, {
         method: 'PUT',
         body: JSON.stringify({
           date: getDate.utc().format('YYYY-MM-DDTHH:mm:ss'),
         }),
       });
-      changeDate(item.id, getDate);
+
+      if (status !== 500) {
+        changeDate(item.id, getDate);
+        return;
+      }
+
+      toaster.show('Can\'t change date, remove post from publication', 'warning');
     },
     collect: (monitor) => ({
       canDrop: isBeforeNow ? false : !!monitor.canDrop() && !!monitor.isOver(),
@@ -272,6 +280,7 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
         children: (
           <ExistingDataContextProvider value={data}>
             <AddEditModal
+              reopenModal={editPost(id)}
               integrations={integrations.filter(
                 (f) => f.id === data.integration
               )}
@@ -294,7 +303,13 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
       classNames: {
         modal: 'bg-transparent text-white',
       },
-      children: <AddEditModal integrations={integrations} date={getDate} />,
+      children: (
+        <AddEditModal
+          reopenModal={() => ({})}
+          integrations={integrations}
+          date={getDate}
+        />
+      ),
       size: '80%',
       // title: `Adding posts for ${getDate.format('DD/MM/YYYY HH:mm')}`,
     });

@@ -71,6 +71,10 @@ export class CreatePostDto {
   @IsIn(['draft', 'schedule', 'now'])
   type: 'draft' | 'schedule' | 'now';
 
+  @IsOptional()
+  @IsString()
+  order: string;
+
   @IsDefined()
   @IsDateString()
   date: string;

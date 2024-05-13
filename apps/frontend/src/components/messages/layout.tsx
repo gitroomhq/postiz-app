@@ -1,49 +1,27 @@
 'use client';
 
-import { FC, ReactNode, useCallback } from 'react';
+import { FC, ReactNode, useCallback, useMemo } from 'react';
 import clsx from 'clsx';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useParams, useRouter } from 'next/navigation';
-
-export interface Root2 {
-  id: string;
-  buyerId: string;
-  sellerId: string;
-  createdAt: string;
-  updatedAt: string;
-  seller: Seller;
-  messages: Message[];
-}
-
-export interface Seller {
-  name: any;
-  picture: Picture;
-}
-
-export interface Picture {
-  id: string;
-  path: string;
-}
-
-export interface Message {
-  id: string;
-  from: string;
-  content: string;
-  groupId: string;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt: any;
-}
+import { MarketplaceProvider, Root2 } from '@gitroom/frontend/components/marketplace/marketplace.provider';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { Button } from '@gitroom/react/form/button';
 
 const Card: FC<{ message: Root2 }> = (props) => {
   const { message } = props;
   const path = useParams();
   const router = useRouter();
+  const user = useUser();
 
   const changeConversation = useCallback(() => {
     router.push(`/messages/${message.id}`);
   }, []);
+
+  const showFrom = useMemo(() => {
+    return user?.id === message?.buyerId ? message?.seller : message?.buyer;
+  }, [message, user]);
 
   return (
     <div
@@ -54,13 +32,17 @@ const Card: FC<{ message: Root2 }> = (props) => {
       )}
     >
       <div className="w-[40px] h-[40px] rounded-full bg-amber-200">
-        {message?.seller?.picture?.path && (
-          <img src={message.seller.picture.path} alt={message.seller.name || 'Noname'} className="w-full h-full rounded-full" />
+        {showFrom?.picture?.path && (
+          <img
+            src={showFrom.picture.path}
+            alt={showFrom.name || 'Noname'}
+            className="w-full h-full rounded-full"
+          />
         )}
       </div>
       <div className="flex-1 relative">
         <div className="absolute left-0 top-0 w-full h-full flex flex-col whitespace-nowrap">
-          <div>{message.seller.name || 'Noname'}</div>
+          <div>{showFrom?.name || 'Noname'}</div>
           <div className="text-[12px] w-full overflow-ellipsis overflow-hidden">
             {message.messages[0]?.content}
           </div>
@@ -73,12 +55,37 @@ const Card: FC<{ message: Root2 }> = (props) => {
 export const Layout: FC<{ renderChildren: ReactNode }> = (props) => {
   const { renderChildren } = props;
   const fetch = useFetch();
+  const params = useParams();
+  const router = useRouter();
 
   const loadMessagesGroup = useCallback(async () => {
     return await (await fetch('/messages')).json();
   }, []);
 
-  const messagesGroup = useSWR<Root2[]>('messagesGroup', loadMessagesGroup);
+  const messagesGroup = useSWR<Root2[]>('messagesGroup', loadMessagesGroup, {
+    refreshInterval: 5000
+  });
+
+  const marketplace = useCallback(() => {
+    router.push('/marketplace');
+  }, [router]);
+
+  const currentMessage = useMemo(() => {
+    return messagesGroup?.data?.find((message) => message.id === params.id);
+  }, [params.id, messagesGroup.data]);
+
+  if (messagesGroup.isLoading) {
+    return null;
+  }
+  if (!messagesGroup.isLoading && !messagesGroup?.data?.length) {
+    return (
+      <div className="flex flex-col justify-center items-center mt-[100px] gap-[27px] text-center">
+        <div><img src="/peoplemarketplace.svg" /></div>
+        <div className="text-[48px]">There are no messages yet.<br />Checkout the Marketplace</div>
+        <div><Button onClick={marketplace}>Go to marketplace</Button></div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex gap-[20px]">
@@ -90,7 +97,9 @@ export const Layout: FC<{ renderChildren: ReactNode }> = (props) => {
           ))}
         </div>
       </div>
-      <div className="flex-1 flex flex-col">{renderChildren}</div>
+      <MarketplaceProvider.Provider value={{ message: currentMessage }}>
+        <div className="flex-1 flex flex-col">{renderChildren}</div>
+      </MarketplaceProvider.Provider>
     </div>
   );
 };

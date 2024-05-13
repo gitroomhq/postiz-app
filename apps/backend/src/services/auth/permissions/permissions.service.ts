@@ -36,14 +36,18 @@ export class PermissionsService {
   async getPackageOptions(orgId: string) {
     const subscription =
       await this._subscriptionService.getSubscriptionByOrganizationId(orgId);
+
+    const tier =
+      subscription?.subscriptionTier ||
+      (!process.env.STRIPE_PUBLISHABLE_KEY ? 'PRO' : 'FREE');
+
+    const { channel, ...all } = pricing[tier];
     return {
       subscription,
-      options:
-        pricing[
-          subscription?.subscriptionTier || !process.env.STRIPE_PUBLISHABLE_KEY
-            ? 'PRO'
-            : 'FREE'
-        ],
+      options: {
+        ...all,
+        ...{ channel: tier === 'FREE' ? { channel } : {} },
+      },
     };
   }
 
@@ -73,6 +77,7 @@ export class PermissionsService {
         ).length;
 
         if (
+          // @ts-ignore
           (options.channel && options.channel > totalChannels) ||
           (subscription?.totalChannels || 0) > totalChannels
         ) {

@@ -1,4 +1,6 @@
 export interface PricingInnerInterface {
+  month_price: number;
+  year_price: number;
   channel?: number;
   posts_per_month: number;
   team_members: boolean;
@@ -12,7 +14,9 @@ export interface PricingInterface {
 }
 export const pricing: PricingInterface = {
   FREE: {
-    channel: 3,
+    month_price: 0,
+    year_price: 0,
+    channel: 2,
     posts_per_month: 30,
     team_members: false,
     community_features: false,
@@ -21,6 +25,9 @@ export const pricing: PricingInterface = {
     import_from_channels: false,
   },
   STANDARD: {
+    month_price: 30,
+    year_price: 288,
+    channel: 5,
     posts_per_month: 400,
     team_members: false,
     ai: true,
@@ -29,6 +36,9 @@ export const pricing: PricingInterface = {
     import_from_channels: true,
   },
   PRO: {
+    month_price: 40,
+    year_price: 384,
+    channel: 8,
     posts_per_month: 1000000,
     community_features: true,
     team_members: true,

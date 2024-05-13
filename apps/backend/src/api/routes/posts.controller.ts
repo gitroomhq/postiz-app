@@ -10,14 +10,18 @@ import {
 } from '@nestjs/common';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
-import { Organization } from '@prisma/client';
+import { Organization, User } from '@prisma/client';
 import { CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { CommentsService } from '@gitroom/nestjs-libraries/database/prisma/comments/comments.service';
-import {StarsService} from "@gitroom/nestjs-libraries/database/prisma/stars/stars.service";
-import {CheckPolicies} from "@gitroom/backend/services/auth/permissions/permissions.ability";
-import {AuthorizationActions, Sections} from "@gitroom/backend/services/auth/permissions/permissions.service";
-import {ApiTags} from "@nestjs/swagger";
+import { StarsService } from '@gitroom/nestjs-libraries/database/prisma/stars/stars.service';
+import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
+import {
+  AuthorizationActions,
+  Sections,
+} from '@gitroom/backend/services/auth/permissions/permissions.service';
+import { ApiTags } from '@nestjs/swagger';
+import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
 
 @ApiTags('Posts')
 @Controller('/posts')
@@ -25,8 +29,17 @@ export class PostsController {
   constructor(
     private _postsService: PostsService,
     private _commentsService: CommentsService,
-    private _starsService: StarsService
+    private _starsService: StarsService,
+    private _messagesService: MessagesService
   ) {}
+
+  @Get('/marketplace/:id?')
+  async getMarketplacePosts(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string
+  ) {
+    return this._messagesService.getMarketplaceAvailableOffers(org.id, id);
+  }
 
   @Get('/')
   async getPosts(
@@ -55,8 +68,8 @@ export class PostsController {
 
   @Get('/old')
   oldPosts(
-      @GetOrgFromRequest() org: Organization,
-      @Query('date') date: string
+    @GetOrgFromRequest() org: Organization,
+    @Query('date') date: string
   ) {
     return this._postsService.getOldPosts(org.id, date);
   }
@@ -72,6 +85,7 @@ export class PostsController {
     @GetOrgFromRequest() org: Organization,
     @Body() body: CreatePostDto
   ) {
+
     return this._postsService.createPost(org.id, body);
   }
 

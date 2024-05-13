@@ -7,7 +7,7 @@ import RedditProvider from "@gitroom/frontend/components/launches/providers/redd
 import MediumProvider from "@gitroom/frontend/components/launches/providers/medium/medium.provider";
 import HashnodeProvider from "@gitroom/frontend/components/launches/providers/hashnode/hashnode.provider";
 
-const Providers = [
+export const Providers = [
     {identifier: 'devto', component: DevtoProvider},
     {identifier: 'x', component: XProvider},
     {identifier: 'linkedin', component: LinkedinProvider},

@@ -1,6 +1,7 @@
 import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
 import dayjs from 'dayjs';
+import * as console from 'node:console';
 
 @Injectable()
 export class IntegrationRepository {
@@ -75,6 +76,37 @@ export class IntegrationRepository {
         id,
       },
     });
+  }
+
+  async getIntegrationForOrder(id: string, order: string, user: string, org: string) {
+    console.log(id, order, user, org);
+    const integration = await this._posts.model.post.findFirst({
+      where: {
+        integrationId: id,
+        submittedForOrder: {
+          id: order,
+          messageGroup: {
+            OR: [
+              {sellerId: user},
+              {buyerId: user},
+              {buyerOrganizationId: org},
+            ]
+          }
+        }
+      },
+      select: {
+        integration: {
+          select: {
+            id: true,
+            name: true,
+            picture: true,
+            providerIdentifier: true,
+          },
+        }
+      }
+    });
+
+    return integration?.integration;
   }
 
   getIntegrationsList(org: string) {

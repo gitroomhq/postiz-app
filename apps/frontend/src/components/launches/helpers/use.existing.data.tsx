@@ -5,7 +5,7 @@ const ExistingDataContext = createContext({
     integration: '',
     group: undefined as undefined | string,
     posts: [] as Post[],
-    settings: {} as any
+    settings: {} as any,
 });
 
 

@@ -25,6 +25,7 @@ model Organization {
   post         Post[]
   Comments     Comments[]
   notifications Notifications[]
+  buyerOrganization MessagesGroup[]
 }
 
 model User {
@@ -51,12 +52,18 @@ model User {
   account       String?
   connectedAccount  Boolean         @default(false)
   groupBuyer   MessagesGroup[]  @relation("groupBuyer")
-  groupSeller  MessagesGroup[] @relation("groupSeller")
+  groupSeller  MessagesGroup[]  @relation("groupSeller")
+  orderBuyer   Orders[]        @relation("orderBuyer")
+  orderSeller  Orders[]        @relation("orderSeller")
+  payoutProblems    PayoutProblems[]
+  lastOnline   DateTime          @default(now())
 
   @@unique([email, providerName])
   @@index([lastReadNotifications])
   @@index([inviteId])
   @@index([account])
+  @@index([lastOnline])
+  @@index([pictureId])
 }
 
 model UserOrganization {
@@ -71,6 +78,7 @@ model UserOrganization {
   updatedAt      DateTime     @updatedAt
 
   @@unique([userId, organizationId])
+  @@index([disabled])
 }
 
 model GitHub {
@@ -179,6 +187,7 @@ model Integration {
   deletedAt       DateTime?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime?      @updatedAt
+  orderItems      OrderItems[]
 
   @@index([updatedAt])
   @@index([deletedAt])
@@ -208,27 +217,33 @@ model Comments {
 }
 
 model Post {
-  id                String       @id @default(cuid())
-  state             State        @default(QUEUE)
-  publishDate       DateTime
-  organizationId    String
-  integrationId     String
-  content           String
-  group             String
-  organization      Organization @relation(fields: [organizationId], references: [id])
-  integration       Integration  @relation(fields: [integrationId], references: [id])
-  title             String?
-  description       String?
-  parentPostId      String?
-  releaseId         String?
-  releaseURL        String?
-  settings          String?
-  parentPost        Post?       @relation("parentPostId", fields: [parentPostId], references: [id])
-  childrenPost      Post[]      @relation("parentPostId")
-  image             String?
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
-  deletedAt         DateTime?
+  id                  String       @id @default(cuid())
+  state               State        @default(QUEUE)
+  publishDate         DateTime
+  organizationId      String
+  integrationId       String
+  content             String
+  group               String
+  organization        Organization @relation(fields: [organizationId], references: [id])
+  integration         Integration  @relation(fields: [integrationId], references: [id])
+  title               String?
+  description         String?
+  parentPostId        String?
+  releaseId           String?
+  releaseURL          String?
+  settings            String?
+  parentPost          Post?       @relation("parentPostId", fields: [parentPostId], references: [id])
+  childrenPost        Post[]      @relation("parentPostId")
+  image               String?
+  submittedForOrderId String?
+  submittedForOrder   Orders? @relation(fields: [submittedForOrderId], references: [id])
+  approvedSubmitForOrder APPROVED_SUBMIT_FOR_ORDER @default(NO)
+  lastMessageId       String?
+  lastMessage         Messages? @relation(fields: [lastMessageId], references: [id])
+  payoutProblems      PayoutProblems[]
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  deletedAt           DateTime?
 
   @@index([group])
   @@index([deletedAt])
@@ -236,6 +251,13 @@ model Post {
   @@index([state])
   @@index([organizationId])
   @@index([parentPostId])
+  @@index([submittedForOrderId])
+  @@index([approvedSubmitForOrder])
+  @@index([lastMessageId])
+  @@index([createdAt])
+  @@index([updatedAt])
+  @@index([releaseURL])
+  @@index([integrationId])
 }
 
 model Notifications {
@@ -254,18 +276,72 @@ model Notifications {
 }
 
 model MessagesGroup {
-  id                String   @id @default(uuid())
-  buyerId           String
-  buyer             User     @relation("groupBuyer", fields: [buyerId], references: [id])
-  sellerId          String
-  seller            User     @relation("groupSeller", fields: [sellerId], references: [id])
-  messages          Messages[]
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                  String   @id @default(uuid())
+  buyerOrganizationId String
+  buyerOrganization   Organization @relation(fields: [buyerOrganizationId], references: [id])
+  buyerId             String
+  buyer               User     @relation("groupBuyer", fields: [buyerId], references: [id])
+  sellerId            String
+  seller              User     @relation("groupSeller", fields: [sellerId], references: [id])
+  messages            Messages[]
+  orders              Orders[]
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   @@unique([buyerId, sellerId])
   @@index([createdAt])
   @@index([updatedAt])
+  @@index([buyerOrganizationId])
+}
+
+model PayoutProblems {
+  id                String   @id @default(uuid())
+  status            String
+  orderId           String
+  order             Orders   @relation(fields: [orderId], references: [id])
+  userId            String
+  user              User     @relation(fields: [userId], references: [id])
+  postId            String?
+  post              Post?     @relation(fields: [postId], references: [id])
+  amount            Int
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Orders {
+  id                String   @id @default(uuid())
+  buyerId           String
+  sellerId          String
+  posts             Post[]
+  buyer             User     @relation("orderBuyer", fields: [buyerId], references: [id])
+  seller            User     @relation("orderSeller", fields: [sellerId], references: [id])
+  status            OrderStatus
+  ordersItems       OrderItems[]
+  messageGroupId    String
+  messageGroup      MessagesGroup @relation(fields: [messageGroupId], references: [id])
+  captureId         String?
+  payoutProblems    PayoutProblems[]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([updatedAt])
+  @@index([createdAt])
+  @@index([messageGroupId])
+}
+
+model OrderItems {
+  id                String   @id @default(uuid())
+  orderId           String
+  order             Orders   @relation(fields: [orderId], references: [id])
+  integrationId     String
+  integration       Integration @relation(fields: [integrationId], references: [id])
+  quantity          Int
+  price             Int
+
+  @@index([orderId])
+  @@index([integrationId])
 }
 
 model Messages {
@@ -274,6 +350,8 @@ model Messages {
   content           String?
   groupId           String
   group             MessagesGroup @relation(fields: [groupId], references: [id])
+  special           String?
+  posts             Post[]
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   deletedAt         DateTime?
@@ -281,6 +359,13 @@ model Messages {
   @@index([groupId])
   @@index([createdAt])
   @@index([deletedAt])
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  CANCELED
+  COMPLETED
 }
 
 enum From {
@@ -314,4 +399,10 @@ enum Role {
   SUPERADMIN
   ADMIN
   USER
+}
+
+enum APPROVED_SUBMIT_FOR_ORDER {
+  NO
+  WAITING_CONFIRMATION
+  YES
 }

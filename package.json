@@ -44,6 +44,7 @@
     "@types/multer": "^1.4.11",
     "@types/remove-markdown": "^0.3.4",
     "@types/stripe": "^8.0.417",
+    "@types/yup": "^0.32.0",
     "@uidotdev/usehooks": "^2.4.1",
     "@uiw/react-md-editor": "^4.0.3",
     "@virtual-grid/react": "^2.0.2",
@@ -96,7 +97,8 @@
     "twitter-api-v2": "^1.16.0",
     "use-debounce": "^10.0.0",
     "utf-8-validate": "^5.0.10",
-    "yargs": "^17.7.2"
+    "yargs": "^17.7.2",
+    "yup": "^1.4.0"
   },
   "devDependencies": {
     "@mintlify/scraping": "^3.0.90",
