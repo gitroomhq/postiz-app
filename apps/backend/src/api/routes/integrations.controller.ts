@@ -24,7 +24,6 @@ export class IntegrationsController {
     private _integrationService: IntegrationService
   ) {}
   @Get('/')
-  @CheckPolicies([AuthorizationActions.Create, Sections.CHANNEL])
   getIntegration() {
     return this._integrationManager.getAllIntegrations();
   }
@@ -56,6 +55,7 @@ export class IntegrationsController {
   }
 
   @Get('/social/:integration')
+  @CheckPolicies([AuthorizationActions.Create, Sections.CHANNEL])
   async getIntegrationUrl(@Param('integration') integration: string) {
     if (
       !this._integrationManager

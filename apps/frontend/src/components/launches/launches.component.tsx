@@ -1,7 +1,7 @@
 'use client';
 
 import { AddProviderButton } from '@gitroom/frontend/components/launches/add.provider.component';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { orderBy } from 'lodash';
 import { Calendar } from '@gitroom/frontend/components/launches/calendar';
@@ -53,6 +53,12 @@ export const LaunchesComponent = () => {
 
     if (shouldReload) {
       setReload(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.opener) {
+      window.close();
     }
   }, []);
 

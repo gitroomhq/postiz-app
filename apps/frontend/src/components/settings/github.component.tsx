@@ -43,51 +43,6 @@ const ConnectedComponent: FC<{
   );
 };
 
-const RepositoryComponent: FC<{
-  id: string;
-  login?: string;
-  setRepo: (name: string) => void;
-}> = (props) => {
-  const { setRepo, login, id } = props;
-  const [repositories, setRepositories] = useState<
-    Array<{ id: string; name: string }>
-  >([]);
-  const fetch = useFetch();
-
-  const loadRepositories = useCallback(async () => {
-    const { repositories: repolist } = await (
-      await fetch(`/settings/organizations/${id}/${login}`)
-    ).json();
-    setRepositories(repolist);
-  }, [login, id]);
-
-  useEffect(() => {
-    setRepositories([]);
-    if (!login) {
-      return;
-    }
-
-    loadRepositories();
-  }, [login]);
-  if (!login || !repositories.length) {
-    return <></>;
-  }
-
-  return (
-    <select
-      className="border border-fifth bg-transparent h-[40px]"
-      onChange={(e) => setRepo(e.target.value)}
-    >
-      <option value="">Choose a repository</option>
-      {repositories.map((o) => (
-        <option key={o.id} value={o.name}>
-          {o.name}
-        </option>
-      ))}
-    </select>
-  );
-};
-
 const ConnectComponent: FC<{
   setConnected: (name: string) => void;
   id: string;
@@ -170,13 +125,21 @@ const ConnectComponent: FC<{
 export const GithubComponent: FC<{
   organizations: Array<{ login: string; id: string }>;
   github: Array<{ id: string; login: string }>;
+  mutate: any;
 }> = (props) => {
+  if (typeof window !== 'undefined' && window.opener) {
+    window.close();
+  }
   const { github, organizations } = props;
   const [githubState, setGithubState] = useState(github);
+  useEffect(() => {
+    setGithubState(github);
+  }, [github]);
   const fetch = useFetch();
+
   const connect = useCallback(async () => {
     const { url } = await (await fetch('/settings/github/url')).json();
-    window.location.href = url;
+    window.open(url, "Github Connect", "width=700,height=700");
   }, []);
 
   const setConnected = useCallback(

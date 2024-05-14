@@ -44,8 +44,9 @@ export const ApiModal: FC<{
   identifier: string;
   name: string;
   update?: () => void;
+  close?: () => void;
 }> = (props) => {
-  const { update, name } = props;
+  const { update, name, close: closePopup } = props;
   const fetch = useFetch();
   const router = useRouter();
   const modal = useModals();
@@ -55,6 +56,9 @@ export const ApiModal: FC<{
   });
 
   const close = useCallback(() => {
+    if (closePopup) {
+      return closePopup();
+    }
     modal.closeAll();
   }, []);
 
@@ -68,7 +72,11 @@ export const ApiModal: FC<{
     );
 
     if (add.ok) {
-      modal.closeAll();
+      if (closePopup) {
+        closePopup();
+      } else {
+        modal.closeAll();
+      }
       router.refresh();
       if (update) update();
       return;

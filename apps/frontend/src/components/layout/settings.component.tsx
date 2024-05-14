@@ -1,5 +1,5 @@
 import { useModals } from '@mantine/modals';
-import React, { FC, useCallback, useEffect, useMemo } from 'react';
+import React, { FC, Ref, useCallback, useEffect, useMemo } from 'react';
 import { Input } from '@gitroom/react/form/input';
 import { Button } from '@gitroom/react/form/button';
 import { Textarea } from '@gitroom/react/form/textarea';
@@ -10,8 +10,10 @@ import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useSWRConfig } from 'swr';
+import clsx from 'clsx';
 
-const SettingsPopup: FC = () => {
+export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
+  const { getRef } = props;
   const fetch = useFetch();
   const toast = useToaster();
   const swr = useSWRConfig();
@@ -48,6 +50,11 @@ const SettingsPopup: FC = () => {
       method: 'POST',
       body: JSON.stringify(val),
     });
+
+    if (getRef) {
+      return ;
+    }
+
     toast.show('Profile updated');
     swr.mutate('/marketplace/account');
     close();
@@ -60,28 +67,38 @@ const SettingsPopup: FC = () => {
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(submit)}>
-        <div className="w-full max-w-[920px] mx-auto bg-[#0B101B] p-[32px] rounded-[4px] border border-[#172034] gap-[24px] flex flex-col relative">
-          <button
-            onClick={close}
-            className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
-            type="button"
-          >
-            <svg
-              viewBox="0 0 15 15"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
+        {!!getRef && <button type="submit" className="hidden" ref={getRef}></button>}
+        <div
+          className={clsx(
+            'w-full max-w-[920px] mx-auto bg-[#0B101B] gap-[24px] flex flex-col relative',
+            !getRef && 'p-[32px] rounded-[4px] border border-[#172034]'
+          )}
+        >
+          {!getRef && (
+            <button
+              onClick={close}
+              className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+              type="button"
             >
-              <path
-                d="M11.7816 4.03157C12.0062 3.80702 12.0062 3.44295 11.7816 3.2184C11.5571 2.99385 11.193 2.99385 10.9685 3.2184L7.50005 6.68682L4.03164 3.2184C3.80708 2.99385 3.44301 2.99385 3.21846 3.2184C2.99391 3.44295 2.99391 3.80702 3.21846 4.03157L6.68688 7.49999L3.21846 10.9684C2.99391 11.193 2.99391 11.557 3.21846 11.7816C3.44301 12.0061 3.80708 12.0061 4.03164 11.7816L7.50005 8.31316L10.9685 11.7816C11.193 12.0061 11.5571 12.0061 11.7816 11.7816C12.0062 11.557 12.0062 11.193 11.7816 10.9684L8.31322 7.49999L11.7816 4.03157Z"
-                fill="currentColor"
-                fillRule="evenodd"
-                clipRule="evenodd"
-              ></path>
-            </svg>
-          </button>
-          <div className="text-[24px] font-[600]">Profile Settings</div>
+              <svg
+                viewBox="0 0 15 15"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+              >
+                <path
+                  d="M11.7816 4.03157C12.0062 3.80702 12.0062 3.44295 11.7816 3.2184C11.5571 2.99385 11.193 2.99385 10.9685 3.2184L7.50005 6.68682L4.03164 3.2184C3.80708 2.99385 3.44301 2.99385 3.21846 3.2184C2.99391 3.44295 2.99391 3.80702 3.21846 4.03157L6.68688 7.49999L3.21846 10.9684C2.99391 11.193 2.99391 11.557 3.21846 11.7816C3.44301 12.0061 3.80708 12.0061 4.03164 11.7816L7.50005 8.31316L10.9685 11.7816C11.193 12.0061 11.5571 12.0061 11.7816 11.7816C12.0062 11.557 12.0062 11.193 11.7816 10.9684L8.31322 7.49999L11.7816 4.03157Z"
+                  fill="currentColor"
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                ></path>
+              </svg>
+            </button>
+          )}
+          {!getRef && (
+            <div className="text-[24px] font-[600]">Profile Settings</div>
+          )}
           <div className="flex flex-col gap-[4px]">
             <div className="text-[20px] font-[500]">Profile</div>
             <div className="text-[14px] text-[#AAA] font-[400]">
@@ -106,7 +123,10 @@ const SettingsPopup: FC = () => {
                 <div className="flex flex-col gap-[2px]">
                   <div className="text-[14px]">Profile Picture</div>
                   <div className="flex gap-[8px]">
-                    <button className="h-[24px] w-[120px] bg-[#612AD5] rounded-[4px] flex justify-center gap-[4px] items-center cursor-pointer" type="button">
+                    <button
+                      className="h-[24px] w-[120px] bg-[#612AD5] rounded-[4px] flex justify-center gap-[4px] items-center cursor-pointer"
+                      type="button"
+                    >
                       <div>
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -125,7 +145,10 @@ const SettingsPopup: FC = () => {
                         Upload image
                       </div>
                     </button>
-                    <button className="h-[24px] w-[88px] rounded-[4px] border-2 border-[#506490] flex justify-center items-center gap-[4px]" type="button">
+                    <button
+                      className="h-[24px] w-[88px] rounded-[4px] border-2 border-[#506490] flex justify-center items-center gap-[4px]"
+                      type="button"
+                    >
                       <div>
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -152,9 +175,11 @@ const SettingsPopup: FC = () => {
               <Textarea label="Bio" name="bio" className="resize-none" />
             </div>
           </div>
-          <div className="justify-end flex">
-            <Button type="submit">Save</Button>
-          </div>
+          {!getRef && (
+            <div className="justify-end flex">
+              <Button type="submit">Save</Button>
+            </div>
+          )}
         </div>
       </form>
     </FormProvider>
