@@ -13,7 +13,7 @@ async function bootstrap() {
     rawBody: true,
     cors: {
       credentials: true,
-      exposedHeaders: ['reload'],
+      exposedHeaders: ['reload', 'onboarding'],
       origin: [process.env.FRONTEND_URL],
     }
   });

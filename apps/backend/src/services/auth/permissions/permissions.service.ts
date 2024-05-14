@@ -46,7 +46,7 @@ export class PermissionsService {
       subscription,
       options: {
         ...all,
-        ...{ channel: tier === 'FREE' ? { channel } : {} },
+        ...{ channel: tier === 'FREE' ? channel : -10 },
       },
     };
   }
@@ -77,7 +77,6 @@ export class PermissionsService {
         ).length;
 
         if (
-          // @ts-ignore
           (options.channel && options.channel > totalChannels) ||
           (subscription?.totalChannels || 0) > totalChannels
         ) {

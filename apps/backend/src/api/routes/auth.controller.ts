@@ -50,7 +50,7 @@ export class AuthController {
         });
       }
 
-      response.header('reload', 'true');
+      response.header('onboarding', 'true');
       response.status(200).json({
         register: true,
       });
