@@ -125,7 +125,6 @@ const ConnectComponent: FC<{
 export const GithubComponent: FC<{
   organizations: Array<{ login: string; id: string }>;
   github: Array<{ id: string; login: string }>;
-  mutate: any;
 }> = (props) => {
   if (typeof window !== 'undefined' && window.opener) {
     window.close();

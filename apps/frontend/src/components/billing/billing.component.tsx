@@ -27,6 +27,6 @@ export const BillingComponent = () => {
   }
 
   return (
-    <MainBillingComponent tiers={tiers} sub={subscription?.subscription} />
+    <MainBillingComponent sub={subscription?.subscription} />
   );
 };

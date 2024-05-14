@@ -20,7 +20,7 @@ export const GithubOnboarding: FC = () => {
     return { github, organizations };
   }, []);
 
-  const { isLoading: isLoadingSettings, data: loadAll, mutate } = useSWR(
+  const { isLoading: isLoadingSettings, data: loadAll} = useSWR(
     'load-all',
     load
   );
@@ -31,7 +31,6 @@ export const GithubOnboarding: FC = () => {
 
   return (
     <GithubComponent
-      mutate={mutate}
       github={loadAll.github}
       organizations={loadAll.organizations}
     />
