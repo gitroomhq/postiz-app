@@ -65,7 +65,15 @@ export class PermissionsService {
       requestedPermission.length === 0 ||
       !process.env.STRIPE_PUBLISHABLE_KEY
     ) {
-      return build();
+      for (const [action, section] of requestedPermission) {
+        can(action, section);
+      }
+      return build({
+        detectSubjectType: (item) =>
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          item.constructor,
+      });
     }
 
     const { subscription, options } = await this.getPackageOptions(orgId);

@@ -16,9 +16,10 @@
 
 <div align="center">
   <strong>
-  <h2>Your open-source launch week.</h2>
+  <h2>Maximize your launch.</h2><br />
+  An alternative to: Buffer.com, Hypefury, Twitter Hunter, Etc...<br /><br />
   </strong>
-  Schedule social media and articles.<br />Exchange or buy posts from other members.<br /> Monitor your GitHub trending, and so much more.
+  Schedule social media and articles.<br />Exchange or buy posts from other members.<br /> Monitor your GitHub trending, and so much more.<br />
 </div>
 
 <p align="center">
@@ -41,7 +42,7 @@
 <br />
 
 <p align="center">
-  <a href="" target="_blank">
+  <a href="https://www.youtube.com/watch?v=vLpi6NPOXwU" target="_blank">
   <img src=".github/assets/gitroom-main-youtube.png">
   </a>
 </p>
@@ -64,45 +65,21 @@
     <img width="99%" src=".github/assets/screen-004.png"/>
 </p>
 
-## Intro
+# Intro
 
-<strong>Become a content machine</strong> - you might have heard it before; if you want to promote your stuff, you must release content.
+- Schedule all your social media posts and articles beforehand.
 
-To become consistent with your content, you have to set up everything before and take 1-2 weeks of a buffer (at least) so you can launch your stuff.
+- Plan your launch around GitHub trending changes
 
-You want to be relaxed about the following content and not to make split-second mistakes.
+- Collaborate with other team members to exchange or buy posts
 
-Today, for open-source tools, that's impossible.<br /><br />
+- Invite your team members to collaborate, comment, and schedule posts
 
-<h3>Why?</h3>
+- Post to uncommon platforms such as Reddit, DEV.to, and Hashnode.
 
-Because you must do everything manually, even existing scheduling tools let you schedule only Social Media posts (and ignore essential platforms such as Reddit).
+- Offer your open-source deals to the entire community
 
-But how can you make your social media post if you still need to release your article?
-
-How do you release all your articles at the same time - without copy-pasting them between platforms?
-
-How do you know when is the best time to post?
-
-That's where Gitroom shines; you can do all of it beforehand.
-
----
-
-## Problem - Solution ✅
-
-🚀 Schedule all your social media posts and articles beforehand.
-
-🔥 Plan your launch around GitHub trending changes
-
-🎉 Collaborate with other team members to exchange or buy posts
-
-✨ Invite your team members to collaborate, comment and schedule posts
-
-🥇 Post to uncommon platforms such as Reddit, DEV.to, and Hashnode.
-
-💥 Offer your open-source deals to the entire community
-
-🎈 Be a part of the Gitroom friends - APIs to exchange content between members
+- Be a part of the Gitroom friends - APIs to exchange content between members
 
 ## Tech Stack
 

@@ -38,6 +38,7 @@ export const menuItems = [
     icon: 'billing',
     path: '/billing',
     role: ['ADMIN', 'SUPERADMIN'],
+    requireBilling: true,
   },
 ];
 
@@ -50,6 +51,9 @@ export const TopMenu: FC = () => {
       <ul className="gap-5 flex flex-1 items-center text-[18px]">
         {menuItems
           .filter((f) => {
+            if (f.requireBilling && process.env.isBillingEnabled === 'false') {
+              return false;
+            }
             if (f.role) {
               return f.role.includes(user?.role!);
             }

@@ -87,6 +87,12 @@ npm run prisma-db-push
 ```
   </Step>
 
+  <Step title="Setup postgres & redis via docker compose">
+```bash Terminal
+docker compose -f "docker-compose.dev.yaml" up
+```
+  </Step>
+
   <Step title="Run the project">
 ```bash Terminal
 npm run dev

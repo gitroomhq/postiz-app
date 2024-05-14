@@ -12,6 +12,9 @@ const nextConfig = {
     // See: https://github.com/gregberge/svgr
     svgr: false,
   },
+  env: {
+    isBillingEnabled: String(!!process.env.STRIPE_PUBLISHABLE_KEY),
+  }
 };
 
 const plugins = [

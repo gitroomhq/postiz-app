@@ -10,7 +10,8 @@
     {
       "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
       "rules": {
-        "@next/next/no-html-link-for-pages": ["error", "apps/frontend/pages"]
+        "@next/next/no-html-link-for-pages": ["error", "apps/frontend/pages"],
+        "no-extra-boolean-cast": "off"
       }
     },
     {
