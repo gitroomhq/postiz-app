@@ -22,7 +22,8 @@ model Organization {
   github       GitHub[]
   subscription Subscription?
   Integration  Integration[]
-  post         Post[]
+  post         Post[] @relation("organization")
+  submittedPost Post[] @relation("submittedForOrg")
   Comments     Comments[]
   notifications Notifications[]
   buyerOrganization MessagesGroup[]
@@ -224,7 +225,7 @@ model Post {
   integrationId       String
   content             String
   group               String
-  organization        Organization @relation(fields: [organizationId], references: [id])
+  organization        Organization @relation("organization", fields: [organizationId], references: [id])
   integration         Integration  @relation(fields: [integrationId], references: [id])
   title               String?
   description         String?
@@ -237,6 +238,8 @@ model Post {
   image               String?
   submittedForOrderId String?
   submittedForOrder   Orders? @relation(fields: [submittedForOrderId], references: [id])
+  submittedForOrganizationId String?
+  submittedForOrganization   Organization? @relation("submittedForOrg", fields: [submittedForOrganizationId], references: [id])
   approvedSubmitForOrder APPROVED_SUBMIT_FOR_ORDER @default(NO)
   lastMessageId       String?
   lastMessage         Messages? @relation(fields: [lastMessageId], references: [id])

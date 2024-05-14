@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useCallback, useMemo } from 'react';
+import React, { FC, useCallback, useMemo } from 'react';
 import {
   Integrations,
   useCalendar,
@@ -19,6 +19,9 @@ import { CommentComponent } from '@gitroom/frontend/components/launches/comments
 import { useSWRConfig } from 'swr';
 import { useIntersectionObserver } from '@uidotdev/usehooks';
 import { useToaster } from '@gitroom/react/toaster/toaster';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { IntegrationContext } from '@gitroom/frontend/components/launches/helpers/use.integration';
+import { PreviewPopup } from '@gitroom/frontend/components/marketplace/special.message';
 
 export const days = [
   '',
@@ -195,6 +198,7 @@ const CalendarColumn: FC<{ day: number; hour: string }> = (props) => {
 };
 const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
   const { day, hour } = props;
+  const user = useUser();
   const {
     currentWeek,
     currentYear,
@@ -259,16 +263,65 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
         return;
       }
 
-      toaster.show('Can\'t change date, remove post from publication', 'warning');
+      toaster.show(
+        "Can't change date, remove post from publication",
+        'warning'
+      );
     },
     collect: (monitor) => ({
       canDrop: isBeforeNow ? false : !!monitor.canDrop() && !!monitor.isOver(),
     }),
   }));
 
+  const getIntegration = useCallback(async (post: Post & { integration: Integration }) => {
+    console.log('hello');
+    return (
+      await fetch(
+        `/integrations/${post.integration.id}?order=${post.submittedForOrderId}`,
+        {
+          method: 'GET',
+        }
+      )
+    ).json();
+  }, []);
+
+  const previewPublication = useCallback(
+    async (postInfo: Post & { integration: Integration }) => {
+      const post = await (await fetch(`/marketplace/posts/${postInfo.id}`)).json();
+
+      const integration = await getIntegration(postInfo);
+      modal.openModal({
+        classNames: {
+          modal: 'bg-transparent text-white',
+        },
+        size: 'auto',
+        withCloseButton: false,
+        children: (
+          <IntegrationContext.Provider
+            value={{
+              date: dayjs(),
+              integration,
+              value: [],
+            }}
+          >
+            <PreviewPopup
+              providerId={post?.providerId!}
+              post={post}
+              postId={post.id}
+            />
+          </IntegrationContext.Provider>
+        ),
+      });
+    },
+    []
+  );
+
   const editPost = useCallback(
-    (id: string) => async () => {
-      const data = await (await fetch(`/posts/${id}`)).json();
+    (post: Post & { integration: Integration }) => async () => {
+      if (user?.orgId === post.submittedForOrganizationId) {
+        return previewPublication(post);
+      }
+      const data = await (await fetch(`/posts/${post.id}`)).json();
 
       modal.openModal({
         closeOnClickOutside: false,
@@ -280,7 +333,7 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
         children: (
           <ExistingDataContextProvider value={data}>
             <AddEditModal
-              reopenModal={editPost(id)}
+              reopenModal={editPost(post)}
               integrations={integrations.filter(
                 (f) => f.id === data.integration
               )}
@@ -303,7 +356,13 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
       classNames: {
         modal: 'w-[100%] max-w-[1400px] bg-transparent text-white',
       },
-      children: <AddEditModal integrations={integrations} date={getDate} reopenModal={() => ({})} />,
+      children: (
+        <AddEditModal
+          integrations={integrations}
+          date={getDate}
+          reopenModal={() => ({})}
+        />
+      ),
       size: '80%',
       // title: `Adding posts for ${getDate.format('DD/MM/YYYY HH:mm')}`,
     });
@@ -341,7 +400,7 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
                 <CalendarItem
                   date={getDate}
                   state={post.state}
-                  editPost={editPost(post.id)}
+                  editPost={editPost(post)}
                   post={post}
                   integrations={integrations}
                 />
@@ -397,7 +456,7 @@ const CalendarItem: FC<{
     <div
       ref={dragRef}
       onClick={editPost}
-      className={clsx("relative", state === 'DRAFT' && '!grayscale')}
+      className={clsx('relative', state === 'DRAFT' && '!grayscale')}
       data-tooltip-id="tooltip"
       style={{ opacity }}
       data-tooltip-content={`${state === 'DRAFT' ? 'Draft: ' : ''}${
@@ -408,11 +467,7 @@ const CalendarItem: FC<{
     >
       <img
         className="w-[20px] h-[20px] rounded-full"
-        src={
-          integrations.find(
-            (p) => p.identifier === post.integration?.providerIdentifier
-          )?.picture!
-        }
+        src={post.integration.picture!}
       />
       <img
         className="w-[12px] h-[12px] rounded-full absolute z-10 bottom-[0] right-0 border border-fifth"

@@ -84,7 +84,7 @@ export const Published: FC<{
   );
 };
 
-const PreviewPopup: FC<{
+export const PreviewPopup: FC<{
   postId: string;
   providerId: string;
   post: {

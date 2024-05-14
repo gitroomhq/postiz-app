@@ -58,6 +58,21 @@ export class MessagesRepository {
     return { id };
   }
 
+  getOrgByOrder(orderId: string) {
+    return this._orders.model.orders.findFirst({
+      where: {
+        id: orderId,
+      },
+      select: {
+        messageGroup: {
+          select: {
+            buyerOrganizationId: true,
+          },
+        },
+      },
+    });
+  }
+
   async getMessagesGroup(userId: string, organizationId: string) {
     return this._messagesGroup.model.messagesGroup.findMany({
       where: {
@@ -615,6 +630,7 @@ export class MessagesRepository {
       },
       data: {
         approvedSubmitForOrder: 'NO',
+        submittedForOrganizationId: null,
       },
     });
 
@@ -882,18 +898,18 @@ export class MessagesRepository {
         id: postId,
         submittedForOrder: {
           messageGroup: {
-            OR: [{ sellerId: userId }, {buyerOrganizationId: orgId}],
-          }
+            OR: [{ sellerId: userId }, { buyerOrganizationId: orgId }],
+          },
         },
       },
       select: {
         organizationId: true,
         integration: {
           select: {
-            providerIdentifier: true
-          }
-        }
-      }
+            providerIdentifier: true,
+          },
+        },
+      },
     });
   }
 }

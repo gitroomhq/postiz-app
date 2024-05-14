@@ -256,7 +256,8 @@ export class PostsService {
       console.log('hello');
       throw new Error('You can not add a post to this publication');
     }
-    const submit = await this._postRepository.submit(id, order);
+    const getOrgByOrder = await this._messagesService.getOrgByOrder(order);
+    const submit = await this._postRepository.submit(id, order, getOrgByOrder?.messageGroup?.buyerOrganizationId!);
     const messageModel = await this._messagesService.createNewMessage(
       submit?.submittedForOrder?.messageGroupId || '',
       From.SELLER,

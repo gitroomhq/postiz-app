@@ -67,7 +67,14 @@ export class PostsRepository {
 
     return this._post.model.post.findMany({
       where: {
-        organizationId: orgId,
+        OR: [
+          {
+            organizationId: orgId,
+          },
+          {
+            submittedForOrganizationId: orgId,
+          }
+        ],
         publishDate: {
           gte: startDate,
           lte: endDate,
@@ -80,11 +87,15 @@ export class PostsRepository {
         content: true,
         publishDate: true,
         releaseURL: true,
+        submittedForOrganizationId: true,
+        submittedForOrderId: true,
         state: true,
         integration: {
           select: {
             id: true,
             providerIdentifier: true,
+            name: true,
+            picture: true,
           },
         },
       },
@@ -280,7 +291,7 @@ export class PostsRepository {
     return { previousPost, posts };
   }
 
-  async submit(id: string, order: string) {
+  async submit(id: string, order: string, buyerOrganizationId: string) {
     return this._post.model.post.update({
       where: {
         id,
@@ -288,6 +299,7 @@ export class PostsRepository {
       data: {
         submittedForOrderId: order,
         approvedSubmitForOrder: 'WAITING_CONFIRMATION',
+        submittedForOrganizationId: buyerOrganizationId,
       },
       select: {
         id: true,
@@ -331,7 +343,7 @@ export class PostsRepository {
             seller: {
               select: {
                 id: true,
-                account: true
+                account: true,
               },
             },
           },

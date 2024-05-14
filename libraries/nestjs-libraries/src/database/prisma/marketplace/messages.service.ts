@@ -157,6 +157,10 @@ export class MessagesService {
     );
   }
 
+  getOrgByOrder(orderId: string) {
+    return this._messagesRepository.getOrgByOrder(orderId);
+  }
+
   getMarketplaceAvailableOffers(orgId: string, id: string) {
     return this._messagesRepository.getMarketplaceAvailableOffers(orgId, id);
   }
