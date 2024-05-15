@@ -10,6 +10,9 @@ import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/n
 import { capitalize } from 'lodash';
 import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
 import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
+import { GeneratorDto } from '@gitroom/nestjs-libraries/dtos/generator/generator.dto';
+import { ExtractContentService } from '@gitroom/nestjs-libraries/openai/extract.content.service';
+import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 
 type PostWithConditionals = Post & {
   integration?: Integration;
@@ -24,7 +27,9 @@ export class PostsService {
     private _integrationManager: IntegrationManager,
     private _notificationService: NotificationService,
     private _messagesService: MessagesService,
-    private _stripeService: StripeService
+    private _stripeService: StripeService,
+    private _extractContentService: ExtractContentService,
+    private _openAiService: OpenaiService
   ) {}
 
   async getPostsRecursively(
@@ -431,5 +436,15 @@ export class PostsService {
         id
       );
     }
+  }
+
+  async generatePosts(orgId: string, body: GeneratorDto) {
+    const content = await this._extractContentService.extractContent(body.url);
+    if (content) {
+      const value = await this._openAiService.extractWebsiteText(content);
+      return {list: value};
+    }
+
+    return [];
   }
 }

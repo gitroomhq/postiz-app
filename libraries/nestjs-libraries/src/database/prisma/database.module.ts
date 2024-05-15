@@ -25,6 +25,8 @@ import { ItemUserService } from '@gitroom/nestjs-libraries/database/prisma/marke
 import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
 import { MessagesRepository } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.repository';
 import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
+import { ExtractContentService } from '@gitroom/nestjs-libraries/openai/extract.content.service';
+import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 
 @Global()
 @Module({
@@ -57,6 +59,8 @@ import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service
     MessagesService,
     CommentsService,
     IntegrationManager,
+    ExtractContentService,
+    OpenaiService,
     EmailService,
   ],
   get exports() {
