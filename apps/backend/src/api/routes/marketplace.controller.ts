@@ -53,8 +53,11 @@ export class MarketplaceController {
   }
 
   @Get('/bank')
-  connectBankAccount(@GetUserFromRequest() user: User) {
-    return this._stripeService.createAccountProcess(user.id, user.email);
+  connectBankAccount(
+    @GetUserFromRequest() user: User,
+    @Query('country') country: string
+    ) {
+    return this._stripeService.createAccountProcess(user.id, user.email, country);
   }
 
   @Post('/item')

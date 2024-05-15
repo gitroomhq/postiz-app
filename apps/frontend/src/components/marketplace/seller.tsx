@@ -4,12 +4,53 @@ import { Slider } from '@gitroom/react/form/slider';
 import { Button } from '@gitroom/react/form/button';
 import { tagsList } from '@gitroom/nestjs-libraries/database/prisma/marketplace/tags.list';
 import { Options } from '@gitroom/frontend/components/marketplace/buyer';
-import { ChangeEvent, useCallback, useEffect, useState } from 'react';
+import { ChangeEvent, FC, useCallback, useEffect, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { Input } from '@gitroom/react/form/input';
 import { useDebouncedCallback } from 'use-debounce';
 import { OrderList } from '@gitroom/frontend/components/marketplace/order.list';
+import { useModals } from '@mantine/modals';
+import { Select } from '@gitroom/react/form/select';
+import { countries } from '@gitroom/nestjs-libraries/services/stripe.country.list';
+
+export const AddAccount: FC<{ openBankAccount: (country: string) => void }> = (
+  props
+) => {
+  const { openBankAccount } = props;
+  const [country, setCountry] = useState('');
+  return (
+    <div className="bg-sixth p-[32px] text-[20px] w-full max-w-[600px] mx-auto flex flex-col gap-[24px] rounded-[4px] border border-[#172034] relative">
+      Please select your country where your business is registered.
+      <br />
+      <span className="bg-red-400 text-red-950 font-[600]">
+        THIS IS IRREVERSIBLE.
+      </span>
+      <Select
+        label="Country"
+        name="country"
+        disableForm={true}
+        value={country}
+        onChange={(e) => setCountry(e.target.value)}
+      >
+        <option value="">--SELECT COUNTRY--</option>
+        {countries.map((country) => (
+          <option key={country.value} value={country.value}>
+            {country.label}
+          </option>
+        ))}
+      </Select>
+      <Button
+        className="w-full"
+        disabled={!country}
+        type="button"
+        onClick={() => openBankAccount(country)}
+      >
+        Connect Bank Account
+      </Button>
+    </div>
+  );
+};
 
 export const Seller = () => {
   const fetch = useFetch();
@@ -20,6 +61,7 @@ export const Seller = () => {
   const [connectedLoading, setConnectedLoading] = useState(false);
   const [state, setState] = useState(true);
   const [audience, setAudience] = useState<number>(0);
+  const modals = useModals();
 
   const accountInformation = useCallback(async () => {
     const account = await (
@@ -43,10 +85,10 @@ export const Seller = () => {
     });
   }, []);
 
-  const connectBankAccount = useCallback(async () => {
+  const connectBankAccountLink = useCallback(async (country: string) => {
     setConnectedLoading(true);
     const { url } = await (
-      await fetch('/marketplace/bank', {
+      await fetch(`/marketplace/bank?country=${country}`, {
         method: 'GET',
       })
     ).json();
@@ -97,6 +139,22 @@ export const Seller = () => {
   );
 
   const { data } = useSWR('/marketplace/account', accountInformation);
+
+  const connectBankAccount = useCallback(async () => {
+    if (!data?.account) {
+      modals.openModal({
+        size: '100%',
+        classNames: {
+          modal: 'bg-transparent text-white',
+        },
+        withCloseButton: false,
+        children: <AddAccount openBankAccount={connectBankAccountLink} />,
+      });
+      return;
+    }
+
+    connectBankAccountLink('');
+  }, [data, connectBankAccountLink]);
 
   useEffect(() => {
     loadItems();
