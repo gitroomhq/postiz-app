@@ -58,6 +58,7 @@
     "class-validator": "^0.14.1",
     "clsx": "^2.1.0",
     "concat-stream": "^2.0.0",
+    "concurrently": "^8.2.2",
     "cookie-parser": "^1.4.6",
     "copy-to-clipboard": "^3.3.3",
     "dayjs": "^1.11.10",
