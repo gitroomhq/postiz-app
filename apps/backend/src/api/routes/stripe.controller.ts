@@ -6,6 +6,31 @@ import { ApiTags } from '@nestjs/swagger';
 @Controller('/stripe')
 export class StripeController {
   constructor(private readonly _stripeService: StripeService) {}
+  @Post('/connect')
+  stripeConnect(@Req() req: RawBodyRequest<Request>) {
+    const event = this._stripeService.validateRequest(
+      req.rawBody,
+      req.headers['stripe-signature'],
+      process.env.STRIPE_SIGNING_KEY_CONNECT
+    );
+
+    // Maybe it comes from another stripe webhook
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    if (event?.data?.object?.metadata?.service !== 'gitroom') {
+      return { ok: true };
+    }
+
+    switch (event.type) {
+      case 'checkout.session.completed':
+        return this._stripeService.updateOrder(event);
+      case 'account.updated':
+        return this._stripeService.updateAccount(event);
+      default:
+        return { ok: true };
+    }
+  }
+
   @Post('/')
   stripe(@Req() req: RawBodyRequest<Request>) {
     const event = this._stripeService.validateRequest(

@@ -135,32 +135,44 @@ export class StripeService {
       expand: ['data.prices'],
     });
 
-    const findProduct = allProducts.data.find(
-      (product) => product.name.toUpperCase() === body.billing.toUpperCase()
-    ) || await stripe.products.create({
-      active: true,
-      name: body.billing,
-    });
+    const findProduct =
+      allProducts.data.find(
+        (product) => product.name.toUpperCase() === body.billing.toUpperCase()
+      ) ||
+      (await stripe.products.create({
+        active: true,
+        name: body.billing,
+      }));
 
     const pricesList = await stripe.prices.list({
       active: true,
       product: findProduct!.id,
     });
 
-    const findPrice = pricesList.data.find(
-      (p) =>
-        p?.recurring?.interval?.toLowerCase() === (body.period === 'MONTHLY' ? 'month' : 'year') &&
-        p?.unit_amount === (body.period === 'MONTHLY' ? priceData.month_price : priceData.year_price) * 100
-    ) || await stripe.prices.create({
-      active: true,
-      product: findProduct!.id,
-      currency: 'usd',
-      nickname: body.billing + ' ' + body.period,
-      unit_amount: (body.period === 'MONTHLY' ? priceData.month_price : priceData.year_price) * 100,
-      recurring: {
-        interval: body.period === 'MONTHLY' ? 'month' : 'year',
-      },
-    });
+    const findPrice =
+      pricesList.data.find(
+        (p) =>
+          p?.recurring?.interval?.toLowerCase() ===
+            (body.period === 'MONTHLY' ? 'month' : 'year') &&
+          p?.unit_amount ===
+            (body.period === 'MONTHLY'
+              ? priceData.month_price
+              : priceData.year_price) *
+              100
+      ) ||
+      (await stripe.prices.create({
+        active: true,
+        product: findProduct!.id,
+        currency: 'usd',
+        nickname: body.billing + ' ' + body.period,
+        unit_amount:
+          (body.period === 'MONTHLY'
+            ? priceData.month_price
+            : priceData.year_price) * 100,
+        recurring: {
+          interval: body.period === 'MONTHLY' ? 'month' : 'year',
+        },
+      }));
 
     const proration_date = Math.floor(Date.now() / 1000);
 
@@ -269,29 +281,39 @@ export class StripeService {
     return { url };
   }
 
-  async createAccountProcess(userId: string, email: string) {
+  async createAccountProcess(userId: string, email: string, country: string) {
     const account =
       (await this._subscriptionService.getUserAccount(userId))?.account ||
-      (await this.createAccount(userId, email));
+      (await this.createAccount(userId, email, country));
     return { url: await this.addBankAccount(account) };
   }
 
-  async createAccount(userId: string, email: string) {
+  async createAccount(userId: string, email: string, country: string) {
     const account = await stripe.accounts.create({
-      controller: {
-        stripe_dashboard: {
-          type: 'express',
+      type: 'custom',
+      // controller: {
+      //   stripe_dashboard: {
+      //     type: 'express',
+      //   },
+      //   fees: {
+      //     payer: 'application',
+      //   },
+      //   losses: {
+      //     payments: 'application',
+      //   },
+      // },
+      capabilities: {
+        transfers: {
+          requested: true,
         },
-        fees: {
-          payer: 'application',
-        },
-        losses: {
-          payments: 'application',
+        card_payments: {
+          requested: true,
         },
       },
       metadata: {
         service: 'gitroom',
       },
+      country,
       email,
     });
 
@@ -306,6 +328,9 @@ export class StripeService {
       refresh_url: process.env['FRONTEND_URL'] + '/marketplace/seller',
       return_url: process.env['FRONTEND_URL'] + '/marketplace/seller',
       type: 'account_onboarding',
+      collection_options: {
+        fields: 'eventually_due',
+      },
     });
 
     return accountLink.url;
@@ -378,32 +403,44 @@ export class StripeService {
       expand: ['data.prices'],
     });
 
-    const findProduct = allProducts.data.find(
-      (product) => product.name.toUpperCase() === body.billing.toUpperCase()
-    ) || await stripe.products.create({
-      active: true,
-      name: body.billing,
-    });
+    const findProduct =
+      allProducts.data.find(
+        (product) => product.name.toUpperCase() === body.billing.toUpperCase()
+      ) ||
+      (await stripe.products.create({
+        active: true,
+        name: body.billing,
+      }));
 
     const pricesList = await stripe.prices.list({
       active: true,
       product: findProduct!.id,
     });
 
-    const findPrice = pricesList.data.find(
-      (p) =>
-        p?.recurring?.interval?.toLowerCase() === (body.period === 'MONTHLY' ? 'month' : 'year') &&
-        p?.unit_amount === (body.period === 'MONTHLY' ? priceData.month_price : priceData.year_price) * 100
-    ) || await stripe.prices.create({
-      active: true,
-      product: findProduct!.id,
-      currency: 'usd',
-      nickname: body.billing + ' ' + body.period,
-      unit_amount: (body.period === 'MONTHLY' ? priceData.month_price : priceData.year_price) * 100,
-      recurring: {
-        interval: body.period === 'MONTHLY' ? 'month' : 'year',
-      },
-    });
+    const findPrice =
+      pricesList.data.find(
+        (p) =>
+          p?.recurring?.interval?.toLowerCase() ===
+            (body.period === 'MONTHLY' ? 'month' : 'year') &&
+          p?.unit_amount ===
+            (body.period === 'MONTHLY'
+              ? priceData.month_price
+              : priceData.year_price) *
+              100
+      ) ||
+      (await stripe.prices.create({
+        active: true,
+        product: findProduct!.id,
+        currency: 'usd',
+        nickname: body.billing + ' ' + body.period,
+        unit_amount:
+          (body.period === 'MONTHLY'
+            ? priceData.month_price
+            : priceData.year_price) * 100,
+        recurring: {
+          interval: body.period === 'MONTHLY' ? 'month' : 'year',
+        },
+      }));
 
     const currentUserSubscription = await stripe.subscriptions.list({
       customer,
