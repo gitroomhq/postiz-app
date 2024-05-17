@@ -16,6 +16,7 @@ export class SubscriptionRepository {
       },
       select: {
         account: true,
+        connectedAccount: true,
       },
     });
   }
@@ -43,7 +44,7 @@ export class SubscriptionRepository {
   updateConnectedStatus(account: string, accountCharges: boolean) {
     return this._user.model.user.updateMany({
       where: {
-        account
+        account,
       },
       data: {
         connectedAccount: accountCharges,

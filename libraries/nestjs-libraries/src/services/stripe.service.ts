@@ -282,33 +282,31 @@ export class StripeService {
   }
 
   async createAccountProcess(userId: string, email: string, country: string) {
-    const account =
-      (await this._subscriptionService.getUserAccount(userId))?.account ||
-      (await this.createAccount(userId, email, country));
-    return { url: await this.addBankAccount(account) };
+    const account = await this._subscriptionService.getUserAccount(userId);
+
+    if (account?.account && account?.connectedAccount) {
+      return { url: await this.addBankAccount(account.account) };
+    }
+
+    if (account?.account && !account?.connectedAccount) {
+      await stripe.accounts.del(account.account);
+    }
+
+    const createAccount = await this.createAccount(userId, email, country);
+
+    return { url: await this.addBankAccount(createAccount) };
   }
 
   async createAccount(userId: string, email: string, country: string) {
     const account = await stripe.accounts.create({
       type: 'custom',
-      // controller: {
-      //   stripe_dashboard: {
-      //     type: 'express',
-      //   },
-      //   fees: {
-      //     payer: 'application',
-      //   },
-      //   losses: {
-      //     payments: 'application',
-      //   },
-      // },
       capabilities: {
         transfers: {
           requested: true,
         },
-        card_payments: {
-          requested: true,
-        },
+      },
+      tos_acceptance: {
+        service_agreement: 'recipient',
       },
       metadata: {
         service: 'gitroom',

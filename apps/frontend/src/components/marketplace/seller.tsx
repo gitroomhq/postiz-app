@@ -21,11 +21,8 @@ export const AddAccount: FC<{ openBankAccount: (country: string) => void }> = (
   const [country, setCountry] = useState('');
   return (
     <div className="bg-sixth p-[32px] text-[20px] w-full max-w-[600px] mx-auto flex flex-col gap-[24px] rounded-[4px] border border-[#172034] relative">
-      Please select your country where your business is registered.
+      Please select your country where your business is.
       <br />
-      <span className="bg-red-400 text-red-950 font-[600]">
-        THIS IS IRREVERSIBLE.
-      </span>
       <Select
         label="Country"
         name="country"
@@ -141,7 +138,7 @@ export const Seller = () => {
   const { data } = useSWR('/marketplace/account', accountInformation);
 
   const connectBankAccount = useCallback(async () => {
-    if (!data?.account) {
+    if (!data?.connectedAccount) {
       modals.openModal({
         size: '100%',
         classNames: {
@@ -198,7 +195,7 @@ export const Seller = () => {
                 onClick={connectBankAccount}
                 loading={connectedLoading}
               >
-                {!data?.account
+                {!data?.connectedAccount
                   ? 'Connect Bank Account'
                   : 'Update Bank Account'}
               </Button>
