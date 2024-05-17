@@ -38,6 +38,7 @@ export class PostsRepository {
             name: true,
             providerIdentifier: true,
             picture: true,
+            type: true,
           },
         },
       },
@@ -62,9 +63,10 @@ export class PostsRepository {
   getPosts(orgId: string, query: GetPostsDto) {
     const date = dayjs().year(query.year).isoWeek(query.week);
 
-    const startDate = date.startOf('isoWeek').toDate();
-    const endDate = date.endOf('isoWeek').toDate();
+    const startDate = date.startOf('week').toDate();
+    const endDate = date.endOf('week').toDate();
 
+    console.log(startDate, endDate);
     return this._post.model.post.findMany({
       where: {
         OR: [
