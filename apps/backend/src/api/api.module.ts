@@ -22,6 +22,8 @@ import { BillingController } from '@gitroom/backend/api/routes/billing.controlle
 import { NotificationsController } from '@gitroom/backend/api/routes/notifications.controller';
 import { MarketplaceController } from '@gitroom/backend/api/routes/marketplace.controller';
 import { MessagesController } from '@gitroom/backend/api/routes/messages.controller';
+import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
+import { ExtractContentService } from '@gitroom/nestjs-libraries/openai/extract.content.service';
 
 const authenticatedController = [
   UsersController,
@@ -59,6 +61,8 @@ const authenticatedController = [
   providers: [
     AuthService,
     StripeService,
+    OpenaiService,
+    ExtractContentService,
     AuthMiddleware,
     PoliciesGuard,
     PermissionsService,

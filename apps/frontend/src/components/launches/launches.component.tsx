@@ -13,6 +13,7 @@ import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import clsx from 'clsx';
 import { useUser } from '../layout/user.context';
 import { Menu } from '@gitroom/frontend/components/launches/menu/menu';
+import { GeneratorComponent } from '@gitroom/frontend/components/launches/generator/generator';
 
 export const LaunchesComponent = () => {
   const fetch = useFetch();
@@ -132,6 +133,7 @@ export const LaunchesComponent = () => {
                 ))}
               </div>
               <AddProviderButton update={() => update(true)} />
+              {sortedIntegrations?.length > 0 && <GeneratorComponent />}
             </div>
             <div className="flex-1 flex flex-col gap-[14px]">
               <Filters />

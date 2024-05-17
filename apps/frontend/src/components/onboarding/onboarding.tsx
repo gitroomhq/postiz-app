@@ -9,15 +9,15 @@ import { SettingsPopup } from '@gitroom/frontend/components/layout/settings.comp
 import { Button } from '@gitroom/react/form/button';
 import { ConnectChannels } from '@gitroom/frontend/components/onboarding/connect.channels';
 
-const Step: FC<{ step: number; title: string; currentStep: number }> = (
+export const Step: FC<{ step: number; title: string; currentStep: number, lastStep: number }> = (
   props
 ) => {
-  const { step, title, currentStep } = props;
+  const { step, title, currentStep, lastStep } = props;
   return (
     <div className="flex flex-col">
       <div className="mb-[8px]">
         <div className="w-[24px] h-[24px]">
-          {step === currentStep && currentStep !== 4 && (
+          {step === currentStep && currentStep !== lastStep && (
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="24"
@@ -31,7 +31,7 @@ const Step: FC<{ step: number; title: string; currentStep: number }> = (
               />
             </svg>
           )}
-          {(currentStep > step || currentStep == 4) && (
+          {(currentStep > step || currentStep == lastStep) && (
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="24"
@@ -45,7 +45,7 @@ const Step: FC<{ step: number; title: string; currentStep: number }> = (
               />
             </svg>
           )}
-          {step > currentStep && currentStep !== 4 && (
+          {step > currentStep && currentStep !== lastStep && (
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="24"
@@ -73,7 +73,7 @@ const Step: FC<{ step: number; title: string; currentStep: number }> = (
   );
 };
 
-const StepSpace: FC = () => {
+export const StepSpace: FC = () => {
   return (
     <div className="flex-1 justify-center items-center flex px-[20px]">
       <div className="h-[1px] w-full bg-white"></div>
@@ -128,13 +128,13 @@ const Welcome: FC = () => {
     <div className="bg-sixth p-[32px] w-full max-w-[920px] mx-auto flex flex-col gap-[24px] rounded-[4px] border border-[#172034] relative">
       <h1 className="text-[24px]">Onboarding</h1>
       <div className="flex">
-        <Step title="Profile" step={1} currentStep={step} />
+        <Step title="Profile" step={1} currentStep={step} lastStep={4} />
         <StepSpace />
-        <Step title="Connect Github" step={2} currentStep={step} />
+        <Step title="Connect Github" step={2} currentStep={step} lastStep={4} />
         <StepSpace />
-        <Step title="Connect Channels" step={3} currentStep={step} />
+        <Step title="Connect Channels" step={3} currentStep={step} lastStep={4} />
         <StepSpace />
-        <Step title="Finish" step={4} currentStep={step} />
+        <Step title="Finish" step={4} currentStep={step} lastStep={4} />
       </div>
       {step === 1 && (
         <>

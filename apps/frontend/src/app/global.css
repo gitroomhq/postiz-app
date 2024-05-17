@@ -284,3 +284,7 @@ html {
 .editor * {
   color: white;
 }
+
+:empty + .existing-empty {
+  display: none;
+}

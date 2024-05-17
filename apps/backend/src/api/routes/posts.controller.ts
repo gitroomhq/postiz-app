@@ -22,6 +22,8 @@ import {
 } from '@gitroom/backend/services/auth/permissions/permissions.service';
 import { ApiTags } from '@nestjs/swagger';
 import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
+import { GeneratorDto } from '@gitroom/nestjs-libraries/dtos/generator/generator.dto';
+import { CreateGeneratedPostsDto } from '@gitroom/nestjs-libraries/dtos/generator/create.generated.posts.dto';
 
 @ApiTags('Posts')
 @Controller('/posts')
@@ -85,8 +87,25 @@ export class PostsController {
     @GetOrgFromRequest() org: Organization,
     @Body() body: CreatePostDto
   ) {
-
     return this._postsService.createPost(org.id, body);
+  }
+
+  @Post('/generator/draft')
+  @CheckPolicies([AuthorizationActions.Create, Sections.POSTS_PER_MONTH])
+  generatePostsDraft(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: CreateGeneratedPostsDto
+  ) {
+    return this._postsService.generatePostsDraft(org.id, body);
+  }
+
+  @Post('/generator')
+  @CheckPolicies([AuthorizationActions.Create, Sections.POSTS_PER_MONTH])
+  generatePosts(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: GeneratorDto
+  ) {
+    return this._postsService.generatePosts(org.id, body);
   }
 
   @Delete('/:group')

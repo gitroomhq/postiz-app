@@ -7,9 +7,15 @@ import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integ
 import { Integration, Post, Media, From } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
-import { capitalize } from 'lodash';
+import { capitalize, chunk, shuffle } from 'lodash';
 import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
 import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
+import { GeneratorDto } from '@gitroom/nestjs-libraries/dtos/generator/generator.dto';
+import { ExtractContentService } from '@gitroom/nestjs-libraries/openai/extract.content.service';
+import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
+import { CreateGeneratedPostsDto } from '@gitroom/nestjs-libraries/dtos/generator/create.generated.posts.dto';
+import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 
 type PostWithConditionals = Post & {
   integration?: Integration;
@@ -24,7 +30,10 @@ export class PostsService {
     private _integrationManager: IntegrationManager,
     private _notificationService: NotificationService,
     private _messagesService: MessagesService,
-    private _stripeService: StripeService
+    private _stripeService: StripeService,
+    private _extractContentService: ExtractContentService,
+    private _openAiService: OpenaiService,
+    private _integrationService: IntegrationService
   ) {}
 
   async getPostsRecursively(
@@ -257,7 +266,11 @@ export class PostsService {
       throw new Error('You can not add a post to this publication');
     }
     const getOrgByOrder = await this._messagesService.getOrgByOrder(order);
-    const submit = await this._postRepository.submit(id, order, getOrgByOrder?.messageGroup?.buyerOrganizationId!);
+    const submit = await this._postRepository.submit(
+      id,
+      order,
+      getOrgByOrder?.messageGroup?.buyerOrganizationId!
+    );
     const messageModel = await this._messagesService.createNewMessage(
       submit?.submittedForOrder?.messageGroupId || '',
       From.SELLER,
@@ -430,6 +443,103 @@ export class PostsService {
         findPrice.price,
         id
       );
+    }
+  }
+
+  async loadPostContent(postId: string) {
+    const post = await this._postRepository.getPostById(postId);
+    if (!post) {
+      return '';
+    }
+
+    return post.content;
+  }
+
+  async generatePosts(orgId: string, body: GeneratorDto) {
+    const content = body.url
+      ? await this._extractContentService.extractContent(body.url)
+      : await this.loadPostContent(body.post);
+
+    const value = body.url
+      ? await this._openAiService.extractWebsiteText(content!)
+      : await this._openAiService.generatePosts(content!);
+    return { list: value };
+  }
+
+  async generatePostsDraft(orgId: string, body: CreateGeneratedPostsDto) {
+    const getAllIntegrations = (
+      await this._integrationService.getIntegrationsList(orgId)
+    ).filter((f) => !f.disabled && f.providerIdentifier !== 'reddit');
+
+    // const posts = chunk(body.posts, getAllIntegrations.length);
+    const allDates = dayjs()
+      .isoWeek(body.week)
+      .year(body.year)
+      .startOf('isoWeek');
+
+    const dates = [...new Array(7)].map((_, i) => {
+      return allDates.add(i, 'day').format('YYYY-MM-DD');
+    });
+
+    const findTime = (): string => {
+      const totalMinutes = Math.floor(Math.random() * 144) * 10;
+
+      // Convert total minutes to hours and minutes
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+
+      // Format hours and minutes to always be two digits
+      const formattedHours = hours.toString().padStart(2, '0');
+      const formattedMinutes = minutes.toString().padStart(2, '0');
+      const randomDate =
+        shuffle(dates)[0] + 'T' + `${formattedHours}:${formattedMinutes}:00`;
+
+      if (dayjs(randomDate).isBefore(dayjs())) {
+        return findTime();
+      }
+
+      return randomDate;
+    };
+
+    for (const integration of getAllIntegrations) {
+      for (const toPost of body.posts) {
+        const group = makeId(10);
+        const randomDate = findTime();
+
+        await this.createPost(orgId, {
+          type: 'draft',
+          date: randomDate,
+          order: '',
+          posts: [
+            {
+              group,
+              integration: {
+                id: integration.id,
+              },
+              settings: {
+                subtitle: '',
+                title: '',
+                tags: [],
+                subreddit: [],
+              },
+              value: [
+                ...toPost.list.map((l) => ({
+                  id: '',
+                  content: l.post,
+                  image: [],
+                })),
+                {
+                  id: '',
+                  content: `Check out the full story here:\n${
+                    body.postId || body.url
+                  }`,
+                  image: [],
+                },
+              ],
+            },
+          ],
+        });
+      }
     }
   }
 }
