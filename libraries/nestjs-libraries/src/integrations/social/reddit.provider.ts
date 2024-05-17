@@ -48,6 +48,7 @@ export class RedditProvider implements SocialProvider {
       refreshToken: newRefreshToken,
       expiresIn,
       picture: icon_img.split('?')[0],
+      username: name,
     };
   }
 
@@ -105,6 +106,7 @@ export class RedditProvider implements SocialProvider {
       refreshToken,
       expiresIn,
       picture: icon_img.split('?')[0],
+      username: name,
     };
   }
 

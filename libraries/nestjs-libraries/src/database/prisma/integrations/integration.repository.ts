@@ -19,7 +19,8 @@ export class IntegrationRepository {
     provider: string,
     token: string,
     refreshToken = '',
-    expiresIn = 999999999
+    expiresIn = 999999999,
+    username?: string
   ) {
     return this._integration.model.integration.upsert({
       where: {
@@ -33,6 +34,7 @@ export class IntegrationRepository {
         name,
         providerIdentifier: provider,
         token,
+        profile: username,
         picture,
         refreshToken,
         ...(expiresIn
@@ -47,6 +49,7 @@ export class IntegrationRepository {
         providerIdentifier: provider,
         token,
         picture,
+        profile: username,
         refreshToken,
         ...(expiresIn
           ? { tokenExpiration: new Date(Date.now() + expiresIn * 1000) }

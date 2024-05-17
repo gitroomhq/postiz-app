@@ -8,7 +8,7 @@ import {
 import { lookup } from 'mime-types';
 import sharp from 'sharp';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
-import removeMd from "remove-markdown";
+import removeMd from 'remove-markdown';
 
 export class XProvider implements SocialProvider {
   identifier = 'x';
@@ -27,6 +27,13 @@ export class XProvider implements SocialProvider {
     const {
       data: { id, name, profile_image_url },
     } = await client.v2.me();
+
+    const {
+      data: { username },
+    } = await client.v2.me({
+      'user.fields': 'username',
+    });
+
     return {
       id,
       name,
@@ -34,6 +41,7 @@ export class XProvider implements SocialProvider {
       refreshToken: newRefreshToken,
       expiresIn,
       picture: profile_image_url,
+      username,
     };
   }
 
@@ -78,6 +86,12 @@ export class XProvider implements SocialProvider {
       true
     );
 
+    const {
+      data: { username },
+    } = await client.v2.me({
+      'user.fields': 'username',
+    });
+
     return {
       id: String(id),
       accessToken: accessToken + ':' + accessSecret,
@@ -85,6 +99,7 @@ export class XProvider implements SocialProvider {
       refreshToken: '',
       expiresIn: 999999999,
       picture: profile_image_url_https,
+      username,
     };
   }
 
@@ -146,7 +161,10 @@ export class XProvider implements SocialProvider {
       const media_ids = (uploadAll[post.id] || []).filter((f) => f);
 
       const { data }: { data: { id: string } } = await client.v2.tweet({
-        text: removeMd(post.message.replace('\n', '𝔫𝔢𝔴𝔩𝔦𝔫𝔢')).replace('𝔫𝔢𝔴𝔩𝔦𝔫𝔢', '\n'),
+        text: removeMd(post.message.replace('\n', '𝔫𝔢𝔴𝔩𝔦𝔫𝔢')).replace(
+          '𝔫𝔢𝔴𝔩𝔦𝔫𝔢',
+          '\n'
+        ),
         ...(media_ids.length ? { media: { media_ids } } : {}),
         ...(ids.length
           ? { reply: { in_reply_to_tweet_id: ids[ids.length - 1].postId } }
@@ -165,4 +183,17 @@ export class XProvider implements SocialProvider {
       status: 'posted',
     }));
   }
+
+  // async analytics(accessToken: string) {
+  //   const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
+  //   const client = new TwitterApi({
+  //     appKey: process.env.X_API_KEY!,
+  //     appSecret: process.env.X_API_SECRET!,
+  //     accessToken: accessTokenSplit,
+  //     accessSecret: accessSecretSplit,
+  //   });
+  //   const {
+  //     data: { username },
+  //   } = await client.v2;
+  // }
 }

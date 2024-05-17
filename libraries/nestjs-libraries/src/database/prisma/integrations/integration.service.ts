@@ -17,7 +17,8 @@ export class IntegrationService {
     provider: string,
     token: string,
     refreshToken = '',
-    expiresIn?: number
+    expiresIn?: number,
+    username?: string
   ) {
     return this._integrationRepository.createOrUpdateIntegration(
       org,
@@ -28,7 +29,8 @@ export class IntegrationService {
       provider,
       token,
       refreshToken,
-      expiresIn
+      expiresIn,
+      username
     );
   }
 

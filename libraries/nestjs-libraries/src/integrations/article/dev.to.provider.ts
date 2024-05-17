@@ -5,7 +5,7 @@ export class DevToProvider implements ArticleProvider {
   identifier = 'devto';
   name = 'Dev.to';
   async authenticate(token: string) {
-    const { name, id, profile_image } = await (
+    const { name, id, profile_image, username } = await (
       await fetch('https://dev.to/api/users/me', {
         headers: {
           'api-key': token,
@@ -18,6 +18,7 @@ export class DevToProvider implements ArticleProvider {
       name,
       token,
       picture: profile_image,
+      username
     };
   }
 

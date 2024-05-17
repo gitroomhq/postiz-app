@@ -8,7 +8,6 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import sharp from 'sharp';
 import { lookup } from 'mime-types';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
-import removeMd from 'remove-markdown';
 import { removeMarkdown } from '@gitroom/helpers/utils/remove.markdown';
 
 export class LinkedinProvider implements SocialProvider {
@@ -30,6 +29,14 @@ export class LinkedinProvider implements SocialProvider {
       })
     ).json();
 
+    const { vanityName } = await (
+      await fetch('https://api.linkedin.com/v2/me', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+    ).json();
+
     const {
       name,
       sub: id,
@@ -48,6 +55,7 @@ export class LinkedinProvider implements SocialProvider {
       refreshToken,
       name,
       picture,
+      username: vanityName,
     };
   }
 
@@ -59,7 +67,7 @@ export class LinkedinProvider implements SocialProvider {
     }&redirect_uri=${encodeURIComponent(
       `${process.env.FRONTEND_URL}/integrations/social/linkedin`
     )}&state=${state}&scope=${encodeURIComponent(
-      'openid profile w_member_social'
+      'openid profile w_member_social r_basicprofile'
     )}`;
     return {
       url,
@@ -105,6 +113,14 @@ export class LinkedinProvider implements SocialProvider {
       })
     ).json();
 
+    const { vanityName } = await (
+      await fetch('https://api.linkedin.com/v2/me', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+    ).json();
+
     return {
       id,
       accessToken,
@@ -112,6 +128,7 @@ export class LinkedinProvider implements SocialProvider {
       expiresIn,
       name,
       picture,
+      username: vanityName,
     };
   }
 

@@ -17,6 +17,7 @@ export type AuthTokenDetails = {
     refreshToken?: string; // The refresh token, if applicable
     expiresIn?: number; // The duration in seconds for which the access token is valid
     picture?: string;
+    username: string;
 };
 
 export interface ISocialMediaIntegration {

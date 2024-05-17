@@ -1,4 +1,12 @@
-import { Body, Controller, Delete, Get, Param, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { ConnectIntegrationDto } from '@gitroom/nestjs-libraries/dtos/integrations/connect.integration.dto';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
@@ -12,8 +20,8 @@ import {
   Sections,
 } from '@gitroom/backend/services/auth/permissions/permissions.service';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
-import {pricing} from "@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing";
-import {ApiTags} from "@nestjs/swagger";
+import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
+import { ApiTags } from '@nestjs/swagger';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 
 @ApiTags('Integrations')
@@ -51,7 +59,12 @@ export class IntegrationsController {
     @GetUserFromRequest() user: User,
     @GetOrgFromRequest() org: Organization
   ) {
-    return this._integrationService.getIntegrationForOrder(id, order, user.id, org.id);
+    return this._integrationService.getIntegrationForOrder(
+      id,
+      order,
+      user.id,
+      org.id
+    );
   }
 
   @Get('/social/:integration')
@@ -138,9 +151,8 @@ export class IntegrationsController {
 
     const integrationProvider =
       this._integrationManager.getArticlesIntegration(integration);
-    const { id, name, token, picture } = await integrationProvider.authenticate(
-      api.api
-    );
+    const { id, name, token, picture, username } =
+      await integrationProvider.authenticate(api.api);
 
     if (!id) {
       throw new Error('Invalid api key');
@@ -153,7 +165,10 @@ export class IntegrationsController {
       'article',
       String(id),
       integration,
-      token
+      token,
+      '',
+      undefined,
+      username
     );
   }
 
@@ -179,11 +194,18 @@ export class IntegrationsController {
 
     const integrationProvider =
       this._integrationManager.getSocialIntegration(integration);
-    const { accessToken, expiresIn, refreshToken, id, name, picture } =
-      await integrationProvider.authenticate({
-        code: body.code,
-        codeVerifier: getCodeVerifier,
-      });
+    const {
+      accessToken,
+      expiresIn,
+      refreshToken,
+      id,
+      name,
+      picture,
+      username,
+    } = await integrationProvider.authenticate({
+      code: body.code,
+      codeVerifier: getCodeVerifier,
+    });
 
     if (!id) {
       throw new Error('Invalid api key');
@@ -198,7 +220,8 @@ export class IntegrationsController {
       integration,
       accessToken,
       refreshToken,
-      expiresIn
+      expiresIn,
+      username
     );
   }
 

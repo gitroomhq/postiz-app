@@ -10,7 +10,7 @@ export class HashnodeProvider implements ArticleProvider {
     try {
       const {
         data: {
-          me: { name, id, profilePicture },
+          me: { name, id, profilePicture, username },
         },
       } = await (
         await fetch('https://gql.hashnode.com', {
@@ -26,6 +26,7 @@ export class HashnodeProvider implements ArticleProvider {
                         name,
                         id,
                         profilePicture
+                        username
                       }
                     }
                 `,
@@ -38,6 +39,7 @@ export class HashnodeProvider implements ArticleProvider {
         name,
         token,
         picture: profilePicture,
+        username
       };
     } catch (err) {
       return {
@@ -45,6 +47,7 @@ export class HashnodeProvider implements ArticleProvider {
         name: '',
         token: '',
         picture: '',
+        username: ''
       };
     }
   }

@@ -7,7 +7,7 @@ export class MediumProvider implements ArticleProvider {
 
   async authenticate(token: string) {
     const {
-      data: { name, id, imageUrl },
+      data: { name, id, imageUrl, username },
     } = await (
       await fetch('https://api.medium.com/v1/me', {
         headers: {
@@ -21,6 +21,7 @@ export class MediumProvider implements ArticleProvider {
       name,
       token,
       picture: imageUrl,
+      username,
     };
   }
 
@@ -52,7 +53,7 @@ export class MediumProvider implements ArticleProvider {
             content,
             ...(settings.canonical ? { canonicalUrl: settings.canonical } : {}),
             ...(settings?.tags?.length
-              ? { tags: settings?.tags?.map(p => p.value) }
+              ? { tags: settings?.tags?.map((p) => p.value) }
               : {}),
             publishStatus: settings?.publication ? 'draft' : 'public',
           }),
