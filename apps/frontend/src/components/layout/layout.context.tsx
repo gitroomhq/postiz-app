@@ -3,6 +3,7 @@
 import { ReactNode, useCallback } from 'react';
 import { FetchWrapperComponent } from '@gitroom/helpers/utils/custom.fetch';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
+import { isGeneral } from '@gitroom/react/helpers/is.general';
 
 export default function LayoutContext(params: { children: ReactNode }) {
   if (params?.children) {
@@ -16,7 +17,7 @@ function LayoutContextInner(params: { children: ReactNode }) {
   const afterRequest = useCallback(
     async (url: string, options: RequestInit, response: Response) => {
       if (response?.headers?.get('onboarding')) {
-        window.location.href = '/analytics?onboarding=true';
+        window.location.href = isGeneral() ? '/launches?onboarding=true' : '/analytics?onboarding=true';
       }
 
       if (response?.headers?.get('reload')) {
