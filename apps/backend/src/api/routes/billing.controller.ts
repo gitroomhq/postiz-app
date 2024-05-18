@@ -4,7 +4,7 @@ import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization } from '@prisma/client';
 import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.subscribe.dto';
-import {ApiTags} from "@nestjs/swagger";
+import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Billing')
 @Controller('/billing')
@@ -58,9 +58,17 @@ export class BillingController {
 
   @Post('/prorate')
   prorate(
-      @GetOrgFromRequest() org: Organization,
-      @Body() body: BillingSubscribeDto
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: BillingSubscribeDto
   ) {
     return this._stripeService.prorate(org.id, body);
+  }
+
+  @Post('/lifetime')
+  async lifetime(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: { code: string }
+  ) {
+    return this._stripeService.lifetimeDeal(org.id, body.code);
   }
 }

@@ -1,4 +1,5 @@
 export interface PricingInnerInterface {
+  current: string;
   month_price: number;
   year_price: number;
   channel?: number;
@@ -14,6 +15,7 @@ export interface PricingInterface {
 }
 export const pricing: PricingInterface = {
   FREE: {
+    current: 'FREE',
     month_price: 0,
     year_price: 0,
     channel: 2,
@@ -25,6 +27,7 @@ export const pricing: PricingInterface = {
     import_from_channels: false,
   },
   STANDARD: {
+    current: 'STANDARD',
     month_price: 30,
     year_price: 288,
     channel: 5,
@@ -36,6 +39,7 @@ export const pricing: PricingInterface = {
     import_from_channels: true,
   },
   PRO: {
+    current: 'PRO',
     month_price: 40,
     year_price: 384,
     channel: 8,

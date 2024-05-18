@@ -24,6 +24,7 @@ import { MarketplaceController } from '@gitroom/backend/api/routes/marketplace.c
 import { MessagesController } from '@gitroom/backend/api/routes/messages.controller';
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { ExtractContentService } from '@gitroom/nestjs-libraries/openai/extract.content.service';
+import { CodesService } from '@gitroom/nestjs-libraries/services/codes.service';
 
 const authenticatedController = [
   UsersController,
@@ -66,6 +67,7 @@ const authenticatedController = [
     AuthMiddleware,
     PoliciesGuard,
     PermissionsService,
+    CodesService,
     IntegrationManager,
   ],
   get exports() {

@@ -67,6 +67,15 @@ model User {
   @@index([pictureId])
 }
 
+model UsedCodes {
+  id        String   @id @default(uuid())
+  code      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([code])
+}
+
 model UserOrganization {
   id             String       @id @default(uuid())
   user           User         @relation(fields: [userId], references: [id])
@@ -163,6 +172,7 @@ model Subscription {
   cancelAt          DateTime?
   period            Period
   totalChannels     Int
+  isLifetime        Boolean           @default(false)
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
   deletedAt         DateTime?

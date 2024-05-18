@@ -18,6 +18,7 @@ import { FAQComponent } from '@gitroom/frontend/components/billing/faq.component
 import { useSWRConfig } from 'swr';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import interClass from '@gitroom/react/helpers/inter.font';
+import { useRouter } from 'next/navigation';
 
 export interface Tiers {
   month: Array<{
@@ -155,6 +156,7 @@ export const MainBillingComponent: FC<{
   const fetch = useFetch();
   const toast = useToaster();
   const user = useUser();
+  const router = useRouter();
 
   const [subscription, setSubscription] = useState<Subscription | undefined>(
     sub
@@ -306,6 +308,11 @@ export const MainBillingComponent: FC<{
     },
     [monthlyOrYearly, subscription, user]
   );
+
+  if (user?.isLifetime) {
+    router.replace('/billing/lifetime');
+    return null;
+  }
 
   return (
     <div className="flex flex-col gap-[16px]">

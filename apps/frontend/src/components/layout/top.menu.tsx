@@ -5,24 +5,35 @@ import Link from 'next/link';
 import clsx from 'clsx';
 import { usePathname } from 'next/navigation';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { isGeneral } from '@gitroom/react/helpers/is.general';
+
+const general = isGeneral();
 
 export const menuItems = [
-  {
-    name: 'Analytics',
-    icon: 'analytics',
-    path: '/analytics',
-  },
+  ...(!general
+    ? [
+        {
+          name: 'Analytics',
+          icon: 'analytics',
+          path: '/analytics',
+        },
+      ]
+    : []),
   {
     name: 'Launches',
     icon: 'launches',
     path: '/launches',
   },
-  {
-    name: 'Settings',
-    icon: 'settings',
-    path: '/settings',
-    role: ['ADMIN', 'SUPERADMIN'],
-  },
+  ...(!general
+    ? [
+        {
+          name: 'Settings',
+          icon: 'settings',
+          path: '/settings',
+          role: ['ADMIN', 'SUPERADMIN'],
+        },
+      ]
+    : []),
   {
     name: 'Marketplace',
     icon: 'marketplace',

@@ -14,6 +14,7 @@ export const UserContext = createContext<
       tier: PricingInnerInterface;
       role: 'USER' | 'ADMIN' | 'SUPERADMIN';
       totalChannels: number;
+      isLifetime?: boolean;
     })
 >(undefined);
 

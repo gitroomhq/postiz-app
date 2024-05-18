@@ -14,6 +14,7 @@ const nextConfig = {
   },
   env: {
     isBillingEnabled: String(!!process.env.STRIPE_PUBLISHABLE_KEY),
+    isGeneral: String(!!process.env.IS_GENERAL),
   }
 };
 

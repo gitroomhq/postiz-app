@@ -8,10 +8,14 @@ import { GithubOnboarding } from '@gitroom/frontend/components/onboarding/github
 import { SettingsPopup } from '@gitroom/frontend/components/layout/settings.component';
 import { Button } from '@gitroom/react/form/button';
 import { ConnectChannels } from '@gitroom/frontend/components/onboarding/connect.channels';
+import { isGeneral } from '@gitroom/react/helpers/is.general';
 
-export const Step: FC<{ step: number; title: string; currentStep: number, lastStep: number }> = (
-  props
-) => {
+export const Step: FC<{
+  step: number;
+  title: string;
+  currentStep: number;
+  lastStep: number;
+}> = (props) => {
   const { step, title, currentStep, lastStep } = props;
   return (
     <div className="flex flex-col">
@@ -87,40 +91,51 @@ const SkipOnboarding: FC = () => {
   const onSkip = useCallback(() => {
     const keys = Array.from(searchParams.keys());
 
-    const buildNewQuery = keys.reduce((all, current) => {
-      if (current === 'onboarding') {
+    const buildNewQuery = keys
+      .reduce((all, current) => {
+        if (current === 'onboarding') {
+          return all;
+        }
+        const value = searchParams.get(current);
+        all.push(`${current}=${value}`);
         return all;
-      }
-      const value = searchParams.get(current);
-      all.push(`${current}=${value}`);
-      return all;
-    }, [] as string[]).join('&');
+      }, [] as string[])
+      .join('&');
     router.push(`?${buildNewQuery}`);
   }, [searchParams]);
   return (
-    <Button secondary={true} className="border-[2px] border-[#506490]" onClick={onSkip}>Skip onboarding</Button>
+    <Button
+      secondary={true}
+      className="border-[2px] border-[#506490]"
+      onClick={onSkip}
+    >
+      Skip onboarding
+    </Button>
   );
-}
+};
 const Welcome: FC = () => {
   const [step, setStep] = useState(1);
   const ref = useRef();
   const router = useRouter();
 
-  const nextStep = useCallback(() => {
-    setStep(step + 1);
-  }, [step]);
+  const nextStep = useCallback(
+    (stepIt?: number) => () => {
+      setStep(stepIt ? stepIt : step + 1);
+    },
+    [step]
+  );
 
   const firstNext = useCallback(() => {
     // @ts-ignore
     ref?.current?.click();
-    nextStep();
+    nextStep(isGeneral() ? 3 : 2)();
   }, [nextStep]);
 
   const goToAnalytics = useCallback(() => {
     router.push('/analytics');
   }, []);
 
-    const goToLaunches = useCallback(() => {
+  const goToLaunches = useCallback(() => {
     router.push('/launches');
   }, []);
 
@@ -130,9 +145,23 @@ const Welcome: FC = () => {
       <div className="flex">
         <Step title="Profile" step={1} currentStep={step} lastStep={4} />
         <StepSpace />
-        <Step title="Connect Github" step={2} currentStep={step} lastStep={4} />
-        <StepSpace />
-        <Step title="Connect Channels" step={3} currentStep={step} lastStep={4} />
+        {!isGeneral() && (
+          <>
+            <Step
+              title="Connect Github"
+              step={2}
+              currentStep={step}
+              lastStep={4}
+            />
+            <StepSpace />
+          </>
+        )}
+        <Step
+          title="Connect Channels"
+          step={3}
+          currentStep={step}
+          lastStep={4}
+        />
         <StepSpace />
         <Step title="Finish" step={4} currentStep={step} lastStep={4} />
       </div>
@@ -152,7 +181,7 @@ const Welcome: FC = () => {
           <GithubOnboarding />
           <div className="flex justify-end gap-[8px]">
             <SkipOnboarding />
-            <Button onClick={nextStep}>Next</Button>
+            <Button onClick={nextStep(3)}>Next</Button>
           </div>
         </div>
       )}
@@ -161,7 +190,7 @@ const Welcome: FC = () => {
           <ConnectChannels />
           <div className="flex justify-end gap-[8px]">
             <SkipOnboarding />
-            <Button onClick={nextStep}>Next</Button>
+            <Button onClick={nextStep(4)}>Next</Button>
           </div>
         </div>
       )}
@@ -171,10 +200,20 @@ const Welcome: FC = () => {
             <img src="/success.svg" alt="success" />
           </div>
           <div className="text-[18px] text-center">
-            You are done, you can now video your GitHub analytics or<br />schedule new posts
+            You are done, you can now video your GitHub analytics or
+            <br />
+            schedule new posts
           </div>
           <div className="flex gap-[8px]">
-            <Button onClick={goToAnalytics} secondary={true} className="border-[2px] border-[#506490]">View Analytics</Button>
+            {!isGeneral() && (
+              <Button
+                onClick={goToAnalytics}
+                secondary={true}
+                className="border-[2px] border-[#506490]"
+              >
+                View Analytics
+              </Button>
+            )}
             <Button onClick={goToLaunches}>Schedule a new post</Button>
           </div>
         </div>

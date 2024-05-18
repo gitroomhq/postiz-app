@@ -10,7 +10,7 @@
     "docs": "nx run docs:serve:development",
     "workers": "nx run workers:serve:development",
     "cron": "nx run cron:serve:development",
-    "command": "nx run commands:build && nx run commands:command",
+    "command": "rm -rf dist/apps/commands && nx run commands:build && nx run commands:command",
     "prisma-generate": "cd ./libraries/nestjs-libraries/src/database/prisma && prisma generate",
     "prisma-db-push": "cd ./libraries/nestjs-libraries/src/database/prisma && prisma db push"
   },

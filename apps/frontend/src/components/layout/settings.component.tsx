@@ -11,12 +11,16 @@ import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useSWRConfig } from 'swr';
 import clsx from 'clsx';
+import { TeamsComponent } from '@gitroom/frontend/components/settings/teams.component';
+import { isGeneral } from '@gitroom/react/helpers/is.general';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
 
 export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
   const { getRef } = props;
   const fetch = useFetch();
   const toast = useToaster();
   const swr = useSWRConfig();
+  const user = useUser();
 
   const resolver = useMemo(() => {
     return classValidatorResolver(UserDetailDto);
@@ -52,7 +56,7 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
     });
 
     if (getRef) {
-      return ;
+      return;
     }
 
     toast.show('Profile updated');
@@ -67,7 +71,9 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(submit)}>
-        {!!getRef && <button type="submit" className="hidden" ref={getRef}></button>}
+        {!!getRef && (
+          <button type="submit" className="hidden" ref={getRef}></button>
+        )}
         <div
           className={clsx(
             'w-full max-w-[920px] mx-auto bg-[#0B101B] gap-[24px] flex flex-col relative',
@@ -180,6 +186,7 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
               <Button type="submit">Save</Button>
             </div>
           )}
+          {!!user?.tier?.team_members && isGeneral() && <TeamsComponent />}
         </div>
       </form>
     </FormProvider>

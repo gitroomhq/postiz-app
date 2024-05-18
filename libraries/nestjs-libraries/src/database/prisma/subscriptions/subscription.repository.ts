@@ -6,7 +6,8 @@ export class SubscriptionRepository {
   constructor(
     private readonly _subscription: PrismaRepository<'subscription'>,
     private readonly _organization: PrismaRepository<'organization'>,
-    private readonly _user: PrismaRepository<'user'>
+    private readonly _user: PrismaRepository<'user'>,
+    private _usedCodes: PrismaRepository<'usedCodes'>
   ) {}
 
   getUserAccount(userId: string) {
@@ -17,6 +18,14 @@ export class SubscriptionRepository {
       select: {
         account: true,
         connectedAccount: true,
+      },
+    });
+  }
+
+  getCode(code: string) {
+    return this._usedCodes.model.usedCodes.findFirst({
+      where: {
+        code,
       },
     });
   }
@@ -107,27 +116,37 @@ export class SubscriptionRepository {
     totalChannels: number,
     billing: 'STANDARD' | 'PRO',
     period: 'MONTHLY' | 'YEARLY',
-    cancelAt: number | null
+    cancelAt: number | null,
+    code?: string,
+    org?: { id: string }
   ) {
-    const findOrg = (await this.getOrganizationByCustomerId(customerId))!;
+    const findOrg =
+      org || (await this.getOrganizationByCustomerId(customerId))!;
+
     await this._subscription.model.subscription.upsert({
       where: {
         organizationId: findOrg.id,
-        organization: {
-          paymentId: customerId,
-        },
+        ...(!code
+          ? {
+              organization: {
+                paymentId: customerId,
+              },
+            }
+          : {}),
       },
       update: {
         subscriptionTier: billing,
         totalChannels,
         period,
         identifier,
+        isLifetime: !!code,
         cancelAt: cancelAt ? new Date(cancelAt * 1000) : null,
         deletedAt: null,
       },
       create: {
         organizationId: findOrg.id,
         subscriptionTier: billing,
+        isLifetime: !!code,
         totalChannels,
         period,
         cancelAt: cancelAt ? new Date(cancelAt * 1000) : null,
@@ -135,6 +154,14 @@ export class SubscriptionRepository {
         deletedAt: null,
       },
     });
+
+    if (code) {
+      await this._usedCodes.model.usedCodes.create({
+        data: {
+          code,
+        },
+      });
+    }
   }
 
   getSubscription(organizationId: string) {

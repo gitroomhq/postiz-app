@@ -8,6 +8,7 @@ import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/bill
 import { capitalize, groupBy } from 'lodash';
 import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
+import { AuthService } from '@gitroom/helpers/auth/auth.service';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-04-10',
@@ -510,5 +511,46 @@ export class StripeService {
       source_transaction: charge,
       transfer_group: orderId,
     });
+  }
+
+  async lifetimeDeal(organizationId: string, code: string) {
+    const getCurrentSubscription =
+      await this._subscriptionService.getSubscriptionByOrganizationId(
+        organizationId
+      );
+    if (getCurrentSubscription && !getCurrentSubscription?.isLifetime) {
+      throw new Error('You already have a non lifetime subscription');
+    }
+
+    try {
+      const testCode = AuthService.fixedDecryption(code);
+      const findCode = await this._subscriptionService.getCode(testCode);
+      if (findCode) {
+        return {
+          success: false,
+        };
+      }
+
+      const nextPackage = !getCurrentSubscription ? 'STANDARD' : 'PRO';
+      const findPricing = pricing[nextPackage];
+      await this._subscriptionService.createOrUpdateSubscription(
+        makeId(10),
+        organizationId,
+        findPricing.channel!,
+        nextPackage,
+        'MONTHLY',
+        null,
+        testCode,
+        organizationId
+      );
+      return {
+        success: true,
+      };
+    } catch (err) {
+      console.log(err);
+      return {
+        success: false,
+      };
+    }
   }
 }

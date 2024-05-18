@@ -54,6 +54,8 @@ export class UsersController {
       tier: organization?.subscription?.subscriptionTier || 'FREE',
       // @ts-ignore
       role: organization?.users[0]?.role,
+      // @ts-ignore
+      isLifetime: !!organization?.subscription?.isLifetime,
     };
   }
 

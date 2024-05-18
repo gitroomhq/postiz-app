@@ -18,6 +18,10 @@ export class SubscriptionService {
     );
   }
 
+  getCode(code: string) {
+    return this._subscriptionRepository.getCode(code);
+  }
+
   updateAccount(userId: string, account: string) {
     return this._subscriptionRepository.updateAccount(userId, account);
   }
@@ -52,7 +56,10 @@ export class SubscriptionService {
   }
 
   updateConnectedStatus(account: string, accountCharges: boolean) {
-    return this._subscriptionRepository.updateConnectedStatus(account, accountCharges);
+    return this._subscriptionRepository.updateConnectedStatus(
+      account,
+      accountCharges
+    );
   }
 
   async modifySubscription(
@@ -60,7 +67,10 @@ export class SubscriptionService {
     totalChannels: number,
     billing: 'FREE' | 'STANDARD' | 'PRO'
   ) {
-    const getOrgByCustomerId = await this._subscriptionRepository.getOrganizationByCustomerId(customerId);
+    const getOrgByCustomerId =
+      await this._subscriptionRepository.getOrganizationByCustomerId(
+        customerId
+      );
 
     const getCurrentSubscription =
       (await this._subscriptionRepository.getSubscriptionByCustomerId(
@@ -120,16 +130,22 @@ export class SubscriptionService {
     totalChannels: number,
     billing: 'STANDARD' | 'PRO',
     period: 'MONTHLY' | 'YEARLY',
-    cancelAt: number | null
+    cancelAt: number | null,
+    code?: string,
+    org?: string
   ) {
-    await this.modifySubscription(customerId, totalChannels, billing);
+    if (!code) {
+      await this.modifySubscription(customerId, totalChannels, billing);
+    }
     return this._subscriptionRepository.createOrUpdateSubscription(
       identifier,
       customerId,
       totalChannels,
       billing,
       period,
-      cancelAt
+      cancelAt,
+      code,
+      org ? { id: org } : undefined
     );
   }
 

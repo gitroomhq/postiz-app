@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { fetchBackend } from '@gitroom/helpers/utils/custom.fetch.func';
 import { removeSubdomain } from '@gitroom/helpers/subdomain/subdomain.management';
+import { isGeneral } from '@gitroom/react/helpers/is.general';
 
 // This function can be marked `async` if using `await` inside
 export async function middleware(request: NextRequest) {
@@ -86,8 +87,16 @@ export async function middleware(request: NextRequest) {
       return redirect;
     }
 
+    if (isGeneral() && (nextUrl.pathname.indexOf('/analytics') > -1 || nextUrl.pathname.indexOf('/settings') > -1)) {
+      return NextResponse.redirect(
+        new URL('/launches', nextUrl.href)
+      );
+    }
+
     if (nextUrl.pathname === '/') {
-      return NextResponse.redirect(new URL(`/analytics`, nextUrl.href));
+      return NextResponse.redirect(
+        new URL(isGeneral() ? '/launches' : `/analytics`, nextUrl.href)
+      );
     }
 
     const next = NextResponse.next();

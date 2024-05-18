@@ -1,11 +1,23 @@
-import { Controller, Post, RawBodyRequest, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Header,
+  Param,
+  Post,
+  RawBodyRequest,
+  Req,
+} from '@nestjs/common';
 import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
 import { ApiTags } from '@nestjs/swagger';
+import { CodesService } from '@gitroom/nestjs-libraries/services/codes.service';
 
 @ApiTags('Stripe')
 @Controller('/stripe')
 export class StripeController {
-  constructor(private readonly _stripeService: StripeService) {}
+  constructor(
+    private readonly _stripeService: StripeService,
+    private readonly _codesService: CodesService
+  ) {}
   @Post('/connect')
   stripeConnect(@Req() req: RawBodyRequest<Request>) {
     const event = this._stripeService.validateRequest(
@@ -60,5 +72,12 @@ export class StripeController {
       default:
         return { ok: true };
     }
+  }
+
+  @Get('/lifetime-deal-codes/:provider')
+  @Header('Content-disposition', 'attachment; filename=codes.csv')
+  @Header('Content-type', 'text/csv')
+  async getStripeCodes(@Param('provider') providerToken: string) {
+    return this._codesService.generateCodes(providerToken);
   }
 }
