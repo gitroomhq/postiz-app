@@ -9,6 +9,7 @@ import { SettingsPopup } from '@gitroom/frontend/components/layout/settings.comp
 import { Button } from '@gitroom/react/form/button';
 import { ConnectChannels } from '@gitroom/frontend/components/onboarding/connect.channels';
 import { isGeneral } from '@gitroom/react/helpers/is.general';
+import { AddAccount } from '@gitroom/frontend/components/marketplace/seller';
 
 export const Step: FC<{
   step: number;
@@ -114,6 +115,8 @@ const SkipOnboarding: FC = () => {
   );
 };
 const Welcome: FC = () => {
+  const [seller, setSeller] = useState(false);
+  const [lastStep, setLastStep] = useState(isGeneral() ? 3 : 4);
   const [step, setStep] = useState(1);
   const ref = useRef();
   const router = useRouter();
@@ -128,7 +131,7 @@ const Welcome: FC = () => {
   const firstNext = useCallback(() => {
     // @ts-ignore
     ref?.current?.click();
-    nextStep(isGeneral() ? 3 : 2)();
+    nextStep(2)();
   }, [nextStep]);
 
   const goToAnalytics = useCallback(() => {
@@ -139,11 +142,25 @@ const Welcome: FC = () => {
     router.push('/launches');
   }, []);
 
+  const buyPosts = useCallback(() => {
+    router.push('/marketplace/buyer');
+  }, []);
+
+  const sellPosts = useCallback(() => {
+    nextStep()();
+    setLastStep(isGeneral() ? 4 : 5);
+    setSeller(true);
+  }, [step]);
+
+  const connectBankAccount = useCallback(() => {
+    router.push('/marketplace/seller');
+  }, []);
+
   return (
     <div className="bg-sixth p-[32px] w-full max-w-[920px] mx-auto flex flex-col gap-[24px] rounded-[4px] border border-[#172034] relative">
       <h1 className="text-[24px]">Onboarding</h1>
       <div className="flex">
-        <Step title="Profile" step={1} currentStep={step} lastStep={4} />
+        <Step title="Profile" step={1} currentStep={step} lastStep={lastStep} />
         <StepSpace />
         {!isGeneral() && (
           <>
@@ -158,12 +175,23 @@ const Welcome: FC = () => {
         )}
         <Step
           title="Connect Channels"
-          step={3}
+          step={3 - (isGeneral() ? 1 : 0)}
           currentStep={step}
           lastStep={4}
         />
         <StepSpace />
-        <Step title="Finish" step={4} currentStep={step} lastStep={4} />
+        <Step title="Finish" step={4 - (isGeneral() ? 1 : 0)} currentStep={step} lastStep={lastStep} />
+        {seller && (
+          <>
+            <StepSpace />
+            <Step
+              title="Sell Posts"
+              step={5- (isGeneral() ? 1 : 0)}
+              currentStep={step}
+              lastStep={lastStep}
+            />
+          </>
+        )}
       </div>
       {step === 1 && (
         <>
@@ -176,45 +204,58 @@ const Welcome: FC = () => {
           </div>
         </>
       )}
-      {step === 2 && (
+      {step === 2 && !isGeneral() && (
         <div>
           <GithubOnboarding />
           <div className="flex justify-end gap-[8px]">
             <SkipOnboarding />
-            <Button onClick={nextStep(3)}>Next</Button>
+            <Button onClick={nextStep()}>Next</Button>
           </div>
         </div>
       )}
-      {step === 3 && (
+      {step === 3 - (isGeneral() ? 1 : 0) && (
         <div>
           <ConnectChannels />
           <div className="flex justify-end gap-[8px]">
             <SkipOnboarding />
-            <Button onClick={nextStep(4)}>Next</Button>
+            <Button onClick={nextStep()}>Next</Button>
           </div>
         </div>
       )}
-      {step === 4 && (
+      {step === 4 - (isGeneral() ? 1 : 0) && (
         <div className="items-center justify-center flex flex-col gap-[24px]">
           <div className="items-center justify-center flex flex-col">
             <img src="/success.svg" alt="success" />
           </div>
           <div className="text-[18px] text-center">
-            You are done, you can now video your GitHub analytics or
-            <br />
-            schedule new posts
+            You are done, from here you can:
           </div>
-          <div className="flex gap-[8px]">
-            {!isGeneral() && (
-              <Button
-                onClick={goToAnalytics}
-                secondary={true}
-                className="border-[2px] border-[#506490]"
-              >
-                View Analytics
-              </Button>
-            )}
-            <Button onClick={goToLaunches}>Schedule a new post</Button>
+          <div className="flex flex-col gap-[8px]">
+            <div className={clsx(isGeneral() ? "grid" : "grid grid-cols-2 gap-[8px]")}>
+              {!isGeneral() && (
+                <Button onClick={goToAnalytics}>View Analytics</Button>
+              )}
+              <Button onClick={goToLaunches}>Schedule a new post</Button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-[8px]">
+              <Button onClick={buyPosts}>Buy posts from Influencers</Button>
+              <Button onClick={sellPosts}>Sell your services</Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {step === 5 - (isGeneral() ? 1 : 0) && (
+        <div>
+          <div className="text-[24px] mb-[24px]">To sell posts you would have to:</div>
+          <ul>
+            <li>1. Connect at least one channel</li>
+            <li>2. Connect you bank account</li>
+          </ul>
+
+          <div className="grid grid-cols-2 gap-[8px] mt-[24px]">
+            <Button onClick={() => setStep(isGeneral() ? 2 : 3)}>Go back to connect channels</Button>
+            <Button onClick={connectBankAccount}>Move to the seller page to connect you bank</Button>
           </div>
         </div>
       )}
