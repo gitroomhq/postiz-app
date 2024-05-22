@@ -71,8 +71,10 @@ export const MediaBox: FC<{
       if (
         !file?.target?.files?.length ||
         file?.target?.files?.[0]?.size > maxFileSize
-      )
+      ) {
+        setLoading(() => false);
         return;
+      }
       const formData = new FormData();
       formData.append('file', file?.target?.files?.[0]);
       const data = await (
@@ -96,15 +98,17 @@ export const MediaBox: FC<{
     []
   );
 
-  const { data } = useSWR('get-media', loadMedia);
+  const { data, isLoading } = useSWR('get-media', loadMedia);
 
   useEffect(() => {
+    setLoading(() => true);
     if (data?.pages) {
       setPages(data.pages);
     }
     if (data?.results && data?.results?.length) {
       setListMedia([...data.results]);
     }
+    setLoading(() => false);
   }, [data]);
 
   return (
@@ -176,12 +180,12 @@ export const MediaBox: FC<{
             !mediaList.length && 'justify-center items-center text-white'
           )}
         >
-          {!mediaList.length && (
-            <div className="flex flex-col text-center">
-              {loading ? (
-                <LoadingComponent />
-              ) : (
-                <>
+          {loading || isLoading ? (
+            <LoadingComponent />
+          ) : (
+            <>
+              {!isLoading && !mediaList.length && (
+                <div className="flex flex-col text-center">
                   <div>You don{"'"}t have any assets yet.</div>
                   <div>Click the button below to upload one</div>
                   <div className="mt-[10px]">
@@ -213,22 +217,22 @@ export const MediaBox: FC<{
                       </button>
                     </div>
                   </div>
-                </>
+                </div>
               )}
-            </div>
+              {mediaList.map((media) => (
+                <div
+                  key={media.id}
+                  className="w-[200px] h-[200px] border-tableBorder border-2 cursor-pointer"
+                  onClick={setNewMedia(media)}
+                >
+                  <img
+                    className="w-full h-full object-cover"
+                    src={mediaDirectory.set(media.path)}
+                  />
+                </div>
+              ))}
+            </>
           )}
-          {mediaList.map((media) => (
-            <div
-              key={media.id}
-              className="w-[200px] h-[200px] border-tableBorder border-2 cursor-pointer"
-              onClick={setNewMedia(media)}
-            >
-              <img
-                className="w-full h-full object-cover"
-                src={mediaDirectory.set(media.path)}
-              />
-            </div>
-          ))}
         </div>
       </div>
     </div>
