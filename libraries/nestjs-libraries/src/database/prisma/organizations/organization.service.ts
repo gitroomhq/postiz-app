@@ -33,6 +33,10 @@ export class OrganizationService {
     return this._organizationRepository.getOrgById(id);
   }
 
+  getUserOrg(id: string) {
+    return this._organizationRepository.getUserOrg(id);
+  }
+
   getOrgsByUserId(userId: string) {
     return this._organizationRepository.getOrgsByUserId(userId);
   }

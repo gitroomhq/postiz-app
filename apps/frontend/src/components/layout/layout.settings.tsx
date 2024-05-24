@@ -24,6 +24,7 @@ import { ShowLinkedinCompany } from '@gitroom/frontend/components/launches/helpe
 import { SettingsComponent } from '@gitroom/frontend/components/layout/settings.component';
 import { Onboarding } from '@gitroom/frontend/components/onboarding/onboarding';
 import { Support } from '@gitroom/frontend/components/layout/support';
+import { Impersonate } from '@gitroom/frontend/components/layout/impersonate';
 
 dayjs.extend(utc);
 dayjs.extend(weekOfYear);
@@ -55,6 +56,7 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
         <Onboarding />
         <Support />
         <div className="min-h-[100vh] w-full max-w-[1440px] mx-auto bg-primary px-[12px] text-white flex flex-col">
+          {user?.admin && <Impersonate />}
           <div className="px-[23px] flex h-[80px] items-center justify-between z-[200] sticky top-0 bg-primary">
             <Link href="/" className="text-2xl flex items-center gap-[10px]">
               <div>

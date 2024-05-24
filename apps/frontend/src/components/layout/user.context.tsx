@@ -15,6 +15,7 @@ export const UserContext = createContext<
       role: 'USER' | 'ADMIN' | 'SUPERADMIN';
       totalChannels: number;
       isLifetime?: boolean;
+      impersonate: boolean;
     })
 >(undefined);
 
