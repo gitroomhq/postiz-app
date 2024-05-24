@@ -12,6 +12,77 @@ export class OrganizationRepository {
     private _user: PrismaRepository<'user'>
   ) {}
 
+  getUserOrg(id: string) {
+    return this._userOrg.model.userOrganization.findFirst({
+      where: {
+        id,
+      },
+      select: {
+        user: true,
+        organization: {
+          include: {
+            users: {
+              select: {
+                id: true,
+                disabled: true,
+                role: true,
+                userId: true,
+              },
+            },
+            subscription: {
+              select: {
+                subscriptionTier: true,
+                totalChannels: true,
+                isLifetime: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  getImpersonateUser(name: string) {
+    return this._userOrg.model.userOrganization.findMany({
+      where: {
+        user: {
+          OR: [
+            {
+              name: {
+                contains: name,
+              },
+            },
+            {
+              email: {
+                contains: name,
+              },
+            },
+            {
+              id: {
+                contains: name,
+              },
+            },
+          ],
+        },
+      },
+      select: {
+        id: true,
+        organization: {
+          select: {
+            id: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+  }
+
   async getOrgsByUserId(userId: string) {
     return this._organization.model.organization.findMany({
       where: {
