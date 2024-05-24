@@ -53,4 +53,5 @@ export type MediaContent = {
 export interface SocialProvider extends IAuthenticator, ISocialMediaIntegration {
     identifier: string;
     name: string;
+    isBetweenSteps: boolean;
 }

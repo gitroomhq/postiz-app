@@ -2,6 +2,8 @@ import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/pris
 import { Injectable } from '@nestjs/common';
 import dayjs from 'dayjs';
 import * as console from 'node:console';
+import { Integration } from '@prisma/client';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 
 @Injectable()
 export class IntegrationRepository {
@@ -9,6 +11,17 @@ export class IntegrationRepository {
     private _integration: PrismaRepository<'integration'>,
     private _posts: PrismaRepository<'post'>
   ) {}
+
+  updateIntegration(id: string, params: Partial<Integration>) {
+    return this._integration.model.integration.update({
+      where: {
+        id,
+      },
+      data: {
+        ...params,
+      },
+    });
+  }
 
   createOrUpdateIntegration(
     org: string,
@@ -20,7 +33,8 @@ export class IntegrationRepository {
     token: string,
     refreshToken = '',
     expiresIn = 999999999,
-    username?: string
+    username?: string,
+    isBetweenSteps = false
   ) {
     return this._integration.model.integration.upsert({
       where: {
@@ -36,6 +50,7 @@ export class IntegrationRepository {
         token,
         profile: username,
         picture,
+        inBetweenSteps: isBetweenSteps,
         refreshToken,
         ...(expiresIn
           ? { tokenExpiration: new Date(Date.now() + expiresIn * 1000) }
@@ -47,6 +62,7 @@ export class IntegrationRepository {
         type: type as any,
         name,
         providerIdentifier: provider,
+        inBetweenSteps: isBetweenSteps,
         token,
         picture,
         profile: username,
@@ -67,6 +83,7 @@ export class IntegrationRepository {
         tokenExpiration: {
           lte: dayjs().add(1, 'day').toDate(),
         },
+        inBetweenSteps: false,
         deletedAt: null,
       },
     });
@@ -81,7 +98,12 @@ export class IntegrationRepository {
     });
   }
 
-  async getIntegrationForOrder(id: string, order: string, user: string, org: string) {
+  async getIntegrationForOrder(
+    id: string,
+    order: string,
+    user: string,
+    org: string
+  ) {
     console.log(id, order, user, org);
     const integration = await this._posts.model.post.findFirst({
       where: {
@@ -90,12 +112,12 @@ export class IntegrationRepository {
           id: order,
           messageGroup: {
             OR: [
-              {sellerId: user},
-              {buyerId: user},
-              {buyerOrganizationId: org},
-            ]
-          }
-        }
+              { sellerId: user },
+              { buyerId: user },
+              { buyerOrganizationId: org },
+            ],
+          },
+        },
       },
       select: {
         integration: {
@@ -103,10 +125,11 @@ export class IntegrationRepository {
             id: true,
             name: true,
             picture: true,
+            inBetweenSteps: true,
             providerIdentifier: true,
           },
-        }
-      }
+        },
+      },
     });
 
     return integration?.integration;
@@ -167,6 +190,21 @@ export class IntegrationRepository {
       data: {
         deletedAt: new Date(),
       },
+    });
+  }
+
+  async checkForDeletedOnceAndUpdate(org: string, page: string) {
+    return this._integration.model.integration.updateMany({
+      where: {
+        organizationId: org,
+        internalId: page,
+        deletedAt: {
+          not: null,
+        },
+      },
+      data: {
+        internalId: makeId(10),
+      }
     });
   }
 

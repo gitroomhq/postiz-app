@@ -24,6 +24,8 @@ import { ShowLinkedinCompany } from '@gitroom/frontend/components/launches/helpe
 import { SettingsComponent } from '@gitroom/frontend/components/layout/settings.component';
 import { Onboarding } from '@gitroom/frontend/components/onboarding/onboarding';
 import { Support } from '@gitroom/frontend/components/layout/support';
+import { ContinueProvider } from '@gitroom/frontend/components/layout/continue.provider';
+import { isGeneral } from '@gitroom/react/helpers/is.general';
 
 dayjs.extend(utc);
 dayjs.extend(weekOfYear);
@@ -54,13 +56,14 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
         <ShowPostSelector />
         <Onboarding />
         <Support />
+        <ContinueProvider />
         <div className="min-h-[100vh] w-full max-w-[1440px] mx-auto bg-primary px-[12px] text-white flex flex-col">
           <div className="px-[23px] flex h-[80px] items-center justify-between z-[200] sticky top-0 bg-primary">
             <Link href="/" className="text-2xl flex items-center gap-[10px]">
               <div>
                 <Image src="/logo.svg" width={55} height={53} alt="Logo" />
               </div>
-              <div className="mt-[12px]">Gitroom</div>
+              <div className="mt-[12px]">{isGeneral() ? 'Postiz' : 'Gitroom'}</div>
             </Link>
             {user?.orgId ? <TopMenu /> : <div />}
             <div className="flex items-center gap-[8px]">

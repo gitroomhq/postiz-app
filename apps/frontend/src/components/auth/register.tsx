@@ -12,6 +12,7 @@ import { GithubProvider } from '@gitroom/frontend/app/auth/providers/github.prov
 import { useSearchParams } from 'next/navigation';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import interClass from '@gitroom/react/helpers/inter.font';
+import { isGeneral } from '@gitroom/react/helpers/is.general';
 
 type Inputs = {
   email: string;
@@ -56,7 +57,9 @@ export function Register() {
     return <LoadingComponent />;
   }
 
-  return <RegisterAfter token={code} provider={provider?.toUpperCase() || 'LOCAL'} />;
+  return (
+    <RegisterAfter token={code} provider={provider?.toUpperCase() || 'LOCAL'} />
+  );
 }
 
 export function RegisterAfter({
@@ -110,11 +113,13 @@ export function RegisterAfter({
             Sign Up
           </h1>
         </div>
-        {!isAfterProvider && <GithubProvider />}
-        {!isAfterProvider && (
+        {!isAfterProvider && !isGeneral() && <GithubProvider />}
+        {!isAfterProvider && !isGeneral() && (
           <div className="h-[20px] mb-[24px] mt-[24px] relative">
             <div className="absolute w-full h-[1px] bg-[#28344F] top-[50%] -translate-y-[50%]" />
-            <div className={`absolute z-[1] ${interClass} justify-center items-center w-full left-0 top-0 flex`}>
+            <div
+              className={`absolute z-[1] ${interClass} justify-center items-center w-full left-0 top-0 flex`}
+            >
               <div className="bg-[#0a0a0a] px-[16px]">OR</div>
             </div>
           </div>

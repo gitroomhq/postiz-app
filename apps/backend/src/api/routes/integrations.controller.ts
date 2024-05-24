@@ -44,9 +44,11 @@ export class IntegrationsController {
       ).map((p) => ({
         name: p.name,
         id: p.id,
+        internalId: p.internalId,
         disabled: p.disabled,
         picture: p.picture,
         identifier: p.providerIdentifier,
+        inBetweenSteps: p.inBetweenSteps,
         type: p.type,
       })),
     };
@@ -221,7 +223,8 @@ export class IntegrationsController {
       accessToken,
       refreshToken,
       expiresIn,
-      username
+      username,
+      integrationProvider.isBetweenSteps
     );
   }
 
@@ -231,6 +234,24 @@ export class IntegrationsController {
     @Body('id') id: string
   ) {
     return this._integrationService.disableChannel(org.id, id);
+  }
+
+  @Post('/instagram/:id')
+  async saveInstagram(
+    @Param('id') id: string,
+    @Body() body: { pageId: string, id: string },
+    @GetOrgFromRequest() org: Organization
+  ) {
+    return this._integrationService.saveInstagram(org.id, id, body);
+  }
+
+  @Post('/facebook/:id')
+  async saveFacebook(
+    @Param('id') id: string,
+    @Body() body: { page: string },
+    @GetOrgFromRequest() org: Organization
+  ) {
+    return this._integrationService.saveFacebook(org.id, id, body.page);
   }
 
   @Post('/enable')

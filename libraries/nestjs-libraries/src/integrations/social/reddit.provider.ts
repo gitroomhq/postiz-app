@@ -12,6 +12,8 @@ import { groupBy } from 'lodash';
 export class RedditProvider implements SocialProvider {
   identifier = 'reddit';
   name = 'Reddit';
+  isBetweenSteps = false;
+
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const {
       access_token: accessToken,

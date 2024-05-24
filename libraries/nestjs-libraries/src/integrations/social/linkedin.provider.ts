@@ -13,6 +13,8 @@ import { removeMarkdown } from '@gitroom/helpers/utils/remove.markdown';
 export class LinkedinProvider implements SocialProvider {
   identifier = 'linkedin';
   name = 'LinkedIn';
+  isBetweenSteps = false;
+
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     const { access_token: accessToken, refresh_token: refreshToken } = await (
       await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
@@ -165,43 +167,86 @@ export class LinkedinProvider implements SocialProvider {
   }
 
   private async uploadPicture(
+    fileName: string,
     accessToken: string,
     personId: string,
     picture: any
   ) {
-    const {
-      value: { uploadUrl, image },
-    } = await (
-      await fetch(
-        'https://api.linkedin.com/rest/images?action=initializeUpload',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Restli-Protocol-Version': '2.0.0',
-            'LinkedIn-Version': '202402',
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({
-            initializeUploadRequest: {
-              owner: `urn:li:person:${personId}`,
+    try {
+      const {
+        value: { uploadUrl, image, video, uploadInstructions, ...all },
+      } = await (
+        await fetch(
+          `https://api.linkedin.com/rest/${
+            fileName.indexOf('mp4') > -1 ? 'videos' : 'images'
+          }?action=initializeUpload`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Restli-Protocol-Version': '2.0.0',
+              'LinkedIn-Version': '202402',
+              Authorization: `Bearer ${accessToken}`,
             },
-          }),
-        }
-      )
-    ).json();
+            body: JSON.stringify({
+              initializeUploadRequest: {
+                owner: `urn:li:person:${personId}`,
+                ...(fileName.indexOf('mp4') > -1
+                  ? {
+                      fileSizeBytes: picture.length,
+                      uploadCaptions: false,
+                      uploadThumbnail: false,
+                    }
+                  : {}),
+              },
+            }),
+          }
+        )
+      ).json();
 
-    await fetch(uploadUrl, {
-      method: 'PUT',
-      headers: {
-        'X-Restli-Protocol-Version': '2.0.0',
-        'LinkedIn-Version': '202402',
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: picture,
-    });
+      const sendUrlRequest = uploadInstructions?.[0]?.uploadUrl || uploadUrl;
+      const finalOutput = video || image;
 
-    return image;
+      const upload = await fetch(sendUrlRequest, {
+        method: 'PUT',
+        headers: {
+          'X-Restli-Protocol-Version': '2.0.0',
+          'LinkedIn-Version': '202402',
+          Authorization: `Bearer ${accessToken}`,
+          ...(fileName.indexOf('mp4') > -1
+            ? { 'Content-Type': 'application/octet-stream' }
+            : {}),
+        },
+        body: picture,
+      });
+
+      if (fileName.indexOf('mp4') > -1) {
+        const etag = upload.headers.get('etag');
+        const a = await fetch(
+          'https://api.linkedin.com/rest/videos?action=finalizeUpload',
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              finalizeUploadRequest: {
+                video,
+                uploadToken: '',
+                uploadedPartIds: [etag],
+              },
+            }),
+            headers: {
+              'X-Restli-Protocol-Version': '2.0.0',
+              'LinkedIn-Version': '202402',
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+      }
+
+      return finalOutput;
+    } catch (err: any) {
+      throw 'eerr';
+    }
   }
 
   async post(
@@ -217,15 +262,18 @@ export class LinkedinProvider implements SocialProvider {
           p?.media?.flatMap(async (m) => {
             return {
               id: await this.uploadPicture(
+                m.path,
                 accessToken,
                 id,
-                await sharp(await readOrFetch(m.path), {
-                  animated: lookup(m.path) === 'image/gif',
-                })
-                  .resize({
-                    width: 1000,
-                  })
-                  .toBuffer()
+                m.path.indexOf('mp4') > -1
+                  ? Buffer.from(await readOrFetch(m.path))
+                  : await sharp(await readOrFetch(m.path), {
+                      animated: lookup(m.path) === 'image/gif',
+                    })
+                      .resize({
+                        width: 1000,
+                      })
+                      .toBuffer()
               ),
               postId: p.id,
             };

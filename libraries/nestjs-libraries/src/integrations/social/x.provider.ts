@@ -13,6 +13,8 @@ import removeMd from 'remove-markdown';
 export class XProvider implements SocialProvider {
   identifier = 'x';
   name = 'X';
+  isBetweenSteps = false;
+
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const startingClient = new TwitterApi({
       clientId: process.env.TWITTER_CLIENT_ID!,
@@ -47,8 +49,6 @@ export class XProvider implements SocialProvider {
 
   async generateAuthUrl() {
     const client = new TwitterApi({
-      // clientId: process.env.TWITTER_CLIENT_ID!,
-      // clientSecret: process.env.TWITTER_CLIENT_SECRET!,
       appKey: process.env.X_API_KEY!,
       appSecret: process.env.X_API_SECRET!,
     });
@@ -128,14 +128,16 @@ export class XProvider implements SocialProvider {
           p?.media?.flatMap(async (m) => {
             return {
               id: await client.v1.uploadMedia(
-                await sharp(await readOrFetch(m.path), {
-                  animated: lookup(m.path) === 'image/gif',
-                })
-                  .resize({
-                    width: 1000,
-                  })
-                  .gif()
-                  .toBuffer(),
+                m.path.indexOf('mp4') > -1
+                  ? Buffer.from(await readOrFetch(m.path))
+                  : await sharp(await readOrFetch(m.path), {
+                      animated: lookup(m.path) === 'image/gif',
+                    })
+                      .resize({
+                        width: 1000,
+                      })
+                      .gif()
+                      .toBuffer(),
                 {
                   mimeType: lookup(m.path) || '',
                 }
@@ -183,17 +185,4 @@ export class XProvider implements SocialProvider {
       status: 'posted',
     }));
   }
-
-  // async analytics(accessToken: string) {
-  //   const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
-  //   const client = new TwitterApi({
-  //     appKey: process.env.X_API_KEY!,
-  //     appSecret: process.env.X_API_SECRET!,
-  //     accessToken: accessTokenSplit,
-  //     accessSecret: accessSecretSplit,
-  //   });
-  //   const {
-  //     data: { username },
-  //   } = await client.v2;
-  // }
 }

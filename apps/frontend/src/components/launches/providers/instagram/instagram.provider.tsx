@@ -3,9 +3,13 @@ import { withProvider } from '@gitroom/frontend/components/launches/providers/hi
 import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { useFormatting } from '@gitroom/frontend/components/launches/helpers/use.formatting';
 import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
-import {afterLinkedinCompanyPreventRemove, linkedinCompanyPreventRemove} from "@gitroom/helpers/utils/linkedin.company.prevent.remove";
+import {
+  afterLinkedinCompanyPreventRemove,
+  linkedinCompanyPreventRemove,
+} from '@gitroom/helpers/utils/linkedin.company.prevent.remove';
+import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
 
-const FacebookPreview: FC = (props) => {
+const InstagramPreview: FC = (props) => {
   const { value: topValue, integration } = useIntegration();
   const mediaDir = useMediaDirectory();
   const newValues = useFormatting(topValue, {
@@ -43,8 +47,6 @@ const FacebookPreview: FC = (props) => {
         </div>
       </div>
       <div>
-        <pre className="font-['helvetica'] text-[14px] font-[400] text-wrap" dangerouslySetInnerHTML={{__html: firstPost?.text}} />
-
         {!!firstPost?.images?.length && (
           <div className="-ml-[16px] -mr-[40px] flex-1 h-[555px] flex overflow-hidden mt-[12px] gap-[2px]">
             {firstPost.images.map((image, index) => (
@@ -54,14 +56,15 @@ const FacebookPreview: FC = (props) => {
                 className="flex-1"
                 target="_blank"
               >
-                <img
-                  className="w-full h-full object-cover"
-                  src={mediaDir.set(image.path)}
-                />
+                <VideoOrImage autoplay={true} src={mediaDir.set(image.path)} />
               </a>
             ))}
           </div>
         )}
+        <pre
+          className="font-['helvetica'] text-[14px] font-[400] text-wrap"
+          dangerouslySetInnerHTML={{ __html: firstPost?.text }}
+        />
       </div>
       {morePosts.map((p, index) => (
         <div className="flex gap-[8px]" key={index}>
@@ -89,10 +92,12 @@ const FacebookPreview: FC = (props) => {
                     href={mediaDir.set(image.path)}
                     target="_blank"
                   >
-                    <img
-                      className="w-[120px] h-full object-cover"
-                      src={mediaDir.set(image.path)}
-                    />
+                    <div className="w-[120px] h-full">
+                      <VideoOrImage
+                        autoplay={true}
+                        src={mediaDir.set(image.path)}
+                      />
+                    </div>
                   </a>
                 ))}
               </div>
@@ -104,4 +109,4 @@ const FacebookPreview: FC = (props) => {
   );
 };
 
-export default withProvider(null, FacebookPreview);
+export default withProvider(null, InstagramPreview);

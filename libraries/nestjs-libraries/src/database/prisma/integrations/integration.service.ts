@@ -1,6 +1,8 @@
-import {HttpException, HttpStatus, Injectable} from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { IntegrationRepository } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.repository';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
+import { InstagramProvider } from '@gitroom/nestjs-libraries/integrations/social/instagram.provider';
+import { FacebookProvider } from '@gitroom/nestjs-libraries/integrations/social/facebook.provider';
 
 @Injectable()
 export class IntegrationService {
@@ -18,7 +20,8 @@ export class IntegrationService {
     token: string,
     refreshToken = '',
     expiresIn?: number,
-    username?: string
+    username?: string,
+    isBetweenSteps = false
   ) {
     return this._integrationRepository.createOrUpdateIntegration(
       org,
@@ -30,7 +33,8 @@ export class IntegrationService {
       token,
       refreshToken,
       expiresIn,
-      username
+      username,
+      isBetweenSteps
     );
   }
 
@@ -39,7 +43,12 @@ export class IntegrationService {
   }
 
   getIntegrationForOrder(id: string, order: string, user: string, org: string) {
-    return this._integrationRepository.getIntegrationForOrder(id, order, user, org);
+    return this._integrationRepository.getIntegrationForOrder(
+      id,
+      order,
+      user,
+      org
+    );
   }
 
   getIntegrationById(org: string, id: string) {
@@ -86,9 +95,15 @@ export class IntegrationService {
   }
 
   async deleteChannel(org: string, id: string) {
-    const isTherePosts = await this._integrationRepository.countPostsForChannel(org, id);
+    const isTherePosts = await this._integrationRepository.countPostsForChannel(
+      org,
+      id
+    );
     if (isTherePosts) {
-      throw new HttpException('There are posts for this channel', HttpStatus.NOT_ACCEPTABLE);
+      throw new HttpException(
+        'There are posts for this channel',
+        HttpStatus.NOT_ACCEPTABLE
+      );
     }
 
     return this._integrationRepository.deleteChannel(org, id);
@@ -96,5 +111,67 @@ export class IntegrationService {
 
   async disableIntegrations(org: string, totalChannels: number) {
     return this._integrationRepository.disableIntegrations(org, totalChannels);
+  }
+
+  async checkForDeletedOnceAndUpdate(org: string, page: string) {
+    return this._integrationRepository.checkForDeletedOnceAndUpdate(org, page);
+  }
+
+  async saveInstagram(org: string, id: string, data: { pageId: string, id: string }) {
+    const getIntegration = await this._integrationRepository.getIntegrationById(
+      org,
+      id
+    );
+    if (getIntegration && !getIntegration.inBetweenSteps) {
+      throw new HttpException('Invalid request', HttpStatus.BAD_REQUEST);
+    }
+
+    const instagram = this._integrationManager.getSocialIntegration(
+      'instagram'
+    ) as InstagramProvider;
+    const getIntegrationInformation = await instagram.fetchPageInformation(
+      getIntegration?.token!,
+      data
+    );
+
+    await this.checkForDeletedOnceAndUpdate(org, getIntegrationInformation.id);
+    await this._integrationRepository.updateIntegration(id, {
+      picture: getIntegrationInformation.picture,
+      internalId: getIntegrationInformation.id,
+      name: getIntegrationInformation.name,
+      inBetweenSteps: false,
+      token: getIntegrationInformation.access_token,
+    });
+
+    return { success: true };
+  }
+
+  async saveFacebook(org: string, id: string, page: string) {
+    const getIntegration = await this._integrationRepository.getIntegrationById(
+      org,
+      id
+    );
+    if (getIntegration && !getIntegration.inBetweenSteps) {
+      throw new HttpException('Invalid request', HttpStatus.BAD_REQUEST);
+    }
+
+    const facebook = this._integrationManager.getSocialIntegration(
+      'facebook'
+    ) as FacebookProvider;
+    const getIntegrationInformation = await facebook.fetchPageInformation(
+      getIntegration?.token!,
+      page
+    );
+
+    await this.checkForDeletedOnceAndUpdate(org, getIntegrationInformation.id);
+    await this._integrationRepository.updateIntegration(id, {
+      picture: getIntegrationInformation.picture,
+      internalId: getIntegrationInformation.id,
+      name: getIntegrationInformation.name,
+      inBetweenSteps: false,
+      token: getIntegrationInformation.access_token,
+    });
+
+    return { success: true };
   }
 }

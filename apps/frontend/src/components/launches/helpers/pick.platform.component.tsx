@@ -138,7 +138,7 @@ export const PickPlatforms: FC<{
         >
           <div className="innerComponent">
             <div className="flex">
-              {integrations.map((integration) =>
+              {integrations.filter(f => !f.inBetweenSteps).map((integration) =>
                 !props.singleSelect ? (
                   <div
                     key={integration.id}

@@ -14,9 +14,12 @@ import clsx from 'clsx';
 import { useUser } from '../layout/user.context';
 import { Menu } from '@gitroom/frontend/components/launches/menu/menu';
 import { GeneratorComponent } from '@gitroom/frontend/components/launches/generator/generator';
+import { useRouter } from 'next/navigation';
 
 export const LaunchesComponent = () => {
   const fetch = useFetch();
+  const router = useRouter();
+
   const [reload, setReload] = useState(false);
   const load = useCallback(async (path: string) => {
     return (await (await fetch(path)).json()).integrations;
@@ -57,6 +60,10 @@ export const LaunchesComponent = () => {
     }
   }, []);
 
+  const continueIntegration = useCallback((integration: any) => async () => {
+    router.push(`/launches?added=${integration.identifier}&continue=${integration.id}`);
+  }, []);
+
   useEffect(() => {
     if (typeof window !== 'undefined' && window.opener) {
       window.close();
@@ -89,6 +96,14 @@ export const LaunchesComponent = () => {
                         integration.disabled && 'opacity-50'
                       )}
                     >
+                      {integration.inBetweenSteps && (
+                        <div className="absolute left-0 top-0 w-[39px] h-[46px] cursor-pointer" onClick={continueIntegration(integration)}>
+                          <div className="bg-red-500 w-[15px] h-[15px] rounded-full -left-[5px] -top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
+                            !
+                          </div>
+                          <div className="bg-black/60 w-[39px] h-[46px] left-0 top-0 absolute rounded-full z-[199]" />
+                        </div>
+                      )}
                       <img
                         src={integration.picture}
                         className="rounded-full"
@@ -114,7 +129,7 @@ export const LaunchesComponent = () => {
                           }
                         : {})}
                       className={clsx(
-                        'flex-1',
+                        'flex-1 whitespace-nowrap text-ellipsis overflow-hidden',
                         integration.disabled && 'opacity-50'
                       )}
                     >

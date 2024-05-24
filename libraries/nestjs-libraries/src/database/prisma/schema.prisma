@@ -200,6 +200,7 @@ model Integration {
   createdAt       DateTime       @default(now())
   updatedAt       DateTime?      @updatedAt
   orderItems      OrderItems[]
+  inBetweenSteps  Boolean         @default(false)
 
   @@index([updatedAt])
   @@index([deletedAt])

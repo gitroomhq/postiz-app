@@ -11,6 +11,7 @@ import EventEmitter from 'events';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import clsx from 'clsx';
 import interClass from '@gitroom/react/helpers/inter.font';
+import { VideoFrame } from '@gitroom/react/helpers/video.frame';
 const showModalEmitter = new EventEmitter();
 
 export const ShowMediaBoxModal: FC = () => {
@@ -139,10 +140,12 @@ export const MediaBox: FC<{
                 <input
                   type="file"
                   className="absolute left-0 top-0 w-full h-full opacity-0"
-                  accept="image/*"
+                  accept="image/*,video/mp4"
                   onChange={uploadMedia}
                 />
-                <button className={`cursor-pointer font-[500] flex justify-center items-center gap-[4px] text-[12px] rounded-[4px] w-[107px] h-[25px] bg-[#0b0f1c] text-white ${interClass} border-[2px] border-[#506490]`}>
+                <button
+                  className={`cursor-pointer font-[500] flex justify-center items-center gap-[4px] text-[12px] rounded-[4px] w-[107px] h-[25px] bg-[#0b0f1c] text-white ${interClass} border-[2px] border-[#506490]`}
+                >
                   <div>
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -181,7 +184,9 @@ export const MediaBox: FC<{
                     accept="image/*"
                     onChange={uploadMedia}
                   />
-                  <button className={`cursor-pointer font-[500] flex justify-center items-center gap-[4px] text-[12px] rounded-[4px] w-[107px] h-[25px] bg-[#0b0f1c] text-white ${interClass} border-[2px] border-[#506490]`}>
+                  <button
+                    className={`cursor-pointer font-[500] flex justify-center items-center gap-[4px] text-[12px] rounded-[4px] w-[107px] h-[25px] bg-[#0b0f1c] text-white ${interClass} border-[2px] border-[#506490]`}
+                  >
                     <div>
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -208,10 +213,14 @@ export const MediaBox: FC<{
               className="w-[200px] h-[200px] border-tableBorder border-2 cursor-pointer"
               onClick={setNewMedia(media)}
             >
-              <img
-                className="w-full h-full object-cover"
-                src={mediaDirectory.set(media.path)}
-              />
+              {media.path.indexOf('mp4') > -1 ? (
+                <VideoFrame url={mediaDirectory.set(media.path)} />
+              ) : (
+                <img
+                  className="w-full h-full object-cover"
+                  src={mediaDirectory.set(media.path)}
+                />
+              )}
             </div>
           ))}
         </div>
@@ -295,11 +304,18 @@ export const MultiMediaComponent: FC<{
             currentMedia.map((media, index) => (
               <>
                 <div className="cursor-pointer w-[40px] h-[40px] border-2 border-tableBorder relative">
-                  <img
-                    className="w-full h-full object-cover"
-                    src={mediaDirectory.set(media.path)}
+                  <div
                     onClick={() => window.open(mediaDirectory.set(media.path))}
-                  />
+                  >
+                    {media.path.indexOf('mp4') > -1 ? (
+                      <VideoFrame url={mediaDirectory.set(media.path)} />
+                    ) : (
+                      <img
+                        className="w-full h-full object-cover"
+                        src={mediaDirectory.set(media.path)}
+                      />
+                    )}
+                  </div>
                   <div
                     onClick={clearMedia(index)}
                     className="rounded-full w-[15px] h-[15px] bg-red-800 text-white flex justify-center items-center absolute -right-[4px] -top-[4px]"

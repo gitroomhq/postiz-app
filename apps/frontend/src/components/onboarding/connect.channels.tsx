@@ -1,4 +1,11 @@
-import React, { FC, useCallback, useMemo, useState } from 'react';
+import React, {
+  FC,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { orderBy } from 'lodash';
@@ -7,10 +14,13 @@ import clsx from 'clsx';
 import Image from 'next/image';
 import { Menu } from '@gitroom/frontend/components/launches/menu/menu';
 import { ApiModal } from '@gitroom/frontend/components/launches/add.provider.component';
+import { useRouter } from 'next/navigation';
 
 export const ConnectChannels: FC = () => {
   const fetch = useFetch();
+  const router = useRouter();
   const [identifier, setIdentifier] = useState<any>(undefined);
+  const [popup, setPopups] = useState<undefined | string[]>(undefined);
 
   const getIntegrations = useCallback(async () => {
     return (await fetch('/integrations')).json();
@@ -30,7 +40,9 @@ export const ConnectChannels: FC = () => {
   );
 
   const load = useCallback(async (path: string) => {
-    return (await (await fetch(path)).json()).integrations;
+    const list = (await (await fetch(path)).json()).integrations;
+    setPopups(list.map((p: any) => p.id));
+    return list;
   }, []);
 
   const { data: integrations, mutate } = useSWR('/integrations/list', load, {
@@ -54,6 +66,21 @@ export const ConnectChannels: FC = () => {
     );
   }, [integrations]);
 
+  useEffect(() => {
+    if (sortedIntegrations.length === 0 || !popup) {
+      return;
+    }
+
+    const betweenSteps = sortedIntegrations.find((p) => p.inBetweenSteps);
+    if (betweenSteps && popup.indexOf(betweenSteps.id) === -1) {
+      const url = new URL(window.location.href);
+      url.searchParams.append('added', betweenSteps.identifier);
+      url.searchParams.append('continue', betweenSteps.id);
+      router.push(url.toString());
+      setPopups([...popup, betweenSteps.id]);
+    }
+  }, [sortedIntegrations, popup]);
+
   const update = useCallback(async (shouldReload: boolean) => {
     if (shouldReload) {
       setReload(true);
@@ -64,6 +91,16 @@ export const ConnectChannels: FC = () => {
       setReload(false);
     }
   }, []);
+
+  const continueIntegration = useCallback(
+    (integration: any) => async () => {
+      const url = new URL(window.location.href);
+      url.searchParams.append('added', integration.identifier);
+      url.searchParams.append('continue', integration.id);
+      router.push(url.toString());
+    },
+    []
+  );
 
   const finishUpdate = useCallback(() => {
     setIdentifier(undefined);
@@ -153,6 +190,17 @@ export const ConnectChannels: FC = () => {
                     integration.disabled && 'opacity-50'
                   )}
                 >
+                  {integration.inBetweenSteps && (
+                    <div
+                      className="absolute left-0 top-0 w-[39px] h-[46px] cursor-pointer"
+                      onClick={continueIntegration(integration)}
+                    >
+                      <div className="bg-red-500 w-[15px] h-[15px] rounded-full -left-[5px] -top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
+                        !
+                      </div>
+                      <div className="bg-black/60 w-[39px] h-[46px] left-0 top-0 absolute rounded-full z-[199]" />
+                    </div>
+                  )}
                   <img
                     src={integration.picture}
                     className="rounded-full"

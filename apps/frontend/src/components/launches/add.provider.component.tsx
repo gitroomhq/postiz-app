@@ -190,7 +190,7 @@ export const AddProviderComponent: FC<{
           </svg>
         </button>
         <h2 className="pt-[16px] pb-[10px]">Social</h2>
-        <div className="flex flex-wrap gap-[10px]">
+        <div className="grid grid-cols-3 gap-[10px] justify-items-center justify-center">
           {social.map((item) => (
             <div
               key={item.identifier}
@@ -210,7 +210,7 @@ export const AddProviderComponent: FC<{
       </div>
       <div className="flex flex-col">
         <h2 className="pb-[10px]">Articles</h2>
-        <div className="flex flex-wrap gap-[10px]">
+        <div className="grid grid-cols-3 gap-[10px]">
           {article.map((item) => (
             <div
               key={item.identifier}

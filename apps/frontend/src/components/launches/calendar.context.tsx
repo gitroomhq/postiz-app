@@ -16,6 +16,7 @@ import useSWR, { useSWRConfig } from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Post, Integration } from '@prisma/client';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { isGeneral } from '@gitroom/react/helpers/is.general';
 
 const CalendarContext = createContext({
   currentWeek: dayjs().week(),
@@ -31,6 +32,7 @@ const CalendarContext = createContext({
 export interface Integrations {
   name: string;
   id: string;
+  inBetweenSteps: boolean;
   identifier: string;
   type: string;
   picture: string;
@@ -48,6 +50,9 @@ export const CalendarWeekProvider: FC<{
 
   useEffect(() => {
     (async () => {
+      if (isGeneral()) {
+        return [];
+      }
       setTrendings(await (await fetch('/posts/predict-trending')).json());
     })();
   }, []);

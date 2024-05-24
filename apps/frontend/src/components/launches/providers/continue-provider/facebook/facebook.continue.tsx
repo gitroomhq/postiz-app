@@ -6,14 +6,11 @@ import { Button } from '@gitroom/react/form/button';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 
-export const InstagramContinue: FC<{
-  closeModal: () => void;
-  existingId: string[];
-}> = (props) => {
+export const FacebookContinue: FC<{closeModal: () => void, existingId: string[]}> = (props) => {
   const { closeModal, existingId } = props;
   const call = useCustomProviderFunction();
   const { integration } = useIntegration();
-  const [page, setSelectedPage] = useState<null | {id: string, pageId: string}>(null);
+  const [page, setSelectedPage] = useState<null | string>(null);
   const fetch = useFetch();
 
   const loadPages = useCallback(() => {
@@ -21,8 +18,8 @@ export const InstagramContinue: FC<{
   }, []);
 
   const setPage = useCallback(
-    (param: {id: string, pageId: string}) => () => {
-      setSelectedPage(param);
+    (id: string) => () => {
+      setSelectedPage(id);
     },
     []
   );
@@ -38,28 +35,25 @@ export const InstagramContinue: FC<{
   });
 
   const saveInstagram = useCallback(async () => {
-    await fetch(`/integrations/instagram/${integration?.id}`, {
+    await fetch(`/integrations/facebook/${integration?.id}`, {
       method: 'POST',
-      body: JSON.stringify(page),
+      body: JSON.stringify({ page }),
     });
 
     closeModal();
   }, [integration, page]);
 
   const filteredData = useMemo(() => {
-    return (
-      data?.filter((p: { id: string }) => !existingId.includes(p.id)) || []
-    );
+    return data?.filter((p: { id: string }) => !existingId.includes(p.id)) || [];
   }, [data]);
 
   return (
     <div className="flex flex-col gap-[20px]">
-      <div>Select Instagram Account:</div>
+      <div>Select Page:</div>
       <div className="grid grid-cols-3 justify-items-center select-none cursor-pointer">
         {filteredData?.map(
           (p: {
             id: string;
-            pageId: string;
             username: string;
             name: string;
             picture: { data: { url: string } };
@@ -68,9 +62,9 @@ export const InstagramContinue: FC<{
               key={p.id}
               className={clsx(
                 'flex flex-col w-full text-center gap-[10px] border border-input p-[10px] hover:bg-seventh',
-                page?.id === p.id && 'bg-seventh'
+                page === p.id && 'bg-seventh'
               )}
-              onClick={setPage(p)}
+              onClick={setPage(p.id)}
             >
               <div>
                 <img

@@ -6,6 +6,8 @@ import LinkedinProvider from "@gitroom/frontend/components/launches/providers/li
 import RedditProvider from "@gitroom/frontend/components/launches/providers/reddit/reddit.provider";
 import MediumProvider from "@gitroom/frontend/components/launches/providers/medium/medium.provider";
 import HashnodeProvider from "@gitroom/frontend/components/launches/providers/hashnode/hashnode.provider";
+import FacebookProvider from '@gitroom/frontend/components/launches/providers/facebook/facebook.provider';
+import InstagramProvider from '@gitroom/frontend/components/launches/providers/instagram/instagram.provider';
 
 export const Providers = [
     {identifier: 'devto', component: DevtoProvider},
@@ -14,6 +16,8 @@ export const Providers = [
     {identifier: 'reddit', component: RedditProvider},
     {identifier: 'medium', component: MediumProvider},
     {identifier: 'hashnode', component: HashnodeProvider},
+    {identifier: 'facebook', component: FacebookProvider},
+    {identifier: 'instagram', component: InstagramProvider},
 ];
 
 

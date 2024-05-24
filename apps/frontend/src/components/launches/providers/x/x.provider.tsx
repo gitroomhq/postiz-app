@@ -5,6 +5,7 @@ import clsx from 'clsx';
 import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { useFormatting } from '@gitroom/frontend/components/launches/helpers/use.formatting';
 import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
+import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
 
 const chirp = localFont({
   src: [
@@ -82,11 +83,13 @@ const XPreview: FC = (props) => {
               {!!value?.images?.length && (
                 <div className="w-full h-[270px] rounded-[16px] flex overflow-hidden mt-[12px]">
                   {value.images.map((image, index) => (
-                    <a key={`image_${index}`} className="flex-1" href={mediaDir.set(image.path)} target="_blank">
-                      <img
-                        className="w-full h-full object-cover"
-                        src={mediaDir.set(image.path)}
-                      />
+                    <a
+                      key={`image_${index}`}
+                      className="flex-1"
+                      href={mediaDir.set(image.path)}
+                      target="_blank"
+                    >
+                      <VideoOrImage autoplay={true} src={mediaDir.set(image.path)} />
                     </a>
                   ))}
                 </div>
