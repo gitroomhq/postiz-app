@@ -25,6 +25,7 @@ import { MessagesController } from '@gitroom/backend/api/routes/messages.control
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { ExtractContentService } from '@gitroom/nestjs-libraries/openai/extract.content.service';
 import { CodesService } from '@gitroom/nestjs-libraries/services/codes.service';
+import { CopilotController } from '@gitroom/backend/api/routes/copilot.controller';
 
 const authenticatedController = [
   UsersController,
@@ -37,7 +38,7 @@ const authenticatedController = [
   BillingController,
   NotificationsController,
   MarketplaceController,
-  MessagesController
+  MessagesController,
 ];
 @Module({
   imports: [
@@ -58,7 +59,12 @@ const authenticatedController = [
         ]
       : []),
   ],
-  controllers: [StripeController, AuthController, ...authenticatedController],
+  controllers: [
+    StripeController,
+    AuthController,
+    CopilotController,
+    ...authenticatedController,
+  ],
   providers: [
     AuthService,
     StripeService,

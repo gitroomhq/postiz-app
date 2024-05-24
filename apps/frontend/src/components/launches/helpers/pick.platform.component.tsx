@@ -4,22 +4,26 @@ import { useMoveToIntegrationListener } from '@gitroom/frontend/components/launc
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import clsx from 'clsx';
 import Image from 'next/image';
+import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
+import { useStateCallback } from '@gitroom/react/helpers/use.state.callback';
 
 export const PickPlatforms: FC<{
   integrations: Integrations[];
   selectedIntegrations: Integrations[];
-  onChange: (integrations: Integrations[]) => void;
+  onChange: (integrations: Integrations[], callback: () => void) => void;
   singleSelect: boolean;
   hide?: boolean;
+  isMain: boolean;
 }> = (props) => {
-  const { hide, integrations, selectedIntegrations, onChange } = props;
+  const { hide, isMain, integrations, selectedIntegrations, onChange } = props;
   const ref = useRef<HTMLDivElement>(null);
 
   const [isLeft, setIsLeft] = useState(false);
   const [isRight, setIsRight] = useState(false);
 
-  const [selectedAccounts, setSelectedAccounts] =
-    useState<Integrations[]>(selectedIntegrations);
+  const [selectedAccounts, setSelectedAccounts] = useStateCallback<
+    Integrations[]
+  >(selectedIntegrations.slice(0).map((p) => ({ ...p })));
 
   useEffect(() => {
     if (
@@ -56,21 +60,36 @@ export const PickPlatforms: FC<{
     checkLeftRight();
   }, [selectedIntegrations, integrations]);
 
-  useMoveToIntegrationListener([integrations], props.singleSelect, (identifier) => {
-    const findIntegration = integrations.find(
-      (p) => p.id === identifier
-    );
+  useMoveToIntegrationListener(
+    [integrations],
+    props.singleSelect,
+    (identifier) => {
+      const findIntegration = integrations.find((p) => p.id === identifier);
 
-    if (findIntegration) {
-      addPlatform(findIntegration)();
+      if (findIntegration) {
+        addPlatform(findIntegration)();
+      }
     }
-  });
+  );
 
   const addPlatform = useCallback(
     (integration: Integrations) => async () => {
+      const promises = [];
       if (props.singleSelect) {
-        onChange([integration]);
-        setSelectedAccounts([integration]);
+        promises.push(
+          new Promise((res) => {
+            onChange([integration], () => {
+              res('');
+            });
+          })
+        );
+        promises.push(
+          new Promise((res) => {
+            setSelectedAccounts([integration], () => {
+              res('');
+            });
+          })
+        );
         return;
       }
       if (selectedAccounts.includes(integration)) {
@@ -86,15 +105,73 @@ export const PickPlatforms: FC<{
         ) {
           return;
         }
-        onChange(changedIntegrations);
-        setSelectedAccounts(changedIntegrations);
+        promises.push(
+          new Promise((res) => {
+            onChange(changedIntegrations, () => {
+              res('');
+            });
+          })
+        );
+        promises.push(
+          new Promise((res) => {
+            setSelectedAccounts(changedIntegrations, () => {
+              res('');
+            });
+          })
+        );
       } else {
         const changedIntegrations = [...selectedAccounts, integration];
-        onChange(changedIntegrations);
-        setSelectedAccounts(changedIntegrations);
+        promises.push(
+          new Promise((res) => {
+            onChange(changedIntegrations, () => {
+              res('');
+            });
+          })
+        );
+        promises.push(
+          new Promise((res) => {
+            setSelectedAccounts(changedIntegrations, () => {
+              res('');
+            });
+          })
+        );
       }
+
+      await Promise.all(promises);
     },
     [selectedAccounts]
+  );
+
+  const handler = useCallback(
+    async ({ integrationId }: { integrationId: string }) => {
+      const findIntegration = integrations.find((p) => p.id === integrationId)!;
+      await addPlatform(findIntegration)();
+    },
+    [selectedAccounts, integrations, selectedAccounts]
+  );
+
+  useCopilotReadable({
+    description: isMain ? 'All available platforms channels' : 'Possible platforms channels to edit',
+    value: JSON.stringify(integrations),
+  });
+
+  useCopilotAction(
+    {
+      name: isMain ? `addOrRemovePlatform` : 'setSelectedIntegration',
+      description: isMain
+        ? `Add or remove one channel to schedule your post to, always pass the id`
+        : 'Set selected integration',
+      parameters: [
+        {
+          name: 'integrationId',
+          type: 'string',
+          description: 'The id of the integration',
+          required: true,
+        },
+      ],
+      handler,
+    },
+    [addPlatform, selectedAccounts, integrations]
   );
 
   if (hide) {
@@ -102,7 +179,9 @@ export const PickPlatforms: FC<{
   }
 
   return (
-    <div className={clsx('flex select-none', props.singleSelect && 'gap-[10px]')}>
+    <div
+      className={clsx('flex select-none', props.singleSelect && 'gap-[10px]')}
+    >
       {props.singleSelect && (
         <div className="flex items-center">
           {isLeft && (
@@ -138,75 +217,77 @@ export const PickPlatforms: FC<{
         >
           <div className="innerComponent">
             <div className="flex">
-              {integrations.filter(f => !f.inBetweenSteps).map((integration) =>
-                !props.singleSelect ? (
-                  <div
-                    key={integration.id}
-                    className="flex gap-[8px] items-center mr-[10px]"
-                  >
+              {integrations
+                .filter((f) => !f.inBetweenSteps)
+                .map((integration) =>
+                  !props.singleSelect ? (
                     <div
-                      onClick={addPlatform(integration)}
-                      className={clsx(
-                        'cursor-pointer relative w-[34px] h-[34px] rounded-full flex justify-center items-center bg-fifth filter transition-all duration-500',
-                        selectedAccounts.findIndex(
-                          (p) => p.id === integration.id
-                        ) === -1
-                          ? 'opacity-40'
-                          : ''
-                      )}
+                      key={integration.id}
+                      className="flex gap-[8px] items-center mr-[10px]"
                     >
-                      <img
-                        src={integration.picture}
-                        className="rounded-full"
-                        alt={integration.identifier}
-                        width={32}
-                        height={32}
-                      />
-                      <Image
-                        src={`/icons/platforms/${integration.identifier}.png`}
-                        className="rounded-full absolute z-10 -bottom-[5px] -right-[5px] border border-fifth"
-                        alt={integration.identifier}
-                        width={20}
-                        height={20}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div key={integration.id} className="">
-                    <div
-                      onClick={addPlatform(integration)}
-                      className={clsx(
-                        'cursor-pointer rounded-[50px] w-[200px] relative h-[40px] flex justify-center items-center bg-fifth filter transition-all duration-500',
-                        selectedAccounts.findIndex(
-                          (p) => p.id === integration.id
-                        ) === -1
-                          ? 'bg-third border border-third'
-                          : 'bg-[#291259] border border-[#5826C2]'
-                      )}
-                    >
-                      <div className="flex items-center justify-center gap-[10px]">
-                        <div className="relative">
-                          <img
-                            src={integration.picture}
-                            className="rounded-full"
-                            alt={integration.identifier}
-                            width={24}
-                            height={24}
-                          />
-                          <Image
-                            src={`/icons/platforms/${integration.identifier}.png`}
-                            className="rounded-full absolute z-10 -bottom-[5px] -right-[5px] border border-fifth"
-                            alt={integration.identifier}
-                            width={15}
-                            height={15}
-                          />
-                        </div>
-                        <div>{integration.name}</div>
+                      <div
+                        onClick={addPlatform(integration)}
+                        className={clsx(
+                          'cursor-pointer relative w-[34px] h-[34px] rounded-full flex justify-center items-center bg-fifth filter transition-all duration-500',
+                          selectedAccounts.findIndex(
+                            (p) => p.id === integration.id
+                          ) === -1
+                            ? 'opacity-40'
+                            : ''
+                        )}
+                      >
+                        <img
+                          src={integration.picture}
+                          className="rounded-full"
+                          alt={integration.identifier}
+                          width={32}
+                          height={32}
+                        />
+                        <Image
+                          src={`/icons/platforms/${integration.identifier}.png`}
+                          className="rounded-full absolute z-10 -bottom-[5px] -right-[5px] border border-fifth"
+                          alt={integration.identifier}
+                          width={20}
+                          height={20}
+                        />
                       </div>
                     </div>
-                  </div>
-                )
-              )}
+                  ) : (
+                    <div key={integration.id} className="">
+                      <div
+                        onClick={addPlatform(integration)}
+                        className={clsx(
+                          'cursor-pointer rounded-[50px] w-[200px] relative h-[40px] flex justify-center items-center bg-fifth filter transition-all duration-500',
+                          selectedAccounts.findIndex(
+                            (p) => p.id === integration.id
+                          ) === -1
+                            ? 'bg-third border border-third'
+                            : 'bg-[#291259] border border-[#5826C2]'
+                        )}
+                      >
+                        <div className="flex items-center justify-center gap-[10px]">
+                          <div className="relative">
+                            <img
+                              src={integration.picture}
+                              className="rounded-full"
+                              alt={integration.identifier}
+                              width={24}
+                              height={24}
+                            />
+                            <Image
+                              src={`/icons/platforms/${integration.identifier}.png`}
+                              className="rounded-full absolute z-10 -bottom-[5px] -right-[5px] border border-fifth"
+                              alt={integration.identifier}
+                              width={15}
+                              height={15}
+                            />
+                          </div>
+                          <div>{integration.name}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                )}
             </div>
           </div>
         </div>

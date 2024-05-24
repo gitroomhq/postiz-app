@@ -288,3 +288,43 @@ html {
 :empty + .existing-empty {
   display: none;
 }
+
+:root {
+  --copilot-kit-primary-color: #612AD5 !important;
+  --copilot-kit-background-color: #0B0F1C !important;
+  --copilot-kit-separator-color: #1F2941 !important;
+  --copilot-kit-contrast-color: #FFFFFF !important;
+  --copilot-kit-secondary-contrast-color: #FFFFFF !important;
+  --copilot-kit-secondary-color: #000 !important;
+  --copilot-kit-response-button-background-color: #000 !important;;
+  --copilot-kit-response-button-color: #fff !important;;
+}
+
+.copilotKitWindow {
+  background-color: #0B0F1C !important;
+}
+
+.copilotKitButtonIconOpen svg {
+  display: none !important;
+}
+
+.copilotKitButtonIconOpen:after {
+  content: "";
+  display: block;
+  position: relative;
+  z-index: 1;
+  object-fit: contain;
+  color: white;
+  background: url("/magic.svg") no-repeat center center / contain;
+  width: 30px;
+  height: 30px;
+}
+
+.copilotKitPopup {
+  right: -2rem !important;
+  bottom: 2rem !important;
+}
+
+.copilotKitWindow {
+  /*right: -5rem !important;*/
+}

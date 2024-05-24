@@ -60,9 +60,14 @@ export const LaunchesComponent = () => {
     }
   }, []);
 
-  const continueIntegration = useCallback((integration: any) => async () => {
-    router.push(`/launches?added=${integration.identifier}&continue=${integration.id}`);
-  }, []);
+  const continueIntegration = useCallback(
+    (integration: any) => async () => {
+      router.push(
+        `/launches?added=${integration.identifier}&continue=${integration.id}`
+      );
+    },
+    []
+  );
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.opener) {
@@ -74,6 +79,7 @@ export const LaunchesComponent = () => {
     return <LoadingComponent />;
   }
 
+  // @ts-ignore
   return (
     <CalendarWeekProvider integrations={sortedIntegrations}>
       <div className="flex flex-1 flex-col">
@@ -97,7 +103,10 @@ export const LaunchesComponent = () => {
                       )}
                     >
                       {integration.inBetweenSteps && (
-                        <div className="absolute left-0 top-0 w-[39px] h-[46px] cursor-pointer" onClick={continueIntegration(integration)}>
+                        <div
+                          className="absolute left-0 top-0 w-[39px] h-[46px] cursor-pointer"
+                          onClick={continueIntegration(integration)}
+                        >
                           <div className="bg-red-500 w-[15px] h-[15px] rounded-full -left-[5px] -top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
                             !
                           </div>
@@ -148,7 +157,7 @@ export const LaunchesComponent = () => {
                 ))}
               </div>
               <AddProviderButton update={() => update(true)} />
-              {sortedIntegrations?.length > 0 && <GeneratorComponent />}
+              {sortedIntegrations?.length > 0 && user?.tier.ai && <GeneratorComponent />}
             </div>
             <div className="flex-1 flex flex-col gap-[14px]">
               <Filters />
