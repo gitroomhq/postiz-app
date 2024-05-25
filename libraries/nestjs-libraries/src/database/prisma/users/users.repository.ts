@@ -227,4 +227,26 @@ export class UsersRepository {
       count,
     };
   }
+
+  async getEmailNotifications(userId: string) {
+    return await this._user.model.user.findFirst({
+      where: {
+        id: userId,
+      },
+      select: {
+        emailNotifications: true,
+      },
+    });
+  }
+
+  updateEmailNotifications(userId: string, emailNotifications: boolean) {
+    return this._user.model.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        emailNotifications,
+      },
+    });
+  }
 }

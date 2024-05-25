@@ -47,11 +47,18 @@ export class UsersController {
       throw new HttpException('Organization not found', 401);
     }
 
+    const isEmailNotification = await this._userService.getEmailNotifications(
+      user.id
+    );
+
     return {
       ...user,
+      emailNotifications: isEmailNotification.emailNotifications,
       orgId: organization.id,
       // @ts-ignore
-      totalChannels: organization?.subscription?.totalChannels || pricing.FREE.channel,
+      totalChannels:
+        // @ts-ignore
+        organization?.subscription?.totalChannels || pricing.FREE.channel,
       // @ts-ignore
       tier: organization?.subscription?.subscriptionTier || 'FREE',
       // @ts-ignore

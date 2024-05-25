@@ -1,20 +1,24 @@
 'use client';
 
 import { GithubComponent } from '@gitroom/frontend/components/settings/github.component';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { TeamsComponent } from '@gitroom/frontend/components/settings/teams.component';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
+import { useSWRConfig } from 'swr';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import { useRouter } from 'next/navigation';
 import { isGeneral } from '@gitroom/react/helpers/is.general';
+import { Checkbox } from '@gitroom/react/form/checkbox';
 
 const general = isGeneral();
 
 export const SettingsComponent = () => {
   const user = useUser();
   const router = useRouter();
+  const { mutate } = useSWRConfig();
+  const [isChecked, setIsChecked] = useState(false);
 
   const fetch = useFetch();
 
@@ -31,6 +35,34 @@ export const SettingsComponent = () => {
 
     return { github, organizations };
   }, []);
+
+  const toggleEmailNotification = useCallback(async () => {
+    if (!user || Object.keys(user).length === 0) return;
+
+    const newSetting = !isChecked;
+    setIsChecked(newSetting);
+
+    await fetch(`/settings/email-notifications/${user.id}`, {
+      method: 'POST',
+      body: JSON.stringify({ emailNotifications: newSetting }),
+    });
+
+    mutate(
+      '/user/self',
+      {
+        ...user,
+        emailNotifications: newSetting,
+      },
+      {
+        revalidate: false,
+      }
+    );
+  }, [user, fetch, mutate, isChecked, setIsChecked]);
+
+  useEffect(() => {
+    if (!user || Object.keys(user).length === 0) return;
+    setIsChecked(user.emailNotifications);
+  }, [user, setIsChecked]);
 
   const { isLoading: isLoadingSettings, data: loadAll } = useSWR(
     'load-all',
@@ -63,12 +95,17 @@ export const SettingsComponent = () => {
             github={loadAll.github}
             organizations={loadAll.organizations}
           />
-          {/*<div className="flex gap-[5px]">*/}
-          {/*  <div>*/}
-          {/*    <Checkbox disableForm={true} checked={true} name="Send Email" />*/}
-          {/*  </div>*/}
-          {/*  <div>Show news with everybody in Gitroom</div>*/}
-          {/*</div>*/}
+          <div className="flex gap-[5px]">
+            <div>
+              <Checkbox
+                disableForm={true}
+                checked={isChecked}
+                name="Send Email"
+                onChange={toggleEmailNotification}
+              />
+            </div>
+            <div>Show news with everybody in Gitroom</div>
+          </div>
         </div>
       )}
       {!!user?.tier?.team_members && <TeamsComponent />}

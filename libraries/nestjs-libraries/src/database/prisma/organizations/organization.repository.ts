@@ -242,6 +242,7 @@ export class OrganizationRepository {
               select: {
                 email: true,
                 id: true,
+                emailNotifications: true,
               },
             },
           },

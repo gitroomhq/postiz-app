@@ -25,7 +25,12 @@ export class NotificationService {
     );
   }
 
-  async inAppNotification(orgId: string, subject: string, message: string, sendEmail = false) {
+  async inAppNotification(
+    orgId: string,
+    subject: string,
+    message: string,
+    sendEmail = false
+  ) {
     await this._notificationRepository.createNotification(orgId, message);
     if (!sendEmail) {
       return;
@@ -33,7 +38,10 @@ export class NotificationService {
 
     const userOrg = await this._organizationRepository.getAllUsersOrgs(orgId);
     for (const user of userOrg?.users || []) {
-      await this.sendEmail(user.user.email, subject, message);
+      if (user.user.emailNotifications) {
+        // Check if user wants email notifications
+        await this.sendEmail(user.user.email, subject, message);
+      }
     }
   }
 
