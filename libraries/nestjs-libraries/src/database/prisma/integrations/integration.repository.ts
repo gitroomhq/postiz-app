@@ -34,7 +34,8 @@ export class IntegrationRepository {
     refreshToken = '',
     expiresIn = 999999999,
     username?: string,
-    isBetweenSteps = false
+    isBetweenSteps = false,
+    refresh?: string
   ) {
     return this._integration.model.integration.upsert({
       where: {
@@ -57,15 +58,20 @@ export class IntegrationRepository {
           : {}),
         internalId,
         organizationId: org,
+        refreshNeeded: false,
       },
       update: {
         type: type as any,
+        ...(!refresh
+          ? {
+              inBetweenSteps: isBetweenSteps,
+            }
+          : {}),
         name,
-        providerIdentifier: provider,
-        inBetweenSteps: isBetweenSteps,
-        token,
         picture,
         profile: username,
+        providerIdentifier: provider,
+        token,
         refreshToken,
         ...(expiresIn
           ? { tokenExpiration: new Date(Date.now() + expiresIn * 1000) }
@@ -73,6 +79,7 @@ export class IntegrationRepository {
         internalId,
         organizationId: org,
         deletedAt: null,
+        refreshNeeded: false,
       },
     });
   }
@@ -85,6 +92,19 @@ export class IntegrationRepository {
         },
         inBetweenSteps: false,
         deletedAt: null,
+        refreshNeeded: false,
+      },
+    });
+  }
+
+  refreshNeeded(org: string, id: string) {
+    return this._integration.model.integration.update({
+      where: {
+        id,
+        organizationId: org,
+      },
+      data: {
+        refreshNeeded: true,
       },
     });
   }
@@ -104,7 +124,6 @@ export class IntegrationRepository {
     user: string,
     org: string
   ) {
-    console.log(id, order, user, org);
     const integration = await this._posts.model.post.findFirst({
       where: {
         integrationId: id,
@@ -204,7 +223,7 @@ export class IntegrationRepository {
       },
       data: {
         internalId: makeId(10),
-      }
+      },
     });
   }
 

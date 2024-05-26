@@ -47,14 +47,16 @@ export class XProvider implements SocialProvider {
     };
   }
 
-  async generateAuthUrl() {
+  async generateAuthUrl(refresh?: string) {
     const client = new TwitterApi({
       appKey: process.env.X_API_KEY!,
       appSecret: process.env.X_API_SECRET!,
     });
     const { url, oauth_token, oauth_token_secret } =
       await client.generateAuthLink(
-        process.env.FRONTEND_URL + '/integrations/social/x',
+        process.env.FRONTEND_URL + `/integrations/social/x${
+        refresh ? `?refresh=${refresh}` : ''
+      }`,
         {
           authAccessType: 'write',
           linkMode: 'authenticate',
@@ -78,6 +80,7 @@ export class XProvider implements SocialProvider {
       accessToken: oauth_token,
       accessSecret: oauth_token_secret,
     });
+
     const { accessToken, client, accessSecret } = await startingClient.login(
       code
     );

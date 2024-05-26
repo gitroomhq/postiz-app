@@ -1,7 +1,7 @@
 import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
 import { Post as PostBody } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
-import { APPROVED_SUBMIT_FOR_ORDER, Post } from '@prisma/client';
+import { APPROVED_SUBMIT_FOR_ORDER, Post, State } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
@@ -75,7 +75,7 @@ export class PostsRepository {
           },
           {
             submittedForOrganizationId: orgId,
-          }
+          },
         ],
         publishDate: {
           gte: startDate,
@@ -159,6 +159,17 @@ export class PostsRepository {
         state: 'PUBLISHED',
         releaseURL,
         releaseId: postId,
+      },
+    });
+  }
+
+  changeState(id: string, state: State) {
+    return this._post.model.post.update({
+      where: {
+        id,
+      },
+      data: {
+        state,
       },
     });
   }

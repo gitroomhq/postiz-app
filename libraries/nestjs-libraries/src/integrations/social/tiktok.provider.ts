@@ -7,10 +7,10 @@ import {
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
 
-export class FacebookProvider implements SocialProvider {
-  identifier = 'facebook';
-  name = 'Facebook Page';
-  isBetweenSteps = true;
+export class TiktokProvider implements SocialProvider {
+  identifier = 'tiktok';
+  name = 'Tiktok';
+  isBetweenSteps = false;
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     return {
@@ -26,15 +26,42 @@ export class FacebookProvider implements SocialProvider {
 
   async generateAuthUrl(refresh?: string) {
     const state = makeId(6);
-    return {
-      url:
-        'https://www.facebook.com/v19.0/dialog/oauth' +
-        `?client_id=${process.env.FACEBOOK_APP_ID}` +
+    console.log(
+      'https://www.tiktok.com/v2/auth/authorize' +
+        `?client_key=${process.env.TIKTOK_CLIENT_ID}` +
         `&redirect_uri=${encodeURIComponent(
-          `${process.env.FRONTEND_URL}/integrations/social/facebook${refresh ? `?refresh=${refresh}` : ''}`
+          `${
+            process.env.NODE_ENV === 'development' || !process.env.NODE_ENV
+              ? 'https://redirectmeto.com/'
+              : ''
+          }${process.env.FRONTEND_URL}/integrations/social/tiktok${
+            refresh ? `?refresh=${refresh}` : ''
+          }`
         )}` +
         `&state=${state}` +
-        '&scope=pages_show_list,business_management,pages_manage_posts,publish_video,pages_manage_engagement,pages_read_engagement',
+        `&response_type=code` +
+        `&scope=${encodeURIComponent(
+          'user.info.basic,video.publish,video.upload'
+        )}`
+    );
+    return {
+      url:
+        'https://www.tiktok.com/v2/auth/authorize' +
+        `?client_key=${process.env.TIKTOK_CLIENT_ID}` +
+        `&redirect_uri=${encodeURIComponent(
+          `${
+            process.env.NODE_ENV === 'development' || !process.env.NODE_ENV
+              ? 'https://redirectmeto.com/'
+              : ''
+          }${process.env.FRONTEND_URL}/integrations/social/tiktok${
+            refresh ? `?refresh=${refresh}` : ''
+          }`
+        )}` +
+        `&state=${state}` +
+        `&response_type=code` +
+        `&scope=${encodeURIComponent(
+          'user.info.basic,video.publish,video.upload'
+        )}`,
       codeVerifier: makeId(10),
       state,
     };

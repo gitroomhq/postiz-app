@@ -8,6 +8,8 @@ import MediumProvider from "@gitroom/frontend/components/launches/providers/medi
 import HashnodeProvider from "@gitroom/frontend/components/launches/providers/hashnode/hashnode.provider";
 import FacebookProvider from '@gitroom/frontend/components/launches/providers/facebook/facebook.provider';
 import InstagramProvider from '@gitroom/frontend/components/launches/providers/instagram/instagram.provider';
+import YoutubeProvider from '@gitroom/frontend/components/launches/providers/youtube/youtube.provider';
+import TiktokProvider from '@gitroom/frontend/components/launches/providers/tiktok/tiktok.provider';
 
 export const Providers = [
     {identifier: 'devto', component: DevtoProvider},
@@ -18,8 +20,9 @@ export const Providers = [
     {identifier: 'hashnode', component: HashnodeProvider},
     {identifier: 'facebook', component: FacebookProvider},
     {identifier: 'instagram', component: InstagramProvider},
+    {identifier: 'youtube', component: YoutubeProvider},
+    {identifier: 'tiktok', component: TiktokProvider},
 ];
-
 
 
 export const ShowAllProviders: FC<{integrations: Integrations[], value: Array<{content: string, id?: string}>, selectedProvider?: Integrations}> = (props) => {

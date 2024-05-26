@@ -1,7 +1,7 @@
 export interface IAuthenticator {
-    authenticate(params: {code: string, codeVerifier: string}): Promise<AuthTokenDetails>;
+    authenticate(params: {code: string, codeVerifier: string, refresh?: string}): Promise<AuthTokenDetails>;
     refreshToken(refreshToken: string): Promise<AuthTokenDetails>;
-    generateAuthUrl(): Promise<GenerateAuthUrlResponse>;
+    generateAuthUrl(refresh?: string): Promise<GenerateAuthUrlResponse>;
 }
 
 export type GenerateAuthUrlResponse = {

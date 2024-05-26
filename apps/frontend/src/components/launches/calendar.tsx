@@ -274,7 +274,6 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
   }));
 
   const getIntegration = useCallback(async (post: Post & { integration: Integration }) => {
-    console.log('hello');
     return (
       await fetch(
         `/integrations/${post.integration.id}?order=${post.submittedForOrderId}`,
@@ -345,7 +344,7 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
         title: ``,
       });
     },
-    []
+    [integrations]
   );
 
   const addModal = useCallback(() => {
@@ -366,7 +365,7 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
       size: '80%',
       // title: `Adding posts for ${getDate.format('DD/MM/YYYY HH:mm')}`,
     });
-  }, []);
+  }, [integrations]);
 
   const addProvider = useAddProvider();
 

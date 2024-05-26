@@ -6,6 +6,7 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { timer } from '@gitroom/helpers/utils/timer';
+import dayjs from 'dayjs';
 
 export class InstagramProvider implements SocialProvider {
   identifier = 'instagram';
@@ -13,57 +14,27 @@ export class InstagramProvider implements SocialProvider {
   isBetweenSteps = true;
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
-    const { access_token, expires_in, ...all } = await (
-      await fetch(
-        'https://graph.facebook.com/v20.0/oauth/access_token' +
-          '?grant_type=fb_exchange_token' +
-          `&client_id=${process.env.FACEBOOK_APP_ID}` +
-          `&client_secret=${process.env.FACEBOOK_APP_SECRET}` +
-          `&fb_exchange_token=${refresh_token}`
-      )
-    ).json();
-
-    const {
-      data: {
-        id,
-        name,
-        picture: {
-          data: { url },
-        },
-      },
-    } = await (
-      await fetch(
-        `https://graph.facebook.com/v20.0/me/accounts?fields=id,username,name,picture&access_token=${access_token}`
-      )
-    ).json();
-
-    const {
-      instagram_business_account: { id: instagramId },
-    } = await (
-      await fetch(
-        `https://graph.facebook.com/v20.0/${id}?fields=instagram_business_account&access_token=${access_token}`
-      )
-    ).json();
-
     return {
-      id: instagramId,
-      name,
-      accessToken: access_token,
-      refreshToken: access_token,
-      expiresIn: expires_in,
-      picture: url,
+      refreshToken: '',
+      expiresIn: 0,
+      accessToken: '',
+      id: '',
+      name: '',
+      picture: '',
       username: '',
     };
   }
 
-  async generateAuthUrl() {
+  async generateAuthUrl(refresh?: string) {
     const state = makeId(6);
     return {
       url:
         'https://www.facebook.com/v20.0/dialog/oauth' +
         `?client_id=${process.env.FACEBOOK_APP_ID}` +
         `&redirect_uri=${encodeURIComponent(
-          `${process.env.FRONTEND_URL}/integrations/social/instagram`
+          `${process.env.FRONTEND_URL}/integrations/social/instagram${
+            refresh ? `?refresh=${refresh}` : ''
+          }`
         )}` +
         `&state=${state}` +
         `&scope=${encodeURIComponent(
@@ -74,13 +45,19 @@ export class InstagramProvider implements SocialProvider {
     };
   }
 
-  async authenticate(params: { code: string; codeVerifier: string }) {
+  async authenticate(params: {
+    code: string;
+    codeVerifier: string;
+    refresh: string;
+  }) {
     const getAccessToken = await (
       await fetch(
         'https://graph.facebook.com/v20.0/oauth/access_token' +
           `?client_id=${process.env.FACEBOOK_APP_ID}` +
           `&redirect_uri=${encodeURIComponent(
-            `${process.env.FRONTEND_URL}/integrations/social/instagram`
+            `${process.env.FRONTEND_URL}/integrations/social/instagram${
+              params.refresh ? `?refresh=${params.refresh}` : ''
+            }`
           )}` +
           `&client_secret=${process.env.FACEBOOK_APP_SECRET}` +
           `&code=${params.code}`
@@ -109,12 +86,30 @@ export class InstagramProvider implements SocialProvider {
       )
     ).json();
 
+    if (params.refresh) {
+      const findPage = (await this.pages(access_token)).find(p => p.id === params.refresh);
+      const information = await this.fetchPageInformation(access_token, {
+        id: params.refresh,
+        pageId: findPage?.pageId!,
+      });
+
+      return {
+        id: information.id,
+        name: information.name,
+        accessToken: information.access_token,
+        refreshToken: information.access_token,
+        expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
+        picture: information.picture,
+        username: information.username,
+      };
+    }
+
     return {
       id,
       name,
       accessToken: access_token,
       refreshToken: access_token,
-      expiresIn: expires_in,
+      expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
       picture: url,
       username: '',
     };
@@ -155,15 +150,15 @@ export class InstagramProvider implements SocialProvider {
     accessToken: string,
     data: { pageId: string; id: string }
   ) {
-    const { access_token } = await (
+    const { access_token, ...all } = await (
       await fetch(
         `https://graph.facebook.com/v20.0/${data.pageId}?fields=access_token,name,picture.type(large)&access_token=${accessToken}`
       )
     ).json();
 
-    const { id, name, profile_picture_url } = await (
+    const { id, name, profile_picture_url, username } = await (
       await fetch(
-        `https://graph.facebook.com/v20.0/${data.id}?fields=name,profile_picture_url&access_token=${accessToken}`
+        `https://graph.facebook.com/v20.0/${data.id}?fields=username,name,profile_picture_url&access_token=${accessToken}`
       )
     ).json();
 
@@ -172,6 +167,7 @@ export class InstagramProvider implements SocialProvider {
       name,
       picture: profile_picture_url,
       access_token,
+      username,
     };
   }
 
@@ -303,7 +299,7 @@ export class InstagramProvider implements SocialProvider {
     }
 
     for (const post of theRest) {
-      const { id: commentId, ...all } = await (
+      const { id: commentId } = await (
         await fetch(
           `https://graph.facebook.com/v20.0/${containerIdGlobal}/comments?message=${encodeURIComponent(
             post.message

@@ -9,6 +9,8 @@ import { MediumProvider } from '@gitroom/nestjs-libraries/integrations/article/m
 import { ArticleProvider } from '@gitroom/nestjs-libraries/integrations/article/article.integrations.interface';
 import { FacebookProvider } from '@gitroom/nestjs-libraries/integrations/social/facebook.provider';
 import { InstagramProvider } from '@gitroom/nestjs-libraries/integrations/social/instagram.provider';
+import { YoutubeProvider } from '@gitroom/nestjs-libraries/integrations/social/youtube.provider';
+import { TiktokProvider } from '@gitroom/nestjs-libraries/integrations/social/tiktok.provider';
 
 const socialIntegrationList = [
   new XProvider(),
@@ -16,6 +18,8 @@ const socialIntegrationList = [
   new RedditProvider(),
   new FacebookProvider(),
   new InstagramProvider(),
+  new YoutubeProvider(),
+  new TiktokProvider(),
 ];
 
 const articleIntegrationList = [

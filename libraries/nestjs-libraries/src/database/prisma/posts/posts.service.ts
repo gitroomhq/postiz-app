@@ -89,6 +89,16 @@ export class PostsService {
       return;
     }
 
+    if (firstPost.integration?.refreshNeeded) {
+      await this._notificationService.inAppNotification(
+        firstPost.organizationId,
+        `We couldn't post to ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
+        `We couldn't post to ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name} because you need to reconnect it. Please enable it and try again.`,
+        true
+      );
+      return;
+    }
+
     if (firstPost.integration?.disabled) {
       await this._notificationService.inAppNotification(
         firstPost.organizationId,
@@ -112,6 +122,13 @@ export class PostsService {
             ]);
 
       if (!finalPost?.postId || !finalPost?.releaseURL) {
+        await this._postRepository.changeState(firstPost.id, 'ERROR');
+        await this._notificationService.inAppNotification(
+          firstPost.organizationId,
+          `Error posting on ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
+          `An error occurred while posting on ${firstPost.integration?.providerIdentifier}`,
+          true
+        );
         return;
       }
 
@@ -124,10 +141,11 @@ export class PostsService {
         });
       }
     } catch (err: any) {
+      await this._postRepository.changeState(firstPost.id, 'ERROR');
       await this._notificationService.inAppNotification(
         firstPost.organizationId,
         `Error posting on ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
-        `An error occurred while posting on ${firstPost.integration?.providerIdentifier}: ${err.message}`,
+        `An error occurred while posting on ${firstPost.integration?.providerIdentifier}`,
         true
       );
     }
@@ -159,8 +177,28 @@ export class PostsService {
     const getIntegration = this._integrationManager.getSocialIntegration(
       integration.providerIdentifier
     );
+
     if (!getIntegration) {
       return;
+    }
+
+    if (dayjs(integration?.tokenExpiration).isBefore(dayjs())) {
+      const { accessToken, expiresIn, refreshToken } =
+        await getIntegration.refreshToken(integration.refreshToken!);
+
+      await this._integrationService.createOrUpdateIntegration(
+        integration.organizationId,
+        integration.name,
+        integration.picture!,
+        'social',
+        integration.internalId,
+        integration.providerIdentifier,
+        accessToken,
+        refreshToken,
+        expiresIn
+      );
+
+      integration.token = accessToken;
     }
 
     const newPosts = await this.updateTags(integration.organizationId, posts);

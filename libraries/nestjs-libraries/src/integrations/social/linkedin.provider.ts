@@ -61,13 +61,15 @@ export class LinkedinProvider implements SocialProvider {
     };
   }
 
-  async generateAuthUrl() {
+  async generateAuthUrl(refresh?: string) {
     const state = makeId(6);
     const codeVerifier = makeId(30);
     const url = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${
       process.env.LINKEDIN_CLIENT_ID
     }&redirect_uri=${encodeURIComponent(
-      `${process.env.FRONTEND_URL}/integrations/social/linkedin`
+      `${process.env.FRONTEND_URL}/integrations/social/linkedin${
+        refresh ? `?refresh=${refresh}` : ''
+      }`
     )}&state=${state}&scope=${encodeURIComponent(
       'openid profile w_member_social r_basicprofile'
     )}`;
@@ -78,13 +80,19 @@ export class LinkedinProvider implements SocialProvider {
     };
   }
 
-  async authenticate(params: { code: string; codeVerifier: string }) {
+  async authenticate(params: {
+    code: string;
+    codeVerifier: string;
+    refresh?: string;
+  }) {
     const body = new URLSearchParams();
     body.append('grant_type', 'authorization_code');
     body.append('code', params.code);
     body.append(
       'redirect_uri',
-      `${process.env.FRONTEND_URL}/integrations/social/linkedin`
+      `${process.env.FRONTEND_URL}/integrations/social/linkedin${
+        params.refresh ? `?refresh=${params.refresh}` : ''
+      }`
     );
     body.append('client_id', process.env.LINKEDIN_CLIENT_ID!);
     body.append('client_secret', process.env.LINKEDIN_CLIENT_SECRET!);

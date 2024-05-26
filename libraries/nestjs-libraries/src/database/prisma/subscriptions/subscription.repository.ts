@@ -159,6 +159,7 @@ export class SubscriptionRepository {
       await this._usedCodes.model.usedCodes.create({
         data: {
           code,
+          orgId: findOrg.id,
         },
       });
     }

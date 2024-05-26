@@ -8,6 +8,7 @@ import {AllProvidersSettings} from "@gitroom/nestjs-libraries/dtos/posts/provide
 import {MediumSettingsDto} from "@gitroom/nestjs-libraries/dtos/posts/providers-settings/medium.settings.dto";
 import {HashnodeSettingsDto} from "@gitroom/nestjs-libraries/dtos/posts/providers-settings/hashnode.settings.dto";
 import {RedditSettingsDto} from "@gitroom/nestjs-libraries/dtos/posts/providers-settings/reddit.dto";
+import { YoutubeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/youtube.settings.dto';
 
 export class EmptySettings {}
 export class Integration {
@@ -60,6 +61,7 @@ export class Post {
           { value: MediumSettingsDto, name: 'medium' },
           { value: HashnodeSettingsDto, name: 'hashnode' },
           { value: RedditSettingsDto, name: 'reddit' },
+          { value: YoutubeSettingsDto, name: 'youtube' },
       ],
     },
   })

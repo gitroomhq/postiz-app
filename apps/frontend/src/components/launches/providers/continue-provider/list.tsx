@@ -3,5 +3,5 @@ import { FacebookContinue } from '@gitroom/frontend/components/launches/provider
 
 export const continueProviderList = {
   instagram: InstagramContinue,
-  facebook: FacebookContinue,
+  facebook: FacebookContinue
 }

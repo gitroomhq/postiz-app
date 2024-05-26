@@ -1,9 +1,11 @@
+import { isGeneral } from '@gitroom/react/helpers/is.general';
+
 export const dynamic = 'force-dynamic';
 
 import {Metadata} from "next";
 
 export const metadata: Metadata = {
-  title: 'Gitroom Messages',
+  title: `${isGeneral() ? 'Postiz' : 'Gitroom'} Messages`,
   description: '',
 }
 
