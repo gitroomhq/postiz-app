@@ -140,18 +140,18 @@ export class SettingsController {
     return this._organizationService.deleteTeamMember(org, id);
   }
 
-  @Get('/email-notifications/:userId')
-  async getEmailNotifications(@Param('userId') userId: string) {
-    return this._usersService.getEmailNotifications(userId);
+  @Get('/email-notifications')
+  async getEmailNotifications(@GetUserFromRequest() user: User) {
+    return this._usersService.getEmailNotifications(user.id);
   }
 
-  @Post('/email-notifications/:userId')
+  @Post('/email-notifications')
   async updateEmailNotifications(
-    @Param('userId') userId: string,
+    @GetUserFromRequest() user: User,
     @Body('emailNotifications') emailNotifications: boolean
   ) {
     return await this._usersService.updateEmailNotifications(
-      userId,
+      user.id,
       emailNotifications
     );
   }

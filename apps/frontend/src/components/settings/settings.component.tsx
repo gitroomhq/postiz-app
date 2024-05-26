@@ -42,7 +42,7 @@ export const SettingsComponent = () => {
     const newSetting = !isChecked;
     setIsChecked(newSetting);
 
-    await fetch(`/settings/email-notifications/${user.id}`, {
+    await fetch(`/settings/email-notifications`, {
       method: 'POST',
       body: JSON.stringify({ emailNotifications: newSetting }),
     });
