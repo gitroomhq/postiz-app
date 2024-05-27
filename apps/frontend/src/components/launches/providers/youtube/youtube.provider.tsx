@@ -108,7 +108,7 @@ const YoutubePreview: FC = (props) => {
             </div>
 
             {!!p?.images?.length && (
-              <div className="w-full h-[120px] flex overflow-hidden mt-[12px] gap-[2px]">
+              <div className="w-full h-[120px] flex overflow-hidden mt-[12px] gap-[3px]">
                 {p.images.map((image, index) => (
                   <a
                     key={`image_${index}`}
