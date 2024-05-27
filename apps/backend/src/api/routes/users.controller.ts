@@ -172,4 +172,39 @@ export class UsersController {
 
     response.status(200).send();
   }
+
+  @Post('/logout')
+  logout(@Res({ passthrough: true }) response: Response) {
+    response.cookie('auth', '', {
+      domain:
+        '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
+      secure: true,
+      httpOnly: true,
+      maxAge: -1,
+      expires: new Date(0),
+      sameSite: 'none',
+    });
+
+    response.cookie('showorg', '', {
+      domain:
+        '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
+      secure: true,
+      httpOnly: true,
+      maxAge: -1,
+      expires: new Date(0),
+      sameSite: 'none',
+    });
+
+    response.cookie('impersonate', '', {
+      domain:
+        '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
+      secure: true,
+      httpOnly: true,
+      maxAge: -1,
+      expires: new Date(0),
+      sameSite: 'none',
+    });
+
+    response.status(200).send();
+  }
 }

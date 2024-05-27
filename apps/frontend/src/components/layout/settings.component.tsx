@@ -14,6 +14,7 @@ import clsx from 'clsx';
 import { TeamsComponent } from '@gitroom/frontend/components/settings/teams.component';
 import { isGeneral } from '@gitroom/react/helpers/is.general';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
 
 export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
   const { getRef } = props;
@@ -187,6 +188,7 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
             </div>
           )}
           {!!user?.tier?.team_members && isGeneral() && <TeamsComponent />}
+          <LogoutComponent />
         </div>
       </form>
     </FormProvider>
