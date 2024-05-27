@@ -66,7 +66,10 @@ export const EditorWrapper: FC<{ children: ReactNode }> = ({ children }) => {
 export const withProvider = (
   SettingsComponent: FC | null,
   PreviewComponent: FC,
-  dto?: any
+  dto?: any,
+  firstCommentRequirements?: 'video' | 'image',
+  minimumMediaRequirements?: number,
+  maximumMediaRequirements?: number,
 ) => {
   return (props: {
     identifier: string;
@@ -117,7 +120,10 @@ export const withProvider = (
       props.id,
       props.identifier,
       editInPlace ? InPlaceValue : props.value,
-      dto
+      dto,
+      firstCommentRequirements,
+      minimumMediaRequirements,
+      maximumMediaRequirements
     );
 
     // change editor value

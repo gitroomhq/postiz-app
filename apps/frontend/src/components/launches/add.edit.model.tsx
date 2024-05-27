@@ -45,6 +45,7 @@ import {
   PostToOrganization,
 } from '@gitroom/frontend/components/launches/post.to.organization';
 import { Submitted } from '@gitroom/frontend/components/launches/submitted';
+import { capitalize } from 'lodash';
 
 export const AddEditModal: FC<{
   date: dayjs.Dayjs;
@@ -241,6 +242,7 @@ export const AddEditModal: FC<{
       }
 
       const values = getValues();
+
       const allKeys = Object.keys(values).map((v) => ({
         integration: integrations.find((p) => p.id === v),
         value: values[v].posts,
@@ -248,9 +250,46 @@ export const AddEditModal: FC<{
         group: existingData?.group,
         trigger: values[v].trigger,
         settings: values[v].settings(),
+        firstCommentRequirements: values[v].firstCommentRequirements,
+        maximumMediaRequirements: values[v].maximumMediaRequirements,
+        minimumMediaRequirements: values[v].minimumMediaRequirements,
       }));
 
       for (const key of allKeys) {
+        // @ts-ignore
+        const images = key?.value[0].image;
+        if (
+          (images?.length || 0) > (key.maximumMediaRequirements || 0) ||
+          (images?.length || 0) < (key.minimumMediaRequirements || 0)
+        ) {
+          toaster.show(
+            `The amount of ${capitalize(key?.integration?.identifier)} media attached supposed to be ${
+              key.maximumMediaRequirements === key.minimumMediaRequirements
+                ? key.minimumMediaRequirements
+                : `between ${key.minimumMediaRequirements} to ${key.maximumMediaRequirements}`
+            }`,
+            'warning'
+          );
+          return;
+        }
+
+        if (
+          key.firstCommentRequirements &&
+          !images?.every((p: any) =>
+            key.firstCommentRequirements === 'video'
+              ? p.name.includes('mp4')
+              : !p.name.includes('mp4')
+          )
+        ) {
+          toaster.show(
+            `${capitalize(key?.integration?.identifier?.toUpperCase())} media should be a ${
+              key.firstCommentRequirements === 'video' ? 'video' : 'image'
+            }`,
+            'warning'
+          );
+          return;
+        }
+
         if (key.value.some((p) => !p.content || p.content.length < 6)) {
           setShowError(true);
           return;
@@ -346,7 +385,10 @@ export const AddEditModal: FC<{
                 onChange={setSelectedIntegrations}
               />
             )}
-            <div id="renderEditor" className={clsx(!showHide.hideTopEditor && 'hidden')} />
+            <div
+              id="renderEditor"
+              className={clsx(!showHide.hideTopEditor && 'hidden')}
+            />
             {!existingData.integration && !showHide.hideTopEditor ? (
               <>
                 <div>You are in global editing mode</div>

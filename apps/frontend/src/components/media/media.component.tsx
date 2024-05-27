@@ -50,9 +50,10 @@ export const showMediaBox = (
 
 export const MediaBox: FC<{
   setMedia: (params: { id: string; path: string }) => void;
+  type?: 'image' | 'video';
   closeModal: () => void;
 }> = (props) => {
-  const { setMedia, closeModal } = props;
+  const { setMedia, type, closeModal } = props;
   const [pages, setPages] = useState(0);
   const [mediaList, setListMedia] = useState<Media[]>([]);
   const fetch = useFetch();
@@ -140,7 +141,13 @@ export const MediaBox: FC<{
                 <input
                   type="file"
                   className="absolute left-0 top-0 w-full h-full opacity-0"
-                  accept="image/*,video/mp4"
+                  accept={
+                    type === 'video'
+                      ? 'video/mp4'
+                      : type === 'image'
+                      ? 'image/*'
+                      : 'image/*,video/mp4'
+                  }
                   onChange={uploadMedia}
                 />
                 <button
@@ -207,22 +214,31 @@ export const MediaBox: FC<{
               </div>
             </div>
           )}
-          {mediaList.map((media) => (
-            <div
-              key={media.id}
-              className="w-[200px] h-[200px] border-tableBorder border-2 cursor-pointer"
-              onClick={setNewMedia(media)}
-            >
-              {media.path.indexOf('mp4') > -1 ? (
-                <VideoFrame url={mediaDirectory.set(media.path)} />
-              ) : (
-                <img
-                  className="w-full h-full object-cover"
-                  src={mediaDirectory.set(media.path)}
-                />
-              )}
-            </div>
-          ))}
+          {mediaList
+            .filter((f) => {
+              if (type === 'video') {
+                return f.path.indexOf('mp4') > -1;
+              } else if (type === 'image') {
+                return f.path.indexOf('mp4') === -1;
+              }
+              return true;
+            })
+            .map((media) => (
+              <div
+                key={media.id}
+                className="w-[200px] h-[200px] border-tableBorder border-2 cursor-pointer"
+                onClick={setNewMedia(media)}
+              >
+                {media.path.indexOf('mp4') > -1 ? (
+                  <VideoFrame url={mediaDirectory.set(media.path)} />
+                ) : (
+                  <img
+                    className="w-full h-full object-cover"
+                    src={mediaDirectory.set(media.path)}
+                  />
+                )}
+              </div>
+            ))}
         </div>
       </div>
     </div>
@@ -340,8 +356,9 @@ export const MediaComponent: FC<{
   onChange: (event: {
     target: { name: string; value?: { id: string; path: string } };
   }) => void;
+  type?: 'image' | 'video';
 }> = (props) => {
-  const { name, label, description, onChange, value } = props;
+  const { name, type, label, description, onChange, value } = props;
   const { getValues } = useSettings();
   useEffect(() => {
     const settings = getValues()[props.name];
@@ -369,7 +386,9 @@ export const MediaComponent: FC<{
 
   return (
     <div className="flex flex-col gap-[8px]">
-      {modal && <MediaBox setMedia={changeMedia} closeModal={showModal} />}
+      {modal && (
+        <MediaBox setMedia={changeMedia} closeModal={showModal} type={type} />
+      )}
       <div className="text-[14px]">{label}</div>
       <div className="text-[12px]">{description}</div>
       {!!currentMedia && (

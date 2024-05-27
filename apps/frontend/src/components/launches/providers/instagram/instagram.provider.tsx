@@ -109,4 +109,4 @@ const InstagramPreview: FC = (props) => {
   );
 };
 
-export default withProvider(null, InstagramPreview);
+export default withProvider(null, InstagramPreview, undefined, undefined, 1, 10);

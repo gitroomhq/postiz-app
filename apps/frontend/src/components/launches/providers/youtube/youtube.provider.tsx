@@ -22,6 +22,7 @@ const YoutubeSettings: FC = () => {
       <MediumTags label="Tags" {...register('tags')} />
       <div className="mt-[20px]">
         <MediaComponent
+          type="image"
           label="Thumbnail"
           description="Thumbnail picture (optional)"
           {...register('thumbnail')}
@@ -134,5 +135,8 @@ const YoutubePreview: FC = (props) => {
 export default withProvider(
   YoutubeSettings,
   YoutubePreview,
-  YoutubeSettingsDto
+  YoutubeSettingsDto,
+  'video',
+  1,
+  1
 );
