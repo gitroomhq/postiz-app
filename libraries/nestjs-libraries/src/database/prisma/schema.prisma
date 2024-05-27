@@ -37,6 +37,7 @@ model User {
   providerName  Provider
   name          String?
   lastName      String?
+  isSuperAdmin  Boolean            @default(false)
   bio           String?
   audience      Int                @default(0)
   pictureId     String?

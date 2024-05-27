@@ -44,7 +44,7 @@ export const Input: FC<
 
   return (
     <div className="flex flex-col gap-[6px]">
-      <div className={`${interClass} text-[14px]`}>{label}</div>
+      {!!label && (<div className={`${interClass} text-[14px]`}>{label}</div>)}
       <div
         className={clsx(
           'bg-input h-[44px] border-fifth border rounded-[4px] text-inputText placeholder-inputText flex items-center justify-center',

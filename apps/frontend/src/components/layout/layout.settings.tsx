@@ -26,6 +26,7 @@ import { Onboarding } from '@gitroom/frontend/components/onboarding/onboarding';
 import { Support } from '@gitroom/frontend/components/layout/support';
 import { ContinueProvider } from '@gitroom/frontend/components/layout/continue.provider';
 import { isGeneral } from '@gitroom/react/helpers/is.general';
+import { Impersonate } from '@gitroom/frontend/components/layout/impersonate';
 
 dayjs.extend(utc);
 dayjs.extend(weekOfYear);
@@ -58,6 +59,7 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
         <Support />
         <ContinueProvider />
         <div className="min-h-[100vh] w-full max-w-[1440px] mx-auto bg-primary px-[12px] text-white flex flex-col">
+          {user?.admin && <Impersonate />}
           <div className="px-[23px] flex h-[80px] items-center justify-between z-[200] sticky top-0 bg-primary">
             <Link href="/" className="text-2xl flex items-center gap-[10px]">
               <div>
