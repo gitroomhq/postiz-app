@@ -28,7 +28,7 @@ export class FacebookProvider implements SocialProvider {
     const state = makeId(6);
     return {
       url:
-        'https://www.facebook.com/v19.0/dialog/oauth' +
+        'https://www.facebook.com/v20.0/dialog/oauth' +
         `?client_id=${process.env.FACEBOOK_APP_ID}` +
         `&redirect_uri=${encodeURIComponent(
           `${process.env.FRONTEND_URL}/integrations/social/facebook${refresh ? `?refresh=${refresh}` : ''}`
@@ -93,7 +93,7 @@ export class FacebookProvider implements SocialProvider {
       },
     } = await (
       await fetch(
-        `https://graph.facebook.com/v19.0/me?fields=id,name,picture&access_token=${access_token}`
+        `https://graph.facebook.com/v20.0/me?fields=id,name,picture&access_token=${access_token}`
       )
     ).json();
 
