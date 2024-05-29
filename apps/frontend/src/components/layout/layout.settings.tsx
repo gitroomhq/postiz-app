@@ -27,6 +27,7 @@ import { Support } from '@gitroom/frontend/components/layout/support';
 import { ContinueProvider } from '@gitroom/frontend/components/layout/continue.provider';
 import { isGeneral } from '@gitroom/react/helpers/is.general';
 import { Impersonate } from '@gitroom/frontend/components/layout/impersonate';
+import clsx from 'clsx';
 
 dayjs.extend(utc);
 dayjs.extend(weekOfYear);
@@ -62,10 +63,10 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
           {user?.admin && <Impersonate />}
           <div className="px-[23px] flex h-[80px] items-center justify-between z-[200] sticky top-0 bg-primary">
             <Link href="/" className="text-2xl flex items-center gap-[10px]">
-              <div>
-                <Image src="/logo.svg" width={55} height={53} alt="Logo" />
+              <div className="min-w-[55px]">
+                <Image src={isGeneral() ? "/postiz.svg" : "/logo.svg"} width={55} height={53} alt="Logo" />
               </div>
-              <div className="mt-[12px]">{isGeneral() ? 'Postiz' : 'Gitroom'}</div>
+              <div className={clsx(!isGeneral() ? "mt-[12px]" : "min-w-[80px]")}>{isGeneral() ? <img src="/postiz-text.svg" className="w-[80px]" /> : 'Gitroom'}</div>
             </Link>
             {user?.orgId ? <TopMenu /> : <div />}
             <div className="flex items-center gap-[8px]">

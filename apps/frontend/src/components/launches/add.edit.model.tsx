@@ -259,12 +259,12 @@ export const AddEditModal: FC<{
         // @ts-ignore
         const images = key?.value[0].image;
         if (
-          (images?.length || 0) > (key.maximumMediaRequirements || 0) ||
+          (images?.length || 0) > (key.maximumMediaRequirements || 100000) ||
           (images?.length || 0) < (key.minimumMediaRequirements || 0)
         ) {
           toaster.show(
             `The amount of ${capitalize(key?.integration?.identifier)} media attached supposed to be ${
-              key.maximumMediaRequirements === key.minimumMediaRequirements
+              (key.maximumMediaRequirements === key.minimumMediaRequirements) || !key.maximumMediaRequirements
                 ? key.minimumMediaRequirements
                 : `between ${key.minimumMediaRequirements} to ${key.maximumMediaRequirements}`
             }`,

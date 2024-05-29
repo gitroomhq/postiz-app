@@ -11,6 +11,7 @@ import { FacebookProvider } from '@gitroom/nestjs-libraries/integrations/social/
 import { InstagramProvider } from '@gitroom/nestjs-libraries/integrations/social/instagram.provider';
 import { YoutubeProvider } from '@gitroom/nestjs-libraries/integrations/social/youtube.provider';
 import { TiktokProvider } from '@gitroom/nestjs-libraries/integrations/social/tiktok.provider';
+import { PinterestProvider } from '@gitroom/nestjs-libraries/integrations/social/pinterest.provider';
 
 const socialIntegrationList = [
   new XProvider(),
@@ -20,6 +21,7 @@ const socialIntegrationList = [
   new InstagramProvider(),
   new YoutubeProvider(),
   new TiktokProvider(),
+  new PinterestProvider()
 ];
 
 const articleIntegrationList = [

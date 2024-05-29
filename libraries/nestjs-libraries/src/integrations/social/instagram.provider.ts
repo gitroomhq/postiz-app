@@ -219,7 +219,7 @@ export class InstagramProvider implements SocialProvider {
     let containerIdGlobal = '';
     let linkGlobal = '';
     if (medias.length === 1) {
-      const { id: mediaId, ...all } = await (
+      const { id: mediaId } = await (
         await fetch(
           `https://graph.facebook.com/v20.0/${id}/media_publish?creation_id=${medias[0]}&access_token=${accessToken}&field=id`,
           {
@@ -227,8 +227,6 @@ export class InstagramProvider implements SocialProvider {
           }
         )
       ).json();
-
-      console.log(all);
 
       containerIdGlobal = mediaId;
 

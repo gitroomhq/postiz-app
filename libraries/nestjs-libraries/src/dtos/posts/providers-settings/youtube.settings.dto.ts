@@ -1,5 +1,4 @@
 import {
-  ArrayMaxSize,
   IsArray,
   IsDefined,
   IsOptional,

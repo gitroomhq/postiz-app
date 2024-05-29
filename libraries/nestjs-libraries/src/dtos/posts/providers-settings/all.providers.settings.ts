@@ -2,9 +2,13 @@ import { DevToSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers
 import { MediumSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/medium.settings.dto';
 import { HashnodeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/hashnode.settings.dto';
 import { RedditSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/reddit.dto';
+import { PinterestSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/pinterest.dto';
+import { YoutubeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/youtube.settings.dto';
 
 export type AllProvidersSettings =
   | DevToSettingsDto
   | MediumSettingsDto
   | HashnodeSettingsDto
-  | RedditSettingsDto;
+  | RedditSettingsDto
+  | YoutubeSettingsDto
+  | PinterestSettingsDto;
