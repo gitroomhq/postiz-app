@@ -136,7 +136,15 @@ export default withProvider(
   YoutubeSettings,
   YoutubePreview,
   YoutubeSettingsDto,
-  'video',
-  1,
-  1
+  async (items) => {
+    if (items.length === 1) {
+      return 'Youtube items should be one';
+    }
+
+    if (items[0].length !== 1) {
+      return 'You need one item';
+    }
+
+    return true;
+  }
 );
