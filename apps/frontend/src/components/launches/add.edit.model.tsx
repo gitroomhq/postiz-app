@@ -262,6 +262,7 @@ export const AddEditModal: FC<{
           }
         }
 
+
         if (key.value.some((p) => !p.content || p.content.length < 6)) {
           setShowError(true);
           return;
