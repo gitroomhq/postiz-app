@@ -250,44 +250,16 @@ export const AddEditModal: FC<{
         group: existingData?.group,
         trigger: values[v].trigger,
         settings: values[v].settings(),
-        firstCommentRequirements: values[v].firstCommentRequirements,
-        maximumMediaRequirements: values[v].maximumMediaRequirements,
-        minimumMediaRequirements: values[v].minimumMediaRequirements,
+        checkValidity: values[v].checkValidity
       }));
 
       for (const key of allKeys) {
-        // @ts-ignore
-        const images = key?.value[0].image;
-        if (
-          (images?.length || 0) > (key.maximumMediaRequirements || 100000) ||
-          (images?.length || 0) < (key.minimumMediaRequirements || 0)
-        ) {
-          toaster.show(
-            `The amount of ${capitalize(key?.integration?.identifier)} media attached supposed to be ${
-              (key.maximumMediaRequirements === key.minimumMediaRequirements) || !key.maximumMediaRequirements
-                ? key.minimumMediaRequirements
-                : `between ${key.minimumMediaRequirements} to ${key.maximumMediaRequirements}`
-            }`,
-            'warning'
-          );
-          return;
-        }
-
-        if (
-          key.firstCommentRequirements &&
-          !images?.every((p: any) =>
-            key.firstCommentRequirements === 'video'
-              ? p.name.includes('mp4')
-              : !p.name.includes('mp4')
-          )
-        ) {
-          toaster.show(
-            `${capitalize(key?.integration?.identifier?.toUpperCase())} media should be a ${
-              key.firstCommentRequirements === 'video' ? 'video' : 'image'
-            }`,
-            'warning'
-          );
-          return;
+        if (key.checkValidity) {
+          const check = await key.checkValidity(key?.value.map((p: any) => p.image || {path: ''}));
+          if (typeof check === 'string') {
+            toaster.show(check, 'warning');
+            return;
+          }
         }
 
         if (key.value.some((p) => !p.content || p.content.length < 6)) {
@@ -322,7 +294,7 @@ export const AddEditModal: FC<{
       );
       modal.closeAll();
     },
-    [postFor, dateState, value, integrations, existingData]
+    [postFor, dateState, value, integrations, existingData, selectedIntegrations]
   );
 
   const getPostsMarketplace = useCallback(async () => {

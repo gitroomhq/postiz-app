@@ -34,7 +34,7 @@ export class FacebookProvider implements SocialProvider {
           `${process.env.FRONTEND_URL}/integrations/social/facebook${refresh ? `?refresh=${refresh}` : ''}`
         )}` +
         `&state=${state}` +
-        '&scope=pages_show_list,business_management,pages_manage_posts,publish_video,pages_manage_engagement,pages_read_engagement',
+        '&scope=pages_show_list,business_management,pages_manage_posts,pages_manage_engagement,pages_read_engagement',
       codeVerifier: makeId(10),
       state,
     };

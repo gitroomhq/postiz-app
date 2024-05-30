@@ -12,6 +12,7 @@ import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.titl
 import clsx from 'clsx';
 import interClass from '@gitroom/react/helpers/inter.font';
 import { VideoFrame } from '@gitroom/react/helpers/video.frame';
+import { useToaster } from '@gitroom/react/toaster/toaster';
 const showModalEmitter = new EventEmitter();
 
 export const ShowMediaBoxModal: FC = () => {
@@ -58,6 +59,7 @@ export const MediaBox: FC<{
   const [mediaList, setListMedia] = useState<Media[]>([]);
   const fetch = useFetch();
   const mediaDirectory = useMediaDirectory();
+  const toaster = useToaster();
 
   const loadMedia = useCallback(async () => {
     return (await fetch('/media')).json();
@@ -69,8 +71,10 @@ export const MediaBox: FC<{
       if (
         !file?.target?.files?.length ||
         file?.target?.files?.[0]?.size > maxFileSize
-      )
+      ) {
+        toaster.show('Maximum file size 10mb', 'warning');
         return;
+      }
       const formData = new FormData();
       formData.append('file', file?.target?.files?.[0]);
       const data = await (
@@ -226,7 +230,7 @@ export const MediaBox: FC<{
             .map((media) => (
               <div
                 key={media.id}
-                className="w-[200px] h-[200px] border-tableBorder border-2 cursor-pointer"
+                className="w-[200px] h-[200px] flex border-tableBorder border-2 cursor-pointer"
                 onClick={setNewMedia(media)}
               >
                 {media.path.indexOf('mp4') > -1 ? (
@@ -319,7 +323,7 @@ export const MultiMediaComponent: FC<{
           {!!currentMedia &&
             currentMedia.map((media, index) => (
               <>
-                <div className="cursor-pointer w-[40px] h-[40px] border-2 border-tableBorder relative">
+                <div className="cursor-pointer w-[40px] h-[40px] border-2 border-tableBorder relative flex">
                   <div
                     onClick={() => window.open(mediaDirectory.set(media.path))}
                   >

@@ -5,12 +5,10 @@ import {
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { timer } from '@gitroom/helpers/utils/timer';
-import dayjs from 'dayjs';
 import { PinterestSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/pinterest.dto';
 import axios from 'axios';
 import FormData from 'form-data';
-const form = new FormData();
+import { timer } from '@gitroom/helpers/utils/timer';
 
 export class PinterestProvider implements SocialProvider {
   identifier = 'pinterest';
@@ -126,29 +124,40 @@ export class PinterestProvider implements SocialProvider {
         })
       ).json();
 
-      console.log(media_id, upload_url);
-
-      try {
-        const { data } = await axios({
-          url: postDetails?.[0]?.media?.[0]?.url,
-          method: 'GET',
+      const { data, status } = await axios.get(
+        postDetails?.[0]?.media?.[0]?.url!,
+        {
           responseType: 'stream',
-        });
+        }
+      );
 
-        const p = await (
-          await fetch(upload_url, {
-            method: 'PUT',
-            body: data.buffer,
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              ...upload_parameters,
-            },
-          })
+      const formData = Object.keys(upload_parameters)
+        .filter((f) => f)
+        .reduce((acc, key) => {
+          acc.append(key, upload_parameters[key]);
+          return acc;
+        }, new FormData());
+
+      formData.append('file', data);
+      await axios.post(upload_url, formData);
+
+      let statusCode = '';
+      while (statusCode !== 'succeeded') {
+        console.log('trying');
+        const mediafile = await (
+          await fetch(
+            'https://api-sandbox.pinterest.com/v5/media/' + media_id,
+            {
+              method: 'GET',
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            }
+          )
         ).json();
 
-        console.log(p);
-      } catch (err) {
-        console.log(err);
+        await timer(3000);
+        statusCode = mediafile.status;
       }
 
       mediaId = media_id;
@@ -157,8 +166,6 @@ export class PinterestProvider implements SocialProvider {
     const mapImages = postDetails?.[0]?.media?.map((m) => ({
       url: m.url,
     }));
-
-    console.log('1');
 
     try {
       const {
@@ -188,7 +195,7 @@ export class PinterestProvider implements SocialProvider {
             board_id: postDetails?.[0]?.settings.board,
             media_source: mediaId
               ? {
-                  source_type: 'video',
+                  source_type: 'video_id',
                   media_id: mediaId,
                 }
               : mapImages?.length === 1
@@ -203,8 +210,6 @@ export class PinterestProvider implements SocialProvider {
           }),
         })
       ).json();
-
-      console.log(all);
 
       return [
         {

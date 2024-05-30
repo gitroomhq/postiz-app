@@ -67,9 +67,7 @@ export const withProvider = (
   SettingsComponent: FC | null,
   PreviewComponent: FC,
   dto?: any,
-  firstCommentRequirements?: 'video' | 'image',
-  minimumMediaRequirements?: number,
-  maximumMediaRequirements?: number,
+  checkValidity?: (value: Array<Array<{path: string}>>) => Promise<string|true>
 ) => {
   return (props: {
     identifier: string;
@@ -121,9 +119,7 @@ export const withProvider = (
       props.identifier,
       editInPlace ? InPlaceValue : props.value,
       dto,
-      firstCommentRequirements,
-      minimumMediaRequirements,
-      maximumMediaRequirements
+      checkValidity
     );
 
     // change editor value

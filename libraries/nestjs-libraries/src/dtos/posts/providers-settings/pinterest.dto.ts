@@ -1,5 +1,4 @@
-import { IsDefined, IsOptional, IsString, IsUrl, MinLength, ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsDefined, IsOptional, IsString, IsUrl, MinLength } from 'class-validator';
 
 export class PinterestSettingsDto {
   @IsString()

@@ -8,9 +8,7 @@ const finalInformation = {} as {
     settings: () => object;
     trigger: () => Promise<boolean>;
     isValid: boolean;
-    firstCommentRequirements?: 'video' | 'image';
-    minimumMediaRequirements?: number;
-    maximumMediaRequirements?: number;
+    checkValidity?: (value: Array<Array<{path: string}>>) => Promise<string|true>;
   };
 };
 export const useValues = (
@@ -19,9 +17,7 @@ export const useValues = (
   identifier: string,
   value: Array<{ id?: string; content: string; media?: Array<string> }>,
   dto: any,
-  firstCommentRequirements?: 'video' | 'image',
-  minimumMediaRequirements?: number,
-  maximumMediaRequirements?: number
+  checkValidity?: (value: Array<Array<{path: string}>>) => Promise<string|true>,
 ) => {
   const resolver = useMemo(() => {
     return classValidatorResolver(dto);
@@ -44,17 +40,9 @@ export const useValues = (
   finalInformation[integration].settings = getValues;
   finalInformation[integration].trigger = form.trigger;
 
-  if (firstCommentRequirements) {
-    finalInformation[integration].firstCommentRequirements =
-      firstCommentRequirements;
-  }
-  if (minimumMediaRequirements) {
-    finalInformation[integration].minimumMediaRequirements =
-      minimumMediaRequirements;
-  }
-  if (maximumMediaRequirements) {
-    finalInformation[integration].maximumMediaRequirements =
-      maximumMediaRequirements;
+  if (checkValidity) {
+    finalInformation[integration].checkValidity =
+      checkValidity;
   }
 
   useEffect(() => {
