@@ -15,15 +15,43 @@ export class PinterestProvider implements SocialProvider {
   name = 'Pinterest';
   isBetweenSteps = false;
 
-  async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
+  async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
+    const { access_token, expires_in } = await (
+      await fetch('https://api-sandbox.pinterest.com/v5/oauth/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Authorization: `Basic ${Buffer.from(
+            `${process.env.PINTEREST_CLIENT_ID}:${process.env.PINTEREST_CLIENT_SECRET}`
+          ).toString('base64')}`,
+        },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: refreshToken,
+          scope:
+            'boards:read,boards:write,pins:read,pins:write,user_accounts:read',
+          redirect_uri: `${process.env.FRONTEND_URL}/integrations/social/pinterest`,
+        }),
+      })
+    ).json();
+
+    const { id, profile_image, username } = await (
+      await fetch('https://api-sandbox.pinterest.com/v5/user_account', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      })
+    ).json();
+
     return {
-      refreshToken: '',
-      expiresIn: 0,
-      accessToken: '',
-      id: '',
-      name: '',
-      picture: '',
-      username: '',
+      id: id,
+      name: username,
+      accessToken: access_token,
+      refreshToken: refreshToken,
+      expiresIn: expires_in,
+      picture: profile_image,
+      username,
     };
   }
 
@@ -110,7 +138,14 @@ export class PinterestProvider implements SocialProvider {
     postDetails: PostDetails<PinterestSettingsDto>[]
   ): Promise<PostResponse[]> {
     let mediaId = '';
-    if ((postDetails?.[0]?.media?.[0]?.path?.indexOf('mp4') || -1) > -1) {
+    const findMp4 = postDetails?.[0]?.media?.find(
+      (p) => (p.path?.indexOf('mp4') || -1) > -1
+    );
+    const picture = postDetails?.[0]?.media?.find(
+      (p) => (p.path?.indexOf('mp4') || -1) === -1
+    );
+
+    if (findMp4) {
       const { upload_url, media_id, upload_parameters } = await (
         await fetch('https://api-sandbox.pinterest.com/v5/media', {
           method: 'POST',
@@ -197,6 +232,7 @@ export class PinterestProvider implements SocialProvider {
               ? {
                   source_type: 'video_id',
                   media_id: mediaId,
+                  cover_image_url: picture?.url,
                 }
               : mapImages?.length === 1
               ? {
@@ -213,9 +249,9 @@ export class PinterestProvider implements SocialProvider {
 
       return [
         {
-          id,
+          id: postDetails?.[0]?.id,
           postId: pId,
-          releaseURL: link,
+          releaseURL: `https://www.pinterest.com/pin/${pId}`,
           status: 'success',
         },
       ];

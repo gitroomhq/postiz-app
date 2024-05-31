@@ -4,6 +4,7 @@ import { diskStorage } from 'multer';
 import { mkdirSync } from 'fs';
 import { extname } from 'path';
 import CloudflareStorage from '@gitroom/nestjs-libraries/upload/cloudflare.storage';
+import { CustomFileValidationPipe } from '@gitroom/nestjs-libraries/upload/custom.upload.validation';
 
 const storage =
   process.env.CLOUDFLARE_ACCOUNT_ID &&
@@ -51,8 +52,9 @@ const storage =
       storage,
     }),
   ],
+  providers: [CustomFileValidationPipe],
   get exports() {
-    return this.imports;
+    return [...this.imports, ...this.providers];
   },
 })
 export class UploadModule {}

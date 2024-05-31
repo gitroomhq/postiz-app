@@ -22,11 +22,6 @@ export const DatePicker: FC<{
 
   const changeDate = useCallback(
     (type: 'date' | 'time') => (day: Date) => {
-      console.log(
-        type === 'time'
-          ? date.format('YYYY-MM-DD') + ' ' + dayjs(day).format('HH:mm:ss')
-          : dayjs(day).format('YYYY-MM-DD') + ' ' + date.format('HH:mm:ss')
-      );
       onChange(
         dayjs(
           type === 'time'

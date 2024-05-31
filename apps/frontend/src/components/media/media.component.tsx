@@ -67,12 +67,16 @@ export const MediaBox: FC<{
 
   const uploadMedia = useCallback(
     async (file: ChangeEvent<HTMLInputElement>) => {
-      const maxFileSize = 10 * 1024 * 1024;
+      const maxFileSize =
+        (file?.target?.files?.[0].name.indexOf('mp4') || -1) > -1
+          ? 100 * 1024 * 1024
+          : 10 * 1024 * 1024;
+
       if (
         !file?.target?.files?.length ||
         file?.target?.files?.[0]?.size > maxFileSize
       ) {
-        toaster.show('Maximum file size 10mb', 'warning');
+        toaster.show(`Maximum file size ${maxFileSize / 1024 / 1024}mb`, 'warning');
         return;
       }
       const formData = new FormData();

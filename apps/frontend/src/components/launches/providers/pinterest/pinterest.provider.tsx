@@ -131,8 +131,8 @@ export default withProvider(
   PinterestPreview,
   PinterestSettingsDto,
   async ([firstItem, ...otherItems]) => {
-    const isMp4 = firstItem.find((item) => item.path.indexOf('mp4') > -1);
-    const isPicture = firstItem.find((item) => item.path.indexOf('mp4') === -1);
+    const isMp4 = firstItem?.find((item) => item.path.indexOf('mp4') > -1);
+    const isPicture = firstItem?.find((item) => item.path.indexOf('mp4') === -1);
 
     if (firstItem.length === 0) {
       return 'Pinterest requires at least one media';

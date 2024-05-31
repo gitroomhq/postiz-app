@@ -255,7 +255,7 @@ export const AddEditModal: FC<{
 
       for (const key of allKeys) {
         if (key.checkValidity) {
-          const check = await key.checkValidity(key?.value.map((p: any) => p.image || {path: ''}));
+          const check = await key.checkValidity(key?.value.map((p: any) => p.image || []));
           if (typeof check === 'string') {
             toaster.show(check, 'warning');
             return;

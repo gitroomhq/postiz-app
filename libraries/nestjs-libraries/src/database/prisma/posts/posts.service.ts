@@ -300,7 +300,6 @@ export class PostsService {
     integrationId: string
   ) {
     if (!(await this._messagesService.canAddPost(id, order, integrationId))) {
-      console.log('hello');
       throw new Error('You can not add a post to this publication');
     }
     const getOrgByOrder = await this._messagesService.getOrgByOrder(order);
