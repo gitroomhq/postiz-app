@@ -145,7 +145,7 @@ export class PostsService {
       await this._notificationService.inAppNotification(
         firstPost.organizationId,
         `Error posting on ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
-        `An error occurred while posting on ${firstPost.integration?.providerIdentifier}`,
+        `An error occurred while posting on ${firstPost.integration?.providerIdentifier} ${JSON.stringify(err)}`,
         true
       );
     }
