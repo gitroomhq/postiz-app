@@ -16,6 +16,7 @@ export const Providers = [
     {identifier: 'devto', component: DevtoProvider},
     {identifier: 'x', component: XProvider},
     {identifier: 'linkedin', component: LinkedinProvider},
+    {identifier: 'linkedin-page', component: LinkedinProvider},
     {identifier: 'reddit', component: RedditProvider},
     {identifier: 'medium', component: MediumProvider},
     {identifier: 'hashnode', component: HashnodeProvider},

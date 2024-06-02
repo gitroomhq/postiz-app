@@ -9,16 +9,17 @@ import { PinterestSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/provi
 import axios from 'axios';
 import FormData from 'form-data';
 import { timer } from '@gitroom/helpers/utils/timer';
+import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
-export class PinterestProvider extends SocialAbstract implements SocialProvider {
-  identifier = 'pinterest';
-  name = 'Pinterest';
+export class DribbbleProvider extends SocialAbstract implements SocialProvider {
+  identifier = 'dribbble';
+  name = 'Dribbbble';
   isBetweenSteps = false;
 
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const { access_token, expires_in } = await (
-      await this.fetch('https://api.pinterest.com/v5/oauth/token', {
+      await this.fetch('https://api-sandbox.pinterest.com/v5/oauth/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -37,7 +38,7 @@ export class PinterestProvider extends SocialAbstract implements SocialProvider 
     ).json();
 
     const { id, profile_image, username } = await (
-      await this.fetch('https://api.pinterest.com/v5/user_account', {
+      await this.fetch('https://api-sandbox.pinterest.com/v5/user_account', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${access_token}`,
@@ -56,18 +57,32 @@ export class PinterestProvider extends SocialAbstract implements SocialProvider 
     };
   }
 
+  async teams(accessToken: string) {
+    const { teams } = await (
+      await this.fetch('https://api.dribbble.com/v2/user', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+    ).json();
+
+    return teams?.map((team: any) => ({
+      id: team.id,
+      name: team.name,
+    })) || [];
+  }
+
   async generateAuthUrl(refresh?: string) {
     const state = makeId(6);
     return {
-      url: `https://www.pinterest.com/oauth/?client_id=${
-        process.env.PINTEREST_CLIENT_ID
+      url: `https://dribbble.com/oauth/authorize?client_id=${
+        process.env.DRIBBBLE_CLIENT_ID
       }&redirect_uri=${encodeURIComponent(
-        `${process.env.FRONTEND_URL}/integrations/social/pinterest${
+        `${process.env.FRONTEND_URL}/integrations/social/dribbble${
           refresh ? `?refresh=${refresh}` : ''
         }`
-      )}&response_type=code&scope=${encodeURIComponent(
-        'boards:read,boards:write,pins:read,pins:write,user_accounts:read'
-      )}&state=${state}`,
+      )}&response_type=code&scope=public+upload&state=${state}`,
       codeVerifier: makeId(10),
       state,
     };
@@ -78,25 +93,17 @@ export class PinterestProvider extends SocialAbstract implements SocialProvider 
     codeVerifier: string;
     refresh: string;
   }) {
-    const { access_token, refresh_token, expires_in } = await (
-      await this.fetch('https://api.pinterest.com/v5/oauth/token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Authorization: `Basic ${Buffer.from(
-            `${process.env.PINTEREST_CLIENT_ID}:${process.env.PINTEREST_CLIENT_SECRET}`
-          ).toString('base64')}`,
-        },
-        body: new URLSearchParams({
-          grant_type: 'authorization_code',
-          code: params.code,
-          redirect_uri: `${process.env.FRONTEND_URL}/integrations/social/pinterest`,
-        }),
-      })
+    const { access_token } = await (
+      await this.fetch(
+        `https://dribbble.com/oauth/token?client_id=${process.env.DRIBBBLE_CLIENT_ID}&client_secret=${process.env.DRIBBBLE_CLIENT_SECRET}&code=${params.code}&redirect_uri=${process.env.FRONTEND_URL}/integrations/social/dribbble`,
+        {
+          method: 'POST',
+        }
+      )
     ).json();
 
-    const { id, profile_image, username } = await (
-      await this.fetch('https://api.pinterest.com/v5/user_account', {
+    const { id, name, avatar_url, login } = await (
+      await this.fetch('https://api.dribbble.com/v2/user', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${access_token}`,
@@ -106,18 +113,18 @@ export class PinterestProvider extends SocialAbstract implements SocialProvider 
 
     return {
       id: id,
-      name: username,
+      name,
       accessToken: access_token,
-      refreshToken: refresh_token,
-      expiresIn: expires_in,
-      picture: profile_image,
-      username,
+      refreshToken: '',
+      expiresIn: 999999999,
+      picture: avatar_url,
+      username: login,
     };
   }
 
   async boards(accessToken: string) {
     const { items } = await (
-      await this.fetch('https://api.pinterest.com/v5/boards', {
+      await this.fetch('https://api-sandbox.pinterest.com/v5/boards', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -148,7 +155,7 @@ export class PinterestProvider extends SocialAbstract implements SocialProvider 
 
     if (findMp4) {
       const { upload_url, media_id, upload_parameters } = await (
-        await this.fetch('https://api.pinterest.com/v5/media', {
+        await this.fetch('https://api-sandbox.pinterest.com/v5/media', {
           method: 'POST',
           body: JSON.stringify({
             media_type: 'video',
@@ -182,7 +189,7 @@ export class PinterestProvider extends SocialAbstract implements SocialProvider 
         console.log('trying');
         const mediafile = await (
           await this.fetch(
-            'https://api.pinterest.com/v5/media/' + media_id,
+            'https://api-sandbox.pinterest.com/v5/media/' + media_id,
             {
               method: 'GET',
               headers: {
@@ -209,7 +216,7 @@ export class PinterestProvider extends SocialAbstract implements SocialProvider 
         link,
         ...all
       } = await (
-        await this.fetch('https://api.pinterest.com/v5/pins', {
+        await this.fetch('https://api-sandbox.pinterest.com/v5/pins', {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${accessToken}`,

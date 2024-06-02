@@ -9,15 +9,16 @@ import sharp from 'sharp';
 import { lookup } from 'mime-types';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
 import { removeMarkdown } from '@gitroom/helpers/utils/remove.markdown';
+import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
-export class LinkedinProvider implements SocialProvider {
+export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   identifier = 'linkedin';
   name = 'LinkedIn';
   isBetweenSteps = false;
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     const { access_token: accessToken, refresh_token: refreshToken } = await (
-      await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
+      await this.fetch('https://www.linkedin.com/oauth/v2/accessToken', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -32,7 +33,7 @@ export class LinkedinProvider implements SocialProvider {
     ).json();
 
     const { vanityName } = await (
-      await fetch('https://api.linkedin.com/v2/me', {
+      await this.fetch('https://api.linkedin.com/v2/me', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -44,7 +45,7 @@ export class LinkedinProvider implements SocialProvider {
       sub: id,
       picture,
     } = await (
-      await fetch('https://api.linkedin.com/v2/userinfo', {
+      await this.fetch('https://api.linkedin.com/v2/userinfo', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -102,7 +103,7 @@ export class LinkedinProvider implements SocialProvider {
       expires_in: expiresIn,
       refresh_token: refreshToken,
     } = await (
-      await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
+      await this.fetch('https://www.linkedin.com/oauth/v2/accessToken', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -116,7 +117,7 @@ export class LinkedinProvider implements SocialProvider {
       sub: id,
       picture,
     } = await (
-      await fetch('https://api.linkedin.com/v2/userinfo', {
+      await this.fetch('https://api.linkedin.com/v2/userinfo', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -124,7 +125,7 @@ export class LinkedinProvider implements SocialProvider {
     ).json();
 
     const { vanityName } = await (
-      await fetch('https://api.linkedin.com/v2/me', {
+      await this.fetch('https://api.linkedin.com/v2/me', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -152,7 +153,7 @@ export class LinkedinProvider implements SocialProvider {
     }
 
     const { elements } = await (
-      await fetch(
+      await this.fetch(
         `https://api.linkedin.com/rest/organizations?q=vanityName&vanityName=${getCompanyVanity[1]}`,
         {
           method: 'GET',
@@ -174,17 +175,18 @@ export class LinkedinProvider implements SocialProvider {
     };
   }
 
-  private async uploadPicture(
+  protected async uploadPicture(
     fileName: string,
     accessToken: string,
     personId: string,
-    picture: any
+    picture: any,
+    type = 'personal' as 'company' | 'personal'
   ) {
     try {
       const {
         value: { uploadUrl, image, video, uploadInstructions, ...all },
       } = await (
-        await fetch(
+        await this.fetch(
           `https://api.linkedin.com/rest/${
             fileName.indexOf('mp4') > -1 ? 'videos' : 'images'
           }?action=initializeUpload`,
@@ -198,7 +200,10 @@ export class LinkedinProvider implements SocialProvider {
             },
             body: JSON.stringify({
               initializeUploadRequest: {
-                owner: `urn:li:person:${personId}`,
+                owner:
+                  type === 'personal'
+                    ? `urn:li:person:${personId}`
+                    : `urn:li:organization:${personId}`,
                 ...(fileName.indexOf('mp4') > -1
                   ? {
                       fileSizeBytes: picture.length,
@@ -215,7 +220,7 @@ export class LinkedinProvider implements SocialProvider {
       const sendUrlRequest = uploadInstructions?.[0]?.uploadUrl || uploadUrl;
       const finalOutput = video || image;
 
-      const upload = await fetch(sendUrlRequest, {
+      const upload = await this.fetch(sendUrlRequest, {
         method: 'PUT',
         headers: {
           'X-Restli-Protocol-Version': '2.0.0',
@@ -230,7 +235,7 @@ export class LinkedinProvider implements SocialProvider {
 
       if (fileName.indexOf('mp4') > -1) {
         const etag = upload.headers.get('etag');
-        const a = await fetch(
+        const a = await this.fetch(
           'https://api.linkedin.com/rest/videos?action=finalizeUpload',
           {
             method: 'POST',
@@ -260,7 +265,8 @@ export class LinkedinProvider implements SocialProvider {
   async post(
     id: string,
     accessToken: string,
-    postDetails: PostDetails[]
+    postDetails: PostDetails[],
+    type = 'personal' as 'company' | 'personal'
   ): Promise<PostResponse[]> {
     const [firstPost, ...restPosts] = postDetails;
 
@@ -281,7 +287,8 @@ export class LinkedinProvider implements SocialProvider {
                       .resize({
                         width: 1000,
                       })
-                      .toBuffer()
+                      .toBuffer(),
+                type
               ),
               postId: p.id,
             };
@@ -300,7 +307,7 @@ export class LinkedinProvider implements SocialProvider {
 
     const media_ids = (uploadAll[firstPost.id] || []).filter((f) => f);
 
-    const data = await fetch('https://api.linkedin.com/v2/posts', {
+    const data = await this.fetch('https://api.linkedin.com/v2/posts', {
       method: 'POST',
       headers: {
         'X-Restli-Protocol-Version': '2.0.0',
@@ -308,7 +315,10 @@ export class LinkedinProvider implements SocialProvider {
         Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify({
-        author: `urn:li:person:${id}`,
+        author:
+          type === 'personal'
+            ? `urn:li:person:${id}`
+            : `urn:li:organization:${id}`,
         commentary: removeMarkdown({
           text: firstPost.message.replace('\n', '𝔫𝔢𝔴𝔩𝔦𝔫𝔢'),
           except: [/@\[(.*?)]\(urn:li:organization:(\d+)\)/g],
@@ -350,6 +360,7 @@ export class LinkedinProvider implements SocialProvider {
     }
 
     const topPostId = data.headers.get('x-restli-id')!;
+
     const ids = [
       {
         status: 'posted',
@@ -360,7 +371,7 @@ export class LinkedinProvider implements SocialProvider {
     ];
     for (const post of restPosts) {
       const { object } = await (
-        await fetch(
+        await this.fetch(
           `https://api.linkedin.com/v2/socialActions/${decodeURIComponent(
             topPostId
           )}/comments`,
@@ -371,7 +382,7 @@ export class LinkedinProvider implements SocialProvider {
               Authorization: `Bearer ${accessToken}`,
             },
             body: JSON.stringify({
-              actor: `urn:li:person:${id}`,
+              actor: type === 'personal' ? `urn:li:person:${id}` : `urn:li:organization:${id}`,
               object: topPostId,
               message: {
                 text: removeMarkdown({

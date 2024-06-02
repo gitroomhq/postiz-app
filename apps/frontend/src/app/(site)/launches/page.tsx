@@ -6,7 +6,7 @@ import {LaunchesComponent} from "@gitroom/frontend/components/launches/launches.
 import {Metadata} from "next";
 
 export const metadata: Metadata = {
-  title: `${isGeneral() ? 'Postiz' : 'Gitroom'} Launches`,
+  title: `${isGeneral() ? 'Postiz Calendar' : 'Gitroom Launches'}`,
   description: '',
 }
 

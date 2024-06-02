@@ -261,6 +261,15 @@ export class IntegrationsController {
     return this._integrationService.saveFacebook(org.id, id, body.page);
   }
 
+  @Post('/linkedin-page/:id')
+  async saveLinkedin(
+    @Param('id') id: string,
+    @Body() body: { page: string },
+    @GetOrgFromRequest() org: Organization
+  ) {
+    return this._integrationService.saveLinkedin(org.id, id, body.page);
+  }
+
   @Post('/enable')
   enableChannel(
     @GetOrgFromRequest() org: Organization,

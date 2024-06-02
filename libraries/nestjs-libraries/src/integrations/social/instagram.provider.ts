@@ -7,8 +7,9 @@ import {
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { timer } from '@gitroom/helpers/utils/timer';
 import dayjs from 'dayjs';
+import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
-export class InstagramProvider implements SocialProvider {
+export class InstagramProvider extends SocialAbstract implements SocialProvider {
   identifier = 'instagram';
   name = 'Instagram';
   isBetweenSteps = true;
@@ -51,7 +52,7 @@ export class InstagramProvider implements SocialProvider {
     refresh: string;
   }) {
     const getAccessToken = await (
-      await fetch(
+      await this.fetch(
         'https://graph.facebook.com/v20.0/oauth/access_token' +
           `?client_id=${process.env.FACEBOOK_APP_ID}` +
           `&redirect_uri=${encodeURIComponent(
@@ -65,7 +66,7 @@ export class InstagramProvider implements SocialProvider {
     ).json();
 
     const { access_token, expires_in, ...all } = await (
-      await fetch(
+      await this.fetch(
         'https://graph.facebook.com/v20.0/oauth/access_token' +
           '?grant_type=fb_exchange_token' +
           `&client_id=${process.env.FACEBOOK_APP_ID}` +
@@ -81,7 +82,7 @@ export class InstagramProvider implements SocialProvider {
         data: { url },
       },
     } = await (
-      await fetch(
+      await this.fetch(
         `https://graph.facebook.com/v20.0/me?fields=id,name,picture&access_token=${access_token}`
       )
     ).json();
@@ -117,7 +118,7 @@ export class InstagramProvider implements SocialProvider {
 
   async pages(accessToken: string) {
     const { data } = await (
-      await fetch(
+      await this.fetch(
         `https://graph.facebook.com/v20.0/me/accounts?fields=id,instagram_business_account,username,name,picture.type(large)&access_token=${accessToken}&limit=500`
       )
     ).json();
@@ -129,7 +130,7 @@ export class InstagramProvider implements SocialProvider {
           return {
             pageId: p.id,
             ...(await (
-              await fetch(
+              await this.fetch(
                 `https://graph.facebook.com/v20.0/${p.instagram_business_account.id}?fields=name,profile_picture_url&access_token=${accessToken}&limit=500`
               )
             ).json()),
@@ -151,13 +152,13 @@ export class InstagramProvider implements SocialProvider {
     data: { pageId: string; id: string }
   ) {
     const { access_token, ...all } = await (
-      await fetch(
+      await this.fetch(
         `https://graph.facebook.com/v20.0/${data.pageId}?fields=access_token,name,picture.type(large)&access_token=${accessToken}`
       )
     ).json();
 
     const { id, name, profile_picture_url, username } = await (
-      await fetch(
+      await this.fetch(
         `https://graph.facebook.com/v20.0/${data.id}?fields=username,name,profile_picture_url&access_token=${accessToken}`
       )
     ).json();
@@ -191,7 +192,7 @@ export class InstagramProvider implements SocialProvider {
               : `video_url=${m.url}&media_type=VIDEO`
             : `image_url=${m.url}`;
         const { id: photoId } = await (
-          await fetch(
+          await this.fetch(
             `https://graph.facebook.com/v20.0/${id}/media?${mediaType}${caption}${isCarousel}&access_token=${accessToken}`,
             {
               method: 'POST',
@@ -202,7 +203,7 @@ export class InstagramProvider implements SocialProvider {
         let status = 'IN_PROGRESS';
         while (status === 'IN_PROGRESS') {
           const { status_code } = await (
-            await fetch(
+            await this.fetch(
               `https://graph.facebook.com/v20.0/${photoId}?access_token=${accessToken}&fields=status_code`
             )
           ).json();
@@ -220,7 +221,7 @@ export class InstagramProvider implements SocialProvider {
     let linkGlobal = '';
     if (medias.length === 1) {
       const { id: mediaId } = await (
-        await fetch(
+        await this.fetch(
           `https://graph.facebook.com/v20.0/${id}/media_publish?creation_id=${medias[0]}&access_token=${accessToken}&field=id`,
           {
             method: 'POST',
@@ -231,7 +232,7 @@ export class InstagramProvider implements SocialProvider {
       containerIdGlobal = mediaId;
 
       const { permalink } = await (
-        await fetch(
+        await this.fetch(
           `https://graph.facebook.com/v20.0/${mediaId}?fields=permalink&access_token=${accessToken}`
         )
       ).json();
@@ -246,7 +247,7 @@ export class InstagramProvider implements SocialProvider {
       linkGlobal = permalink;
     } else {
       const { id: containerId, ...all3 } = await (
-        await fetch(
+        await this.fetch(
           `https://graph.facebook.com/v20.0/${id}/media?caption=${encodeURIComponent(
             firstPost?.message
           )}&media_type=CAROUSEL&children=${encodeURIComponent(
@@ -261,7 +262,7 @@ export class InstagramProvider implements SocialProvider {
       let status = 'IN_PROGRESS';
       while (status === 'IN_PROGRESS') {
         const { status_code } = await (
-          await fetch(
+          await this.fetch(
             `https://graph.facebook.com/v20.0/${containerId}?fields=status_code&access_token=${accessToken}`
           )
         ).json();
@@ -270,7 +271,7 @@ export class InstagramProvider implements SocialProvider {
       }
 
       const { id: mediaId, ...all4 } = await (
-        await fetch(
+        await this.fetch(
           `https://graph.facebook.com/v20.0/${id}/media_publish?creation_id=${containerId}&access_token=${accessToken}&field=id`,
           {
             method: 'POST',
@@ -281,7 +282,7 @@ export class InstagramProvider implements SocialProvider {
       containerIdGlobal = mediaId;
 
       const { permalink } = await (
-        await fetch(
+        await this.fetch(
           `https://graph.facebook.com/v20.0/${mediaId}?fields=permalink&access_token=${accessToken}`
         )
       ).json();
@@ -298,7 +299,7 @@ export class InstagramProvider implements SocialProvider {
 
     for (const post of theRest) {
       const { id: commentId } = await (
-        await fetch(
+        await this.fetch(
           `https://graph.facebook.com/v20.0/${containerIdGlobal}/comments?message=${encodeURIComponent(
             post.message
           )}&access_token=${accessToken}`,

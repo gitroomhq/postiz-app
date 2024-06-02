@@ -12,12 +12,19 @@ const nextConfig = {
     // See: https://github.com/gregberge/svgr
     svgr: false,
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
+  },
   env: {
     isBillingEnabled: String(!!process.env.STRIPE_PUBLISHABLE_KEY),
     isGeneral: String(!!process.env.IS_GENERAL),
-  }
+  },
 };
-
 
 const plugins = [
   // Add more Next.js plugins to this list if needed.

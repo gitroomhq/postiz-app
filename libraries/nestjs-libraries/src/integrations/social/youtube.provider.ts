@@ -10,6 +10,7 @@ import { OAuth2Client } from 'google-auth-library/build/src/auth/oauth2client';
 import * as console from 'node:console';
 import axios from 'axios';
 import { YoutubeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/youtube.settings.dto';
+import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
 const clientAndYoutube = () => {
   const client = new google.auth.OAuth2({
@@ -33,7 +34,7 @@ const clientAndYoutube = () => {
   return { client, youtube, oauth2 };
 };
 
-export class YoutubeProvider implements SocialProvider {
+export class YoutubeProvider extends SocialAbstract implements SocialProvider {
   identifier = 'youtube';
   name = 'Youtube';
   isBetweenSteps = false;

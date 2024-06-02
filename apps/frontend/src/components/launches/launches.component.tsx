@@ -16,6 +16,7 @@ import { Menu } from '@gitroom/frontend/components/launches/menu/menu';
 import { GeneratorComponent } from '@gitroom/frontend/components/launches/generator/generator';
 import { useRouter } from 'next/navigation';
 import { Integration } from '@prisma/client';
+import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
 
 export const LaunchesComponent = () => {
   const fetch = useFetch();
@@ -71,10 +72,15 @@ export const LaunchesComponent = () => {
   );
 
   const refreshChannel = useCallback(
-    (integration: Integration & {identifier: string}) => async () => {
-      const {url} = await (await fetch(`/integrations/social/${integration.identifier}?refresh=${integration.internalId}`, {
-        method: 'GET',
-      })).json();
+    (integration: Integration & { identifier: string }) => async () => {
+      const { url } = await (
+        await fetch(
+          `/integrations/social/${integration.identifier}?refresh=${integration.internalId}`,
+          {
+            method: 'GET',
+          }
+        )
+      ).json();
 
       window.location.href = url;
     },
@@ -134,7 +140,8 @@ export const LaunchesComponent = () => {
                           <div className="bg-black/60 w-[39px] h-[46px] left-0 top-0 absolute rounded-full z-[199]" />
                         </div>
                       )}
-                      <img
+                      <ImageWithFallback
+                        fallbackSrc={`/icons/platforms/${integration.identifier}.png`}
                         src={integration.picture}
                         className="rounded-full"
                         alt={integration.identifier}

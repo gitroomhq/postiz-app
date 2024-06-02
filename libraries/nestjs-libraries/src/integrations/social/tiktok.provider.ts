@@ -6,8 +6,9 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
+import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
-export class TiktokProvider implements SocialProvider {
+export class TiktokProvider extends SocialAbstract implements SocialProvider {
   identifier = 'tiktok';
   name = 'Tiktok';
   isBetweenSteps = false;
@@ -73,7 +74,7 @@ export class TiktokProvider implements SocialProvider {
     refresh?: string;
   }) {
     const getAccessToken = await (
-      await fetch(
+      await this.fetch(
         'https://graph.facebook.com/v20.0/oauth/access_token' +
           `?client_id=${process.env.FACEBOOK_APP_ID}` +
           `&redirect_uri=${encodeURIComponent(
@@ -87,7 +88,7 @@ export class TiktokProvider implements SocialProvider {
     ).json();
 
     const { access_token } = await (
-      await fetch(
+      await this.fetch(
         'https://graph.facebook.com/v20.0/oauth/access_token' +
           '?grant_type=fb_exchange_token' +
           `&client_id=${process.env.FACEBOOK_APP_ID}` +
@@ -119,7 +120,7 @@ export class TiktokProvider implements SocialProvider {
         data: { url },
       },
     } = await (
-      await fetch(
+      await this.fetch(
         `https://graph.facebook.com/v19.0/me?fields=id,name,picture&access_token=${access_token}`
       )
     ).json();
@@ -137,7 +138,7 @@ export class TiktokProvider implements SocialProvider {
 
   async pages(accessToken: string) {
     const { data } = await (
-      await fetch(
+      await this.fetch(
         `https://graph.facebook.com/v20.0/me/accounts?fields=id,username,name,picture.type(large)&access_token=${accessToken}`
       )
     ).json();
@@ -155,7 +156,7 @@ export class TiktokProvider implements SocialProvider {
         data: { url },
       },
     } = await (
-      await fetch(
+      await this.fetch(
         `https://graph.facebook.com/v20.0/${pageId}?fields=username,access_token,name,picture.type(large)&access_token=${accessToken}`
       )
     ).json();
@@ -180,7 +181,7 @@ export class TiktokProvider implements SocialProvider {
     let finalUrl = '';
     if ((firstPost?.media?.[0]?.path?.indexOf('mp4') || -2) > -1) {
       const { id: videoId, permalink_url } = await (
-        await fetch(
+        await this.fetch(
           `https://graph.facebook.com/v20.0/${id}/videos?access_token=${accessToken}&fields=id,permalink_url`,
           {
             method: 'POST',
@@ -204,7 +205,7 @@ export class TiktokProvider implements SocialProvider {
         : await Promise.all(
             firstPost.media.map(async (media) => {
               const { id: photoId } = await (
-                await fetch(
+                await this.fetch(
                   `https://graph.facebook.com/v20.0/${id}/photos?access_token=${accessToken}`,
                   {
                     method: 'POST',
@@ -228,7 +229,7 @@ export class TiktokProvider implements SocialProvider {
         permalink_url,
         ...all
       } = await (
-        await fetch(
+        await this.fetch(
           `https://graph.facebook.com/v20.0/${id}/feed?access_token=${accessToken}&fields=id,permalink_url`,
           {
             method: 'POST',
@@ -251,7 +252,7 @@ export class TiktokProvider implements SocialProvider {
     const postsArray = [];
     for (const comment of comments) {
       const data = await (
-        await fetch(
+        await this.fetch(
           `https://graph.facebook.com/v20.0/${finalId}/comments?access_token=${accessToken}&fields=id,permalink_url`,
           {
             method: 'POST',
