@@ -1,4 +1,5 @@
 import {
+  AnalyticsData,
   AuthTokenDetails,
   PostDetails,
   PostResponse,
@@ -14,7 +15,7 @@ import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.ab
 
 export class DribbbleProvider extends SocialAbstract implements SocialProvider {
   identifier = 'dribbble';
-  name = 'Dribbbble';
+  name = 'Dribbble';
   isBetweenSteps = false;
 
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
@@ -67,10 +68,12 @@ export class DribbbleProvider extends SocialAbstract implements SocialProvider {
       })
     ).json();
 
-    return teams?.map((team: any) => ({
-      id: team.id,
-      name: team.name,
-    })) || [];
+    return (
+      teams?.map((team: any) => ({
+        id: team.id,
+        name: team.name,
+      })) || []
+    );
   }
 
   async generateAuthUrl(refresh?: string) {
@@ -267,5 +270,13 @@ export class DribbbleProvider extends SocialAbstract implements SocialProvider {
       console.log(err);
       return [];
     }
+  }
+
+  analytics(
+    id: string,
+    accessToken: string,
+    date: number
+  ): Promise<AnalyticsData[]> {
+    return Promise.resolve([]);
   }
 }

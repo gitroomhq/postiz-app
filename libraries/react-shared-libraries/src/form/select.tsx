@@ -16,9 +16,18 @@ export const Select: FC<
     disableForm?: boolean;
     label: string;
     name: string;
+    hideErrors?: boolean;
   }
 > = (props) => {
-  const { label, className, disableForm, error, extraForm, ...rest } = props;
+  const {
+    label,
+    className,
+    hideErrors,
+    disableForm,
+    error,
+    extraForm,
+    ...rest
+  } = props;
   const form = useFormContext();
   const err = useMemo(() => {
     if (error) return error;
@@ -27,7 +36,7 @@ export const Select: FC<
   }, [form?.formState?.errors?.[props?.name!]?.message, error]);
 
   return (
-    <div className="flex flex-col gap-[6px]">
+    <div className={clsx("flex flex-col", label ? 'gap-[6px]' : '')}>
       <div className={`${interClass} text-[14px]`}>{label}</div>
       <select
         {...(disableForm ? {} : form.register(props.name, extraForm))}
@@ -37,7 +46,9 @@ export const Select: FC<
         )}
         {...rest}
       />
-      <div className="text-red-400 text-[12px]">{err || <>&nbsp;</>}</div>
+      {!hideErrors && (
+        <div className="text-red-400 text-[12px]">{err || <>&nbsp;</>}</div>
+      )}
     </div>
   );
 };

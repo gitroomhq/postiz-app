@@ -1,4 +1,5 @@
 import {
+  AnalyticsData,
   AuthTokenDetails,
   PostDetails,
   PostResponse,
@@ -8,9 +9,11 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library/build/src/auth/oauth2client';
 import * as console from 'node:console';
-import axios from 'axios';
+import axios, { all } from 'axios';
 import { YoutubeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/youtube.settings.dto';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import * as process from 'node:process';
+import dayjs from 'dayjs';
 
 const clientAndYoutube = () => {
   const client = new google.auth.OAuth2({
@@ -25,13 +28,19 @@ const clientAndYoutube = () => {
       auth: newClient,
     });
 
+  const youtubeAnalytics = (newClient: OAuth2Client) =>
+    google.youtubeAnalytics({
+      version: 'v2',
+      auth: newClient,
+    });
+
   const oauth2 = (newClient: OAuth2Client) =>
     google.oauth2({
       version: 'v2',
       auth: newClient,
     });
 
-  return { client, youtube, oauth2 };
+  return { client, youtube, oauth2, youtubeAnalytics };
 };
 
 export class YoutubeProvider extends SocialAbstract implements SocialProvider {
@@ -79,6 +88,8 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
           'https://www.googleapis.com/auth/youtube.readonly',
           'https://www.googleapis.com/auth/youtube.upload',
           'https://www.googleapis.com/auth/youtubepartner',
+          'https://www.googleapis.com/auth/youtubepartner',
+          'https://www.googleapis.com/auth/yt-analytics.readonly',
         ],
       }),
       codeVerifier: makeId(10),
@@ -161,5 +172,88 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       console.log(err);
     }
     return [];
+  }
+
+  async analytics(
+    id: string,
+    accessToken: string,
+    date: number
+  ): Promise<AnalyticsData[]> {
+    const endDate = dayjs().format('YYYY-MM-DD');
+    const startDate = dayjs().subtract(date, 'day').format('YYYY-MM-DD');
+
+    const { client, youtubeAnalytics } = clientAndYoutube();
+    client.setCredentials({ access_token: accessToken });
+    const youtubeClient = youtubeAnalytics(client);
+    const { data } = await youtubeClient.reports.query({
+      ids: 'channel==MINE',
+      startDate,
+      endDate,
+      metrics:
+        'views,estimatedMinutesWatched,averageViewDuration,averageViewPercentage,subscribersGained,likes,subscribersLost',
+      dimensions: 'day',
+      sort: 'day',
+    });
+
+    const columns = data?.columnHeaders?.map((p) => p.name)!;
+    const mappedData = data?.rows?.map((p) => {
+      return columns.reduce((acc, curr, index) => {
+        acc[curr!] = p[index];
+        return acc;
+      }, {} as any);
+    });
+
+    const acc = [] as any[];
+    acc.push({
+      label: 'Estimated Minutes Watched',
+      data: mappedData?.map((p: any) => ({
+        total: p.estimatedMinutesWatched,
+        date: p.day,
+      })),
+    });
+
+    acc.push({
+      label: 'Average View Duration',
+      average: true,
+      data: mappedData?.map((p: any) => ({
+        total: p.averageViewDuration,
+        date: p.day,
+      })),
+    });
+
+    acc.push({
+      label: 'Average View Percentage',
+      average: true,
+      data: mappedData?.map((p: any) => ({
+        total: p.averageViewPercentage,
+        date: p.day,
+      })),
+    });
+
+    acc.push({
+      label: 'Subscribers Gained',
+      data: mappedData?.map((p: any) => ({
+        total: p.subscribersGained,
+        date: p.day,
+      })),
+    });
+
+    acc.push({
+      label: 'Subscribers Lost',
+      data: mappedData?.map((p: any) => ({
+        total: p.subscribersLost,
+        date: p.day,
+      })),
+    });
+
+    acc.push({
+      label: 'Likes',
+      data: mappedData?.map((p: any) => ({
+        total: p.likes,
+        date: p.day,
+      })),
+    });
+
+    return acc;
   }
 }

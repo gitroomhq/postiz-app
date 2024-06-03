@@ -24,6 +24,15 @@ export const menuItems = [
     icon: 'launches',
     path: '/launches',
   },
+  ...(general
+    ? [
+        {
+          name: 'Analytics',
+          icon: 'analytics',
+          path: '/analytics',
+        },
+      ]
+    : []),
   ...(!general
     ? [
         {

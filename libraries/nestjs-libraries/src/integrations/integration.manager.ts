@@ -16,7 +16,7 @@ import { DribbbleProvider } from '@gitroom/nestjs-libraries/integrations/social/
 import { LinkedinPageProvider } from '@gitroom/nestjs-libraries/integrations/social/linkedin.page.provider';
 
 const socialIntegrationList = [
-  new XProvider(),
+  ...(process.env.IS_GENERAL !== 'true' ? [new XProvider()] : []),
   new LinkedinProvider(),
   new LinkedinPageProvider(),
   new RedditProvider(),

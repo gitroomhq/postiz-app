@@ -87,12 +87,6 @@ export async function middleware(request: NextRequest) {
       return redirect;
     }
 
-    if (isGeneral() && (nextUrl.pathname.indexOf('/analytics') > -1 || nextUrl.pathname.indexOf('/settings') > -1)) {
-      return NextResponse.redirect(
-        new URL('/launches', nextUrl.href)
-      );
-    }
-
     if (nextUrl.pathname === '/') {
       return NextResponse.redirect(
         new URL(isGeneral() ? '/launches' : `/analytics`, nextUrl.href)
