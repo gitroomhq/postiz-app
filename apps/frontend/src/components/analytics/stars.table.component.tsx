@@ -37,16 +37,19 @@ export const UpDown: FC<{ name: string; param: string }> = (props) => {
 
   const changeStateUrl = useCallback(
     (newState: string) => {
-      const query =
-        newState === 'none' ? `` : `?key=${param}&state=${newState}`;
-      let dateRange = '';
+      const params = new URLSearchParams();
       if (startDate) {
-        dateRange = `&startDate=${startDate}`;
+        params.set('startDate', startDate);
       }
       if (endDate) {
-        dateRange = `${dateRange}&endDate=${endDate}`;
+        params.set('endDate', endDate);
       }
-      router.replace(`/analytics${query}${dateRange}`);
+
+      if (newState !== 'none') {
+        params.set('key', param);
+        params.set('state', newState);
+      }
+      router.replace(`/analytics?${params.toString()}`);
     },
     [state, param, startDate, endDate]
   );
@@ -55,7 +58,7 @@ export const UpDown: FC<{ name: string; param: string }> = (props) => {
     changeStateUrl(
       state === 'none' ? 'desc' : state === 'desc' ? 'asc' : 'none'
     );
-  }, [state, param]);
+  }, [state, param, startDate, endDate]);
 
   return (
     <div
@@ -161,17 +164,21 @@ export const StarsTableComponent = () => {
 
   const changePage = useCallback(
     (type: 'increase' | 'decrease') => () => {
-      const newPage = type === 'increase' ? page + 1 : page - 1;
-      const keyAndState = key && state ? `&key=${key}&state=${state}` : '';
+      const params = new URLSearchParams();
+      const pageValue = type === 'increase' ? page + 1 : page - 1;
+      params.set('page', pageValue.toString());
+      if (key && state) {
+        params.set('key', key);
+        params.set('state', state);
+      }
 
-      let dateRange = '';
       if (startDate) {
-        dateRange = `&startDate=${startDate}`;
+        params.set('startDate', startDate);
       }
       if (endDate) {
-        dateRange = `${dateRange}&endDate=${endDate}`;
+        params.set('endDate', endDate);
       }
-      router.replace(`/analytics?page=${newPage}${keyAndState}${dateRange}`);
+      router.replace(`/analytics?${params.toString()}`);
     },
     [page, key, state, startDate, endDate]
   );
