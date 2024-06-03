@@ -21,6 +21,8 @@ export const UpDown: FC<{ name: string; param: string }> = (props) => {
   const { name, param } = props;
   const router = useRouter();
   const searchParams = useSearchParams();
+  const startDate = searchParams.get('startDate');
+  const endDate = searchParams.get('endDate');
 
   const state = useMemo(() => {
     const newName = searchParams.get('key');
@@ -37,9 +39,16 @@ export const UpDown: FC<{ name: string; param: string }> = (props) => {
     (newState: string) => {
       const query =
         newState === 'none' ? `` : `?key=${param}&state=${newState}`;
-      router.replace(`/analytics${query}`);
+      let dateRange = '';
+      if (startDate) {
+        dateRange = `&startDate=${startDate}`;
+      }
+      if (endDate) {
+        dateRange = `${dateRange}&endDate=${endDate}`;
+      }
+      router.replace(`/analytics${query}${dateRange}`);
     },
-    [state, param]
+    [state, param, startDate, endDate]
   );
 
   const changeState = useCallback(() => {
@@ -96,6 +105,10 @@ export const StarsTableComponent = () => {
   const page = +(searchParams.get('page') || 1);
   const key = searchParams.get('key');
   const state = searchParams.get('state');
+
+  const startDate = searchParams.get('startDate');
+  const endDate = searchParams.get('endDate');
+
   const [loading, setLoading] = useState(false);
   const [, startTransition] = useTransition();
 
@@ -150,9 +163,17 @@ export const StarsTableComponent = () => {
     (type: 'increase' | 'decrease') => () => {
       const newPage = type === 'increase' ? page + 1 : page - 1;
       const keyAndState = key && state ? `&key=${key}&state=${state}` : '';
-      router.replace(`/analytics?page=${newPage}${keyAndState}`);
+
+      let dateRange = '';
+      if (startDate) {
+        dateRange = `&startDate=${startDate}`;
+      }
+      if (endDate) {
+        dateRange = `${dateRange}&endDate=${endDate}`;
+      }
+      router.replace(`/analytics?page=${newPage}${keyAndState}${dateRange}`);
     },
-    [page, key, state]
+    [page, key, state, startDate, endDate]
   );
 
   return (

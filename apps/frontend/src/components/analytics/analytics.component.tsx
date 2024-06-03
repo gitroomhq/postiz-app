@@ -6,10 +6,22 @@ import { StarsTableComponent } from '@gitroom/frontend/components/analytics/star
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import {
+  DateRange,
+  DateRangePicker,
+} from '../launches/helpers/date.range.picker';
+import {
+  getDateRangeQuery,
+  getDateRangeUrl,
+} from '../launches/helpers/date.query';
 
 export const AnalyticsComponent: FC = () => {
   const fetch = useFetch();
-
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const dateRange: DateRange = getDateRangeQuery(searchParams);
   const load = useCallback(async (path: string) => {
     return await (await fetch(path)).json();
   }, []);
@@ -27,9 +39,17 @@ export const AnalyticsComponent: FC = () => {
     return <LoadingComponent />;
   }
 
+  const changeDateRange = (newDateRange: DateRange) => {
+    const dateRangeUrl = getDateRangeUrl(searchParams, newDateRange);
+    router.replace(`${pathname}?${dateRangeUrl}`);
+  };
+
   return (
     <div className="flex gap-[24px] flex-1">
       <div className="flex flex-col gap-[24px] flex-1">
+        <div className="flex justify-end">
+          <DateRangePicker onChange={changeDateRange} dateRange={dateRange} />
+        </div>
         <StarsAndForks list={analytics} trending={trending} />
         <StarsTableComponent />
       </div>
