@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { EmailProvider } from './email-providers/email.provider.interface';
-import { EmailProviderFactory } from './email-providers/email.provider.factory';
+import { EmailProviderFactory } from './email-providers/email.provider.service';
 
 
 @Injectable()
