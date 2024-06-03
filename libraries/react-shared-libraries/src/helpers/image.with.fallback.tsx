@@ -10,18 +10,19 @@ interface ImageSrc {
 }
 
 const ImageWithFallback: FC<ImageSrc> = (props) => {
-    const { src, fallbackSrc, ...rest } = props;
-    const [imgSrc, setImgSrc] = useState(src);
+  const { src, fallbackSrc, ...rest } = props;
+  const [imgSrc, setImgSrc] = useState(src);
 
-    return (
-        <Image
-            {...rest}
-            src={imgSrc}
-            onError={() => {
-                setImgSrc(fallbackSrc);
-            }}
-        />
-    );
+  return (
+    <Image
+      alt=""
+      {...rest}
+      src={imgSrc}
+      onError={() => {
+        setImgSrc(fallbackSrc);
+      }}
+    />
+  );
 };
 
 export default ImageWithFallback;
