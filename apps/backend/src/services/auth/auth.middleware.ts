@@ -70,6 +70,12 @@ export class AuthMiddleware implements NestMiddleware {
       const setOrg =
         organization.find((org) => org.id === orgHeader) || organization[0];
 
+      if (!organization) {
+        removeAuth(res);
+        res.status(401).send('Unauthorized');
+        return ;
+      }
+
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-expect-error
       req.user = user;
