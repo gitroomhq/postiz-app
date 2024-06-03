@@ -1,4 +1,5 @@
 import {
+  AnalyticsData,
   AuthTokenDetails,
   PostDetails,
   PostResponse,
@@ -8,8 +9,12 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { timer } from '@gitroom/helpers/utils/timer';
 import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { chunk } from 'lodash';
 
-export class InstagramProvider extends SocialAbstract implements SocialProvider {
+export class InstagramProvider
+  extends SocialAbstract
+  implements SocialProvider
+{
   identifier = 'instagram';
   name = 'Instagram';
   isBetweenSteps = true;
@@ -39,7 +44,7 @@ export class InstagramProvider extends SocialAbstract implements SocialProvider 
         )}` +
         `&state=${state}` +
         `&scope=${encodeURIComponent(
-          'instagram_basic,pages_show_list,pages_read_engagement,business_management,instagram_content_publish,instagram_manage_comments'
+          'instagram_basic,pages_show_list,pages_read_engagement,business_management,instagram_content_publish,instagram_manage_comments,instagram_manage_insights'
         )}`,
       codeVerifier: makeId(10),
       state,
@@ -88,7 +93,9 @@ export class InstagramProvider extends SocialAbstract implements SocialProvider 
     ).json();
 
     if (params.refresh) {
-      const findPage = (await this.pages(access_token)).find(p => p.id === params.refresh);
+      const findPage = (await this.pages(access_token)).find(
+        (p) => p.id === params.refresh
+      );
       const information = await this.fetchPageInformation(access_token, {
         id: params.refresh,
         pageId: findPage?.pageId!,
@@ -318,5 +325,31 @@ export class InstagramProvider extends SocialAbstract implements SocialProvider 
     }
 
     return arr;
+  }
+
+  async analytics(
+    id: string,
+    accessToken: string,
+    date: number
+  ): Promise<AnalyticsData[]> {
+    const until = dayjs().format('YYYY-MM-DD');
+    const since = dayjs().subtract(date, 'day').format('YYYY-MM-DD');
+
+    const { data, ...all } = await (
+      await fetch(
+        `https://graph.facebook.com/v20.0/${id}/insights?metric=follower_count,impressions,reach,profile_views&access_token=${accessToken}&period=day&since=${since}&until=${until}`
+      )
+    ).json();
+
+    console.log(all);
+
+    return data?.map((d: any) => ({
+      label: d.title,
+      percentageChange: 5,
+      data: d.values.map((v: any) => ({
+        total: v.value,
+        date: dayjs(v.end_time).format('YYYY-MM-DD'),
+      })),
+    })) || [];
   }
 }

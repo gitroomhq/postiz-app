@@ -1,4 +1,5 @@
 import {
+  AnalyticsData,
   AuthTokenDetails,
   PostDetails,
   PostResponse,
@@ -10,8 +11,12 @@ import axios from 'axios';
 import FormData from 'form-data';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import dayjs from 'dayjs';
 
-export class PinterestProvider extends SocialAbstract implements SocialProvider {
+export class PinterestProvider
+  extends SocialAbstract
+  implements SocialProvider
+{
   identifier = 'pinterest';
   name = 'Pinterest';
   isBetweenSteps = false;
@@ -181,15 +186,12 @@ export class PinterestProvider extends SocialAbstract implements SocialProvider 
       while (statusCode !== 'succeeded') {
         console.log('trying');
         const mediafile = await (
-          await this.fetch(
-            'https://api.pinterest.com/v5/media/' + media_id,
-            {
-              method: 'GET',
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-              },
-            }
-          )
+          await this.fetch('https://api.pinterest.com/v5/media/' + media_id, {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          })
         ).json();
 
         await timer(3000);
@@ -260,5 +262,69 @@ export class PinterestProvider extends SocialAbstract implements SocialProvider 
       console.log(err);
       return [];
     }
+  }
+
+  async analytics(
+    id: string,
+    accessToken: string,
+    date: number
+  ): Promise<AnalyticsData[]> {
+    const until = dayjs().format('YYYY-MM-DD');
+    const since = dayjs().subtract(date, 'day').format('YYYY-MM-DD');
+
+    const {
+      all: { daily_metrics },
+    } = await (
+      await this.fetch(
+        `https://api.pinterest.com/v5/user_account/analytics?start_date=${since}&end_date=${until}`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+    ).json();
+
+    return daily_metrics.reduce(
+      (acc: any, item: any) => {
+        if (typeof item.metrics.PIN_CLICK_RATE !== 'undefined') {
+          acc[0].data.push({
+            date: item.date,
+            total: item.metrics.PIN_CLICK_RATE,
+          });
+
+          acc[1].data.push({
+            date: item.date,
+            total: item.metrics.IMPRESSION,
+          });
+
+          acc[2].data.push({
+            date: item.date,
+            total: item.metrics.PIN_CLICK,
+          });
+
+          acc[3].data.push({
+            date: item.date,
+            total: item.metrics.ENGAGEMENT,
+          });
+
+          acc[4].data.push({
+            date: item.date,
+            total: item.metrics.SAVE,
+          });
+        }
+
+        return acc;
+      },
+      [
+        { label: 'Pin click rate', data: [] as any[] },
+        { label: 'Impressions', data: [] as any[] },
+        { label: 'Pin Clicks', data: [] as any[] },
+        { label: 'Engagement', data: [] as any[] },
+        { label: 'Saves', data: [] as any[] },
+      ]
+    );
   }
 }

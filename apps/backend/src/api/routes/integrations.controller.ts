@@ -199,6 +199,8 @@ export class IntegrationsController {
       throw new Error('Invalid state');
     }
 
+    await ioRedis.del(`login:${body.state}`);
+
     const integrationProvider =
       this._integrationManager.getSocialIntegration(integration);
     const {

@@ -1,4 +1,5 @@
 import {
+  AnalyticsData,
   AuthTokenDetails,
   PostDetails,
   PostResponse,
@@ -6,6 +7,9 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { LinkedinProvider } from '@gitroom/nestjs-libraries/integrations/social/linkedin.provider';
+import { number, string } from 'yup';
+import dayjs from 'dayjs';
+import { writeFileSync } from 'fs';
 
 export class LinkedinPageProvider
   extends LinkedinProvider
@@ -121,7 +125,8 @@ export class LinkedinPageProvider
       id: data.id,
       name: data.localizedName,
       access_token: accessToken,
-      picture: data?.logoV2?.['original~']?.elements?.[0]?.identifiers?.[0].identifier,
+      picture:
+        data?.logoV2?.['original~']?.elements?.[0]?.identifiers?.[0].identifier,
       username: data.vanityName,
     };
   }
@@ -195,4 +200,332 @@ export class LinkedinPageProvider
   ): Promise<PostResponse[]> {
     return super.post(id, accessToken, postDetails, 'company');
   }
+
+  async analytics(
+    id: string,
+    accessToken: string,
+    date: number
+  ): Promise<AnalyticsData[]> {
+    const endDate = dayjs().unix() * 1000;
+    const startDate = dayjs().subtract(date, 'days').unix() * 1000;
+
+    const { elements }: { elements: Root[]; paging: any } = await (
+      await fetch(
+        `https://api.linkedin.com/rest/organizationPageStatistics?q=organization&organization=${encodeURIComponent(
+          `urn:li:organization:${id}`
+        )}&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Linkedin-Version': '202405',
+            'X-Restli-Protocol-Version': '2.0.0',
+          },
+        }
+      )
+    ).json();
+
+    const { elements: elements2 }: { elements: Root[]; paging: any } = await (
+      await fetch(
+        `https://api.linkedin.com/rest/organizationalEntityFollowerStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(
+          `urn:li:organization:${id}`
+        )}&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Linkedin-Version': '202405',
+            'X-Restli-Protocol-Version': '2.0.0',
+          },
+        }
+      )
+    ).json();
+
+    const { elements: elements3 }: { elements: Root[]; paging: any } = await (
+      await fetch(
+        `https://api.linkedin.com/rest/organizationalEntityShareStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(
+          `urn:li:organization:${id}`
+        )}&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Linkedin-Version': '202405',
+            'X-Restli-Protocol-Version': '2.0.0',
+          },
+        }
+      )
+    ).json();
+
+    const analytics = [...elements2, ...elements, ...elements3].reduce(
+      (all, current) => {
+        if (
+          typeof current?.totalPageStatistics?.views?.allPageViews
+            ?.pageViews !== 'undefined'
+        ) {
+          all['Page Views'].push({
+            total: current.totalPageStatistics.views.allPageViews.pageViews,
+            date: dayjs(current.timeRange.start).format('YYYY-MM-DD'),
+          });
+        }
+
+        if (
+          typeof current?.followerGains?.organicFollowerGain !== 'undefined'
+        ) {
+          all['Organic Followers'].push({
+            total: current?.followerGains?.organicFollowerGain,
+            date: dayjs(current.timeRange.start).format('YYYY-MM-DD'),
+          });
+        }
+
+        if (typeof current?.followerGains?.paidFollowerGain !== 'undefined') {
+          all['Paid Followers'].push({
+            total: current?.followerGains?.paidFollowerGain,
+            date: dayjs(current.timeRange.start).format('YYYY-MM-DD'),
+          });
+        }
+
+        if (typeof current?.totalShareStatistics !== 'undefined') {
+          all['Clicks'].push({
+            total: current?.totalShareStatistics.clickCount,
+            date: dayjs(current.timeRange.start).format('YYYY-MM-DD'),
+          });
+
+          all['Shares'].push({
+            total: current?.totalShareStatistics.shareCount,
+            date: dayjs(current.timeRange.start).format('YYYY-MM-DD'),
+          });
+
+          all['Engagement'].push({
+            total: current?.totalShareStatistics.engagement,
+            date: dayjs(current.timeRange.start).format('YYYY-MM-DD'),
+          });
+
+          all['Comments'].push({
+            total: current?.totalShareStatistics.commentCount,
+            date: dayjs(current.timeRange.start).format('YYYY-MM-DD'),
+          });
+        }
+
+        return all;
+      },
+      {
+        'Page Views': [] as any[],
+        Clicks: [] as any[],
+        Shares: [] as any[],
+        Engagement: [] as any[],
+        Comments: [] as any[],
+        'Organic Followers': [] as any[],
+        'Paid Followers': [] as any[],
+      }
+    );
+
+    return Object.keys(analytics).map((key) => ({
+      label: key,
+      data: analytics[
+        key as 'Page Views' | 'Organic Followers' | 'Paid Followers'
+      ],
+      percentageChange: 5,
+    }));
+  }
+}
+
+export interface Root {
+  pageStatisticsByIndustryV2: any[];
+  pageStatisticsBySeniority: any[];
+  organization: string;
+  pageStatisticsByGeoCountry: any[];
+  pageStatisticsByTargetedContent: any[];
+  totalPageStatistics: TotalPageStatistics;
+  pageStatisticsByStaffCountRange: any[];
+  pageStatisticsByFunction: any[];
+  pageStatisticsByGeo: any[];
+  followerGains: { organicFollowerGain: number; paidFollowerGain: number };
+  timeRange: TimeRange;
+  totalShareStatistics: {
+    uniqueImpressionsCount: number;
+    shareCount: number;
+    engagement: number;
+    clickCount: number;
+    likeCount: number;
+    impressionCount: number;
+    commentCount: number;
+  };
+}
+
+export interface TotalPageStatistics {
+  clicks: Clicks;
+  views: Views;
+}
+
+export interface Clicks {
+  mobileCustomButtonClickCounts: any[];
+  desktopCustomButtonClickCounts: any[];
+}
+
+export interface Views {
+  mobileProductsPageViews: MobileProductsPageViews;
+  allDesktopPageViews: AllDesktopPageViews;
+  insightsPageViews: InsightsPageViews;
+  mobileAboutPageViews: MobileAboutPageViews;
+  allMobilePageViews: AllMobilePageViews;
+  productsPageViews: ProductsPageViews;
+  desktopProductsPageViews: DesktopProductsPageViews;
+  jobsPageViews: JobsPageViews;
+  peoplePageViews: PeoplePageViews;
+  overviewPageViews: OverviewPageViews;
+  mobileOverviewPageViews: MobileOverviewPageViews;
+  lifeAtPageViews: LifeAtPageViews;
+  desktopOverviewPageViews: DesktopOverviewPageViews;
+  mobileCareersPageViews: MobileCareersPageViews;
+  allPageViews: AllPageViews;
+  careersPageViews: CareersPageViews;
+  mobileJobsPageViews: MobileJobsPageViews;
+  mobileLifeAtPageViews: MobileLifeAtPageViews;
+  desktopJobsPageViews: DesktopJobsPageViews;
+  desktopPeoplePageViews: DesktopPeoplePageViews;
+  aboutPageViews: AboutPageViews;
+  desktopAboutPageViews: DesktopAboutPageViews;
+  mobilePeoplePageViews: MobilePeoplePageViews;
+  desktopCareersPageViews: DesktopCareersPageViews;
+  desktopInsightsPageViews: DesktopInsightsPageViews;
+  desktopLifeAtPageViews: DesktopLifeAtPageViews;
+  mobileInsightsPageViews: MobileInsightsPageViews;
+}
+
+export interface MobileProductsPageViews {
+  pageViews: number;
+  uniquePageViews: number;
+}
+
+export interface AllDesktopPageViews {
+  pageViews: number;
+  uniquePageViews: number;
+}
+
+export interface InsightsPageViews {
+  pageViews: number;
+  uniquePageViews: number;
+}
+
+export interface MobileAboutPageViews {
+  pageViews: number;
+  uniquePageViews: number;
+}
+
+export interface AllMobilePageViews {
+  pageViews: number;
+  uniquePageViews: number;
+}
+
+export interface ProductsPageViews {
+  pageViews: number;
+  uniquePageViews: number;
+}
+
+export interface DesktopProductsPageViews {
+  pageViews: number;
+  uniquePageViews: number;
+}
+
+export interface JobsPageViews {
+  pageViews: number;
+  uniquePageViews: number;
+}
+
+export interface PeoplePageViews {
+  pageViews: number;
+  uniquePageViews: number;
+}
+
+export interface OverviewPageViews {
+  pageViews: number;
+  uniquePageViews: number;
+}
+
+export interface MobileOverviewPageViews {
+  pageViews: number;
+  uniquePageViews: number;
+}
+
+export interface LifeAtPageViews {
+  pageViews: number;
+  uniquePageViews: number;
+}
+
+export interface DesktopOverviewPageViews {
+  pageViews: number;
+  uniquePageViews: number;
+}
+
+export interface MobileCareersPageViews {
+  pageViews: number;
+  uniquePageViews: number;
+}
+
+export interface AllPageViews {
+  pageViews: number;
+  uniquePageViews: number;
+}
+
+export interface CareersPageViews {
+  pageViews: number;
+  uniquePageViews: number;
+}
+
+export interface MobileJobsPageViews {
+  pageViews: number;
+  uniquePageViews: number;
+}
+
+export interface MobileLifeAtPageViews {
+  pageViews: number;
+  uniquePageViews: number;
+}
+
+export interface DesktopJobsPageViews {
+  pageViews: number;
+  uniquePageViews: number;
+}
+
+export interface DesktopPeoplePageViews {
+  pageViews: number;
+  uniquePageViews: number;
+}
+
+export interface AboutPageViews {
+  pageViews: number;
+  uniquePageViews: number;
+}
+
+export interface DesktopAboutPageViews {
+  pageViews: number;
+  uniquePageViews: number;
+}
+
+export interface MobilePeoplePageViews {
+  pageViews: number;
+  uniquePageViews: number;
+}
+
+export interface DesktopCareersPageViews {
+  pageViews: number;
+  uniquePageViews: number;
+}
+
+export interface DesktopInsightsPageViews {
+  pageViews: number;
+  uniquePageViews: number;
+}
+
+export interface DesktopLifeAtPageViews {
+  pageViews: number;
+  uniquePageViews: number;
+}
+
+export interface MobileInsightsPageViews {
+  pageViews: number;
+  uniquePageViews: number;
+}
+
+export interface TimeRange {
+  start: number;
+  end: number;
 }

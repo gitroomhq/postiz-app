@@ -1,4 +1,5 @@
 import {
+  AnalyticsData,
   AuthTokenDetails,
   PostDetails,
   PostResponse,
@@ -32,7 +33,9 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
         'https://www.facebook.com/v20.0/dialog/oauth' +
         `?client_id=${process.env.FACEBOOK_APP_ID}` +
         `&redirect_uri=${encodeURIComponent(
-          `${process.env.FRONTEND_URL}/integrations/social/facebook${refresh ? `?refresh=${refresh}` : ''}`
+          `${process.env.FRONTEND_URL}/integrations/social/facebook${
+            refresh ? `?refresh=${refresh}` : ''
+          }`
         )}` +
         `&state=${state}` +
         '&scope=pages_show_list,business_management,pages_manage_posts,pages_manage_engagement,pages_read_engagement',
@@ -258,5 +261,38 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       },
       ...postsArray,
     ];
+  }
+
+  async analytics(
+    id: string,
+    accessToken: string,
+    date: number
+  ): Promise<AnalyticsData[]> {
+    const until = dayjs().format('YYYY-MM-DD');
+    const since = dayjs().subtract(date, 'day').format('YYYY-MM-DD');
+
+    const { data } = await (
+      await fetch(
+        `https://graph.facebook.com/v20.0/${id}/insights?metric=page_impressions_unique,page_posts_impressions_unique,page_post_engagements,page_daily_follows,page_video_views&access_token=${accessToken}&period=day&since=${since}&until=${until}`
+      )
+    ).json();
+
+    return data.map((d: any) => ({
+      label:
+        d.name === 'page_impressions_unique'
+          ? 'Page Impressions'
+          : d.name === 'page_post_engagements'
+          ? 'Posts Engagement'
+          : d.name === 'page_daily_follows'
+          ? 'Page followers'
+          : d.name === 'page_video_views'
+          ? 'Videos views'
+          : 'Posts Impressions',
+      percentageChange: 5,
+      data: d.values.map((v: any) => ({
+        total: v.value,
+        date: dayjs(v.end_time).format('YYYY-MM-DD'),
+      })),
+    }));
   }
 }

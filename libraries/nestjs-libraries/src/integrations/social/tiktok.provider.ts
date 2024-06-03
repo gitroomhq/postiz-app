@@ -73,100 +73,15 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     codeVerifier: string;
     refresh?: string;
   }) {
-    const getAccessToken = await (
-      await this.fetch(
-        'https://graph.facebook.com/v20.0/oauth/access_token' +
-          `?client_id=${process.env.FACEBOOK_APP_ID}` +
-          `&redirect_uri=${encodeURIComponent(
-            `${process.env.FRONTEND_URL}/integrations/social/facebook${
-              params.refresh ? `?refresh=${params.refresh}` : ''
-            }`
-          )}` +
-          `&client_secret=${process.env.FACEBOOK_APP_SECRET}` +
-          `&code=${params.code}`
-      )
-    ).json();
-
-    const { access_token } = await (
-      await this.fetch(
-        'https://graph.facebook.com/v20.0/oauth/access_token' +
-          '?grant_type=fb_exchange_token' +
-          `&client_id=${process.env.FACEBOOK_APP_ID}` +
-          `&client_secret=${process.env.FACEBOOK_APP_SECRET}` +
-          `&fb_exchange_token=${getAccessToken.access_token}&fields=access_token,expires_in`
-      )
-    ).json();
-
-    if (params.refresh) {
-      const information = await this.fetchPageInformation(
-        access_token,
-        params.refresh
-      );
-      return {
-        id: information.id,
-        name: information.name,
-        accessToken: information.access_token,
-        refreshToken: information.access_token,
-        expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
-        picture: information.picture,
-        username: information.username,
-      };
-    }
-
-    const {
-      id,
-      name,
-      picture: {
-        data: { url },
-      },
-    } = await (
-      await this.fetch(
-        `https://graph.facebook.com/v19.0/me?fields=id,name,picture&access_token=${access_token}`
-      )
-    ).json();
-
+    console.log(params);
     return {
-      id,
-      name,
-      accessToken: access_token,
-      refreshToken: access_token,
+      id: '',
+      name: '',
+      accessToken: '',
+      refreshToken: '',
       expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
-      picture: url,
+      picture: '',
       username: '',
-    };
-  }
-
-  async pages(accessToken: string) {
-    const { data } = await (
-      await this.fetch(
-        `https://graph.facebook.com/v20.0/me/accounts?fields=id,username,name,picture.type(large)&access_token=${accessToken}`
-      )
-    ).json();
-
-    return data;
-  }
-
-  async fetchPageInformation(accessToken: string, pageId: string) {
-    const {
-      id,
-      name,
-      access_token,
-      username,
-      picture: {
-        data: { url },
-      },
-    } = await (
-      await this.fetch(
-        `https://graph.facebook.com/v20.0/${pageId}?fields=username,access_token,name,picture.type(large)&access_token=${accessToken}`
-      )
-    ).json();
-
-    return {
-      id,
-      name,
-      access_token,
-      picture: url,
-      username,
     };
   }
 
