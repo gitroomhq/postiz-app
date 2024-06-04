@@ -108,7 +108,13 @@ export function RegisterAfter({
 
   const rootDomain = useMemo(() => {
     const url = new URL(process.env.frontendUrl!);
-    return url.protocol + '//' + url.host;
+    const hostname = url.hostname;
+    const parts = hostname.split('.');
+    if (parts.length > 2) {
+      return url.protocol + '//' + url.hostname?.replace(/^[^.]+\./, '');
+    }
+
+    return process.env.frontendUrl;
   }, []);
 
   return (
@@ -156,7 +162,7 @@ export function RegisterAfter({
             placeholder="Company"
           />
         </div>
-        <div className={clsx("text-[12px]", interClass)}>
+        <div className={clsx('text-[12px]', interClass)}>
           By registering you agree to our{' '}
           <a
             href={`${rootDomain}/terms-of-service`}
