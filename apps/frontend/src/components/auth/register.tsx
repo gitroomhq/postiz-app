@@ -105,6 +105,11 @@ export function RegisterAfter({
     }
   };
 
+  const rootDomain = useMemo(() => {
+    const url = new URL(process.env.frontendUrl!);
+    return url.protocol + '//' + url.host;
+  }, []);
+
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -150,6 +155,7 @@ export function RegisterAfter({
             placeholder="Company"
           />
         </div>
+        <div className="text-[12px]">By registering you agree to our <a href={`${rootDomain}/terms-of-service`}>Terms of Service</a> and <a href={`${rootDomain}/privacy policy`}>Privacy Policy</a></div>
         <div className="text-center mt-6">
           <div className="w-full flex">
             <Button type="submit" className="flex-1" loading={loading}>
