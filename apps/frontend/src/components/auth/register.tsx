@@ -13,6 +13,7 @@ import { useSearchParams } from 'next/navigation';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import interClass from '@gitroom/react/helpers/inter.font';
 import { isGeneral } from '@gitroom/react/helpers/is.general';
+import clsx from 'clsx';
 
 type Inputs = {
   email: string;
@@ -155,7 +156,22 @@ export function RegisterAfter({
             placeholder="Company"
           />
         </div>
-        <div className="text-[12px]">By registering you agree to our <a href={`${rootDomain}/terms-of-service`}>Terms of Service</a> and <a href={`${rootDomain}/privacy policy`}>Privacy Policy</a></div>
+        <div className={clsx("text-[12px]", interClass)}>
+          By registering you agree to our{' '}
+          <a
+            href={`${rootDomain}/terms-of-service`}
+            className="underline hover:font-bold"
+          >
+            Terms of Service
+          </a>{' '}
+          and{' '}
+          <a
+            href={`${rootDomain}/privacy-policy`}
+            className="underline hover:font-bold"
+          >
+            Privacy Policy
+          </a>
+        </div>
         <div className="text-center mt-6">
           <div className="w-full flex">
             <Button type="submit" className="flex-1" loading={loading}>
