@@ -2,13 +2,15 @@
 
 import useSWR from 'swr';
 import { useCallback, useMemo, useState } from 'react';
-import { orderBy } from 'lodash';
+import { capitalize, orderBy } from 'lodash';
 import clsx from 'clsx';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
 import Image from 'next/image';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { RenderAnalytics } from '@gitroom/frontend/components/platform-analytics/render.analytics';
 import { Select } from '@gitroom/react/form/select';
+import { Button } from '@gitroom/react/form/button';
+import { useRouter } from 'next/navigation';
 
 const allowedIntegrations = [
   'facebook',
@@ -16,11 +18,12 @@ const allowedIntegrations = [
   'linkedin-page',
   'tiktok',
   'youtube',
-  'pinterest'
+  'pinterest',
 ];
 
 export const PlatformAnalytics = () => {
   const fetch = useFetch();
+  const router = useRouter();
   const [current, setCurrent] = useState(0);
   const [key, setKey] = useState(7);
 
@@ -29,7 +32,7 @@ export const PlatformAnalytics = () => {
     return int.filter((f: any) => allowedIntegrations.includes(f.identifier));
   }, []);
 
-  const { data } = useSWR('analytics-list', load, {
+  const { data, isLoading } = useSWR('analytics-list', load, {
     fallbackData: [],
   });
 
@@ -51,9 +54,13 @@ export const PlatformAnalytics = () => {
     }
     const arr = [];
     if (
-      ['facebook', 'instagram', 'linkedin-page', 'pinterest', 'youtube'].indexOf(
-        currentIntegration.identifier
-      ) !== -1
+      [
+        'facebook',
+        'instagram',
+        'linkedin-page',
+        'pinterest',
+        'youtube',
+      ].indexOf(currentIntegration.identifier) !== -1
     ) {
       arr.push({
         key: 7,
@@ -62,9 +69,13 @@ export const PlatformAnalytics = () => {
     }
 
     if (
-      ['facebook', 'instagram', 'linkedin-page', 'pinterest', 'youtube'].indexOf(
-        currentIntegration.identifier
-      ) !== -1
+      [
+        'facebook',
+        'instagram',
+        'linkedin-page',
+        'pinterest',
+        'youtube',
+      ].indexOf(currentIntegration.identifier) !== -1
     ) {
       arr.push({
         key: 30,
@@ -73,8 +84,9 @@ export const PlatformAnalytics = () => {
     }
 
     if (
-      ['facebook', 'linkedin-page', 'pinterest', 'youtube'].indexOf(currentIntegration.identifier) !==
-      -1
+      ['facebook', 'linkedin-page', 'pinterest', 'youtube'].indexOf(
+        currentIntegration.identifier
+      ) !== -1
     ) {
       arr.push({
         key: 90,
@@ -95,6 +107,31 @@ export const PlatformAnalytics = () => {
 
     return options[0]?.key;
   }, [key, currentIntegration]);
+
+  if (isLoading) {
+    return null;
+  }
+
+  if (!sortedIntegrations.length && !isLoading) {
+    return (
+      <div className="flex flex-col items-center mt-[100px] gap-[27px] text-center">
+        <div>
+          <img src="/peoplemarketplace.svg" />
+        </div>
+        <div className="text-[48px]">
+          Can{"'"}t show analytics yet
+          <br />
+          You have to add Social Media channels
+        </div>
+        <div className="text-[20px]">
+          Supported: {allowedIntegrations.map(p => capitalize(p)).join(', ')}
+        </div>
+        <Button onClick={() => router.push('/launches')}>
+          Go to the calendar to add channels
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex gap-[30px] flex-1">
@@ -153,29 +190,31 @@ export const PlatformAnalytics = () => {
           ))}
         </div>
       </div>
-      <div className="flex-1 flex flex-col gap-[14px]">
-        <div className="max-w-[200px]">
-          <Select
-            className="bg-[#0A0B14] !border-0"
-            label=""
-            name="date"
-            disableForm={true}
-            hideErrors={true}
-            onChange={(e) => setKey(+e.target.value)}
-          >
-            {options.map((option) => (
-              <option key={option.key} value={option.key}>
-                {option.value}
-              </option>
-            ))}
-          </Select>
+      {!!options.length && (
+        <div className="flex-1 flex flex-col gap-[14px]">
+          <div className="max-w-[200px]">
+            <Select
+              className="bg-[#0A0B14] !border-0"
+              label=""
+              name="date"
+              disableForm={true}
+              hideErrors={true}
+              onChange={(e) => setKey(+e.target.value)}
+            >
+              {options.map((option) => (
+                <option key={option.key} value={option.key}>
+                  {option.value}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div className="flex-1">
+            {!!keys && !!currentIntegration && (
+              <RenderAnalytics integration={currentIntegration} date={keys} />
+            )}
+          </div>
         </div>
-        <div className="flex-1">
-          {!!keys && !!currentIntegration && (
-            <RenderAnalytics integration={currentIntegration} date={keys} />
-          )}
-        </div>
-      </div>
+      )}
     </div>
   );
 };
