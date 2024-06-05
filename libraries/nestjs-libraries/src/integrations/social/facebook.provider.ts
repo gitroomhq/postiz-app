@@ -38,7 +38,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
           }`
         )}` +
         `&state=${state}` +
-        '&scope=pages_show_list,business_management,pages_manage_posts,pages_manage_engagement,pages_read_engagement',
+        '&scope=pages_show_list,business_management,pages_manage_posts,pages_manage_engagement,pages_read_engagement,read_insights',
       codeVerifier: makeId(10),
       state,
     };

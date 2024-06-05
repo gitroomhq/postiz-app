@@ -11,6 +11,7 @@ import InstagramProvider from '@gitroom/frontend/components/launches/providers/i
 import YoutubeProvider from '@gitroom/frontend/components/launches/providers/youtube/youtube.provider';
 import TiktokProvider from '@gitroom/frontend/components/launches/providers/tiktok/tiktok.provider';
 import PinterestProvider from '@gitroom/frontend/components/launches/providers/pinterest/pinterest.provider';
+import DribbbleProvider from '@gitroom/frontend/components/launches/providers/dribbble/dribbble.provider';
 
 export const Providers = [
     {identifier: 'devto', component: DevtoProvider},
@@ -25,6 +26,7 @@ export const Providers = [
     {identifier: 'youtube', component: YoutubeProvider},
     {identifier: 'tiktok', component: TiktokProvider},
     {identifier: 'pinterest', component: PinterestProvider},
+    {identifier: 'dribbble', component: DribbbleProvider},
 ];
 
 

@@ -12,6 +12,8 @@ import FormData from 'form-data';
 import { timer } from '@gitroom/helpers/utils/timer';
 import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { DribbbleDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dribbble.dto';
+import mime from 'mime-types';
 
 export class DribbbleProvider extends SocialAbstract implements SocialProvider {
   identifier = 'dribbble';
@@ -125,151 +127,51 @@ export class DribbbleProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
-  async boards(accessToken: string) {
-    const { items } = await (
-      await this.fetch('https://api-sandbox.pinterest.com/v5/boards', {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-    ).json();
-
-    return (
-      items?.map((item: any) => ({
-        name: item.name,
-        id: item.id,
-      })) || []
-    );
-  }
-
   async post(
     id: string,
     accessToken: string,
-    postDetails: PostDetails<PinterestSettingsDto>[]
+    postDetails: PostDetails<DribbbleDto>[]
   ): Promise<PostResponse[]> {
-    let mediaId = '';
-    const findMp4 = postDetails?.[0]?.media?.find(
-      (p) => (p.path?.indexOf('mp4') || -1) > -1
-    );
-    const picture = postDetails?.[0]?.media?.find(
-      (p) => (p.path?.indexOf('mp4') || -1) === -1
-    );
-
-    if (findMp4) {
-      const { upload_url, media_id, upload_parameters } = await (
-        await this.fetch('https://api-sandbox.pinterest.com/v5/media', {
-          method: 'POST',
-          body: JSON.stringify({
-            media_type: 'video',
-          }),
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${accessToken}`,
-          },
-        })
-      ).json();
-
-      const { data, status } = await axios.get(
-        postDetails?.[0]?.media?.[0]?.url!,
-        {
-          responseType: 'stream',
-        }
-      );
-
-      const formData = Object.keys(upload_parameters)
-        .filter((f) => f)
-        .reduce((acc, key) => {
-          acc.append(key, upload_parameters[key]);
-          return acc;
-        }, new FormData());
-
-      formData.append('file', data);
-      await axios.post(upload_url, formData);
-
-      let statusCode = '';
-      while (statusCode !== 'succeeded') {
-        console.log('trying');
-        const mediafile = await (
-          await this.fetch(
-            'https://api-sandbox.pinterest.com/v5/media/' + media_id,
-            {
-              method: 'GET',
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-              },
-            }
-          )
-        ).json();
-
-        await timer(3000);
-        statusCode = mediafile.status;
+    const { data, status } = await axios.get(
+      postDetails?.[0]?.media?.[0]?.url!,
+      {
+        responseType: 'stream',
       }
+    );
 
-      mediaId = media_id;
-    }
+    const slash = postDetails?.[0]?.media?.[0]?.url.split('/').at(-1);
 
-    const mapImages = postDetails?.[0]?.media?.map((m) => ({
-      url: m.url,
-    }));
+    const formData = new FormData();
+    formData.append('image', data, {
+      filename: slash,
+      contentType: mime.lookup(slash!) || '',
+    });
 
-    try {
-      const {
-        id: pId,
-        link,
-        ...all
-      } = await (
-        await this.fetch('https://api-sandbox.pinterest.com/v5/pins', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            ...(postDetails?.[0]?.settings.link
-              ? { link: postDetails?.[0]?.settings.link }
-              : {}),
-            ...(postDetails?.[0]?.settings.title
-              ? { title: postDetails?.[0]?.settings.title }
-              : {}),
-            ...(postDetails?.[0]?.settings.description
-              ? { title: postDetails?.[0]?.settings.description }
-              : {}),
-            ...(postDetails?.[0]?.settings.dominant_color
-              ? { title: postDetails?.[0]?.settings.dominant_color }
-              : {}),
-            board_id: postDetails?.[0]?.settings.board,
-            media_source: mediaId
-              ? {
-                  source_type: 'video_id',
-                  media_id: mediaId,
-                  cover_image_url: picture?.url,
-                }
-              : mapImages?.length === 1
-              ? {
-                  source_type: 'image_url',
-                  url: mapImages?.[0]?.url,
-                }
-              : {
-                  source_type: 'multiple_image_urls',
-                  items: mapImages,
-                },
-          }),
-        })
-      ).json();
+    formData.append('title', postDetails[0].settings.title);
+    formData.append('description', postDetails[0].message);
 
-      return [
-        {
-          id: postDetails?.[0]?.id,
-          postId: pId,
-          releaseURL: `https://www.pinterest.com/pin/${pId}`,
-          status: 'success',
+    const data2 = await axios.post(
+      'https://api.dribbble.com/v2/shots',
+      formData,
+      {
+        headers: {
+          ...formData.getHeaders(),
+          Authorization: `Bearer ${accessToken}`,
         },
-      ];
-    } catch (err) {
-      console.log(err);
-      return [];
-    }
+      }
+    );
+
+    const location = data2.headers['location'];
+    const newId = location.split('/').at(-1);
+
+    return [
+      {
+        id: postDetails?.[0]?.id,
+        status: 'completed',
+        postId: newId,
+        releaseURL: `https://dribbble.com/shots/${newId}`,
+      },
+    ];
   }
 
   analytics(
