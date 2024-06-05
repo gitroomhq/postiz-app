@@ -50,6 +50,7 @@ model User {
   updatedAt     DateTime           @updatedAt
   lastReadNotifications DateTime   @default(now())
   inviteId      String?
+  activated     Boolean            @default(true)
   items         ItemUser[]
   marketplace   Boolean            @default(true)
   account       String?

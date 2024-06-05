@@ -9,7 +9,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
 import { GithubProvider } from '@gitroom/frontend/components/auth/providers/github.provider';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import interClass from '@gitroom/react/helpers/inter.font';
 import { isGeneral } from '@gitroom/react/helpers/is.general';
@@ -73,6 +73,7 @@ export function RegisterAfter({
 }) {
   const [loading, setLoading] = useState(false);
   const getQuery = useSearchParams();
+  const router = useRouter();
 
   const isAfterProvider = useMemo(() => {
     return !!token && !!provider;
@@ -104,6 +105,12 @@ export function RegisterAfter({
       });
 
       setLoading(false);
+    }
+
+    console.log(register.headers.get('activate'), register.headers.get('Activate'));
+
+    if (register.headers.get('activate')) {
+      router.push('/auth/activate');
     }
   };
 

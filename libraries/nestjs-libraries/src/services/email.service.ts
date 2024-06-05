@@ -10,8 +10,8 @@ export class EmailService {
       console.log('No Resend API Key found, skipping email sending');
       return;
     }
-    await resend.emails.send({
-      from: process.env.IS_GENERAL === 'true' ? 'Nevo <nevo@postiz.com>' : 'Nevo <nevo@gitroom.com>',
+    const sends = await resend.emails.send({
+      from: process.env.IS_GENERAL === 'true' ? 'Nevo <nevo@gitroom.com>' : 'Nevo <nevo@gitroom.com>',
       to,
       subject,
       html,

@@ -44,7 +44,7 @@ export function Login() {
 
     if (login.status === 400) {
       form.setError('email', {
-        message: 'Invalid email or password',
+        message: await login.text(),
       });
 
       setLoading(false);

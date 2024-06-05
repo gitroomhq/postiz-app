@@ -36,8 +36,11 @@ export class AuthMiddleware implements NestMiddleware {
       const orgHeader = req.cookies.showorg || req.headers.showorg;
 
       if (!user) {
-        removeAuth(res);
-        res.status(401).send('Unauthorized');
+        throw new HttpForbiddenException();
+      }
+
+      if (!user.activated) {
+        throw new HttpForbiddenException();
       }
 
       if (user?.isSuperAdmin && req.cookies.impersonate) {

@@ -30,6 +30,12 @@ export class AuthController {
         getOrgFromCookie
       );
 
+      if (body.provider === 'LOCAL') {
+        response.header('activate', 'true');
+        response.status(200).json({ activate: true });
+        return;
+      }
+
       response.cookie('auth', jwt, {
         domain:
           '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
@@ -130,6 +136,29 @@ export class AuthController {
   @Get('/oauth/:provider')
   async oauthLink(@Param('provider') provider: string) {
     return this._authService.oauthLink(provider);
+  }
+
+  @Post('/activate')
+  async activate(
+    @Body('code') code: string,
+    @Res({ passthrough: true }) response: Response
+  ) {
+    const activate = await this._authService.activate(code);
+    if (!activate) {
+      return response.status(200).send({ can: false });
+    }
+
+    response.cookie('auth', activate, {
+      domain:
+        '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
+      secure: true,
+      httpOnly: true,
+      sameSite: 'none',
+      expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
+    });
+
+    response.header('onboarding', 'true');
+    return response.status(200).send({ can: true });
   }
 
   @Post('/oauth/:provider/exists')

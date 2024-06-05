@@ -64,6 +64,17 @@ export class UsersRepository {
     });
   }
 
+  activateUser(id: string) {
+    return this._user.model.user.update({
+      where: {
+        id,
+      },
+      data: {
+        activated: true,
+      },
+    });
+  }
+
   getUserByProvider(providerId: string, provider: Provider) {
     return this._user.model.user.findFirst({
       where: {
