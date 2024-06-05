@@ -413,6 +413,7 @@ enum Period {
 enum Provider {
   LOCAL
   GITHUB
+  GOOGLE
 }
 
 enum Role {

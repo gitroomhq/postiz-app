@@ -8,12 +8,13 @@ import { Input } from '@gitroom/react/form/input';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
-import { GithubProvider } from '@gitroom/frontend/app/auth/providers/github.provider';
+import { GithubProvider } from '@gitroom/frontend/components/auth/providers/github.provider';
 import { useSearchParams } from 'next/navigation';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import interClass from '@gitroom/react/helpers/inter.font';
 import { isGeneral } from '@gitroom/react/helpers/is.general';
 import clsx from 'clsx';
+import { GoogleProvider } from '@gitroom/frontend/components/auth/providers/google.provider';
 
 type Inputs = {
   email: string;
@@ -125,8 +126,8 @@ export function RegisterAfter({
             Sign Up
           </h1>
         </div>
-        {!isAfterProvider && !isGeneral() && <GithubProvider />}
-        {!isAfterProvider && !isGeneral() && (
+        {!isAfterProvider && (!isGeneral() ? <GithubProvider /> : <GoogleProvider />)}
+        {!isAfterProvider && (
           <div className="h-[20px] mb-[24px] mt-[24px] relative">
             <div className="absolute w-full h-[1px] bg-[#28344F] top-[50%] -translate-y-[50%]" />
             <div
