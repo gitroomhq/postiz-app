@@ -11,7 +11,7 @@ export class EmailService {
       return;
     }
     const sends = await resend.emails.send({
-      from: process.env.IS_GENERAL === 'true' ? 'Nevo <nevo@gitroom.com>' : 'Nevo <nevo@gitroom.com>',
+      from: process.env.IS_GENERAL === 'true' ? 'Nevo <nevo@postiz.com>' : 'Nevo <nevo@gitroom.com>',
       to,
       subject,
       html,
