@@ -92,7 +92,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
           'https://www.googleapis.com/auth/yt-analytics.readonly',
         ],
       }),
-      codeVerifier: makeId(10),
+      codeVerifier: makeId(11),
       state,
     };
   }
