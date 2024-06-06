@@ -13,6 +13,7 @@ import clsx from 'clsx';
 import interClass from '@gitroom/react/helpers/inter.font';
 import { VideoFrame } from '@gitroom/react/helpers/video.frame';
 import { useToaster } from '@gitroom/react/toaster/toaster';
+import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 const showModalEmitter = new EventEmitter();
 
 export const ShowMediaBoxModal: FC = () => {
@@ -60,6 +61,7 @@ export const MediaBox: FC<{
   const fetch = useFetch();
   const mediaDirectory = useMediaDirectory();
   const toaster = useToaster();
+  const [loading, setLoading] = useState(false);
 
   const loadMedia = useCallback(async () => {
     return (await fetch('/media')).json();
@@ -76,18 +78,22 @@ export const MediaBox: FC<{
         !file?.target?.files?.length ||
         file?.target?.files?.[0]?.size > maxFileSize
       ) {
-        toaster.show(`Maximum file size ${maxFileSize / 1024 / 1024}mb`, 'warning');
+        toaster.show(
+          `Maximum file size ${maxFileSize / 1024 / 1024}mb`,
+          'warning'
+        );
         return;
       }
       const formData = new FormData();
       formData.append('file', file?.target?.files?.[0]);
+      setLoading(true);
       const data = await (
         await fetch('/media', {
           method: 'POST',
           body: formData,
         })
       ).json();
-
+      setLoading(false);
       setListMedia([...mediaList, data]);
     },
     [mediaList]
@@ -247,6 +253,13 @@ export const MediaBox: FC<{
                 )}
               </div>
             ))}
+          {loading && (
+            <div className="w-[200px] h-[200px] flex border-tableBorder border-2 cursor-pointer relative">
+              <div className="absolute left-0 top-0 w-full h-full -mt-[50px] flex justify-center items-center">
+                <LoadingComponent />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
