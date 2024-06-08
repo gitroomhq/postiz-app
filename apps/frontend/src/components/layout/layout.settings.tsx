@@ -50,6 +50,7 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
   return (
     <ContextWrapper user={user}>
       <CopilotKit
+        credentials="include"
         runtimeUrl={process.env.NEXT_PUBLIC_BACKEND_URL + '/copilot/chat'}
       >
         <MantineWrapper>

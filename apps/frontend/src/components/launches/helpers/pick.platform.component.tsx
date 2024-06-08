@@ -145,6 +145,7 @@ export const PickPlatforms: FC<{
   const handler = useCallback(
     async ({ integrationId }: { integrationId: string }) => {
       const findIntegration = integrations.find((p) => p.id === integrationId)!;
+      console.log(findIntegration);
       await addPlatform(findIntegration)();
     },
     [selectedAccounts, integrations, selectedAccounts]
