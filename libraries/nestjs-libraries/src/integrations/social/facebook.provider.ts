@@ -277,7 +277,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       )
     ).json();
 
-    return data.map((d: any) => ({
+    return data?.map((d: any) => ({
       label:
         d.name === 'page_impressions_unique'
           ? 'Page Impressions'
@@ -289,10 +289,10 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
           ? 'Videos views'
           : 'Posts Impressions',
       percentageChange: 5,
-      data: d.values.map((v: any) => ({
+      data: d?.values?.map((v: any) => ({
         total: v.value,
         date: dayjs(v.end_time).format('YYYY-MM-DD'),
       })),
-    }));
+    })) || [];
   }
 }
