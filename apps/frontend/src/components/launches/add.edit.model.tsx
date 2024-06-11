@@ -459,7 +459,7 @@ export const AddEditModal: FC<{
                             />
                           </svg>
                         </div>
-                        <div>Add post</div>
+                        <div>Add Comment</div>
                       </Button>
                     </div>
                   </Fragment>
