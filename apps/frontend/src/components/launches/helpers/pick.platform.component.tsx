@@ -56,15 +56,17 @@ export const PickPlatforms: FC<{
     checkLeftRight();
   }, [selectedIntegrations, integrations]);
 
-  useMoveToIntegrationListener([integrations], props.singleSelect, (identifier) => {
-    const findIntegration = integrations.find(
-      (p) => p.id === identifier
-    );
+  useMoveToIntegrationListener(
+    [integrations],
+    props.singleSelect,
+    (identifier) => {
+      const findIntegration = integrations.find((p) => p.id === identifier);
 
-    if (findIntegration) {
-      addPlatform(findIntegration)();
+      if (findIntegration) {
+        addPlatform(findIntegration)();
+      }
     }
-  });
+  );
 
   const addPlatform = useCallback(
     (integration: Integrations) => async () => {
@@ -102,7 +104,9 @@ export const PickPlatforms: FC<{
   }
 
   return (
-    <div className={clsx('flex select-none', props.singleSelect && 'gap-[10px]')}>
+    <div
+      className={clsx('flex select-none', props.singleSelect && 'gap-[10px]')}
+    >
       {props.singleSelect && (
         <div className="flex items-center">
           {isLeft && (
@@ -138,75 +142,81 @@ export const PickPlatforms: FC<{
         >
           <div className="innerComponent">
             <div className="flex">
-              {integrations.filter(f => !f.inBetweenSteps).map((integration) =>
-                !props.singleSelect ? (
-                  <div
-                    key={integration.id}
-                    className="flex gap-[8px] items-center mr-[10px]"
-                  >
+              {integrations
+                .filter((f) => !f.inBetweenSteps)
+                .map((integration) =>
+                  !props.singleSelect ? (
                     <div
-                      onClick={addPlatform(integration)}
-                      className={clsx(
-                        'cursor-pointer relative w-[34px] h-[34px] rounded-full flex justify-center items-center bg-fifth filter transition-all duration-500',
-                        selectedAccounts.findIndex(
-                          (p) => p.id === integration.id
-                        ) === -1
-                          ? 'opacity-40'
-                          : ''
-                      )}
+                      key={integration.id}
+                      className="flex gap-[8px] items-center mr-[10px]"
                     >
-                      <img
-                        src={integration.picture}
-                        className="rounded-full"
-                        alt={integration.identifier}
-                        width={32}
-                        height={32}
-                      />
-                      <Image
-                        src={`/icons/platforms/${integration.identifier}.png`}
-                        className="rounded-full absolute z-10 -bottom-[5px] -right-[5px] border border-fifth"
-                        alt={integration.identifier}
-                        width={20}
-                        height={20}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div key={integration.id} className="">
-                    <div
-                      onClick={addPlatform(integration)}
-                      className={clsx(
-                        'cursor-pointer rounded-[50px] w-[200px] relative h-[40px] flex justify-center items-center bg-fifth filter transition-all duration-500',
-                        selectedAccounts.findIndex(
-                          (p) => p.id === integration.id
-                        ) === -1
-                          ? 'bg-third border border-third'
-                          : 'bg-[#291259] border border-[#5826C2]'
-                      )}
-                    >
-                      <div className="flex items-center justify-center gap-[10px]">
-                        <div className="relative">
-                          <img
-                            src={integration.picture}
-                            className="rounded-full"
-                            alt={integration.identifier}
-                            width={24}
-                            height={24}
-                          />
+                      <div
+                        onClick={addPlatform(integration)}
+                        className={clsx(
+                          'cursor-pointer relative w-[34px] h-[34px] rounded-full flex justify-center items-center bg-fifth filter transition-all duration-500',
+                          selectedAccounts.findIndex(
+                            (p) => p.id === integration.id
+                          ) === -1
+                            ? 'opacity-40'
+                            : ''
+                        )}
+                      >
+                        <Image
+                          src={integration.picture}
+                          className="rounded-full"
+                          alt={integration.identifier}
+                          width={32}
+                          height={32}
+                        />
+                        {integration.identifier === 'youtube' ? (
+                          <img src="/icons/platforms/youtube.svg" className="absolute z-10 -bottom-[5px] -right-[5px]" width={20} />
+                        ) : (
                           <Image
                             src={`/icons/platforms/${integration.identifier}.png`}
                             className="rounded-full absolute z-10 -bottom-[5px] -right-[5px] border border-fifth"
                             alt={integration.identifier}
-                            width={15}
-                            height={15}
+                            width={20}
+                            height={20}
                           />
-                        </div>
-                        <div>{integration.name}</div>
+                        )}
                       </div>
                     </div>
-                  </div>
-                )
-              )}
+                  ) : (
+                    <div key={integration.id} className="">
+                      <div
+                        onClick={addPlatform(integration)}
+                        className={clsx(
+                          'cursor-pointer rounded-[50px] w-[200px] relative h-[40px] flex justify-center items-center bg-fifth filter transition-all duration-500',
+                          selectedAccounts.findIndex(
+                            (p) => p.id === integration.id
+                          ) === -1
+                            ? 'bg-third border border-third'
+                            : 'bg-[#291259] border border-[#5826C2]'
+                        )}
+                      >
+                        <div className="flex items-center justify-center gap-[10px]">
+                          <div className="relative">
+                            <img
+                              src={integration.picture}
+                              className="rounded-full"
+                              alt={integration.identifier}
+                              width={24}
+                              height={24}
+                            />
+                            <Image
+                              src={`/icons/platforms/${integration.identifier}.png`}
+                              className="rounded-full absolute z-10 -bottom-[5px] -right-[5px] border border-fifth"
+                              alt={integration.identifier}
+                              width={15}
+                              height={15}
+                            />
+                          </div>
+                          <div>{integration.name}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                )}
             </div>
           </div>
         </div>

@@ -148,13 +148,21 @@ export const LaunchesComponent = () => {
                         width={32}
                         height={32}
                       />
-                      <Image
-                        src={`/icons/platforms/${integration.identifier}.png`}
-                        className="rounded-full absolute z-10 -bottom-[5px] -right-[5px] border border-fifth"
-                        alt={integration.identifier}
-                        width={20}
-                        height={20}
-                      />
+                      {integration.identifier === 'youtube' ? (
+                        <img
+                          src="/icons/platforms/youtube.svg"
+                          className="absolute z-10 -bottom-[5px] -right-[5px]"
+                          width={20}
+                        />
+                      ) : (
+                        <Image
+                          src={`/icons/platforms/${integration.identifier}.png`}
+                          className="rounded-full absolute z-10 -bottom-[5px] -right-[5px] border border-fifth"
+                          alt={integration.identifier}
+                          width={20}
+                          height={20}
+                        />
+                      )}
                     </div>
                     <div
                       {...(integration.disabled &&

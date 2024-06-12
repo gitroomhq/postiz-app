@@ -8,8 +8,7 @@ import {
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library/build/src/auth/oauth2client';
-import * as console from 'node:console';
-import axios, { all } from 'axios';
+import axios from 'axios';
 import { YoutubeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/youtube.settings.dto';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import * as process from 'node:process';
@@ -45,7 +44,7 @@ const clientAndYoutube = () => {
 
 export class YoutubeProvider extends SocialAbstract implements SocialProvider {
   identifier = 'youtube';
-  name = 'Youtube';
+  name = 'YouTube';
   isBetweenSteps = false;
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
@@ -152,14 +151,18 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
             title: settings.title,
             description: firstPost?.message,
             tags: settings.tags.map((p) => p.label),
-            thumbnails: {
-              default: {
-                url: settings?.thumbnail?.path,
-              },
-            },
+            ...(settings?.thumbnail?.path
+              ? {
+                  thumbnails: {
+                    default: {
+                      url: settings?.thumbnail?.path,
+                    },
+                  },
+                }
+              : {}),
           },
           status: {
-            privacyStatus: 'public',
+            privacyStatus: settings.type,
           },
         },
         media: {
@@ -167,7 +170,12 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
         },
       });
 
-      console.log(all);
+      return [{
+        id: firstPost.id,
+        releaseURL: `https://www.youtube.com/watch?v=${all.data.id}`,
+        postId: all?.data?.id!,
+        status: 'success',
+      }];
     } catch (err) {
       console.log(err);
     }
