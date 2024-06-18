@@ -173,14 +173,14 @@ export function RegisterAfter({
         <div className={clsx('text-[12px]', interClass)}>
           By registering you agree to our{' '}
           <a
-            href={`${rootDomain}/terms-of-service`}
+            href={`${rootDomain}/terms`}
             className="underline hover:font-bold"
           >
             Terms of Service
           </a>{' '}
           and{' '}
           <a
-            href={`${rootDomain}/privacy-policy`}
+            href={`${rootDomain}/privacy`}
             className="underline hover:font-bold"
           >
             Privacy Policy
