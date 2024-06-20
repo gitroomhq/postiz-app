@@ -5,11 +5,48 @@ import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { ItemsDto } from '@gitroom/nestjs-libraries/dtos/marketplace/items.dto';
 import { allTagsOptions } from '@gitroom/nestjs-libraries/database/prisma/marketplace/tags.list';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
-import { NewConversationDto } from '@gitroom/nestjs-libraries/dtos/marketplace/new.conversation.dto';
 
 @Injectable()
 export class UsersRepository {
   constructor(private _user: PrismaRepository<'user'>) {}
+
+  getImpersonateUser(name: string) {
+    return this._user.model.user.findMany({
+      where: {
+        OR: [
+          {
+            name: {
+              contains: name,
+            },
+          },
+          {
+            email: {
+              contains: name,
+            },
+          },
+          {
+            id: {
+              contains: name,
+            },
+          },
+        ],
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+      take: 10,
+    });
+  }
+
+  getUserById(id: string) {
+    return this._user.model.user.findFirst({
+      where: {
+        id,
+      },
+    });
+  }
 
   getUserByEmail(email: string) {
     return this._user.model.user.findFirst({
@@ -23,6 +60,17 @@ export class UsersRepository {
             path: true,
           },
         },
+      },
+    });
+  }
+
+  activateUser(id: string) {
+    return this._user.model.user.update({
+      where: {
+        id,
+      },
+      data: {
+        activated: true,
       },
     });
   }

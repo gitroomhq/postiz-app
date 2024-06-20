@@ -104,20 +104,8 @@ export const Features: FC<{
       list.push(`Unlimited team members`);
     }
 
-    if (currentPricing.import_from_channels) {
-      list.push(`Import content from channels (coming soon)`);
-    }
-
-    if (currentPricing.community_features) {
-      list.push(`Community features (coming soon)`);
-    }
-
     if (currentPricing.ai) {
-      list.push(`AI auto-complete (coming soon)`);
-    }
-
-    if (currentPricing.featured_by_gitroom) {
-      list.push(`Become featured by Gitroom (coming soon)`);
+      list.push(`AI auto-complete`);
     }
 
     return list;

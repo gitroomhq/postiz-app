@@ -9,13 +9,23 @@ import { MediumProvider } from '@gitroom/nestjs-libraries/integrations/article/m
 import { ArticleProvider } from '@gitroom/nestjs-libraries/integrations/article/article.integrations.interface';
 import { FacebookProvider } from '@gitroom/nestjs-libraries/integrations/social/facebook.provider';
 import { InstagramProvider } from '@gitroom/nestjs-libraries/integrations/social/instagram.provider';
+import { YoutubeProvider } from '@gitroom/nestjs-libraries/integrations/social/youtube.provider';
+import { TiktokProvider } from '@gitroom/nestjs-libraries/integrations/social/tiktok.provider';
+import { PinterestProvider } from '@gitroom/nestjs-libraries/integrations/social/pinterest.provider';
+import { DribbbleProvider } from '@gitroom/nestjs-libraries/integrations/social/dribbble.provider';
+import { LinkedinPageProvider } from '@gitroom/nestjs-libraries/integrations/social/linkedin.page.provider';
 
 const socialIntegrationList = [
-  new XProvider(),
+  ...(process.env.IS_GENERAL !== 'true' ? [new XProvider()] : []),
   new LinkedinProvider(),
+  new LinkedinPageProvider(),
   new RedditProvider(),
   new FacebookProvider(),
   new InstagramProvider(),
+  new YoutubeProvider(),
+  new TiktokProvider(),
+  new PinterestProvider(),
+  new DribbbleProvider(),
 ];
 
 const articleIntegrationList = [

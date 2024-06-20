@@ -69,7 +69,8 @@ export const EditorWrapper: FC<{ children: ReactNode }> = ({ children }) => {
 export const withProvider = (
   SettingsComponent: FC | null,
   PreviewComponent: FC,
-  dto?: any
+  dto?: any,
+  checkValidity?: (value: Array<Array<{path: string}>>) => Promise<string|true>
 ) => {
   return (props: {
     identifier: string;
@@ -124,7 +125,8 @@ export const withProvider = (
       props.id,
       props.identifier,
       editInPlace ? InPlaceValue : props.value,
-      dto
+      dto,
+      checkValidity
     );
 
     // change editor value

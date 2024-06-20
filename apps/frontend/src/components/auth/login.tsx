@@ -8,7 +8,7 @@ import { Input } from '@gitroom/react/form/input';
 import { useMemo, useState } from 'react';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { LoginUserDto } from '@gitroom/nestjs-libraries/dtos/auth/login.user.dto';
-import { GithubProvider } from '@gitroom/frontend/app/auth/providers/github.provider';
+import { GithubProvider } from '@gitroom/frontend/components/auth/providers/github.provider';
 import interClass from '@gitroom/react/helpers/inter.font';
 import { isGeneral } from '@gitroom/react/helpers/is.general';
 
@@ -44,7 +44,7 @@ export function Login() {
 
     if (login.status === 400) {
       form.setError('email', {
-        message: 'Invalid email or password',
+        message: await login.text(),
       });
 
       setLoading(false);

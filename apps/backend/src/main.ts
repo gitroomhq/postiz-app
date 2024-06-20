@@ -7,13 +7,14 @@ import {Logger, ValidationPipe} from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import {SubscriptionExceptionFilter} from "@gitroom/backend/services/auth/permissions/subscription.exception";
+import { HttpExceptionFilter } from '@gitroom/nestjs-libraries/services/exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     rawBody: true,
     cors: {
       credentials: true,
-      exposedHeaders: ['reload', 'onboarding'],
+      exposedHeaders: ['reload', 'onboarding', 'activate'],
       origin: [process.env.FRONTEND_URL],
     }
   });
@@ -24,6 +25,7 @@ async function bootstrap() {
 
   app.use(cookieParser());
   app.useGlobalFilters(new SubscriptionExceptionFilter());
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   loadSwagger(app);
 

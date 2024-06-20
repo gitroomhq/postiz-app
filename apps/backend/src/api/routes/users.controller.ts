@@ -4,6 +4,7 @@ import {
   Get,
   HttpException,
   Post,
+  Query,
   Req,
   Res,
 } from '@nestjs/common';
@@ -12,7 +13,7 @@ import { Organization, User } from '@prisma/client';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
-import { Response } from 'express';
+import { Response, Request } from 'express';
 import { AuthService } from '@gitroom/backend/services/auth/auth.service';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
@@ -25,6 +26,7 @@ import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions
 import { ApiTags } from '@nestjs/swagger';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
+import { HttpForbiddenException } from '@gitroom/nestjs-libraries/services/exception.filter';
 
 @ApiTags('User')
 @Controller('/user')
@@ -39,10 +41,11 @@ export class UsersController {
   @Get('/self')
   async getSelf(
     @GetUserFromRequest() user: User,
-    @GetOrgFromRequest() organization: Organization
+    @GetOrgFromRequest() organization: Organization,
+    @Req() req: Request,
   ) {
     if (!organization) {
-      throw new HttpException('Organization not found', 401);
+      throw new HttpForbiddenException();
     }
 
     return {
@@ -56,12 +59,46 @@ export class UsersController {
       role: organization?.users[0]?.role,
       // @ts-ignore
       isLifetime: !!organization?.subscription?.isLifetime,
+      admin: !!user.isSuperAdmin,
+      impersonate: !!req.cookies.impersonate,
     };
   }
 
   @Get('/personal')
   async getPersonal(@GetUserFromRequest() user: User) {
     return this._userService.getPersonal(user.id);
+  }
+
+  @Get('/impersonate')
+  async getImpersonate(
+    @GetUserFromRequest() user: User,
+    @Query('name') name: string
+  ) {
+    if (!user.isSuperAdmin) {
+      throw new HttpException('Unauthorized', 400);
+    }
+
+    return this._userService.getImpersonateUser(name);
+  }
+
+  @Post('/impersonate')
+  async setImpersonate(
+    @GetUserFromRequest() user: User,
+    @Body('id') id: string,
+    @Res({ passthrough: true }) response: Response
+  ) {
+    if (!user.isSuperAdmin) {
+      throw new HttpException('Unauthorized', 400);
+    }
+
+    response.cookie('impersonate', id, {
+      domain:
+        '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
+      secure: true,
+      httpOnly: true,
+      sameSite: 'none',
+      expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
+    });
   }
 
   @Post('/personal')
@@ -132,6 +169,41 @@ export class UsersController {
       httpOnly: true,
       sameSite: 'none',
       expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
+    });
+
+    response.status(200).send();
+  }
+
+  @Post('/logout')
+  logout(@Res({ passthrough: true }) response: Response) {
+    response.cookie('auth', '', {
+      domain:
+        '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
+      secure: true,
+      httpOnly: true,
+      maxAge: -1,
+      expires: new Date(0),
+      sameSite: 'none',
+    });
+
+    response.cookie('showorg', '', {
+      domain:
+        '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
+      secure: true,
+      httpOnly: true,
+      maxAge: -1,
+      expires: new Date(0),
+      sameSite: 'none',
+    });
+
+    response.cookie('impersonate', '', {
+      domain:
+        '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
+      secure: true,
+      httpOnly: true,
+      maxAge: -1,
+      expires: new Date(0),
+      sameSite: 'none',
     });
 
     response.status(200).send();

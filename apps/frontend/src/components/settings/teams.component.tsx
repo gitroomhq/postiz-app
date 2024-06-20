@@ -189,7 +189,7 @@ export const TeamsComponent = () => {
       <h2 className="text-[24px] mb-[24px]">Team Members</h2>
       <h3 className="text-[20px]">Account Managers</h3>
       <div className="text-[#AAA] mt-[4px]">
-        Invite your assistant or team member to manage your Gitroom account
+        Invite your assistant or team member to manage your account
       </div>
       <div className="my-[16px] mt-[16px] bg-sixth border-fifth border rounded-[4px] p-[24px] flex flex-col gap-[24px]">
         <div className="flex flex-col gap-[16px]">

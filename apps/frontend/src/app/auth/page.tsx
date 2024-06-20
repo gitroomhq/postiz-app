@@ -1,10 +1,12 @@
+import { isGeneral } from '@gitroom/react/helpers/is.general';
+
 export const dynamic = 'force-dynamic';
 
 import { Register } from '@gitroom/frontend/components/auth/register';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Gitroom Register',
+  title: `${isGeneral() ? 'Postiz' : 'Gitroom'} Register`,
   description: '',
 };
 

@@ -8,8 +8,9 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { RedditSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/reddit.dto';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { groupBy } from 'lodash';
+import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
-export class RedditProvider implements SocialProvider {
+export class RedditProvider extends SocialAbstract implements SocialProvider {
   identifier = 'reddit';
   name = 'Reddit';
   isBetweenSteps = false;
@@ -20,7 +21,7 @@ export class RedditProvider implements SocialProvider {
       refresh_token: newRefreshToken,
       expires_in: expiresIn,
     } = await (
-      await fetch('https://www.reddit.com/api/v1/access_token', {
+      await this.fetch('https://www.reddit.com/api/v1/access_token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -36,7 +37,7 @@ export class RedditProvider implements SocialProvider {
     ).json();
 
     const { name, id, icon_img } = await (
-      await fetch('https://oauth.reddit.com/api/v1/me', {
+      await this.fetch('https://oauth.reddit.com/api/v1/me', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -77,7 +78,7 @@ export class RedditProvider implements SocialProvider {
       refresh_token: refreshToken,
       expires_in: expiresIn,
     } = await (
-      await fetch('https://www.reddit.com/api/v1/access_token', {
+      await this.fetch('https://www.reddit.com/api/v1/access_token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -94,7 +95,7 @@ export class RedditProvider implements SocialProvider {
     ).json();
 
     const { name, id, icon_img } = await (
-      await fetch('https://oauth.reddit.com/api/v1/me', {
+      await this.fetch('https://oauth.reddit.com/api/v1/me', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -126,7 +127,7 @@ export class RedditProvider implements SocialProvider {
           data: { id, name, url },
         },
       } = await (
-        await fetch('https://oauth.reddit.com/api/submit', {
+        await this.fetch('https://oauth.reddit.com/api/submit', {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -181,7 +182,7 @@ export class RedditProvider implements SocialProvider {
             },
           },
         } = await (
-          await fetch('https://oauth.reddit.com/api/comment', {
+          await this.fetch('https://oauth.reddit.com/api/comment', {
             method: 'POST',
             headers: {
               Authorization: `Bearer ${accessToken}`,
@@ -226,7 +227,7 @@ export class RedditProvider implements SocialProvider {
     const {
       data: { children },
     } = await (
-      await fetch(
+      await this.fetch(
         `https://oauth.reddit.com/subreddits/search?show=public&q=${data.word}&sort=activity&show_users=false&limit=10`,
         {
           method: 'GET',
@@ -271,7 +272,7 @@ export class RedditProvider implements SocialProvider {
     const {
       data: { submission_type, allow_images },
     } = await (
-      await fetch(`https://oauth.reddit.com/${data.subreddit}/about`, {
+      await this.fetch(`https://oauth.reddit.com/${data.subreddit}/about`, {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -281,7 +282,7 @@ export class RedditProvider implements SocialProvider {
     ).json();
 
     const { is_flair_required } = await (
-      await fetch(
+      await this.fetch(
         `https://oauth.reddit.com/api/v1/${
           data.subreddit.split('/r/')[1]
         }/post_requirements`,
@@ -296,7 +297,7 @@ export class RedditProvider implements SocialProvider {
     ).json();
 
     const newData = await (
-      await fetch(
+      await this.fetch(
         `https://oauth.reddit.com/${data.subreddit}/api/link_flair_v2`,
         {
           method: 'GET',

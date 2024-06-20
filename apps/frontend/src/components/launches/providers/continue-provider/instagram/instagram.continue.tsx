@@ -13,15 +13,23 @@ export const InstagramContinue: FC<{
   const { closeModal, existingId } = props;
   const call = useCustomProviderFunction();
   const { integration } = useIntegration();
-  const [page, setSelectedPage] = useState<null | {id: string, pageId: string}>(null);
+  const [page, setSelectedPage] = useState<null | {
+    id: string;
+    pageId: string;
+  }>(null);
   const fetch = useFetch();
 
-  const loadPages = useCallback(() => {
-    return call.get('pages');
+  const loadPages = useCallback(async () => {
+    try {
+      const pages = await call.get('pages');
+      return pages;
+    } catch (e) {
+      closeModal();
+    }
   }, []);
 
   const setPage = useCallback(
-    (param: {id: string, pageId: string}) => () => {
+    (param: { id: string; pageId: string }) => () => {
       setSelectedPage(param);
     },
     []

@@ -181,7 +181,6 @@ export const linkedinCompany = (identifier: string, id: string): ICommand[] => {
         const state1 = api.setSelectionRange(newSelectionRange);
         const media = await showPostSelector(id);
 
-        console.log(media);
         executeCommand({
           api,
           selectedText: state1.selectedText,

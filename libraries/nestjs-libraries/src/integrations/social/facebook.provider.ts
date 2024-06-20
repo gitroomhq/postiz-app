@@ -1,88 +1,93 @@
 import {
+  AnalyticsData,
   AuthTokenDetails,
   PostDetails,
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import dayjs from 'dayjs';
+import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
-export class FacebookProvider implements SocialProvider {
+export class FacebookProvider extends SocialAbstract implements SocialProvider {
   identifier = 'facebook';
   name = 'Facebook Page';
   isBetweenSteps = true;
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
-    const { access_token, expires_in, ...all } = await (
-      await fetch(
-        'https://graph.facebook.com/v19.0/oauth/access_token' +
-          '?grant_type=fb_exchange_token' +
-          `&client_id=${process.env.FACEBOOK_APP_ID}` +
-          `&client_secret=${process.env.FACEBOOK_APP_SECRET}` +
-          `&fb_exchange_token=${refresh_token}`
-      )
-    ).json();
-
-    const {
-      id,
-      name,
-      picture: {
-        data: { url },
-      },
-    } = await (
-      await fetch(
-        `https://graph.facebook.com/v19.0/me?fields=id,name,picture&access_token=${access_token}`
-      )
-    ).json();
-
     return {
-      id,
-      name,
-      accessToken: access_token,
-      refreshToken: access_token,
-      expiresIn: expires_in,
-      picture: url,
+      refreshToken: '',
+      expiresIn: 0,
+      accessToken: '',
+      id: '',
+      name: '',
+      picture: '',
       username: '',
     };
   }
 
-  async generateAuthUrl() {
+  async generateAuthUrl(refresh?: string) {
     const state = makeId(6);
     return {
       url:
-        'https://www.facebook.com/v19.0/dialog/oauth' +
+        'https://www.facebook.com/v20.0/dialog/oauth' +
         `?client_id=${process.env.FACEBOOK_APP_ID}` +
         `&redirect_uri=${encodeURIComponent(
-          `${process.env.FRONTEND_URL}/integrations/social/facebook`
+          `${process.env.FRONTEND_URL}/integrations/social/facebook${
+            refresh ? `?refresh=${refresh}` : ''
+          }`
         )}` +
         `&state=${state}` +
-        '&scope=pages_show_list,business_management,pages_manage_posts,publish_video,pages_manage_engagement,pages_read_engagement',
+        '&scope=pages_show_list,business_management,pages_manage_posts,pages_manage_engagement,pages_read_engagement,read_insights',
       codeVerifier: makeId(10),
       state,
     };
   }
 
-  async authenticate(params: { code: string; codeVerifier: string }) {
+  async authenticate(params: {
+    code: string;
+    codeVerifier: string;
+    refresh?: string;
+  }) {
     const getAccessToken = await (
-      await fetch(
-        'https://graph.facebook.com/v19.0/oauth/access_token' +
+      await this.fetch(
+        'https://graph.facebook.com/v20.0/oauth/access_token' +
           `?client_id=${process.env.FACEBOOK_APP_ID}` +
           `&redirect_uri=${encodeURIComponent(
-            `${process.env.FRONTEND_URL}/integrations/social/facebook`
+            `${process.env.FRONTEND_URL}/integrations/social/facebook${
+              params.refresh ? `?refresh=${params.refresh}` : ''
+            }`
           )}` +
           `&client_secret=${process.env.FACEBOOK_APP_SECRET}` +
           `&code=${params.code}`
       )
     ).json();
 
-    const { access_token, expires_in, ...all } = await (
-      await fetch(
-        'https://graph.facebook.com/v19.0/oauth/access_token' +
+    const { access_token } = await (
+      await this.fetch(
+        'https://graph.facebook.com/v20.0/oauth/access_token' +
           '?grant_type=fb_exchange_token' +
           `&client_id=${process.env.FACEBOOK_APP_ID}` +
           `&client_secret=${process.env.FACEBOOK_APP_SECRET}` +
-          `&fb_exchange_token=${getAccessToken.access_token}`
+          `&fb_exchange_token=${getAccessToken.access_token}&fields=access_token,expires_in`
       )
     ).json();
+
+    if (params.refresh) {
+      const information = await this.fetchPageInformation(
+        access_token,
+        params.refresh
+      );
+      return {
+        id: information.id,
+        name: information.name,
+        accessToken: information.access_token,
+        refreshToken: information.access_token,
+        expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
+        picture: information.picture,
+        username: information.username,
+      };
+    }
 
     const {
       id,
@@ -91,8 +96,8 @@ export class FacebookProvider implements SocialProvider {
         data: { url },
       },
     } = await (
-      await fetch(
-        `https://graph.facebook.com/v19.0/me?fields=id,name,picture&access_token=${access_token}`
+      await this.fetch(
+        `https://graph.facebook.com/v20.0/me?fields=id,name,picture&access_token=${access_token}`
       )
     ).json();
 
@@ -101,7 +106,7 @@ export class FacebookProvider implements SocialProvider {
       name,
       accessToken: access_token,
       refreshToken: access_token,
-      expiresIn: expires_in,
+      expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
       picture: url,
       username: '',
     };
@@ -109,7 +114,7 @@ export class FacebookProvider implements SocialProvider {
 
   async pages(accessToken: string) {
     const { data } = await (
-      await fetch(
+      await this.fetch(
         `https://graph.facebook.com/v20.0/me/accounts?fields=id,username,name,picture.type(large)&access_token=${accessToken}`
       )
     ).json();
@@ -122,12 +127,13 @@ export class FacebookProvider implements SocialProvider {
       id,
       name,
       access_token,
+      username,
       picture: {
         data: { url },
       },
     } = await (
-      await fetch(
-        `https://graph.facebook.com/v20.0/${pageId}?fields=access_token,name,picture.type(large)&access_token=${accessToken}`
+      await this.fetch(
+        `https://graph.facebook.com/v20.0/${pageId}?fields=username,access_token,name,picture.type(large)&access_token=${accessToken}`
       )
     ).json();
 
@@ -136,6 +142,7 @@ export class FacebookProvider implements SocialProvider {
       name,
       access_token,
       picture: url,
+      username,
     };
   }
 
@@ -148,9 +155,9 @@ export class FacebookProvider implements SocialProvider {
 
     let finalId = '';
     let finalUrl = '';
-    if ((firstPost?.media?.[0]?.path?.indexOf('mp4') || 0) > -1) {
+    if ((firstPost?.media?.[0]?.path?.indexOf('mp4') || -2) > -1) {
       const { id: videoId, permalink_url } = await (
-        await fetch(
+        await this.fetch(
           `https://graph.facebook.com/v20.0/${id}/videos?access_token=${accessToken}&fields=id,permalink_url`,
           {
             method: 'POST',
@@ -174,7 +181,7 @@ export class FacebookProvider implements SocialProvider {
         : await Promise.all(
             firstPost.media.map(async (media) => {
               const { id: photoId } = await (
-                await fetch(
+                await this.fetch(
                   `https://graph.facebook.com/v20.0/${id}/photos?access_token=${accessToken}`,
                   {
                     method: 'POST',
@@ -193,8 +200,12 @@ export class FacebookProvider implements SocialProvider {
             })
           );
 
-      const { id: postId, permalink_url } = await (
-        await fetch(
+      const {
+        id: postId,
+        permalink_url,
+        ...all
+      } = await (
+        await this.fetch(
           `https://graph.facebook.com/v20.0/${id}/feed?access_token=${accessToken}&fields=id,permalink_url`,
           {
             method: 'POST',
@@ -217,7 +228,7 @@ export class FacebookProvider implements SocialProvider {
     const postsArray = [];
     for (const comment of comments) {
       const data = await (
-        await fetch(
+        await this.fetch(
           `https://graph.facebook.com/v20.0/${finalId}/comments?access_token=${accessToken}&fields=id,permalink_url`,
           {
             method: 'POST',
@@ -250,5 +261,38 @@ export class FacebookProvider implements SocialProvider {
       },
       ...postsArray,
     ];
+  }
+
+  async analytics(
+    id: string,
+    accessToken: string,
+    date: number
+  ): Promise<AnalyticsData[]> {
+    const until = dayjs().format('YYYY-MM-DD');
+    const since = dayjs().subtract(date, 'day').format('YYYY-MM-DD');
+
+    const { data } = await (
+      await fetch(
+        `https://graph.facebook.com/v20.0/${id}/insights?metric=page_impressions_unique,page_posts_impressions_unique,page_post_engagements,page_daily_follows,page_video_views&access_token=${accessToken}&period=day&since=${since}&until=${until}`
+      )
+    ).json();
+
+    return data?.map((d: any) => ({
+      label:
+        d.name === 'page_impressions_unique'
+          ? 'Page Impressions'
+          : d.name === 'page_post_engagements'
+          ? 'Posts Engagement'
+          : d.name === 'page_daily_follows'
+          ? 'Page followers'
+          : d.name === 'page_video_views'
+          ? 'Videos views'
+          : 'Posts Impressions',
+      percentageChange: 5,
+      data: d?.values?.map((v: any) => ({
+        total: v.value,
+        date: dayjs(v.end_time).format('YYYY-MM-DD'),
+      })),
+    })) || [];
   }
 }

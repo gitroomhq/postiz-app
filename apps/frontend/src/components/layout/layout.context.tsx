@@ -17,11 +17,17 @@ function LayoutContextInner(params: { children: ReactNode }) {
   const afterRequest = useCallback(
     async (url: string, options: RequestInit, response: Response) => {
       if (response?.headers?.get('onboarding')) {
-        window.location.href = isGeneral() ? '/launches?onboarding=true' : '/analytics?onboarding=true';
+        window.location.href = isGeneral()
+          ? '/launches?onboarding=true'
+          : '/analytics?onboarding=true';
       }
 
       if (response?.headers?.get('reload')) {
         window.location.reload();
+      }
+
+      if (response.status === 401) {
+        window.location.href = '/';
       }
 
       if (response.status === 402) {

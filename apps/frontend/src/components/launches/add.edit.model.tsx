@@ -51,6 +51,7 @@ import { AddPostButton } from '@gitroom/frontend/components/launches/add.post.bu
 import { useStateCallback } from '@gitroom/react/helpers/use.state.callback';
 import { CopilotPopup } from '@copilotkit/react-ui';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { capitalize } from 'lodash';
 
 export const AddEditModal: FC<{
   date: dayjs.Dayjs;
@@ -252,6 +253,7 @@ export const AddEditModal: FC<{
       }
 
       const values = getValues();
+
       const allKeys = Object.keys(values).map((v) => ({
         integration: integrations.find((p) => p.id === v),
         value: values[v].posts,
@@ -259,9 +261,19 @@ export const AddEditModal: FC<{
         group: existingData?.group,
         trigger: values[v].trigger,
         settings: values[v].settings(),
+        checkValidity: values[v].checkValidity
       }));
 
       for (const key of allKeys) {
+        if (key.checkValidity) {
+          const check = await key.checkValidity(key?.value.map((p: any) => p.image || []));
+          if (typeof check === 'string') {
+            toaster.show(check, 'warning');
+            return;
+          }
+        }
+
+
         if (key.value.some((p) => !p.content || p.content.length < 6)) {
           setShowError(true);
           return;
@@ -294,7 +306,7 @@ export const AddEditModal: FC<{
       );
       modal.closeAll();
     },
-    [postFor, dateState, value, integrations, existingData]
+    [postFor, dateState, value, integrations, existingData, selectedIntegrations]
   );
 
   const getPostsMarketplace = useCallback(async () => {

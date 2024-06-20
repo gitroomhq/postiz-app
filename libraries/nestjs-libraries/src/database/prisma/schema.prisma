@@ -27,6 +27,7 @@ model Organization {
   Comments     Comments[]
   notifications Notifications[]
   buyerOrganization MessagesGroup[]
+  usedCodes    UsedCodes[]
 }
 
 model User {
@@ -36,6 +37,7 @@ model User {
   providerName  Provider
   name          String?
   lastName      String?
+  isSuperAdmin  Boolean            @default(false)
   bio           String?
   audience      Int                @default(0)
   pictureId     String?
@@ -48,6 +50,7 @@ model User {
   updatedAt     DateTime           @updatedAt
   lastReadNotifications DateTime   @default(now())
   inviteId      String?
+  activated     Boolean            @default(true)
   items         ItemUser[]
   marketplace   Boolean            @default(true)
   account       String?
@@ -70,6 +73,8 @@ model User {
 model UsedCodes {
   id        String   @id @default(uuid())
   code      String
+  orgId     String
+  organization Organization @relation(fields: [orgId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -201,6 +206,7 @@ model Integration {
   updatedAt       DateTime?      @updatedAt
   orderItems      OrderItems[]
   inBetweenSteps  Boolean         @default(false)
+  refreshNeeded   Boolean         @default(false)
 
   @@index([updatedAt])
   @@index([deletedAt])
@@ -408,6 +414,7 @@ enum Period {
 enum Provider {
   LOCAL
   GITHUB
+  GOOGLE
 }
 
 enum Role {

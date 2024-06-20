@@ -3,18 +3,33 @@ import { UsersRepository } from '@gitroom/nestjs-libraries/database/prisma/users
 import { Provider } from '@prisma/client';
 import { ItemsDto } from '@gitroom/nestjs-libraries/dtos/marketplace/items.dto';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
-import { NewConversationDto } from '@gitroom/nestjs-libraries/dtos/marketplace/new.conversation.dto';
+import { OrganizationRepository } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.repository';
 
 @Injectable()
 export class UsersService {
-  constructor(private _usersRepository: UsersRepository) {}
+  constructor(
+    private _usersRepository: UsersRepository,
+    private _organizationRepository: OrganizationRepository
+  ) {}
 
   getUserByEmail(email: string) {
     return this._usersRepository.getUserByEmail(email);
   }
 
+  getUserById(id: string) {
+    return this._usersRepository.getUserById(id);
+  }
+
+  getImpersonateUser(name: string) {
+    return this._organizationRepository.getImpersonateUser(name);
+  }
+
   getUserByProvider(providerId: string, provider: Provider) {
     return this._usersRepository.getUserByProvider(providerId, provider);
+  }
+
+  activateUser(id: string) {
+    return this._usersRepository.activateUser(id);
   }
 
   updatePassword(id: string, password: string) {

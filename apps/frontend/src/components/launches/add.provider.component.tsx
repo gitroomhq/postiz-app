@@ -195,13 +195,21 @@ export const AddProviderComponent: FC<{
             <div
               key={item.identifier}
               onClick={getSocialLink(item.identifier)}
-              className="w-[120px] h-[100px] bg-input text-white justify-center items-center flex flex-col gap-[10px] cursor-pointer"
+              className={
+                'w-[120px] h-[100px] bg-input text-white justify-center items-center flex flex-col gap-[10px] cursor-pointer'
+              }
             >
               <div>
-                <img
-                  className="w-[32px] h-[32px] rounded-full"
-                  src={`/icons/platforms/${item.identifier}.png`}
-                />
+                {item.identifier === 'youtube' ? (
+                  <img
+                    src={`/icons/platforms/youtube.svg`}
+                  />
+                ) : (
+                  <img
+                    className="w-[32px] h-[32px] rounded-full"
+                    src={`/icons/platforms/${item.identifier}.png`}
+                  />
+                )}
               </div>
               <div>{item.name}</div>
             </div>

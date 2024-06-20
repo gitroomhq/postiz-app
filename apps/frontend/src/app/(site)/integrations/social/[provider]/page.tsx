@@ -15,6 +15,7 @@ export default async function Page({
       ...searchParams,
       state: searchParams.oauth_token || '',
       code: searchParams.oauth_verifier || '',
+      refresh: searchParams.refresh || '',
     };
   }
 
@@ -25,7 +26,7 @@ export default async function Page({
     })
   ).json();
 
-  if (inBetweenSteps) {
+  if (inBetweenSteps && !searchParams.refresh) {
     return redirect(`/launches?added=${provider}&continue=${id}`);
   }
 

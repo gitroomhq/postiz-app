@@ -87,6 +87,7 @@ export class PostsController {
     @GetOrgFromRequest() org: Organization,
     @Body() body: CreatePostDto
   ) {
+    console.log(JSON.stringify(body, null, 2));
     return this._postsService.createPost(org.id, body);
   }
 

@@ -1,0 +1,184 @@
+import {
+  AnalyticsData,
+  AuthTokenDetails,
+  PostDetails,
+  PostResponse,
+  SocialProvider,
+} from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { PinterestSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/pinterest.dto';
+import axios from 'axios';
+import FormData from 'form-data';
+import { timer } from '@gitroom/helpers/utils/timer';
+import dayjs from 'dayjs';
+import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { DribbbleDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dribbble.dto';
+import mime from 'mime-types';
+
+export class DribbbleProvider extends SocialAbstract implements SocialProvider {
+  identifier = 'dribbble';
+  name = 'Dribbble';
+  isBetweenSteps = false;
+
+  async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
+    const { access_token, expires_in } = await (
+      await this.fetch('https://api-sandbox.pinterest.com/v5/oauth/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Authorization: `Basic ${Buffer.from(
+            `${process.env.PINTEREST_CLIENT_ID}:${process.env.PINTEREST_CLIENT_SECRET}`
+          ).toString('base64')}`,
+        },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: refreshToken,
+          scope:
+            'boards:read,boards:write,pins:read,pins:write,user_accounts:read',
+          redirect_uri: `${process.env.FRONTEND_URL}/integrations/social/pinterest`,
+        }),
+      })
+    ).json();
+
+    const { id, profile_image, username } = await (
+      await this.fetch('https://api-sandbox.pinterest.com/v5/user_account', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      })
+    ).json();
+
+    return {
+      id: id,
+      name: username,
+      accessToken: access_token,
+      refreshToken: refreshToken,
+      expiresIn: expires_in,
+      picture: profile_image,
+      username,
+    };
+  }
+
+  async teams(accessToken: string) {
+    const { teams } = await (
+      await this.fetch('https://api.dribbble.com/v2/user', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+    ).json();
+
+    return (
+      teams?.map((team: any) => ({
+        id: team.id,
+        name: team.name,
+      })) || []
+    );
+  }
+
+  async generateAuthUrl(refresh?: string) {
+    const state = makeId(6);
+    return {
+      url: `https://dribbble.com/oauth/authorize?client_id=${
+        process.env.DRIBBBLE_CLIENT_ID
+      }&redirect_uri=${encodeURIComponent(
+        `${process.env.FRONTEND_URL}/integrations/social/dribbble${
+          refresh ? `?refresh=${refresh}` : ''
+        }`
+      )}&response_type=code&scope=public+upload&state=${state}`,
+      codeVerifier: makeId(10),
+      state,
+    };
+  }
+
+  async authenticate(params: {
+    code: string;
+    codeVerifier: string;
+    refresh: string;
+  }) {
+    const { access_token } = await (
+      await this.fetch(
+        `https://dribbble.com/oauth/token?client_id=${process.env.DRIBBBLE_CLIENT_ID}&client_secret=${process.env.DRIBBBLE_CLIENT_SECRET}&code=${params.code}&redirect_uri=${process.env.FRONTEND_URL}/integrations/social/dribbble`,
+        {
+          method: 'POST',
+        }
+      )
+    ).json();
+
+    const { id, name, avatar_url, login } = await (
+      await this.fetch('https://api.dribbble.com/v2/user', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      })
+    ).json();
+
+    return {
+      id: id,
+      name,
+      accessToken: access_token,
+      refreshToken: '',
+      expiresIn: 999999999,
+      picture: avatar_url,
+      username: login,
+    };
+  }
+
+  async post(
+    id: string,
+    accessToken: string,
+    postDetails: PostDetails<DribbbleDto>[]
+  ): Promise<PostResponse[]> {
+    const { data, status } = await axios.get(
+      postDetails?.[0]?.media?.[0]?.url!,
+      {
+        responseType: 'stream',
+      }
+    );
+
+    const slash = postDetails?.[0]?.media?.[0]?.url.split('/').at(-1);
+
+    const formData = new FormData();
+    formData.append('image', data, {
+      filename: slash,
+      contentType: mime.lookup(slash!) || '',
+    });
+
+    formData.append('title', postDetails[0].settings.title);
+    formData.append('description', postDetails[0].message);
+
+    const data2 = await axios.post(
+      'https://api.dribbble.com/v2/shots',
+      formData,
+      {
+        headers: {
+          ...formData.getHeaders(),
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    const location = data2.headers['location'];
+    const newId = location.split('/').at(-1);
+
+    return [
+      {
+        id: postDetails?.[0]?.id,
+        status: 'completed',
+        postId: newId,
+        releaseURL: `https://dribbble.com/shots/${newId}`,
+      },
+    ];
+  }
+
+  analytics(
+    id: string,
+    accessToken: string,
+    date: number
+  ): Promise<AnalyticsData[]> {
+    return Promise.resolve([]);
+  }
+}

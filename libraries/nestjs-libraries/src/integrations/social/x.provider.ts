@@ -9,8 +9,9 @@ import { lookup } from 'mime-types';
 import sharp from 'sharp';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
 import removeMd from 'remove-markdown';
+import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
-export class XProvider implements SocialProvider {
+export class XProvider extends SocialAbstract implements SocialProvider {
   identifier = 'x';
   name = 'X';
   isBetweenSteps = false;
@@ -47,14 +48,16 @@ export class XProvider implements SocialProvider {
     };
   }
 
-  async generateAuthUrl() {
+  async generateAuthUrl(refresh?: string) {
     const client = new TwitterApi({
       appKey: process.env.X_API_KEY!,
       appSecret: process.env.X_API_SECRET!,
     });
     const { url, oauth_token, oauth_token_secret } =
       await client.generateAuthLink(
-        process.env.FRONTEND_URL + '/integrations/social/x',
+        process.env.FRONTEND_URL + `/integrations/social/x${
+        refresh ? `?refresh=${refresh}` : ''
+      }`,
         {
           authAccessType: 'write',
           linkMode: 'authenticate',
@@ -78,6 +81,7 @@ export class XProvider implements SocialProvider {
       accessToken: oauth_token,
       accessSecret: oauth_token_secret,
     });
+
     const { accessToken, client, accessSecret } = await startingClient.login(
       code
     );

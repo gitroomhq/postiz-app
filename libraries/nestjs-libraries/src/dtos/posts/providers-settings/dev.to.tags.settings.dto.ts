@@ -1,6 +1,6 @@
 import {IsNumber, IsString} from "class-validator";
 
-export class DevToTagsSettings {
+export class DevToTagsSettingsDto {
     @IsNumber()
     value: number;
 

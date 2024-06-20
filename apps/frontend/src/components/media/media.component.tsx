@@ -12,6 +12,8 @@ import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.titl
 import clsx from 'clsx';
 import interClass from '@gitroom/react/helpers/inter.font';
 import { VideoFrame } from '@gitroom/react/helpers/video.frame';
+import { useToaster } from '@gitroom/react/toaster/toaster';
+import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 const showModalEmitter = new EventEmitter();
 
 export const ShowMediaBoxModal: FC = () => {
@@ -50,13 +52,16 @@ export const showMediaBox = (
 
 export const MediaBox: FC<{
   setMedia: (params: { id: string; path: string }) => void;
+  type?: 'image' | 'video';
   closeModal: () => void;
 }> = (props) => {
-  const { setMedia, closeModal } = props;
+  const { setMedia, type, closeModal } = props;
   const [pages, setPages] = useState(0);
   const [mediaList, setListMedia] = useState<Media[]>([]);
   const fetch = useFetch();
   const mediaDirectory = useMediaDirectory();
+  const toaster = useToaster();
+  const [loading, setLoading] = useState(false);
 
   const loadMedia = useCallback(async () => {
     return (await fetch('/media')).json();
@@ -64,21 +69,31 @@ export const MediaBox: FC<{
 
   const uploadMedia = useCallback(
     async (file: ChangeEvent<HTMLInputElement>) => {
-      const maxFileSize = 10 * 1024 * 1024;
+      const maxFileSize =
+        (file?.target?.files?.[0].name.indexOf('mp4') || -1) > -1
+          ? 100 * 1024 * 1024
+          : 10 * 1024 * 1024;
+
       if (
         !file?.target?.files?.length ||
         file?.target?.files?.[0]?.size > maxFileSize
-      )
+      ) {
+        toaster.show(
+          `Maximum file size ${maxFileSize / 1024 / 1024}mb`,
+          'warning'
+        );
         return;
+      }
       const formData = new FormData();
       formData.append('file', file?.target?.files?.[0]);
+      setLoading(true);
       const data = await (
         await fetch('/media', {
           method: 'POST',
           body: formData,
         })
       ).json();
-
+      setLoading(false);
       setListMedia([...mediaList, data]);
     },
     [mediaList]
@@ -140,7 +155,13 @@ export const MediaBox: FC<{
                 <input
                   type="file"
                   className="absolute left-0 top-0 w-full h-full opacity-0"
-                  accept="image/*,video/mp4"
+                  accept={
+                    type === 'video'
+                      ? 'video/mp4'
+                      : type === 'image'
+                      ? 'image/*'
+                      : 'image/*,video/mp4'
+                  }
                   onChange={uploadMedia}
                 />
                 <button
@@ -207,22 +228,38 @@ export const MediaBox: FC<{
               </div>
             </div>
           )}
-          {mediaList.map((media) => (
-            <div
-              key={media.id}
-              className="w-[200px] h-[200px] border-tableBorder border-2 cursor-pointer"
-              onClick={setNewMedia(media)}
-            >
-              {media.path.indexOf('mp4') > -1 ? (
-                <VideoFrame url={mediaDirectory.set(media.path)} />
-              ) : (
-                <img
-                  className="w-full h-full object-cover"
-                  src={mediaDirectory.set(media.path)}
-                />
-              )}
+          {mediaList
+            .filter((f) => {
+              if (type === 'video') {
+                return f.path.indexOf('mp4') > -1;
+              } else if (type === 'image') {
+                return f.path.indexOf('mp4') === -1;
+              }
+              return true;
+            })
+            .map((media) => (
+              <div
+                key={media.id}
+                className="w-[200px] h-[200px] flex border-tableBorder border-2 cursor-pointer"
+                onClick={setNewMedia(media)}
+              >
+                {media.path.indexOf('mp4') > -1 ? (
+                  <VideoFrame url={mediaDirectory.set(media.path)} />
+                ) : (
+                  <img
+                    className="w-full h-full object-cover"
+                    src={mediaDirectory.set(media.path)}
+                  />
+                )}
+              </div>
+            ))}
+          {loading && (
+            <div className="w-[200px] h-[200px] flex border-tableBorder border-2 cursor-pointer relative">
+              <div className="absolute left-0 top-0 w-full h-full -mt-[50px] flex justify-center items-center">
+                <LoadingComponent />
+              </div>
             </div>
-          ))}
+          )}
         </div>
       </div>
     </div>
@@ -303,7 +340,7 @@ export const MultiMediaComponent: FC<{
           {!!currentMedia &&
             currentMedia.map((media, index) => (
               <>
-                <div className="cursor-pointer w-[40px] h-[40px] border-2 border-tableBorder relative">
+                <div className="cursor-pointer w-[40px] h-[40px] border-2 border-tableBorder relative flex">
                   <div
                     onClick={() => window.open(mediaDirectory.set(media.path))}
                   >
@@ -340,8 +377,9 @@ export const MediaComponent: FC<{
   onChange: (event: {
     target: { name: string; value?: { id: string; path: string } };
   }) => void;
+  type?: 'image' | 'video';
 }> = (props) => {
-  const { name, label, description, onChange, value } = props;
+  const { name, type, label, description, onChange, value } = props;
   const { getValues } = useSettings();
   useEffect(() => {
     const settings = getValues()[props.name];
@@ -369,7 +407,9 @@ export const MediaComponent: FC<{
 
   return (
     <div className="flex flex-col gap-[8px]">
-      {modal && <MediaBox setMedia={changeMedia} closeModal={showModal} />}
+      {modal && (
+        <MediaBox setMedia={changeMedia} closeModal={showModal} type={type} />
+      )}
       <div className="text-[14px]">{label}</div>
       <div className="text-[12px]">{description}</div>
       {!!currentMedia && (

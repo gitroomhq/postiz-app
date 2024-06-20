@@ -533,10 +533,11 @@ export class StripeService {
 
       const nextPackage = !getCurrentSubscription ? 'STANDARD' : 'PRO';
       const findPricing = pricing[nextPackage];
+
       await this._subscriptionService.createOrUpdateSubscription(
         makeId(10),
         organizationId,
-        findPricing.channel!,
+        getCurrentSubscription?.subscriptionTier === 'PRO' ? (getCurrentSubscription.totalChannels + 5) : findPricing.channel!,
         nextPackage,
         'MONTHLY',
         null,
@@ -546,6 +547,7 @@ export class StripeService {
       return {
         success: true,
       };
+
     } catch (err) {
       console.log(err);
       return {

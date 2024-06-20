@@ -6,15 +6,23 @@ import { Button } from '@gitroom/react/form/button';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 
-export const FacebookContinue: FC<{closeModal: () => void, existingId: string[]}> = (props) => {
+export const FacebookContinue: FC<{
+  closeModal: () => void;
+  existingId: string[];
+}> = (props) => {
   const { closeModal, existingId } = props;
   const call = useCustomProviderFunction();
   const { integration } = useIntegration();
   const [page, setSelectedPage] = useState<null | string>(null);
   const fetch = useFetch();
 
-  const loadPages = useCallback(() => {
-    return call.get('pages');
+  const loadPages = useCallback(async () => {
+    try {
+      const pages = await call.get('pages');
+      return pages;
+    } catch (e) {
+      closeModal();
+    }
   }, []);
 
   const setPage = useCallback(
@@ -44,7 +52,9 @@ export const FacebookContinue: FC<{closeModal: () => void, existingId: string[]}
   }, [integration, page]);
 
   const filteredData = useMemo(() => {
-    return data?.filter((p: { id: string }) => !existingId.includes(p.id)) || [];
+    return (
+      data?.filter((p: { id: string }) => !existingId.includes(p.id)) || []
+    );
   }, [data]);
 
   return (

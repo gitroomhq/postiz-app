@@ -109,4 +109,10 @@ const InstagramPreview: FC = (props) => {
   );
 };
 
-export default withProvider(null, InstagramPreview);
+export default withProvider(null, InstagramPreview, undefined, async ([firstPost, ...otherPosts]) => {
+  if (!firstPost.length) {
+    return 'Instagram should have at least one media';
+  }
+
+  return true;
+});

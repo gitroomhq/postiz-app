@@ -49,6 +49,7 @@ export class IntegrationsController {
         picture: p.picture,
         identifier: p.providerIdentifier,
         inBetweenSteps: p.inBetweenSteps,
+        refreshNeeded: p.refreshNeeded,
         type: p.type,
       })),
     };
@@ -71,7 +72,10 @@ export class IntegrationsController {
 
   @Get('/social/:integration')
   @CheckPolicies([AuthorizationActions.Create, Sections.CHANNEL])
-  async getIntegrationUrl(@Param('integration') integration: string) {
+  async getIntegrationUrl(
+    @Param('integration') integration: string,
+    @Query('refresh') refresh: string
+  ) {
     if (
       !this._integrationManager
         .getAllowedSocialsIntegrations()
@@ -83,7 +87,7 @@ export class IntegrationsController {
     const integrationProvider =
       this._integrationManager.getSocialIntegration(integration);
     const { codeVerifier, state, url } =
-      await integrationProvider.generateAuthUrl();
+      await integrationProvider.generateAuthUrl(refresh);
     await ioRedis.set(`login:${state}`, codeVerifier, 'EX', 300);
 
     return { url };
@@ -170,7 +174,8 @@ export class IntegrationsController {
       token,
       '',
       undefined,
-      username
+      username,
+      false
     );
   }
 
@@ -194,6 +199,8 @@ export class IntegrationsController {
       throw new Error('Invalid state');
     }
 
+    await ioRedis.del(`login:${body.state}`);
+
     const integrationProvider =
       this._integrationManager.getSocialIntegration(integration);
     const {
@@ -207,6 +214,7 @@ export class IntegrationsController {
     } = await integrationProvider.authenticate({
       code: body.code,
       codeVerifier: getCodeVerifier,
+      refresh: body.refresh,
     });
 
     if (!id) {
@@ -224,7 +232,8 @@ export class IntegrationsController {
       refreshToken,
       expiresIn,
       username,
-      integrationProvider.isBetweenSteps
+      integrationProvider.isBetweenSteps,
+      body.refresh
     );
   }
 
@@ -239,7 +248,7 @@ export class IntegrationsController {
   @Post('/instagram/:id')
   async saveInstagram(
     @Param('id') id: string,
-    @Body() body: { pageId: string, id: string },
+    @Body() body: { pageId: string; id: string },
     @GetOrgFromRequest() org: Organization
   ) {
     return this._integrationService.saveInstagram(org.id, id, body);
@@ -252,6 +261,15 @@ export class IntegrationsController {
     @GetOrgFromRequest() org: Organization
   ) {
     return this._integrationService.saveFacebook(org.id, id, body.page);
+  }
+
+  @Post('/linkedin-page/:id')
+  async saveLinkedin(
+    @Param('id') id: string,
+    @Body() body: { page: string },
+    @GetOrgFromRequest() org: Organization
+  ) {
+    return this._integrationService.saveLinkedin(org.id, id, body.page);
   }
 
   @Post('/enable')

@@ -8,6 +8,7 @@ import {
   Query,
   UploadedFile,
   UseInterceptors,
+  UsePipes,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Express } from 'express';
@@ -15,6 +16,7 @@ import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.reque
 import { Organization } from '@prisma/client';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 import { ApiTags } from '@nestjs/swagger';
+import { CustomFileValidationPipe } from '@gitroom/nestjs-libraries/upload/custom.upload.validation';
 
 @ApiTags('Media')
 @Controller('/media')
@@ -22,17 +24,10 @@ export class MediaController {
   constructor(private _mediaService: MediaService) {}
   @Post('/')
   @UseInterceptors(FileInterceptor('file'))
+  @UsePipes(new CustomFileValidationPipe())
   async uploadFile(
     @GetOrgFromRequest() org: Organization,
-    @UploadedFile(
-      'file',
-      new ParseFilePipe({
-        validators: [
-          new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }),
-          new FileTypeValidator({ fileType: /^(image\/.+|video\/mp4)$/ }),
-        ],
-      })
-    )
+    @UploadedFile('file')
     file: Express.Multer.File
   ) {
     const filePath =

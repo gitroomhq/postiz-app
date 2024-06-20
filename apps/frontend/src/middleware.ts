@@ -30,7 +30,10 @@ export async function middleware(request: NextRequest) {
   const url = new URL(nextUrl).search;
 
   if (nextUrl.href.indexOf('/auth') === -1 && !authCookie) {
-    return NextResponse.redirect(new URL(`/auth${url}`, nextUrl.href));
+    const providers = ['google', 'github'];
+    const findIndex = providers.find(p => nextUrl.href.indexOf(p) > -1);
+    const additional = !findIndex ? '' : (url.indexOf('?') > -1 ? '&' : '?') + `provider=${findIndex.toUpperCase()}`;
+    return NextResponse.redirect(new URL(`/auth${url}${additional}`, nextUrl.href));
   }
 
   // If the url is /auth and the cookie exists, redirect to /
@@ -85,12 +88,6 @@ export async function middleware(request: NextRequest) {
       }
 
       return redirect;
-    }
-
-    if (isGeneral() && (nextUrl.pathname.indexOf('/analytics') > -1 || nextUrl.pathname.indexOf('/settings') > -1)) {
-      return NextResponse.redirect(
-        new URL('/launches', nextUrl.href)
-      );
     }
 
     if (nextUrl.pathname === '/') {

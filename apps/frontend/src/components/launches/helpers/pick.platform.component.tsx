@@ -6,6 +6,8 @@ import clsx from 'clsx';
 import Image from 'next/image';
 import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
 import { useStateCallback } from '@gitroom/react/helpers/use.state.callback';
+import { timer } from '@gitroom/helpers/utils/timer';
+import dayjs from 'dayjs';
 
 export const PickPlatforms: FC<{
   integrations: Integrations[];
@@ -137,6 +139,7 @@ export const PickPlatforms: FC<{
         );
       }
 
+      await timer(500);
       await Promise.all(promises);
     },
     [selectedAccounts]
@@ -144,15 +147,17 @@ export const PickPlatforms: FC<{
 
   const handler = useCallback(
     async ({ integrationId }: { integrationId: string }) => {
+      console.log('setSelectedIntegration', integrations, integrationId, dayjs().unix());
       const findIntegration = integrations.find((p) => p.id === integrationId)!;
-      console.log(findIntegration);
       await addPlatform(findIntegration)();
     },
     [selectedAccounts, integrations, selectedAccounts]
   );
 
   useCopilotReadable({
-    description: isMain ? 'All available platforms channels' : 'Possible platforms channels to edit',
+    description: isMain
+      ? 'All available platforms channels'
+      : 'Possible platforms channels to edit',
     value: JSON.stringify(integrations),
   });
 
@@ -237,20 +242,28 @@ export const PickPlatforms: FC<{
                             : ''
                         )}
                       >
-                        <img
+                        <Image
                           src={integration.picture}
                           className="rounded-full"
                           alt={integration.identifier}
                           width={32}
                           height={32}
                         />
-                        <Image
-                          src={`/icons/platforms/${integration.identifier}.png`}
-                          className="rounded-full absolute z-10 -bottom-[5px] -right-[5px] border border-fifth"
-                          alt={integration.identifier}
-                          width={20}
-                          height={20}
-                        />
+                        {integration.identifier === 'youtube' ? (
+                          <img
+                            src="/icons/platforms/youtube.svg"
+                            className="absolute z-10 -bottom-[5px] -right-[5px]"
+                            width={20}
+                          />
+                        ) : (
+                          <Image
+                            src={`/icons/platforms/${integration.identifier}.png`}
+                            className="rounded-full absolute z-10 -bottom-[5px] -right-[5px] border border-fifth"
+                            alt={integration.identifier}
+                            width={20}
+                            height={20}
+                          />
+                        )}
                       </div>
                     </div>
                   ) : (

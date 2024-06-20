@@ -15,6 +15,8 @@ import { useUser } from '../layout/user.context';
 import { Menu } from '@gitroom/frontend/components/launches/menu/menu';
 import { GeneratorComponent } from '@gitroom/frontend/components/launches/generator/generator';
 import { useRouter } from 'next/navigation';
+import { Integration } from '@prisma/client';
+import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
 
 export const LaunchesComponent = () => {
   const fetch = useFetch();
@@ -69,6 +71,22 @@ export const LaunchesComponent = () => {
     []
   );
 
+  const refreshChannel = useCallback(
+    (integration: Integration & { identifier: string }) => async () => {
+      const { url } = await (
+        await fetch(
+          `/integrations/social/${integration.identifier}?refresh=${integration.internalId}`,
+          {
+            method: 'GET',
+          }
+        )
+      ).json();
+
+      window.location.href = url;
+    },
+    []
+  );
+
   useEffect(() => {
     if (typeof window !== 'undefined' && window.opener) {
       window.close();
@@ -93,6 +111,11 @@ export const LaunchesComponent = () => {
                 )}
                 {sortedIntegrations.map((integration) => (
                   <div
+                    {...(integration.refreshNeeded && {
+                      'data-tooltip-id': 'tooltip',
+                      'data-tooltip-content':
+                        'Channel disconnected, click to reconnect.',
+                    })}
                     key={integration.id}
                     className="flex gap-[8px] items-center"
                   >
@@ -102,10 +125,15 @@ export const LaunchesComponent = () => {
                         integration.disabled && 'opacity-50'
                       )}
                     >
-                      {integration.inBetweenSteps && (
+                      {(integration.inBetweenSteps ||
+                        integration.refreshNeeded) && (
                         <div
                           className="absolute left-0 top-0 w-[39px] h-[46px] cursor-pointer"
-                          onClick={continueIntegration(integration)}
+                          onClick={
+                            integration.refreshNeeded
+                              ? refreshChannel(integration)
+                              : continueIntegration(integration)
+                          }
                         >
                           <div className="bg-red-500 w-[15px] h-[15px] rounded-full -left-[5px] -top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
                             !
@@ -113,20 +141,29 @@ export const LaunchesComponent = () => {
                           <div className="bg-black/60 w-[39px] h-[46px] left-0 top-0 absolute rounded-full z-[199]" />
                         </div>
                       )}
-                      <img
+                      <ImageWithFallback
+                        fallbackSrc={`/icons/platforms/${integration.identifier}.png`}
                         src={integration.picture}
                         className="rounded-full"
                         alt={integration.identifier}
                         width={32}
                         height={32}
                       />
-                      <Image
-                        src={`/icons/platforms/${integration.identifier}.png`}
-                        className="rounded-full absolute z-10 -bottom-[5px] -right-[5px] border border-fifth"
-                        alt={integration.identifier}
-                        width={20}
-                        height={20}
-                      />
+                      {integration.identifier === 'youtube' ? (
+                        <img
+                          src="/icons/platforms/youtube.svg"
+                          className="absolute z-10 -bottom-[5px] -right-[5px]"
+                          width={20}
+                        />
+                      ) : (
+                        <Image
+                          src={`/icons/platforms/${integration.identifier}.png`}
+                          className="rounded-full absolute z-10 -bottom-[5px] -right-[5px] border border-fifth"
+                          alt={integration.identifier}
+                          width={20}
+                          height={20}
+                        />
+                      )}
                     </div>
                     <div
                       {...(integration.disabled &&

@@ -8,6 +8,7 @@ import "@copilotkit/react-ui/styles.css";
 import LayoutContext from '@gitroom/frontend/components/layout/layout.context';
 import { ReactNode } from 'react';
 import { Chakra_Petch } from 'next/font/google';
+import { isGeneral } from '@gitroom/react/helpers/is.general';
 
 const chakra = Chakra_Petch({ weight: '400', subsets: ['latin'] });
 
@@ -15,7 +16,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   return (
     <html className={interClass}>
       <head>
-        <link rel="icon" href="/favicon.png" sizes="any" />
+        <link rel="icon" href={!isGeneral() ? "/favicon.png" : "/postiz-fav.png"} sizes="any" />
       </head>
       <body className={chakra.className}>
         <LayoutContext>{children}</LayoutContext>
