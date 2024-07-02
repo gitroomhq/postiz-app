@@ -4,7 +4,6 @@ import {
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
@@ -13,57 +12,71 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   name = 'Tiktok';
   isBetweenSteps = false;
 
-  async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
+  async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
+    const value = {
+      client_key: process.env.TIKTOK_CLIENT_ID!,
+      client_secret: process.env.TIKTOK_CLIENT_SECRET!,
+      grant_type: 'authorization_code',
+      refresh_token: refreshToken,
+    };
+
+    const { access_token, refresh_token } = await (
+      await this.fetch('https://open.tiktokapis.com/v2/oauth/token/', {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        method: 'POST',
+        body: new URLSearchParams(value).toString(),
+      })
+    ).json();
+
+    const {
+      data: {
+        user: { avatar_url, display_name, open_id },
+      },
+    } = await (
+      await fetch(
+        'https://open.tiktokapis.com/v2/user/info/?fields=open_id,avatar_url,display_name',
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+          },
+        }
+      )
+    ).json();
+
     return {
-      refreshToken: '',
-      expiresIn: 0,
-      accessToken: '',
-      id: '',
-      name: '',
-      picture: '',
-      username: '',
+      refreshToken: refresh_token,
+      expiresIn: dayjs().add(23, 'hours').unix() - dayjs().unix(),
+      accessToken: access_token,
+      id: open_id.replace(/-/g, ''),
+      name: display_name,
+      picture: avatar_url,
+      username: display_name.toLowerCase(),
     };
   }
 
   async generateAuthUrl(refresh?: string) {
-    const state = makeId(6);
-    console.log(
-      'https://www.tiktok.com/v2/auth/authorize' +
-        `?client_key=${process.env.TIKTOK_CLIENT_ID}` +
-        `&redirect_uri=${encodeURIComponent(
-          `${
-            process.env.NODE_ENV === 'development' || !process.env.NODE_ENV
-              ? 'https://redirectmeto.com/'
-              : ''
-          }${process.env.FRONTEND_URL}/integrations/social/tiktok${
-            refresh ? `?refresh=${refresh}` : ''
-          }`
-        )}` +
-        `&state=${state}` +
-        `&response_type=code` +
-        `&scope=${encodeURIComponent(
-          'user.info.basic,video.publish,video.upload'
-        )}`
-    );
+    const state = Math.random().toString(36).substring(2);
+
     return {
       url:
-        'https://www.tiktok.com/v2/auth/authorize' +
+        'https://www.tiktok.com/v2/auth/authorize/' +
         `?client_key=${process.env.TIKTOK_CLIENT_ID}` +
         `&redirect_uri=${encodeURIComponent(
           `${
             process.env.NODE_ENV === 'development' || !process.env.NODE_ENV
-              ? 'https://redirectmeto.com/'
-              : ''
-          }${process.env.FRONTEND_URL}/integrations/social/tiktok${
-            refresh ? `?refresh=${refresh}` : ''
-          }`
+              ? `https://integration.git.sn/integrations/social/tiktok`
+              : `${process.env.FRONTEND_URL}/integrations/social/tiktok`
+          }${refresh ? `?refresh=${refresh}` : ''}`
         )}` +
         `&state=${state}` +
         `&response_type=code` +
         `&scope=${encodeURIComponent(
           'user.info.basic,video.publish,video.upload'
         )}`,
-      codeVerifier: makeId(10),
+      codeVerifier: state,
       state,
     };
   }
@@ -73,15 +86,52 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     codeVerifier: string;
     refresh?: string;
   }) {
-    console.log(params);
+    const value = {
+      client_key: process.env.TIKTOK_CLIENT_ID!,
+      client_secret: process.env.TIKTOK_CLIENT_SECRET!,
+      code: params.code,
+      grant_type: 'authorization_code',
+      code_verifier: params.codeVerifier,
+      redirect_uri:
+        process.env.NODE_ENV === 'development' || !process.env.NODE_ENV
+          ? `https://integration.git.sn/integrations/social/tiktok`
+          : `${process.env.FRONTEND_URL}/integrations/social/tiktok`,
+    };
+
+    const { access_token, refresh_token } = await (
+      await this.fetch('https://open.tiktokapis.com/v2/oauth/token/', {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        method: 'POST',
+        body: new URLSearchParams(value).toString(),
+      })
+    ).json();
+
+    const {
+      data: {
+        user: { avatar_url, display_name, open_id },
+      },
+    } = await (
+      await fetch(
+        'https://open.tiktokapis.com/v2/user/info/?fields=open_id,avatar_url,display_name',
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+          },
+        }
+      )
+    ).json();
+
     return {
-      id: '',
-      name: '',
-      accessToken: '',
-      refreshToken: '',
-      expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
-      picture: '',
-      username: '',
+      id: open_id.replace(/-/g, ''),
+      name: display_name,
+      accessToken: access_token,
+      refreshToken: refresh_token,
+      expiresIn: dayjs().add(23, 'hours').unix() - dayjs().unix(),
+      picture: avatar_url,
+      username: display_name.toLowerCase(),
     };
   }
 

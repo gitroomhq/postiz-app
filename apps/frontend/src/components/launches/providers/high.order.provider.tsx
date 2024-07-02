@@ -382,8 +382,8 @@ export const withProvider = (
               </EditorWrapper>,
               document.querySelector('#renderEditor')!
             )}
-          {showTab === 2 && (
-            <div className="mt-[20px]">
+          {(showTab === 0 || showTab === 2) && (
+            <div className={clsx("mt-[20px]", showTab !== 2 && 'hidden')}>
               <Component />
             </div>
           )}

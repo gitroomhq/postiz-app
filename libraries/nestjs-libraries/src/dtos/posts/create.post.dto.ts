@@ -11,6 +11,7 @@ import {RedditSettingsDto} from "@gitroom/nestjs-libraries/dtos/posts/providers-
 import { YoutubeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/youtube.settings.dto';
 import { PinterestSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/pinterest.dto';
 import { DribbbleDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dribbble.dto';
+import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
 
 export class EmptySettings {}
 export class Integration {
@@ -66,6 +67,7 @@ export class Post {
           { value: YoutubeSettingsDto, name: 'youtube' },
           { value: PinterestSettingsDto, name: 'pinterest' },
           { value: DribbbleDto, name: 'dribbble' },
+          { value: TikTokDto, name: 'tiktok' },
       ],
     },
   })

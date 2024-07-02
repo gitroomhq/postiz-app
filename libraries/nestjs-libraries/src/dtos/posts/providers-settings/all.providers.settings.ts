@@ -4,6 +4,7 @@ import { HashnodeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/provid
 import { RedditSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/reddit.dto';
 import { PinterestSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/pinterest.dto';
 import { YoutubeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/youtube.settings.dto';
+import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
 
 export type AllProvidersSettings =
   | DevToSettingsDto
@@ -11,4 +12,5 @@ export type AllProvidersSettings =
   | HashnodeSettingsDto
   | RedditSettingsDto
   | YoutubeSettingsDto
-  | PinterestSettingsDto;
+  | PinterestSettingsDto
+  | TikTokDto;
