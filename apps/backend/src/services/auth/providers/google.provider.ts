@@ -1,10 +1,3 @@
-import {
-  AnalyticsData,
-  AuthTokenDetails,
-  PostDetails,
-  PostResponse,
-  SocialProvider,
-} from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library/build/src/auth/oauth2client';
