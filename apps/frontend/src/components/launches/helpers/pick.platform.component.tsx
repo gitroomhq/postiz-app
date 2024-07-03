@@ -4,22 +4,28 @@ import { useMoveToIntegrationListener } from '@gitroom/frontend/components/launc
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import clsx from 'clsx';
 import Image from 'next/image';
+import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
+import { useStateCallback } from '@gitroom/react/helpers/use.state.callback';
+import { timer } from '@gitroom/helpers/utils/timer';
+import dayjs from 'dayjs';
 
 export const PickPlatforms: FC<{
   integrations: Integrations[];
   selectedIntegrations: Integrations[];
-  onChange: (integrations: Integrations[]) => void;
+  onChange: (integrations: Integrations[], callback: () => void) => void;
   singleSelect: boolean;
   hide?: boolean;
+  isMain: boolean;
 }> = (props) => {
-  const { hide, integrations, selectedIntegrations, onChange } = props;
+  const { hide, isMain, integrations, selectedIntegrations, onChange } = props;
   const ref = useRef<HTMLDivElement>(null);
 
   const [isLeft, setIsLeft] = useState(false);
   const [isRight, setIsRight] = useState(false);
 
-  const [selectedAccounts, setSelectedAccounts] =
-    useState<Integrations[]>(selectedIntegrations);
+  const [selectedAccounts, setSelectedAccounts] = useStateCallback<
+    Integrations[]
+  >(selectedIntegrations.slice(0).map((p) => ({ ...p })));
 
   useEffect(() => {
     if (
@@ -70,9 +76,22 @@ export const PickPlatforms: FC<{
 
   const addPlatform = useCallback(
     (integration: Integrations) => async () => {
+      const promises = [];
       if (props.singleSelect) {
-        onChange([integration]);
-        setSelectedAccounts([integration]);
+        promises.push(
+          new Promise((res) => {
+            onChange([integration], () => {
+              res('');
+            });
+          })
+        );
+        promises.push(
+          new Promise((res) => {
+            setSelectedAccounts([integration], () => {
+              res('');
+            });
+          })
+        );
         return;
       }
       if (selectedAccounts.includes(integration)) {
@@ -88,15 +107,77 @@ export const PickPlatforms: FC<{
         ) {
           return;
         }
-        onChange(changedIntegrations);
-        setSelectedAccounts(changedIntegrations);
+        promises.push(
+          new Promise((res) => {
+            onChange(changedIntegrations, () => {
+              res('');
+            });
+          })
+        );
+        promises.push(
+          new Promise((res) => {
+            setSelectedAccounts(changedIntegrations, () => {
+              res('');
+            });
+          })
+        );
       } else {
         const changedIntegrations = [...selectedAccounts, integration];
-        onChange(changedIntegrations);
-        setSelectedAccounts(changedIntegrations);
+        promises.push(
+          new Promise((res) => {
+            onChange(changedIntegrations, () => {
+              res('');
+            });
+          })
+        );
+        promises.push(
+          new Promise((res) => {
+            setSelectedAccounts(changedIntegrations, () => {
+              res('');
+            });
+          })
+        );
       }
+
+      await timer(500);
+      await Promise.all(promises);
     },
     [selectedAccounts]
+  );
+
+  const handler = useCallback(
+    async ({ integrationId }: { integrationId: string }) => {
+      console.log('setSelectedIntegration', integrations, integrationId, dayjs().unix());
+      const findIntegration = integrations.find((p) => p.id === integrationId)!;
+      await addPlatform(findIntegration)();
+    },
+    [selectedAccounts, integrations, selectedAccounts]
+  );
+
+  useCopilotReadable({
+    description: isMain
+      ? 'All available platforms channels'
+      : 'Possible platforms channels to edit',
+    value: JSON.stringify(integrations),
+  });
+
+  useCopilotAction(
+    {
+      name: isMain ? `addOrRemovePlatform` : 'setSelectedIntegration',
+      description: isMain
+        ? `Add or remove one channel to schedule your post to, always pass the id`
+        : 'Set selected integration',
+      parameters: [
+        {
+          name: 'integrationId',
+          type: 'string',
+          description: 'The id of the integration',
+          required: true,
+        },
+      ],
+      handler,
+    },
+    [addPlatform, selectedAccounts, integrations]
   );
 
   if (hide) {
@@ -169,7 +250,11 @@ export const PickPlatforms: FC<{
                           height={32}
                         />
                         {integration.identifier === 'youtube' ? (
-                          <img src="/icons/platforms/youtube.svg" className="absolute z-10 -bottom-[5px] -right-[5px]" width={20} />
+                          <img
+                            src="/icons/platforms/youtube.svg"
+                            className="absolute z-10 -bottom-[5px] -right-[5px]"
+                            width={20}
+                          />
                         ) : (
                           <Image
                             src={`/icons/platforms/${integration.identifier}.png`}

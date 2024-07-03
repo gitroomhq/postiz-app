@@ -333,9 +333,9 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
           <ExistingDataContextProvider value={data}>
             <AddEditModal
               reopenModal={editPost(post)}
-              integrations={integrations.filter(
+              integrations={integrations.slice(0).filter(
                 (f) => f.id === data.integration
-              )}
+              ).map(p => ({ ...p, picture: data.integrationPicture }))}
               date={getDate}
             />
           </ExistingDataContextProvider>
@@ -357,7 +357,7 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
       },
       children: (
         <AddEditModal
-          integrations={integrations}
+          integrations={integrations.slice(0).map(p => ({ ...p }))}
           date={getDate}
           reopenModal={() => ({})}
         />

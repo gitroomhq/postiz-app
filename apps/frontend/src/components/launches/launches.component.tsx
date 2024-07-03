@@ -97,6 +97,7 @@ export const LaunchesComponent = () => {
     return <LoadingComponent />;
   }
 
+  // @ts-ignore
   return (
     <CalendarWeekProvider integrations={sortedIntegrations}>
       <div className="flex flex-1 flex-col">
@@ -193,7 +194,7 @@ export const LaunchesComponent = () => {
                 ))}
               </div>
               <AddProviderButton update={() => update(true)} />
-              {sortedIntegrations?.length > 0 && <GeneratorComponent />}
+              {sortedIntegrations?.length > 0 && user?.tier.ai && <GeneratorComponent />}
             </div>
             <div className="flex-1 flex flex-col gap-[14px]">
               <Filters />

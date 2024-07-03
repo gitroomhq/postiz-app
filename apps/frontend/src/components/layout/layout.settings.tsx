@@ -26,6 +26,7 @@ import { Onboarding } from '@gitroom/frontend/components/onboarding/onboarding';
 import { Support } from '@gitroom/frontend/components/layout/support';
 import { ContinueProvider } from '@gitroom/frontend/components/layout/continue.provider';
 import { isGeneral } from '@gitroom/react/helpers/is.general';
+import { CopilotKit } from '@copilotkit/react-core';
 import { Impersonate } from '@gitroom/frontend/components/layout/impersonate';
 import clsx from 'clsx';
 
@@ -50,39 +51,64 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
 
   return (
     <ContextWrapper user={user}>
-      <MantineWrapper>
-        <ToolTip />
-        <ShowMediaBoxModal />
-        <ShowLinkedinCompany />
-        <Toaster />
-        <ShowPostSelector />
-        <Onboarding />
-        <Support />
-        <ContinueProvider />
-        <div className="min-h-[100vh] w-full max-w-[1440px] mx-auto bg-primary px-[12px] text-white flex flex-col">
-          {user?.admin && <Impersonate />}
-          <div className="px-[23px] flex h-[80px] items-center justify-between z-[200] sticky top-0 bg-primary">
-            <Link href="/" className="text-2xl flex items-center gap-[10px]">
-              <div className="min-w-[55px]">
-                <Image src={isGeneral() ? "/postiz.svg" : "/logo.svg"} width={55} height={53} alt="Logo" />
+      <CopilotKit
+        credentials="include"
+        runtimeUrl={process.env.NEXT_PUBLIC_BACKEND_URL + '/copilot/chat'}
+      >
+        <ContextWrapper user={user}>
+          <MantineWrapper>
+            <ToolTip />
+            <ShowMediaBoxModal />
+            <ShowLinkedinCompany />
+            <Toaster />
+            <ShowPostSelector />
+            <Onboarding />
+            <Support />
+            <ContinueProvider />
+            <div className="min-h-[100vh] w-full max-w-[1440px] mx-auto bg-primary px-[12px] text-white flex flex-col">
+              {user?.admin && <Impersonate />}
+              <div className="px-[23px] flex h-[80px] items-center justify-between z-[200] sticky top-0 bg-primary">
+                <Link
+                  href="/"
+                  className="text-2xl flex items-center gap-[10px]"
+                >
+                  <div className="min-w-[55px]">
+                    <Image
+                      src={isGeneral() ? '/postiz.svg' : '/logo.svg'}
+                      width={55}
+                      height={53}
+                      alt="Logo"
+                    />
+                  </div>
+                  <div
+                    className={clsx(
+                      !isGeneral() ? 'mt-[12px]' : 'min-w-[80px]'
+                    )}
+                  >
+                    {isGeneral() ? (
+                      <img src="/postiz-text.svg" className="w-[80px]" />
+                    ) : (
+                      'Gitroom'
+                    )}
+                  </div>
+                </Link>
+                {user?.orgId ? <TopMenu /> : <div />}
+                <div className="flex items-center gap-[8px]">
+                  <SettingsComponent />
+                  <NotificationComponent />
+                  <OrganizationSelector />
+                </div>
               </div>
-              <div className={clsx(!isGeneral() ? "mt-[12px]" : "min-w-[80px]")}>{isGeneral() ? <img src="/postiz-text.svg" className="w-[80px]" /> : 'Gitroom'}</div>
-            </Link>
-            {user?.orgId ? <TopMenu /> : <div />}
-            <div className="flex items-center gap-[8px]">
-              <SettingsComponent />
-              <NotificationComponent />
-              <OrganizationSelector />
+              <div className="flex-1 flex">
+                <div className="flex-1 rounded-3xl px-[23px] py-[17px] flex flex-col">
+                  <Title />
+                  <div className="flex flex-1 flex-col">{children}</div>
+                </div>
+              </div>
             </div>
-          </div>
-          <div className="flex-1 flex">
-            <div className="flex-1 rounded-3xl px-[23px] py-[17px] flex flex-col">
-              <Title />
-              <div className="flex flex-1 flex-col">{children}</div>
-            </div>
-          </div>
-        </div>
-      </MantineWrapper>
+          </MantineWrapper>
+        </ContextWrapper>
+      </CopilotKit>
     </ContextWrapper>
   );
 };

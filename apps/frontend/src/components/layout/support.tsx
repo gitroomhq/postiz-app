@@ -1,7 +1,21 @@
 'use client';
 
+import { EventEmitter } from 'events';
+import { useEffect, useState } from 'react';
+
+export const supportEmitter = new EventEmitter();
+
 export const Support = () => {
-  if (!process.env.NEXT_PUBLIC_DISCORD_SUPPORT) return null;
+  const [show, setShow] = useState(true);
+
+  useEffect(() => {
+    supportEmitter.on('change', setShow);
+    return () => {
+      supportEmitter.off('state', setShow);
+    }
+  }, []);
+
+  if (!process.env.NEXT_PUBLIC_DISCORD_SUPPORT || !show) return null
   return (
     <div
       className="bg-[#fff] w-[194px] h-[58px] fixed right-[20px] bottom-[20px] z-[500] text-[16px] text-[#0E0E0E] rounded-[30px] !rounded-br-[0] cursor-pointer flex justify-center items-center gap-[10px]"
