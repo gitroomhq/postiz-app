@@ -6,6 +6,7 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
 
 export class TiktokProvider extends SocialAbstract implements SocialProvider {
   identifier = 'tiktok';
@@ -16,12 +17,12 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     const value = {
       client_key: process.env.TIKTOK_CLIENT_ID!,
       client_secret: process.env.TIKTOK_CLIENT_SECRET!,
-      grant_type: 'authorization_code',
+      grant_type: 'refresh_token',
       refresh_token: refreshToken,
     };
 
-    const { access_token, refresh_token } = await (
-      await this.fetch('https://open.tiktokapis.com/v2/oauth/token/', {
+    const { access_token, refresh_token, ...all } = await (
+      await fetch('https://open.tiktokapis.com/v2/oauth/token/', {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
@@ -138,117 +139,50 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   async post(
     id: string,
     accessToken: string,
-    postDetails: PostDetails[]
+    postDetails: PostDetails<TikTokDto>[]
   ): Promise<PostResponse[]> {
-    const [firstPost, ...comments] = postDetails;
-
-    let finalId = '';
-    let finalUrl = '';
-    if ((firstPost?.media?.[0]?.path?.indexOf('mp4') || -2) > -1) {
-      const { id: videoId, permalink_url } = await (
-        await this.fetch(
-          `https://graph.facebook.com/v20.0/${id}/videos?access_token=${accessToken}&fields=id,permalink_url`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              file_url: firstPost?.media?.[0]?.path!,
-              description: firstPost.message,
-              published: true,
-            }),
-          }
-        )
-      ).json();
-
-      finalUrl = permalink_url;
-      finalId = videoId;
-    } else {
-      const uploadPhotos = !firstPost?.media?.length
-        ? []
-        : await Promise.all(
-            firstPost.media.map(async (media) => {
-              const { id: photoId } = await (
-                await this.fetch(
-                  `https://graph.facebook.com/v20.0/${id}/photos?access_token=${accessToken}`,
-                  {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                      url: media.url,
-                      published: false,
-                    }),
-                  }
-                )
-              ).json();
-
-              return { media_fbid: photoId };
-            })
-          );
-
+    try {
+      const [firstPost, ...comments] = postDetails;
       const {
-        id: postId,
-        permalink_url,
-        ...all
+        data: { publish_id },
       } = await (
         await this.fetch(
-          `https://graph.facebook.com/v20.0/${id}/feed?access_token=${accessToken}&fields=id,permalink_url`,
+          'https://open.tiktokapis.com/v2/post/publish/video/init/',
           {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json',
+              'Content-Type': 'application/json; charset=UTF-8',
+              Authorization: `Bearer ${accessToken}`,
             },
             body: JSON.stringify({
-              ...(uploadPhotos?.length ? { attached_media: uploadPhotos } : {}),
-              message: firstPost.message,
-              published: true,
+              post_info: {
+                title: firstPost.message,
+                privacy_level: firstPost.settings.privacy_level,
+                disable_duet: firstPost.settings.disable_duet,
+                disable_comment: firstPost.settings.disable_comment,
+                disable_stitch: firstPost.settings.disable_stitch,
+                brand_content_toggle: firstPost.settings.brand_content_toggle,
+                brand_organic_toggle: firstPost.settings.brand_organic_toggle,
+              },
+              source_info: {
+                source: 'PULL_FROM_URL',
+                video_url: firstPost?.media?.[0]?.url!,
+              },
             }),
           }
         )
       ).json();
 
-      finalUrl = permalink_url;
-      finalId = postId;
+      return [
+        {
+          id: firstPost.id,
+          releaseURL: `https://www.tiktok.com`,
+          postId: publish_id,
+          status: 'success',
+        },
+      ];
+    } catch (err) {
+      return [];
     }
-
-    const postsArray = [];
-    for (const comment of comments) {
-      const data = await (
-        await this.fetch(
-          `https://graph.facebook.com/v20.0/${finalId}/comments?access_token=${accessToken}&fields=id,permalink_url`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              ...(comment.media?.length
-                ? { attachment_url: comment.media[0].url }
-                : {}),
-              message: comment.message,
-            }),
-          }
-        )
-      ).json();
-
-      postsArray.push({
-        id: comment.id,
-        postId: data.id,
-        releaseURL: data.permalink_url,
-        status: 'success',
-      });
-    }
-    return [
-      {
-        id: firstPost.id,
-        postId: finalId,
-        releaseURL: finalUrl,
-        status: 'success',
-      },
-      ...postsArray,
-    ];
   }
 }

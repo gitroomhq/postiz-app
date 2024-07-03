@@ -158,7 +158,7 @@ export default withProvider(
     }
 
     if (items[0].length !== 1) {
-      return 'You need one item';
+      return 'You need one media';
     }
 
     if (firstItems[0].path.indexOf('mp4') === -1) {

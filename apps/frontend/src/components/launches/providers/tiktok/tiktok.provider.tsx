@@ -237,4 +237,25 @@ const TikTokPreview: FC = (props) => {
   );
 };
 
-export default withProvider(TikTokSettings, TikTokPreview, TikTokDto);
+export default withProvider(
+  TikTokSettings,
+  TikTokPreview,
+  TikTokDto,
+  async (items) => {
+    const [firstItems] = items;
+
+    if (items.length !== 1) {
+      return 'Tiktok items should be one';
+    }
+
+    if (items[0].length !== 1) {
+      return 'You need one media';
+    }
+
+    if (firstItems[0].path.indexOf('mp4') === -1) {
+      return 'Item must be a video';
+    }
+
+    return true;
+  }
+);
