@@ -169,6 +169,12 @@
     "vite": "^5.0.0",
     "vitest": "1.3.1"
   },
+  "optionalDependencies": {
+    "@nx/nx-darwin-arm64": "18.0.8",
+    "@nx/nx-darwin-x64": "18.0.8",
+    "@nx/nx-linux-x64-gnu": "18.0.8",
+    "@nx/nx-win32-x64-msvc": "18.0.8"
+  },
   "nx": {
     "includedScripts": []
   },
