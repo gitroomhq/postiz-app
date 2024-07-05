@@ -30,9 +30,9 @@ export async function middleware(request: NextRequest) {
   const url = new URL(nextUrl).search;
 
   if (nextUrl.href.indexOf('/auth') === -1 && !authCookie) {
-    const providers = ['google', 'github'];
+    const providers = ['google', 'settings'];
     const findIndex = providers.find(p => nextUrl.href.indexOf(p) > -1);
-    const additional = !findIndex ? '' : (url.indexOf('?') > -1 ? '&' : '?') + `provider=${findIndex.toUpperCase()}`;
+    const additional = !findIndex ? '' : (url.indexOf('?') > -1 ? '&' : '?') + `provider=${(findIndex === 'settings' ? 'github' : findIndex).toUpperCase()}`;
     return NextResponse.redirect(new URL(`/auth${url}${additional}`, nextUrl.href));
   }
 
