@@ -558,7 +558,7 @@ export const Buyer = () => {
           {list?.list?.map((item, index) => (
             <Card key={String(index)} data={item} />
           ))}
-          <Pagination results={list?.count || 0} />
+          {/*<Pagination results={list?.count || 0} />*/}
         </div>
       </div>
     </>
