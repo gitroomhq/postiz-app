@@ -66,7 +66,7 @@ export const LifetimeDeal = () => {
       list.push(`Unlimited team members`);
     }
 
-    if (currentPricing.ai) {
+    if (currentPricing?.ai) {
       list.push(`AI auto-complete`);
     }
 
@@ -92,7 +92,7 @@ export const LifetimeDeal = () => {
       list.push(`Unlimited team members`);
     }
 
-    if (currentPricing.ai) {
+    if (currentPricing?.ai) {
       list.push(`AI auto-complete`);
     }
 

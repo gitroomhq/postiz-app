@@ -340,7 +340,7 @@ export const AddEditModal: FC<{
 
   return (
     <>
-      {user?.tier.ai && (
+      {user?.tier?.ai && (
         <CopilotPopup
           hitEscapeToClose={false}
           clickOutsideToClose={true}

@@ -104,7 +104,7 @@ export const Features: FC<{
       list.push(`Unlimited team members`);
     }
 
-    if (currentPricing.ai) {
+    if (currentPricing?.ai) {
       list.push(`AI auto-complete`);
     }
 

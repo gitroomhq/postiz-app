@@ -194,7 +194,7 @@ export const LaunchesComponent = () => {
                 ))}
               </div>
               <AddProviderButton update={() => update(true)} />
-              {sortedIntegrations?.length > 0 && user?.tier.ai && <GeneratorComponent />}
+              {sortedIntegrations?.length > 0 && user?.tier?.ai && <GeneratorComponent />}
             </div>
             <div className="flex-1 flex flex-col gap-[14px]">
               <Filters />

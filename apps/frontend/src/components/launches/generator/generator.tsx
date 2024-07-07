@@ -366,7 +366,7 @@ export const GeneratorComponent = () => {
   const modal = useModals();
 
   const generate = useCallback(async () => {
-    if (!user?.tier.ai) {
+    if (!user?.tier?.ai) {
       if (
         await deleteDialog(
           'You need to upgrade to use this feature',
