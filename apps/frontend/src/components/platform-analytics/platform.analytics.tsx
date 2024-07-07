@@ -19,6 +19,7 @@ const allowedIntegrations = [
   'tiktok',
   'youtube',
   'pinterest',
+  'threads'
 ];
 
 export const PlatformAnalytics = () => {
@@ -60,6 +61,7 @@ export const PlatformAnalytics = () => {
         'linkedin-page',
         'pinterest',
         'youtube',
+        'threads',
       ].indexOf(currentIntegration.identifier) !== -1
     ) {
       arr.push({
@@ -75,6 +77,7 @@ export const PlatformAnalytics = () => {
         'linkedin-page',
         'pinterest',
         'youtube',
+        'threads',
       ].indexOf(currentIntegration.identifier) !== -1
     ) {
       arr.push({

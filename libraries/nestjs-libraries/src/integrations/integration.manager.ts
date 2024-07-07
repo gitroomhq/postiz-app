@@ -14,6 +14,7 @@ import { TiktokProvider } from '@gitroom/nestjs-libraries/integrations/social/ti
 import { PinterestProvider } from '@gitroom/nestjs-libraries/integrations/social/pinterest.provider';
 import { DribbbleProvider } from '@gitroom/nestjs-libraries/integrations/social/dribbble.provider';
 import { LinkedinPageProvider } from '@gitroom/nestjs-libraries/integrations/social/linkedin.page.provider';
+import { ThreadsProvider } from '@gitroom/nestjs-libraries/integrations/social/threads.provider';
 
 const socialIntegrationList = [
   ...(process.env.IS_GENERAL !== 'true' ? [new XProvider()] : []),
@@ -22,6 +23,7 @@ const socialIntegrationList = [
   new RedditProvider(),
   new FacebookProvider(),
   new InstagramProvider(),
+  new ThreadsProvider(),
   new YoutubeProvider(),
   new TiktokProvider(),
   new PinterestProvider(),

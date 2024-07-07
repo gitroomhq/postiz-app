@@ -12,6 +12,7 @@ import YoutubeProvider from '@gitroom/frontend/components/launches/providers/you
 import TiktokProvider from '@gitroom/frontend/components/launches/providers/tiktok/tiktok.provider';
 import PinterestProvider from '@gitroom/frontend/components/launches/providers/pinterest/pinterest.provider';
 import DribbbleProvider from '@gitroom/frontend/components/launches/providers/dribbble/dribbble.provider';
+import ThreadsProvider from '@gitroom/frontend/components/launches/providers/threads/threads.provider';
 
 export const Providers = [
     {identifier: 'devto', component: DevtoProvider},
@@ -27,6 +28,7 @@ export const Providers = [
     {identifier: 'tiktok', component: TiktokProvider},
     {identifier: 'pinterest', component: PinterestProvider},
     {identifier: 'dribbble', component: DribbbleProvider},
+    {identifier: 'threads', component: ThreadsProvider},
 ];
 
 
