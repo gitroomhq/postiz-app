@@ -34,7 +34,7 @@ export const AddPostButton: FC<{ onClick: () => void; num: number }> = (
           />
         </svg>
       </div>
-      <div>Add post</div>
+      <div>Add comment</div>
     </Button>
   );
 };
