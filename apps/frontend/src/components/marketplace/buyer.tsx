@@ -18,7 +18,7 @@ import {
   allTagsOptions,
   tagsList,
 } from '@gitroom/nestjs-libraries/database/prisma/marketplace/tags.list';
-import { chunk, fill } from 'lodash';
+import { capitalize, chunk, fill } from 'lodash';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useModals } from '@mantine/modals';
@@ -120,6 +120,19 @@ const Pagination: FC<{ results: number }> = (props) => {
       });
     },
     [page]
+  );
+
+  return (
+    <div className="flex flex-col items-center mt-[100px] gap-[27px] text-center">
+      <div>
+        <img src="/peoplemarketplace.svg" />
+      </div>
+      <div className="text-[48px]">
+        The marketplace is not opened yet
+        <br />
+        Check again soon!
+      </div>
+    </div>
   );
 
   if (results < 8) {
