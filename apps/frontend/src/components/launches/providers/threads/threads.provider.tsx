@@ -109,10 +109,11 @@ const ThreadsPreview: FC = (props) => {
   );
 };
 
-export default withProvider(null, ThreadsPreview, undefined, async ([firstPost, ...otherPosts]) => {
-  if (!firstPost.length) {
-    return 'Instagram should have at least one media';
+export default withProvider(
+  null,
+  ThreadsPreview,
+  undefined,
+  async ([firstPost, ...otherPosts]) => {
+    return true;
   }
-
-  return true;
-});
+);
