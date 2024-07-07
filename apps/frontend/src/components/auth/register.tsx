@@ -107,8 +107,6 @@ export function RegisterAfter({
       setLoading(false);
     }
 
-    console.log(register.headers.get('activate'), register.headers.get('Activate'));
-
     if (register.headers.get('activate')) {
       router.push('/auth/activate');
     }
