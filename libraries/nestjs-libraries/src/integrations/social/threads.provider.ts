@@ -43,7 +43,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
         )}` +
         `&state=${state}` +
         `&scope=${encodeURIComponent(
-          'threads_basic,threads_content_publish,threads_manage_replies,threads_read_replies,threads_manage_insights'
+          'threads_basic,threads_content_publish,threads_manage_replies,threads_manage_insights'
         )}`,
       codeVerifier: makeId(10),
       state,
