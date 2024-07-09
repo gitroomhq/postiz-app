@@ -122,19 +122,6 @@ const Pagination: FC<{ results: number }> = (props) => {
     [page]
   );
 
-  return (
-    <div className="flex flex-col items-center mt-[100px] gap-[27px] text-center">
-      <div>
-        <img src="/peoplemarketplace.svg" />
-      </div>
-      <div className="text-[48px]">
-        The marketplace is not opened yet
-        <br />
-        Check again soon!
-      </div>
-    </div>
-  );
-
   if (results < 8) {
     return null;
   }
@@ -530,6 +517,20 @@ export const Buyer = () => {
   }, [services]);
 
   const { data: list } = useSWR<Root>('search' + services + page, marketplace);
+
+  return (
+    <div className="flex flex-col items-center mt-[100px] gap-[27px] text-center">
+      <div>
+        <img src="/peoplemarketplace.svg" />
+      </div>
+      <div className="text-[48px]">
+        The marketplace is not opened yet
+        <br />
+        Check again soon!
+      </div>
+    </div>
+  );
+
   return (
     <>
       <div>
