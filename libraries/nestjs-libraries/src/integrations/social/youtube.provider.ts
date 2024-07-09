@@ -170,12 +170,14 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
         },
       });
 
-      return [{
-        id: firstPost.id,
-        releaseURL: `https://www.youtube.com/watch?v=${all.data.id}`,
-        postId: all?.data?.id!,
-        status: 'success',
-      }];
+      return [
+        {
+          id: firstPost.id,
+          releaseURL: `https://www.youtube.com/watch?v=${all.data.id}`,
+          postId: all?.data?.id!,
+          status: 'success',
+        },
+      ];
     } catch (err) {
       console.log(err);
     }
@@ -187,81 +189,86 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     accessToken: string,
     date: number
   ): Promise<AnalyticsData[]> {
-    const endDate = dayjs().format('YYYY-MM-DD');
-    const startDate = dayjs().subtract(date, 'day').format('YYYY-MM-DD');
+    try {
+      const endDate = dayjs().format('YYYY-MM-DD');
+      const startDate = dayjs().subtract(date, 'day').format('YYYY-MM-DD');
 
-    const { client, youtubeAnalytics } = clientAndYoutube();
-    client.setCredentials({ access_token: accessToken });
-    const youtubeClient = youtubeAnalytics(client);
-    const { data } = await youtubeClient.reports.query({
-      ids: 'channel==MINE',
-      startDate,
-      endDate,
-      metrics:
-        'views,estimatedMinutesWatched,averageViewDuration,averageViewPercentage,subscribersGained,likes,subscribersLost',
-      dimensions: 'day',
-      sort: 'day',
-    });
+      const { client, youtubeAnalytics } = clientAndYoutube();
+      client.setCredentials({ access_token: accessToken });
 
-    const columns = data?.columnHeaders?.map((p) => p.name)!;
-    const mappedData = data?.rows?.map((p) => {
-      return columns.reduce((acc, curr, index) => {
-        acc[curr!] = p[index];
-        return acc;
-      }, {} as any);
-    });
+      const youtubeClient = youtubeAnalytics(client);
+      const { data } = await youtubeClient.reports.query({
+        ids: 'channel==MINE',
+        startDate,
+        endDate,
+        metrics:
+          'views,estimatedMinutesWatched,averageViewDuration,averageViewPercentage,subscribersGained,likes,subscribersLost',
+        dimensions: 'day',
+        sort: 'day',
+      });
 
-    const acc = [] as any[];
-    acc.push({
-      label: 'Estimated Minutes Watched',
-      data: mappedData?.map((p: any) => ({
-        total: p.estimatedMinutesWatched,
-        date: p.day,
-      })),
-    });
+      const columns = data?.columnHeaders?.map((p) => p.name)!;
+      const mappedData = data?.rows?.map((p) => {
+        return columns.reduce((acc, curr, index) => {
+          acc[curr!] = p[index];
+          return acc;
+        }, {} as any);
+      });
 
-    acc.push({
-      label: 'Average View Duration',
-      average: true,
-      data: mappedData?.map((p: any) => ({
-        total: p.averageViewDuration,
-        date: p.day,
-      })),
-    });
+      const acc = [] as any[];
+      acc.push({
+        label: 'Estimated Minutes Watched',
+        data: mappedData?.map((p: any) => ({
+          total: p.estimatedMinutesWatched,
+          date: p.day,
+        })),
+      });
 
-    acc.push({
-      label: 'Average View Percentage',
-      average: true,
-      data: mappedData?.map((p: any) => ({
-        total: p.averageViewPercentage,
-        date: p.day,
-      })),
-    });
+      acc.push({
+        label: 'Average View Duration',
+        average: true,
+        data: mappedData?.map((p: any) => ({
+          total: p.averageViewDuration,
+          date: p.day,
+        })),
+      });
 
-    acc.push({
-      label: 'Subscribers Gained',
-      data: mappedData?.map((p: any) => ({
-        total: p.subscribersGained,
-        date: p.day,
-      })),
-    });
+      acc.push({
+        label: 'Average View Percentage',
+        average: true,
+        data: mappedData?.map((p: any) => ({
+          total: p.averageViewPercentage,
+          date: p.day,
+        })),
+      });
 
-    acc.push({
-      label: 'Subscribers Lost',
-      data: mappedData?.map((p: any) => ({
-        total: p.subscribersLost,
-        date: p.day,
-      })),
-    });
+      acc.push({
+        label: 'Subscribers Gained',
+        data: mappedData?.map((p: any) => ({
+          total: p.subscribersGained,
+          date: p.day,
+        })),
+      });
 
-    acc.push({
-      label: 'Likes',
-      data: mappedData?.map((p: any) => ({
-        total: p.likes,
-        date: p.day,
-      })),
-    });
+      acc.push({
+        label: 'Subscribers Lost',
+        data: mappedData?.map((p: any) => ({
+          total: p.subscribersLost,
+          date: p.day,
+        })),
+      });
 
-    return acc;
+      acc.push({
+        label: 'Likes',
+        data: mappedData?.map((p: any) => ({
+          total: p.likes,
+          date: p.day,
+        })),
+      });
+
+      return acc;
+    } catch (err) {
+      return [];
+    }
   }
 }
