@@ -19,6 +19,7 @@ export class DribbbleProvider extends SocialAbstract implements SocialProvider {
   identifier = 'dribbble';
   name = 'Dribbble';
   isBetweenSteps = false;
+  scopes = ['public', 'upload'];
 
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const { access_token, expires_in } = await (
@@ -33,8 +34,7 @@ export class DribbbleProvider extends SocialAbstract implements SocialProvider {
         body: new URLSearchParams({
           grant_type: 'refresh_token',
           refresh_token: refreshToken,
-          scope:
-            'boards:read,boards:write,pins:read,pins:write,user_accounts:read',
+          scope: `${this.scopes.join(',')}`,
           redirect_uri: `${process.env.FRONTEND_URL}/integrations/social/pinterest`,
         }),
       })
@@ -87,7 +87,7 @@ export class DribbbleProvider extends SocialAbstract implements SocialProvider {
         `${process.env.FRONTEND_URL}/integrations/social/dribbble${
           refresh ? `?refresh=${refresh}` : ''
         }`
-      )}&response_type=code&scope=public+upload&state=${state}`,
+      )}&response_type=code&scope=${this.scopes.join('+')}&state=${state}`,
       codeVerifier: makeId(10),
       state,
     };
@@ -98,7 +98,7 @@ export class DribbbleProvider extends SocialAbstract implements SocialProvider {
     codeVerifier: string;
     refresh: string;
   }) {
-    const { access_token } = await (
+    const { access_token, scope } = await (
       await this.fetch(
         `https://dribbble.com/oauth/token?client_id=${process.env.DRIBBBLE_CLIENT_ID}&client_secret=${process.env.DRIBBBLE_CLIENT_SECRET}&code=${params.code}&redirect_uri=${process.env.FRONTEND_URL}/integrations/social/dribbble`,
         {
@@ -106,6 +106,8 @@ export class DribbbleProvider extends SocialAbstract implements SocialProvider {
         }
       )
     ).json();
+
+    this.checkScopes(this.scopes, scope);
 
     const { id, name, avatar_url, login } = await (
       await this.fetch('https://api.dribbble.com/v2/user', {

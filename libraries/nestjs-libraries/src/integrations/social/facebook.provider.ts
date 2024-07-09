@@ -13,7 +13,14 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
   identifier = 'facebook';
   name = 'Facebook Page';
   isBetweenSteps = true;
-
+  scopes = [
+    'pages_show_list',
+    'business_management',
+    'pages_manage_posts',
+    'pages_manage_engagement',
+    'pages_read_engagement',
+    'read_insights',
+  ];
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     return {
       refreshToken: '',
@@ -38,7 +45,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
           }`
         )}` +
         `&state=${state}` +
-        '&scope=pages_show_list,business_management,pages_manage_posts,pages_manage_engagement,pages_read_engagement,read_insights',
+        `&scope=${this.scopes.join(',')}`,
       codeVerifier: makeId(10),
       state,
     };
@@ -72,6 +79,17 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
           `&fb_exchange_token=${getAccessToken.access_token}&fields=access_token,expires_in`
       )
     ).json();
+
+    const { data } = await (
+      await this.fetch(
+        `https://graph.facebook.com/v20.0/me/permissions?access_token=${access_token}`
+      )
+    ).json();
+
+    const permissions = data
+      .filter((d: any) => d.status === 'granted')
+      .map((p: any) => p.permission);
+    this.checkScopes(this.scopes, permissions);
 
     if (params.refresh) {
       const information = await this.fetchPageInformation(
@@ -277,22 +295,24 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       )
     ).json();
 
-    return data?.map((d: any) => ({
-      label:
-        d.name === 'page_impressions_unique'
-          ? 'Page Impressions'
-          : d.name === 'page_post_engagements'
-          ? 'Posts Engagement'
-          : d.name === 'page_daily_follows'
-          ? 'Page followers'
-          : d.name === 'page_video_views'
-          ? 'Videos views'
-          : 'Posts Impressions',
-      percentageChange: 5,
-      data: d?.values?.map((v: any) => ({
-        total: v.value,
-        date: dayjs(v.end_time).format('YYYY-MM-DD'),
-      })),
-    })) || [];
+    return (
+      data?.map((d: any) => ({
+        label:
+          d.name === 'page_impressions_unique'
+            ? 'Page Impressions'
+            : d.name === 'page_post_engagements'
+            ? 'Posts Engagement'
+            : d.name === 'page_daily_follows'
+            ? 'Page followers'
+            : d.name === 'page_video_views'
+            ? 'Videos views'
+            : 'Posts Impressions',
+        percentageChange: 5,
+        data: d?.values?.map((v: any) => ({
+          total: v.value,
+          date: dayjs(v.end_time).format('YYYY-MM-DD'),
+        })),
+      })) || []
+    );
   }
 }

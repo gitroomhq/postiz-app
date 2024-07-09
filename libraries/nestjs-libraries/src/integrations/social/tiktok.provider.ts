@@ -12,6 +12,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   identifier = 'tiktok';
   name = 'Tiktok';
   isBetweenSteps = false;
+  scopes = ['user.info.basic', 'video.publish', 'video.upload'];
 
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const value = {
@@ -74,9 +75,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
         )}` +
         `&state=${state}` +
         `&response_type=code` +
-        `&scope=${encodeURIComponent(
-          'user.info.basic,video.publish,video.upload'
-        )}`,
+        `&scope=${encodeURIComponent(this.scopes.join(','))}`,
       codeVerifier: state,
       state,
     };
@@ -99,7 +98,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
           : `${process.env.FRONTEND_URL}/integrations/social/tiktok`,
     };
 
-    const { access_token, refresh_token } = await (
+    const { access_token, refresh_token, scope } = await (
       await this.fetch('https://open.tiktokapis.com/v2/oauth/token/', {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -108,6 +107,8 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
         body: new URLSearchParams(value).toString(),
       })
     ).json();
+
+    this.checkScopes(this.scopes, scope);
 
     const {
       data: {

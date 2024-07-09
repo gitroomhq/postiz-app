@@ -1,5 +1,9 @@
 import {
-  AnalyticsData, AuthTokenDetails, PostDetails, PostResponse, SocialProvider
+  AnalyticsData,
+  AuthTokenDetails,
+  PostDetails,
+  PostResponse,
+  SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import sharp from 'sharp';
@@ -7,12 +11,12 @@ import { lookup } from 'mime-types';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
 import { removeMarkdown } from '@gitroom/helpers/utils/remove.markdown';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
-import { number, string } from 'yup';
 
 export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   identifier = 'linkedin';
   name = 'LinkedIn';
   isBetweenSteps = false;
+  scopes = ['openid', 'profile', 'w_member_social', 'r_basicprofile'];
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     const { access_token: accessToken, refresh_token: refreshToken } = await (
@@ -69,9 +73,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       `${process.env.FRONTEND_URL}/integrations/social/linkedin${
         refresh ? `?refresh=${refresh}` : ''
       }`
-    )}&state=${state}&scope=${encodeURIComponent(
-      'openid profile w_member_social r_basicprofile'
-    )}`;
+    )}&state=${state}&scope=${encodeURIComponent(this.scopes.join(' '))}`;
     return {
       url,
       codeVerifier,
@@ -100,6 +102,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       access_token: accessToken,
       expires_in: expiresIn,
       refresh_token: refreshToken,
+      scope,
     } = await (
       await this.fetch('https://www.linkedin.com/oauth/v2/accessToken', {
         method: 'POST',
@@ -109,6 +112,8 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
         body,
       })
     ).json();
+
+    this.checkScopes(this.scopes, scope);
 
     const {
       name,
@@ -380,7 +385,10 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
               Authorization: `Bearer ${accessToken}`,
             },
             body: JSON.stringify({
-              actor: type === 'personal' ? `urn:li:person:${id}` : `urn:li:organization:${id}`,
+              actor:
+                type === 'personal'
+                  ? `urn:li:person:${id}`
+                  : `urn:li:organization:${id}`,
               object: topPostId,
               message: {
                 text: removeMarkdown({

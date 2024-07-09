@@ -15,6 +15,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   identifier = 'x';
   name = 'X';
   isBetweenSteps = false;
+  scopes = [];
 
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const startingClient = new TwitterApi({
@@ -55,9 +56,8 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     });
     const { url, oauth_token, oauth_token_secret } =
       await client.generateAuthLink(
-        process.env.FRONTEND_URL + `/integrations/social/x${
-        refresh ? `?refresh=${refresh}` : ''
-      }`,
+        process.env.FRONTEND_URL +
+          `/integrations/social/x${refresh ? `?refresh=${refresh}` : ''}`,
         {
           authAccessType: 'write',
           linkMode: 'authenticate',

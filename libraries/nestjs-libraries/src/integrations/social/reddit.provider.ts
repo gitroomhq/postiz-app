@@ -14,6 +14,7 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
   identifier = 'reddit';
   name = 'Reddit';
   isBetweenSteps = false;
+  scopes = ['read', 'identity', 'submit', 'flair'];
 
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const {
@@ -62,9 +63,7 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
       process.env.REDDIT_CLIENT_ID
     }&response_type=code&state=${state}&redirect_uri=${encodeURIComponent(
       `${process.env.FRONTEND_URL}/integrations/social/reddit`
-    )}&duration=permanent&scope=${encodeURIComponent(
-      'read identity submit flair'
-    )}`;
+    )}&duration=permanent&scope=${encodeURIComponent(this.scopes.join(' '))}`;
     return {
       url,
       codeVerifier,
@@ -77,6 +76,7 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
       access_token: accessToken,
       refresh_token: refreshToken,
       expires_in: expiresIn,
+      scope
     } = await (
       await this.fetch('https://www.reddit.com/api/v1/access_token', {
         method: 'POST',
@@ -93,6 +93,8 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
         }),
       })
     ).json();
+
+    this.checkScopes(this.scopes, scope);
 
     const { name, id, icon_img } = await (
       await this.fetch('https://oauth.reddit.com/api/v1/me', {

@@ -1,3 +1,5 @@
+import { HttpStatusCode } from 'axios';
+
 export const dynamic = 'force-dynamic';
 
 import { internalFetch } from '@gitroom/helpers/utils/internal.fetch';
@@ -19,12 +21,16 @@ export default async function Page({
     };
   }
 
-  const { id, inBetweenSteps } = await (
-    await internalFetch(`/integrations/social/${provider}/connect`, {
-      method: 'POST',
-      body: JSON.stringify(searchParams),
-    })
-  ).json();
+  const data = await internalFetch(`/integrations/social/${provider}/connect`, {
+    method: 'POST',
+    body: JSON.stringify(searchParams),
+  });
+
+  if (data.status === HttpStatusCode.NotAcceptable) {
+    return redirect(`/launches?scope=missing`);
+  }
+
+  const { inBetweenSteps, id } = await data.json();
 
   if (inBetweenSteps && !searchParams.refresh) {
     return redirect(`/launches?added=${provider}&continue=${id}`);

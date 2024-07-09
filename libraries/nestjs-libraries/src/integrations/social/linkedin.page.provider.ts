@@ -7,9 +7,7 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { LinkedinProvider } from '@gitroom/nestjs-libraries/integrations/social/linkedin.provider';
-import { number, string } from 'yup';
 import dayjs from 'dayjs';
-import { writeFileSync } from 'fs';
 
 export class LinkedinPageProvider
   extends LinkedinProvider
@@ -18,6 +16,15 @@ export class LinkedinPageProvider
   override identifier = 'linkedin-page';
   override name = 'LinkedIn Page';
   override isBetweenSteps = true;
+  override scopes = [
+    'openid',
+    'profile',
+    'w_member_social',
+    'r_basicprofile',
+    'rw_organization_admin',
+    'w_organization_social',
+    'r_organization_social',
+  ];
 
   override async refreshToken(
     refresh_token: string
@@ -76,9 +83,7 @@ export class LinkedinPageProvider
       `${process.env.FRONTEND_URL}/integrations/social/linkedin-page${
         refresh ? `?refresh=${refresh}` : ''
       }`
-    )}&state=${state}&scope=${encodeURIComponent(
-      'openid profile w_member_social r_basicprofile rw_organization_admin w_organization_social r_organization_social'
-    )}`;
+    )}&state=${state}&scope=${encodeURIComponent(this.scopes.join(' '))}`;
     return {
       url,
       codeVerifier,
@@ -152,6 +157,7 @@ export class LinkedinPageProvider
       access_token: accessToken,
       expires_in: expiresIn,
       refresh_token: refreshToken,
+      scope,
     } = await (
       await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
         method: 'POST',
@@ -161,6 +167,8 @@ export class LinkedinPageProvider
         body,
       })
     ).json();
+
+    this.checkScopes(this.scopes, scope);
 
     const {
       name,

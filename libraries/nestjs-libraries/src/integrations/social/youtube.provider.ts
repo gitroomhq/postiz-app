@@ -46,6 +46,17 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
   identifier = 'youtube';
   name = 'YouTube';
   isBetweenSteps = false;
+  scopes = [
+    'https://www.googleapis.com/auth/userinfo.profile',
+    'https://www.googleapis.com/auth/userinfo.email',
+    'https://www.googleapis.com/auth/youtube',
+    'https://www.googleapis.com/auth/youtube.force-ssl',
+    'https://www.googleapis.com/auth/youtube.readonly',
+    'https://www.googleapis.com/auth/youtube.upload',
+    'https://www.googleapis.com/auth/youtubepartner',
+    'https://www.googleapis.com/auth/youtubepartner',
+    'https://www.googleapis.com/auth/yt-analytics.readonly',
+  ];
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     const { client, oauth2 } = clientAndYoutube();
@@ -79,17 +90,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
         prompt: 'consent',
         state,
         redirect_uri: `${process.env.FRONTEND_URL}/integrations/social/youtube`,
-        scope: [
-          'https://www.googleapis.com/auth/userinfo.profile',
-          'https://www.googleapis.com/auth/userinfo.email',
-          'https://www.googleapis.com/auth/youtube',
-          'https://www.googleapis.com/auth/youtube.force-ssl',
-          'https://www.googleapis.com/auth/youtube.readonly',
-          'https://www.googleapis.com/auth/youtube.upload',
-          'https://www.googleapis.com/auth/youtubepartner',
-          'https://www.googleapis.com/auth/youtubepartner',
-          'https://www.googleapis.com/auth/yt-analytics.readonly',
-        ],
+        scope: this.scopes.slice(0),
       }),
       codeVerifier: makeId(11),
       state,
@@ -104,6 +105,9 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     const { client, oauth2 } = clientAndYoutube();
     const { tokens } = await client.getToken(params.code);
     client.setCredentials(tokens);
+    const { scopes } = await client.getTokenInfo(tokens.access_token!);
+    this.checkScopes(this.scopes, scopes);
+
     const user = oauth2(client);
     const { data } = await user.userinfo.get();
 

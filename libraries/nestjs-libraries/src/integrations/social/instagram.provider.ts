@@ -18,6 +18,15 @@ export class InstagramProvider
   identifier = 'instagram';
   name = 'Instagram';
   isBetweenSteps = true;
+  scopes = [
+    'instagram_basic',
+    'pages_show_list',
+    'pages_read_engagement',
+    'business_management',
+    'instagram_content_publish',
+    'instagram_manage_comments',
+    'instagram_manage_insights',
+  ];
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     return {
@@ -43,9 +52,7 @@ export class InstagramProvider
           }`
         )}` +
         `&state=${state}` +
-        `&scope=${encodeURIComponent(
-          'instagram_basic,pages_show_list,pages_read_engagement,business_management,instagram_content_publish,instagram_manage_comments,instagram_manage_insights'
-        )}`,
+        `&scope=${encodeURIComponent(this.scopes.join(','))}`,
       codeVerifier: makeId(10),
       state,
     };
@@ -79,6 +86,17 @@ export class InstagramProvider
           `&fb_exchange_token=${getAccessToken.access_token}`
       )
     ).json();
+
+    const { data } = await (
+      await this.fetch(
+        `https://graph.facebook.com/v20.0/me/permissions?access_token=${access_token}`
+      )
+    ).json();
+
+    const permissions = data
+      .filter((d: any) => d.status === 'granted')
+      .map((p: any) => p.permission);
+    this.checkScopes(this.scopes, permissions);
 
     const {
       id,
@@ -343,13 +361,15 @@ export class InstagramProvider
 
     console.log(all);
 
-    return data?.map((d: any) => ({
-      label: d.title,
-      percentageChange: 5,
-      data: d.values.map((v: any) => ({
-        total: v.value,
-        date: dayjs(v.end_time).format('YYYY-MM-DD'),
-      })),
-    })) || [];
+    return (
+      data?.map((d: any) => ({
+        label: d.title,
+        percentageChange: 5,
+        data: d.values.map((v: any) => ({
+          total: v.value,
+          date: dayjs(v.end_time).format('YYYY-MM-DD'),
+        })),
+      })) || []
+    );
   }
 }

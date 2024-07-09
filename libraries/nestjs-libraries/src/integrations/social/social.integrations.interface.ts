@@ -71,4 +71,5 @@ export interface SocialProvider
   identifier: string;
   name: string;
   isBetweenSteps: boolean;
+  scopes: string[];
 }

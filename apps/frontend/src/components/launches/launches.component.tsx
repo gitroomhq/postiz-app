@@ -14,13 +14,16 @@ import clsx from 'clsx';
 import { useUser } from '../layout/user.context';
 import { Menu } from '@gitroom/frontend/components/launches/menu/menu';
 import { GeneratorComponent } from '@gitroom/frontend/components/launches/generator/generator';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Integration } from '@prisma/client';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
+import { useToaster } from '@gitroom/react/toaster/toaster';
 
 export const LaunchesComponent = () => {
   const fetch = useFetch();
   const router = useRouter();
+  const search = useSearchParams();
+  const toast = useToaster();
 
   const [reload, setReload] = useState(false);
   const load = useCallback(async (path: string) => {
@@ -88,7 +91,13 @@ export const LaunchesComponent = () => {
   );
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.opener) {
+    if (typeof window === 'undefined') {
+      return ;
+    }
+    if (search.get('scope') === 'missing') {
+      toast.show('You have to approve all the channel permissions', 'warning');
+    }
+    if (window.opener) {
       window.close();
     }
   }, []);

@@ -15,6 +15,12 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
   identifier = 'threads';
   name = 'Threads';
   isBetweenSteps = false;
+  scopes = [
+    'threads_basic',
+    'threads_content_publish',
+    'threads_manage_replies',
+    'threads_manage_insights',
+  ];
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     return {
@@ -42,9 +48,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
               }`
         )}` +
         `&state=${state}` +
-        `&scope=${encodeURIComponent(
-          'threads_basic,threads_content_publish,threads_manage_replies,threads_manage_insights'
-        )}`,
+        `&scope=${encodeURIComponent(this.scopes.join(','))}`,
       codeVerifier: makeId(10),
       state,
     };
@@ -214,7 +218,9 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
 
       const { id: containerId } = await (
         await this.fetch(
-          `https://graph.threads.net/v1.0/${id}/threads?text=${firstPost?.message}&media_type=CAROUSEL&children=${medias.join(
+          `https://graph.threads.net/v1.0/${id}/threads?text=${
+            firstPost?.message
+          }&media_type=CAROUSEL&children=${medias.join(
             ','
           )}&access_token=${accessToken}`,
           {
@@ -304,10 +310,12 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       data?.map((d: any) => ({
         label: capitalize(d.name),
         percentageChange: 5,
-        data: d.total_value ? [{total: d.total_value.value, date: dayjs().format('YYYY-MM-DD')}] : d.values.map((v: any) => ({
-          total: v.value,
-          date: dayjs(v.end_time).format('YYYY-MM-DD'),
-        })),
+        data: d.total_value
+          ? [{ total: d.total_value.value, date: dayjs().format('YYYY-MM-DD') }]
+          : d.values.map((v: any) => ({
+              total: v.value,
+              date: dayjs(v.end_time).format('YYYY-MM-DD'),
+            })),
       })) || []
     );
   }

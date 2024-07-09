@@ -20,6 +20,13 @@ export class PinterestProvider
   identifier = 'pinterest';
   name = 'Pinterest';
   isBetweenSteps = false;
+  scopes = [
+    'boards:read',
+    'boards:write',
+    'pins:read',
+    'pins:write',
+    'user_accounts:read',
+  ];
 
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const { access_token, expires_in } = await (
@@ -34,8 +41,7 @@ export class PinterestProvider
         body: new URLSearchParams({
           grant_type: 'refresh_token',
           refresh_token: refreshToken,
-          scope:
-            'boards:read,boards:write,pins:read,pins:write,user_accounts:read',
+          scope: this.scopes.join(','),
           redirect_uri: `${process.env.FRONTEND_URL}/integrations/social/pinterest`,
         }),
       })
@@ -83,7 +89,7 @@ export class PinterestProvider
     codeVerifier: string;
     refresh: string;
   }) {
-    const { access_token, refresh_token, expires_in } = await (
+    const { access_token, refresh_token, expires_in, scope } = await (
       await this.fetch('https://api.pinterest.com/v5/oauth/token', {
         method: 'POST',
         headers: {
@@ -99,6 +105,8 @@ export class PinterestProvider
         }),
       })
     ).json();
+
+    this.checkScopes(this.scopes, scope);
 
     const { id, profile_image, username } = await (
       await this.fetch('https://api.pinterest.com/v5/user_account', {

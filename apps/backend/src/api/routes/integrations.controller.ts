@@ -6,6 +6,7 @@ import {
   Param,
   Post,
   Query,
+  UseFilters,
 } from '@nestjs/common';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { ConnectIntegrationDto } from '@gitroom/nestjs-libraries/dtos/integrations/connect.integration.dto';
@@ -23,6 +24,7 @@ import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permis
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { ApiTags } from '@nestjs/swagger';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
+import { NotEnoughScopesFilter } from '@gitroom/nestjs-libraries/integrations/integration.missing.scopes';
 
 @ApiTags('Integrations')
 @Controller('/integrations')
@@ -181,6 +183,7 @@ export class IntegrationsController {
 
   @Post('/social/:integration/connect')
   @CheckPolicies([AuthorizationActions.Create, Sections.CHANNEL])
+  @UseFilters(new NotEnoughScopesFilter())
   async connectSocialMedia(
     @GetOrgFromRequest() org: Organization,
     @Param('integration') integration: string,
