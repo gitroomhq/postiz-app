@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Inject, Param, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { Organization } from '@prisma/client';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { StarsService } from '@gitroom/nestjs-libraries/database/prisma/stars/stars.service';
@@ -61,23 +69,57 @@ export class AnalyticsController {
       throw new Error('Invalid integration');
     }
 
-    if (getIntegration.type === 'social') {
-      const integrationProvider = this._integrationManager.getSocialIntegration(
-        getIntegration.providerIdentifier
-      );
-
-      const getIntegrationData = await ioRedis.get(`integration:${org.id}:${integration}:${date}`);
-      if (getIntegrationData) {
-        return JSON.parse(getIntegrationData)
-      }
-
-      if (integrationProvider.analytics) {
-        const loadAnalytics = await integrationProvider.analytics(getIntegration.internalId, getIntegration.token, +date);
-        await ioRedis.set(`integration:${org.id}:${integration}:${date}`, JSON.stringify(loadAnalytics), 'EX', !process.env.NODE_ENV || process.env.NODE_ENV === 'development' ? 1 : 3600);
-        return loadAnalytics;
-      }
-
+    if (getIntegration.type !== 'social') {
       return {};
     }
+
+    const integrationProvider = this._integrationManager.getSocialIntegration(
+      getIntegration.providerIdentifier
+    );
+
+    if (dayjs(getIntegration?.tokenExpiration).isBefore(dayjs())) {
+      const { accessToken, expiresIn, refreshToken } =
+        await integrationProvider.refreshToken(getIntegration.refreshToken!);
+
+      await this._integrationService.createOrUpdateIntegration(
+        getIntegration.organizationId,
+        getIntegration.name,
+        getIntegration.picture!,
+        'social',
+        getIntegration.internalId,
+        getIntegration.providerIdentifier,
+        accessToken,
+        refreshToken,
+        expiresIn
+      );
+
+      getIntegration.token = accessToken;
+    }
+
+    const getIntegrationData = await ioRedis.get(
+      `integration:${org.id}:${integration}:${date}`
+    );
+    if (getIntegrationData) {
+      return JSON.parse(getIntegrationData);
+    }
+
+    if (integrationProvider.analytics) {
+      const loadAnalytics = await integrationProvider.analytics(
+        getIntegration.internalId,
+        getIntegration.token,
+        +date
+      );
+      await ioRedis.set(
+        `integration:${org.id}:${integration}:${date}`,
+        JSON.stringify(loadAnalytics),
+        'EX',
+        !process.env.NODE_ENV || process.env.NODE_ENV === 'development'
+          ? 1
+          : 3600
+      );
+      return loadAnalytics;
+    }
+
+    return {};
   }
 }
