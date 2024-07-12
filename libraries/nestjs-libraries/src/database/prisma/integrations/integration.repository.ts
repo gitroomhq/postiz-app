@@ -187,8 +187,9 @@ export class IntegrationRepository {
     });
   }
 
-  countPostsForChannel(org: string, id: string) {
-    return this._posts.model.post.count({
+  getPostsForChannel(org: string, id: string) {
+    return this._posts.model.post.groupBy({
+      by: ['group'],
       where: {
         organizationId: org,
         integrationId: id,

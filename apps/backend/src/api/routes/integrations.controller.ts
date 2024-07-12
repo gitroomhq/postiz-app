@@ -31,7 +31,7 @@ import { NotEnoughScopesFilter } from '@gitroom/nestjs-libraries/integrations/in
 export class IntegrationsController {
   constructor(
     private _integrationManager: IntegrationManager,
-    private _integrationService: IntegrationService
+    private _integrationService: IntegrationService,
   ) {}
   @Get('/')
   getIntegration() {
@@ -293,7 +293,6 @@ export class IntegrationsController {
     @GetOrgFromRequest() org: Organization,
     @Body('id') id: string
   ) {
-    // @ts-ignore
     return this._integrationService.deleteChannel(org.id, id);
   }
 }

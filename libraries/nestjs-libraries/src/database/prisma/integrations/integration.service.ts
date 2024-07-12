@@ -7,13 +7,15 @@ import { SocialProvider } from '@gitroom/nestjs-libraries/integrations/social/so
 import { Integration } from '@prisma/client';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { LinkedinPageProvider } from '@gitroom/nestjs-libraries/integrations/social/linkedin.page.provider';
+import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 
 @Injectable()
 export class IntegrationService {
   constructor(
     private _integrationRepository: IntegrationRepository,
     private _integrationManager: IntegrationManager,
-    private _notificationService: NotificationService
+    private _notificationService: NotificationService,
+    private _postsService: PostsService
   ) {}
   createOrUpdateIntegration(
     org: string,
@@ -143,15 +145,14 @@ export class IntegrationService {
   }
 
   async deleteChannel(org: string, id: string) {
-    const isTherePosts = await this._integrationRepository.countPostsForChannel(
+    const isTherePosts = await this._integrationRepository.getPostsForChannel(
       org,
       id
     );
-    if (isTherePosts) {
-      throw new HttpException(
-        'There are posts for this channel',
-        HttpStatus.NOT_ACCEPTABLE
-      );
+    if (isTherePosts.length) {
+      for (const post of isTherePosts) {
+        await this._postsService.deletePost(org, post.group);
+      }
     }
 
     return this._integrationRepository.deleteChannel(org, id);
@@ -217,7 +218,10 @@ export class IntegrationService {
       page
     );
 
-    await this.checkForDeletedOnceAndUpdate(org, String(getIntegrationInformation.id));
+    await this.checkForDeletedOnceAndUpdate(
+      org,
+      String(getIntegrationInformation.id)
+    );
 
     await this._integrationRepository.updateIntegration(String(id), {
       picture: getIntegrationInformation.picture,
