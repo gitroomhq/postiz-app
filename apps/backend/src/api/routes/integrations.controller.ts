@@ -25,6 +25,7 @@ import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions
 import { ApiTags } from '@nestjs/swagger';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 import { NotEnoughScopesFilter } from '@gitroom/nestjs-libraries/integrations/integration.missing.scopes';
+import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 
 @ApiTags('Integrations')
 @Controller('/integrations')
@@ -32,6 +33,7 @@ export class IntegrationsController {
   constructor(
     private _integrationManager: IntegrationManager,
     private _integrationService: IntegrationService,
+    private _postService: PostsService
   ) {}
   @Get('/')
   getIntegration() {
@@ -289,10 +291,20 @@ export class IntegrationsController {
   }
 
   @Delete('/')
-  deleteChannel(
+  async deleteChannel(
     @GetOrgFromRequest() org: Organization,
     @Body('id') id: string
   ) {
+    const isTherePosts = await this._integrationService.getPostsForChannel(
+      org.id,
+      id
+    );
+    if (isTherePosts.length) {
+      for (const post of isTherePosts) {
+        await this._postService.deletePost(org.id, post.group);
+      }
+    }
+
     return this._integrationService.deleteChannel(org.id, id);
   }
 }

@@ -7,15 +7,13 @@ import { SocialProvider } from '@gitroom/nestjs-libraries/integrations/social/so
 import { Integration } from '@prisma/client';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { LinkedinPageProvider } from '@gitroom/nestjs-libraries/integrations/social/linkedin.page.provider';
-import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 
 @Injectable()
 export class IntegrationService {
   constructor(
     private _integrationRepository: IntegrationRepository,
     private _integrationManager: IntegrationManager,
-    private _notificationService: NotificationService,
-    private _postsService: PostsService
+    private _notificationService: NotificationService
   ) {}
   createOrUpdateIntegration(
     org: string,
@@ -144,17 +142,11 @@ export class IntegrationService {
     return this._integrationRepository.enableChannel(org, id);
   }
 
-  async deleteChannel(org: string, id: string) {
-    const isTherePosts = await this._integrationRepository.getPostsForChannel(
-      org,
-      id
-    );
-    if (isTherePosts.length) {
-      for (const post of isTherePosts) {
-        await this._postsService.deletePost(org, post.group);
-      }
-    }
+  async getPostsForChannel(org: string, id: string) {
+    return this._integrationRepository.getPostsForChannel(org, id);
+  }
 
+  async deleteChannel(org: string, id: string) {
     return this._integrationRepository.deleteChannel(org, id);
   }
 
