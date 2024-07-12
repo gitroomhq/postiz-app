@@ -199,7 +199,10 @@ export class PostsService {
           integration.id
         );
 
-        await this._integrationService.informAboutRefreshError(integration.organizationId, integration);
+        await this._integrationService.informAboutRefreshError(
+          integration.organizationId,
+          integration
+        );
         return {};
       }
 
@@ -531,7 +534,11 @@ export class PostsService {
   async generatePostsDraft(orgId: string, body: CreateGeneratedPostsDto) {
     const getAllIntegrations = (
       await this._integrationService.getIntegrationsList(orgId)
-    ).filter((f) => !f.disabled && f.providerIdentifier !== 'reddit');
+    ).filter(
+      (f) =>
+        !f.disabled &&
+        f.providerIdentifier !== 'reddit'
+    );
 
     // const posts = chunk(body.posts, getAllIntegrations.length);
     const allDates = dayjs()

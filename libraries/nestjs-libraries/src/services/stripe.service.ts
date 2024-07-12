@@ -307,7 +307,7 @@ export class StripeService {
         },
       },
       tos_acceptance: {
-        service_agreement: 'recipient',
+        service_agreement: 'full',
       },
       metadata: {
         service: 'gitroom',
