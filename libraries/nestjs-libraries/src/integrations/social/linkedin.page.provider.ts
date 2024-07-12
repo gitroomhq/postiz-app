@@ -191,7 +191,7 @@ export class LinkedinPageProvider
     ).json();
 
     return {
-      id,
+      id: `p_${id}`,
       accessToken,
       refreshToken,
       expiresIn,
