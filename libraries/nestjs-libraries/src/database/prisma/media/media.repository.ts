@@ -38,8 +38,11 @@ export class MediaRepository {
           id: org,
         },
       },
-      skip: pageNum * 10,
-      take: 10,
+      orderBy: {
+        createdAt: 'desc',
+      }
+      // skip: pageNum * 10,
+      // take: 10,
     });
 
     return {

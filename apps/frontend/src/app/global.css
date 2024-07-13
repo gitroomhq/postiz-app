@@ -256,7 +256,7 @@ html {
 /*    display: none;*/
 /*}*/
 .w-md-editor {
-  background-color: #131B2C !important;
+  background-color: #131b2c !important;
   border: 0 !important;
   box-shadow: none !important;
   border-radius: 8px !important;
@@ -264,12 +264,12 @@ html {
   border-bottom-right-radius: 0 !important;
 }
 
-.w-md-editor-toolbar  {
+.w-md-editor-toolbar {
   height: 40px !important;
   min-height: 40px !important;
-  background-color: #131B2C !important;
+  background-color: #131b2c !important;
   padding: 0 8px !important;
-  border-color: #28344F !important;
+  border-color: #28344f !important;
 }
 
 .wmde-markdown {
@@ -290,18 +290,18 @@ html {
 }
 
 :root {
-  --copilot-kit-primary-color: #612AD5 !important;
-  --copilot-kit-background-color: #0B0F1C !important;
-  --copilot-kit-separator-color: #1F2941 !important;
-  --copilot-kit-contrast-color: #FFFFFF !important;
-  --copilot-kit-secondary-contrast-color: #FFFFFF !important;
+  --copilot-kit-primary-color: #612ad5 !important;
+  --copilot-kit-background-color: #0b0f1c !important;
+  --copilot-kit-separator-color: #1f2941 !important;
+  --copilot-kit-contrast-color: #ffffff !important;
+  --copilot-kit-secondary-contrast-color: #ffffff !important;
   --copilot-kit-secondary-color: #000 !important;
-  --copilot-kit-response-button-background-color: #000 !important;;
-  --copilot-kit-response-button-color: #fff !important;;
+  --copilot-kit-response-button-background-color: #000 !important;
+  --copilot-kit-response-button-color: #fff !important;
 }
 
 .copilotKitWindow {
-  background-color: #0B0F1C !important;
+  background-color: #0b0f1c !important;
 }
 
 .copilotKitButtonIconOpen svg {
@@ -309,13 +309,13 @@ html {
 }
 
 .copilotKitButtonIconOpen:after {
-  content: "";
+  content: '';
   display: block;
   position: relative;
   z-index: 1;
   object-fit: contain;
   color: white;
-  background: url("/magic.svg") no-repeat center center / contain;
+  background: url('/magic.svg') no-repeat center center / contain;
   width: 30px;
   height: 30px;
 }
@@ -327,4 +327,33 @@ html {
 
 .copilotKitWindow {
   /*right: -5rem !important;*/
+}
+
+.uppy-FileInput-container {
+  @apply cursor-pointer font-[500] flex justify-center items-center gap-[4px] text-[12px] rounded-[4px] w-[107px] h-[25px] bg-[#0b0f1c] text-white border-[2px] border-[#506490];
+}
+
+.uppy-ProgressBar {
+  width: 150px;
+  position: relative;
+}
+
+.uppy-ProgressBar-inner {
+  background-color: #4f46e5;
+  height: 25px;
+  border-radius: 4px;
+}
+
+.uppy-ProgressBar-percentage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.uppy-ProgressBar-inner[style='width: 0%;'],
+.uppy-ProgressBar-inner[style='width: 0%;'] + div,
+.uppy-ProgressBar-inner[style='width: 100%;'],
+.uppy-ProgressBar-inner[style='width: 100%;'] + div {
+  visibility: hidden;
 }
