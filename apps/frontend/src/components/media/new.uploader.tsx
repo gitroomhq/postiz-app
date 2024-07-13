@@ -1,13 +1,13 @@
 import React from 'react';
+// @ts-ignore
 import Uppy, { type UploadResult } from '@uppy/core';
-import { ProgressBar, FileInput, StatusBar } from '@uppy/react';
+// @ts-ignore
+import { ProgressBar, FileInput } from '@uppy/react';
+// @ts-ignore
 import { sha256 } from 'crypto-hash';
 // @ts-ignore
 import AwsS3Multipart from '@uppy/aws-s3-multipart';
-
-// Uppy styles
-import '@uppy/core/dist/style.min.css';
-import '@uppy/dashboard/dist/style.min.css';
+// @ts-ignore
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 
 const fetchUploadApiEndpoint = async (

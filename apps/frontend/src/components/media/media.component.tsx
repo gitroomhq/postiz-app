@@ -10,11 +10,17 @@ import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.v
 import EventEmitter from 'events';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import clsx from 'clsx';
-import interClass from '@gitroom/react/helpers/inter.font';
 import { VideoFrame } from '@gitroom/react/helpers/video.frame';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
-import { MultipartFileUploader } from '@gitroom/frontend/components/media/new.uploader';
+import dynamic from 'next/dynamic';
+const MultipartFileUploader = dynamic(
+  () =>
+    import('@gitroom/frontend/components/media/new.uploader').then(
+      (mod) => mod.MultipartFileUploader
+    ),
+  { ssr: false }
+);
 const showModalEmitter = new EventEmitter();
 
 export const ShowMediaBoxModal: FC = () => {
@@ -215,33 +221,16 @@ export const MediaBox: FC<{
               <div>You don{"'"}t have any assets yet.</div>
               <div>Click the button below to upload one</div>
               <div className="mt-[10px]">
-                <div className="relative flex gap-2 items-center justify-center">
-                  <input
-                    type="file"
-                    className="absolute left-0 top-0 w-full h-full opacity-0"
-                    accept="image/*"
-                    onChange={uploadMedia}
-                  />
-                  <button
-                    className={`cursor-pointer font-[500] flex justify-center items-center gap-[4px] text-[12px] rounded-[4px] w-[107px] h-[25px] bg-[#0b0f1c] text-white ${interClass} border-[2px] border-[#506490]`}
-                  >
-                    <div>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="14"
-                        height="15"
-                        viewBox="0 0 14 15"
-                        fill="none"
-                      >
-                        <path
-                          d="M7 1.8125C5.87512 1.8125 4.7755 2.14607 3.8402 2.77102C2.90489 3.39597 2.17591 4.28423 1.74544 5.32349C1.31496 6.36274 1.20233 7.50631 1.42179 8.60958C1.64124 9.71284 2.18292 10.7263 2.97833 11.5217C3.77374 12.3171 4.78716 12.8588 5.89043 13.0782C6.99369 13.2977 8.13726 13.185 9.17651 12.7546C10.2158 12.3241 11.104 11.5951 11.729 10.6598C12.3539 9.7245 12.6875 8.62488 12.6875 7.5C12.6859 5.99207 12.0862 4.54636 11.0199 3.48009C9.95365 2.41382 8.50793 1.81409 7 1.8125ZM7 12.3125C6.04818 12.3125 5.11773 12.0303 4.32632 11.5014C3.53491 10.9726 2.91808 10.221 2.55383 9.34166C2.18959 8.46229 2.09428 7.49466 2.27997 6.56113C2.46566 5.62759 2.92401 4.77009 3.59705 4.09705C4.27009 3.42401 5.1276 2.96566 6.06113 2.77997C6.99466 2.59428 7.9623 2.68958 8.84167 3.05383C9.72104 3.41808 10.4726 4.03491 11.0015 4.82632C11.5303 5.61773 11.8125 6.54818 11.8125 7.5C11.8111 8.77591 11.3036 9.99915 10.4014 10.9014C9.49915 11.8036 8.27591 12.3111 7 12.3125ZM9.625 7.5C9.625 7.61603 9.57891 7.72731 9.49686 7.80936C9.41481 7.89141 9.30353 7.9375 9.1875 7.9375H7.4375V9.6875C7.4375 9.80353 7.39141 9.91481 7.30936 9.99686C7.22731 10.0789 7.11603 10.125 7 10.125C6.88397 10.125 6.77269 10.0789 6.69064 9.99686C6.6086 9.91481 6.5625 9.80353 6.5625 9.6875V7.9375H4.8125C4.69647 7.9375 4.58519 7.89141 4.50314 7.80936C4.4211 7.72731 4.375 7.61603 4.375 7.5C4.375 7.38397 4.4211 7.27269 4.50314 7.19064C4.58519 7.10859 4.69647 7.0625 4.8125 7.0625H6.5625V5.3125C6.5625 5.19647 6.6086 5.08519 6.69064 5.00314C6.77269 4.92109 6.88397 4.875 7 4.875C7.11603 4.875 7.22731 4.92109 7.30936 5.00314C7.39141 5.08519 7.4375 5.19647 7.4375 5.3125V7.0625H9.1875C9.30353 7.0625 9.41481 7.10859 9.49686 7.19064C9.57891 7.27269 9.625 7.38397 9.625 7.5Z"
-                          fill="white"
-                        />
-                      </svg>
-                    </div>
-                    <div>Upload</div>
-                  </button>
-                </div>
+                <MultipartFileUploader
+                  onUploadSuccess={mutate}
+                  allowedFileTypes={
+                    type === 'video'
+                      ? 'video/mp4'
+                      : type === 'image'
+                      ? 'image/*'
+                      : 'image/*,video/mp4'
+                  }
+                />
               </div>
             </div>
           )}
