@@ -52,6 +52,7 @@ export class UsersRepository {
     return this._user.model.user.findFirst({
       where: {
         email,
+        providerName: Provider.LOCAL,
       },
       include: {
         picture: {

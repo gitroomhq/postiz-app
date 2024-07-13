@@ -16,5 +16,7 @@ export class EmailService {
       subject,
       html,
     });
+
+    console.log(sends);
   }
 }

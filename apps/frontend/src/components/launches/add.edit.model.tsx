@@ -51,7 +51,6 @@ import { AddPostButton } from '@gitroom/frontend/components/launches/add.post.bu
 import { useStateCallback } from '@gitroom/react/helpers/use.state.callback';
 import { CopilotPopup } from '@copilotkit/react-ui';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
-import { capitalize } from 'lodash';
 
 export const AddEditModal: FC<{
   date: dayjs.Dayjs;
@@ -374,7 +373,7 @@ export const AddEditModal: FC<{
 
             {!existingData.integration && (
               <PickPlatforms
-                integrations={integrations}
+                integrations={integrations.filter(f => !f.disabled)}
                 selectedIntegrations={[]}
                 singleSelect={false}
                 onChange={setSelectedIntegrations}
