@@ -14,13 +14,7 @@ import { VideoFrame } from '@gitroom/react/helpers/video.frame';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import dynamic from 'next/dynamic';
-const MultipartFileUploader = dynamic(
-  () =>
-    import('@gitroom/frontend/components/media/new.uploader').then(
-      (mod) => mod.MultipartFileUploader
-    ),
-  { ssr: false }
-);
+import { MultipartFileUploader } from '@gitroom/frontend/components/media/new.uploader';
 const showModalEmitter = new EventEmitter();
 
 export const ShowMediaBoxModal: FC = () => {
@@ -221,16 +215,16 @@ export const MediaBox: FC<{
               <div>You don{"'"}t have any assets yet.</div>
               <div>Click the button below to upload one</div>
               <div className="mt-[10px]">
-                <MultipartFileUploader
-                  onUploadSuccess={mutate}
-                  allowedFileTypes={
-                    type === 'video'
-                      ? 'video/mp4'
-                      : type === 'image'
-                      ? 'image/*'
-                      : 'image/*,video/mp4'
-                  }
-                />
+                {/*<MultipartFileUploader*/}
+                {/*  onUploadSuccess={mutate}*/}
+                {/*  allowedFileTypes={*/}
+                {/*    type === 'video'*/}
+                {/*      ? 'video/mp4'*/}
+                {/*      : type === 'image'*/}
+                {/*      ? 'image/*'*/}
+                {/*      : 'image/*,video/mp4'*/}
+                {/*  }*/}
+                {/*/>*/}
               </div>
             </div>
           )}

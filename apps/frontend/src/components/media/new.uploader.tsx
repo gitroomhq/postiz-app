@@ -1,14 +1,17 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 // @ts-ignore
-import Uppy, { type UploadResult } from '@uppy/core';
-// @ts-ignore
-import { ProgressBar, FileInput } from '@uppy/react';
-// @ts-ignore
-import { sha256 } from 'crypto-hash';
+import Uppy, { UploadResult } from '@uppy/core';
 // @ts-ignore
 import AwsS3Multipart from '@uppy/aws-s3-multipart';
 // @ts-ignore
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+
+import sha256 from 'sha256';
+import { FileInput, ProgressBar } from '@uppy/react';
+
+// Uppy styles
+import "@uppy/core/dist/style.min.css";
+import "@uppy/dashboard/dist/style.min.css";
 
 const fetchUploadApiEndpoint = async (
   fetch: any,
@@ -35,19 +38,46 @@ export function MultipartFileUploader({
   onUploadSuccess: (result: UploadResult) => void;
   allowedFileTypes: string;
 }) {
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    setLoaded(true);
+  }, []);
+
+  if (!loaded) {
+    return null;
+  }
+
+  return (
+    <MultipartFileUploaderAfter
+      onUploadSuccess={onUploadSuccess}
+      allowedFileTypes={allowedFileTypes}
+    />
+  );
+}
+
+export function MultipartFileUploaderAfter({
+  onUploadSuccess,
+  allowedFileTypes,
+}: {
+  // @ts-ignore
+  onUploadSuccess: (result: UploadResult) => void;
+  allowedFileTypes: string;
+}) {
   const fetch = useFetch();
-  const uppy = React.useMemo(() => {
-    const uppy = new Uppy({
+  const uppy = useMemo(() => {
+    const uppy2 = new Uppy({
       autoProceed: true,
       restrictions: {
         maxNumberOfFiles: 1,
         allowedFileTypes: allowedFileTypes.split(','),
-        maxFileSize: 1000000,
+        maxFileSize: 1000000000,
       },
     }).use(AwsS3Multipart, {
       // @ts-ignore
       createMultipartUpload: async (file) => {
         const arrayBuffer = await new Response(file.data).arrayBuffer();
+        // @ts-ignore
         const fileHash = await sha256(arrayBuffer);
         const contentType = file.type;
         return fetchUploadApiEndpoint(fetch, 'create-multipart-upload', {
@@ -75,29 +105,31 @@ export function MultipartFileUploader({
           ...props,
         }),
     });
-    return uppy;
-  }, []);
-  uppy.on('complete', (result) => {
-    onUploadSuccess(result);
-  });
-  uppy.on('upload-success', (file, response) => {
-    // @ts-ignore
-    uppy.setFileState(file.id, {
-      // @ts-ignore
-      progress: uppy.getState().files[file.id].progress,
-      // @ts-ignore
-      uploadURL: response.body.Location,
-      response: response,
-      isPaused: false,
+
+    uppy2.on('complete', (result) => {
+      onUploadSuccess(result);
     });
-  });
+
+    uppy2.on('upload-success', (file, response) => {
+      // @ts-ignore
+      uppy.setFileState(file.id, {
+        // @ts-ignore
+        progress: uppy.getState().files[file.id].progress,
+        // @ts-ignore
+        uploadURL: response.body.Location,
+        response: response,
+        isPaused: false,
+      });
+    });
+
+    return uppy2;
+  }, []);
 
   return (
     <>
       <ProgressBar uppy={uppy} />
       <FileInput
         uppy={uppy}
-        pretty={true}
         locale={{
           strings: {
             chooseFiles: 'Upload',

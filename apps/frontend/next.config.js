@@ -12,6 +12,7 @@ const nextConfig = {
     // See: https://github.com/gregberge/vgr
     svgr: false,
   },
+  transpilePackages: ['crypto-hash'],
   images: {
     remotePatterns: [
       {
