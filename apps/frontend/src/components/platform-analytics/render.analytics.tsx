@@ -57,6 +57,9 @@ export const RenderAnalytics: FC<{ integration: Integration; date: number }> = (
 
   return (
     <div className="grid grid-cols-3 gap-[20px]">
+      {data?.length === 0 && (
+        <div>This channel needs to be refreshed</div>
+      )}
       {data?.map((p: any, index: number) => (
         <div key={`pl-${index}`} className="flex">
           <div className="flex-1 bg-secondary py-[10px] px-[16px] gap-[10px] flex flex-col">

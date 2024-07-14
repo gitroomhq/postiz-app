@@ -23,6 +23,18 @@ export class IntegrationRepository {
     });
   }
 
+  disconnectChannel(org: string, id: string) {
+    return this._integration.model.integration.update({
+      where: {
+        id,
+        organizationId: org,
+      },
+      data: {
+        refreshNeeded: true,
+      },
+    });
+  }
+
   createOrUpdateIntegration(
     org: string,
     name: string,

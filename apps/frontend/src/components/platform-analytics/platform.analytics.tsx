@@ -11,6 +11,7 @@ import { RenderAnalytics } from '@gitroom/frontend/components/platform-analytics
 import { Select } from '@gitroom/react/form/select';
 import { Button } from '@gitroom/react/form/button';
 import { useRouter } from 'next/navigation';
+import { useToaster } from '@gitroom/react/toaster/toaster';
 
 const allowedIntegrations = [
   'facebook',
@@ -19,7 +20,7 @@ const allowedIntegrations = [
   // 'tiktok',
   'youtube',
   'pinterest',
-  'threads'
+  'threads',
 ];
 
 export const PlatformAnalytics = () => {
@@ -27,7 +28,8 @@ export const PlatformAnalytics = () => {
   const router = useRouter();
   const [current, setCurrent] = useState(0);
   const [key, setKey] = useState(7);
-
+  const [refresh, setRefresh] = useState(false);
+  const toaster = useToaster();
   const load = useCallback(async () => {
     const int = (await (await fetch('/integrations/list')).json()).integrations;
     return int.filter((f: any) => allowedIntegrations.includes(f.identifier));
@@ -127,7 +129,7 @@ export const PlatformAnalytics = () => {
           You have to add Social Media channels
         </div>
         <div className="text-[20px]">
-          Supported: {allowedIntegrations.map(p => capitalize(p)).join(', ')}
+          Supported: {allowedIntegrations.map((p) => capitalize(p)).join(', ')}
         </div>
         <Button onClick={() => router.push('/launches')}>
           Go to the calendar to add channels
@@ -144,7 +146,17 @@ export const PlatformAnalytics = () => {
           {sortedIntegrations.map((integration, index) => (
             <div
               key={integration.id}
-              onClick={() => setCurrent(index)}
+              onClick={() => {
+                if (integration.refreshNeeded) {
+                  toaster.show('Please refresh the integration from the calendar', 'warning');
+                  return ;
+                }
+                setRefresh(true);
+                setTimeout(() => {
+                  setRefresh(false);
+                }, 10);
+                setCurrent(index);
+              }}
               className={clsx(
                 'flex gap-[8px] items-center',
                 currentIntegration.id !== integration.id &&
@@ -159,7 +171,7 @@ export const PlatformAnalytics = () => {
               >
                 {(integration.inBetweenSteps || integration.refreshNeeded) && (
                   <div className="absolute left-0 top-0 w-[39px] h-[46px] cursor-pointer">
-                    <div className="bg-red-500 w-[15px] h-[15px] rounded-full -left-[5px] -top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
+                    <div className="bg-red-500 w-[15px] h-[15px] rounded-full left-0 -top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
                       !
                     </div>
                     <div className="bg-black/60 w-[39px] h-[46px] left-0 top-0 absolute rounded-full z-[199]" />
@@ -212,7 +224,7 @@ export const PlatformAnalytics = () => {
             </Select>
           </div>
           <div className="flex-1">
-            {!!keys && !!currentIntegration && (
+            {!!keys && !!currentIntegration && !refresh && (
               <RenderAnalytics integration={currentIntegration} date={keys} />
             )}
           </div>

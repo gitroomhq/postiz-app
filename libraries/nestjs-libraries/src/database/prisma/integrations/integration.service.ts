@@ -77,6 +77,11 @@ export class IntegrationService {
     }
   }
 
+  async disconnectChannel(orgId: string, integration: Integration) {
+    await this._integrationRepository.disconnectChannel(orgId, integration.id);
+    await this.informAboutRefreshError(orgId, integration);
+  }
+
   async informAboutRefreshError(orgId: string, integration: Integration) {
     await this._notificationService.inAppNotification(
       orgId,

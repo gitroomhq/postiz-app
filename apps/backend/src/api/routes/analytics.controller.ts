@@ -16,6 +16,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
+import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
 @ApiTags('Analytics')
 @Controller('/analytics')
@@ -104,22 +105,29 @@ export class AnalyticsController {
     }
 
     if (integrationProvider.analytics) {
-      const loadAnalytics = await integrationProvider.analytics(
-        getIntegration.internalId,
-        getIntegration.token,
-        +date
-      );
-      await ioRedis.set(
-        `integration:${org.id}:${integration}:${date}`,
-        JSON.stringify(loadAnalytics),
-        'EX',
-        !process.env.NODE_ENV || process.env.NODE_ENV === 'development'
-          ? 1
-          : 3600
-      );
-      return loadAnalytics;
+      try {
+        const loadAnalytics = await integrationProvider.analytics(
+          getIntegration.internalId,
+          getIntegration.token,
+          +date
+        );
+        await ioRedis.set(
+          `integration:${org.id}:${integration}:${date}`,
+          JSON.stringify(loadAnalytics),
+          'EX',
+          !process.env.NODE_ENV || process.env.NODE_ENV === 'development'
+            ? 1
+            : 3600
+        );
+        return loadAnalytics;
+      } catch (e) {
+        if (e instanceof RefreshToken) {
+          await this._integrationService.disconnectChannel(org.id, getIntegration);
+          return [];
+        }
+      }
     }
 
-    return {};
+    return [];
   }
 }
