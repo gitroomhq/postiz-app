@@ -7,10 +7,6 @@ export class PinterestSettingsDto {
 
   @IsString()
   @IsOptional()
-  description: string;
-
-  @IsString()
-  @IsOptional()
   @IsUrl()
   link: string;
 

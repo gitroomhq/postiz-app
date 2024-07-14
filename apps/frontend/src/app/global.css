@@ -357,3 +357,13 @@ html {
 .uppy-ProgressBar-inner[style='width: 100%;'] + div {
   visibility: hidden;
 }
+
+.fill-text-white {
+  -webkit-text-fill-color: white !important;
+}
+div div .set-font-family {
+  font-family: "Helvetica Neue", Helvetica !important;
+  font-stretch: 100% !important;
+  font-style: normal !important;
+  font-weight: 400 !important;
+}

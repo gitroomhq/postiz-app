@@ -38,6 +38,9 @@ module.exports = {
         loginBox: 'url(/auth/login-box.png)',
         loginBg: 'url(/auth/bg-login.png)',
       },
+      fontFamily: {
+        sans: ["Helvetica Neue"],
+      },
       animation: {
         fade: 'fadeOut 0.5s ease-in-out',
         overflow: 'overFlow 0.5s ease-in-out forwards',

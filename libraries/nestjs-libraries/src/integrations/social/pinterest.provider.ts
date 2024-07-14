@@ -192,7 +192,6 @@ export class PinterestProvider
 
       let statusCode = '';
       while (statusCode !== 'succeeded') {
-        console.log('trying');
         const mediafile = await (
           await this.fetch('https://api.pinterest.com/v5/media/' + media_id, {
             method: 'GET',
@@ -215,9 +214,7 @@ export class PinterestProvider
 
     try {
       const {
-        id: pId,
-        link,
-        ...all
+        id: pId
       } = await (
         await this.fetch('https://api.pinterest.com/v5/pins', {
           method: 'POST',
@@ -232,11 +229,9 @@ export class PinterestProvider
             ...(postDetails?.[0]?.settings.title
               ? { title: postDetails?.[0]?.settings.title }
               : {}),
-            ...(postDetails?.[0]?.settings.description
-              ? { title: postDetails?.[0]?.settings.description }
-              : {}),
+            description: postDetails?.[0]?.message,
             ...(postDetails?.[0]?.settings.dominant_color
-              ? { title: postDetails?.[0]?.settings.dominant_color }
+              ? { dominant_color: postDetails?.[0]?.settings.dominant_color }
               : {}),
             board_id: postDetails?.[0]?.settings.board,
             media_source: mediaId

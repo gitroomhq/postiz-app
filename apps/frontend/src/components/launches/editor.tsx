@@ -7,10 +7,14 @@ import dayjs from 'dayjs';
 
 export const Editor = forwardRef<
   RefMDEditor,
-  MDEditorProps & { order: number, currentWatching: string, isGlobal: boolean}
+  MDEditorProps & { order: number; currentWatching: string; isGlobal: boolean }
 >(
   (
-    props: MDEditorProps & { order: number, currentWatching: string, isGlobal: boolean },
+    props: MDEditorProps & {
+      order: number;
+      currentWatching: string;
+      isGlobal: boolean;
+    },
     ref: React.ForwardedRef<RefMDEditor>
   ) => {
     useCopilotReadable({
@@ -33,6 +37,10 @@ export const Editor = forwardRef<
       },
     });
 
-    return <MDEditor {...props} ref={ref} />;
+    return (
+      <div className="relative">
+        <MDEditor {...props} ref={ref} />
+      </div>
+    );
   }
 );
