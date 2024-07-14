@@ -5,9 +5,11 @@ import { APPROVED_SUBMIT_FOR_ORDER, Post, State } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
+import weekOfYear from 'dayjs/plugin/weekOfYear';
 import { v4 as uuidv4 } from 'uuid';
 
 dayjs.extend(isoWeek);
+dayjs.extend(weekOfYear);
 
 @Injectable()
 export class PostsRepository {
@@ -61,12 +63,11 @@ export class PostsRepository {
   }
 
   getPosts(orgId: string, query: GetPostsDto) {
-    const date = dayjs().year(query.year).isoWeek(query.week);
+    const date = dayjs().year(query.year).week(query.week);
 
     const startDate = date.startOf('week').toDate();
     const endDate = date.endOf('week').toDate();
 
-    console.log(startDate, endDate);
     return this._post.model.post.findMany({
       where: {
         OR: [

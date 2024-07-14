@@ -1,8 +1,8 @@
 import { FC, useCallback, useState } from 'react';
-import { Button } from './button';
 import { HexColorPicker } from 'react-colorful';
 import { useFormContext } from 'react-hook-form';
 import interClass from '../helpers/inter.font';
+import { Button } from './button';
 
 export const ColorPicker: FC<{
   name: string;
@@ -12,9 +12,9 @@ export const ColorPicker: FC<{
 }> = (props) => {
   const { name, label, enabled, canBeCancelled } = props;
   const form = useFormContext();
-  const [enabledState, setEnabledState] = useState(enabled);
   const color = form.register(name);
   const watch = form.watch(name);
+  const [enabledState, setEnabledState] = useState(!!watch);
 
   const enable = useCallback(async () => {
     await color.onChange({ target: { name, value: '#FFFFFF' } });
