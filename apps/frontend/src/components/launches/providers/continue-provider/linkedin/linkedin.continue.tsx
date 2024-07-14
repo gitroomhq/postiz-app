@@ -35,7 +35,7 @@ export const LinkedinContinue: FC<{
     []
   );
 
-  const { data } = useSWR('load-pages', loadPages, {
+  const { data, isLoading } = useSWR('load-pages', loadPages, {
     refreshWhenHidden: false,
     refreshWhenOffline: false,
     revalidateOnFocus: false,
@@ -60,9 +60,19 @@ export const LinkedinContinue: FC<{
     );
   }, [data]);
 
+  if (!isLoading && !data?.length) {
+    return (
+      <div className="text-center flex justify-center items-center text-[18px] leading-[50px] h-[300px]">
+        We couldn{"'"}t find any business connected to your LinkedIn Page.
+        <br />
+        Please close this dialog, create a new page, and add a new channel again.
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-[20px]">
-      <div>Select Linkedin Account:</div>
+      <div>Select Linkedin Page:</div>
       <div className="grid grid-cols-3 justify-items-center select-none cursor-pointer">
         {filteredData?.map(
           (p: {
@@ -81,11 +91,7 @@ export const LinkedinContinue: FC<{
               onClick={setPage(p)}
             >
               <div>
-                <img
-                  className="w-full"
-                  src={p.picture}
-                  alt="profile"
-                />
+                <img className="w-full" src={p.picture} alt="profile" />
               </div>
               <div>{p.name}</div>
             </div>

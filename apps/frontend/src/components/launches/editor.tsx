@@ -3,7 +3,6 @@ import type { MDEditorProps } from '@uiw/react-md-editor/src/Types';
 import { RefMDEditor } from '@uiw/react-md-editor/src/Editor';
 import MDEditor from '@uiw/react-md-editor';
 import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
-import { timer } from '@gitroom/helpers/utils/timer';
 import dayjs from 'dayjs';
 
 export const Editor = forwardRef<

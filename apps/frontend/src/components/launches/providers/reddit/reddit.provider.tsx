@@ -15,6 +15,7 @@ import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import MDEditor from '@uiw/react-md-editor';
 import interClass from '@gitroom/react/helpers/inter.font';
+import Image from 'next/image';
 
 const RenderRedditComponent: FC<{
   type: string;
@@ -118,8 +119,10 @@ const RedditPreview: FC = (props) => {
                 {restOfPosts.map((p, index) => (
                   <div className="flex gap-[8px]" key={index}>
                     <div className="w-[32px] h-[32px]">
-                      <img
-                        src={integration?.picture}
+                      <Image
+                        width={48}
+                        height={48}
+                        src={integration?.picture!}
                         alt="x"
                         className="rounded-full w-full h-full relative z-[2]"
                       />

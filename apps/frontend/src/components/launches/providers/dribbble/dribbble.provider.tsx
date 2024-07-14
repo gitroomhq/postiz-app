@@ -12,6 +12,7 @@ import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.v
 import { Input } from '@gitroom/react/form/input';
 import { DribbbleTeams } from '@gitroom/frontend/components/launches/providers/dribbble/dribbble.teams';
 import { DribbbleDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dribbble.dto';
+import ImageFile from 'next/image';
 
 const DribbbleSettings: FC = () => {
   const { register, control } = useSettings();
@@ -45,8 +46,10 @@ const DribbblePreview: FC = (props) => {
     <div className="rounded-[8px] flex flex-col gap-[8px] border border-black/90 w-[555px] pt-[12px] pl-[16px] pb-[12px] pr-[40px] bg-white text-black font-['helvetica']">
       <div className="flex gap-[8px]">
         <div className="w-[48px] h-[48px]">
-          <img
-            src={integration?.picture}
+          <ImageFile
+            width={48}
+            height={48}
+            src={integration?.picture!}
             alt="x"
             className="rounded-full w-full h-full relative z-[2]"
           />
@@ -83,8 +86,10 @@ const DribbblePreview: FC = (props) => {
       {morePosts.map((p, index) => (
         <div className="flex gap-[8px]" key={index}>
           <div className="w-[40px] h-[40px]">
-            <img
-              src={integration?.picture}
+            <ImageFile
+              width={48}
+              height={48}
+              src={integration?.picture!}
               alt="x"
               className="rounded-full w-full h-full relative z-[2]"
             />
@@ -138,15 +143,16 @@ export default withProvider(
       return 'Dribbble does not support mp4 files';
     }
 
-    const details = await new Promise<{width: number, height: number}>((resolve, reject) => {
-      const url = new Image();
-      url.onload = function() {
-        // @ts-ignore
-        resolve({width: this.width, height: this.height});
+    const details = await new Promise<{ width: number; height: number }>(
+      (resolve, reject) => {
+        const url = new Image();
+        url.onload = function () {
+          // @ts-ignore
+          resolve({ width: this.width, height: this.height });
+        };
+        url.src = firstItem[0].path;
       }
-      url.src = firstItem[0].path;
-    });
-
+    );
 
     if (
       (details?.width === 400 && details?.height === 300) ||

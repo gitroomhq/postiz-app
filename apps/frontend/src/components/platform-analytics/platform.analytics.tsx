@@ -16,7 +16,7 @@ const allowedIntegrations = [
   'facebook',
   'instagram',
   'linkedin-page',
-  'tiktok',
+  // 'tiktok',
   'youtube',
   'pinterest',
   'threads'

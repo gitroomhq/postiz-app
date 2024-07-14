@@ -396,10 +396,10 @@ export const AddEditModal: FC<{
                             order={index}
                             height={value.length > 1 ? 150 : 250}
                             commands={[
-                              ...commands
-                                .getCommands()
-                                .filter((f) => f.name !== 'image'),
-                              newImage,
+                              // ...commands
+                              //   .getCommands()
+                              //   .filter((f) => f.name === 'image'),
+                              // newImage,
                               postSelector(dateState),
                             ]}
                             value={p.content}

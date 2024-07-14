@@ -15,6 +15,7 @@ import Image from 'next/image';
 import { Menu } from '@gitroom/frontend/components/launches/menu/menu';
 import { ApiModal } from '@gitroom/frontend/components/launches/add.provider.component';
 import { useRouter } from 'next/navigation';
+import { isGeneral } from '@gitroom/react/helpers/is.general';
 
 export const ConnectChannels: FC = () => {
   const fetch = useFetch();
@@ -142,9 +143,12 @@ export const ConnectChannels: FC = () => {
                   className="h-[96px] bg-input flex flex-col justify-center items-center gap-[10px] cursor-pointer"
                 >
                   <div>
-                    <img
+                    <Image
+                      alt={social.identifier}
                       src={`/icons/platforms/${social.identifier}.png`}
                       className="rounded-full w-[32px] h-[32px]"
+                      width={32}
+                      height={32}
                     />
                   </div>
                   <div className="text-[#64748B] text-[10px] tracking-[1.2px] uppercase">
@@ -154,28 +158,30 @@ export const ConnectChannels: FC = () => {
               ))}
             </div>
           </div>
-          <div className="flex-1 flex flex-col p-[16px] gap-[10px]">
-            <div className="text-[18px]">Publishing Platforms</div>
-            <div className="grid grid-cols-3 gap-[16px]">
-              {data?.article.map((article: any) => (
-                <div
-                  onClick={() => setIdentifier(article)}
-                  key={article.identifier}
-                  className="h-[96px] bg-input flex flex-col justify-center items-center gap-[10px] cursor-pointer"
-                >
-                  <div>
-                    <img
-                      src={`/icons/platforms/${article.identifier}.png`}
-                      className="rounded-full w-[32px] h-[32px]"
-                    />
+          {!isGeneral() && (
+            <div className="flex-1 flex flex-col p-[16px] gap-[10px]">
+              <div className="text-[18px]">Publishing Platforms</div>
+              <div className="grid grid-cols-3 gap-[16px]">
+                {data?.article.map((article: any) => (
+                  <div
+                    onClick={() => setIdentifier(article)}
+                    key={article.identifier}
+                    className="h-[96px] bg-input flex flex-col justify-center items-center gap-[10px] cursor-pointer"
+                  >
+                    <div>
+                      <img
+                        src={`/icons/platforms/${article.identifier}.png`}
+                        className="rounded-full w-[32px] h-[32px]"
+                      />
+                    </div>
+                    <div className="text-[#64748B] text-[10px] tracking-[1.2px] uppercase">
+                      {article.name}
+                    </div>
                   </div>
-                  <div className="text-[#64748B] text-[10px] tracking-[1.2px] uppercase">
-                    {article.name}
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
         <div className="my-[24px] border border-[#182034] rounded-[4px] p-[16px]">
           <div className="gap-[16px] flex flex-col">
@@ -201,7 +207,7 @@ export const ConnectChannels: FC = () => {
                       <div className="bg-black/60 w-[39px] h-[46px] left-0 top-0 absolute rounded-full z-[199]" />
                     </div>
                   )}
-                  <img
+                  <Image
                     src={integration.picture}
                     className="rounded-full"
                     alt={integration.identifier}

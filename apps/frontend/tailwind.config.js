@@ -84,6 +84,9 @@ module.exports = {
           '100%': { backgroundColor: '#080B13', fontWeight: 'normal' },
         },
       }),
+      screens: {
+        custom: { raw: '(max-height: 800px)' },
+      },
     },
   },
   plugins: [

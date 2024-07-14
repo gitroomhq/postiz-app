@@ -32,7 +32,7 @@ export const FacebookContinue: FC<{
     []
   );
 
-  const { data } = useSWR('load-pages', loadPages, {
+  const { data, isLoading } = useSWR('load-pages', loadPages, {
     refreshWhenHidden: false,
     refreshWhenOffline: false,
     revalidateOnFocus: false,
@@ -56,6 +56,19 @@ export const FacebookContinue: FC<{
       data?.filter((p: { id: string }) => !existingId.includes(p.id)) || []
     );
   }, [data]);
+
+  if (!isLoading && !data?.length) {
+    return (
+      <div className="text-center flex justify-center items-center text-[18px] leading-[50px] h-[300px]">
+        We couldn{"'"}t find any business connected to the selected pages.
+        <br />
+        We recommend you to connect all the pages and all the businesses.
+        <br />
+        Please close this dialog, delete your integration and add a new channel
+        again.
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-[20px]">

@@ -301,9 +301,9 @@ export const withProvider = (
                               height={InPlaceValue.length > 1 ? 200 : 250}
                               value={val.content}
                               commands={[
-                                ...commands
-                                  .getCommands()
-                                  .filter((f) => f.name !== 'image'),
+                                // ...commands
+                                //   .getCommands()
+                                //   .filter((f) => f.name !== 'image'),
                                 newImage,
                                 postSelector(date),
                                 ...linkedinCompany(

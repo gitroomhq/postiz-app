@@ -14,6 +14,7 @@ import { Input } from '@gitroom/react/form/input';
 import { MediumTags } from '@gitroom/frontend/components/launches/providers/medium/medium.tags';
 import { MediaComponent } from '@gitroom/frontend/components/media/media.component';
 import { Select } from '@gitroom/react/form/select';
+import Image from 'next/image';
 
 const type = [
   { label: 'Public', value: 'public' },
@@ -26,7 +27,7 @@ const YoutubeSettings: FC = () => {
   return (
     <div className="flex flex-col">
       <Input label="Title" {...register('title')} />
-      <Select label="Type" {...register('type', {value: 'public'})}>
+      <Select label="Type" {...register('type', { value: 'public' })}>
         {type.map((t) => (
           <option key={t.value} value={t.value}>
             {t.label}
@@ -68,8 +69,10 @@ const YoutubePreview: FC = (props) => {
     <div className="rounded-[8px] flex flex-col gap-[8px] border border-black/90 w-[555px] pt-[12px] pl-[16px] pb-[12px] pr-[40px] bg-white text-black font-['helvetica']">
       <div className="flex gap-[8px]">
         <div className="w-[48px] h-[48px]">
-          <img
-            src={integration?.picture}
+          <Image
+            width={48}
+            height={48}
+            src={integration?.picture!}
             alt="x"
             className="rounded-full w-full h-full relative z-[2]"
           />
@@ -106,8 +109,10 @@ const YoutubePreview: FC = (props) => {
       {morePosts.map((p, index) => (
         <div className="flex gap-[8px]" key={index}>
           <div className="w-[40px] h-[40px]">
-            <img
-              src={integration?.picture}
+            <Image
+              width={48}
+              height={48}
+              src={integration?.picture!}
               alt="x"
               className="rounded-full w-full h-full relative z-[2]"
             />

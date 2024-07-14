@@ -11,6 +11,7 @@ import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
 import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { Select } from '@gitroom/react/form/select';
+import Image from 'next/image';
 
 const privacyLevel = [
   {
@@ -159,8 +160,10 @@ const TikTokPreview: FC = (props) => {
     <div className="rounded-[8px] flex flex-col gap-[8px] border border-black/90 w-[555px] pt-[12px] pl-[16px] pb-[12px] pr-[40px] bg-white text-black font-['helvetica']">
       <div className="flex gap-[8px]">
         <div className="w-[48px] h-[48px]">
-          <img
-            src={integration?.picture}
+          <Image
+            width={48}
+            height={48}
+            src={integration?.picture!}
             alt="x"
             className="rounded-full w-full h-full relative z-[2]"
           />
@@ -197,8 +200,10 @@ const TikTokPreview: FC = (props) => {
       {morePosts.map((p, index) => (
         <div className="flex gap-[8px]" key={index}>
           <div className="w-[40px] h-[40px]">
-            <img
-              src={integration?.picture}
+            <Image
+              width={48}
+              height={48}
+              src={integration?.picture!}
               alt="x"
               className="rounded-full w-full h-full relative z-[2]"
             />

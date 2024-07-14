@@ -17,7 +17,7 @@ export default async function AuthLayout({
       <div className="relative z-[1] pr-[100px] flex justify-end items-center h-[100vh] w-[100vw] overflow-hidden">
         <div className="w-[557px] flex h-[614px] bg-loginBox bg-contain">
           <div className="w-full relative">
-            <div className="absolute -top-[100px] text-white justify-center items-center w-full flex gap-[10px]">
+            <div className="custom:fixed custom:text-left custom:left-[20px] custom:justify-start custom:top-[20px] absolute -top-[100px] text-white justify-center items-center w-full flex gap-[10px]">
               <Image
                 src={isGeneral() ? '/postiz.svg' : '/logo.svg'}
                 width={55}
