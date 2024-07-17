@@ -15,6 +15,7 @@ import interClass from '@gitroom/react/helpers/inter.font';
 import { isGeneral } from '@gitroom/react/helpers/is.general';
 import clsx from 'clsx';
 import { GoogleProvider } from '@gitroom/frontend/components/auth/providers/google.provider';
+import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
 
 type Inputs = {
   email: string;
@@ -74,6 +75,7 @@ export function RegisterAfter({
   const [loading, setLoading] = useState(false);
   const getQuery = useSearchParams();
   const router = useRouter();
+  const fireEvents = useFireEvents();
 
   const isAfterProvider = useMemo(() => {
     return !!token && !!provider;
@@ -106,6 +108,8 @@ export function RegisterAfter({
 
       setLoading(false);
     }
+
+    fireEvents('register');
 
     if (register.headers.get('activate')) {
       router.push('/auth/activate');

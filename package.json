@@ -88,6 +88,7 @@
     "multer": "^1.4.5-lts.1",
     "nestjs-command": "^3.1.4",
     "next": "^14.2.4",
+    "next-plausible": "^3.12.0",
     "openai": "^4.47.1",
     "prisma-paginate": "^5.2.1",
     "react": "18.2.0",

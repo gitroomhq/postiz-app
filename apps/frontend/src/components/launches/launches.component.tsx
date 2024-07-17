@@ -18,12 +18,14 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Integration } from '@prisma/client';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
 import { useToaster } from '@gitroom/react/toaster/toaster';
+import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
 
 export const LaunchesComponent = () => {
   const fetch = useFetch();
   const router = useRouter();
   const search = useSearchParams();
   const toast = useToaster();
+  const fireEvents = useFireEvents();
 
   const [reload, setReload] = useState(false);
   const load = useCallback(async (path: string) => {
@@ -96,6 +98,9 @@ export const LaunchesComponent = () => {
     }
     if (search.get('scope') === 'missing') {
       toast.show('You have to approve all the channel permissions', 'warning');
+    }
+    if (search.get('added')) {
+      fireEvents('channel_added');
     }
     if (window.opener) {
       window.close();

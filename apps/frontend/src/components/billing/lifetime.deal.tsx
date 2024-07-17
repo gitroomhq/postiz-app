@@ -9,6 +9,7 @@ import { Button } from '@gitroom/react/form/button';
 import { useSWRConfig } from 'swr';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useRouter } from 'next/navigation';
+import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
 
 export const LifetimeDeal = () => {
   const fetch = useFetch();
@@ -17,6 +18,7 @@ export const LifetimeDeal = () => {
   const toast = useToaster();
   const { mutate } = useSWRConfig();
   const router = useRouter();
+  const fireEvents = useFireEvents();
 
   const claim = useCallback(async () => {
     const { success } = await (
@@ -32,6 +34,7 @@ export const LifetimeDeal = () => {
     if (success) {
       mutate('/user/self');
       toast.show('Successfully claimed the code');
+      fireEvents('lifetime_claimed');
     } else {
       toast.show('Code already claimed or invalid code', 'warning');
     }
