@@ -13,6 +13,7 @@ import { YoutubeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/provide
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import * as process from 'node:process';
 import dayjs from 'dayjs';
+import { GaxiosError } from 'gaxios/build/src/common';
 
 const clientAndYoutube = () => {
   const client = new google.auth.OAuth2({
@@ -154,16 +155,18 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
           snippet: {
             title: settings.title,
             description: firstPost?.message,
-            tags: settings.tags.map((p) => p.label),
-            ...(settings?.thumbnail?.path
-              ? {
-                  thumbnails: {
-                    default: {
-                      url: settings?.thumbnail?.path,
-                    },
-                  },
-                }
+            ...(settings?.tags?.length
+              ? { tags: settings.tags.map((p) => p.label) }
               : {}),
+            // ...(settings?.thumbnail?.path
+            //   ? {
+            //       thumbnails: {
+            //         default: {
+            //           url: settings?.thumbnail?.path,
+            //         },
+            //       },
+            //     }
+            //   : {}),
           },
           status: {
             privacyStatus: settings.type,
@@ -174,16 +177,62 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
         },
       });
 
+      console.log(all);
+
+      if (settings?.thumbnail?.path) {
+        try {
+          const allb = await youtubeClient.thumbnails.set({
+            videoId: all?.data?.id!,
+            media: {
+              body: (
+                await axios({
+                  url: settings?.thumbnail?.path,
+                  method: 'GET',
+                  responseType: 'stream',
+                })
+              ).data,
+            },
+          });
+
+          console.log(allb);
+        } catch (err: any) {
+          if (
+            err.response?.data?.error?.errors?.[0]?.domain ===
+            'youtube.thumbnail'
+          ) {
+            throw 'Your account is not verified, we have uploaded your video but we could not set the thumbnail. Please verify your account and try again.';
+          }
+
+          console.log(JSON.stringify(err?.response?.data, null, 2));
+        }
+      }
+
       return [
         {
           id: firstPost.id,
-          releaseURL: `https://www.youtube.com/watch?v=${all.data.id}`,
+          releaseURL: `https://www.youtube.com/watch?v=${all?.data?.id}`,
           postId: all?.data?.id!,
           status: 'success',
         },
       ];
-    } catch (err) {
-      console.log(err);
+    } catch (err: any) {
+      if (
+        err.response?.data?.error?.errors?.[0]?.reason === 'failedPrecondition'
+      ) {
+        throw 'We have uploaded your video but we could not set the thumbnail. Thumbnail size is too large';
+      }
+      if (
+        err.response?.data?.error?.errors?.[0]?.reason === 'uploadLimitExceeded'
+      ) {
+        throw 'You have reached your daily upload limit, please try again tomorrow.';
+      }
+      if (
+        err.response?.data?.error?.errors?.[0]?.reason ===
+        'youtubeSignupRequired'
+      ) {
+        console.log('nevo david!');
+        throw 'You have to link your youtube account to your google account first.';
+      }
     }
     return [];
   }

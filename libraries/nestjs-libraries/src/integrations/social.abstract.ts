@@ -6,6 +6,14 @@ export abstract class SocialAbstract {
   async fetch(url: string, options: RequestInit = {}) {
     const request = await fetch(url, options);
     console.log(request.status);
+    if (request.status !== 200 && request.status !== 201) {
+      try {
+        console.log(await request.json());
+      }
+      catch (err) {
+        console.log('skip');
+      }
+    }
     if (request.status === 401) {
       throw new RefreshToken();
     }

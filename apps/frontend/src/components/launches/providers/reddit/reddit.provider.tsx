@@ -118,13 +118,20 @@ const RedditPreview: FC = (props) => {
               >
                 {restOfPosts.map((p, index) => (
                   <div className="flex gap-[8px]" key={index}>
-                    <div className="w-[32px] h-[32px]">
+                    <div className="w-[32px] h-[32px] relative">
                       <Image
                         width={48}
                         height={48}
                         src={integration?.picture!}
                         alt="x"
                         className="rounded-full w-full h-full relative z-[2]"
+                      />
+                      <Image
+                        width={24}
+                        height={24}
+                        src={`/icons/platforms/${integration?.identifier!}.png`}
+                        alt="x"
+                        className="rounded-full absolute -right-[5px] -bottom-[5px] z-[2]"
                       />
                     </div>
                     <div className="flex-1 flex flex-col leading-[16px] w-full pr-[64px] pb-[8px] rounded-[8px]">

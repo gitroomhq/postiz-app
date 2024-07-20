@@ -104,6 +104,22 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
+  private async checkLoaded(mediaContainerId: string, accessToken: string): Promise<boolean> {
+    const {status, id, error_message} = await (await this.fetch(`https://graph.threads.net/v1.0/${mediaContainerId}?fields=status,error_message&access_token=${accessToken}`)).json();
+    console.log(status, error_message);
+    if (status === 'ERROR') {
+      throw new Error(id);
+    }
+
+    if (status === 'FINISHED') {
+      await timer(2000);
+      return true;
+    }
+
+    await timer(2200);
+    return this.checkLoaded(mediaContainerId, accessToken);
+  }
+
   async fetchPageInformation(accessToken: string) {
     const { id, username, threads_profile_picture_url, access_token } = await (
       await this.fetch(
@@ -163,6 +179,8 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
         )
       ).json();
 
+      await this.checkLoaded(containerId, accessToken);
+
       const { id: threadId } = await (
         await this.fetch(
           `https://graph.threads.net/v1.0/${id}/threads_publish?creation_id=${containerId}&access_token=${accessToken}`,
@@ -188,10 +206,10 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
 
         const media = new URLSearchParams({
           ...(type === 'video_url'
-            ? { video_url: firstPost?.media![0].path }
+            ? { video_url: mediaLoad.path }
             : {}),
           ...(type === 'image_url'
-            ? { image_url: firstPost?.media![0].path }
+            ? { image_url: mediaLoad.path }
             : {}),
           is_carousel_item: 'true',
           media_type:
@@ -216,6 +234,8 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
         medias.push(mediaId);
       }
 
+      await Promise.all(medias.map((p: string) => this.checkLoaded(p, accessToken)));
+
       const { id: containerId } = await (
         await this.fetch(
           `https://graph.threads.net/v1.0/${id}/threads?text=${
@@ -228,6 +248,8 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
           }
         )
       ).json();
+
+      await this.checkLoaded(containerId, accessToken);
 
       const { id: threadId } = await (
         await this.fetch(

@@ -205,10 +205,7 @@ export class IntegrationRepository {
       where: {
         organizationId: org,
         integrationId: id,
-        deletedAt: null,
-        state: {
-          in: ['QUEUE', 'DRAFT'],
-        },
+        deletedAt: null
       },
     });
   }

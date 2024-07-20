@@ -38,8 +38,7 @@ const authenticatedController = [
   BillingController,
   NotificationsController,
   MarketplaceController,
-  MessagesController,
-  CopilotController,
+  MessagesController
 ];
 @Module({
   imports: [
@@ -60,7 +59,7 @@ const authenticatedController = [
         ]
       : []),
   ],
-  controllers: [StripeController, AuthController, ...authenticatedController],
+  controllers: [StripeController, AuthController, CopilotController, ...authenticatedController],
   providers: [
     AuthService,
     StripeService,

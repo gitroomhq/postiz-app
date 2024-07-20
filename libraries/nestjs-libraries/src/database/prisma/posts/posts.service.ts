@@ -68,13 +68,14 @@ export class PostsService {
   }
 
   async getPost(orgId: string, id: string) {
-    const posts = await this.getPostsRecursively(id, false, orgId, true);
+    const posts = await this.getPostsRecursively(id, true, orgId, true);
     return {
       group: posts?.[0]?.group,
       posts: posts.map((post) => ({
         ...post,
         image: JSON.parse(post.image || '[]'),
       })),
+      integrationPicture: posts[0]?.integration?.picture,
       integration: posts[0].integrationId,
       settings: JSON.parse(posts[0].settings || '{}'),
     };
@@ -148,7 +149,7 @@ export class PostsService {
         `Error posting on ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
         `An error occurred while posting on ${
           firstPost.integration?.providerIdentifier
-        } ${JSON.stringify(err)}`,
+        } ${err}`,
         true
       );
     }

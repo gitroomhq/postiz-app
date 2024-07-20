@@ -142,17 +142,33 @@ export const PickPlatforms: FC<{
       await timer(500);
       await Promise.all(promises);
     },
-    [selectedAccounts]
+    [onChange, props.singleSelect, selectedAccounts, setSelectedAccounts]
   );
 
-  const handler = useCallback(
-    async ({ integrationId }: { integrationId: string }) => {
-      console.log('setSelectedIntegration', integrations, integrationId, dayjs().unix());
-      const findIntegration = integrations.find((p) => p.id === integrationId)!;
-      await addPlatform(findIntegration)();
-    },
-    [selectedAccounts, integrations, selectedAccounts]
-  );
+  const handler = async ({ integrationsId }: { integrationsId: string[] }) => {
+    console.log(
+      'setSelectedIntegration',
+      integrations,
+      integrationsId,
+      dayjs().unix()
+    );
+
+    const selected = selectedIntegrations.map((p) => p.id);
+    const notToRemove = selected.filter((p) => integrationsId.includes(p));
+    const toAdd = integrationsId.filter((p) => !selected.includes(p));
+
+    const newIntegrations = [...notToRemove, ...toAdd]
+      .map((id) => integrations.find((p) => p.id === id)!)
+      .filter((p) => p);
+
+    setSelectedAccounts(newIntegrations, () => {
+      console.log('changed')
+    });
+
+    onChange(newIntegrations, () => {
+      console.log('changed')
+    });
+  };
 
   useCopilotReadable({
     description: isMain
@@ -165,19 +181,26 @@ export const PickPlatforms: FC<{
     {
       name: isMain ? `addOrRemovePlatform` : 'setSelectedIntegration',
       description: isMain
-        ? `Add or remove one channel to schedule your post to, always pass the id`
-        : 'Set selected integration',
+        ? `Add or remove channels to schedule your post to, pass all the ids as array`
+        : 'Set selected integrations',
       parameters: [
         {
-          name: 'integrationId',
-          type: 'string',
-          description: 'The id of the integration',
+          name: 'integrationsId',
+          type: 'string[]',
+          description: 'List of integrations id to set as selected',
           required: true,
         },
       ],
       handler,
     },
-    [addPlatform, selectedAccounts, integrations]
+    [
+      addPlatform,
+      selectedAccounts,
+      integrations,
+      onChange,
+      props.singleSelect,
+      setSelectedAccounts,
+    ]
   );
 
   if (hide) {
