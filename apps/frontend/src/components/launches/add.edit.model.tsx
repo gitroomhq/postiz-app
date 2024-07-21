@@ -347,7 +347,7 @@ export const AddEditModal: FC<{
             title: 'AI Content Assistant',
           }}
           className="!z-[499]"
-          instructions="You are an assistant that help the user to schedule their social media posts"
+          instructions="You are an assistant that help the user to schedule their social media posts, do not answers to questions that don't trigger a function call"
         />
       )}
       <div className={clsx('flex gap-[20px] bg-black')}>
