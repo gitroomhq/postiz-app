@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 // @ts-ignore
 import Uppy, { UploadResult } from '@uppy/core';
 // @ts-ignore
@@ -10,8 +10,8 @@ import sha256 from 'sha256';
 import { FileInput, ProgressBar } from '@uppy/react';
 
 // Uppy styles
-import "@uppy/core/dist/style.min.css";
-import "@uppy/dashboard/dist/style.min.css";
+import '@uppy/core/dist/style.min.css';
+import '@uppy/dashboard/dist/style.min.css';
 
 const fetchUploadApiEndpoint = async (
   fetch: any,
@@ -39,18 +39,32 @@ export function MultipartFileUploader({
   allowedFileTypes: string;
 }) {
   const [loaded, setLoaded] = useState(false);
+  const [reload, setReload] = useState(false);
+
+  const onUploadSuccessExtended = useCallback((result: UploadResult) => {
+    setReload(true);
+    onUploadSuccess(result);
+  }, [onUploadSuccess]);
+
+  useEffect(() => {
+    if (reload) {
+      setTimeout(() => {
+        setReload(false);
+      }, 1);
+    }
+  }, [reload]);
 
   useEffect(() => {
     setLoaded(true);
   }, []);
 
-  if (!loaded) {
+  if (!loaded || reload) {
     return null;
   }
 
   return (
     <MultipartFileUploaderAfter
-      onUploadSuccess={onUploadSuccess}
+      onUploadSuccess={onUploadSuccessExtended}
       allowedFileTypes={allowedFileTypes}
     />
   );

@@ -64,67 +64,12 @@ export const MediaBox: FC<{
   const [mediaList, setListMedia] = useState<Media[]>([]);
   const fetch = useFetch();
   const mediaDirectory = useMediaDirectory();
-  const toaster = useToaster();
-  const [uploadProgress, setUploadProgress] = useState(0);
 
   const [loading, setLoading] = useState(false);
 
   const loadMedia = useCallback(async () => {
     return (await fetch('/media')).json();
   }, []);
-
-  const uploadMedia = useCallback(
-    async (event: ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0]!;
-      const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-      for (let i = 0; i < totalChunks; i++) {
-        const chunk = file.slice(i, i + CHUNK_SIZE);
-        const formData = new FormData();
-        formData.append('chunk', chunk);
-        formData.append('chunkNumber', String(i));
-        formData.append('totalChunks', String(totalChunks));
-        formData.append('fileName', file.name);
-
-        const percent = ((i + 1) / totalChunks) * 100;
-        setUploadProgress(percent);
-
-        const data = await (
-          await fetch('/media', {
-            method: 'POST',
-            body: formData,
-          })
-        ).json();
-      }
-
-      // const maxFileSize =
-      //   (file?.target?.files?.[0].name.indexOf('mp4') || -1) > -1
-      //     ? 100 * 1024 * 1024
-      //     : 10 * 1024 * 1024;
-      //
-      // if (
-      //   !file?.target?.files?.length ||
-      //   file?.target?.files?.[0]?.size > maxFileSize
-      // ) {
-      //   toaster.show(
-      //     `Maximum file size ${maxFileSize / 1024 / 1024}mb`,
-      //     'warning'
-      //   );
-      //   return;
-      // }
-      // const formData = new FormData();
-      // formData.append('file', file?.target?.files?.[0]);
-      // setLoading(true);
-      // const data = await (
-      //   await fetch('/media', {
-      //     method: 'POST',
-      //     body: formData,
-      //   })
-      // ).json();
-      // setLoading(false);
-      setListMedia([...mediaList, data]);
-    },
-    [mediaList]
-  );
 
   const setNewMedia = useCallback(
     (media: Media) => () => {
@@ -179,18 +124,6 @@ export const MediaBox: FC<{
               type="button"
             >
               <div className="relative flex gap-2 items-center justify-center">
-                <input
-                  type="file"
-                  className="absolute left-0 top-0 w-full h-full opacity-0"
-                  accept={
-                    type === 'video'
-                      ? 'video/mp4'
-                      : type === 'image'
-                      ? 'image/*'
-                      : 'image/*,video/mp4'
-                  }
-                  onChange={uploadMedia}
-                />
                 <MultipartFileUploader
                   onUploadSuccess={mutate}
                   allowedFileTypes={
@@ -208,24 +141,24 @@ export const MediaBox: FC<{
         <div
           className={clsx(
             'flex flex-wrap gap-[10px] mt-[35px] pt-[20px]',
-            !mediaList.length && 'justify-center items-center text-white'
+            !!mediaList.length && 'justify-center items-center text-white'
           )}
         >
           {!mediaList.length && (
             <div className="flex flex-col text-center">
               <div>You don{"'"}t have any assets yet.</div>
               <div>Click the button below to upload one</div>
-              <div className="mt-[10px]">
-                {/*<MultipartFileUploader*/}
-                {/*  onUploadSuccess={mutate}*/}
-                {/*  allowedFileTypes={*/}
-                {/*    type === 'video'*/}
-                {/*      ? 'video/mp4'*/}
-                {/*      : type === 'image'*/}
-                {/*      ? 'image/*'*/}
-                {/*      : 'image/*,video/mp4'*/}
-                {/*  }*/}
-                {/*/>*/}
+              <div className="mt-[10px] justify-center items-center flex flex-col-reverse gap-[10px]">
+                <MultipartFileUploader
+                  onUploadSuccess={mutate}
+                  allowedFileTypes={
+                    type === 'video'
+                      ? 'video/mp4'
+                      : type === 'image'
+                      ? 'image/*'
+                      : 'image/*,video/mp4'
+                  }
+                />
               </div>
             </div>
           )}
