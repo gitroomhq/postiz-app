@@ -273,20 +273,25 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
     }),
   }));
 
-  const getIntegration = useCallback(async (post: Post & { integration: Integration }) => {
-    return (
-      await fetch(
-        `/integrations/${post.integration.id}?order=${post.submittedForOrderId}`,
-        {
-          method: 'GET',
-        }
-      )
-    ).json();
-  }, []);
+  const getIntegration = useCallback(
+    async (post: Post & { integration: Integration }) => {
+      return (
+        await fetch(
+          `/integrations/${post.integration.id}?order=${post.submittedForOrderId}`,
+          {
+            method: 'GET',
+          }
+        )
+      ).json();
+    },
+    []
+  );
 
   const previewPublication = useCallback(
     async (postInfo: Post & { integration: Integration }) => {
-      const post = await (await fetch(`/marketplace/posts/${postInfo.id}`)).json();
+      const post = await (
+        await fetch(`/marketplace/posts/${postInfo.id}`)
+      ).json();
 
       const integration = await getIntegration(postInfo);
       modal.openModal({
@@ -327,15 +332,16 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
         closeOnEscape: false,
         withCloseButton: false,
         classNames: {
-          modal: 'bg-transparent text-white',
+          modal: 'w-[100%] max-w-[1400px] bg-transparent text-white',
         },
         children: (
           <ExistingDataContextProvider value={data}>
             <AddEditModal
               reopenModal={editPost(post)}
-              integrations={integrations.slice(0).filter(
-                (f) => f.id === data.integration
-              ).map(p => ({ ...p, picture: data.integrationPicture }))}
+              integrations={integrations
+                .slice(0)
+                .filter((f) => f.id === data.integration)
+                .map((p) => ({ ...p, picture: data.integrationPicture }))}
               date={getDate}
             />
           </ExistingDataContextProvider>
@@ -357,7 +363,7 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
       },
       children: (
         <AddEditModal
-          integrations={integrations.slice(0).map(p => ({ ...p }))}
+          integrations={integrations.slice(0).map((p) => ({ ...p }))}
           date={getDate}
           reopenModal={() => ({})}
         />
