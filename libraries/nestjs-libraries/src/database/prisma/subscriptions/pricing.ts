@@ -9,6 +9,7 @@ export interface PricingInnerInterface {
   featured_by_gitroom: boolean;
   ai: boolean;
   import_from_channels: boolean;
+  image_generator?: boolean;
 }
 export interface PricingInterface {
   [key: string]: PricingInnerInterface;
@@ -25,6 +26,7 @@ export const pricing: PricingInterface = {
     featured_by_gitroom: false,
     ai: false,
     import_from_channels: false,
+    image_generator: false,
   },
   STANDARD: {
     current: 'STANDARD',
@@ -37,6 +39,7 @@ export const pricing: PricingInterface = {
     community_features: false,
     featured_by_gitroom: false,
     import_from_channels: true,
+    image_generator: false,
   },
   PRO: {
     current: 'PRO',
@@ -49,5 +52,6 @@ export const pricing: PricingInterface = {
     featured_by_gitroom: true,
     ai: true,
     import_from_channels: true,
+    image_generator: true,
   },
 };

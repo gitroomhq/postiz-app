@@ -15,7 +15,10 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import { MultipartFileUploader } from '@gitroom/frontend/components/media/new.uploader';
 import dynamic from 'next/dynamic';
-const Polonto = dynamic(() => import('@gitroom/frontend/components/launches/polonto'));
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
+const Polonto = dynamic(
+  () => import('@gitroom/frontend/components/launches/polonto')
+);
 const showModalEmitter = new EventEmitter();
 
 export const ShowMediaBoxModal: FC = () => {
@@ -211,6 +214,7 @@ export const MultiMediaComponent: FC<{
   }) => void;
 }> = (props) => {
   const { name, label, error, description, onChange, value } = props;
+  const user = useUser();
   useEffect(() => {
     if (value) {
       setCurrentMedia(value);
@@ -257,7 +261,9 @@ export const MultiMediaComponent: FC<{
     <>
       <div className="flex flex-col gap-[8px] bg-[#131B2C] rounded-bl-[8px]">
         {modal && <MediaBox setMedia={changeMedia} closeModal={showModal} />}
-        {mediaModal && <Polonto setMedia={changeMedia} closeModal={closeDesignModal} />}
+        {mediaModal && !!user?.tier?.ai &&  (
+          <Polonto setMedia={changeMedia} closeModal={closeDesignModal} />
+        )}
         <div className="flex gap-[10px]">
           <div className="flex">
             <Button
@@ -344,9 +350,12 @@ export const MediaComponent: FC<{
     target: { name: string; value?: { id: string; path: string } };
   }) => void;
   type?: 'image' | 'video';
+  width?: number;
+  height?: number;
 }> = (props) => {
-  const { name, type, label, description, onChange, value } = props;
+  const { name, type, label, description, onChange, value, width, height } = props;
   const { getValues } = useSettings();
+  const user = useUser();
   useEffect(() => {
     const settings = getValues()[props.name];
     if (settings) {
@@ -354,8 +363,17 @@ export const MediaComponent: FC<{
     }
   }, []);
   const [modal, setShowModal] = useState(false);
+  const [mediaModal, setMediaModal] = useState(false);
   const [currentMedia, setCurrentMedia] = useState(value);
   const mediaDirectory = useMediaDirectory();
+
+  const closeDesignModal = useCallback(() => {
+    setMediaModal(false);
+  }, [modal]);
+
+  const showDesignModal = useCallback(() => {
+    setMediaModal(true);
+  }, [modal]);
 
   const changeMedia = useCallback((m: { path: string; id: string }) => {
     setCurrentMedia(m);
@@ -376,6 +394,14 @@ export const MediaComponent: FC<{
       {modal && (
         <MediaBox setMedia={changeMedia} closeModal={showModal} type={type} />
       )}
+      {mediaModal && !!user?.tier?.ai && (
+        <Polonto
+          width={width}
+          height={height}
+          setMedia={changeMedia}
+          closeModal={closeDesignModal}
+        />
+      )}
       <div className="text-[14px]">{label}</div>
       <div className="text-[12px]">{description}</div>
       {!!currentMedia && (
@@ -387,8 +413,11 @@ export const MediaComponent: FC<{
           />
         </div>
       )}
-      <div className="flex">
+      <div className="flex gap-[5px]">
         <Button onClick={showModal}>Select</Button>
+        <Button onClick={showDesignModal} className="!bg-[#832AD5]">
+          Editor
+        </Button>
         <Button secondary={true} onClick={clearMedia}>
           Clear
         </Button>

@@ -2568,19 +2568,6 @@ span.bp5-icon:empty.bp5-icon-large{
   border-color:rgba(17, 20, 24, 0.15);
 }
 
-a{
-  color:#215db0;
-}
-a:hover{
-  color:#215db0;
-}
-a .bp5-icon, a .bp5-icon-standard, a .bp5-icon-large{
-  color:inherit;
-}
-a code{
-  color:inherit;
-}
-
 .bp5-code,
 .bp5-running-text code{
   background:rgba(255, 255, 255, 0.7);
@@ -2805,13 +2792,7 @@ a > .bp5-running-text code{
 .bp5-text-small{
   font-size:12px;
 }
-a{
-  text-decoration:none;
-}
-a:hover{
-  cursor:pointer;
-  text-decoration:underline;
-}
+
 .bp5-code, .bp5-running-text code{
   font-family:monospace;
   text-transform:none;
@@ -2954,7 +2935,7 @@ a > .bp5-dark .bp5-running-text code{
   color:#fa999c;
 }
 
-:focus{
+.polonto :focus{
   outline:rgba(45, 114, 210, 0.6) solid 2px;
   outline-offset:2px;
   -moz-outline-radius:6px;

@@ -1,4 +1,11 @@
-import { createContext, FC, useContext, useEffect, useState } from 'react';
+import {
+  createContext,
+  FC,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { createStore } from 'polotno/model/store';
 import Workspace from 'polotno/canvas/workspace';
@@ -9,14 +16,12 @@ import ZoomButtons from 'polotno/toolbar/zoom-buttons';
 import { Button } from '@gitroom/react/form/button';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { PictureGeneratorSection } from '@gitroom/frontend/components/launches/polonto/polonto.picture.generation';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
 
 const store = createStore({
   key: 'Aqml_02mqf6YTKC0jYZ8',
   showCredit: false,
 });
-
-// @ts-ignore
-DEFAULT_SECTIONS.push(PictureGeneratorSection)
 
 // @ts-ignore
 const CloseContext = createContext({ close: {} as any, setMedia: {} as any });
@@ -56,18 +61,29 @@ const Polonto: FC<{
   setMedia: (params: { id: string; path: string }) => void;
   type?: 'image' | 'video';
   closeModal: () => void;
+  width?: number;
+  height?: number;
 }> = (props) => {
   const { setMedia, type, closeModal } = props;
+  const user = useUser();
+
+  console.log(user);
+  const features = useMemo(() => {
+    return [
+      ...DEFAULT_SECTIONS,
+      ...(user?.tier?.image_generator ? [PictureGeneratorSection] : []),
+    ] as any[];
+  }, [user?.tier?.image_generator]);
 
   useEffect(() => {
-    const page = store.addPage({
-      width: 540,
-      height: 675,
+    store.addPage({
+      width: props.width || 540,
+      height: props.height || 675,
     });
 
     return () => {
       store.clear();
-    }
+    };
   }, []);
   return (
     <div className="fixed left-0 top-0 bg-black/80 z-[300] w-full min-h-full p-[60px] animate-fade">
@@ -103,7 +119,7 @@ const Polonto: FC<{
           >
             <PolotnoContainer style={{ width: '100%', height: '1000px' }}>
               <SidePanelWrap>
-                <SidePanel store={store} sections={DEFAULT_SECTIONS} />
+                <SidePanel store={store} sections={features} />
               </SidePanelWrap>
               <WorkspaceWrap>
                 <Toolbar

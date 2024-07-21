@@ -304,8 +304,8 @@ export const withProvider = (
                                 // ...commands
                                 //   .getCommands()
                                 //   .filter((f) => f.name !== 'image'),
-                                newImage,
-                                postSelector(date),
+                                // newImage,
+                                // postSelector(date),
                                 ...linkedinCompany(
                                   integration?.identifier!,
                                   integration?.id!
