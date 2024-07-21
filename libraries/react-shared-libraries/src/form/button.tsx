@@ -15,8 +15,8 @@ export const Button: FC<
   DetailedHTMLProps<
     ButtonHTMLAttributes<HTMLButtonElement>,
     HTMLButtonElement
-  > & { secondary?: boolean; loading?: boolean }
-> = ({ children, loading, ...props }) => {
+  > & { secondary?: boolean; loading?: boolean; innerClassName?: string }
+> = ({ children, loading, innerClassName, ...props }) => {
   const ref = useRef<HTMLButtonElement | null>(null);
   const [height, setHeight] = useState<number | null>(null);
 
@@ -49,6 +49,7 @@ export const Button: FC<
       )}
       <div
         className={clsx(
+          innerClassName,
           'flex-1 items-center justify-center flex',
           loading && 'invisible'
         )}

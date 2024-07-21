@@ -1,6 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import "./polonto.css";
 
 body,
 html {
@@ -285,8 +286,20 @@ html {
   color: white;
 }
 
+.editor .polonto * {
+  color: black !important;
+}
+
+.bp5-portal {
+  z-index: 9999 !important;
+}
+
 :empty + .existing-empty {
   display: none;
+}
+
+.mantine-Paper-root {
+  outline: none !important;
 }
 
 :root {
