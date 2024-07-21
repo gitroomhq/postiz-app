@@ -39,10 +39,11 @@ module.exports = {
         loginBg: 'url(/auth/bg-login.png)',
       },
       fontFamily: {
-        sans: ["Helvetica Neue"],
+        sans: ['Helvetica Neue'],
       },
       animation: {
         fade: 'fadeOut 0.5s ease-in-out',
+        normalFadeOut: 'normalFadeOut 0.5s linear 5s forwards',
         overflow: 'overFlow 0.5s ease-in-out forwards',
         overflowReverse: 'overFlowReverse 0.5s ease-in-out forwards',
         fadeDown: 'fadeDown 4s ease-in-out forwards',
@@ -59,6 +60,10 @@ module.exports = {
         fadeOut: {
           '0%': { opacity: 0, transform: 'translateY(30px)' },
           '100%': { opacity: 1, transform: 'translateY(0)' },
+        },
+        normalFadeOut: {
+          '0%': { opacity: 1 },
+          '100%': { opacity: 0 },
         },
         overFlow: {
           '0%': { overflow: 'hidden' },
