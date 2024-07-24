@@ -32,6 +32,8 @@ import { linkedinCompany } from '@gitroom/frontend/components/launches/helpers/l
 import { Editor } from '@gitroom/frontend/components/launches/editor';
 import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
 import { AddPostButton } from '@gitroom/frontend/components/launches/add.post.button';
+import { GeneralPreviewComponent } from '@gitroom/frontend/components/launches/general.preview.component';
+import { capitalize } from 'lodash';
 
 // Simple component to change back to settings on after changing tab
 export const SetTab: FC<{ changeTab: () => void }> = (props) => {
@@ -277,7 +279,7 @@ export const withProvider = (
                   secondary={showTab !== 1}
                   onClick={changeToEditor}
                 >
-                  {editInPlace ? 'Edit globally' : 'Edit only this'}
+                  {editInPlace ? 'Edit globally' : `Edit only ${integration?.name} (${capitalize(integration?.identifier.replace('-', ' '))})`}
                 </Button>
               </div>
             </div>
@@ -288,7 +290,7 @@ export const withProvider = (
                 <div className="flex flex-col gap-[20px]">
                   {!existingData?.integration && (
                     <div className="bg-red-800">
-                      This will edit only this provider
+                      You are now editing only {integration?.name} ({capitalize(integration?.identifier.replace('-', ' '))})
                     </div>
                   )}
                   {InPlaceValue.map((val, index) => (
@@ -304,7 +306,7 @@ export const withProvider = (
                                 // ...commands
                                 //   .getCommands()
                                 //   .filter((f) => f.name !== 'image'),
-                                newImage,
+                                // newImage,
                                 postSelector(date),
                                 ...linkedinCompany(
                                   integration?.identifier!,
@@ -396,7 +398,7 @@ export const withProvider = (
                 {(editInPlace ? InPlaceValue : props.value)
                   .map((p) => p.content)
                   .join('').length ? (
-                  <PreviewComponent />
+                  <GeneralPreviewComponent />
                 ) : (
                   <>No Content Yet</>
                 )}
