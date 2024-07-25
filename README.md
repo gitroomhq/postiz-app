@@ -17,7 +17,7 @@
 <div align="center">
   <strong>
   <h2>Maximize your launch.</h2><br />
-  [Gitroom](https://gitroom.com/) and [Postiz](https://postiz.com/): An alternative to: Buffer.com, Hypefury, Twitter Hunter, Etc...<br /><br />
+  <a href="https://gitroom.com">Gitroom</a> and <a href="https://postiz.com">Postiz</a>: An alternative to: Buffer.com, Hypefury, Twitter Hunter, Etc...<br /><br />
   </strong>
   Schedule social media and articles.<br />Exchange or buy posts from other members.<br /> Monitor your GitHub trending, and so much more.<br />
 </div>
