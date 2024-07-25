@@ -18,7 +18,7 @@ export const pricing: PricingInterface = {
     current: 'FREE',
     month_price: 0,
     year_price: 0,
-    channel: 2,
+    channel: 1,
     posts_per_month: 30,
     team_members: false,
     community_features: false,
