@@ -337,7 +337,7 @@ export const PickPlatforms: FC<{
             height="16"
             viewBox="0 0 16 16"
             fill="none"
-            className={!isRight ? 'pointer-events-none invisible' : ''}
+            className={!isRight ? 'pointer-events-none invisible' : ' '}
             onClick={changeOffset(200)}
           >
             <path
