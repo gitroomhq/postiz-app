@@ -102,4 +102,4 @@ const XPreview: FC = (props) => {
   );
 };
 
-export default withProvider(null, XPreview);
+export default withProvider(null, XPreview, undefined, undefined, 280);

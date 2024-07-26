@@ -260,18 +260,36 @@ export const AddEditModal: FC<{
         group: existingData?.group,
         trigger: values[v].trigger,
         settings: values[v].settings(),
-        checkValidity: values[v].checkValidity
+        checkValidity: values[v].checkValidity,
+        maximumCharacters: values[v].maximumCharacters,
       }));
 
       for (const key of allKeys) {
         if (key.checkValidity) {
-          const check = await key.checkValidity(key?.value.map((p: any) => p.image || []));
+          const check = await key.checkValidity(
+            key?.value.map((p: any) => p.image || [])
+          );
           if (typeof check === 'string') {
             toaster.show(check, 'warning');
             return;
           }
         }
 
+        if (
+          key.value.some(
+            (p) => p.content.length > (key.maximumCharacters || 1000000)
+          )
+        ) {
+          if (
+            !(await deleteDialog(
+              `${key?.integration?.name} post is too long, it will be cropped, do you want to continue?`
+            ))
+          ) {
+            await key.trigger();
+            moveToIntegration({identifier: key?.integration?.id!, toPreview: true});
+            return;
+          }
+        }
 
         if (key.value.some((p) => !p.content || p.content.length < 6)) {
           setShowError(true);
@@ -280,7 +298,7 @@ export const AddEditModal: FC<{
 
         if (!key.valid) {
           await key.trigger();
-          moveToIntegration(key?.integration?.id!);
+          moveToIntegration({identifier: key?.integration?.id!});
           return;
         }
       }
@@ -305,7 +323,14 @@ export const AddEditModal: FC<{
       );
       modal.closeAll();
     },
-    [postFor, dateState, value, integrations, existingData, selectedIntegrations]
+    [
+      postFor,
+      dateState,
+      value,
+      integrations,
+      existingData,
+      selectedIntegrations,
+    ]
   );
 
   const getPostsMarketplace = useCallback(async () => {
@@ -373,7 +398,7 @@ export const AddEditModal: FC<{
 
             {!existingData.integration && (
               <PickPlatforms
-                integrations={integrations.filter(f => !f.disabled)}
+                integrations={integrations.filter((f) => !f.disabled)}
                 selectedIntegrations={[]}
                 singleSelect={false}
                 onChange={setSelectedIntegrations}

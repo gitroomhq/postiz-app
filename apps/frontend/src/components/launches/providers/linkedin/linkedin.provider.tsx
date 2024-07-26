@@ -129,4 +129,4 @@ const LinkedinPreview: FC = (props) => {
   );
 };
 
-export default withProvider(null, LinkedinPreview);
+export default withProvider(null, LinkedinPreview, undefined, undefined, 3000);

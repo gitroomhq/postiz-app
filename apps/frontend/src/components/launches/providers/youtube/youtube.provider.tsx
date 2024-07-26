@@ -185,5 +185,6 @@ export default withProvider(
     }
 
     return true;
-  }
+  },
+  5000
 );

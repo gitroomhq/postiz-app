@@ -134,5 +134,6 @@ export default withProvider(
   undefined,
   async ([firstPost, ...otherPosts]) => {
     return true;
-  }
+  },
+  500
 );

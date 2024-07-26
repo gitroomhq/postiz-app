@@ -72,7 +72,8 @@ export const withProvider = (
   SettingsComponent: FC | null,
   PreviewComponent: FC,
   dto?: any,
-  checkValidity?: (value: Array<Array<{path: string}>>) => Promise<string|true>
+  checkValidity?: (value: Array<Array<{path: string}>>) => Promise<string|true>,
+  maximumCharacters?: number
 ) => {
   return (props: {
     identifier: string;
@@ -115,9 +116,9 @@ export const withProvider = (
     }, [SettingsComponent]);
 
     // in case there is an error on submit, we change to the settings tab for the specific provider
-    useMoveToIntegrationListener([props.id], true, (identifier) => {
+    useMoveToIntegrationListener([props.id], true, ({identifier, toPreview}) => {
       if (identifier === props.id) {
-        setShowTab(2);
+        setShowTab(toPreview ? 1 : 2);
       }
     });
 
@@ -128,7 +129,8 @@ export const withProvider = (
       props.identifier,
       editInPlace ? InPlaceValue : props.value,
       dto,
-      checkValidity
+      checkValidity,
+      maximumCharacters
     );
 
     // change editor value
@@ -398,7 +400,7 @@ export const withProvider = (
                 {(editInPlace ? InPlaceValue : props.value)
                   .map((p) => p.content)
                   .join('').length ? (
-                  <GeneralPreviewComponent />
+                  <GeneralPreviewComponent maximumCharacters={maximumCharacters} />
                 ) : (
                   <>No Content Yet</>
                 )}

@@ -14,6 +14,9 @@ html {
   position: relative;
   z-index: 2;
 }
+#tooltip {
+  z-index: 10000;
+}
 .box:after {
   border-radius: 50px;
   width: 100%;

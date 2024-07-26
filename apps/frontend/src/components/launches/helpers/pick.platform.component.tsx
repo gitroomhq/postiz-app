@@ -65,7 +65,7 @@ export const PickPlatforms: FC<{
   useMoveToIntegrationListener(
     [integrations],
     props.singleSelect,
-    (identifier) => {
+    ({identifier, toPreview}: {identifier: string, toPreview: boolean}) => {
       const findIntegration = integrations.find((p) => p.id === identifier);
 
       if (findIntegration) {

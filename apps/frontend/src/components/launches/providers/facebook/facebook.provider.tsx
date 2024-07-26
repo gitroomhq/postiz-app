@@ -129,4 +129,4 @@ const FacebookPreview: FC = (props) => {
   );
 };
 
-export default withProvider(null, FacebookPreview);
+export default withProvider(null, FacebookPreview, undefined, undefined, 63206);

@@ -202,4 +202,4 @@ const RedditSettings: FC = () => {
   );
 };
 
-export default withProvider(RedditSettings, RedditPreview, RedditSettingsDto);
+export default withProvider(RedditSettings, RedditPreview, RedditSettingsDto, undefined, 10000);

@@ -9,6 +9,7 @@ const finalInformation = {} as {
     trigger: () => Promise<boolean>;
     isValid: boolean;
     checkValidity?: (value: Array<Array<{path: string}>>) => Promise<string|true>;
+    maximumCharacters?: number;
   };
 };
 export const useValues = (
@@ -18,6 +19,7 @@ export const useValues = (
   value: Array<{ id?: string; content: string; media?: Array<string> }>,
   dto: any,
   checkValidity?: (value: Array<Array<{path: string}>>) => Promise<string|true>,
+  maximumCharacters?: number,
 ) => {
   const resolver = useMemo(() => {
     return classValidatorResolver(dto);
@@ -43,6 +45,10 @@ export const useValues = (
   if (checkValidity) {
     finalInformation[integration].checkValidity =
       checkValidity;
+  }
+
+  if (maximumCharacters) {
+    finalInformation[integration].maximumCharacters = maximumCharacters;
   }
 
   useEffect(() => {

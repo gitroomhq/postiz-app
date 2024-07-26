@@ -5,15 +5,15 @@ import { useCallback, useEffect } from 'react';
 
 const emitter = new EventEmitter();
 export const useMoveToIntegration = () => {
-  return useCallback((identifier: string) => {
-    emitter.emit('moveToIntegration', identifier);
+  return useCallback(({identifier, toPreview}: {identifier: string, toPreview?: boolean}) => {
+    emitter.emit('moveToIntegration', {identifier, toPreview});
   }, []);
 };
 
 export const useMoveToIntegrationListener = (
   useEffectParams: any[],
   enabled: boolean,
-  callback: (identifier: string) => void
+  callback: ({identifier, toPreview}: {identifier: string, toPreview: boolean}) => void
 ) => {
   useEffect(() => {
     if (!enabled) {
