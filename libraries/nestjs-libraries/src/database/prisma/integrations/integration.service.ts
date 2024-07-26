@@ -7,6 +7,9 @@ import { SocialProvider } from '@gitroom/nestjs-libraries/integrations/social/so
 import { Integration } from '@prisma/client';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { LinkedinPageProvider } from '@gitroom/nestjs-libraries/integrations/social/linkedin.page.provider';
+import { simpleUpload } from '@gitroom/nestjs-libraries/upload/r2.uploader';
+import axios from 'axios';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 
 @Injectable()
 export class IntegrationService {
@@ -15,7 +18,7 @@ export class IntegrationService {
     private _integrationManager: IntegrationManager,
     private _notificationService: NotificationService
   ) {}
-  createOrUpdateIntegration(
+  async createOrUpdateIntegration(
     org: string,
     name: string,
     picture: string,
@@ -29,10 +32,13 @@ export class IntegrationService {
     isBetweenSteps = false,
     refresh?: string
   ) {
+    const loadImage = await axios.get(picture, { responseType: 'arraybuffer' });
+    const uploadedPicture = await simpleUpload(loadImage.data, `${makeId(10)}.png`, 'image/png');
+
     return this._integrationRepository.createOrUpdateIntegration(
       org,
       name,
-      picture,
+      uploadedPicture,
       type,
       internalId,
       provider,

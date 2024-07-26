@@ -1,10 +1,5 @@
 import {
-  UploadPartCommand,
-  S3Client,
-  ListPartsCommand,
-  CreateMultipartUploadCommand,
-  CompleteMultipartUploadCommand,
-  AbortMultipartUploadCommand,
+  UploadPartCommand, S3Client, ListPartsCommand, CreateMultipartUploadCommand, CompleteMultipartUploadCommand, AbortMultipartUploadCommand, PutObjectCommand
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Request, Response } from 'express';
@@ -42,6 +37,20 @@ export default async function handleR2Upload(
       return signPart(req, res);
   }
   return res.status(404).end();
+}
+
+export async function simpleUpload(data: Buffer, key: string, contentType: string) {
+  const params = {
+    Bucket: CLOUDFLARE_BUCKETNAME,
+    Key: key,
+    Body: data,
+    ContentType: contentType,
+  };
+
+  const command = new PutObjectCommand({ ...params });
+  await R2.send(command);
+
+  return CLOUDFLARE_BUCKET_URL + '/' + key;
 }
 
 export async function createMultipartUpload(

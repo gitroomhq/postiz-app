@@ -4,6 +4,8 @@ import dayjs from 'dayjs';
 import * as console from 'node:console';
 import { Integration } from '@prisma/client';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { simpleUpload } from '@gitroom/nestjs-libraries/upload/r2.uploader';
+import axios from 'axios';
 
 @Injectable()
 export class IntegrationRepository {
@@ -12,7 +14,12 @@ export class IntegrationRepository {
     private _posts: PrismaRepository<'post'>
   ) {}
 
-  updateIntegration(id: string, params: Partial<Integration>) {
+  async updateIntegration(id: string, params: Partial<Integration>) {
+    if (params.picture && params.picture.indexOf(process.env.CLOUDFLARE_BUCKET_URL!) === -1) {
+      const picture = await axios.get(params.picture, { responseType: 'arraybuffer' });
+      params.picture = await simpleUpload(picture.data, `${makeId(10)}.png`, 'image/png');
+    }
+
     return this._integration.model.integration.update({
       where: {
         id,
