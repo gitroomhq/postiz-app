@@ -38,6 +38,32 @@ export interface Integrations {
   type: string;
   picture: string;
 }
+
+function getWeekNumber(date: Date) {
+    // Copy date so don't modify original
+    const targetDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    // Set to nearest Thursday: current date + 4 - current day number
+    // Make Sunday's day number 7
+    targetDate.setUTCDate(targetDate.getUTCDate() + 4 - (targetDate.getUTCDay() || 7));
+    // Get first day of year
+    const yearStart = new Date(Date.UTC(targetDate.getUTCFullYear(), 0, 1));
+    // Calculate full weeks to nearest Thursday
+    return Math.ceil((((targetDate.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+}
+
+function isISOWeek(date: Date, weekNumber: number): boolean {
+    // Copy date so don't modify original
+    const targetDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    // Set to nearest Thursday: current date + 4 - current day number
+    // Make Sunday's day number 7
+    targetDate.setUTCDate(targetDate.getUTCDate() + 4 - (targetDate.getUTCDay() || 7));
+    // Get first day of year
+    const yearStart = new Date(Date.UTC(targetDate.getUTCFullYear(), 0, 1));
+    // Calculate full weeks to nearest Thursday
+    const isoWeekNo = Math.ceil((((targetDate.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+    return isoWeekNo === weekNumber;
+}
+
 export const CalendarWeekProvider: FC<{
   children: ReactNode;
   integrations: Integrations[];
@@ -59,9 +85,13 @@ export const CalendarWeekProvider: FC<{
   }, []);
 
   const [filters, setFilters] = useState({
-    currentWeek: +(searchParams.get('week') || dayjs().week()),
+    currentWeek: +(searchParams.get('week') || getWeekNumber(new Date())),
     currentYear: +(searchParams.get('year') || dayjs().year()),
   });
+
+  const isIsoWeek = useMemo(() => {
+    return isISOWeek(new Date(), filters.currentWeek);
+  }, [filters]);
 
   const setFiltersWrapper = useCallback(
     (filters: { currentWeek: number; currentYear: number }) => {
@@ -80,6 +110,7 @@ export const CalendarWeekProvider: FC<{
     return new URLSearchParams({
       week: filters.currentWeek.toString(),
       year: filters.currentYear.toString(),
+      isIsoWeek: isIsoWeek.toString(),
     }).toString();
   }, [filters]);
 
