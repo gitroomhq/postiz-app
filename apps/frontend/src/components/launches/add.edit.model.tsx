@@ -282,11 +282,14 @@ export const AddEditModal: FC<{
         ) {
           if (
             !(await deleteDialog(
-              `${key?.integration?.name} post is too long, it will be cropped, do you want to continue?`
+              `${key?.integration?.name} post is too long, it will be cropped, do you want to continue?`, 'Yes, continue'
             ))
           ) {
             await key.trigger();
-            moveToIntegration({identifier: key?.integration?.id!, toPreview: true});
+            moveToIntegration({
+              identifier: key?.integration?.id!,
+              toPreview: true,
+            });
             return;
           }
         }
@@ -298,7 +301,7 @@ export const AddEditModal: FC<{
 
         if (!key.valid) {
           await key.trigger();
-          moveToIntegration({identifier: key?.integration?.id!});
+          moveToIntegration({ identifier: key?.integration?.id! });
           return;
         }
       }
@@ -309,7 +312,13 @@ export const AddEditModal: FC<{
           ...(postFor ? { order: postFor.id } : {}),
           type,
           date: dateState.utc().format('YYYY-MM-DDTHH:mm:ss'),
-          posts: allKeys,
+          posts: allKeys.map((p) => ({
+            ...p,
+            value: p.value.map((a) => ({
+              ...a,
+              content: a.content.slice(0, p.maximumCharacters || 1000000),
+            })),
+          })),
         }),
       });
 
