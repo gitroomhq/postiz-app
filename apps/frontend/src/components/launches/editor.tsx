@@ -1,9 +1,12 @@
-import { forwardRef } from 'react';
+import { forwardRef, useCallback, useRef } from 'react';
 import type { MDEditorProps } from '@uiw/react-md-editor/src/Types';
 import { RefMDEditor } from '@uiw/react-md-editor/src/Editor';
 import MDEditor from '@uiw/react-md-editor';
 import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
 import dayjs from 'dayjs';
+import { CopilotTextarea } from '@copilotkit/react-textarea';
+import clsx from 'clsx';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
 
 export const Editor = forwardRef<
   RefMDEditor,
@@ -17,6 +20,7 @@ export const Editor = forwardRef<
     },
     ref: React.ForwardedRef<RefMDEditor>
   ) => {
+    const user = useUser();
     useCopilotReadable({
       description: 'Content of the post number ' + (props.order + 1),
       value: props.content,
@@ -38,8 +42,24 @@ export const Editor = forwardRef<
     });
 
     return (
-      <div className="relative">
-        <MDEditor {...props} ref={ref} />
+      <div className="relative bg-[#141C2C]">
+        {user?.tier?.ai ? (
+          <CopilotTextarea
+            disableBranding={true}
+            className={clsx(
+              '!min-h-40 !max-h-80 p-2 overflow-hidden bg-[#141C2C] outline-none'
+            )}
+            value={props.value}
+            onChange={(e) => props?.onChange?.(e.target.value)}
+            placeholder="Write your reply..."
+            autosuggestionsConfig={{
+              textareaPurpose: `Assist me in writing social media posts.`,
+              chatApiConfigs: {},
+            }}
+          />
+        ) : (
+          <MDEditor {...props} ref={ref} />
+        )}
       </div>
     );
   }
