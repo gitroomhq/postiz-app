@@ -12,9 +12,11 @@ export class CopilotController {
     const copilotRuntimeHandler = copilotRuntimeNestEndpoint({
       endpoint: '/copilot/chat',
       runtime: new CopilotRuntime(),
-      serviceAdapter: new OpenAIAdapter({ model: 'gpt-4o' }),
+      // @ts-ignore
+      serviceAdapter: new OpenAIAdapter({ model: req?.body?.variables?.data?.metadata?.requestType === 'TextareaCompletion' ? 'gpt-4o-mini' : 'gpt-4o' }),
     });
 
+    // @ts-ignore
     return copilotRuntimeHandler(req, res);
   }
 }
