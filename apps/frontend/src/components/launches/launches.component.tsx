@@ -116,8 +116,8 @@ export const LaunchesComponent = () => {
     <CalendarWeekProvider integrations={sortedIntegrations}>
       <div className="flex flex-1 flex-col">
         <div className="flex flex-1 relative">
-          <div className="absolute w-full h-full flex flex-1 gap-[30px] overflow-hidden overflow-y-scroll scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary">
-            <div className="w-[220px] bg-third p-[16px] flex flex-col gap-[24px] sticky top-0">
+          <div className="absolute w-full h-full grid grid-cols-[220px_minmax(0,1fr)] gap-[30px] overflow-hidden overflow-y-scroll scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary">
+              <div className="w-[220px] bg-third p-[16px] flex flex-col gap-[24px] min-h-[100%]">
               <h2 className="text-[20px]">Channels</h2>
               <div className="gap-[16px] flex flex-col">
                 {sortedIntegrations.length === 0 && (
@@ -208,7 +208,7 @@ export const LaunchesComponent = () => {
                 ))}
               </div>
               <AddProviderButton update={() => update(true)} />
-              {sortedIntegrations?.length > 0 && user?.tier?.ai && <GeneratorComponent />}
+              {/*{sortedIntegrations?.length > 0 && user?.tier?.ai && <GeneratorComponent />}*/}
             </div>
             <div className="flex-1 flex flex-col gap-[14px]">
               <Filters />
