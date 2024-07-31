@@ -9,11 +9,15 @@ import { ApiTags } from '@nestjs/swagger';
 import handleR2Upload from '@gitroom/nestjs-libraries/upload/r2.uploader';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CustomFileValidationPipe } from '@gitroom/nestjs-libraries/upload/custom.upload.validation';
+import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 
 @ApiTags('Media')
 @Controller('/media')
 export class MediaController {
-  constructor(private _mediaService: MediaService) {}
+  constructor(
+    private _mediaService: MediaService,
+    private _subscriptionService: SubscriptionService
+  ) {}
 
   @Post('/generate-image')
   async generateImage(
@@ -21,7 +25,12 @@ export class MediaController {
     @Req() req: Request,
     @Body('prompt') prompt: string
   ) {
-    return {output: 'data:image/png;base64,' + await this._mediaService.generateImage(prompt)};
+    const total = await this._subscriptionService.checkCredits(org);
+    if (total.credits <= 0) {
+      return false;
+    }
+
+    return {output: 'data:image/png;base64,' + await this._mediaService.generateImage(prompt, org)};
   }
 
   @Post('/upload-simple')

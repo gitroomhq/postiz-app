@@ -1,23 +1,44 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
-import { InputGroup, Button } from '@blueprintjs/core';
+import { InputGroup } from '@blueprintjs/core';
 import { Clean } from '@blueprintjs/icons';
 
 import { SectionTab } from 'polotno/side-panel';
-import { getKey } from 'polotno/utils/validate-key';
 import { getImageSize } from 'polotno/utils/image';
 
 import { ImagesGrid } from 'polotno/side-panel/images-grid';
-import { getAPI } from 'polotno/utils/api';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import useSWR from 'swr';
+import { Button } from '@gitroom/react/form/button';
+import { useToaster } from '@gitroom/react/toaster/toaster';
 
 const GenerateTab = observer(({ store }: any) => {
   const inputRef = React.useRef<any>(null);
   const [image, setImage] = React.useState(null);
   const [loading, setLoading] = React.useState(false);
   const fetch = useFetch();
+  const toast = useToaster();
+
+  const loadCredits = useCallback(async () => {
+    return (
+      await fetch(`/copilot/credits`, {
+        method: 'GET',
+      })
+    ).json();
+  }, []);
+
+  const {data, mutate} = useSWR('copilot-credits', loadCredits);
 
   const handleGenerate = async () => {
+    if (data?.credits <= 0) {
+      window.open('/billing', '_blank');
+      return ;
+    }
+
+    if (!inputRef.current.value) {
+      toast.show('Please type your prompt', 'warning');
+      return ;
+    }
     setLoading(true);
     setImage(null);
 
@@ -33,14 +54,15 @@ const GenerateTab = observer(({ store }: any) => {
       alert('Something went wrong, please try again later...');
       return;
     }
-    const data = await req.json();
-    setImage(data.output);
+    mutate();
+    const newData = await req.json();
+    setImage(newData.output);
   };
 
   return (
     <>
       <div style={{ height: '40px', paddingTop: '5px' }}>
-        Generate image with AI
+        Generate image with AI {data?.credits ? `(${data?.credits} left)` : ``}
       </div>
       <InputGroup
         placeholder="Type your image generation prompt here..."
@@ -56,11 +78,10 @@ const GenerateTab = observer(({ store }: any) => {
       />
       <Button
         onClick={handleGenerate}
-        intent="primary"
-        loading={loading}
+        loading={loading} innerClassName="invert"
         style={{ marginBottom: '40px' }}
       >
-        Generate
+        {data?.credits <= 0 ? 'Click to purchase more credits' : 'Generate'}
       </Button>
       {image && (
         <ImagesGrid
