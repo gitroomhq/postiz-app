@@ -49,6 +49,7 @@ export const MediumTags: FC<{
     <div>
       <div className={`${interClass} text-[14px] mb-[6px]`}>{label}</div>
       <ReactTags
+        placeholderText="Add a tag"
         suggestions={suggestionsArray}
         selected={tagValue}
         onAdd={onAddition}

@@ -80,6 +80,9 @@ export const LinkedinCompany: FC<{
   const [company, setCompany] = useState<any>(null);
 
   const getCompany = async () => {
+    if (!company) {
+      return ;
+    }
     const {options} = await (
       await fetch('/integrations/function', {
         method: 'POST',
@@ -141,7 +144,7 @@ export const LinkedinCompany: FC<{
 };
 
 export const linkedinCompany = (identifier: string, id: string): ICommand[] => {
-  if (identifier !== 'linkedin') {
+  if (identifier !== 'linkedin' && identifier !== 'linkedin-page') {
     return [];
   }
 
