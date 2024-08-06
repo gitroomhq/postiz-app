@@ -19,6 +19,7 @@ export const AddAccount: FC<{ openBankAccount: (country: string) => void }> = (
 ) => {
   const { openBankAccount } = props;
   const [country, setCountry] = useState('');
+  const [loading, setLoading] = useState(false);
   return (
     <div className="bg-sixth p-[32px] text-[20px] w-full max-w-[600px] mx-auto flex flex-col gap-[24px] rounded-[4px] border border-[#172034] relative">
       Please select your country where your business is.
@@ -40,8 +41,12 @@ export const AddAccount: FC<{ openBankAccount: (country: string) => void }> = (
       <Button
         className="w-full"
         disabled={!country}
+        loading={loading}
         type="button"
-        onClick={() => openBankAccount(country)}
+        onClick={() => {
+          openBankAccount(country);
+          setLoading(true);
+        }}
       >
         Connect Bank Account
       </Button>
