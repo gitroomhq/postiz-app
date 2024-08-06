@@ -305,6 +305,9 @@ export class StripeService {
         transfers: {
           requested: true,
         },
+        card_payments: {
+          requested: true,
+        }
       },
       tos_acceptance: {
         service_agreement: 'full',
