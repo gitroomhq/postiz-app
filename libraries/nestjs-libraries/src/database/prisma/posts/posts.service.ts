@@ -149,7 +149,7 @@ export class PostsService {
         `Error posting on ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
         `An error occurred while posting on ${
           firstPost.integration?.providerIdentifier
-        } ${err}`,
+        } ${!process.env.NODE_ENV || process.env.NODE_ENV === 'development' ? err : ''}`,
         true
       );
     }

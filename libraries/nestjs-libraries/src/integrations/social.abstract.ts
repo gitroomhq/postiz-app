@@ -14,7 +14,7 @@ export abstract class SocialAbstract {
         console.log('skip');
       }
     }
-    if (request.status === 401) {
+    if (request.status === 401 || request.status === 400) {
       throw new RefreshToken();
     }
 
