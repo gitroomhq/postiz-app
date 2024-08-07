@@ -28,6 +28,7 @@ model Organization {
   notifications Notifications[]
   buyerOrganization MessagesGroup[]
   usedCodes    UsedCodes[]
+  credits      Credits[]
 }
 
 model User {
@@ -166,6 +167,18 @@ model Media {
   userPicture    User[]
 
   @@index([organizationId])
+}
+
+model Credits {
+  id             String   @id @default(uuid())
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
+  credits        Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([createdAt])
 }
 
 model Subscription {

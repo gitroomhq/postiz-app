@@ -434,7 +434,7 @@ export const AddEditModal: FC<{
                               //   .getCommands()
                               //   .filter((f) => f.name === 'image'),
                               // newImage,
-                              postSelector(dateState),
+                              // postSelector(dateState),
                             ]}
                             value={p.content}
                             preview="edit"

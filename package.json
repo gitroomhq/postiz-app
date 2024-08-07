@@ -90,6 +90,7 @@
     "next": "^14.2.4",
     "next-plausible": "^3.12.0",
     "openai": "^4.47.1",
+    "polotno": "^2.10.5",
     "prisma-paginate": "^5.2.1",
     "react": "18.2.0",
     "react-colorful": "^5.6.1",

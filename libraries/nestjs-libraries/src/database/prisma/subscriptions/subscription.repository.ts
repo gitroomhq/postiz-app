@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
+import dayjs from 'dayjs';
+import { Organization } from '@prisma/client';
 
 @Injectable()
 export class SubscriptionRepository {
@@ -7,6 +9,7 @@ export class SubscriptionRepository {
     private readonly _subscription: PrismaRepository<'subscription'>,
     private readonly _organization: PrismaRepository<'organization'>,
     private readonly _user: PrismaRepository<'user'>,
+    private readonly _credits: PrismaRepository<'credits'>,
     private _usedCodes: PrismaRepository<'usedCodes'>
   ) {}
 
@@ -170,6 +173,32 @@ export class SubscriptionRepository {
       where: {
         organizationId,
         deletedAt: null,
+      },
+    });
+  }
+
+  async getCreditsFrom(organizationId: string, from: dayjs.Dayjs) {
+    const load = await this._credits.model.credits.groupBy({
+      by: ['organizationId'],
+      where: {
+        organizationId,
+        createdAt: {
+          gte: from.toDate(),
+        },
+      },
+      _sum: {
+        credits: true,
+      },
+    });
+
+    return load?.[0]?._sum?.credits || 0;
+  }
+
+  useCredit(org: Organization) {
+    return this._credits.model.credits.create({
+      data: {
+        organizationId: org.id,
+        credits: 1,
       },
     });
   }
