@@ -46,10 +46,9 @@ export class BullMqServer extends Server implements CustomTransportStrategy {
               });
             });
           },
-          // @ts-ignore
           {
             ...this.options,
-            ...{ removeOnComplete: true, removeOnFail: true },
+            ...{ removeOnComplete: { count: 0 }, removeOnFail: { count: 0 } },
             ...handler?.extras,
           }
         );
