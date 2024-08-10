@@ -19,6 +19,7 @@ import { useSWRConfig } from 'swr';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import interClass from '@gitroom/react/helpers/inter.font';
 import { useRouter } from 'next/navigation';
+import { isGeneral } from '@gitroom/react/helpers/is.general';
 
 export interface Tiers {
   month: Array<{
@@ -79,7 +80,7 @@ export const Prorate: FC<{
 
   return (
     <div className="text-[12px] flex pt-[12px]">
-      (Pay Today ${(price < 0 ? 0 : price).toFixed(1)})
+      (Pay Today ${(price < 0 ? 0 : price)?.toFixed(1)})
     </div>
   );
 };
@@ -315,81 +316,104 @@ export const MainBillingComponent: FC<{
         </div>
       </div>
       <div className="flex gap-[16px]">
-        {Object.entries(pricing).map(([name, values]) => (
-          <div
-            key={name}
-            className="flex-1 bg-sixth border border-[#172034] rounded-[4px] p-[24px] gap-[16px] flex flex-col"
-          >
-            <div className="text-[18px]">{name}</div>
-            <div className="text-[38px] flex gap-[2px] items-center">
-              <div>
-                $
-                {monthlyOrYearly === 'on'
-                  ? values.year_price
-                  : values.month_price}
-              </div>
-              <div className={`text-[14px] ${interClass} text-[#AAA]`}>
-                {monthlyOrYearly === 'on' ? '/year' : '/month'}
-              </div>
-            </div>
-            <div className="text-[14px] flex gap-[10px]">
-              {currentPackage === name.toUpperCase() &&
-              subscription?.cancelAt ? (
-                <div className="gap-[3px] flex flex-col">
-                  <div>
-                    <Button onClick={moveToCheckout('FREE')} loading={loading}>
-                      Reactivate subscription
-                    </Button>
-                  </div>
+        {Object.entries(pricing)
+          .filter((f) => !isGeneral() || f[0] !== 'FREE')
+          .map(([name, values]) => (
+            <div
+              key={name}
+              className="flex-1 bg-sixth border border-[#172034] rounded-[4px] p-[24px] gap-[16px] flex flex-col"
+            >
+              <div className="text-[18px]">{name}</div>
+              <div className="text-[38px] flex gap-[2px] items-center">
+                <div>
+                  $
+                  {monthlyOrYearly === 'on'
+                    ? values.year_price
+                    : values.month_price}
                 </div>
-              ) : (
-                <Button
-                  loading={loading}
-                  disabled={
-                    (!!subscription?.cancelAt &&
-                      name.toUpperCase() === 'FREE') ||
-                    currentPackage === name.toUpperCase()
-                  }
-                  className={clsx(
-                    subscription &&
-                      name.toUpperCase() === 'FREE' &&
-                      '!bg-red-500'
-                  )}
-                  onClick={moveToCheckout(
-                    name.toUpperCase() as 'STANDARD' | 'PRO'
-                  )}
-                >
-                  {currentPackage === name.toUpperCase()
-                    ? 'Current Plan'
-                    : name.toUpperCase() === 'FREE'
-                    ? subscription?.cancelAt
-                      ? `Downgrade on ${dayjs
-                          .utc(subscription?.cancelAt)
-                          .local()
-                          .format('D MMM, YYYY')}`
-                      : 'Cancel subscription'
-                    : 'Purchase Plan'}
-                </Button>
-              )}
-              {subscription &&
-                currentPackage !== name.toUpperCase() &&
-                name !== 'FREE' &&
-                !!name && (
-                  <Prorate
-                    period={monthlyOrYearly === 'on' ? 'YEARLY' : 'MONTHLY'}
-                    pack={name.toUpperCase() as 'STANDARD' | 'PRO'}
-                  />
+                <div className={`text-[14px] ${interClass} text-[#AAA]`}>
+                  {monthlyOrYearly === 'on' ? '/year' : '/month'}
+                </div>
+              </div>
+              <div className="text-[14px] flex gap-[10px]">
+                {currentPackage === name.toUpperCase() &&
+                subscription?.cancelAt ? (
+                  <div className="gap-[3px] flex flex-col">
+                    <div>
+                      <Button
+                        onClick={moveToCheckout('FREE')}
+                        loading={loading}
+                      >
+                        Reactivate subscription
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    loading={loading}
+                    disabled={
+                      (!!subscription?.cancelAt &&
+                        name.toUpperCase() === 'FREE') ||
+                      currentPackage === name.toUpperCase()
+                    }
+                    className={clsx(
+                      subscription &&
+                        name.toUpperCase() === 'FREE' &&
+                        '!bg-red-500'
+                    )}
+                    onClick={moveToCheckout(
+                      name.toUpperCase() as 'STANDARD' | 'PRO'
+                    )}
+                  >
+                    {currentPackage === name.toUpperCase()
+                      ? 'Current Plan'
+                      : name.toUpperCase() === 'FREE'
+                      ? subscription?.cancelAt
+                        ? `Downgrade on ${dayjs
+                            .utc(subscription?.cancelAt)
+                            .local()
+                            .format('D MMM, YYYY')}`
+                        : 'Cancel subscription'
+                      : // @ts-ignore
+                      user?.tier === 'FREE' || user?.tier?.current === 'FREE'
+                      ? 'Start 7 days free trial'
+                      : 'Purchase'}
+                  </Button>
                 )}
+                {subscription &&
+                  currentPackage !== name.toUpperCase() &&
+                  name !== 'FREE' &&
+                  !!name && (
+                    <Prorate
+                      period={monthlyOrYearly === 'on' ? 'YEARLY' : 'MONTHLY'}
+                      pack={name.toUpperCase() as 'STANDARD' | 'PRO'}
+                    />
+                  )}
+              </div>
+              <Features
+                pack={name.toUpperCase() as 'FREE' | 'STANDARD' | 'PRO'}
+              />
             </div>
-            <Features
-              pack={name.toUpperCase() as 'FREE' | 'STANDARD' | 'PRO'}
-            />
-          </div>
-        ))}
+          ))}
       </div>
       {!!subscription?.id && (
-        <div className="flex justify-center mt-[20px]">
+        <div className="flex justify-center mt-[20px] gap-[10px]">
           <Button onClick={updatePayment}>Update Payment Method</Button>
+          {isGeneral() && !subscription?.cancelAt && (
+            <Button
+              className="bg-red-500"
+              loading={loading}
+              onClick={moveToCheckout('FREE')}
+            >
+              Cancel subscription
+            </Button>
+          )}
+        </div>
+      )}
+      {subscription?.cancelAt && isGeneral() && (
+        <div className="text-center">
+          Your subscription will be cancel at {dayjs(subscription.cancelAt).local().format('D MMM, YYYY')}<br />
+          You will never be charged again
         </div>
       )}
       <FAQComponent />

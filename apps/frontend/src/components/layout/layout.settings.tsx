@@ -29,6 +29,7 @@ import { isGeneral } from '@gitroom/react/helpers/is.general';
 import { CopilotKit } from '@copilotkit/react-core';
 import { Impersonate } from '@gitroom/frontend/components/layout/impersonate';
 import clsx from 'clsx';
+import { BillingComponent } from '@gitroom/frontend/components/billing/billing.component';
 
 dayjs.extend(utc);
 dayjs.extend(weekOfYear);
@@ -49,6 +50,8 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
     refreshWhenHidden: false,
   });
 
+  if (!user) return null;
+
   return (
     <ContextWrapper user={user}>
       <CopilotKit
@@ -62,7 +65,7 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
             <ShowLinkedinCompany />
             <Toaster />
             <ShowPostSelector />
-            <Onboarding />
+            {(user.tier !== 'FREE' || !isGeneral()) && <Onboarding />}
             <Support />
             <ContinueProvider />
             <div className="min-h-[100vh] w-full max-w-[1440px] mx-auto bg-primary px-[12px] text-white flex flex-col">
@@ -92,7 +95,11 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
                     )}
                   </div>
                 </Link>
-                {user?.orgId ? <TopMenu /> : <div />}
+                {user?.orgId && (user.tier !== 'FREE' || !isGeneral()) ? (
+                  <TopMenu />
+                ) : (
+                  <div />
+                )}
                 <div className="flex items-center gap-[8px]">
                   <SettingsComponent />
                   <NotificationComponent />
@@ -101,8 +108,25 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
               </div>
               <div className="flex-1 flex">
                 <div className="flex-1 rounded-3xl px-[23px] py-[17px] flex flex-col">
-                  <Title />
-                  <div className="flex flex-1 flex-col">{children}</div>
+                  {user.tier === 'FREE' && isGeneral() ? (
+                    <>
+                      <div className="text-center mb-[20px] text-xl">
+                        <h1 className="text-3xl">
+                          PLEASE SELECT A PLAN TO CONTINUE
+                        </h1>
+                        <br />
+                        You will not be charged today.
+                        <br />
+                        You can cancel anytime.
+                      </div>
+                      <BillingComponent />
+                    </>
+                  ) : (
+                    <>
+                      <Title />
+                      <div className="flex flex-1 flex-col">{children}</div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

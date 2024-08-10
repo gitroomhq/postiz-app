@@ -22,7 +22,7 @@ export const UserContext = createContext<
 export const ContextWrapper: FC<{
   user: User & {
     orgId: string;
-    tier: 'FREE' | 'STANDARD' | 'PRO';
+    tier: 'FREE' | 'STANDARD' | 'PRO' | 'ULTIMATE' | 'TEAM';
     role: 'USER' | 'ADMIN' | 'SUPERADMIN';
     totalChannels: number;
   };

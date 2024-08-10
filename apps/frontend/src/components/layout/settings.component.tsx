@@ -15,6 +15,7 @@ import { TeamsComponent } from '@gitroom/frontend/components/settings/teams.comp
 import { isGeneral } from '@gitroom/react/helpers/is.general';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
+import { useSearchParams } from 'next/navigation';
 
 export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
   const { getRef } = props;
@@ -32,6 +33,9 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
   const close = useCallback(() => {
     return modal.closeAll();
   }, []);
+
+  const url = useSearchParams();
+  const showLogout = !url.get('onboarding');
 
   const loadProfile = useCallback(async () => {
     const personal = await (await fetch('/user/personal')).json();
@@ -188,7 +192,7 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
             </div>
           )}
           {!!user?.tier?.team_members && isGeneral() && <TeamsComponent />}
-          <LogoutComponent />
+          {showLogout && <LogoutComponent />}
         </div>
       </form>
     </FormProvider>
