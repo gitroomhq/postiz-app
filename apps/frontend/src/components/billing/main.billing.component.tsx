@@ -107,7 +107,19 @@ export const Features: FC<{
 
     if (currentPricing?.ai) {
       list.push(`AI auto-complete`);
+      list.push(`AI copilots`);
+      list.push(`AI Autocomplete`);
     }
+
+    list.push(`Advanced Picture Editor`);
+
+    if (currentPricing?.image_generator) {
+      list.push(
+        `${currentPricing?.image_generation_count} AI Images per month`
+      );
+    }
+
+    list.push(`Marketplace full access`);
 
     return list;
   }, [pack]);
@@ -412,7 +424,9 @@ export const MainBillingComponent: FC<{
       )}
       {subscription?.cancelAt && isGeneral() && (
         <div className="text-center">
-          Your subscription will be cancel at {dayjs(subscription.cancelAt).local().format('D MMM, YYYY')}<br />
+          Your subscription will be cancel at{' '}
+          {dayjs(subscription.cancelAt).local().format('D MMM, YYYY')}
+          <br />
           You will never be charged again
         </div>
       )}
