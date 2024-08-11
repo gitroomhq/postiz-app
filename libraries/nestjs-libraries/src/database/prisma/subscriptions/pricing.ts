@@ -74,8 +74,8 @@ export const pricing: PricingInterface = {
   },
   ULTIMATE: {
     current: 'ULTIMATE',
-    month_price: 69,
-    year_price: 662,
+    month_price: 99,
+    year_price: 950,
     channel: 100,
     posts_per_month: 1000000,
     image_generation_count: 500,
