@@ -202,4 +202,15 @@ export class SubscriptionRepository {
       },
     });
   }
+
+  setCustomerId(orgId: string, customerId: string) {
+    return this._organization.model.organization.update({
+      where: {
+        id: orgId,
+      },
+      data: {
+        paymentId: customerId,
+      },
+    });
+  }
 }

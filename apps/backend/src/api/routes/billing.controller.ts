@@ -2,9 +2,10 @@ import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
-import { Organization } from '@prisma/client';
+import { Organization, User } from '@prisma/client';
 import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.subscribe.dto';
 import { ApiTags } from '@nestjs/swagger';
+import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 
 @ApiTags('Billing')
 @Controller('/billing')
@@ -70,5 +71,18 @@ export class BillingController {
     @Body() body: { code: string }
   ) {
     return this._stripeService.lifetimeDeal(org.id, body.code);
+  }
+
+  @Post('/add-subscription')
+  async addSubscription(
+    @Body() body: { subscription: string },
+    @GetUserFromRequest() user: User,
+    @GetOrgFromRequest() org: Organization
+  ) {
+    if (!user.isSuperAdmin) {
+      throw new Error('Unauthorized');
+    }
+
+    await this._subscriptionService.addSubscription(org.id, user.id, body.subscription);
   }
 }
