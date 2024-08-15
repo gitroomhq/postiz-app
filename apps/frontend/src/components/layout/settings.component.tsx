@@ -1,5 +1,12 @@
 import { useModals } from '@mantine/modals';
-import React, { FC, Ref, useCallback, useEffect, useMemo } from 'react';
+import React, {
+  FC,
+  Ref,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { Input } from '@gitroom/react/form/input';
 import { Button } from '@gitroom/react/form/button';
 import { Textarea } from '@gitroom/react/form/textarea';
@@ -16,6 +23,8 @@ import { isGeneral } from '@gitroom/react/helpers/is.general';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
 import { useSearchParams } from 'next/navigation';
+import ReactLoading from 'react-loading';
+import Skeleton from './skeleton';
 
 export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
   const { getRef } = props;
@@ -23,6 +32,11 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
   const toast = useToaster();
   const swr = useSWRConfig();
   const user = useUser();
+  // Loading states for better ux
+  const [loading, setLoading] = useState({
+    isProfileLoading: false, //When the user details are loading
+    isSaving: false, // When the user submits the form
+  });
 
   const resolver = useMemo(() => {
     return classValidatorResolver(UserDetailDto);
@@ -38,10 +52,18 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
   const showLogout = !url.get('onboarding');
 
   const loadProfile = useCallback(async () => {
+    setLoading((prevState) => ({
+      ...prevState,
+      isProfileLoading: true,
+    }));
     const personal = await (await fetch('/user/personal')).json();
     form.setValue('fullname', personal.name || '');
     form.setValue('bio', personal.bio || '');
     form.setValue('picture', personal.picture);
+    setLoading((prevState) => ({
+      ...prevState,
+      isProfileLoading: false,
+    }));
   }, []);
 
   const openMedia = useCallback(() => {
@@ -55,6 +77,10 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
   }, []);
 
   const submit = useCallback(async (val: any) => {
+    setLoading((prevState) => ({
+      ...prevState,
+      isSaving: true,
+    }));
     await fetch('/user/personal', {
       method: 'POST',
       body: JSON.stringify(val),
@@ -64,6 +90,10 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
       return;
     }
 
+    setLoading((prevState) => ({
+      ...prevState,
+      isSaving: false,
+    }));
     toast.show('Profile updated');
     swr.mutate('/marketplace/account');
     close();
@@ -119,18 +149,29 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
           <div className="rounded-[4px] border border-[#172034] p-[24px] flex flex-col">
             <div className="flex justify-between items-center">
               <div className="w-[455px]">
-                <Input label="Full Name" name="fullname" />
+                {loading.isProfileLoading ? (
+                  <div className="flex flex-col gap-2 mb-4">
+                    <Skeleton width="40%" height="30px" />
+                    <Skeleton width="100%" height="40px" />
+                  </div>
+                ) : (
+                  <Input label="Full Name" name="fullname" />
+                )}
               </div>
               <div className="flex gap-[8px] mb-[10px]">
-                <div className="w-[48px] h-[48px] rounded-full bg-[#D9D9D9]">
-                  {!!picture?.path && (
-                    <img
-                      src={picture?.path}
-                      alt="profile"
-                      className="w-full h-full rounded-full"
-                    />
-                  )}
-                </div>
+                {loading.isProfileLoading ? (
+                  <Skeleton width="48px" height="48px" type="circle" />
+                ) : (
+                  <div className="w-[48px] h-[48px] rounded-full bg-[#D9D9D9]">
+                    {!!picture?.path && (
+                      <img
+                        src={picture?.path}
+                        alt="profile"
+                        className="w-full h-full rounded-full"
+                      />
+                    )}
+                  </div>
+                )}
                 <div className="flex flex-col gap-[2px]">
                   <div className="text-[14px]">Profile Picture</div>
                   <div className="flex gap-[8px]">
@@ -183,12 +224,30 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
               </div>
             </div>
             <div>
-              <Textarea label="Bio" name="bio" className="resize-none" />
+              {loading.isProfileLoading ? (
+                <div className="flex flex-col gap-2 mb-4">
+                  <Skeleton width="30px" height="30px" />
+                  <Skeleton width="100%" height="150px" />
+                </div>
+              ) : (
+                <Textarea label="Bio" name="bio" className="resize-none" />
+              )}
             </div>
           </div>
           {!getRef && (
             <div className="justify-end flex">
-              <Button type="submit">Save</Button>
+              <Button disabled={loading.isProfileLoading} type="submit">
+                {loading.isSaving ? (
+                  <ReactLoading
+                    type="spin"
+                    color="#fff"
+                    width={20}
+                    height={20}
+                  />
+                ) : (
+                  'Save'
+                )}
+              </Button>
             </div>
           )}
           {!!user?.tier?.team_members && isGeneral() && <TeamsComponent />}
