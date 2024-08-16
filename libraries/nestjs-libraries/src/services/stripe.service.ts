@@ -94,7 +94,9 @@ export class StripeService {
       return organization.paymentId;
     }
 
-    const customer = await stripe.customers.create();
+    const customer = await stripe.customers.create({
+      name: organization.name,
+    });
     await this._subscriptionService.updateCustomerId(
       organization.id,
       customer.id
