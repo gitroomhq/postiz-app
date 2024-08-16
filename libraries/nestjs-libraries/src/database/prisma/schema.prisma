@@ -174,14 +174,10 @@ model Media {
 model SocialMediaAgency {
   id                  String   @id @default(uuid())
   user                User @relation(fields: [userId], references: [id])
-  userId              String
+  userId              String @unique()
   name                String
   logoId              String?
   logo                Media? @relation(fields: [logoId], references: [id])
-  tagline             String?
-  address             String?
-  phoneNumber         String?
-  emailAddress        String?
   website             String?
 
   facebook            String?
@@ -189,30 +185,13 @@ model SocialMediaAgency {
   twitter             String?
   linkedIn            String?
   youtube             String?
+  tiktok              String?
   otherSocialMedia    String?
 
-  primaryServices     String
-  specialties         String?
-  packages            String?
-  caseStudies         String?
-
-  yearEstablished     Int?
-  teamSize            Int?
-  languagesSupported  String?
-  clientTypes         String?
-  clientTestimonials  String?
-
-  certifications      String?
-  awards              String?
-
-  blog                String?
-  faqs                String?
-  events              String?
-  freeConsultation    Boolean   @default(false)
-
-  businessHours       String?
-  serviceArea         String?
-  termsAndConditions  String?
+  shortDescription    String
+  description         String
+  niches              SocialMediaAgencyNiche[]
+  approved            Boolean @default(false)
 
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
@@ -221,6 +200,14 @@ model SocialMediaAgency {
   @@index([userId])
   @@index([deletedAt])
   @@index([id])
+}
+
+model SocialMediaAgencyNiche {
+  agencyId            String
+  agency              SocialMediaAgency @relation(fields: [agencyId], references: [id])
+  niche               String
+
+  @@id([agencyId, niche])
 }
 
 model Credits {

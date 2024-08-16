@@ -5,6 +5,8 @@ export const dynamic = 'force-dynamic';
 import { ReactNode } from 'react';
 import Image from 'next/image';
 import clsx from 'clsx';
+import loadDynamic from 'next/dynamic';
+const ReturnUrlComponent = loadDynamic(() => import('./return.url.component'));
 
 export default async function AuthLayout({
   children,
@@ -13,6 +15,7 @@ export default async function AuthLayout({
 }) {
   return (
     <>
+      <ReturnUrlComponent />
       <div className="absolute left-0 top-0 z-[0] h-[100vh] w-[100vw] overflow-hidden bg-loginBg bg-contain bg-no-repeat bg-left-top" />
       <div className="relative z-[1] pr-[100px] flex justify-end items-center h-[100vh] w-[100vw] overflow-hidden">
         <div className="w-[557px] flex h-[614px] bg-loginBox bg-contain">
