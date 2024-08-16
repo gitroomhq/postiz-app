@@ -471,6 +471,8 @@ enum State {
 enum SubscriptionTier {
   STANDARD
   PRO
+  TEAM
+  ULTIMATE
 }
 
 enum Period {

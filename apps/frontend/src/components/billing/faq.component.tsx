@@ -5,8 +5,14 @@ import { isGeneral } from '@gitroom/react/helpers/is.general';
 
 const list = [
   {
+    title: `Can I trust ${isGeneral() ? 'Postiz' : 'Gitroom'}?`,
+    description: `${isGeneral() ? 'Postiz' : 'Gitroom'} is proudly open-source! We believe in an ethical and transparent culture, meaning Postiz will live forever. You can check the entire code / or use it for your personal use. You can check the open-source repository click here.`,
+  },
+  {
     title: 'What are channels?',
-    description: `${isGeneral() ? 'Postiz' : 'Gitroom'} allows you to schedule your posts between different channels.
+    description: `${
+      isGeneral() ? 'Postiz' : 'Gitroom'
+    } allows you to schedule your posts between different channels.
 A channel is a publishing platform where you can schedule your posts.
 For example, you can schedule your posts on Twitter, Linkedin, DEV and Hashnode`,
   },
@@ -35,7 +41,9 @@ export const FAQSection: FC<{ title: string; description: string }> = (
       className="bg-sixth p-[24px] border border-tableBorder rounded-[4px] flex flex-col"
       onClick={changeShow}
     >
-      <div className={`text-[20px] ${interClass} cursor-pointer flex justify-center`}>
+      <div
+        className={`text-[20px] ${interClass} cursor-pointer flex justify-center`}
+      >
         <div className="flex-1">{title}</div>
         <div className="flex items-center justify-center w-[32px]">
           {!show ? (

@@ -1,9 +1,55 @@
 import { Input } from '@gitroom/react/form/input';
-import { useCallback, useMemo, useState } from 'react';
+import { ChangeEventHandler, useCallback, useMemo, useState } from 'react';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { Select } from '@gitroom/react/form/select';
+import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
+import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 
+export const Subscription = () => {
+  const fetch = useFetch();
+  const addSubscription: ChangeEventHandler<HTMLSelectElement> = useCallback(
+    async (e) => {
+      const value = e.target.value;
+      if (
+        await deleteDialog(
+          'Are you sure you want to add a user subscription?',
+          'Add'
+        )
+      ) {
+        await fetch('/billing/add-subscription', {
+          method: 'POST',
+          body: JSON.stringify({ subscription: value }),
+        });
+
+        window.location.reload();
+      }
+    },
+    []
+  );
+
+  return (
+    <Select
+      onChange={addSubscription}
+      hideErrors={true}
+      disableForm={true}
+      name="sub"
+      label=""
+      value=""
+      className="text-black"
+    >
+      <option>-- ADD FREE SUBSCRIPTION --</option>
+      {Object.keys(pricing)
+        .filter((f) => !f.includes('FREE'))
+        .map((key) => (
+          <option key={key} value={key}>
+            {key}
+          </option>
+        ))}
+    </Select>
+  );
+};
 export const Impersonate = () => {
   const fetch = useFetch();
   const [name, setName] = useState('');
@@ -76,6 +122,7 @@ export const Impersonate = () => {
                     X
                   </div>
                 </div>
+                {user?.tier?.current === 'FREE' && <Subscription />}
               </div>
             ) : (
               <Input

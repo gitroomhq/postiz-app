@@ -155,6 +155,7 @@ export class StripeService {
         (p) =>
           p?.recurring?.interval?.toLowerCase() ===
             (body.period === 'MONTHLY' ? 'month' : 'year') &&
+          p?.nickname === body.billing + ' ' + body.period &&
           p?.unit_amount ===
             (body.period === 'MONTHLY'
               ? priceData.month_price
@@ -177,10 +178,14 @@ export class StripeService {
 
     const proration_date = Math.floor(Date.now() / 1000);
 
-    const currentUserSubscription = await stripe.subscriptions.list({
-      customer,
-      status: 'active',
-    });
+    const currentUserSubscription = {
+      data: (
+        await stripe.subscriptions.list({
+          customer,
+          status: 'all',
+        })
+      ).data.filter((f) => f.status === 'active' || f.status === 'trialing'),
+    };
 
     try {
       const price = await stripe.invoices.retrieveUpcoming({
@@ -210,10 +215,14 @@ export class StripeService {
     const id = makeId(10);
     const org = await this._organizationService.getOrgById(organizationId);
     const customer = await this.createOrGetCustomer(org!);
-    const currentUserSubscription = await stripe.subscriptions.list({
-      customer,
-      status: 'active',
-    });
+    const currentUserSubscription = {
+      data: (
+        await stripe.subscriptions.list({
+          customer,
+          status: 'all',
+        })
+      ).data.filter((f) => f.status === 'active' || f.status === 'trialing'),
+    };
 
     const { cancel_at } = await stripe.subscriptions.update(
       currentUserSubscription.data[0].id,
@@ -261,9 +270,13 @@ export class StripeService {
   ) {
     const { url } = await stripe.checkout.sessions.create({
       customer,
-      success_url: process.env['FRONTEND_URL'] + `/billing?check=${uniqueId}`,
+      return_url: process.env['FRONTEND_URL'] + `/billing`,
+      success_url:
+        process.env['FRONTEND_URL'] +
+        `/launches?onboarding=true&check=${uniqueId}`,
       mode: 'subscription',
       subscription_data: {
+        trial_period_days: 7,
         metadata: {
           service: 'gitroom',
           ...body,
@@ -307,7 +320,7 @@ export class StripeService {
         },
         card_payments: {
           requested: true,
-        }
+        },
       },
       tos_acceptance: {
         service_agreement: 'full',
@@ -444,10 +457,14 @@ export class StripeService {
         },
       }));
 
-    const currentUserSubscription = await stripe.subscriptions.list({
-      customer,
-      status: 'active',
-    });
+    const currentUserSubscription = {
+      data: (
+        await stripe.subscriptions.list({
+          customer,
+          status: 'all',
+        })
+      ).data.filter((f) => f.status === 'active' || f.status === 'trialing'),
+    };
 
     if (!currentUserSubscription.data.length) {
       return this.createCheckoutSession(id, customer, body, findPrice!.id);
@@ -540,7 +557,9 @@ export class StripeService {
       await this._subscriptionService.createOrUpdateSubscription(
         makeId(10),
         organizationId,
-        getCurrentSubscription?.subscriptionTier === 'PRO' ? (getCurrentSubscription.totalChannels + 5) : findPricing.channel!,
+        getCurrentSubscription?.subscriptionTier === 'PRO'
+          ? getCurrentSubscription.totalChannels + 5
+          : findPricing.channel!,
         nextPackage,
         'MONTHLY',
         null,
@@ -550,7 +569,6 @@ export class StripeService {
       return {
         success: true,
       };
-
     } catch (err) {
       console.log(err);
       return {

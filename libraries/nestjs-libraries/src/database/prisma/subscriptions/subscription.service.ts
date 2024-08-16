@@ -5,6 +5,7 @@ import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/in
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { Organization } from '@prisma/client';
 import dayjs from 'dayjs';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 
 @Injectable()
 export class SubscriptionService {
@@ -164,7 +165,7 @@ export class SubscriptionService {
     const type = organization?.subscription?.subscriptionTier || 'FREE';
 
     if (type === 'FREE') {
-      return {credits: 0};
+      return { credits: 0 };
     }
 
     // @ts-ignore
@@ -176,10 +177,29 @@ export class SubscriptionService {
     const checkFromMonth = date.subtract(1, 'month');
     const imageGenerationCount = pricing[type].image_generation_count;
 
-    const totalUse = await this._subscriptionRepository.getCreditsFrom(organization.id, checkFromMonth);
+    const totalUse = await this._subscriptionRepository.getCreditsFrom(
+      organization.id,
+      checkFromMonth
+    );
 
     return {
       credits: imageGenerationCount - totalUse,
-    }
+    };
   }
+
+  async addSubscription(orgId: string, userId: string, subscription: any) {
+    await this._subscriptionRepository.setCustomerId(orgId, orgId);
+    return this.createOrUpdateSubscription(
+      makeId(5),
+      userId,
+      pricing[subscription].channel!,
+      subscription,
+      'MONTHLY',
+      null,
+      undefined,
+       orgId
+    );
+  }
+
+
 }
