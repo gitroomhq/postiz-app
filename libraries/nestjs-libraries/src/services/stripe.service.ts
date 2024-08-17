@@ -272,6 +272,7 @@ export class StripeService {
   ) {
     const { url } = await stripe.checkout.sessions.create({
       customer,
+      cancel_url: process.env['FRONTEND_URL'] + `/billing`,
       success_url:
         process.env['FRONTEND_URL'] +
         `/launches?onboarding=true&check=${uniqueId}`,
