@@ -1,4 +1,4 @@
-import { IsDefined, IsString, IsUrl, MinLength } from 'class-validator';
+import { ArrayMaxSize, ArrayMinSize, IsDefined, IsString, IsUrl, MinLength } from 'class-validator';
 
 export class CreateAgencyDto {
   @IsString()
@@ -39,5 +39,7 @@ export class CreateAgencyDto {
   @IsString({
     each: true
   })
+  @ArrayMinSize(1)
+  @ArrayMaxSize(3)
   niche: string[];
 }
