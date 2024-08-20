@@ -11,7 +11,7 @@ export class AgenciesController {
   constructor(private _agenciesService: AgenciesService) {}
   @Get('/')
   async getAgencyByUser(@GetUserFromRequest() user: User) {
-    return this._agenciesService.getAgencyByUser(user);
+    return (await this._agenciesService.getAgencyByUser(user)) || {};
   }
 
   @Post('/')
