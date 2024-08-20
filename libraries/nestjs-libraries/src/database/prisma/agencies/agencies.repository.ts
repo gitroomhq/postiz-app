@@ -10,11 +10,63 @@ export class AgenciesRepository {
     private _socialMediaAgenciesNiche: PrismaRepository<'socialMediaAgencyNiche'>
   ) {}
 
+  getAllAgencies() {
+    return this._socialMediaAgencies.model.socialMediaAgency.findMany({
+      where: {
+        deletedAt: null,
+        approved: true,
+      },
+      include: {
+        logo: true,
+        niches: true,
+      },
+    });
+  }
+
+  getCount() {
+    return this._socialMediaAgencies.model.socialMediaAgency.count({
+      where: {
+        deletedAt: null,
+        approved: true,
+      },
+    });
+  }
+
+  getAllAgenciesSlug() {
+    return this._socialMediaAgencies.model.socialMediaAgency.findMany({
+      where: {
+        deletedAt: null,
+        approved: true,
+      },
+      select: {
+        slug: true,
+      },
+    });
+  }
+
+  getAgencyInformation(agency: string) {
+    return this._socialMediaAgencies.model.socialMediaAgency.findFirst({
+      where: {
+        slug: agency,
+        deletedAt: null,
+        approved: true,
+      },
+      include: {
+        logo: true,
+        niches: true,
+      },
+    });
+  }
+
   getAgencyByUser(user: User) {
     return this._socialMediaAgencies.model.socialMediaAgency.findFirst({
       where: {
         userId: user.id,
         deletedAt: null,
+      },
+      include: {
+        logo: true,
+        niches: true,
       },
     });
   }
@@ -32,17 +84,13 @@ export class AgenciesRepository {
           facebook: body.facebook,
           instagram: body.instagram,
           twitter: body.twitter,
-          linkedIn: body.linkedin,
+          linkedIn: body.linkedIn,
           youtube: body.youtube,
           tiktok: body.tiktok,
-          logoId: body.logo,
+          logoId: body.logo.id,
           shortDescription: body.shortDescription,
           description: body.description,
-          niches: {
-            create: body.niche.map((n) => ({
-              niche: n,
-            })),
-          },
+          approved: false,
         },
         create: {
           userId: user.id,
@@ -51,12 +99,14 @@ export class AgenciesRepository {
           facebook: body.facebook,
           instagram: body.instagram,
           twitter: body.twitter,
-          linkedIn: body.linkedin,
+          linkedIn: body.linkedIn,
           youtube: body.youtube,
           tiktok: body.tiktok,
-          logoId: body.logo,
+          logoId: body.logo.id,
           shortDescription: body.shortDescription,
           description: body.description,
+          slug: body.name.toLowerCase().replace(/ /g, '-'),
+          approved: false,
         },
         select: {
           id: true,
@@ -68,7 +118,7 @@ export class AgenciesRepository {
         where: {
           agencyId: insertAgency.id,
           niche: {
-            notIn: body.niche,
+            notIn: body.niches,
           },
         },
       }
@@ -86,7 +136,7 @@ export class AgenciesRepository {
         }
       );
 
-    const addNewNiche = body.niche.filter(
+    const addNewNiche = body.niches.filter(
       (n) => !currentNiche.some((c) => c.niche === n)
     );
 

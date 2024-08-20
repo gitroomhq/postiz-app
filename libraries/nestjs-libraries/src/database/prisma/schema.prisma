@@ -179,6 +179,7 @@ model SocialMediaAgency {
   logoId              String?
   logo                Media? @relation(fields: [logoId], references: [id])
   website             String?
+  slug                String?
 
   facebook            String?
   instagram           String?

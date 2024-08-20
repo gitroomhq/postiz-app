@@ -1,5 +1,13 @@
-import { ArrayMaxSize, ArrayMinSize, IsDefined, IsString, IsUrl, MinLength } from 'class-validator';
+import { ArrayMaxSize, ArrayMinSize, IsDefined, IsOptional, IsString, IsUrl, MinLength, ValidateIf } from 'class-validator';
+import { Type } from 'class-transformer';
 
+export class CreateAgencyLogoDto {
+  @IsString()
+  @IsDefined()
+  id: string;
+
+  path: string;
+}
 export class CreateAgencyDto {
   @IsString()
   @MinLength(3)
@@ -10,25 +18,31 @@ export class CreateAgencyDto {
   website: string;
 
   @IsUrl()
+  @ValidateIf((o) => o.facebook)
   facebook: string;
 
   @IsString()
+  @IsOptional()
   instagram: string;
 
   @IsString()
+  @IsOptional()
   twitter: string;
 
   @IsUrl()
-  linkedin: string;
+  @ValidateIf((o) => o.linkedIn)
+  linkedIn: string;
 
   @IsUrl()
+  @ValidateIf((o) => o.youtube)
   youtube: string;
 
-  @IsUrl()
+  @IsString()
+  @IsOptional()
   tiktok: string;
 
-  @IsString()
-  logo: string;
+  @Type(() => CreateAgencyLogoDto)
+  logo: CreateAgencyLogoDto;
 
   @IsString()
   shortDescription: string;
@@ -41,5 +55,5 @@ export class CreateAgencyDto {
   })
   @ArrayMinSize(1)
   @ArrayMaxSize(3)
-  niche: string[];
+  niches: string[];
 }
