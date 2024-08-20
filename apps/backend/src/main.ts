@@ -1,12 +1,12 @@
-import {loadSwagger} from "@gitroom/helpers/swagger/load.swagger";
+import { loadSwagger } from '@gitroom/helpers/swagger/load.swagger';
 
-process.env.TZ='UTC';
+process.env.TZ = 'UTC';
 
 import cookieParser from 'cookie-parser';
-import {Logger, ValidationPipe} from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import {SubscriptionExceptionFilter} from "@gitroom/backend/services/auth/permissions/subscription.exception";
+import { SubscriptionExceptionFilter } from '@gitroom/backend/services/auth/permissions/subscription.exception';
 import { HttpExceptionFilter } from '@gitroom/nestjs-libraries/services/exception.filter';
 
 async function bootstrap() {
@@ -15,13 +15,18 @@ async function bootstrap() {
     cors: {
       credentials: true,
       exposedHeaders: ['reload', 'onboarding', 'activate'],
-      origin: [process.env.FRONTEND_URL],
-    }
+      origin: [
+        process.env.FRONTEND_URL,
+        ...(process.env.MAIN_URL ? [process.env.MAIN_URL] : []),
+      ],
+    },
   });
 
-  app.useGlobalPipes(new ValidationPipe({
-    transform: true,
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+    })
+  );
 
   app.use(cookieParser());
   app.useGlobalFilters(new SubscriptionExceptionFilter());
@@ -31,9 +36,7 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  Logger.log(
-    `🚀 Application is running on: http://localhost:${port}`
-  );
+  Logger.log(`🚀 Application is running on: http://localhost:${port}`);
 }
 
 bootstrap();
