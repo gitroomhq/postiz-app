@@ -44,6 +44,31 @@ export class AgenciesRepository {
     });
   }
 
+  approveOrDecline(action: string, id: string) {
+    return this._socialMediaAgencies.model.socialMediaAgency.update({
+      where: {
+        id,
+      },
+      data: {
+        approved: action === 'approve',
+      },
+    });
+  }
+
+  getAgencyById(id: string) {
+    return this._socialMediaAgencies.model.socialMediaAgency.findFirst({
+      where: {
+        id,
+        deletedAt: null,
+        approved: true,
+      },
+      include: {
+        logo: true,
+        niches: true,
+      },
+    });
+  }
+
   getAgencyInformation(agency: string) {
     return this._socialMediaAgencies.model.socialMediaAgency.findFirst({
       where: {

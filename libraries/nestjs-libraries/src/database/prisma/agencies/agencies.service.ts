@@ -30,6 +30,58 @@ export class AgenciesService {
     return this._agenciesRepository.getAgencyInformation(agency);
   }
 
+  async approveOrDecline(email: string, action: string, id: string) {
+    await this._agenciesRepository.approveOrDecline(action, id);
+    const agency = await this._agenciesRepository.getAgencyById(id);
+
+    if (action === 'approve') {
+      await this._emailService.sendEmail(
+        email,
+        'Your Agency has been approved and added to Postiz 🚀',
+        `
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Agency has been approved and added to Postiz 🚀</title>
+</head>
+
+<body style="font-family: Arial, sans-serif; margin: 0; padding: 0;">
+  Hi there, <br /><br />
+  Your agency ${agency?.name} has been added to Postiz!<br />
+  You can <a href="https://postiz.com/agencies/${agency?.slug}">check it here</a><br />
+  It will appear on the main agency of Postiz in the next 24 hours.<br /><br />
+</body>
+</html>`
+      );
+
+      return;
+    }
+
+    await this._emailService.sendEmail(
+      email,
+      'Your Agency has been declined 😔',
+      `
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Agency has been declined</title>
+</head>
+
+<body style="font-family: Arial, sans-serif; margin: 0; padding: 0;">
+  Hi there, <br /><br />
+  Your agency ${agency?.name} has been declined to Postiz!<br />
+  If you think we have made a mistake, please reply to this email and let us know
+</body>
+</html>`
+    );
+
+    return ;
+  }
+
   async createAgency(user: User, body: CreateAgencyDto) {
     const agency = await this._agenciesRepository.createAgency(user, body);
     await this._emailService.sendEmail(
@@ -141,12 +193,12 @@ export class AgenciesService {
         </tr>
         <tr>
             <td style="padding: 20px; text-align: center; background-color: #000;">
-                <a href="https://platform.postiz.com/agencies/${
+                <a href="https://postiz.com/agencies/action/approve/${
                   agency.id
-                }/approve" style="margin: 0 10px; text-decoration: none; color: #007bff;">To approve click here</a><br /><br /><br />
-                <a href="https://platform.postiz.com/agencies/${
+                }" style="margin: 0 10px; text-decoration: none; color: #007bff;">To approve click here</a><br /><br /><br />
+                <a href="https://postiz.com/agencies/action/decline/${
                   agency.id
-                }/decline" style="margin: 0 10px; text-decoration: none; color: #007bff;">To decline click here</a><br /><br /><br />
+                }" style="margin: 0 10px; text-decoration: none; color: #007bff;">To decline click here</a><br /><br /><br />
             </td>
         </tr>
         <tr>

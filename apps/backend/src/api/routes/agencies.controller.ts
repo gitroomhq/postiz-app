@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { ApiTags } from '@nestjs/swagger';
 import { AgenciesService } from '@gitroom/nestjs-libraries/database/prisma/agencies/agencies.service';
@@ -20,5 +20,18 @@ export class AgenciesController {
     @Body() body: CreateAgencyDto
   ) {
     return this._agenciesService.createAgency(user, body);
+  }
+
+  @Post('/action/:action/:id')
+  async updateAgency(
+    @GetUserFromRequest() user: User,
+    @Param('action') action: string,
+    @Param('id') id: string
+  ) {
+    if (!user.isSuperAdmin) {
+      return 400;
+    }
+
+    return this._agenciesService.approveOrDecline(user.email, action, id);
   }
 }
