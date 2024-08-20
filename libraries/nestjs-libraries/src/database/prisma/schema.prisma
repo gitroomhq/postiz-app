@@ -62,6 +62,7 @@ model User {
   orderSeller  Orders[]        @relation("orderSeller")
   payoutProblems    PayoutProblems[]
   lastOnline   DateTime          @default(now())
+  agencies     SocialMediaAgency[]
 
   @@unique([email, providerName])
   @@index([lastReadNotifications])
@@ -165,8 +166,49 @@ model Media {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   userPicture    User[]
+  agencies       SocialMediaAgency[]
 
   @@index([organizationId])
+}
+
+model SocialMediaAgency {
+  id                  String   @id @default(uuid())
+  user                User @relation(fields: [userId], references: [id])
+  userId              String @unique()
+  name                String
+  logoId              String?
+  logo                Media? @relation(fields: [logoId], references: [id])
+  website             String?
+  slug                String?
+
+  facebook            String?
+  instagram           String?
+  twitter             String?
+  linkedIn            String?
+  youtube             String?
+  tiktok              String?
+  otherSocialMedia    String?
+
+  shortDescription    String
+  description         String
+  niches              SocialMediaAgencyNiche[]
+  approved            Boolean @default(false)
+
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  deletedAt           DateTime?
+
+  @@index([userId])
+  @@index([deletedAt])
+  @@index([id])
+}
+
+model SocialMediaAgencyNiche {
+  agencyId            String
+  agency              SocialMediaAgency @relation(fields: [agencyId], references: [id])
+  niche               String
+
+  @@id([agencyId, niche])
 }
 
 model Credits {
