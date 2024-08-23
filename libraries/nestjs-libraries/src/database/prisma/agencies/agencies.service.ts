@@ -36,7 +36,7 @@ export class AgenciesService {
 
     if (action === 'approve') {
       await this._emailService.sendEmail(
-        email,
+        agency?.user?.email!,
         'Your Agency has been approved and added to Postiz 🚀',
         `
 <html lang="en">
@@ -60,7 +60,7 @@ export class AgenciesService {
     }
 
     await this._emailService.sendEmail(
-      email,
+      agency?.user?.email!,
       'Your Agency has been declined 😔',
       `
 <html lang="en">

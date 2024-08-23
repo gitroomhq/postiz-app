@@ -65,6 +65,7 @@ export class AgenciesRepository {
       include: {
         logo: true,
         niches: true,
+        user: true,
       },
     });
   }
