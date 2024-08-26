@@ -4,7 +4,7 @@ import { AddProviderButton } from '@gitroom/frontend/components/launches/add.pro
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { orderBy } from 'lodash';
-import { Calendar } from '@gitroom/frontend/components/launches/calendar';
+// import { Calendar } from '@gitroom/frontend/components/launches/calendar';
 import { CalendarWeekProvider } from '@gitroom/frontend/components/launches/calendar.context';
 import { Filters } from '@gitroom/frontend/components/launches/filters';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
@@ -19,6 +19,7 @@ import { Integration } from '@prisma/client';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
+import { NewCalendarComponent } from '@gitroom/frontend/components/launches/new.calendar.component';
 
 export const LaunchesComponent = () => {
   const fetch = useFetch();
@@ -116,7 +117,7 @@ export const LaunchesComponent = () => {
     <CalendarWeekProvider integrations={sortedIntegrations}>
       <div className="flex flex-1 flex-col">
         <div className="flex flex-1 relative">
-          <div className="absolute w-full h-full grid grid-cols-[220px_minmax(0,1fr)] gap-[30px] overflow-hidden overflow-y-scroll scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary">
+          <div className="outline-none absolute w-full h-full grid grid-cols-[220px_minmax(0,1fr)] gap-[30px] overflow-hidden overflow-y-scroll scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary">
               <div className="w-[220px] bg-third p-[16px] flex flex-col gap-[24px] min-h-[100%]">
               <h2 className="text-[20px]">Channels</h2>
               <div className="gap-[16px] flex flex-col">
@@ -212,7 +213,8 @@ export const LaunchesComponent = () => {
             </div>
             <div className="flex-1 flex flex-col gap-[14px]">
               <Filters />
-              <Calendar />
+              <NewCalendarComponent />
+              {/*<Calendar />*/}
             </div>
           </div>
         </div>

@@ -144,7 +144,7 @@ export const Calendar = () => {
   );
 };
 
-const CalendarColumn: FC<{ day: number; hour: string }> = (props) => {
+export const CalendarColumn: FC<{ day: number; hour: string }> = (props) => {
   const { day, hour } = props;
   const { currentWeek, currentYear } = useCalendar();
 
@@ -174,22 +174,7 @@ const CalendarColumn: FC<{ day: number; hour: string }> = (props) => {
   return (
     <div className="w-full h-full" ref={ref}>
       {!entry?.isIntersecting ? (
-        <div
-          className={clsx(
-            'h-full flex justify-center items-center text-[12px]',
-            isBeforeNow && 'bg-secondary'
-          )}
-        >
-          {!isBeforeNow && (
-            <div
-              className={clsx(
-                'w-[20px] h-[20px] bg-forth rounded-full flex justify-center items-center hover:bg-seventh'
-              )}
-            >
-              +
-            </div>
-          )}
-        </div>
+        <div />
       ) : (
         <CalendarColumnRender {...props} />
       )}
@@ -230,7 +215,7 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
       return dayjs
         .utc(post.publishDate)
         .local()
-        .isBetween(getDate, getDate.add(10, 'minute'), 'minute', '[)');
+        .isBetween(getDate, getDate.add(59, 'minute'), 'minute', '[)');
     });
   }, [posts]);
 
@@ -376,65 +361,60 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
   const addProvider = useAddProvider();
 
   return (
-    <div className="relative w-full h-full">
-      <div className="absolute left-0 top-0 w-full h-full">
-        <div
-          {...(canBeTrending
-            ? {
-                'data-tooltip-id': 'tooltip',
-                'data-tooltip-content': 'Predicted GitHub Trending Change',
-              }
-            : {})}
-          ref={drop}
-          className={clsx(
-            'h-[calc(216px/6)] gap-[2.5px] text-[12px] pointer w-full overflow-hidden justify-center overflow-x-auto flex scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary',
-            isBeforeNow && 'bg-secondary',
-            canDrop && 'bg-white/80',
-            canBeTrending && 'bg-[#eaff00]'
-          )}
-        >
-          {postList.map((post) => (
-            <div
-              key={post.id}
-              className={clsx(
-                postList.length > 1 && 'w-[33px] basis-[28px]',
-                'h-full text-white relative  flex justify-center items-center flex-grow-0 flex-shrink-0'
-              )}
-            >
-              <div className="relative flex gap-[5px] items-center">
-                <CalendarItem
-                  date={getDate}
-                  state={post.state}
-                  editPost={editPost(post)}
-                  post={post}
-                  integrations={integrations}
-                />
-              </div>
+    <div className="relative flex flex-col w-full min-h-full">
+      <div
+        {...(canBeTrending
+          ? {
+              'data-tooltip-id': 'tooltip',
+              'data-tooltip-content': 'Predicted GitHub Trending Change',
+            }
+          : {})}
+        ref={drop}
+        className={clsx(
+          'flex-col flex-1 text-[12px] pointer w-full overflow-hidden justify-center overflow-x-auto flex scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary',
+          isBeforeNow && 'bg-[#06080d]',
+          canDrop && 'bg-white/80',
+          canBeTrending && 'bg-[#eaff00]'
+        )}
+      >
+        {postList.map((post) => (
+          <div
+            key={post.id}
+            className={clsx(
+              'text-white p-[2.5px] relative flex flex-col justify-center items-center'
+            )}
+          >
+            <div className="relative w-full flex flex-col items-center p-[2.5px]">
+              <CalendarItem
+                date={getDate}
+                state={post.state}
+                editPost={editPost(post)}
+                post={post}
+                integrations={integrations}
+              />
             </div>
-          ))}
-          {!isBeforeNow && (
-            <div
-              className={clsx(
-                !postList.length ? 'justify-center flex-1' : 'ml-[2px]',
-                'flex items-center cursor-pointer gap-[2.5px]'
-              )}
-            >
-              <div
-                data-tooltip-id="tooltip"
-                data-tooltip-content={
-                  'Schedule for ' + getDate.format('DD/MM/YYYY HH:mm')
-                }
-                onClick={integrations.length ? addModal : addProvider}
-                className={clsx(
-                  'w-[20px] h-[20px] bg-forth rounded-full flex justify-center items-center hover:bg-seventh'
-                )}
-              >
-                +
-              </div>
-            </div>
-          )}
-        </div>
+          </div>
+        ))}
       </div>
+      {!isBeforeNow && (
+        <div className="pb-[2.5px] px-[5px]">
+          <div
+            className={clsx(
+              !postList.length
+                ? 'h-full w-full absolute left-0 top-0 p-[5px]'
+                : 'h-[40px]',
+              'flex items-center justify-center cursor-pointer pb-[2.5px]'
+            )}
+          >
+            <div
+              onClick={integrations.length ? addModal : addProvider}
+              className={clsx(
+                'hover:before:content-["+"] w-full h-full text-seventh rounded-[10px] hover:border hover:border-seventh flex justify-center items-center'
+              )}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -461,23 +441,24 @@ const CalendarItem: FC<{
     <div
       ref={dragRef}
       onClick={editPost}
-      className={clsx('relative', state === 'DRAFT' && '!grayscale')}
-      data-tooltip-id="tooltip"
+      className={clsx(
+        'gap-[5px] w-full flex h-full flex-1 rounded-[10px] border border-seventh px-[5px] p-[2.5px]',
+        'relative',
+        state === 'DRAFT' && '!grayscale'
+      )}
       style={{ opacity }}
-      data-tooltip-content={`${state === 'DRAFT' ? 'Draft: ' : ''}${
-        integrations.find(
-          (p) => p.identifier === post.integration?.providerIdentifier
-        )?.name
-      }: ${post.content.slice(0, 100)}`}
     >
-      <img
-        className="w-[20px] h-[20px] rounded-full"
-        src={post.integration.picture!}
-      />
-      <img
-        className="w-[12px] h-[12px] rounded-full absolute z-10 bottom-[0] right-0 border border-fifth"
-        src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
-      />
+      <div className="relative min-w-[20px] h-[20px]">
+        <img
+          className="w-[20px] h-[20px] rounded-full"
+          src={post.integration.picture!}
+        />
+        <img
+          className="w-[12px] h-[12px] rounded-full absolute z-10 bottom-[0] right-0 border border-fifth"
+          src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
+        />
+      </div>
+      <div className="whitespace-pre-wrap line-clamp-3">{post.content}</div>
     </div>
   );
 };
