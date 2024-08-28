@@ -20,6 +20,9 @@ export class AgenciesRepository {
         logo: true,
         niches: true,
       },
+      orderBy: {
+        createdAt: 'desc',
+      }
     });
   }
 
