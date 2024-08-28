@@ -45,7 +45,7 @@ export const AnalyticsComponent: FC = () => {
       {/*    </div>*/}
       {/*    <div>*/}
       {/*        <div className="w-full flex-col justify-start items-start gap-4 inline-flex">*/}
-      {/*            <div className="self-stretch justify-start items-start gap-2.5 inline-flex pb-[16.5px] border-b-[1px] border-[#28344F]">*/}
+      {/*            <div className="self-stretch justify-start items-start gap-2.5 inline-flex pb-[16.5px] border-b-[1px] border-fifth">*/}
       {/*                <img className="w-8 h-8 rounded-full" src="https://via.placeholder.com/32x32"/>*/}
       {/*                <div className="grow shrink basis-0 flex-col justify-start items-start gap-1 inline-flex">*/}
       {/*                    <div className="justify-center items-center gap-1 inline-flex">*/}
@@ -59,7 +59,7 @@ export const AnalyticsComponent: FC = () => {
       {/*                    </div>*/}
       {/*                </div>*/}
       {/*            </div>*/}
-      {/*            <div className="self-stretch justify-start items-start gap-2.5 inline-flex pb-[16.5px] border-b-[1px] border-[#28344F]">*/}
+      {/*            <div className="self-stretch justify-start items-start gap-2.5 inline-flex pb-[16.5px] border-b-[1px] border-fifth">*/}
       {/*                <img className="w-8 h-8 rounded-full" src="https://via.placeholder.com/32x32"/>*/}
       {/*                <div className="grow shrink basis-0 flex-col justify-start items-start gap-1 inline-flex">*/}
       {/*                    <div className="justify-center items-center gap-1 inline-flex">*/}
@@ -73,7 +73,7 @@ export const AnalyticsComponent: FC = () => {
       {/*                    </div>*/}
       {/*                </div>*/}
       {/*            </div>*/}
-      {/*            <div className="self-stretch justify-start items-start gap-2.5 inline-flex pb-[16.5px] border-b-[1px] border-[#28344F]">*/}
+      {/*            <div className="self-stretch justify-start items-start gap-2.5 inline-flex pb-[16.5px] border-b-[1px] border-fifth">*/}
       {/*                <img className="w-8 h-8 rounded-full" src="https://via.placeholder.com/32x32"/>*/}
       {/*                <div className="grow shrink basis-0 flex-col justify-start items-start gap-1 inline-flex">*/}
       {/*                    <div className="justify-center items-center gap-1 inline-flex">*/}
@@ -87,7 +87,7 @@ export const AnalyticsComponent: FC = () => {
       {/*                    </div>*/}
       {/*                </div>*/}
       {/*            </div>*/}
-      {/*            <div className="self-stretch justify-start items-start gap-2.5 inline-flex pb-[16.5px] border-b-[1px] border-[#28344F]">*/}
+      {/*            <div className="self-stretch justify-start items-start gap-2.5 inline-flex pb-[16.5px] border-b-[1px] border-fifth">*/}
       {/*                <img className="w-8 h-8 rounded-full" src="https://via.placeholder.com/32x32"/>*/}
       {/*                <div className="grow shrink basis-0 flex-col justify-start items-start gap-1 inline-flex">*/}
       {/*                    <div className="justify-center items-center gap-1 inline-flex">*/}
@@ -101,7 +101,7 @@ export const AnalyticsComponent: FC = () => {
       {/*                    </div>*/}
       {/*                </div>*/}
       {/*            </div>*/}
-      {/*            <div className="self-stretch justify-start items-start gap-2.5 inline-flex pb-[16.5px] border-b-[1px] border-[#28344F]">*/}
+      {/*            <div className="self-stretch justify-start items-start gap-2.5 inline-flex pb-[16.5px] border-b-[1px] border-fifth">*/}
       {/*                <img className="w-8 h-8 rounded-full" src="https://via.placeholder.com/32x32"/>*/}
       {/*                <div className="grow shrink basis-0 flex-col justify-start items-start gap-1 inline-flex">*/}
       {/*                    <div className="justify-center items-center gap-1 inline-flex">*/}

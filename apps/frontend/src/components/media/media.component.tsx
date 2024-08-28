@@ -95,7 +95,7 @@ export const MediaBox: FC<{
 
   return (
     <div className="fixed left-0 top-0 bg-black/80 z-[300] w-full min-h-full p-[60px] animate-fade">
-      <div className="w-full h-full bg-[#0B101B] border-tableBorder border-2 rounded-xl pb-[20px] px-[20px] relative">
+      <div className="w-full h-full bg-sixth border-tableBorder border-2 rounded-xl pb-[20px] px-[20px] relative">
         <div className="flex">
           <div className="flex-1">
             <TopTitle title="Media Library" />
@@ -259,7 +259,7 @@ export const MultiMediaComponent: FC<{
 
   return (
     <>
-      <div className="flex flex-col gap-[8px] bg-[#131B2C] rounded-bl-[8px]">
+      <div className="flex flex-col gap-[8px] bg-input rounded-bl-[8px]">
         {modal && <MediaBox setMedia={changeMedia} closeModal={showModal} />}
         {mediaModal && !!user?.tier?.ai &&  (
           <Polonto setMedia={changeMedia} closeModal={closeDesignModal} />
@@ -268,7 +268,7 @@ export const MultiMediaComponent: FC<{
           <div className="flex">
             <Button
               onClick={showModal}
-              className="ml-[10px] rounded-[4px] mb-[10px] gap-[8px] justify-center items-center w-[127px] flex border border-dashed border-[#506490] bg-[#131B2C]"
+              className="ml-[10px] rounded-[4px] mb-[10px] gap-[8px] justify-center items-center w-[127px] flex border border-dashed border-[#506490] bg-input"
             >
               <div>
                 <svg

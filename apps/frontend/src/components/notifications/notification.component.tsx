@@ -27,7 +27,7 @@ export const ShowNotification: FC<{
     <div
       className={clsx(
         `text-white px-[16px] py-[10px] border-b border-tableBorder last:border-b-0 transition-colors ${interClass} overflow-hidden text-ellipsis`,
-        newNotification && 'font-bold bg-[#7236f1] animate-newMessages'
+        newNotification && 'font-bold bg-seventh animate-newMessages'
       )}
       dangerouslySetInnerHTML={{ __html: replaceLinks(notification.content) }}
     />

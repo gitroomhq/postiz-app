@@ -70,7 +70,7 @@ export const Step: FC<{
         STEP {step}
       </div>
       <div
-        className={clsx('text-[12px]', step > currentStep && 'text-[#64748B]')}
+        className={clsx('text-[12px]', step > currentStep && 'text-inputText')}
       >
         {title}
       </div>

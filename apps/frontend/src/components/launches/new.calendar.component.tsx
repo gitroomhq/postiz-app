@@ -33,12 +33,12 @@ export const NewCalendarComponent = () => {
             ))}
             {hours.map((hour) => (
               <Fragment key={hour}>
-                <div className="p-2 pr-4 bg-[#090B13] text-center items-center justify-center flex">
+                <div className="p-2 pr-4 bg-secondary text-center items-center justify-center flex">
                   {hour.toString().padStart(2, '0')}:00
                 </div>
                 {days.map((day, indexDay) => (
                   <Fragment key={`${day}-${hour}`}>
-                    <div className="relative bg-[#090b13]">
+                    <div className="relative bg-secondary">
                       <CalendarColumn
                         day={indexDay}
                         hour={`${hour.toString().padStart(2, '0')}:00`}

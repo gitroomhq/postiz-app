@@ -156,7 +156,7 @@ export const Offer: FC<{
         <div className="text-[#32D583]">${totalPrice}</div>
       </div>
       <div className="py-[16px] px-[24px] flex flex-col gap-[20px]">
-        <div className="text-[#64748B] text-[12px]">Platform</div>
+        <div className="text-inputText text-[12px]">Platform</div>
         {data.data.ordersItems.map((item: any) => (
           <div
             key={item.integration.id}
@@ -192,7 +192,7 @@ export const Offer: FC<{
           )}
         {orderStatus === 'ACCEPTED' && (
           <div className="flex justify-end">
-            <Button className="rounded-[4px] text-[14px] border border-[#1F2941] !bg-[#0B101B] text-[#1F2941]">
+            <Button className="rounded-[4px] text-[14px] border border-tableBorder !bg-sixth text-tableBorder">
               Accepted
             </Button>
           </div>
@@ -336,13 +336,13 @@ export const Post: FC<{
               <div className="mt-[18px] flex gap-[10px] justify-end">
                 <Button
                   onClick={requestRevision}
-                  className="rounded-[4px] text-[14px] border-[2px] border-[#506490] !bg-[#0B101B]"
+                  className="rounded-[4px] text-[14px] border-[2px] border-[#506490] !bg-sixth"
                 >
                   Revision Needed
                 </Button>
                 <Button
                   onClick={requestApproved}
-                  className="rounded-[4px] text-[14px] border-[2px] border-[#506490] !bg-[#0B101B]"
+                  className="rounded-[4px] text-[14px] border-[2px] border-[#506490] !bg-sixth"
                 >
                   Approve
                 </Button>
@@ -354,14 +354,14 @@ export const Post: FC<{
 
           {data.data.status === 'REVISION' && (
             <div className="flex justify-end">
-              <Button className="rounded-[4px] text-[14px] border border-[#1F2941] !bg-[#0B101B] text-[#1F2941]">
+              <Button className="rounded-[4px] text-[14px] border border-tableBorder !bg-sixth text-tableBorder">
                 Revision Requested
               </Button>
             </div>
           )}
           {data.data.status === 'APPROVED' && (
             <div className="flex justify-end gap-[10px]">
-              <Button className="rounded-[4px] text-[14px] border border-[#1F2941] !bg-[#0B101B] text-[#1F2941]">
+              <Button className="rounded-[4px] text-[14px] border border-tableBorder !bg-sixth text-tableBorder">
                 ACCEPTED
               </Button>
             </div>
@@ -369,7 +369,7 @@ export const Post: FC<{
 
           {data.data.status === 'CANCELED' && (
             <div className="flex justify-end gap-[10px]">
-              <Button className="rounded-[4px] text-[14px] border border-[#1F2941] !bg-[#0B101B] text-[#1F2941]">
+              <Button className="rounded-[4px] text-[14px] border border-tableBorder !bg-sixth text-tableBorder">
                 Cancelled by the seller
               </Button>
             </div>

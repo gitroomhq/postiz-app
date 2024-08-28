@@ -160,7 +160,7 @@ export const NewOrder: FC<{ group: string }> = (props) => {
   return (
     <form onSubmit={form.handleSubmit(submit)}>
       <FormProvider {...form}>
-        <div className="w-full max-w-[647px] mx-auto bg-[#0B101B] px-[16px] rounded-[4px] border border-[#172034] gap-[24px] flex flex-col relative">
+        <div className="w-full max-w-[647px] mx-auto bg-sixth px-[16px] rounded-[4px] border border-[#172034] gap-[24px] flex flex-col relative">
           <button
             onClick={close}
             className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
@@ -283,7 +283,7 @@ export const OrderInProgress: FC<{ group: string; buyer: boolean, order: string 
   return (
     <div className="flex gap-[10px]">
       {buyer && (
-        <div onClick={completeOrder} className="rounded-[34px] border-[1px] border-[#506490] !bg-[#0B101B] h-[28px] justify-center items-center text-[12px] px-[12px] flex font-[600] cursor-pointer">
+        <div onClick={completeOrder} className="rounded-[34px] border-[1px] border-[#506490] !bg-sixth h-[28px] justify-center items-center text-[12px] px-[12px] flex font-[600] cursor-pointer">
           Complete order and pay early
         </div>
       )}

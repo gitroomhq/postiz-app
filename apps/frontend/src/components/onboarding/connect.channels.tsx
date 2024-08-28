@@ -151,7 +151,7 @@ export const ConnectChannels: FC = () => {
                       height={32}
                     />
                   </div>
-                  <div className="text-[#64748B] text-[10px] tracking-[1.2px] uppercase">
+                  <div className="text-inputText text-[10px] tracking-[1.2px] uppercase">
                     {social.name}
                   </div>
                 </div>
@@ -174,7 +174,7 @@ export const ConnectChannels: FC = () => {
                         className="rounded-full w-[32px] h-[32px]"
                       />
                     </div>
-                    <div className="text-[#64748B] text-[10px] tracking-[1.2px] uppercase">
+                    <div className="text-inputText text-[10px] tracking-[1.2px] uppercase">
                       {article.name}
                     </div>
                   </div>

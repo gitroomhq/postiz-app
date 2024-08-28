@@ -149,7 +149,7 @@ const SecondStep: FC<{
                 key={post[0].post}
               >
                 {post.length > 1 && (
-                  <div className="bg-[#612AD5] absolute -left-[15px] -top-[15px] z-[100] p-[3px] rounded-[10px]">
+                  <div className="bg-forth absolute -left-[15px] -top-[15px] z-[100] p-[3px] rounded-[10px]">
                     a thread
                   </div>
                 )}

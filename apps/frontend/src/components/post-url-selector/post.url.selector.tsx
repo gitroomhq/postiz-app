@@ -142,7 +142,7 @@ export const PostSelector: FC<{
             <div
               className={
                 !noModal
-                  ? 'flex flex-col w-full max-w-[1200px] mx-auto h-full bg-[#0B101B] border-tableBorder border-2 rounded-xl pb-[20px] px-[20px] relative'
+                  ? 'flex flex-col w-full max-w-[1200px] mx-auto h-full bg-sixth border-tableBorder border-2 rounded-xl pb-[20px] px-[20px] relative'
                   : ''
               }
             >

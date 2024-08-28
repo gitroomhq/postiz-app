@@ -393,7 +393,7 @@ export const AddEditModal: FC<{
               : 'w-0 overflow-hidden'
           )}
         >
-          <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-[#172034] bg-[#0B101B] p-[16px] pt-0">
+          <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-[#172034] bg-sixth p-[16px] pt-0">
             <TopTitle title={existingData?.group ? 'Edit Post' : 'Create Post'}>
               <div className="flex items-center">
                 <PostToOrganization
@@ -505,7 +505,7 @@ export const AddEditModal: FC<{
               </>
             ) : null}
           </div>
-          <div className="relative h-[68px] flex flex-col rounded-[4px] border border-[#172034] bg-[#0B101B]">
+          <div className="relative h-[68px] flex flex-col rounded-[4px] border border-[#172034] bg-sixth">
             <div className="flex flex-1 gap-[10px] relative">
               <div className="absolute w-full h-full flex gap-[10px] justify-end items-center right-[16px]">
                 <Button
@@ -586,7 +586,7 @@ export const AddEditModal: FC<{
         </div>
         <div
           className={clsx(
-            'flex gap-[20px] flex-col rounded-[4px] border-[#172034] bg-[#0B101B] flex-1 transition-all duration-700',
+            'flex gap-[20px] flex-col rounded-[4px] border-[#172034] bg-sixth flex-1 transition-all duration-700',
             !selectedIntegrations.length
               ? 'flex-grow-0 overflow-hidden'
               : 'flex-grow-1 border animate-overflow'

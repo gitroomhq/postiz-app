@@ -81,7 +81,7 @@ export const AddMember = () => {
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(submit)}>
-        <div className="relative flex gap-[10px] flex-col flex-1 rounded-[4px] border border-[#172034] bg-[#0B101B] p-[16px] pt-0">
+        <div className="relative flex gap-[10px] flex-col flex-1 rounded-[4px] border border-[#172034] bg-sixth p-[16px] pt-0">
           <TopTitle title="Add Member" />
           <button
             onClick={closeModal}

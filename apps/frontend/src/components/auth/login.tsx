@@ -63,7 +63,7 @@ export function Login() {
 
         {!isGeneral() ? <GithubProvider /> : <GoogleProvider />}
         <div className="h-[20px] mb-[24px] mt-[24px] relative">
-          <div className="absolute w-full h-[1px] bg-[#28344F] top-[50%] -translate-y-[50%]" />
+          <div className="absolute w-full h-[1px] bg-fifth top-[50%] -translate-y-[50%]" />
           <div
             className={`absolute z-[1] ${interClass} justify-center items-center w-full left-0 top-0 flex`}
           >

@@ -89,7 +89,7 @@ export const ApiModal: FC<{
   }, []);
 
   return (
-    <div className="rounded-[4px] border border-[#172034] bg-[#0B101B] px-[16px] pb-[16px] relative">
+    <div className="rounded-[4px] border border-[#172034] bg-sixth px-[16px] pb-[16px] relative">
       <TopTitle title={`Add API key for ${name}`} />
       <button
         onClick={close}
@@ -167,7 +167,7 @@ export const AddProviderComponent: FC<{
     []
   );
   return (
-    <div className="w-full flex flex-col gap-[20px] rounded-[4px] border border-[#172034] bg-[#0B101B] px-[16px] pb-[16px] relative">
+    <div className="w-full flex flex-col gap-[20px] rounded-[4px] border border-[#172034] bg-sixth px-[16px] pb-[16px] relative">
       <div className="flex flex-col">
         <TopTitle title="Add Channel" />
         <button

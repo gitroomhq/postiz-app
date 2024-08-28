@@ -165,7 +165,7 @@ const Pagination: FC<{ results: number }> = (props) => {
             onClick={changePage(p)}
             className={clsx(
               'w-[40px] h-[40px] flex justify-center items-center rounded-[8px] cursor-pointer',
-              p === page + 1 ? 'bg-[#8155DD]' : 'text-[#64748B]'
+              p === page + 1 ? 'bg-[#8155DD]' : 'text-inputText'
             )}
           >
             {p}
@@ -313,7 +313,7 @@ export const RequestService: FC<{ toId: string; name: string }> = (props) => {
   return (
     <form onSubmit={form.handleSubmit(createConversation)}>
       <FormProvider {...form}>
-        <div className="w-full max-w-[920px] mx-auto bg-[#0B101B] px-[16px] rounded-[4px] border border-[#172034] gap-[24px] flex flex-col relative">
+        <div className="w-full max-w-[920px] mx-auto bg-sixth px-[16px] rounded-[4px] border border-[#172034] gap-[24px] flex flex-col relative">
           <button
             onClick={close}
             className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
@@ -394,7 +394,7 @@ export const Card: FC<{
   }, []);
 
   return (
-    <div className="min-h-[155px] bg-[#0B101B] p-[24px] flex">
+    <div className="min-h-[155px] bg-sixth p-[24px] flex">
       <div className="flex gap-[16px] flex-1">
         <div>
           <div className="h-[103px] w-[103px] bg-red-500/10 rounded-full relative">

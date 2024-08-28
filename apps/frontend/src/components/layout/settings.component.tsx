@@ -81,7 +81,7 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
         )}
         <div
           className={clsx(
-            'w-full max-w-[920px] mx-auto bg-[#0B101B] gap-[24px] flex flex-col relative',
+            'w-full max-w-[920px] mx-auto bg-sixth gap-[24px] flex flex-col relative',
             !getRef && 'p-[32px] rounded-[4px] border border-[#172034]'
           )}
         >
@@ -135,7 +135,7 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
                   <div className="text-[14px]">Profile Picture</div>
                   <div className="flex gap-[8px]">
                     <button
-                      className="h-[24px] w-[120px] bg-[#612AD5] rounded-[4px] flex justify-center gap-[4px] items-center cursor-pointer"
+                      className="h-[24px] w-[120px] bg-forth rounded-[4px] flex justify-center gap-[4px] items-center cursor-pointer"
                       type="button"
                     >
                       <div>

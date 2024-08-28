@@ -276,7 +276,7 @@ export const CommentComponent: FC<{ date: dayjs.Dayjs }> = (props) => {
   }, []);
 
   return (
-    <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-[#172034] bg-[#0B101B] p-[16px] pt-0">
+    <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-[#172034] bg-sixth p-[16px] pt-0">
       <TopTitle title={`Comments for ${date.format('DD/MM/YYYY HH:mm')}`} />
       <button
         onClick={closeAll}

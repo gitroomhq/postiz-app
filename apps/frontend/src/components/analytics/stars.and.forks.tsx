@@ -12,7 +12,7 @@ export const StarsAndForks: FC<StarsAndForksInterface> = (props) => {
         <div className="flex gap-[24px] h-[272px]" key={item.login}>
           <div className="flex-1 bg-secondary py-[10px] px-[16px] flex flex-col">
             <div className="flex items-center gap-[14px]">
-              <div className="bg-[#28344F] p-[8px]">
+              <div className="bg-fifth p-[8px]">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="20"
@@ -55,7 +55,7 @@ export const StarsAndForks: FC<StarsAndForksInterface> = (props) => {
 
           <div className="flex-1 bg-secondary py-[10px] px-[16px] flex flex-col">
             <div className="flex items-center gap-[14px]">
-              <div className="bg-[#28344F] p-[8px]">
+              <div className="bg-fifth p-[8px]">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="20"
@@ -104,7 +104,7 @@ export const StarsAndForks: FC<StarsAndForksInterface> = (props) => {
             className="flex-1 bg-secondary py-[24px] px-[16px] gap-[16px] flex flex-col"
           >
             <div className="flex items-center gap-[14px]">
-              <div className="p-[8px] bg-[#28344F]">
+              <div className="p-[8px] bg-fifth">
                 {p === 0 ? (
                   <svg
                     xmlns="http://www.w3.org/2000/svg"

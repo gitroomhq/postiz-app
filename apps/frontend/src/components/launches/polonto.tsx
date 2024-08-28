@@ -87,7 +87,7 @@ const Polonto: FC<{
   }, []);
   return (
     <div className="fixed left-0 top-0 bg-black/80 z-[300] w-full min-h-full p-[60px] animate-fade">
-      <div className="w-full h-full bg-[#0B101B] border-tableBorder border-2 rounded-xl pb-[20px] px-[20px] relative">
+      <div className="w-full h-full bg-sixth border-tableBorder border-2 rounded-xl pb-[20px] px-[20px] relative">
         <div className="flex">
           <div className="flex-1">
             <TopTitle title="Design Media" />
