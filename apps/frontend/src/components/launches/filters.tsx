@@ -25,7 +25,7 @@ export const Filters = () => {
   }, [week.currentWeek, week.currentYear]);
 
   return (
-    <div className="h-[20px] text-white flex gap-[8px] items-center select-none">
+    <div className="h-[20px] text-textColor flex gap-[8px] items-center select-none">
       <div onClick={previousWeek}>
         <svg
           xmlns="http://www.w3.org/2000/svg"

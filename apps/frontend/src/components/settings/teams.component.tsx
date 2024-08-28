@@ -81,7 +81,7 @@ export const AddMember = () => {
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(submit)}>
-        <div className="relative flex gap-[10px] flex-col flex-1 rounded-[4px] border border-[#172034] bg-sixth p-[16px] pt-0">
+        <div className="relative flex gap-[10px] flex-col flex-1 rounded-[4px] border border-customColor6 bg-sixth p-[16px] pt-0">
           <TopTitle title="Add Member" />
           <button
             onClick={closeModal}
@@ -152,7 +152,7 @@ export const TeamsComponent = () => {
   const addMember = useCallback(() => {
     modals.openModal({
       classNames: {
-        modal: 'bg-transparent text-white',
+        modal: 'bg-transparent text-textColor',
       },
       withCloseButton: false,
       children: <AddMember />,
@@ -188,7 +188,7 @@ export const TeamsComponent = () => {
     <div className="flex flex-col">
       <h2 className="text-[24px] mb-[24px]">Team Members</h2>
       <h3 className="text-[20px]">Account Managers</h3>
-      <div className="text-[#AAA] mt-[4px]">
+      <div className="text-customColor18 mt-[4px]">
         Invite your assistant or team member to manage your account
       </div>
       <div className="my-[16px] mt-[16px] bg-sixth border-fifth border rounded-[4px] p-[24px] flex flex-col gap-[24px]">
@@ -208,7 +208,7 @@ export const TeamsComponent = () => {
               {+myLevel > +getLevel(p.role) ? (
                 <div className="flex-1 flex justify-end">
                   <Button
-                    className={`!bg-[#0b0f1c] !h-[24px] border border-[#506490] rounded-[4px] text-[12px] ${interClass}`}
+                    className={`!bg-customColor3 !h-[24px] border border-customColor21 rounded-[4px] text-[12px] ${interClass}`}
                     onClick={remove(p)}
                   >
                     <div className="flex justify-center items-center gap-[4px]">

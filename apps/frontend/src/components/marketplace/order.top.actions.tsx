@@ -160,7 +160,7 @@ export const NewOrder: FC<{ group: string }> = (props) => {
   return (
     <form onSubmit={form.handleSubmit(submit)}>
       <FormProvider {...form}>
-        <div className="w-full max-w-[647px] mx-auto bg-sixth px-[16px] rounded-[4px] border border-[#172034] gap-[24px] flex flex-col relative">
+        <div className="w-full max-w-[647px] mx-auto bg-sixth px-[16px] rounded-[4px] border border-customColor6 gap-[24px] flex flex-col relative">
           <button
             onClick={close}
             className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
@@ -189,7 +189,7 @@ export const NewOrder: FC<{ group: string }> = (props) => {
                   {index !== 0 && (
                     <div
                       onClick={() => remove(index)}
-                      className="cursor-pointer top-[3px] z-[99] w-[15px] h-[15px] bg-red-500 rounded-full text-white absolute left-[60px] text-[12px] flex justify-center items-center pb-[2px] select-none"
+                      className="cursor-pointer top-[3px] z-[99] w-[15px] h-[15px] bg-red-500 rounded-full text-textColor absolute left-[60px] text-[12px] flex justify-center items-center pb-[2px] select-none"
                     >
                       x
                     </div>
@@ -231,7 +231,7 @@ export const NewOrder: FC<{ group: string }> = (props) => {
                     onClick={() =>
                       append({ value: undefined, total: 1, price: '' })
                     }
-                    className="select-none rounded-[4px] border-2 border-[#506490] flex py-[9.5px] px-[24px] items-center gap-[4px] text-[14px] float-left cursor-pointer"
+                    className="select-none rounded-[4px] border-2 border-customColor21 flex py-[9.5px] px-[24px] items-center gap-[4px] text-[14px] float-left cursor-pointer"
                   >
                     <div>
                       <svg
@@ -283,11 +283,11 @@ export const OrderInProgress: FC<{ group: string; buyer: boolean, order: string 
   return (
     <div className="flex gap-[10px]">
       {buyer && (
-        <div onClick={completeOrder} className="rounded-[34px] border-[1px] border-[#506490] !bg-sixth h-[28px] justify-center items-center text-[12px] px-[12px] flex font-[600] cursor-pointer">
+        <div onClick={completeOrder} className="rounded-[34px] border-[1px] border-customColor21 !bg-sixth h-[28px] justify-center items-center text-[12px] px-[12px] flex font-[600] cursor-pointer">
           Complete order and pay early
         </div>
       )}
-      <div className="h-[28px] justify-center items-center bg-[#32D583] text-[12px] px-[12px] flex rounded-[34px] font-[600]">
+      <div className="h-[28px] justify-center items-center bg-customColor42 text-[12px] px-[12px] flex rounded-[34px] font-[600]">
         Order in progress
       </div>
     </div>
@@ -301,7 +301,7 @@ export const CreateNewOrder: FC<{ group: string }> = (props) => {
   const createOrder = useCallback(() => {
     modals.openModal({
       classNames: {
-        modal: 'bg-transparent text-white',
+        modal: 'bg-transparent text-textColor',
       },
       withCloseButton: false,
       size: '100%',
@@ -311,7 +311,7 @@ export const CreateNewOrder: FC<{ group: string }> = (props) => {
 
   return (
     <div
-      className="h-[28px] justify-center items-center bg-[#32D583] text-[12px] px-[12px] flex rounded-[34px] font-[600] cursor-pointer"
+      className="h-[28px] justify-center items-center bg-customColor42 text-[12px] px-[12px] flex rounded-[34px] font-[600] cursor-pointer"
       onClick={createOrder}
     >
       Create a new offer

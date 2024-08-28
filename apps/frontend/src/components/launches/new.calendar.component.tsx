@@ -19,14 +19,14 @@ export const hours = Array.from({ length: 24 }, (_, i) => i);
 export const NewCalendarComponent = () => {
   return (
     <DNDProvider>
-      <div className="flex flex-col h-screen bg-[#0f1727] rounded-[10px] overflow-hidden text-white flex-1">
+      <div className="flex flex-col h-screen overflow-hidden text-textColor flex-1">
         <div className="flex-1">
-          <div className="grid grid-cols-8 bg-gray-800 gap-[2px]">
-            <div className="bg-[#121b2c] sticky top-0 z-10 bg-gray-900"></div>
+          <div className="grid grid-cols-8 bg-customColor31 gap-[1px] border-customColor31 border rounded-[10px]">
+            <div className="bg-customColor20 sticky top-0 z-10 bg-gray-900"></div>
             {days.map((day, index) => (
               <div
                 key={day}
-                className="sticky top-0 z-10 bg-[#121b2c] p-2 text-center"
+                className="sticky top-0 z-10 bg-customColor20 p-2 text-center"
               >
                 <div>{day}</div>
               </div>

@@ -41,7 +41,7 @@ export const UpDownArrow: FC<{
           'outline-none rounded-tl-[20px] rounded-tr-[20px] w-[24px] h-[24px] flex justify-center items-center',
           isUp
             ? 'bg-input hover:bg-seventh cursor-pointer'
-            : 'bg-[#0F1524] pointer-events-none text-tableBorder'
+            : 'bg-customColor8 pointer-events-none text-textColor'
         )}
       >
         <Arrow flip={true} />
@@ -52,7 +52,7 @@ export const UpDownArrow: FC<{
           'outline-none rounded-bl-[20px] rounded-br-[20px] w-[24px] h-[24px] flex justify-center items-center',
           isDown
             ? 'bg-input hover:bg-seventh cursor-pointer'
-            : 'bg-[#0F1524] pointer-events-none text-tableBorder'
+            : 'bg-customColor8 pointer-events-none text-textColor'
         )}
       >
         <Arrow flip={false} />

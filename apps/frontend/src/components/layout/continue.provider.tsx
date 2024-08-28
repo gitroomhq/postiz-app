@@ -47,11 +47,11 @@ export const ContinueProvider: FC = () => {
 
   return (
     <div
-      className="fixed left-0 top-0 w-full h-full bg-black/40 z-[499]"
+      className="fixed left-0 top-0 w-full h-full bg-primary/40 z-[499]"
       onClick={closeModal}
     >
       <div
-        className="w-[100%] max-w-[674px] absolute left-[50%] top-[65px] bg-[#0B0F1C] z-[500] -translate-x-[50%] text-white p-[16px] !pt-0 border border-[#172034] min-h-[300px]"
+        className="w-[100%] max-w-[674px] absolute left-[50%] top-[65px] bg-customColor3 z-[500] -translate-x-[50%] text-textColor p-[16px] !pt-0 border border-customColor6 min-h-[300px]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="w-full h-full relative">

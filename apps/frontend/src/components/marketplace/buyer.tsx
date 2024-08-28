@@ -165,7 +165,7 @@ const Pagination: FC<{ results: number }> = (props) => {
             onClick={changePage(p)}
             className={clsx(
               'w-[40px] h-[40px] flex justify-center items-center rounded-[8px] cursor-pointer',
-              p === page + 1 ? 'bg-[#8155DD]' : 'text-inputText'
+              p === page + 1 ? 'bg-customColor4' : 'text-inputText'
             )}
           >
             {p}
@@ -252,10 +252,10 @@ export const Options: FC<{
 
   return (
     <>
-      <div className="h-[56px] text-[20px] font-[600] flex items-center px-[24px] bg-[#0F1524]">
+      <div className="h-[56px] text-[20px] font-[600] flex items-center px-[24px] bg-customColor8">
         {title}
       </div>
-      <div className="bg-[#0b0f1c] flex px-[32px] py-[24px]">
+      <div className="bg-customColor3 flex px-[32px] py-[24px]">
         {optionsGroup.map((options, key) => (
           <div
             key={`options_` + key}
@@ -313,7 +313,7 @@ export const RequestService: FC<{ toId: string; name: string }> = (props) => {
   return (
     <form onSubmit={form.handleSubmit(createConversation)}>
       <FormProvider {...form}>
-        <div className="w-full max-w-[920px] mx-auto bg-sixth px-[16px] rounded-[4px] border border-[#172034] gap-[24px] flex flex-col relative">
+        <div className="w-full max-w-[920px] mx-auto bg-sixth px-[16px] rounded-[4px] border border-customColor6 gap-[24px] flex flex-col relative">
           <button
             onClick={close}
             className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
@@ -376,7 +376,7 @@ export const Card: FC<{
     modal.openModal({
       children: <RequestService toId={data.id} name={data.name || 'Noname'} />,
       classNames: {
-        modal: 'bg-transparent text-white',
+        modal: 'bg-transparent text-textColor',
       },
       withCloseButton: false,
       size: '100%',
@@ -404,7 +404,7 @@ export const Card: FC<{
                 className="rounded-full w-full h-full"
               />
             )}
-            <div className="w-[80px] h-[28px] bg-[#8155DD] absolute bottom-0 left-[50%] -translate-x-[50%] rounded-[30px] flex gap-[4px] justify-center items-center">
+            <div className="w-[80px] h-[28px] bg-customColor4 absolute bottom-0 left-[50%] -translate-x-[50%] rounded-[30px] flex gap-[4px] justify-center items-center">
               <div>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -430,7 +430,7 @@ export const Card: FC<{
               {data.items.some((i) => i.key === 'content-writer') && (
                 <div
                   className={clsx(
-                    'bg-[#172034] rounded-[34px] py-[8px] px-[12px] text-[12px]',
+                    'bg-customColor6 rounded-[34px] py-[8px] px-[12px] text-[12px]',
                     interClass
                   )}
                 >
@@ -440,7 +440,7 @@ export const Card: FC<{
               {data.items.some((i) => i.key === 'influencers') && (
                 <div
                   className={clsx(
-                    'bg-[#172034] rounded-[34px] py-[8px] px-[12px] text-[12px]',
+                    'bg-customColor6 rounded-[34px] py-[8px] px-[12px] text-[12px]',
                     interClass
                   )}
                 >
@@ -458,12 +458,12 @@ export const Card: FC<{
               ))}
             </div>
           </div>
-          <div className="text-[18px] text-[#AAA] font-[400]">
+          <div className="text-[18px] text-customColor18 font-[400]">
             {data.bio || 'No bio'}
           </div>
           <div
             className={clsx(
-              'gap-[8px] flex items-center text-[10px] font-[300] text-[#CEBDF2] tracking-[1.2px] uppercase',
+              'gap-[8px] flex items-center text-[10px] font-[300] text-customColor41 tracking-[1.2px] uppercase',
               interClass
             )}
           >
@@ -472,7 +472,7 @@ export const Card: FC<{
                 <div>{tag}</div>
                 {index !== tags.length - 1 && (
                   <div>
-                    <div className="w-[4px] h-[4px] bg-[#324264] rounded-full" />
+                    <div className="w-[4px] h-[4px] bg-customColor1 rounded-full" />
                   </div>
                 )}
               </Fragment>

@@ -277,7 +277,7 @@ export const withProvider = (
               )}
               <div className="flex-1 flex">
                 <Button
-                  className="rounded-[4px] flex-1 !bg-red-700 overflow-hidden whitespace-nowrap"
+                  className="text-white rounded-[4px] flex-1 !bg-red-700 overflow-hidden whitespace-nowrap"
                   secondary={showTab !== 1}
                   onClick={changeToEditor}
                 >
@@ -299,7 +299,7 @@ export const withProvider = (
                     <Fragment key={`edit_inner_${index}`}>
                       <div>
                         <div className="flex gap-[4px]">
-                          <div className="flex-1 text-white editor">
+                          <div className="flex-1 text-textColor editor">
                             <Editor
                               order={index}
                               height={InPlaceValue.length > 1 ? 200 : 250}
@@ -320,7 +320,7 @@ export const withProvider = (
                               onChange={changeValue(index)}
                             />
                             {(!val.content || val.content.length < 6) && (
-                              <div className="my-[5px] text-[#F97066] text-[12px] font-[500]">
+                              <div className="my-[5px] text-customColor19 text-[12px] font-[500]">
                                 The post should be at least 6 characters long
                               </div>
                             )}
@@ -334,7 +334,7 @@ export const withProvider = (
                                   onChange={changeImage(index)}
                                 />
                               </div>
-                              <div className="flex bg-[#121b2c] rounded-br-[8px] text-[#F97066]">
+                              <div className="flex bg-customColor20 rounded-br-[8px] text-customColor19">
                                 {InPlaceValue.length > 1 && (
                                   <div
                                     className="flex cursor-pointer gap-[4px] justify-center items-center flex-1"

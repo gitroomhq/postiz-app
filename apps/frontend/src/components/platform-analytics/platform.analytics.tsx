@@ -140,7 +140,7 @@ export const PlatformAnalytics = () => {
 
   return (
     <div className="flex gap-[30px] flex-1">
-      <div className="p-[16px] bg-[#080B14] overflow-hidden flex w-[220px]">
+      <div className="p-[16px] bg-customColor48 overflow-hidden flex w-[220px]">
         <div className="flex gap-[16px] flex-col overflow-hidden">
           <div className="text-[20px] mb-[8px]">Channels</div>
           {sortedIntegrations.map((integration, index) => (
@@ -174,7 +174,7 @@ export const PlatformAnalytics = () => {
                     <div className="bg-red-500 w-[15px] h-[15px] rounded-full left-0 -top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
                       !
                     </div>
-                    <div className="bg-black/60 w-[39px] h-[46px] left-0 top-0 absolute rounded-full z-[199]" />
+                    <div className="bg-primary/60 w-[39px] h-[46px] left-0 top-0 absolute rounded-full z-[199]" />
                   </div>
                 )}
                 <ImageWithFallback
@@ -209,7 +209,7 @@ export const PlatformAnalytics = () => {
         <div className="flex-1 flex flex-col gap-[14px]">
           <div className="max-w-[200px]">
             <Select
-              className="bg-[#0A0B14] !border-0"
+              className="bg-customColor49 !border-0"
               label=""
               name="date"
               disableForm={true}

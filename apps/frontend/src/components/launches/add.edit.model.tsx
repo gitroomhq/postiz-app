@@ -384,7 +384,7 @@ export const AddEditModal: FC<{
           instructions="You are an assistant that help the user to schedule their social media posts, everytime somebody write something, try to use a function call, if not prompt the user that the request is invalid and you are here to assists with social media posts"
         />
       )}
-      <div className={clsx('flex gap-[20px] bg-black')}>
+      <div className={clsx('flex p-[10px] rounded-[4px] bg-primary gap-[20px]')}>
         <div
           className={clsx(
             'flex flex-col gap-[16px] transition-all duration-700 whitespace-nowrap',
@@ -393,7 +393,7 @@ export const AddEditModal: FC<{
               : 'w-0 overflow-hidden'
           )}
         >
-          <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-[#172034] bg-sixth p-[16px] pt-0">
+          <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-customColor6 bg-sixth p-[16px] pt-0">
             <TopTitle title={existingData?.group ? 'Edit Post' : 'Create Post'}>
               <div className="flex items-center">
                 <PostToOrganization
@@ -425,7 +425,7 @@ export const AddEditModal: FC<{
                   <Fragment key={`edit_${index}`}>
                     <div>
                       <div className="flex gap-[4px]">
-                        <div className="flex-1 editor text-white">
+                        <div className="flex-1 editor text-textColor">
                           <Editor
                             order={index}
                             height={value.length > 1 ? 150 : 250}
@@ -444,7 +444,7 @@ export const AddEditModal: FC<{
 
                           {showError &&
                             (!p.content || p.content.length < 6) && (
-                              <div className="my-[5px] text-[#F97066] text-[12px] font-[500]">
+                              <div className="my-[5px] text-customColor19 text-[12px] font-[500]">
                                 The post should be at least 6 characters long
                               </div>
                             )}
@@ -458,7 +458,7 @@ export const AddEditModal: FC<{
                                 onChange={changeImage(index)}
                               />
                             </div>
-                            <div className="flex bg-[#121b2c] rounded-br-[8px] text-[#F97066]">
+                            <div className="flex bg-customColor20 rounded-br-[8px] text-customColor19">
                               {value.length > 1 && (
                                 <div
                                   className="flex cursor-pointer gap-[4px] justify-center items-center flex-1"
@@ -505,7 +505,7 @@ export const AddEditModal: FC<{
               </>
             ) : null}
           </div>
-          <div className="relative h-[68px] flex flex-col rounded-[4px] border border-[#172034] bg-sixth">
+          <div className="relative h-[68px] flex flex-col rounded-[4px] border border-customColor6 bg-sixth">
             <div className="flex flex-1 gap-[10px] relative">
               <div className="absolute w-full h-full flex gap-[10px] justify-end items-center right-[16px]">
                 <Button
@@ -530,7 +530,7 @@ export const AddEditModal: FC<{
                   )}
                   <Button
                     onClick={schedule('draft')}
-                    className="rounded-[4px] border-2 border-[#506490]"
+                    className="rounded-[4px] border-2 border-customColor21"
                     secondary={true}
                     disabled={selectedIntegrations.length === 0}
                   >
@@ -546,7 +546,7 @@ export const AddEditModal: FC<{
                     }
                   >
                     <div className="flex justify-center items-center gap-[5px] h-full">
-                      <div className="h-full flex items-center">
+                      <div className="h-full flex items-center text-white">
                         {!canSendForPublication
                           ? 'Not matching order'
                           : postFor
@@ -571,7 +571,7 @@ export const AddEditModal: FC<{
                           </svg>
                           <div
                             onClick={postNow}
-                            className="hidden group-hover:flex hover:flex flex-col justify-center absolute left-0 top-[100%] w-full h-[40px] bg-[#B91C1C] border border-tableBorder"
+                            className="hidden group-hover:flex hover:flex flex-col justify-center absolute left-0 top-[100%] w-full h-[40px] bg-customColor22 border border-tableBorder"
                           >
                             Post now
                           </div>
@@ -586,7 +586,7 @@ export const AddEditModal: FC<{
         </div>
         <div
           className={clsx(
-            'flex gap-[20px] flex-col rounded-[4px] border-[#172034] bg-sixth flex-1 transition-all duration-700',
+            'flex gap-[20px] flex-col rounded-[4px] border-customColor6 bg-sixth flex-1 transition-all duration-700',
             !selectedIntegrations.length
               ? 'flex-grow-0 overflow-hidden'
               : 'flex-grow-1 border animate-overflow'

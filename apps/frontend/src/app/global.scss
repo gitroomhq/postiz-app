@@ -1,11 +1,12 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import "./colors.scss";
 @import "./polonto.css";
 
 body,
 html {
-  background-color: #000;
+  @apply bg-primary;
 }
 .box {
   position: relative;
@@ -33,11 +34,11 @@ html {
 }
 
 .showbox {
-  color: black;
+  @apply text-primary;
 }
 .showbox:after {
+  @apply bg-textColor;
   opacity: 1;
-  background: white;
   transition: all 0.3s ease-in-out;
 }
 .table1 {
@@ -46,10 +47,9 @@ html {
 }
 
 .table1 thead {
-  background-color: #0f1524;
+  @apply bg-customColor8 border-b border-b-fifth;
   height: 44px;
   font-size: 12px;
-  border-bottom: 1px solid #28344f;
 }
 .table1 thead th,
 .table1 tbody td {
@@ -63,21 +63,24 @@ html {
 }
 
 .swal2-modal {
-  background-color: black !important;
-  border: 2px solid #0b101b;
+  @apply bg-primary #{!important};
+  @apply border-b-[2px] border-b-sixth;
 }
 
 .swal2-modal * {
-  color: white !important;
+  @apply text-textColor #{!important};
 }
 
 .swal2-icon {
-  color: white !important;
-  border-color: white !important;
+  @apply text-textColor bg-primary #{!important};
 }
 
+.swal2-cancel {
+  @apply text-white #{!important};
+}
 .swal2-confirm {
-  background-color: #262373 !important;
+  @apply bg-customColor50 #{!important};
+  @apply text-white #{!important};
 }
 
 .w-md-editor-text {
@@ -85,12 +88,11 @@ html {
 }
 
 .react-tags {
+  @apply border border-fifth bg-input;
   position: relative;
-  border: 1px solid #28344f;
   padding-left: 16px;
   height: 44px;
   border-radius: 4px;
-  background: #131b2c;
   /* shared font styles */
   font-size: 14px;
   line-height: 1.2;
@@ -101,12 +103,12 @@ html {
 }
 
 .react-tags.is-active {
-  border-color: #4f46e5;
+  @apply border-customColor51;
 }
 
 .react-tags.is-disabled {
   opacity: 0.75;
-  background-color: #eaeef2;
+  @apply bg-customColor52;
   /* Prevent any clicking on the component */
   pointer-events: none;
   cursor: not-allowed;
@@ -142,15 +144,14 @@ html {
   padding: 0.15rem 0.5rem;
   border: 0;
   border-radius: 3px;
-  background: #7236f1;
+  @apply bg-seventh;
   /* match the font styles */
   font-size: inherit;
   line-height: inherit;
 }
 
 .react-tags__tag:hover {
-  color: #ffffff;
-  background-color: #4f46e5;
+  @apply text-textColor bg-customColor51;
 }
 
 .react-tags__tag::after {
@@ -174,11 +175,11 @@ html {
   );
   margin-left: 0.5rem;
   font-size: 0.875rem;
-  background-color: #7c7d86;
+  @apply bg-customColor53;
 }
 
 .react-tags__tag:hover::after {
-  background-color: #ffffff;
+  @apply bg-primary;
 }
 
 .react-tags__combobox {
@@ -203,7 +204,7 @@ html {
 }
 
 .react-tags__combobox-input::placeholder {
-  color: #7c7d86;
+  @apply text-customColor53;
   opacity: 1;
 }
 
@@ -216,8 +217,7 @@ html {
   right: -2px;
   max-height: 12.5rem;
   overflow-y: auto;
-  background: #131b2c;
-  border: 1px solid #afb8c1;
+  @apply bg-input border border-customColor54;
   border-radius: 6px;
   box-shadow: rgba(0, 0, 0, 0.1) 0 10px 15px -4px,
     rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
@@ -229,16 +229,15 @@ html {
 
 .react-tags__listbox-option:hover {
   cursor: pointer;
-  background: #080b13;
+  @apply bg-third;
 }
 
 .react-tags__listbox-option:not([aria-disabled='true']).is-active {
-  background: #4f46e5;
-  color: #ffffff;
+  @apply text-textColor bg-customColor51;
 }
 
 .react-tags__listbox-option[aria-disabled='true'] {
-  color: #7c7d86;
+  @apply text-customColor53;
   cursor: not-allowed;
   pointer-events: none;
 }
@@ -249,7 +248,7 @@ html {
 }
 
 .react-tags__listbox-option[aria-selected='true']:not(.is-active)::after {
-  color: #4f46e5;
+  @apply text-customColor51;
 }
 
 .react-tags__listbox-option-highlight {
@@ -260,7 +259,7 @@ html {
 /*    display: none;*/
 /*}*/
 .w-md-editor {
-  background-color: #131b2c !important;
+  @apply bg-input #{!important};
   border: 0 !important;
   box-shadow: none !important;
   border-radius: 8px !important;
@@ -269,11 +268,10 @@ html {
 }
 
 .w-md-editor-toolbar {
+  @apply bg-input border-fifth #{!important};
   height: 40px !important;
   min-height: 40px !important;
-  background-color: #131b2c !important;
   padding: 0 8px !important;
-  border-color: #28344f !important;
 }
 
 .wmde-markdown {
@@ -286,7 +284,7 @@ html {
 }
 
 .editor * {
-  color: white;
+  @apply text-textColor;
 }
 
 .editor .polonto * {
@@ -317,7 +315,7 @@ html {
 }
 
 .copilotKitWindow {
-  background-color: #0b0f1c !important;
+  @apply bg-customColor3 #{!important};
 }
 
 .copilotKitButtonIconOpen svg {
@@ -325,12 +323,12 @@ html {
 }
 
 .copilotKitButtonIconOpen:after {
+  @apply text-textColor;
   content: '';
   display: block;
   position: relative;
   z-index: 1;
   object-fit: contain;
-  color: white;
   background: url('/magic.svg') no-repeat center center / contain;
   width: 30px;
   height: 30px;
@@ -346,7 +344,8 @@ html {
 }
 
 .uppy-FileInput-container {
-  @apply cursor-pointer font-[500] flex justify-center items-center gap-[4px] text-[12px] rounded-[4px] w-[107px] h-[25px] bg-[#0b0f1c] text-white border-[2px] border-[#506490];
+  @apply cursor-pointer font-[500] flex justify-center items-center gap-[4px] text-[12px] rounded-[4px] w-[107px] h-[25px] text-textColor border-[2px];
+  @apply bg-customColor3 border-customColor21;
 }
 
 .uppy-ProgressBar {
@@ -355,7 +354,7 @@ html {
 }
 
 .uppy-ProgressBar-inner {
-  background-color: #4f46e5;
+  @apply bg-customColor51;
   height: 25px;
   border-radius: 4px;
 }
@@ -376,7 +375,7 @@ html {
   @apply animate-normalFadeOut;
 }
 
-.fill-text-white {
+.fill-text-textColor {
   -webkit-text-fill-color: white !important;
 }
 div div .set-font-family {

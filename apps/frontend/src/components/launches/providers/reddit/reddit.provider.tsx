@@ -94,7 +94,7 @@ const RedditPreview: FC = (props) => {
           <div
             key={index}
             className={clsx(
-              `bg-[#0B1416] w-full p-[10px] flex flex-col ${interClass} border-tableBorder border`
+              `bg-customColor37 w-full p-[10px] flex flex-col ${interClass} border-tableBorder border`
             )}
           >
             <div className="flex flex-col">
@@ -184,7 +184,7 @@ const RedditSettings: FC = () => {
           <div key={field.id} className="flex flex-col relative">
             <div
               onClick={deleteField(index)}
-              className="absolute -left-[10px] justify-center items-center flex -top-[10px] w-[20px] h-[20px] bg-red-600 rounded-full text-white"
+              className="absolute -left-[10px] justify-center items-center flex -top-[10px] w-[20px] h-[20px] bg-red-600 rounded-full text-textColor"
             >
               x
             </div>

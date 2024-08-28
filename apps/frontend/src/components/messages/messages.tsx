@@ -121,7 +121,7 @@ export const Message: FC<{
       <div className="flex-1 flex flex-col max-w-[534px] gap-[10px]">
         <div className="flex gap-[10px] items-center">
           <div>{isMe ? 'Me' : person?.name}</div>
-          <div className="w-[6px] h-[6px] bg-[#334155] rounded-full" />
+          <div className="w-[6px] h-[6px] bg-customColor34 rounded-full" />
           <div className="text-[14px] text-inputText">{time}</div>
         </div>
         <pre
@@ -241,8 +241,8 @@ export const Messages = () => {
   return (
     <form onSubmit={form.handleSubmit(submit)}>
       <FormProvider {...form}>
-        <div className="flex-1 flex flex-col rounded-[4px] border border-[#172034] bg-[#0b0f1c] pb-[16px]">
-          <div className="bg-[#0F1524] h-[64px] px-[24px] py-[16px] flex gap-[10px] items-center">
+        <div className="flex-1 flex flex-col rounded-[4px] border border-customColor6 bg-customColor3 pb-[16px]">
+          <div className="bg-customColor8 h-[64px] px-[24px] py-[16px] flex gap-[10px] items-center">
             <div className="w-[32px] h-[32px] rounded-full bg-amber-200">
               {!!showFrom?.picture?.path && (
                 <img
@@ -276,7 +276,7 @@ export const Messages = () => {
             </div>
           </div>
 
-          <div className="border-t border-t-[#658dac] p-[16px] flex flex-col">
+          <div className="border-t border-t-customColor46 p-[16px] flex flex-col">
             <div>
               <Textarea
                 className="!min-h-[100px] resize-none"
@@ -287,7 +287,7 @@ export const Messages = () => {
             <div className="flex justify-end">
               <button
                 className={clsx(
-                  'rounded-[4px] border border-[#506490] h-[48px] px-[24px]',
+                  'rounded-[4px] border border-customColor21 h-[48px] px-[24px]',
                   !form.formState.isValid && 'opacity-40'
                 )}
                 disabled={!form.formState.isValid}

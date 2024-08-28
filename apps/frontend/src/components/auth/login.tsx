@@ -67,11 +67,11 @@ export function Login() {
           <div
             className={`absolute z-[1] ${interClass} justify-center items-center w-full left-0 top-0 flex`}
           >
-            <div className="bg-[#0a0a0a] px-[16px]">OR</div>
+            <div className="bg-customColor15 px-[16px]">OR</div>
           </div>
         </div>
 
-        <div className="text-white">
+        <div className="text-textColor">
           <Input
             label="Email"
             {...form.register('email')}

@@ -49,12 +49,12 @@ export const AnalyticsComponent: FC = () => {
       {/*                <img className="w-8 h-8 rounded-full" src="https://via.placeholder.com/32x32"/>*/}
       {/*                <div className="grow shrink basis-0 flex-col justify-start items-start gap-1 inline-flex">*/}
       {/*                    <div className="justify-center items-center gap-1 inline-flex">*/}
-      {/*                        <div className="text-white text-sm font-medium leading-tight">Nevo David</div>*/}
+      {/*                        <div className="text-textColor text-sm font-medium leading-tight">Nevo David</div>*/}
       {/*                        <div className="text-neutral-500 text-[10px] font-normal uppercase tracking-wide">05/06/2024</div>*/}
       {/*                    </div>*/}
       {/*                    <div className="self-stretch text-neutral-400 text-xs font-normal">O atual sistema político precisa mudar para valorizar o trabalho e garantir igualdade de oportunidad</div>*/}
       {/*                    <div className="self-stretch justify-start items-center gap-1 inline-flex">*/}
-      {/*                        <div className="text-[#E4B895] text-xs font-normal">See Tweet</div>*/}
+      {/*                        <div className="text-customColor10 text-xs font-normal">See Tweet</div>*/}
       {/*                        <div className="w-4 h-4 relative"/>*/}
       {/*                    </div>*/}
       {/*                </div>*/}
@@ -63,12 +63,12 @@ export const AnalyticsComponent: FC = () => {
       {/*                <img className="w-8 h-8 rounded-full" src="https://via.placeholder.com/32x32"/>*/}
       {/*                <div className="grow shrink basis-0 flex-col justify-start items-start gap-1 inline-flex">*/}
       {/*                    <div className="justify-center items-center gap-1 inline-flex">*/}
-      {/*                        <div className="text-white text-sm font-medium leading-tight">Nevo David</div>*/}
+      {/*                        <div className="text-textColor text-sm font-medium leading-tight">Nevo David</div>*/}
       {/*                        <div className="text-neutral-500 text-[10px] font-normal uppercase tracking-wide">05/06/2024</div>*/}
       {/*                    </div>*/}
       {/*                    <div className="self-stretch text-neutral-400 text-xs font-normal">O atual sistema político precisa mudar para valorizar o trabalho e garantir igualdade de oportunidad</div>*/}
       {/*                    <div className="self-stretch justify-start items-center gap-1 inline-flex">*/}
-      {/*                        <div className="text-[#E4B895] text-xs font-normal">See Tweet</div>*/}
+      {/*                        <div className="text-customColor10 text-xs font-normal">See Tweet</div>*/}
       {/*                        <div className="w-4 h-4 relative"/>*/}
       {/*                    </div>*/}
       {/*                </div>*/}
@@ -77,12 +77,12 @@ export const AnalyticsComponent: FC = () => {
       {/*                <img className="w-8 h-8 rounded-full" src="https://via.placeholder.com/32x32"/>*/}
       {/*                <div className="grow shrink basis-0 flex-col justify-start items-start gap-1 inline-flex">*/}
       {/*                    <div className="justify-center items-center gap-1 inline-flex">*/}
-      {/*                        <div className="text-white text-sm font-medium leading-tight">Nevo David</div>*/}
+      {/*                        <div className="text-textColor text-sm font-medium leading-tight">Nevo David</div>*/}
       {/*                        <div className="text-neutral-500 text-[10px] font-normal uppercase tracking-wide">05/06/2024</div>*/}
       {/*                    </div>*/}
       {/*                    <div className="self-stretch text-neutral-400 text-xs font-normal">O atual sistema político precisa mudar para valorizar o trabalho e garantir igualdade de oportunidad</div>*/}
       {/*                    <div className="self-stretch justify-start items-center gap-1 inline-flex">*/}
-      {/*                        <div className="text-[#E4B895] text-xs font-normal">See Tweet</div>*/}
+      {/*                        <div className="text-customColor10 text-xs font-normal">See Tweet</div>*/}
       {/*                        <div className="w-4 h-4 relative"/>*/}
       {/*                    </div>*/}
       {/*                </div>*/}
@@ -91,12 +91,12 @@ export const AnalyticsComponent: FC = () => {
       {/*                <img className="w-8 h-8 rounded-full" src="https://via.placeholder.com/32x32"/>*/}
       {/*                <div className="grow shrink basis-0 flex-col justify-start items-start gap-1 inline-flex">*/}
       {/*                    <div className="justify-center items-center gap-1 inline-flex">*/}
-      {/*                        <div className="text-white text-sm font-medium leading-tight">Nevo David</div>*/}
+      {/*                        <div className="text-textColor text-sm font-medium leading-tight">Nevo David</div>*/}
       {/*                        <div className="text-neutral-500 text-[10px] font-normal uppercase tracking-wide">05/06/2024</div>*/}
       {/*                    </div>*/}
       {/*                    <div className="self-stretch text-neutral-400 text-xs font-normal">O atual sistema político precisa mudar para valorizar o trabalho e garantir igualdade de oportunidad</div>*/}
       {/*                    <div className="self-stretch justify-start items-center gap-1 inline-flex">*/}
-      {/*                        <div className="text-[#E4B895] text-xs font-normal">See Tweet</div>*/}
+      {/*                        <div className="text-customColor10 text-xs font-normal">See Tweet</div>*/}
       {/*                        <div className="w-4 h-4 relative"/>*/}
       {/*                    </div>*/}
       {/*                </div>*/}
@@ -105,12 +105,12 @@ export const AnalyticsComponent: FC = () => {
       {/*                <img className="w-8 h-8 rounded-full" src="https://via.placeholder.com/32x32"/>*/}
       {/*                <div className="grow shrink basis-0 flex-col justify-start items-start gap-1 inline-flex">*/}
       {/*                    <div className="justify-center items-center gap-1 inline-flex">*/}
-      {/*                        <div className="text-white text-sm font-medium leading-tight">Nevo David</div>*/}
+      {/*                        <div className="text-textColor text-sm font-medium leading-tight">Nevo David</div>*/}
       {/*                        <div className="text-neutral-500 text-[10px] font-normal uppercase tracking-wide">05/06/2024</div>*/}
       {/*                    </div>*/}
       {/*                    <div className="self-stretch text-neutral-400 text-xs font-normal">O atual sistema político precisa mudar para valorizar o trabalho e garantir igualdade de oportunidad</div>*/}
       {/*                    <div className="self-stretch justify-start items-center gap-1 inline-flex">*/}
-      {/*                        <div className="text-[#E4B895] text-xs font-normal">See Tweet</div>*/}
+      {/*                        <div className="text-customColor10 text-xs font-normal">See Tweet</div>*/}
       {/*                        <div className="w-4 h-4 relative"/>*/}
       {/*                    </div>*/}
       {/*                </div>*/}

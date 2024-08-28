@@ -66,7 +66,7 @@ export const Step: FC<{
           )}
         </div>
       </div>
-      <div className="mb-[4px] text-[10px] text-[#AAA] tracking-[1.2px]">
+      <div className="mb-[4px] text-[10px] text-customColor18 tracking-[1.2px]">
         STEP {step}
       </div>
       <div
@@ -107,7 +107,7 @@ const SkipOnboarding: FC = () => {
   return (
     <Button
       secondary={true}
-      className="border-[2px] border-[#506490]"
+      className="border-[2px] border-customColor21"
       onClick={onSkip}
     >
       Skip onboarding
@@ -157,7 +157,7 @@ const Welcome: FC = () => {
   }, []);
 
   return (
-    <div className="bg-sixth p-[32px] w-full max-w-[920px] mx-auto flex flex-col gap-[24px] rounded-[4px] border border-[#172034] relative">
+    <div className="bg-sixth p-[32px] w-full max-w-[920px] mx-auto flex flex-col gap-[24px] rounded-[4px] border border-customColor6 relative">
       <h1 className="text-[24px]">Onboarding</h1>
       <div className="flex">
         <Step title="Profile" step={1} currentStep={step} lastStep={lastStep} />
@@ -281,7 +281,7 @@ export const Onboarding: FC = () => {
       withCloseButton: false,
       closeOnEscape: false,
       classNames: {
-        modal: 'bg-transparent text-white',
+        modal: 'bg-transparent text-textColor',
       },
       size: '100%',
       children: <Welcome />,

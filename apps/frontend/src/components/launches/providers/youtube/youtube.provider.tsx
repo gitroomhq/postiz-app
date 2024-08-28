@@ -133,7 +133,7 @@ const YoutubePreview: FC = (props) => {
               className="rounded-full absolute -right-[5px] -bottom-[5px] z-[2]"
             />
           </div>
-          <div className="flex-1 flex flex-col leading-[16px] bg-[#F2F2F2] w-full pt-[8px] pr-[64px] pl-[12px] pb-[8px] rounded-[8px]">
+          <div className="flex-1 flex flex-col leading-[16px] bg-customColor33 w-full pt-[8px] pr-[64px] pl-[12px] pb-[8px] rounded-[8px]">
             <div className="text-[14px] font-[600]">{integration?.name}</div>
             <div className="text-[12px] font-[400] text-black/60">
               CEO @ Gitroom

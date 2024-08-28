@@ -113,12 +113,12 @@ export const LifetimeDeal = () => {
 
   return (
     <div className="flex gap-[30px]">
-      <div className="border border-[#172034] bg-sixth p-[24px] flex flex-col gap-[20px] flex-1 rounded-[4px]">
+      <div className="border border-customColor6 bg-sixth p-[24px] flex flex-col gap-[20px] flex-1 rounded-[4px]">
         <div className="text-[30px]">
           Current Package: {user?.totalChannels > 8 ? 'EXTRA' : user?.tier?.current}
         </div>
 
-        <div className="flex flex-col gap-[10px] justify-center text-[16px] text-[#AAA]">
+        <div className="flex flex-col gap-[10px] justify-center text-[16px] text-customColor18">
           {features.map((feature) => (
             <div key={feature} className="flex gap-[20px]">
               <div>
@@ -141,13 +141,13 @@ export const LifetimeDeal = () => {
         </div>
       </div>
 
-      <div className="border border-[#172034] bg-sixth p-[24px] flex flex-col gap-[20px] flex-1 rounded-[4px]">
+      <div className="border border-customColor6 bg-sixth p-[24px] flex flex-col gap-[20px] flex-1 rounded-[4px]">
         <div className="text-[30px]">
           Next Package:{' '}
           {user?.tier?.current === 'PRO' ? 'EXTRA' : !user?.tier?.current ? 'FREE' : user?.tier?.current === 'STANDARD' ? 'PRO' : 'STANDARD'}
         </div>
 
-        <div className="flex flex-col gap-[10px] justify-center text-[16px] text-[#AAA]">
+        <div className="flex flex-col gap-[10px] justify-center text-[16px] text-customColor18">
           {(user?.tier?.current === 'PRO'
             ? [`${(user?.totalChannels || 0) + 5} channels`]
             : nextFeature

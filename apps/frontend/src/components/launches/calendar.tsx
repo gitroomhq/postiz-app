@@ -281,7 +281,7 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
       const integration = await getIntegration(postInfo);
       modal.openModal({
         classNames: {
-          modal: 'bg-transparent text-white',
+          modal: 'bg-transparent text-textColor',
         },
         size: 'auto',
         withCloseButton: false,
@@ -317,7 +317,7 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
         closeOnEscape: false,
         withCloseButton: false,
         classNames: {
-          modal: 'w-[100%] max-w-[1400px] bg-transparent text-white',
+          modal: 'w-[100%] max-w-[1400px] bg-transparent text-textColor',
         },
         children: (
           <ExistingDataContextProvider value={data}>
@@ -344,7 +344,7 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
       closeOnEscape: false,
       withCloseButton: false,
       classNames: {
-        modal: 'w-[100%] max-w-[1400px] bg-transparent text-white',
+        modal: 'w-[100%] max-w-[1400px] bg-transparent text-textColor',
       },
       children: (
         <AddEditModal
@@ -372,16 +372,16 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
         ref={drop}
         className={clsx(
           'flex-col flex-1 text-[12px] pointer w-full overflow-hidden justify-center overflow-x-auto flex scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary',
-          isBeforeNow && 'bg-[#06080d]',
+          isBeforeNow && 'bg-customColor23',
           canDrop && 'bg-white/80',
-          canBeTrending && 'bg-[#eaff00]'
+          canBeTrending && 'bg-customColor24'
         )}
       >
         {postList.map((post) => (
           <div
             key={post.id}
             className={clsx(
-              'text-white p-[2.5px] relative flex flex-col justify-center items-center'
+              'text-textColor p-[2.5px] relative flex flex-col justify-center items-center'
             )}
           >
             <div className="relative w-full flex flex-col items-center p-[2.5px]">
@@ -477,7 +477,7 @@ export const CommentBox: FC<{ totalComments: number; date: dayjs.Dayjs }> = (
         mutate(`/posts`);
       },
       classNames: {
-        modal: 'bg-transparent text-white',
+        modal: 'bg-transparent text-textColor',
       },
       size: '80%',
     });
@@ -507,7 +507,7 @@ export const CommentBox: FC<{ totalComments: number; date: dayjs.Dayjs }> = (
           )}
         >
           {totalComments > 0 && (
-            <div className="absolute right-0 bottom-[10px] w-[10px] h-[10px] text-[8px] bg-red-500 z-[20] rounded-full flex justify-center items-center text-white">
+            <div className="absolute right-0 bottom-[10px] w-[10px] h-[10px] text-[8px] bg-red-500 z-[20] rounded-full flex justify-center items-center text-textColor">
               {totalComments}
             </div>
           )}

@@ -30,8 +30,8 @@ interface SpecialMessageInterface {
 
 export const OrderCompleted: FC = () => {
   return (
-    <div className="border border-[#283450] flex flex-col rounded-[6px] overflow-hidden">
-      <div className="flex items-center bg-[#0F1524] px-[24px] py-[16px] text-[20px]">
+    <div className="border border-customColor44 flex flex-col rounded-[6px] overflow-hidden">
+      <div className="flex items-center bg-customColor8 px-[24px] py-[16px] text-[20px]">
         <div className="flex-1">Order completed</div>
       </div>
       <div className="py-[16px] px-[24px] flex flex-col gap-[20px] text-[18px]">
@@ -49,8 +49,8 @@ export const Published: FC<{
 }> = (props) => {
   const { data, isSellerOrBuyer } = props;
   return (
-    <div className="border border-[#283450] flex flex-col rounded-[6px] overflow-hidden">
-      <div className="flex items-center bg-[#0F1524] px-[24px] py-[16px] text-[20px]">
+    <div className="border border-customColor44 flex flex-col rounded-[6px] overflow-hidden">
+      <div className="flex items-center bg-customColor8 px-[24px] py-[16px] text-[20px]">
         <div className="flex-1">
           {isSellerOrBuyer === 'BUYER' ? 'Your' : 'The'} post has been published
         </div>
@@ -99,7 +99,7 @@ export const PreviewPopup: FC<{
     return modal.closeAll();
   }, []);
   return (
-    <div className="bg-black p-[20px] w-full relative">
+    <div className="bg-primary p-[20px] w-full relative">
       <button
         onClick={close}
         className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
@@ -150,10 +150,10 @@ export const Offer: FC<{
     }, 0);
   }, [data?.data?.ordersItems]);
   return (
-    <div className="border border-[#283450] flex flex-col rounded-[6px] overflow-hidden">
-      <div className="flex items-center bg-[#0F1524] px-[24px] py-[16px] text-[20px]">
+    <div className="border border-customColor44 flex flex-col rounded-[6px] overflow-hidden">
+      <div className="flex items-center bg-customColor8 px-[24px] py-[16px] text-[20px]">
         <div className="flex-1">New Offer</div>
-        <div className="text-[#32D583]">${totalPrice}</div>
+        <div className="text-customColor42">${totalPrice}</div>
       </div>
       <div className="py-[16px] px-[24px] flex flex-col gap-[20px]">
         <div className="text-inputText text-[12px]">Platform</div>
@@ -275,7 +275,7 @@ export const Post: FC<{
 
     modal.openModal({
       classNames: {
-        modal: 'bg-transparent text-white',
+        modal: 'bg-transparent text-textColor',
       },
       size: 'auto',
       withCloseButton: false,
@@ -305,8 +305,8 @@ export const Post: FC<{
   }>(`/integrations/${data.data.integration}`, getIntegration);
 
   return (
-    <div className="border border-[#283450] flex flex-col rounded-[6px] overflow-hidden">
-      <div className="flex items-center bg-[#0F1524] px-[24px] py-[16px] text-[20px]">
+    <div className="border border-customColor44 flex flex-col rounded-[6px] overflow-hidden">
+      <div className="flex items-center bg-customColor8 px-[24px] py-[16px] text-[20px]">
         <div className="flex-1">
           Post Draft {capitalize(integrationData?.providerIdentifier || '')}
         </div>
@@ -336,13 +336,13 @@ export const Post: FC<{
               <div className="mt-[18px] flex gap-[10px] justify-end">
                 <Button
                   onClick={requestRevision}
-                  className="rounded-[4px] text-[14px] border-[2px] border-[#506490] !bg-sixth"
+                  className="rounded-[4px] text-[14px] border-[2px] border-customColor21 !bg-sixth"
                 >
                   Revision Needed
                 </Button>
                 <Button
                   onClick={requestApproved}
-                  className="rounded-[4px] text-[14px] border-[2px] border-[#506490] !bg-sixth"
+                  className="rounded-[4px] text-[14px] border-[2px] border-customColor21 !bg-sixth"
                 >
                   Approve
                 </Button>

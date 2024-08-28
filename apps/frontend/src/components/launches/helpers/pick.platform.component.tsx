@@ -211,7 +211,7 @@ export const PickPlatforms: FC<{
     <div
       className={clsx('flex select-none', props.singleSelect && 'gap-[10px]')}
     >
-      {props.singleSelect && (
+      {props.singleSelect && isLeft && (
         <div className="flex items-center">
           {isLeft && (
             <svg
@@ -299,7 +299,7 @@ export const PickPlatforms: FC<{
                             (p) => p.id === integration.id
                           ) === -1
                             ? 'bg-third border border-third'
-                            : 'bg-[#291259] border border-[#5826C2]'
+                            : 'bg-customColor29 border border-customColor30'
                         )}
                       >
                         <div className="flex items-center justify-center gap-[10px]">

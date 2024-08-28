@@ -8,7 +8,7 @@ export function Activate() {
           Activate your account
         </h1>
       </div>
-      <div className="text-white">
+      <div className="text-textColor">
         Thank you for registering!<br />Please check your email to activate your account.
       </div>
     </>

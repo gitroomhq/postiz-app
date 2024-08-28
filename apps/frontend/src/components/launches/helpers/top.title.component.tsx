@@ -10,7 +10,7 @@ export const TopTitle: FC<{
   const { title, children, shouldExpend, expend, collapse } = props;
 
   return (
-    <div className="h-[57px] border-b flex items-center border-[#172034] px-[16px] -mx-[16px]">
+    <div className="h-[57px] border-b flex items-center border-customColor6 px-[16px] -mx-[16px]">
       <div className="flex-1">{title}</div>
       {children}
       {shouldExpend !== undefined && (

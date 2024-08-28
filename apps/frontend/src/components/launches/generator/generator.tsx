@@ -304,7 +304,7 @@ export const GeneratorPopup = () => {
   }, []);
 
   return (
-    <div className="bg-sixth p-[32px] w-full max-w-[920px] mx-auto flex flex-col gap-[24px] rounded-[4px] border border-[#172034] relative">
+    <div className="bg-sixth p-[32px] w-full max-w-[920px] mx-auto flex flex-col gap-[24px] rounded-[4px] border border-customColor6 relative">
       <button
         onClick={closeAll}
         className="outline-none absolute right-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
@@ -383,7 +383,7 @@ export const GeneratorComponent = () => {
       title: '',
       withCloseButton: false,
       classNames: {
-        modal: 'bg-transparent text-white',
+        modal: 'bg-transparent text-textColor',
       },
       size: '100%',
       children: <GeneratorPopup />,
@@ -392,7 +392,7 @@ export const GeneratorComponent = () => {
 
   return (
     <button
-      className="text-white p-[8px] rounded-md bg-red-700 flex justify-center items-center gap-[5px] outline-none"
+      className="text-textColor p-[8px] rounded-md bg-red-700 flex justify-center items-center gap-[5px] outline-none"
       onClick={generate}
     >
       <svg

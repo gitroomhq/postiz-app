@@ -86,7 +86,7 @@ const Polonto: FC<{
     };
   }, []);
   return (
-    <div className="fixed left-0 top-0 bg-black/80 z-[300] w-full min-h-full p-[60px] animate-fade">
+    <div className="fixed left-0 top-0 bg-primary/80 z-[300] w-full min-h-full p-[60px] animate-fade">
       <div className="w-full h-full bg-sixth border-tableBorder border-2 rounded-xl pb-[20px] px-[20px] relative">
         <div className="flex">
           <div className="flex-1">
@@ -94,7 +94,7 @@ const Polonto: FC<{
           </div>
           <button
             onClick={closeModal}
-            className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root bg-black hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+            className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root bg-primary hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
             type="button"
           >
             <svg
