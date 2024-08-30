@@ -16,10 +16,24 @@
 
 <div align="center">
   <strong>
-  <h2>Maximize your launch.</h2><br />
+  <h2>Your ultimate AI social media scheduling tool</h2><br />
   <a href="https://postiz.com">Postiz</a>: An alternative to: Buffer.com, Hypefury, Twitter Hunter, Etc...<br /><br />
   </strong>
-  Schedule social media and articles.<br />Exchange or buy posts from other members.<br /> Monitor your GitHub trending, and so much more.<br />
+  Postiz offers everything you need to manage your social media posts,<br />build an audience, capture leads, and grow your business.
+</div>
+
+
+<div class="flex" align="center">
+  <br />
+  <img alt="Instagram" src="https://postiz.com/svgs/socials/Instagram.svg" width="32">
+  <img alt="Youtube" src="https://postiz.com/svgs/socials/Youtube.svg" width="32">
+  <img alt="Dribbble" src="https://postiz.com/svgs/socials/Dribbble.svg" width="32">
+  <img alt="Linkedin" src="https://postiz.com/svgs/socials/Linkedin.svg" width="32">
+  <img alt="Reddit" src="https://postiz.com/svgs/socials/Reddit.svg" width="32">
+  <img alt="TikTok" src="https://postiz.com/svgs/socials/TikTok.svg" width="32">
+  <img alt="Facebook" src="https://postiz.com/svgs/socials/Facebook.svg" width="32">
+  <img alt="Pinterest" src="https://postiz.com/svgs/socials/Pinterest.svg" width="32">
+  <img alt="Threads" src="https://postiz.com/svgs/socials/Threads.svg" width="32">
 </div>
 
 <p align="center">
@@ -28,21 +42,19 @@
   <br />
 
   <br/>
-    <a href="https://docs.gitroom.com/quickstart">Quick Start Guide</a>
+    <a href="https://platform.postiz.com">Register</a>
     ·
-    <a href="https://platform.gitroom.com">Register to the cloud</a>
-    ·
-    <a href="https://gitroom.com">Join the newsletter</a>
-    ·
-    <a href="https://discord.gitroom.com">Join Our Discord</a>
+    <a href="https://discord.postiz.com">Join Our Discord</a>
     ·
     <a href="https://twitter.com/nevodavid">X</a>
+    ·
+    <a href="https://gitroom.com">Gitroom</a>
   </p>
 
 <br />
 
 <p align="center">
-  <video src="https://github.com/user-attachments/assets/05436a01-19c8-4827-b57f-05a5e7637a67" />
+  <video src="https://github.com/user-attachments/assets/05436a01-19c8-4827-b57f-05a5e7637a67" width="100%" />
 </p>
 
 ## ✨ Features
@@ -53,11 +65,10 @@
 
 # Intro
 
-- Schedule all your social media posts and articles beforehand.
-
-- Collaborate with other team members to exchange or buy posts
-
-- Invite your team members to collaborate, comment, and schedule posts
+- Schedule all your social media posts (many AI features)
+- Measure your work with analytics.
+- Collaborate with other team members to exchange or buy posts.
+- Invite your team members to collaborate, comment, and schedule posts.
 
 ## Tech Stack
 
