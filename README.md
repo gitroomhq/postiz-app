@@ -17,7 +17,7 @@
 <div align="center">
   <strong>
   <h2>Maximize your launch.</h2><br />
-  <a href="https://gitroom.com">Gitroom</a> and <a href="https://postiz.com">Postiz</a>: An alternative to: Buffer.com, Hypefury, Twitter Hunter, Etc...<br /><br />
+  <a href="https://postiz.com">Postiz</a>: An alternative to: Buffer.com, Hypefury, Twitter Hunter, Etc...<br /><br />
   </strong>
   Schedule social media and articles.<br />Exchange or buy posts from other members.<br /> Monitor your GitHub trending, and so much more.<br />
 </div>
@@ -42,44 +42,22 @@
 <br />
 
 <p align="center">
-  <a href="https://www.youtube.com/watch?v=vLpi6NPOXwU" target="_blank">
-  <img src=".github/assets/gitroom-main-youtube.png">
-  </a>
-</p>
-
-<p align="center">
-
+  <video src="https://github.com/user-attachments/assets/05436a01-19c8-4827-b57f-05a5e7637a67" />
 </p>
 
 ## ✨ Features
 
-<p align="center">
-    <img width="99%" src=".github/assets/screen-002.png"/>
-</p>
-
-<p align="center">
-    <img width="99%" src=".github/assets/screen-003.png"/>
-</p>
-
-<p align="center">
-    <img width="99%" src=".github/assets/screen-004.png"/>
-</p>
+| ![Image 1](https://github.com/user-attachments/assets/a27ee220-beb7-4c7e-8c1b-2c44301f82ef) | ![Image 2](https://github.com/user-attachments/assets/eb5f5f15-ed90-47fc-811c-03ccba6fa8a2) |
+|--------------------------------|--------------------------------|
+| ![Image 3](https://github.com/user-attachments/assets/d51786ee-ddd8-4ef8-8138-5192e9cfe7c3) | ![Image 4](https://github.com/user-attachments/assets/91f83c89-22f6-43d6-b7aa-d2d3378289fb) |
 
 # Intro
 
 - Schedule all your social media posts and articles beforehand.
 
-- Plan your launch around GitHub trending changes
-
 - Collaborate with other team members to exchange or buy posts
 
 - Invite your team members to collaborate, comment, and schedule posts
-
-- Post to uncommon platforms such as Reddit, DEV.to, and Hashnode.
-
-- Offer your open-source deals to the entire community
-
-- Be a part of the Gitroom friends - APIs to exchange content between members
 
 ## Tech Stack
 
@@ -88,7 +66,7 @@
 - NestJS
 - Prisma (Default to PostgreSQL)
 - Redis
-- Resend (emails notifications)
+- Resend (email notifications)
 
 ## Quick Start
 To have the project up and running, please follow the [Quick Start Guide](https://docs.gitroom.com/quickstart)
