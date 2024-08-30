@@ -1,4 +1,14 @@
-import { ArrayMaxSize, ArrayMinSize, IsDefined, IsOptional, IsString, IsUrl, MinLength, ValidateIf } from 'class-validator';
+import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsDefined,
+  IsIn,
+  IsOptional,
+  IsString,
+  IsUrl,
+  MinLength,
+  ValidateIf,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateAgencyLogoDto {
@@ -51,9 +61,36 @@ export class CreateAgencyDto {
   description: string;
 
   @IsString({
-    each: true
+    each: true,
   })
   @ArrayMinSize(1)
   @ArrayMaxSize(3)
+  @IsIn(
+    [
+      'Real Estate',
+      'Fashion',
+      'Health and Fitness',
+      'Beauty',
+      'Travel',
+      'Food',
+      'Tech',
+      'Gaming',
+      'Parenting',
+      'Education',
+      'Business',
+      'Finance',
+      'DIY',
+      'Pets',
+      'Lifestyle',
+      'Sports',
+      'Entertainment',
+      'Art',
+      'Photography',
+      'Sustainability',
+    ],
+    {
+      each: true,
+    }
+  )
   niches: string[];
 }
