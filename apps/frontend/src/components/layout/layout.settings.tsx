@@ -70,7 +70,7 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
             <ShowLinkedinCompany />
             <Toaster />
             <ShowPostSelector />
-            {(user.tier !== 'FREE' || !isGeneral()) && <Onboarding />}
+            {(user.tier !== 'FREE' || !isGeneral() || process.env.isBillingEnabled === "false") && <Onboarding />}
             <Support />
             <ContinueProvider />
             <div className="min-h-[100vh] w-full max-w-[1440px] mx-auto bg-primary px-[12px] text-textColor flex flex-col">
@@ -123,7 +123,7 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
                     )}
                   </div>
                 </Link>
-                {user?.orgId && (user.tier !== 'FREE' || !isGeneral()) ? (
+                {user?.orgId && (user.tier !== 'FREE' || !isGeneral() || process.env.isBillingEnabled === "false") ? (
                   <TopMenu />
                 ) : (
                   <div />
@@ -137,7 +137,7 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
               </div>
               <div className="flex-1 flex">
                 <div className="flex-1 rounded-3xl px-[23px] py-[17px] flex flex-col">
-                  {user.tier === 'FREE' && isGeneral() ? (
+                  {(user.tier === 'FREE' && isGeneral()) && process.env.isBillingEnabled === "true" ? (
                     <>
                       <div className="text-center mb-[20px] text-xl">
                         <h1 className="text-3xl">
