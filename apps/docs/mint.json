@@ -15,18 +15,18 @@
       "to": "#612ad5"
     }
   },
-  "openapi": "https://api.gitroom.com/docs-json",
+  "openapi": "https://api.postiz.com/docs-json",
   "api": {
-    "baseUrl": "https://api.gitroom.com"
+    "baseUrl": "https://api.postiz.com"
   },
   "topbarLinks": [
     {
       "name": "Support",
-      "url": "mailto:nevo@gitroom.com"
+      "url": "mailto:nevo@postiz.com"
     },
     {
       "name": "Cloud",
-      "url": "https://platform.gitroom.com"
+      "url": "https://platform.postiz.com"
     }
   ],
   "modeToggle": {
@@ -34,23 +34,18 @@
   },
   "topbarCtaButton": {
     "type": "github",
-    "url": "https://github.com/gitroomhq/gitroom"
+    "url": "https://github.com/gitroomhq/postiz-app"
   },
   "anchors": [
     {
       "name": "Community",
       "icon": "discord",
-      "url": "https://discord.gitroom.com"
+      "url": "https://postiz.gitroom.com"
     },
-    {
-      "name": "Blog",
-      "icon": "newspaper",
-      "url": "https://gitroom.com/blog"
-    }
   ],
   "navigation": [
     {
-      "group": "How to use Gitroom",
+      "group": "How to use Postiz",
       "pages": [
         "use/analytics",
         {
@@ -84,7 +79,7 @@
   ],
   "footerSocials": {
     "twitter": "https://twitter.com/nevodavid",
-    "github": "https://github.com/gitroomhq/gitroom",
+    "github": "https://github.com/gitroomhq/postiz-app",
     "linkedin": "https://www.linkedin.com/nevodavid"
   }
 }
