@@ -38,7 +38,7 @@
 
 <p align="center">
   <br />
-  <a href="https://docs.gitroom.com" rel="dofollow"><strong>Explore the docs »</strong></a>
+  <a href="https://docs.postiz.com" rel="dofollow"><strong>Explore the docs »</strong></a>
   <br />
 
   <br/>
