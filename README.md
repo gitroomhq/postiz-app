@@ -91,6 +91,16 @@
 ## Quick Start
 To have the project up and running, please follow the [Quick Start Guide](https://docs.postiz.com/quickstart)
 
+##
+
+
 # License
 
 This repository's source code is available under the [Apache 2.0 License](LICENSE).
+
+<br /><br /><br />
+<p align="center">
+  <a href="https://www.g2.com/products/postiz/take_survey" target="blank"><img alt="Threads" src="https://github.com/user-attachments/assets/0dc24c67-e720-42dc-89fe-4d5e9efa940b" /></a>
+</p>
+
+
