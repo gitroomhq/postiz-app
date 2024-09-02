@@ -11,7 +11,6 @@ import { PermissionsService } from '@gitroom/backend/services/auth/permissions/p
 import { IntegrationsController } from '@gitroom/backend/api/routes/integrations.controller';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { SettingsController } from '@gitroom/backend/api/routes/settings.controller';
-import { BullMqModule } from '@gitroom/nestjs-libraries/bull-mq-transport/bull-mq.module';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { PostsController } from '@gitroom/backend/api/routes/posts.controller';
 import { MediaController } from '@gitroom/backend/api/routes/media.controller';
@@ -47,9 +46,6 @@ const authenticatedController = [
 @Module({
   imports: [
     UploadModule,
-    BullMqModule.forRoot({
-      connection: ioRedis,
-    }),
     ...(!!process.env.UPLOAD_DIRECTORY &&
     !!process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY
       ? [
@@ -63,7 +59,12 @@ const authenticatedController = [
         ]
       : []),
   ],
-  controllers: [StripeController, AuthController, PublicController, ...authenticatedController],
+  controllers: [
+    StripeController,
+    AuthController,
+    PublicController,
+    ...authenticatedController,
+  ],
   providers: [
     AuthService,
     StripeService,

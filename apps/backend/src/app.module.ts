@@ -4,10 +4,11 @@ import {DatabaseModule} from "@gitroom/nestjs-libraries/database/prisma/database
 import {ApiModule} from "@gitroom/backend/api/api.module";
 import {APP_GUARD} from "@nestjs/core";
 import {PoliciesGuard} from "@gitroom/backend/services/auth/permissions/permissions.guard";
+import { BullMqModule } from '@gitroom/nestjs-libraries/bull-mq-transport-new/bull.mq.module';
 
 @Global()
 @Module({
-  imports: [DatabaseModule, ApiModule],
+  imports: [BullMqModule, DatabaseModule, ApiModule],
   controllers: [],
   providers: [{
     provide: APP_GUARD,
