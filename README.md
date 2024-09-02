@@ -89,7 +89,7 @@
 - Resend (email notifications)
 
 ## Quick Start
-To have the project up and running, please follow the [Quick Start Guide](https://docs.gitroom.com/quickstart)
+To have the project up and running, please follow the [Quick Start Guide](https://docs.postiz.com/quickstart)
 
 # License
 
