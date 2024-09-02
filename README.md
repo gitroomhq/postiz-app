@@ -1,3 +1,11 @@
+
+<p align="center">
+  <a href="https://x.com/nevodavid" target="_blank">
+    <img alt="Follow me" src="https://github.com/user-attachments/assets/1562c93f-95c6-4307-8a85-e62003e26348" />
+  </a>
+  <br /><br />
+</p>
+
 <p align="center">
   <a href="https://postiz.com" target="_blank">
   <picture>
