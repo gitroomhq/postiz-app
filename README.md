@@ -77,6 +77,7 @@
 - Measure your work with analytics.
 - Collaborate with other team members to exchange or buy posts.
 - Invite your team members to collaborate, comment, and schedule posts.
+- At the moment there is no difference between the hosted version to the self-hosted version
 
 ## Tech Stack
 
@@ -84,7 +85,7 @@
 - NextJS (React)
 - NestJS
 - Prisma (Default to PostgreSQL)
-- Redis
+- Redis (BullMQ)
 - Resend (email notifications)
 
 ## Quick Start
