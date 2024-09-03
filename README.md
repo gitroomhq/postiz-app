@@ -89,8 +89,19 @@
 - Resend (email notifications)
 
 ## Quick Start
-To have the project up and running, please follow the [Quick Start Guide](https://docs.gitroom.com/quickstart)
+To have the project up and running, please follow the [Quick Start Guide](https://docs.postiz.com/quickstart)
+
+##
+
 
 # License
 
 This repository's source code is available under the [Apache 2.0 License](LICENSE).
+
+<br /><br /><br />
+
+<p align="center">
+  <a href="https://www.g2.com/products/postiz/take_survey" target="blank"><img alt="g2" src="https://github.com/user-attachments/assets/892cb74c-0b49-4589-b2f5-fbdbf7a98f66" /></a>
+</p>
+
+
