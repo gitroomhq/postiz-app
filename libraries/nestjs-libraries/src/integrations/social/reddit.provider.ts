@@ -124,6 +124,34 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
 
     const valueArray: PostResponse[] = [];
     for (const firstPostSettings of post.settings.subreddit) {
+      const postData = {
+        api_type: 'json',
+        title: firstPostSettings.value.title || '',
+        kind:
+          firstPostSettings.value.type === 'media'
+            ? 'image'
+            : firstPostSettings.value.type,
+        ...(firstPostSettings.value.flair
+          ? { flair_id: firstPostSettings.value.flair.id }
+          : {}),
+        ...(firstPostSettings.value.type === 'link'
+          ? {
+              url: firstPostSettings.value.url,
+            }
+          : {}),
+        ...(firstPostSettings.value.type === 'media'
+          ? {
+              url: `${
+                firstPostSettings.value.media[0].path.indexOf('http') === -1
+                  ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/${process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY}`
+                  : ``
+              }${firstPostSettings.value.media[0].path}`,
+            }
+          : {}),
+        text: post.message,
+        sr: firstPostSettings.value.subreddit,
+      };
+
       const {
         json: {
           data: { id, name, url },
@@ -135,33 +163,7 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
             Authorization: `Bearer ${accessToken}`,
             'Content-Type': 'application/x-www-form-urlencoded',
           },
-          body: new URLSearchParams({
-            api_type: 'json',
-            title: firstPostSettings.value.type,
-            kind:
-              firstPostSettings.value.type === 'media'
-                ? 'image'
-                : firstPostSettings.value.type,
-            ...(firstPostSettings.value.flair
-              ? { flair_id: firstPostSettings.value.flair.id }
-              : {}),
-            ...(firstPostSettings.value.type === 'link'
-              ? {
-                  url: firstPostSettings.value.url,
-                }
-              : {}),
-            ...(firstPostSettings.value.type === 'media'
-              ? {
-                  url: `${
-                    firstPostSettings.value.media[0].path.indexOf('http') === -1
-                      ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/${process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY}`
-                      : ``
-                  }${firstPostSettings.value.media[0].path}`,
-                }
-              : {}),
-            text: post.message,
-            sr: firstPostSettings.value.subreddit,
-          }),
+          body: new URLSearchParams(postData),
         })
       ).json();
 
