@@ -17,6 +17,7 @@
     "command": "rm -rf dist/apps/commands && nx run commands:build && nx run commands:command",
     "prisma-generate": "cd ./libraries/nestjs-libraries/src/database/prisma && prisma generate",
     "prisma-db-push": "cd ./libraries/nestjs-libraries/src/database/prisma && prisma db push",
+    "prisma-reset": "cd ./libraries/nestjs-libraries/src/database/prisma && prisma db push --force-reset && npx prisma db push",
     "postinstall": "npm run prisma-generate"
   },
   "private": true,
