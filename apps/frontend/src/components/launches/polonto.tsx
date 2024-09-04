@@ -19,7 +19,7 @@ import { PictureGeneratorSection } from '@gitroom/frontend/components/launches/p
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 
 const store = createStore({
-  key: 'Aqml_02mqf6YTKC0jYZ8',
+  key: process.env.NEXT_PUBLIC_POLOTNO!,
   showCredit: false,
 });
 
