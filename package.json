@@ -15,8 +15,8 @@
     "workers": "nx run workers:serve:development",
     "cron": "nx run cron:serve:development",
     "command": "rm -rf dist/apps/commands && nx run commands:build && nx run commands:command",
-    "prisma-generate": "cd ./libraries/nestjs-libraries/src/database/prisma && prisma generate",
-    "prisma-db-push": "cd ./libraries/nestjs-libraries/src/database/prisma && prisma db push",
+    "prisma-generate": "cd ./libraries/nestjs-libraries/src/database/prisma && npx prisma generate",
+    "prisma-db-push": "cd ./libraries/nestjs-libraries/src/database/prisma && npx prisma db push",
     "postinstall": "npm run prisma-generate"
   },
   "private": true,
