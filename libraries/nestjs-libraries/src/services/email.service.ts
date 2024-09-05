@@ -11,9 +11,14 @@ export class EmailService {
       return;
     }
 
+    if (!process.env.EMAIL_FROM_ADDRESS || !process.env.EMAIL_FROM_NAME) {
+      console.log('Email sender information not found in environment variables');
+      return;
+    }
+
     console.log('Sending email to', to);
     const sends = await resend.emails.send({
-      from: process.env.IS_GENERAL === 'true' ? 'Nevo <nevo@postiz.com>' : 'Nevo <nevo@postiz.com>',
+      from: `${process.env.EMAIL_FROM_NAME} <${process.env.EMAIL_FROM_ADDRESS}>`,
       to,
       subject,
       html,
