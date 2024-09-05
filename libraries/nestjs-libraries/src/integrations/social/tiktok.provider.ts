@@ -67,11 +67,9 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
         'https://www.tiktok.com/v2/auth/authorize/' +
         `?client_key=${process.env.TIKTOK_CLIENT_ID}` +
         `&redirect_uri=${encodeURIComponent(
-          `${
-            process.env.NODE_ENV === 'development' || !process.env.NODE_ENV
-              ? `https://integration.git.sn/integrations/social/tiktok`
-              : `${process.env.FRONTEND_URL}/integrations/social/tiktok`
-          }${refresh ? `?refresh=${refresh}` : ''}`
+          `${process.env.FRONTEND_URL}/integrations/social/tiktok${
+            refresh ? `?refresh=${refresh}` : ''
+          }`
         )}` +
         `&state=${state}` +
         `&response_type=code` +
@@ -92,10 +90,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       code: params.code,
       grant_type: 'authorization_code',
       code_verifier: params.codeVerifier,
-      redirect_uri:
-        process.env.NODE_ENV === 'development' || !process.env.NODE_ENV
-          ? `https://integration.git.sn/integrations/social/tiktok`
-          : `${process.env.FRONTEND_URL}/integrations/social/tiktok`,
+      redirect_uri: `${process.env.FRONTEND_URL}/integrations/social/tiktok`,
     };
 
     const { access_token, refresh_token, scope } = await (

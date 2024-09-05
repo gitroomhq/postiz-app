@@ -41,11 +41,9 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
         'https://threads.net/oauth/authorize' +
         `?client_id=${process.env.THREADS_APP_ID}` +
         `&redirect_uri=${encodeURIComponent(
-          process.env.NODE_ENV === 'development' || !process.env.NODE_ENV
-            ? `https://integration.git.sn/integrations/social/threads`
-            : `${process.env.FRONTEND_URL}/integrations/social/threads${
-                refresh ? `?refresh=${refresh}` : ''
-              }`
+          `${process.env.FRONTEND_URL}/integrations/social/threads${
+            refresh ? `?refresh=${refresh}` : ''
+          }`
         )}` +
         `&state=${state}` +
         `&scope=${encodeURIComponent(this.scopes.join(','))}`,
@@ -64,11 +62,9 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
         'https://graph.threads.net/oauth/access_token' +
           `?client_id=${process.env.THREADS_APP_ID}` +
           `&redirect_uri=${encodeURIComponent(
-            process.env.NODE_ENV === 'development' || !process.env.NODE_ENV
-              ? `https://integration.git.sn/integrations/social/threads`
-              : `${process.env.FRONTEND_URL}/integrations/social/threads${
-                  params.refresh ? `?refresh=${params.refresh}` : ''
-                }`
+            `${process.env.FRONTEND_URL}/integrations/social/threads${
+              params.refresh ? `?refresh=${params.refresh}` : ''
+            }`
           )}` +
           `&grant_type=authorization_code` +
           `&client_secret=${process.env.THREADS_APP_SECRET}` +
