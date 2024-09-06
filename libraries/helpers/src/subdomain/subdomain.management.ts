@@ -1,6 +1,11 @@
 import {allTwoLevelSubdomain} from "./all.two.level.subdomain";
 
 export function removeSubdomain(domain: string) {
+    // Check if the domain is an IP address with optional port
+    const ipRegex = /^(https?:\/\/)?(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(:\d+)?$/;
+    if (ipRegex.test(domain)) {
+        return domain; // Return the original domain if it's an IP address
+    }
     // Split the domain into its parts
     const parts = domain.split('.');
 
