@@ -53,7 +53,7 @@ function checkConfiguration() {
       Logger.warn(issue, 'Configuration issue')
     }
 
-    Logger.warn("Configuration issues found: " + checker.getIssuesCount() + ". You run run `npm run command config:check` to quickly check again.")
+    Logger.warn("Configuration issues found: " + checker.getIssuesCount() + ". You can run `npm run command config:check` to quickly check again.")
   } else {
     Logger.log("Configuration check completed without any issues.")
   }
