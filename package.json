@@ -20,7 +20,8 @@
     "prisma-generate": "cd ./libraries/nestjs-libraries/src/database/prisma && npx prisma generate",
     "prisma-db-push": "cd ./libraries/nestjs-libraries/src/database/prisma && npx prisma db push",
     "prisma-reset": "cd ./libraries/nestjs-libraries/src/database/prisma && npx prisma db push --force-reset && npx prisma db push",
-    "build-docker-image": "docker rmi localhost/postiz || true && docker build -t localhost/postiz . && docker create --name postiz -p 3000:3000 -p 4200:4200 localhost/postiz",
+    "docker-build": "docker rmi localhost/postiz || true && docker build -t localhost/postiz . ",
+	"docker-create": "docker kill postiz || true && docker rm postiz || true && docker create --name postiz -p 3000:3000 -p 4200:4200 localhost/postiz",
     "postinstall": "npm run prisma-generate"
   },
   "private": true,
