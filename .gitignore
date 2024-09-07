@@ -42,3 +42,6 @@ Thumbs.db
 
 # Next.js
 .next
+
+#Switch to pnpm
+package-lock.json
