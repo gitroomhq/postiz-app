@@ -21,6 +21,10 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { IntegrationContext } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { PreviewPopup } from '@gitroom/frontend/components/marketplace/special.message';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+dayjs.extend(isSameOrAfter);
+dayjs.extend(isSameOrBefore);
 
 export const days = [
   'Monday',
@@ -163,9 +167,12 @@ export const CalendarColumn: FC<{
   const postList = useMemo(() => {
     return posts.filter((post) => {
       const pList = dayjs.utc(post.publishDate).local();
-      return display === 'week'
-        ? pList.isBetween(getDate.startOf('hour'), getDate.endOf('hour'))
+      const check = display === 'week'
+        ? pList.isSameOrAfter(getDate.startOf('hour')) && pList.isBefore(getDate.endOf('hour'))
         : pList.format('DD/MM/YYYY') === getDate.format('DD/MM/YYYY');
+
+      console.log('check', check);
+      return check;
     });
   }, [posts, display, getDate]);
 
@@ -180,7 +187,7 @@ export const CalendarColumn: FC<{
   }, [trendings]);
 
   const isBeforeNow = useMemo(() => {
-    return getDate.isBefore(dayjs());
+    return getDate.startOf('hour').isBefore(dayjs().startOf('hour'));
   }, [getDate]);
 
   const [{ canDrop }, drop] = useDrop(() => ({
@@ -310,12 +317,12 @@ export const CalendarColumn: FC<{
       size: '80%',
       // title: `Adding posts for ${getDate.format('DD/MM/YYYY HH:mm')}`,
     });
-  }, [integrations]);
+  }, [integrations, getDate]);
 
   const addProvider = useAddProvider();
 
   return (
-    <div className="flex flex-col w-full min-h-full">
+    <div className="flex flex-col w-full min-h-full" ref={drop}>
       {display === 'month' && (
         <div className={clsx('pt-[5px]', isBeforeNow && 'bg-customColor23')}>
           {getDate.date()}
@@ -326,7 +333,6 @@ export const CalendarColumn: FC<{
           'relative flex flex-col flex-1',
           canDrop && 'bg-white/80'
         )}
-        ref={drop}
       >
         <div
           {...(canBeTrending
@@ -365,10 +371,10 @@ export const CalendarColumn: FC<{
           <div className="pb-[2.5px] px-[5px] flex-1 flex" onClick={integrations.length ? addModal : addProvider}>
             <div
               className={clsx(
-                display === 'month' ? 'flex-1 min-h-[40px]' :
+                display === 'month' ? 'flex-1 min-h-[40px] w-full' :
                 !postList.length
                   ? 'h-full w-full absolute left-0 top-0 p-[5px]'
-                  : 'h-[40px]',
+                  : 'min-h-[40px] w-full',
                 'flex items-center justify-center cursor-pointer pb-[2.5px]'
               )}
             >
