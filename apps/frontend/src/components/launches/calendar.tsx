@@ -150,7 +150,7 @@ export const Calendar = () => {
   useEffect(() => {
     setTimeout(() => {
       setFirstDisplay(display);
-    }, 10);
+    }, 1000);
   }, [display]);
 
   if (display !== firstDisplay) {
