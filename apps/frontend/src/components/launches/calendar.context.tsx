@@ -105,31 +105,6 @@ export const CalendarWeekProvider: FC<{
     display,
   });
 
-  const setFiltersWrapper = useCallback(
-    (filters: {
-      currentWeek: number;
-      currentYear: number;
-      currentMonth: number;
-      display: 'week' | 'month';
-    }) => {
-      setFilters(filters);
-      setInternalData([]);
-      window.history.replaceState(
-        null,
-        '',
-        `/launches?${
-          filters.currentWeek
-            ? `week=${filters.currentWeek}`
-            : `month=${filters.currentMonth}`
-        }&year=${filters.currentYear}`
-      );
-      setTimeout(() => {
-        mutate('/posts');
-      }, 10);
-    },
-    [filters]
-  );
-
   const params = useMemo(() => {
     return new URLSearchParams(
       filters.currentWeek
@@ -158,6 +133,32 @@ export const CalendarWeekProvider: FC<{
     refreshWhenHidden: false,
     revalidateOnFocus: false,
   });
+
+  const setFiltersWrapper = useCallback(
+    (filters: {
+      currentWeek: number;
+      currentYear: number;
+      currentMonth: number;
+      display: 'week' | 'month';
+    }) => {
+      setFilters(filters);
+      setInternalData([]);
+      window.history.replaceState(
+        null,
+        '',
+        `/launches?${
+          filters.currentWeek
+            ? `week=${filters.currentWeek}`
+            : `month=${filters.currentMonth}`
+        }&year=${filters.currentYear}`
+      );
+      setTimeout(() => {
+        swr.mutate();
+      }, 10);
+    },
+    [filters, swr.mutate]
+  );
+
   const { isLoading } = swr;
   const { posts, comments } = swr?.data || { posts: [], comments: [] };
 

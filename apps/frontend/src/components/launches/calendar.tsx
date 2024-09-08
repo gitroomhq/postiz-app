@@ -145,17 +145,7 @@ export const MonthView = () => {
 
 export const Calendar = () => {
   const { display } = useCalendar();
-  const [firstDisplay, setFirstDisplay] = useState(display);
 
-  useEffect(() => {
-    setTimeout(() => {
-      setFirstDisplay(display);
-    }, 1000);
-  }, [display]);
-
-  if (display !== firstDisplay) {
-    return <></>;
-  }
   return (
     <DNDProvider>
       {display === 'week' ? <WeekView /> : <MonthView />}
