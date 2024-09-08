@@ -113,6 +113,7 @@ export const CalendarWeekProvider: FC<{
       display: 'week' | 'month';
     }) => {
       setFilters(filters);
+      setInternalData([]);
       window.history.replaceState(
         null,
         '',
@@ -145,7 +146,6 @@ export const CalendarWeekProvider: FC<{
 
   const loadData = useCallback(
     async (url: string) => {
-      setInternalData([]);
       const data = (await fetch(`${url}?${params}`)).json();
       return data;
     },
