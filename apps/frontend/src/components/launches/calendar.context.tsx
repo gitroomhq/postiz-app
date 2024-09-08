@@ -113,7 +113,9 @@ export const CalendarWeekProvider: FC<{
       display: 'week' | 'month';
     }) => {
       setFilters(filters);
-      router.replace(
+      window.history.replaceState(
+        null,
+        '',
         `/launches?${
           filters.currentWeek
             ? `week=${filters.currentWeek}`
@@ -122,7 +124,7 @@ export const CalendarWeekProvider: FC<{
       );
       setTimeout(() => {
         mutate('/posts');
-      });
+      }, 10);
     },
     [filters]
   );
