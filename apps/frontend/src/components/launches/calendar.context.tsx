@@ -142,7 +142,7 @@ export const CalendarWeekProvider: FC<{
       const data = (await fetch(`${url}?${params}`)).json();
       return data;
     },
-    [filters]
+    [filters, params]
   );
 
   const swr = useSWR(`/posts`, loadData, {
