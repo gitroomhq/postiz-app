@@ -169,6 +169,7 @@ export const CalendarColumn: FC<{
     });
   }, [posts, display, getDate]);
 
+
   const canBeTrending = useMemo(() => {
     return !!trendings.find((trend) => {
       return dayjs
