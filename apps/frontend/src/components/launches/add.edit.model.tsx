@@ -12,7 +12,6 @@ import React, {
 import dayjs from 'dayjs';
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
 import clsx from 'clsx';
-import { commands } from '@uiw/react-md-editor';
 import { usePreventWindowUnload } from '@gitroom/react/helpers/use.prevent.window.unload';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useModals } from '@mantine/modals';
@@ -27,7 +26,6 @@ import {
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useMoveToIntegration } from '@gitroom/frontend/components/launches/helpers/use.move.to.integration';
 import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
-import { newImage } from '@gitroom/frontend/components/launches/helpers/new.image.component';
 import { MultiMediaComponent } from '@gitroom/frontend/components/media/media.component';
 import { useExpend } from '@gitroom/frontend/components/launches/helpers/use.expend';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
@@ -36,7 +34,6 @@ import { ProvidersOptions } from '@gitroom/frontend/components/launches/provider
 import { v4 as uuidv4 } from 'uuid';
 import useSWR, { useSWRConfig } from 'swr';
 import { useToaster } from '@gitroom/react/toaster/toaster';
-import { postSelector } from '@gitroom/frontend/components/post-url-selector/post.url.selector';
 import { UpDownArrow } from '@gitroom/frontend/components/launches/up.down.arrow';
 import { DatePicker } from '@gitroom/frontend/components/launches/helpers/date.picker';
 import { arrayMoveImmutable } from 'array-move';
