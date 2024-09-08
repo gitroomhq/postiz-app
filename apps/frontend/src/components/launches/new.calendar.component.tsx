@@ -1,6 +1,4 @@
 'use client';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
-import { Button } from '@gitroom/react/form/button';
 import { Fragment } from 'react';
 import { CalendarColumn } from '@gitroom/frontend/components/launches/calendar';
 import { DNDProvider } from '@gitroom/frontend/components/launches/helpers/dnd.provider';

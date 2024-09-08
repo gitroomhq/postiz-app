@@ -109,8 +109,7 @@ export const CalendarWeekProvider: FC<{
   const params = useMemo(() => {
     return new URLSearchParams({
       week: filters.currentWeek.toString(),
-      year: filters.currentYear.toString(),
-      isIsoWeek: isIsoWeek.toString(),
+      year: filters.currentYear.toString()
     }).toString();
   }, [filters]);
 

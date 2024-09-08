@@ -53,8 +53,7 @@ export class PostsController {
       this._commentsService.getAllCommentsByWeekYear(
         org.id,
         query.year,
-        query.week,
-        query.isIsoWeek === 'true'
+        query.week
       ),
     ]);
 

@@ -44,7 +44,7 @@ export class CommentsService {
     );
   }
 
-  getAllCommentsByWeekYear(orgId: string, year: number, week: number, isIsoWeek: boolean) {
-    return this._commentsRepository.getAllCommentsByWeekYear(orgId, year, week, isIsoWeek);
+  getAllCommentsByWeekYear(orgId: string, year: number, week: number) {
+    return this._commentsRepository.getAllCommentsByWeekYear(orgId, year, week);
   }
 }

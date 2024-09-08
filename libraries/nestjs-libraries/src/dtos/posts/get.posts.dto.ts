@@ -14,8 +14,4 @@ export class GetPostsDto {
   @Max(dayjs().add(10, 'year').year())
   @Min(2022)
   year: number;
-
-  @IsIn(['true', 'false'])
-  @IsString()
-  isIsoWeek: 'true' | 'false';
 }

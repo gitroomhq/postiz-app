@@ -144,44 +144,44 @@ export const Calendar = () => {
   );
 };
 
+// export const CalendarColumn: FC<{ day: number; hour: string }> = (props) => {
+//   const { day, hour } = props;
+//   const { currentWeek, currentYear } = useCalendar();
+//
+//   const getDate = useMemo(() => {
+//     const date =
+//       dayjs()
+//         .year(currentYear)
+//         .isoWeek(currentWeek)
+//         .isoWeekday(day)
+//         .format('YYYY-MM-DD') +
+//       'T' +
+//       hour +
+//       ':00';
+//     return dayjs(date);
+//   }, [currentWeek]);
+//
+//   const isBeforeNow = useMemo(() => {
+//     return getDate.isBefore(dayjs());
+//   }, [getDate]);
+//
+//   const [ref, entry] = useIntersectionObserver({
+//     threshold: 0.5,
+//     root: null,
+//     rootMargin: '0px',
+//   });
+//
+//   return (
+//     <div className="w-full h-full" ref={ref}>
+//       {!entry?.isIntersecting ? (
+//         <div />
+//       ) : (
+//         <CalendarColumnRender {...props} />
+//       )}
+//     </div>
+//   );
+// };
 export const CalendarColumn: FC<{ day: number; hour: string }> = (props) => {
-  const { day, hour } = props;
-  const { currentWeek, currentYear } = useCalendar();
-
-  const getDate = useMemo(() => {
-    const date =
-      dayjs()
-        .year(currentYear)
-        .isoWeek(currentWeek)
-        .isoWeekday(day)
-        .format('YYYY-MM-DD') +
-      'T' +
-      hour +
-      ':00';
-    return dayjs(date);
-  }, [currentWeek]);
-
-  const isBeforeNow = useMemo(() => {
-    return getDate.isBefore(dayjs());
-  }, [getDate]);
-
-  const [ref, entry] = useIntersectionObserver({
-    threshold: 0.5,
-    root: null,
-    rootMargin: '0px',
-  });
-
-  return (
-    <div className="w-full h-full" ref={ref}>
-      {!entry?.isIntersecting ? (
-        <div />
-      ) : (
-        <CalendarColumnRender {...props} />
-      )}
-    </div>
-  );
-};
-const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
   const { day, hour } = props;
   const user = useUser();
   const {
@@ -201,12 +201,13 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
     const date =
       dayjs()
         .year(currentYear)
-        .isoWeek(currentWeek)
-        .isoWeekday(day)
+        .week(currentWeek)
+        .day(day + 1)
         .format('YYYY-MM-DD') +
       'T' +
       hour +
       ':00';
+
     return dayjs(date);
   }, [currentWeek]);
 
@@ -311,6 +312,7 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
         return previewPublication(post);
       }
       const data = await (await fetch(`/posts/${post.id}`)).json();
+      const publishDate = dayjs.utc(data.posts[0].publishDate).local();
 
       modal.openModal({
         closeOnClickOutside: false,
@@ -327,7 +329,7 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
                 .slice(0)
                 .filter((f) => f.id === data.integration)
                 .map((p) => ({ ...p, picture: data.integrationPicture }))}
-              date={getDate}
+              date={publishDate}
             />
           </ExistingDataContextProvider>
         ),
@@ -361,7 +363,7 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
   const addProvider = useAddProvider();
 
   return (
-    <div className="relative flex flex-col w-full min-h-full">
+    <div className={clsx("relative flex flex-col w-full min-h-full", canDrop && 'bg-white/80')} ref={drop}>
       <div
         {...(canBeTrending
           ? {
@@ -369,11 +371,9 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
               'data-tooltip-content': 'Predicted GitHub Trending Change',
             }
           : {})}
-        ref={drop}
         className={clsx(
-          'flex-col flex-1 text-[12px] pointer w-full overflow-hidden justify-center overflow-x-auto flex scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary',
+          'flex-col flex-1 text-[12px] pointer w-full cursor-pointer overflow-hidden justify-center overflow-x-auto flex scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary',
           isBeforeNow && 'bg-customColor23',
-          canDrop && 'bg-white/80',
           canBeTrending && 'bg-customColor24'
         )}
       >
