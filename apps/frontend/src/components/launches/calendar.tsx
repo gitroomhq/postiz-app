@@ -1,6 +1,6 @@
 'use client';
 
-import React, { FC, Fragment, useCallback, useMemo } from 'react';
+import React, { FC, Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Integrations,
   useCalendar,
@@ -145,6 +145,17 @@ export const MonthView = () => {
 
 export const Calendar = () => {
   const { display } = useCalendar();
+  const [firstDisplay, setFirstDisplay] = useState(display);
+
+  useEffect(() => {
+    setTimeout(() => {
+      setFirstDisplay(display);
+    }, 10);
+  }, [display]);
+
+  if (display !== firstDisplay) {
+    return <></>;
+  }
   return (
     <DNDProvider>
       {display === 'week' ? <WeekView /> : <MonthView />}
@@ -171,7 +182,6 @@ export const CalendarColumn: FC<{
         ? pList.isSameOrAfter(getDate.startOf('hour')) && pList.isBefore(getDate.endOf('hour'))
         : pList.format('DD/MM/YYYY') === getDate.format('DD/MM/YYYY');
 
-      console.log('check', check);
       return check;
     });
   }, [posts, display, getDate]);
