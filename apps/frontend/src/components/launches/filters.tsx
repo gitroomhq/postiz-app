@@ -1,32 +1,109 @@
 'use client';
 import { useCalendar } from '@gitroom/frontend/components/launches/calendar.context';
+import clsx from 'clsx';
 import dayjs from 'dayjs';
-import {useCallback} from "react";
+import { useCallback } from 'react';
 
 export const Filters = () => {
   const week = useCalendar();
   const betweenDates =
-    dayjs().year(week.currentYear).isoWeek(week.currentWeek).startOf('isoWeek').format('DD/MM/YYYY') +
-    ' - ' +
-    dayjs().year(week.currentYear).isoWeek(week.currentWeek).endOf('isoWeek').format('DD/MM/YYYY');
+    week.display === 'week'
+      ? dayjs()
+          .year(week.currentYear)
+          .isoWeek(week.currentWeek)
+          .startOf('isoWeek')
+          .format('DD/MM/YYYY') +
+        ' - ' +
+        dayjs()
+          .year(week.currentYear)
+          .isoWeek(week.currentWeek)
+          .endOf('isoWeek')
+          .format('DD/MM/YYYY')
+      : dayjs()
+          .year(week.currentYear)
+          .month(week.currentMonth)
+          .startOf('month')
+          .format('DD/MM/YYYY') +
+        ' - ' +
+        dayjs()
+          .year(week.currentYear)
+          .month(week.currentMonth)
+          .endOf('month')
+          .format('DD/MM/YYYY');
 
-  const nextWeek = useCallback(() => {
-      week.setFilters({
-          currentWeek: week.currentWeek === 52 ? 1 : week.currentWeek + 1,
-          currentYear: week.currentWeek === 52 ? week.currentYear + 1 : week.currentYear,
-      });
-  }, [week.currentWeek, week.currentYear]);
+  const setWeek = useCallback(() => {
+    week.setFilters({
+      currentWeek: dayjs().isoWeek(),
+      currentYear: dayjs().year(),
+      currentMonth: 0,
+      display: 'week',
+    });
+  }, [week]);
 
-  const previousWeek = useCallback(() => {
-        week.setFilters({
-            currentWeek: week.currentWeek === 1 ? 52 : week.currentWeek - 1,
-            currentYear: week.currentWeek === 1 ? week.currentYear - 1 : week.currentYear,
-        });
-  }, [week.currentWeek, week.currentYear]);
+  const setMonth = useCallback(() => {
+    week.setFilters({
+      currentMonth: dayjs().month(),
+      currentWeek: 0,
+      currentYear: dayjs().year(),
+      display: 'month',
+    });
+  }, [week]);
+
+  const next = useCallback(() => {
+    week.setFilters({
+      currentWeek:
+        week.display === 'week'
+          ? week.currentWeek === 52
+            ? 1
+            : week.currentWeek + 1
+          : 0,
+      currentYear:
+        week.display === 'week'
+          ? week.currentWeek === 52
+            ? week.currentYear + 1
+            : week.currentYear
+          : week.currentMonth === 11
+          ? week.currentYear + 1
+          : week.currentYear,
+      display: week.display as any,
+      currentMonth:
+        week.display === 'week'
+          ? 0
+          : week.currentMonth === 11
+          ? 0
+          : week.currentMonth + 1,
+    });
+  }, [week.display, week.currentMonth, week.currentWeek, week.currentYear]);
+
+  const previous = useCallback(() => {
+    week.setFilters({
+      currentWeek:
+        week.display === 'week'
+          ? week.currentWeek === 1
+            ? 52
+            : week.currentWeek - 1
+          : 0,
+      currentYear:
+        week.display === 'week'
+          ? week.currentWeek === 1
+            ? week.currentYear - 1
+            : week.currentYear
+          : week.currentMonth === 0
+          ? week.currentYear - 1
+          : week.currentYear,
+      display: week.display as any,
+      currentMonth:
+        week.display === 'week'
+          ? 0
+          : week.currentMonth === 0
+          ? 11
+          : week.currentMonth - 1,
+    });
+  }, [week.display, week.currentMonth, week.currentWeek, week.currentYear]);
 
   return (
-    <div className="h-[20px] text-textColor flex gap-[8px] items-center select-none">
-      <div onClick={previousWeek}>
+    <div className="text-textColor flex gap-[8px] items-center select-none">
+      <div onClick={previous}>
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="20"
@@ -40,8 +117,12 @@ export const Filters = () => {
           />
         </svg>
       </div>
-      <div>Week {week.currentWeek}</div>
-      <div onClick={nextWeek}>
+      <div className="w-[80px] text-center">
+        {week.display === 'week'
+          ? `Week ${week.currentWeek}`
+          : `${dayjs().month(week.currentMonth).format('MMMM')}`}
+      </div>
+      <div onClick={next}>
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="20"
@@ -55,7 +136,25 @@ export const Filters = () => {
           />
         </svg>
       </div>
-      <div>{betweenDates}</div>
+      <div className="flex-1">{betweenDates}</div>
+      <div
+        className={clsx(
+          'border border-tableBorder p-[10px]',
+          week.display === 'week' && 'bg-tableBorder'
+        )}
+        onClick={setWeek}
+      >
+        Week
+      </div>
+      <div
+        className={clsx(
+          'border border-tableBorder p-[10px]',
+          week.display === 'month' && 'bg-tableBorder'
+        )}
+        onClick={setMonth}
+      >
+        Month
+      </div>
     </div>
   );
 };

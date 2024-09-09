@@ -17,16 +17,33 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Post, Integration } from '@prisma/client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { isGeneral } from '@gitroom/react/helpers/is.general';
+import isoWeek from 'dayjs/plugin/isoWeek';
+import weekOfYear from 'dayjs/plugin/weekOfYear';
+
+dayjs.extend(isoWeek);
+dayjs.extend(weekOfYear);
 
 const CalendarContext = createContext({
   currentWeek: dayjs().week(),
   currentYear: dayjs().year(),
+  currentMonth: dayjs().month(),
   comments: [] as Array<{ date: string; total: number }>,
   integrations: [] as Integrations[],
   trendings: [] as string[],
   posts: [] as Array<Post & { integration: Integration }>,
-  setFilters: (filters: { currentWeek: number; currentYear: number }) => {},
-  changeDate: (id: string, date: dayjs.Dayjs) => {},
+  reloadCalendarView: () => {/** empty **/},
+  display: 'week',
+  setFilters: (filters: {
+    currentWeek: number;
+    currentYear: number;
+    currentMonth: number;
+    display: 'week' | 'month';
+  }) => {
+    /** empty **/
+  },
+  changeDate: (id: string, date: dayjs.Dayjs) => {
+    /** empty **/
+  },
 });
 
 export interface Integrations {
@@ -40,28 +57,21 @@ export interface Integrations {
 }
 
 function getWeekNumber(date: Date) {
-    // Copy date so don't modify original
-    const targetDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-    // Set to nearest Thursday: current date + 4 - current day number
-    // Make Sunday's day number 7
-    targetDate.setUTCDate(targetDate.getUTCDate() + 4 - (targetDate.getUTCDay() || 7));
-    // Get first day of year
-    const yearStart = new Date(Date.UTC(targetDate.getUTCFullYear(), 0, 1));
-    // Calculate full weeks to nearest Thursday
-    return Math.ceil((((targetDate.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-}
-
-function isISOWeek(date: Date, weekNumber: number): boolean {
-    // Copy date so don't modify original
-    const targetDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-    // Set to nearest Thursday: current date + 4 - current day number
-    // Make Sunday's day number 7
-    targetDate.setUTCDate(targetDate.getUTCDate() + 4 - (targetDate.getUTCDay() || 7));
-    // Get first day of year
-    const yearStart = new Date(Date.UTC(targetDate.getUTCFullYear(), 0, 1));
-    // Calculate full weeks to nearest Thursday
-    const isoWeekNo = Math.ceil((((targetDate.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-    return isoWeekNo === weekNumber;
+  // Copy date so don't modify original
+  const targetDate = new Date(
+    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
+  );
+  // Set to nearest Thursday: current date + 4 - current day number
+  // Make Sunday's day number 7
+  targetDate.setUTCDate(
+    targetDate.getUTCDate() + 4 - (targetDate.getUTCDay() || 7)
+  );
+  // Get first day of year
+  const yearStart = new Date(Date.UTC(targetDate.getUTCFullYear(), 0, 1));
+  // Calculate full weeks to nearest Thursday
+  return Math.ceil(
+    ((targetDate.getTime() - yearStart.getTime()) / 86400000 + 1) / 7
+  );
 }
 
 export const CalendarWeekProvider: FC<{
@@ -70,64 +80,72 @@ export const CalendarWeekProvider: FC<{
 }> = ({ children, integrations }) => {
   const fetch = useFetch();
   const [internalData, setInternalData] = useState([] as any[]);
-  const [trendings, setTrendings] = useState<string[]>([]);
-  const { mutate } = useSWRConfig();
+  const [trendings] = useState<string[]>([]);
   const searchParams = useSearchParams();
-  const router = useRouter();
 
-  useEffect(() => {
-    (async () => {
-      if (isGeneral()) {
-        return [];
-      }
-      setTrendings(await (await fetch('/posts/predict-trending')).json());
-    })();
-  }, []);
-
+  const display = searchParams.get('month') ? 'month' : 'week';
   const [filters, setFilters] = useState({
-    currentWeek: +(searchParams.get('week') || getWeekNumber(new Date())),
+    currentWeek:
+      display === 'week'
+        ? +(searchParams.get('week') || getWeekNumber(new Date()))
+        : 0,
+    currentMonth:
+      display === 'week' ? 0 : +(searchParams.get('month') || dayjs().month()),
     currentYear: +(searchParams.get('year') || dayjs().year()),
+    display,
   });
 
-  const isIsoWeek = useMemo(() => {
-    return isISOWeek(new Date(), filters.currentWeek);
-  }, [filters]);
-
-  const setFiltersWrapper = useCallback(
-    (filters: { currentWeek: number; currentYear: number }) => {
-      setFilters(filters);
-      router.replace(
-        `/launches?week=${filters.currentWeek}&year=${filters.currentYear}`
-      );
-      setTimeout(() => {
-        mutate('/posts');
-      });
-    },
-    [filters]
-  );
-
   const params = useMemo(() => {
-    return new URLSearchParams({
-      week: filters.currentWeek.toString(),
-      year: filters.currentYear.toString(),
-      isIsoWeek: isIsoWeek.toString(),
-    }).toString();
+    return new URLSearchParams(
+      filters.currentWeek
+        ? {
+            week: filters.currentWeek.toString(),
+            year: filters.currentYear.toString(),
+          }
+        : {
+            year: filters.currentYear.toString(),
+            month: (filters.currentMonth + 1).toString(),
+          }
+    ).toString();
   }, [filters]);
 
   const loadData = useCallback(
-    async (url: string) => {
-      const data = (await fetch(`${url}?${params}`)).json();
+    async () => {
+      const data = (await fetch(`/posts?${params}`)).json();
       return data;
     },
-    [filters]
+    [filters, params]
   );
 
-  const swr = useSWR(`/posts`, loadData, {
+  const swr = useSWR(`/posts-${params}`, loadData, {
     refreshInterval: 3600000,
     refreshWhenOffline: false,
     refreshWhenHidden: false,
     revalidateOnFocus: false,
   });
+
+  const setFiltersWrapper = useCallback(
+    (filters: {
+      currentWeek: number;
+      currentYear: number;
+      currentMonth: number;
+      display: 'week' | 'month';
+    }) => {
+      setFilters(filters);
+      setInternalData([]);
+      window.history.replaceState(
+        null,
+        '',
+        `/launches?${
+          filters.currentWeek
+            ? `week=${filters.currentWeek}`
+            : `month=${filters.currentMonth}`
+        }&year=${filters.currentYear}`
+      );
+    },
+    [filters, swr.mutate]
+  );
+
   const { isLoading } = swr;
   const { posts, comments } = swr?.data || { posts: [], comments: [] };
 
@@ -158,6 +176,7 @@ export const CalendarWeekProvider: FC<{
     <CalendarContext.Provider
       value={{
         trendings,
+        reloadCalendarView: swr.mutate,
         ...filters,
         posts: isLoading ? [] : internalData,
         integrations,
