@@ -1,5 +1,5 @@
 ---
-name: "Build Tag"
+name: "Build Containers"
 
 on:
   push:
@@ -25,10 +25,14 @@ jobs:
       - name: docker build
         run: /var/run/docker-build.sh
 
+      - name: Get date
+        run: |
+          echo "DATE=$(date +'%s')" >> "$GITHUB_ENV"
+
       - name: docker tag
         run: |
-          docker tag localhost/postiz ghcr.io/githubhq/postiz-app:${{ GITHUB_REF_NAME }}
-          docker push ghcr.io/githubhq/postiz-app:${{ GITHUB_REF_NAME }}
+          docker tag localhost/postiz ghcr.io/githubhq/postiz-app:${{ env.DATE }}
+          docker push ghcr.io/githubhq/postiz-app:${{ env.DATE }}
 
-          docker tag localhost/postiz-devcontainer ghcr.io/githubhq/postiz-app:${{ GITHUB_REF_NAME }}
-          docker push ghcr.io/githubhq/postiz-devcontainer:${{ GITHUB_REF_NAME }}
+          docker tag localhost/postiz-devcontainer ghcr.io/githubhq/postiz-app:${{ env.DATE }}
+          docker push ghcr.io/githubhq/postiz-devcontainer:${{ env.DATE }}
