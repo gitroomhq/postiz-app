@@ -2,6 +2,7 @@
 name: "Build Tag"
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - '*'
