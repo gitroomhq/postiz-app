@@ -15,6 +15,9 @@ EXPOSE 3000
 
 RUN mkdir -p /config
 
+COPY var/docker/entrypoint.sh /app/entrypoint.sh
+COPY var/docker/supervisord.conf /etc/supervisord.conf
+COPY var/docker/supervisord /app/supervisord_available_configs/
 COPY .env.example /config/.env
 
 VOLUME /config
@@ -28,10 +31,7 @@ COPY nx.json tsconfig.base.json package.json package-lock.json /app/
 COPY apps /app/apps/
 COPY libraries /app/libraries/
 
-RUN npm ci --no-fund && npm run build
-
-COPY var/docker/entrypoint.sh /app/entrypoint.sh
-COPY var/docker/supervisord/* /app/supervisord_configs/
+RUN npm ci --no-fund && npx nx run-many --target=build --projects=frontend,backend,workers,cron
 
 LABEL org.opencontainers.image.title="Postiz App (DevContainer)"
 
