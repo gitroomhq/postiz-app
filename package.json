@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "npx nx run-many --target=serve --projects=frontend,backend,workers --parallel=4",
     "dev:stripe": "npx concurrently \"stripe listen --forward-to localhost:3000/stripe\" \"npm run dev\"",
-    "build": "npx nx run-many --target=build --projects=frontend,backend,workers",
+    "build": "npx nx run-many --target=build --projects=frontend,backend,workers,cron",
     "start:prod": "node dist/apps/backend/main.js",
     "start:prod:frontend": "nx run frontend:serve:production",
     "start:prod:workers": "node dist/apps/workers/main.js",
