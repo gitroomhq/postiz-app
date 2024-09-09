@@ -12,7 +12,8 @@ import { isGeneral } from '@gitroom/react/helpers/is.general';
 import PlausibleProvider from 'next-plausible';
 import clsx from 'clsx';
 
-const chakra = Chakra_Petch({ weight: '400', subsets: ['latin'] });
+// See: https://stackoverflow.com/a/76484168
+const chakra = Chakra_Petch({ weight: '400', subsets: ['latin'], display: 'swap', adjustFontFallback: false });
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   return (
