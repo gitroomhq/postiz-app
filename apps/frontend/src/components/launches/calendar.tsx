@@ -1,6 +1,13 @@
 'use client';
 
-import React, { FC, Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  FC,
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import {
   Integrations,
   useCalendar,
@@ -159,7 +166,14 @@ export const CalendarColumn: FC<{
 }> = (props) => {
   const { getDate, randomHour } = props;
   const user = useUser();
-  const { integrations, posts, trendings, changeDate, display } = useCalendar();
+  const {
+    integrations,
+    posts,
+    trendings,
+    changeDate,
+    display,
+    reloadCalendarView,
+  } = useCalendar();
 
   const toaster = useToaster();
   const modal = useModals();
@@ -168,14 +182,15 @@ export const CalendarColumn: FC<{
   const postList = useMemo(() => {
     return posts.filter((post) => {
       const pList = dayjs.utc(post.publishDate).local();
-      const check = display === 'week'
-        ? pList.isSameOrAfter(getDate.startOf('hour')) && pList.isBefore(getDate.endOf('hour'))
-        : pList.format('DD/MM/YYYY') === getDate.format('DD/MM/YYYY');
+      const check =
+        display === 'week'
+          ? pList.isSameOrAfter(getDate.startOf('hour')) &&
+            pList.isBefore(getDate.endOf('hour'))
+          : pList.format('DD/MM/YYYY') === getDate.format('DD/MM/YYYY');
 
       return check;
     });
   }, [posts, display, getDate]);
-
 
   const canBeTrending = useMemo(() => {
     return !!trendings.find((trend) => {
@@ -282,6 +297,7 @@ export const CalendarColumn: FC<{
           <ExistingDataContextProvider value={data}>
             <AddEditModal
               reopenModal={editPost(post)}
+              mutate={reloadCalendarView}
               integrations={integrations
                 .slice(0)
                 .filter((f) => f.id === data.integration)
@@ -308,6 +324,7 @@ export const CalendarColumn: FC<{
       children: (
         <AddEditModal
           integrations={integrations.slice(0).map((p) => ({ ...p }))}
+          mutate={reloadCalendarView}
           date={
             randomHour ? getDate.hour(Math.floor(Math.random() * 24)) : getDate
           }
@@ -368,11 +385,15 @@ export const CalendarColumn: FC<{
           ))}
         </div>
         {!isBeforeNow && (
-          <div className="pb-[2.5px] px-[5px] flex-1 flex" onClick={integrations.length ? addModal : addProvider}>
+          <div
+            className="pb-[2.5px] px-[5px] flex-1 flex"
+            onClick={integrations.length ? addModal : addProvider}
+          >
             <div
               className={clsx(
-                display === 'month' ? 'flex-1 min-h-[40px] w-full' :
-                !postList.length
+                display === 'month'
+                  ? 'flex-1 min-h-[40px] w-full'
+                  : !postList.length
                   ? 'h-full w-full absolute left-0 top-0 p-[5px]'
                   : 'min-h-[40px] w-full',
                 'flex items-center justify-center cursor-pointer pb-[2.5px]'

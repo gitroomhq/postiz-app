@@ -32,7 +32,7 @@ import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.titl
 import { PickPlatforms } from '@gitroom/frontend/components/launches/helpers/pick.platform.component';
 import { ProvidersOptions } from '@gitroom/frontend/components/launches/providers.options';
 import { v4 as uuidv4 } from 'uuid';
-import useSWR, { useSWRConfig } from 'swr';
+import useSWR from 'swr';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { UpDownArrow } from '@gitroom/frontend/components/launches/up.down.arrow';
 import { DatePicker } from '@gitroom/frontend/components/launches/helpers/date.picker';
@@ -53,10 +53,10 @@ export const AddEditModal: FC<{
   date: dayjs.Dayjs;
   integrations: Integrations[];
   reopenModal: () => void;
+  mutate: () => void;
 }> = (props) => {
-  const { date, integrations, reopenModal } = props;
+  const { date, integrations, reopenModal, mutate } = props;
   const [dateState, setDateState] = useState(date);
-  const { mutate } = useSWRConfig();
 
   // hook to open a new modal
   const modal = useModals();
@@ -243,7 +243,7 @@ export const AddEditModal: FC<{
         await fetch(`/posts/${existingData.group}`, {
           method: 'DELETE',
         });
-        mutate('/posts');
+        mutate();
         modal.closeAll();
         return;
       }
@@ -321,7 +321,7 @@ export const AddEditModal: FC<{
 
       existingData.group = uuidv4();
 
-      mutate('/posts');
+      mutate();
       toaster.show(
         !existingData.integration
           ? 'Added successfully'

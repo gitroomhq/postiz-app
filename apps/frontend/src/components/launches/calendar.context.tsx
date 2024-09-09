@@ -31,6 +31,7 @@ const CalendarContext = createContext({
   integrations: [] as Integrations[],
   trendings: [] as string[],
   posts: [] as Array<Post & { integration: Integration }>,
+  reloadCalendarView: () => {/** empty **/},
   display: 'week',
   setFilters: (filters: {
     currentWeek: number;
@@ -175,6 +176,7 @@ export const CalendarWeekProvider: FC<{
     <CalendarContext.Provider
       value={{
         trendings,
+        reloadCalendarView: swr.mutate,
         ...filters,
         posts: isLoading ? [] : internalData,
         integrations,
