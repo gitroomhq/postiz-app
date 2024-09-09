@@ -20,6 +20,8 @@
     "prisma-generate": "cd ./libraries/nestjs-libraries/src/database/prisma && npx prisma generate",
     "prisma-db-push": "cd ./libraries/nestjs-libraries/src/database/prisma && npx prisma db push",
     "prisma-reset": "cd ./libraries/nestjs-libraries/src/database/prisma && npx prisma db push --force-reset && npx prisma db push",
+    "docker-build": "./var/docker/docker-build.sh",
+    "docker-create": "./var/docker/docker-create.sh",
     "postinstall": "npm run prisma-generate"
   },
   "private": true,
