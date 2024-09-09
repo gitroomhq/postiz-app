@@ -1,5 +1,13 @@
+# This Dockerfile is used for producing 3 container images. 
+#
+# base - which is thrown away, that contains node and the basic infrastructure. 
+# devcontainer - which is used for development, and contains the source code and the node_modules.
+# dist - which is used for production, and contains the built source code and the node_modules.
+
+ARG NODE_VERSION="20.17"
+
 # Base image
-FROM docker.io/node:20.17-alpine3.19 AS base
+FROM docker.io/node:${NODE_VERSION}-alpine3.19 AS base
 
 ## Just reduce unccessary noise in the logs.
 ENV NPM_CONFIG_UPDATE_NOTIFIER=false
