@@ -28,7 +28,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.CONTAINER_TOKEN }}
+          password: ${{ github.token }}
 
       - name: docker build
         run: npm run docker-build
