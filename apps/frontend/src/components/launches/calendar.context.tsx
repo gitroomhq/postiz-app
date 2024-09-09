@@ -110,7 +110,7 @@ export const CalendarWeekProvider: FC<{
 
   const loadData = useCallback(
     async (url: string) => {
-      const data = (await fetch(`${url}?${params}`)).json();
+      const data = (await fetch(`/posts${url}?${params}`)).json();
       return data;
     },
     [filters, params]
