@@ -1,43 +1,52 @@
-# Foundation image
-FROM registry.fedoraproject.org/fedora-minimal:40 AS foundation
+# Base image
+FROM docker.io/node:20.17-alpine3.19 AS base
 
-RUN microdnf install --nodocs --noplugins --setopt=keepcache=0 --setopt=install_weak_deps=0 -y \
-	npm \
-	node \
-	&& microdnf clean all
+ENV NPM_CONFIG_UPDATE_NOTIFIER=false
+ENV NEXT_TELEMETRY_DISABLED=1
 
-# Builder image
-FROM foundation AS builder
+RUN apk add --no-cache \
+	bash=5.2.21-r0 \
+	supervisor=4.2.5-r4
 
-RUN mkdir /src
-
-COPY . /src
-
-WORKDIR /src
-
-RUN npx nx reset
-RUN npm run build
-
-# Output image
-FROM foundation AS dist
-
-LABEL org.opencontainers.image.source=https://github.com/gitroomhq/postiz-app
-LABEL org.opencontainers.image.title="Postiz App"
-
-RUN mkdir -p /config /app
-
-VOLUME /config
-
-COPY --from=builder /src/dist /app/dist/
-COPY --from=builder /src/package.json /app/
-COPY --from=builder /src/nx.json /app/
-
-COPY .env.example /config/.env
-COPY var/docker-entrypoint.sh /app/entrypoint.sh
+WORKDIR /app
 
 EXPOSE 4200
 EXPOSE 3000
 
-WORKDIR /app
+RUN mkdir -p /config
+
+COPY .env.example /config/.env
+
+VOLUME /config
+
+LABEL org.opencontainers.image.source=https://github.com/gitroomhq/postiz-app
+
+# Builder image
+FROM base AS devcontainer
+
+COPY nx.json tsconfig.base.json package.json package-lock.json /app/
+COPY apps /app/apps/
+COPY libraries /app/libraries/
+
+RUN npm ci --no-fund && npm run build
+
+COPY var/docker/entrypoint.sh /app/entrypoint.sh
+COPY var/docker/supervisord/* /app/supervisord_configs/
+
+LABEL org.opencontainers.image.title="Postiz App (DevContainer)"
+
+ENTRYPOINT ["/app/entrypoint.sh"]
+
+# Output image
+FROM base AS dist
+
+COPY --from=devcontainer /app/node_modules/ /app/node_modules/
+COPY --from=devcontainer /app/dist/ /app/dist/
+
+COPY package.json nx.json /app/
+COPY var/docker/entrypoint.sh /app/entrypoint.sh
+
+## Labels at the bottom, because CI will eventially add dates, commit hashes, etc.
+LABEL org.opencontainers.image.title="Postiz App (Production)"
 
 ENTRYPOINT ["/app/entrypoint.sh"]
