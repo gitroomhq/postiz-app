@@ -23,7 +23,7 @@ jobs:
           password: ${{ github.token }}
 
       - name: docker build
-        run: /var/run/docker-build.sh
+        run: ./var/run/docker-build.sh
 
       - name: docker tag
         run: |
