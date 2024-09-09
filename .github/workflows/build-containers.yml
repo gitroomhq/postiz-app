@@ -15,14 +15,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20.17'
-          cache: 'npm'
-          cache-dependency-path: |
-            **/package-lock.json
-
       - name: Login to ghcr
         uses: docker/login-action@v3
         with:
@@ -31,7 +23,7 @@ jobs:
           password: ${{ github.token }}
 
       - name: docker build
-        run: npm run docker-build
+        run: /var/run/docker-build.sh
 
       - name: docker tag
         run: |
