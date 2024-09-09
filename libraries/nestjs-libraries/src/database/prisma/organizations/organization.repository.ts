@@ -187,7 +187,7 @@ export class OrganizationRepository {
             role: Role.SUPERADMIN,
             user: {
               create: {
-                activated: body.provider !== 'LOCAL',
+                activated: body.provider !== 'LOCAL' || !process.env.RESEND_API_KEY,
                 email: body.email,
                 password: body.password
                   ? AuthService.hashPassword(body.password)

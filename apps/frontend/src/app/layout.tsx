@@ -1,18 +1,14 @@
 import interClass from '@gitroom/react/helpers/inter.font';
-
 export const dynamic = 'force-dynamic';
 import './global.scss';
 import 'react-tooltip/dist/react-tooltip.css';
 import '@copilotkit/react-ui/styles.css';
-
 import LayoutContext from '@gitroom/frontend/components/layout/layout.context';
 import { ReactNode } from 'react';
-import { Chakra_Petch } from 'next/font/google';
 import { isGeneral } from '@gitroom/react/helpers/is.general';
 import PlausibleProvider from 'next-plausible';
 import clsx from 'clsx';
-
-const chakra = Chakra_Petch({ weight: '400', subsets: ['latin'] });
+import "@fontsource/chakra-petch";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   return (
@@ -24,7 +20,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           sizes="any"
         />
       </head>
-      <body className={clsx(chakra.className, 'text-primary dark')}>
+      <body className={clsx('chakra-petch', 'text-primary dark')}>
         <PlausibleProvider domain={isGeneral() ? "postiz.com" : "gitroom.com"}>
           <LayoutContext>{children}</LayoutContext>
         </PlausibleProvider>
