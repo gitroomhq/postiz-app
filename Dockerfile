@@ -13,8 +13,6 @@ WORKDIR /app
 EXPOSE 4200
 EXPOSE 3000
 
-RUN mkdir -p /config
-
 COPY var/docker/entrypoint.sh /app/entrypoint.sh
 COPY var/docker/supervisord.conf /etc/supervisord.conf
 COPY var/docker/supervisord /app/supervisord_available_configs/
