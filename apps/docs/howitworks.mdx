@@ -8,13 +8,13 @@ Unlike other NX project, this project has one `.env` file that is shared between
 It makes it easier to develop and deploy the project.<br /><br />
 When deploying to websites like [Railway](https://railway.app) or [Heroku](https://heroku.com), you can use a shared environment variables for all the apps.<br /><br />
 
-**At the moment it has 6 project:**
+**At the moment it has 6 projects:**
 
-- **Backend** - NestJS based system
-- **Workers** - NestJS based workers connected to a Redis Queue.
-- **Cron**    - NestJS scheduler to run cron jobs.
-- **Frontend** - NextJS based control panel.
-- **Docs** - Mintlify based documentation website.
+- [Frontend](#frontend) - Provides the Web user interface, talks to the Backend.
+- [Backend](#backend) - Does all the real work, provides an API for the frontend, and posts work to the redis queue.
+- [Workers](#worker) - Consumes work from the Redis Queue.
+- [Cron](#cron) - Run jobs at scheduled times.
+- [Docs](#docs) - This documentation site!
 
 <img
   src="/images/arch.png"
