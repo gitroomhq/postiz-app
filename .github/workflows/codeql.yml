@@ -3,7 +3,16 @@ name: "Code Quality  Analysis"
 
 on:
   push:
+    branches:
+      - main
+    paths:
+      - apps/*
+      - libraries/*
+
   pull_request:
+    paths:
+      - apps/*
+      - libraries/*
 
 jobs:
   analyze:
