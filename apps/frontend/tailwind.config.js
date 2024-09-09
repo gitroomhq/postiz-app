@@ -149,6 +149,7 @@ module.exports = {
       }),
       screens: {
         custom: { raw: '(max-height: 800px)' },
+        xs: { max: '401px'} ,
       },
     },
   },
