@@ -109,8 +109,8 @@ export const CalendarWeekProvider: FC<{
   }, [filters]);
 
   const loadData = useCallback(
-    async (url: string) => {
-      const data = (await fetch(`/posts${url}?${params}`)).json();
+    async () => {
+      const data = (await fetch(`/posts?${params}`)).json();
       return data;
     },
     [filters, params]
@@ -141,9 +141,6 @@ export const CalendarWeekProvider: FC<{
             : `month=${filters.currentMonth}`
         }&year=${filters.currentYear}`
       );
-      setTimeout(() => {
-        swr.mutate();
-      }, 10);
     },
     [filters, swr.mutate]
   );
