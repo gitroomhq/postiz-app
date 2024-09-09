@@ -1,6 +1,7 @@
 # Base image
 FROM docker.io/node:20.17-alpine3.19 AS base
 
+## Just reduce unccessary noise in the logs.
 ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 ENV NEXT_TELEMETRY_DISABLED=1
 
@@ -22,6 +23,8 @@ VOLUME /config
 
 LABEL org.opencontainers.image.source=https://github.com/gitroomhq/postiz-app
 
+ENTRYPOINT ["/app/entrypoint.sh"]
+
 # Builder image
 FROM base AS devcontainer
 
@@ -33,8 +36,6 @@ RUN npm ci --no-fund && npx nx run-many --target=build --projects=frontend,backe
 
 LABEL org.opencontainers.image.title="Postiz App (DevContainer)"
 
-ENTRYPOINT ["/app/entrypoint.sh"]
-
 # Output image
 FROM base AS dist
 
@@ -42,9 +43,6 @@ COPY --from=devcontainer /app/node_modules/ /app/node_modules/
 COPY --from=devcontainer /app/dist/ /app/dist/
 
 COPY package.json nx.json /app/
-COPY var/docker/entrypoint.sh /app/entrypoint.sh
 
-## Labels at the bottom, because CI will eventially add dates, commit hashes, etc.
+## Labels at the bottom, because CI will eventually add dates, commit hashes, etc.
 LABEL org.opencontainers.image.title="Postiz App (Production)"
-
-ENTRYPOINT ["/app/entrypoint.sh"]
