@@ -79,19 +79,8 @@ export const CalendarWeekProvider: FC<{
 }> = ({ children, integrations }) => {
   const fetch = useFetch();
   const [internalData, setInternalData] = useState([] as any[]);
-  const [trendings, setTrendings] = useState<string[]>([]);
-  const { mutate } = useSWRConfig();
+  const [trendings] = useState<string[]>([]);
   const searchParams = useSearchParams();
-  const router = useRouter();
-
-  useEffect(() => {
-    (async () => {
-      if (isGeneral()) {
-        return [];
-      }
-      setTrendings(await (await fetch('/posts/predict-trending')).json());
-    })();
-  }, []);
 
   const display = searchParams.get('month') ? 'month' : 'week';
   const [filters, setFilters] = useState({
@@ -127,7 +116,7 @@ export const CalendarWeekProvider: FC<{
     [filters, params]
   );
 
-  const swr = useSWR(`/posts`, loadData, {
+  const swr = useSWR(`/posts-${params}`, loadData, {
     refreshInterval: 3600000,
     refreshWhenOffline: false,
     refreshWhenHidden: false,
