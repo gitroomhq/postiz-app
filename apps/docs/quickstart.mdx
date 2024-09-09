@@ -2,6 +2,10 @@
 title: 'Quickstart'
 ---
 
+At the moment it is necessary to build the project locally - some dependencies 
+like redis and postgres can run as docker containers, but there is no docker 
+container for Postiz just yet.
+
 ## Prerequisites
 
 To run the project you need to have multiple things:
@@ -17,25 +21,29 @@ To run the project you need to have multiple things:
 
 A complete guide of how to install NodeJS can be found [here](https://nodejs.org/en/download/).
 
-### PostgreSQL (or any other SQL database)
+### PostgreSQL (or any other SQL database) & Redis
 
-Make sure you have PostgreSQL installed on your machine.<br />
-If you don't, you can install [Docker](https://www.docker.com/products/docker-desktop) and run:
+Make sure you have PostgreSQL installed on your machine.
 
-```bash
+#### Option A) Postgres and Redis as Single containers
+
+You can install [Docker](https://www.docker.com/products/docker-desktop) and run:
+
+```bash Terminal
 docker run -e POSTGRES_USER=root -e POSTGRES_PASSWORD=your_password --name postgres -p 5432:5432 -d postgres
-```
-
-### Redis
-
-Make sure you have Redis installed on your machine.<br />
-If you don't, you can install [Docker](https://www.docker.com/products/docker-desktop) and run:
-
-```bash
 docker run --name redis -p 6379:6379 -d redis
 ```
 
-## Installation
+#### Option B) Postgres and Redis as docker-compose
+
+Download the [docker-compose.yaml file here](https://raw.githubusercontent.com/gitroomhq/postiz-app/main/docker-compose.dev.yaml), 
+or grab it from the repository in the next step.
+
+```bash Terminal
+docker compose -f "docker-compose.dev.yaml" up
+```
+
+## Build Postiz
 
 <Steps>
   <Step title="Clone the repository">
@@ -44,7 +52,7 @@ git clone https://github.com/gitroomhq/gitroom
 ```
   </Step>
 
-  <Step title="Copy environment variables">
+  <Step title="Set environment variables">
 Copy the `.env.example` file to `.env` and fill in the values
 
 ```bash .env
@@ -77,24 +85,16 @@ IS_GENERAL="true" # required for now
   </Step>
 
   <Step title="Install the dependencies">
-
 ```bash Terminal
 npm install
 ```
-
   </Step>
 
-{' '}
-<Step title="Setup postgres & redis via docker compose">
-  Using this you can skip the redis and postgres steps from above. This will
-  also give you pg-admin to check the database. ```bash Terminal docker compose
-  -f "docker-compose.dev.yaml" up ```
-</Step>
-
-{' '}
-<Step title="Generate the prisma client and run the migrations">
-  ```bash Terminal npm run prisma-db-push ```
-</Step>
+  <Step title="Generate the prisma client and run the migrations">
+```bash Terminal
+npm run prisma-db-push
+```
+  </Step>
 
   <Step title="Run the project">
 ```bash Terminal
