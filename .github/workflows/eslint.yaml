@@ -3,7 +3,18 @@ name: ESLint
 
 on:
   push:
+    branches:
+      - main
+    paths:
+      - package.json
+      - apps/**
+      - libraries/**
+
   pull_request:
+    paths:
+      - package.json
+      - apps/**
+      - libraries/**
 
 jobs:
   eslint:
