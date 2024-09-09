@@ -31,6 +31,7 @@
     "@copilotkit/react-textarea": "1.1.0",
     "@copilotkit/react-ui": "1.1.0",
     "@copilotkit/runtime": "1.1.0",
+    "@fontsource/chakra-petch": "^5.0.22",
     "@hookform/resolvers": "^3.3.4",
     "@mantine/core": "^5.10.5",
     "@mantine/dates": "^5.10.5",
