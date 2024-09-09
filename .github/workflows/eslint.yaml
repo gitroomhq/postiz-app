@@ -27,7 +27,7 @@ jobs:
 
       - name: Run ESLint
         run: npx eslint apps/${{ matrix.service }}/
-          --config .eslintrc.json
+          --config apps/${{ matrix.service }}/.eslintrc.json
           --format @microsoft/eslint-formatter-sarif
           --output-file apps/${{ matrix.service }}/eslint-results.sarif
         continue-on-error: true
