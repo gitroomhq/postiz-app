@@ -24,7 +24,7 @@ jobs:
           password: ${{ github.token }}
 
       - name: docker build
-        run: ./var/run/docker-build.sh
+        run: ./var/docker/docker-build.sh
 
       - name: Get date
         run: |
