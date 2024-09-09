@@ -7,7 +7,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN apk add --no-cache \
 	bash=5.2.21-r0 \
-	supervisor=4.2.5-r4
+	supervisor=4.2.5-r4 \
+	make \
+	build-base
 
 WORKDIR /app
 
