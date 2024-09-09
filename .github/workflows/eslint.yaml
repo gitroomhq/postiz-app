@@ -7,14 +7,14 @@ on:
       - main
     paths:
       - package.json
-      - apps/*
-      - libraries/*
+      - apps/**
+      - libraries/**
 
   pull_request:
     paths:
       - package.json
-      - apps/*
-      - libraries/*
+      - apps/**
+      - libraries/**
 
 jobs:
   eslint:

@@ -6,13 +6,13 @@ on:
     branches:
       - main
     paths:
-      - apps/*
-      - libraries/*
+      - apps/**
+      - libraries/**
 
   pull_request:
     paths:
-      - apps/*
-      - libraries/*
+      - apps/**
+      - libraries/**
 
 jobs:
   analyze:
