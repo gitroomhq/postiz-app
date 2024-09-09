@@ -56,7 +56,7 @@ git clone https://github.com/gitroomhq/gitroom
 Copy the `.env.example` file to `.env` and fill in the values
 
 ```bash .env
-DATABASE_URL="postgres database URL"
+DATABASE_URL="postgres database URL i.g. postgresql://postiz-local:postiz-local-pwd@0.0.0.0:5432/postiz-db-local"
 REDIS_URL="redis database URL"
 JWT_SECRET="random string for your JWT secret, make it long"
 FRONTEND_URL="By default: http://localhost:4200"
@@ -81,10 +81,10 @@ CLOUDFLARE_BUCKET_URL="Cloudflare R2 Backet URL"
 NX_ADD_PLUGINS=false
 IS_GENERAL="true" # required for now
 ```
+
   </Step>
 
   <Step title="Install the dependencies">
-
 ```bash Terminal
 npm install
 ```
