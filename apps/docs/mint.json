@@ -61,6 +61,15 @@
       "pages": [
         "introduction",
         "quickstart",
+		{
+		  "group": "Install",
+		  "pages": [
+			"installation/development",
+			"installation/docker",
+			"installation/docker-compose",
+			"installation/kubernetes-helm"
+		  ]
+		},
         "howitworks",
         "emails",
         "github",
@@ -73,9 +82,15 @@
             "providers/articles"
           ]
         },
-        "providers/how-to-add-provider"
+		"support"
       ]
-    }
+    },
+	{
+		  "group": "Developer Guide",
+		  "pages": [
+            "developer-guide/how-to-add-provider"
+		  ]
+	}
   ],
   "footerSocials": {
     "twitter": "https://twitter.com/nevodavid",
