@@ -32,8 +32,8 @@ jobs:
 
       - name: docker tag
         run: |
-          docker tag localhost/postiz ghcr.io/githubhq/postiz-app:${{ env.DATE }}
-          docker push ghcr.io/githubhq/postiz-app:${{ env.DATE }}
+          docker tag localhost/postiz ghcr.io/gitroomhq/postiz-app:${{ env.DATE }}
+          docker push ghcr.io/gitroomhq/postiz-app:${{ env.DATE }}
 
-          docker tag localhost/postiz-devcontainer ghcr.io/githubhq/postiz-app:${{ env.DATE }}
-          docker push ghcr.io/githubhq/postiz-devcontainer:${{ env.DATE }}
+          docker tag localhost/postiz-devcontainer ghcr.io/gitroomhq/postiz-app:${{ env.DATE }}
+          docker push ghcr.io/gitroomhq/postiz-devcontainer:${{ env.DATE }}
