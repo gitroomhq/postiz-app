@@ -42,3 +42,7 @@ Thumbs.db
 
 # Next.js
 .next
+
+# Vim files
+**/*.swp
+**/*.swo

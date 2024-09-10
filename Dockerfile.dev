@@ -1,4 +1,4 @@
-# This Dockerfile is used for producing 3 container images. 
+# This Dockerfile is used for producing 3 container images.
 #
 # base - which is thrown away, that contains node and the basic infrastructure. 
 # devcontainer - which is used for development, and contains the source code and the node_modules.
