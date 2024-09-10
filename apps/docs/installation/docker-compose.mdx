@@ -1,4 +1,30 @@
+---
+title: Docker Compose
+---
+
+import EarlyDoc from '/snippets/earlydoc.mdx';
+import DockerDatabase from '/snippets/docker-database.mdx';
+import DockerEnvvarApps from '/snippets/docker-envvar-apps.mdx';
+
+<EarlyDoc />
+<DockerDatabase />
+
+# Example `docker-compose.yml` file
+
+```yaml
 services:
+  postiz:
+  	image: ghcr.io/gitroomhq/postiz-app:latest
+	container_name: postiz
+	restart: always
+	volumes:
+	  - ./config:/config/ # Should contain your .env file
+	ports:
+	  - 4200:4200
+	  - 3000:3000
+	networks:
+	  - postiz-network
+
   postiz-postgres:
     image: postgres:14.5
     container_name: postiz-postgres
@@ -38,3 +64,6 @@ volumes:
 networks:
   postiz-network:
     external: false
+```
+
+<DockerEnvvarApps />

@@ -17,8 +17,8 @@ export default async function AuthLayout({
     <>
       <ReturnUrlComponent />
       <div className="absolute left-0 top-0 z-[0] h-[100vh] w-[100vw] overflow-hidden bg-loginBg bg-contain bg-no-repeat bg-left-top" />
-      <div className="relative z-[1] pr-[100px] flex justify-end items-center h-[100vh] w-[100vw] overflow-hidden">
-        <div className="w-[557px] flex h-[614px] bg-loginBox bg-contain">
+      <div className="relative z-[1] px-3 lg:pr-[100px] xs:mt-[70px] flex justify-center lg:justify-end items-center h-[100vh] w-[100vw] overflow-hidden">
+        <div className="w-full max-w-lg h-[614px] flex flex-col bg-loginBox bg-no-repeat bg-contain">
           <div className="w-full relative">
             <div className="custom:fixed custom:text-left custom:left-[20px] custom:justify-start custom:top-[20px] absolute -top-[100px] text-textColor justify-center items-center w-full flex gap-[10px]">
               <Image
@@ -61,7 +61,7 @@ export default async function AuthLayout({
               </div>
             </div>
           </div>
-          <div className="p-[32px] absolute w-[557px] h-[614px] text-textColor">
+          <div className="p-[32px] w-full h-[614px] text-textColor">
             {children}
           </div>
           <div className="flex flex-1 flex-col">

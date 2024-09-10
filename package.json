@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "npx nx run-many --target=serve --projects=frontend,backend,workers --parallel=4",
     "dev:stripe": "npx concurrently \"stripe listen --forward-to localhost:3000/stripe\" \"npm run dev\"",
-    "build": "npx nx run-many --target=build --projects=frontend,backend,workers",
+    "build": "npx nx run-many --target=build --projects=frontend,backend,workers,cron",
     "start:prod": "node dist/apps/backend/main.js",
     "start:prod:frontend": "nx run frontend:serve:production",
     "start:prod:workers": "node dist/apps/workers/main.js",
@@ -20,6 +20,8 @@
     "prisma-generate": "cd ./libraries/nestjs-libraries/src/database/prisma && npx prisma generate",
     "prisma-db-push": "cd ./libraries/nestjs-libraries/src/database/prisma && npx prisma db push",
     "prisma-reset": "cd ./libraries/nestjs-libraries/src/database/prisma && npx prisma db push --force-reset && npx prisma db push",
+    "docker-build": "./var/docker/docker-build.sh",
+    "docker-create": "./var/docker/docker-create.sh",
     "postinstall": "npm run prisma-generate"
   },
   "private": true,

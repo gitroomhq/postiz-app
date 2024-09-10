@@ -48,19 +48,18 @@ export class PostsController {
     @GetOrgFromRequest() org: Organization,
     @Query() query: GetPostsDto
   ) {
-    const [posts, comments] = await Promise.all([
+    const [posts] = await Promise.all([
       this._postsService.getPosts(org.id, query),
-      this._commentsService.getAllCommentsByWeekYear(
-        org.id,
-        query.year,
-        query.week,
-        query.isIsoWeek === 'true'
-      ),
+      // this._commentsService.getAllCommentsByWeekYear(
+      //   org.id,
+      //   query.year,
+      //   query.week
+      // ),
     ]);
 
     return {
       posts,
-      comments,
+      // comments,
     };
   }
 

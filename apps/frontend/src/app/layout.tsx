@@ -1,5 +1,4 @@
 import interClass from '@gitroom/react/helpers/inter.font';
-
 export const dynamic = 'force-dynamic';
 import './global.scss';
 import 'react-tooltip/dist/react-tooltip.css';

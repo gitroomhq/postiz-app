@@ -116,10 +116,9 @@ export class CommentsRepository {
     orgId: string,
     year: number,
     week: number,
-    isIsoWeek: boolean
   ) {
     const dateYear = dayjs().year(year);
-    const date = isIsoWeek ? dateYear.isoWeek(week) : dateYear.week(week);
+    const date = dateYear.isoWeek(week);
     const startDate = date.startOf('isoWeek').subtract(2, 'days').toDate();
     const endDate = date.endOf('isoWeek').add(2, 'days').toDate();
 
