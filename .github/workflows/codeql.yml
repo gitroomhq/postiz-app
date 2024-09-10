@@ -7,11 +7,13 @@ on:
       - main
     paths:
       - apps/**
+      - !apps/docs/**
       - libraries/**
 
   pull_request:
     paths:
       - apps/**
+      - !apps/docs/**
       - libraries/**
 
 jobs:
