@@ -234,7 +234,7 @@ export const Subreddit: FC<{
           )}
           {value.type === 'media' && (
             <div className="flex flex-col">
-              <div className="w-full h-[10px] bg-[#131B2C] rounded-tr-[8px] rounded-tl-[8px]" />
+              <div className="w-full h-[10px] bg-input rounded-tr-[8px] rounded-tl-[8px]" />
               <div className="flex flex-col text-nowrap">
                 <MultiMediaComponent
                   description=""

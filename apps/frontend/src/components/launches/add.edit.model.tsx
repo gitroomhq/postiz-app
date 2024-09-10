@@ -12,7 +12,6 @@ import React, {
 import dayjs from 'dayjs';
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
 import clsx from 'clsx';
-import { commands } from '@uiw/react-md-editor';
 import { usePreventWindowUnload } from '@gitroom/react/helpers/use.prevent.window.unload';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useModals } from '@mantine/modals';
@@ -27,16 +26,14 @@ import {
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useMoveToIntegration } from '@gitroom/frontend/components/launches/helpers/use.move.to.integration';
 import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
-import { newImage } from '@gitroom/frontend/components/launches/helpers/new.image.component';
 import { MultiMediaComponent } from '@gitroom/frontend/components/media/media.component';
 import { useExpend } from '@gitroom/frontend/components/launches/helpers/use.expend';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { PickPlatforms } from '@gitroom/frontend/components/launches/helpers/pick.platform.component';
 import { ProvidersOptions } from '@gitroom/frontend/components/launches/providers.options';
 import { v4 as uuidv4 } from 'uuid';
-import useSWR, { useSWRConfig } from 'swr';
+import useSWR from 'swr';
 import { useToaster } from '@gitroom/react/toaster/toaster';
-import { postSelector } from '@gitroom/frontend/components/post-url-selector/post.url.selector';
 import { UpDownArrow } from '@gitroom/frontend/components/launches/up.down.arrow';
 import { DatePicker } from '@gitroom/frontend/components/launches/helpers/date.picker';
 import { arrayMoveImmutable } from 'array-move';
@@ -56,10 +53,10 @@ export const AddEditModal: FC<{
   date: dayjs.Dayjs;
   integrations: Integrations[];
   reopenModal: () => void;
+  mutate: () => void;
 }> = (props) => {
-  const { date, integrations, reopenModal } = props;
+  const { date, integrations, reopenModal, mutate } = props;
   const [dateState, setDateState] = useState(date);
-  const { mutate } = useSWRConfig();
 
   // hook to open a new modal
   const modal = useModals();
@@ -246,7 +243,7 @@ export const AddEditModal: FC<{
         await fetch(`/posts/${existingData.group}`, {
           method: 'DELETE',
         });
-        mutate('/posts');
+        mutate();
         modal.closeAll();
         return;
       }
@@ -324,7 +321,7 @@ export const AddEditModal: FC<{
 
       existingData.group = uuidv4();
 
-      mutate('/posts');
+      mutate();
       toaster.show(
         !existingData.integration
           ? 'Added successfully'
@@ -384,7 +381,7 @@ export const AddEditModal: FC<{
           instructions="You are an assistant that help the user to schedule their social media posts, everytime somebody write something, try to use a function call, if not prompt the user that the request is invalid and you are here to assists with social media posts"
         />
       )}
-      <div className={clsx('flex gap-[20px] bg-black')}>
+      <div className={clsx('flex p-[10px] rounded-[4px] bg-primary gap-[20px]')}>
         <div
           className={clsx(
             'flex flex-col gap-[16px] transition-all duration-700 whitespace-nowrap',
@@ -393,7 +390,7 @@ export const AddEditModal: FC<{
               : 'w-0 overflow-hidden'
           )}
         >
-          <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-[#172034] bg-[#0B101B] p-[16px] pt-0">
+          <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-customColor6 bg-sixth p-[16px] pt-0">
             <TopTitle title={existingData?.group ? 'Edit Post' : 'Create Post'}>
               <div className="flex items-center">
                 <PostToOrganization
@@ -425,7 +422,7 @@ export const AddEditModal: FC<{
                   <Fragment key={`edit_${index}`}>
                     <div>
                       <div className="flex gap-[4px]">
-                        <div className="flex-1 editor text-white">
+                        <div className="flex-1 editor text-textColor">
                           <Editor
                             order={index}
                             height={value.length > 1 ? 150 : 250}
@@ -444,7 +441,7 @@ export const AddEditModal: FC<{
 
                           {showError &&
                             (!p.content || p.content.length < 6) && (
-                              <div className="my-[5px] text-[#F97066] text-[12px] font-[500]">
+                              <div className="my-[5px] text-customColor19 text-[12px] font-[500]">
                                 The post should be at least 6 characters long
                               </div>
                             )}
@@ -458,7 +455,7 @@ export const AddEditModal: FC<{
                                 onChange={changeImage(index)}
                               />
                             </div>
-                            <div className="flex bg-[#121b2c] rounded-br-[8px] text-[#F97066]">
+                            <div className="flex bg-customColor20 rounded-br-[8px] text-customColor19">
                               {value.length > 1 && (
                                 <div
                                   className="flex cursor-pointer gap-[4px] justify-center items-center flex-1"
@@ -505,7 +502,7 @@ export const AddEditModal: FC<{
               </>
             ) : null}
           </div>
-          <div className="relative h-[68px] flex flex-col rounded-[4px] border border-[#172034] bg-[#0B101B]">
+          <div className="relative h-[68px] flex flex-col rounded-[4px] border border-customColor6 bg-sixth">
             <div className="flex flex-1 gap-[10px] relative">
               <div className="absolute w-full h-full flex gap-[10px] justify-end items-center right-[16px]">
                 <Button
@@ -530,7 +527,7 @@ export const AddEditModal: FC<{
                   )}
                   <Button
                     onClick={schedule('draft')}
-                    className="rounded-[4px] border-2 border-[#506490]"
+                    className="rounded-[4px] border-2 border-customColor21"
                     secondary={true}
                     disabled={selectedIntegrations.length === 0}
                   >
@@ -546,7 +543,7 @@ export const AddEditModal: FC<{
                     }
                   >
                     <div className="flex justify-center items-center gap-[5px] h-full">
-                      <div className="h-full flex items-center">
+                      <div className="h-full flex items-center text-white">
                         {!canSendForPublication
                           ? 'Not matching order'
                           : postFor
@@ -571,7 +568,7 @@ export const AddEditModal: FC<{
                           </svg>
                           <div
                             onClick={postNow}
-                            className="hidden group-hover:flex hover:flex flex-col justify-center absolute left-0 top-[100%] w-full h-[40px] bg-[#B91C1C] border border-tableBorder"
+                            className="hidden group-hover:flex hover:flex flex-col justify-center absolute left-0 top-[100%] w-full h-[40px] bg-customColor22 border border-tableBorder"
                           >
                             Post now
                           </div>
@@ -586,7 +583,7 @@ export const AddEditModal: FC<{
         </div>
         <div
           className={clsx(
-            'flex gap-[20px] flex-col rounded-[4px] border-[#172034] bg-[#0B101B] flex-1 transition-all duration-700',
+            'flex gap-[20px] flex-col rounded-[4px] border-customColor6 bg-sixth flex-1 transition-all duration-700',
             !selectedIntegrations.length
               ? 'flex-grow-0 overflow-hidden'
               : 'flex-grow-1 border animate-overflow'

@@ -4,6 +4,7 @@ import { ReactNode, useCallback } from 'react';
 import { FetchWrapperComponent } from '@gitroom/helpers/utils/custom.fetch';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { isGeneral } from '@gitroom/react/helpers/is.general';
+import { useReturnUrl } from '@gitroom/frontend/app/auth/return.url.component';
 
 export default function LayoutContext(params: { children: ReactNode }) {
   if (params?.children) {
@@ -14,16 +15,33 @@ export default function LayoutContext(params: { children: ReactNode }) {
   return <></>;
 }
 function LayoutContextInner(params: { children: ReactNode }) {
+  const returnUrl = useReturnUrl();
+
   const afterRequest = useCallback(
     async (url: string, options: RequestInit, response: Response) => {
+      const reloadOrOnboarding =
+        response?.headers?.get('reload') ||
+        response?.headers?.get('onboarding');
+
+      if (reloadOrOnboarding) {
+        const getAndClear = returnUrl.getAndClear();
+        if (getAndClear) {
+          window.location.href = getAndClear;
+          return true;
+        }
+      }
+
       if (response?.headers?.get('onboarding')) {
         window.location.href = isGeneral()
           ? '/launches?onboarding=true'
           : '/analytics?onboarding=true';
+
+        return true;
       }
 
       if (response?.headers?.get('reload')) {
         window.location.reload();
+        return true;
       }
 
       if (response.status === 401) {

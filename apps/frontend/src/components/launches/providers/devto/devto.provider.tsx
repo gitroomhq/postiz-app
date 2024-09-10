@@ -35,7 +35,7 @@ const DevtoPreview: FC = () => {
     <div
       className={clsx(
         font.className,
-        'font-[800] flex h-[1000px] w-[699.8px] rounded-[10px] bg-[#181818] overflow-hidden overflow-y-auto flex-col gap-[32px]'
+        'font-[800] flex h-[1000px] w-[699.8px] rounded-[10px] bg-customColor32 overflow-hidden overflow-y-auto flex-col gap-[32px]'
       )}
     >
       {!!coverPicture?.path && (

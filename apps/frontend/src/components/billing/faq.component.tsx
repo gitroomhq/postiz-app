@@ -89,7 +89,7 @@ export const FAQSection: FC<{ title: string; description: string }> = (
           onClick={(e) => {
             e.stopPropagation();
           }}
-          className={`mt-[16px] w-full text-wrap ${interClass} font-[400] text-[16px] text-[#D3D3D3] select-text`}
+          className={`mt-[16px] w-full text-wrap ${interClass} font-[400] text-[16px] text-customColor17 select-text`}
           dangerouslySetInnerHTML={{ __html: description }}
         />
       </div>

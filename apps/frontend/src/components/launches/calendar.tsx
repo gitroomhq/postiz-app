@@ -1,6 +1,13 @@
 'use client';
 
-import React, { FC, useCallback, useMemo } from 'react';
+import React, {
+  FC,
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import {
   Integrations,
   useCalendar,
@@ -17,14 +24,16 @@ import { Integration, Post, State } from '@prisma/client';
 import { useAddProvider } from '@gitroom/frontend/components/launches/add.provider.component';
 import { CommentComponent } from '@gitroom/frontend/components/launches/comments/comment.component';
 import { useSWRConfig } from 'swr';
-import { useIntersectionObserver } from '@uidotdev/usehooks';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { IntegrationContext } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { PreviewPopup } from '@gitroom/frontend/components/marketplace/special.message';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+dayjs.extend(isSameOrAfter);
+dayjs.extend(isSameOrBefore);
 
 export const days = [
-  '',
   'Monday',
   'Tuesday',
   'Wednesday',
@@ -33,206 +42,155 @@ export const days = [
   'Saturday',
   'Sunday',
 ];
-export const hours = [
-  '00:00',
-  '01:00',
-  '02:00',
-  '03:00',
-  '04:00',
-  '05:00',
-  '06:00',
-  '07:00',
-  '08:00',
-  '09:00',
-  '10:00',
-  '11:00',
-  '12:00',
-  '13:00',
-  '14:00',
-  '15:00',
-  '16:00',
-  '17:00',
-  '18:00',
-  '19:00',
-  '20:00',
-  '21:00',
-  '22:00',
-  '23:00',
-];
+export const hours = Array.from({ length: 24 }, (_, i) => i);
+
+export const WeekView = () => {
+  const { currentYear, currentWeek } = useCalendar();
+
+  return (
+    <div className="flex flex-col h-screen overflow-hidden text-textColor flex-1">
+      <div className="flex-1">
+        <div className="grid grid-cols-8 bg-customColor31 gap-[1px] border-customColor31 border rounded-[10px]">
+          <div className="bg-customColor20 sticky top-0 z-10 bg-gray-900"></div>
+          {days.map((day, index) => (
+            <div
+              key={day}
+              className="sticky top-0 z-10 bg-customColor20 p-2 text-center"
+            >
+              <div>{day}</div>
+            </div>
+          ))}
+          {hours.map((hour) => (
+            <Fragment key={hour}>
+              <div className="p-2 pr-4 bg-secondary text-center items-center justify-center flex">
+                {hour.toString().padStart(2, '0')}:00
+              </div>
+              {days.map((day, indexDay) => (
+                <Fragment key={`${day}-${hour}`}>
+                  <div className="relative bg-secondary">
+                    <CalendarColumn
+                      getDate={dayjs()
+                        .year(currentYear)
+                        .week(currentWeek)
+                        .day(indexDay + 1)
+                        .hour(hour)
+                        .startOf('hour')}
+                    />
+                  </div>
+                </Fragment>
+              ))}
+            </Fragment>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export const MonthView = () => {
+  const { currentYear, currentMonth } = useCalendar();
+
+  const calendarDays = useMemo(() => {
+    const startOfMonth = dayjs(new Date(currentYear, currentMonth, 1));
+
+    // Calculate the day offset for Monday (isoWeekday() returns 1 for Monday)
+    const startDayOfWeek = startOfMonth.isoWeekday(); // 1 for Monday, 7 for Sunday
+    const daysBeforeMonth = startDayOfWeek - 1; // Days to show from the previous month
+
+    // Get the start date (Monday of the first week that includes this month)
+    const startDate = startOfMonth.subtract(daysBeforeMonth, 'day');
+
+    // Create an array to hold the calendar days (6 weeks * 7 days = 42 days max)
+    const calendarDays = [];
+    let currentDay = startDate;
+
+    for (let i = 0; i < 42; i++) {
+      let label = 'current-month';
+      if (currentDay.month() < currentMonth) label = 'previous-month';
+      if (currentDay.month() > currentMonth) label = 'next-month';
+
+      calendarDays.push({
+        day: currentDay,
+        label,
+      });
+
+      // Move to the next day
+      currentDay = currentDay.add(1, 'day');
+    }
+
+    return calendarDays;
+  }, [currentYear, currentMonth]);
+
+  return (
+    <div className="flex flex-col h-screen overflow-hidden text-textColor flex-1">
+      <div className="flex-1 flex">
+        <div className="grid grid-cols-7 grid-rows-[40px_auto] bg-customColor31 gap-[1px] border-customColor31 border rounded-[10px] flex-1">
+          {days.map((day) => (
+            <div
+              key={day}
+              className="sticky top-0 z-10 bg-customColor20 p-2 text-center"
+            >
+              <div>{day}</div>
+            </div>
+          ))}
+          {calendarDays.map((date, index) => (
+            <div
+              key={index}
+              className="bg-secondary text-center items-center justify-center flex min-h-[100px]"
+            >
+              <CalendarColumn
+                getDate={dayjs(date.day).endOf('day')}
+                randomHour={true}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const Calendar = () => {
-  const { currentWeek, currentYear, comments } = useCalendar();
-
-  const firstDay = useMemo(() => {
-    return dayjs().year(currentYear).isoWeek(currentWeek).isoWeekday(1);
-  }, [currentYear, currentWeek]);
+  const { display } = useCalendar();
 
   return (
     <DNDProvider>
-      <div className="select-none">
-        <div className="grid grid-cols-8 text-center border-tableBorder border-r">
-          {days.map((day, index) => (
-            <div
-              className="border-tableBorder gap-[4px] border-l border-b h-[36px] border-t flex items-center justify-center bg-input text-[14px] sticky top-0 z-[100]"
-              key={day}
-            >
-              <div>{day} </div>
-              <div className="text-[12px]">
-                {day && `(${firstDay.add(index - 1, 'day').format('DD/MM')})`}
-              </div>
-            </div>
-          ))}
-          {hours.map((hour) =>
-            days.map((day, index) => (
-              <>
-                {index === 0 ? (
-                  <div
-                    className="border-tableBorder border-l border-b h-[216px]"
-                    key={day + hour}
-                  >
-                    {['00', '10', '20', '30', '40', '50'].map((num) => (
-                      <div
-                        key={day + hour + num}
-                        className="h-[calc(216px/6)] text-[12px] flex justify-center items-center"
-                      >
-                        {hour.split(':')[0] + ':' + num}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div
-                    className="group relative border-tableBorder border-l border-b h-[216px] flex flex-col overflow-hidden"
-                    key={day + hour}
-                  >
-                    <CommentBox
-                      totalComments={
-                        comments.find(
-                          (p) =>
-                            dayjs
-                              .utc(p.date)
-                              .local()
-                              .format('YYYY-MM-DD HH:mm') ===
-                            dayjs()
-                              .isoWeek(currentWeek)
-                              .isoWeekday(index + 1)
-                              .hour(+hour.split(':')[0] - 1)
-                              .minute(0)
-                              .format('YYYY-MM-DD HH:mm')
-                        )?.total || 0
-                      }
-                      date={dayjs()
-                        .isoWeek(currentWeek)
-                        .isoWeekday(index + 1)
-                        .hour(+hour.split(':')[0] - 1)
-                        .minute(0)}
-                    />
-                    {['00', '10', '20', '30', '40', '50'].map((num) => (
-                      <CalendarColumn
-                        key={day + hour + num + currentWeek + currentYear}
-                        day={index}
-                        hour={hour.split(':')[0] + ':' + num}
-                      />
-                    ))}
-                  </div>
-                )}
-              </>
-            ))
-          )}
-        </div>
-      </div>
+      {display === 'week' ? <WeekView /> : <MonthView />}
     </DNDProvider>
   );
 };
 
-const CalendarColumn: FC<{ day: number; hour: string }> = (props) => {
-  const { day, hour } = props;
-  const { currentWeek, currentYear } = useCalendar();
-
-  const getDate = useMemo(() => {
-    const date =
-      dayjs()
-        .year(currentYear)
-        .isoWeek(currentWeek)
-        .isoWeekday(day)
-        .format('YYYY-MM-DD') +
-      'T' +
-      hour +
-      ':00';
-    return dayjs(date);
-  }, [currentWeek]);
-
-  const isBeforeNow = useMemo(() => {
-    return getDate.isBefore(dayjs());
-  }, [getDate]);
-
-  const [ref, entry] = useIntersectionObserver({
-    threshold: 0.5,
-    root: null,
-    rootMargin: '0px',
-  });
-
-  return (
-    <div className="w-full h-full" ref={ref}>
-      {!entry?.isIntersecting ? (
-        <div
-          className={clsx(
-            'h-full flex justify-center items-center text-[12px]',
-            isBeforeNow && 'bg-secondary'
-          )}
-        >
-          {!isBeforeNow && (
-            <div
-              className={clsx(
-                'w-[20px] h-[20px] bg-forth rounded-full flex justify-center items-center hover:bg-seventh'
-              )}
-            >
-              +
-            </div>
-          )}
-        </div>
-      ) : (
-        <CalendarColumnRender {...props} />
-      )}
-    </div>
-  );
-};
-const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
-  const { day, hour } = props;
+export const CalendarColumn: FC<{
+  getDate: dayjs.Dayjs;
+  randomHour?: boolean;
+}> = (props) => {
+  const { getDate, randomHour } = props;
   const user = useUser();
   const {
-    currentWeek,
-    currentYear,
     integrations,
     posts,
     trendings,
     changeDate,
+    display,
+    reloadCalendarView,
   } = useCalendar();
 
   const toaster = useToaster();
   const modal = useModals();
   const fetch = useFetch();
 
-  const getDate = useMemo(() => {
-    const date =
-      dayjs()
-        .year(currentYear)
-        .isoWeek(currentWeek)
-        .isoWeekday(day)
-        .format('YYYY-MM-DD') +
-      'T' +
-      hour +
-      ':00';
-    return dayjs(date);
-  }, [currentWeek]);
-
   const postList = useMemo(() => {
     return posts.filter((post) => {
-      return dayjs
-        .utc(post.publishDate)
-        .local()
-        .isBetween(getDate, getDate.add(10, 'minute'), 'minute', '[)');
+      const pList = dayjs.utc(post.publishDate).local();
+      const check =
+        display === 'week'
+          ? pList.isSameOrAfter(getDate.startOf('hour')) &&
+            pList.isBefore(getDate.endOf('hour'))
+          : pList.format('DD/MM/YYYY') === getDate.format('DD/MM/YYYY');
+
+      return check;
     });
-  }, [posts]);
+  }, [posts, display, getDate]);
 
   const canBeTrending = useMemo(() => {
     return !!trendings.find((trend) => {
@@ -244,7 +202,7 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
   }, [trendings]);
 
   const isBeforeNow = useMemo(() => {
-    return getDate.isBefore(dayjs());
+    return getDate.startOf('hour').isBefore(dayjs().startOf('hour'));
   }, [getDate]);
 
   const [{ canDrop }, drop] = useDrop(() => ({
@@ -296,7 +254,7 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
       const integration = await getIntegration(postInfo);
       modal.openModal({
         classNames: {
-          modal: 'bg-transparent text-white',
+          modal: 'bg-transparent text-textColor',
         },
         size: 'auto',
         withCloseButton: false,
@@ -326,23 +284,25 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
         return previewPublication(post);
       }
       const data = await (await fetch(`/posts/${post.id}`)).json();
+      const publishDate = dayjs.utc(data.posts[0].publishDate).local();
 
       modal.openModal({
         closeOnClickOutside: false,
         closeOnEscape: false,
         withCloseButton: false,
         classNames: {
-          modal: 'w-[100%] max-w-[1400px] bg-transparent text-white',
+          modal: 'w-[100%] max-w-[1400px] bg-transparent text-textColor',
         },
         children: (
           <ExistingDataContextProvider value={data}>
             <AddEditModal
               reopenModal={editPost(post)}
+              mutate={reloadCalendarView}
               integrations={integrations
                 .slice(0)
                 .filter((f) => f.id === data.integration)
                 .map((p) => ({ ...p, picture: data.integrationPicture }))}
-              date={getDate}
+              date={publishDate}
             />
           </ExistingDataContextProvider>
         ),
@@ -359,25 +319,38 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
       closeOnEscape: false,
       withCloseButton: false,
       classNames: {
-        modal: 'w-[100%] max-w-[1400px] bg-transparent text-white',
+        modal: 'w-[100%] max-w-[1400px] bg-transparent text-textColor',
       },
       children: (
         <AddEditModal
           integrations={integrations.slice(0).map((p) => ({ ...p }))}
-          date={getDate}
+          mutate={reloadCalendarView}
+          date={
+            randomHour ? getDate.hour(Math.floor(Math.random() * 24)) : getDate
+          }
           reopenModal={() => ({})}
         />
       ),
       size: '80%',
       // title: `Adding posts for ${getDate.format('DD/MM/YYYY HH:mm')}`,
     });
-  }, [integrations]);
+  }, [integrations, getDate]);
 
   const addProvider = useAddProvider();
 
   return (
-    <div className="relative w-full h-full">
-      <div className="absolute left-0 top-0 w-full h-full">
+    <div className="flex flex-col w-full min-h-full" ref={drop}>
+      {display === 'month' && (
+        <div className={clsx('pt-[5px]', isBeforeNow && 'bg-customColor23')}>
+          {getDate.date()}
+        </div>
+      )}
+      <div
+        className={clsx(
+          'relative flex flex-col flex-1',
+          canDrop && 'bg-white/80'
+        )}
+      >
         <div
           {...(canBeTrending
             ? {
@@ -385,24 +358,22 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
                 'data-tooltip-content': 'Predicted GitHub Trending Change',
               }
             : {})}
-          ref={drop}
           className={clsx(
-            'h-[calc(216px/6)] gap-[2.5px] text-[12px] pointer w-full overflow-hidden justify-center overflow-x-auto flex scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary',
-            isBeforeNow && 'bg-secondary',
-            canDrop && 'bg-white/80',
-            canBeTrending && 'bg-[#eaff00]'
+            'flex-col text-[12px] pointer w-full cursor-pointer overflow-hidden overflow-x-auto flex scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary',
+            isBeforeNow && 'bg-customColor23 flex-1',
+            canBeTrending && 'bg-customColor24'
           )}
         >
           {postList.map((post) => (
             <div
               key={post.id}
               className={clsx(
-                postList.length > 1 && 'w-[33px] basis-[28px]',
-                'h-full text-white relative  flex justify-center items-center flex-grow-0 flex-shrink-0'
+                'text-textColor p-[2.5px] relative flex flex-col justify-center items-center'
               )}
             >
-              <div className="relative flex gap-[5px] items-center">
+              <div className="relative w-full flex flex-col items-center p-[2.5px]">
                 <CalendarItem
+                  isBeforeNow={isBeforeNow}
                   date={getDate}
                   state={post.state}
                   editPost={editPost(post)}
@@ -412,28 +383,30 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
               </div>
             </div>
           ))}
-          {!isBeforeNow && (
+        </div>
+        {!isBeforeNow && (
+          <div
+            className="pb-[2.5px] px-[5px] flex-1 flex"
+            onClick={integrations.length ? addModal : addProvider}
+          >
             <div
               className={clsx(
-                !postList.length ? 'justify-center flex-1' : 'ml-[2px]',
-                'flex items-center cursor-pointer gap-[2.5px]'
+                display === 'month'
+                  ? 'flex-1 min-h-[40px] w-full'
+                  : !postList.length
+                  ? 'h-full w-full absolute left-0 top-0 p-[5px]'
+                  : 'min-h-[40px] w-full',
+                'flex items-center justify-center cursor-pointer pb-[2.5px]'
               )}
             >
               <div
-                data-tooltip-id="tooltip"
-                data-tooltip-content={
-                  'Schedule for ' + getDate.format('DD/MM/YYYY HH:mm')
-                }
-                onClick={integrations.length ? addModal : addProvider}
                 className={clsx(
-                  'w-[20px] h-[20px] bg-forth rounded-full flex justify-center items-center hover:bg-seventh'
+                  'hover:before:content-["+"] w-full h-full text-seventh rounded-[10px] hover:border hover:border-seventh flex justify-center items-center'
                 )}
-              >
-                +
-              </div>
+              />
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -441,12 +414,13 @@ const CalendarColumnRender: FC<{ day: number; hour: string }> = (props) => {
 
 const CalendarItem: FC<{
   date: dayjs.Dayjs;
+  isBeforeNow: boolean;
   editPost: () => void;
   integrations: Integrations[];
   state: State;
   post: Post & { integration: Integration };
 }> = (props) => {
-  const { editPost, post, date, integrations, state } = props;
+  const { editPost, post, date, isBeforeNow, state } = props;
   const [{ opacity }, dragRef] = useDrag(
     () => ({
       type: 'post',
@@ -461,23 +435,27 @@ const CalendarItem: FC<{
     <div
       ref={dragRef}
       onClick={editPost}
-      className={clsx('relative', state === 'DRAFT' && '!grayscale')}
-      data-tooltip-id="tooltip"
+      className={clsx(
+        'gap-[5px] w-full flex h-full flex-1 rounded-[10px] border border-seventh px-[5px] p-[2.5px]',
+        'relative',
+        (state === 'DRAFT' || isBeforeNow) && '!grayscale'
+      )}
       style={{ opacity }}
-      data-tooltip-content={`${state === 'DRAFT' ? 'Draft: ' : ''}${
-        integrations.find(
-          (p) => p.identifier === post.integration?.providerIdentifier
-        )?.name
-      }: ${post.content.slice(0, 100)}`}
     >
-      <img
-        className="w-[20px] h-[20px] rounded-full"
-        src={post.integration.picture!}
-      />
-      <img
-        className="w-[12px] h-[12px] rounded-full absolute z-10 bottom-[0] right-0 border border-fifth"
-        src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
-      />
+      <div className="relative min-w-[20px] h-[20px]">
+        <img
+          className="w-[20px] h-[20px] rounded-full"
+          src={post.integration.picture!}
+        />
+        <img
+          className="w-[12px] h-[12px] rounded-full absolute z-10 bottom-[0] right-0 border border-fifth"
+          src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
+        />
+      </div>
+      <div className="whitespace-pre-wrap line-clamp-3">
+        {state === 'DRAFT' ? 'Draft: ' : ''}
+        {post.content}
+      </div>
     </div>
   );
 };
@@ -496,7 +474,7 @@ export const CommentBox: FC<{ totalComments: number; date: dayjs.Dayjs }> = (
         mutate(`/posts`);
       },
       classNames: {
-        modal: 'bg-transparent text-white',
+        modal: 'bg-transparent text-textColor',
       },
       size: '80%',
     });
@@ -526,7 +504,7 @@ export const CommentBox: FC<{ totalComments: number; date: dayjs.Dayjs }> = (
           )}
         >
           {totalComments > 0 && (
-            <div className="absolute right-0 bottom-[10px] w-[10px] h-[10px] text-[8px] bg-red-500 z-[20] rounded-full flex justify-center items-center text-white">
+            <div className="absolute right-0 bottom-[10px] w-[10px] h-[10px] text-[8px] bg-red-500 z-[20] rounded-full flex justify-center items-center text-textColor">
               {totalComments}
             </div>
           )}

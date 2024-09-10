@@ -4,10 +4,10 @@ import { NewConversationDto } from '@gitroom/nestjs-libraries/dtos/marketplace/n
 import { AddMessageDto } from '@gitroom/nestjs-libraries/dtos/messages/add.message';
 import { CreateOfferDto } from '@gitroom/nestjs-libraries/dtos/marketplace/create.offer.dto';
 import { From, OrderStatus, User } from '@prisma/client';
-import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport/client/bull-mq.client';
 import { OrganizationRepository } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.repository';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import dayjs from 'dayjs';
+import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/client';
 
 @Injectable()
 export class MessagesService {

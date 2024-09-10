@@ -42,12 +42,12 @@ export const Editor = forwardRef<
     });
 
     return (
-      <div className="relative bg-[#141C2C]">
+      <div className="relative bg-customColor2">
         {user?.tier?.ai ? (
           <CopilotTextarea
             disableBranding={true}
             className={clsx(
-              '!min-h-40 !max-h-80 p-2 overflow-hidden bg-[#141C2C] outline-none'
+              '!min-h-40 !max-h-80 p-2 overflow-hidden bg-customColor2 outline-none'
             )}
             value={props.value}
             onChange={(e) => props?.onChange?.(e.target.value)}

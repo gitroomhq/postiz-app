@@ -45,7 +45,7 @@ const HashnodePreview: FC = () => {
       )}
       <div className="px-[60px]">
         <div className="font-[800] text-[48px] leading-[60px] mb-[8px]">{title}</div>
-        <div className="font-[400] text-[30px] leading-[60px] mb-[8px] text-[#334155]">{subtitle}</div>
+        <div className="font-[400] text-[30px] leading-[60px] mb-[8px] text-customColor34">{subtitle}</div>
       </div>
       <div className="px-[60px] text-left">
         <MDEditor.Markdown

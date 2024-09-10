@@ -17,9 +17,9 @@ export const Track: FC<{
       onChange={onChange}
       size="xl"
       classNames={{
-        track: 'before:bg-[#0B0F1C] before:border before:border-[#172034]',
-        mark: 'border-[#172034]',
-        markFilled: 'border-[#7950F2]',
+        track: 'before:bg-customColor3 before:border before:border-customColor6',
+        mark: 'border-customColor6',
+        markFilled: 'border-customColor7',
       }}
       min={min}
       max={max}

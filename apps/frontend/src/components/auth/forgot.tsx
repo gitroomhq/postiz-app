@@ -48,7 +48,7 @@ export function Forgot() {
         </div>
         {!state ? (
           <>
-            <div className="space-y-4 text-white">
+            <div className="space-y-4 text-textColor">
               <Input
                 label="Email"
                 {...form.register('email')}

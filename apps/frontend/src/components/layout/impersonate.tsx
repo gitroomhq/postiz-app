@@ -116,7 +116,7 @@ export const Impersonate = () => {
                 <div>Currently Impersonating</div>
                 <div>
                   <div
-                    className="px-[10px] rounded-[4px] bg-red-500 text-white cursor-pointer"
+                    className="px-[10px] rounded-[4px] bg-red-500 text-textColor cursor-pointer"
                     onClick={stopImpersonating}
                   >
                     X
@@ -140,15 +140,15 @@ export const Impersonate = () => {
           {!!data?.length && (
             <>
               <div
-                className="bg-black/80 fixed left-0 top-0 w-full h-full z-[998]"
+                className="bg-primary/80 fixed left-0 top-0 w-full h-full z-[998]"
                 onClick={() => setName('')}
               />
-              <div className="absolute top-[100%] w-full left-0 bg-sixth border border-[#172034] text-white z-[999]">
+              <div className="absolute top-[100%] w-full left-0 bg-sixth border border-customColor6 text-textColor z-[999]">
                 {mapData?.map((user: any) => (
                   <div
                     onClick={setUser(user.id)}
                     key={user.id}
-                    className="p-[10px] border-b border-[#172034] hover:bg-tableBorder cursor-pointer"
+                    className="p-[10px] border-b border-customColor6 hover:bg-tableBorder cursor-pointer"
                   >
                     user: {user.id.split('-').at(-1)} - {user.name} -{' '}
                     {user.email}

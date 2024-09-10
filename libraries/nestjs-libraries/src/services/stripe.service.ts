@@ -94,7 +94,9 @@ export class StripeService {
       return organization.paymentId;
     }
 
-    const customer = await stripe.customers.create();
+    const customer = await stripe.customers.create({
+      name: organization.name,
+    });
     await this._subscriptionService.updateCustomerId(
       organization.id,
       customer.id
@@ -270,7 +272,7 @@ export class StripeService {
   ) {
     const { url } = await stripe.checkout.sessions.create({
       customer,
-      return_url: process.env['FRONTEND_URL'] + `/billing`,
+      cancel_url: process.env['FRONTEND_URL'] + `/billing`,
       success_url:
         process.env['FRONTEND_URL'] +
         `/launches?onboarding=true&check=${uniqueId}`,

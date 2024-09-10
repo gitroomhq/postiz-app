@@ -4,8 +4,8 @@ import { chunk, groupBy } from 'lodash';
 import dayjs from 'dayjs';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { StarsListDto } from '@gitroom/nestjs-libraries/dtos/analytics/stars.list.dto';
-import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport/client/bull-mq.client';
 import { mean } from 'simple-statistics';
+import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/client';
 enum Inform {
   Removed,
   New,

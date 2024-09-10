@@ -11,8 +11,8 @@ export const BuyerSeller: FC = () => {
     <div className="relative">
       <div className="w-[286px] h-[50px] bg-third p-[9px] flex select-none absolute -translate-y-[63px] right-0">
         <div className="bg-input flex flex-1">
-          <Link href="/marketplace/seller" className={clsx("flex justify-center items-center flex-1", pathComputed.indexOf('/marketplace/seller') > -1 && 'bg-forth')}>Seller</Link>
-          <Link href="/marketplace/buyer" className={clsx("flex justify-center items-center flex-1", pathComputed.indexOf('/marketplace/buyer') > -1 && 'bg-forth')}>Buyer</Link>
+          <Link href="/marketplace/seller" className={clsx("flex justify-center items-center flex-1", pathComputed.indexOf('/marketplace/seller') > -1 && 'bg-forth text-white')}>Seller</Link>
+          <Link href="/marketplace/buyer" className={clsx("flex justify-center items-center flex-1", pathComputed.indexOf('/marketplace/buyer') > -1 && 'bg-forth text-white')}>Buyer</Link>
         </div>
       </div>
     </div>

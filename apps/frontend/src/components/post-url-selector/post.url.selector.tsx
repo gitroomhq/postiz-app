@@ -135,14 +135,14 @@ export const PostSelector: FC<{
           <div
             className={
               !noModal
-                ? 'text-white fixed left-0 top-0 bg-black/80 z-[300] w-full h-full p-[60px] animate-fade'
+                ? 'text-textColor fixed left-0 top-0 bg-primary/80 z-[300] w-full h-full p-[60px] animate-fade'
                 : ''
             }
           >
             <div
               className={
                 !noModal
-                  ? 'flex flex-col w-full max-w-[1200px] mx-auto h-full bg-[#0B101B] border-tableBorder border-2 rounded-xl pb-[20px] px-[20px] relative'
+                  ? 'flex flex-col w-full max-w-[1200px] mx-auto h-full bg-sixth border-tableBorder border-2 rounded-xl pb-[20px] px-[20px] relative'
                   : ''
               }
             >
@@ -158,7 +158,7 @@ export const PostSelector: FC<{
                   </div>
                   <button
                     onClick={onCloseWithEmptyString}
-                    className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root bg-black hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+                    className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root bg-primary hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
                     type="button"
                   >
                     <svg

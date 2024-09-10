@@ -4,7 +4,7 @@ import { AddProviderButton } from '@gitroom/frontend/components/launches/add.pro
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { orderBy } from 'lodash';
-import { Calendar } from '@gitroom/frontend/components/launches/calendar';
+// import { Calendar } from '@gitroom/frontend/components/launches/calendar';
 import { CalendarWeekProvider } from '@gitroom/frontend/components/launches/calendar.context';
 import { Filters } from '@gitroom/frontend/components/launches/filters';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
@@ -13,12 +13,12 @@ import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import clsx from 'clsx';
 import { useUser } from '../layout/user.context';
 import { Menu } from '@gitroom/frontend/components/launches/menu/menu';
-import { GeneratorComponent } from '@gitroom/frontend/components/launches/generator/generator';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Integration } from '@prisma/client';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
+import { Calendar } from './calendar';
 
 export const LaunchesComponent = () => {
   const fetch = useFetch();
@@ -116,7 +116,7 @@ export const LaunchesComponent = () => {
     <CalendarWeekProvider integrations={sortedIntegrations}>
       <div className="flex flex-1 flex-col">
         <div className="flex flex-1 relative">
-          <div className="absolute w-full h-full grid grid-cols-[220px_minmax(0,1fr)] gap-[30px] overflow-hidden overflow-y-scroll scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary">
+          <div className="outline-none w-full h-full grid grid-cols-[220px_minmax(0,1fr)] gap-[30px] scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary">
               <div className="w-[220px] bg-third p-[16px] flex flex-col gap-[24px] min-h-[100%]">
               <h2 className="text-[20px]">Channels</h2>
               <div className="gap-[16px] flex flex-col">
@@ -152,7 +152,7 @@ export const LaunchesComponent = () => {
                           <div className="bg-red-500 w-[15px] h-[15px] rounded-full -left-[5px] -top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
                             !
                           </div>
-                          <div className="bg-black/60 w-[39px] h-[46px] left-0 top-0 absolute rounded-full z-[199]" />
+                          <div className="bg-primary/60 w-[39px] h-[46px] left-0 top-0 absolute rounded-full z-[199]" />
                         </div>
                       )}
                       <ImageWithFallback

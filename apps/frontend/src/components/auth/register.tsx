@@ -138,15 +138,15 @@ export function RegisterAfter({
         {!isAfterProvider && (!isGeneral() ? <GithubProvider /> : <GoogleProvider />)}
         {!isAfterProvider && (
           <div className="h-[20px] mb-[24px] mt-[24px] relative">
-            <div className="absolute w-full h-[1px] bg-[#28344F] top-[50%] -translate-y-[50%]" />
+            <div className="absolute w-full h-[1px] bg-fifth top-[50%] -translate-y-[50%]" />
             <div
               className={`absolute z-[1] ${interClass} justify-center items-center w-full left-0 top-0 flex`}
             >
-              <div className="bg-[#0a0a0a] px-[16px]">OR</div>
+              <div className="bg-customColor15 px-[16px]">OR</div>
             </div>
           </div>
         )}
-        <div className="text-white">
+        <div className="text-textColor">
           {!isAfterProvider && (
             <>
               <Input

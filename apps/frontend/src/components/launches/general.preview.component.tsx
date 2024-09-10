@@ -37,7 +37,7 @@ export const GeneralPreviewComponent: FC<{maximumCharacters?: number}> = (props)
                 className="rounded-full relative z-[2]"
               />
               {index !== topValue.length - 1 && (
-                <div className="flex-1 w-[2px] h-[calc(100%-10px)] bg-[#2E3336] absolute top-[10px] z-[1]" />
+                <div className="flex-1 w-[2px] h-[calc(100%-10px)] bg-customColor25 absolute top-[10px] z-[1]" />
               )}
             </div>
             <div className="flex-1 flex flex-col gap-[4px]">
@@ -45,7 +45,7 @@ export const GeneralPreviewComponent: FC<{maximumCharacters?: number}> = (props)
                 <div className="h-[22px] text-[15px] font-[700]">
                   {integration?.name}
                 </div>
-                <div className="text-[15px] text-[#1D9BF0] mt-[1px] ml-[2px]">
+                <div className="text-[15px] text-customColor26 mt-[1px] ml-[2px]">
                   <svg
                     viewBox="0 0 22 22"
                     aria-label="Verified account"
@@ -58,7 +58,7 @@ export const GeneralPreviewComponent: FC<{maximumCharacters?: number}> = (props)
                     </g>
                   </svg>
                 </div>
-                <div className="text-[15px] font-[400] text-[#71767b] ml-[4px]">
+                <div className="text-[15px] font-[400] text-customColor27 ml-[4px]">
                   @username
                 </div>
               </div>

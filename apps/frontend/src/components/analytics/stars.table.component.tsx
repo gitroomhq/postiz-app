@@ -157,7 +157,7 @@ export const StarsTableComponent = () => {
 
   return (
     <div className="flex flex-1 flex-col gap-[15px] min-h-[426px]">
-      <div className="text-white flex gap-[8px] items-center select-none">
+      <div className="text-textColor flex gap-[8px] items-center select-none">
         <div
           onClick={changePage('decrease')}
           className={clsx(

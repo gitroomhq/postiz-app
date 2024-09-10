@@ -48,12 +48,12 @@ const MediumPreview: FC = () => {
   return (
     <div
       className={clsx(
-        `font-[800] flex h-[1000px] w-[699.8px] text-[#242424] ${interClass} rounded-[10px] bg-white overflow-hidden overflow-y-auto flex-col gap-[56px]`
+        `font-[800] flex h-[1000px] w-[699.8px] text-customColor35 ${interClass} rounded-[10px] bg-white overflow-hidden overflow-y-auto flex-col gap-[56px]`
       )}
     >
       <div className="px-[60px] pt-[20px]">
         <div className="text-[48px] leading-[60px] mb-[8px]">{title}</div>
-        <div className="text-[22px] font-[400] text-[#6b6b6b]">{subtitle}</div>
+        <div className="text-[22px] font-[400] text-customColor36">{subtitle}</div>
       </div>
       <div className="px-[60px]">
         <MDEditor.Markdown

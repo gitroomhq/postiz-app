@@ -1,6 +1,11 @@
 import {allTwoLevelSubdomain} from "./all.two.level.subdomain";
+const ipRegex = /^(https?:\/\/)?(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(:\d+)?$/;
 
 export function removeSubdomain(domain: string) {
+    // Check if the domain is an IP address with optional port
+    if (ipRegex.test(domain)) {
+        return domain; // Return the original domain if it's an IP address
+    }
     // Split the domain into its parts
     const parts = domain.split('.');
 
@@ -18,4 +23,15 @@ export function removeSubdomain(domain: string) {
 
     // Return the last two parts for standard domains
     return 'https://' + parts.slice(-2).join('.');
+}
+
+
+export function getCookieUrlFromDomain(domain: string) {
+    const url = removeSubdomain(domain);
+    const urlObj = new URL(url);
+    if (!ipRegex.test(domain)) {
+        return '.' + urlObj.hostname
+    }
+
+    return urlObj.hostname;
 }
