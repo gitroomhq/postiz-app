@@ -8,7 +8,7 @@ on:
       - '*'
 
 jobs:
-  build-tag:
+  build-containers:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -30,10 +30,14 @@ jobs:
         run: |
           echo "DATE=$(date +'%s')" >> "$GITHUB_ENV"
 
+      - name: Print post-build debug info
+        run: |
+          docker images
+
       - name: docker tag
         run: |
           docker tag localhost/postiz ghcr.io/gitroomhq/postiz-app:${{ env.DATE }}
           docker push ghcr.io/gitroomhq/postiz-app:${{ env.DATE }}
 
-          docker tag localhost/postiz-devcontainer ghcr.io/gitroomhq/postiz-app:${{ env.DATE }}
+          docker tag localhost/postiz-devcontainer ghcr.io/gitroomhq/postiz-devcontainer:${{ env.DATE }}
           docker push ghcr.io/gitroomhq/postiz-devcontainer:${{ env.DATE }}
