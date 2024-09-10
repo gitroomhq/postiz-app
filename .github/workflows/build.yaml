@@ -8,14 +8,14 @@ on:
     paths:
       - package.json
       - apps/**
-      - !apps/docs/**
+      - '!apps/docs/**'
       - libraries/**
 
   pull_request:
     paths:
       - package.json
       - apps/**
-      - !apps/docs/**
+      - '!apps/docs/**'
       - libraries/**
 
 jobs:
