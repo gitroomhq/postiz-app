@@ -27,7 +27,8 @@
       "@gitroom/nestjs-libraries/*": ["libraries/nestjs-libraries/src/*"],
       "@gitroom/react/*": ["libraries/react-shared-libraries/src/*"],
       "@gitroom/workers/*": ["apps/workers/src/*"]
-    }
+    },
+    "jsx": "react"
   },
   "exclude": ["node_modules", "tmp"]
 }
