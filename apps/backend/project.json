@@ -37,7 +37,8 @@
       "executor": "@nx/js:node",
       "defaultConfiguration": "development",
       "options": {
-        "buildTarget": "backend:build"
+        "buildTarget": "backend:build",
+        "inspect": false
       },
       "configurations": {
         "development": {
