@@ -78,6 +78,7 @@
     "bufferutil": "^4.0.8",
     "bullmq": "^5.12.12",
     "cache-manager-redis-store": "^2.0.0",
+    "canvas": "^2.11.2",
     "chart.js": "^4.4.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
