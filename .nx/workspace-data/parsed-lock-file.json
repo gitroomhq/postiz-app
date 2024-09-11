@@ -2169,13 +2169,22 @@
         "hash": "sha512-VTPCzHQGHwJ2gzYLSqm8bYjgkRetAeNzUNB8UNXEd+vHbXA8l3SjThnTVbJMpb+gQgpJWlT9lEyH3WsAK+JyCg=="
       }
     },
-    "npm:uuid@10.0.0": {
+    "npm:uuid": {
       "type": "npm",
-      "name": "npm:uuid@10.0.0",
+      "name": "npm:uuid",
       "data": {
         "version": "10.0.0",
         "packageName": "uuid",
         "hash": "sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ=="
+      }
+    },
+    "npm:uuid@9.0.1": {
+      "type": "npm",
+      "name": "npm:uuid@9.0.1",
+      "data": {
+        "version": "9.0.1",
+        "packageName": "uuid",
+        "hash": "sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA=="
       }
     },
     "npm:uuid@8.3.2": {
@@ -2185,15 +2194,6 @@
         "version": "8.3.2",
         "packageName": "uuid",
         "hash": "sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg=="
-      }
-    },
-    "npm:uuid": {
-      "type": "npm",
-      "name": "npm:uuid",
-      "data": {
-        "version": "9.0.1",
-        "packageName": "uuid",
-        "hash": "sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA=="
       }
     },
     "npm:@puppeteer/browsers@0.5.0": {
@@ -28735,7 +28735,7 @@
     },
     {
       "source": "npm:@langchain/community@0.0.53",
-      "target": "npm:uuid",
+      "target": "npm:uuid@9.0.1",
       "type": "static"
     },
     {
@@ -28790,7 +28790,7 @@
     },
     {
       "source": "npm:langsmith@0.1.54",
-      "target": "npm:uuid@10.0.0",
+      "target": "npm:uuid",
       "type": "static"
     },
     {
@@ -29100,7 +29100,7 @@
     },
     {
       "source": "npm:gaxios",
-      "target": "npm:uuid",
+      "target": "npm:uuid@9.0.1",
       "type": "static"
     },
     {
@@ -29320,7 +29320,7 @@
     },
     {
       "source": "npm:langchain@0.1.37",
-      "target": "npm:uuid",
+      "target": "npm:uuid@9.0.1",
       "type": "static"
     },
     {
@@ -29380,7 +29380,7 @@
     },
     {
       "source": "npm:langsmith@0.1.54",
-      "target": "npm:uuid@10.0.0",
+      "target": "npm:uuid",
       "type": "static"
     },
     {
@@ -31130,7 +31130,7 @@
     },
     {
       "source": "npm:@langchain/core",
-      "target": "npm:uuid",
+      "target": "npm:uuid@9.0.1",
       "type": "static"
     },
     {
@@ -31180,7 +31180,7 @@
     },
     {
       "source": "npm:langsmith@0.1.54",
-      "target": "npm:uuid@10.0.0",
+      "target": "npm:uuid",
       "type": "static"
     },
     {
@@ -31260,7 +31260,7 @@
     },
     {
       "source": "npm:@langchain/core@0.2.32",
-      "target": "npm:uuid@10.0.0",
+      "target": "npm:uuid",
       "type": "static"
     },
     {
@@ -31310,7 +31310,7 @@
     },
     {
       "source": "npm:langsmith@0.1.54",
-      "target": "npm:uuid@10.0.0",
+      "target": "npm:uuid",
       "type": "static"
     },
     {
@@ -33230,7 +33230,7 @@
     },
     {
       "source": "npm:@nestjs/schedule",
-      "target": "npm:uuid@10.0.0",
+      "target": "npm:uuid",
       "type": "static"
     },
     {
@@ -36375,7 +36375,7 @@
     },
     {
       "source": "npm:@smithy/middleware-retry",
-      "target": "npm:uuid",
+      "target": "npm:uuid@9.0.1",
       "type": "static"
     },
     {
@@ -41240,7 +41240,7 @@
     },
     {
       "source": "npm:bullmq",
-      "target": "npm:uuid",
+      "target": "npm:uuid@9.0.1",
       "type": "static"
     },
     {
@@ -45980,7 +45980,7 @@
     },
     {
       "source": "npm:gaxios",
-      "target": "npm:uuid",
+      "target": "npm:uuid@9.0.1",
       "type": "static"
     },
     {
@@ -46310,7 +46310,7 @@
     },
     {
       "source": "npm:googleapis-common",
-      "target": "npm:uuid",
+      "target": "npm:uuid@9.0.1",
       "type": "static"
     },
     {
