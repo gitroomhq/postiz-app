@@ -39,5 +39,11 @@ jobs:
           docker tag localhost/postiz ghcr.io/gitroomhq/postiz-app:${{ env.DATE }}
           docker push ghcr.io/gitroomhq/postiz-app:${{ env.DATE }}
 
+          docker tag ghcr.io/gitroomhq/postiz-app:${{ env.DATE }} ghcr.io/gitroomhq/postiz-app:latest
+          docker push ghcr.io/gitroomhq/postiz-app:latest
+
           docker tag localhost/postiz-devcontainer ghcr.io/gitroomhq/postiz-devcontainer:${{ env.DATE }}
           docker push ghcr.io/gitroomhq/postiz-devcontainer:${{ env.DATE }}
+
+          docker tag ghcr.io/gitroomhq/postiz-devcontainer:${{ env.DATE }} ghcr.io/gitroomhq/postiz-devcontainer:latest
+          docker push ghcr.io/gitroomhq/postiz-devcontainer:latest
