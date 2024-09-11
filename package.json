@@ -180,7 +180,7 @@
     "jest-environment-jsdom": "^29.4.1",
     "jest-environment-node": "^29.4.1",
     "jsdom": "~22.1.0",
-    "nx": "18.0.8",
+    "nx": "^18.0.8",
     "postcss": "^8.4.33",
     "prettier": "^2.6.2",
     "prisma": "^5.8.1",
