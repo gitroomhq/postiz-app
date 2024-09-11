@@ -31,7 +31,6 @@ import { useExpend } from '@gitroom/frontend/components/launches/helpers/use.exp
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { PickPlatforms } from '@gitroom/frontend/components/launches/helpers/pick.platform.component';
 import { ProvidersOptions } from '@gitroom/frontend/components/launches/providers.options';
-import { v4 as uuidv4 } from 'uuid';
 import useSWR from 'swr';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { UpDownArrow } from '@gitroom/frontend/components/launches/up.down.arrow';
@@ -48,6 +47,7 @@ import { AddPostButton } from '@gitroom/frontend/components/launches/add.post.bu
 import { useStateCallback } from '@gitroom/react/helpers/use.state.callback';
 import { CopilotPopup } from '@copilotkit/react-ui';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 
 export const AddEditModal: FC<{
   date: dayjs.Dayjs;
@@ -319,7 +319,7 @@ export const AddEditModal: FC<{
         }),
       });
 
-      existingData.group = uuidv4();
+      existingData.group = makeId(10);
 
       mutate();
       toaster.show(
