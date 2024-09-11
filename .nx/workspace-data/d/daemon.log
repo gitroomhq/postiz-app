@@ -132,3 +132,40 @@
 [NX Daemon Server] - 2024-09-11T11:31:11.915Z - Handled GET_TASK_HISTORY_FOR_HASHES. Handling time: 0. Response time: 0.
 [NX Daemon Server] - 2024-09-11T11:31:11.918Z - Closed a connection. Number of open connections: 0
 [NX Daemon Server] - 2024-09-11T11:31:11.965Z - [WATCHER]: Processing file changes in outputs
+[NX Daemon Server] - 2024-09-11T11:34:01.728Z - [WATCHER]: package.json was modified
+[NX Daemon Server] - 2024-09-11T11:34:01.729Z - [WATCHER]: Processing file changes in outputs
+[NX Daemon Server] - 2024-09-11T11:34:01.832Z - [REQUEST]: Updated workspace context based on watched changes, recomputing project graph...
+[NX Daemon Server] - 2024-09-11T11:34:01.832Z - [REQUEST]: package.json
+[NX Daemon Server] - 2024-09-11T11:34:01.832Z - [REQUEST]: 
+[NX Daemon Server] - 2024-09-11T11:34:01.834Z - Time taken for 'hash changed files from watcher' 0.5419170260429382ms
+[NX Daemon Server] - 2024-09-11T11:34:01.858Z - Time taken for 'build-project-configs' 20.458875000476837ms
+[NX Daemon Server] - 2024-09-11T11:34:01.894Z - [SYNC]: collect registered sync generators
+[NX Daemon Server] - 2024-09-11T11:34:01.895Z - [SYNC]: project graph hash is the same, not collecting task sync generators
+[NX Daemon Server] - 2024-09-11T11:34:01.895Z - [SYNC]: nx.json hash is the same, not collecting global sync generators
+[NX Daemon Server] - 2024-09-11T11:34:01.895Z - Time taken for 'total execution time for createProjectGraph()' 31.71375000476837ms
+[NX Daemon Server] - 2024-09-11T11:34:11.008Z - [WATCHER]: package.json was modified
+[NX Daemon Server] - 2024-09-11T11:34:11.008Z - [WATCHER]: Processing file changes in outputs
+[NX Daemon Server] - 2024-09-11T11:34:11.210Z - [REQUEST]: Updated workspace context based on watched changes, recomputing project graph...
+[NX Daemon Server] - 2024-09-11T11:34:11.210Z - [REQUEST]: package.json
+[NX Daemon Server] - 2024-09-11T11:34:11.210Z - [REQUEST]: 
+[NX Daemon Server] - 2024-09-11T11:34:11.212Z - Time taken for 'hash changed files from watcher' 0.46879202127456665ms
+[NX Daemon Server] - 2024-09-11T11:34:11.229Z - Time taken for 'build-project-configs' 13.820167005062103ms
+[NX Daemon Server] - 2024-09-11T11:34:11.262Z - [SYNC]: collect registered sync generators
+[NX Daemon Server] - 2024-09-11T11:34:11.262Z - [SYNC]: project graph hash is the same, not collecting task sync generators
+[NX Daemon Server] - 2024-09-11T11:34:11.262Z - [SYNC]: nx.json hash is the same, not collecting global sync generators
+[NX Daemon Server] - 2024-09-11T11:34:11.262Z - Time taken for 'total execution time for createProjectGraph()' 27.082499980926514ms
+[NX Daemon Server] - 2024-09-11T11:34:11.718Z - [WATCHER]: package.json was modified
+[NX Daemon Server] - 2024-09-11T11:34:11.718Z - [WATCHER]: Processing file changes in outputs
+[NX Daemon Server] - 2024-09-11T11:34:12.120Z - [REQUEST]: Updated workspace context based on watched changes, recomputing project graph...
+[NX Daemon Server] - 2024-09-11T11:34:12.120Z - [REQUEST]: package.json
+[NX Daemon Server] - 2024-09-11T11:34:12.120Z - [REQUEST]: 
+[NX Daemon Server] - 2024-09-11T11:34:12.121Z - Time taken for 'hash changed files from watcher' 0.4183749556541443ms
+[NX Daemon Server] - 2024-09-11T11:34:12.136Z - Time taken for 'build-project-configs' 12.397832989692688ms
+[NX Daemon Server] - 2024-09-11T11:34:12.173Z - [SYNC]: collect registered sync generators
+[NX Daemon Server] - 2024-09-11T11:34:12.173Z - [SYNC]: project graph hash is the same, not collecting task sync generators
+[NX Daemon Server] - 2024-09-11T11:34:12.173Z - [SYNC]: nx.json hash is the same, not collecting global sync generators
+[NX Daemon Server] - 2024-09-11T11:34:12.173Z - Time taken for 'total execution time for createProjectGraph()' 28.65679097175598ms
+[NX Daemon Server] - 2024-09-11T11:34:16.858Z - [WATCHER]: Processing file changes in outputs
+[NX Daemon Server] - 2024-09-11T11:34:16.858Z - [WATCHER]: Stopping the watcher for /Users/nevodavid/Projects/gitroom (sources)
+[NX Daemon Server] - 2024-09-11T11:34:16.858Z - [WATCHER]: Stopping the watcher for /Users/nevodavid/Projects/gitroom (outputs)
+[NX Daemon Server] - 2024-09-11T11:34:16.859Z - Server stopped because: "LOCK_FILES_CHANGED"

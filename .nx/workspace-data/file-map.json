@@ -48,6 +48,17 @@
     "@uppy/progress-bar": "^3.0.3",
     "@uppy/react": "^3.1.3",
     "@virtual-grid/react": "^2.0.2",
+    "@nx/eslint": "19.7.2",
+    "@nx/eslint-plugin": "19.7.2",
+    "@nx/jest": "19.7.2",
+    "@nx/js": "19.7.2",
+    "@nx/nest": "19.7.2",
+    "@nx/next": "19.7.2",
+    "@nx/node": "19.7.2",
+    "@nx/react": "19.7.2",
+    "@nx/vite": "19.7.2",
+    "@nx/webpack": "19.7.2",
+    "@nx/workspace": "19.7.2",
     "nx": "19.7.2",
     "array-move": "^4.0.0",
     "axios": "1.6.7",
@@ -114,17 +125,6 @@
     "@mintlify/scraping": "^3.0.90",
     "@nestjs/schematics": "^10.0.1",
     "@nestjs/testing": "^10.0.2",
-    "@nx/eslint": "19.7.2",
-    "@nx/eslint-plugin": "19.7.2",
-    "@nx/jest": "19.7.2",
-    "@nx/js": "19.7.2",
-    "@nx/nest": "19.7.2",
-    "@nx/next": "19.7.2",
-    "@nx/node": "19.7.2",
-    "@nx/react": "19.7.2",
-    "@nx/vite": "19.7.2",
-    "@nx/webpack": "19.7.2",
-    "@nx/workspace": "19.7.2",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.7",
     "@svgr/webpack": "^8.0.1",
     "@swc-node/register": "1.9.2",
@@ -203,36 +203,96 @@
   "fileMap": {
     "nonProjectFiles": [
       {
-        "file": "libraries/helpers/src/subdomain/all.two.level.subdomain.ts",
-        "hash": "11299782291300004955"
-      },
-      {
-        "file": "libraries/helpers/src/utils/remove.markdown.ts",
-        "hash": "4329333594222972794"
-      },
-      {
-        "file": ".github/workflows/build-containers.yml",
-        "hash": "12125288151486098864"
-      },
-      {
-        "file": "libraries/helpers/src/utils/utm.saver.tsx",
-        "hash": "10273568092707519565"
-      },
-      {
-        "file": ".github/ISSUE_TEMPLATE/bug_report.yml",
-        "hash": "5825134754294952518"
-      },
-      {
-        "file": ".github/workflows/eslint.yaml",
-        "hash": "12126455791600149418"
+        "file": ".eslintrc.json",
+        "hash": "4103543200215464923"
       },
       {
         "file": "nx.json",
         "hash": "13143397806290733681"
       },
       {
+        "file": "var/docker/supervisord/workers.conf",
+        "hash": "425809648337353880"
+      },
+      {
+        "file": ".github/assets/gitroom-main-youtube.png",
+        "hash": "1336079232766965088"
+      },
+      {
         "file": "var/docker/docker-build.sh",
         "hash": "14026090172416867330"
+      },
+      {
+        "file": "LICENSE",
+        "hash": "12033914949973546246"
+      },
+      {
+        "file": ".github/assets/gitroom-lightmode-logo.png",
+        "hash": "7984896463819400098"
+      },
+      {
+        "file": "libraries/helpers/src/utils/read.or.fetch.ts",
+        "hash": "1544894843635825100"
+      },
+      {
+        "file": ".devcontainer/devcontainer.json",
+        "hash": "14351274284383957364"
+      },
+      {
+        "file": "libraries/helpers/src/subdomain/all.two.level.subdomain.ts",
+        "hash": "11299782291300004955"
+      },
+      {
+        "file": "libraries/helpers/src/utils/utm.saver.tsx",
+        "hash": "10273568092707519565"
+      },
+      {
+        "file": "Dockerfile.dev",
+        "hash": "1461686069827246996"
+      },
+      {
+        "file": "libraries/helpers/src/subdomain/subdomain.management.ts",
+        "hash": "4273482749269434135"
+      },
+      {
+        "file": ".vscode/extensions.json",
+        "hash": "4637156562308165301"
+      },
+      {
+        "file": "var/docker/supervisord/frontend.conf",
+        "hash": "12398553695749500531"
+      },
+      {
+        "file": "libraries/helpers/src/utils/remove.markdown.ts",
+        "hash": "4329333594222972794"
+      },
+      {
+        "file": "jest.config.ts",
+        "hash": "12333515226966617182"
+      },
+      {
+        "file": "package.json",
+        "hash": "3848046438623721126"
+      },
+      {
+        "file": "var/docker/supervisord/backend.conf",
+        "hash": "4847164419739612815"
+      },
+      {
+        "file": "libraries/helpers/src/swagger/load.swagger.ts",
+        "hash": "5609629468062019515"
+      },
+      {
+        "file": ".prettierrc",
+        "hash": "16267754514737964994"
+      },
+      {
+        "file": ".github/assets/gitroom-darkmode-logo.png",
+        "hash": "18333385985712224872"
+      },
+      {
+        "file": "jest.preset.js",
+        "hash": "9430166341120122740"
       },
       {
         "file": "libraries/helpers/src/utils/linkedin.company.prevent.remove.ts",
@@ -243,124 +303,12 @@
         "hash": "13071186497111846221"
       },
       {
-        "file": ".github/PULL_REQUEST_TEMPLATE.md",
-        "hash": "16615718099920987337"
-      },
-      {
-        "file": ".dockerignore",
-        "hash": "15111313885890417682"
-      },
-      {
-        "file": "jest.config.ts",
-        "hash": "12333515226966617182"
-      },
-      {
-        "file": "libraries/helpers/src/utils/custom.fetch.tsx",
-        "hash": "17955849608184954758"
-      },
-      {
-        "file": ".github/assets/gitroom-darkmode-logo.png",
-        "hash": "18333385985712224872"
-      },
-      {
-        "file": "CODE_OF_CONDUCT.md",
-        "hash": "11449244652848408044"
-      },
-      {
-        "file": "package.json",
-        "hash": "13273810584348176850"
-      },
-      {
-        "file": "tsconfig.base.json",
-        "hash": "12082231963935194608"
-      },
-      {
-        "file": "var/docker/docker-create.sh",
-        "hash": "2978359363426959461"
-      },
-      {
-        "file": "README.md",
-        "hash": "16225110991187405771"
-      },
-      {
-        "file": "var/docker/supervisord.conf",
-        "hash": "11075105168503179453"
-      },
-      {
-        "file": "var/docker/supervisord/cron.conf",
-        "hash": "9523241048078889399"
-      },
-      {
         "file": "var/docker/entrypoint.sh",
         "hash": "6985804703639296926"
       },
       {
-        "file": "var/docker/supervisord/frontend.conf",
-        "hash": "12398553695749500531"
-      },
-      {
-        "file": "libraries/helpers/src/swagger/load.swagger.ts",
-        "hash": "5609629468062019515"
-      },
-      {
-        "file": ".github/ISSUE_TEMPLATE/feature_request.yml",
-        "hash": "11833240586361254286"
-      },
-      {
-        "file": ".github/workflows/build.yaml",
-        "hash": "7391629024683681252"
-      },
-      {
-        "file": ".prettierignore",
-        "hash": "16448050467312557263"
-      },
-      {
-        "file": ".eslintrc.json",
-        "hash": "4103543200215464923"
-      },
-      {
-        "file": "Dockerfile.dev",
-        "hash": "1461686069827246996"
-      },
-      {
-        "file": "var/docker/supervisord/workers.conf",
-        "hash": "425809648337353880"
-      },
-      {
-        "file": "libraries/helpers/src/utils/is.dev.ts",
-        "hash": "5879249797514921209"
-      },
-      {
-        "file": "package-lock.json",
-        "hash": "7157237781841802369"
-      },
-      {
-        "file": ".github/assets/screen-003.png",
-        "hash": "13880033135844191755"
-      },
-      {
-        "file": ".github/assets/screen-004.png",
-        "hash": "3027781719589404088"
-      },
-      {
-        "file": "LICENSE",
-        "hash": "12033914949973546246"
-      },
-      {
-        "file": "libraries/helpers/src/utils/internal.fetch.ts",
-        "hash": "13025859423480541663"
-      },
-      {
-        "file": "migrations.json",
-        "hash": "8771718763912657492"
-      },
-      {
-        "file": ".env.example",
-        "hash": "12708730687857812667"
-      },
-      {
-        "file": ".vscode/extensions.json",
-        "hash": "4637156562308165301"
+        "file": "var/docker/supervisord.conf",
+        "hash": "11075105168503179453"
       },
       {
         "file": ".eslintignore",
@@ -371,60 +319,112 @@
         "hash": "996027888444059694"
       },
       {
-        "file": ".github/assets/gitroom-lightmode-logo.png",
-        "hash": "7984896463819400098"
-      },
-      {
-        "file": ".prettierrc",
-        "hash": "16267754514737964994"
-      },
-      {
-        "file": ".github/assets/gitroom-main-youtube.png",
-        "hash": "1336079232766965088"
-      },
-      {
-        "file": "docker-compose.dev.yaml",
-        "hash": "3039514600196570035"
-      },
-      {
-        "file": "libraries/helpers/src/subdomain/subdomain.management.ts",
-        "hash": "4273482749269434135"
+        "file": ".github/ISSUE_TEMPLATE/feature_request.yml",
+        "hash": "11833240586361254286"
       },
       {
         "file": ".github/assets/screen-002.png",
         "hash": "12305026372091775026"
       },
       {
+        "file": ".prettierignore",
+        "hash": "16448050467312557263"
+      },
+      {
+        "file": "CODE_OF_CONDUCT.md",
+        "hash": "11449244652848408044"
+      },
+      {
+        "file": "libraries/helpers/src/utils/internal.fetch.ts",
+        "hash": "13025859423480541663"
+      },
+      {
+        "file": ".github/PULL_REQUEST_TEMPLATE.md",
+        "hash": "16615718099920987337"
+      },
+      {
         "file": "libraries/helpers/src/utils/custom.fetch.func.ts",
         "hash": "3873920074194237778"
       },
       {
-        "file": "libraries/helpers/src/utils/read.or.fetch.ts",
-        "hash": "1544894843635825100"
+        "file": "docker-compose.dev.yaml",
+        "hash": "3039514600196570035"
+      },
+      {
+        "file": ".github/workflows/build.yaml",
+        "hash": "7391629024683681252"
       },
       {
         "file": ".github/workflows/codeql.yml",
         "hash": "14335231655185804782"
       },
       {
-        "file": "libraries/helpers/src/utils/timer.ts",
-        "hash": "2689293240374064534"
+        "file": "libraries/helpers/src/utils/is.dev.ts",
+        "hash": "5879249797514921209"
+      },
+      {
+        "file": ".github/ISSUE_TEMPLATE/bug_report.yml",
+        "hash": "5825134754294952518"
+      },
+      {
+        "file": "tsconfig.base.json",
+        "hash": "12082231963935194608"
+      },
+      {
+        "file": ".github/workflows/build-containers.yml",
+        "hash": "12125288151486098864"
+      },
+      {
+        "file": ".github/workflows/eslint.yaml",
+        "hash": "12126455791600149418"
       },
       {
         "file": "libraries/helpers/src/auth/auth.service.ts",
         "hash": "12602717388129413985"
       },
       {
-        "file": "var/docker/supervisord/backend.conf",
-        "hash": "4847164419739612815"
+        "file": "package-lock.json",
+        "hash": "7157237781841802369"
       },
       {
-        "file": "jest.preset.js",
-        "hash": "9430166341120122740"
+        "file": ".github/assets/screen-004.png",
+        "hash": "3027781719589404088"
       },
       {
-        "file": ".devcontainer/devcontainer.json",
-        "hash": "14351274284383957364"
+        "file": ".env.example",
+        "hash": "12708730687857812667"
+      },
+      {
+        "file": "migrations.json",
+        "hash": "8771718763912657492"
+      },
+      {
+        "file": "var/docker/supervisord/cron.conf",
+        "hash": "9523241048078889399"
+      },
+      {
+        "file": "libraries/helpers/src/utils/timer.ts",
+        "hash": "2689293240374064534"
+      },
+      {
+        "file": "README.md",
+        "hash": "16225110991187405771"
+      },
+      {
+        "file": "var/docker/docker-create.sh",
+        "hash": "2978359363426959461"
+      },
+      {
+        "file": ".dockerignore",
+        "hash": "15111313885890417682"
+      },
+      {
+        "file": "libraries/helpers/src/utils/custom.fetch.tsx",
+        "hash": "17955849608184954758"
+      },
+      {
+        "file": ".github/assets/screen-003.png",
+        "hash": "13880033135844191755"
       }
     ],
     "projectFileMap": {
