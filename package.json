@@ -147,7 +147,8 @@
     "utf-8-validate": "^5.0.10",
     "yargs": "^17.7.2",
     "yup": "^1.4.0",
-    "tailwindcss": "3.4.3"
+    "tailwindcss": "3.4.3",
+    "tailwind-scrollbar": "^3.1.0"
   },
   "devDependencies": {
     "@mintlify/scraping": "^3.0.90",
@@ -190,7 +191,6 @@
     "prisma": "^5.8.1",
     "react-refresh": "^0.10.0",
     "sass": "1.62.1",
-    "tailwind-scrollbar": "^3.1.0",
     "ts-jest": "^29.1.0",
     "ts-node": "10.9.1",
     "typescript": "5.5.4",
