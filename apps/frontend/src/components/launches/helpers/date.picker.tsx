@@ -91,7 +91,6 @@ export const DatePicker: FC<{
               input:
                 'bg-sixth h-[40px] border border-tableBorder text-textColor rounded-[4px] outline-none',
             }}
-            placeholder="Pick time"
             defaultValue={date.toDate()}
           />
           <Button className="mt-[12px]" onClick={changeShow}>
