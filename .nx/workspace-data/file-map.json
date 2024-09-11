@@ -48,6 +48,7 @@
     "@uppy/progress-bar": "^3.0.3",
     "@uppy/react": "^3.1.3",
     "@virtual-grid/react": "^2.0.2",
+    "nx": "19.7.2",
     "array-move": "^4.0.0",
     "axios": "1.6.7",
     "bcrypt": "^5.1.1",
@@ -113,7 +114,6 @@
     "@mintlify/scraping": "^3.0.90",
     "@nestjs/schematics": "^10.0.1",
     "@nestjs/testing": "^10.0.2",
-    "nx": "19.7.2",
     "@nx/eslint": "19.7.2",
     "@nx/eslint-plugin": "19.7.2",
     "@nx/jest": "19.7.2",
@@ -201,276 +201,233 @@
     }
   },
   "fileMap": {
-    "nonProjectFiles": [],
+    "nonProjectFiles": [
+      {
+        "file": "libraries/helpers/src/subdomain/all.two.level.subdomain.ts",
+        "hash": "11299782291300004955"
+      },
+      {
+        "file": "libraries/helpers/src/utils/remove.markdown.ts",
+        "hash": "4329333594222972794"
+      },
+      {
+        "file": ".github/workflows/build-containers.yml",
+        "hash": "12125288151486098864"
+      },
+      {
+        "file": "libraries/helpers/src/utils/utm.saver.tsx",
+        "hash": "10273568092707519565"
+      },
+      {
+        "file": ".github/ISSUE_TEMPLATE/bug_report.yml",
+        "hash": "5825134754294952518"
+      },
+      {
+        "file": ".github/workflows/eslint.yaml",
+        "hash": "12126455791600149418"
+      },
+      {
+        "file": "nx.json",
+        "hash": "13143397806290733681"
+      },
+      {
+        "file": "var/docker/docker-build.sh",
+        "hash": "14026090172416867330"
+      },
+      {
+        "file": "libraries/helpers/src/utils/linkedin.company.prevent.remove.ts",
+        "hash": "1375821839012190189"
+      },
+      {
+        "file": "libraries/helpers/src/utils/use.fire.events.ts",
+        "hash": "13071186497111846221"
+      },
+      {
+        "file": ".github/PULL_REQUEST_TEMPLATE.md",
+        "hash": "16615718099920987337"
+      },
+      {
+        "file": ".dockerignore",
+        "hash": "15111313885890417682"
+      },
+      {
+        "file": "jest.config.ts",
+        "hash": "12333515226966617182"
+      },
+      {
+        "file": "libraries/helpers/src/utils/custom.fetch.tsx",
+        "hash": "17955849608184954758"
+      },
+      {
+        "file": ".github/assets/gitroom-darkmode-logo.png",
+        "hash": "18333385985712224872"
+      },
+      {
+        "file": "CODE_OF_CONDUCT.md",
+        "hash": "11449244652848408044"
+      },
+      {
+        "file": "package.json",
+        "hash": "13273810584348176850"
+      },
+      {
+        "file": "tsconfig.base.json",
+        "hash": "12082231963935194608"
+      },
+      {
+        "file": "var/docker/docker-create.sh",
+        "hash": "2978359363426959461"
+      },
+      {
+        "file": "README.md",
+        "hash": "16225110991187405771"
+      },
+      {
+        "file": "var/docker/supervisord.conf",
+        "hash": "11075105168503179453"
+      },
+      {
+        "file": "var/docker/supervisord/cron.conf",
+        "hash": "9523241048078889399"
+      },
+      {
+        "file": "var/docker/entrypoint.sh",
+        "hash": "6985804703639296926"
+      },
+      {
+        "file": "var/docker/supervisord/frontend.conf",
+        "hash": "12398553695749500531"
+      },
+      {
+        "file": "libraries/helpers/src/swagger/load.swagger.ts",
+        "hash": "5609629468062019515"
+      },
+      {
+        "file": ".github/ISSUE_TEMPLATE/feature_request.yml",
+        "hash": "11833240586361254286"
+      },
+      {
+        "file": ".github/workflows/build.yaml",
+        "hash": "7391629024683681252"
+      },
+      {
+        "file": ".prettierignore",
+        "hash": "16448050467312557263"
+      },
+      {
+        "file": ".eslintrc.json",
+        "hash": "4103543200215464923"
+      },
+      {
+        "file": "Dockerfile.dev",
+        "hash": "1461686069827246996"
+      },
+      {
+        "file": "var/docker/supervisord/workers.conf",
+        "hash": "425809648337353880"
+      },
+      {
+        "file": "libraries/helpers/src/utils/is.dev.ts",
+        "hash": "5879249797514921209"
+      },
+      {
+        "file": "package-lock.json",
+        "hash": "7157237781841802369"
+      },
+      {
+        "file": ".github/assets/screen-003.png",
+        "hash": "13880033135844191755"
+      },
+      {
+        "file": ".github/assets/screen-004.png",
+        "hash": "3027781719589404088"
+      },
+      {
+        "file": "LICENSE",
+        "hash": "12033914949973546246"
+      },
+      {
+        "file": "libraries/helpers/src/utils/internal.fetch.ts",
+        "hash": "13025859423480541663"
+      },
+      {
+        "file": "migrations.json",
+        "hash": "8771718763912657492"
+      },
+      {
+        "file": ".env.example",
+        "hash": "12708730687857812667"
+      },
+      {
+        "file": ".vscode/extensions.json",
+        "hash": "4637156562308165301"
+      },
+      {
+        "file": ".eslintignore",
+        "hash": "7663861978715868291"
+      },
+      {
+        "file": ".gitignore",
+        "hash": "996027888444059694"
+      },
+      {
+        "file": ".github/assets/gitroom-lightmode-logo.png",
+        "hash": "7984896463819400098"
+      },
+      {
+        "file": ".prettierrc",
+        "hash": "16267754514737964994"
+      },
+      {
+        "file": ".github/assets/gitroom-main-youtube.png",
+        "hash": "1336079232766965088"
+      },
+      {
+        "file": "docker-compose.dev.yaml",
+        "hash": "3039514600196570035"
+      },
+      {
+        "file": "libraries/helpers/src/subdomain/subdomain.management.ts",
+        "hash": "4273482749269434135"
+      },
+      {
+        "file": ".github/assets/screen-002.png",
+        "hash": "12305026372091775026"
+      },
+      {
+        "file": "libraries/helpers/src/utils/custom.fetch.func.ts",
+        "hash": "3873920074194237778"
+      },
+      {
+        "file": "libraries/helpers/src/utils/read.or.fetch.ts",
+        "hash": "1544894843635825100"
+      },
+      {
+        "file": ".github/workflows/codeql.yml",
+        "hash": "14335231655185804782"
+      },
+      {
+        "file": "libraries/helpers/src/utils/timer.ts",
+        "hash": "2689293240374064534"
+      },
+      {
+        "file": "libraries/helpers/src/auth/auth.service.ts",
+        "hash": "12602717388129413985"
+      },
+      {
+        "file": "var/docker/supervisord/backend.conf",
+        "hash": "4847164419739612815"
+      },
+      {
+        "file": "jest.preset.js",
+        "hash": "9430166341120122740"
+      },
+      {
+        "file": ".devcontainer/devcontainer.json",
+        "hash": "14351274284383957364"
+      }
+    ],
     "projectFileMap": {
-      "backend": [
-        {
-          "file": "apps/backend/.eslintrc.json",
-          "hash": "13800677001662881425"
-        },
-        {
-          "file": "apps/backend/jest.config.ts",
-          "hash": "13565990685219350708"
-        },
-        {
-          "file": "apps/backend/project.json",
-          "hash": "4838857156351528057"
-        },
-        {
-          "file": "apps/backend/src/api/api.module.ts",
-          "hash": "3448986618542703823"
-        },
-        {
-          "file": "apps/backend/src/api/routes/agencies.controller.ts",
-          "hash": "15022699673983082208"
-        },
-        {
-          "file": "apps/backend/src/api/routes/analytics.controller.ts",
-          "hash": "1894551936760020142"
-        },
-        {
-          "file": "apps/backend/src/api/routes/auth.controller.ts",
-          "hash": "6335338264132194951"
-        },
-        {
-          "file": "apps/backend/src/api/routes/billing.controller.ts",
-          "hash": "5651213979571490197"
-        },
-        {
-          "file": "apps/backend/src/api/routes/comments.controller.ts",
-          "hash": "17574007682940858306"
-        },
-        {
-          "file": "apps/backend/src/api/routes/copilot.controller.ts",
-          "hash": "16711683457121191058"
-        },
-        {
-          "file": "apps/backend/src/api/routes/integrations.controller.ts",
-          "hash": "8197413645469149249"
-        },
-        {
-          "file": "apps/backend/src/api/routes/marketplace.controller.ts",
-          "hash": "5797034131596167685"
-        },
-        {
-          "file": "apps/backend/src/api/routes/media.controller.ts",
-          "hash": "11380275422644179629"
-        },
-        {
-          "file": "apps/backend/src/api/routes/messages.controller.ts",
-          "hash": "9474219418714427139"
-        },
-        {
-          "file": "apps/backend/src/api/routes/notifications.controller.ts",
-          "hash": "5197440296441443828"
-        },
-        {
-          "file": "apps/backend/src/api/routes/posts.controller.ts",
-          "hash": "10792640272103910942"
-        },
-        {
-          "file": "apps/backend/src/api/routes/public.controller.ts",
-          "hash": "11300400995027471654"
-        },
-        {
-          "file": "apps/backend/src/api/routes/settings.controller.ts",
-          "hash": "308707005236612273"
-        },
-        {
-          "file": "apps/backend/src/api/routes/stripe.controller.ts",
-          "hash": "13370326495222538422"
-        },
-        {
-          "file": "apps/backend/src/api/routes/users.controller.ts",
-          "hash": "10356345998872724122"
-        },
-        {
-          "file": "apps/backend/src/app.module.ts",
-          "hash": "18217041619983561147"
-        },
-        {
-          "file": "apps/backend/src/assets/.gitkeep",
-          "hash": "3244421341483603138"
-        },
-        {
-          "file": "apps/backend/src/main.ts",
-          "hash": "1855282359392801643"
-        },
-        {
-          "file": "apps/backend/src/services/auth/auth.middleware.ts",
-          "hash": "7509969953611433218"
-        },
-        {
-          "file": "apps/backend/src/services/auth/auth.service.ts",
-          "hash": "8758511002704853445"
-        },
-        {
-          "file": "apps/backend/src/services/auth/permissions/permissions.ability.ts",
-          "hash": "18219975579012458469"
-        },
-        {
-          "file": "apps/backend/src/services/auth/permissions/permissions.guard.ts",
-          "hash": "2362033220154992243"
-        },
-        {
-          "file": "apps/backend/src/services/auth/permissions/permissions.service.ts",
-          "hash": "18032580795926665839"
-        },
-        {
-          "file": "apps/backend/src/services/auth/permissions/subscription.exception.ts",
-          "hash": "15427407132934854384"
-        },
-        {
-          "file": "apps/backend/src/services/auth/providers.interface.ts",
-          "hash": "2809602420059349820"
-        },
-        {
-          "file": "apps/backend/src/services/auth/providers/github.provider.ts",
-          "hash": "7293619256382819567"
-        },
-        {
-          "file": "apps/backend/src/services/auth/providers/google.provider.ts",
-          "hash": "10011474887309988694"
-        },
-        {
-          "file": "apps/backend/src/services/auth/providers/providers.factory.ts",
-          "hash": "5919632019880690754"
-        },
-        {
-          "file": "apps/backend/tsconfig.app.json",
-          "hash": "15089815994262284547"
-        },
-        {
-          "file": "apps/backend/tsconfig.json",
-          "hash": "15579720136018731907"
-        },
-        {
-          "file": "apps/backend/tsconfig.spec.json",
-          "hash": "11550347367511341917"
-        },
-        {
-          "file": "apps/backend/webpack.config.js",
-          "hash": "5708803163266262522"
-        }
-      ],
-      "react-shared-libraries": [
-        {
-          "file": "libraries/react-shared-libraries/.eslintrc.json",
-          "hash": "13800677001662881425"
-        },
-        {
-          "file": "libraries/react-shared-libraries/README.md",
-          "hash": "1405906347456240405"
-        },
-        {
-          "file": "libraries/react-shared-libraries/project.json",
-          "hash": "4007164190564411356"
-        },
-        {
-          "file": "libraries/react-shared-libraries/src/form/button.tsx",
-          "hash": "16469949975838297342"
-        },
-        {
-          "file": "libraries/react-shared-libraries/src/form/canonical.tsx",
-          "hash": "10413085755775237151"
-        },
-        {
-          "file": "libraries/react-shared-libraries/src/form/checkbox.tsx",
-          "hash": "356497816639116800"
-        },
-        {
-          "file": "libraries/react-shared-libraries/src/form/color.picker.tsx",
-          "hash": "17663133310226533723"
-        },
-        {
-          "file": "libraries/react-shared-libraries/src/form/custom.select.tsx",
-          "hash": "3712597479524254906"
-        },
-        {
-          "file": "libraries/react-shared-libraries/src/form/input.tsx",
-          "hash": "15057852360215712317"
-        },
-        {
-          "file": "libraries/react-shared-libraries/src/form/select.tsx",
-          "hash": "14945024036006244295"
-        },
-        {
-          "file": "libraries/react-shared-libraries/src/form/slider.tsx",
-          "hash": "17401811183098778428"
-        },
-        {
-          "file": "libraries/react-shared-libraries/src/form/textarea.tsx",
-          "hash": "11214952986647159993"
-        },
-        {
-          "file": "libraries/react-shared-libraries/src/form/total.tsx",
-          "hash": "6748882072893520135"
-        },
-        {
-          "file": "libraries/react-shared-libraries/src/form/track.tsx",
-          "hash": "10565798816027206182"
-        },
-        {
-          "file": "libraries/react-shared-libraries/src/helpers/delete.dialog.tsx",
-          "hash": "15405891847879263985"
-        },
-        {
-          "file": "libraries/react-shared-libraries/src/helpers/image.with.fallback.tsx",
-          "hash": "17945819450586628130"
-        },
-        {
-          "file": "libraries/react-shared-libraries/src/helpers/inter.font.ts",
-          "hash": "11681107252454295864"
-        },
-        {
-          "file": "libraries/react-shared-libraries/src/helpers/is.general.tsx",
-          "hash": "9615623232906813964"
-        },
-        {
-          "file": "libraries/react-shared-libraries/src/helpers/mantine.wrapper.tsx",
-          "hash": "2954194639123953788"
-        },
-        {
-          "file": "libraries/react-shared-libraries/src/helpers/use.is.visible.tsx",
-          "hash": "4117446017327832824"
-        },
-        {
-          "file": "libraries/react-shared-libraries/src/helpers/use.media.directory.ts",
-          "hash": "15613013363440255254"
-        },
-        {
-          "file": "libraries/react-shared-libraries/src/helpers/use.prevent.window.unload.tsx",
-          "hash": "6111892856105897335"
-        },
-        {
-          "file": "libraries/react-shared-libraries/src/helpers/use.state.callback.ts",
-          "hash": "8013747512265567722"
-        },
-        {
-          "file": "libraries/react-shared-libraries/src/helpers/utc.date.render.tsx",
-          "hash": "12918657694618869336"
-        },
-        {
-          "file": "libraries/react-shared-libraries/src/helpers/video.frame.tsx",
-          "hash": "521180303782453833"
-        },
-        {
-          "file": "libraries/react-shared-libraries/src/helpers/video.or.image.tsx",
-          "hash": "8671890792132354168"
-        },
-        {
-          "file": "libraries/react-shared-libraries/src/toaster/toaster.tsx",
-          "hash": "15300976623019465322"
-        },
-        {
-          "file": "libraries/react-shared-libraries/tsconfig.json",
-          "hash": "3792648976171159090"
-        },
-        {
-          "file": "libraries/react-shared-libraries/tsconfig.lib.json",
-          "hash": "1084017896242351988"
-        }
-      ],
       "docs": [
         {
           "file": "apps/docs/README.md",
@@ -899,586 +856,6 @@
         {
           "file": "apps/docs/use/settings.mdx",
           "hash": "7990471555101074598"
-        }
-      ],
-      "nestjs-libraries": [
-        {
-          "file": "libraries/nestjs-libraries/.eslintrc.json",
-          "hash": "13800677001662881425"
-        },
-        {
-          "file": "libraries/nestjs-libraries/README.md",
-          "hash": "1405906347456240405"
-        },
-        {
-          "file": "libraries/nestjs-libraries/project.json",
-          "hash": "17762445633394353706"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/bull-mq-transport-new/bull.mq.module.ts",
-          "hash": "1367046701470269334"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/bull-mq-transport-new/client.ts",
-          "hash": "6110461504661453123"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/bull-mq-transport-new/strategy.ts",
-          "hash": "17103783825787024074"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/database/prisma/agencies/agencies.repository.ts",
-          "hash": "17362949771332446857"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/database/prisma/agencies/agencies.service.ts",
-          "hash": "8055225731307784618"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/database/prisma/comments/comments.repository.ts",
-          "hash": "17130270751440640136"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/database/prisma/comments/comments.service.ts",
-          "hash": "15768418268628632246"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/database/prisma/database.module.ts",
-          "hash": "556995840828448680"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/database/prisma/integrations/integration.repository.ts",
-          "hash": "14409468826509787484"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/database/prisma/integrations/integration.service.ts",
-          "hash": "11508993089043394729"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/database/prisma/marketplace/item.user.repository.ts",
-          "hash": "15953189654034807898"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/database/prisma/marketplace/item.user.service.ts",
-          "hash": "5643742094525330042"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/database/prisma/marketplace/messages.repository.ts",
-          "hash": "13321864892622883029"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/database/prisma/marketplace/messages.service.ts",
-          "hash": "4364671462468994727"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/database/prisma/marketplace/tags.list.ts",
-          "hash": "10206004138800302008"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/database/prisma/media/media.repository.ts",
-          "hash": "13907492984723387087"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/database/prisma/media/media.service.ts",
-          "hash": "6479112517721636450"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/database/prisma/notifications/notification.service.ts",
-          "hash": "17416079474212071461"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/database/prisma/notifications/notifications.repository.ts",
-          "hash": "12502296627171281207"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/database/prisma/organizations/organization.repository.ts",
-          "hash": "13163562450361704448"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/database/prisma/organizations/organization.service.ts",
-          "hash": "15851369861059925690"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/database/prisma/posts/posts.repository.ts",
-          "hash": "11044364083260263416"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/database/prisma/posts/posts.service.ts",
-          "hash": "14574215766032376157"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/database/prisma/prisma.service.ts",
-          "hash": "5531139344629942520"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/database/prisma/schema.prisma",
-          "hash": "17863124008881603864"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/database/prisma/stars/stars.repository.ts",
-          "hash": "13221959072057357229"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/database/prisma/stars/stars.service.ts",
-          "hash": "7636309448572942487"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/database/prisma/subscriptions/pricing.ts",
-          "hash": "910699754873468265"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/database/prisma/subscriptions/subscription.repository.ts",
-          "hash": "17574067521832696973"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/database/prisma/subscriptions/subscription.service.ts",
-          "hash": "749667598310590387"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/database/prisma/users/users.repository.ts",
-          "hash": "3233771122389427913"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/database/prisma/users/users.service.ts",
-          "hash": "8408974996030263322"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/agencies/create.agency.dto.ts",
-          "hash": "7013520594166692643"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/analytics/stars.list.dto.ts",
-          "hash": "4468840690291235575"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/auth/create.org.user.dto.ts",
-          "hash": "11361569442173076068"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/auth/forgot-return.password.dto.ts",
-          "hash": "7499367262107212921"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/auth/forgot.password.dto.ts",
-          "hash": "15964465413608573668"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/auth/login.user.dto.ts",
-          "hash": "12087123939987092587"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/billing/billing.subscribe.dto.ts",
-          "hash": "13386953960387852846"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/comments/add.comment.dto.ts",
-          "hash": "4642065549966644712"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/generator/create.generated.posts.dto.ts",
-          "hash": "17247173015934966761"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/generator/generator.dto.ts",
-          "hash": "5666091043199065605"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/integrations/api.key.dto.ts",
-          "hash": "13531844450555192312"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/integrations/connect.integration.dto.ts",
-          "hash": "8058452559664431394"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/integrations/integration.function.dto.ts",
-          "hash": "9564510884805548944"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/marketplace/add.remove.item.dto.ts",
-          "hash": "6501285906550478825"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/marketplace/audience.dto.ts",
-          "hash": "17246057445719515588"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/marketplace/change.active.dto.ts",
-          "hash": "13262203113001733841"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/marketplace/create.offer.dto.ts",
-          "hash": "16788601695612379671"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/marketplace/items.dto.ts",
-          "hash": "8318534974265146898"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/marketplace/new.conversation.dto.ts",
-          "hash": "5500574475904935927"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/media/media.dto.ts",
-          "hash": "11245213416772650356"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/messages/add.message.ts",
-          "hash": "7200127800310063888"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/posts/create.post.dto.ts",
-          "hash": "626701850948308074"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/posts/get.posts.dto.ts",
-          "hash": "7687576652276727154"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/posts/providers-settings/all.providers.settings.ts",
-          "hash": "12708146642540100539"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/posts/providers-settings/dev.to.settings.dto.ts",
-          "hash": "14053189096407891800"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/posts/providers-settings/dev.to.tags.settings.dto.ts",
-          "hash": "5538191689667760881"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/posts/providers-settings/dribbble.dto.ts",
-          "hash": "15240524885591419294"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/posts/providers-settings/hashnode.settings.dto.ts",
-          "hash": "2638793565334383495"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/posts/providers-settings/medium.settings.dto.ts",
-          "hash": "3122515755994075006"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/posts/providers-settings/pinterest.dto.ts",
-          "hash": "3251367067037901285"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/posts/providers-settings/reddit.dto.ts",
-          "hash": "7866297708202998964"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/posts/providers-settings/tiktok.dto.ts",
-          "hash": "7222856163947247559"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/posts/providers-settings/youtube.settings.dto.ts",
-          "hash": "2486842778317850092"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/settings/add.team.member.dto.ts",
-          "hash": "1486229094160074098"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/dtos/users/user.details.dto.ts",
-          "hash": "15300570974509191318"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/integrations/article/article.integrations.interface.ts",
-          "hash": "8420661015427826461"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/integrations/article/dev.to.provider.ts",
-          "hash": "16306619531740312834"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/integrations/article/hashnode.provider.ts",
-          "hash": "9306784907214422413"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/integrations/article/hashnode.tags.ts",
-          "hash": "9129509207576732895"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/integrations/article/medium.provider.ts",
-          "hash": "7390111057796302840"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/integrations/integration.manager.ts",
-          "hash": "12199536887688621187"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/integrations/integration.missing.scopes.ts",
-          "hash": "9580094800970107732"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/integrations/social.abstract.ts",
-          "hash": "1888930268760768227"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/integrations/social/dribbble.provider.ts",
-          "hash": "12789861784041156495"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/integrations/social/facebook.provider.ts",
-          "hash": "9329002453852481007"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/integrations/social/instagram.provider.ts",
-          "hash": "11561692014358394999"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/integrations/social/linkedin.page.provider.ts",
-          "hash": "17605914221452837689"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/integrations/social/linkedin.provider.ts",
-          "hash": "2739843841243298596"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/integrations/social/pinterest.provider.ts",
-          "hash": "2218318907735656188"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/integrations/social/reddit.provider.ts",
-          "hash": "16838248429295778642"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/integrations/social/social.integrations.interface.ts",
-          "hash": "12912887834681279413"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/integrations/social/threads.provider.ts",
-          "hash": "2777418306514021063"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/integrations/social/tiktok.provider.ts",
-          "hash": "15681150238725887824"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/integrations/social/x.provider.ts",
-          "hash": "10811236017699529428"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/integrations/social/youtube.provider.ts",
-          "hash": "13725855330767902189"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/openai/extract.content.service.ts",
-          "hash": "14604510424858748037"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/openai/openai.service.ts",
-          "hash": "8274120588609600130"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/redis/redis.service.ts",
-          "hash": "18392743220160223332"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/services/codes.service.ts",
-          "hash": "9516227522209958024"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/services/email.service.ts",
-          "hash": "6295330803816896276"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/services/exception.filter.ts",
-          "hash": "14814034488773055625"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/services/make.is.ts",
-          "hash": "13125586716440552659"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/services/newsletter.service.ts",
-          "hash": "9509522059959594947"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/services/stripe.country.list.ts",
-          "hash": "6110249117004917535"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/services/stripe.service.ts",
-          "hash": "37512720087864747"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/services/trending.service.ts",
-          "hash": "17343528042390672726"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/services/trending.ts",
-          "hash": "3776535998188457373"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/upload/cloudflare.storage.ts",
-          "hash": "15842504990337155320"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/upload/custom.upload.validation.ts",
-          "hash": "6012385567030272640"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/upload/r2.uploader.ts",
-          "hash": "4059007914148794323"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/upload/upload.module.ts",
-          "hash": "15946040705710941177"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/user/org.from.request.ts",
-          "hash": "2393581106925849401"
-        },
-        {
-          "file": "libraries/nestjs-libraries/src/user/user.from.request.ts",
-          "hash": "11032599316751893155"
-        },
-        {
-          "file": "libraries/nestjs-libraries/tsconfig.json",
-          "hash": "3394741610301473512"
-        },
-        {
-          "file": "libraries/nestjs-libraries/tsconfig.lib.json",
-          "hash": "18155349116525859334"
-        }
-      ],
-      "commands": [
-        {
-          "file": "apps/commands/.eslintrc.json",
-          "hash": "13800677001662881425"
-        },
-        {
-          "file": "apps/commands/jest.config.ts",
-          "hash": "7531699116142924183"
-        },
-        {
-          "file": "apps/commands/project.json",
-          "hash": "14946563384797773703"
-        },
-        {
-          "file": "apps/commands/src/command.module.ts",
-          "hash": "17219208399822395780"
-        },
-        {
-          "file": "apps/commands/src/main.ts",
-          "hash": "638982593281210653"
-        },
-        {
-          "file": "apps/commands/src/tasks/check.stars.ts",
-          "hash": "5536199936938577299"
-        },
-        {
-          "file": "apps/commands/src/tasks/refresh.tokens.ts",
-          "hash": "3901327810659437778"
-        },
-        {
-          "file": "apps/commands/tsconfig.app.json",
-          "hash": "3171572500325445971"
-        },
-        {
-          "file": "apps/commands/tsconfig.json",
-          "hash": "3490524966360018312"
-        },
-        {
-          "file": "apps/commands/tsconfig.spec.json",
-          "hash": "11550347367511341917"
-        },
-        {
-          "file": "apps/commands/webpack.config.js",
-          "hash": "8260508390776215679"
-        }
-      ],
-      "cron": [
-        {
-          "file": "apps/cron/.eslintrc.json",
-          "hash": "13800677001662881425"
-        },
-        {
-          "file": "apps/cron/jest.config.ts",
-          "hash": "7531699116142924183"
-        },
-        {
-          "file": "apps/cron/project.json",
-          "hash": "12961267011515469971"
-        },
-        {
-          "file": "apps/cron/src/cron.module.ts",
-          "hash": "4380924017006066168"
-        },
-        {
-          "file": "apps/cron/src/main.ts",
-          "hash": "15491301299812474655"
-        },
-        {
-          "file": "apps/cron/src/tasks/check.stars.ts",
-          "hash": "16073240326041793383"
-        },
-        {
-          "file": "apps/cron/src/tasks/sync.trending.ts",
-          "hash": "4223464328878940651"
-        },
-        {
-          "file": "apps/cron/tsconfig.app.json",
-          "hash": "3171572500325445971"
-        },
-        {
-          "file": "apps/cron/tsconfig.json",
-          "hash": "3490524966360018312"
-        },
-        {
-          "file": "apps/cron/tsconfig.spec.json",
-          "hash": "11550347367511341917"
-        },
-        {
-          "file": "apps/cron/webpack.config.js",
-          "hash": "8260508390776215679"
-        }
-      ],
-      "workers": [
-        {
-          "file": "apps/workers/.eslintrc.json",
-          "hash": "13800677001662881425"
-        },
-        {
-          "file": "apps/workers/jest.config.ts",
-          "hash": "7531699116142924183"
-        },
-        {
-          "file": "apps/workers/project.json",
-          "hash": "16619678358158188646"
-        },
-        {
-          "file": "apps/workers/src/app/app.module.ts",
-          "hash": "9977002778067145169"
-        },
-        {
-          "file": "apps/workers/src/app/posts.controller.ts",
-          "hash": "10500739339240369755"
-        },
-        {
-          "file": "apps/workers/src/app/stars.controller.ts",
-          "hash": "14588652178547414795"
-        },
-        {
-          "file": "apps/workers/src/main.ts",
-          "hash": "10931306948844444903"
-        },
-        {
-          "file": "apps/workers/tsconfig.app.json",
-          "hash": "3171572500325445971"
-        },
-        {
-          "file": "apps/workers/tsconfig.json",
-          "hash": "3490524966360018312"
-        },
-        {
-          "file": "apps/workers/tsconfig.spec.json",
-          "hash": "11550347367511341917"
-        },
-        {
-          "file": "apps/workers/webpack.config.js",
-          "hash": "8260508390776215679"
         }
       ],
       "frontend": [
@@ -2255,400 +1632,852 @@
           "hash": "5280293892406828523"
         }
       ],
-      "gitroom": [
+      "nestjs-libraries": [
         {
-          "file": ".devcontainer/devcontainer.json",
-          "hash": "14351274284383957364"
+          "file": "libraries/nestjs-libraries/.eslintrc.json",
+          "hash": "13800677001662881425"
         },
         {
-          "file": ".dockerignore",
-          "hash": "15111313885890417682"
+          "file": "libraries/nestjs-libraries/README.md",
+          "hash": "1405906347456240405"
         },
         {
-          "file": ".env.example",
-          "hash": "12708730687857812667"
+          "file": "libraries/nestjs-libraries/project.json",
+          "hash": "17762445633394353706"
         },
         {
-          "file": ".eslintignore",
-          "hash": "7663861978715868291"
+          "file": "libraries/nestjs-libraries/src/bull-mq-transport-new/bull.mq.module.ts",
+          "hash": "1367046701470269334"
         },
         {
-          "file": ".eslintrc.json",
-          "hash": "4103543200215464923"
+          "file": "libraries/nestjs-libraries/src/bull-mq-transport-new/client.ts",
+          "hash": "6110461504661453123"
         },
         {
-          "file": ".github/ISSUE_TEMPLATE/bug_report.yml",
-          "hash": "5825134754294952518"
+          "file": "libraries/nestjs-libraries/src/bull-mq-transport-new/strategy.ts",
+          "hash": "17103783825787024074"
         },
         {
-          "file": ".github/ISSUE_TEMPLATE/feature_request.yml",
-          "hash": "11833240586361254286"
+          "file": "libraries/nestjs-libraries/src/database/prisma/agencies/agencies.repository.ts",
+          "hash": "17362949771332446857"
         },
         {
-          "file": ".github/PULL_REQUEST_TEMPLATE.md",
-          "hash": "16615718099920987337"
+          "file": "libraries/nestjs-libraries/src/database/prisma/agencies/agencies.service.ts",
+          "hash": "8055225731307784618"
         },
         {
-          "file": ".github/assets/gitroom-darkmode-logo.png",
-          "hash": "18333385985712224872"
+          "file": "libraries/nestjs-libraries/src/database/prisma/comments/comments.repository.ts",
+          "hash": "17130270751440640136"
         },
         {
-          "file": ".github/assets/gitroom-lightmode-logo.png",
-          "hash": "7984896463819400098"
+          "file": "libraries/nestjs-libraries/src/database/prisma/comments/comments.service.ts",
+          "hash": "15768418268628632246"
         },
         {
-          "file": ".github/assets/gitroom-main-youtube.png",
-          "hash": "1336079232766965088"
+          "file": "libraries/nestjs-libraries/src/database/prisma/database.module.ts",
+          "hash": "556995840828448680"
         },
         {
-          "file": ".github/assets/screen-002.png",
-          "hash": "12305026372091775026"
+          "file": "libraries/nestjs-libraries/src/database/prisma/integrations/integration.repository.ts",
+          "hash": "14409468826509787484"
         },
         {
-          "file": ".github/assets/screen-003.png",
-          "hash": "13880033135844191755"
+          "file": "libraries/nestjs-libraries/src/database/prisma/integrations/integration.service.ts",
+          "hash": "11508993089043394729"
         },
         {
-          "file": ".github/assets/screen-004.png",
-          "hash": "3027781719589404088"
+          "file": "libraries/nestjs-libraries/src/database/prisma/marketplace/item.user.repository.ts",
+          "hash": "15953189654034807898"
         },
         {
-          "file": ".github/workflows/build-containers.yml",
-          "hash": "12125288151486098864"
+          "file": "libraries/nestjs-libraries/src/database/prisma/marketplace/item.user.service.ts",
+          "hash": "5643742094525330042"
         },
         {
-          "file": ".github/workflows/build.yaml",
-          "hash": "7391629024683681252"
+          "file": "libraries/nestjs-libraries/src/database/prisma/marketplace/messages.repository.ts",
+          "hash": "13321864892622883029"
         },
         {
-          "file": ".github/workflows/codeql.yml",
-          "hash": "14335231655185804782"
+          "file": "libraries/nestjs-libraries/src/database/prisma/marketplace/messages.service.ts",
+          "hash": "4364671462468994727"
         },
         {
-          "file": ".github/workflows/eslint.yaml",
-          "hash": "12126455791600149418"
+          "file": "libraries/nestjs-libraries/src/database/prisma/marketplace/tags.list.ts",
+          "hash": "10206004138800302008"
         },
         {
-          "file": ".gitignore",
-          "hash": "15289906206056207021"
+          "file": "libraries/nestjs-libraries/src/database/prisma/media/media.repository.ts",
+          "hash": "13907492984723387087"
         },
         {
-          "file": ".prettierignore",
-          "hash": "16448050467312557263"
+          "file": "libraries/nestjs-libraries/src/database/prisma/media/media.service.ts",
+          "hash": "6479112517721636450"
         },
         {
-          "file": ".prettierrc",
-          "hash": "16267754514737964994"
+          "file": "libraries/nestjs-libraries/src/database/prisma/notifications/notification.service.ts",
+          "hash": "17416079474212071461"
         },
         {
-          "file": ".vscode/extensions.json",
-          "hash": "4637156562308165301"
+          "file": "libraries/nestjs-libraries/src/database/prisma/notifications/notifications.repository.ts",
+          "hash": "12502296627171281207"
         },
         {
-          "file": "CODE_OF_CONDUCT.md",
-          "hash": "11449244652848408044"
+          "file": "libraries/nestjs-libraries/src/database/prisma/organizations/organization.repository.ts",
+          "hash": "13163562450361704448"
         },
         {
-          "file": "Dockerfile.dev",
-          "hash": "1461686069827246996"
+          "file": "libraries/nestjs-libraries/src/database/prisma/organizations/organization.service.ts",
+          "hash": "15851369861059925690"
         },
         {
-          "file": "LICENSE",
-          "hash": "12033914949973546246"
+          "file": "libraries/nestjs-libraries/src/database/prisma/posts/posts.repository.ts",
+          "hash": "11044364083260263416"
         },
         {
-          "file": "README.md",
-          "hash": "16225110991187405771"
+          "file": "libraries/nestjs-libraries/src/database/prisma/posts/posts.service.ts",
+          "hash": "14574215766032376157"
         },
         {
-          "file": "docker-compose.dev.yaml",
-          "hash": "3039514600196570035"
+          "file": "libraries/nestjs-libraries/src/database/prisma/prisma.service.ts",
+          "hash": "5531139344629942520"
         },
         {
-          "file": "jest.config.ts",
-          "hash": "12333515226966617182"
+          "file": "libraries/nestjs-libraries/src/database/prisma/schema.prisma",
+          "hash": "17863124008881603864"
         },
         {
-          "file": "jest.preset.js",
-          "hash": "9430166341120122740"
+          "file": "libraries/nestjs-libraries/src/database/prisma/stars/stars.repository.ts",
+          "hash": "13221959072057357229"
         },
         {
-          "file": "libraries/helpers/src/auth/auth.service.ts",
-          "hash": "12602717388129413985"
+          "file": "libraries/nestjs-libraries/src/database/prisma/stars/stars.service.ts",
+          "hash": "7636309448572942487"
         },
         {
-          "file": "libraries/helpers/src/subdomain/all.two.level.subdomain.ts",
-          "hash": "11299782291300004955"
+          "file": "libraries/nestjs-libraries/src/database/prisma/subscriptions/pricing.ts",
+          "hash": "910699754873468265"
         },
         {
-          "file": "libraries/helpers/src/subdomain/subdomain.management.ts",
-          "hash": "4273482749269434135"
+          "file": "libraries/nestjs-libraries/src/database/prisma/subscriptions/subscription.repository.ts",
+          "hash": "17574067521832696973"
         },
         {
-          "file": "libraries/helpers/src/swagger/load.swagger.ts",
-          "hash": "5609629468062019515"
+          "file": "libraries/nestjs-libraries/src/database/prisma/subscriptions/subscription.service.ts",
+          "hash": "749667598310590387"
         },
         {
-          "file": "libraries/helpers/src/utils/custom.fetch.func.ts",
-          "hash": "3873920074194237778"
+          "file": "libraries/nestjs-libraries/src/database/prisma/users/users.repository.ts",
+          "hash": "3233771122389427913"
         },
         {
-          "file": "libraries/helpers/src/utils/custom.fetch.tsx",
-          "hash": "17955849608184954758"
+          "file": "libraries/nestjs-libraries/src/database/prisma/users/users.service.ts",
+          "hash": "8408974996030263322"
         },
         {
-          "file": "libraries/helpers/src/utils/internal.fetch.ts",
-          "hash": "13025859423480541663"
+          "file": "libraries/nestjs-libraries/src/dtos/agencies/create.agency.dto.ts",
+          "hash": "7013520594166692643"
         },
         {
-          "file": "libraries/helpers/src/utils/is.dev.ts",
-          "hash": "5879249797514921209"
+          "file": "libraries/nestjs-libraries/src/dtos/analytics/stars.list.dto.ts",
+          "hash": "4468840690291235575"
         },
         {
-          "file": "libraries/helpers/src/utils/linkedin.company.prevent.remove.ts",
-          "hash": "1375821839012190189"
+          "file": "libraries/nestjs-libraries/src/dtos/auth/create.org.user.dto.ts",
+          "hash": "11361569442173076068"
         },
         {
-          "file": "libraries/helpers/src/utils/read.or.fetch.ts",
-          "hash": "1544894843635825100"
+          "file": "libraries/nestjs-libraries/src/dtos/auth/forgot-return.password.dto.ts",
+          "hash": "7499367262107212921"
         },
         {
-          "file": "libraries/helpers/src/utils/remove.markdown.ts",
-          "hash": "4329333594222972794"
+          "file": "libraries/nestjs-libraries/src/dtos/auth/forgot.password.dto.ts",
+          "hash": "15964465413608573668"
         },
         {
-          "file": "libraries/helpers/src/utils/timer.ts",
-          "hash": "2689293240374064534"
+          "file": "libraries/nestjs-libraries/src/dtos/auth/login.user.dto.ts",
+          "hash": "12087123939987092587"
         },
         {
-          "file": "libraries/helpers/src/utils/use.fire.events.ts",
-          "hash": "13071186497111846221"
+          "file": "libraries/nestjs-libraries/src/dtos/billing/billing.subscribe.dto.ts",
+          "hash": "13386953960387852846"
         },
         {
-          "file": "libraries/helpers/src/utils/utm.saver.tsx",
-          "hash": "10273568092707519565"
+          "file": "libraries/nestjs-libraries/src/dtos/comments/add.comment.dto.ts",
+          "hash": "4642065549966644712"
         },
         {
-          "file": "migrations.json",
-          "hash": "8771718763912657492"
+          "file": "libraries/nestjs-libraries/src/dtos/generator/create.generated.posts.dto.ts",
+          "hash": "17247173015934966761"
         },
         {
-          "file": "nx.json",
-          "hash": "13143397806290733681"
+          "file": "libraries/nestjs-libraries/src/dtos/generator/generator.dto.ts",
+          "hash": "5666091043199065605"
         },
         {
-          "file": "package-lock.json",
-          "hash": "9914783865884169819"
+          "file": "libraries/nestjs-libraries/src/dtos/integrations/api.key.dto.ts",
+          "hash": "13531844450555192312"
         },
         {
-          "file": "package.json",
-          "hash": "443947593856547327",
-          "deps": [
-            "npm:@mintlify/scraping",
-            "npm:@nestjs/schematics",
-            "npm:@nestjs/testing",
-            "npm:nx",
-            "npm:@nx/eslint",
-            "npm:@nx/eslint-plugin",
-            "npm:@nx/jest",
-            "npm:@nx/js",
-            "npm:@nx/nest",
-            "npm:@nx/next",
-            "npm:@nx/node",
-            "npm:@nx/react",
-            "npm:@nx/vite",
-            "npm:@nx/webpack",
-            "npm:@nx/workspace",
-            "npm:@pmmmwh/react-refresh-webpack-plugin",
-            "npm:@svgr/webpack",
-            "npm:@swc-node/register",
-            "npm:@swc/cli",
-            "npm:@swc/core",
-            "npm:@testing-library/react",
-            "npm:@types/cache-manager-redis-store",
-            "npm:@types/cookie-parser",
-            "npm:@types/jest",
-            "npm:@types/node",
-            "npm:@types/react",
-            "npm:@types/react-dom",
-            "npm:@types/uuid",
-            "npm:@types/yargs",
-            "npm:@typescript-eslint/eslint-plugin",
-            "npm:@typescript-eslint/parser",
-            "npm:@vitejs/plugin-react",
-            "npm:@vitest/coverage-v8",
-            "npm:@vitest/ui",
-            "npm:autoprefixer",
-            "npm:babel-jest",
-            "npm:eslint",
-            "npm:eslint-config-next",
-            "npm:eslint-config-prettier",
-            "npm:eslint-plugin-import",
-            "npm:eslint-plugin-jsx-a11y",
-            "npm:eslint-plugin-react",
-            "npm:eslint-plugin-react-hooks",
-            "npm:jest",
-            "npm:jest-environment-jsdom",
-            "npm:jest-environment-node",
-            "npm:jsdom",
-            "npm:postcss",
-            "npm:prettier",
-            "npm:prisma",
-            "npm:react-refresh",
-            "npm:sass",
-            "npm:tailwind-scrollbar",
-            "npm:tailwindcss",
-            "npm:ts-jest",
-            "npm:ts-node",
-            "npm:typescript",
-            "npm:url-loader",
-            "npm:vite",
-            "npm:vitest",
-            "npm:@aws-sdk/client-s3",
-            "npm:@aws-sdk/s3-request-presigner",
-            "npm:@casl/ability",
-            "npm:@copilotkit/react-core",
-            "npm:@copilotkit/react-textarea",
-            "npm:@copilotkit/react-ui",
-            "npm:@copilotkit/runtime",
-            "npm:@hookform/resolvers",
-            "npm:@mantine/core",
-            "npm:@mantine/dates",
-            "npm:@mantine/hooks",
-            "npm:@mantine/modals",
-            "npm:@nestjs/cache-manager",
-            "npm:@nestjs/common",
-            "npm:@nestjs/core",
-            "npm:@nestjs/microservices",
-            "npm:@nestjs/platform-express",
-            "npm:@nestjs/schedule",
-            "npm:@nestjs/serve-static",
-            "npm:@nestjs/swagger",
-            "npm:@prisma/client",
-            "npm:@swc/helpers",
-            "npm:@sweetalert2/theme-dark",
-            "npm:@tanstack/react-virtual",
-            "npm:@types/bcrypt",
-            "npm:@types/concat-stream",
-            "npm:@types/jsonwebtoken",
-            "npm:@types/lodash",
-            "npm:@types/md5",
-            "npm:@types/mime-types",
-            "npm:@types/multer",
-            "npm:@types/remove-markdown",
-            "npm:@types/sha256",
-            "npm:@types/stripe",
-            "npm:@types/yup",
-            "npm:@uidotdev/usehooks",
-            "npm:@uiw/react-md-editor",
-            "npm:@uppy/aws-s3",
-            "npm:@uppy/aws-s3-multipart",
-            "npm:@uppy/core",
-            "npm:@uppy/dashboard",
-            "npm:@uppy/drag-drop",
-            "npm:@uppy/file-input",
-            "npm:@uppy/progress-bar",
-            "npm:@uppy/react",
-            "npm:@virtual-grid/react",
-            "npm:array-move",
-            "npm:axios",
-            "npm:bcrypt",
-            "npm:bufferutil",
-            "npm:bullmq",
-            "npm:cache-manager-redis-store",
-            "npm:canvas",
-            "npm:chart.js",
-            "npm:class-transformer",
-            "npm:class-validator",
-            "npm:clsx",
-            "npm:concat-stream",
-            "npm:cookie-parser",
-            "npm:copy-to-clipboard",
-            "npm:crypto-hash",
-            "npm:dayjs",
-            "npm:google-auth-library",
-            "npm:googleapis",
-            "npm:ioredis",
-            "npm:json-to-graphql-query",
-            "npm:jsonwebtoken",
-            "npm:lodash",
-            "npm:lucide-react",
-            "npm:md5",
-            "npm:mime-types",
-            "npm:multer",
-            "npm:nestjs-command",
-            "npm:next",
-            "npm:next-plausible",
-            "npm:openai",
-            "npm:polotno",
-            "npm:prisma-paginate",
-            "npm:react",
-            "npm:react-colorful",
-            "npm:react-dnd",
-            "npm:react-dnd-html5-backend",
-            "npm:react-dom",
-            "npm:react-hook-form",
-            "npm:react-loading",
-            "npm:react-query",
-            "npm:react-router-dom",
-            "npm:react-slider",
-            "npm:react-tag-autocomplete",
-            "npm:react-tooltip",
-            "npm:react-use-keypress",
-            "npm:redis",
-            "npm:reflect-metadata",
-            "npm:remove-markdown",
-            "npm:resend",
-            "npm:rxjs",
-            "npm:sha256",
-            "npm:sharp",
-            "npm:simple-statistics",
-            "npm:stripe",
-            "npm:sweetalert2",
-            "npm:swr",
-            "npm:tslib",
-            "npm:twitter-api-v2",
-            "npm:use-debounce",
-            "npm:utf-8-validate",
-            "npm:yargs",
-            "npm:yup"
-          ]
+          "file": "libraries/nestjs-libraries/src/dtos/integrations/connect.integration.dto.ts",
+          "hash": "8058452559664431394"
         },
         {
-          "file": "tsconfig.base.json",
-          "hash": "12082231963935194608"
+          "file": "libraries/nestjs-libraries/src/dtos/integrations/integration.function.dto.ts",
+          "hash": "9564510884805548944"
         },
         {
-          "file": "var/docker/docker-build.sh",
-          "hash": "14026090172416867330"
+          "file": "libraries/nestjs-libraries/src/dtos/marketplace/add.remove.item.dto.ts",
+          "hash": "6501285906550478825"
         },
         {
-          "file": "var/docker/docker-create.sh",
-          "hash": "2978359363426959461"
+          "file": "libraries/nestjs-libraries/src/dtos/marketplace/audience.dto.ts",
+          "hash": "17246057445719515588"
         },
         {
-          "file": "var/docker/entrypoint.sh",
-          "hash": "6985804703639296926"
+          "file": "libraries/nestjs-libraries/src/dtos/marketplace/change.active.dto.ts",
+          "hash": "13262203113001733841"
         },
         {
-          "file": "var/docker/supervisord.conf",
-          "hash": "11075105168503179453"
+          "file": "libraries/nestjs-libraries/src/dtos/marketplace/create.offer.dto.ts",
+          "hash": "16788601695612379671"
         },
         {
-          "file": "var/docker/supervisord/backend.conf",
-          "hash": "4847164419739612815"
+          "file": "libraries/nestjs-libraries/src/dtos/marketplace/items.dto.ts",
+          "hash": "8318534974265146898"
         },
         {
-          "file": "var/docker/supervisord/cron.conf",
-          "hash": "9523241048078889399"
+          "file": "libraries/nestjs-libraries/src/dtos/marketplace/new.conversation.dto.ts",
+          "hash": "5500574475904935927"
         },
         {
-          "file": "var/docker/supervisord/frontend.conf",
-          "hash": "12398553695749500531"
+          "file": "libraries/nestjs-libraries/src/dtos/media/media.dto.ts",
+          "hash": "11245213416772650356"
         },
         {
-          "file": "var/docker/supervisord/workers.conf",
-          "hash": "425809648337353880"
+          "file": "libraries/nestjs-libraries/src/dtos/messages/add.message.ts",
+          "hash": "7200127800310063888"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/dtos/posts/create.post.dto.ts",
+          "hash": "626701850948308074"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/dtos/posts/get.posts.dto.ts",
+          "hash": "7687576652276727154"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/dtos/posts/providers-settings/all.providers.settings.ts",
+          "hash": "12708146642540100539"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/dtos/posts/providers-settings/dev.to.settings.dto.ts",
+          "hash": "14053189096407891800"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/dtos/posts/providers-settings/dev.to.tags.settings.dto.ts",
+          "hash": "5538191689667760881"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/dtos/posts/providers-settings/dribbble.dto.ts",
+          "hash": "15240524885591419294"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/dtos/posts/providers-settings/hashnode.settings.dto.ts",
+          "hash": "2638793565334383495"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/dtos/posts/providers-settings/medium.settings.dto.ts",
+          "hash": "3122515755994075006"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/dtos/posts/providers-settings/pinterest.dto.ts",
+          "hash": "3251367067037901285"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/dtos/posts/providers-settings/reddit.dto.ts",
+          "hash": "7866297708202998964"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/dtos/posts/providers-settings/tiktok.dto.ts",
+          "hash": "7222856163947247559"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/dtos/posts/providers-settings/youtube.settings.dto.ts",
+          "hash": "2486842778317850092"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/dtos/settings/add.team.member.dto.ts",
+          "hash": "1486229094160074098"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/dtos/users/user.details.dto.ts",
+          "hash": "15300570974509191318"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/integrations/article/article.integrations.interface.ts",
+          "hash": "8420661015427826461"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/integrations/article/dev.to.provider.ts",
+          "hash": "16306619531740312834"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/integrations/article/hashnode.provider.ts",
+          "hash": "9306784907214422413"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/integrations/article/hashnode.tags.ts",
+          "hash": "9129509207576732895"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/integrations/article/medium.provider.ts",
+          "hash": "7390111057796302840"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/integrations/integration.manager.ts",
+          "hash": "12199536887688621187"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/integrations/integration.missing.scopes.ts",
+          "hash": "9580094800970107732"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/integrations/social.abstract.ts",
+          "hash": "1888930268760768227"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/integrations/social/dribbble.provider.ts",
+          "hash": "12789861784041156495"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/integrations/social/facebook.provider.ts",
+          "hash": "9329002453852481007"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/integrations/social/instagram.provider.ts",
+          "hash": "11561692014358394999"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/integrations/social/linkedin.page.provider.ts",
+          "hash": "17605914221452837689"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/integrations/social/linkedin.provider.ts",
+          "hash": "2739843841243298596"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/integrations/social/pinterest.provider.ts",
+          "hash": "2218318907735656188"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/integrations/social/reddit.provider.ts",
+          "hash": "16838248429295778642"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/integrations/social/social.integrations.interface.ts",
+          "hash": "12912887834681279413"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/integrations/social/threads.provider.ts",
+          "hash": "2777418306514021063"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/integrations/social/tiktok.provider.ts",
+          "hash": "15681150238725887824"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/integrations/social/x.provider.ts",
+          "hash": "6977207789903002174"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/integrations/social/youtube.provider.ts",
+          "hash": "13725855330767902189"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/openai/extract.content.service.ts",
+          "hash": "14604510424858748037"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/openai/openai.service.ts",
+          "hash": "8274120588609600130"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/redis/redis.service.ts",
+          "hash": "18392743220160223332"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/services/codes.service.ts",
+          "hash": "9516227522209958024"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/services/email.service.ts",
+          "hash": "6295330803816896276"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/services/exception.filter.ts",
+          "hash": "14814034488773055625"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/services/make.is.ts",
+          "hash": "13125586716440552659"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/services/newsletter.service.ts",
+          "hash": "9509522059959594947"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/services/stripe.country.list.ts",
+          "hash": "6110249117004917535"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/services/stripe.service.ts",
+          "hash": "37512720087864747"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/services/trending.service.ts",
+          "hash": "17343528042390672726"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/services/trending.ts",
+          "hash": "3776535998188457373"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/upload/cloudflare.storage.ts",
+          "hash": "15842504990337155320"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/upload/custom.upload.validation.ts",
+          "hash": "6012385567030272640"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/upload/r2.uploader.ts",
+          "hash": "4059007914148794323"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/upload/upload.module.ts",
+          "hash": "15946040705710941177"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/user/org.from.request.ts",
+          "hash": "2393581106925849401"
+        },
+        {
+          "file": "libraries/nestjs-libraries/src/user/user.from.request.ts",
+          "hash": "11032599316751893155"
+        },
+        {
+          "file": "libraries/nestjs-libraries/tsconfig.json",
+          "hash": "3394741610301473512"
+        },
+        {
+          "file": "libraries/nestjs-libraries/tsconfig.lib.json",
+          "hash": "18155349116525859334"
+        }
+      ],
+      "cron": [
+        {
+          "file": "apps/cron/.eslintrc.json",
+          "hash": "13800677001662881425"
+        },
+        {
+          "file": "apps/cron/jest.config.ts",
+          "hash": "7531699116142924183"
+        },
+        {
+          "file": "apps/cron/project.json",
+          "hash": "12961267011515469971"
+        },
+        {
+          "file": "apps/cron/src/cron.module.ts",
+          "hash": "4380924017006066168"
+        },
+        {
+          "file": "apps/cron/src/main.ts",
+          "hash": "15491301299812474655"
+        },
+        {
+          "file": "apps/cron/src/tasks/check.stars.ts",
+          "hash": "16073240326041793383"
+        },
+        {
+          "file": "apps/cron/src/tasks/sync.trending.ts",
+          "hash": "4223464328878940651"
+        },
+        {
+          "file": "apps/cron/tsconfig.app.json",
+          "hash": "3171572500325445971"
+        },
+        {
+          "file": "apps/cron/tsconfig.json",
+          "hash": "3490524966360018312"
+        },
+        {
+          "file": "apps/cron/tsconfig.spec.json",
+          "hash": "11550347367511341917"
+        },
+        {
+          "file": "apps/cron/webpack.config.js",
+          "hash": "8260508390776215679"
+        }
+      ],
+      "workers": [
+        {
+          "file": "apps/workers/.eslintrc.json",
+          "hash": "13800677001662881425"
+        },
+        {
+          "file": "apps/workers/jest.config.ts",
+          "hash": "7531699116142924183"
+        },
+        {
+          "file": "apps/workers/project.json",
+          "hash": "16619678358158188646"
+        },
+        {
+          "file": "apps/workers/src/app/app.module.ts",
+          "hash": "9977002778067145169"
+        },
+        {
+          "file": "apps/workers/src/app/posts.controller.ts",
+          "hash": "10500739339240369755"
+        },
+        {
+          "file": "apps/workers/src/app/stars.controller.ts",
+          "hash": "14588652178547414795"
+        },
+        {
+          "file": "apps/workers/src/main.ts",
+          "hash": "10931306948844444903"
+        },
+        {
+          "file": "apps/workers/tsconfig.app.json",
+          "hash": "3171572500325445971"
+        },
+        {
+          "file": "apps/workers/tsconfig.json",
+          "hash": "3490524966360018312"
+        },
+        {
+          "file": "apps/workers/tsconfig.spec.json",
+          "hash": "11550347367511341917"
+        },
+        {
+          "file": "apps/workers/webpack.config.js",
+          "hash": "8260508390776215679"
+        }
+      ],
+      "backend": [
+        {
+          "file": "apps/backend/.eslintrc.json",
+          "hash": "13800677001662881425"
+        },
+        {
+          "file": "apps/backend/jest.config.ts",
+          "hash": "13565990685219350708"
+        },
+        {
+          "file": "apps/backend/project.json",
+          "hash": "4838857156351528057"
+        },
+        {
+          "file": "apps/backend/src/api/api.module.ts",
+          "hash": "3448986618542703823"
+        },
+        {
+          "file": "apps/backend/src/api/routes/agencies.controller.ts",
+          "hash": "15022699673983082208"
+        },
+        {
+          "file": "apps/backend/src/api/routes/analytics.controller.ts",
+          "hash": "1894551936760020142"
+        },
+        {
+          "file": "apps/backend/src/api/routes/auth.controller.ts",
+          "hash": "6335338264132194951"
+        },
+        {
+          "file": "apps/backend/src/api/routes/billing.controller.ts",
+          "hash": "5651213979571490197"
+        },
+        {
+          "file": "apps/backend/src/api/routes/comments.controller.ts",
+          "hash": "17574007682940858306"
+        },
+        {
+          "file": "apps/backend/src/api/routes/copilot.controller.ts",
+          "hash": "16711683457121191058"
+        },
+        {
+          "file": "apps/backend/src/api/routes/integrations.controller.ts",
+          "hash": "8197413645469149249"
+        },
+        {
+          "file": "apps/backend/src/api/routes/marketplace.controller.ts",
+          "hash": "5797034131596167685"
+        },
+        {
+          "file": "apps/backend/src/api/routes/media.controller.ts",
+          "hash": "11380275422644179629"
+        },
+        {
+          "file": "apps/backend/src/api/routes/messages.controller.ts",
+          "hash": "9474219418714427139"
+        },
+        {
+          "file": "apps/backend/src/api/routes/notifications.controller.ts",
+          "hash": "5197440296441443828"
+        },
+        {
+          "file": "apps/backend/src/api/routes/posts.controller.ts",
+          "hash": "10792640272103910942"
+        },
+        {
+          "file": "apps/backend/src/api/routes/public.controller.ts",
+          "hash": "11300400995027471654"
+        },
+        {
+          "file": "apps/backend/src/api/routes/settings.controller.ts",
+          "hash": "308707005236612273"
+        },
+        {
+          "file": "apps/backend/src/api/routes/stripe.controller.ts",
+          "hash": "13370326495222538422"
+        },
+        {
+          "file": "apps/backend/src/api/routes/users.controller.ts",
+          "hash": "10356345998872724122"
+        },
+        {
+          "file": "apps/backend/src/app.module.ts",
+          "hash": "18217041619983561147"
+        },
+        {
+          "file": "apps/backend/src/assets/.gitkeep",
+          "hash": "3244421341483603138"
+        },
+        {
+          "file": "apps/backend/src/main.ts",
+          "hash": "1855282359392801643"
+        },
+        {
+          "file": "apps/backend/src/services/auth/auth.middleware.ts",
+          "hash": "7509969953611433218"
+        },
+        {
+          "file": "apps/backend/src/services/auth/auth.service.ts",
+          "hash": "8758511002704853445"
+        },
+        {
+          "file": "apps/backend/src/services/auth/permissions/permissions.ability.ts",
+          "hash": "18219975579012458469"
+        },
+        {
+          "file": "apps/backend/src/services/auth/permissions/permissions.guard.ts",
+          "hash": "2362033220154992243"
+        },
+        {
+          "file": "apps/backend/src/services/auth/permissions/permissions.service.ts",
+          "hash": "18032580795926665839"
+        },
+        {
+          "file": "apps/backend/src/services/auth/permissions/subscription.exception.ts",
+          "hash": "15427407132934854384"
+        },
+        {
+          "file": "apps/backend/src/services/auth/providers.interface.ts",
+          "hash": "2809602420059349820"
+        },
+        {
+          "file": "apps/backend/src/services/auth/providers/github.provider.ts",
+          "hash": "7293619256382819567"
+        },
+        {
+          "file": "apps/backend/src/services/auth/providers/google.provider.ts",
+          "hash": "10011474887309988694"
+        },
+        {
+          "file": "apps/backend/src/services/auth/providers/providers.factory.ts",
+          "hash": "5919632019880690754"
+        },
+        {
+          "file": "apps/backend/tsconfig.app.json",
+          "hash": "15089815994262284547"
+        },
+        {
+          "file": "apps/backend/tsconfig.json",
+          "hash": "15579720136018731907"
+        },
+        {
+          "file": "apps/backend/tsconfig.spec.json",
+          "hash": "11550347367511341917"
+        },
+        {
+          "file": "apps/backend/webpack.config.js",
+          "hash": "5708803163266262522"
+        }
+      ],
+      "commands": [
+        {
+          "file": "apps/commands/.eslintrc.json",
+          "hash": "13800677001662881425"
+        },
+        {
+          "file": "apps/commands/jest.config.ts",
+          "hash": "7531699116142924183"
+        },
+        {
+          "file": "apps/commands/project.json",
+          "hash": "14946563384797773703"
+        },
+        {
+          "file": "apps/commands/src/command.module.ts",
+          "hash": "17219208399822395780"
+        },
+        {
+          "file": "apps/commands/src/main.ts",
+          "hash": "638982593281210653"
+        },
+        {
+          "file": "apps/commands/src/tasks/check.stars.ts",
+          "hash": "5536199936938577299"
+        },
+        {
+          "file": "apps/commands/src/tasks/refresh.tokens.ts",
+          "hash": "3901327810659437778"
+        },
+        {
+          "file": "apps/commands/tsconfig.app.json",
+          "hash": "3171572500325445971"
+        },
+        {
+          "file": "apps/commands/tsconfig.json",
+          "hash": "3490524966360018312"
+        },
+        {
+          "file": "apps/commands/tsconfig.spec.json",
+          "hash": "11550347367511341917"
+        },
+        {
+          "file": "apps/commands/webpack.config.js",
+          "hash": "8260508390776215679"
+        }
+      ],
+      "react-shared-libraries": [
+        {
+          "file": "libraries/react-shared-libraries/.eslintrc.json",
+          "hash": "13800677001662881425"
+        },
+        {
+          "file": "libraries/react-shared-libraries/README.md",
+          "hash": "1405906347456240405"
+        },
+        {
+          "file": "libraries/react-shared-libraries/project.json",
+          "hash": "4007164190564411356"
+        },
+        {
+          "file": "libraries/react-shared-libraries/src/form/button.tsx",
+          "hash": "16469949975838297342"
+        },
+        {
+          "file": "libraries/react-shared-libraries/src/form/canonical.tsx",
+          "hash": "10413085755775237151"
+        },
+        {
+          "file": "libraries/react-shared-libraries/src/form/checkbox.tsx",
+          "hash": "356497816639116800"
+        },
+        {
+          "file": "libraries/react-shared-libraries/src/form/color.picker.tsx",
+          "hash": "17663133310226533723"
+        },
+        {
+          "file": "libraries/react-shared-libraries/src/form/custom.select.tsx",
+          "hash": "3712597479524254906"
+        },
+        {
+          "file": "libraries/react-shared-libraries/src/form/input.tsx",
+          "hash": "15057852360215712317"
+        },
+        {
+          "file": "libraries/react-shared-libraries/src/form/select.tsx",
+          "hash": "14945024036006244295"
+        },
+        {
+          "file": "libraries/react-shared-libraries/src/form/slider.tsx",
+          "hash": "17401811183098778428"
+        },
+        {
+          "file": "libraries/react-shared-libraries/src/form/textarea.tsx",
+          "hash": "11214952986647159993"
+        },
+        {
+          "file": "libraries/react-shared-libraries/src/form/total.tsx",
+          "hash": "6748882072893520135"
+        },
+        {
+          "file": "libraries/react-shared-libraries/src/form/track.tsx",
+          "hash": "10565798816027206182"
+        },
+        {
+          "file": "libraries/react-shared-libraries/src/helpers/delete.dialog.tsx",
+          "hash": "15405891847879263985"
+        },
+        {
+          "file": "libraries/react-shared-libraries/src/helpers/image.with.fallback.tsx",
+          "hash": "17945819450586628130"
+        },
+        {
+          "file": "libraries/react-shared-libraries/src/helpers/inter.font.ts",
+          "hash": "11681107252454295864"
+        },
+        {
+          "file": "libraries/react-shared-libraries/src/helpers/is.general.tsx",
+          "hash": "9615623232906813964"
+        },
+        {
+          "file": "libraries/react-shared-libraries/src/helpers/mantine.wrapper.tsx",
+          "hash": "2954194639123953788"
+        },
+        {
+          "file": "libraries/react-shared-libraries/src/helpers/use.is.visible.tsx",
+          "hash": "4117446017327832824"
+        },
+        {
+          "file": "libraries/react-shared-libraries/src/helpers/use.media.directory.ts",
+          "hash": "15613013363440255254"
+        },
+        {
+          "file": "libraries/react-shared-libraries/src/helpers/use.prevent.window.unload.tsx",
+          "hash": "6111892856105897335"
+        },
+        {
+          "file": "libraries/react-shared-libraries/src/helpers/use.state.callback.ts",
+          "hash": "8013747512265567722"
+        },
+        {
+          "file": "libraries/react-shared-libraries/src/helpers/utc.date.render.tsx",
+          "hash": "12918657694618869336"
+        },
+        {
+          "file": "libraries/react-shared-libraries/src/helpers/video.frame.tsx",
+          "hash": "521180303782453833"
+        },
+        {
+          "file": "libraries/react-shared-libraries/src/helpers/video.or.image.tsx",
+          "hash": "8671890792132354168"
+        },
+        {
+          "file": "libraries/react-shared-libraries/src/toaster/toaster.tsx",
+          "hash": "15300976623019465322"
+        },
+        {
+          "file": "libraries/react-shared-libraries/tsconfig.json",
+          "hash": "3792648976171159090"
+        },
+        {
+          "file": "libraries/react-shared-libraries/tsconfig.lib.json",
+          "hash": "1084017896242351988"
         }
       ]
     }
