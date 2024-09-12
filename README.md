@@ -3,6 +3,12 @@
   <a href="https://x.com/intent/follow?screen_name=nevodavid" target="_blank">
     <img alt="Follow me" src="https://github.com/user-attachments/assets/1562c93f-95c6-4307-8a85-e62003e26348" />
   </a>
+  <br />
+
+  <a href="https://devfest.ai" target="_blank">
+    <img alt="DevFest" src="https://github.com/user-attachments/assets/cab9a4e5-e88e-4a28-be7d-28ed749e537a" width="850" />
+  </a>
+
   <br /><br />
 </p>
 

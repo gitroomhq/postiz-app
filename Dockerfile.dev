@@ -16,6 +16,11 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN apk add --no-cache \
 	bash=5.2.21-r0 \
 	supervisor=4.2.5-r4 \
+	pkgconfig \
+	gcc \
+	pixman-dev \
+	cairo-dev \
+	pango-dev \
 	make \
 	build-base
 
