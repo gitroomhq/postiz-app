@@ -18,6 +18,9 @@ RUN apk add --no-cache \
 	supervisor=4.2.5-r4 \
 	pkgconfig \
 	gcc \
+	pixman-dev \
+	cairo-dev \
+	pango-dev \
 	make \
 	build-base
 
