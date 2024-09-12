@@ -149,7 +149,11 @@ export class PostsService {
         `Error posting on ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
         `An error occurred while posting on ${
           firstPost.integration?.providerIdentifier
-        } ${!process.env.NODE_ENV || process.env.NODE_ENV === 'development' ? err : ''}`,
+        } ${
+          !process.env.NODE_ENV || process.env.NODE_ENV === 'development'
+            ? err
+            : ''
+        }`,
         true
       );
     }
@@ -390,8 +394,8 @@ export class PostsService {
       }
 
       if (
-        (body.type === 'schedule' || body.type === 'now') &&
-        dayjs(body.date).isAfter(dayjs())
+        body.type === 'now' ||
+        (body.type === 'schedule' && dayjs(body.date).isAfter(dayjs()))
       ) {
         this._workerServiceProducer.emit('post', {
           id: posts[0].id,
@@ -535,11 +539,7 @@ export class PostsService {
   async generatePostsDraft(orgId: string, body: CreateGeneratedPostsDto) {
     const getAllIntegrations = (
       await this._integrationService.getIntegrationsList(orgId)
-    ).filter(
-      (f) =>
-        !f.disabled &&
-        f.providerIdentifier !== 'reddit'
-    );
+    ).filter((f) => !f.disabled && f.providerIdentifier !== 'reddit');
 
     // const posts = chunk(body.posts, getAllIntegrations.length);
     const allDates = dayjs()
