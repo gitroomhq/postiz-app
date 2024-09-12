@@ -3,7 +3,7 @@ import {useCallback} from "react";
 
 export const useFireEvents = () => {
     const plausible = usePlausible();
-    return useCallback((name: string, props?: object) => {
+    return useCallback((name: string, props?: any) => {
         plausible(name, {props});
     }, []);
 }

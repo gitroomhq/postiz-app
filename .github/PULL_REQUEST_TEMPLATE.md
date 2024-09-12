@@ -1,5 +1,11 @@
-- **What kind of change does this PR introduce?** (Bug fix, feature, docs update, ...)
+# What kind of change does this PR introduce?
 
-- **Why was this change needed?** (You can also link to an open issue here)
+eg: Bug fix, feature, docs update, ...
 
-- **Other information**:
+# Why was this change needed?
+
+Please link to related issues when possible.
+
+# Other information:
+
+eg: Did you discuss this change with anybody before working on it (not required, but can be a good idea for bigger changes). Any plans for the future, etc? 

@@ -339,7 +339,7 @@ export const CalendarColumn: FC<{
   const addProvider = useAddProvider();
 
   return (
-    <div className="flex flex-col w-full min-h-full" ref={drop}>
+    <div className="flex flex-col w-full min-h-full" ref={drop as any}>
       {display === 'month' && (
         <div className={clsx('pt-[5px]', isBeforeNow && 'bg-customColor23')}>
           {getDate.date()}
@@ -433,6 +433,7 @@ const CalendarItem: FC<{
   );
   return (
     <div
+      // @ts-ignore
       ref={dragRef}
       onClick={editPost}
       className={clsx(

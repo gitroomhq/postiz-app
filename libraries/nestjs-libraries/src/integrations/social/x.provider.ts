@@ -166,6 +166,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     for (const post of postDetails) {
       const media_ids = (uploadAll[post.id] || []).filter((f) => f);
 
+      // @ts-ignore
       const { data }: { data: { id: string } } = await client.v2.tweet({
         text: removeMd(post.message.replace('\n', '𝔫𝔢𝔴𝔩𝔦𝔫𝔢')).replace(
           '𝔫𝔢𝔴𝔩𝔦𝔫𝔢',

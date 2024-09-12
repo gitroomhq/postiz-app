@@ -29,7 +29,7 @@ export class LinkedinPageProvider
   override async refreshToken(
     refresh_token: string
   ): Promise<AuthTokenDetails> {
-    const { access_token: accessToken, refresh_token: refreshToken } = await (
+    const { access_token: accessToken, expires_in, refresh_token: refreshToken } = await (
       await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
         method: 'POST',
         headers: {
@@ -68,6 +68,7 @@ export class LinkedinPageProvider
       id,
       accessToken,
       refreshToken,
+      expiresIn: expires_in,
       name,
       picture,
       username: vanityName,

@@ -82,19 +82,21 @@ export class AnalyticsController {
       const { accessToken, expiresIn, refreshToken } =
         await integrationProvider.refreshToken(getIntegration.refreshToken!);
 
-      await this._integrationService.createOrUpdateIntegration(
-        getIntegration.organizationId,
-        getIntegration.name,
-        getIntegration.picture!,
-        'social',
-        getIntegration.internalId,
-        getIntegration.providerIdentifier,
-        accessToken,
-        refreshToken,
-        expiresIn
-      );
+      if (accessToken) {
+        await this._integrationService.createOrUpdateIntegration(
+          getIntegration.organizationId,
+          getIntegration.name,
+          getIntegration.picture!,
+          'social',
+          getIntegration.internalId,
+          getIntegration.providerIdentifier,
+          accessToken,
+          refreshToken,
+          expiresIn
+        );
 
-      getIntegration.token = accessToken;
+        getIntegration.token = accessToken;
+      }
     }
 
     const getIntegrationData = await ioRedis.get(
@@ -122,7 +124,10 @@ export class AnalyticsController {
         return loadAnalytics;
       } catch (e) {
         if (e instanceof RefreshToken) {
-          await this._integrationService.disconnectChannel(org.id, getIntegration);
+          await this._integrationService.disconnectChannel(
+            org.id,
+            getIntegration
+          );
           return [];
         }
       }

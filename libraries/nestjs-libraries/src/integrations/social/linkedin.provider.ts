@@ -1,5 +1,4 @@
 import {
-  AnalyticsData,
   AuthTokenDetails,
   PostDetails,
   PostResponse,
@@ -19,7 +18,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   scopes = ['openid', 'profile', 'w_member_social', 'r_basicprofile'];
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
-    const { access_token: accessToken, refresh_token: refreshToken } = await (
+    const { access_token: accessToken, refresh_token: refreshToken, expires_in } = await (
       await this.fetch('https://www.linkedin.com/oauth/v2/accessToken', {
         method: 'POST',
         headers: {
@@ -58,6 +57,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       id,
       accessToken,
       refreshToken,
+      expiresIn: expires_in,
       name,
       picture,
       username: vanityName,
