@@ -7,7 +7,7 @@ if [[ "$SKIP_CONFIG_CHECK" != "true" ]]; then
 		echo "ERROR: No .env file found in /config/.env"
 	fi
 
-	ln -sf /config/.env /app/.env
+	ln -sf /config/postiz.env /app/.env
 fi
 
 if [[ "$POSTIZ_APPS" -eq "" ]]; then
