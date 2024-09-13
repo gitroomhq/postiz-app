@@ -15,6 +15,9 @@ if [[ "$POSTIZ_APPS" -eq "" ]]; then
 	POSTIZ_APPS="frontend workers cron backend"
 fi
 
+echo "Running database migrations"
+npm run prisma-db-push
+
 mkdir -p /etc/supervisor.d/
 
 if [[ "$POSTIZ_APPS" == *"frontend"* ]]; then
