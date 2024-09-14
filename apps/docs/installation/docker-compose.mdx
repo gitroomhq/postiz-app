@@ -3,11 +3,14 @@ title: Docker Compose
 ---
 
 import EarlyDoc from '/snippets/earlydoc.mdx';
-import DockerDatabase from '/snippets/docker-database.mdx';
 import DockerEnvvarApps from '/snippets/docker-envvar-apps.mdx';
+import DockerEnvvarGeneral from '/snippets/docker-envvar-general.mdx';
 
 <EarlyDoc />
-<DockerDatabase />
+
+<DockerEnvvarGeneral />
+
+The container images will copy a file called `/config/postiz.env` to `/apps/.env` on startup.
 
 # Example `docker-compose.yml` file
 
@@ -17,8 +20,15 @@ services:
   	image: ghcr.io/gitroomhq/postiz-app:latest
 	container_name: postiz
 	restart: always
+	environment: # If you want to specify the variables in your compose file.
+      - DATABASE_URL="postgresql://postiz-user:postiz-password@localhost:5432/postiz-db-local"
+      - REDIS_URL="redis://localhost:6379"
+      - JWT_SECRET="random string for your JWT secret, make it long"
+      - FRONTEND_URL="http://localhost:4200"
+      - NEXT_PUBLIC_BACKEND_URL="http://localhost:3000"
+      - BACKEND_INTERNAL_URL="http://localhost:3000"
 	volumes:
-	  - ./config:/config/ # Should contain your .env file
+	  - ./config:/config/ # If you want to specify the variables in your `postiz.env` file.
 	ports:
 	  - 4200:4200
 	  - 3000:3000

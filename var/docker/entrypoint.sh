@@ -1,19 +1,24 @@
 #!/bin/bash
 
+set -o xtrace
+
 if [[ "$SKIP_CONFIG_CHECK" != "true" ]]; then
-	echo "symlinking /config/.env into /app/.env"
+	echo "Entrypoint: Copying /config/postiz.env into /app/.env"
 
 	if [ ! -f /config/.env ]; then
-		echo "ERROR: No .env file found in /config/.env"
+		echo "Entrypoint: WARNING: No .env file found in /config/postiz.env"
 	fi
 
-	ln -sf /config/.env /app/.env
+	cp -vf /config/postiz.env /app/.env
 fi
 
 if [[ "$POSTIZ_APPS" -eq "" ]]; then
-	echo "POSTIZ_APPS is not set, starting everything!"
+	echo "Entrypoint: POSTIZ_APPS is not set, starting everything!"
 	POSTIZ_APPS="frontend workers cron backend"
 fi
+
+echo "Entrypoint: Running database migrations"
+npm run prisma-db-push
 
 mkdir -p /etc/supervisor.d/
 
