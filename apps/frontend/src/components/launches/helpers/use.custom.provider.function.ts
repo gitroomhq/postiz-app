@@ -7,16 +7,20 @@ export const useCustomProviderFunction = () => {
   const fetch = useFetch();
   const get = useCallback(
     async (funcName: string, customData?: any) => {
-      return (
-        await fetch('/integrations/function', {
-          method: 'POST',
-          body: JSON.stringify({
-            name: funcName,
-            id: integration?.id!,
-            data: customData,
-          }),
-        })
-      ).json();
+      const load = await fetch('/integrations/function', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: funcName,
+          id: integration?.id!,
+          data: customData,
+        }),
+      });
+
+      if (load.status !== 200 && load.status !== 201) {
+        throw new Error('Failed to fetch');
+      }
+
+      return load.json();
     },
     [integration]
   );

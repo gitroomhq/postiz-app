@@ -2,6 +2,10 @@ import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/pris
 import { Injectable } from '@nestjs/common';
 import dayjs from 'dayjs';
 import * as console from 'node:console';
+import { Integration } from '@prisma/client';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { simpleUpload } from '@gitroom/nestjs-libraries/upload/r2.uploader';
+import axios from 'axios';
 
 @Injectable()
 export class IntegrationRepository {
@@ -9,6 +13,34 @@ export class IntegrationRepository {
     private _integration: PrismaRepository<'integration'>,
     private _posts: PrismaRepository<'post'>
   ) {}
+
+  async updateIntegration(id: string, params: Partial<Integration>) {
+    if (params.picture && params.picture.indexOf(process.env.CLOUDFLARE_BUCKET_URL!) === -1) {
+      const picture = await axios.get(params.picture, { responseType: 'arraybuffer' });
+      params.picture = await simpleUpload(picture.data, `${makeId(10)}.png`, 'image/png');
+    }
+
+    return this._integration.model.integration.update({
+      where: {
+        id,
+      },
+      data: {
+        ...params,
+      },
+    });
+  }
+
+  disconnectChannel(org: string, id: string) {
+    return this._integration.model.integration.update({
+      where: {
+        id,
+        organizationId: org,
+      },
+      data: {
+        refreshNeeded: true,
+      },
+    });
+  }
 
   createOrUpdateIntegration(
     org: string,
@@ -20,7 +52,9 @@ export class IntegrationRepository {
     token: string,
     refreshToken = '',
     expiresIn = 999999999,
-    username?: string
+    username?: string,
+    isBetweenSteps = false,
+    refresh?: string
   ) {
     return this._integration.model.integration.upsert({
       where: {
@@ -36,20 +70,27 @@ export class IntegrationRepository {
         token,
         profile: username,
         picture,
+        inBetweenSteps: isBetweenSteps,
         refreshToken,
         ...(expiresIn
           ? { tokenExpiration: new Date(Date.now() + expiresIn * 1000) }
           : {}),
         internalId,
         organizationId: org,
+        refreshNeeded: false,
       },
       update: {
         type: type as any,
+        ...(!refresh
+          ? {
+              inBetweenSteps: isBetweenSteps,
+            }
+          : {}),
         name,
-        providerIdentifier: provider,
-        token,
         picture,
         profile: username,
+        providerIdentifier: provider,
+        token,
         refreshToken,
         ...(expiresIn
           ? { tokenExpiration: new Date(Date.now() + expiresIn * 1000) }
@@ -57,6 +98,7 @@ export class IntegrationRepository {
         internalId,
         organizationId: org,
         deletedAt: null,
+        refreshNeeded: false,
       },
     });
   }
@@ -67,7 +109,21 @@ export class IntegrationRepository {
         tokenExpiration: {
           lte: dayjs().add(1, 'day').toDate(),
         },
+        inBetweenSteps: false,
         deletedAt: null,
+        refreshNeeded: false,
+      },
+    });
+  }
+
+  refreshNeeded(org: string, id: string) {
+    return this._integration.model.integration.update({
+      where: {
+        id,
+        organizationId: org,
+      },
+      data: {
+        refreshNeeded: true,
       },
     });
   }
@@ -81,8 +137,12 @@ export class IntegrationRepository {
     });
   }
 
-  async getIntegrationForOrder(id: string, order: string, user: string, org: string) {
-    console.log(id, order, user, org);
+  async getIntegrationForOrder(
+    id: string,
+    order: string,
+    user: string,
+    org: string
+  ) {
     const integration = await this._posts.model.post.findFirst({
       where: {
         integrationId: id,
@@ -90,12 +150,12 @@ export class IntegrationRepository {
           id: order,
           messageGroup: {
             OR: [
-              {sellerId: user},
-              {buyerId: user},
-              {buyerOrganizationId: org},
-            ]
-          }
-        }
+              { sellerId: user },
+              { buyerId: user },
+              { buyerOrganizationId: org },
+            ],
+          },
+        },
       },
       select: {
         integration: {
@@ -103,10 +163,11 @@ export class IntegrationRepository {
             id: true,
             name: true,
             picture: true,
+            inBetweenSteps: true,
             providerIdentifier: true,
           },
-        }
-      }
+        },
+      },
     });
 
     return integration?.integration;
@@ -145,15 +206,13 @@ export class IntegrationRepository {
     });
   }
 
-  countPostsForChannel(org: string, id: string) {
-    return this._posts.model.post.count({
+  getPostsForChannel(org: string, id: string) {
+    return this._posts.model.post.groupBy({
+      by: ['group'],
       where: {
         organizationId: org,
         integrationId: id,
-        deletedAt: null,
-        state: {
-          in: ['QUEUE', 'DRAFT'],
-        },
+        deletedAt: null
       },
     });
   }
@@ -166,6 +225,21 @@ export class IntegrationRepository {
       },
       data: {
         deletedAt: new Date(),
+      },
+    });
+  }
+
+  async checkForDeletedOnceAndUpdate(org: string, page: string) {
+    return this._integration.model.integration.updateMany({
+      where: {
+        organizationId: org,
+        internalId: page,
+        deletedAt: {
+          not: null,
+        },
+      },
+      data: {
+        internalId: makeId(10),
       },
     });
   }

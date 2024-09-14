@@ -1,0 +1,14 @@
+{
+	"name": "Postiz Dev Container",
+	"image": "localhost/postiz-devcontainer",
+	"features": {},
+	"customizations": {
+		"vscode": {
+			"settings": {},
+			"extensions": []
+		}
+	},
+	"forwardPorts": ["4200:4200", "3000:3000"],
+	"mounts": ["source=/apps,destination=/apps/dist/,type=bind,consistency=cached"]
+}
+

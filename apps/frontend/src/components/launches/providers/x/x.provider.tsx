@@ -5,6 +5,7 @@ import clsx from 'clsx';
 import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { useFormatting } from '@gitroom/frontend/components/launches/helpers/use.formatting';
 import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
+import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
 
 const chirp = localFont({
   src: [
@@ -51,7 +52,7 @@ const XPreview: FC = (props) => {
                 className="rounded-full relative z-[2]"
               />
               {index !== topValue.length - 1 && (
-                <div className="flex-1 w-[2px] h-[calc(100%-10px)] bg-[#2E3336] absolute top-[10px] z-[1]" />
+                <div className="flex-1 w-[2px] h-[calc(100%-10px)] bg-customColor25 absolute top-[10px] z-[1]" />
               )}
             </div>
             <div className="flex-1 flex flex-col gap-[4px]">
@@ -59,7 +60,7 @@ const XPreview: FC = (props) => {
                 <div className="h-[22px] text-[15px] font-[700]">
                   {integration?.name}
                 </div>
-                <div className="text-[15px] text-[#1D9BF0] mt-[1px] ml-[2px]">
+                <div className="text-[15px] text-customColor26 mt-[1px] ml-[2px]">
                   <svg
                     viewBox="0 0 22 22"
                     aria-label="Verified account"
@@ -72,7 +73,7 @@ const XPreview: FC = (props) => {
                     </g>
                   </svg>
                 </div>
-                <div className="text-[15px] font-[400] text-[#71767b] ml-[4px]">
+                <div className="text-[15px] font-[400] text-customColor27 ml-[4px]">
                   @username
                 </div>
               </div>
@@ -82,11 +83,13 @@ const XPreview: FC = (props) => {
               {!!value?.images?.length && (
                 <div className="w-full h-[270px] rounded-[16px] flex overflow-hidden mt-[12px]">
                   {value.images.map((image, index) => (
-                    <a key={`image_${index}`} className="flex-1" href={mediaDir.set(image.path)} target="_blank">
-                      <img
-                        className="w-full h-full object-cover"
-                        src={mediaDir.set(image.path)}
-                      />
+                    <a
+                      key={`image_${index}`}
+                      className="flex-1"
+                      href={mediaDir.set(image.path)}
+                      target="_blank"
+                    >
+                      <VideoOrImage autoplay={true} src={mediaDir.set(image.path)} />
                     </a>
                   ))}
                 </div>
@@ -99,4 +102,4 @@ const XPreview: FC = (props) => {
   );
 };
 
-export default withProvider(null, XPreview);
+export default withProvider(null, XPreview, undefined, undefined, 280);

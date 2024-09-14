@@ -1,0 +1,15 @@
+# Set environment variables
+
+Postiz configuration is entirely via environment variables.
+
+When using Postiz container images, you can specify the environment variables when you create the container (`docker create -e DATABASE_URL=...`), but this might be 
+a bit tedious, as Postiz requires quite a few variables set to startup.
+
+It is recommended to use a `postiz.env` file, which the Postiz containers look for in /config. Docker will automatically create this file for you on a 
+docker volume the first time you start up Postiz. The default container images will copy the `/config/postiz.env` to `/apps/.env` on startup. Like with
+any environment variables, if you change them, you must restart the application for the changes to take effect.
+
+An example file of the most used configuration settings can be found here; [example postiz.env file](https://raw.githubusercontent.com/gitroomhq/postiz-app/main/.env.example)
+
+There is also a [configuration reference](/configuration/reference) page that goes into more detail.
+

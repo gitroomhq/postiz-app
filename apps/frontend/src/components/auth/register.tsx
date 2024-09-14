@@ -8,10 +8,14 @@ import { Input } from '@gitroom/react/form/input';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
-import { GithubProvider } from '@gitroom/frontend/app/auth/providers/github.provider';
-import { useSearchParams } from 'next/navigation';
+import { GithubProvider } from '@gitroom/frontend/components/auth/providers/github.provider';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import interClass from '@gitroom/react/helpers/inter.font';
+import { isGeneral } from '@gitroom/react/helpers/is.general';
+import clsx from 'clsx';
+import { GoogleProvider } from '@gitroom/frontend/components/auth/providers/google.provider';
+import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
 
 type Inputs = {
   email: string;
@@ -56,7 +60,9 @@ export function Register() {
     return <LoadingComponent />;
   }
 
-  return <RegisterAfter token={code} provider={provider?.toUpperCase() || 'LOCAL'} />;
+  return (
+    <RegisterAfter token={code} provider={provider?.toUpperCase() || 'LOCAL'} />
+  );
 }
 
 export function RegisterAfter({
@@ -68,6 +74,8 @@ export function RegisterAfter({
 }) {
   const [loading, setLoading] = useState(false);
   const getQuery = useSearchParams();
+  const router = useRouter();
+  const fireEvents = useFireEvents();
 
   const isAfterProvider = useMemo(() => {
     return !!token && !!provider;
@@ -100,7 +108,24 @@ export function RegisterAfter({
 
       setLoading(false);
     }
+
+    fireEvents('register');
+
+    if (register.headers.get('activate')) {
+      router.push('/auth/activate');
+    }
   };
+
+  const rootDomain = useMemo(() => {
+    const url = new URL(process.env.frontendUrl!);
+    const hostname = url.hostname;
+    const parts = hostname.split('.');
+    if (parts.length > 2) {
+      return url.protocol + '//' + url.hostname?.replace(/^[^.]+\./, '');
+    }
+
+    return process.env.frontendUrl;
+  }, []);
 
   return (
     <FormProvider {...form}>
@@ -110,16 +135,18 @@ export function RegisterAfter({
             Sign Up
           </h1>
         </div>
-        {!isAfterProvider && <GithubProvider />}
+        {!isAfterProvider && (!isGeneral() ? <GithubProvider /> : <GoogleProvider />)}
         {!isAfterProvider && (
           <div className="h-[20px] mb-[24px] mt-[24px] relative">
-            <div className="absolute w-full h-[1px] bg-[#28344F] top-[50%] -translate-y-[50%]" />
-            <div className={`absolute z-[1] ${interClass} justify-center items-center w-full left-0 top-0 flex`}>
-              <div className="bg-[#0a0a0a] px-[16px]">OR</div>
+            <div className="absolute w-full h-[1px] bg-fifth top-[50%] -translate-y-[50%]" />
+            <div
+              className={`absolute z-[1] ${interClass} justify-center items-center w-full left-0 top-0 flex`}
+            >
+              <div className="bg-customColor15 px-[16px]">OR</div>
             </div>
           </div>
         )}
-        <div className="text-white">
+        <div className="text-textColor">
           {!isAfterProvider && (
             <>
               <Input
@@ -144,6 +171,22 @@ export function RegisterAfter({
             type="text"
             placeholder="Company"
           />
+        </div>
+        <div className={clsx('text-[12px]', interClass)}>
+          By registering you agree to our{' '}
+          <a
+            href={`${rootDomain}/terms`}
+            className="underline hover:font-bold"
+          >
+            Terms of Service
+          </a>{' '}
+          and{' '}
+          <a
+            href={`${rootDomain}/privacy`}
+            className="underline hover:font-bold"
+          >
+            Privacy Policy
+          </a>
         </div>
         <div className="text-center mt-6">
           <div className="w-full flex">

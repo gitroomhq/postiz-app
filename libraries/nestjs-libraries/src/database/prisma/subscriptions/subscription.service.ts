@@ -3,6 +3,9 @@ import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions
 import { SubscriptionRepository } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.repository';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
+import { Organization } from '@prisma/client';
+import dayjs from 'dayjs';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 
 @Injectable()
 export class SubscriptionService {
@@ -16,6 +19,10 @@ export class SubscriptionService {
     return this._subscriptionRepository.getSubscriptionByOrganizationId(
       organizationId
     );
+  }
+
+  useCredit(organization: Organization) {
+    return this._subscriptionRepository.useCredit(organization);
   }
 
   getCode(code: string) {
@@ -152,4 +159,47 @@ export class SubscriptionService {
   async getSubscription(organizationId: string) {
     return this._subscriptionRepository.getSubscription(organizationId);
   }
+
+  async checkCredits(organization: Organization) {
+    // @ts-ignore
+    const type = organization?.subscription?.subscriptionTier || 'FREE';
+
+    if (type === 'FREE') {
+      return { credits: 0 };
+    }
+
+    // @ts-ignore
+    let date = dayjs(organization.subscription.createdAt);
+    while (date.isBefore(dayjs())) {
+      date = date.add(1, 'month');
+    }
+
+    const checkFromMonth = date.subtract(1, 'month');
+    const imageGenerationCount = pricing[type].image_generation_count;
+
+    const totalUse = await this._subscriptionRepository.getCreditsFrom(
+      organization.id,
+      checkFromMonth
+    );
+
+    return {
+      credits: imageGenerationCount - totalUse,
+    };
+  }
+
+  async addSubscription(orgId: string, userId: string, subscription: any) {
+    await this._subscriptionRepository.setCustomerId(orgId, orgId);
+    return this.createOrUpdateSubscription(
+      makeId(5),
+      userId,
+      pricing[subscription].channel!,
+      subscription,
+      'MONTHLY',
+      null,
+      undefined,
+       orgId
+    );
+  }
+
+
 }

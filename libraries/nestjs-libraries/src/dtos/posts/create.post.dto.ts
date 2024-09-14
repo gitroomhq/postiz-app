@@ -8,6 +8,10 @@ import {AllProvidersSettings} from "@gitroom/nestjs-libraries/dtos/posts/provide
 import {MediumSettingsDto} from "@gitroom/nestjs-libraries/dtos/posts/providers-settings/medium.settings.dto";
 import {HashnodeSettingsDto} from "@gitroom/nestjs-libraries/dtos/posts/providers-settings/hashnode.settings.dto";
 import {RedditSettingsDto} from "@gitroom/nestjs-libraries/dtos/posts/providers-settings/reddit.dto";
+import { YoutubeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/youtube.settings.dto';
+import { PinterestSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/pinterest.dto';
+import { DribbbleDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dribbble.dto';
+import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
 
 export class EmptySettings {}
 export class Integration {
@@ -60,6 +64,10 @@ export class Post {
           { value: MediumSettingsDto, name: 'medium' },
           { value: HashnodeSettingsDto, name: 'hashnode' },
           { value: RedditSettingsDto, name: 'reddit' },
+          { value: YoutubeSettingsDto, name: 'youtube' },
+          { value: PinterestSettingsDto, name: 'pinterest' },
+          { value: DribbbleDto, name: 'dribbble' },
+          { value: TikTokDto, name: 'tiktok' },
       ],
     },
   })

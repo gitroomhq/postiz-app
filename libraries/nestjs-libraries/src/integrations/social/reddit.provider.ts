@@ -8,17 +8,21 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { RedditSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/reddit.dto';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { groupBy } from 'lodash';
+import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
-export class RedditProvider implements SocialProvider {
+export class RedditProvider extends SocialAbstract implements SocialProvider {
   identifier = 'reddit';
   name = 'Reddit';
+  isBetweenSteps = false;
+  scopes = ['read', 'identity', 'submit', 'flair'];
+
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const {
       access_token: accessToken,
       refresh_token: newRefreshToken,
       expires_in: expiresIn,
     } = await (
-      await fetch('https://www.reddit.com/api/v1/access_token', {
+      await this.fetch('https://www.reddit.com/api/v1/access_token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -34,7 +38,7 @@ export class RedditProvider implements SocialProvider {
     ).json();
 
     const { name, id, icon_img } = await (
-      await fetch('https://oauth.reddit.com/api/v1/me', {
+      await this.fetch('https://oauth.reddit.com/api/v1/me', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -59,9 +63,7 @@ export class RedditProvider implements SocialProvider {
       process.env.REDDIT_CLIENT_ID
     }&response_type=code&state=${state}&redirect_uri=${encodeURIComponent(
       `${process.env.FRONTEND_URL}/integrations/social/reddit`
-    )}&duration=permanent&scope=${encodeURIComponent(
-      'read identity submit flair'
-    )}`;
+    )}&duration=permanent&scope=${encodeURIComponent(this.scopes.join(' '))}`;
     return {
       url,
       codeVerifier,
@@ -74,8 +76,9 @@ export class RedditProvider implements SocialProvider {
       access_token: accessToken,
       refresh_token: refreshToken,
       expires_in: expiresIn,
+      scope
     } = await (
-      await fetch('https://www.reddit.com/api/v1/access_token', {
+      await this.fetch('https://www.reddit.com/api/v1/access_token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -91,8 +94,10 @@ export class RedditProvider implements SocialProvider {
       })
     ).json();
 
+    this.checkScopes(this.scopes, scope);
+
     const { name, id, icon_img } = await (
-      await fetch('https://oauth.reddit.com/api/v1/me', {
+      await this.fetch('https://oauth.reddit.com/api/v1/me', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -119,44 +124,46 @@ export class RedditProvider implements SocialProvider {
 
     const valueArray: PostResponse[] = [];
     for (const firstPostSettings of post.settings.subreddit) {
+      const postData = {
+        api_type: 'json',
+        title: firstPostSettings.value.title || '',
+        kind:
+          firstPostSettings.value.type === 'media'
+            ? 'image'
+            : firstPostSettings.value.type,
+        ...(firstPostSettings.value.flair
+          ? { flair_id: firstPostSettings.value.flair.id }
+          : {}),
+        ...(firstPostSettings.value.type === 'link'
+          ? {
+              url: firstPostSettings.value.url,
+            }
+          : {}),
+        ...(firstPostSettings.value.type === 'media'
+          ? {
+              url: `${
+                firstPostSettings.value.media[0].path.indexOf('http') === -1
+                  ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/${process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY}`
+                  : ``
+              }${firstPostSettings.value.media[0].path}`,
+            }
+          : {}),
+        text: post.message,
+        sr: firstPostSettings.value.subreddit,
+      };
+
       const {
         json: {
           data: { id, name, url },
         },
       } = await (
-        await fetch('https://oauth.reddit.com/api/submit', {
+        await this.fetch('https://oauth.reddit.com/api/submit', {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${accessToken}`,
             'Content-Type': 'application/x-www-form-urlencoded',
           },
-          body: new URLSearchParams({
-            api_type: 'json',
-            title: firstPostSettings.value.type,
-            kind:
-              firstPostSettings.value.type === 'media'
-                ? 'image'
-                : firstPostSettings.value.type,
-            ...(firstPostSettings.value.flair
-              ? { flair_id: firstPostSettings.value.flair.id }
-              : {}),
-            ...(firstPostSettings.value.type === 'link'
-              ? {
-                  url: firstPostSettings.value.url,
-                }
-              : {}),
-            ...(firstPostSettings.value.type === 'media'
-              ? {
-                  url: `${
-                    firstPostSettings.value.media[0].path.indexOf('http') === -1
-                      ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/${process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY}`
-                      : ``
-                  }${firstPostSettings.value.media[0].path}`,
-                }
-              : {}),
-            text: post.message,
-            sr: firstPostSettings.value.subreddit,
-          }),
+          body: new URLSearchParams(postData),
         })
       ).json();
 
@@ -179,7 +186,7 @@ export class RedditProvider implements SocialProvider {
             },
           },
         } = await (
-          await fetch('https://oauth.reddit.com/api/comment', {
+          await this.fetch('https://oauth.reddit.com/api/comment', {
             method: 'POST',
             headers: {
               Authorization: `Bearer ${accessToken}`,
@@ -224,7 +231,7 @@ export class RedditProvider implements SocialProvider {
     const {
       data: { children },
     } = await (
-      await fetch(
+      await this.fetch(
         `https://oauth.reddit.com/subreddits/search?show=public&q=${data.word}&sort=activity&show_users=false&limit=10`,
         {
           method: 'GET',
@@ -269,7 +276,7 @@ export class RedditProvider implements SocialProvider {
     const {
       data: { submission_type, allow_images },
     } = await (
-      await fetch(`https://oauth.reddit.com/${data.subreddit}/about`, {
+      await this.fetch(`https://oauth.reddit.com/${data.subreddit}/about`, {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -279,7 +286,7 @@ export class RedditProvider implements SocialProvider {
     ).json();
 
     const { is_flair_required } = await (
-      await fetch(
+      await this.fetch(
         `https://oauth.reddit.com/api/v1/${
           data.subreddit.split('/r/')[1]
         }/post_requirements`,
@@ -294,7 +301,7 @@ export class RedditProvider implements SocialProvider {
     ).json();
 
     const newData = await (
-      await fetch(
+      await this.fetch(
         `https://oauth.reddit.com/${data.subreddit}/api/link_flair_v2`,
         {
           method: 'GET',

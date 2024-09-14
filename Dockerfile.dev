@@ -1,0 +1,69 @@
+# This Dockerfile is used for producing 3 container images.
+#
+# base - which is thrown away, that contains node and the basic infrastructure. 
+# devcontainer - which is used for development, and contains the source code and the node_modules.
+# dist - which is used for production, and contains the built source code and the node_modules.
+
+ARG NODE_VERSION="20.17"
+
+# Base image
+FROM docker.io/node:${NODE_VERSION}-alpine3.19 AS base
+
+## Just reduce unccessary noise in the logs.
+ENV NPM_CONFIG_UPDATE_NOTIFIER=false
+ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN apk add --no-cache \
+	bash=5.2.21-r0 \
+	supervisor=4.2.5-r4
+
+WORKDIR /app
+
+EXPOSE 4200
+EXPOSE 3000
+
+COPY var/docker/entrypoint.sh /app/entrypoint.sh
+COPY var/docker/supervisord.conf /etc/supervisord.conf
+COPY var/docker/supervisord /app/supervisord_available_configs/
+COPY .env.example /config/postiz.env
+
+VOLUME /config
+
+LABEL org.opencontainers.image.source=https://github.com/gitroomhq/postiz-app
+
+ENTRYPOINT ["/app/entrypoint.sh"]
+
+# Builder image
+FROM base AS devcontainer
+
+RUN apk add --no-cache \
+	pkgconfig \
+	gcc \
+	pixman-dev \
+	cairo-dev \
+	pango-dev \
+	make \
+	build-base
+
+COPY nx.json tsconfig.base.json package.json package-lock.json /app/
+COPY apps /app/apps/
+COPY libraries /app/libraries/
+
+RUN npm ci --no-fund && npx nx run-many --target=build --projects=frontend,backend,workers,cron
+
+VOLUME /config
+
+LABEL org.opencontainers.image.title="Postiz App (DevContainer)"
+
+# Output image
+FROM base AS dist
+
+COPY --from=devcontainer /app/node_modules/ /app/node_modules/
+COPY --from=devcontainer /app/dist/ /app/dist/
+
+COPY package.json nx.json /app/
+
+VOLUME /config
+
+## Labels at the bottom, because CI will eventually add dates, commit hashes, etc.
+LABEL org.opencontainers.image.title="Postiz App (Production)"

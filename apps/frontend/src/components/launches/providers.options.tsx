@@ -4,6 +4,7 @@ import {PickPlatforms} from "@gitroom/frontend/components/launches/helpers/pick.
 import {IntegrationContext} from "@gitroom/frontend/components/launches/helpers/use.integration";
 import {ShowAllProviders} from "@gitroom/frontend/components/launches/providers/show.all.providers";
 import dayjs from "dayjs";
+import { useStateCallback } from '@gitroom/react/helpers/use.state.callback';
 
 export const ProvidersOptions: FC<{
   integrations: Integrations[];
@@ -11,7 +12,7 @@ export const ProvidersOptions: FC<{
   date: dayjs.Dayjs;
 }> = (props) => {
   const { integrations, editorValue, date } = props;
-  const [selectedIntegrations, setSelectedIntegrations] = useState([
+  const [selectedIntegrations, setSelectedIntegrations] = useStateCallback([
     integrations[0],
   ]);
 
@@ -28,6 +29,7 @@ export const ProvidersOptions: FC<{
         onChange={setSelectedIntegrations}
         singleSelect={true}
         hide={integrations.length === 1}
+        isMain={false}
       />
       <IntegrationContext.Provider
         value={{ value: editorValue, integration: selectedIntegrations?.[0], date }}

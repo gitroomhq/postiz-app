@@ -11,7 +11,6 @@ import { PermissionsService } from '@gitroom/backend/services/auth/permissions/p
 import { IntegrationsController } from '@gitroom/backend/api/routes/integrations.controller';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { SettingsController } from '@gitroom/backend/api/routes/settings.controller';
-import { BullMqModule } from '@gitroom/nestjs-libraries/bull-mq-transport/bull-mq.module';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { PostsController } from '@gitroom/backend/api/routes/posts.controller';
 import { MediaController } from '@gitroom/backend/api/routes/media.controller';
@@ -25,6 +24,9 @@ import { MessagesController } from '@gitroom/backend/api/routes/messages.control
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { ExtractContentService } from '@gitroom/nestjs-libraries/openai/extract.content.service';
 import { CodesService } from '@gitroom/nestjs-libraries/services/codes.service';
+import { CopilotController } from '@gitroom/backend/api/routes/copilot.controller';
+import { AgenciesController } from '@gitroom/backend/api/routes/agencies.controller';
+import { PublicController } from '@gitroom/backend/api/routes/public.controller';
 
 const authenticatedController = [
   UsersController,
@@ -37,14 +39,13 @@ const authenticatedController = [
   BillingController,
   NotificationsController,
   MarketplaceController,
-  MessagesController
+  MessagesController,
+  CopilotController,
+  AgenciesController,
 ];
 @Module({
   imports: [
     UploadModule,
-    BullMqModule.forRoot({
-      connection: ioRedis,
-    }),
     ...(!!process.env.UPLOAD_DIRECTORY &&
     !!process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY
       ? [
@@ -58,7 +59,12 @@ const authenticatedController = [
         ]
       : []),
   ],
-  controllers: [StripeController, AuthController, ...authenticatedController],
+  controllers: [
+    StripeController,
+    AuthController,
+    PublicController,
+    ...authenticatedController,
+  ],
   providers: [
     AuthService,
     StripeService,

@@ -27,6 +27,8 @@ model Organization {
   Comments     Comments[]
   notifications Notifications[]
   buyerOrganization MessagesGroup[]
+  usedCodes    UsedCodes[]
+  credits      Credits[]
 }
 
 model User {
@@ -49,6 +51,7 @@ model User {
   updatedAt     DateTime           @updatedAt
   lastReadNotifications DateTime   @default(now())
   inviteId      String?
+  activated     Boolean            @default(true)
   items         ItemUser[]
   marketplace   Boolean            @default(true)
   account       String?
@@ -59,6 +62,7 @@ model User {
   orderSeller  Orders[]        @relation("orderSeller")
   payoutProblems    PayoutProblems[]
   lastOnline   DateTime          @default(now())
+  agencies     SocialMediaAgency[]
 
   @@unique([email, providerName])
   @@index([lastReadNotifications])
@@ -71,6 +75,8 @@ model User {
 model UsedCodes {
   id        String   @id @default(uuid())
   code      String
+  orgId     String
+  organization Organization @relation(fields: [orgId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -160,8 +166,61 @@ model Media {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   userPicture    User[]
+  agencies       SocialMediaAgency[]
 
   @@index([organizationId])
+}
+
+model SocialMediaAgency {
+  id                  String   @id @default(uuid())
+  user                User @relation(fields: [userId], references: [id])
+  userId              String @unique()
+  name                String
+  logoId              String?
+  logo                Media? @relation(fields: [logoId], references: [id])
+  website             String?
+  slug                String?
+
+  facebook            String?
+  instagram           String?
+  twitter             String?
+  linkedIn            String?
+  youtube             String?
+  tiktok              String?
+  otherSocialMedia    String?
+
+  shortDescription    String
+  description         String
+  niches              SocialMediaAgencyNiche[]
+  approved            Boolean @default(false)
+
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  deletedAt           DateTime?
+
+  @@index([userId])
+  @@index([deletedAt])
+  @@index([id])
+}
+
+model SocialMediaAgencyNiche {
+  agencyId            String
+  agency              SocialMediaAgency @relation(fields: [agencyId], references: [id])
+  niche               String
+
+  @@id([agencyId, niche])
+}
+
+model Credits {
+  id             String   @id @default(uuid())
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
+  credits        Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([createdAt])
 }
 
 model Subscription {
@@ -201,6 +260,8 @@ model Integration {
   createdAt       DateTime       @default(now())
   updatedAt       DateTime?      @updatedAt
   orderItems      OrderItems[]
+  inBetweenSteps  Boolean         @default(false)
+  refreshNeeded   Boolean         @default(false)
 
   @@index([updatedAt])
   @@index([deletedAt])
@@ -398,6 +459,8 @@ enum State {
 enum SubscriptionTier {
   STANDARD
   PRO
+  TEAM
+  ULTIMATE
 }
 
 enum Period {
@@ -408,6 +471,7 @@ enum Period {
 enum Provider {
   LOCAL
   GITHUB
+  GOOGLE
 }
 
 enum Role {

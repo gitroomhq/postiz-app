@@ -1,4 +1,4 @@
-import {IsDefined, IsString} from "class-validator";
+import { IsDefined, IsOptional, IsString } from 'class-validator';
 
 export class ConnectIntegrationDto {
     @IsString()
@@ -8,4 +8,8 @@ export class ConnectIntegrationDto {
     @IsString()
     @IsDefined()
     code: string;
+
+    @IsString()
+    @IsOptional()
+    refresh?: string;
 }

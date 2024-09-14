@@ -25,9 +25,9 @@ export const OrderList: FC<{ type: 'seller' | 'buyer' }> = (props) => {
   if (isLoading || !data?.orders?.length) return <></>;
 
   return (
-    <div className="bg-sixth p-[24px] flex flex-col gap-[24px] border border-[#172034] rounded-[4px]">
+    <div className="bg-sixth p-[24px] flex flex-col gap-[24px] border border-customColor6 rounded-[4px]">
       <h3 className="text-[24px]">Orders</h3>
-      <div className="pt-[20px] px-[24px] border border-[#172034] flex">
+      <div className="pt-[20px] px-[24px] border border-customColor6 flex">
         <table className="w-full">
           <tr>
             <td colSpan={biggerRow + 1} className="pb-[20px]">

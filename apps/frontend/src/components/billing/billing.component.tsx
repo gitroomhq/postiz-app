@@ -1,13 +1,23 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import useSWR from 'swr';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { MainBillingComponent } from './main.billing.component';
+import { useSearchParams } from 'next/navigation';
+import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
 
 export const BillingComponent = () => {
   const fetch = useFetch();
+  const searchParams = useSearchParams();
+  const fireEvents = useFireEvents();
+
+  useEffect(() => {
+    if (searchParams.get('check')) {
+      fireEvents('purchase');
+    }
+  }, []);
 
   const load = useCallback(async (path: string) => {
     return await (await fetch(path)).json();

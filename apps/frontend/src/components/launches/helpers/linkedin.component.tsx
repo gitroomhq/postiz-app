@@ -80,6 +80,9 @@ export const LinkedinCompany: FC<{
   const [company, setCompany] = useState<any>(null);
 
   const getCompany = async () => {
+    if (!company) {
+      return ;
+    }
     const {options} = await (
       await fetch('/integrations/function', {
         method: 'POST',
@@ -98,14 +101,14 @@ export const LinkedinCompany: FC<{
   };
 
   return (
-    <div className="text-white fixed left-0 top-0 bg-black/80 z-[300] w-full h-full p-[60px] animate-fade justify-center flex">
-      <div className="flex flex-col w-[500px] h-[250px] bg-[#0B101B] border-tableBorder border-2 rounded-xl pb-[20px] px-[20px] relative">
+    <div className="text-textColor fixed left-0 top-0 bg-primary/80 z-[300] w-full h-full p-[60px] animate-fade justify-center flex">
+      <div className="flex flex-col w-[500px] h-[250px] bg-sixth border-tableBorder border-2 rounded-xl pb-[20px] px-[20px] relative">
         <div className="flex">
           <div className="flex-1">
             <TopTitle title={'Select Company'} />
           </div>
           <button
-            className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root bg-black hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+            className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root bg-primary hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
             type="button"
           >
             <svg
@@ -141,7 +144,7 @@ export const LinkedinCompany: FC<{
 };
 
 export const linkedinCompany = (identifier: string, id: string): ICommand[] => {
-  if (identifier !== 'linkedin') {
+  if (identifier !== 'linkedin' && identifier !== 'linkedin-page') {
     return [];
   }
 
@@ -181,7 +184,6 @@ export const linkedinCompany = (identifier: string, id: string): ICommand[] => {
         const state1 = api.setSelectionRange(newSelectionRange);
         const media = await showPostSelector(id);
 
-        console.log(media);
         executeCommand({
           api,
           selectedText: state1.selectedText,

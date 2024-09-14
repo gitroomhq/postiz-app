@@ -1,0 +1,39 @@
+---
+title: Docker
+---
+
+import EarlyDoc from '/snippets/earlydoc.mdx';
+import DockerEnvvarApps from '/snippets/docker-envvar-apps.mdx';
+import DockerEnvvarGeneral from '/snippets/docker-envvar-general.mdx';
+
+<EarlyDoc />
+
+<DockerEnvvarGeneral />
+
+The container images will copy a file called `/config/postiz.env` to `/apps/.env` on startup.
+
+# Create the container on command line
+
+It is recommended to have a local directory where you save your `postiz.env` file, such as `/myContainers/postiz/config`, which is mounted as a volume.
+
+```bash Using a configuration volume
+docker create --name postiz -v /myContainers/postiz/config:/config -p 4200:4200 -p 3000:3000 ghcr.io/gitroomhq/postiz-app:latest
+```
+
+Alternatively, you can specify the variables one by one at creation time. This approach is not recommended
+simply because it's a pain to manage, and sensitive keys get stored with the container definition, which is bad practice.
+
+```bash At creation-time (not recommended)
+docker create --name postiz \
+  -e DATABASE_URL=postgres://... \
+  -e REDIS_URL=redis:// \
+  -e JWT_SECRET \
+  ... \
+  -p 4200:4200 \
+  -p 3000:3000 \
+  ghcr.io/gitroomhq/postiz-app:latest
+```
+
+
+
+<DockerEnvvarApps />

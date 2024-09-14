@@ -1,0 +1,90 @@
+{
+  "migrations": [
+    {
+      "version": "18.1.0-beta.3",
+      "description": "Moves affected.defaultBase to defaultBase in `nx.json`",
+      "implementation": "./src/migrations/update-17-2-0/move-default-base",
+      "package": "nx",
+      "name": "move-default-base-to-nx-json-root"
+    },
+    {
+      "cli": "nx",
+      "version": "19.2.0-beta.2",
+      "description": "Updates the default workspace data directory to .nx/workspace-data",
+      "implementation": "./src/migrations/update-19-2-0/move-workspace-data-directory",
+      "package": "nx",
+      "name": "19-2-0-move-graph-cache-directory"
+    },
+    {
+      "cli": "nx",
+      "version": "19.2.2-beta.0",
+      "description": "Updates the nx wrapper.",
+      "implementation": "./src/migrations/update-17-3-0/update-nxw",
+      "package": "nx",
+      "name": "19-2-2-update-nx-wrapper"
+    },
+    {
+      "version": "19.2.4-beta.0",
+      "description": "Set project name in nx.json explicitly",
+      "implementation": "./src/migrations/update-19-2-4/set-project-name",
+      "x-repair-skip": true,
+      "package": "nx",
+      "name": "19-2-4-set-project-name"
+    },
+    {
+      "cli": "nx",
+      "version": "19.1.0-beta.6",
+      "description": "Migrate no-extra-semi rules into user config, out of nx extendable configs",
+      "implementation": "./src/migrations/update-19-1-0-migrate-no-extra-semi/migrate-no-extra-semi",
+      "package": "@nx/eslint-plugin",
+      "name": "update-19-1-0-rename-no-extra-semi"
+    },
+    {
+      "cli": "nx",
+      "version": "19.6.3-beta.0",
+      "description": "Migrate proxy config files to match new format from webpack-dev-server v5.",
+      "implementation": "./src/migrations/update-19-6-3/proxy-config",
+      "package": "@nx/webpack",
+      "name": "update-19-6-3-proxy-config"
+    },
+    {
+      "version": "19.6.0-beta.0",
+      "description": "Add dependsOn: [build] to preview targets using preview-server",
+      "implementation": "./src/migrations/update-19-6-0/add-depends-on-for-preview",
+      "package": "@nx/vite",
+      "name": "update-19-6-0-add-depends-on-for-preview-server"
+    },
+    {
+      "cli": "nx",
+      "version": "18.1.1-beta.0",
+      "description": "Ensure targetDefaults inputs for task hashing when '@nx/webpack:webpack' is used are correct for Module Federation.",
+      "factory": "./src/migrations/update-18-1-1/fix-target-defaults-inputs",
+      "package": "@nx/react",
+      "name": "fix-target-defaults-for-webpack"
+    },
+    {
+      "cli": "nx",
+      "version": "19.6.0-beta.4",
+      "description": "Ensure Module Federation DTS is turned off by default.",
+      "factory": "./src/migrations/update-19-6-0/turn-off-dts-by-default",
+      "package": "@nx/react",
+      "name": "update-19-6-0-turn-module-federation-dts-off"
+    },
+    {
+      "cli": "nx",
+      "version": "19.6.0-beta.4",
+      "description": "Update the server file for Module Federation SSR port value to be the same as the 'serve' target port value.",
+      "factory": "./src/migrations/update-19-6-0/update-ssr-server-port",
+      "package": "@nx/react",
+      "name": "update-module-federation-ssr-server-file"
+    },
+    {
+      "cli": "nx",
+      "version": "19.6.1-beta.0",
+      "description": "Ensure Target Defaults are set correctly for Module Federation.",
+      "factory": "./src/migrations/update-19-6-1/ensure-depends-on-for-mf",
+      "package": "@nx/react",
+      "name": "update-19-6-1-ensure-module-federation-target-defaults"
+    }
+  ]
+}

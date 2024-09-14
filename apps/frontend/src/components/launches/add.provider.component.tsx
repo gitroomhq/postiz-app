@@ -10,6 +10,7 @@ import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { ApiKeyDto } from '@gitroom/nestjs-libraries/dtos/integrations/api.key.dto';
 import { useRouter } from 'next/navigation';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
+import { isGeneral } from '@gitroom/react/helpers/is.general';
 
 const resolver = classValidatorResolver(ApiKeyDto);
 
@@ -22,7 +23,7 @@ export const useAddProvider = (update?: () => void) => {
       title: '',
       withCloseButton: false,
       classNames: {
-        modal: 'bg-transparent text-white',
+        modal: 'bg-transparent text-textColor',
       },
       children: <AddProviderComponent update={update} {...data} />,
       size: 'auto',
@@ -88,7 +89,7 @@ export const ApiModal: FC<{
   }, []);
 
   return (
-    <div className="rounded-[4px] border border-[#172034] bg-[#0B101B] px-[16px] pb-[16px] relative">
+    <div className="rounded-[4px] border border-customColor6 bg-sixth px-[16px] pb-[16px] relative">
       <TopTitle title={`Add API key for ${name}`} />
       <button
         onClick={close}
@@ -156,7 +157,7 @@ export const AddProviderComponent: FC<{
         title: '',
         withCloseButton: false,
         classNames: {
-          modal: 'bg-transparent text-white',
+          modal: 'bg-transparent text-textColor',
         },
         children: (
           <ApiModal update={update} name={name} identifier={identifier} />
@@ -166,7 +167,7 @@ export const AddProviderComponent: FC<{
     []
   );
   return (
-    <div className="w-full flex flex-col gap-[20px] rounded-[4px] border border-[#172034] bg-[#0B101B] px-[16px] pb-[16px] relative">
+    <div className="w-full flex flex-col gap-[20px] rounded-[4px] border border-customColor6 bg-sixth px-[16px] pb-[16px] relative">
       <div className="flex flex-col">
         <TopTitle title="Add Channel" />
         <button
@@ -190,44 +191,52 @@ export const AddProviderComponent: FC<{
           </svg>
         </button>
         <h2 className="pt-[16px] pb-[10px]">Social</h2>
-        <div className="flex flex-wrap gap-[10px]">
+        <div className="grid grid-cols-3 gap-[10px] justify-items-center justify-center">
           {social.map((item) => (
             <div
               key={item.identifier}
               onClick={getSocialLink(item.identifier)}
-              className="w-[120px] h-[100px] bg-input text-white justify-center items-center flex flex-col gap-[10px] cursor-pointer"
+              className={
+                'w-[120px] h-[100px] bg-input text-textColor justify-center items-center flex flex-col gap-[10px] cursor-pointer'
+              }
             >
               <div>
-                <img
-                  className="w-[32px] h-[32px] rounded-full"
-                  src={`/icons/platforms/${item.identifier}.png`}
-                />
+                {item.identifier === 'youtube' ? (
+                  <img src={`/icons/platforms/youtube.svg`} />
+                ) : (
+                  <img
+                    className="w-[32px] h-[32px] rounded-full"
+                    src={`/icons/platforms/${item.identifier}.png`}
+                  />
+                )}
               </div>
               <div>{item.name}</div>
             </div>
           ))}
         </div>
       </div>
-      <div className="flex flex-col">
-        <h2 className="pb-[10px]">Articles</h2>
-        <div className="flex flex-wrap gap-[10px]">
-          {article.map((item) => (
-            <div
-              key={item.identifier}
-              onClick={showApiButton(item.identifier, item.name)}
-              className="w-[120px] h-[100px] bg-input text-white justify-center items-center flex flex-col gap-[10px] cursor-pointer"
-            >
-              <div>
-                <img
-                  className="w-[32px] h-[32px] rounded-full"
-                  src={`/icons/platforms/${item.identifier}.png`}
-                />
+      {!isGeneral() && (
+        <div className="flex flex-col">
+          <h2 className="pb-[10px]">Articles</h2>
+          <div className="grid grid-cols-3 gap-[10px]">
+            {article.map((item) => (
+              <div
+                key={item.identifier}
+                onClick={showApiButton(item.identifier, item.name)}
+                className="w-[120px] h-[100px] bg-input text-textColor justify-center items-center flex flex-col gap-[10px] cursor-pointer"
+              >
+                <div>
+                  <img
+                    className="w-[32px] h-[32px] rounded-full"
+                    src={`/icons/platforms/${item.identifier}.png`}
+                  />
+                </div>
+                <div>{item.name}</div>
               </div>
-              <div>{item.name}</div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

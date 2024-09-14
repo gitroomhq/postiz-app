@@ -10,11 +10,20 @@ export class EmailService {
       console.log('No Resend API Key found, skipping email sending');
       return;
     }
-    await resend.emails.send({
-      from: 'Gitroom <no-reply@gitroom.com>',
+
+    if (!process.env.EMAIL_FROM_ADDRESS || !process.env.EMAIL_FROM_NAME) {
+      console.log('Email sender information not found in environment variables');
+      return;
+    }
+
+    console.log('Sending email to', to);
+    const sends = await resend.emails.send({
+      from: `${process.env.EMAIL_FROM_NAME} <${process.env.EMAIL_FROM_ADDRESS}>`,
       to,
       subject,
       html,
     });
+
+    console.log(sends);
   }
 }

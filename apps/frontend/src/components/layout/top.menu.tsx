@@ -20,10 +20,19 @@ export const menuItems = [
       ]
     : []),
   {
-    name: 'Launches',
+    name: isGeneral() ? 'Calendar' : 'Launches',
     icon: 'launches',
     path: '/launches',
   },
+  ...(general
+    ? [
+        {
+          name: 'Analytics',
+          icon: 'analytics',
+          path: '/analytics',
+        },
+      ]
+    : []),
   ...(!general
     ? [
         {

@@ -10,7 +10,7 @@ export const useFormatting = (
   params: {
     removeMarkdown?: boolean;
     saveBreaklines?: boolean;
-    specialFunc?: (text: string) => string;
+    specialFunc?: (text: string) => any;
     beforeSpecialFunc?: (text: string) => string;
   }
 ) => {

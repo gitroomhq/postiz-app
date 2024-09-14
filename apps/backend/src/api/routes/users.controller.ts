@@ -26,6 +26,7 @@ import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions
 import { ApiTags } from '@nestjs/swagger';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
+import { HttpForbiddenException } from '@gitroom/nestjs-libraries/services/exception.filter';
 
 @ApiTags('User')
 @Controller('/user')
@@ -41,10 +42,10 @@ export class UsersController {
   async getSelf(
     @GetUserFromRequest() user: User,
     @GetOrgFromRequest() organization: Organization,
-    @Req() req: Request
+    @Req() req: Request,
   ) {
     if (!organization) {
-      throw new HttpException('Organization not found', 401);
+      throw new HttpForbiddenException();
     }
 
     return {
@@ -74,7 +75,7 @@ export class UsersController {
     @Query('name') name: string
   ) {
     if (!user.isSuperAdmin) {
-      throw new HttpException('Unauthorized', 401);
+      throw new HttpException('Unauthorized', 400);
     }
 
     return this._userService.getImpersonateUser(name);
@@ -87,7 +88,7 @@ export class UsersController {
     @Res({ passthrough: true }) response: Response
   ) {
     if (!user.isSuperAdmin) {
-      throw new HttpException('Unauthorized', 401);
+      throw new HttpException('Unauthorized', 400);
     }
 
     response.cookie('impersonate', id, {

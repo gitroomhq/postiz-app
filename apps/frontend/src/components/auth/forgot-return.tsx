@@ -63,7 +63,7 @@ export function ForgotReturn({ token }: { token: string }) {
         </div>
         {!state ? (
           <>
-            <div className="space-y-4 text-white">
+            <div className="space-y-4 text-textColor">
               <Input
                 label="New Password"
                 {...form.register('password')}

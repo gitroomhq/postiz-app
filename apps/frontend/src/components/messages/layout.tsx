@@ -28,7 +28,7 @@ const Card: FC<{ message: Root2 }> = (props) => {
       onClick={changeConversation}
       className={clsx(
         'h-[89px] p-[24px] flex gap-[16px] rounded-[4px] cursor-pointer',
-        path?.id === message.id && 'bg-sixth border border-[#172034]'
+        path?.id === message.id && 'bg-sixth border border-customColor6'
       )}
     >
       <div className="w-[40px] h-[40px] rounded-full bg-amber-200">

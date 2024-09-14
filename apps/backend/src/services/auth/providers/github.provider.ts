@@ -5,7 +5,7 @@ export class GithubProvider implements ProvidersInterface {
     return `https://github.com/login/oauth/authorize?client_id=${
       process.env.GITHUB_CLIENT_ID
     }&scope=user:email&redirect_uri=${encodeURIComponent(
-      `${process.env.FRONTEND_URL}/settings?provider=github`
+      `${process.env.FRONTEND_URL}/settings`
     )}`;
   }
 

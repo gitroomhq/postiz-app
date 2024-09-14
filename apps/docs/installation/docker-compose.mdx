@@ -1,0 +1,79 @@
+---
+title: Docker Compose
+---
+
+import EarlyDoc from '/snippets/earlydoc.mdx';
+import DockerEnvvarApps from '/snippets/docker-envvar-apps.mdx';
+import DockerEnvvarGeneral from '/snippets/docker-envvar-general.mdx';
+
+<EarlyDoc />
+
+<DockerEnvvarGeneral />
+
+The container images will copy a file called `/config/postiz.env` to `/apps/.env` on startup.
+
+# Example `docker-compose.yml` file
+
+```yaml
+services:
+  postiz:
+  	image: ghcr.io/gitroomhq/postiz-app:latest
+	container_name: postiz
+	restart: always
+	environment: # If you want to specify the variables in your compose file.
+      - DATABASE_URL="postgresql://postiz-user:postiz-password@localhost:5432/postiz-db-local"
+      - REDIS_URL="redis://localhost:6379"
+      - JWT_SECRET="random string for your JWT secret, make it long"
+      - FRONTEND_URL="http://localhost:4200"
+      - NEXT_PUBLIC_BACKEND_URL="http://localhost:3000"
+      - BACKEND_INTERNAL_URL="http://localhost:3000"
+	volumes:
+	  - ./config:/config/ # If you want to specify the variables in your `postiz.env` file.
+	ports:
+	  - 4200:4200
+	  - 3000:3000
+	networks:
+	  - postiz-network
+
+  postiz-postgres:
+    image: postgres:14.5
+    container_name: postiz-postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: postiz-local-pwd
+      POSTGRES_USER: postiz-local
+      POSTGRES_DB: postiz-db-local
+    volumes:
+      - postgres-volume:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    networks:
+      - postiz-network
+  postiz-pg-admin:
+    image: dpage/pgadmin4
+    container_name: postiz-pg-admin
+    restart: always
+    ports:
+      - 8081:80
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    networks:
+      - postiz-network
+  postiz-redis:
+    image: redis:7.2
+    container_name: postiz-redis
+    restart: always
+    ports:
+      - 6379:6379
+
+volumes:
+  postgres-volume:
+    external: false
+
+networks:
+  postiz-network:
+    external: false
+```
+
+<DockerEnvvarApps />

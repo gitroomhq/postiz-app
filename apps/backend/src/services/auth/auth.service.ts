@@ -10,13 +10,15 @@ import dayjs from 'dayjs';
 import { NewsletterService } from '@gitroom/nestjs-libraries/services/newsletter.service';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { ForgotReturnPasswordDto } from '@gitroom/nestjs-libraries/dtos/auth/forgot-return.password.dto';
+import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private _userService: UsersService,
     private _organizationService: OrganizationService,
-    private _notificationService: NotificationService
+    private _notificationService: NotificationService,
+    private _emailService: EmailService,
   ) {}
   async routeAuth(
     provider: Provider,
@@ -31,7 +33,7 @@ export class AuthService {
         }
 
         const create = await this._organizationService.createOrgAndUser(body);
-        NewsletterService.register(body.email);
+
         const addedOrg =
           addToOrg && typeof addToOrg !== 'boolean'
             ? await this._organizationService.addUserToOrg(
@@ -41,14 +43,21 @@ export class AuthService {
                 addToOrg.role
               )
             : false;
-        return { addedOrg, jwt: await this.jwt(create.users[0].user) };
+
+        const obj = { addedOrg, jwt: await this.jwt(create.users[0].user) };
+        await this._emailService.sendEmail(body.email, 'Activate your account', `Click <a href="${process.env.FRONTEND_URL}/auth/activate/${obj.jwt}">here</a> to activate your account`);
+        return obj;
       }
 
       if (!user || !AuthChecker.comparePassword(body.password, user.password)) {
-        throw new Error('Invalid user');
+        throw new Error('Invalid user name or password');
       }
 
-      return { jwt: await this.jwt(user) };
+      if (!user.activated) {
+        throw new Error('User is not activated');
+      }
+
+      return { addedOrg: false, jwt: await this.jwt(user) };
     }
 
     const user = await this.loginOrRegisterProvider(
@@ -150,6 +159,22 @@ export class AuthService {
     }
 
     return this._userService.updatePassword(user.id, body.password);
+  }
+
+  async activate(code: string) {
+    const user = AuthChecker.verifyJWT(code) as { id: string, activated: boolean, email: string };
+    if (user.id && !user.activated) {
+      const getUserAgain = await this._userService.getUserByEmail(user.email);
+      if (getUserAgain.activated) {
+        return false;
+      }
+      await this._userService.activateUser(user.id);
+      user.activated = true;
+      await NewsletterService.register(user.email);
+      return this.jwt(user as any);
+    }
+
+    return false;
   }
 
   oauthLink(provider: string) {

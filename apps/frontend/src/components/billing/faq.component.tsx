@@ -1,11 +1,18 @@
 import { FC, useCallback, useState } from 'react';
 import clsx from 'clsx';
 import interClass from '@gitroom/react/helpers/inter.font';
+import { isGeneral } from '@gitroom/react/helpers/is.general';
 
 const list = [
   {
+    title: `Can I trust ${isGeneral() ? 'Postiz' : 'Gitroom'}?`,
+    description: `${isGeneral() ? 'Postiz' : 'Gitroom'} is proudly open-source! We believe in an ethical and transparent culture, meaning Postiz will live forever. You can check the entire code / or use it for your personal use. You can check the open-source repository click here.`,
+  },
+  {
     title: 'What are channels?',
-    description: `Gitroom allows you to schedule your posts between different channels.
+    description: `${
+      isGeneral() ? 'Postiz' : 'Gitroom'
+    } allows you to schedule your posts between different channels.
 A channel is a publishing platform where you can schedule your posts.
 For example, you can schedule your posts on Twitter, Linkedin, DEV and Hashnode`,
   },
@@ -14,30 +21,8 @@ For example, you can schedule your posts on Twitter, Linkedin, DEV and Hashnode`
     description: `If you have a team with multiple members, you can invite them to your workspace to collaborate on your posts and add their personal channels`,
   },
   {
-    title: 'What do I need to import content from channels?',
-    description: `Gitroom can help you schedule your launch, but you might write your content on other platforms such as Notion, Google Docs, etc.
-You may experience problems copy your content with different formats or uploaded images.
-That's why we have a feature to import your content from different platforms.
-`,
-  },
-  {
-    title: 'What can I find in the community features?',
-    description: `Gitroom is all about the community, You can enjoy features such as: exchanging posts with other members,
-exchanging links as part of the "Gitroom Friends" and buy social media services from other members`,
-  },
-  {
     title: 'What is AI auto-complete?',
-    description: `We automate ChatGPT to help you write your social posts based on the articles you schedule`,
-  },
-  {
-    title: 'Why would I want to become featured by Gitroom?',
-    description: `Gitroom will feature your posts on our social media platforms and our website to help you get more exposure and followers`,
-  },
-  {
-    title: 'Can I get everything for free?',
-    description: `Gitroom is 100% open-source, you can deploy it on your own server and use it for free.
-However, you might not be able to enjoy the community features Click <a class="underline font-bold" target="_blank" href="https://github.com/gitroomhq/gitroom">here for the open-source</a>
-`,
+    description: `We automate ChatGPT to help you write your social posts and articles`,
   },
 ];
 
@@ -56,7 +41,9 @@ export const FAQSection: FC<{ title: string; description: string }> = (
       className="bg-sixth p-[24px] border border-tableBorder rounded-[4px] flex flex-col"
       onClick={changeShow}
     >
-      <div className={`text-[20px] ${interClass} cursor-pointer flex justify-center`}>
+      <div
+        className={`text-[20px] ${interClass} cursor-pointer flex justify-center`}
+      >
         <div className="flex-1">{title}</div>
         <div className="flex items-center justify-center w-[32px]">
           {!show ? (
@@ -102,7 +89,7 @@ export const FAQSection: FC<{ title: string; description: string }> = (
           onClick={(e) => {
             e.stopPropagation();
           }}
-          className={`mt-[16px] w-full text-wrap ${interClass} font-[400] text-[16px] text-[#D3D3D3] select-text`}
+          className={`mt-[16px] w-full text-wrap ${interClass} font-[400] text-[16px] text-customColor17 select-text`}
           dangerouslySetInnerHTML={{ __html: description }}
         />
       </div>
