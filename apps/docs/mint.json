@@ -70,6 +70,12 @@
 			"installation/kubernetes-helm"
 		  ]
 		},
+		{
+          "group": "Configuration",
+          "pages": [
+            "configuration/reference"
+		  ]
+		},
         "howitworks",
         "emails",
         "github",

@@ -4,24 +4,36 @@ title: Docker
 
 import EarlyDoc from '/snippets/earlydoc.mdx';
 import DockerEnvvarApps from '/snippets/docker-envvar-apps.mdx';
+import DockerEnvvarGeneral from '/snippets/docker-envvar-general.mdx';
 
 <EarlyDoc />
 
-# Set environment variables
+<DockerEnvvarGeneral />
 
-Postiz configuration is entirely via environment variables for now. You might be used to setting environment variables when starting containers,
-however postiz needs a LOT of environment variables, so setting these on command line or in a docker-compose is probably not practical for long
-term maintainability.
-
-It is recommended to use a `.env` file, which the Postiz containers look for in /config. Docker will automatically create this file for you on a 
-docker volume the first time you start up Postiz. 
-
-The default .env file can be found here; [example .env file](https://raw.githubusercontent.com/gitroomhq/postiz-app/main/.env.example)
+The container images will copy a file called `/config/postiz.env` to `/apps/.env` on startup.
 
 # Create the container on command line
 
-```bash
-docker create --name postiz -v ./config:/config -p 4200:4200 -p 3000:3000 ghcr.io/gitroomhq/postiz-app:latest
+It is recommended to have a local directory where you save your `postiz.env` file, such as `/myContainers/postiz/config`, which is mounted as a volume.
+
+```bash Using a configuration volume
+docker create --name postiz -v /myContainers/postiz/config:/config -p 4200:4200 -p 3000:3000 ghcr.io/gitroomhq/postiz-app:latest
 ```
+
+Alternatively, you can specify the variables one by one at creation time. This approach is not recommended
+simply because it's a pain to manage, and sensitive keys get stored with the container definition, which is bad practice.
+
+```bash At creation-time (not recommended)
+docker create --name postiz \
+  -e DATABASE_URL=postgres://... \
+  -e REDIS_URL=redis:// \
+  -e JWT_SECRET \
+  ... \
+  -p 4200:4200 \
+  -p 3000:3000 \
+  ghcr.io/gitroomhq/postiz-app:latest
+```
+
+
 
 <DockerEnvvarApps />
