@@ -7,13 +7,16 @@ if [[ "$SKIP_CONFIG_CHECK" != "true" ]]; then
 		echo "ERROR: No .env file found in /config/.env"
 	fi
 
-	ln -sf /config/.env /app/.env
+	ln -sf /config/postiz.env /app/.env
 fi
 
 if [[ "$POSTIZ_APPS" -eq "" ]]; then
 	echo "POSTIZ_APPS is not set, starting everything!"
 	POSTIZ_APPS="frontend workers cron backend"
 fi
+
+echo "Running database migrations"
+npm run prisma-db-push
 
 mkdir -p /etc/supervisor.d/
 

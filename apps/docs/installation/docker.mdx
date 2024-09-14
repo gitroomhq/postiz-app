@@ -3,18 +3,25 @@ title: Docker
 ---
 
 import EarlyDoc from '/snippets/earlydoc.mdx';
-import DockerDatabase from '/snippets/docker-database.mdx';
 import DockerEnvvarApps from '/snippets/docker-envvar-apps.mdx';
 
 <EarlyDoc />
 
-<DockerDatabase />
+# Set environment variables
 
+Postiz configuration is entirely via environment variables for now. You might be used to setting environment variables when starting containers,
+however postiz needs a LOT of environment variables, so setting these on command line or in a docker-compose is probably not practical for long
+term maintainability.
+
+It is recommended to use a `.env` file, which the Postiz containers look for in /config. Docker will automatically create this file for you on a 
+docker volume the first time you start up Postiz. 
+
+The default .env file can be found here; [example .env file](https://raw.githubusercontent.com/gitroomhq/postiz-app/main/.env.example)
 
 # Create the container on command line
 
 ```bash
-docker create --name postiz -v ./config:/config -p 4200:4200 -p 3000:3000 ghcr.io/postiz/postiz:latest
+docker create --name postiz -v ./config:/config -p 4200:4200 -p 3000:3000 ghcr.io/gitroomhq/postiz-app:latest
 ```
 
 <DockerEnvvarApps />
