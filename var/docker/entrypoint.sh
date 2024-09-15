@@ -38,4 +38,4 @@ if [[ $POSTIZ_APPS == *"backend"* ]]; then
 	ln -sf /app/supervisord_available_configs/backend.conf /etc/supervisor.d/
 fi
 
-/usr/bin/supervisord
+/usr/bin/supervisord -c /etc/supervisord.conf
