@@ -35,8 +35,14 @@ async function bootstrap() {
   loadSwagger(app);
 
   const port = process.env.PORT || 3000;
-  await app.listen(port);
-  Logger.log(`🚀 Application is running on: http://localhost:${port}`);
+
+  try {
+    await app.listen(port);
+
+    Logger.log(`🚀 Backend is running on: http://localhost:${port}`);
+  } catch (e) {
+    Logger.error(`Backend failed to start on port ${port}`, e);
+  }
 }
 
 bootstrap();

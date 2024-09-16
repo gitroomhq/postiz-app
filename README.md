@@ -48,6 +48,7 @@
   <img alt="Facebook" src="https://postiz.com/svgs/socials/Facebook.svg" width="32">
   <img alt="Pinterest" src="https://postiz.com/svgs/socials/Pinterest.svg" width="32">
   <img alt="Threads" src="https://postiz.com/svgs/socials/Threads.svg" width="32">
+  <img alt="X" src="https://postiz.com/svgs/socials/X.svg" width="32">
 </div>
 
 <p align="center">

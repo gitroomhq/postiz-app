@@ -61,6 +61,9 @@ FROM base AS dist
 COPY --from=devcontainer /app/node_modules/ /app/node_modules/
 COPY --from=devcontainer /app/dist/ /app/dist/
 
+# Required for prisma
+COPY --from=devcontainer /app/libraries/ /app/libraries/
+
 COPY package.json nx.json /app/
 
 VOLUME /config
