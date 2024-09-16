@@ -15,7 +15,7 @@ import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { CreateGeneratedPostsDto } from '@gitroom/nestjs-libraries/dtos/generator/create.generated.posts.dto';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { BadBody, RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/client';
 
 type PostWithConditionals = Post & {
@@ -277,6 +277,10 @@ export class PostsService {
     } catch (err) {
       if (err instanceof RefreshToken) {
         return this.postSocial(integration, posts, true);
+      }
+
+      if (err instanceof BadBody && process.env.EMAIL_FROM_ADDRESS === 'nevo@postiz.com') {
+        await this._notificationService.sendEmail('nevo@positz.com', 'Bad body', JSON.stringify(err.body));
       }
 
       throw err;
