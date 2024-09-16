@@ -16,6 +16,7 @@ export class LinkedinPageProvider
   override identifier = 'linkedin-page';
   override name = 'LinkedIn Page';
   override isBetweenSteps = true;
+  override refreshWait = true;
   override scopes = [
     'openid',
     'profile',
