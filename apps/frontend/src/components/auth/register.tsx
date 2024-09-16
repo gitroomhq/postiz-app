@@ -73,7 +73,6 @@ export function RegisterAfter({
   provider: string;
 }) {
   const [loading, setLoading] = useState(false);
-  const getQuery = useSearchParams();
   const router = useRouter();
   const fireEvents = useFireEvents();
 
@@ -115,17 +114,6 @@ export function RegisterAfter({
       router.push('/auth/activate');
     }
   };
-
-  const rootDomain = useMemo(() => {
-    const url = new URL(process.env.frontendUrl!);
-    const hostname = url.hostname;
-    const parts = hostname.split('.');
-    if (parts.length > 2) {
-      return url.protocol + '//' + url.hostname?.replace(/^[^.]+\./, '');
-    }
-
-    return process.env.frontendUrl;
-  }, []);
 
   return (
     <FormProvider {...form}>
@@ -175,14 +163,14 @@ export function RegisterAfter({
         <div className={clsx('text-[12px]', interClass)}>
           By registering you agree to our{' '}
           <a
-            href={`${rootDomain}/terms`}
+            href={`https://postiz.com/terms`}
             className="underline hover:font-bold"
           >
             Terms of Service
           </a>{' '}
           and{' '}
           <a
-            href={`${rootDomain}/privacy`}
+            href={`https://postiz.com/privacy`}
             className="underline hover:font-bold"
           >
             Privacy Policy
