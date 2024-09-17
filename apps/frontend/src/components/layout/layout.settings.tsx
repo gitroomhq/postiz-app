@@ -31,6 +31,7 @@ import { Impersonate } from '@gitroom/frontend/components/layout/impersonate';
 import clsx from 'clsx';
 import { BillingComponent } from '@gitroom/frontend/components/billing/billing.component';
 import dynamic from 'next/dynamic';
+import { NewSubscription } from '@gitroom/frontend/components/layout/new.subscription';
 const ModeComponent = dynamic(
   () => import('@gitroom/frontend/components/layout/mode.component'),
   { ssr: false }
@@ -70,7 +71,8 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
             <ShowLinkedinCompany />
             <Toaster />
             <ShowPostSelector />
-            {(user.tier !== 'FREE' || !isGeneral() || process.env.isBillingEnabled === "false") && <Onboarding />}
+            <NewSubscription />
+            {user.tier !== 'FREE' && <Onboarding />}
             <Support />
             <ContinueProvider />
             <div className="min-h-[100vh] w-full max-w-[1440px] mx-auto bg-primary px-[12px] text-textColor flex flex-col">
