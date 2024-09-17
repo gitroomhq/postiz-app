@@ -12,11 +12,10 @@ import {
   useState,
 } from 'react';
 import dayjs from 'dayjs';
-import useSWR, { useSWRConfig } from 'swr';
+import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Post, Integration } from '@prisma/client';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { isGeneral } from '@gitroom/react/helpers/is.general';
+import { useSearchParams } from 'next/navigation';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 

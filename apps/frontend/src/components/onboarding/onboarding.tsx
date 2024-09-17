@@ -8,8 +8,7 @@ import { GithubOnboarding } from '@gitroom/frontend/components/onboarding/github
 import { SettingsPopup } from '@gitroom/frontend/components/layout/settings.component';
 import { Button } from '@gitroom/react/form/button';
 import { ConnectChannels } from '@gitroom/frontend/components/onboarding/connect.channels';
-import { isGeneral } from '@gitroom/react/helpers/is.general';
-import { AddAccount } from '@gitroom/frontend/components/marketplace/seller';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 
 export const Step: FC<{
   step: number;
@@ -116,7 +115,8 @@ const SkipOnboarding: FC = () => {
 };
 const Welcome: FC = () => {
   const [seller, setSeller] = useState(false);
-  const [lastStep, setLastStep] = useState(isGeneral() ? 3 : 4);
+  const {isGeneral} = useVariables();
+  const [lastStep, setLastStep] = useState(isGeneral ? 3 : 4);
   const [step, setStep] = useState(1);
   const ref = useRef();
   const router = useRouter();
@@ -148,7 +148,7 @@ const Welcome: FC = () => {
 
   const sellPosts = useCallback(() => {
     nextStep()();
-    setLastStep(isGeneral() ? 4 : 5);
+    setLastStep(isGeneral ? 4 : 5);
     setSeller(true);
   }, [step]);
 
@@ -162,7 +162,7 @@ const Welcome: FC = () => {
       <div className="flex">
         <Step title="Profile" step={1} currentStep={step} lastStep={lastStep} />
         <StepSpace />
-        {!isGeneral() && (
+        {!isGeneral && (
           <>
             <Step
               title="Connect Github"
@@ -175,18 +175,18 @@ const Welcome: FC = () => {
         )}
         <Step
           title="Connect Channels"
-          step={3 - (isGeneral() ? 1 : 0)}
+          step={3 - (isGeneral ? 1 : 0)}
           currentStep={step}
           lastStep={4}
         />
         <StepSpace />
-        <Step title="Finish" step={4 - (isGeneral() ? 1 : 0)} currentStep={step} lastStep={lastStep} />
+        <Step title="Finish" step={4 - (isGeneral ? 1 : 0)} currentStep={step} lastStep={lastStep} />
         {seller && (
           <>
             <StepSpace />
             <Step
               title="Sell Posts"
-              step={5- (isGeneral() ? 1 : 0)}
+              step={5- (isGeneral ? 1 : 0)}
               currentStep={step}
               lastStep={lastStep}
             />
@@ -204,7 +204,7 @@ const Welcome: FC = () => {
           </div>
         </>
       )}
-      {step === 2 && !isGeneral() && (
+      {step === 2 && !isGeneral && (
         <div>
           <GithubOnboarding />
           <div className="flex justify-end gap-[8px]">
@@ -213,7 +213,7 @@ const Welcome: FC = () => {
           </div>
         </div>
       )}
-      {step === 3 - (isGeneral() ? 1 : 0) && (
+      {step === 3 - (isGeneral ? 1 : 0) && (
         <div>
           <ConnectChannels />
           <div className="flex justify-end gap-[8px]">
@@ -222,7 +222,7 @@ const Welcome: FC = () => {
           </div>
         </div>
       )}
-      {step === 4 - (isGeneral() ? 1 : 0) && (
+      {step === 4 - (isGeneral ? 1 : 0) && (
         <div className="items-center justify-center flex flex-col gap-[24px]">
           <div className="items-center justify-center flex flex-col">
             <img src="/success.svg" alt="success" />
@@ -231,8 +231,8 @@ const Welcome: FC = () => {
             You are done, from here you can:
           </div>
           <div className="flex flex-col gap-[8px]">
-            <div className={clsx(isGeneral() ? "grid" : "grid grid-cols-2 gap-[8px]")}>
-              {!isGeneral() && (
+            <div className={clsx(isGeneral ? "grid" : "grid grid-cols-2 gap-[8px]")}>
+              {!isGeneral && (
                 <Button onClick={goToAnalytics}>View Analytics</Button>
               )}
               <Button onClick={goToLaunches}>Schedule a new post</Button>
@@ -245,7 +245,7 @@ const Welcome: FC = () => {
           </div>
         </div>
       )}
-      {step === 5 - (isGeneral() ? 1 : 0) && (
+      {step === 5 - (isGeneral ? 1 : 0) && (
         <div>
           <div className="text-[24px] mb-[24px]">To sell posts you would have to:</div>
           <ul>
@@ -254,7 +254,7 @@ const Welcome: FC = () => {
           </ul>
 
           <div className="grid grid-cols-2 gap-[8px] mt-[24px]">
-            <Button onClick={() => setStep(isGeneral() ? 2 : 3)}>Go back to connect channels</Button>
+            <Button onClick={() => setStep(isGeneral ? 2 : 3)}>Go back to connect channels</Button>
             <Button onClick={connectBankAccount}>Move to the seller page to connect you bank</Button>
           </div>
         </div>

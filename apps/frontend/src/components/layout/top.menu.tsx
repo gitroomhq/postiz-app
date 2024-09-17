@@ -5,36 +5,36 @@ import Link from 'next/link';
 import clsx from 'clsx';
 import { usePathname } from 'next/navigation';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
-import { isGeneral } from '@gitroom/react/helpers/is.general';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 
-const general = isGeneral();
-
-export const menuItems = [
-  ...(!general
-    ? [
+export const useMenuItems = () => {
+  const {isGeneral} = useVariables();
+  return [
+    ...(!isGeneral
+      ? [
         {
           name: 'Analytics',
           icon: 'analytics',
           path: '/analytics',
         },
       ]
-    : []),
-  {
-    name: isGeneral() ? 'Calendar' : 'Launches',
-    icon: 'launches',
-    path: '/launches',
-  },
-  ...(general
-    ? [
+      : []),
+    {
+      name: isGeneral ? 'Calendar' : 'Launches',
+      icon: 'launches',
+      path: '/launches',
+    },
+    ...(isGeneral
+      ? [
         {
           name: 'Analytics',
           icon: 'analytics',
           path: '/analytics',
         },
       ]
-    : []),
-  ...(!general
-    ? [
+      : []),
+    ...(!isGeneral
+      ? [
         {
           name: 'Settings',
           icon: 'settings',
@@ -42,36 +42,39 @@ export const menuItems = [
           role: ['ADMIN', 'SUPERADMIN'],
         },
       ]
-    : []),
-  {
-    name: 'Marketplace',
-    icon: 'marketplace',
-    path: '/marketplace',
-  },
-  {
-    name: 'Messages',
-    icon: 'messages',
-    path: '/messages',
-  },
-  {
-    name: 'Billing',
-    icon: 'billing',
-    path: '/billing',
-    role: ['ADMIN', 'SUPERADMIN'],
-    requireBilling: true,
-  },
-];
+      : []),
+    {
+      name: 'Marketplace',
+      icon: 'marketplace',
+      path: '/marketplace',
+    },
+    {
+      name: 'Messages',
+      icon: 'messages',
+      path: '/messages',
+    },
+    {
+      name: 'Billing',
+      icon: 'billing',
+      path: '/billing',
+      role: ['ADMIN', 'SUPERADMIN'],
+      requireBilling: true,
+    },
+  ];
+}
 
 export const TopMenu: FC = () => {
   const path = usePathname();
   const user = useUser();
+  const {billingEnabled} = useVariables();
+  const menuItems = useMenuItems();
 
   return (
     <div className="flex flex-col h-full animate-normalFadeDown">
       <ul className="gap-5 flex flex-1 items-center text-[18px]">
         {menuItems
           .filter((f) => {
-            if (f.requireBilling && process.env.isBillingEnabled === 'false') {
+            if (f.requireBilling && !billingEnabled) {
               return false;
             }
             if (f.role) {

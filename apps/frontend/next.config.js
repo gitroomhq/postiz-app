@@ -20,12 +20,7 @@ const nextConfig = {
         hostname: '**',
       },
     ],
-  },
-  env: {
-    isBillingEnabled: String(!!process.env.STRIPE_PUBLISHABLE_KEY),
-    isGeneral: String(!!process.env.IS_GENERAL),
-    frontendUrl: String(process.env.FRONTEND_URL),
-  },
+  }
 };
 
 const plugins = [
