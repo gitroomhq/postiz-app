@@ -1,14 +1,8 @@
 'use client';
 
-import React, {
-  FC,
-  Fragment,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import React, { FC, Fragment, useCallback, useMemo } from 'react';
 import {
+  CalendarContext,
   Integrations,
   useCalendar,
 } from '@gitroom/frontend/components/launches/calendar.context';
@@ -30,6 +24,8 @@ import { IntegrationContext } from '@gitroom/frontend/components/launches/helper
 import { PreviewPopup } from '@gitroom/frontend/components/marketplace/special.message';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import { groupBy, sortBy } from 'lodash';
+import Image from 'next/image';
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
@@ -43,6 +39,86 @@ export const days = [
   'Sunday',
 ];
 export const hours = Array.from({ length: 24 }, (_, i) => i);
+
+export const DayView = () => {
+  const calendar = useCalendar();
+  const { integrations, posts, currentYear, currentDay, currentWeek } =
+    calendar;
+
+  const options = useMemo(() => {
+    const createdPosts = posts.map((post) => ({
+      integration: [integrations.find((i) => i.id === post.integration.id)!],
+      image: post.integration.picture,
+      identifier: post.integration.providerIdentifier,
+      id: post.integration.id,
+      name: post.integration.name,
+      time: dayjs
+        .utc(post.publishDate)
+        .diff(dayjs.utc(post.publishDate).startOf('day'), 'minute'),
+    }));
+
+    return sortBy(
+      Object.values(
+        groupBy(
+          [
+            ...createdPosts,
+            ...integrations.flatMap((p) =>
+              p.time.flatMap((t) => ({
+                integration: p,
+                identifier: p.identifier,
+                name: p.name,
+                id: p.id,
+                image: p.picture,
+                time: t.time,
+              }))
+            ),
+          ],
+          (p: any) => p.time
+        )
+      ),
+      (p) => p[0].time
+    );
+  }, [integrations, posts]);
+
+  return (
+    <div className="flex flex-col gap-[10px]">
+      {options.map((option) => (
+        <Fragment key={option[0].time}>
+          <div className="text-center text-[20px]">
+            {dayjs()
+              .utc()
+              .startOf('day')
+              .add(option[0].time, 'minute')
+              .local()
+              .format('HH:mm')}
+          </div>
+          <div
+            key={option[0].time}
+            className="bg-secondary min-h-[60px] border-[2px] border-secondary rounded-[10px] flex justify-center items-center gap-[10px] mb-[20px]"
+          >
+            <CalendarContext.Provider
+              value={{
+                ...calendar,
+                integrations: option.flatMap((p) => p.integration),
+              }}
+            >
+              <CalendarColumn
+                getDate={dayjs()
+                  .utc()
+                  .year(currentYear)
+                  .week(currentWeek)
+                  .day(currentDay)
+                  .startOf('day')
+                  .add(option[0].time, 'minute')
+                  .local()}
+              />
+            </CalendarContext.Provider>
+          </div>
+        </Fragment>
+      ))}
+    </div>
+  );
+};
 
 export const WeekView = () => {
   const { currentYear, currentWeek } = useCalendar();
@@ -155,7 +231,13 @@ export const Calendar = () => {
 
   return (
     <DNDProvider>
-      {display === 'week' ? <WeekView /> : <MonthView />}
+      {display === 'day' ? (
+        <DayView />
+      ) : display === 'week' ? (
+        <WeekView />
+      ) : (
+        <MonthView />
+      )}
     </DNDProvider>
   );
 };
@@ -183,7 +265,10 @@ export const CalendarColumn: FC<{
     return posts.filter((post) => {
       const pList = dayjs.utc(post.publishDate).local();
       const check =
-        display === 'week'
+        display === 'day'
+          ? pList.format('YYYY-MM-DD HH:mm') ===
+            getDate.format('YYYY-MM-DD HH:mm')
+          : display === 'week'
           ? pList.isSameOrAfter(getDate.startOf('hour')) &&
             pList.isBefore(getDate.endOf('hour'))
           : pList.format('DD/MM/YYYY') === getDate.format('DD/MM/YYYY');
@@ -373,6 +458,7 @@ export const CalendarColumn: FC<{
             >
               <div className="relative w-full flex flex-col items-center p-[2.5px]">
                 <CalendarItem
+                  display={display as 'day' | 'week' | 'month'}
                   isBeforeNow={isBeforeNow}
                   date={getDate}
                   state={post.state}
@@ -384,14 +470,16 @@ export const CalendarColumn: FC<{
             </div>
           ))}
         </div>
-        {!isBeforeNow && (
+        {(display === 'day'
+          ? !isBeforeNow && postList.length === 0
+          : !isBeforeNow) && (
           <div
             className="pb-[2.5px] px-[5px] flex-1 flex"
             onClick={integrations.length ? addModal : addProvider}
           >
             <div
               className={clsx(
-                display === 'month'
+                display === ('month' as any)
                   ? 'flex-1 min-h-[40px] w-full'
                   : !postList.length
                   ? 'h-full w-full absolute left-0 top-0 p-[5px]'
@@ -399,11 +487,51 @@ export const CalendarColumn: FC<{
                 'flex items-center justify-center cursor-pointer pb-[2.5px]'
               )}
             >
-              <div
-                className={clsx(
-                  'hover:before:content-["+"] w-full h-full text-seventh rounded-[10px] hover:border hover:border-seventh flex justify-center items-center'
-                )}
-              />
+              {display !== 'day' && (
+                <div
+                  className={clsx(
+                    'hover:before:content-["+"] w-full h-full text-seventh rounded-[10px] hover:border hover:border-seventh flex justify-center items-center'
+                  )}
+                />
+              )}
+              {display === 'day' && (
+                <div
+                  className={`w-full h-full rounded-[10px] hover:border hover:border-seventh flex justify-center items-center gap-[20px] opacity-30 grayscale hover:grayscale-0 hover:opacity-100`}
+                >
+                  {integrations.map((selectedIntegrations) => (
+                    <div className="relative" key={selectedIntegrations.identifier}>
+                      <div
+                        className={clsx(
+                          'relative w-[34px] h-[34px] rounded-full flex justify-center items-center bg-fifth filter transition-all duration-500'
+                        )}
+                      >
+                        <Image
+                          src={selectedIntegrations.picture}
+                          className="rounded-full"
+                          alt={selectedIntegrations.identifier}
+                          width={32}
+                          height={32}
+                        />
+                        {selectedIntegrations.identifier === 'youtube' ? (
+                          <img
+                            src="/icons/platforms/youtube.svg"
+                            className="absolute z-10 -bottom-[5px] -right-[5px]"
+                            width={20}
+                          />
+                        ) : (
+                          <Image
+                            src={`/icons/platforms/${selectedIntegrations.identifier}.png`}
+                            className="rounded-full absolute z-10 -bottom-[5px] -right-[5px] border border-fifth"
+                            alt={selectedIntegrations.identifier}
+                            width={20}
+                            height={20}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -418,9 +546,10 @@ const CalendarItem: FC<{
   editPost: () => void;
   integrations: Integrations[];
   state: State;
+  display: 'day' | 'week' | 'month';
   post: Post & { integration: Integration };
 }> = (props) => {
-  const { editPost, post, date, isBeforeNow, state } = props;
+  const { editPost, post, date, isBeforeNow, state, display } = props;
   const [{ opacity }, dragRef] = useDrag(
     () => ({
       type: 'post',
@@ -443,13 +572,18 @@ const CalendarItem: FC<{
       )}
       style={{ opacity }}
     >
-      <div className="relative min-w-[20px] h-[20px]">
+      <div
+        className={clsx(
+          'relative min-w-[20px] h-[20px]',
+          display === 'day' ? 'h-[40px]' : 'h-[20px]'
+        )}
+      >
         <img
           className="w-[20px] h-[20px] rounded-full"
           src={post.integration.picture!}
         />
         <img
-          className="w-[12px] h-[12px] rounded-full absolute z-10 bottom-[0] right-0 border border-fifth"
+          className="w-[12px] h-[12px] rounded-full absolute z-10 top-[10px] right-0 border border-fifth"
           src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
         />
       </div>

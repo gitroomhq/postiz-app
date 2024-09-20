@@ -22,7 +22,8 @@ import weekOfYear from 'dayjs/plugin/weekOfYear';
 dayjs.extend(isoWeek);
 dayjs.extend(weekOfYear);
 
-const CalendarContext = createContext({
+export const CalendarContext = createContext({
+  currentDay: dayjs().day() as 0 | 1 | 2 | 3 | 4 | 5 | 6,
   currentWeek: dayjs().week(),
   currentYear: dayjs().year(),
   currentMonth: dayjs().month(),
@@ -30,13 +31,16 @@ const CalendarContext = createContext({
   integrations: [] as Integrations[],
   trendings: [] as string[],
   posts: [] as Array<Post & { integration: Integration }>,
-  reloadCalendarView: () => {/** empty **/},
+  reloadCalendarView: () => {
+    /** empty **/
+  },
   display: 'week',
   setFilters: (filters: {
     currentWeek: number;
     currentYear: number;
+    currentDay: 0 | 1 | 2 | 3 | 4 | 5 | 6;
     currentMonth: number;
-    display: 'week' | 'month';
+    display: 'week' | 'month' | 'day';
   }) => {
     /** empty **/
   },
@@ -53,6 +57,7 @@ export interface Integrations {
   identifier: string;
   type: string;
   picture: string;
+  time: { time: number }[];
 }
 
 function getWeekNumber(date: Date) {
@@ -82,39 +87,37 @@ export const CalendarWeekProvider: FC<{
   const [trendings] = useState<string[]>([]);
   const searchParams = useSearchParams();
 
-  const display = searchParams.get('month') ? 'month' : 'week';
+  const display = searchParams.get('display') || 'week';
+
   const [filters, setFilters] = useState({
-    currentWeek:
-      display === 'week'
-        ? +(searchParams.get('week') || getWeekNumber(new Date()))
-        : 0,
-    currentMonth:
-      display === 'week' ? 0 : +(searchParams.get('month') || dayjs().month()),
+    currentDay: +(searchParams.get('day') || dayjs().day()) as
+      | 0
+      | 1
+      | 2
+      | 3
+      | 4
+      | 5
+      | 6,
+    currentWeek: +(searchParams.get('week') || getWeekNumber(new Date())),
+    currentMonth: +(searchParams.get('month') || dayjs().month()),
     currentYear: +(searchParams.get('year') || dayjs().year()),
     display,
   });
 
   const params = useMemo(() => {
-    return new URLSearchParams(
-      filters.currentWeek
-        ? {
-            week: filters.currentWeek.toString(),
-            year: filters.currentYear.toString(),
-          }
-        : {
-            year: filters.currentYear.toString(),
-            month: (filters.currentMonth + 1).toString(),
-          }
-    ).toString();
-  }, [filters]);
+    return new URLSearchParams({
+      display: filters.display,
+      day: filters.currentDay.toString(),
+      week: filters.currentWeek.toString(),
+      month: (filters.currentMonth + 1).toString(),
+      year: filters.currentYear.toString(),
+    }).toString();
+  }, [filters, display]);
 
-  const loadData = useCallback(
-    async () => {
-      const data = (await fetch(`/posts?${params}`)).json();
-      return data;
-    },
-    [filters, params]
-  );
+  const loadData = useCallback(async () => {
+    const data = (await fetch(`/posts?${params}`)).json();
+    return data;
+  }, [filters, params]);
 
   const swr = useSWR(`/posts-${params}`, loadData, {
     refreshInterval: 3600000,
@@ -125,22 +128,23 @@ export const CalendarWeekProvider: FC<{
 
   const setFiltersWrapper = useCallback(
     (filters: {
+      currentDay: 0 | 1 | 2 | 3 | 4 | 5 | 6;
       currentWeek: number;
       currentYear: number;
       currentMonth: number;
-      display: 'week' | 'month';
+      display: 'week' | 'month' | 'day';
     }) => {
       setFilters(filters);
       setInternalData([]);
-      window.history.replaceState(
-        null,
-        '',
-        `/launches?${
-          filters.currentWeek
-            ? `week=${filters.currentWeek}`
-            : `month=${filters.currentMonth}`
-        }&year=${filters.currentYear}`
-      );
+
+      const path = [
+        `day=${filters.currentDay}`,
+        `week=${filters.currentWeek}`,
+        `month=${filters.currentMonth}`,
+        `year=${filters.currentYear}`,
+        `display=${filters.display}`,
+      ].filter((f) => f);
+      window.history.replaceState(null, '', `/launches?${path.join('&')}`);
     },
     [filters, swr.mutate]
   );

@@ -26,6 +26,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 import { NotEnoughScopesFilter } from '@gitroom/nestjs-libraries/integrations/integration.missing.scopes';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
+import { IntegrationTimeDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.time.dto';
 
 @ApiTags('Integrations')
 @Controller('/integrations')
@@ -55,6 +56,7 @@ export class IntegrationsController {
         inBetweenSteps: p.inBetweenSteps,
         refreshNeeded: p.refreshNeeded,
         type: p.type,
+        time: JSON.parse(p.postingTimes)
       })),
     };
   }
@@ -97,6 +99,14 @@ export class IntegrationsController {
     return { url };
   }
 
+  @Post('/:id/time')
+  async setTime(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: IntegrationTimeDto
+  ) {
+    return this._integrationService.setTimes(org.id, id, body);
+  }
   @Post('/function')
   async functionIntegration(
     @GetOrgFromRequest() org: Organization,
@@ -238,7 +248,8 @@ export class IntegrationsController {
       expiresIn,
       username,
       integrationProvider.isBetweenSteps,
-      body.refresh
+      body.refresh,
+      +body.timezone
     );
   }
 

@@ -13,7 +13,6 @@ import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.reque
 import { Organization, User } from '@prisma/client';
 import { CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
-import { CommentsService } from '@gitroom/nestjs-libraries/database/prisma/comments/comments.service';
 import { StarsService } from '@gitroom/nestjs-libraries/database/prisma/stars/stars.service';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import {
@@ -30,7 +29,6 @@ import { CreateGeneratedPostsDto } from '@gitroom/nestjs-libraries/dtos/generato
 export class PostsController {
   constructor(
     private _postsService: PostsService,
-    private _commentsService: CommentsService,
     private _starsService: StarsService,
     private _messagesService: MessagesService
   ) {}

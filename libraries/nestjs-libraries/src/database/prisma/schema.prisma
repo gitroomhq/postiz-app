@@ -262,6 +262,7 @@ model Integration {
   orderItems      OrderItems[]
   inBetweenSteps  Boolean         @default(false)
   refreshNeeded   Boolean         @default(false)
+  postingTimes    String          @default("[{\"time\":120}, {\"time\":400}, {\"time\":700}]")
 
   @@index([updatedAt])
   @@index([deletedAt])

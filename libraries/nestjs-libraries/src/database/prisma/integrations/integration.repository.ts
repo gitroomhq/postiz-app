@@ -1,11 +1,11 @@
 import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
 import dayjs from 'dayjs';
-import * as console from 'node:console';
 import { Integration } from '@prisma/client';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { simpleUpload } from '@gitroom/nestjs-libraries/upload/r2.uploader';
 import axios from 'axios';
+import { IntegrationTimeDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.time.dto';
 
 @Injectable()
 export class IntegrationRepository {
@@ -14,10 +14,34 @@ export class IntegrationRepository {
     private _posts: PrismaRepository<'post'>
   ) {}
 
+  async setTimes(org: string, id: string, times: IntegrationTimeDto) {
+    return this._integration.model.integration.update({
+      select: {
+        id: true,
+      },
+      where: {
+        id,
+        organizationId: org,
+      },
+      data: {
+        postingTimes: JSON.stringify(times.time),
+      },
+    });
+  }
+
   async updateIntegration(id: string, params: Partial<Integration>) {
-    if (params.picture && params.picture.indexOf(process.env.CLOUDFLARE_BUCKET_URL!) === -1) {
-      const picture = await axios.get(params.picture, { responseType: 'arraybuffer' });
-      params.picture = await simpleUpload(picture.data, `${makeId(10)}.png`, 'image/png');
+    if (
+      params.picture &&
+      params.picture.indexOf(process.env.CLOUDFLARE_BUCKET_URL!) === -1
+    ) {
+      const picture = await axios.get(params.picture, {
+        responseType: 'arraybuffer',
+      });
+      params.picture = await simpleUpload(
+        picture.data,
+        `${makeId(10)}.png`,
+        'image/png'
+      );
     }
 
     return this._integration.model.integration.update({
@@ -54,8 +78,18 @@ export class IntegrationRepository {
     expiresIn = 999999999,
     username?: string,
     isBetweenSteps = false,
-    refresh?: string
+    refresh?: string,
+    timezone?: number
   ) {
+    const postTimes = timezone
+      ? {
+          postingTimes: JSON.stringify([
+            { time: 560 - timezone },
+            { time: 850 - timezone },
+            { time: 1140 - timezone },
+          ]),
+        }
+      : {};
     return this._integration.model.integration.upsert({
       where: {
         organizationId_internalId: {
@@ -76,6 +110,7 @@ export class IntegrationRepository {
           ? { tokenExpiration: new Date(Date.now() + expiresIn * 1000) }
           : {}),
         internalId,
+        ...postTimes,
         organizationId: org,
         refreshNeeded: false,
       },
@@ -212,7 +247,7 @@ export class IntegrationRepository {
       where: {
         organizationId: org,
         integrationId: id,
-        deletedAt: null
+        deletedAt: null,
       },
     });
   }
