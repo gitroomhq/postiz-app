@@ -21,7 +21,7 @@ import { useVariables } from '@gitroom/react/helpers/variable.context';
 
 export const ConnectChannels: FC = () => {
   const fetch = useFetch();
-  const {isGeneral} = useVariables();
+  const { isGeneral } = useVariables();
   const router = useRouter();
   const [identifier, setIdentifier] = useState<any>(undefined);
   const [popup, setPopups] = useState<undefined | string[]>(undefined);
@@ -242,6 +242,7 @@ export const ConnectChannels: FC = () => {
                   {integration.name}
                 </div>
                 <Menu
+                  mutate={mutate}
                   onChange={update}
                   id={integration.id}
                   canEnable={
