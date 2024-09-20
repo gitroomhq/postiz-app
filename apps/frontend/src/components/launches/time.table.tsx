@@ -12,6 +12,7 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useKeypress from 'react-use-keypress';
 import { useModals } from '@mantine/modals';
 import { sortBy } from 'lodash';
+import { usePreventWindowUnload } from '@gitroom/react/helpers/use.prevent.window.unload';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -37,6 +38,7 @@ export const TimeTable: FC<{
   const [minute, setMinute] = useState(0);
   const fetch = useFetch();
   const modal = useModals();
+  usePreventWindowUnload(true);
 
   const askClose = useCallback(async () => {
     if (

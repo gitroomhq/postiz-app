@@ -7,7 +7,6 @@ import interClass from '@gitroom/react/helpers/inter.font';
 import { useModals } from '@mantine/modals';
 import { TimeTable } from '@gitroom/frontend/components/launches/time.table';
 import { useCalendar } from '@gitroom/frontend/components/launches/calendar.context';
-import { usePreventWindowUnload } from '@gitroom/react/helpers/use.prevent.window.unload';
 
 export const Menu: FC<{
   canEnable: boolean;
@@ -20,7 +19,6 @@ export const Menu: FC<{
   const fetch = useFetch();
   const { integrations } = useCalendar();
   const toast = useToaster();
-  usePreventWindowUnload(true);
   const modal = useModals();
   const [show, setShow] = useState(false);
   const ref = useClickOutside<HTMLDivElement>(() => {
