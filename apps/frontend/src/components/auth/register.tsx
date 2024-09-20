@@ -12,10 +12,10 @@ import { GithubProvider } from '@gitroom/frontend/components/auth/providers/gith
 import { useRouter, useSearchParams } from 'next/navigation';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import interClass from '@gitroom/react/helpers/inter.font';
-import { isGeneral } from '@gitroom/react/helpers/is.general';
 import clsx from 'clsx';
 import { GoogleProvider } from '@gitroom/frontend/components/auth/providers/google.provider';
 import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 
 type Inputs = {
   email: string;
@@ -72,6 +72,7 @@ export function RegisterAfter({
   token: string;
   provider: string;
 }) {
+  const {isGeneral} = useVariables();
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const fireEvents = useFireEvents();
@@ -123,7 +124,7 @@ export function RegisterAfter({
             Sign Up
           </h1>
         </div>
-        {!isAfterProvider && (!isGeneral() ? <GithubProvider /> : <GoogleProvider />)}
+        {!isAfterProvider && (!isGeneral ? <GithubProvider /> : <GoogleProvider />)}
         {!isAfterProvider && (
           <div className="h-[20px] mb-[24px] mt-[24px] relative">
             <div className="absolute w-full h-[1px] bg-fifth top-[50%] -translate-y-[50%]" />
