@@ -12,11 +12,6 @@ if [[ "$SKIP_CONFIG_CHECK" != "true" ]]; then
 	cp -vf /config/postiz.env /app/.env
 fi
 
-if [[ "$INTERNAL_PROXY_ENABLED" != "false" ]]; then
-	echo "Entrypoint: Starting internal proxy"
-	cp -vf /app/supervisord_available_configs/caddy.conf /etc/supervisor.d/
-fi
-
 if [[ "$POSTIZ_APPS" -eq "" ]]; then
 	echo "Entrypoint: POSTIZ_APPS is not set, starting everything!"
 	POSTIZ_APPS="frontend workers cron backend"
