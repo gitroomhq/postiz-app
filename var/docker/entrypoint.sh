@@ -27,6 +27,11 @@ npm run prisma-db-push
 
 mkdir -p /etc/supervisor.d/
 
+if [[ "$INTERNAL_PROXY_ENABLED" != "false" ]]; then
+	echo "Entrypoint: Starting internal proxy"
+	cp -vf /app/supervisord_available_configs/caddy.conf /etc/supervisor.d/
+fi
+
 if [[ "$POSTIZ_APPS" == *"frontend"* ]]; then
 	ln -sf /app/supervisord_available_configs/frontend.conf /etc/supervisor.d/
 fi
