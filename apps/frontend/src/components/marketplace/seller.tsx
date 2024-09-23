@@ -19,8 +19,9 @@ export const AddAccount: FC<{ openBankAccount: (country: string) => void }> = (
 ) => {
   const { openBankAccount } = props;
   const [country, setCountry] = useState('');
+  const [loading, setLoading] = useState(false);
   return (
-    <div className="bg-sixth p-[32px] text-[20px] w-full max-w-[600px] mx-auto flex flex-col gap-[24px] rounded-[4px] border border-[#172034] relative">
+    <div className="bg-sixth p-[32px] text-[20px] w-full max-w-[600px] mx-auto flex flex-col gap-[24px] rounded-[4px] border border-customColor6 relative">
       Please select your country where your business is.
       <br />
       <Select
@@ -40,8 +41,12 @@ export const AddAccount: FC<{ openBankAccount: (country: string) => void }> = (
       <Button
         className="w-full"
         disabled={!country}
+        loading={loading}
         type="button"
-        onClick={() => openBankAccount(country)}
+        onClick={() => {
+          openBankAccount(country);
+          setLoading(true);
+        }}
       >
         Connect Bank Account
       </Button>
@@ -142,7 +147,7 @@ export const Seller = () => {
       modals.openModal({
         size: '100%',
         classNames: {
-          modal: 'bg-transparent text-white',
+          modal: 'bg-transparent text-textColor',
         },
         withCloseButton: false,
         children: <AddAccount openBankAccount={connectBankAccountLink} />,
@@ -167,8 +172,8 @@ export const Seller = () => {
       <div className="flex mt-[29px] w-full gap-[26px]">
         <div className="w-[328px] flex flex-col gap-[16px]">
           <h2 className="text-[20px]">Seller Mode</h2>
-          <div className="flex p-[24px] bg-sixth rounded-[4px] border border-[#172034] flex-col items-center gap-[16px]">
-            <div className="w-[64px] h-[64px] bg-[#D9D9D9] rounded-full">
+          <div className="flex p-[24px] bg-sixth rounded-[4px] border border-customColor6 flex-col items-center gap-[16px]">
+            <div className="w-[64px] h-[64px] bg-customColor38 rounded-full">
               {!!data?.picture?.path && (
                 <img
                   className="w-full h-full rounded-full"
@@ -188,7 +193,7 @@ export const Seller = () => {
                 <div className="text-[18px]">Active</div>
               </div>
             )}
-            <div className="border-t border-t-[#425379] w-full" />
+            <div className="border-t border-t-customColor43 w-full" />
             <div className="w-full">
               <Button
                 className="w-full"
@@ -204,7 +209,7 @@ export const Seller = () => {
         </div>
         <div className="flex-1 flex gap-[16px] flex-col">
           <h2 className="text-[20px]">Details</h2>
-          <div className="bg-sixth rounded-[4px] border border-[#172034]">
+          <div className="bg-sixth rounded-[4px] border border-customColor6">
             {tagsList.map((tag) => (
               <Options
                 rows={3}
@@ -216,10 +221,10 @@ export const Seller = () => {
                 title={tag.name}
               />
             ))}
-            <div className="h-[56px] text-[20px] font-[600] flex items-center px-[24px] bg-[#0F1524]">
+            <div className="h-[56px] text-[20px] font-[600] flex items-center px-[24px] bg-customColor8">
               Audience Size
             </div>
-            <div className="bg-[#0b0f1c] flex px-[32px] py-[24px]">
+            <div className="bg-customColor3 flex px-[32px] py-[24px]">
               <div className="flex-1">
                 <Input
                   label="Audience size on all platforms"

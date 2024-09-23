@@ -52,6 +52,7 @@ export class UsersRepository {
     return this._user.model.user.findFirst({
       where: {
         email,
+        providerName: Provider.LOCAL,
       },
       include: {
         picture: {
@@ -60,6 +61,17 @@ export class UsersRepository {
             path: true,
           },
         },
+      },
+    });
+  }
+
+  activateUser(id: string) {
+    return this._user.model.user.update({
+      where: {
+        id,
+      },
+      data: {
+        activated: true,
       },
     });
   }

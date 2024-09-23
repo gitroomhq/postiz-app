@@ -11,10 +11,12 @@ import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import { useRouter } from 'next/navigation';
 import { isGeneral } from '@gitroom/react/helpers/is.general';
 import { Checkbox } from '@gitroom/react/form/checkbox';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 
 const general = isGeneral();
 
 export const SettingsComponent = () => {
+  const {isGeneral} = useVariables();
   const user = useUser();
   const router = useRouter();
   const { mutate } = useSWRConfig();
@@ -85,10 +87,10 @@ export const SettingsComponent = () => {
 
   return (
     <div className="flex flex-col gap-[68px]">
-      {!general && (
+      {!isGeneral && (
         <div className="flex flex-col">
           <h3 className="text-[20px]">Your Git Repository</h3>
-          <div className="text-[#AAA] mt-[4px]">
+          <div className="text-customColor18 mt-[4px]">
             Connect your GitHub repository to receive updates and analytics
           </div>
           <GithubComponent

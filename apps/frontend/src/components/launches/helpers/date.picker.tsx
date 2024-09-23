@@ -22,11 +22,6 @@ export const DatePicker: FC<{
 
   const changeDate = useCallback(
     (type: 'date' | 'time') => (day: Date) => {
-      console.log(
-        type === 'time'
-          ? date.format('YYYY-MM-DD') + ' ' + dayjs(day).format('HH:mm:ss')
-          : dayjs(day).format('YYYY-MM-DD') + ' ' + date.format('HH:mm:ss')
-      );
       onChange(
         dayjs(
           type === 'time'
@@ -62,14 +57,14 @@ export const DatePicker: FC<{
       {open && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className="animate-normalFadeDown absolute top-[100%] mt-[16px] right-0 bg-sixth border border-tableBorder text-white rounded-[16px] z-[300] p-[16px] flex flex-col"
+          className="animate-normalFadeDown absolute top-[100%] mt-[16px] right-0 bg-sixth border border-tableBorder text-textColor rounded-[16px] z-[300] p-[16px] flex flex-col"
         >
           <Calendar
             onChange={changeDate('date')}
             value={date.toDate()}
             dayClassName={(date, modifiers) => {
               if (modifiers.weekend) {
-                return '!text-[#B69DEC]';
+                return '!text-customColor28';
               }
 
               if (modifiers.outside) {
@@ -77,26 +72,25 @@ export const DatePicker: FC<{
               }
 
               if (modifiers.selected) {
-                return '!text-white !bg-seventh !outline-none';
+                return '!text-textColor !bg-seventh !outline-none';
               }
 
-              return '!text-white';
+              return '!text-textColor';
             }}
             classNames={{
               day: 'hover:bg-seventh',
-              calendarHeaderControl: 'text-white hover:bg-third',
-              calendarHeaderLevel: 'text-white hover:bg-third', // cell: 'child:!text-white'
+              calendarHeaderControl: 'text-textColor hover:bg-third',
+              calendarHeaderLevel: 'text-textColor hover:bg-third', // cell: 'child:!text-textColor'
             }}
           />
           <TimeInput
             onChange={changeDate('time')}
             label="Pick time"
             classNames={{
-              label: 'text-white py-[12px]',
+              label: 'text-textColor py-[12px]',
               input:
-                'bg-sixth h-[40px] border border-tableBorder text-white rounded-[4px] outline-none',
+                'bg-sixth h-[40px] border border-tableBorder text-textColor rounded-[4px] outline-none',
             }}
-            placeholder="Pick time"
             defaultValue={date.toDate()}
           />
           <Button className="mt-[12px]" onClick={changeShow}>

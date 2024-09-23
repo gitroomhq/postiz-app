@@ -82,7 +82,7 @@ export class PermissionsService {
       if (section === Sections.CHANNEL) {
         const totalChannels = (
           await this._integrationService.getIntegrationsList(orgId)
-        ).length;
+        ).filter(f => !f.refreshNeeded).length;
 
         if (
           (options.channel && options.channel > totalChannels) ||

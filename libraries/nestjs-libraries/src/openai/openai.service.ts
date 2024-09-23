@@ -8,6 +8,14 @@ const openai = new OpenAI({
 
 @Injectable()
 export class OpenaiService {
+  async generateImage(prompt: string) {
+    return (await openai.images.generate({
+      prompt,
+      response_format: 'b64_json',
+      model: 'dall-e-3',
+    })).data[0].b64_json;
+  }
+
   async generatePosts(content: string) {
     const posts = (
       await Promise.all([

@@ -28,6 +28,10 @@ export class UsersService {
     return this._usersRepository.getUserByProvider(providerId, provider);
   }
 
+  activateUser(id: string) {
+    return this._usersRepository.activateUser(id);
+  }
+
   updatePassword(id: string, password: string) {
     return this._usersRepository.updatePassword(id, password);
   }

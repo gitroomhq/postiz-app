@@ -3,6 +3,11 @@ export interface StarsList {
   date: string;
 }
 
+export interface TotalList {
+  total: number;
+  date: string;
+}
+
 export interface ForksList {
   totalForks: number;
   date: string;

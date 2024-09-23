@@ -1,9 +1,55 @@
 import { Input } from '@gitroom/react/form/input';
-import { useCallback, useMemo, useState } from 'react';
+import { ChangeEventHandler, useCallback, useMemo, useState } from 'react';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { Select } from '@gitroom/react/form/select';
+import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
+import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 
+export const Subscription = () => {
+  const fetch = useFetch();
+  const addSubscription: ChangeEventHandler<HTMLSelectElement> = useCallback(
+    async (e) => {
+      const value = e.target.value;
+      if (
+        await deleteDialog(
+          'Are you sure you want to add a user subscription?',
+          'Add'
+        )
+      ) {
+        await fetch('/billing/add-subscription', {
+          method: 'POST',
+          body: JSON.stringify({ subscription: value }),
+        });
+
+        window.location.reload();
+      }
+    },
+    []
+  );
+
+  return (
+    <Select
+      onChange={addSubscription}
+      hideErrors={true}
+      disableForm={true}
+      name="sub"
+      label=""
+      value=""
+      className="text-black"
+    >
+      <option>-- ADD FREE SUBSCRIPTION --</option>
+      {Object.keys(pricing)
+        .filter((f) => !f.includes('FREE'))
+        .map((key) => (
+          <option key={key} value={key}>
+            {key}
+          </option>
+        ))}
+    </Select>
+  );
+};
 export const Impersonate = () => {
   const fetch = useFetch();
   const [name, setName] = useState('');
@@ -70,12 +116,13 @@ export const Impersonate = () => {
                 <div>Currently Impersonating</div>
                 <div>
                   <div
-                    className="px-[10px] rounded-[4px] bg-red-500 text-white cursor-pointer"
+                    className="px-[10px] rounded-[4px] bg-red-500 text-textColor cursor-pointer"
                     onClick={stopImpersonating}
                   >
                     X
                   </div>
                 </div>
+                {user?.tier?.current === 'FREE' && <Subscription />}
               </div>
             ) : (
               <Input
@@ -93,15 +140,15 @@ export const Impersonate = () => {
           {!!data?.length && (
             <>
               <div
-                className="bg-black/80 fixed left-0 top-0 w-full h-full z-[998]"
+                className="bg-primary/80 fixed left-0 top-0 w-full h-full z-[998]"
                 onClick={() => setName('')}
               />
-              <div className="absolute top-[100%] w-full left-0 bg-sixth border border-[#172034] text-white z-[999]">
+              <div className="absolute top-[100%] w-full left-0 bg-sixth border border-customColor6 text-textColor z-[999]">
                 {mapData?.map((user: any) => (
                   <div
                     onClick={setUser(user.id)}
                     key={user.id}
-                    className="p-[10px] border-b border-[#172034] hover:bg-tableBorder cursor-pointer"
+                    className="p-[10px] border-b border-customColor6 hover:bg-tableBorder cursor-pointer"
                   >
                     user: {user.id.split('-').at(-1)} - {user.name} -{' '}
                     {user.email}

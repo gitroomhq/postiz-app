@@ -11,7 +11,7 @@ import {
 } from 'class-validator';
 import { MediaDto } from '@gitroom/nestjs-libraries/dtos/media/media.dto';
 import { Type } from 'class-transformer';
-import { DevToTagsSettings } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dev.to.tags.settings';
+import { DevToTagsSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dev.to.tags.settings.dto';
 
 export class DevToSettingsDto {
   @IsString()
@@ -42,5 +42,5 @@ export class DevToSettingsDto {
   @IsArray()
   @ArrayMaxSize(4)
   @IsOptional()
-  tags: DevToTagsSettings[];
+  tags: DevToTagsSettingsDto[];
 }

@@ -6,6 +6,7 @@ import {
   Param,
   Post,
   Query,
+  UseFilters,
 } from '@nestjs/common';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { ConnectIntegrationDto } from '@gitroom/nestjs-libraries/dtos/integrations/connect.integration.dto';
@@ -23,13 +24,17 @@ import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permis
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { ApiTags } from '@nestjs/swagger';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
+import { NotEnoughScopesFilter } from '@gitroom/nestjs-libraries/integrations/integration.missing.scopes';
+import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
+import { IntegrationTimeDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.time.dto';
 
 @ApiTags('Integrations')
 @Controller('/integrations')
 export class IntegrationsController {
   constructor(
     private _integrationManager: IntegrationManager,
-    private _integrationService: IntegrationService
+    private _integrationService: IntegrationService,
+    private _postService: PostsService
   ) {}
   @Get('/')
   getIntegration() {
@@ -44,10 +49,14 @@ export class IntegrationsController {
       ).map((p) => ({
         name: p.name,
         id: p.id,
+        internalId: p.internalId,
         disabled: p.disabled,
         picture: p.picture,
         identifier: p.providerIdentifier,
+        inBetweenSteps: p.inBetweenSteps,
+        refreshNeeded: p.refreshNeeded,
         type: p.type,
+        time: JSON.parse(p.postingTimes)
       })),
     };
   }
@@ -69,7 +78,10 @@ export class IntegrationsController {
 
   @Get('/social/:integration')
   @CheckPolicies([AuthorizationActions.Create, Sections.CHANNEL])
-  async getIntegrationUrl(@Param('integration') integration: string) {
+  async getIntegrationUrl(
+    @Param('integration') integration: string,
+    @Query('refresh') refresh: string
+  ) {
     if (
       !this._integrationManager
         .getAllowedSocialsIntegrations()
@@ -81,12 +93,20 @@ export class IntegrationsController {
     const integrationProvider =
       this._integrationManager.getSocialIntegration(integration);
     const { codeVerifier, state, url } =
-      await integrationProvider.generateAuthUrl();
+      await integrationProvider.generateAuthUrl(refresh);
     await ioRedis.set(`login:${state}`, codeVerifier, 'EX', 300);
 
     return { url };
   }
 
+  @Post('/:id/time')
+  async setTime(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: IntegrationTimeDto
+  ) {
+    return this._integrationService.setTimes(org.id, id, body);
+  }
   @Post('/function')
   async functionIntegration(
     @GetOrgFromRequest() org: Organization,
@@ -168,12 +188,14 @@ export class IntegrationsController {
       token,
       '',
       undefined,
-      username
+      username,
+      false
     );
   }
 
   @Post('/social/:integration/connect')
   @CheckPolicies([AuthorizationActions.Create, Sections.CHANNEL])
+  @UseFilters(new NotEnoughScopesFilter())
   async connectSocialMedia(
     @GetOrgFromRequest() org: Organization,
     @Param('integration') integration: string,
@@ -192,6 +214,8 @@ export class IntegrationsController {
       throw new Error('Invalid state');
     }
 
+    await ioRedis.del(`login:${body.state}`);
+
     const integrationProvider =
       this._integrationManager.getSocialIntegration(integration);
     const {
@@ -205,6 +229,7 @@ export class IntegrationsController {
     } = await integrationProvider.authenticate({
       code: body.code,
       codeVerifier: getCodeVerifier,
+      refresh: body.refresh,
     });
 
     if (!id) {
@@ -221,7 +246,10 @@ export class IntegrationsController {
       accessToken,
       refreshToken,
       expiresIn,
-      username
+      username,
+      integrationProvider.isBetweenSteps,
+      body.refresh,
+      +body.timezone
     );
   }
 
@@ -231,6 +259,33 @@ export class IntegrationsController {
     @Body('id') id: string
   ) {
     return this._integrationService.disableChannel(org.id, id);
+  }
+
+  @Post('/instagram/:id')
+  async saveInstagram(
+    @Param('id') id: string,
+    @Body() body: { pageId: string; id: string },
+    @GetOrgFromRequest() org: Organization
+  ) {
+    return this._integrationService.saveInstagram(org.id, id, body);
+  }
+
+  @Post('/facebook/:id')
+  async saveFacebook(
+    @Param('id') id: string,
+    @Body() body: { page: string },
+    @GetOrgFromRequest() org: Organization
+  ) {
+    return this._integrationService.saveFacebook(org.id, id, body.page);
+  }
+
+  @Post('/linkedin-page/:id')
+  async saveLinkedin(
+    @Param('id') id: string,
+    @Body() body: { page: string },
+    @GetOrgFromRequest() org: Organization
+  ) {
+    return this._integrationService.saveLinkedin(org.id, id, body.page);
   }
 
   @Post('/enable')
@@ -247,11 +302,20 @@ export class IntegrationsController {
   }
 
   @Delete('/')
-  deleteChannel(
+  async deleteChannel(
     @GetOrgFromRequest() org: Organization,
     @Body('id') id: string
   ) {
-    // @ts-ignore
+    const isTherePosts = await this._integrationService.getPostsForChannel(
+      org.id,
+      id
+    );
+    if (isTherePosts.length) {
+      for (const post of isTherePosts) {
+        await this._postService.deletePost(org.id, post.group);
+      }
+    }
+
     return this._integrationService.deleteChannel(org.id, id);
   }
 }

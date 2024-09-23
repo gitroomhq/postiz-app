@@ -1,0 +1,386 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@import "./colors.scss";
+@import "./polonto.css";
+
+body,
+html {
+  @apply bg-primary;
+}
+.box {
+  position: relative;
+  padding: 8px 24px;
+}
+.box span {
+  position: relative;
+  z-index: 2;
+}
+#tooltip {
+  z-index: 10000;
+}
+.box:after {
+  border-radius: 50px;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  content: '';
+  position: absolute;
+  background: white;
+  opacity: 0;
+  z-index: 1;
+  transition: all 0.3s ease-in-out;
+}
+
+.showbox {
+  @apply text-primary;
+}
+.showbox:after {
+  @apply bg-textColor;
+  opacity: 1;
+  transition: all 0.3s ease-in-out;
+}
+.table1 {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table1 thead {
+  @apply bg-customColor8 border-b border-b-fifth;
+  height: 44px;
+  font-size: 12px;
+}
+.table1 thead th,
+.table1 tbody td {
+  text-align: left;
+  padding: 14px 24px;
+}
+
+.table1 tbody td {
+  padding: 16px 24px;
+  font-size: 14px;
+}
+
+.swal2-modal {
+  @apply bg-primary #{!important};
+  @apply border-b-[2px] border-b-sixth;
+}
+
+.swal2-modal * {
+  @apply text-textColor #{!important};
+}
+
+.swal2-icon {
+  @apply text-textColor bg-primary #{!important};
+}
+
+.swal2-cancel {
+  @apply text-white #{!important};
+}
+.swal2-confirm {
+  @apply bg-customColor50 #{!important};
+  @apply text-white #{!important};
+}
+
+.w-md-editor-text {
+  min-height: 100% !important;
+}
+
+.react-tags {
+  @apply border border-fifth bg-input;
+  position: relative;
+  padding-left: 16px;
+  height: 44px;
+  border-radius: 4px;
+  /* shared font styles */
+  font-size: 14px;
+  line-height: 1.2;
+  /* clicking anywhere will focus the input */
+  cursor: text;
+  display: flex;
+  align-items: center;
+}
+
+.react-tags.is-active {
+  @apply border-customColor51;
+}
+
+.react-tags.is-disabled {
+  opacity: 0.75;
+  @apply bg-customColor52;
+  /* Prevent any clicking on the component */
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+.react-tags.is-invalid {
+  border-color: #fd5956;
+  box-shadow: 0 0 0 2px rgba(253, 86, 83, 0.25);
+}
+
+.react-tags__label {
+  position: absolute;
+  left: -10000px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.react-tags__list {
+  /* Do not use display: contents, it's too buggy */
+  display: inline;
+  padding: 0;
+}
+
+.react-tags__list-item {
+  display: inline;
+  list-style: none;
+}
+
+.react-tags__tag {
+  margin: 0 0.25rem 0 0;
+  padding: 0.15rem 0.5rem;
+  border: 0;
+  border-radius: 3px;
+  @apply bg-seventh;
+  /* match the font styles */
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.react-tags__tag:hover {
+  @apply text-textColor bg-customColor51;
+}
+
+.react-tags__tag::after {
+  content: '';
+  display: inline-block;
+  width: 0.65rem;
+  height: 0.65rem;
+  clip-path: polygon(
+    10% 0,
+    0 10%,
+    40% 50%,
+    0 90%,
+    10% 100%,
+    50% 60%,
+    90% 100%,
+    100% 90%,
+    60% 50%,
+    100% 10%,
+    90% 0,
+    50% 40%
+  );
+  margin-left: 0.5rem;
+  font-size: 0.875rem;
+  @apply bg-customColor53;
+}
+
+.react-tags__tag:hover::after {
+  @apply bg-primary;
+}
+
+.react-tags__combobox {
+  display: inline-block;
+  /* match tag layout */
+  /* prevents autoresize overflowing the container */
+  max-width: 100%;
+}
+
+.react-tags__combobox-input {
+  /* prevent autoresize overflowing the container */
+  max-width: 100%;
+  /* remove styles and layout from this element */
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: none;
+  /* match the font styles */
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.react-tags__combobox-input::placeholder {
+  @apply text-customColor53;
+  opacity: 1;
+}
+
+.react-tags__listbox {
+  position: absolute;
+  z-index: 1;
+  top: calc(100% + 5px);
+  /* Negate the border width on the container */
+  left: -2px;
+  right: -2px;
+  max-height: 12.5rem;
+  overflow-y: auto;
+  @apply bg-input border border-customColor54;
+  border-radius: 6px;
+  box-shadow: rgba(0, 0, 0, 0.1) 0 10px 15px -4px,
+    rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+}
+
+.react-tags__listbox-option {
+  padding: 0.375rem 0.5rem;
+}
+
+.react-tags__listbox-option:hover {
+  cursor: pointer;
+  @apply bg-third;
+}
+
+.react-tags__listbox-option:not([aria-disabled='true']).is-active {
+  @apply text-textColor bg-customColor51;
+}
+
+.react-tags__listbox-option[aria-disabled='true'] {
+  @apply text-customColor53;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.react-tags__listbox-option[aria-selected='true']::after {
+  content: '✓';
+  margin-left: 0.5rem;
+}
+
+.react-tags__listbox-option[aria-selected='true']:not(.is-active)::after {
+  @apply text-customColor51;
+}
+
+.react-tags__listbox-option-highlight {
+  background-color: #ffdd00;
+}
+
+/*#renderEditor:not(:has(:first-child)) {*/
+/*    display: none;*/
+/*}*/
+.w-md-editor {
+  @apply bg-input #{!important};
+  border: 0 !important;
+  box-shadow: none !important;
+  border-radius: 8px !important;
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+.w-md-editor-toolbar {
+  @apply bg-input border-fifth #{!important};
+  height: 40px !important;
+  min-height: 40px !important;
+  padding: 0 8px !important;
+}
+
+.wmde-markdown {
+  background: transparent !important;
+  font-size: 20px !important;
+  font-weight: 400 !important;
+}
+.auto-width {
+  width: auto !important;
+}
+
+.editor * {
+  @apply text-textColor;
+}
+
+.editor .polonto * {
+  color: black !important;
+}
+
+.bp5-portal {
+  z-index: 9999 !important;
+}
+
+:empty + .existing-empty {
+  display: none;
+}
+
+.mantine-Paper-root {
+  outline: none !important;
+}
+
+:root {
+  --copilot-kit-primary-color: #612ad5 !important;
+  --copilot-kit-background-color: #0b0f1c !important;
+  --copilot-kit-separator-color: #1f2941 !important;
+  --copilot-kit-contrast-color: #ffffff !important;
+  --copilot-kit-secondary-contrast-color: #ffffff !important;
+  --copilot-kit-secondary-color: #000 !important;
+  --copilot-kit-response-button-background-color: #000 !important;
+  --copilot-kit-response-button-color: #fff !important;
+}
+
+.copilotKitWindow {
+  @apply bg-customColor3 #{!important};
+}
+
+.copilotKitButtonIconOpen svg {
+  display: none !important;
+}
+
+.copilotKitButtonIconOpen:after {
+  @apply text-textColor;
+  content: '';
+  display: block;
+  position: relative;
+  z-index: 1;
+  object-fit: contain;
+  background: url('/magic.svg') no-repeat center center / contain;
+  width: 30px;
+  height: 30px;
+}
+
+.copilotKitPopup {
+  right: -2rem !important;
+  bottom: 2rem !important;
+}
+
+.copilotKitWindow {
+  /*right: -5rem !important;*/
+}
+
+.uppy-FileInput-container {
+  @apply cursor-pointer font-[500] flex justify-center items-center gap-[4px] text-[12px] rounded-[4px] w-[107px] h-[25px] text-textColor border-[2px];
+  @apply bg-customColor3 border-customColor21;
+}
+
+.uppy-ProgressBar {
+  width: 150px;
+  position: relative;
+}
+
+.uppy-ProgressBar-inner {
+  @apply bg-customColor51;
+  height: 25px;
+  border-radius: 4px;
+}
+
+.uppy-ProgressBar-percentage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.uppy-ProgressBar-inner[style='width: 0%;'],
+.uppy-ProgressBar-inner[style='width: 0%;'] + div {
+  opacity: 0;
+}
+.uppy-ProgressBar-inner[style='width: 100%;'],
+.uppy-ProgressBar-inner[style='width: 100%;'] + div {
+  @apply animate-normalFadeOut;
+}
+
+.fill-text-textColor {
+  -webkit-text-fill-color: white !important;
+}
+div div .set-font-family {
+  font-family: "Helvetica Neue", Helvetica !important;
+  font-stretch: 100% !important;
+  font-style: normal !important;
+  font-weight: 400 !important;
+}

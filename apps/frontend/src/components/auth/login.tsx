@@ -8,8 +8,10 @@ import { Input } from '@gitroom/react/form/input';
 import { useMemo, useState } from 'react';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { LoginUserDto } from '@gitroom/nestjs-libraries/dtos/auth/login.user.dto';
-import { GithubProvider } from '@gitroom/frontend/app/auth/providers/github.provider';
+import { GithubProvider } from '@gitroom/frontend/components/auth/providers/github.provider';
 import interClass from '@gitroom/react/helpers/inter.font';
+import { GoogleProvider } from '@gitroom/frontend/components/auth/providers/google.provider';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 
 type Inputs = {
   email: string;
@@ -20,6 +22,7 @@ type Inputs = {
 
 export function Login() {
   const [loading, setLoading] = useState(false);
+  const {isGeneral} = useVariables();
   const resolver = useMemo(() => {
     return classValidatorResolver(LoginUserDto);
   }, []);
@@ -43,7 +46,7 @@ export function Login() {
 
     if (login.status === 400) {
       form.setError('email', {
-        message: 'Invalid email or password',
+        message: await login.text(),
       });
 
       setLoading(false);
@@ -58,14 +61,18 @@ export function Login() {
             Sign In
           </h1>
         </div>
-        <GithubProvider />
+
+        {!isGeneral ? <GithubProvider /> : <GoogleProvider />}
         <div className="h-[20px] mb-[24px] mt-[24px] relative">
-          <div className="absolute w-full h-[1px] bg-[#28344F] top-[50%] -translate-y-[50%]" />
-          <div className={`absolute z-[1] ${interClass} justify-center items-center w-full left-0 top-0 flex`}>
-            <div className="bg-[#0a0a0a] px-[16px]">OR</div>
+          <div className="absolute w-full h-[1px] bg-fifth top-[50%] -translate-y-[50%]" />
+          <div
+            className={`absolute z-[1] ${interClass} justify-center items-center w-full left-0 top-0 flex`}
+          >
+            <div className="bg-customColor15 px-[16px]">OR</div>
           </div>
         </div>
-        <div className="text-white">
+
+        <div className="text-textColor">
           <Input
             label="Email"
             {...form.register('email')}

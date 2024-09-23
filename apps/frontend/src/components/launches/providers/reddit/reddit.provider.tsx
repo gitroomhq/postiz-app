@@ -15,6 +15,7 @@ import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import MDEditor from '@uiw/react-md-editor';
 import interClass from '@gitroom/react/helpers/inter.font';
+import Image from 'next/image';
 
 const RenderRedditComponent: FC<{
   type: string;
@@ -93,7 +94,7 @@ const RedditPreview: FC = (props) => {
           <div
             key={index}
             className={clsx(
-              `bg-[#0B1416] w-full p-[10px] flex flex-col ${interClass} border-tableBorder border`
+              `bg-customColor37 w-full p-[10px] flex flex-col ${interClass} border-tableBorder border`
             )}
           >
             <div className="flex flex-col">
@@ -117,11 +118,20 @@ const RedditPreview: FC = (props) => {
               >
                 {restOfPosts.map((p, index) => (
                   <div className="flex gap-[8px]" key={index}>
-                    <div className="w-[32px] h-[32px]">
-                      <img
-                        src={integration?.picture}
+                    <div className="w-[32px] h-[32px] relative">
+                      <Image
+                        width={48}
+                        height={48}
+                        src={integration?.picture!}
                         alt="x"
                         className="rounded-full w-full h-full relative z-[2]"
+                      />
+                      <Image
+                        width={24}
+                        height={24}
+                        src={`/icons/platforms/${integration?.identifier!}.png`}
+                        alt="x"
+                        className="rounded-full absolute -right-[5px] -bottom-[5px] z-[2]"
                       />
                     </div>
                     <div className="flex-1 flex flex-col leading-[16px] w-full pr-[64px] pb-[8px] rounded-[8px]">
@@ -174,7 +184,7 @@ const RedditSettings: FC = () => {
           <div key={field.id} className="flex flex-col relative">
             <div
               onClick={deleteField(index)}
-              className="absolute -left-[10px] justify-center items-center flex -top-[10px] w-[20px] h-[20px] bg-red-600 rounded-full text-white"
+              className="absolute -left-[10px] justify-center items-center flex -top-[10px] w-[20px] h-[20px] bg-red-600 rounded-full text-textColor"
             >
               x
             </div>
@@ -192,4 +202,4 @@ const RedditSettings: FC = () => {
   );
 };
 
-export default withProvider(RedditSettings, RedditPreview, RedditSettingsDto);
+export default withProvider(RedditSettings, RedditPreview, RedditSettingsDto, undefined, 10000);

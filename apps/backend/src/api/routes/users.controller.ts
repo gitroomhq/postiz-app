@@ -21,11 +21,12 @@ import {
   AuthorizationActions,
   Sections,
 } from '@gitroom/backend/services/auth/permissions/permissions.service';
-import { removeSubdomain } from '@gitroom/helpers/subdomain/subdomain.management';
+import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { ApiTags } from '@nestjs/swagger';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
+import { HttpForbiddenException } from '@gitroom/nestjs-libraries/services/exception.filter';
 
 @ApiTags('User')
 @Controller('/user')
@@ -41,10 +42,10 @@ export class UsersController {
   async getSelf(
     @GetUserFromRequest() user: User,
     @GetOrgFromRequest() organization: Organization,
-    @Req() req: Request
+    @Req() req: Request,
   ) {
     if (!organization) {
-      throw new HttpException('Organization not found', 401);
+      throw new HttpForbiddenException();
     }
 
     const isEmailNotification = await this._userService.getEmailNotifications(
@@ -60,7 +61,7 @@ export class UsersController {
         // @ts-ignore
         organization?.subscription?.totalChannels || pricing.FREE.channel,
       // @ts-ignore
-      tier: organization?.subscription?.subscriptionTier || 'FREE',
+      tier: organization?.subscription?.subscriptionTier || (!process.env.STRIPE_PUBLISHABLE_KEY ? 'ULTIMATE' : 'FREE'),
       // @ts-ignore
       role: organization?.users[0]?.role,
       // @ts-ignore
@@ -81,7 +82,7 @@ export class UsersController {
     @Query('name') name: string
   ) {
     if (!user.isSuperAdmin) {
-      throw new HttpException('Unauthorized', 401);
+      throw new HttpException('Unauthorized', 400);
     }
 
     return this._userService.getImpersonateUser(name);
@@ -94,12 +95,11 @@ export class UsersController {
     @Res({ passthrough: true }) response: Response
   ) {
     if (!user.isSuperAdmin) {
-      throw new HttpException('Unauthorized', 401);
+      throw new HttpException('Unauthorized', 400);
     }
 
     response.cookie('impersonate', id, {
-      domain:
-        '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
+      domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
       secure: true,
       httpOnly: true,
       sameSite: 'none',
@@ -169,12 +169,43 @@ export class UsersController {
     @Res({ passthrough: true }) response: Response
   ) {
     response.cookie('showorg', id, {
-      domain:
-        '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
+      domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
       secure: true,
       httpOnly: true,
       sameSite: 'none',
       expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
+    });
+
+    response.status(200).send();
+  }
+
+  @Post('/logout')
+  logout(@Res({ passthrough: true }) response: Response) {
+    response.cookie('auth', '', {
+      domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+      secure: true,
+      httpOnly: true,
+      maxAge: -1,
+      expires: new Date(0),
+      sameSite: 'none',
+    });
+
+    response.cookie('showorg', '', {
+      domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+      secure: true,
+      httpOnly: true,
+      maxAge: -1,
+      expires: new Date(0),
+      sameSite: 'none',
+    });
+
+    response.cookie('impersonate', '', {
+      domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+      secure: true,
+      httpOnly: true,
+      maxAge: -1,
+      expires: new Date(0),
+      sameSite: 'none',
     });
 
     response.status(200).send();

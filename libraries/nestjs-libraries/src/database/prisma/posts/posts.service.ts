@@ -1,13 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { PostsRepository } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.repository';
 import { CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
-import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport/client/bull-mq.client';
 import dayjs from 'dayjs';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { Integration, Post, Media, From } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
-import { capitalize, chunk, shuffle } from 'lodash';
+import { capitalize, shuffle } from 'lodash';
 import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
 import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
 import { GeneratorDto } from '@gitroom/nestjs-libraries/dtos/generator/generator.dto';
@@ -16,6 +15,12 @@ import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { CreateGeneratedPostsDto } from '@gitroom/nestjs-libraries/dtos/generator/create.generated.posts.dto';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import {
+  BadBody,
+  RefreshToken,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/client';
+import { timer } from '@gitroom/helpers/utils/timer';
 
 type PostWithConditionals = Post & {
   integration?: Integration;
@@ -67,13 +72,14 @@ export class PostsService {
   }
 
   async getPost(orgId: string, id: string) {
-    const posts = await this.getPostsRecursively(id, false, orgId, true);
+    const posts = await this.getPostsRecursively(id, true, orgId, true);
     return {
       group: posts?.[0]?.group,
       posts: posts.map((post) => ({
         ...post,
         image: JSON.parse(post.image || '[]'),
       })),
+      integrationPicture: posts[0]?.integration?.picture,
       integration: posts[0].integrationId,
       settings: JSON.parse(posts[0].settings || '{}'),
     };
@@ -86,6 +92,16 @@ export class PostsService {
   async post(id: string) {
     const [firstPost, ...morePosts] = await this.getPostsRecursively(id, true);
     if (!firstPost) {
+      return;
+    }
+
+    if (firstPost.integration?.refreshNeeded) {
+      await this._notificationService.inAppNotification(
+        firstPost.organizationId,
+        `We couldn't post to ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
+        `We couldn't post to ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name} because you need to reconnect it. Please enable it and try again.`,
+        true
+      );
       return;
     }
 
@@ -112,6 +128,13 @@ export class PostsService {
             ]);
 
       if (!finalPost?.postId || !finalPost?.releaseURL) {
+        await this._postRepository.changeState(firstPost.id, 'ERROR');
+        await this._notificationService.inAppNotification(
+          firstPost.organizationId,
+          `Error posting on ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
+          `An error occurred while posting on ${firstPost.integration?.providerIdentifier}`,
+          true
+        );
         return;
       }
 
@@ -124,10 +147,17 @@ export class PostsService {
         });
       }
     } catch (err: any) {
+      await this._postRepository.changeState(firstPost.id, 'ERROR');
       await this._notificationService.inAppNotification(
         firstPost.organizationId,
         `Error posting on ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
-        `An error occurred while posting on ${firstPost.integration?.providerIdentifier}: ${err.message}`,
+        `An error occurred while posting on ${
+          firstPost.integration?.providerIdentifier
+        } ${
+          !process.env.NODE_ENV || process.env.NODE_ENV === 'development'
+            ? err
+            : ''
+        }`,
         true
       );
     }
@@ -155,61 +185,121 @@ export class PostsService {
     return this.updateTags(orgId, JSON.parse(newPlainText) as Post[]);
   }
 
-  private async postSocial(integration: Integration, posts: Post[]) {
+  private async postSocial(
+    integration: Integration,
+    posts: Post[],
+    forceRefresh = false
+  ): Promise<Partial<{ postId: string; releaseURL: string }>> {
     const getIntegration = this._integrationManager.getSocialIntegration(
       integration.providerIdentifier
     );
+
     if (!getIntegration) {
-      return;
+      return {};
+    }
+
+    if (dayjs(integration?.tokenExpiration).isBefore(dayjs()) || forceRefresh) {
+      const { accessToken, expiresIn, refreshToken } =
+        await getIntegration.refreshToken(integration.refreshToken!);
+
+      if (!accessToken) {
+        await this._integrationService.refreshNeeded(
+          integration.organizationId,
+          integration.id
+        );
+
+        await this._integrationService.informAboutRefreshError(
+          integration.organizationId,
+          integration
+        );
+        return {};
+      }
+
+      await this._integrationService.createOrUpdateIntegration(
+        integration.organizationId,
+        integration.name,
+        integration.picture!,
+        'social',
+        integration.internalId,
+        integration.providerIdentifier,
+        accessToken,
+        refreshToken,
+        expiresIn
+      );
+
+      integration.token = accessToken;
+
+      if (getIntegration.refreshWait) {
+        await timer(10000);
+      }
     }
 
     const newPosts = await this.updateTags(integration.organizationId, posts);
 
-    const publishedPosts = await getIntegration.post(
-      integration.internalId,
-      integration.token,
-      newPosts.map((p) => ({
-        id: p.id,
-        message: p.content,
-        settings: JSON.parse(p.settings || '{}'),
-        media: (JSON.parse(p.image || '[]') as Media[]).map((m) => ({
-          url:
-            m.path.indexOf('http') === -1
-              ? process.env.FRONTEND_URL +
-                '/' +
-                process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
-                m.path
-              : m.path,
-          type: 'image',
-          path:
-            m.path.indexOf('http') === -1
-              ? process.env.UPLOAD_DIRECTORY + m.path
-              : m.path,
-        })),
-      }))
-    );
-
-    for (const post of publishedPosts) {
-      await this._postRepository.updatePost(
-        post.id,
-        post.postId,
-        post.releaseURL
+    try {
+      const publishedPosts = await getIntegration.post(
+        integration.internalId,
+        integration.token,
+        newPosts.map((p) => ({
+          id: p.id,
+          message: p.content,
+          settings: JSON.parse(p.settings || '{}'),
+          media: (JSON.parse(p.image || '[]') as Media[]).map((m) => ({
+            url:
+              m.path.indexOf('http') === -1
+                ? process.env.FRONTEND_URL +
+                  '/' +
+                  process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
+                  m.path
+                : m.path,
+            type: 'image',
+            path:
+              m.path.indexOf('http') === -1
+                ? process.env.UPLOAD_DIRECTORY + m.path
+                : m.path,
+          })),
+        }))
       );
+
+      for (const post of publishedPosts) {
+        await this._postRepository.updatePost(
+          post.id,
+          post.postId,
+          post.releaseURL
+        );
+      }
+
+      await this._notificationService.inAppNotification(
+        integration.organizationId,
+        `Your post has been published on ${capitalize(
+          integration.providerIdentifier
+        )}`,
+        `Your post has been published at ${publishedPosts[0].releaseURL}`,
+        true
+      );
+
+      return {
+        postId: publishedPosts[0].postId,
+        releaseURL: publishedPosts[0].releaseURL,
+      };
+    } catch (err) {
+      if (err instanceof RefreshToken) {
+        return this.postSocial(integration, posts, true);
+      }
+
+      if (
+        err instanceof BadBody &&
+        process.env.EMAIL_FROM_ADDRESS === 'nevo@postiz.com'
+      ) {
+        await this._notificationService.sendEmail(
+          'nevo@positz.com',
+          'Bad body',
+          JSON.stringify(err.body)
+        );
+      }
+
+      throw err;
     }
-
-    await this._notificationService.inAppNotification(
-      integration.organizationId,
-      `Your post has been published on ${capitalize(
-        integration.providerIdentifier
-      )}`,
-      `Your post has been published at ${publishedPosts[0].releaseURL}`,
-      true
-    );
-
-    return {
-      postId: publishedPosts[0].postId,
-      releaseURL: publishedPosts[0].releaseURL,
-    };
   }
 
   private async postArticle(integration: Integration, posts: Post[]) {
@@ -262,7 +352,6 @@ export class PostsService {
     integrationId: string
   ) {
     if (!(await this._messagesService.canAddPost(id, order, integrationId))) {
-      console.log('hello');
       throw new Error('You can not add a post to this publication');
     }
     const getOrgByOrder = await this._messagesService.getOrgByOrder(order);
@@ -324,8 +413,8 @@ export class PostsService {
       }
 
       if (
-        (body.type === 'schedule' || body.type === 'now') &&
-        dayjs(body.date).isAfter(dayjs())
+        body.type === 'now' ||
+        (body.type === 'schedule' && dayjs(body.date).isAfter(dayjs()))
       ) {
         this._workerServiceProducer.emit('post', {
           id: posts[0].id,

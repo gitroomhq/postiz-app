@@ -2,10 +2,11 @@
 
 import {usePathname} from "next/navigation";
 import {useMemo} from "react";
-import {menuItems} from "@gitroom/frontend/components/layout/top.menu";
+import { useMenuItems } from '@gitroom/frontend/components/layout/top.menu';
 
 export const Title = () => {
     const path = usePathname();
+    const menuItems = useMenuItems();
     const currentTitle = useMemo(() => {
         return menuItems.find(item => path.indexOf(item.path) > -1)?.name;
     }, [path]);

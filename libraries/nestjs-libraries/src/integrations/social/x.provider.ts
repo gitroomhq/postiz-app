@@ -9,10 +9,14 @@ import { lookup } from 'mime-types';
 import sharp from 'sharp';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
 import removeMd from 'remove-markdown';
+import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
-export class XProvider implements SocialProvider {
+export class XProvider extends SocialAbstract implements SocialProvider {
   identifier = 'x';
   name = 'X';
+  isBetweenSteps = false;
+  scopes = [];
+
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const startingClient = new TwitterApi({
       clientId: process.env.TWITTER_CLIENT_ID!,
@@ -45,16 +49,15 @@ export class XProvider implements SocialProvider {
     };
   }
 
-  async generateAuthUrl() {
+  async generateAuthUrl(refresh?: string) {
     const client = new TwitterApi({
-      // clientId: process.env.TWITTER_CLIENT_ID!,
-      // clientSecret: process.env.TWITTER_CLIENT_SECRET!,
       appKey: process.env.X_API_KEY!,
       appSecret: process.env.X_API_SECRET!,
     });
     const { url, oauth_token, oauth_token_secret } =
       await client.generateAuthLink(
-        process.env.FRONTEND_URL + '/integrations/social/x',
+        process.env.FRONTEND_URL +
+          `/integrations/social/x${refresh ? `?refresh=${refresh}` : ''}`,
         {
           authAccessType: 'write',
           linkMode: 'authenticate',
@@ -78,6 +81,7 @@ export class XProvider implements SocialProvider {
       accessToken: oauth_token,
       accessSecret: oauth_token_secret,
     });
+
     const { accessToken, client, accessSecret } = await startingClient.login(
       code
     );
@@ -128,14 +132,16 @@ export class XProvider implements SocialProvider {
           p?.media?.flatMap(async (m) => {
             return {
               id: await client.v1.uploadMedia(
-                await sharp(await readOrFetch(m.path), {
-                  animated: lookup(m.path) === 'image/gif',
-                })
-                  .resize({
-                    width: 1000,
-                  })
-                  .gif()
-                  .toBuffer(),
+                m.path.indexOf('mp4') > -1
+                  ? Buffer.from(await readOrFetch(m.path))
+                  : await sharp(await readOrFetch(m.path), {
+                      animated: lookup(m.path) === 'image/gif',
+                    })
+                      .resize({
+                        width: 1000,
+                      })
+                      .gif()
+                      .toBuffer(),
                 {
                   mimeType: lookup(m.path) || '',
                 }
@@ -160,6 +166,7 @@ export class XProvider implements SocialProvider {
     for (const post of postDetails) {
       const media_ids = (uploadAll[post.id] || []).filter((f) => f);
 
+      // @ts-ignore
       const { data }: { data: { id: string } } = await client.v2.tweet({
         text: removeMd(post.message.replace('\n', '𝔫𝔢𝔴𝔩𝔦𝔫𝔢')).replace(
           '𝔫𝔢𝔴𝔩𝔦𝔫𝔢',
@@ -183,17 +190,4 @@ export class XProvider implements SocialProvider {
       status: 'posted',
     }));
   }
-
-  // async analytics(accessToken: string) {
-  //   const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
-  //   const client = new TwitterApi({
-  //     appKey: process.env.X_API_KEY!,
-  //     appSecret: process.env.X_API_SECRET!,
-  //     accessToken: accessTokenSplit,
-  //     accessSecret: accessSecretSplit,
-  //   });
-  //   const {
-  //     data: { username },
-  //   } = await client.v2;
-  // }
 }

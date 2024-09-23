@@ -1,13 +1,15 @@
 import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
 import { Post as PostBody } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
-import { APPROVED_SUBMIT_FOR_ORDER, Post } from '@prisma/client';
+import { APPROVED_SUBMIT_FOR_ORDER, Post, State } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
+import weekOfYear from 'dayjs/plugin/weekOfYear';
 import { v4 as uuidv4 } from 'uuid';
 
 dayjs.extend(isoWeek);
+dayjs.extend(weekOfYear);
 
 @Injectable()
 export class PostsRepository {
@@ -61,12 +63,33 @@ export class PostsRepository {
   }
 
   getPosts(orgId: string, query: GetPostsDto) {
-    const date = dayjs().year(query.year).isoWeek(query.week);
+    const dateYear = dayjs().year(query.year);
+    const date =
+      query.display === 'day'
+        ? dateYear.isoWeek(query.week).day(query.day)
+        : query.display === 'week'
+        ? dateYear.isoWeek(query.week)
+        : dateYear.month(query.month - 1);
 
-    const startDate = date.startOf('week').toDate();
-    const endDate = date.endOf('week').toDate();
+    const startDate = (
+      query.display === 'day'
+        ? date.startOf('day')
+        : query.display === 'week'
+        ? date.startOf('isoWeek')
+        : date.startOf('month')
+    )
+      .subtract(2, 'hours')
+      .toDate();
+    const endDate = (
+      query.display === 'day'
+        ? date.endOf('day')
+        : query.display === 'week'
+        ? date.endOf('isoWeek')
+        : date.endOf('month')
+    )
+      .add(2, 'hours')
+      .toDate();
 
-    console.log(startDate, endDate);
     return this._post.model.post.findMany({
       where: {
         OR: [
@@ -75,7 +98,7 @@ export class PostsRepository {
           },
           {
             submittedForOrganizationId: orgId,
-          }
+          },
         ],
         publishDate: {
           gte: startDate,
@@ -159,6 +182,17 @@ export class PostsRepository {
         state: 'PUBLISHED',
         releaseURL,
         releaseId: postId,
+      },
+    });
+  }
+
+  changeState(id: string, state: State) {
+    return this._post.model.post.update({
+      where: {
+        id,
+      },
+      data: {
+        state,
       },
     });
   }

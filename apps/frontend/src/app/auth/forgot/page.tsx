@@ -1,10 +1,12 @@
+
 export const dynamic = 'force-dynamic';
 
 import {Forgot} from "@gitroom/frontend/components/auth/forgot";
 import {Metadata} from "next";
+import { isGeneralServerSide } from '@gitroom/helpers/utils/is.general.server.side';
 
 export const metadata: Metadata = {
-  title: 'Gitroom Forgot Password',
+  title: `${isGeneralServerSide() ? 'Postiz' : 'Gitroom'} Forgot Password`,
   description: '',
 };
 
