@@ -136,6 +136,7 @@
     "swr": "^2.2.5",
     "tailwind-scrollbar": "^3.1.0",
     "tailwindcss": "3.4.3",
+    "tldts": "^6.1.47",
     "tslib": "^2.3.0",
     "twitter-api-v2": "^1.16.0",
     "use-debounce": "^10.0.0",
