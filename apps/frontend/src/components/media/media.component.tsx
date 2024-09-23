@@ -186,6 +186,7 @@ export const MediaBox: FC<{
                   <img
                     className="w-full h-full object-cover"
                     src={mediaDirectory.set(media.path)}
+                    alt='media'
                   />
                 )}
               </div>
