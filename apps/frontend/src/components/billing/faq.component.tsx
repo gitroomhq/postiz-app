@@ -1,30 +1,35 @@
+'use client';
+
 import { FC, useCallback, useState } from 'react';
 import clsx from 'clsx';
 import interClass from '@gitroom/react/helpers/inter.font';
-import { isGeneral } from '@gitroom/react/helpers/is.general';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 
-const list = [
-  {
-    title: `Can I trust ${isGeneral() ? 'Postiz' : 'Gitroom'}?`,
-    description: `${isGeneral() ? 'Postiz' : 'Gitroom'} is proudly open-source! We believe in an ethical and transparent culture, meaning Postiz will live forever. You can check the entire code / or use it for your personal use. You can check the open-source repository click here.`,
-  },
-  {
-    title: 'What are channels?',
-    description: `${
-      isGeneral() ? 'Postiz' : 'Gitroom'
-    } allows you to schedule your posts between different channels.
+const useFaqList = () => {
+  const {isGeneral} = useVariables();
+  return [
+    {
+      title: `Can I trust ${isGeneral ? 'Postiz' : 'Gitroom'}?`,
+      description: `${isGeneral ? 'Postiz' : 'Gitroom'} is proudly open-source! We believe in an ethical and transparent culture, meaning Postiz will live forever. You can check the entire code / or use it for your personal use. You can check the open-source repository click here.`,
+    },
+    {
+      title: 'What are channels?',
+      description: `${
+        isGeneral ? 'Postiz' : 'Gitroom'
+      } allows you to schedule your posts between different channels.
 A channel is a publishing platform where you can schedule your posts.
 For example, you can schedule your posts on Twitter, Linkedin, DEV and Hashnode`,
-  },
-  {
-    title: 'What are team members?',
-    description: `If you have a team with multiple members, you can invite them to your workspace to collaborate on your posts and add their personal channels`,
-  },
-  {
-    title: 'What is AI auto-complete?',
-    description: `We automate ChatGPT to help you write your social posts and articles`,
-  },
-];
+    },
+    {
+      title: 'What are team members?',
+      description: `If you have a team with multiple members, you can invite them to your workspace to collaborate on your posts and add their personal channels`,
+    },
+    {
+      title: 'What is AI auto-complete?',
+      description: `We automate ChatGPT to help you write your social posts and articles`,
+    },
+  ];
+}
 
 export const FAQSection: FC<{ title: string; description: string }> = (
   props
@@ -98,6 +103,7 @@ export const FAQSection: FC<{ title: string; description: string }> = (
 };
 
 export const FAQComponent: FC = () => {
+  const list = useFaqList();
   return (
     <div>
       <h3 className="text-[24px] text-center mt-[81px] mb-[40px]">

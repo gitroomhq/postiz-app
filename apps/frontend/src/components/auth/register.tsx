@@ -12,10 +12,10 @@ import { GithubProvider } from '@gitroom/frontend/components/auth/providers/gith
 import { useRouter, useSearchParams } from 'next/navigation';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import interClass from '@gitroom/react/helpers/inter.font';
-import { isGeneral } from '@gitroom/react/helpers/is.general';
 import clsx from 'clsx';
 import { GoogleProvider } from '@gitroom/frontend/components/auth/providers/google.provider';
 import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 
 type Inputs = {
   email: string;
@@ -72,8 +72,8 @@ export function RegisterAfter({
   token: string;
   provider: string;
 }) {
+  const {isGeneral} = useVariables();
   const [loading, setLoading] = useState(false);
-  const getQuery = useSearchParams();
   const router = useRouter();
   const fireEvents = useFireEvents();
 
@@ -116,17 +116,6 @@ export function RegisterAfter({
     }
   };
 
-  const rootDomain = useMemo(() => {
-    const url = new URL(process.env.frontendUrl!);
-    const hostname = url.hostname;
-    const parts = hostname.split('.');
-    if (parts.length > 2) {
-      return url.protocol + '//' + url.hostname?.replace(/^[^.]+\./, '');
-    }
-
-    return process.env.frontendUrl;
-  }, []);
-
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -135,7 +124,7 @@ export function RegisterAfter({
             Sign Up
           </h1>
         </div>
-        {!isAfterProvider && (!isGeneral() ? <GithubProvider /> : <GoogleProvider />)}
+        {!isAfterProvider && (!isGeneral ? <GithubProvider /> : <GoogleProvider />)}
         {!isAfterProvider && (
           <div className="h-[20px] mb-[24px] mt-[24px] relative">
             <div className="absolute w-full h-[1px] bg-fifth top-[50%] -translate-y-[50%]" />
@@ -175,14 +164,14 @@ export function RegisterAfter({
         <div className={clsx('text-[12px]', interClass)}>
           By registering you agree to our{' '}
           <a
-            href={`${rootDomain}/terms`}
+            href={`https://postiz.com/terms`}
             className="underline hover:font-bold"
           >
             Terms of Service
           </a>{' '}
           and{' '}
           <a
-            href={`${rootDomain}/privacy`}
+            href={`https://postiz.com/privacy`}
             className="underline hover:font-bold"
           >
             Privacy Policy

@@ -1,16 +1,30 @@
 import { Type } from 'class-transformer';
-import { IsIn, IsNumber, IsString, Max, Min, ValidateIf } from 'class-validator';
+import {
+  IsDefined,
+  IsIn,
+  IsNumber,
+  Max,
+  Min,
+} from 'class-validator';
 import dayjs from 'dayjs';
 
 export class GetPostsDto {
-  @ValidateIf((o) => !o.month)
   @Type(() => Number)
   @IsNumber()
   @Max(52)
   @Min(1)
   week: number;
 
-  @ValidateIf((o) => !o.week)
+  @Type(() => Number)
+  @IsNumber()
+  @Max(6)
+  @Min(0)
+  day: number;
+
+  @IsDefined()
+  @IsIn(['day', 'week', 'month'])
+  display: 'day' | 'week' | 'month';
+
   @Type(() => Number)
   @IsNumber()
   @Max(52)

@@ -10,11 +10,14 @@
     "dev:stripe": "npx concurrently \"stripe listen --forward-to localhost:3000/stripe\" \"npm run dev\"",
     "build": "npx nx run-many --target=build --projects=frontend,backend,workers,cron",
     "build:frontend": "npx nx run frontend:build:production",
+    "dev:frontend": "npx nx run frontend:serve:development",
+    "dev:backend": "npx nx run backend:serve:development",
+    "dev:workers": "npx nx run workers:serve:development",
+    "dev:cron": "npx nx run cron:serve:development",
     "start:prod": "node dist/apps/backend/main.js",
     "start:prod:frontend": "nx run frontend:serve:production",
     "start:prod:workers": "node dist/apps/workers/main.js",
     "start:prod:cron": "node dist/apps/cron/main.js",
-    "docs": "npx nx run docs:serve:development",
     "workers": "npx nx run workers:serve:development",
     "cron": "npx nx run cron:serve:development",
     "command": "rm -rf dist/apps/commands && npx nx run commands:build && npx nx run commands:command",
@@ -144,7 +147,6 @@
     "yup": "^1.4.0"
   },
   "devDependencies": {
-    "@mintlify/scraping": "^3.0.90",
     "@nestjs/schematics": "^10.0.1",
     "@nestjs/testing": "^10.0.2",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.7",

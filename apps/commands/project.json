@@ -26,6 +26,7 @@
       "defaultConfiguration": "development",
       "options": {
         "buildTarget": "commands:build",
+        "inspect": false,
         "command": "cd dist/apps/commands && node main.js"
       },
       "configurations": {

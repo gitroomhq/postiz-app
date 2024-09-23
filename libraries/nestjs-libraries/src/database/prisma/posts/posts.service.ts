@@ -15,8 +15,12 @@ import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { CreateGeneratedPostsDto } from '@gitroom/nestjs-libraries/dtos/generator/create.generated.posts.dto';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  BadBody,
+  RefreshToken,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/client';
+import { timer } from '@gitroom/helpers/utils/timer';
 
 type PostWithConditionals = Post & {
   integration?: Integration;
@@ -149,7 +153,11 @@ export class PostsService {
         `Error posting on ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
         `An error occurred while posting on ${
           firstPost.integration?.providerIdentifier
-        } ${!process.env.NODE_ENV || process.env.NODE_ENV === 'development' ? err : ''}`,
+        } ${
+          !process.env.NODE_ENV || process.env.NODE_ENV === 'development'
+            ? err
+            : ''
+        }`,
         true
       );
     }
@@ -220,6 +228,10 @@ export class PostsService {
       );
 
       integration.token = accessToken;
+
+      if (getIntegration.refreshWait) {
+        await timer(10000);
+      }
     }
 
     const newPosts = await this.updateTags(integration.organizationId, posts);
@@ -273,6 +285,17 @@ export class PostsService {
     } catch (err) {
       if (err instanceof RefreshToken) {
         return this.postSocial(integration, posts, true);
+      }
+
+      if (
+        err instanceof BadBody &&
+        process.env.EMAIL_FROM_ADDRESS === 'nevo@postiz.com'
+      ) {
+        await this._notificationService.sendEmail(
+          'nevo@positz.com',
+          'Bad body',
+          JSON.stringify(err.body)
+        );
       }
 
       throw err;
@@ -390,8 +413,8 @@ export class PostsService {
       }
 
       if (
-        (body.type === 'schedule' || body.type === 'now') &&
-        dayjs(body.date).isAfter(dayjs())
+        body.type === 'now' ||
+        (body.type === 'schedule' && dayjs(body.date).isAfter(dayjs()))
       ) {
         this._workerServiceProducer.emit('post', {
           id: posts[0].id,
@@ -535,11 +558,7 @@ export class PostsService {
   async generatePostsDraft(orgId: string, body: CreateGeneratedPostsDto) {
     const getAllIntegrations = (
       await this._integrationService.getIntegrationsList(orgId)
-    ).filter(
-      (f) =>
-        !f.disabled &&
-        f.providerIdentifier !== 'reddit'
-    );
+    ).filter((f) => !f.disabled && f.providerIdentifier !== 'reddit');
 
     // const posts = chunk(body.posts, getAllIntegrations.length);
     const allDates = dayjs()

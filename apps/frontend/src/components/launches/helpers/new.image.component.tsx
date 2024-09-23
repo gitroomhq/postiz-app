@@ -7,6 +7,7 @@ import {
   TextAreaTextApi,
 } from '@uiw/react-md-editor';
 import { showMediaBox } from '@gitroom/frontend/components/media/media.component';
+import { loadVars } from '@gitroom/react/helpers/variable.context';
 
 export const newImage: ICommand = {
   name: 'image',
@@ -27,6 +28,7 @@ export const newImage: ICommand = {
     </svg>
   ),
   execute: (state: ExecuteState, api: TextAreaTextApi) => {
+    const {uploadDirectory, backendUrl} = loadVars();
     let newSelectionRange = selectWord({
       text: state.text,
       selection: state.selection,
@@ -70,7 +72,7 @@ export const newImage: ICommand = {
             prefix: '![',
             suffix: `](${
               media.path.indexOf('http') === -1
-                ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/${process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY}`
+                ? `${backendUrl}/${uploadDirectory}`
                 : ``
             }${media.path})`,
           });
@@ -85,7 +87,7 @@ export const newImage: ICommand = {
           prefix: '![image',
           suffix: `](${
             media.path.indexOf('http') === -1
-              ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/${process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY}`
+              ? `${backendUrl}/${uploadDirectory}`
               : ``
           }${media.path})`,
         });

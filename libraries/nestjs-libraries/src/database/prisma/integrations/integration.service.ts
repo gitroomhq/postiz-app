@@ -1,15 +1,26 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  Param,
+  Query,
+} from '@nestjs/common';
 import { IntegrationRepository } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.repository';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { InstagramProvider } from '@gitroom/nestjs-libraries/integrations/social/instagram.provider';
 import { FacebookProvider } from '@gitroom/nestjs-libraries/integrations/social/facebook.provider';
-import { SocialProvider } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { Integration } from '@prisma/client';
+import { AnalyticsData, SocialProvider } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { Integration, Organization } from '@prisma/client';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { LinkedinPageProvider } from '@gitroom/nestjs-libraries/integrations/social/linkedin.page.provider';
 import { simpleUpload } from '@gitroom/nestjs-libraries/upload/r2.uploader';
 import axios from 'axios';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import dayjs from 'dayjs';
+import { timer } from '@gitroom/helpers/utils/timer';
+import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
+import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { IntegrationTimeDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.time.dto';
 
 @Injectable()
 export class IntegrationService {
@@ -18,6 +29,11 @@ export class IntegrationService {
     private _integrationManager: IntegrationManager,
     private _notificationService: NotificationService
   ) {}
+
+  async setTimes(orgId: string, integrationId: string, times: IntegrationTimeDto) {
+    return this._integrationRepository.setTimes(orgId, integrationId, times);
+  }
+
   async createOrUpdateIntegration(
     org: string,
     name: string,
@@ -30,10 +46,15 @@ export class IntegrationService {
     expiresIn?: number,
     username?: string,
     isBetweenSteps = false,
-    refresh?: string
+    refresh?: string,
+    timezone?: number
   ) {
     const loadImage = await axios.get(picture, { responseType: 'arraybuffer' });
-    const uploadedPicture = await simpleUpload(loadImage.data, `${makeId(10)}.png`, 'image/png');
+    const uploadedPicture = await simpleUpload(
+      loadImage.data,
+      `${makeId(10)}.png`,
+      'image/png'
+    );
 
     return this._integrationRepository.createOrUpdateIntegration(
       org,
@@ -47,7 +68,8 @@ export class IntegrationService {
       expiresIn,
       username,
       isBetweenSteps,
-      refresh
+      refresh,
+      timezone
     );
   }
 
@@ -266,5 +288,81 @@ export class IntegrationService {
     });
 
     return { success: true };
+  }
+
+  async checkAnalytics(org: Organization, integration: string, date: string, forceRefresh = false): Promise<AnalyticsData[]> {
+    const getIntegration = await this.getIntegrationById(org.id, integration);
+
+    if (!getIntegration) {
+      throw new Error('Invalid integration');
+    }
+
+    if (getIntegration.type !== 'social') {
+      return [];
+    }
+
+    const integrationProvider = this._integrationManager.getSocialIntegration(
+      getIntegration.providerIdentifier
+    );
+
+    if (dayjs(getIntegration?.tokenExpiration).isBefore(dayjs()) || forceRefresh) {
+      const { accessToken, expiresIn, refreshToken } =
+        await integrationProvider.refreshToken(getIntegration.refreshToken!);
+
+      if (accessToken) {
+        await this.createOrUpdateIntegration(
+          getIntegration.organizationId,
+          getIntegration.name,
+          getIntegration.picture!,
+          'social',
+          getIntegration.internalId,
+          getIntegration.providerIdentifier,
+          accessToken,
+          refreshToken,
+          expiresIn
+        );
+
+        getIntegration.token = accessToken;
+
+        if (integrationProvider.refreshWait) {
+          await timer(10000);
+        }
+      } else {
+        await this.disconnectChannel(org.id, getIntegration);
+        return [];
+      }
+    }
+
+    const getIntegrationData = await ioRedis.get(
+      `integration:${org.id}:${integration}:${date}`
+    );
+    if (getIntegrationData) {
+      return JSON.parse(getIntegrationData);
+    }
+
+    if (integrationProvider.analytics) {
+      try {
+        const loadAnalytics = await integrationProvider.analytics(
+          getIntegration.internalId,
+          getIntegration.token,
+          +date
+        );
+        await ioRedis.set(
+          `integration:${org.id}:${integration}:${date}`,
+          JSON.stringify(loadAnalytics),
+          'EX',
+          !process.env.NODE_ENV || process.env.NODE_ENV === 'development'
+            ? 1
+            : 3600
+        );
+        return loadAnalytics;
+      } catch (e) {
+        if (e instanceof RefreshToken) {
+          return this.checkAnalytics(org, integration, date);
+        }
+      }
+    }
+
+    return [];
   }
 }

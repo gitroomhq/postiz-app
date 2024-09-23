@@ -1,3 +1,5 @@
+'use client';
+
 import React, {
   FC,
   useCallback,
@@ -15,10 +17,11 @@ import Image from 'next/image';
 import { Menu } from '@gitroom/frontend/components/launches/menu/menu';
 import { ApiModal } from '@gitroom/frontend/components/launches/add.provider.component';
 import { useRouter } from 'next/navigation';
-import { isGeneral } from '@gitroom/react/helpers/is.general';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 
 export const ConnectChannels: FC = () => {
   const fetch = useFetch();
+  const { isGeneral } = useVariables();
   const router = useRouter();
   const [identifier, setIdentifier] = useState<any>(undefined);
   const [popup, setPopups] = useState<undefined | string[]>(undefined);
@@ -158,7 +161,7 @@ export const ConnectChannels: FC = () => {
               ))}
             </div>
           </div>
-          {!isGeneral() && (
+          {!isGeneral && (
             <div className="flex-1 flex flex-col p-[16px] gap-[10px]">
               <div className="text-[18px]">Publishing Platforms</div>
               <div className="grid grid-cols-3 gap-[16px]">
@@ -239,6 +242,7 @@ export const ConnectChannels: FC = () => {
                   {integration.name}
                 </div>
                 <Menu
+                  mutate={mutate}
                   onChange={update}
                   id={integration.id}
                   canEnable={

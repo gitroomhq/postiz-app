@@ -10,7 +10,7 @@ import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { ApiKeyDto } from '@gitroom/nestjs-libraries/dtos/integrations/api.key.dto';
 import { useRouter } from 'next/navigation';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
-import { isGeneral } from '@gitroom/react/helpers/is.general';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 
 const resolver = classValidatorResolver(ApiKeyDto);
 
@@ -133,6 +133,7 @@ export const AddProviderComponent: FC<{
   update?: () => void;
 }> = (props) => {
   const { update } = props;
+  const {isGeneral} = useVariables();
 
   const fetch = useFetch();
   const modal = useModals();
@@ -215,7 +216,7 @@ export const AddProviderComponent: FC<{
           ))}
         </div>
       </div>
-      {!isGeneral() && (
+      {!isGeneral && (
         <div className="flex flex-col">
           <h2 className="pb-[10px]">Articles</h2>
           <div className="grid grid-cols-3 gap-[10px]">

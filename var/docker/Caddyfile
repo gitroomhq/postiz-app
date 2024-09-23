@@ -1,0 +1,9 @@
+:5000 {
+	handle_path /api/* {
+		reverse_proxy * localhost:3000
+	}
+
+	handle {
+		reverse_proxy * localhost:4200
+	}
+}

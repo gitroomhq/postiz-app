@@ -25,12 +25,13 @@ import { SettingsComponent } from '@gitroom/frontend/components/layout/settings.
 import { Onboarding } from '@gitroom/frontend/components/onboarding/onboarding';
 import { Support } from '@gitroom/frontend/components/layout/support';
 import { ContinueProvider } from '@gitroom/frontend/components/layout/continue.provider';
-import { isGeneral } from '@gitroom/react/helpers/is.general';
 import { CopilotKit } from '@copilotkit/react-core';
 import { Impersonate } from '@gitroom/frontend/components/layout/impersonate';
 import clsx from 'clsx';
 import { BillingComponent } from '@gitroom/frontend/components/billing/billing.component';
 import dynamic from 'next/dynamic';
+import { NewSubscription } from '@gitroom/frontend/components/layout/new.subscription';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 const ModeComponent = dynamic(
   () => import('@gitroom/frontend/components/layout/mode.component'),
   { ssr: false }
@@ -43,6 +44,8 @@ dayjs.extend(isBetween);
 
 export const LayoutSettings = ({ children }: { children: ReactNode }) => {
   const fetch = useFetch();
+  const {isGeneral} = useVariables();
+  const {backendUrl, billingEnabled} = useVariables();
   const load = useCallback(async (path: string) => {
     return await (await fetch(path)).json();
   }, []);
@@ -61,7 +64,7 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
     <ContextWrapper user={user}>
       <CopilotKit
         credentials="include"
-        runtimeUrl={process.env.NEXT_PUBLIC_BACKEND_URL + '/copilot/chat'}
+        runtimeUrl={backendUrl + '/copilot/chat'}
       >
         <ContextWrapper user={user}>
           <MantineWrapper>
@@ -70,7 +73,8 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
             <ShowLinkedinCompany />
             <Toaster />
             <ShowPostSelector />
-            {(user.tier !== 'FREE' || !isGeneral() || process.env.isBillingEnabled === "false") && <Onboarding />}
+            <NewSubscription />
+            {user.tier !== 'FREE' && <Onboarding />}
             <Support />
             <ContinueProvider />
             <div className="min-h-[100vh] w-full max-w-[1440px] mx-auto bg-primary px-[12px] text-textColor flex flex-col">
@@ -82,7 +86,7 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
                 >
                   <div className="min-w-[55px]">
                     <Image
-                      src={isGeneral() ? '/postiz.svg' : '/logo.svg'}
+                      src={isGeneral ? '/postiz.svg' : '/logo.svg'}
                       width={55}
                       height={53}
                       alt="Logo"
@@ -90,10 +94,10 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
                   </div>
                   <div
                     className={clsx(
-                      !isGeneral() ? 'mt-[12px]' : 'min-w-[80px]'
+                      !isGeneral ? 'mt-[12px]' : 'min-w-[80px]'
                     )}
                   >
-                    {isGeneral() ? (
+                    {isGeneral ? (
                       <svg
                         width="80"
                         height="167"
@@ -123,7 +127,7 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
                     )}
                   </div>
                 </Link>
-                {user?.orgId && (user.tier !== 'FREE' || !isGeneral() || process.env.isBillingEnabled === "false") ? (
+                {user?.orgId && (user.tier !== 'FREE' || !isGeneral || !billingEnabled) ? (
                   <TopMenu />
                 ) : (
                   <div />
@@ -137,7 +141,7 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
               </div>
               <div className="flex-1 flex">
                 <div className="flex-1 rounded-3xl px-[23px] py-[17px] flex flex-col">
-                  {(user.tier === 'FREE' && isGeneral()) && process.env.isBillingEnabled === "true" ? (
+                  {(user.tier === 'FREE' && isGeneral) && billingEnabled ? (
                     <>
                       <div className="text-center mb-[20px] text-xl">
                         <h1 className="text-3xl">

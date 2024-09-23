@@ -1,7 +1,0 @@
-## Controlling container services
-The environment variable POSTIZ_APPS defaults to "", which means that all
-services will be started in a single container. However, you can only start 
-specific services within the docker container by changing this environement variable.
-
-For most deployments, starting all services is fine. To scale out, you might want
-to start individual containers for "frontend", "backend", "worker" and "cron".

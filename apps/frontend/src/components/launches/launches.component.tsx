@@ -196,6 +196,7 @@ export const LaunchesComponent = () => {
                       {integration.name}
                     </div>
                     <Menu
+                      mutate={mutate}
                       onChange={update}
                       id={integration.id}
                       canEnable={
