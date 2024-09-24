@@ -30,7 +30,9 @@ export class AuthController {
         getOrgFromCookie
       );
 
-      if (body.provider === 'LOCAL') {
+      const activationRequired = !!process.env.ACTIVATION_REQUIRED;
+
+      if (process.envbody.provider === 'LOCAL' && activationRequired) {
         response.header('activate', 'true');
         response.status(200).json({ activate: true });
         return;
@@ -38,7 +40,7 @@ export class AuthController {
 
       response.cookie('auth', jwt, {
         domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-        secure: true,
+        secure: !!process.env.COOKIES_MARK_SECURE,
         httpOnly: true,
         sameSite: 'none',
         expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
@@ -47,7 +49,7 @@ export class AuthController {
       if (typeof addedOrg !== 'boolean' && addedOrg?.organizationId) {
         response.cookie('showorg', addedOrg.organizationId, {
           domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-          secure: true,
+          secure: !!process.env.COOKIES_MARK_SECURE
           httpOnly: true,
           sameSite: 'none',
           expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
