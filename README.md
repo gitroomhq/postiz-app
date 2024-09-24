@@ -78,6 +78,18 @@
 |--------------------------------|--------------------------------|
 | ![Image 3](https://github.com/user-attachments/assets/d51786ee-ddd8-4ef8-8138-5192e9cfe7c3) | ![Image 4](https://github.com/user-attachments/assets/91f83c89-22f6-43d6-b7aa-d2d3378289fb) |
 
+
+## Table of Contents
+
+- [Description](#description)
+- [Intro] (#intro)
+- [Purpose](#purpose)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Quick Start](#quick-start)
+- [Contribute](#contribute)
+- [License](#license)
+
 # Intro
 
 - Schedule all your social media posts (many AI features)
@@ -85,6 +97,23 @@
 - Collaborate with other team members to exchange or buy posts.
 - Invite your team members to collaborate, comment, and schedule posts.
 - At the moment there is no difference between the hosted version to the self-hosted version
+
+## Description
+
+Postiz is an all-in-one social media management tool designed to streamline the process of scheduling, collaborating, and analyzing social media content. With powerful AI-driven features, Postiz allows users to automate and manage their entire social media strategy in one seamless platform.
+
+Postiz is tailored for influencers, marketers, and businesses of all sizes, enabling them to:
+
+- **Schedule social media posts** across multiple platforms with ease, taking advantage of advanced AI features to optimize posting times and maximize engagement.
+- **Analyze the performance** of your posts with built-in analytics tools that provide valuable insights into audience behavior, engagement rates, and content effectiveness.
+- **Collaborate with team members** by sharing, exchanging, or even purchasing social media posts. Teams can work together on campaigns, offering feedback through comments, and scheduling posts collaboratively.
+- **Manage team permissions** by inviting members to join projects, assign tasks, and oversee the entire social media workflow from a single, user-friendly dashboard.
+
+At the moment, there is no difference between the hosted version and the self-hosted version, offering flexibility and control based on your preferences. Whether you're working solo or with a large team, Postiz is designed to make your social media management easier, more efficient, and more impactful.
+
+## Purpose
+
+The purpose of Postiz is to help influencers and professionals whose job it is to post on social media. Postiz provides the tools to streamline content scheduling, collaborate with team members, and track performance through analytics. It simplifies the process of social media management, freeing up time to focus on growing your audience.
 
 ## Tech Stack
 
@@ -100,6 +129,19 @@ To have the project up and running, please follow the [Quick Start Guide](https:
 
 ##
 
+## Contribute
+
+We welcome contributions from the community! Here's how you can get involved:
+
+1. **Fork the repository** by clicking the fork button at the top right of the repository page.
+2. **Clone your forked repository** onto your local machine using the following command:
+   ```bash
+   git clone https://github.com/your-username/postiz.git
+3. Create a new branch for your changes: git checkout -b my-branch
+4. Make your changes and add them to your brach: git add .
+5. commit them to your branch: git commit -m "your message"
+6. Push your changes to your forked repository: git push origin my-branch
+7. Submit a pull request to the main repository. Our team will review it as soon as possible!
 
 # License
 
