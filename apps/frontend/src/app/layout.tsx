@@ -7,9 +7,9 @@ import '@copilotkit/react-ui/styles.css';
 import LayoutContext from '@gitroom/frontend/components/layout/layout.context';
 import { ReactNode } from 'react';
 import { Chakra_Petch } from 'next/font/google';
-import { isGeneral } from '@gitroom/react/helpers/is.general';
 import PlausibleProvider from 'next-plausible';
 import clsx from 'clsx';
+import { VariableContextComponent } from '@gitroom/react/helpers/variable.context';
 
 const chakra = Chakra_Petch({ weight: '400', subsets: ['latin'] });
 
@@ -19,14 +19,26 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       <head>
         <link
           rel="icon"
-          href={!isGeneral() ? '/favicon.png' : '/postiz-fav.png'}
+          href={!!process.env.IS_GENERAL ? '/favicon.png' : '/postiz-fav.png'}
           sizes="any"
         />
       </head>
       <body className={clsx(chakra.className, 'text-primary dark')}>
-        <PlausibleProvider domain={isGeneral() ? "postiz.com" : "gitroom.com"}>
-          <LayoutContext>{children}</LayoutContext>
-        </PlausibleProvider>
+        <VariableContextComponent
+          backendUrl={process.env.NEXT_PUBLIC_BACKEND_URL!}
+          plontoKey={process.env.NEXT_PUBLIC_POLOTNO!}
+          billingEnabled={!!process.env.STRIPE_PUBLISHABLE_KEY}
+          discordUrl={process.env.NEXT_PUBLIC_DISCORD_SUPPORT!}
+          frontEndUrl={process.env.FRONTEND_URL!}
+          isGeneral={!!process.env.IS_GENERAL}
+          uploadDirectory={process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY!}
+        >
+          <PlausibleProvider
+            domain={!!process.env.IS_GENERAL ? 'postiz.com' : 'gitroom.com'}
+          >
+            <LayoutContext>{children}</LayoutContext>
+          </PlausibleProvider>
+        </VariableContextComponent>
       </body>
     </html>
   );

@@ -48,6 +48,7 @@ import { useStateCallback } from '@gitroom/react/helpers/use.state.callback';
 import { CopilotPopup } from '@copilotkit/react-ui';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import Image from 'next/image';
 
 export const AddEditModal: FC<{
   date: dayjs.Dayjs;
@@ -111,6 +112,8 @@ export const AddEditModal: FC<{
       setSelectedIntegrations([
         integrations.find((p) => p.id === existingData.integration)!,
       ]);
+    } else if (integrations.length === 1) {
+      setSelectedIntegrations([integrations[0]]);
     }
   }, [existingData.integration]);
 
@@ -279,7 +282,8 @@ export const AddEditModal: FC<{
         ) {
           if (
             !(await deleteDialog(
-              `${key?.integration?.name} post is too long, it will be cropped, do you want to continue?`, 'Yes, continue'
+              `${key?.integration?.name} post is too long, it will be cropped, do you want to continue?`,
+              'Yes, continue'
             ))
           ) {
             await key.trigger();
@@ -381,7 +385,9 @@ export const AddEditModal: FC<{
           instructions="You are an assistant that help the user to schedule their social media posts, everytime somebody write something, try to use a function call, if not prompt the user that the request is invalid and you are here to assists with social media posts"
         />
       )}
-      <div className={clsx('flex p-[10px] rounded-[4px] bg-primary gap-[20px]')}>
+      <div
+        className={clsx('flex p-[10px] rounded-[4px] bg-primary gap-[20px]')}
+      >
         <div
           className={clsx(
             'flex flex-col gap-[16px] transition-all duration-700 whitespace-nowrap',
@@ -402,7 +408,7 @@ export const AddEditModal: FC<{
               </div>
             </TopTitle>
 
-            {!existingData.integration && (
+            {!existingData.integration && integrations.length > 1 ? (
               <PickPlatforms
                 integrations={integrations.filter((f) => !f.disabled)}
                 selectedIntegrations={[]}
@@ -410,6 +416,35 @@ export const AddEditModal: FC<{
                 onChange={setSelectedIntegrations}
                 isMain={true}
               />
+            ) : (
+              <div
+                className={clsx(
+                  'relative w-[34px] h-[34px] rounded-full flex justify-center items-center bg-fifth filter transition-all duration-500',
+                )}
+              >
+                <Image
+                  src={selectedIntegrations?.[0]?.picture}
+                  className="rounded-full"
+                  alt={selectedIntegrations?.[0]?.identifier}
+                  width={32}
+                  height={32}
+                />
+                {selectedIntegrations?.[0]?.identifier === 'youtube' ? (
+                  <img
+                    src="/icons/platforms/youtube.svg"
+                    className="absolute z-10 -bottom-[5px] -right-[5px]"
+                    width={20}
+                  />
+                ) : (
+                  <Image
+                    src={`/icons/platforms/${selectedIntegrations?.[0]?.identifier}.png`}
+                    className="rounded-full absolute z-10 -bottom-[5px] -right-[5px] border border-fifth"
+                    alt={selectedIntegrations?.[0]?.identifier}
+                    width={20}
+                    height={20}
+                  />
+                )}
+              </div>
             )}
             <div
               id="renderEditor"
@@ -426,13 +461,15 @@ export const AddEditModal: FC<{
                           <Editor
                             order={index}
                             height={value.length > 1 ? 150 : 250}
-                            commands={[
-                              // ...commands
-                              //   .getCommands()
-                              //   .filter((f) => f.name === 'image'),
-                              // newImage,
-                              // postSelector(dateState),
-                            ]}
+                            commands={
+                              [
+                                // ...commands
+                                //   .getCommands()
+                                //   .filter((f) => f.name === 'image'),
+                                // newImage,
+                                // postSelector(dateState),
+                              ]
+                            }
                             value={p.content}
                             preview="edit"
                             // @ts-ignore

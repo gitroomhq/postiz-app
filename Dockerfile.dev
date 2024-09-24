@@ -14,17 +14,20 @@ ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN apk add --no-cache \
+	caddy \
 	bash=5.2.21-r0 \
 	supervisor=4.2.5-r4
 
 WORKDIR /app
 
-EXPOSE 4200
 EXPOSE 3000
+EXPOSE 4200
+EXPOSE 5000
 
 COPY var/docker/entrypoint.sh /app/entrypoint.sh
 COPY var/docker/supervisord.conf /etc/supervisord.conf
 COPY var/docker/supervisord /app/supervisord_available_configs/
+COPY var/docker/Caddyfile /app/Caddyfile
 COPY .env.example /config/postiz.env
 
 VOLUME /config

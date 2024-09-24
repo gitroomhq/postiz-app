@@ -8,11 +8,10 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import { useRouter } from 'next/navigation';
-import { isGeneral } from '@gitroom/react/helpers/is.general';
-
-const general = isGeneral();
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 
 export const SettingsComponent = () => {
+  const {isGeneral} = useVariables();
   const user = useUser();
   const router = useRouter();
 
@@ -53,7 +52,7 @@ export const SettingsComponent = () => {
 
   return (
     <div className="flex flex-col gap-[68px]">
-      {!general && (
+      {!isGeneral && (
         <div className="flex flex-col">
           <h3 className="text-[20px]">Your Git Repository</h3>
           <div className="text-customColor18 mt-[4px]">

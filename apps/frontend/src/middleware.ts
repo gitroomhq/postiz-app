@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { fetchBackend } from '@gitroom/helpers/utils/custom.fetch.func';
-import { removeSubdomain } from '@gitroom/helpers/subdomain/subdomain.management';
-import { isGeneral } from '@gitroom/react/helpers/is.general';
+import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
 
 // This function can be marked `async` if using `await` inside
 export async function middleware(request: NextRequest) {
@@ -20,8 +19,7 @@ export async function middleware(request: NextRequest) {
       httpOnly: true,
       secure: true,
       maxAge: -1,
-      domain:
-        '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
+      domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
     });
     return response;
   }
@@ -31,9 +29,17 @@ export async function middleware(request: NextRequest) {
 
   if (nextUrl.href.indexOf('/auth') === -1 && !authCookie) {
     const providers = ['google', 'settings'];
-    const findIndex = providers.find(p => nextUrl.href.indexOf(p) > -1);
-    const additional = !findIndex ? '' : (url.indexOf('?') > -1 ? '&' : '?') + `provider=${(findIndex === 'settings' ? 'github' : findIndex).toUpperCase()}`;
-    return NextResponse.redirect(new URL(`/auth${url}${additional}`, nextUrl.href));
+    const findIndex = providers.find((p) => nextUrl.href.indexOf(p) > -1);
+    const additional = !findIndex
+      ? ''
+      : (url.indexOf('?') > -1 ? '&' : '?') +
+        `provider=${(findIndex === 'settings'
+          ? 'github'
+          : findIndex
+        ).toUpperCase()}`;
+    return NextResponse.redirect(
+      new URL(`/auth${url}${additional}`, nextUrl.href)
+    );
   }
 
   // If the url is /auth and the cookie exists, redirect to /
@@ -50,8 +56,7 @@ export async function middleware(request: NextRequest) {
         httpOnly: true,
         secure: true,
         expires: new Date(Date.now() + 15 * 60 * 1000),
-        domain:
-          '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
+        domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
       });
       return redirect;
     }
@@ -82,8 +87,7 @@ export async function middleware(request: NextRequest) {
           httpOnly: true,
           secure: true,
           expires: new Date(Date.now() + 15 * 60 * 1000),
-          domain:
-            '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
+          domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
         });
       }
 
@@ -92,7 +96,10 @@ export async function middleware(request: NextRequest) {
 
     if (nextUrl.pathname === '/') {
       return NextResponse.redirect(
-        new URL(isGeneral() ? '/launches' : `/analytics`, nextUrl.href)
+        new URL(
+          !!process.env.IS_GENERAL ? '/launches' : `/analytics`,
+          nextUrl.href
+        )
       );
     }
 
@@ -110,8 +117,7 @@ export async function middleware(request: NextRequest) {
         httpOnly: true,
         secure: true,
         expires: new Date(Date.now() + 15 * 60 * 1000),
-        domain:
-          '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
+        domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
       });
     }
 

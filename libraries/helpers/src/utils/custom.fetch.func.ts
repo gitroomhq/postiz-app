@@ -1,3 +1,5 @@
+import { loadVars } from '@gitroom/react/helpers/variable.context';
+
 export interface Params {
   baseUrl: string;
   beforeRequest?: (url: string, options: RequestInit) => Promise<RequestInit>;
@@ -45,5 +47,7 @@ export const customFetch = (
 };
 
 export const fetchBackend = customFetch({
-  baseUrl: process.env.NEXT_PUBLIC_BACKEND_URL!,
+  get baseUrl() {
+    return loadVars().backendUrl;
+  },
 });

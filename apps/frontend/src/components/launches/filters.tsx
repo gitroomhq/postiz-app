@@ -7,7 +7,13 @@ import { useCallback } from 'react';
 export const Filters = () => {
   const week = useCalendar();
   const betweenDates =
-    week.display === 'week'
+    week.display === 'day'
+      ? dayjs()
+          .year(week.currentYear)
+          .isoWeek(week.currentWeek)
+          .day(week.currentDay)
+          .format('DD/MM/YYYY')
+      : week.display === 'week'
       ? dayjs()
           .year(week.currentYear)
           .isoWeek(week.currentWeek)
@@ -31,76 +37,113 @@ export const Filters = () => {
           .endOf('month')
           .format('DD/MM/YYYY');
 
-  const setWeek = useCallback(() => {
+  const setDay = useCallback(() => {
     week.setFilters({
+      currentDay: +dayjs().day() as 0 | 1 | 2 | 3 | 4 | 5 | 6,
       currentWeek: dayjs().isoWeek(),
       currentYear: dayjs().year(),
-      currentMonth: 0,
+      currentMonth: dayjs().month(),
+      display: 'day',
+    });
+  }, [week]);
+
+  const setWeek = useCallback(() => {
+    week.setFilters({
+      currentDay: +dayjs().day() as 0 | 1 | 2 | 3 | 4 | 5 | 6,
+      currentWeek: dayjs().isoWeek(),
+      currentYear: dayjs().year(),
+      currentMonth: dayjs().month(),
       display: 'week',
     });
   }, [week]);
 
   const setMonth = useCallback(() => {
     week.setFilters({
+      currentDay: +dayjs().day() as 0 | 1 | 2 | 3 | 4 | 5 | 6,
       currentMonth: dayjs().month(),
-      currentWeek: 0,
+      currentWeek: dayjs().isoWeek(),
       currentYear: dayjs().year(),
       display: 'month',
     });
   }, [week]);
 
   const next = useCallback(() => {
+    const increaseDay = week.display === 'day';
+    const increaseWeek =
+      week.display === 'week' ||
+      (week.display === 'day' && week.currentDay === 6);
+    const increaseMonth =
+      week.display === 'month' || (increaseWeek && week.currentWeek === 52);
+
     week.setFilters({
-      currentWeek:
-        week.display === 'week'
-          ? week.currentWeek === 52
-            ? 1
-            : week.currentWeek + 1
-          : 0,
-      currentYear:
-        week.display === 'week'
-          ? week.currentWeek === 52
-            ? week.currentYear + 1
-            : week.currentYear
-          : week.currentMonth === 11
-          ? week.currentYear + 1
-          : week.currentYear,
+      currentDay: (!increaseDay
+        ? 0
+        : week.currentDay === 6
+        ? 0
+        : week.currentDay + 1) as 0 | 1 | 2 | 3 | 4 | 5 | 6,
+      currentWeek: !increaseWeek
+        ? week.currentWeek
+        : week.currentWeek === 52
+        ? 1
+        : week.currentWeek + 1,
+      currentYear: !increaseMonth
+        ? week.currentYear
+        : week.currentMonth === 11
+        ? week.currentYear + 1
+        : week.currentYear,
       display: week.display as any,
-      currentMonth:
-        week.display === 'week'
-          ? 0
-          : week.currentMonth === 11
-          ? 0
-          : week.currentMonth + 1,
+      currentMonth: !increaseMonth
+        ? week.currentMonth
+        : week.currentMonth === 11
+        ? 0
+        : week.currentMonth + 1,
     });
-  }, [week.display, week.currentMonth, week.currentWeek, week.currentYear]);
+  }, [
+    week.display,
+    week.currentMonth,
+    week.currentWeek,
+    week.currentYear,
+    week.currentDay,
+  ]);
 
   const previous = useCallback(() => {
-    week.setFilters({
-      currentWeek:
-        week.display === 'week'
-          ? week.currentWeek === 1
-            ? 52
-            : week.currentWeek - 1
-          : 0,
-      currentYear:
-        week.display === 'week'
-          ? week.currentWeek === 1
-            ? week.currentYear - 1
-            : week.currentYear
-          : week.currentMonth === 0
-          ? week.currentYear - 1
-          : week.currentYear,
-      display: week.display as any,
-      currentMonth:
-        week.display === 'week'
-          ? 0
-          : week.currentMonth === 0
-          ? 11
-          : week.currentMonth - 1,
-    });
-  }, [week.display, week.currentMonth, week.currentWeek, week.currentYear]);
+    const decreaseDay = week.display === 'day';
+    const decreaseWeek =
+      week.display === 'week' ||
+      (week.display === 'day' && week.currentDay === 0);
+    const decreaseMonth =
+      week.display === 'month' || (decreaseWeek && week.currentWeek === 1);
 
+    week.setFilters({
+      currentDay: (!decreaseDay
+        ? 0
+        : week.currentDay === 0
+        ? 6
+        : week.currentDay - 1) as 0 | 1 | 2 | 3 | 4 | 5 | 6,
+      currentWeek: !decreaseWeek
+        ? week.currentWeek
+        : week.currentWeek === 1
+        ? 52
+        : week.currentWeek - 1,
+      currentYear: !decreaseMonth
+        ? week.currentYear
+        : week.currentMonth === 0
+        ? week.currentYear - 1
+        : week.currentYear,
+      display: week.display as any,
+      currentMonth: !decreaseMonth
+        ? week.currentMonth
+        : week.currentMonth === 0
+        ? 11
+        : week.currentMonth - 1,
+    });
+  }, [
+    week.display,
+    week.currentMonth,
+    week.currentWeek,
+    week.currentYear,
+    week.currentDay,
+  ]);
   return (
     <div className="text-textColor flex gap-[8px] items-center select-none">
       <div onClick={previous}>
@@ -118,7 +161,13 @@ export const Filters = () => {
         </svg>
       </div>
       <div className="w-[80px] text-center">
-        {week.display === 'week'
+        {week.display === 'day'
+          ? `${dayjs()
+              .month(week.currentMonth)
+              .week(week.currentWeek)
+              .day(week.currentDay)
+              .format('dddd')}`
+          : week.display === 'week'
           ? `Week ${week.currentWeek}`
           : `${dayjs().month(week.currentMonth).format('MMMM')}`}
       </div>
@@ -137,6 +186,15 @@ export const Filters = () => {
         </svg>
       </div>
       <div className="flex-1">{betweenDates}</div>
+      <div
+        className={clsx(
+          'border border-tableBorder p-[10px]',
+          week.display === 'day' && 'bg-tableBorder'
+        )}
+        onClick={setDay}
+      >
+        Day
+      </div>
       <div
         className={clsx(
           'border border-tableBorder p-[10px]',

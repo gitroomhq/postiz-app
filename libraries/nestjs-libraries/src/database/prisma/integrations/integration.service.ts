@@ -16,11 +16,11 @@ import { LinkedinPageProvider } from '@gitroom/nestjs-libraries/integrations/soc
 import { simpleUpload } from '@gitroom/nestjs-libraries/upload/r2.uploader';
 import axios from 'axios';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import dayjs from 'dayjs';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { IntegrationTimeDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.time.dto';
 
 @Injectable()
 export class IntegrationService {
@@ -29,6 +29,11 @@ export class IntegrationService {
     private _integrationManager: IntegrationManager,
     private _notificationService: NotificationService
   ) {}
+
+  async setTimes(orgId: string, integrationId: string, times: IntegrationTimeDto) {
+    return this._integrationRepository.setTimes(orgId, integrationId, times);
+  }
+
   async createOrUpdateIntegration(
     org: string,
     name: string,
@@ -41,7 +46,8 @@ export class IntegrationService {
     expiresIn?: number,
     username?: string,
     isBetweenSteps = false,
-    refresh?: string
+    refresh?: string,
+    timezone?: number
   ) {
     const loadImage = await axios.get(picture, { responseType: 'arraybuffer' });
     const uploadedPicture = await simpleUpload(
@@ -62,7 +68,8 @@ export class IntegrationService {
       expiresIn,
       username,
       isBetweenSteps,
-      refresh
+      refresh,
+      timezone
     );
   }
 
