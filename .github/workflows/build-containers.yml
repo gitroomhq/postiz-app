@@ -25,7 +25,7 @@ jobs:
         include:
           - os: ubuntu-latest
             arch: [amd64]
-          - os: ubuntu-22.04-arm
+          - os: [self-hosted, ARM64]
             arch: [arm64]
 
     runs-on: ${{ matrix.os }}
