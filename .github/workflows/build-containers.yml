@@ -63,7 +63,7 @@ jobs:
           docker push ghcr.io/gitroomhq/postiz-devcontainer:latest
 
   build-container-manifest:
-    needs: build-containers
+    needs: [build-containers, build-containers-common]
     runs-on: ubuntu-latest
     steps:
       - name: Login to ghcr
@@ -75,7 +75,7 @@ jobs:
 
       - name: Create Docker Manifest 
         env: 
-          CONTAINERVER: ${{ jobs.build-containers-common.outputs.containerver }}
+          CONTAINERVER: ${{ needs.build-containers-common.outputs.containerver }}
         run: |
           docker manifest create \
             ghcr.io/gitroomhq/postiz-app:latest \
