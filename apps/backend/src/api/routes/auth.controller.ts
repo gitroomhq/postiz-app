@@ -32,7 +32,7 @@ export class AuthController {
 
       const activationRequired = !!process.env.ACTIVATION_REQUIRED;
 
-      if (process.envbody.provider === 'LOCAL' && activationRequired) {
+      if (process.env.provider === 'LOCAL' && activationRequired) {
         response.header('activate', 'true');
         response.status(200).json({ activate: true });
         return;
