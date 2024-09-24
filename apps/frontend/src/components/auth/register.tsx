@@ -65,7 +65,7 @@ export function Register() {
   );
 }
 
-function getHelpfulReasonForRegistrationFailure(httpCode: int) {
+function getHelpfulReasonForRegistrationFailure(httpCode: number) {
   switch (httpCode) {
     case 400:
       return 'Email already exists';
