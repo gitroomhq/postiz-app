@@ -79,7 +79,7 @@ jobs:
         run: |
           docker manifest create \
             ghcr.io/gitroomhq/postiz-app:latest \
-            ghcr.io/gitroomhq/postiz-app:amd64-${{ needs.build-containers.outputs.containerver }} \
-            ghcr.io/gitroomhq/postiz-app:arm64-${{ needs.build-containers.outputs.containerver }}
+            ghcr.io/gitroomhq/postiz-app:amd64-${{ env.CONTAINERVER }} \
+            ghcr.io/gitroomhq/postiz-app:arm64-${{ env.CONTAINERVER }}
 
           docker manifest push ghcr.io/gitroomhq/postiz-app:latest
