@@ -23,12 +23,12 @@ jobs:
     strategy: 
       matrix:
         include:
-          - os: ubuntu-latest
-            arch: [amd64]
-          - os: [self-hosted, ARM64]
-            arch: [arm64]
+          - runnertags: ubuntu-latest
+            arch: amd64
+          - runnertags: [self-hosted, ARM64]
+            arch: arm64
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.runnertags }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
