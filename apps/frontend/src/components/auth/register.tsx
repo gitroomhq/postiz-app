@@ -65,6 +65,17 @@ export function Register() {
   );
 }
 
+function getHelpfulReasonForRegistrationFailure(httpCode: number) {
+  switch (httpCode) {
+    case 400:
+      return 'Email already exists';
+    case 404:
+      return 'Your browser got a 404 when trying to contact the API, the most likely reasons for this are the NEXT_PUBLIC_BACKEND_URL is set incorrectly, or the backend is not running.';
+  }
+
+  return 'Unhandled error: ' + httpCode;
+}
+
 export function RegisterAfter({
   token,
   provider,
@@ -97,23 +108,31 @@ export function RegisterAfter({
 
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
     setLoading(true);
-    const register = await fetchData('/auth/register', {
+
+    await fetchData('/auth/register', {
       method: 'POST',
       body: JSON.stringify({ ...data }),
-    });
-    if (register.status === 400) {
-      form.setError('email', {
-        message: 'Email already exists',
-      });
-
+    }).then((response) => {
       setLoading(false);
-    }
 
-    fireEvents('register');
+      if (response.status === 200) {
+        fireEvents('register')
 
-    if (register.headers.get('activate')) {
-      router.push('/auth/activate');
-    }
+        if (response.headers.get('activate') === "true") {
+          router.push('/auth/activate');
+        } else {
+          router.push('/auth/login');
+        }
+      } else {
+        form.setError('email', {
+          message: getHelpfulReasonForRegistrationFailure(response.status),
+        });
+      }
+    }).catch(e => {
+      form.setError("email", {
+        message: 'General error: ' + e.toString() + '. Please check your browser console.',
+      });
+    })
   };
 
   return (
