@@ -75,7 +75,7 @@ jobs:
 
       - name: Create Docker Manifest 
         env: 
-          CONTAINERVER: ${{ needs.build-containers-common.outputs.containerver }}
+          CONTAINERVER: ${{ jobs.build-containers-common.outputs.containerver }}
         run: |
           docker manifest create \
             ghcr.io/gitroomhq/postiz-app:latest \
