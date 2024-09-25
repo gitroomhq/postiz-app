@@ -290,17 +290,6 @@ export class PostsService {
         return this.postSocial(integration, posts, true);
       }
 
-      if (
-        err instanceof BadBody &&
-        process.env.EMAIL_FROM_ADDRESS === 'nevo@postiz.com'
-      ) {
-        await this._notificationService.sendEmail(
-          'nevo@positz.com',
-          'Bad body',
-          JSON.stringify(err.body)
-        );
-      }
-
       throw err;
     }
   }
