@@ -135,6 +135,7 @@ export class PostsService {
           `An error occurred while posting on ${firstPost.integration?.providerIdentifier}`,
           true
         );
+
         return;
       }
 
@@ -160,6 +161,8 @@ export class PostsService {
         }`,
         true
       );
+
+      console.error('[Error] posting on', firstPost.integration?.providerIdentifier, err);
     }
   }
 
