@@ -1,3 +1,5 @@
+'use client';
+
 import { useModals } from '@mantine/modals';
 import React, { FC, Ref, useCallback, useEffect, useMemo } from 'react';
 import { Input } from '@gitroom/react/form/input';
@@ -12,12 +14,13 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useSWRConfig } from 'swr';
 import clsx from 'clsx';
 import { TeamsComponent } from '@gitroom/frontend/components/settings/teams.component';
-import { isGeneral } from '@gitroom/react/helpers/is.general';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
 import { useSearchParams } from 'next/navigation';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 
 export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
+  const {isGeneral} = useVariables();
   const { getRef } = props;
   const fetch = useFetch();
   const toast = useToaster();
@@ -191,7 +194,7 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
               <Button type="submit">Save</Button>
             </div>
           )}
-          {!!user?.tier?.team_members && isGeneral() && <TeamsComponent />}
+          {!!user?.tier?.team_members && isGeneral && <TeamsComponent />}
           {showLogout && <LogoutComponent />}
         </div>
       </form>

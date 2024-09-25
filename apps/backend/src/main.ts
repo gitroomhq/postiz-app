@@ -36,11 +36,16 @@ async function bootstrap() {
   loadSwagger(app);
 
   const port = process.env.PORT || 3000;
-  await app.listen(port);
 
-  checkConfiguration() // Do this last, so that users will see obvious issues at the end of the startup log without having to scroll up.
+  try {
+    await app.listen(port);
+    
+    checkConfiguration() // Do this last, so that users will see obvious issues at the end of the startup log without having to scroll up.
 
-  Logger.log(`🚀 Application is running on: http://localhost:${port}`);
+    Logger.log(`🚀 Backend is running on: http://localhost:${port}`);
+  } catch (e) {
+    Logger.error(`Backend failed to start on port ${port}`, e);
+  }
 }
 
 function checkConfiguration() {
@@ -53,7 +58,7 @@ function checkConfiguration() {
       Logger.warn(issue, 'Configuration issue')
     }
 
-    Logger.warn("Configuration issues found: " + checker.getIssuesCount() + ". You can run `npm run command config:check` to quickly check again.")
+    Logger.warn("Configuration issues found: " + checker.getIssuesCount())
   } else {
     Logger.log("Configuration check completed without any issues.")
   }

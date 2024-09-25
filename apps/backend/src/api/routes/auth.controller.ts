@@ -30,7 +30,9 @@ export class AuthController {
         getOrgFromCookie
       );
 
-      if (body.provider === 'LOCAL') {
+      const activationRequired = body.provider === 'LOCAL' && !!process.env.RESEND_API_KEY;
+
+      if (activationRequired) {
         response.header('activate', 'true');
         response.status(200).json({ activate: true });
         return;

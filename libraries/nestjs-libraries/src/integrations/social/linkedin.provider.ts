@@ -16,6 +16,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   name = 'LinkedIn';
   isBetweenSteps = false;
   scopes = ['openid', 'profile', 'w_member_social', 'r_basicprofile'];
+  refreshWait = true;
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     const { access_token: accessToken, refresh_token: refreshToken, expires_in } = await (

@@ -8,7 +8,7 @@ import { BullMqModule } from '@gitroom/nestjs-libraries/bull-mq-transport-new/bu
 
 @Module({
   imports: [DatabaseModule, BullMqModule],
-  controllers: [StarsController, PostsController],
+  controllers: [...!process.env.IS_GENERAL ? [StarsController] : [], PostsController],
   providers: [TrendingService],
 })
 export class AppModule {}

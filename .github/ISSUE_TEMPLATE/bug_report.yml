@@ -1,6 +1,6 @@
 name: "🐛 Bug Report"
 description: "Submit a bug report to help us improve,\nif you have a problem installing the app please join our https://discord.postiz.com instead for help."
-title: "🐛 Bug Report: "
+title: "Give your bug report a good title "
 labels: ["type: bug"]
 body:
   - type: markdown

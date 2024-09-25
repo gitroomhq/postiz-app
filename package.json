@@ -18,7 +18,6 @@
     "start:prod:frontend": "nx run frontend:serve:production",
     "start:prod:workers": "node dist/apps/workers/main.js",
     "start:prod:cron": "node dist/apps/cron/main.js",
-    "docs": "npx nx run docs:serve:development",
     "workers": "npx nx run workers:serve:development",
     "cron": "npx nx run cron:serve:development",
     "command": "rm -rf dist/apps/commands && npx nx run commands:build && npx nx run commands:command",
@@ -137,6 +136,7 @@
     "swr": "^2.2.5",
     "tailwind-scrollbar": "^3.1.0",
     "tailwindcss": "3.4.3",
+    "tldts": "^6.1.47",
     "tslib": "^2.3.0",
     "twitter-api-v2": "^1.16.0",
     "use-debounce": "^10.0.0",
@@ -146,7 +146,6 @@
     "yup": "^1.4.0"
   },
   "devDependencies": {
-    "@mintlify/scraping": "^3.0.90",
     "@nestjs/schematics": "^10.0.1",
     "@nestjs/testing": "^10.0.2",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.7",

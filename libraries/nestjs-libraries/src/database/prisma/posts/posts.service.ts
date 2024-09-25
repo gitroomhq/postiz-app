@@ -15,8 +15,12 @@ import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { CreateGeneratedPostsDto } from '@gitroom/nestjs-libraries/dtos/generator/create.generated.posts.dto';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  BadBody,
+  RefreshToken,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/client';
+import { timer } from '@gitroom/helpers/utils/timer';
 
 type PostWithConditionals = Post & {
   integration?: Integration;
@@ -131,6 +135,7 @@ export class PostsService {
           `An error occurred while posting on ${firstPost.integration?.providerIdentifier}`,
           true
         );
+
         return;
       }
 
@@ -156,6 +161,8 @@ export class PostsService {
         }`,
         true
       );
+
+      console.error('[Error] posting on', firstPost.integration?.providerIdentifier, err);
     }
   }
 
@@ -224,6 +231,10 @@ export class PostsService {
       );
 
       integration.token = accessToken;
+
+      if (getIntegration.refreshWait) {
+        await timer(10000);
+      }
     }
 
     const newPosts = await this.updateTags(integration.organizationId, posts);

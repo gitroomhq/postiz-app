@@ -5,6 +5,7 @@ import { FetchWrapperComponent } from '@gitroom/helpers/utils/custom.fetch';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { isGeneral } from '@gitroom/react/helpers/is.general';
 import { useReturnUrl } from '@gitroom/frontend/app/auth/return.url.component';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 
 export default function LayoutContext(params: { children: ReactNode }) {
   if (params?.children) {
@@ -16,6 +17,7 @@ export default function LayoutContext(params: { children: ReactNode }) {
 }
 function LayoutContextInner(params: { children: ReactNode }) {
   const returnUrl = useReturnUrl();
+  const {backendUrl, isGeneral} = useVariables();
 
   const afterRequest = useCallback(
     async (url: string, options: RequestInit, response: Response) => {
@@ -32,7 +34,7 @@ function LayoutContextInner(params: { children: ReactNode }) {
       }
 
       if (response?.headers?.get('onboarding')) {
-        window.location.href = isGeneral()
+        window.location.href = isGeneral
           ? '/launches?onboarding=true'
           : '/analytics?onboarding=true';
 
@@ -70,7 +72,7 @@ function LayoutContextInner(params: { children: ReactNode }) {
 
   return (
     <FetchWrapperComponent
-      baseUrl={process.env.NEXT_PUBLIC_BACKEND_URL!}
+      baseUrl={backendUrl}
       afterRequest={afterRequest}
     >
       {params?.children || <></>}

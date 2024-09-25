@@ -69,6 +69,7 @@ export interface SocialProvider
   extends IAuthenticator,
     ISocialMediaIntegration {
   identifier: string;
+  refreshWait?: boolean;
   name: string;
   isBetweenSteps: boolean;
   scopes: string[];

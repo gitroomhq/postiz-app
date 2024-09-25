@@ -17,7 +17,7 @@ import { LinkedinPageProvider } from '@gitroom/nestjs-libraries/integrations/soc
 import { ThreadsProvider } from '@gitroom/nestjs-libraries/integrations/social/threads.provider';
 
 const socialIntegrationList = [
-  ...(process.env.IS_GENERAL !== 'true' ? [new XProvider()] : []),
+  new XProvider(),
   new LinkedinProvider(),
   new LinkedinPageProvider(),
   new RedditProvider(),

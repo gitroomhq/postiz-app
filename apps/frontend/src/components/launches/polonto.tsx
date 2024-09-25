@@ -1,3 +1,5 @@
+'use client';
+
 import {
   createContext,
   FC,
@@ -17,9 +19,12 @@ import { Button } from '@gitroom/react/form/button';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { PictureGeneratorSection } from '@gitroom/frontend/components/launches/polonto/polonto.picture.generation';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { loadVars } from '@gitroom/react/helpers/variable.context';
 
 const store = createStore({
-  key: process.env.NEXT_PUBLIC_POLOTNO!,
+  get key() {
+    return loadVars().plontoKey;
+  },
   showCredit: false,
 });
 

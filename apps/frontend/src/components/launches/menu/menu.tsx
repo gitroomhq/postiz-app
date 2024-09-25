@@ -4,16 +4,22 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import interClass from '@gitroom/react/helpers/inter.font';
+import { useModals } from '@mantine/modals';
+import { TimeTable } from '@gitroom/frontend/components/launches/time.table';
+import { useCalendar } from '@gitroom/frontend/components/launches/calendar.context';
 
 export const Menu: FC<{
   canEnable: boolean;
   canDisable: boolean;
   id: string;
+  mutate: () => void,
   onChange: (shouldReload: boolean) => void;
 }> = (props) => {
-  const { canEnable, canDisable, id, onChange } = props;
+  const { canEnable, canDisable, id, onChange, mutate } = props;
   const fetch = useFetch();
+  const { integrations } = useCalendar();
   const toast = useToaster();
+  const modal = useModals();
   const [show, setShow] = useState(false);
   const ref = useClickOutside<HTMLDivElement>(() => {
     setShow(false);
@@ -80,6 +86,25 @@ export const Menu: FC<{
     onChange(false);
   }, []);
 
+  const editTimeTable = useCallback(() => {
+    const findIntegration = integrations.find(
+      (integration) => integration.id === id
+    );
+    modal.openModal({
+      classNames: {
+        modal: 'w-[100%] max-w-[600px] bg-transparent text-textColor',
+      },
+      size: '100%',
+      withCloseButton: false,
+      closeOnEscape: false,
+      closeOnClickOutside: false,
+      children: (
+        <TimeTable integration={findIntegration!} mutate={mutate} />
+      ),
+    });
+    setShow(false);
+  }, [integrations]);
+
   return (
     <div
       className="cursor-pointer relative select-none"
@@ -103,6 +128,23 @@ export const Menu: FC<{
           onClick={(e) => e.stopPropagation()}
           className={`absolute top-[100%] left-0 p-[8px] px-[20px] bg-fifth flex flex-col gap-[16px] z-[100] rounded-[8px] border border-tableBorder ${interClass} text-nowrap`}
         >
+          <div className="flex gap-[12px] items-center" onClick={editTimeTable}>
+            <div>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                viewBox="0 0 32 32"
+                fill="none"
+              >
+                <path
+                  d="M16 5C13.6266 5 11.3066 5.70379 9.33316 7.02236C7.35977 8.34094 5.8217 10.2151 4.91345 12.4078C4.0052 14.6005 3.76756 17.0133 4.23058 19.3411C4.6936 21.6689 5.83649 23.8071 7.51472 25.4853C9.19295 27.1635 11.3312 28.3064 13.6589 28.7694C15.9867 29.2324 18.3995 28.9948 20.5922 28.0866C22.7849 27.1783 24.6591 25.6402 25.9776 23.6668C27.2962 21.6935 28 19.3734 28 17C27.9964 13.8185 26.7309 10.7684 24.4813 8.51874C22.2316 6.26909 19.1815 5.00364 16 5ZM16 27C14.0222 27 12.0888 26.4135 10.4443 25.3147C8.79981 24.2159 7.51809 22.6541 6.76121 20.8268C6.00433 18.9996 5.8063 16.9889 6.19215 15.0491C6.578 13.1093 7.53041 11.3275 8.92894 9.92893C10.3275 8.53041 12.1093 7.578 14.0491 7.19215C15.9889 6.80629 17.9996 7.00433 19.8268 7.7612C21.6541 8.51808 23.2159 9.79981 24.3147 11.4443C25.4135 13.0888 26 15.0222 26 17C25.997 19.6513 24.9425 22.1931 23.0678 24.0678C21.1931 25.9425 18.6513 26.997 16 27ZM21.7075 11.2925C21.8005 11.3854 21.8742 11.4957 21.9246 11.6171C21.9749 11.7385 22.0008 11.8686 22.0008 12C22.0008 12.1314 21.9749 12.2615 21.9246 12.3829C21.8742 12.5043 21.8005 12.6146 21.7075 12.7075L16.7075 17.7075C16.6146 17.8004 16.5043 17.8741 16.3829 17.9244C16.2615 17.9747 16.1314 18.0006 16 18.0006C15.8686 18.0006 15.7385 17.9747 15.6171 17.9244C15.4957 17.8741 15.3854 17.8004 15.2925 17.7075C15.1996 17.6146 15.1259 17.5043 15.0756 17.3829C15.0253 17.2615 14.9994 17.1314 14.9994 17C14.9994 16.8686 15.0253 16.7385 15.0756 16.6171C15.1259 16.4957 15.1996 16.3854 15.2925 16.2925L20.2925 11.2925C20.3854 11.1995 20.4957 11.1258 20.6171 11.0754C20.7385 11.0251 20.8686 10.9992 21 10.9992C21.1314 10.9992 21.2615 11.0251 21.3829 11.0754C21.5043 11.1258 21.6146 11.1995 21.7075 11.2925ZM12 2C12 1.73478 12.1054 1.48043 12.2929 1.29289C12.4804 1.10536 12.7348 1 13 1H19C19.2652 1 19.5196 1.10536 19.7071 1.29289C19.8946 1.48043 20 1.73478 20 2C20 2.26522 19.8946 2.51957 19.7071 2.70711C19.5196 2.89464 19.2652 3 19 3H13C12.7348 3 12.4804 2.89464 12.2929 2.70711C12.1054 2.51957 12 2.26522 12 2Z"
+                  fill="green"
+                />
+              </svg>
+            </div>
+            <div className="text-[12px]">Edit Time Slots</div>
+          </div>
           {canEnable && (
             <div
               className="flex gap-[12px] items-center"

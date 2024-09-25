@@ -19,7 +19,7 @@ import { useSWRConfig } from 'swr';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import interClass from '@gitroom/react/helpers/inter.font';
 import { useRouter } from 'next/navigation';
-import { isGeneral } from '@gitroom/react/helpers/is.general';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 
 export interface Tiers {
   month: Array<{
@@ -153,6 +153,7 @@ export const MainBillingComponent: FC<{
   sub?: Subscription;
 }> = (props) => {
   const { sub } = props;
+  const {isGeneral} = useVariables();
   const { mutate } = useSWRConfig();
   const fetch = useFetch();
   const toast = useToaster();
@@ -329,7 +330,7 @@ export const MainBillingComponent: FC<{
       </div>
       <div className="flex gap-[16px]">
         {Object.entries(pricing)
-          .filter((f) => !isGeneral() || f[0] !== 'FREE')
+          .filter((f) => !isGeneral || f[0] !== 'FREE')
           .map(([name, values]) => (
             <div
               key={name}
@@ -411,7 +412,7 @@ export const MainBillingComponent: FC<{
       {!!subscription?.id && (
         <div className="flex justify-center mt-[20px] gap-[10px]">
           <Button onClick={updatePayment}>Update Payment Method</Button>
-          {isGeneral() && !subscription?.cancelAt && (
+          {isGeneral && !subscription?.cancelAt && (
             <Button
               className="bg-red-500"
               loading={loading}
@@ -422,7 +423,7 @@ export const MainBillingComponent: FC<{
           )}
         </div>
       )}
-      {subscription?.cancelAt && isGeneral() && (
+      {subscription?.cancelAt && isGeneral && (
         <div className="text-center">
           Your subscription will be cancel at{' '}
           {dayjs(subscription.cancelAt).local().format('D MMM, YYYY')}

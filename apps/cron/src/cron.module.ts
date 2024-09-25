@@ -8,6 +8,6 @@ import { BullMqModule } from '@gitroom/nestjs-libraries/bull-mq-transport-new/bu
 @Module({
   imports: [DatabaseModule, ScheduleModule.forRoot(), BullMqModule],
   controllers: [],
-  providers: [CheckStars, SyncTrending],
+  providers: [...(!process.env.IS_GENERAL ? [CheckStars, SyncTrending] : [])],
 })
 export class CronModule {}
