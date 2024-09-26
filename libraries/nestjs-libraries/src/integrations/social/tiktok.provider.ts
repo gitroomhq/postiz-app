@@ -5,7 +5,10 @@ import {
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import dayjs from 'dayjs';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  BadBody,
+  SocialAbstract,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
 
 export class TiktokProvider extends SocialAbstract implements SocialProvider {
@@ -183,7 +186,10 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
         },
       ];
     } catch (err) {
-      return [];
+      throw new BadBody(JSON.stringify(err), {
+        // @ts-ignore
+        postDetails
+      });
     }
   }
 }
