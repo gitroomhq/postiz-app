@@ -16,6 +16,7 @@ import clsx from 'clsx';
 import { GoogleProvider } from '@gitroom/frontend/components/auth/providers/google.provider';
 import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { Eye, EyeOff } from 'lucide-react';
 
 type Inputs = {
   email: string;
@@ -85,6 +86,7 @@ export function RegisterAfter({
 }) {
   const {isGeneral} = useVariables();
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const fireEvents = useFireEvents();
 
@@ -135,6 +137,10 @@ export function RegisterAfter({
     })
   };
 
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -159,21 +165,37 @@ export function RegisterAfter({
             <>
               <Input
                 label="Email"
+                 className='bg-gray-100 text-white p-2 rounded transition duration-300 ease-in-out  hover:bg-gradient-to-r hover:from-purple-500 hover:to-purple-200'
                 {...form.register('email')}
                 type="email"
                 placeholder="Email Address"
               />
-              <Input
-                label="Password"
-                {...form.register('password')}
-                autoComplete="off"
-                type="password"
-                placeholder="Password"
-              />
+              <div className="relative">
+                <Input
+                  label="Password"
+                  className='bg-gray-100 p-2 rounded text-white transition duration-300 ease-in-out hover:bg-gradient-to-r hover:from-purple-500 hover:to-purple-200'
+                  {...form.register('password')}
+                  autoComplete="off"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password"
+                />
+                <button
+                  type="button"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 focus:outline-none"
+                  onClick={togglePasswordVisibility}
+                >
+                  {showPassword ? (
+                    <EyeOff size={20} className="text-gray-500" />
+                  ) : (
+                    <Eye size={20} className="text-gray-500" />
+                  )}
+                </button>
+              </div>
             </>
           )}
           <Input
             label="Company"
+             className='bg-gray-100 p-2  text-white rounded transition duration-300 ease-in-out  hover:bg-gradient-to-r hover:from-purple-500 hover:to-purple-200'
             {...form.register('company')}
             autoComplete="off"
             type="text"
@@ -198,7 +220,7 @@ export function RegisterAfter({
         </div>
         <div className="text-center mt-6">
           <div className="w-full flex">
-            <Button type="submit" className="flex-1" loading={loading}>
+            <Button type="submit" className="flex-1 rounded  hover:bg-purple-700" loading={loading}>
               Create Account
             </Button>
           </div>
