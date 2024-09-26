@@ -9,7 +9,10 @@ import sharp from 'sharp';
 import { lookup } from 'mime-types';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
 import { removeMarkdown } from '@gitroom/helpers/utils/remove.markdown';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  BadBody,
+  SocialAbstract,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
 export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   identifier = 'linkedin';
@@ -19,7 +22,11 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   refreshWait = true;
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
-    const { access_token: accessToken, refresh_token: refreshToken, expires_in } = await (
+    const {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      expires_in,
+    } = await (
       await this.fetch('https://www.linkedin.com/oauth/v2/accessToken', {
         method: 'POST',
         headers: {
@@ -262,7 +269,13 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
 
       return finalOutput;
     } catch (err: any) {
-      throw 'eerr';
+      throw new BadBody(JSON.stringify(err), {
+        // @ts-ignore
+        fileName,
+        personId,
+        picture,
+        type,
+      });
     }
   }
 
