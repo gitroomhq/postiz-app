@@ -8,11 +8,15 @@ import { ForgotReturnPasswordDto } from '@gitroom/nestjs-libraries/dtos/auth/for
 import { ForgotPasswordDto } from '@gitroom/nestjs-libraries/dtos/auth/forgot.password.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
+import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 
 @ApiTags('Auth')
 @Controller('/auth')
 export class AuthController {
-  constructor(private _authService: AuthService) {}
+  constructor(
+    private _authService: AuthService,
+    private _emailService: EmailService
+  ) {}
   @Post('/register')
   async register(
     @Req() req: Request,
@@ -30,7 +34,7 @@ export class AuthController {
         getOrgFromCookie
       );
 
-      const activationRequired = body.provider === 'LOCAL' && !!process.env.RESEND_API_KEY;
+      const activationRequired = body.provider === 'LOCAL' && this._emailService.hasProvider();
 
       if (activationRequired) {
         response.header('activate', 'true');

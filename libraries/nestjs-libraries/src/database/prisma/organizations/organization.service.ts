@@ -17,7 +17,7 @@ export class OrganizationService {
   async createOrgAndUser(
     body: Omit<CreateOrgUserDto, 'providerToken'> & { providerId?: string }
   ) {
-    return this._organizationRepository.createOrgAndUser(body);
+    return this._organizationRepository.createOrgAndUser(body, this._notificationsService.hasEmailProvider());
   }
 
   addUserToOrg(

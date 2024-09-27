@@ -30,7 +30,6 @@ export class ConfigurationChecker {
     this.checkIsValidUrl('FRONTEND_URL')
     this.checkIsValidUrl('NEXT_PUBLIC_BACKEND_URL')
     this.checkIsValidUrl('BACKEND_INTERNAL_URL')
-    this.checkNonEmpty('RESEND_API_KEY', 'Needed to send user activation emails.')
     this.checkNonEmpty('CLOUDFLARE_ACCOUNT_ID', 'Needed to setup providers.')
     this.checkNonEmpty('CLOUDFLARE_ACCESS_KEY', 'Needed to setup providers.')
     this.checkNonEmpty('CLOUDFLARE_SECRET_ACCESS_KEY', 'Needed to setup providers.')
