@@ -231,21 +231,25 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       const sendUrlRequest = uploadInstructions?.[0]?.uploadUrl || uploadUrl;
       const finalOutput = video || image;
 
-      const upload = await this.fetch(sendUrlRequest, {
-        method: 'PUT',
-        headers: {
-          'X-Restli-Protocol-Version': '2.0.0',
-          'LinkedIn-Version': '202402',
-          Authorization: `Bearer ${accessToken}`,
-          ...(fileName.indexOf('mp4') > -1
-            ? { 'Content-Type': 'application/octet-stream' }
-            : {}),
-        },
-        body: picture,
-      });
+      const etags = [];
+      for (let i = 0; i < picture.length; i += 1024 * 1024 * 2) {
+        const upload = await this.fetch(sendUrlRequest, {
+          method: 'PUT',
+          headers: {
+            'X-Restli-Protocol-Version': '2.0.0',
+            'LinkedIn-Version': '202402',
+            Authorization: `Bearer ${accessToken}`,
+            ...(fileName.indexOf('mp4') > -1
+              ? { 'Content-Type': 'application/octet-stream' }
+              : {}),
+          },
+          body: picture.slice(i, i + 1024 * 1024 * 2),
+        });
+
+        etags.push(upload.headers.get('etag'));
+      }
 
       if (fileName.indexOf('mp4') > -1) {
-        const etag = upload.headers.get('etag');
         const a = await this.fetch(
           'https://api.linkedin.com/rest/videos?action=finalizeUpload',
           {
@@ -254,7 +258,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
               finalizeUploadRequest: {
                 video,
                 uploadToken: '',
-                uploadedPartIds: [etag],
+                uploadedPartIds: etags,
               },
             }),
             headers: {
