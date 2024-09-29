@@ -42,7 +42,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
         `?client_id=${process.env.THREADS_APP_ID}` +
         `&redirect_uri=${encodeURIComponent(
           process.env.NODE_ENV === 'development' || !process.env.NODE_ENV
-            ? `https://integration.git.sn/integrations/social/threads`
+            ? `https://redirectmeto.com/${process.env.FRONTEND_URL}/integrations/social/threads`
             : `${process.env.FRONTEND_URL}/integrations/social/threads${
                 refresh ? `?refresh=${refresh}` : ''
               }`
