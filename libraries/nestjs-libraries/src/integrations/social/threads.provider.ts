@@ -64,11 +64,11 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
         'https://graph.threads.net/oauth/access_token' +
           `?client_id=${process.env.THREADS_APP_ID}` +
           `&redirect_uri=${encodeURIComponent(
-            process.env.NODE_ENV === 'development' || !process.env.NODE_ENV
-              ? `https://integration.git.sn/integrations/social/threads`
-              : `${process.env.FRONTEND_URL}/integrations/social/threads${
-                  params.refresh ? `?refresh=${params.refresh}` : ''
-                }`
+            `${
+              process?.env.FRONTEND_URL?.indexOf('https') == -1
+                ? `https://redirectmeto.com/${process?.env.FRONTEND_URL}`
+                : `${process?.env.FRONTEND_URL}`
+            }/integrations/social/threads`
           )}` +
           `&grant_type=authorization_code` +
           `&client_secret=${process.env.THREADS_APP_SECRET}` +
