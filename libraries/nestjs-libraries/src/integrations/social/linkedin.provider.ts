@@ -273,7 +273,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
 
       return finalOutput;
     } catch (err: any) {
-      throw new BadBody(JSON.stringify(err), {
+      throw new BadBody('error-posting-to-linkedin', JSON.stringify(err), {
         // @ts-ignore
         fileName,
         personId,
