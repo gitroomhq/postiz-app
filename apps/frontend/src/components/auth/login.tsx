@@ -89,7 +89,7 @@ export function Login() {
         </div>
         <div className="text-center mt-6">
           <div className="w-full flex">
-            <Button type="submit" className="flex-1" loading={loading}>
+            <Button type="submit" className="flex-1 rounded-[4px]" loading={loading}>
               Sign in
             </Button>
           </div>
