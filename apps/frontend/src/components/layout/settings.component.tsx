@@ -155,7 +155,7 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
                           />
                         </svg>
                       </div>
-                      <div className="text-[12px]" onClick={openMedia}>
+                      <div className="text-[12px] text-white" onClick={openMedia}>
                         Upload image
                       </div>
                     </button>
