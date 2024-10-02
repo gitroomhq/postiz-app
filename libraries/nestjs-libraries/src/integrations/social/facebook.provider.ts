@@ -187,7 +187,8 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
               description: firstPost.message,
               published: true,
             }),
-          }
+          },
+          'upload mp4'
         )
       ).json();
 
@@ -210,7 +211,8 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
                       url: media.url,
                       published: false,
                     }),
-                  }
+                  },
+                  'upload images slides'
                 )
               ).json();
 
@@ -235,7 +237,8 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
               message: firstPost.message,
               published: true,
             }),
-          }
+          },
+          'finalize upload'
         )
       ).json();
 
@@ -259,7 +262,8 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
                 : {}),
               message: comment.message,
             }),
-          }
+          },
+          'add comment'
         )
       ).json();
 

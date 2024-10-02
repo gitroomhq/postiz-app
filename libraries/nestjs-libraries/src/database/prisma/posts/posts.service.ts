@@ -162,7 +162,24 @@ export class PostsService {
         true
       );
 
-      console.error('[Error] posting on', firstPost.integration?.providerIdentifier, err);
+      if (err instanceof BadBody) {
+        console.error(
+          '[Error] posting on',
+          firstPost.integration?.providerIdentifier,
+          err.identifier,
+          err.json,
+          err.body,
+          err
+        );
+
+        return ;
+      }
+
+      console.error(
+        '[Error] posting on',
+        firstPost.integration?.providerIdentifier,
+        err
+      );
     }
   }
 

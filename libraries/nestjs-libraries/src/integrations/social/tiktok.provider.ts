@@ -186,7 +186,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
         },
       ];
     } catch (err) {
-      throw new BadBody(JSON.stringify(err), {
+      throw new BadBody('titok-error', JSON.stringify(err), {
         // @ts-ignore
         postDetails
       });

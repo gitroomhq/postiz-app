@@ -40,4 +40,8 @@ export class NotificationService {
   async sendEmail(to: string, subject: string, html: string) {
     await this._emailService.sendEmail(to, subject, html);
   }
+
+  hasEmailProvider() {
+    return this._emailService.hasProvider();
+  }
 }
