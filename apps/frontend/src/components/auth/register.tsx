@@ -16,6 +16,7 @@ import clsx from 'clsx';
 import { GoogleProvider } from '@gitroom/frontend/components/auth/providers/google.provider';
 import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
+import React from 'react';
 
 type Inputs = {
   email: string;
@@ -137,9 +138,9 @@ export function RegisterAfter({
 
   return (
     <FormProvider {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
+      <form onSubmit={form.handleSubmit(onSubmit)} >
         <div>
-          <h1 className="text-3xl font-bold text-left mb-4 cursor-pointer">
+          <h1 className="text-3xl font-bold text-left mb-2 cursor-pointer">
             Sign Up
           </h1>
         </div>
@@ -198,7 +199,7 @@ export function RegisterAfter({
         </div>
         <div className="text-center mt-6">
           <div className="w-full flex">
-            <Button type="submit" className="flex-1" loading={loading}>
+            <Button type="submit" className="flex-1 rounded-md hover:bg-purple-800 " loading={loading}>
               Create Account
             </Button>
           </div>
