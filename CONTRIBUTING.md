@@ -16,7 +16,7 @@ As a general rule;
 
 ## How to contribute
 
-This project follows a Fork/Feature Brabch/Pull Request model. If you're not familiar with this, here's how it works:
+This project follows a Fork/Feature Branch/Pull Request model. If you're not familiar with this, here's how it works:
 
 1. Fork the project to your GitHub account.
 2. Clone your fork to your local machine.
