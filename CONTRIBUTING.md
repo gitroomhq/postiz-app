@@ -38,49 +38,17 @@ This project follows a Fork/Feature Branch/Pull Request model. If you're not fam
 6. **Make your changes**: Implement the changes you wish to contribute.
 7. **Push your changes**: Upload your changes to your fork.
    ```bash
-   git push origin feature/your-feature-name
+   git push -u origin feature/your-feature-name
    ```
 9. **Create a pull request**: Propose your changes to the main project.
 
 
 ## Setting up your development environment
-To contribute effectively, you’ll need to set up your development environment. Follow the instructions below:
+To contribute effectively, you’ll need to set up your development environment. Follow the instructions on this page: https://docs.postiz.com/installation/development
 
-### Prerequisites
-1. **Node.js** (version 18+): Install [Node.js](https://nodejs.org/en/download/package-manager)
-2. **PostgreSQL**: Install PostgreSQL for your database. You can run it in Docker:
-```bash
-docker run -e POSTGRES_USER=root -e POSTGRES_PASSWORD=your_password --name postgres -p 5432:5432 -d postgres
-```
-3. **Redis**: Also install Redis, which can be done using Docker:
-```bash
-docker run --name redis -p 6379:6379 -d redis
-```
-4. **Cloud Services**
-  - Cloudflare R2: For image uploads and storage (optional).
-  - Social Media API Keys: Obtain various API keys and secrets for services you wish to integrate (e.g., Reddit, X, Instagram).
-
-### Setting Up the Project
-1. **Clone the repository**:
-```bash
-git clone https://github.com/gitroomhq/gitroom
-```
-2. **Set environment variables**: Copy `.env.example` to `.env` and fill in the required values.
-3. **Install dependencies**:
-```bash
-npm install
-```
-4. **Generate the Prisma client and run migrations**:
-```bash
-npm run prisma-db-push
-```
-5. **Run the project**:
-```bash
-npm run dev
-```
-If everything runs successfully, open http://localhost:4200 in your browser!
 
 Need Help?
-If you encounter any issues, please visit our support page or check the community forums. Your contributions help make Postiz better!
+If you encounter any issues, please visit our [support page](https://docs.postiz.com/support) or check the community forums. Your contributions help make Postiz better!
+
 
 
