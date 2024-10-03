@@ -20,7 +20,7 @@ export const BillingComponent = () => {
   }, []);
 
   const load = useCallback(async (path: string) => {
-    // return await (await fetch(path)).json();
+    return await (await fetch(path)).json();
   }, []);
 
   const { isLoading: isLoadingTier, data: tiers } = useSWR(
