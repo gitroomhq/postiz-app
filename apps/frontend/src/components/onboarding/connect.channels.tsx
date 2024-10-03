@@ -242,6 +242,8 @@ export const ConnectChannels: FC = () => {
                   {integration.name}
                 </div>
                 <Menu
+                  canChangeProfilePicture={integration.changeProfile}
+                  canChangeNickName={integration.changeNickName}
                   mutate={mutate}
                   onChange={update}
                   id={integration.id}

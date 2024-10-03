@@ -94,7 +94,7 @@ export const LaunchesComponent = () => {
 
   useEffect(() => {
     if (typeof window === 'undefined') {
-      return ;
+      return;
     }
     if (search.get('scope') === 'missing') {
       toast.show('You have to approve all the channel permissions', 'warning');
@@ -117,7 +117,7 @@ export const LaunchesComponent = () => {
       <div className="flex flex-1 flex-col">
         <div className="flex flex-1 relative">
           <div className="outline-none w-full h-full grid grid-cols-[220px_minmax(0,1fr)] gap-[30px] scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary">
-              <div className="w-[220px] bg-third p-[16px] flex flex-col gap-[24px] min-h-[100%]">
+            <div className="w-[220px] bg-third p-[16px] flex flex-col gap-[24px] min-h-[100%]">
               <h2 className="text-[20px]">Channels</h2>
               <div className="gap-[16px] flex flex-col">
                 {sortedIntegrations.length === 0 && (
@@ -196,6 +196,8 @@ export const LaunchesComponent = () => {
                       {integration.name}
                     </div>
                     <Menu
+                      canChangeProfilePicture={integration.changeProfilePicture}
+                      canChangeNickName={integration.changeNickName}
                       mutate={mutate}
                       onChange={update}
                       id={integration.id}

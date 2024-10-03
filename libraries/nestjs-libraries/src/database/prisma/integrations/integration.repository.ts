@@ -121,7 +121,6 @@ export class IntegrationRepository {
               inBetweenSteps: isBetweenSteps,
             }
           : {}),
-        name,
         picture,
         profile: username,
         providerIdentifier: provider,
@@ -159,6 +158,18 @@ export class IntegrationRepository {
       },
       data: {
         refreshNeeded: true,
+      },
+    });
+  }
+
+  updateNameAndUrl(id: string, name: string, url: string) {
+    return this._integration.model.integration.update({
+      where: {
+        id,
+      },
+      data: {
+        ...(name ? { name } : {}),
+        ...(url ? { picture: url } : {}),
       },
     });
   }

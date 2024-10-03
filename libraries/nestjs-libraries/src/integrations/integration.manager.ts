@@ -15,6 +15,8 @@ import { PinterestProvider } from '@gitroom/nestjs-libraries/integrations/social
 import { DribbbleProvider } from '@gitroom/nestjs-libraries/integrations/social/dribbble.provider';
 import { LinkedinPageProvider } from '@gitroom/nestjs-libraries/integrations/social/linkedin.page.provider';
 import { ThreadsProvider } from '@gitroom/nestjs-libraries/integrations/social/threads.provider';
+import { DiscordProvider } from '@gitroom/nestjs-libraries/integrations/social/discord.provider';
+import { SlackProvider } from '@gitroom/nestjs-libraries/integrations/social/slack.provider';
 
 const socialIntegrationList = [
   new XProvider(),
@@ -28,6 +30,8 @@ const socialIntegrationList = [
   new TiktokProvider(),
   new PinterestProvider(),
   new DribbbleProvider(),
+  new DiscordProvider(),
+  new SlackProvider(),
 ];
 
 const articleIntegrationList = [
