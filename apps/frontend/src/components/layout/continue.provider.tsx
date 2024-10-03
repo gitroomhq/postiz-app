@@ -88,6 +88,8 @@ export const ContinueProvider: FC = () => {
                   name: '',
                   picture: '',
                   inBetweenSteps: true,
+                  changeNickName: false,
+                  changeProfilePicture: false,
                   identifier: added,
                 },
               }}
