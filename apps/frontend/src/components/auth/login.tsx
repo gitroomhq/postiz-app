@@ -89,13 +89,13 @@ export function Login() {
         </div>
         <div className="text-center mt-6">
           <div className="w-full flex">
-            <Button type="submit" className="flex-1" loading={loading}>
+            <Button type="submit" className="flex-1 rounded-md hover:bg-purple-800" loading={loading}>
               Sign in
             </Button>
           </div>
-          <p className="mt-4 text-sm">
+          <p className="mt-4 text-sm ">
             Don{"'"}t Have An Account?{' '}
-            <Link href="/auth" className="underline cursor-pointer">
+            <Link href="/auth" className="underline cursor-pointer ">
               {' '}
               Sign Up
             </Link>
