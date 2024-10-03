@@ -13,6 +13,7 @@ import {
   BadBody,
   SocialAbstract,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { Integration } from '@prisma/client';
 
 export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   identifier = 'linkedin';
@@ -287,6 +288,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     id: string,
     accessToken: string,
     postDetails: PostDetails[],
+    integration: Integration,
     type = 'personal' as 'company' | 'personal'
   ): Promise<PostResponse[]> {
     const [firstPost, ...restPosts] = postDetails;

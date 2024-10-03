@@ -57,6 +57,8 @@ export interface Integrations {
   identifier: string;
   type: string;
   picture: string;
+  changeProfilePicture: boolean;
+  changeNickName: boolean;
   time: { time: number }[];
 }
 

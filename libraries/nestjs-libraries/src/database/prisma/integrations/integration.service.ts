@@ -86,6 +86,10 @@ export class IntegrationService {
     );
   }
 
+  updateNameAndUrl(id: string, name: string, url: string) {
+    return this._integrationRepository.updateNameAndUrl(id, name, url);
+  }
+
   getIntegrationById(org: string, id: string) {
     return this._integrationRepository.getIntegrationById(org, id);
   }

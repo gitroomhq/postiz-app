@@ -46,19 +46,66 @@ export class IntegrationsController {
     return {
       integrations: (
         await this._integrationService.getIntegrationsList(org.id)
-      ).map((p) => ({
-        name: p.name,
-        id: p.id,
-        internalId: p.internalId,
-        disabled: p.disabled,
-        picture: p.picture,
-        identifier: p.providerIdentifier,
-        inBetweenSteps: p.inBetweenSteps,
-        refreshNeeded: p.refreshNeeded,
-        type: p.type,
-        time: JSON.parse(p.postingTimes)
-      })),
+      ).map((p) => {
+        const findIntegration = this._integrationManager.getSocialIntegration(
+          p.providerIdentifier
+        );
+        return {
+          name: p.name,
+          id: p.id,
+          internalId: p.internalId,
+          disabled: p.disabled,
+          picture: p.picture,
+          identifier: p.providerIdentifier,
+          inBetweenSteps: p.inBetweenSteps,
+          refreshNeeded: p.refreshNeeded,
+          type: p.type,
+          time: JSON.parse(p.postingTimes),
+          changeProfilePicture: !!findIntegration.changeProfilePicture,
+          changeNickName: !!findIntegration.changeNickname,
+        };
+      }),
     };
+  }
+
+  @Post('/:id/nickname')
+  async setNickname(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: { name: string; picture: string }
+  ) {
+    const integration = await this._integrationService.getIntegrationById(
+      org.id,
+      id
+    );
+    if (!integration) {
+      throw new Error('Invalid integration');
+    }
+
+    const manager = this._integrationManager.getSocialIntegration(
+      integration.providerIdentifier
+    );
+    if (!manager.changeProfilePicture && !manager.changeNickname) {
+      throw new Error('Invalid integration');
+    }
+
+    const { url } = manager.changeProfilePicture
+      ? await manager.changeProfilePicture(
+          integration.internalId,
+          integration.token,
+          body.picture
+        )
+      : { url: '' };
+
+    const { name } = manager.changeNickname
+      ? await manager.changeNickname(
+          integration.internalId,
+          integration.token,
+          body.name
+        )
+      : { name: '' };
+
+    return this._integrationService.updateNameAndUrl(id, name, url);
   }
 
   @Get('/:id')
@@ -129,7 +176,11 @@ export class IntegrationsController {
       }
 
       if (integrationProvider[body.name]) {
-        return integrationProvider[body.name](getIntegration.token, body.data);
+        return integrationProvider[body.name](
+          getIntegration.token,
+          body.data,
+          getIntegration.internalId
+        );
       }
       throw new Error('Function not found');
     }
@@ -144,7 +195,11 @@ export class IntegrationsController {
       }
 
       if (integrationProvider[body.name]) {
-        return integrationProvider[body.name](getIntegration.token, body.data);
+        return integrationProvider[body.name](
+          getIntegration.token,
+          body.data,
+          getIntegration.internalId
+        );
       }
       throw new Error('Function not found');
     }

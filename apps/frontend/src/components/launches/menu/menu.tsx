@@ -7,15 +7,26 @@ import interClass from '@gitroom/react/helpers/inter.font';
 import { useModals } from '@mantine/modals';
 import { TimeTable } from '@gitroom/frontend/components/launches/time.table';
 import { useCalendar } from '@gitroom/frontend/components/launches/calendar.context';
+import { BotPicture } from '@gitroom/frontend/components/launches/bot.picture';
 
 export const Menu: FC<{
   canEnable: boolean;
   canDisable: boolean;
+  canChangeProfilePicture: boolean;
+  canChangeNickName: boolean;
   id: string;
-  mutate: () => void,
+  mutate: () => void;
   onChange: (shouldReload: boolean) => void;
 }> = (props) => {
-  const { canEnable, canDisable, id, onChange, mutate } = props;
+  const {
+    canEnable,
+    canDisable,
+    id,
+    onChange,
+    mutate,
+    canChangeProfilePicture,
+    canChangeNickName,
+  } = props;
   const fetch = useFetch();
   const { integrations } = useCalendar();
   const toast = useToaster();
@@ -98,8 +109,30 @@ export const Menu: FC<{
       withCloseButton: false,
       closeOnEscape: false,
       closeOnClickOutside: false,
+      children: <TimeTable integration={findIntegration!} mutate={mutate} />,
+    });
+    setShow(false);
+  }, [integrations]);
+
+  const changeBotPicture = useCallback(() => {
+    const findIntegration = integrations.find(
+      (integration) => integration.id === id
+    );
+    modal.openModal({
+      classNames: {
+        modal: 'w-[100%] max-w-[600px] bg-transparent text-textColor',
+      },
+      size: '100%',
+      withCloseButton: false,
+      closeOnEscape: true,
+      closeOnClickOutside: true,
       children: (
-        <TimeTable integration={findIntegration!} mutate={mutate} />
+        <BotPicture
+          canChangeProfilePicture={canChangeProfilePicture}
+          canChangeNickName={canChangeNickName}
+          integration={findIntegration!}
+          mutate={mutate}
+        />
       ),
     });
     setShow(false);
@@ -128,6 +161,36 @@ export const Menu: FC<{
           onClick={(e) => e.stopPropagation()}
           className={`absolute top-[100%] left-0 p-[8px] px-[20px] bg-fifth flex flex-col gap-[16px] z-[100] rounded-[8px] border border-tableBorder ${interClass} text-nowrap`}
         >
+          {(canChangeProfilePicture || canChangeNickName) && (
+            <div
+              className="flex gap-[12px] items-center"
+              onClick={changeBotPicture}
+            >
+              <div>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 32 32"
+                  fill="none"
+                >
+                  <path
+                    d="M26 4H10C9.46957 4 8.96086 4.21071 8.58579 4.58579C8.21071 4.96086 8 5.46957 8 6V8H6C5.46957 8 4.96086 8.21071 4.58579 8.58579C4.21071 8.96086 4 9.46957 4 10V26C4 26.5304 4.21071 27.0391 4.58579 27.4142C4.96086 27.7893 5.46957 28 6 28H22C22.5304 28 23.0391 27.7893 23.4142 27.4142C23.7893 27.0391 24 26.5304 24 26V24H26C26.5304 24 27.0391 23.7893 27.4142 23.4142C27.7893 23.0391 28 22.5304 28 22V6C28 5.46957 27.7893 4.96086 27.4142 4.58579C27.0391 4.21071 26.5304 4 26 4ZM10 6H26V14.6725L23.9125 12.585C23.5375 12.2102 23.029 11.9997 22.4988 11.9997C21.9685 11.9997 21.46 12.2102 21.085 12.585L11.6713 22H10V6ZM22 26H6V10H8V22C8 22.5304 8.21071 23.0391 8.58579 23.4142C8.96086 23.7893 9.46957 24 10 24H22V26ZM26 22H14.5L22.5 14L26 17.5V22ZM15 14C15.5933 14 16.1734 13.8241 16.6667 13.4944C17.1601 13.1648 17.5446 12.6962 17.7716 12.1481C17.9987 11.5999 18.0581 10.9967 17.9424 10.4147C17.8266 9.83279 17.5409 9.29824 17.1213 8.87868C16.7018 8.45912 16.1672 8.1734 15.5853 8.05764C15.0033 7.94189 14.4001 8.0013 13.8519 8.22836C13.3038 8.45542 12.8352 8.83994 12.5056 9.33329C12.1759 9.82664 12 10.4067 12 11C12 11.7956 12.3161 12.5587 12.8787 13.1213C13.4413 13.6839 14.2044 14 15 14ZM15 10C15.1978 10 15.3911 10.0586 15.5556 10.1685C15.72 10.2784 15.8482 10.4346 15.9239 10.6173C15.9996 10.8 16.0194 11.0011 15.9808 11.1951C15.9422 11.3891 15.847 11.5673 15.7071 11.7071C15.5673 11.847 15.3891 11.9422 15.1951 11.9808C15.0011 12.0194 14.8 11.9996 14.6173 11.9239C14.4346 11.8482 14.2784 11.72 14.1685 11.5556C14.0586 11.3911 14 11.1978 14 11C14 10.7348 14.1054 10.4804 14.2929 10.2929C14.4804 10.1054 14.7348 10 15 10Z"
+                    fill="lightgreen"
+                  />
+                </svg>
+              </div>
+              <div className="text-[12px]">
+                Change Bot{' '}
+                {[
+                  canChangeProfilePicture && 'Picture',
+                  canChangeNickName && 'Nickname',
+                ]
+                  .filter((f) => f)
+                  .join(' / ')}
+              </div>
+            </div>
+          )}
           <div className="flex gap-[12px] items-center" onClick={editTimeTable}>
             <div>
               <svg
