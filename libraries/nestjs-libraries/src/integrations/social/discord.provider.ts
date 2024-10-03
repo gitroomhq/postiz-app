@@ -69,12 +69,11 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
     codeVerifier: string;
     refresh?: string;
   }) {
-    const [newCode, guild] = params.code.split(':');
-    const { access_token, expires_in, refresh_token, scope } = await (
+    const { access_token, expires_in, refresh_token, scope, guild } = await (
       await this.fetch('https://discord.com/api/oauth2/token', {
         method: 'POST',
         body: new URLSearchParams({
-          code: newCode,
+          code: params.code,
           grant_type: 'authorization_code',
           redirect_uri: `${process.env.FRONTEND_URL}/integrations/social/discord`,
         }),
@@ -100,7 +99,7 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
     ).json();
 
     return {
-      id: guild,
+      id: guild.id,
       name: application.name,
       accessToken: access_token,
       refreshToken: refresh_token,

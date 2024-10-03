@@ -13,40 +13,21 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
   identifier = 'slack';
   name = 'Slack';
   isBetweenSteps = false;
-  scopes = ['identify', 'guilds'];
+  scopes = [
+    'channels:read',
+    'chat:write',
+    'users:read',
+    'groups:read',
+    'channels:join',
+    'chat:write.customize',
+  ];
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
-    const { access_token, expires_in, refresh_token } = await (
-      await this.fetch('https://discord.com/api/oauth2/token', {
-        method: 'POST',
-        body: new URLSearchParams({
-          refresh_token: refreshToken,
-          grant_type: 'refresh_token',
-        }),
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Authorization: `Basic ${Buffer.from(
-            process.env.DISCORD_CLIENT_ID +
-              ':' +
-              process.env.DISCORD_CLIENT_SECRET
-          ).toString('base64')}`,
-        },
-      })
-    ).json();
-
-    const { application } = await (
-      await fetch('https://discord.com/api/oauth2/@me', {
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-        },
-      })
-    ).json();
-
     return {
-      refreshToken: refresh_token,
-      expiresIn: expires_in,
-      accessToken: access_token,
+      refreshToken: '',
+      expiresIn: 1000000,
+      accessToken: '',
       id: '',
-      name: application.name,
+      name: '',
       picture: '',
       username: '',
     };
@@ -76,7 +57,7 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
     codeVerifier: string;
     refresh?: string;
   }) {
-    const { access_token, team, bot_user_id, authed_user, ...all } = await (
+    const { access_token, team, bot_user_id, scope } = await (
       await this.fetch(`https://slack.com/api/oauth.v2.access`, {
         method: 'POST',
         headers: {
@@ -97,6 +78,8 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
       })
     ).json();
 
+    this.checkScopes(this.scopes, scope.split(','));
+
     const { user } = await (
       await fetch(`https://slack.com/api/users.info?user=${bot_user_id}`, {
         method: 'GET',
@@ -112,7 +95,7 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
       accessToken: access_token,
       refreshToken: 'null',
       expiresIn: dayjs().add(100, 'years').unix() - dayjs().unix(),
-      picture: user.profile.image_48,
+      picture: user.profile.image_original,
       username: user.name,
     };
   }
