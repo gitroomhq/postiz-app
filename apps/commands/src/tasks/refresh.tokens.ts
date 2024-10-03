@@ -1,4 +1,4 @@
-import { Command } from 'nestjs-command';
+import { Command } from '@nestjs-command';
 import { Injectable } from '@nestjs/common';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 

@@ -1,4 +1,4 @@
-import { Command } from 'nestjs-command';
+import { Command } from '@nestjs-command';
 import { Injectable } from '@nestjs/common';
 import { ConfigurationChecker } from '@gitroom/helpers/configuration/configuration.checker';
 
