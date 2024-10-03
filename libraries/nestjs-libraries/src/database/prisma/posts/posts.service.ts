@@ -172,7 +172,7 @@ export class PostsService {
           err
         );
 
-        return ;
+        return;
       }
 
       console.error(
@@ -278,7 +278,8 @@ export class PostsService {
                 ? process.env.UPLOAD_DIRECTORY + m.path
                 : m.path,
           })),
-        }))
+        })),
+        integration
       );
 
       for (const post of publishedPosts) {

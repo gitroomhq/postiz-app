@@ -1,4 +1,4 @@
-import { FC, useState } from 'react';
+import { FC, useEffect, useState } from 'react';
 import Image from 'next/image';
 
 interface ImageSrc {
@@ -12,6 +12,11 @@ interface ImageSrc {
 const ImageWithFallback: FC<ImageSrc> = (props) => {
   const { src, fallbackSrc, ...rest } = props;
   const [imgSrc, setImgSrc] = useState(src);
+  useEffect(() => {
+    if (src !== imgSrc) {
+      setImgSrc(src);
+    }
+  }, [src]);
 
   return (
     <Image

@@ -1,3 +1,5 @@
+import { Integration } from '@prisma/client';
+
 export interface IAuthenticator {
   authenticate(params: {
     code: string;
@@ -6,7 +8,21 @@ export interface IAuthenticator {
   }): Promise<AuthTokenDetails>;
   refreshToken(refreshToken: string): Promise<AuthTokenDetails>;
   generateAuthUrl(refresh?: string): Promise<GenerateAuthUrlResponse>;
-  analytics?(id: string, accessToken: string, date: number): Promise<AnalyticsData[]>;
+  analytics?(
+    id: string,
+    accessToken: string,
+    date: number
+  ): Promise<AnalyticsData[]>;
+  changeNickname?(
+    id: string,
+    accessToken: string,
+    name: string
+  ): Promise<{ name: string }>;
+  changeProfilePicture?(
+    id: string,
+    accessToken: string,
+    url: string
+  ): Promise<{ url: string }>;
 }
 
 export interface AnalyticsData {
@@ -35,7 +51,8 @@ export interface ISocialMediaIntegration {
   post(
     id: string,
     accessToken: string,
-    postDetails: PostDetails[]
+    postDetails: PostDetails[],
+    integration: Integration
   ): Promise<PostResponse[]>; // Schedules a new post
 }
 
