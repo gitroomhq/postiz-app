@@ -275,25 +275,25 @@ export const AddEditModal: FC<{
           }
         }
 
-        if (
-          key.value.some(
-            (p) => p.content.length > (key.maximumCharacters || 1000000)
-          )
-        ) {
-          if (
-            !(await deleteDialog(
-              `${key?.integration?.name} post is too long, it will be cropped, do you want to continue?`,
-              'Yes, continue'
-            ))
-          ) {
-            await key.trigger();
-            moveToIntegration({
-              identifier: key?.integration?.id!,
-              toPreview: true,
-            });
-            return;
-          }
-        }
+        // if (
+        //   key.value.some(
+        //     (p) => p.content.length > (key.maximumCharacters || 1000000)
+        //   )
+        // ) {
+        //   if (
+        //     !(await deleteDialog(
+        //       `${key?.integration?.name} post is too long, it will be cropped, do you want to continue?`,
+        //       'Yes, continue'
+        //     ))
+        //   ) {
+        //     await key.trigger();
+        //     moveToIntegration({
+        //       identifier: key?.integration?.id!,
+        //       toPreview: true,
+        //     });
+        //     return;
+        //   }
+        // }
 
         if (key.value.some((p) => !p.content || p.content.length < 6)) {
           setShowError(true);
@@ -317,7 +317,7 @@ export const AddEditModal: FC<{
             ...p,
             value: p.value.map((a) => ({
               ...a,
-              content: a.content.slice(0, p.maximumCharacters || 1000000),
+              content: a.content,
             })),
           })),
         }),
