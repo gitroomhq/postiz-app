@@ -174,7 +174,8 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     let finalId = '';
     let finalUrl = '';
     if ((firstPost?.media?.[0]?.path?.indexOf('mp4') || -2) > -1) {
-      const { id: videoId, permalink_url } = await (
+      console.log('mp4');
+      const { id: videoId, permalink_url, ...all } = await (
         await this.fetch(
           `https://graph.facebook.com/v20.0/${id}/videos?access_token=${accessToken}&fields=id,permalink_url`,
           {
@@ -183,7 +184,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              file_url: firstPost?.media?.[0]?.path!,
+              file_url: firstPost?.media?.[0]?.url!,
               description: firstPost.message,
               published: true,
             }),
@@ -192,7 +193,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
         )
       ).json();
 
-      finalUrl = permalink_url;
+      finalUrl = 'https://www.facebook.com/reel/' + videoId;
       finalId = videoId;
     } else {
       const uploadPhotos = !firstPost?.media?.length
