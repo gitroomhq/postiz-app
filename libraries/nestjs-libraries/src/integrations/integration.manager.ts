@@ -17,8 +17,10 @@ import { LinkedinPageProvider } from '@gitroom/nestjs-libraries/integrations/soc
 import { ThreadsProvider } from '@gitroom/nestjs-libraries/integrations/social/threads.provider';
 import { DiscordProvider } from '@gitroom/nestjs-libraries/integrations/social/discord.provider';
 import { SlackProvider } from '@gitroom/nestjs-libraries/integrations/social/slack.provider';
+import { MastodonProvider } from '@gitroom/nestjs-libraries/integrations/social/mastodon.provider';
+import { MastodonCustomProvider } from '@gitroom/nestjs-libraries/integrations/social/mastodon.custom.provider';
 
-const socialIntegrationList = [
+const socialIntegrationList: SocialProvider[] = [
   new XProvider(),
   new LinkedinProvider(),
   new LinkedinPageProvider(),
@@ -32,6 +34,8 @@ const socialIntegrationList = [
   new DribbbleProvider(),
   new DiscordProvider(),
   new SlackProvider(),
+  new MastodonProvider(),
+  new MastodonCustomProvider(),
 ];
 
 const articleIntegrationList = [
@@ -47,6 +51,7 @@ export class IntegrationManager {
       social: socialIntegrationList.map((p) => ({
         name: p.name,
         identifier: p.identifier,
+        isExternal: !!p.externalUrl
       })),
       article: articleIntegrationList.map((p) => ({
         name: p.name,
