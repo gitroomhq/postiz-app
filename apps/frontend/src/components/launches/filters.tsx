@@ -188,7 +188,7 @@ export const Filters = () => {
       <div className="flex-1">{betweenDates}</div>
       <div
         className={clsx(
-          'border border-tableBorder p-[10px]',
+          'border border-tableBorder p-[10px] cursor-pointer',
           week.display === 'day' && 'bg-tableBorder'
         )}
         onClick={setDay}
@@ -197,7 +197,7 @@ export const Filters = () => {
       </div>
       <div
         className={clsx(
-          'border border-tableBorder p-[10px]',
+          'border border-tableBorder p-[10px] cursor-pointer',
           week.display === 'week' && 'bg-tableBorder'
         )}
         onClick={setWeek}
@@ -206,7 +206,7 @@ export const Filters = () => {
       </div>
       <div
         className={clsx(
-          'border border-tableBorder p-[10px]',
+          'border border-tableBorder p-[10px] cursor-pointer',
           week.display === 'month' && 'bg-tableBorder'
         )}
         onClick={setMonth}
