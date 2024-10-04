@@ -139,7 +139,7 @@ export function RegisterAfter({
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <div>
-          <h1 className="text-3xl font-bold text-left mb-4 cursor-pointer">
+          <h1 className="text-3xl font-bold text-left mb-2 cursor-pointer">
             Sign Up
           </h1>
         </div>
@@ -198,7 +198,7 @@ export function RegisterAfter({
         </div>
         <div className="text-center mt-6">
           <div className="w-full flex">
-            <Button type="submit" className="flex-1" loading={loading}>
+            <Button type="submit" className="flex-1 rounded-md hover:bg-purple-800 " loading={loading}>
               Create Account
             </Button>
           </div>
