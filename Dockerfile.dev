@@ -31,6 +31,7 @@ COPY var/docker/Caddyfile /app/Caddyfile
 COPY .env.example /config/postiz.env
 
 VOLUME /config
+VOLUME /uploads
 
 LABEL org.opencontainers.image.source=https://github.com/gitroomhq/postiz-app
 
@@ -55,6 +56,7 @@ COPY libraries /app/libraries/
 RUN npm ci --no-fund && npx nx run-many --target=build --projects=frontend,backend,workers,cron
 
 VOLUME /config
+VOLUME /uploads
 
 LABEL org.opencontainers.image.title="Postiz App (DevContainer)"
 
@@ -70,6 +72,7 @@ COPY --from=devcontainer /app/libraries/ /app/libraries/
 COPY package.json nx.json /app/
 
 VOLUME /config
+VOLUME /uploads
 
 ## Labels at the bottom, because CI will eventually add dates, commit hashes, etc.
 LABEL org.opencontainers.image.title="Postiz App (Production)"
