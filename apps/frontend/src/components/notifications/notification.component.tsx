@@ -19,6 +19,7 @@ export const ShowNotification: FC<{
   lastReadNotification: string;
 }> = (props) => {
   const { notification } = props;
+  const createdAt = new Date(notification.createdAt).toLocaleString();
   const [newNotification] = useState(
     new Date(notification.createdAt) > new Date(props.lastReadNotification)
   );
@@ -29,6 +30,8 @@ export const ShowNotification: FC<{
         `text-textColor px-[16px] py-[10px] border-b border-tableBorder last:border-b-0 transition-colors ${interClass} overflow-hidden text-ellipsis`,
         newNotification && 'font-bold bg-seventh animate-newMessages'
       )}
+      data-tooltip-id="tooltip"
+      data-tooltip-content={createdAt}
       dangerouslySetInnerHTML={{ __html: replaceLinks(notification.content) }}
     />
   );
