@@ -102,4 +102,10 @@ const XPreview: FC = (props) => {
   );
 };
 
-export default withProvider(null, XPreview, undefined, undefined, 280);
+export default withProvider(null, XPreview, undefined, async (posts) => {
+  if (posts.some(p => p.length > 4)) {
+    return 'There can be maximum 4 pictures in a post.';
+  }
+
+  return true;
+}, 280);
