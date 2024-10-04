@@ -9,7 +9,6 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { timer } from '@gitroom/helpers/utils/timer';
 import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
-import { chunk } from 'lodash';
 
 export class InstagramProvider
   extends SocialAbstract
@@ -207,7 +206,7 @@ export class InstagramProvider
     const medias = await Promise.all(
       firstPost?.media?.map(async (m) => {
         const caption =
-          firstPost.media?.length === 1 ? `&caption=${firstPost.message}` : ``;
+          firstPost.media?.length === 1 ? `&caption=${encodeURIComponent(firstPost.message)}` : ``;
         const isCarousel =
           (firstPost?.media?.length || 0) > 1 ? `&is_carousel_item=true` : ``;
         const mediaType =
@@ -216,9 +215,10 @@ export class InstagramProvider
               ? `video_url=${m.url}&media_type=REELS`
               : `video_url=${m.url}&media_type=VIDEO`
             : `image_url=${m.url}`;
+
         const { id: photoId } = await (
           await this.fetch(
-            `https://graph.facebook.com/v20.0/${id}/media?${mediaType}${caption}${isCarousel}&access_token=${accessToken}`,
+            `https://graph.facebook.com/v20.0/${id}/media?${mediaType}${isCarousel}&access_token=${accessToken}${caption}`,
             {
               method: 'POST',
             }

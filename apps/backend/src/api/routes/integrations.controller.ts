@@ -61,8 +61,8 @@ export class IntegrationsController {
           refreshNeeded: p.refreshNeeded,
           type: p.type,
           time: JSON.parse(p.postingTimes),
-          changeProfilePicture: !!findIntegration.changeProfilePicture,
-          changeNickName: !!findIntegration.changeNickname,
+          changeProfilePicture: !!findIntegration?.changeProfilePicture,
+          changeNickName: !!findIntegration?.changeNickname,
         };
       }),
     };
