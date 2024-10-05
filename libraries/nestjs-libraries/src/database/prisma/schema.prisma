@@ -242,27 +242,28 @@ model Subscription {
 }
 
 model Integration {
-  id              String          @id @default(cuid())
-  internalId      String
-  organizationId  String
-  name            String
-  organization    Organization    @relation(fields: [organizationId], references: [id])
-  picture         String?
-  providerIdentifier String
-  type            String
-  token           String
-  disabled        Boolean         @default(false)
-  tokenExpiration DateTime?
-  refreshToken    String?
-  posts           Post[]
-  profile         String?
-  deletedAt       DateTime?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime?      @updatedAt
-  orderItems      OrderItems[]
-  inBetweenSteps  Boolean         @default(false)
-  refreshNeeded   Boolean         @default(false)
-  postingTimes    String          @default("[{\"time\":120}, {\"time\":400}, {\"time\":700}]")
+  id                    String          @id @default(cuid())
+  internalId            String
+  organizationId        String
+  name                  String
+  organization          Organization    @relation(fields: [organizationId], references: [id])
+  picture               String?
+  providerIdentifier    String
+  type                  String
+  token                 String
+  disabled              Boolean         @default(false)
+  tokenExpiration       DateTime?
+  refreshToken          String?
+  posts                 Post[]
+  profile               String?
+  deletedAt             DateTime?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime?      @updatedAt
+  orderItems            OrderItems[]
+  inBetweenSteps        Boolean         @default(false)
+  refreshNeeded         Boolean         @default(false)
+  postingTimes          String          @default("[{\"time\":120}, {\"time\":400}, {\"time\":700}]")
+  customInstanceDetails String?
 
   @@index([updatedAt])
   @@index([deletedAt])

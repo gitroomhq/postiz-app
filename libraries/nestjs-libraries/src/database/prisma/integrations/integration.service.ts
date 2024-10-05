@@ -47,7 +47,8 @@ export class IntegrationService {
     username?: string,
     isBetweenSteps = false,
     refresh?: string,
-    timezone?: number
+    timezone?: number,
+    customInstanceDetails?: string
   ) {
     const loadImage = await axios.get(picture, { responseType: 'arraybuffer' });
     const uploadedPicture = await simpleUpload(
@@ -69,7 +70,8 @@ export class IntegrationService {
       username,
       isBetweenSteps,
       refresh,
-      timezone
+      timezone,
+      customInstanceDetails
     );
   }
 

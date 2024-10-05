@@ -27,6 +27,7 @@ import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.req
 import { NotEnoughScopesFilter } from '@gitroom/nestjs-libraries/integrations/integration.missing.scopes';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import { IntegrationTimeDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.time.dto';
+import { AuthService } from '@gitroom/helpers/auth/auth.service';
 
 @ApiTags('Integrations')
 @Controller('/integrations')
@@ -127,7 +128,8 @@ export class IntegrationsController {
   @CheckPolicies([AuthorizationActions.Create, Sections.CHANNEL])
   async getIntegrationUrl(
     @Param('integration') integration: string,
-    @Query('refresh') refresh: string
+    @Query('refresh') refresh: string,
+    @Query('externalUrl') externalUrl: string
   ) {
     if (
       !this._integrationManager
@@ -139,11 +141,33 @@ export class IntegrationsController {
 
     const integrationProvider =
       this._integrationManager.getSocialIntegration(integration);
-    const { codeVerifier, state, url } =
-      await integrationProvider.generateAuthUrl(refresh);
-    await ioRedis.set(`login:${state}`, codeVerifier, 'EX', 300);
 
-    return { url };
+    if (integrationProvider.externalUrl && !externalUrl) {
+      throw new Error('Missing external url');
+    }
+
+    try {
+      const getExternalUrl = integrationProvider.externalUrl
+        ? {
+            ...(await integrationProvider.externalUrl(externalUrl)),
+            instanceUrl: externalUrl,
+          }
+        : undefined;
+
+      const { codeVerifier, state, url } =
+        await integrationProvider.generateAuthUrl(refresh, getExternalUrl);
+      await ioRedis.set(`login:${state}`, codeVerifier, 'EX', 300);
+      await ioRedis.set(
+        `external:${state}`,
+        JSON.stringify(getExternalUrl),
+        'EX',
+        300
+      );
+
+      return { url };
+    } catch (err) {
+      return { err: true };
+    }
   }
 
   @Post('/:id/time')
@@ -273,6 +297,15 @@ export class IntegrationsController {
 
     const integrationProvider =
       this._integrationManager.getSocialIntegration(integration);
+
+    const details = integrationProvider.externalUrl
+      ? await ioRedis.get(`external:${body.state}`)
+      : undefined;
+
+    if (details) {
+      await ioRedis.del(`external:${body.state}`);
+    }
+
     const {
       accessToken,
       expiresIn,
@@ -281,11 +314,14 @@ export class IntegrationsController {
       name,
       picture,
       username,
-    } = await integrationProvider.authenticate({
-      code: body.code,
-      codeVerifier: getCodeVerifier,
-      refresh: body.refresh,
-    });
+    } = await integrationProvider.authenticate(
+      {
+        code: body.code,
+        codeVerifier: getCodeVerifier,
+        refresh: body.refresh,
+      },
+      details ? JSON.parse(details) : undefined
+    );
 
     if (!id) {
       throw new Error('Invalid api key');
@@ -304,7 +340,8 @@ export class IntegrationsController {
       username,
       integrationProvider.isBetweenSteps,
       body.refresh,
-      +body.timezone
+      +body.timezone,
+      AuthService.fixedEncryption(details)
     );
   }
 

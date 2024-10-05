@@ -79,7 +79,8 @@ export class IntegrationRepository {
     username?: string,
     isBetweenSteps = false,
     refresh?: string,
-    timezone?: number
+    timezone?: number,
+    customInstanceDetails?: string
   ) {
     const postTimes = timezone
       ? {
@@ -113,6 +114,7 @@ export class IntegrationRepository {
         ...postTimes,
         organizationId: org,
         refreshNeeded: false,
+        ...(customInstanceDetails ? { customInstanceDetails } : {}),
       },
       update: {
         type: type as any,
