@@ -1,6 +1,5 @@
 import {
   AuthTokenDetails,
-  ClientInformation,
   PostDetails,
   PostResponse,
   SocialProvider,

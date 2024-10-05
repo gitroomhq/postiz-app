@@ -18,6 +18,7 @@ import { ThreadsProvider } from '@gitroom/nestjs-libraries/integrations/social/t
 import { DiscordProvider } from '@gitroom/nestjs-libraries/integrations/social/discord.provider';
 import { SlackProvider } from '@gitroom/nestjs-libraries/integrations/social/slack.provider';
 import { MastodonProvider } from '@gitroom/nestjs-libraries/integrations/social/mastodon.provider';
+import { BlueskyProvider } from '@gitroom/nestjs-libraries/integrations/social/bluesky.provider';
 // import { MastodonCustomProvider } from '@gitroom/nestjs-libraries/integrations/social/mastodon.custom.provider';
 
 const socialIntegrationList: SocialProvider[] = [
@@ -35,6 +36,7 @@ const socialIntegrationList: SocialProvider[] = [
   new DiscordProvider(),
   new SlackProvider(),
   new MastodonProvider(),
+  new BlueskyProvider(),
   // new MastodonCustomProvider(),
 ];
 
@@ -46,13 +48,16 @@ const articleIntegrationList = [
 
 @Injectable()
 export class IntegrationManager {
-  getAllIntegrations() {
+  async getAllIntegrations() {
     return {
-      social: socialIntegrationList.map((p) => ({
-        name: p.name,
-        identifier: p.identifier,
-        isExternal: !!p.externalUrl
-      })),
+      social: await Promise.all(
+        socialIntegrationList.map(async (p) => ({
+          name: p.name,
+          identifier: p.identifier,
+          isExternal: !!p.externalUrl,
+          ...(p.customFields ? { customFields: await p.customFields() } : {}),
+        }))
+      ),
       article: articleIntegrationList.map((p) => ({
         name: p.name,
         identifier: p.identifier,

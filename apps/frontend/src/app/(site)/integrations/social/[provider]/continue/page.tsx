@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { internalFetch } from '@gitroom/helpers/utils/internal.fetch';
 import { redirect } from 'next/navigation';
+import { Redirect } from '@gitroom/frontend/components/layout/redirect';
 
 export default async function Page({
   params: { provider },
@@ -28,6 +29,22 @@ export default async function Page({
 
   if (data.status === HttpStatusCode.NotAcceptable) {
     return redirect(`/launches?scope=missing`);
+  }
+
+  if (
+    data.status !== HttpStatusCode.Ok &&
+    data.status !== HttpStatusCode.Created
+  ) {
+    return (
+      <>
+        <div className="mt-[50px] text-[50px]">
+          Could not add provider.
+          <br />
+          You are being redirected back
+        </div>
+        <Redirect url="/launches" delay={3000} />
+      </>
+    );
   }
 
   const { inBetweenSteps, id } = await data.json();

@@ -16,6 +16,7 @@ import ThreadsProvider from '@gitroom/frontend/components/launches/providers/thr
 import DiscordProvider from '@gitroom/frontend/components/launches/providers/discord/discord.provider';
 import SlackProvider from '@gitroom/frontend/components/launches/providers/slack/slack.provider';
 import MastodonProvider from '@gitroom/frontend/components/launches/providers/mastodon/mastodon.provider';
+import BlueskyProvider from '@gitroom/frontend/components/launches/providers/bluesky/bluesky.provider';
 
 export const Providers = [
     {identifier: 'devto', component: DevtoProvider},
@@ -35,6 +36,7 @@ export const Providers = [
     {identifier: 'discord', component: DiscordProvider},
     {identifier: 'slack', component: SlackProvider},
     {identifier: 'mastodon', component: MastodonProvider},
+    {identifier: 'bluesky', component: BlueskyProvider},
 ];
 
 

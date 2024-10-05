@@ -98,6 +98,15 @@ export interface SocialProvider
     ISocialMediaIntegration {
   identifier: string;
   refreshWait?: boolean;
+  customFields?: () => Promise<
+    {
+      key: string;
+      label: string;
+      defaultValue?: string;
+      validation: string;
+      type: 'text' | 'password';
+    }[]
+  >;
   name: string;
   isBetweenSteps: boolean;
   scopes: string[];

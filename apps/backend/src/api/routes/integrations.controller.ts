@@ -288,15 +288,19 @@ export class IntegrationsController {
       throw new Error('Integration not allowed');
     }
 
-    const getCodeVerifier = await ioRedis.get(`login:${body.state}`);
+    const integrationProvider =
+      this._integrationManager.getSocialIntegration(integration);
+
+    const getCodeVerifier = integrationProvider.customFields
+      ? 'none'
+      : await ioRedis.get(`login:${body.state}`);
     if (!getCodeVerifier) {
       throw new Error('Invalid state');
     }
 
-    await ioRedis.del(`login:${body.state}`);
-
-    const integrationProvider =
-      this._integrationManager.getSocialIntegration(integration);
+    if (!integrationProvider.customFields) {
+      await ioRedis.del(`login:${body.state}`);
+    }
 
     const details = integrationProvider.externalUrl
       ? await ioRedis.get(`external:${body.state}`)
@@ -341,7 +345,13 @@ export class IntegrationsController {
       integrationProvider.isBetweenSteps,
       body.refresh,
       +body.timezone,
-      details ? AuthService.fixedEncryption(details) : undefined
+      details
+        ? AuthService.fixedEncryption(details)
+        : integrationProvider.customFields
+        ? AuthService.fixedEncryption(
+            Buffer.from(body.code, 'base64').toString()
+          )
+        : undefined
     );
   }
 
