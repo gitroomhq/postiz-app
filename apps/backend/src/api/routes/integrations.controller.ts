@@ -341,7 +341,7 @@ export class IntegrationsController {
       integrationProvider.isBetweenSteps,
       body.refresh,
       +body.timezone,
-      AuthService.fixedEncryption(details)
+      details ? AuthService.fixedEncryption(details) : undefined
     );
   }
 
