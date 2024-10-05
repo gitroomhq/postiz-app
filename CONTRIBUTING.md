@@ -14,20 +14,41 @@ As a general rule;
 - **If a change is less than 3 lines**: You're probably safe just to submit the change without a discussion. This includes typos, dependency changes, and quick fixes, etc.
 - **If a change is more than 3 lines**: It's probably best to discuss the change in an issue or on discord first. This is simply because you might not be aware of the roadmap for the project, or understand the impact this change might have. We're just trying to save you time here, and importantly, avoid you being disappointed if your change isn't accepted.
 
+## Types of Contributions
+
+Contributions can include:
+- **Code improvements:** Fixing bugs or adding new features.
+- **Documentation updates:** Enhancing clarity or adding missing information.
+- **Feature requests:** Suggesting new capabilities or integrations.
+- **Bug reports:** Identifying and reporting issues.
+
 ## How to contribute
 
 This project follows a Fork/Feature Branch/Pull Request model. If you're not familiar with this, here's how it works:
 
-1. Fork the project to your GitHub account.
-2. Clone your fork to your local machine.
-3. Create a new branch for your changes.
-4. Make your changes in this new branch.
-5. Push your changes to your fork.
-6. Create a pull request from your fork to this project.
-7. We'll review your changes and approve or comment on them.
+1. **Fork the project:** Create a personal copy of the repository on your GitHub account.
+2. **Clone your fork:** Bring a copy of your fork to your local machine.
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/postiz.git
+   ```
+3. **Create a new branch**: Start a new branch for your changes
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+6. **Make your changes**: Implement the changes you wish to contribute.
+7. **Push your changes**: Upload your changes to your fork.
+   ```bash
+   git push -u origin feature/your-feature-name
+   ```
+9. **Create a pull request**: Propose your changes to the main project.
+
 
 ## Setting up your development environment
+To contribute effectively, you’ll need to set up your development environment. Follow the instructions on this page: https://docs.postiz.com/installation/development
 
-Documentation on how to setup a development environment is available here; https://docs.postiz.com/installation/development
+
+Need Help?
+If you encounter any issues, please visit our [support page](https://docs.postiz.com/support) or check the community forums. Your contributions help make Postiz better!
+
 
 

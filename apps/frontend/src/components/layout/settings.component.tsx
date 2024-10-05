@@ -160,7 +160,7 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
                       </div>
                     </button>
                     <button
-                      className="h-[24px] w-[88px] rounded-[4px] border-2 border-customColor21 flex justify-center items-center gap-[4px]"
+                      className="h-[24px] w-[88px] rounded-[4px] border-2 border-customColor21 hover:text-red-600 flex justify-center items-center gap-[4px]"
                       type="button"
                     >
                       <div>
@@ -177,7 +177,7 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
                           />
                         </svg>
                       </div>
-                      <div className="text-[12px]" onClick={remove}>
+                      <div className="text-[12px] " onClick={remove}>
                         Remove
                       </div>
                     </button>
@@ -191,7 +191,7 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
           </div>
           {!getRef && (
             <div className="justify-end flex">
-              <Button type="submit">Save</Button>
+              <Button type="submit" className='rounded-md'>Save</Button>
             </div>
           )}
           {!!user?.tier?.team_members && isGeneral && <TeamsComponent />}
