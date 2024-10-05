@@ -1,32 +1,40 @@
-export class RefreshToken {}
+export class RefreshToken {
+  constructor(
+    public identifier: string,
+    public json: string,
+    public body: BodyInit
+  ) {}
+}
 export class BadBody {
-  constructor(public body: BodyInit) {
-  }
+  constructor(
+    public identifier: string,
+    public json: string,
+    public body: BodyInit
+  ) {}
 }
 
 export class NotEnoughScopes {}
 
 export abstract class SocialAbstract {
-  async fetch(url: string, options: RequestInit = {}) {
+  async fetch(url: string, options: RequestInit = {}, identifier = '') {
     const request = await fetch(url, options);
 
-    if (request.status !== 200 && request.status !== 201) {
-      try {
-        console.log(await request.json());
-      }
-      catch (err) {
-        console.log('skip');
-      }
+    if (request.status === 200 || request.status === 201) {
+      return request;
     }
+
+    let json = '{}';
+    try {
+      json = await request.text();
+    } catch (err) {
+      json = '{}';
+    }
+
     if (request.status === 401) {
-      throw new RefreshToken();
+      throw new RefreshToken(identifier, json, options.body!);
     }
 
-    if (request.status === 400) {
-      throw new BadBody(options.body!);
-    }
-
-    return request;
+    throw new BadBody(identifier, json, options.body!);
   }
 
   checkScopes(required: string[], got: string | string[]) {

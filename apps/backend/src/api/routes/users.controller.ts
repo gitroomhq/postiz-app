@@ -21,7 +21,7 @@ import {
   AuthorizationActions,
   Sections,
 } from '@gitroom/backend/services/auth/permissions/permissions.service';
-import { removeSubdomain } from '@gitroom/helpers/subdomain/subdomain.management';
+import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { ApiTags } from '@nestjs/swagger';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
@@ -92,8 +92,7 @@ export class UsersController {
     }
 
     response.cookie('impersonate', id, {
-      domain:
-        '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
+      domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
       secure: true,
       httpOnly: true,
       sameSite: 'none',
@@ -163,8 +162,7 @@ export class UsersController {
     @Res({ passthrough: true }) response: Response
   ) {
     response.cookie('showorg', id, {
-      domain:
-        '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
+      domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
       secure: true,
       httpOnly: true,
       sameSite: 'none',
@@ -177,8 +175,7 @@ export class UsersController {
   @Post('/logout')
   logout(@Res({ passthrough: true }) response: Response) {
     response.cookie('auth', '', {
-      domain:
-        '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
+      domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
       secure: true,
       httpOnly: true,
       maxAge: -1,
@@ -187,8 +184,7 @@ export class UsersController {
     });
 
     response.cookie('showorg', '', {
-      domain:
-        '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
+      domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
       secure: true,
       httpOnly: true,
       maxAge: -1,
@@ -197,8 +193,7 @@ export class UsersController {
     });
 
     response.cookie('impersonate', '', {
-      domain:
-        '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
+      domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
       secure: true,
       httpOnly: true,
       maxAge: -1,

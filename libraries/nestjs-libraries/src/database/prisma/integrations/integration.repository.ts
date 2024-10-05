@@ -79,7 +79,8 @@ export class IntegrationRepository {
     username?: string,
     isBetweenSteps = false,
     refresh?: string,
-    timezone?: number
+    timezone?: number,
+    customInstanceDetails?: string
   ) {
     const postTimes = timezone
       ? {
@@ -113,6 +114,7 @@ export class IntegrationRepository {
         ...postTimes,
         organizationId: org,
         refreshNeeded: false,
+        ...(customInstanceDetails ? { customInstanceDetails } : {}),
       },
       update: {
         type: type as any,
@@ -121,7 +123,6 @@ export class IntegrationRepository {
               inBetweenSteps: isBetweenSteps,
             }
           : {}),
-        name,
         picture,
         profile: username,
         providerIdentifier: provider,
@@ -159,6 +160,18 @@ export class IntegrationRepository {
       },
       data: {
         refreshNeeded: true,
+      },
+    });
+  }
+
+  updateNameAndUrl(id: string, name: string, url: string) {
+    return this._integration.model.integration.update({
+      where: {
+        id,
+      },
+      data: {
+        ...(name ? { name } : {}),
+        ...(url ? { picture: url } : {}),
       },
     });
   }

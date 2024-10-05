@@ -27,6 +27,7 @@ import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.req
 import { NotEnoughScopesFilter } from '@gitroom/nestjs-libraries/integrations/integration.missing.scopes';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import { IntegrationTimeDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.time.dto';
+import { AuthService } from '@gitroom/helpers/auth/auth.service';
 
 @ApiTags('Integrations')
 @Controller('/integrations')
@@ -46,19 +47,66 @@ export class IntegrationsController {
     return {
       integrations: (
         await this._integrationService.getIntegrationsList(org.id)
-      ).map((p) => ({
-        name: p.name,
-        id: p.id,
-        internalId: p.internalId,
-        disabled: p.disabled,
-        picture: p.picture,
-        identifier: p.providerIdentifier,
-        inBetweenSteps: p.inBetweenSteps,
-        refreshNeeded: p.refreshNeeded,
-        type: p.type,
-        time: JSON.parse(p.postingTimes)
-      })),
+      ).map((p) => {
+        const findIntegration = this._integrationManager.getSocialIntegration(
+          p.providerIdentifier
+        );
+        return {
+          name: p.name,
+          id: p.id,
+          internalId: p.internalId,
+          disabled: p.disabled,
+          picture: p.picture,
+          identifier: p.providerIdentifier,
+          inBetweenSteps: p.inBetweenSteps,
+          refreshNeeded: p.refreshNeeded,
+          type: p.type,
+          time: JSON.parse(p.postingTimes),
+          changeProfilePicture: !!findIntegration?.changeProfilePicture,
+          changeNickName: !!findIntegration?.changeNickname,
+        };
+      }),
     };
+  }
+
+  @Post('/:id/nickname')
+  async setNickname(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: { name: string; picture: string }
+  ) {
+    const integration = await this._integrationService.getIntegrationById(
+      org.id,
+      id
+    );
+    if (!integration) {
+      throw new Error('Invalid integration');
+    }
+
+    const manager = this._integrationManager.getSocialIntegration(
+      integration.providerIdentifier
+    );
+    if (!manager.changeProfilePicture && !manager.changeNickname) {
+      throw new Error('Invalid integration');
+    }
+
+    const { url } = manager.changeProfilePicture
+      ? await manager.changeProfilePicture(
+          integration.internalId,
+          integration.token,
+          body.picture
+        )
+      : { url: '' };
+
+    const { name } = manager.changeNickname
+      ? await manager.changeNickname(
+          integration.internalId,
+          integration.token,
+          body.name
+        )
+      : { name: '' };
+
+    return this._integrationService.updateNameAndUrl(id, name, url);
   }
 
   @Get('/:id')
@@ -80,7 +128,8 @@ export class IntegrationsController {
   @CheckPolicies([AuthorizationActions.Create, Sections.CHANNEL])
   async getIntegrationUrl(
     @Param('integration') integration: string,
-    @Query('refresh') refresh: string
+    @Query('refresh') refresh: string,
+    @Query('externalUrl') externalUrl: string
   ) {
     if (
       !this._integrationManager
@@ -92,11 +141,33 @@ export class IntegrationsController {
 
     const integrationProvider =
       this._integrationManager.getSocialIntegration(integration);
-    const { codeVerifier, state, url } =
-      await integrationProvider.generateAuthUrl(refresh);
-    await ioRedis.set(`login:${state}`, codeVerifier, 'EX', 300);
 
-    return { url };
+    if (integrationProvider.externalUrl && !externalUrl) {
+      throw new Error('Missing external url');
+    }
+
+    try {
+      const getExternalUrl = integrationProvider.externalUrl
+        ? {
+            ...(await integrationProvider.externalUrl(externalUrl)),
+            instanceUrl: externalUrl,
+          }
+        : undefined;
+
+      const { codeVerifier, state, url } =
+        await integrationProvider.generateAuthUrl(refresh, getExternalUrl);
+      await ioRedis.set(`login:${state}`, codeVerifier, 'EX', 300);
+      await ioRedis.set(
+        `external:${state}`,
+        JSON.stringify(getExternalUrl),
+        'EX',
+        300
+      );
+
+      return { url };
+    } catch (err) {
+      return { err: true };
+    }
   }
 
   @Post('/:id/time')
@@ -129,7 +200,11 @@ export class IntegrationsController {
       }
 
       if (integrationProvider[body.name]) {
-        return integrationProvider[body.name](getIntegration.token, body.data);
+        return integrationProvider[body.name](
+          getIntegration.token,
+          body.data,
+          getIntegration.internalId
+        );
       }
       throw new Error('Function not found');
     }
@@ -144,7 +219,11 @@ export class IntegrationsController {
       }
 
       if (integrationProvider[body.name]) {
-        return integrationProvider[body.name](getIntegration.token, body.data);
+        return integrationProvider[body.name](
+          getIntegration.token,
+          body.data,
+          getIntegration.internalId
+        );
       }
       throw new Error('Function not found');
     }
@@ -209,15 +288,28 @@ export class IntegrationsController {
       throw new Error('Integration not allowed');
     }
 
-    const getCodeVerifier = await ioRedis.get(`login:${body.state}`);
+    const integrationProvider =
+      this._integrationManager.getSocialIntegration(integration);
+
+    const getCodeVerifier = integrationProvider.customFields
+      ? 'none'
+      : await ioRedis.get(`login:${body.state}`);
     if (!getCodeVerifier) {
       throw new Error('Invalid state');
     }
 
-    await ioRedis.del(`login:${body.state}`);
+    if (!integrationProvider.customFields) {
+      await ioRedis.del(`login:${body.state}`);
+    }
 
-    const integrationProvider =
-      this._integrationManager.getSocialIntegration(integration);
+    const details = integrationProvider.externalUrl
+      ? await ioRedis.get(`external:${body.state}`)
+      : undefined;
+
+    if (details) {
+      await ioRedis.del(`external:${body.state}`);
+    }
+
     const {
       accessToken,
       expiresIn,
@@ -226,11 +318,14 @@ export class IntegrationsController {
       name,
       picture,
       username,
-    } = await integrationProvider.authenticate({
-      code: body.code,
-      codeVerifier: getCodeVerifier,
-      refresh: body.refresh,
-    });
+    } = await integrationProvider.authenticate(
+      {
+        code: body.code,
+        codeVerifier: getCodeVerifier,
+        refresh: body.refresh,
+      },
+      details ? JSON.parse(details) : undefined
+    );
 
     if (!id) {
       throw new Error('Invalid api key');
@@ -249,7 +344,14 @@ export class IntegrationsController {
       username,
       integrationProvider.isBetweenSteps,
       body.refresh,
-      +body.timezone
+      +body.timezone,
+      details
+        ? AuthService.fixedEncryption(details)
+        : integrationProvider.customFields
+        ? AuthService.fixedEncryption(
+            Buffer.from(body.code, 'base64').toString()
+          )
+        : undefined
     );
   }
 

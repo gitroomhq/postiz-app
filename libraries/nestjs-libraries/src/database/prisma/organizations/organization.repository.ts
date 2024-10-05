@@ -177,7 +177,8 @@ export class OrganizationRepository {
   }
 
   async createOrgAndUser(
-    body: Omit<CreateOrgUserDto, 'providerToken'> & { providerId?: string }
+    body: Omit<CreateOrgUserDto, 'providerToken'> & { providerId?: string },
+    hasEmail: boolean
   ) {
     return this._organization.model.organization.create({
       data: {
@@ -187,7 +188,7 @@ export class OrganizationRepository {
             role: Role.SUPERADMIN,
             user: {
               create: {
-                activated: body.provider !== 'LOCAL' || !process.env.RESEND_API_KEY,
+                activated: body.provider !== 'LOCAL' || !hasEmail,
                 email: body.email,
                 password: body.password
                   ? AuthService.hashPassword(body.password)

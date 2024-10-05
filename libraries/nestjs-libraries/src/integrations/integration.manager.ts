@@ -15,8 +15,13 @@ import { PinterestProvider } from '@gitroom/nestjs-libraries/integrations/social
 import { DribbbleProvider } from '@gitroom/nestjs-libraries/integrations/social/dribbble.provider';
 import { LinkedinPageProvider } from '@gitroom/nestjs-libraries/integrations/social/linkedin.page.provider';
 import { ThreadsProvider } from '@gitroom/nestjs-libraries/integrations/social/threads.provider';
+import { DiscordProvider } from '@gitroom/nestjs-libraries/integrations/social/discord.provider';
+import { SlackProvider } from '@gitroom/nestjs-libraries/integrations/social/slack.provider';
+import { MastodonProvider } from '@gitroom/nestjs-libraries/integrations/social/mastodon.provider';
+import { BlueskyProvider } from '@gitroom/nestjs-libraries/integrations/social/bluesky.provider';
+// import { MastodonCustomProvider } from '@gitroom/nestjs-libraries/integrations/social/mastodon.custom.provider';
 
-const socialIntegrationList = [
+const socialIntegrationList: SocialProvider[] = [
   new XProvider(),
   new LinkedinProvider(),
   new LinkedinPageProvider(),
@@ -28,6 +33,11 @@ const socialIntegrationList = [
   new TiktokProvider(),
   new PinterestProvider(),
   new DribbbleProvider(),
+  new DiscordProvider(),
+  new SlackProvider(),
+  new MastodonProvider(),
+  new BlueskyProvider(),
+  // new MastodonCustomProvider(),
 ];
 
 const articleIntegrationList = [
@@ -38,12 +48,16 @@ const articleIntegrationList = [
 
 @Injectable()
 export class IntegrationManager {
-  getAllIntegrations() {
+  async getAllIntegrations() {
     return {
-      social: socialIntegrationList.map((p) => ({
-        name: p.name,
-        identifier: p.identifier,
-      })),
+      social: await Promise.all(
+        socialIntegrationList.map(async (p) => ({
+          name: p.name,
+          identifier: p.identifier,
+          isExternal: !!p.externalUrl,
+          ...(p.customFields ? { customFields: await p.customFields() } : {}),
+        }))
+      ),
       article: articleIntegrationList.map((p) => ({
         name: p.name,
         identifier: p.identifier,
