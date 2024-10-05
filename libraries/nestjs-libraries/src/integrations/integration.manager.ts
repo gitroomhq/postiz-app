@@ -18,7 +18,7 @@ import { ThreadsProvider } from '@gitroom/nestjs-libraries/integrations/social/t
 import { DiscordProvider } from '@gitroom/nestjs-libraries/integrations/social/discord.provider';
 import { SlackProvider } from '@gitroom/nestjs-libraries/integrations/social/slack.provider';
 import { MastodonProvider } from '@gitroom/nestjs-libraries/integrations/social/mastodon.provider';
-import { MastodonCustomProvider } from '@gitroom/nestjs-libraries/integrations/social/mastodon.custom.provider';
+// import { MastodonCustomProvider } from '@gitroom/nestjs-libraries/integrations/social/mastodon.custom.provider';
 
 const socialIntegrationList: SocialProvider[] = [
   new XProvider(),
@@ -35,7 +35,7 @@ const socialIntegrationList: SocialProvider[] = [
   new DiscordProvider(),
   new SlackProvider(),
   new MastodonProvider(),
-  new MastodonCustomProvider(),
+  // new MastodonCustomProvider(),
 ];
 
 const articleIntegrationList = [

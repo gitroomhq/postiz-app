@@ -18,7 +18,7 @@ export class MastodonCustomProvider extends MastodonProvider {
     );
     form.append('scopes', this.scopes.join(' '));
     form.append('website', process.env.FRONTEND_URL!);
-    const { client_id, client_secret } = await (
+    const { client_id, client_secret, ...all } = await (
       await fetch(url + '/api/v1/apps', {
         method: 'POST',
         body: form,
