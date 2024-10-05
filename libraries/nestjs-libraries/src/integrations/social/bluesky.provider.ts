@@ -116,6 +116,7 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
 
     let loadCid = '';
     let loadUri = '';
+    const cidUrl = [] as { cid: string; url: string, rev: string }[];
     for (const post of postDetails) {
       const images = await Promise.all(
         post.media?.map(async (p) => {
@@ -129,7 +130,8 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
         }) || []
       );
 
-      const { cid, uri } = await agent.post({
+      // @ts-ignore
+      const { cid, uri, commit } = await agent.post({
         text: post.message,
         createdAt: new Date().toISOString(),
         ...(images.length
@@ -162,8 +164,15 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
 
       loadCid = loadCid || cid;
       loadUri = loadUri || uri;
+
+      cidUrl.push({ cid, url: uri, rev: commit.rev });
     }
 
-    return [];
+    return postDetails.map((p, index) => ({
+      id: p.id,
+      postId: cidUrl[index].cid,
+      status: 'completed',
+      releaseURL: `https://bsky.app/profile/${id}/post/${cidUrl[index].url.split('/').pop()}`,
+    }));
   }
 }
