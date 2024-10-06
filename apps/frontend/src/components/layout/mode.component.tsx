@@ -10,7 +10,6 @@ const ModeComponent = () => {
   }, [mode]);
 
   useEffect(() => {
-    console.log(mode);
     document.body.classList.remove('dark', 'light');
     document.body.classList.add(mode);
   }, [mode]);

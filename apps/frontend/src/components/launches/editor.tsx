@@ -36,7 +36,6 @@ export const Editor = forwardRef<
         },
       ],
       handler: async ({ content }) => {
-        console.log('editPost_' + props.order, content, dayjs().unix());
         props?.onChange?.(content);
       },
     });

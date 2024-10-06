@@ -359,8 +359,6 @@ export class InstagramProvider
       )
     ).json();
 
-    console.log(all);
-
     return (
       data?.map((d: any) => ({
         label: d.title,
