@@ -113,7 +113,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
         `https://graph.threads.net/v1.0/${mediaContainerId}?fields=status,error_message&access_token=${accessToken}`
       )
     ).json();
-    console.log(status, error_message);
+
     if (status === 'ERROR') {
       throw new Error(id);
     }
@@ -154,18 +154,18 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     let link = '';
 
     if (firstPost?.media?.length! <= 1) {
-      const type = !firstPost?.media?.[0]?.path
+      const type = !firstPost?.media?.[0]?.url
         ? undefined
-        : firstPost?.media![0].path.indexOf('.mp4') > -1
+        : firstPost?.media![0].url.indexOf('.mp4') > -1
         ? 'video_url'
         : 'image_url';
 
       const media = new URLSearchParams({
         ...(type === 'video_url'
-          ? { video_url: firstPost?.media![0].path }
+          ? { video_url: firstPost?.media![0].url }
           : {}),
         ...(type === 'image_url'
-          ? { image_url: firstPost?.media![0].path }
+          ? { image_url: firstPost?.media![0].url }
           : {}),
         media_type:
           type === 'video_url'
@@ -209,11 +209,11 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       const medias = [];
       for (const mediaLoad of firstPost.media!) {
         const type =
-          mediaLoad.path.indexOf('.mp4') > -1 ? 'video_url' : 'image_url';
+          mediaLoad.url.indexOf('.mp4') > -1 ? 'video_url' : 'image_url';
 
         const media = new URLSearchParams({
-          ...(type === 'video_url' ? { video_url: mediaLoad.path } : {}),
-          ...(type === 'image_url' ? { image_url: mediaLoad.path } : {}),
+          ...(type === 'video_url' ? { video_url: mediaLoad.url } : {}),
+          ...(type === 'image_url' ? { image_url: mediaLoad.url } : {}),
           is_carousel_item: 'true',
           media_type:
             type === 'video_url'

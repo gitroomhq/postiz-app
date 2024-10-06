@@ -173,8 +173,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
 
     let finalId = '';
     let finalUrl = '';
-    if ((firstPost?.media?.[0]?.path?.indexOf('mp4') || -2) > -1) {
-      console.log('mp4');
+    if ((firstPost?.media?.[0]?.url?.indexOf('mp4') || -2) > -1) {
       const { id: videoId, permalink_url, ...all } = await (
         await this.fetch(
           `https://graph.facebook.com/v20.0/${id}/videos?access_token=${accessToken}&fields=id,permalink_url`,

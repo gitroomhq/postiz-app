@@ -72,7 +72,6 @@ const Polonto: FC<{
   const { setMedia, type, closeModal } = props;
   const user = useUser();
 
-  console.log(user);
   const features = useMemo(() => {
     return [
       ...DEFAULT_SECTIONS,

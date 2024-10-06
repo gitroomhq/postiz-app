@@ -70,9 +70,11 @@ export const EditorWrapper: FC<{ children: ReactNode }> = ({ children }) => {
 
 export const withProvider = (
   SettingsComponent: FC | null,
-  PreviewComponent: FC,
+  CustomPreviewComponent?: FC<{maximumCharacters?: number}>,
   dto?: any,
-  checkValidity?: (value: Array<Array<{path: string}>>) => Promise<string|true>,
+  checkValidity?: (
+    value: Array<Array<{ path: string }>>
+  ) => Promise<string | true>,
   maximumCharacters?: number
 ) => {
   return (props: {
@@ -89,8 +91,11 @@ export const withProvider = (
     const existingData = useExistingData();
     const { integration, date } = useIntegration();
     useCopilotReadable({
-      description: integration?.type === 'social' ? 'force content always in MD format' : 'force content always to be fit to social media',
-      value: ''
+      description:
+        integration?.type === 'social'
+          ? 'force content always in MD format'
+          : 'force content always to be fit to social media',
+      value: '',
     });
     const [editInPlace, setEditInPlace] = useState(!!existingData.integration);
     const [InPlaceValue, setInPlaceValue] = useState<
@@ -116,11 +121,15 @@ export const withProvider = (
     }, [SettingsComponent]);
 
     // in case there is an error on submit, we change to the settings tab for the specific provider
-    useMoveToIntegrationListener([props.id], true, ({identifier, toPreview}) => {
-      if (identifier === props.id) {
-        setShowTab(toPreview ? 1 : 2);
+    useMoveToIntegrationListener(
+      [props.id],
+      true,
+      ({ identifier, toPreview }) => {
+        if (identifier === props.id) {
+          setShowTab(toPreview ? 1 : 2);
+        }
       }
-    });
+    );
 
     // this is a smart function, it updates the global value without updating the states (too heavy) and set the settings validation
     const form = useValues(
@@ -234,8 +243,12 @@ export const withProvider = (
     }, [props.value, editInPlace]);
 
     useCopilotAction({
-      name: editInPlace ? 'switchToGlobalEdit' : `editInPlace_${integration?.identifier}`,
-      description: editInPlace ? 'Switch to global editing' : `Edit only ${integration?.identifier} this, if you want a different identifier, you have to use setSelectedIntegration first`,
+      name: editInPlace
+        ? 'switchToGlobalEdit'
+        : `editInPlace_${integration?.identifier}`,
+      description: editInPlace
+        ? 'Switch to global editing'
+        : `Edit only ${integration?.identifier} this, if you want a different identifier, you have to use setSelectedIntegration first`,
       handler: async () => {
         await changeToEditor();
       },
@@ -281,7 +294,11 @@ export const withProvider = (
                   secondary={showTab !== 1}
                   onClick={changeToEditor}
                 >
-                  {editInPlace ? 'Edit globally' : `Edit only ${integration?.name} (${capitalize(integration?.identifier.replace('-', ' '))})`}
+                  {editInPlace
+                    ? 'Edit globally'
+                    : `Edit only ${integration?.name} (${capitalize(
+                        integration?.identifier.replace('-', ' ')
+                      )})`}
                 </Button>
               </div>
             </div>
@@ -292,7 +309,8 @@ export const withProvider = (
                 <div className="flex flex-col gap-[20px]">
                   {!existingData?.integration && (
                     <div className="bg-red-800">
-                      You are now editing only {integration?.name} ({capitalize(integration?.identifier.replace('-', ' '))})
+                      You are now editing only {integration?.name} (
+                      {capitalize(integration?.identifier.replace('-', ' '))})
                     </div>
                   )}
                   {InPlaceValue.map((val, index) => (
@@ -384,7 +402,7 @@ export const withProvider = (
               document.querySelector('#renderEditor')!
             )}
           {(showTab === 0 || showTab === 2) && (
-            <div className={clsx("mt-[20px]", showTab !== 2 && 'hidden')}>
+            <div className={clsx('mt-[20px]', showTab !== 2 && 'hidden')}>
               <Component />
             </div>
           )}
@@ -400,7 +418,15 @@ export const withProvider = (
                 {(editInPlace ? InPlaceValue : props.value)
                   .map((p) => p.content)
                   .join('').length ? (
-                  <GeneralPreviewComponent maximumCharacters={maximumCharacters} />
+                  CustomPreviewComponent ? (
+                    <CustomPreviewComponent
+                      maximumCharacters={maximumCharacters}
+                    />
+                  ) : (
+                    <GeneralPreviewComponent
+                      maximumCharacters={maximumCharacters}
+                    />
+                  )
                 ) : (
                   <>No Content Yet</>
                 )}

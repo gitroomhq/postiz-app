@@ -158,11 +158,11 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
             ...(settings?.tags?.length
               ? { tags: settings.tags.map((p) => p.label) }
               : {}),
-            // ...(settings?.thumbnail?.path
+            // ...(settings?.thumbnail?.url
             //   ? {
             //       thumbnails: {
             //         default: {
-            //           url: settings?.thumbnail?.path,
+            //           url: settings?.thumbnail?.url,
             //         },
             //       },
             //     }
@@ -176,8 +176,6 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
           body: response.data,
         },
       });
-
-      console.log(all);
 
       if (settings?.thumbnail?.path) {
         try {
@@ -194,7 +192,6 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
             },
           });
 
-          console.log(allb);
         } catch (err: any) {
           if (
             err.response?.data?.error?.errors?.[0]?.domain ===
@@ -203,7 +200,6 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
             throw 'Your account is not verified, we have uploaded your video but we could not set the thumbnail. Please verify your account and try again.';
           }
 
-          console.log(JSON.stringify(err?.response?.data, null, 2));
         }
       }
 
@@ -230,7 +226,6 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
         err.response?.data?.error?.errors?.[0]?.reason ===
         'youtubeSignupRequired'
       ) {
-        console.log('nevo david!');
         throw 'You have to link your youtube account to your google account first.';
       }
     }

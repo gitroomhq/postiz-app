@@ -4,10 +4,6 @@ import { DiscordDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-setti
 import { DiscordChannelSelect } from '@gitroom/frontend/components/launches/providers/discord/discord.channel.select';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 
-const Empty: FC = () => {
-  return null;
-};
-
 const DiscordComponent: FC = () => {
   const form = useSettings();
   return (
@@ -18,7 +14,7 @@ const DiscordComponent: FC = () => {
 };
 export default withProvider(
   DiscordComponent,
-  Empty,
+  undefined,
   DiscordDto,
   undefined,
   280
