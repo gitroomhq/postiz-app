@@ -158,11 +158,11 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
             ...(settings?.tags?.length
               ? { tags: settings.tags.map((p) => p.label) }
               : {}),
-            // ...(settings?.thumbnail?.path
+            // ...(settings?.thumbnail?.url
             //   ? {
             //       thumbnails: {
             //         default: {
-            //           url: settings?.thumbnail?.path,
+            //           url: settings?.thumbnail?.url,
             //         },
             //       },
             //     }
