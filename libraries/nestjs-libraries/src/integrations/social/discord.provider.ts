@@ -118,8 +118,6 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
       })
     ).json();
 
-    console.log(list);
-
     return list
       .filter((p: any) => p.type === 0 || p.type === 15)
       .map((p: any) => ({

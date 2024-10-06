@@ -30,6 +30,7 @@
   },
   "private": true,
   "dependencies": {
+    "@atproto/api": "^0.13.11",
     "@aws-sdk/client-s3": "^3.410.0",
     "@aws-sdk/s3-request-presigner": "^3.410.0",
     "@casl/ability": "^6.5.0",

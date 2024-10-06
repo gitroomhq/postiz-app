@@ -113,7 +113,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
         `https://graph.threads.net/v1.0/${mediaContainerId}?fields=status,error_message&access_token=${accessToken}`
       )
     ).json();
-    console.log(status, error_message);
+
     if (status === 'ERROR') {
       throw new Error(id);
     }

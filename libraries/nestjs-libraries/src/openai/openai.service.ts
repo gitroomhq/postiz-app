@@ -69,7 +69,6 @@ export class OpenaiService {
               ']'
           );
         } catch (e) {
-          console.log(content);
           return [];
         }
       })
