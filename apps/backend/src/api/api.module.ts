@@ -46,18 +46,6 @@ const authenticatedController = [
 @Module({
   imports: [
     UploadModule,
-    ...(!!process.env.UPLOAD_DIRECTORY &&
-    !!process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY
-      ? [
-          ServeStaticModule.forRoot({
-            rootPath: process.env.UPLOAD_DIRECTORY,
-            serveRoot: '/' + process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY,
-            serveStaticOptions: {
-              index: false,
-            },
-          }),
-        ]
-      : []),
   ],
   controllers: [
     RootController,

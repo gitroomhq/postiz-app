@@ -143,7 +143,7 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
           ? {
               url: `${
                 firstPostSettings.value.media[0].path.indexOf('http') === -1
-                  ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/${process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY}`
+                  ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/uploads`
                   : ``
               }${firstPostSettings.value.media[0].path}`,
             }

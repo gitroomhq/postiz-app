@@ -3,12 +3,12 @@ import { Injectable } from '@nestjs/common';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { simpleUpload } from '@gitroom/nestjs-libraries/upload/r2.uploader';
-import axios from 'axios';
 import { IntegrationTimeDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.time.dto';
+import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 
 @Injectable()
 export class IntegrationRepository {
+  private storage = UploadFactory.createStorage();
   constructor(
     private _integration: PrismaRepository<'integration'>,
     private _posts: PrismaRepository<'post'>
@@ -32,16 +32,10 @@ export class IntegrationRepository {
   async updateIntegration(id: string, params: Partial<Integration>) {
     if (
       params.picture &&
-      params.picture.indexOf(process.env.CLOUDFLARE_BUCKET_URL!) === -1
+      (params.picture.indexOf(process.env.CLOUDFLARE_BUCKET_URL!) === -1 ||
+        params.picture.indexOf(process.env.FRONTEND_URL!) === -1)
     ) {
-      const picture = await axios.get(params.picture, {
-        responseType: 'arraybuffer',
-      });
-      params.picture = await simpleUpload(
-        picture.data,
-        `${makeId(10)}.png`,
-        'image/png'
-      );
+      params.picture = await this.storage.uploadSimple(params.picture);
     }
 
     return this._integration.model.integration.update({
