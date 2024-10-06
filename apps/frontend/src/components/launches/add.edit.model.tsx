@@ -261,7 +261,7 @@ export const AddEditModal: FC<{
         trigger: values[v].trigger,
         settings: values[v].settings(),
         checkValidity: values[v].checkValidity,
-        maximumCharacters: values[v].maximumCharacters,
+        maximumCharacters: values[v].maximumCharacters || 3000, 
       }));
 
       for (const key of allKeys) {
@@ -277,7 +277,7 @@ export const AddEditModal: FC<{
 
         if (
           key.value.some(
-            (p) => p.content.length > (key.maximumCharacters || 1000000)
+            (p) => p.content.length > (key.maximumCharacters || 3000)
           )
         ) {
           if (
