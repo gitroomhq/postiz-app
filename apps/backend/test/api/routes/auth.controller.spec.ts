@@ -41,7 +41,7 @@ describe('AuthController (e2e)', () => {
       providerToken: '',
     };
 
-    const response = await request(app.getHttpServer())
+    await request(app.getHttpServer())
       .post('/auth/register')
       .set('Accept', 'application/json')
       .set('Content-Type', 'application/json')
