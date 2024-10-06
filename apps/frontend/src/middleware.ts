@@ -7,7 +7,9 @@ import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.man
 export async function middleware(request: NextRequest) {
   const nextUrl = request.nextUrl;
   const authCookie = request.cookies.get('auth');
-
+  if (nextUrl.pathname.startsWith('/uploads/')) {
+    return NextResponse.next();
+  }
   // If the URL is logout, delete the cookie and redirect to login
   if (nextUrl.href.indexOf('/auth/logout') > -1) {
     const response = NextResponse.redirect(

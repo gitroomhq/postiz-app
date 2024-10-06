@@ -50,17 +50,12 @@ export class MediaController {
 
   @Post('/upload-simple')
   @UseInterceptors(FileInterceptor('file'))
-  @UsePipes(new CustomFileValidationPipe())
   async uploadSimple(
     @GetOrgFromRequest() org: Organization,
-    @UploadedFile('file')
-    file: Express.Multer.File
+    @UploadedFile('file') file: Express.Multer.File
   ) {
-    const filePath =
-      file.path.indexOf('http') === 0
-        ? file.path
-        : file.path.replace(process.env.UPLOAD_DIRECTORY, '');
-    return this._mediaService.saveFile(org.id, file.originalname, filePath);
+    const getFile = await this.storage.uploadFile(file);
+    return this._mediaService.saveFile(org.id, getFile.originalname, getFile.path);
   }
 
   @Post('/:endpoint')
