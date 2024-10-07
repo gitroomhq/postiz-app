@@ -115,11 +115,11 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
     const {
       data: {
-        user: { avatar_url, display_name, open_id },
+        user: { avatar_url, display_name, open_id, username },
       },
     } = await (
       await fetch(
-        'https://open.tiktokapis.com/v2/user/info/?fields=open_id,avatar_url,display_name',
+        'https://open.tiktokapis.com/v2/user/info/?fields=open_id,avatar_url,display_name,union_id',
         {
           method: 'GET',
           headers: {
@@ -129,6 +129,8 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       )
     ).json();
 
+    console.log(username);
+
     return {
       id: open_id.replace(/-/g, ''),
       name: display_name,
@@ -136,7 +138,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       refreshToken: refresh_token,
       expiresIn: dayjs().add(23, 'hours').unix() - dayjs().unix(),
       picture: avatar_url,
-      username: display_name.toLowerCase(),
+      username: display_name,
     };
   }
 

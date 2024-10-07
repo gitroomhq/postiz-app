@@ -60,6 +60,7 @@ export class IntegrationsController {
           identifier: p.providerIdentifier,
           inBetweenSteps: p.inBetweenSteps,
           refreshNeeded: p.refreshNeeded,
+          display: p.profile,
           type: p.type,
           time: JSON.parse(p.postingTimes),
           changeProfilePicture: !!findIntegration?.changeProfilePicture,

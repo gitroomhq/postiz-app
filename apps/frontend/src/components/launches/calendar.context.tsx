@@ -54,6 +54,7 @@ export interface Integrations {
   id: string;
   disabled?: boolean;
   inBetweenSteps: boolean;
+  display: string;
   identifier: string;
   type: string;
   picture: string;

@@ -19,7 +19,7 @@ const fetchUploadApiEndpoint = async (
 };
 
 // Define the factory to return appropriate Uppy configuration
-export const getUppyUploadPlugin = (provider: string, fetch: any) => {
+export const getUppyUploadPlugin = (provider: string, fetch: any, backendUrl: string) => {
     switch (provider) {
       case 'cloudflare':
         return {
@@ -56,7 +56,7 @@ export const getUppyUploadPlugin = (provider: string, fetch: any) => {
         return {
           plugin: XHRUpload,
           options: {
-            endpoint: `${process.env.NEXT_PUBLIC_BACKEND_URL}/media/upload-server`,
+            endpoint: `${backendUrl}/media/upload-server`,
             withCredentials: true,
           },
         };
