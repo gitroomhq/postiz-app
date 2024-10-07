@@ -54,7 +54,7 @@ export class LocalStorage implements IUploadProvider {
     const publicPath = `${innerPath}/${randomName}${extname(
       file.originalname
     )}`;
-    console.log(filePath);
+
     // Logic to save the file to the filesystem goes here
     writeFileSync(filePath, file.buffer);
 
