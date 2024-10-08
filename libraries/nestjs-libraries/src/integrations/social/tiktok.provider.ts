@@ -15,7 +15,12 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   identifier = 'tiktok';
   name = 'Tiktok';
   isBetweenSteps = false;
-  scopes = ['user.info.basic', 'video.publish', 'video.upload'];
+  scopes = [
+    'user.info.basic',
+    'video.publish',
+    'video.upload',
+    'user.info.profile',
+  ];
 
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const value = {
@@ -37,11 +42,11 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
     const {
       data: {
-        user: { avatar_url, display_name, open_id },
+        user: { avatar_url, display_name, open_id, username },
       },
     } = await (
       await fetch(
-        'https://open.tiktokapis.com/v2/user/info/?fields=open_id,avatar_url,display_name',
+        'https://open.tiktokapis.com/v2/user/info/?fields=open_id,avatar_url,display_name,username',
         {
           method: 'GET',
           headers: {
@@ -58,7 +63,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       id: open_id.replace(/-/g, ''),
       name: display_name,
       picture: avatar_url,
-      username: display_name.toLowerCase(),
+      username: username,
     };
   }
 
@@ -119,7 +124,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       },
     } = await (
       await fetch(
-        'https://open.tiktokapis.com/v2/user/info/?fields=open_id,avatar_url,display_name,union_id',
+        'https://open.tiktokapis.com/v2/user/info/?fields=open_id,avatar_url,display_name,union_id,username',
         {
           method: 'GET',
           headers: {
@@ -129,8 +134,6 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       )
     ).json();
 
-    console.log(username);
-
     return {
       id: open_id.replace(/-/g, ''),
       name: display_name,
@@ -138,7 +141,28 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       refreshToken: refresh_token,
       expiresIn: dayjs().add(23, 'hours').unix() - dayjs().unix(),
       picture: avatar_url,
-      username: display_name,
+      username: username,
+    };
+  }
+
+  async maxVideoLength(accessToken: string) {
+    const {
+      data: { max_video_post_duration_sec },
+    } = await (
+      await this.fetch(
+        'https://open.tiktokapis.com/v2/post/publish/creator_info/query/',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json; charset=UTF-8',
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      )
+    ).json();
+
+    return {
+      maxDurationSeconds: max_video_post_duration_sec,
     };
   }
 
@@ -190,7 +214,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     } catch (err) {
       throw new BadBody('titok-error', JSON.stringify(err), {
         // @ts-ignore
-        postDetails
+        postDetails,
       });
     }
   }
