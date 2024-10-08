@@ -18,5 +18,10 @@ export const LogoutComponent = () => {
     }
   }, []);
 
-  return <div className="text-red-400 cursor-pointer" onClick={logout}>Logout from {isGeneral ? 'Postiz' : 'Gitroom'}</div>;
+  return <div 
+      className="bg-red-500 text-white font-semibold px-4 py-2 rounded-full cursor-pointer hover:bg-red-600 transition duration-300 inline-block w-auto"
+      onClick={logout}
+    >
+      Logout from {isGeneral ? 'Postiz' : 'Gitroom'}
+    </div>;
 };
