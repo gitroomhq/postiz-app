@@ -25,6 +25,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       </head>
       <body className={clsx(chakra.className, 'text-primary dark')}>
         <VariableContextComponent
+          storageProvider={process.env.STORAGE_PROVIDER! as 'local' | 'cloudflare'}
           backendUrl={process.env.NEXT_PUBLIC_BACKEND_URL!}
           plontoKey={process.env.NEXT_PUBLIC_POLOTNO!}
           billingEnabled={!!process.env.STRIPE_PUBLISHABLE_KEY}

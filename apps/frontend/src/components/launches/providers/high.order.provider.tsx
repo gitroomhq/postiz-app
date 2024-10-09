@@ -69,7 +69,7 @@ export const EditorWrapper: FC<{ children: ReactNode }> = ({ children }) => {
 };
 
 export const withProvider = (
-  SettingsComponent: FC | null,
+  SettingsComponent: FC<{values?: any}> | null,
   CustomPreviewComponent?: FC<{maximumCharacters?: number}>,
   dto?: any,
   checkValidity?: (
@@ -403,7 +403,7 @@ export const withProvider = (
             )}
           {(showTab === 0 || showTab === 2) && (
             <div className={clsx('mt-[20px]', showTab !== 2 && 'hidden')}>
-              <Component />
+              <Component values={editInPlace ? InPlaceValue : props.value} />
             </div>
           )}
           {showTab === 0 && (

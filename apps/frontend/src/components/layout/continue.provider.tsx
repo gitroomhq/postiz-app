@@ -82,6 +82,7 @@ export const ContinueProvider: FC = () => {
                 date: dayjs(),
                 value: [],
                 integration: {
+                  display: '',
                   time: [{time: 0}],
                   id: continueId,
                   type: '',
