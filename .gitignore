@@ -47,3 +47,11 @@ Thumbs.db
 # Vim files
 **/*.swp
 **/*.swo
+
+# Temporary files
+*.orig
+*.~*~
+*.tsbuildinfo
+
+# ignore Secrets folder
+.secrets/

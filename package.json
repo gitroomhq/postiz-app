@@ -14,6 +14,7 @@
     "dev:backend": "npx nx run backend:serve:development",
     "dev:workers": "npx nx run workers:serve:development",
     "dev:cron": "npx nx run cron:serve:development",
+    "dev:docker": "docker compose -f ./docker-compose.dev.yaml up -d",
     "start:prod": "node dist/apps/backend/main.js",
     "start:prod:frontend": "nx run frontend:serve:production",
     "start:prod:workers": "node dist/apps/workers/main.js",
@@ -197,5 +198,8 @@
     "typescript": "5.5.4",
     "vite": "^5.0.0",
     "vitest": "1.6.0"
+  },
+  "volta": {
+    "node": "20.17.0"
   }
 }
