@@ -59,7 +59,7 @@ export const GeneralPreviewComponent: FC<{maximumCharacters?: number}> = (props)
                   </svg>
                 </div>
                 <div className="text-[15px] font-[400] text-customColor27 ml-[4px]">
-                  @username
+                  {integration?.display || '@username'}
                 </div>
               </div>
               <pre className={clsx('text-wrap', chakra.className)} dangerouslySetInnerHTML={{__html: value.text}} />

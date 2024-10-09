@@ -10,10 +10,13 @@ import handleR2Upload from '@gitroom/nestjs-libraries/upload/r2.uploader';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CustomFileValidationPipe } from '@gitroom/nestjs-libraries/upload/custom.upload.validation';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
+import { basename } from 'path';
+import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 
 @ApiTags('Media')
 @Controller('/media')
 export class MediaController {
+  private storage = UploadFactory.createStorage();
   constructor(
     private _mediaService: MediaService,
     private _subscriptionService: SubscriptionService
@@ -33,19 +36,25 @@ export class MediaController {
     return {output: 'data:image/png;base64,' + await this._mediaService.generateImage(prompt, org)};
   }
 
-  @Post('/upload-simple')
+  @Post('/upload-server')
   @UseInterceptors(FileInterceptor('file'))
   @UsePipes(new CustomFileValidationPipe())
+  async uploadServer(
+    @GetOrgFromRequest() org: Organization,
+    @UploadedFile() file: Express.Multer.File
+  ) {
+    const uploadedFile = await this.storage.uploadFile(file);
+    return this._mediaService.saveFile(org.id, uploadedFile.originalname, uploadedFile.path);
+  }
+
+  @Post('/upload-simple')
+  @UseInterceptors(FileInterceptor('file'))
   async uploadSimple(
     @GetOrgFromRequest() org: Organization,
-    @UploadedFile('file')
-    file: Express.Multer.File
+    @UploadedFile('file') file: Express.Multer.File
   ) {
-    const filePath =
-      file.path.indexOf('http') === 0
-        ? file.path
-        : file.path.replace(process.env.UPLOAD_DIRECTORY, '');
-    return this._mediaService.saveFile(org.id, file.originalname, filePath);
+    const getFile = await this.storage.uploadFile(file);
+    return this._mediaService.saveFile(org.id, getFile.originalname, getFile.path);
   }
 
   @Post('/:endpoint')

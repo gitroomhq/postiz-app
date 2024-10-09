@@ -299,13 +299,13 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           p?.media?.flatMap(async (m) => {
             return {
               id: await this.uploadPicture(
-                m.path,
+                m.url,
                 accessToken,
                 id,
-                m.path.indexOf('mp4') > -1
-                  ? Buffer.from(await readOrFetch(m.path))
-                  : await sharp(await readOrFetch(m.path), {
-                      animated: lookup(m.path) === 'image/gif',
+                m.url.indexOf('mp4') > -1
+                  ? Buffer.from(await readOrFetch(m.url))
+                  : await sharp(await readOrFetch(m.url), {
+                      animated: lookup(m.url) === 'image/gif',
                     })
                       .resize({
                         width: 1000,

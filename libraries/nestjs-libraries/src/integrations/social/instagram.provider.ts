@@ -210,7 +210,7 @@ export class InstagramProvider
         const isCarousel =
           (firstPost?.media?.length || 0) > 1 ? `&is_carousel_item=true` : ``;
         const mediaType =
-          m.path.indexOf('.mp4') > -1
+          m.url.indexOf('.mp4') > -1
             ? firstPost?.media?.length === 1
               ? `video_url=${m.url}&media_type=REELS`
               : `video_url=${m.url}&media_type=VIDEO`

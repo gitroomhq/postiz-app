@@ -1,6 +1,6 @@
 'use client';
 
-import { ChangeEvent, FC, useCallback, useEffect, useState } from 'react';
+import { FC, useCallback, useEffect, useState } from 'react';
 import { Button } from '@gitroom/react/form/button';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
@@ -11,7 +11,6 @@ import EventEmitter from 'events';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import clsx from 'clsx';
 import { VideoFrame } from '@gitroom/react/helpers/video.frame';
-import { useToaster } from '@gitroom/react/toaster/toaster';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import { MultipartFileUploader } from '@gitroom/frontend/components/media/new.uploader';
 import dynamic from 'next/dynamic';
@@ -186,6 +185,7 @@ export const MediaBox: FC<{
                   <img
                     className="w-full h-full object-cover"
                     src={mediaDirectory.set(media.path)}
+                    alt='media'
                   />
                 )}
               </div>

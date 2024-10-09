@@ -153,10 +153,10 @@ export class PinterestProvider
   ): Promise<PostResponse[]> {
     let mediaId = '';
     const findMp4 = postDetails?.[0]?.media?.find(
-      (p) => (p.path?.indexOf('mp4') || -1) > -1
+      (p) => (p.url?.indexOf('mp4') || -1) > -1
     );
     const picture = postDetails?.[0]?.media?.find(
-      (p) => (p.path?.indexOf('mp4') || -1) === -1
+      (p) => (p.url?.indexOf('mp4') || -1) === -1
     );
 
     if (findMp4) {
