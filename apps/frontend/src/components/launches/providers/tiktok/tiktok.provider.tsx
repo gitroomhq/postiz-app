@@ -130,6 +130,7 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
       <div className="text-[14px] mb-[10px]">Allow User To:</div>
       <div className="flex gap-[40px]">
         <Checkbox
+          variant="hollow"
           label="Duet"
           {...register('duet', {
             value: false,
@@ -137,12 +138,14 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
         />
         <Checkbox
           label="Stitch"
+          variant="hollow"
           {...register('stitch', {
             value: false,
           })}
         />
         <Checkbox
           label="Comments"
+          variant="hollow"
           {...register('comment', {
             value: false,
           })}
@@ -151,6 +154,7 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
       <hr className="my-[15px] mb-[25px] border-tableBorder" />
       <div className="flex flex-col">
         <Checkbox
+          variant="hollow"
           label="Disclose Video Content"
           {...register('disclose', {
             value: false,
@@ -185,8 +189,9 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
         </div>
       </div>
 
-      <div className={clsx(!disclose && 'invisible')}>
+      <div className={clsx(!disclose && 'invisible', 'mt-[20px]')}>
         <Checkbox
+          variant="hollow"
           label="Your brand"
           {...register('brand_organic_toggle', {
             value: false,
@@ -198,6 +203,7 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
           This video will be classified as Brand Organic.
         </div>
         <Checkbox
+          variant="hollow"
           label="Branded content"
           {...register('brand_content_toggle', {
             value: false,
