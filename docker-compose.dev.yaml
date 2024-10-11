@@ -1,6 +1,7 @@
 services:
   postiz-postgres:
-    image: postgres:14.5
+    # ref: https://hub.docker.com/_/postgres
+    image: postgres:17-alpine # 17.0
     container_name: postiz-postgres
     restart: always
     environment:
@@ -13,8 +14,18 @@ services:
       - 5432:5432
     networks:
       - postiz-network
+  postiz-redis:
+    # ref: https://hub.docker.com/_/redis
+    image: redis:7-alpine # 7.4.0
+    container_name: postiz-redis
+    restart: always
+    ports:
+      - 6379:6379
+    networks:
+      - postiz-network
   postiz-pg-admin:
-    image: dpage/pgadmin4
+    # ref: https://hub.docker.com/r/dpage/pgadmin4/tags
+    image: dpage/pgadmin4:latest
     container_name: postiz-pg-admin
     restart: always
     ports:
@@ -24,14 +35,22 @@ services:
       PGADMIN_DEFAULT_PASSWORD: admin
     networks:
       - postiz-network
-  postiz-redis:
-    image: redis:7.2
-    container_name: postiz-redis
-    restart: always
+  postiz-redisinsight:
+    # ref: https://hub.docker.com/r/redis/redisinsight
+    image: redis/redisinsight:latest
+    container_name: postiz-redisinsight
+    links:
+      - postiz-redis
     ports:
-      - 6379:6379
+      - "5540:5540"
+    volumes:
+      - redisinsight:/data
+    networks:
+      - postiz-network
+    restart: always
 
 volumes:
+  redisinsight:
   postgres-volume:
     external: false
 
