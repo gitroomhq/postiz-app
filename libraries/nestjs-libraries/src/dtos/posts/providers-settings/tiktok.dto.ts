@@ -15,13 +15,13 @@ export class TikTokDto {
     | 'SELF_ONLY';
 
   @IsBoolean()
-  disable_duet: boolean;
+  duet: boolean;
 
   @IsBoolean()
-  disable_stitch: boolean;
+  stitch: boolean;
 
   @IsBoolean()
-  disable_comment: boolean;
+  comment: boolean;
 
   @IsBoolean()
   brand_content_toggle: boolean;

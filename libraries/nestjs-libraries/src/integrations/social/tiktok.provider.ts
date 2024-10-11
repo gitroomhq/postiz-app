@@ -188,9 +188,9 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
               post_info: {
                 title: firstPost.message,
                 privacy_level: firstPost.settings.privacy_level,
-                disable_duet: firstPost.settings.disable_duet,
-                disable_comment: firstPost.settings.disable_comment,
-                disable_stitch: firstPost.settings.disable_stitch,
+                disable_duet: !firstPost.settings.duet,
+                disable_comment: !firstPost.settings.comment,
+                disable_stitch: !firstPost.settings.stitch,
                 brand_content_toggle: firstPost.settings.brand_content_toggle,
                 brand_organic_toggle: firstPost.settings.brand_organic_toggle,
               },
