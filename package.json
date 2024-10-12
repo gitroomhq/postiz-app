@@ -12,7 +12,7 @@
     "build:frontend": "npx nx run frontend:build:production",
     "dev:frontend": "npx nx run frontend:serve:development",
     "dev:backend": "npx nx run backend:serve:development",
-    "update-plugins": "node ./build.plugins.js",
+    "update-plugins": "node build.plugins.js",
     "dev:workers": "npx nx run workers:serve:development",
     "dev:cron": "npx nx run cron:serve:development",
     "dev:docker": "docker compose -f ./docker-compose.dev.yaml up -d",
