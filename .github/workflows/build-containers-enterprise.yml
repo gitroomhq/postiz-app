@@ -1,5 +1,5 @@
 ---
-name: "Build Containers"
+name: "Build Containers Enterprise"
 
 on:
   workflow_dispatch:
