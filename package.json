@@ -12,6 +12,7 @@
     "build:frontend": "npx nx run frontend:build:production",
     "dev:frontend": "npx nx run frontend:serve:development",
     "dev:backend": "npx nx run backend:serve:development",
+    "update-plugins": "node ./build.plugins.js",
     "dev:workers": "npx nx run workers:serve:development",
     "dev:cron": "npx nx run cron:serve:development",
     "dev:docker": "docker compose -f ./docker-compose.dev.yaml up -d",
@@ -27,7 +28,7 @@
     "prisma-reset": "cd ./libraries/nestjs-libraries/src/database/prisma && npx prisma db push --force-reset && npx prisma db push",
     "docker-build": "./var/docker/docker-build.sh",
     "docker-create": "./var/docker/docker-create.sh",
-    "postinstall": "npm run prisma-generate"
+    "postinstall": "npm run update-plugins && npm run prisma-generate"
   },
   "private": true,
   "dependencies": {

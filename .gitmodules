@@ -1,0 +1,6 @@
+[submodule "libraries/plugins/src/list/--force"]
+	path = libraries/plugins/src/list/--force
+	url = git@notifire:gitroomhq/public-api.git
+[submodule "libraries/plugins/src/list/public-api"]
+	path = libraries/plugins/src/list/public-api
+	url = git@notifire:gitroomhq/public-api.git
