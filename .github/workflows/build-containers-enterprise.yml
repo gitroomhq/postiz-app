@@ -55,10 +55,10 @@ jobs:
         env: 
           CONTAINERVER: ${{ needs.build-containers-common.outputs.containerver }}
         run: |
-          docker tag localhost/postiz-enterprise ghcr.io/gitroomhq/postiz-app-enterprise:${{ matrix.arch }}-${{ env.CONTAINERVER }}
+          docker tag localhost/postiz ghcr.io/gitroomhq/postiz-app-enterprise:${{ matrix.arch }}-${{ env.CONTAINERVER }}
           docker push ghcr.io/gitroomhq/postiz-app-enterprise:${{ matrix.arch }}-${{ env.CONTAINERVER }}
 
-          docker tag localhost/postiz-devcontainer-enterprise ghcr.io/gitroomhq/postiz-devcontainer-enterprise:${{ env.CONTAINERVER }}
+          docker tag localhost/postiz-devcontainer ghcr.io/gitroomhq/postiz-devcontainer-enterprise:${{ env.CONTAINERVER }}
           docker push ghcr.io/gitroomhq/postiz-devcontainer-enterprise:${{ env.CONTAINERVER }}
 
           docker tag ghcr.io/gitroomhq/postiz-devcontainer-enterprise:${{ env.CONTAINERVER }} ghcr.io/gitroomhq/postiz-devcontainer-enterprise:latest
