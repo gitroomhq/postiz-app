@@ -71,8 +71,6 @@ COPY --from=devcontainer /app/libraries/ /app/libraries/
 
 COPY package.json nx.json /app/
 
-VOLUME /config
-VOLUME /uploads
 
 ## Labels at the bottom, because CI will eventually add dates, commit hashes, etc.
 LABEL org.opencontainers.image.title="Postiz App (Production)"

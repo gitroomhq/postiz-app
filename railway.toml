@@ -4,3 +4,13 @@ dockerfilePath = "Dockerfile.dev"
 
 [deploy]
 restartPolicyType = "ON_FAILURE"
+
+[[volume]]
+name = "config"
+mountPath = "/config"
+persistence = true
+
+[[volume]]
+name = "uploads"
+mountPath = "/uploads"
+persistence = true
