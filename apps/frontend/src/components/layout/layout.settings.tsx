@@ -132,7 +132,7 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
                 ) : (
                   <div />
                 )}
-                <div className="flex items-center gap-[8px]">
+                <div className="flex items-center gap-[8px] cursor-pointer">
                   <ModeComponent />
                   <SettingsComponent />
                   <NotificationComponent />
