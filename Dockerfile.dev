@@ -49,7 +49,7 @@ RUN apk add --no-cache \
 	make \
 	build-base
 
-COPY nx.json tsconfig.base.json package.json package-lock.json /app/
+COPY nx.json tsconfig.base.json package.json package-lock.json build.plugins.js /app/
 COPY apps /app/apps/
 COPY libraries /app/libraries/
 
