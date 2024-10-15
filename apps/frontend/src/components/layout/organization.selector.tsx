@@ -5,6 +5,8 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 
+import { ReactComponent as CheckmarkSvg } from '@gitroom/frontend/assets/checkmark.svg';
+
 export const OrganizationSelector = () => {
   const fetch = useFetch();
   const user = useUser();
@@ -41,7 +43,7 @@ export const OrganizationSelector = () => {
     []
   );
 
-  if (isLoading || !isLoading && data?.length === 1) {
+  if (isLoading || (!isLoading && data?.length === 1)) {
     return null;
   }
 
@@ -51,28 +53,7 @@ export const OrganizationSelector = () => {
         <div className="flex-1">{current?.name || 'Loading...'}</div>
         {data?.length > 1 && (
           <div>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-            >
-              <g clipPath="url(#clip0_140_1160)">
-                <path
-                  d="M3.33301 5.66669L7.99967 10.3334L12.6663 5.66669"
-                  stroke="white"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </g>
-              <defs>
-                <clipPath id="clip0_140_1160">
-                  <rect width="16" height="16" fill="white" />
-                </clipPath>
-              </defs>
-            </svg>
+            <CheckmarkSvg />
           </div>
         )}
       </div>
