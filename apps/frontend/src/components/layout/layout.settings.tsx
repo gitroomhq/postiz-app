@@ -100,7 +100,7 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
                     {isGeneral ? (
                       <svg
                         width="80"
-                        height="167"
+                        height="75"
                         viewBox="0 0 366 167"
                         fill="none"
                         xmlns="http://www.w3.org/2000/svg"
