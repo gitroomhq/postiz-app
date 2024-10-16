@@ -44,8 +44,8 @@ dayjs.extend(isBetween);
 
 export const LayoutSettings = ({ children }: { children: ReactNode }) => {
   const fetch = useFetch();
-  const {isGeneral} = useVariables();
-  const {backendUrl, billingEnabled} = useVariables();
+  const { isGeneral } = useVariables();
+  const { backendUrl, billingEnabled } = useVariables();
   const load = useCallback(async (path: string) => {
     return await (await fetch(path)).json();
   }, []);
