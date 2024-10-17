@@ -93,9 +93,9 @@ export const MediaBox: FC<{
   }, [data]);
 
   return (
-    <div className="fixed left-0 top-0 bg-primary/80 z-[300] w-full min-h-full p-[60px] animate-fade">
-      <div className="w-full h-full bg-sixth border-tableBorder border-2 rounded-xl pb-[20px] px-[20px] relative">
-        <div className="flex">
+    <div className="fixed left-0 top-0 bg-primary/80 z-[300] w-full min-h-full p-4 md:p-[60px] animate-fade">
+      <div className="max-w-[1000px] w-full h-full bg-sixth border-tableBorder border-2 rounded-xl pb-[20px] px-[20px] relative mx-auto">
+        <div className="flex flex-col">
           <div className="flex-1">
             <TopTitle title="Media Library" />
           </div>
