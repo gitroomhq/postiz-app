@@ -15,6 +15,9 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 
+import { ReactComponent as CloseXSvg } from '@gitroom/frontend/assets/close-x.svg';
+import { ReactComponent as PlusSvg } from '@gitroom/frontend/assets/plus.svg';
+
 const schema = object({
   socialMedia: array()
     .min(1)
@@ -166,20 +169,7 @@ export const NewOrder: FC<{ group: string }> = (props) => {
             className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
             type="button"
           >
-            <svg
-              viewBox="0 0 15 15"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-            >
-              <path
-                d="M11.7816 4.03157C12.0062 3.80702 12.0062 3.44295 11.7816 3.2184C11.5571 2.99385 11.193 2.99385 10.9685 3.2184L7.50005 6.68682L4.03164 3.2184C3.80708 2.99385 3.44301 2.99385 3.21846 3.2184C2.99391 3.44295 2.99391 3.80702 3.21846 4.03157L6.68688 7.49999L3.21846 10.9684C2.99391 11.193 2.99391 11.557 3.21846 11.7816C3.44301 12.0061 3.80708 12.0061 4.03164 11.7816L7.50005 8.31316L10.9685 11.7816C11.193 12.0061 11.5571 12.0061 11.7816 11.7816C12.0062 11.557 12.0062 11.193 11.7816 10.9684L8.31322 7.49999L11.7816 4.03157Z"
-                fill="currentColor"
-                fillRule="evenodd"
-                clipRule="evenodd"
-              ></path>
-            </svg>
+            <CloseXSvg />
           </button>
           <div className="text-[18px] font-[500] flex flex-col">
             <TopTitle title={`Send a new offer`} />
@@ -234,18 +224,7 @@ export const NewOrder: FC<{ group: string }> = (props) => {
                     className="select-none rounded-[4px] border-2 border-customColor21 flex py-[9.5px] px-[24px] items-center gap-[4px] text-[14px] float-left cursor-pointer"
                   >
                     <div>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="18"
-                        height="18"
-                        viewBox="0 0 18 18"
-                        fill="none"
-                      >
-                        <path
-                          d="M15.75 9C15.75 9.14918 15.6907 9.29226 15.5852 9.39775C15.4798 9.50324 15.3367 9.5625 15.1875 9.5625H9.5625V15.1875C9.5625 15.3367 9.50324 15.4798 9.39775 15.5852C9.29226 15.6907 9.14918 15.75 9 15.75C8.85082 15.75 8.70774 15.6907 8.60225 15.5852C8.49676 15.4798 8.4375 15.3367 8.4375 15.1875V9.5625H2.8125C2.66332 9.5625 2.52024 9.50324 2.41475 9.39775C2.30926 9.29226 2.25 9.14918 2.25 9C2.25 8.85082 2.30926 8.70774 2.41475 8.60225C2.52024 8.49676 2.66332 8.4375 2.8125 8.4375H8.4375V2.8125C8.4375 2.66332 8.49676 2.52024 8.60225 2.41475C8.70774 2.30926 8.85082 2.25 9 2.25C9.14918 2.25 9.29226 2.30926 9.39775 2.41475C9.50324 2.52024 9.5625 2.66332 9.5625 2.8125V8.4375H15.1875C15.3367 8.4375 15.4798 8.49676 15.5852 8.60225C15.6907 8.70774 15.75 8.85082 15.75 9Z"
-                          fill="white"
-                        />
-                      </svg>
+                      <PlusSvg />
                     </div>
                     <div>Add another platform</div>
                   </div>
@@ -264,14 +243,20 @@ export const NewOrder: FC<{ group: string }> = (props) => {
   );
 };
 
-export const OrderInProgress: FC<{ group: string; buyer: boolean, order: string }> = (
-  props
-) => {
+export const OrderInProgress: FC<{
+  group: string;
+  buyer: boolean;
+  order: string;
+}> = (props) => {
   const { group, buyer, order } = props;
   const fetch = useFetch();
 
   const completeOrder = useCallback(async () => {
-    if (await deleteDialog('Are you sure you want to pay the seller and end the order? this is irreversible action')) {
+    if (
+      await deleteDialog(
+        'Are you sure you want to pay the seller and end the order? this is irreversible action'
+      )
+    ) {
       await (
         await fetch(`/marketplace/offer/${order}/complete`, {
           method: 'POST',
@@ -283,7 +268,10 @@ export const OrderInProgress: FC<{ group: string; buyer: boolean, order: string 
   return (
     <div className="flex gap-[10px]">
       {buyer && (
-        <div onClick={completeOrder} className="rounded-[34px] border-[1px] border-customColor21 !bg-sixth h-[28px] justify-center items-center text-[12px] px-[12px] flex font-[600] cursor-pointer">
+        <div
+          onClick={completeOrder}
+          className="rounded-[34px] border-[1px] border-customColor21 !bg-sixth h-[28px] justify-center items-center text-[12px] px-[12px] flex font-[600] cursor-pointer"
+        >
           Complete order and pay early
         </div>
       )}
@@ -360,7 +348,13 @@ export const OrderTopActions = () => {
     case OrderOptions.CREATE_A_NEW_ORDER:
       return <CreateNewOrder group={message?.id!} />;
     case OrderOptions.WAITING_PUBLICATION:
-      return <OrderInProgress group={message?.id!} buyer={isBuyer} order={message?.orders[0]?.id!} />;
+      return (
+        <OrderInProgress
+          group={message?.id!}
+          buyer={isBuyer}
+          order={message?.orders[0]?.id!}
+        />
+      );
   }
   return <div />;
 };

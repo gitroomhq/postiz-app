@@ -26,6 +26,9 @@ import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import { groupBy, sortBy } from 'lodash';
 import Image from 'next/image';
+
+import { ReactComponent as CommentSvg } from '@gitroom/frontend/assets/comment.svg';
+
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
@@ -499,7 +502,10 @@ export const CalendarColumn: FC<{
                   className={`w-full h-full rounded-[10px] hover:border hover:border-seventh flex justify-center items-center gap-[20px] opacity-30 grayscale hover:grayscale-0 hover:opacity-100`}
                 >
                   {integrations.map((selectedIntegrations) => (
-                    <div className="relative" key={selectedIntegrations.identifier}>
+                    <div
+                      className="relative"
+                      key={selectedIntegrations.identifier}
+                    >
                       <div
                         className={clsx(
                           'relative w-[34px] h-[34px] rounded-full flex justify-center items-center bg-fifth filter transition-all duration-500'
@@ -643,16 +649,7 @@ export const CommentBox: FC<{ totalComments: number; date: dayjs.Dayjs }> = (
               {totalComments}
             </div>
           )}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 32 32"
-            id="comment"
-          >
-            <path
-              fill="#fff"
-              d="M25.784 21.017A10.992 10.992 0 0 0 27 16c0-6.065-4.935-11-11-11S5 9.935 5 16s4.935 11 11 11c1.742 0 3.468-.419 5.018-1.215l4.74 1.185a.996.996 0 0 0 .949-.263 1 1 0 0 0 .263-.95l-1.186-4.74zm-2.033.11.874 3.498-3.498-.875a1.006 1.006 0 0 0-.731.098A8.99 8.99 0 0 1 16 25c-4.963 0-9-4.038-9-9s4.037-9 9-9 9 4.038 9 9a8.997 8.997 0 0 1-1.151 4.395.995.995 0 0 0-.098.732z"
-            ></path>
-          </svg>
+          <CommentSvg id="comment" />
         </div>
         <div className="absolute right-0 bottom-0 w-[0] h-[0] shadow-yellow bg-[rgba(0,0,0,0)]"></div>
       </div>

@@ -24,6 +24,9 @@ import { PostSelector } from '@gitroom/frontend/components/post-url-selector/pos
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import clsx from 'clsx';
 
+import { ReactComponent as CloseXSvg } from '@gitroom/frontend/assets/close-x.svg';
+import { ReactComponent as MagicSvg } from '@gitroom/frontend/assets/magic.svg';
+
 const ThirdStep: FC<{ week: number; year: number }> = (props) => {
   const { week, year } = props;
 
@@ -310,20 +313,7 @@ export const GeneratorPopup = () => {
         className="outline-none absolute right-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
         type="button"
       >
-        <svg
-          viewBox="0 0 15 15"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-        >
-          <path
-            d="M11.7816 4.03157C12.0062 3.80702 12.0062 3.44295 11.7816 3.2184C11.5571 2.99385 11.193 2.99385 10.9685 3.2184L7.50005 6.68682L4.03164 3.2184C3.80708 2.99385 3.44301 2.99385 3.21846 3.2184C2.99391 3.44295 2.99391 3.80702 3.21846 4.03157L6.68688 7.49999L3.21846 10.9684C2.99391 11.193 2.99391 11.557 3.21846 11.7816C3.44301 12.0061 3.80708 12.0061 4.03164 11.7816L7.50005 8.31316L10.9685 11.7816C11.193 12.0061 11.5571 12.0061 11.7816 11.7816C12.0062 11.557 12.0062 11.193 11.7816 10.9684L8.31322 7.49999L11.7816 4.03157Z"
-            fill="currentColor"
-            fillRule="evenodd"
-            clipRule="evenodd"
-          ></path>
-        </svg>
+        <CloseXSvg />
       </button>
       <h1 className="text-[24px]">Generate Posts</h1>
       <div className="flex">
@@ -395,25 +385,7 @@ export const GeneratorComponent = () => {
       className="text-textColor p-[8px] rounded-md bg-red-700 flex justify-center items-center gap-[5px] outline-none"
       onClick={generate}
     >
-      <svg
-        width="25"
-        viewBox="0 0 24 24"
-        fill="currentColor"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          fillRule="evenodd"
-          clipRule="evenodd"
-          d="M15.0614 9.67972L16.4756 11.0939L17.8787 9.69083L16.4645 8.27662L15.0614 9.67972ZM16.4645 6.1553L20 9.69083L8.6863 21.0045L5.15076 17.469L16.4645 6.1553Z"
-          fill="currentColor"
-        />
-        <path
-          fillRule="evenodd"
-          clipRule="evenodd"
-          d="M11.364 5.06066L9.59619 6.82843L8.53553 5.76777L10.3033 4L11.364 5.06066ZM6.76778 6.82842L5 5.06067L6.06066 4L7.82843 5.76776L6.76778 6.82842ZM10.3033 10.364L8.53553 8.5962L9.59619 7.53554L11.364 9.3033L10.3033 10.364ZM7.82843 8.5962L6.06066 10.364L5 9.3033L6.76777 7.53554L7.82843 8.5962Z"
-          fill="currentColor"
-        />
-      </svg>
+      <MagicSvg />
       Generate Posts
     </button>
   );
