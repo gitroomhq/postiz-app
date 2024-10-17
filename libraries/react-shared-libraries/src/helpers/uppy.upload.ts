@@ -25,9 +25,7 @@ export const getUppyUploadPlugin = (provider: string, fetch: any, backendUrl: st
         return {
           plugin: AwsS3Multipart,
           options: {
-            shouldUseMultipart(file : any) {
-              return true;
-            },
+            shouldUseMultipart: (file : any) => true,
             createMultipartUpload: async (file: any) => {
               const arrayBuffer = await new Response(file.data).arrayBuffer();
               const fileHash = sha256(Buffer.from(arrayBuffer));
