@@ -1,4 +1,3 @@
-import { loadVars } from '@gitroom/react/helpers/variable.context';
 
 export interface Params {
   baseUrl: string;
@@ -48,6 +47,6 @@ export const customFetch = (
 
 export const fetchBackend = customFetch({
   get baseUrl() {
-    return loadVars().backendUrl;
+    return process.env.BACKEND_URL!;
   },
 });
