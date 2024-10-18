@@ -67,7 +67,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
-  async generateAuthUrl(refresh?: string) {
+  async generateAuthUrl() {
     const state = Math.random().toString(36).substring(2);
 
     return {
@@ -79,7 +79,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
             process.env.NODE_ENV === 'development' || !process.env.NODE_ENV
               ? `https://integration.git.sn/integrations/social/tiktok`
               : `${process.env.FRONTEND_URL}/integrations/social/tiktok`
-          }${refresh ? `?refresh=${refresh}` : ''}`
+          }`
         )}` +
         `&state=${state}` +
         `&response_type=code` +

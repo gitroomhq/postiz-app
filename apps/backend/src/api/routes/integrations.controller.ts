@@ -28,6 +28,7 @@ import { NotEnoughScopesFilter } from '@gitroom/nestjs-libraries/integrations/in
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import { IntegrationTimeDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.time.dto';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
+import { AuthTokenDetails } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 
 @ApiTags('Integrations')
 @Controller('/integrations')
@@ -156,7 +157,12 @@ export class IntegrationsController {
         : undefined;
 
       const { codeVerifier, state, url } =
-        await integrationProvider.generateAuthUrl(refresh, getExternalUrl);
+        await integrationProvider.generateAuthUrl(getExternalUrl);
+
+      if (refresh) {
+        await ioRedis.set(`refresh:${state}`, refresh, 'EX', 300);
+      }
+
       await ioRedis.set(`login:${state}`, codeVerifier, 'EX', 300);
       await ioRedis.set(
         `external:${state}`,
@@ -311,6 +317,11 @@ export class IntegrationsController {
       await ioRedis.del(`external:${body.state}`);
     }
 
+    const refresh = await ioRedis.get(`refresh:${body.state}`);
+    if (refresh) {
+      await ioRedis.del(`refresh:${body.state}`);
+    }
+
     const {
       accessToken,
       expiresIn,
@@ -319,14 +330,28 @@ export class IntegrationsController {
       name,
       picture,
       username,
-    } = await integrationProvider.authenticate(
-      {
-        code: body.code,
-        codeVerifier: getCodeVerifier,
-        refresh: body.refresh,
-      },
-      details ? JSON.parse(details) : undefined
-    );
+      // eslint-disable-next-line no-async-promise-executor
+    } = await new Promise<AuthTokenDetails>(async (res) => {
+      const auth = await integrationProvider.authenticate(
+        {
+          code: body.code,
+          codeVerifier: getCodeVerifier,
+          refresh: body.refresh,
+        },
+        details ? JSON.parse(details) : undefined
+      );
+
+      if (refresh && integrationProvider.reConnect) {
+        const newAuth = await integrationProvider.reConnect(
+          auth.id,
+          refresh,
+          auth.accessToken
+        );
+        return res(newAuth);
+      }
+
+      return res(auth);
+    });
 
     if (!id) {
       throw new Error('Invalid api key');
@@ -343,7 +368,7 @@ export class IntegrationsController {
       refreshToken,
       expiresIn,
       username,
-      integrationProvider.isBetweenSteps,
+      refresh ? false : integrationProvider.isBetweenSteps,
       body.refresh,
       +body.timezone,
       details

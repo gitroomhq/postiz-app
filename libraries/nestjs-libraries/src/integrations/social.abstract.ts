@@ -26,6 +26,7 @@ export abstract class SocialAbstract {
     let json = '{}';
     try {
       json = await request.text();
+      console.log(json);
     } catch (err) {
       json = '{}';
     }
