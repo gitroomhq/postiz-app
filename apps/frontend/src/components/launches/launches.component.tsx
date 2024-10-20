@@ -4,7 +4,6 @@ import { AddProviderButton } from '@gitroom/frontend/components/launches/add.pro
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { orderBy } from 'lodash';
-// import { Calendar } from '@gitroom/frontend/components/launches/calendar';
 import { CalendarWeekProvider } from '@gitroom/frontend/components/launches/calendar.context';
 import { Filters } from '@gitroom/frontend/components/launches/filters';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';

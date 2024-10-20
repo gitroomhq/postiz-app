@@ -26,8 +26,9 @@ import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import { groupBy, sortBy } from 'lodash';
 import Image from 'next/image';
-dayjs.extend(isSameOrAfter);
-dayjs.extend(isSameOrBefore);
+import { extend } from 'dayjs';
+extend(isSameOrAfter);
+extend(isSameOrBefore);
 
 export const days = [
   'Monday',
@@ -499,7 +500,10 @@ export const CalendarColumn: FC<{
                   className={`w-full h-full rounded-[10px] hover:border hover:border-seventh flex justify-center items-center gap-[20px] opacity-30 grayscale hover:grayscale-0 hover:opacity-100`}
                 >
                   {integrations.map((selectedIntegrations) => (
-                    <div className="relative" key={selectedIntegrations.identifier}>
+                    <div
+                      className="relative"
+                      key={selectedIntegrations.identifier}
+                    >
                       <div
                         className={clsx(
                           'relative w-[34px] h-[34px] rounded-full flex justify-center items-center bg-fifth filter transition-all duration-500'
