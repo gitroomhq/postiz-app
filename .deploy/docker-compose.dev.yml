@@ -1,0 +1,37 @@
+version: '3'
+services:
+  postiz-app:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgres://postiz-local:postiz-local-pwd@postiz-postgres:5432/postiz-db-local
+      REDIS_URL: redis://postiz-redis:6379
+    depends_on:
+      - postiz-postgres
+      - postiz-redis
+
+  postiz-postgres:
+    image: postgres:14.5
+    container_name: postiz-postgres
+    environment:
+      POSTGRES_PASSWORD: postiz-local-pwd
+      POSTGRES_USER: postiz-local
+      POSTGRES_DB: postiz-db-local
+    volumes:
+      - postgres-volume:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  postiz-redis:
+    image: redis:7.2
+    container_name: postiz-redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres-volume:
