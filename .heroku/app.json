@@ -1,0 +1,46 @@
+{
+  "name": "Postiz",
+  "description": "Self-hosted content management platform",
+  "keywords": ["node", "express", "next.js", "cms", "headless-cms"],
+  "website": "https://github.com/gitroomhq/postiz-app",
+  "repository": "https://github.com/gitroomhq/postiz-app",
+  "logo": "https://raw.githubusercontent.com/gitroomhq/postiz-app/main/apps/frontend/public/logo.png",
+  "success_url": "/",
+  "stack": "container",
+  "env": {
+    "NODE_ENV": {
+      "description": "Environment type",
+      "value": "production"
+    },
+    "JWT_SECRET": {
+      "description": "Secret key for JWT tokens",
+      "generator": "secret"
+    },
+    "ADMIN_PASSWORD": {
+      "description": "Initial admin password",
+      "generator": "secret"
+    },
+    "DATABASE_URL": {
+      "description": "DATABASE_URL for Postgres connection",
+      "required": true
+    },
+    "REDIS_URL": {
+      "description": "REDIS_URL for Redis connection",
+      "required": true
+    },
+    "APP_URL": {
+      "description": "Application URL (will be auto-filled)",
+      "required": true
+    }
+  },
+  "addons": [
+    {
+      "plan": "heroku-postgresql:hobby-dev",
+      "as": "DATABASE"
+    },
+    {
+      "plan": "heroku-redis:hobby-dev",
+      "as": "REDIS"
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 ---
-name: "Build Containers Enterprise"
+name: 'Build Containers Enterprise'
 
 on:
   workflow_dispatch:
@@ -20,7 +20,7 @@ jobs:
 
   build-containers:
     needs: build-containers-common
-    strategy: 
+    strategy:
       matrix:
         include:
           - runnertags: ubuntu-latest
@@ -52,7 +52,7 @@ jobs:
           docker images
 
       - name: docker tag
-        env: 
+        env:
           CONTAINERVER: ${{ needs.build-containers-common.outputs.containerver }}
         run: |
           docker tag localhost/postiz ghcr.io/gitroomhq/postiz-app-enterprise:${{ matrix.arch }}-${{ env.CONTAINERVER }}
@@ -63,6 +63,9 @@ jobs:
 
           docker tag ghcr.io/gitroomhq/postiz-devcontainer-enterprise:${{ env.CONTAINERVER }} ghcr.io/gitroomhq/postiz-devcontainer-enterprise:latest
           docker push ghcr.io/gitroomhq/postiz-devcontainer-enterprise:latest
+
+          docker tag localhost/postiz ghcr.io/gitroomhq/postiz-app-enterprise:latest
+          docker push ghcr.io/gitroomhq/postiz-app-enterprise:latest
 
   build-container-manifest:
     needs: [build-containers, build-containers-common]
@@ -75,8 +78,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ github.token }}
 
-      - name: Create Docker Manifest 
-        env: 
+      - name: Create Docker Manifest
+        env:
           CONTAINERVER: ${{ needs.build-containers-common.outputs.containerver }}
         run: |
           docker manifest create \
