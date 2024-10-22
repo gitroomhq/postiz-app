@@ -5,7 +5,7 @@
     "dockerfilePath": "../Dockerfile.dev"
   },
   "deploy": {
-    "startCommand": "/app/entrypoint.sh",
+    "startCommand": "npm run start:prod",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE",
