@@ -3,7 +3,6 @@
 import { ReactNode, useCallback } from 'react';
 import { FetchWrapperComponent } from '@gitroom/helpers/utils/custom.fetch';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
-import { isGeneral } from '@gitroom/react/helpers/is.general';
 import { useReturnUrl } from '@gitroom/frontend/app/auth/return.url.component';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 

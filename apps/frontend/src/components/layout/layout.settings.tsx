@@ -15,7 +15,6 @@ import NotificationComponent from '@gitroom/frontend/components/notifications/no
 import Link from 'next/link';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 import isoWeek from 'dayjs/plugin/isoWeek';
@@ -37,10 +36,12 @@ const ModeComponent = dynamic(
   { ssr: false }
 );
 
-dayjs.extend(utc);
-dayjs.extend(weekOfYear);
-dayjs.extend(isoWeek);
-dayjs.extend(isBetween);
+import { extend } from 'dayjs';
+
+extend(utc);
+extend(weekOfYear);
+extend(isoWeek);
+extend(isBetween);
 
 export const LayoutSettings = ({ children }: { children: ReactNode }) => {
   const fetch = useFetch();
@@ -93,9 +94,7 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
                     />
                   </div>
                   <div
-                    className={clsx(
-                      !isGeneral ? 'mt-[12px]' : 'min-w-[80px]'
-                    )}
+                    className={clsx(!isGeneral ? 'mt-[12px]' : 'min-w-[80px]')}
                   >
                     {isGeneral ? (
                       <svg
@@ -127,7 +126,8 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
                     )}
                   </div>
                 </Link>
-                {user?.orgId && (user.tier !== 'FREE' || !isGeneral || !billingEnabled) ? (
+                {user?.orgId &&
+                (user.tier !== 'FREE' || !isGeneral || !billingEnabled) ? (
                   <TopMenu />
                 ) : (
                   <div />
@@ -141,7 +141,7 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
               </div>
               <div className="flex-1 flex">
                 <div className="flex-1 rounded-3xl px-[23px] py-[17px] flex flex-col">
-                  {(user.tier === 'FREE' && isGeneral) && billingEnabled ? (
+                  {user.tier === 'FREE' && isGeneral && billingEnabled ? (
                     <>
                       <div className="text-center mb-[20px] text-xl">
                         <h1 className="text-3xl">
