@@ -26,11 +26,12 @@ export abstract class SocialAbstract {
     let json = '{}';
     try {
       json = await request.text();
+      console.log(json);
     } catch (err) {
       json = '{}';
     }
 
-    if (request.status === 401) {
+    if (request.status === 401 || json.includes('OAuthException')) {
       throw new RefreshToken(identifier, json, options.body!);
     }
 

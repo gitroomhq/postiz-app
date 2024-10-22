@@ -6,13 +6,15 @@ import { Organization, User } from '@prisma/client';
 import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.subscribe.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
+import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 
 @ApiTags('Billing')
 @Controller('/billing')
 export class BillingController {
   constructor(
     private _subscriptionService: SubscriptionService,
-    private _stripeService: StripeService
+    private _stripeService: StripeService,
+    private _notificationService: NotificationService
   ) {}
 
   @Get('/check/:id')
@@ -53,7 +55,16 @@ export class BillingController {
   }
 
   @Post('/cancel')
-  cancel(@GetOrgFromRequest() org: Organization) {
+  async cancel(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: { feedback: string }
+  ) {
+    await this._notificationService.sendEmail(
+      process.env.EMAIL_FROM_ADDRESS,
+      'Subscription Cancelled',
+      `Organization ${org.name} has cancelled their subscription because: ${body.feedback}`
+    );
+
     return this._stripeService.setToCancel(org.id);
   }
 
@@ -83,6 +94,10 @@ export class BillingController {
       throw new Error('Unauthorized');
     }
 
-    await this._subscriptionService.addSubscription(org.id, user.id, body.subscription);
+    await this._subscriptionService.addSubscription(
+      org.id,
+      user.id,
+      body.subscription
+    );
   }
 }

@@ -9,6 +9,7 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { timer } from '@gitroom/helpers/utils/timer';
 import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { string } from 'yup';
 
 export class InstagramProvider
   extends SocialAbstract
@@ -39,16 +40,39 @@ export class InstagramProvider
     };
   }
 
-  async generateAuthUrl(refresh?: string) {
+  async reConnect(
+    id: string,
+    requiredId: string,
+    accessToken: string
+  ): Promise<AuthTokenDetails> {
+    const findPage = (await this.pages(accessToken)).find(
+      (p) => p.id === requiredId
+    );
+
+    const information = await this.fetchPageInformation(accessToken, {
+      id: requiredId,
+      pageId: findPage?.pageId!,
+    });
+
+    return {
+      id: information.id,
+      name: information.name,
+      accessToken: information.access_token,
+      refreshToken: information.access_token,
+      expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
+      picture: information.picture,
+      username: information.username,
+    };
+  }
+
+  async generateAuthUrl() {
     const state = makeId(6);
     return {
       url:
         'https://www.facebook.com/v20.0/dialog/oauth' +
         `?client_id=${process.env.FACEBOOK_APP_ID}` +
         `&redirect_uri=${encodeURIComponent(
-          `${process.env.FRONTEND_URL}/integrations/social/instagram${
-            refresh ? `?refresh=${refresh}` : ''
-          }`
+          `${process.env.FRONTEND_URL}/integrations/social/instagram`
         )}` +
         `&state=${state}` +
         `&scope=${encodeURIComponent(this.scopes.join(','))}`,
@@ -109,26 +133,6 @@ export class InstagramProvider
       )
     ).json();
 
-    if (params.refresh) {
-      const findPage = (await this.pages(access_token)).find(
-        (p) => p.id === params.refresh
-      );
-      const information = await this.fetchPageInformation(access_token, {
-        id: params.refresh,
-        pageId: findPage?.pageId!,
-      });
-
-      return {
-        id: information.id,
-        name: information.name,
-        accessToken: information.access_token,
-        refreshToken: information.access_token,
-        expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
-        picture: information.picture,
-        username: information.username,
-      };
-    }
-
     return {
       id,
       name,
@@ -187,6 +191,7 @@ export class InstagramProvider
       )
     ).json();
 
+    console.log(id, name, profile_picture_url, username);
     return {
       id,
       name,
@@ -206,7 +211,9 @@ export class InstagramProvider
     const medias = await Promise.all(
       firstPost?.media?.map(async (m) => {
         const caption =
-          firstPost.media?.length === 1 ? `&caption=${encodeURIComponent(firstPost.message)}` : ``;
+          firstPost.media?.length === 1
+            ? `&caption=${encodeURIComponent(firstPost.message)}`
+            : ``;
         const isCarousel =
           (firstPost?.media?.length || 0) > 1 ? `&is_carousel_item=true` : ``;
         const mediaType =

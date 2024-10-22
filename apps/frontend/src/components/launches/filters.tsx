@@ -146,7 +146,7 @@ export const Filters = () => {
   ]);
   return (
     <div className="text-textColor flex gap-[8px] items-center select-none">
-      <div onClick={previous}>
+      <div onClick={previous} className="cursor-pointer">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="20"
@@ -171,7 +171,7 @@ export const Filters = () => {
           ? `Week ${week.currentWeek}`
           : `${dayjs().month(week.currentMonth).format('MMMM')}`}
       </div>
-      <div onClick={next}>
+      <div onClick={next} className="cursor-pointer">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="20"
