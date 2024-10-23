@@ -68,6 +68,7 @@ export const EditorWrapper: FC<{ children: ReactNode }> = ({ children }) => {
   return children;
 };
 
+
 export const withProvider = (
   SettingsComponent: FC | null,
   CustomPreviewComponent?: FC<{maximumCharacters?: number}>,
@@ -114,6 +115,7 @@ export const withProvider = (
           }))
         : [{ content: '' }]
     );
+    
     const [showTab, setShowTab] = useState(0);
 
     const Component = useMemo(() => {
@@ -265,7 +267,7 @@ export const withProvider = (
         <div className="mt-[15px] w-full flex flex-col flex-1">
           {!props.hideMenu && (
             <div className="flex gap-[4px]">
-              <div className="flex-1 flex">
+              <div className="flex flex-1">
                 <Button
                   className="rounded-[4px] flex-1 overflow-hidden whitespace-nowrap"
                   secondary={showTab !== 0}
@@ -275,7 +277,7 @@ export const withProvider = (
                 </Button>
               </div>
               {!!SettingsComponent && (
-                <div className="flex-1 flex">
+                <div className="flex flex-1">
                   <Button
                     className={clsx(
                       'flex-1 overflow-hidden whitespace-nowrap',
@@ -288,7 +290,7 @@ export const withProvider = (
                   </Button>
                 </div>
               )}
-              <div className="flex-1 flex">
+              <div className="flex flex-1">
                 <Button
                   className="text-white rounded-[4px] flex-1 !bg-red-700 overflow-hidden whitespace-nowrap"
                   secondary={showTab !== 1}

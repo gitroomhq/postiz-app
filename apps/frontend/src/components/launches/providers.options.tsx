@@ -22,7 +22,7 @@ export const ProvidersOptions: FC<{
     }
   }, [integrations, selectedIntegrations]);
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex flex-col flex-1">
       <PickPlatforms
         integrations={integrations}
         selectedIntegrations={selectedIntegrations}

@@ -124,21 +124,21 @@ export const WeekView = () => {
   const { currentYear, currentWeek } = useCalendar();
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden text-textColor flex-1">
+    <div className="flex flex-col flex-1 h-screen overflow-hidden text-textColor">
       <div className="flex-1">
         <div className="grid grid-cols-8 bg-customColor31 gap-[1px] border-customColor31 border rounded-[10px]">
-          <div className="bg-customColor20 sticky top-0 z-10 bg-gray-900"></div>
+          <div className="sticky top-0 z-10 bg-gray-900 bg-customColor20"></div>
           {days.map((day, index) => (
             <div
               key={day}
-              className="sticky top-0 z-10 bg-customColor20 p-2 text-center"
+              className="sticky top-0 z-10 p-2 text-center bg-customColor20"
             >
               <div>{day}</div>
             </div>
           ))}
           {hours.map((hour) => (
             <Fragment key={hour}>
-              <div className="p-2 pr-4 bg-secondary text-center items-center justify-center flex">
+              <div className="flex items-center justify-center p-2 pr-4 text-center bg-secondary">
                 {hour.toString().padStart(2, '0')}:00
               </div>
               {days.map((day, indexDay) => (
@@ -198,13 +198,13 @@ export const MonthView = () => {
   }, [currentYear, currentMonth]);
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden text-textColor flex-1">
-      <div className="flex-1 flex">
+    <div className="flex flex-col flex-1 h-screen overflow-hidden text-textColor">
+      <div className="flex flex-1">
         <div className="grid grid-cols-7 grid-rows-[40px_auto] bg-customColor31 gap-[1px] border-customColor31 border rounded-[10px] flex-1">
           {days.map((day) => (
             <div
               key={day}
-              className="sticky top-0 z-10 bg-customColor20 p-2 text-center"
+              className="sticky top-0 z-10 p-2 text-center bg-customColor20"
             >
               <div>{day}</div>
             </div>
@@ -226,7 +226,7 @@ export const MonthView = () => {
   );
 };
 
-export const Calendar = () => {
+export const  Calendar = () => {
   const { display } = useCalendar();
 
   return (

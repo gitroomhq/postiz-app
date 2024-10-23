@@ -114,8 +114,8 @@ export const LaunchesComponent = () => {
   // @ts-ignore
   return (
     <CalendarWeekProvider integrations={sortedIntegrations}>
-      <div className="flex flex-1 flex-col">
-        <div className="flex flex-1 relative">
+      <div className="flex flex-col flex-1">
+        <div className="relative flex flex-1">
           <div className="outline-none w-full h-full grid grid-cols-[220px_minmax(0,1fr)] gap-[30px] scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary">
             <div className="w-[220px] bg-third p-[16px] flex flex-col gap-[24px] min-h-[100%]">
               <h2 className="text-[20px]">Channels</h2>
@@ -150,7 +150,7 @@ export const LaunchesComponent = () => {
                           }
                         >
                           <div className="bg-red-500 w-[15px] h-[15px] rounded-full -left-[5px] -top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
-                            !
+                            ! 
                           </div>
                           <div className="bg-primary/60 w-[39px] h-[46px] left-0 top-0 absolute rounded-full z-[199]" />
                         </div>
