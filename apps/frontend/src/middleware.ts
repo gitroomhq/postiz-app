@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { fetchBackend } from '@gitroom/helpers/utils/custom.fetch.func';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
+import { internalFetch } from '@gitroom/helpers/utils/internal.fetch';
 
 // This function can be marked `async` if using `await` inside
 export async function middleware(request: NextRequest) {
@@ -68,13 +68,10 @@ export async function middleware(request: NextRequest) {
   try {
     if (org) {
       const { id } = await (
-        await fetchBackend('/user/join-org', {
+        await internalFetch('/user/join-org', {
           body: JSON.stringify({
             org,
           }),
-          headers: {
-            auth: authCookie?.value!,
-          },
           method: 'POST',
         })
       ).json();
