@@ -10,6 +10,8 @@ import {
   SocialAbstract,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
+import { timer } from '@gitroom/helpers/utils/timer';
+import { Integration } from '@prisma/client';
 
 export class TiktokProvider extends SocialAbstract implements SocialProvider {
   identifier = 'tiktok';
@@ -166,13 +168,62 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
+  private async uploadedVideoSuccess(
+    id: string,
+    publishId: string,
+    accessToken: string
+  ): Promise<{ url: string; id: number }> {
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const post = await (
+        await this.fetch(
+          'https://open.tiktokapis.com/v2/post/publish/status/fetch/',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json; charset=UTF-8',
+              Authorization: `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({
+              publish_id: publishId,
+            }),
+          }
+        )
+      ).json();
+
+      const { status, publicaly_available_post_id } = post.data;
+
+      if (status === 'PUBLISH_COMPLETE') {
+        return {
+          url: !publicaly_available_post_id
+            ? `https://www.tiktok.com/@${id}`
+            : `https://www.tiktok.com/@${id}/video/` +
+              publicaly_available_post_id,
+          id: !publicaly_available_post_id ? publishId : publicaly_available_post_id?.[0],
+        };
+      }
+
+      if (status === 'FAILED') {
+        throw new BadBody('titok-error-upload', JSON.stringify(post), {
+          // @ts-ignore
+          postDetails,
+        });
+      }
+
+
+      await timer(3000);
+    }
+  }
+
   async post(
     id: string,
     accessToken: string,
-    postDetails: PostDetails<TikTokDto>[]
+    postDetails: PostDetails<TikTokDto>[],
+    integration: Integration
   ): Promise<PostResponse[]> {
     try {
       const [firstPost, ...comments] = postDetails;
+
       const {
         data: { publish_id },
       } = await (
@@ -203,11 +254,17 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
         )
       ).json();
 
+      const { url, id: videoId } = await this.uploadedVideoSuccess(
+        integration.profile!,
+        publish_id,
+        accessToken
+      );
+
       return [
         {
           id: firstPost.id,
-          releaseURL: `https://www.tiktok.com`,
-          postId: publish_id,
+          releaseURL: url,
+          postId: String(videoId),
           status: 'success',
         },
       ];
