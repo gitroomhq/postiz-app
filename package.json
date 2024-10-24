@@ -192,6 +192,7 @@
     "postcss": "8.4.38",
     "prettier": "^2.6.2",
     "prisma": "^5.8.1",
+    "prismock": "^1.33.4",
     "react-refresh": "^0.10.0",
     "sass": "1.62.1",
     "supertest": "^7.0.0",
