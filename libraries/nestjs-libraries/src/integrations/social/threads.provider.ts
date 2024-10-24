@@ -34,7 +34,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
-  async generateAuthUrl(refresh?: string) {
+  async generateAuthUrl() {
     const state = makeId(6);
     return {
       url:

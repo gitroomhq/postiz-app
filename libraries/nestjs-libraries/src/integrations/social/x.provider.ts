@@ -49,15 +49,14 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
-  async generateAuthUrl(refresh?: string) {
+  async generateAuthUrl() {
     const client = new TwitterApi({
       appKey: process.env.X_API_KEY!,
       appSecret: process.env.X_API_SECRET!,
     });
     const { url, oauth_token, oauth_token_secret } =
       await client.generateAuthLink(
-        process.env.FRONTEND_URL +
-          `/integrations/social/x${refresh ? `?refresh=${refresh}` : ''}`,
+        process.env.FRONTEND_URL + `/integrations/social/x`,
         {
           authAccessType: 'write',
           linkMode: 'authenticate',

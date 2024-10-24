@@ -16,7 +16,7 @@ export const useCustomProviderFunction = () => {
         }),
       });
 
-      if (load.status !== 200 && load.status !== 201) {
+      if (load.status > 299 && load.status < 200) {
         throw new Error('Failed to fetch');
       }
 

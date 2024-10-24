@@ -31,7 +31,11 @@ export class LinkedinPageProvider
   override async refreshToken(
     refresh_token: string
   ): Promise<AuthTokenDetails> {
-    const { access_token: accessToken, expires_in, refresh_token: refreshToken } = await (
+    const {
+      access_token: accessToken,
+      expires_in,
+      refresh_token: refreshToken,
+    } = await (
       await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
         method: 'POST',
         headers: {
@@ -77,15 +81,13 @@ export class LinkedinPageProvider
     };
   }
 
-  override async generateAuthUrl(refresh?: string) {
+  override async generateAuthUrl() {
     const state = makeId(6);
     const codeVerifier = makeId(30);
     const url = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${
       process.env.LINKEDIN_CLIENT_ID
     }&redirect_uri=${encodeURIComponent(
-      `${process.env.FRONTEND_URL}/integrations/social/linkedin-page${
-        refresh ? `?refresh=${refresh}` : ''
-      }`
+      `${process.env.FRONTEND_URL}/integrations/social/linkedin-page`
     )}&state=${state}&scope=${encodeURIComponent(this.scopes.join(' '))}`;
     return {
       url,
@@ -115,6 +117,24 @@ export class LinkedinPageProvider
         e['organizationalTarget~'].logoV2?.['original~']?.elements?.[0]
           ?.identifiers?.[0]?.identifier,
     }));
+  }
+
+  async reConnect(
+    id: string,
+    requiredId: string,
+    accessToken: string
+  ): Promise<AuthTokenDetails> {
+    const information = await this.fetchPageInformation(accessToken, requiredId);
+
+    return {
+      id: information.id,
+      name: information.name,
+      accessToken: information.access_token,
+      refreshToken: information.access_token,
+      expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
+      picture: information.picture,
+      username: information.username,
+    };
   }
 
   async fetchPageInformation(accessToken: string, pageId: string) {
@@ -149,9 +169,7 @@ export class LinkedinPageProvider
     body.append('code', params.code);
     body.append(
       'redirect_uri',
-      `${process.env.FRONTEND_URL}/integrations/social/linkedin-page${
-        params.refresh ? `?refresh=${params.refresh}` : ''
-      }`
+      `${process.env.FRONTEND_URL}/integrations/social/linkedin-page`
     );
     body.append('client_id', process.env.LINKEDIN_CLIENT_ID!);
     body.append('client_secret', process.env.LINKEDIN_CLIENT_SECRET!);

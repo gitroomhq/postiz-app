@@ -126,12 +126,13 @@ export const LaunchesComponent = () => {
                 {sortedIntegrations.map((integration) => (
                   <div
                     {...(integration.refreshNeeded && {
+                      onClick: refreshChannel(integration),
                       'data-tooltip-id': 'tooltip',
                       'data-tooltip-content':
                         'Channel disconnected, click to reconnect.',
                     })}
                     key={integration.id}
-                    className="flex gap-[8px] items-center"
+                    className={clsx("flex gap-[8px] items-center", integration.refreshNeeded && 'cursor-pointer')}
                   >
                     <div
                       className={clsx(

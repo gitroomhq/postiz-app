@@ -32,7 +32,7 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
       username: '',
     };
   }
-  async generateAuthUrl(refresh?: string) {
+  async generateAuthUrl() {
     const state = makeId(6);
 
     return {
@@ -43,9 +43,7 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
           process?.env?.FRONTEND_URL?.indexOf('https') === -1
             ? 'https://redirectmeto.com/'
             : ''
-        }${process?.env?.FRONTEND_URL}/integrations/social/slack${
-          refresh ? `?refresh=${refresh}` : ''
-        }`
+        }${process?.env?.FRONTEND_URL}/integrations/social/slack`
       )}&scope=channels:read,chat:write,users:read,groups:read,channels:join,chat:write.customize&state=${state}`,
       codeVerifier: makeId(10),
       state,

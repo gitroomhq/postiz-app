@@ -44,8 +44,8 @@ dayjs.extend(isBetween);
 
 export const LayoutSettings = ({ children }: { children: ReactNode }) => {
   const fetch = useFetch();
-  const {isGeneral} = useVariables();
-  const {backendUrl, billingEnabled} = useVariables();
+  const { isGeneral } = useVariables();
+  const { backendUrl, billingEnabled } = useVariables();
   const load = useCallback(async (path: string) => {
     return await (await fetch(path)).json();
   }, []);
@@ -100,7 +100,7 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
                     {isGeneral ? (
                       <svg
                         width="80"
-                        height="167"
+                        height="75"
                         viewBox="0 0 366 167"
                         fill="none"
                         xmlns="http://www.w3.org/2000/svg"
