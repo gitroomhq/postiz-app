@@ -1,14 +1,31 @@
+import type { ProvidersInterface } from '@gitroom/backend/services/auth/providers.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import type { OAuth2Client } from 'google-auth-library/build/src/auth/oauth2client';
 import { google } from 'googleapis';
-import { OAuth2Client } from 'google-auth-library/build/src/auth/oauth2client';
-import { ProvidersInterface } from '@gitroom/backend/services/auth/providers.interface';
+
+type EnvVar = string | undefined | null;
+
+const coalesceES6 = (...args: EnvVar[]) =>
+  args.find((_) => ![null, undefined].includes(_));
+
+const {
+  GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET,
+  YOUTUBE_CLIENT_ID = '',
+  YOUTUBE_CLIENT_SECRET = '',
+} = process.env;
+
+const CLIENT_ID = [GOOGLE_CLIENT_ID, YOUTUBE_CLIENT_ID];
+const CLIENT_SECRET = [GOOGLE_CLIENT_SECRET, YOUTUBE_CLIENT_SECRET];
 
 const clientAndYoutube = () => {
-  const client = new google.auth.OAuth2({
-    clientId: process.env.YOUTUBE_CLIENT_ID,
-    clientSecret: process.env.YOUTUBE_CLIENT_SECRET,
+  const options = {
+    clientId: coalesceES6(...CLIENT_ID),
+    clientSecret: coalesceES6(...CLIENT_SECRET),
     redirectUri: `${process.env.FRONTEND_URL}/integrations/social/youtube`,
-  });
+  };
+
+  const client = new google.auth.OAuth2(options);
 
   const youtube = (newClient: OAuth2Client) =>
     google.youtube({
