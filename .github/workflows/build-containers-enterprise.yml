@@ -64,9 +64,6 @@ jobs:
           docker tag ghcr.io/gitroomhq/postiz-devcontainer-enterprise:${{ env.CONTAINERVER }} ghcr.io/gitroomhq/postiz-devcontainer-enterprise:latest
           docker push ghcr.io/gitroomhq/postiz-devcontainer-enterprise:latest
 
-          docker tag localhost/postiz ghcr.io/gitroomhq/postiz-app-enterprise:latest
-          docker push ghcr.io/gitroomhq/postiz-app-enterprise:latest
-
   build-container-manifest:
     needs: [build-containers, build-containers-common]
     runs-on: ubuntu-latest
