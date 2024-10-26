@@ -24,6 +24,7 @@ import { useModals } from '@mantine/modals';
 import { AddProviderComponent } from '@gitroom/frontend/components/launches/add.provider.component';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { Textarea } from '@gitroom/react/form/textarea';
+import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
 
 export interface Tiers {
   month: Array<{
@@ -156,9 +157,11 @@ export const Features: FC<{
 const Info: FC<{ proceed: (feedback: string) => void }> = (props) => {
   const [feedback, setFeedback] = useState('');
   const modal = useModals();
+  const events = useFireEvents();
 
   const cancel = useCallback(() => {
     props.proceed(feedback);
+    events('cancel_subscription');
     modal.closeAll();
   }, [modal, feedback]);
 
