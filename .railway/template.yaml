@@ -1,0 +1,52 @@
+service:
+  web:
+    dockerfile: Dockerfile
+    target: dist
+    numReplicas: 1
+    ports:
+      - 3000:3000
+      - 4200:4200
+      - 5000:5000
+    env:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromService:
+          type: postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          property: connectionString
+      - key: JWT_SECRET
+        generate: secret
+    volumes:
+      - name: uploads
+        path: /uploads
+      - name: config
+        path: /config
+
+databases:
+  - type: postgres
+    name: postiz-db
+    version: '17'
+    ipAllowList: []
+
+services:
+  - type: redis
+    name: postiz-redis
+    version: '7'
+    ipAllowList: []
+
+volumes:
+  - name: uploads
+    mountPath: /uploads
+    persistent: true
+  - name: config
+    mountPath: /config
+    persistent: true
+
+scripts:
+  postDeploy: |
+    npm run prisma-generate
+    npm run prisma-db-push
