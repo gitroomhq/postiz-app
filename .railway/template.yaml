@@ -1,6 +1,6 @@
 service:
   web:
-    dockerfile: ../Dockerfile
+    dockerfile: ../Dockerfile.dev
     target: dist
     numReplicas: 1
     ports:
