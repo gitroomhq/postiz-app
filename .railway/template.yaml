@@ -77,13 +77,7 @@ scripts:
     npm ci --production=false
     npm run update-plugins
     npm run prisma-generate
-
-  prestart: |
-    echo "Checking service availability..."
-    node check-services.js
-
-  postdeploy: |
     npm run prisma-db-push
     
   railway:start: |
-    npm run railway:start
+    npm run railway:deploy
