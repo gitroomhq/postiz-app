@@ -9,7 +9,9 @@ service:
       - 5000:5000
     env:
       - key: NODE_ENV
-        value: production
+        value: development
+      - key: NEXT_PUBLIC_API_URL
+        value: /api
       - key: DATABASE_URL
         fromService:
           type: postgres
@@ -47,6 +49,5 @@ volumes:
     persistent: true
 
 scripts:
-  postDeploy: |
-    npm run prisma-generate
-    npm run prisma-db-push
+  postDeploy: npm run railway:setup
+  start: npm run railway:start
