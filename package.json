@@ -29,7 +29,7 @@
     "docker-build": "./var/docker/docker-build.sh",
     "docker-create": "./var/docker/docker-create.sh",
     "railway:start": "npm run build && npm run start:prod",
-    "railway:dev": "npm run dev",
+    "railway:dev": "npm run dev && docker compose -f ./docker-compose.dev.yaml up -d",
     "railway:setup": "npm install && npm run prisma-generate && npm run prisma-db-push",
     "postinstall": "npm run update-plugins && npm run prisma-generate",
     "start": "npm run railway:start"
