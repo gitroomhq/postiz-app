@@ -3,19 +3,30 @@ services:
     dockerfile: ../Dockerfile.dev
     target: dist
     numReplicas: 1
+    depends_on:
+      - postgres
+      - redis
     ports:
       - 3000:3000
       - 4200:4200
       - 5000:5000
     env:
       - key: NODE_ENV
-        value: development
+        value: production
       - key: NEXT_PUBLIC_API_URL
         value: /api
       - key: DATABASE_URL
-        value: postgresql://postiz-local:postiz-local-pwd@localhost:5432/postiz-db-local
+        fromService:
+          name: postgres
+          type: postgresql
+          property: connectionString
+          format: postgresql://${username}:${password}@${host}:${port}/${database}
       - key: REDIS_URL
-        value: redis://localhost:6379
+        fromService:
+          name: redis
+          type: redis
+          property: connectionString
+          format: redis://${host}:${port}
       - key: JWT_SECRET
         generate: secret
       - key: SKIP_CONFIG_CHECK
@@ -26,27 +37,38 @@ services:
       - name: config
         path: /config
 
-services:
   postgres:
-    container_name: postiz-postgres
     image: postgres:17-alpine
-    environment:
-      POSTGRES_PASSWORD: postiz-local-pwd
-      POSTGRES_USER: postiz-local
-      POSTGRES_DB: postiz-db-local
-    ports:
-      - 5432:5432
+    provision: true
+    env:
+      - key: POSTGRES_USER
+        value: postiz
+      - key: POSTGRES_PASSWORD
+        generate: password
+      - key: POSTGRES_DB
+        value: postiz
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - name: postgres-data
+        path: /var/lib/postgresql/data
+        persistent: true
+    healthcheck:
+      command: pg_isready -U postiz
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   redis:
-    container_name: postiz-redis
     image: redis:7-alpine
-    ports:
-      - 6379:6379
+    provision: true
+    healthcheck:
+      command: redis-cli ping
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres-data:
+    persistent: true
   uploads:
     mountPath: /uploads
     persistent: true
@@ -56,8 +78,121 @@ volumes:
 
 scripts:
   predeploy: |
-    npm install
+    # Install dependencies and generate Prisma client
+    npm ci --production=false
+    npm run update-plugins
     npm run prisma-generate
+
+    # Create service checker script
+    cat > check-services.js << 'EOF'
+    const net = require('net');
+    const { Client } = require('pg');
+    const Redis = require('ioredis');
+
+    async function waitForPort(host, port, timeout = 60000) {
+      const startTime = Date.now();
+      
+      while (Date.now() - startTime < timeout) {
+        try {
+          const socket = new net.Socket();
+          
+          const connected = await new Promise((resolve) => {
+            socket.connect(port, host, () => resolve(true));
+            socket.on('error', () => resolve(false));
+          });
+          
+          socket.end();
+          
+          if (connected) return true;
+        } catch (err) {
+          console.log(`Waiting for ${host}:${port}...`);
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      
+      throw new Error(`Timeout waiting for ${host}:${port}`);
+    }
+
+    async function checkPostgres() {
+      const client = new Client({
+        connectionString: process.env.DATABASE_URL
+      });
+
+      try {
+        await client.connect();
+        console.log('PostgreSQL is ready');
+        await client.end();
+        return true;
+      } catch (err) {
+        console.log('Waiting for PostgreSQL...');
+        return false;
+      }
+    }
+
+    async function checkRedis() {
+      const redis = new Redis(process.env.REDIS_URL);
+
+      try {
+        await redis.ping();
+        console.log('Redis is ready');
+        await redis.quit();
+        return true;
+      } catch (err) {
+        console.log('Waiting for Redis...');
+        return false;
+      }
+    }
+
+    async function main() {
+      const pgHost = process.env.POSTGRES_HOST;
+      const pgPort = process.env.POSTGRES_PORT || 5432;
+      const redisHost = process.env.REDIS_HOST;
+      const redisPort = process.env.REDIS_PORT || 6379;
+
+      try {
+        // First check if ports are accessible
+        await waitForPort(pgHost, pgPort);
+        await waitForPort(redisHost, redisPort);
+
+        // Then check if services are ready
+        let pgReady = false;
+        let redisReady = false;
+        
+        while (!pgReady || !redisReady) {
+          if (!pgReady) pgReady = await checkPostgres();
+          if (!redisReady) redisReady = await checkRedis();
+          if (!pgReady || !redisReady) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+        }
+
+        console.log('All services are ready!');
+        process.exit(0);
+      } catch (err) {
+        console.error('Service check failed:', err);
+        process.exit(1);
+      }
+    }
+
+    main();
+    EOF
+
+    # Build the application
+    npm run build
+
+  prestart: |
+    echo "Checking service availability..."
+    node check-services.js
+
   postDeploy: |
+    # Ensure database is migrated
     npm run prisma-db-push
-  start: npm run railway:dev
+    
+  start: |
+    # Start the application components
+    npm run start:prod & 
+    npm run start:prod:workers &
+    npm run start:prod:frontend &
+    npm run start:prod:cron &
+    wait
