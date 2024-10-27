@@ -1,4 +1,4 @@
-service:
+services:
   web:
     dockerfile: ../Dockerfile.dev
     target: dist
@@ -13,41 +13,51 @@ service:
       - key: NEXT_PUBLIC_API_URL
         value: /api
       - key: DATABASE_URL
-        fromService:
-          type: postgres
-          property: connectionString
+        value: postgresql://postiz-local:postiz-local-pwd@localhost:5432/postiz-db-local
       - key: REDIS_URL
-        fromService:
-          type: redis
-          property: connectionString
+        value: redis://localhost:6379
       - key: JWT_SECRET
         generate: secret
+      - key: SKIP_CONFIG_CHECK
+        value: "true"
     volumes:
       - name: uploads
         path: /uploads
       - name: config
         path: /config
 
-databases:
-  - type: postgres
-    name: postiz-db
-    version: '17'
-    ipAllowList: []
-
 services:
-  - type: redis
-    name: postiz-redis
-    version: '7'
-    ipAllowList: []
+  postgres:
+    container_name: postiz-postgres
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_PASSWORD: postiz-local-pwd
+      POSTGRES_USER: postiz-local
+      POSTGRES_DB: postiz-db-local
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  redis:
+    container_name: postiz-redis
+    image: redis:7-alpine
+    ports:
+      - 6379:6379
 
 volumes:
-  - name: uploads
+  postgres-data:
+  uploads:
     mountPath: /uploads
     persistent: true
-  - name: config
+  config:
     mountPath: /config
     persistent: true
 
 scripts:
-  postDeploy: npm run railway:setup
-  start: npm run railway:start
+  predeploy: |
+    npm install
+    npm run prisma-generate
+  postDeploy: |
+    npm run prisma-db-push
+  start: npm run railway:dev
