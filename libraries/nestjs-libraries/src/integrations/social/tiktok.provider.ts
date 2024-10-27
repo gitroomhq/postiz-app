@@ -78,10 +78,10 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
         `?client_key=${process.env.TIKTOK_CLIENT_ID}` +
         `&redirect_uri=${encodeURIComponent(
           `${
-            process.env.NODE_ENV === 'development' || !process.env.NODE_ENV
-              ? `https://integration.git.sn/integrations/social/tiktok`
-              : `${process.env.FRONTEND_URL}/integrations/social/tiktok`
-          }`
+            process?.env?.FRONTEND_URL?.indexOf('https') === -1
+              ? 'https://redirectmeto.com/'
+              : ''
+          }${process?.env?.FRONTEND_URL}/integrations/social/tiktok`
         )}` +
         `&state=${state}` +
         `&response_type=code` +
@@ -199,7 +199,9 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
             ? `https://www.tiktok.com/@${id}`
             : `https://www.tiktok.com/@${id}/video/` +
               publicaly_available_post_id,
-          id: !publicaly_available_post_id ? publishId : publicaly_available_post_id?.[0],
+          id: !publicaly_available_post_id
+            ? publishId
+            : publicaly_available_post_id?.[0],
         };
       }
 
@@ -209,7 +211,6 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
           postDetails,
         });
       }
-
 
       await timer(3000);
     }
