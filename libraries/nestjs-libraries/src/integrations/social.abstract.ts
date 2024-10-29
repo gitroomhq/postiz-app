@@ -13,7 +13,9 @@ export class BadBody {
   ) {}
 }
 
-export class NotEnoughScopes {}
+export class NotEnoughScopes {
+  constructor(public message = 'Not enough scopes') {}
+}
 
 export abstract class SocialAbstract {
   async fetch(url: string, options: RequestInit = {}, identifier = '') {
