@@ -1,14 +1,9 @@
 services:
   web:
-    dockerfile: ../Dockerfile.dev
+    dockerfile: Dockerfile.dev
     target: dist
     numReplicas: 1
-    depends_on:
-      - postgres
-      - redis
     ports:
-      - 3000:3000
-      - 4200:4200
       - 5000:5000
     env:
       - key: NODE_ENV
@@ -17,25 +12,38 @@ services:
         value: /api
       - key: DATABASE_URL
         fromService:
+          name: postgres
           type: postgres
           property: connectionString
       - key: REDIS_URL
         fromService:
+          name: redis
           type: redis
           property: connectionString
       - key: JWT_SECRET
         generate: secret
       - key: SKIP_CONFIG_CHECK
         value: "true"
+      - key: FRONTEND_URL
+        sync: RAILWAY_PUBLIC_DOMAIN
+        prefix: https://
+      - key: MAIN_URL
+        sync: RAILWAY_PUBLIC_DOMAIN
+        prefix: https://
+      - key: STORAGE_PROVIDER
+        value: local
+      - key: UPLOAD_DIRECTORY
+        value: /uploads
     volumes:
       - name: uploads
-        path: /uploads
+        mountPath: /uploads
+        persistent: true
       - name: config
-        path: /config
+        mountPath: /config
+        persistent: true
 
   postgres:
     image: postgres:17-alpine
-    provision: true
     env:
       - key: POSTGRES_USER
         value: postiz
@@ -45,39 +53,24 @@ services:
         value: postiz
     volumes:
       - name: postgres-data
-        path: /var/lib/postgresql/data
+        mountPath: /var/lib/postgresql/data
         persistent: true
-    healthcheck:
-      command: pg_isready -U postiz
-      interval: 5s
-      timeout: 5s
-      retries: 5
 
   redis:
     image: redis:7-alpine
-    provision: true
-    healthcheck:
-      command: redis-cli ping
-      interval: 5s
-      timeout: 5s
-      retries: 5
 
 volumes:
   postgres-data:
+    name: postgres-data
     persistent: true
   uploads:
-    mountPath: /uploads
+    name: uploads
     persistent: true
   config:
-    mountPath: /config
+    name: config
     persistent: true
 
 scripts:
-  predeploy: |
-    npm ci --production=false
-    npm run update-plugins
-    npm run prisma-generate
-    npm run prisma-db-push
-    
-  railway:start: |
-    npm run railway:deploy
+  postdeploy: |
+    npx prisma generate
+    npx prisma db push --accept-data-loss
