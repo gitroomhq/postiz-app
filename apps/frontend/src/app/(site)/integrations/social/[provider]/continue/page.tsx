@@ -51,8 +51,8 @@ export default async function Page({
   const { inBetweenSteps, id } = await data.json();
 
   if (inBetweenSteps && !searchParams.refresh) {
-    return redirect(`/launches?msg=Channel Refreshed&added=${provider}&continue=${id}`);
+    return redirect(`/launches?added=${provider}&continue=${id}`);
   }
 
-  return redirect(`/launches?added=${provider}&msg=Channel Added`);
+  return redirect(`/launches?added=${provider}&msg=Channel Updated`);
 }
