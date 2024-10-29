@@ -4,12 +4,16 @@ services:
     target: dist
     numReplicas: 1
     ports:
+      - 3000:3000
+      - 4200:4200
       - 5000:5000
     env:
       - key: NODE_ENV
-        value: production
-      - key: NEXT_PUBLIC_API_URL
-        value: /api
+        value: development
+      - key: PORT
+        value: 3000
+      - key: FRONTEND_PORT
+        value: 4200
       - key: DATABASE_URL
         fromService:
           name: postgres
@@ -34,6 +38,8 @@ services:
         value: local
       - key: UPLOAD_DIRECTORY
         value: /uploads
+      - key: NEXT_PUBLIC_API_URL
+        value: /api
     volumes:
       - name: uploads
         mountPath: /uploads
