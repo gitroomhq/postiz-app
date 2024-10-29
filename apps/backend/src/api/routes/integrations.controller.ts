@@ -1,12 +1,5 @@
 import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Post,
-  Query,
-  UseFilters,
+  Body, Controller, Delete, Get, Param, Post, Query, UseFilters
 } from '@nestjs/common';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { ConnectIntegrationDto } from '@gitroom/nestjs-libraries/dtos/integrations/connect.integration.dto';
@@ -29,6 +22,7 @@ import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/po
 import { IntegrationTimeDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.time.dto';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { AuthTokenDetails } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { NotEnoughScopes } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
 @ApiTags('Integrations')
 @Controller('/integrations')
@@ -354,7 +348,11 @@ export class IntegrationsController {
     });
 
     if (!id) {
-      throw new Error('Invalid api key');
+      throw new NotEnoughScopes('Invalid API key');
+    }
+
+    if (refresh && id !== refresh) {
+      throw new NotEnoughScopes('Please refresh the channel that needs to be refreshed');
     }
 
     return this._integrationService.createOrUpdateIntegration(

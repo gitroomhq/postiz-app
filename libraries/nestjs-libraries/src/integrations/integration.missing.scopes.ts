@@ -9,6 +9,6 @@ export class NotEnoughScopesFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 
-    response.status(HttpStatusCode.NotAcceptable).json({ invalid: true });
+    response.status(HttpStatusCode.NotAcceptable).json({ msg: exception.message });
   }
 }
