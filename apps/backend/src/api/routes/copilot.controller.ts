@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Req, Res } from '@nestjs/common';
+import { Logger, Controller, Get, Post, Req, Res } from '@nestjs/common';
 import {
   CopilotRuntime,
   OpenAIAdapter,
@@ -13,6 +13,11 @@ export class CopilotController {
   constructor(private _subscriptionService: SubscriptionService) {}
   @Post('/chat')
   chat(@Req() req: Request, @Res() res: Response) {
+    if (process.env.OPENAI_API_KEY === undefined || process.env.OPENAI_API_KEY === '') {
+      Logger.warn('OpenAI API key not set, chat functionality will not work');
+      return
+    }
+
     const copilotRuntimeHandler = copilotRuntimeNestEndpoint({
       endpoint: '/copilot/chat',
       runtime: new CopilotRuntime(),
