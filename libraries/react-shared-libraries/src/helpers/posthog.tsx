@@ -6,22 +6,22 @@ import { FC, ReactNode, useEffect } from 'react';
 
 export const PHProvider: FC<{
   children: ReactNode;
-  key?: string;
+  phkey?: string;
   host?: string;
-}> = ({ children, key, host }) => {
+}> = ({ children, phkey, host }) => {
   useEffect(() => {
-    if (!key || !host) {
+    if (!phkey || !host) {
       return;
     }
 
-    posthog.init(key, {
+    posthog.init(phkey, {
       api_host: host,
       person_profiles: 'identified_only',
       capture_pageview: false, // Disable automatic pageview capture, as we capture manually
     });
   }, []);
 
-  if (!key || !host) {
+  if (!phkey || !host) {
     return <>{children}</>;
   }
   return <PostHogProvider client={posthog}>{children}</PostHogProvider>;

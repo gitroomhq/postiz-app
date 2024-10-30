@@ -46,7 +46,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             domain={!!process.env.IS_GENERAL ? 'postiz.com' : 'gitroom.com'}
           >
             <PHProvider
-              key={process.env.NEXT_PUBLIC_POSTHOG_KEY}
+              phkey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
               host={process.env.NEXT_PUBLIC_POSTHOG_HOST}
             >
               <LayoutContext>{children}</LayoutContext>
