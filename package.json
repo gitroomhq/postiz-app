@@ -121,6 +121,7 @@
     "nx": "19.7.2",
     "openai": "^4.47.1",
     "polotno": "^2.10.5",
+    "posthog-js": "^1.178.0",
     "react": "18.3.1",
     "react-colorful": "^5.6.1",
     "react-dnd": "^16.0.1",
