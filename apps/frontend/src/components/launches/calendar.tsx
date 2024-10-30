@@ -46,16 +46,21 @@ export const DayView = () => {
     calendar;
 
   const options = useMemo(() => {
-    const createdPosts = posts.map((post) => ({
-      integration: [integrations.find((i) => i.id === post.integration.id)!],
-      image: post.integration.picture,
-      identifier: post.integration.providerIdentifier,
-      id: post.integration.id,
-      name: post.integration.name,
-      time: dayjs
-        .utc(post.publishDate)
-        .diff(dayjs.utc(post.publishDate).startOf('day'), 'minute'),
-    }));
+    const createdPosts = posts.map((post) => {
+      const integration = integrations.find(
+        (i) => i.id === post.integration.id
+      );
+      return {
+        integration: integration ? [integration] : [],
+        image: post.integration?.picture,
+        identifier: post.integration?.providerIdentifier,
+        id: post.integration?.id,
+        name: post.integration?.name,
+        time: dayjs
+          .utc(post.publishDate)
+          .diff(dayjs.utc(post.publishDate).startOf('day'), 'minute'),
+      };
+    });
 
     return sortBy(
       Object.values(
@@ -499,7 +504,10 @@ export const CalendarColumn: FC<{
                   className={`w-full h-full rounded-[10px] hover:border hover:border-seventh flex justify-center items-center gap-[20px] opacity-30 grayscale hover:grayscale-0 hover:opacity-100`}
                 >
                   {integrations.map((selectedIntegrations) => (
-                    <div className="relative" key={selectedIntegrations.identifier}>
+                    <div
+                      className="relative"
+                      key={selectedIntegrations.identifier}
+                    >
                       <div
                         className={clsx(
                           'relative w-[34px] h-[34px] rounded-full flex justify-center items-center bg-fifth filter transition-all duration-500'
