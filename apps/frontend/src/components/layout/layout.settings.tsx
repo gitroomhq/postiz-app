@@ -77,12 +77,12 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
             {user.tier !== 'FREE' && <Onboarding />}
             <Support />
             <ContinueProvider />
-            <div className="min-h-[100vh] w-full max-w-[1440px] mx-auto bg-primary px-[12px] text-textColor flex flex-col">
+            <div className="min-h-[100vh] w-full max-w-[1440px] mx-auto bg-primary sm:px-6 px-0 text-textColor flex flex-col">
               {user?.admin && <Impersonate />}
-              <div className="px-[23px] flex h-[80px] items-center justify-between z-[200] sticky top-0 bg-primary">
+              <nav className="px-0 md:px-[23px] gap-2 grid grid-rows-[repeat(2,_auto)] grid-cols-2 md:grid-rows-1 md:grid-cols-[repeat(3,_auto)] items-center justify-between z-[200] sticky top-0 bg-primary">
                 <Link
                   href="/"
-                  className="text-2xl flex items-center gap-[10px] text-textColor"
+                  className="text-2xl flex items-center gap-[10px] text-textColor order-1"
                 >
                   <div className="min-w-[55px]">
                     <Image
@@ -132,15 +132,15 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
                 ) : (
                   <div />
                 )}
-                <div className="flex items-center gap-[8px]">
+                <div id = "systray-buttons" className="flex items-center justify-self-end gap-[8px] order-2 md:order-3">
                   <ModeComponent />
                   <SettingsComponent />
                   <NotificationComponent />
                   <OrganizationSelector />
                 </div>
-              </div>
+              </nav>
               <div className="flex-1 flex">
-                <div className="flex-1 rounded-3xl px-[23px] py-[17px] flex flex-col">
+                <div className="flex-1 rounded-3xl px-0 md:px-[23px] py-[17px] flex flex-col">
                   {(user.tier === 'FREE' && isGeneral) && billingEnabled ? (
                     <>
                       <div className="text-center mb-[20px] text-xl">
