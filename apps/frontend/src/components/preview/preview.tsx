@@ -26,17 +26,10 @@ export const Preview = ({ id }: PreviewProps) => {
 
   if (isLoading) return <LoadingComponent />;
 
-  if (error)
-    return (
-      <main className="flex mx-auto text-red-400">
-        Oops! Something went wrong.
-      </main>
-    );
-
-  if (!data?.posts)
+  if (!data?.posts || error)
     return (
       <main className="flex mx-auto">
-        <h1>No post founded.</h1>
+        <h1>{!data?.posts ? 'No post founded.' : 'Oops! Something went wrong.'} </h1>
       </main>
     );
 
