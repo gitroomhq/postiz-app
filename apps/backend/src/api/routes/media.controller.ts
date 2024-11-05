@@ -43,9 +43,8 @@ export class MediaController {
     @GetOrgFromRequest() org: Organization,
     @UploadedFile() file: Express.Multer.File
   ) {
-    const uploadedFile = await this.storage.uploadFile(file);    
-    const filePath = uploadedFile.path.replace(process.env.UPLOAD_DIRECTORY, basename(process.env.UPLOAD_DIRECTORY));
-    return this._mediaService.saveFile(org.id, uploadedFile.originalname, filePath);
+    const uploadedFile = await this.storage.uploadFile(file);
+    return this._mediaService.saveFile(org.id, uploadedFile.originalname, uploadedFile.path);
   }
 
   @Post('/upload-simple')

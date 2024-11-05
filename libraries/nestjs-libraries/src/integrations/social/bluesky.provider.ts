@@ -6,7 +6,7 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
-import { BskyAgent } from '@atproto/api';
+import { BskyAgent, RichText } from '@atproto/api';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
@@ -54,7 +54,7 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
-  async generateAuthUrl(refresh?: string) {
+  async generateAuthUrl() {
     const state = makeId(6);
     return {
       url: '',
@@ -132,9 +132,16 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
         }) || []
       );
 
+      const rt = new RichText({
+        text: post.message,
+      })
+
+      await rt.detectFacets(agent)
+
       // @ts-ignore
       const { cid, uri, commit } = await agent.post({
-        text: post.message,
+        text: rt.text,
+        facets: rt.facets,
         createdAt: new Date().toISOString(),
         ...(images.length
           ? {

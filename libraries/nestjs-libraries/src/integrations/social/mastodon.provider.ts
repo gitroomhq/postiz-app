@@ -29,24 +29,20 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
     customUrl: string,
     state: string,
     clientId: string,
-    url: string,
-    refresh?: string
+    url: string
   ) {
     return `${customUrl}/oauth/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(
-      `${url}/integrations/social/mastodon${
-        refresh ? `?refresh=${refresh}` : ''
-      }`
+      `${url}/integrations/social/mastodon`
     )}&scope=${this.scopes.join('+')}&state=${state}`;
   }
 
-  async generateAuthUrl(refresh?: string) {
+  async generateAuthUrl() {
     const state = makeId(6);
     const url = this.generateUrlDynamic(
       'https://mastodon.social',
       state,
       process.env.MASTODON_CLIENT_ID!,
-      process.env.FRONTEND_URL!,
-      refresh
+      process.env.FRONTEND_URL!
     );
     return {
       url,
@@ -98,13 +94,11 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
-  async authenticate(
-    params: {
-      code: string;
-      codeVerifier: string;
-      refresh?: string;
-    }
-  ) {
+  async authenticate(params: {
+    code: string;
+    codeVerifier: string;
+    refresh?: string;
+  }) {
     return this.dynamicAuthenticate(
       process.env.MASTODON_CLIENT_ID!,
       process.env.MASTODON_CLIENT_SECRET!,

@@ -19,12 +19,14 @@ const fetchUploadApiEndpoint = async (
 };
 
 // Define the factory to return appropriate Uppy configuration
-export const getUppyUploadPlugin = (provider: string, fetch: any) => {
+export const getUppyUploadPlugin = (provider: string, fetch: any, backendUrl: string) => {
     switch (provider) {
       case 'cloudflare':
         return {
           plugin: AwsS3Multipart,
           options: {
+            shouldUseMultipart: (file : any) => true,
+            endpoint: '',
             createMultipartUpload: async (file: any) => {
               const arrayBuffer = await new Response(file.data).arrayBuffer();
               const fileHash = sha256(Buffer.from(arrayBuffer));
@@ -56,7 +58,7 @@ export const getUppyUploadPlugin = (provider: string, fetch: any) => {
         return {
           plugin: XHRUpload,
           options: {
-            endpoint: `${process.env.NEXT_PUBLIC_BACKEND_URL}/media/upload-server`,
+            endpoint: `${backendUrl}/media/upload-server`,
             withCredentials: true,
           },
         };

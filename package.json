@@ -12,8 +12,10 @@
     "build:frontend": "npx nx run frontend:build:production",
     "dev:frontend": "npx nx run frontend:serve:development",
     "dev:backend": "npx nx run backend:serve:development",
+    "update-plugins": "node build.plugins.js",
     "dev:workers": "npx nx run workers:serve:development",
     "dev:cron": "npx nx run cron:serve:development",
+    "dev:docker": "docker compose -f ./docker-compose.dev.yaml up -d",
     "start:prod": "node dist/apps/backend/main.js",
     "start:prod:frontend": "nx run frontend:serve:production",
     "start:prod:workers": "node dist/apps/workers/main.js",
@@ -26,7 +28,7 @@
     "prisma-reset": "cd ./libraries/nestjs-libraries/src/database/prisma && npx prisma db push --force-reset && npx prisma db push",
     "docker-build": "./var/docker/docker-build.sh",
     "docker-create": "./var/docker/docker-create.sh",
-    "postinstall": "npm run prisma-generate"
+    "postinstall": "npm run update-plugins && npm run prisma-generate"
   },
   "private": true,
   "dependencies": {
@@ -48,7 +50,6 @@
     "@nestjs/microservices": "^10.3.1",
     "@nestjs/platform-express": "^10.0.2",
     "@nestjs/schedule": "^4.0.0",
-    "@nestjs/serve-static": "^4.0.1",
     "@nestjs/swagger": "^7.3.0",
     "@nx/eslint": "19.7.2",
     "@nx/eslint-plugin": "19.7.2",
@@ -89,7 +90,7 @@
     "@uppy/status-bar": "^4.0.3",
     "@uppy/xhr-upload": "^4.1.0",
     "array-move": "^4.0.0",
-    "axios": "1.6.7",
+    "axios": "^1.7.7",
     "bcrypt": "^5.1.1",
     "bufferutil": "^4.0.8",
     "bullmq": "^5.12.12",
@@ -99,7 +100,7 @@
     "class-validator": "^0.14.1",
     "clsx": "^2.1.0",
     "concat-stream": "^2.0.0",
-    "cookie-parser": "^1.4.6",
+    "cookie-parser": "^1.4.7",
     "copy-to-clipboard": "^3.3.3",
     "crypto-hash": "^3.0.0",
     "dayjs": "^1.11.10",
@@ -114,12 +115,13 @@
     "mime-types": "^2.1.35",
     "multer": "^1.4.5-lts.1",
     "nestjs-command": "^3.1.4",
-    "next": "14.2.3",
+    "next": "^14.2.14",
     "next-plausible": "^3.12.0",
     "nodemailer": "^6.9.15",
     "nx": "19.7.2",
     "openai": "^4.47.1",
     "polotno": "^2.10.5",
+    "posthog-js": "^1.178.0",
     "react": "18.3.1",
     "react-colorful": "^5.6.1",
     "react-dnd": "^16.0.1",
@@ -197,5 +199,8 @@
     "typescript": "5.5.4",
     "vite": "^5.0.0",
     "vitest": "1.6.0"
+  },
+  "volta": {
+    "node": "20.17.0"
   }
 }

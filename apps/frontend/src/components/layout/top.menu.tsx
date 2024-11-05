@@ -70,8 +70,8 @@ export const TopMenu: FC = () => {
   const menuItems = useMenuItems();
 
   return (
-    <div className="flex flex-col h-full animate-normalFadeDown">
-      <ul className="gap-5 flex flex-1 items-center text-[18px]">
+    <div className="flex flex-col h-full animate-normalFadeDown order-3 md:order-2 col-span-2 md:col-span-1">
+      <ul className="gap-0 md:gap-5 flex flex-1 items-center text-[18px]">
         {menuItems
           .filter((f) => {
             if (f.requireBilling && !billingEnabled) {
@@ -88,7 +88,7 @@ export const TopMenu: FC = () => {
                 prefetch={true}
                 href={item.path}
                 className={clsx(
-                  'flex gap-2 items-center box',
+                  'flex gap-2 items-center box px-[6px] md:px-[24px] py-[8px]',
                   menuItems
                     .filter((f) => {
                       if (f.role) {

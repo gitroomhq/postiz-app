@@ -385,14 +385,15 @@ export const AddEditModal: FC<{
           instructions="You are an assistant that help the user to schedule their social media posts, everytime somebody write something, try to use a function call, if not prompt the user that the request is invalid and you are here to assists with social media posts"
         />
       )}
-      <div
-        className={clsx('flex p-[10px] rounded-[4px] bg-primary gap-[20px]')}
+      <div 
+        id="add-edit-modal"
+        className={clsx('flex flex-col md:flex-row p-[10px] rounded-[4px] bg-primary gap-[20px]')}
       >
         <div
           className={clsx(
             'flex flex-col gap-[16px] transition-all duration-700 whitespace-nowrap',
             !expend.expend
-              ? 'flex-1 w-1 animate-overflow'
+              ? 'flex-1 animate-overflow'
               : 'w-0 overflow-hidden'
           )}
         >
@@ -540,10 +541,10 @@ export const AddEditModal: FC<{
             ) : null}
           </div>
           <div className="relative h-[68px] flex flex-col rounded-[4px] border border-customColor6 bg-sixth">
-            <div className="flex flex-1 gap-[10px] relative">
-              <div className="absolute w-full h-full flex gap-[10px] justify-end items-center right-[16px]">
+            <div className="gap-[10px] relative">
+              <div id = "add-edit-post-dialog-buttons" className="flex flex-row flex-wrap w-full h-full gap-[10px] justify-end items-center right-[16px]">
                 <Button
-                  className="bg-transparent text-inputText"
+                  className="rounded-[4px]"
                   onClick={askClose}
                 >
                   Cancel

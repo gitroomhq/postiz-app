@@ -4,7 +4,6 @@ import { AddProviderButton } from '@gitroom/frontend/components/launches/add.pro
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { orderBy } from 'lodash';
-// import { Calendar } from '@gitroom/frontend/components/launches/calendar';
 import { CalendarWeekProvider } from '@gitroom/frontend/components/launches/calendar.context';
 import { Filters } from '@gitroom/frontend/components/launches/filters';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
@@ -96,8 +95,8 @@ export const LaunchesComponent = () => {
     if (typeof window === 'undefined') {
       return;
     }
-    if (search.get('scope') === 'missing') {
-      toast.show('You have to approve all the channel permissions', 'warning');
+    if (search.get('msg')) {
+      toast.show(search.get('msg')!, 'warning');
     }
     if (search.get('added')) {
       fireEvents('channel_added');
@@ -114,10 +113,10 @@ export const LaunchesComponent = () => {
   // @ts-ignore
   return (
     <CalendarWeekProvider integrations={sortedIntegrations}>
-      <div className="flex flex-col flex-1">
-        <div className="relative flex flex-1">
-          <div className="outline-none w-full h-full grid grid-cols-[220px_minmax(0,1fr)] gap-[30px] scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary">
-            <div className="w-[220px] bg-third p-[16px] flex flex-col gap-[24px] min-h-[100%]">
+      <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 relative">
+          <div className="outline-none w-full h-full grid grid-cols[1fr] md:grid-cols-[220px_minmax(0,1fr)] gap-[30px] scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary">
+            <div className="bg-third p-[16px] flex flex-col gap-[24px] min-h-[100%]">
               <h2 className="text-[20px]">Channels</h2>
               <div className="gap-[16px] flex flex-col">
                 {sortedIntegrations.length === 0 && (
@@ -126,12 +125,13 @@ export const LaunchesComponent = () => {
                 {sortedIntegrations.map((integration) => (
                   <div
                     {...(integration.refreshNeeded && {
+                      onClick: refreshChannel(integration),
                       'data-tooltip-id': 'tooltip',
                       'data-tooltip-content':
                         'Channel disconnected, click to reconnect.',
                     })}
                     key={integration.id}
-                    className="flex gap-[8px] items-center"
+                    className={clsx("flex gap-[8px] items-center", integration.refreshNeeded && 'cursor-pointer')}
                   >
                     <div
                       className={clsx(

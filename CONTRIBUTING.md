@@ -2,6 +2,10 @@
 
 Contributions are welcome - code, docs, whatever it might be! If this is your first contribution to an Open Source project or you're a core maintainer of multiple projects, your time and interest in contributing to this project is most welcome.
 
+## Read the developers guide
+
+The main documentation site has a [developer guide](https://docs.postiz.com/developer-guide) . That guide provides you a good understanding of the project structure, and how to setup your development environment. Read t his document after you have read that guide. This document is intended to provide you a good understanding of how to submit your first contribution.
+
 ## Write code with others
 
 This is an open source project, with an open and welcoming community that is always keen to welcome new contributors. We recommend the two best ways to interact with the community are:
@@ -43,12 +47,9 @@ This project follows a Fork/Feature Branch/Pull Request model. If you're not fam
 9. **Create a pull request**: Propose your changes to the main project.
 
 
-## Setting up your development environment
-To contribute effectively, you’ll need to set up your development environment. Follow the instructions on this page: https://docs.postiz.com/installation/development
+# Need Help?
 
+Again, do check the [developer guide](https://docs.postiz.com/developer-guide). Much of what you probably need to know is in there.
 
-Need Help?
 If you encounter any issues, please visit our [support page](https://docs.postiz.com/support) or check the community forums. Your contributions help make Postiz better!
-
-
 
