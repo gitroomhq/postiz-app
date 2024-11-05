@@ -13,8 +13,6 @@ import {
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Input } from '@gitroom/react/form/input';
 import { Button } from '@gitroom/react/form/button';
-import { useCustomProviderFunction } from '@gitroom/frontend/components/launches/helpers/use.custom.provider.function';
-import dayjs from 'dayjs';
 
 const postUrlEmitter = new EventEmitter();
 

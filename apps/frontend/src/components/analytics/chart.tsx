@@ -1,5 +1,5 @@
 'use client';
-import { FC, useEffect, useMemo, useRef } from 'react';
+import { FC, useEffect, useRef } from 'react';
 import DrawChart from 'chart.js/auto';
 import {
   ForksList,

@@ -1,9 +1,8 @@
-import { forwardRef, useCallback, useRef } from 'react';
+import { forwardRef } from 'react';
 import type { MDEditorProps } from '@uiw/react-md-editor/src/Types';
 import { RefMDEditor } from '@uiw/react-md-editor/src/Editor';
 import MDEditor from '@uiw/react-md-editor';
 import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
-import dayjs from 'dayjs';
 import { CopilotTextarea } from '@copilotkit/react-textarea';
 import clsx from 'clsx';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
