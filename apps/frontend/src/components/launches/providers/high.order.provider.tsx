@@ -1,6 +1,7 @@
 'use client';
 
 import React, {
+  Component,
   FC,
   Fragment,
   ReactNode,
@@ -34,6 +35,9 @@ import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
 import { AddPostButton } from '@gitroom/frontend/components/launches/add.post.button';
 import { GeneralPreviewComponent } from '@gitroom/frontend/components/launches/general.preview.component';
 import { capitalize } from 'lodash';
+import { date } from 'yup';
+import { useToaster } from '@gitroom/react/toaster/toaster';
+import { useModals } from '@mantine/modals';
 
 // Simple component to change back to settings on after changing tab
 export const SetTab: FC<{ changeTab: () => void }> = (props) => {
@@ -68,10 +72,9 @@ export const EditorWrapper: FC<{ children: ReactNode }> = ({ children }) => {
   return children;
 };
 
-
 export const withProvider = (
   SettingsComponent: FC | null,
-  CustomPreviewComponent?: FC<{maximumCharacters?: number}>,
+  CustomPreviewComponent?: FC<{ maximumCharacters?: number }>,
   dto?: any,
   checkValidity?: (
     value: Array<Array<{ path: string }>>
@@ -89,6 +92,8 @@ export const withProvider = (
     hideMenu?: boolean;
     show: boolean;
   }) => {
+    const toast = useToaster();
+    const modal = useModals();
     const existingData = useExistingData();
     const { integration, date } = useIntegration();
     useCopilotReadable({
@@ -115,7 +120,7 @@ export const withProvider = (
           }))
         : [{ content: '' }]
     );
-    
+
     const [showTab, setShowTab] = useState(0);
 
     const Component = useMemo(() => {
@@ -218,6 +223,20 @@ export const withProvider = (
       },
       [InPlaceValue]
     );
+
+    // Share Post
+    const handleShare = () => {
+      const postId = existingData.posts[0].id;
+      const origin = window.location.origin;
+      const previewPath = `${origin}/preview/${postId}`;
+
+      try {
+        navigator.clipboard.writeText(previewPath);
+        return toast.show('Link copied to clipboard.', 'success');
+      } catch (err) {
+        toast.show('Failed to copy the link.', 'warning');
+      }
+    };
 
     // This is a function if we want to switch from the global editor to edit in place
     const changeToEditor = useCallback(async () => {
@@ -394,8 +413,30 @@ export const withProvider = (
                           </div>
                         </div>
                       </div>
-                      <div>
+                      <div className="flex gap-[8px] items-center">
                         <AddPostButton onClick={addValue(index)} num={index} />
+                        <Button
+                          onClick={handleShare}
+                          className="!h-[24px] rounded-[3px] flex gap-[4px] w-[102px] text-[12px] font-[500]"
+                        >
+                          <div>
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              version="1.1"
+                              x="0px"
+                              y="0px"
+                              viewBox="0 0 800 1000"
+                              className="max-w-[20px] max-h-[20px] fill-current h-[1.25em]"
+                            >
+                              <path
+                                fill="white"
+                                d="M443.25,529.42c2.9,1.32,6.32,0.83,8.73-1.27l211.28-183.37c1.79-1.55,2.81-3.79,2.81-6.16c0-2.37-1.02-4.61-2.81-6.16  L451.98,149.11c-2.41-2.1-5.83-2.59-8.73-1.27c-2.91,1.33-4.77,4.23-4.77,7.42v109.52c-168.67,5.27-304.54,173.69-304.54,379.94  c0,3.81,2.63,7.11,6.35,7.95c0.61,0.14,1.21,0.21,1.81,0.21c3.08,0,5.97-1.75,7.35-4.63c81.79-170.48,158.11-233.12,289.03-235.58  V522C438.47,525.19,440.34,528.09,443.25,529.42z M151.83,607.06c15.41-182.94,141.74-326.08,294.8-326.08  c4.51,0,8.16-3.65,8.16-8.16v-99.67l190.67,165.48L454.79,504.11v-99.67c0-4.51-3.65-8.16-8.16-8.16  C314.35,396.29,231.89,454.14,151.83,607.06z"
+                              />
+                            </svg>
+                          </div>
+
+                          <div className="text-white">Share</div>
+                        </Button>
                       </div>
                     </Fragment>
                   ))}

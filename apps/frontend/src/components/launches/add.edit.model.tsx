@@ -419,7 +419,7 @@ export const AddEditModal: FC<{
             ) : (
               <div
                 className={clsx(
-                  'relative w-[34px] h-[34px] rounded-full flex justify-center items-center bg-fifth filter transition-all duration-500',
+                  'relative w-[34px] h-[34px] rounded-full flex justify-center items-center bg-fifth filter transition-all duration-500'
                 )}
               >
                 <Image
@@ -613,6 +613,8 @@ export const AddEditModal: FC<{
                       )}
                     </div>
                   </Button>
+
+     
                 </Submitted>
               </div>
             </div>
@@ -641,7 +643,6 @@ export const AddEditModal: FC<{
                 editorValue={value}
                 date={dateState}
               />
-              
             </div>
           )}
         </div>

@@ -1,11 +1,12 @@
-"use client"
+'use client';
 
 import { GeneralPreviewComponent } from '@gitroom/frontend/components/launches/general.preview.component';
-import { IntegrationContext, useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
+import { IntegrationContext } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import dayjs from 'dayjs';
 import { useCallback } from 'react';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { LoadingComponent } from '../layout/loading';
 
 interface PreviewProps {
   id: string;
@@ -16,41 +17,46 @@ export const Preview = ({ id }: PreviewProps) => {
 
   const getPostsMarketplace = useCallback(async () => {
     return (await fetch(`/posts/${id}`)).json();
-  }, []);
+  }, [id]);
 
-  const { data } = useSWR(`/posts/${id}`, getPostsMarketplace);
+  const { data, isLoading, error } = useSWR(
+    `/posts/${id}`,
+    getPostsMarketplace
+  );
 
-  const load = useCallback(async (path: string) => {
-    return (await (await fetch(path)).json()).integrations;
-  }, []);
+  if (isLoading) return <LoadingComponent />;
 
-  const {
-    isLoading,
-    data: integrations,
-    mutate,
-  } = useSWR('/integrations/list', load, {
-    fallbackData: [],
-  });
+  if (error)
+    return (
+      <main className="flex mx-auto text-red-400">
+        Oops! Something went wrong.
+      </main>
+    );
 
-  console.log("integrations", integrations)
-
-  console.log("data posts", data?.posts[0])
-
-  const value = [{
-    content: data?.posts[0].content,
-    id: data?.posts[0].id,
-    image: data?.posts[0].image
-  }]
-
-  if(!data || !integrations) return
+  if (!data?.posts)
+    return (
+      <main className="flex mx-auto">
+        <h1>No post founded.</h1>
+      </main>
+    );
 
   return (
-    <IntegrationContext.Provider value={{
-      date: dayjs(),
-      integration: integrations[0],
-      value,
-    }}>
-      <GeneralPreviewComponent />
-    </IntegrationContext.Provider> 
-  )
-}
+    <IntegrationContext.Provider
+      value={{
+        date: dayjs(),
+        integration: data?.posts[0]?.integration,
+        value: [
+          {
+            content: data?.posts[0]?.content,
+            id: data?.posts[0]?.id,
+            image: data?.posts[0]?.image,
+          },
+        ],
+      }}
+    >
+      <div className="flex mx-auto">
+        <GeneralPreviewComponent />
+      </div>
+    </IntegrationContext.Provider>
+  );
+};

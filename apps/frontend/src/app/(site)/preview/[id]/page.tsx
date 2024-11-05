@@ -5,8 +5,8 @@ import { Metadata } from "next";
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: `${isGeneralServerSide() ? 'Postiz' : 'Gitroom Launches'}`,
-  description: '',
+  title: `${isGeneralServerSide() ? 'Postiz' : 'Gitroom'} Preview`,
+  description: 'Make a preview link for your posts.',
 }
 
 export default async function Index({ params }: { params: { id: string } }) {
