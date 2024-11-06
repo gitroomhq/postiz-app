@@ -38,7 +38,7 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
   }, []);
 
   const url = useSearchParams();
-  const showLogout = !url.get('onboarding');
+  const showLogout = !url.get('onboarding') || user?.tier?.current === "FREE";
 
   const loadProfile = useCallback(async () => {
     const personal = await (await fetch('/user/personal')).json();

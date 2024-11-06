@@ -22,8 +22,8 @@ export const GeneralPreviewComponent: FC<{maximumCharacters?: number}> = (props)
   });
 
   return (
-    <div className={clsx('w-[555px] px-[16px]')}>
-      <div className="relative flex flex-col w-full h-full">
+    <div className={clsx('w-full md:w-[555px] px-[16px]')}>
+      <div className="w-full h-full relative flex flex-col">
         {newValues.map((value, index) => (
           <div
             key={`tweet_${index}`}
@@ -62,7 +62,7 @@ export const GeneralPreviewComponent: FC<{maximumCharacters?: number}> = (props)
                   </svg>
                 </div>
                 <div className="text-[15px] font-[400] text-customColor27 ml-[4px]">
-                  @username
+                  {integration?.display || '@username'}
                 </div>
               </div>
               <pre className={clsx('text-wrap', chakra.className)} dangerouslySetInnerHTML={{__html: value.text}} />

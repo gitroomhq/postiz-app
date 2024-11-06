@@ -15,8 +15,8 @@ export interface IAuthenticator {
     clientInformation?: ClientInformation
   ): Promise<AuthTokenDetails>;
   refreshToken(refreshToken: string): Promise<AuthTokenDetails>;
+  reConnect?(id: string, requiredId: string, accessToken: string): Promise<AuthTokenDetails>;
   generateAuthUrl(
-    refresh?: string,
     clientInformation?: ClientInformation
   ): Promise<GenerateAuthUrlResponse>;
   analytics?(

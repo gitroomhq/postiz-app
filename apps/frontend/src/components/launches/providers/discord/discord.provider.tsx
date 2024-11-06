@@ -17,5 +17,5 @@ export default withProvider(
   undefined,
   DiscordDto,
   undefined,
-  280
+  1980
 );

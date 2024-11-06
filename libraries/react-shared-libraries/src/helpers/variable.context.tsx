@@ -7,6 +7,7 @@ interface VariableContextInterface {
   isGeneral: boolean;
   frontEndUrl: string;
   plontoKey: string;
+  storageProvider: 'local' | 'cloudflare',
   backendUrl: string;
   discordUrl: string;
   uploadDirectory: string;
@@ -15,6 +16,7 @@ const VariableContext = createContext({
   billingEnabled: false,
   isGeneral: true,
   frontEndUrl: '',
+  storageProvider: 'local',
   plontoKey: '',
   backendUrl: '',
   discordUrl: '',

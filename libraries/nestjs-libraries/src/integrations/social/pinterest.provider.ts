@@ -67,15 +67,13 @@ export class PinterestProvider
     };
   }
 
-  async generateAuthUrl(refresh?: string) {
+  async generateAuthUrl() {
     const state = makeId(6);
     return {
       url: `https://www.pinterest.com/oauth/?client_id=${
         process.env.PINTEREST_CLIENT_ID
       }&redirect_uri=${encodeURIComponent(
-        `${process.env.FRONTEND_URL}/integrations/social/pinterest${
-          refresh ? `?refresh=${refresh}` : ''
-        }`
+        `${process.env.FRONTEND_URL}/integrations/social/pinterest`
       )}&response_type=code&scope=${encodeURIComponent(
         'boards:read,boards:write,pins:read,pins:write,user_accounts:read'
       )}&state=${state}`,
@@ -213,9 +211,7 @@ export class PinterestProvider
     }));
 
     try {
-      const {
-        id: pId
-      } = await (
+      const { id: pId } = await (
         await this.fetch('https://api.pinterest.com/v5/pins', {
           method: 'POST',
           headers: {

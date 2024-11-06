@@ -9,6 +9,7 @@ import { FileInput, ProgressBar } from '@uppy/react';
 // Uppy styles
 import '@uppy/core/dist/style.min.css';
 import '@uppy/dashboard/dist/style.min.css';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 
 export function MultipartFileUploader({
   onUploadSuccess,
@@ -58,7 +59,7 @@ export function MultipartFileUploaderAfter({
   onUploadSuccess: (result: UploadResult) => void;
   allowedFileTypes: string;
 }) {
-  const storageProvider = process.env.NEXT_PUBLIC_STORAGE_PROVIDER || "local";
+  const {storageProvider, backendUrl} = useVariables();
   const fetch = useFetch();
   
   const uppy = useMemo(() => {
@@ -71,7 +72,7 @@ export function MultipartFileUploaderAfter({
       },
     });
    
-    const { plugin, options } = getUppyUploadPlugin(storageProvider, fetch)
+    const { plugin, options } = getUppyUploadPlugin(storageProvider, fetch, backendUrl)
     uppy2.use(plugin, options)
     // Set additional metadata when a file is added
     uppy2.on('file-added', (file) => {
