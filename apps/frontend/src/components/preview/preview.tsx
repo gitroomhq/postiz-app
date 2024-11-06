@@ -17,6 +17,7 @@ export const Preview = ({ id }: PreviewProps) => {
 
   const getPostsMarketplace = useCallback(async () => {
     return (await fetch(`/posts/${id}`)).json();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const { data, isLoading, error } = useSWR(

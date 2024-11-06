@@ -37,7 +37,6 @@ import { GeneralPreviewComponent } from '@gitroom/frontend/components/launches/g
 import { capitalize } from 'lodash';
 import { date } from 'yup';
 import { useToaster } from '@gitroom/react/toaster/toaster';
-import { useModals } from '@mantine/modals';
 
 // Simple component to change back to settings on after changing tab
 export const SetTab: FC<{ changeTab: () => void }> = (props) => {
@@ -93,7 +92,6 @@ export const withProvider = (
     show: boolean;
   }) => {
     const toast = useToaster();
-    const modal = useModals();
     const existingData = useExistingData();
     const { integration, date } = useIntegration();
     useCopilotReadable({
