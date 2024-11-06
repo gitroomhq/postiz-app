@@ -19,8 +19,9 @@ import { useSearchParams } from 'next/navigation';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 
-dayjs.extend(isoWeek);
-dayjs.extend(weekOfYear);
+import { extend } from 'dayjs';
+extend(isoWeek);
+extend(weekOfYear);
 
 export const CalendarContext = createContext({
   currentDay: dayjs().day() as 0 | 1 | 2 | 3 | 4 | 5 | 6,
