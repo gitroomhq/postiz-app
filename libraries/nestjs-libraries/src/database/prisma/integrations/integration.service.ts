@@ -1,27 +1,23 @@
-import {
-  HttpException,
-  HttpStatus,
-  Injectable,
-  Param,
-  Query,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { IntegrationRepository } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.repository';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { InstagramProvider } from '@gitroom/nestjs-libraries/integrations/social/instagram.provider';
 import { FacebookProvider } from '@gitroom/nestjs-libraries/integrations/social/facebook.provider';
-import { AnalyticsData, SocialProvider } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import {
+  AnalyticsData,
+  SocialProvider,
+} from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { Integration, Organization } from '@prisma/client';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { LinkedinPageProvider } from '@gitroom/nestjs-libraries/integrations/social/linkedin.page.provider';
-import { simpleUpload } from '@gitroom/nestjs-libraries/upload/r2.uploader';
-import axios from 'axios';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { IntegrationTimeDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.time.dto';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
+import { PlugDto } from '@gitroom/nestjs-libraries/dtos/plugs/plug.dto';
+import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/client';
 
 @Injectable()
 export class IntegrationService {
@@ -29,10 +25,15 @@ export class IntegrationService {
   constructor(
     private _integrationRepository: IntegrationRepository,
     private _integrationManager: IntegrationManager,
-    private _notificationService: NotificationService
+    private _notificationService: NotificationService,
+    private _workerServiceProducer: BullMqClient
   ) {}
 
-  async setTimes(orgId: string, integrationId: string, times: IntegrationTimeDto) {
+  async setTimes(
+    orgId: string,
+    integrationId: string,
+    times: IntegrationTimeDto
+  ) {
     return this._integrationRepository.setTimes(orgId, integrationId, times);
   }
 
@@ -292,7 +293,12 @@ export class IntegrationService {
     return { success: true };
   }
 
-  async checkAnalytics(org: Organization, integration: string, date: string, forceRefresh = false): Promise<AnalyticsData[]> {
+  async checkAnalytics(
+    org: Organization,
+    integration: string,
+    date: string,
+    forceRefresh = false
+  ): Promise<AnalyticsData[]> {
     const getIntegration = await this.getIntegrationById(org.id, integration);
 
     if (!getIntegration) {
@@ -307,7 +313,10 @@ export class IntegrationService {
       getIntegration.providerIdentifier
     );
 
-    if (dayjs(getIntegration?.tokenExpiration).isBefore(dayjs()) || forceRefresh) {
+    if (
+      dayjs(getIntegration?.tokenExpiration).isBefore(dayjs()) ||
+      forceRefresh
+    ) {
       const { accessToken, expiresIn, refreshToken } =
         await integrationProvider.refreshToken(getIntegration.refreshToken!);
 
@@ -366,5 +375,134 @@ export class IntegrationService {
     }
 
     return [];
+  }
+
+  getPlugsByIntegrationId(org: string, integrationId: string) {
+    return this._integrationRepository.getPlugsByIntegrationId(
+      org,
+      integrationId
+    );
+  }
+
+  processPlugs(
+    orgId: string,
+    integrationId: string,
+    delay: number,
+    funcName: string
+  ) {
+    return this._workerServiceProducer.emit('plugs', {
+      id: integrationId + '-' + funcName,
+      options: {
+        delay: 0, // delay,
+      },
+      payload: {
+        retry: 1,
+        delay,
+        orgId,
+        integrationId: integrationId,
+        funcName: funcName,
+      },
+    });
+  }
+
+  async activatedPlug(
+    orgId: string,
+    integrationId: string,
+    funcName: string,
+    type: 'add' | 'remove'
+  ) {
+    const loadIntegration = await this.getIntegrationById(orgId, integrationId);
+    const allPlugs = this._integrationManager.getAllPlugs();
+    const findPlug = allPlugs.find(
+      (p) => p.identifier === loadIntegration?.providerIdentifier!
+    )!;
+    const plug = findPlug.plugs.find((p: any) => p.methodName === funcName)!;
+
+    if (type === 'add') {
+      return this.processPlugs(
+        orgId,
+        integrationId,
+        plug.runEveryMilliseconds,
+        funcName
+      );
+    } else {
+      console.log(integrationId + '-' + funcName);
+      return this._workerServiceProducer.delete(
+        'plugs',
+        integrationId + '-' + funcName
+      );
+    }
+  }
+
+  async createOrUpdatePlug(
+    orgId: string,
+    integrationId: string,
+    body: PlugDto
+  ) {
+    const { activated } = await this._integrationRepository.createOrUpdatePlug(
+      orgId,
+      integrationId,
+      body
+    );
+
+    if (activated) {
+      await this.activatedPlug(orgId, integrationId, body.func, 'add');
+    }
+  }
+
+  async changePlugActivation(orgId: string, plugId: string, status: boolean) {
+    const { id, integrationId, plugFunction } =
+      await this._integrationRepository.changePlugActivation(
+        orgId,
+        plugId,
+        status
+      );
+
+    if (status) {
+      await this.activatedPlug(orgId, integrationId, plugFunction, 'add');
+    } else {
+      await this.activatedPlug(orgId, integrationId, plugFunction, 'remove');
+    }
+
+    return { id };
+  }
+
+  async startPlug(data: {
+    orgId: string;
+    integrationId: string;
+    funcName: string;
+    retry: number;
+    delay: number;
+  }) {
+    const integration = await this.getIntegrationById(
+      data.orgId,
+      data.integrationId
+    );
+
+    if (!integration) {
+      return;
+    }
+
+    const plugInformation = (
+      await this._integrationRepository.getPlugsByIntegrationId(
+        data.orgId,
+        data.integrationId
+      )
+    ).find((p) => p.plugFunction === data.funcName)!;
+
+    const plugData = JSON.parse(plugInformation.data).reduce(
+      (all: any, current: any) => ({
+        ...all,
+        [current.name]: current.value,
+      }),
+      {}
+    );
+
+    const integrationInstance = this._integrationManager.getSocialIntegration(
+      integration.providerIdentifier
+    );
+
+    // @ts-ignore
+    return integrationInstance[data.funcName](integration, plugData);
   }
 }

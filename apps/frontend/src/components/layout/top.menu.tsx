@@ -8,16 +8,16 @@ import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 
 export const useMenuItems = () => {
-  const {isGeneral} = useVariables();
+  const { isGeneral } = useVariables();
   return [
     ...(!isGeneral
       ? [
-        {
-          name: 'Analytics',
-          icon: 'analytics',
-          path: '/analytics',
-        },
-      ]
+          {
+            name: 'Analytics',
+            icon: 'analytics',
+            path: '/analytics',
+          },
+        ]
       : []),
     {
       name: isGeneral ? 'Calendar' : 'Launches',
@@ -26,32 +26,27 @@ export const useMenuItems = () => {
     },
     ...(isGeneral
       ? [
-        {
-          name: 'Analytics',
-          icon: 'analytics',
-          path: '/analytics',
-        },
-      ]
+          {
+            name: 'Analytics',
+            icon: 'analytics',
+            path: '/analytics',
+          },
+        ]
       : []),
     ...(!isGeneral
       ? [
-        {
-          name: 'Settings',
-          icon: 'settings',
-          path: '/settings',
-          role: ['ADMIN', 'SUPERADMIN'],
-        },
-      ]
+          {
+            name: 'Settings',
+            icon: 'settings',
+            path: '/settings',
+            role: ['ADMIN', 'SUPERADMIN'],
+          },
+        ]
       : []),
     {
-      name: 'Marketplace',
-      icon: 'marketplace',
-      path: '/marketplace',
-    },
-    {
-      name: 'Messages',
-      icon: 'messages',
-      path: '/messages',
+      name: 'Plugs',
+      icon: 'plugs',
+      path: '/plugs',
     },
     {
       name: 'Billing',
@@ -61,12 +56,12 @@ export const useMenuItems = () => {
       requireBilling: true,
     },
   ];
-}
+};
 
 export const TopMenu: FC = () => {
   const path = usePathname();
   const user = useUser();
-  const {billingEnabled} = useVariables();
+  const { billingEnabled } = useVariables();
   const menuItems = useMenuItems();
 
   return (

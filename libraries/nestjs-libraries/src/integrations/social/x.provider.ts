@@ -10,6 +10,9 @@ import sharp from 'sharp';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
 import removeMd from 'remove-markdown';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
+import { string } from 'yup';
+import { Integration } from '@prisma/client';
 
 export class XProvider extends SocialAbstract implements SocialProvider {
   identifier = 'x';

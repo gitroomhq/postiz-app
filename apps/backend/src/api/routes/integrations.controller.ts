@@ -1,5 +1,5 @@
 import {
-  Body, Controller, Delete, Get, Param, Post, Query, UseFilters
+  Body, Controller, Delete, Get, Param, Post, Put, Query, UseFilters
 } from '@nestjs/common';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { ConnectIntegrationDto } from '@gitroom/nestjs-libraries/dtos/integrations/connect.integration.dto';
@@ -23,6 +23,7 @@ import { IntegrationTimeDto } from '@gitroom/nestjs-libraries/dtos/integrations/
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { AuthTokenDetails } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { NotEnoughScopes } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { PlugDto } from '@gitroom/nestjs-libraries/dtos/plugs/plug.dto';
 
 @ApiTags('Integrations')
 @Controller('/integrations')
@@ -352,7 +353,9 @@ export class IntegrationsController {
     }
 
     if (refresh && id !== refresh) {
-      throw new NotEnoughScopes('Please refresh the channel that needs to be refreshed');
+      throw new NotEnoughScopes(
+        'Please refresh the channel that needs to be refreshed'
+      );
     }
 
     return this._integrationService.createOrUpdateIntegration(
@@ -443,5 +446,36 @@ export class IntegrationsController {
     }
 
     return this._integrationService.deleteChannel(org.id, id);
+  }
+
+  @Get('/plug/list')
+  async getPlugList() {
+    return { plugs: this._integrationManager.getAllPlugs() };
+  }
+
+  @Get('/:id/plugs')
+  async getPlugsByIntegrationId(
+    @Param('id') id: string,
+    @GetOrgFromRequest() org: Organization
+  ) {
+    return this._integrationService.getPlugsByIntegrationId(org.id, id);
+  }
+
+  @Post('/:id/plugs')
+  async postPlugsByIntegrationId(
+    @Param('id') id: string,
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: PlugDto
+  ) {
+    return this._integrationService.createOrUpdatePlug(org.id, id, body);
+  }
+
+  @Put('/plugs/:id/activate')
+  async changePlugActivation(
+    @Param('id') id: string,
+    @GetOrgFromRequest() org: Organization,
+    @Body('status') status: boolean
+  ) {
+    return this._integrationService.changePlugActivation(org.id, id, status);
   }
 }

@@ -14,6 +14,8 @@ import {
   SocialAbstract,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { Integration } from '@prisma/client';
+import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
+import { string } from 'yup';
 
 export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   identifier = 'linkedin';

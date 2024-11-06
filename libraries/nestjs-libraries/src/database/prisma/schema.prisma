@@ -29,6 +29,7 @@ model Organization {
   buyerOrganization MessagesGroup[]
   usedCodes    UsedCodes[]
   credits      Credits[]
+  plugs        Plugs[]
 }
 
 model User {
@@ -264,6 +265,7 @@ model Integration {
   refreshNeeded         Boolean         @default(false)
   postingTimes          String          @default("[{\"time\":120}, {\"time\":400}, {\"time\":700}]")
   customInstanceDetails String?
+  plugs                 Plugs[]
 
   @@index([updatedAt])
   @@index([deletedAt])
@@ -437,6 +439,20 @@ model Messages {
   @@index([groupId])
   @@index([createdAt])
   @@index([deletedAt])
+}
+
+model Plugs {
+  id                String   @id @default(uuid())
+  organizationId    String
+  organization      Organization @relation(fields: [organizationId], references: [id])
+  plugFunction      String
+  data              String
+  integrationId     String
+  integration       Integration @relation(fields: [integrationId], references: [id])
+  activated         Boolean @default(true)
+
+  @@unique([plugFunction, integrationId])
+  @@index([organizationId])
 }
 
 enum OrderStatus {

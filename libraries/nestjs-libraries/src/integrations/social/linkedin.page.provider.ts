@@ -9,6 +9,7 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { LinkedinProvider } from '@gitroom/nestjs-libraries/integrations/social/linkedin.provider';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
+import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
 
 export class LinkedinPageProvider
   extends LinkedinProvider
@@ -97,17 +98,20 @@ export class LinkedinPageProvider
   }
 
   async companies(accessToken: string) {
-    const { elements } = await (
+    const { elements, ...all } = await (
       await fetch(
         'https://api.linkedin.com/v2/organizationalEntityAcls?q=roleAssignee&role=ADMINISTRATOR&projection=(elements*(organizationalTarget~(localizedName,vanityName,logoV2(original~:playableStreams))))',
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
+            'X-Restli-Protocol-Version': '2.0.0',
+            'LinkedIn-Version': '202402',
           },
         }
       )
     ).json();
 
+    console.log(all);
     return (elements || []).map((e: any) => ({
       id: e.organizationalTarget.split(':').pop(),
       page: e.organizationalTarget.split(':').pop(),
@@ -124,7 +128,10 @@ export class LinkedinPageProvider
     requiredId: string,
     accessToken: string
   ): Promise<AuthTokenDetails> {
-    const information = await this.fetchPageInformation(accessToken, requiredId);
+    const information = await this.fetchPageInformation(
+      accessToken,
+      requiredId
+    );
 
     return {
       id: information.id,
@@ -354,6 +361,41 @@ export class LinkedinPageProvider
       ],
       percentageChange: 5,
     }));
+  }
+
+  @Plug({
+    title: 'Auto Repost Posts',
+    description:
+      'When a post reached a certain number of likes, repost it to increase engagement',
+    runEveryMilliseconds: 7200000,
+    fields: [
+      {
+        name: 'likesAmount',
+        type: 'number',
+        placeholder: 'Amount of likes',
+        description: 'The amount of likes to trigger the post',
+        validation: /^\d+$/,
+      },
+    ],
+  })
+  async autoAddPost(integration: Integration, fields: { likesAmount: number }) {
+    const a = await fetch(
+      `https://api.linkedin.com/rest/posts?author=${encodeURIComponent(
+        `urn:li:organization:${integration.internalId}`
+      )}&q=author&count=10&sortBy=LAST_MODIFIED`,
+      {
+        method: 'GET',
+        headers: {
+          'X-Restli-Protocol-Version': '2.0.0',
+          'Content-Type': 'application/json',
+          'LinkedIn-Version': '202402',
+          Authorization: `Bearer ${integration.token}`,
+        },
+      }
+    );
+
+    console.log(await a.json());
+    return;
   }
 }
 

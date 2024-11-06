@@ -31,6 +31,7 @@ export const LaunchesComponent = () => {
   const load = useCallback(async (path: string) => {
     return (await (await fetch(path)).json()).integrations;
   }, []);
+
   const user = useUser();
 
   const {
@@ -132,7 +133,10 @@ export const LaunchesComponent = () => {
                         'Channel disconnected, click to reconnect.',
                     })}
                     key={integration.id}
-                    className={clsx("flex gap-[8px] items-center", integration.refreshNeeded && 'cursor-pointer')}
+                    className={clsx(
+                      'flex gap-[8px] items-center',
+                      integration.refreshNeeded && 'cursor-pointer'
+                    )}
                   >
                     <div
                       className={clsx(
