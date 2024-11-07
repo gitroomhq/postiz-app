@@ -18,6 +18,7 @@ import { IntegrationTimeDto } from '@gitroom/nestjs-libraries/dtos/integrations/
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { PlugDto } from '@gitroom/nestjs-libraries/dtos/plugs/plug.dto';
 import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/client';
+import { difference } from 'lodash';
 
 @Injectable()
 export class IntegrationService {
@@ -467,6 +468,12 @@ export class IntegrationService {
     return { id };
   }
 
+  async loadExisingData (methodName: string, integrationId: string, id: string[]) {
+    const exisingData = await this._integrationRepository.loadExisingData(methodName, integrationId, id);
+    const loadOnlyIds = exisingData.map(p => p.value);
+    return difference(id, loadOnlyIds);
+  }
+
   async startPlug(data: {
     orgId: string;
     integrationId: string;
@@ -503,6 +510,7 @@ export class IntegrationService {
     );
 
     // @ts-ignore
-    return integrationInstance[data.funcName](integration, plugData);
+    const ids = await integrationInstance[data.funcName](integration, plugData, this.loadExisingData.bind(this));
+    return this._integrationRepository.saveExisingData(data.funcName, data.integrationId, ids);
   }
 }

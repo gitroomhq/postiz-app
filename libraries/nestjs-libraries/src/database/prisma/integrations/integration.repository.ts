@@ -13,7 +13,8 @@ export class IntegrationRepository {
   constructor(
     private _integration: PrismaRepository<'integration'>,
     private _posts: PrismaRepository<'post'>,
-    private _plugs: PrismaRepository<'plugs'>
+    private _plugs: PrismaRepository<'plugs'>,
+    private _exisingPlugData: PrismaRepository<'exisingPlugData'>
   ) {}
 
   async setTimes(org: string, id: string, times: IntegrationTimeDto) {
@@ -342,8 +343,8 @@ export class IntegrationRepository {
         data: JSON.stringify(body.fields),
       },
       select: {
-        activated: true
-      }
+        activated: true,
+      },
     });
   }
 
@@ -356,6 +357,36 @@ export class IntegrationRepository {
       data: {
         activated: !!status,
       },
+    });
+  }
+
+  async loadExisingData(
+    methodName: string,
+    integrationId: string,
+    id: string[]
+  ) {
+    return this._exisingPlugData.model.exisingPlugData.findMany({
+      where: {
+        integrationId,
+        methodName,
+        value: {
+          in: id,
+        },
+      },
+    });
+  }
+
+  async saveExisingData(
+    methodName: string,
+    integrationId: string,
+    value: string[]
+  ) {
+    return this._exisingPlugData.model.exisingPlugData.createMany({
+      data: value.map((p) => ({
+        integrationId,
+        methodName,
+        value: p,
+      })),
     });
   }
 }

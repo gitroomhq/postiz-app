@@ -266,6 +266,7 @@ model Integration {
   postingTimes          String          @default("[{\"time\":120}, {\"time\":400}, {\"time\":700}]")
   customInstanceDetails String?
   plugs                 Plugs[]
+  exisingPlugData       ExisingPlugData[]
 
   @@index([updatedAt])
   @@index([deletedAt])
@@ -453,6 +454,16 @@ model Plugs {
 
   @@unique([plugFunction, integrationId])
   @@index([organizationId])
+}
+
+model ExisingPlugData {
+  id                String   @id @default(uuid())
+  integrationId     String
+  integration       Integration @relation(fields: [integrationId], references: [id])
+  methodName        String
+  value             String
+
+  @@unique([integrationId, methodName, value])
 }
 
 enum OrderStatus {
