@@ -1,0 +1,128 @@
+language: en-US # Default language for reviews
+
+reviews:
+  # Review Style Configuration
+  profile: "chill"  # Less nitpicky feedback for faster iterations
+  request_changes_workflow: false  # Don't block PR merges on comment resolution
+  high_level_summary: true  # Provide overview of changes
+  review_status: true  # Show review progress
+  commit_status: true  # Indicate review status in commits
+
+  # Review Content Settings
+  poem: false  # Disable poems for focused technical reviews
+  collapse_walkthrough: true  # Collapsible sections for better organization
+  sequence_diagrams: true  # Visualize flow changes
+  changed_files_summary: true  # Overview of modified files
+
+  # Path Filters - Monorepo Structure
+  path_filters:
+    # Exclude patterns
+    - "!**/node_modules/**"
+    - "!**/*.lock"
+    - "!.next/**"
+    - "!**/dist/**"
+    - "!**/.nx-cache/**"
+
+    # Include patterns for monorepo
+    - "apps/**"  # NX apps directory
+    - "libs/**"  # NX libs directory
+    - "packages/**"  # Shared packages
+    - "prisma/**"  # Prisma schema and migrations
+    - "tools/**"  # Build and configuration tools
+
+  # Language-specific Review Instructions
+  path_instructions:
+    # TypeScript Core
+    - path: "**/*.ts"
+      instructions: |
+        Ensure strict TypeScript practices:
+        - Use explicit typing, avoid 'any'
+        - Prefer interfaces over types for object definitions
+        - Use proper error handling with custom error classes
+        - Follow NestJS patterns for backend code
+        - Ensure proper dependency injection patterns
+        - Validate environment variables
+
+    # React/Next.js Frontend
+    - path: "**/*.tsx"
+      instructions: |
+        Follow React and Next.js best practices:
+        - Use React Server Components by default
+        - Minimize client-side JavaScript
+        - Implement proper error boundaries
+        - Follow React Query patterns for data fetching
+        - Use proper typing for props and state
+        - Implement proper loading states
+        - Follow accessibility guidelines
+
+    # Prisma Schema
+    - path: "**/schema.prisma"
+      instructions: |
+        Review Prisma schema changes:
+        - Ensure proper indexing for performance
+        - Validate relation cardinality
+        - Check migration safety
+        - Verify enum definitions
+        - Ensure proper field constraints
+
+    # Next.js Config
+    - path: "**/next.config.js"
+      instructions: |
+        Verify Next.js configuration:
+        - Check module/webpack configurations
+        - Validate environment variables
+        - Review optimization settings
+        - Check international routing setup
+
+    # NX Configuration
+    - path: "**/*.json"
+      instructions: |
+        For NX configuration files:
+        - Verify proper project references
+        - Check build dependencies
+        - Validate project structure
+        - Review shared configurations
+
+  # Automated Review Settings
+  auto_review:
+    enabled: true
+    auto_incremental_review: true  # Review on each push
+    ignore_title_keywords: ["wip", "draft", "do-not-review"]
+    drafts: false  # Skip draft PRs
+    base_branches:
+      - "main"
+      - "develop"
+      - "staging"
+
+  # Code Analysis Tools
+  tools:
+    # JavaScript/TypeScript Tools
+    biome:
+      enabled: true  # Modern JS/TS linting
+    eslint:
+      enabled: true  # JavaScript/TypeScript linting
+
+    # Infrastructure and Security
+    gitleaks:
+      enabled: true  # Scan for secrets
+
+    # Documentation
+    markdownlint:
+      enabled: true  # Markdown consistency
+
+    # Additional Relevant Tools
+    buf:
+      enabled: true  # For any protocol buffers
+
+    # GitHub Workflow Validation
+    actionlint:
+      enabled: true  # Validate GitHub Actions
+
+# Knowledge Base Configuration
+knowledge_base:
+  learnings:
+    scope: "auto"  # Learn from repository context
+  pull_requests:
+    scope: "auto"  # Use PR history for context
+  issues:
+    scope: "auto"  # Consider issue history
