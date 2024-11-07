@@ -4,5 +4,8 @@ export default withProvider(null, undefined, undefined, async (posts) => {
     return 'There can be maximum 4 pictures in a post.';
   }
 
+  if (posts.some(p => p.some(m => m.path.indexOf('mp4') > -1) && p.length > 1)) {
+    return 'There can be maximum 1 video in a post.';
+  }
   return true;
 }, 280);
