@@ -540,9 +540,9 @@ export const AddEditModal: FC<{
               </>
             ) : null}
           </div>
-          <div className="relative h-[68px] flex flex-col rounded-[4px] border border-customColor6 bg-sixth">
-            <div className="gap-[10px] relative">
-              <div id = "add-edit-post-dialog-buttons" className="flex flex-row flex-wrap w-full h-full gap-[10px] justify-end items-center right-[16px]">
+          <div className="relative min-h-[68px] flex flex-col rounded-[4px] border border-customColor6 bg-sixth">
+            <div className="gap-[10px] relative flex flex-col justify-center items-center min-h-full pr-[16px]">
+              <div id = "add-edit-post-dialog-buttons" className="flex flex-row flex-wrap w-full h-full gap-[10px] justify-end items-center">
                 <Button
                   className="rounded-[4px]"
                   onClick={askClose}
