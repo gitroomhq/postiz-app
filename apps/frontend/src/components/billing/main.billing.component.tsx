@@ -389,7 +389,7 @@ export const MainBillingComponent: FC<{
 
       setLoading(false);
     },
-    [monthlyOrYearly, subscription, user]
+    [monthlyOrYearly, subscription, user, utm]
   );
 
   if (user?.isLifetime) {
