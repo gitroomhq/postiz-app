@@ -11,6 +11,6 @@ body:
     validations:
       required: true
     attributes:
-      label: "For installation issues, please visit our [Discord Support](https://discord.postiz.com) for assistance."
-      description: "For installation issues, please visit our [Discord Support](https://discord.postiz.com) for assistance."
-      placeholder: "For installation issues, please visit our [Discord Support](https://discord.postiz.com) for assistance."
+      label: For installation issues, please visit our https://discord.postiz.com for assistance.
+      description: For installation issues, please visit our [Discord Support](https://discord.postiz.com) for assistance.
+      placeholder: For installation issues, please visit our https://discord.postiz.com for assistance.
