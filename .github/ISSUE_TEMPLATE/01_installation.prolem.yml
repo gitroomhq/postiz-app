@@ -5,5 +5,4 @@ labels: ["installation"]
 body:
   - type: markdown
     attributes:
-      value: |
-        For installation issues, please visit our [Discord Support](https://discord.postiz.com) for assistance.
+      value: For installation issues, please visit our [Discord Support](https://discord.postiz.com) for assistance.
