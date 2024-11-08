@@ -1,7 +1,6 @@
 'use client';
 
 import React, {
-  Component,
   FC,
   Fragment,
   ReactNode,
@@ -12,7 +11,6 @@ import React, {
 } from 'react';
 import { Button } from '@gitroom/react/form/button';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
-import MDEditor, { commands } from '@uiw/react-md-editor';
 import { useHideTopEditor } from '@gitroom/frontend/components/launches/helpers/use.hide.top.editor';
 import { useValues } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { FormProvider } from 'react-hook-form';
@@ -25,7 +23,6 @@ import {
 import { MultiMediaComponent } from '@gitroom/frontend/components/media/media.component';
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
-import { newImage } from '@gitroom/frontend/components/launches/helpers/new.image.component';
 import { postSelector } from '@gitroom/frontend/components/post-url-selector/post.url.selector';
 import { UpDownArrow } from '@gitroom/frontend/components/launches/up.down.arrow';
 import { arrayMoveImmutable } from 'array-move';
@@ -35,7 +32,6 @@ import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
 import { AddPostButton } from '@gitroom/frontend/components/launches/add.post.button';
 import { GeneralPreviewComponent } from '@gitroom/frontend/components/launches/general.preview.component';
 import { capitalize } from 'lodash';
-import { date } from 'yup';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 
 // Simple component to change back to settings on after changing tab
