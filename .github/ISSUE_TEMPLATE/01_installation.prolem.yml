@@ -11,6 +11,6 @@ body:
     validations:
       required: true
     attributes:
-      label: "🔖 Feature description"
-      description: "A clear and concise description of what the feature is."
-      placeholder: "You should add ..."
+      label: "For installation issues, please visit our [Discord Support](https://discord.postiz.com) for assistance."
+      description: "For installation issues, please visit our [Discord Support](https://discord.postiz.com) for assistance."
+      placeholder: "For installation issues, please visit our [Discord Support](https://discord.postiz.com) for assistance."
