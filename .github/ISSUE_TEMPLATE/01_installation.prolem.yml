@@ -1,5 +1,6 @@
-name: "Installation Problem"
+name: "🙏🏻 Installation Problem"
 description: "Report an issue with installation"
+title: "Installation Problem"
 labels: ["installation"]
 body:
   - type: markdown
