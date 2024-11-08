@@ -30,9 +30,6 @@ const UtmSaver: FC = () => {
 
 export const useUtmUrl = () => {
   const [value] = useLocalStorage({ key: 'utm', defaultValue: '' });
-  if (value) {
-    return `utm_source=${value}`;
-  }
-  return '';
+  return value || '';
 };
 export default UtmSaver;
