@@ -6,3 +6,11 @@ body:
   - type: markdown
     attributes:
       value: For installation issues, please visit our [Discord Support](https://discord.postiz.com) for assistance.
+  - type: textarea
+    id: feature-description
+    validations:
+      required: true
+    attributes:
+      label: "🔖 Feature description"
+      description: "A clear and concise description of what the feature is."
+      placeholder: "You should add ..."
