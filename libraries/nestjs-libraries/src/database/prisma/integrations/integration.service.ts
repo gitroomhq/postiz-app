@@ -2,8 +2,6 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
-  Param,
-  Query,
 } from '@nestjs/common';
 import { IntegrationRepository } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.repository';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
@@ -13,9 +11,6 @@ import { AnalyticsData, SocialProvider } from '@gitroom/nestjs-libraries/integra
 import { Integration, Organization } from '@prisma/client';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { LinkedinPageProvider } from '@gitroom/nestjs-libraries/integrations/social/linkedin.page.provider';
-import { simpleUpload } from '@gitroom/nestjs-libraries/upload/r2.uploader';
-import axios from 'axios';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
@@ -39,7 +34,7 @@ export class IntegrationService {
   async createOrUpdateIntegration(
     org: string,
     name: string,
-    picture: string,
+    picture: string | undefined,
     type: 'article' | 'social',
     internalId: string,
     provider: string,
@@ -52,7 +47,7 @@ export class IntegrationService {
     timezone?: number,
     customInstanceDetails?: string
   ) {
-    const uploadedPicture = await this.storage.uploadSimple(picture);
+    const uploadedPicture = picture ? await this.storage.uploadSimple(picture) : undefined;
     return this._integrationRepository.createOrUpdateIntegration(
       org,
       name,
@@ -151,7 +146,7 @@ export class IntegrationService {
       await this.createOrUpdateIntegration(
         integration.organizationId,
         integration.name,
-        integration.picture!,
+        undefined,
         'social',
         integration.internalId,
         integration.providerIdentifier,
