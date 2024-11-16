@@ -48,7 +48,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       },
     } = await (
       await fetch(
-        'https://open.tiktokapis.com/v2/user/info/?fields=open_id,avatar_url,display_name,username',
+        'https://open.tiktokapis.com/v2/user/info/?fields=open_id,avatar_url,display_name,union_id,username',
         {
           method: 'GET',
           headers: {
@@ -102,10 +102,11 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       code: params.code,
       grant_type: 'authorization_code',
       code_verifier: params.codeVerifier,
-      redirect_uri:
-        process.env.NODE_ENV === 'development' || !process.env.NODE_ENV
-          ? `https://integration.git.sn/integrations/social/tiktok`
-          : `${process.env.FRONTEND_URL}/integrations/social/tiktok`,
+      redirect_uri: `${
+            process?.env?.FRONTEND_URL?.indexOf('https') === -1
+              ? 'https://redirectmeto.com/'
+              : ''
+          }${process?.env?.FRONTEND_URL}/integrations/social/tiktok`
     };
 
     const { access_token, refresh_token, scope } = await (
@@ -118,6 +119,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       })
     ).json();
 
+    console.log(this.scopes, scope);
     this.checkScopes(this.scopes, scope);
 
     const {
