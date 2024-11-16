@@ -63,7 +63,7 @@ export class IntegrationRepository {
   createOrUpdateIntegration(
     org: string,
     name: string,
-    picture: string,
+    picture: string | undefined,
     type: 'article' | 'social',
     internalId: string,
     provider: string,
@@ -98,7 +98,7 @@ export class IntegrationRepository {
         providerIdentifier: provider,
         token,
         profile: username,
-        picture,
+        ...(picture ? { picture } : {}),
         inBetweenSteps: isBetweenSteps,
         refreshToken,
         ...(expiresIn
@@ -117,7 +117,7 @@ export class IntegrationRepository {
               inBetweenSteps: isBetweenSteps,
             }
           : {}),
-        picture,
+        ...(picture ? { picture } : {}),
         profile: username,
         providerIdentifier: provider,
         token,
