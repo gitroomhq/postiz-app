@@ -377,4 +377,8 @@ export class InstagramProvider
       })) || []
     );
   }
+
+  music(accessToken: string, data: {q: string}) {
+    return this.fetch(`https://graph.facebook.com/v20.0/music/search?q=${encodeURIComponent(data.q)}&access_token=${accessToken}`);
+  }
 }
