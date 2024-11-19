@@ -13,10 +13,10 @@ export const textSlicer = (
     }
   }
 
-  const {validRangeEnd} = twitter.parseTweet(text);
+  const {validRangeEnd, valid} = twitter.parseTweet(text);
   return {
     start: 0,
-    end: validRangeEnd
+    end: valid ? end : validRangeEnd
   }
 };
 
