@@ -58,22 +58,6 @@
 
 <br />
 
-
-<p align="center">
-  <br /><br /><br />
-  <h1>We participate in Hacktoberfest 2024! 🎉🎊</h1>
-  <p align="left">We are sending a t-shirt for every merged PR! (max 1 per person)</p>
-  <p align="left"><strong>Rules:</strong></p>
-  <ul align="left">
-    <li>You must create an issue before making a pull request.</li>
-    <li>You can also ask to be assigned to an issue. During Hacktoberfest, each issue can have multiple assignees.</li>
-    <li>We have to approve the issue and add a "hacktoberfest" tag.</li>
-    <li>We encourage everybody to contribute to all types of issues. We will only send swag for issues with features and bug fixes (no typos, sorry).</li>
-  </ul>
-  <p align="center"><img align="center" width="400" src="https://github.com/user-attachments/assets/3ceffccc-e4b3-4098-b9ba-44a94cf01294" /></p>
-  <br /><br /><br />
-</p>
-
 <p align="center">
   <video src="https://github.com/user-attachments/assets/05436a01-19c8-4827-b57f-05a5e7637a67" width="100%" />
 </p>
