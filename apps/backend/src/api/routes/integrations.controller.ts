@@ -51,7 +51,7 @@ export class IntegrationsController {
           id: p.id,
           internalId: p.internalId,
           disabled: p.disabled,
-          picture: p.picture,
+          picture: p.picture || '/no-picture.jpg',
           identifier: p.providerIdentifier,
           inBetweenSteps: p.inBetweenSteps,
           refreshNeeded: p.refreshNeeded,
