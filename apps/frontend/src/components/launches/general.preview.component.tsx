@@ -5,6 +5,7 @@ import clsx from 'clsx';
 import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
 import { Chakra_Petch } from 'next/font/google';
 import { FC } from 'react';
+import { textSlicer } from '@gitroom/helpers/utils/count.length';
 const chakra = Chakra_Petch({ weight: '400', subsets: ['latin'] });
 
 export const GeneralPreviewComponent: FC<{maximumCharacters?: number}> = (props) => {
@@ -14,7 +15,8 @@ export const GeneralPreviewComponent: FC<{maximumCharacters?: number}> = (props)
     removeMarkdown: true,
     saveBreaklines: true,
     specialFunc: (text: string) => {
-      return text.slice(0, props.maximumCharacters || 10000) + '<mark class="bg-red-500" data-tooltip-id="tooltip" data-tooltip-content="This text will be cropped">' + text?.slice(props.maximumCharacters || 10000) + '</mark>';
+      const {start, end} = textSlicer(integration?.identifier || '', props.maximumCharacters || 10000, text);
+      return text.slice(start, end) + '<mark class="bg-red-500" data-tooltip-id="tooltip" data-tooltip-content="This text will be cropped">' + text?.slice(end) + '</mark>';
     },
   });
 
