@@ -323,8 +323,8 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     accessToken: string,
     date: number
   ): Promise<AnalyticsData[]> {
-    const until = dayjs().format('YYYY-MM-DD');
-    const since = dayjs().subtract(date, 'day').format('YYYY-MM-DD');
+    const until = dayjs().endOf('day').unix();
+    const since = dayjs().subtract(date, 'day').unix();
 
     const { data, ...all } = await (
       await fetch(
@@ -332,7 +332,6 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       )
     ).json();
 
-    console.log(data);
     return (
       data?.map((d: any) => ({
         label: capitalize(d.name),

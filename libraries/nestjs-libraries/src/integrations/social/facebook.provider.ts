@@ -298,8 +298,8 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     accessToken: string,
     date: number
   ): Promise<AnalyticsData[]> {
-    const until = dayjs().format('YYYY-MM-DD');
-    const since = dayjs().subtract(date, 'day').format('YYYY-MM-DD');
+    const until = dayjs().endOf('day').unix()
+    const since = dayjs().subtract(date, 'day').unix();
 
     const { data } = await (
       await this.fetch(
