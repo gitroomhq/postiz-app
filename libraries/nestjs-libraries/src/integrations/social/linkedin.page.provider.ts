@@ -103,6 +103,8 @@ export class LinkedinPageProvider
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
+            'X-Restli-Protocol-Version': '2.0.0',
+            'LinkedIn-Version': '202402',
           },
         }
       )
@@ -124,7 +126,10 @@ export class LinkedinPageProvider
     requiredId: string,
     accessToken: string
   ): Promise<AuthTokenDetails> {
-    const information = await this.fetchPageInformation(accessToken, requiredId);
+    const information = await this.fetchPageInformation(
+      accessToken,
+      requiredId
+    );
 
     return {
       id: information.id,

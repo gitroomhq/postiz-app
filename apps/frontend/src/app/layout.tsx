@@ -11,6 +11,8 @@ import PlausibleProvider from 'next-plausible';
 import clsx from 'clsx';
 import { VariableContextComponent } from '@gitroom/react/helpers/variable.context';
 import { Fragment } from 'react';
+import { PHProvider } from '@gitroom/react/helpers/posthog';
+import UtmSaver from '@gitroom/helpers/utils/utm.saver';
 
 const chakra = Chakra_Petch({ weight: '400', subsets: ['latin'] });
 
@@ -44,7 +46,13 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           <Plausible
             domain={!!process.env.IS_GENERAL ? 'postiz.com' : 'gitroom.com'}
           >
-            <LayoutContext>{children}</LayoutContext>
+            <PHProvider
+              phkey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
+              host={process.env.NEXT_PUBLIC_POSTHOG_HOST}
+            >
+              <UtmSaver />
+              <LayoutContext>{children}</LayoutContext>
+            </PHProvider>
           </Plausible>
         </VariableContextComponent>
       </body>

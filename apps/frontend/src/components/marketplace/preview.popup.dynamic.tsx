@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { FC, useCallback } from 'react';
+import { FC } from 'react';
 import { Post as PrismaPost } from '.prisma/client';
 import { Providers } from '@gitroom/frontend/components/launches/providers/show.all.providers';
 
