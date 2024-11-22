@@ -210,7 +210,7 @@ export const TeamsComponent = () => {
                   <Button
                     className={`!bg-customColor3 !h-[24px] border border-customColor21 rounded-[4px] text-[12px] ${interClass}`}
                     onClick={remove(p)}
-					secondary="true"
+                    secondary=true
                   >
                     <div className="flex justify-center items-center gap-[4px]">
                       <div>
