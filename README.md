@@ -1,4 +1,10 @@
 <p align="center">
+  Please help us out on Product Hunt,<br />to give you the best open-source<br />social media scheduling tool in the world 🌎👇 <br /><br />
+<a href="https://www.producthunt.com/posts/postiz?embed=true&utm_source=badge-featured&utm_medium=badge&utm_souce=badge-postiz" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=606350&theme=light" alt="Postiz - Your&#0032;ultimate&#0032;AI&#0032;social&#0032;media&#0032;scheduling&#0032;tool&#0032; | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
+  <br /><br />
+</p>
+
+<p align="center">
   <a href="https://postiz.com" target="_blank">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/765e9d72-3ee7-4a56-9d59-a2c9befe2311">
