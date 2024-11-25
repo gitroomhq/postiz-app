@@ -150,8 +150,8 @@ export class OrganizationRepository {
 
     if (
       process.env.STRIPE_PUBLISHABLE_KEY &&
-      checkForSubscription?.subscription?.subscriptionTier !==
-        SubscriptionTier.PRO
+      checkForSubscription?.subscription?.subscriptionTier ===
+        SubscriptionTier.STANDARD
     ) {
       return false;
     }
