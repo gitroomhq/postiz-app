@@ -14,6 +14,7 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useSWRConfig } from 'swr';
 import clsx from 'clsx';
 import { TeamsComponent } from '@gitroom/frontend/components/settings/teams.component';
+import { IntegretionTags } from '@gitroom/frontend/components/settings/integration-tags.component';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
 import { useSearchParams } from 'next/navigation';
