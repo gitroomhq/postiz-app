@@ -4,11 +4,11 @@ import { Injectable } from '@nestjs/common';
 @Injectable()
 export class ConfigurationVariableRepository {
   constructor(
-    private _configurationVariable: PrismaRepository<'configurationVariables'>
+    private _configurationVariables: PrismaRepository<'configurationVariables'>
   ) {}
 
   getOrDefault(key: string, defaultValue: string) {
-    const dbVal = this._configurationVariable.model.configurationVariable.findFirst({
+    const dbVal = this._configurationVariables.model.configurationVariables.findFirst({
       where: {
         key,
       },
@@ -22,7 +22,7 @@ export class ConfigurationVariableRepository {
   }
 
   isSet(key: string) {
-    return !!this._configurationVariable.model.configurationVariable.findFirst({
+    return !!this._configurationVariables.model.configurationVariables.findFirst({
       where: {
         key,
       },
@@ -30,11 +30,15 @@ export class ConfigurationVariableRepository {
   }
 
   set(key: string, value: string) {
-    return this._configurationVariable.model.configurationVariable.create({
+    return this._configurationVariables.model.configurationVariables.create({
       data: {
         key,
         value,
       },
     });
+  }
+
+  getAll() {
+    return this._configurationVariables.model.configurationVariables.findMany();
   }
 }

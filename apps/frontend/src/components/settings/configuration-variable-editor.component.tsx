@@ -1,55 +1,38 @@
 'use client';
 
 import { FormProvider, SubmitHandler, useForm } from 'react-hook-form';
-import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useMemo } from 'react';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { SaveConfigurationVariableDto, SaveConfigurationVariablesDto } from '@gitroom/nestjs-libraries/dtos/settings/configuration-variables.dto.ts';
-
-const cvars = [
-  {
-    key: 'USER_REGISTRATION_ENABLED',
-    description: 'Enable user registration',
-    datatype: 'bool',
-    default: 'true',
-    val: 'true',
-    section: ['Functionality'],
-  },
-  {
-    key: 'MARKETPLACE_ENABLED',
-    description: 'Enable marketplace',
-    datatype: 'bool',
-    default: 'true',
-    val: 'true',
-    section: ['Functionality'],
-  },
-  {
-    key: 'DISCORD_CLIENT_ID',
-    description: 'Discord client ID',
-    datatype: 'string',
-    default: null,
-    value: null,
-    section: ['Providers', 'Discord'],
-  },
-  {
-    key: 'DISCORD_CLIENT_SECRET',
-    description: 'Discord client secret',
-    datatype: 'string',
-    default: null,
-    value: null,
-    section: ['Providers', 'Discord'],
-  },
-]
+import { Button } from '@gitroom/react/form/button';
+import { FC, useCallback, useEffect, useState } from 'react';
+import useSWR from 'swr';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 
 export const ConfigurationVariableEditorComponent = () => {
   const resolver = useMemo(() => classValidatorResolver(SaveConfigurationVariableDto), []);
 
+  const fetch = useFetch();
+
   const form = useForm({ resolver, values: { message: '' } });
 
-  const { data, mutate } = useFetch(`/configuration-variables/all`);
+  const [state, setState] = useState(true);
+
+  const fetchCvars = useCallback(async () => {
+    const cvars = await (
+      await fetch('/settings/cvars/all', {
+        method: 'GET',
+      })
+    ).json();
+
+    setState(cvars);
+    return cvars;
+  }, []);
+
+  const { data, error, isLoading } = useSWR('/settings/cvars/all', fetchCvars)
 
   const submit: SubmitHandler<SaveConfigurationVariableDto> = async (data) => {
-    await fetch(`/configuration-variables/${params.id}`, {
+    await fetch(`/settings/cvars/${params.id}`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -57,21 +40,27 @@ export const ConfigurationVariableEditorComponent = () => {
     form.reset();
   }
 
+  console.log("data", data)
+
+  if (isLoading) return <div>Loading...</div>
+  if (error) return <div className = "text-red-700">Error loading data</div>
+
   return (
     <div>
-      <h2 className = "text-[22px] mb-[6px]">Configuration Variable Editor</h2>
+      <h3 className = "text-[20px] mb-[6px]">Configuration Variable Editor</h3>
       <p className = "mb-[12px]">This screen is only accessible and editable by super admins, it includes configuration that effects the entire app. </p>
 
-      <form onSubmit={form.handleSubmit(submit)}>
-        <FormProvider {...form}>
-
-        {cvars.map((cvar) => (
-          <div className = "grid grid-cols-2 p-1" key={cvar.key}>
+        {data.configurationVariables.map((cvar) => (
+          <div className = "grid grid-cols-2 p-1" key={cvar.description}>
             <div>
               <label className = "">
-                <strong className = "font-bold">{cvar.key}</strong>
+                <strong className = "font-bold"><abbr title = {cvar.key}>{cvar.title}</abbr></strong>
               </label>
               <p className = "text-customColor18">{cvar.description}</p>
+
+              {cvar.docs && (
+                <a href = {cvar.docs} target = "_blank" className = "text-customColor4">More docs...</a>
+              )}
             </div>
             <div className="">
               {cvar.datatype === 'bool' ? ( 
@@ -83,8 +72,8 @@ export const ConfigurationVariableEditorComponent = () => {
           </div>
         ))}
 
-        </FormProvider>
-      </form>
+        <Button className = "rounded-[4px]">Save</Button>
+
     </div>
   )
 }
