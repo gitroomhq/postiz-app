@@ -1,20 +1,20 @@
 'use client';
 
-import { FormProvider, SubmitHandler, useForm } from 'react-hook-form';
-import { useMemo } from 'react';
-import { classValidatorResolver } from '@hookform/resolvers/class-validator';
-import { SaveConfigurationVariableDto, SaveConfigurationVariablesDto } from '@gitroom/nestjs-libraries/dtos/settings/configuration-variables.dto.ts';
-import { Button } from '@gitroom/react/form/button';
-import { FC, useCallback, useEffect, useState } from 'react';
-import useSWR from 'swr';
-import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+// import { FormProvider, SubmitHandler, useForm } from 'react-hook-form';
+// import { useMemo } from 'react';
+// import { classValidatorResolver } from '@hookform/resolvers/class-validator';
+// import { SaveConfigurationVariableDto, SaveConfigurationVariablesDto } from '@gitroom/nestjs-libraries/dtos/settings/configuration-variables.dto.ts';
+import { Button } from '@gitroom/react/form/button'
+import { useCallback, useState } from 'react'
+import useSWR from 'swr'
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch'
 
 export const ConfigurationVariableEditorComponent = () => {
-  const resolver = useMemo(() => classValidatorResolver(SaveConfigurationVariableDto), []);
+  // const resolver = useMemo(() => classValidatorResolver(SaveConfigurationVariableDto), []);
 
   const fetch = useFetch();
 
-  const form = useForm({ resolver, values: { message: '' } });
+  // const form = useForm({ resolver, values: { message: '' } });
 
   const [state, setState] = useState(true);
 
@@ -27,10 +27,11 @@ export const ConfigurationVariableEditorComponent = () => {
 
     setState(cvars);
     return cvars;
-  }, []);
+  }, [])
 
   const { data, error, isLoading } = useSWR('/settings/cvars/all', fetchCvars)
 
+  /*
   const submit: SubmitHandler<SaveConfigurationVariableDto> = async (data) => {
     await fetch(`/settings/cvars/${params.id}`, {
       method: 'POST',
@@ -39,8 +40,7 @@ export const ConfigurationVariableEditorComponent = () => {
     mutate();
     form.reset();
   }
-
-  console.log("data", data)
+ */
 
   if (isLoading) return <div>Loading...</div>
   if (error) return <div className = "text-red-700">Error loading data</div>
