@@ -1,0 +1,16 @@
+id,Large File,File URL,LOC,N_Components,N_Functions,N_Imports,"Em uma escala de 1 a 5, como você avalia a relevância desse smell?
+1 = smell não é importante e, provavelmente, não será refatorado
+5 = smell é muito importante e, provavelmente, será refatorado em breve.",Observação
+1,main.billing.component.tsx,/Users/ludiooliveira/projects/evelyn/postiz-app/apps/frontend/src/components/billing/main.billing.component.tsx,519,4,0,27,,
+2,add.edit.model.tsx,/Users/ludiooliveira/projects/evelyn/postiz-app/apps/frontend/src/components/launches/add.edit.model.tsx,663,1,1,43,,
+3,add.provider.component.tsx,/Users/ludiooliveira/projects/evelyn/postiz-app/apps/frontend/src/components/launches/add.provider.component.tsx,473,5,1,19,,
+4,calendar.tsx,/Users/ludiooliveira/projects/evelyn/postiz-app/apps/frontend/src/components/launches/calendar.tsx,666,7,0,33,,
+5,generator.tsx,/Users/ludiooliveira/projects/evelyn/postiz-app/apps/frontend/src/components/launches/generator/generator.tsx,420,5,0,22,,
+6,high.order.provider.tsx,/Users/ludiooliveira/projects/evelyn/postiz-app/apps/frontend/src/components/launches/providers/high.order.provider.tsx,441,2,1,32,,
+7,settings.component.tsx,/Users/ludiooliveira/projects/evelyn/postiz-app/apps/frontend/src/components/layout/settings.component.tsx,235,2,0,23,,
+8,buyer.tsx,/Users/ludiooliveira/projects/evelyn/postiz-app/apps/frontend/src/components/marketplace/buyer.tsx,568,6,0,29,,
+9,order.top.actions.tsx,/Users/ludiooliveira/projects/evelyn/postiz-app/apps/frontend/src/components/marketplace/order.top.actions.tsx,367,4,0,25,,
+10,special.message.tsx,/Users/ludiooliveira/projects/evelyn/postiz-app/apps/frontend/src/components/marketplace/special.message.tsx,439,6,0,17,,
+11,connect.channels.tsx,/Users/ludiooliveira/projects/evelyn/postiz-app/apps/frontend/src/components/onboarding/connect.channels.tsx,263,1,0,15,,
+12,post.url.selector.tsx,/Users/ludiooliveira/projects/evelyn/postiz-app/apps/frontend/src/components/post-url-selector/post.url.selector.tsx,267,2,3,17,,
+13,teams.component.tsx,/Users/ludiooliveira/projects/evelyn/postiz-app/apps/frontend/src/components/settings/teams.component.tsx,248,2,0,21,,
