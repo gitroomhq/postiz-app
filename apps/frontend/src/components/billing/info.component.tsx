@@ -15,6 +15,8 @@ const Info: FC<{ proceed: (feedback: string) => void }> = (props) => {
         events('cancel_subscription');
         modal.closeAll();
     }, [modal, feedback]);
+    
+    const hasFeedback = feedback.length < 20;
 
     return (
         <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-customColor6 bg-sixth p-[16px] pt-0 w-[500px]">
@@ -54,7 +56,9 @@ const Info: FC<{ proceed: (feedback: string) => void }> = (props) => {
                 />
             </div>
             <div>
-                <Button disabled={feedback.length < 20} onClick={cancel}>
+                <Button 
+                      disabled={hasFeedback} 
+                      onClick={cancel}>
                     Cancel Subscription
                 </Button>
             </div>

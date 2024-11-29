@@ -110,6 +110,8 @@ export const LifetimeDeal = () => {
     router.replace('/billing');
     return null;
   }
+  
+  const codeEmpty = code.length < 4;
 
   return (
     <div className="flex gap-[30px]">
@@ -183,7 +185,10 @@ export const LifetimeDeal = () => {
               />
             </div>
             <div>
-              <Button disabled={code.length < 4} onClick={claim}>
+              <Button 
+                disabled={codeEmpty}
+                onClick={claim}
+              >
                 Claim
               </Button>
             </div>
