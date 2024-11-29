@@ -13,6 +13,8 @@ import ApiModal from "@gitroom/frontend/components/launches/modal/api-modal";
 import UrlModal from "@gitroom/frontend/components/launches/modal/url-modal";
 import CloseIcon from "@gitroom/frontend/components/icons/close";
 import CustomVariables from "@gitroom/frontend/components/launches/custom-variables";
+import SocialLinkItem from "@gitroom/frontend/components/launches/social-link-item";
+import ArticleItemLink from "@gitroom/frontend/components/launches/article-item-link";
 
 const resolver = classValidatorResolver(ApiKeyDto);
 
@@ -161,29 +163,14 @@ export const AddProviderComponent: FC<{
                 <h2 className="pt-[16px] pb-[10px]">Social</h2>
                 <div className="grid grid-cols-3 gap-[10px] justify-items-center justify-center">
                     {social.map((item) => (
-                        <div
+                        <SocialLinkItem
                             key={item.identifier}
-                            onClick={getSocialLink(
-                                item.identifier,
-                                item.isExternal,
-                                item.customFields
-                            )}
-                            className={
-                                'w-[120px] h-[100px] bg-input text-textColor justify-center items-center flex flex-col gap-[10px] cursor-pointer'
-                            }
-                        >
-                            <div>
-                                {item.identifier === 'youtube' ? (
-                                    <img src={`/icons/platforms/youtube.svg`}/>
-                                ) : (
-                                    <img
-                                        className="w-[32px] h-[32px] rounded-full"
-                                        src={`/icons/platforms/${item.identifier}.png`}
-                                    />
-                                )}
-                            </div>
-                            <div>{item.name}</div>
-                        </div>
+                            identifier={item.identifier}
+                            isExternal={item.isExternal}
+                            customFields={item.customFields}
+                            name={item.name}
+                            onClick={getSocialLink(item.identifier, item.isExternal, item.customFields)}
+                        />
                     ))}
                 </div>
             </div>
@@ -192,19 +179,12 @@ export const AddProviderComponent: FC<{
                     <h2 className="pb-[10px]">Articles</h2>
                     <div className="grid grid-cols-3 gap-[10px]">
                         {article.map((item) => (
-                            <div
+                            <ArticleItemLink
                                 key={item.identifier}
+                                identifier={item.identifier}
+                                name={item.name}
                                 onClick={showApiButton(item.identifier, item.name)}
-                                className="w-[120px] h-[100px] bg-input text-textColor justify-center items-center flex flex-col gap-[10px] cursor-pointer"
-                            >
-                                <div>
-                                    <img
-                                        className="w-[32px] h-[32px] rounded-full"
-                                        src={`/icons/platforms/${item.identifier}.png`}
-                                    />
-                                </div>
-                                <div>{item.name}</div>
-                            </div>
+                            />
                         ))}
                     </div>
                 </div>
