@@ -15,7 +15,7 @@ import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useModals } from '@mantine/modals';
 import { useUtmUrl } from '@gitroom/helpers/utils/utm.saver';
 import PricingPlans from "@gitroom/frontend/components/billing/pricing.component";
-import { useMoveToCheckout } from './movecheckout';
+import { useMoveToCheckout } from '@gitroom/frontend/components/billing/move-checkout';
 
 
 export const MainBillingComponent: FC<{

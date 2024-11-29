@@ -240,119 +240,137 @@ export const AddEditModal: FC<{
     []
   );
 
-  // function to send to the server and save
-  const schedule = useCallback(
-    (type: 'draft' | 'now' | 'schedule' | 'delete') => async () => {
-      if (type === 'delete') {
-        if (
-          !(await deleteDialog(
+  const acaoDelete = function () {
+    if (
+        !(await deleteDialog(
             'Are you sure you want to delete this post?',
             'Yes, delete it!'
-          ))
-        ) {
-          return;
-        }
-        await fetch(`/posts/${existingData.group}`, {
-          method: 'DELETE',
-        });
-        mutate();
-        modal.closeAll();
-        return;
-      }
+        ))
+    ) {
+      return;
+    }
+    await fetch(`/posts/${existingData.group}`, {
+      method: 'DELETE',
+    });
+    mutate();
+    modal.closeAll();
+  }
 
-      const values = getValues();
+  const handleDelete = async () => {
+    await acaoDelete();
+  };
 
-      const allKeys = Object.keys(values).map((v) => ({
-        integration: integrations.find((p) => p.id === v),
-        value: values[v].posts,
-        valid: values[v].isValid,
-        group: existingData?.group,
-        trigger: values[v].trigger,
-        settings: values[v].settings(),
-        checkValidity: values[v].checkValidity,
-        maximumCharacters: values[v].maximumCharacters,
-      }));
-
-      for (const key of allKeys) {
-        if (key.checkValidity) {
-          const check = await key.checkValidity(
+  const validateAndProcessKeys = async (allKeys: any[], toaster: any, moveToIntegration: any) => {
+    for (const key of allKeys) {
+      if (key.checkValidity) {
+        const check = await key.checkValidity(
             key?.value.map((p: any) => p.image || [])
-          );
-          if (typeof check === 'string') {
-            toaster.show(check, 'warning');
-            return;
-          }
-        }
-
-        if (
-          key.value.some(
-            (p) => {
-              return countCharacters(p.content, key?.integration?.identifier || '') > (key.maximumCharacters || 1000000);
-            }
-          )
-        ) {
-          if (
-            !(await deleteDialog(
-              `${key?.integration?.name} post is too long, it will be cropped, do you want to continue?`,
-              'Yes, continue'
-            ))
-          ) {
-            await key.trigger();
-            moveToIntegration({
-              identifier: key?.integration?.id!,
-              toPreview: true,
-            });
-            return;
-          }
-        }
-
-        if (key.value.some((p) => !p.content || p.content.length < 6)) {
-          setShowError(true);
-          return;
-        }
-
-        if (!key.valid) {
-          await key.trigger();
-          moveToIntegration({ identifier: key?.integration?.id! });
-          return;
+        );
+        if (typeof check === 'string') {
+          toaster.show(check, 'warning');
+          return false;
         }
       }
 
-      await fetch('/posts', {
-        method: 'POST',
-        body: JSON.stringify({
-          ...(postFor ? { order: postFor.id } : {}),
-          type,
-          date: dateState.utc().format('YYYY-MM-DDTHH:mm:ss'),
-          posts: allKeys.map((p) => ({
-            ...p,
-            value: p.value.map((a) => ({
-              ...a,
-              content: a.content.slice(0, p.maximumCharacters || 1000000),
-            })),
+      if (
+          key.value.some(
+              (p) => {
+                return countCharacters(p.content, key?.integration?.identifier || '') > (key.maximumCharacters || 1000000);
+              }
+          )
+      ) {
+        if (
+            !(await deleteDialog(
+                `${key?.integration?.name} post is too long, it will be cropped, do you want to continue?`,
+                'Yes, continue'
+            ))
+        ) {
+          await key.trigger();
+          moveToIntegration({
+            identifier: key?.integration?.id!,
+            toPreview: true,
+          });
+          return false;
+        }
+      }
+
+      if (key.value.some((p) => !p.content || p.content.length < 6)) {
+        setShowError(true);
+        return false;
+      }
+
+      if (!key.valid) {
+        await key.trigger();
+        moveToIntegration({ identifier: key?.integration?.id! });
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const prepareAndSendPayload = async (type: string, allKeys: any[], postFor: any, dateState: any, existingData: any, mutate: any, toaster: any, modal: any) => {
+    await fetch('/posts', {
+      method: 'POST',
+      body: JSON.stringify({
+        ...(postFor ? { order: postFor.id } : {}),
+        type,
+        date: dateState.utc().format('YYYY-MM-DDTHH:mm:ss'),
+        posts: allKeys.map((p) => ({
+          ...p,
+          value: p.value.map((a) => ({
+            ...a,
+            content: a.content.slice(0, p.maximumCharacters || 1000000),
           })),
-        }),
-      });
+        })),
+      }),
+    });
 
-      existingData.group = makeId(10);
+    existingData.group = makeId(10);
 
-      mutate();
-      toaster.show(
+    mutate();
+    toaster.show(
         !existingData.integration
-          ? 'Added successfully'
-          : 'Updated successfully'
-      );
-      modal.closeAll();
-    },
-    [
-      postFor,
-      dateState,
-      value,
-      integrations,
-      existingData,
-      selectedIntegrations,
-    ]
+            ? 'Added successfully'
+            : 'Updated successfully'
+    );
+    modal.closeAll();
+  };
+
+  const schedule = useCallback(
+      (type: 'draft' | 'now' | 'schedule' | 'delete') => async () => {
+        if (type === 'delete') {
+          await handleDelete();
+          return;
+        }
+
+        const values = getValues();
+
+        const allKeys = Object.keys(values).map((v) => ({
+          integration: integrations.find((p) => p.id === v),
+          value: values[v].posts,
+          valid: values[v].isValid,
+          group: existingData?.group,
+          trigger: values[v].trigger,
+          settings: values[v].settings(),
+          checkValidity: values[v].checkValidity,
+          maximumCharacters: values[v].maximumCharacters,
+        }));
+
+        const isValid = await validateAndProcessKeys(allKeys, toaster, moveToIntegration);
+        if (!isValid) return;
+
+        await prepareAndSendPayload(type, allKeys, postFor, dateState, existingData, mutate, toaster, modal);
+      },
+      [
+        postFor,
+        dateState,
+        value,
+        integrations,
+        existingData,
+        selectedIntegrations,
+      ]
   );
+  
 
   const getPostsMarketplace = useCallback(async () => {
     return (
