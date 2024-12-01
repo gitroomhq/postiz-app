@@ -5,6 +5,7 @@ import Polonto from "../launches/polonto";
 import { Button } from "@gitroom/react/form/button";
 import { VideoFrame } from '@gitroom/react/helpers/video.frame';
 import { MediaBox } from "./mediabox.component";
+import Image from "next/image";
 
 export const MultiMediaComponent: FC<{
     label: string;
@@ -36,7 +37,7 @@ export const MultiMediaComponent: FC<{
         setCurrentMedia(newMedia);
         onChange({ target: { name, value: newMedia } });
       },
-      [currentMedia]
+      [currentMedia, name]
     );
   
     const showModal = useCallback(() => {
@@ -45,7 +46,7 @@ export const MultiMediaComponent: FC<{
   
     const closeDesignModal = useCallback(() => {
       setMediaModal(false);
-    }, [modal]);
+    }, []);
   
     const clearMedia = useCallback(
       (topIndex: number) => () => {
@@ -123,9 +124,12 @@ export const MultiMediaComponent: FC<{
                       {media.path.indexOf('mp4') > -1 ? (
                         <VideoFrame url={mediaDirectory.set(media.path)} />
                       ) : (
-                        <img
+                        <Image
                           className="w-full h-full object-cover"
                           src={mediaDirectory.set(media.path)}
+                          alt={'media'+index}
+                          width={50}
+                          height={50}
                         />
                       )}
                     </div>

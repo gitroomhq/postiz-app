@@ -8,6 +8,7 @@ import { MultipartFileUploader } from "./new.uploader";
 import clsx from "clsx";
 import { VideoFrame } from '@gitroom/react/helpers/video.frame';
 import { LoadingComponent } from "../layout/loading";
+import Image from "next/image";
 
 export const MediaBox: FC<{
     setMedia: (params: { id: string; path: string }) => void;
@@ -15,7 +16,6 @@ export const MediaBox: FC<{
     closeModal: () => void;
   }> = (props) => {
     const { setMedia, type, closeModal } = props;
-    const [pages, setPages] = useState(0);
     const [mediaList, setListMedia] = useState<Media[]>([]);
     const fetch = useFetch();
     const mediaDirectory = useMediaDirectory();
@@ -24,25 +24,24 @@ export const MediaBox: FC<{
   
     const loadMedia = useCallback(async () => {
       return (await fetch('/media')).json();
-    }, []);
+    }, [fetch]);
   
     const setNewMedia = useCallback(
       (media: Media) => () => {
         setMedia(media);
         closeModal();
       },
-      []
+      [closeModal]
     );
   
     const { data, mutate } = useSWR('get-media', loadMedia);
   
     useEffect(() => {
-      if (data?.pages) {
-        setPages(data.pages);
-      }
+      setLoading(true)
       if (data?.results && data?.results?.length) {
         setListMedia([...data.results]);
       }
+      setLoading(false)
     }, [data]);
   
     return (
@@ -135,10 +134,12 @@ export const MediaBox: FC<{
                   {media.path.indexOf('mp4') > -1 ? (
                     <VideoFrame url={mediaDirectory.set(media.path)} />
                   ) : (
-                    <img
+                    <Image
                       className="w-full h-full object-cover"
                       src={mediaDirectory.set(media.path)}
                       alt='media'
+                      width={30}
+                      height={30}
                     />
                   )}
                 </div>
