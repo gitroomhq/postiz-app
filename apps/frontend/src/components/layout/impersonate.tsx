@@ -107,7 +107,7 @@ export const Impersonate = () => {
   }, [data]);
 
   return (
-    <div className="px-[23px]">
+    <div className="md:px-[23px]">
       <div className="bg-forth h-[52px] flex justify-center items-center border-input border rounded-[8px]">
         <div className="relative flex flex-col w-[600px]">
           <div className="relative z-[999]">

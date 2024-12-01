@@ -28,7 +28,8 @@ export default async function Page({
   });
 
   if (data.status === HttpStatusCode.NotAcceptable) {
-    return redirect(`/launches?scope=missing`);
+    const { msg } = await data.json();
+    return redirect(`/launches?msg=${msg}`);
   }
 
   if (
@@ -53,5 +54,5 @@ export default async function Page({
     return redirect(`/launches?added=${provider}&continue=${id}`);
   }
 
-  return redirect(`/launches?added=${provider}`);
+  return redirect(`/launches?added=${provider}&msg=Channel Updated`);
 }
