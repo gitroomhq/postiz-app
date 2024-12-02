@@ -71,6 +71,34 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
+  async uploadVideoThumbnail(
+    accessToken: string,
+    videoId: string,
+    thumbnailUrl: string
+  ): Promise<void> {
+    const response = await this.fetch(
+      `https://graph.facebook.com/v20.0/${videoId}/thumbnails`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          access_token: accessToken,
+          is_preferred: true,
+          source: thumbnailUrl,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        `Failed to upload video thumbnail: ${JSON.stringify(errorData)}`
+      );
+    }
+  }
+
   async authenticate(params: {
     code: string;
     codeVerifier: string;
@@ -202,6 +230,13 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
 
       finalUrl = 'https://www.facebook.com/reel/' + videoId;
       finalId = videoId;
+      if (firstPost.settings?.thumbnail?.url) {
+        await this.uploadVideoThumbnail(
+          accessToken,
+          videoId,
+          firstPost.settings.thumbnail.url
+        );
+      }
     } else {
       const uploadPhotos = !firstPost?.media?.length
         ? []

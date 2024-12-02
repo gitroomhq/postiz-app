@@ -77,7 +77,11 @@ export type PostResponse = {
 export type PostDetails<T = any> = {
   id: string;
   message: string;
-  settings: T;
+  settings: T & {
+    thumbnail?: {
+      url: string;
+    };
+  };
   media?: MediaContent[];
   poll?: PollDetails;
 };
