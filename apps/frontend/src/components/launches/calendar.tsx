@@ -27,8 +27,17 @@ import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import { groupBy, sortBy } from 'lodash';
 import Image from 'next/image';
 import { extend } from 'dayjs';
+import { isUSCitizen } from './helpers/isuscitizen.utils';
 extend(isSameOrAfter);
 extend(isSameOrBefore);
+
+const convertTimeFormatBasedOnLocality = (time: number) => {
+  if (isUSCitizen()) {
+    return `${time === 12 ? 12 : time%12}:00 ${time >= 12 ? "PM" : "AM"}`
+  } else {
+    return `${time}:00`
+  }
+}
 
 export const days = [
   'Monday',
@@ -91,7 +100,7 @@ export const DayView = () => {
               .startOf('day')
               .add(option[0].time, 'minute')
               .local()
-              .format('HH:mm')}
+              .format(isUSCitizen() ? "hh:mm A": "HH:mm")}
           </div>
           <div
             key={option[0].time}
@@ -140,7 +149,8 @@ export const WeekView = () => {
           {hours.map((hour) => (
             <Fragment key={hour}>
               <div className="p-2 pr-4 bg-secondary text-center items-center justify-center flex">
-                {hour.toString().padStart(2, '0')}:00
+                {/* {hour.toString().padStart(2, '0')}:00 */}
+                {convertTimeFormatBasedOnLocality(hour)}
               </div>
               {days.map((day, indexDay) => (
                 <Fragment key={`${day}-${hour}`}>
