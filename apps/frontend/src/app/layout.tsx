@@ -17,7 +17,10 @@ import UtmSaver from '@gitroom/helpers/utils/utm.saver';
 const chakra = Chakra_Petch({ weight: '400', subsets: ['latin'] });
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
-  const Plausible = !!process.env.STRIPE_PUBLISHABLE_KEY
+  const enablePlausible = process.env.ENABLE_PLAUSIBLE === 'true';
+  const enablePosthog = process.env.ENABLE_POSTHOG === 'true';
+  
+  const Plausible = (!!process.env.STRIPE_PUBLISHABLE_KEY && enablePlausible)
     ? PlausibleProvider
     : Fragment;
 
@@ -38,6 +41,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           backendUrl={process.env.NEXT_PUBLIC_BACKEND_URL!}
           plontoKey={process.env.NEXT_PUBLIC_POLOTNO!}
           billingEnabled={!!process.env.STRIPE_PUBLISHABLE_KEY}
+          analyticsEnabled={enablePlausible || enablePosthog}
           discordUrl={process.env.NEXT_PUBLIC_DISCORD_SUPPORT!}
           frontEndUrl={process.env.FRONTEND_URL!}
           isGeneral={!!process.env.IS_GENERAL}
@@ -49,6 +53,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             <PHProvider
               phkey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
               host={process.env.NEXT_PUBLIC_POSTHOG_HOST}
+              enabled={enablePosthog}
             >
               <UtmSaver />
               <LayoutContext>{children}</LayoutContext>

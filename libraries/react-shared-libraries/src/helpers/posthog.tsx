@@ -8,9 +8,10 @@ export const PHProvider: FC<{
   children: ReactNode;
   phkey?: string;
   host?: string;
-}> = ({ children, phkey, host }) => {
+  enabled?: boolean;
+}> = ({ children, phkey, host, enabled = false }) => {
   useEffect(() => {
-    if (!phkey || !host) {
+    if (!enabled || !phkey || !host) {
       return;
     }
 
@@ -19,9 +20,9 @@ export const PHProvider: FC<{
       person_profiles: 'identified_only',
       capture_pageview: false, // Disable automatic pageview capture, as we capture manually
     });
-  }, []);
+  }, [enabled]);
 
-  if (!phkey || !host) {
+  if (!enabled || !phkey || !host) {
     return <>{children}</>;
   }
   return <PostHogProvider client={posthog}>{children}</PostHogProvider>;
