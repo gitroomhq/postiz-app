@@ -11,6 +11,7 @@ interface VariableContextInterface {
   backendUrl: string;
   discordUrl: string;
   uploadDirectory: string;
+  analyticsEnabled: boolean;
 }
 const VariableContext = createContext({
   billingEnabled: false,
