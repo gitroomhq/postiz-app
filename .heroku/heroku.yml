@@ -1,0 +1,15 @@
+setup:
+  addons:
+    - plan: heroku-postgresql:hobby-dev
+      as: DATABASE
+    - plan: heroku-redis:hobby-dev
+      as: REDIS
+
+build:
+  docker:
+    web: ghcr.io/gitroomhq/postiz-app-enterprise:latest
+  config:
+    NODE_ENV: production
+
+run:
+  web: /app/entrypoint.sh
