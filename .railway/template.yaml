@@ -1,0 +1,82 @@
+services:
+  web:
+    dockerfile: Dockerfile.dev
+    target: dist
+    numReplicas: 1
+    ports:
+      - 3000:3000
+      - 4200:4200
+      - 5000:5000
+    env:
+      - key: NODE_ENV
+        value: development
+      - key: PORT
+        value: 3000
+      - key: FRONTEND_PORT
+        value: 4200
+      - key: DATABASE_URL
+        fromService:
+          name: postgres
+          type: postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: redis
+          type: redis
+          property: connectionString
+      - key: JWT_SECRET
+        generate: secret
+      - key: SKIP_CONFIG_CHECK
+        value: "true"
+      - key: FRONTEND_URL
+        sync: RAILWAY_PUBLIC_DOMAIN
+        prefix: https://
+      - key: MAIN_URL
+        sync: RAILWAY_PUBLIC_DOMAIN
+        prefix: https://
+      - key: STORAGE_PROVIDER
+        value: local
+      - key: UPLOAD_DIRECTORY
+        value: /uploads
+      - key: NEXT_PUBLIC_API_URL
+        value: /api
+    volumes:
+      - name: uploads
+        mountPath: /uploads
+        persistent: true
+      - name: config
+        mountPath: /config
+        persistent: true
+
+  postgres:
+    image: postgres:17-alpine
+    env:
+      - key: POSTGRES_USER
+        value: postiz
+      - key: POSTGRES_PASSWORD
+        generate: password
+      - key: POSTGRES_DB
+        value: postiz
+    volumes:
+      - name: postgres-data
+        mountPath: /var/lib/postgresql/data
+        persistent: true
+
+  redis:
+    image: redis:7-alpine
+
+volumes:
+  postgres-data:
+    name: postgres-data
+    persistent: true
+  uploads:
+    name: uploads
+    persistent: true
+  config:
+    name: config
+    persistent: true
+
+scripts:
+  postdeploy: |
+    npx prisma generate
+    npx prisma db push --accept-data-loss

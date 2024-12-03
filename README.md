@@ -18,6 +18,9 @@
 <a href="https://opensource.org/licenses/Apache-2.0">
   <img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License">
 </a>
+<a href="https://railway.app/new/template/gitroomhq/postiz-app">
+  <img src="https://railway.app/button.svg" alt="Deploy on Railway">
+</a>
 </p>
 
 <div align="center">
