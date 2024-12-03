@@ -203,4 +203,19 @@ export class UsersController {
 
     response.status(200).send();
   }
+
+  @Post('/changeLanguage')
+  changeLanguage(@Body('language') language: string, @Res({ passthrough: true }) response: Response) {
+    const maxAge = 1000 * 60 * 60 * 24 * 365 * 10; // 10 years in milliseconds
+    response.cookie('NEXT_LOCALE', language, {
+      domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+      secure: true,
+      httpOnly: true,
+      maxAge: maxAge,
+      expires:  new Date(Date.now() + maxAge),
+      sameSite: 'none',
+    });
+
+    response.status(200).send();
+  }
 }

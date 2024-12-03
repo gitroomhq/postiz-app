@@ -18,6 +18,7 @@ import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
 import { useSearchParams } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { CustomSelect } from "@gitroom/react/form/custom.select"
 
 export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
   const {isGeneral} = useVariables();
@@ -71,6 +72,18 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
     swr.mutate('/marketplace/account');
     close();
   }, []);
+
+  const setCurrentLanguage = () => {
+    const language = form.getValues("language")
+    if(language && language.value) {
+
+      fetch('/user/changeLanguage', {
+        method: 'POST',
+        body: JSON.stringify({language: language.value}),
+      });
+    }
+
+  }
 
   useEffect(() => {
     loadProfile();
@@ -195,6 +208,7 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
             </div>
           )}
           {!!user?.tier?.team_members && isGeneral && <TeamsComponent />}
+          <CustomSelect onChange={setCurrentLanguage} options={[{label: "English", value: "en"}, {label: "French", value: "fr"}]} label='Preffered Language' name='language' />
           {showLogout && <LogoutComponent />}
         </div>
       </form>
