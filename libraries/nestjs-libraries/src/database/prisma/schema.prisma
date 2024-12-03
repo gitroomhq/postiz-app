@@ -439,6 +439,13 @@ model Messages {
   @@index([deletedAt])
 }
 
+model ConfigurationVariables {
+	key 		  String @unique
+	value		  String
+
+	@@index([key])
+}
+
 enum OrderStatus {
   PENDING
   ACCEPTED

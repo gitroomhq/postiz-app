@@ -33,16 +33,12 @@ export const useMenuItems = () => {
         },
       ]
       : []),
-    ...(!isGeneral
-      ? [
-        {
-          name: 'Settings',
-          icon: 'settings',
-          path: '/settings',
-          role: ['ADMIN', 'SUPERADMIN'],
-        },
-      ]
-      : []),
+    {
+      name: 'Settings',
+      icon: 'settings',
+      path: '/settings',
+      role: ['ADMIN', 'SUPERADMIN'],
+    },
     {
       name: 'Marketplace',
       icon: 'marketplace',

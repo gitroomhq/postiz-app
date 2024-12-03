@@ -2,6 +2,8 @@ import { Global, Module } from '@nestjs/common';
 import { PrismaRepository, PrismaService } from './prisma.service';
 import { OrganizationRepository } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.repository';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
+import { ConfigurationVariableRepository } from '@gitroom/nestjs-libraries/database/prisma/configuration/configuration.variable.repository';
+import { ConfigurationVariableService } from '@gitroom/nestjs-libraries/database/prisma/configuration/configuration.variable.service';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { UsersRepository } from '@gitroom/nestjs-libraries/database/prisma/users/users.repository';
 import { StarsService } from '@gitroom/nestjs-libraries/database/prisma/stars/stars.service';
@@ -41,6 +43,8 @@ import { AgenciesRepository } from '@gitroom/nestjs-libraries/database/prisma/ag
     UsersRepository,
     OrganizationService,
     OrganizationRepository,
+    ConfigurationVariableService,
+    ConfigurationVariableRepository,
     StarsService,
     StarsRepository,
     SubscriptionService,
