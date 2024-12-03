@@ -270,12 +270,13 @@ export class StripeService {
     body: BillingSubscribeDto,
     price: string
   ) {
+    const isUtm = body.utm ? `&utm_source=${body.utm}` : '';
     const { url } = await stripe.checkout.sessions.create({
       customer,
-      cancel_url: process.env['FRONTEND_URL'] + `/billing`,
+      cancel_url: process.env['FRONTEND_URL'] + `/billing?cancel=true${isUtm}`,
       success_url:
         process.env['FRONTEND_URL'] +
-        `/launches?onboarding=true&check=${uniqueId}`,
+        `/launches?onboarding=true&check=${uniqueId}${isUtm}`,
       mode: 'subscription',
       subscription_data: {
         trial_period_days: 7,

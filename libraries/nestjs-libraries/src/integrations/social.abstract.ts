@@ -1,3 +1,5 @@
+import { timer } from '@gitroom/helpers/utils/timer';
+
 export class RefreshToken {
   constructor(
     public identifier: string,
@@ -13,10 +15,12 @@ export class BadBody {
   ) {}
 }
 
-export class NotEnoughScopes {}
+export class NotEnoughScopes {
+  constructor(public message = 'Not enough scopes') {}
+}
 
 export abstract class SocialAbstract {
-  async fetch(url: string, options: RequestInit = {}, identifier = '') {
+  async fetch(url: string, options: RequestInit = {}, identifier = ''): Promise<Response> {
     const request = await fetch(url, options);
 
     if (request.status === 200 || request.status === 201) {
@@ -29,6 +33,11 @@ export abstract class SocialAbstract {
       console.log(json);
     } catch (err) {
       json = '{}';
+    }
+
+    if (json.includes('rate_limit_exceeded') || json.includes('Rate limit')) {
+      await timer(2000);
+      return this.fetch(url, options, identifier);
     }
 
     if (request.status === 401 || json.includes('OAuthException')) {

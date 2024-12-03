@@ -17,7 +17,7 @@ const YoutubeSettings: FC = () => {
   const { register, control } = useSettings();
   return (
     <div className="flex flex-col">
-      <Input label="Title" {...register('title')} />
+      <Input label="Title" {...register('title')} maxLength={100} />
       <Select label="Type" {...register('type', { value: 'public' })}>
         {type.map((t) => (
           <option key={t.value} value={t.value}>

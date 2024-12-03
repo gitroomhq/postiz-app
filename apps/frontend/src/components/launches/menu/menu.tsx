@@ -1,4 +1,4 @@
-import { FC, useCallback, useState } from 'react';
+import { FC, MouseEventHandler, useCallback, useState } from 'react';
 import { useClickOutside } from '@mantine/hooks';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
@@ -36,7 +36,8 @@ export const Menu: FC<{
     setShow(false);
   });
 
-  const changeShow = useCallback(() => {
+  const changeShow: MouseEventHandler<HTMLDivElement> = useCallback((e) => {
+    e.stopPropagation();
     setShow(!show);
   }, [show]);
 

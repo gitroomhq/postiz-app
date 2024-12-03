@@ -6,4 +6,6 @@ export class BillingSubscribeDto {
 
   @IsIn(['STANDARD', 'PRO', 'TEAM', 'ULTIMATE'])
   billing: 'STANDARD' | 'PRO' | 'TEAM' | 'ULTIMATE';
+
+  utm: string;
 }
