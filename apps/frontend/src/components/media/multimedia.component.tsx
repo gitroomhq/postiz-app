@@ -17,27 +17,20 @@ export const MultiMediaComponent: FC<{
       target: { name: string; value?: Array<{ id: string; path: string }> };
     }) => void;
   }> = (props) => {
-    const { name, label, error, description, onChange, value } = props;
+    const { name, error, onChange, value } = props;
     const user = useUser();
-    useEffect(() => {
-      if (value) {
-        setCurrentMedia(value);
-      }
-    }, []);
   
     const [modal, setShowModal] = useState(false);
     const [mediaModal, setMediaModal] = useState(false);
-  
-    const [currentMedia, setCurrentMedia] = useState(value);
+
     const mediaDirectory = useMediaDirectory();
   
     const changeMedia = useCallback(
       (m: { path: string; id: string }) => {
-        const newMedia = [...(currentMedia || []), m];
-        setCurrentMedia(newMedia);
+        const newMedia = [...(value || []), m];
         onChange({ target: { name, value: newMedia } });
       },
-      [currentMedia, name]
+      [value, name]
     );
   
     const showModal = useCallback(() => {
@@ -50,11 +43,10 @@ export const MultiMediaComponent: FC<{
   
     const clearMedia = useCallback(
       (topIndex: number) => () => {
-        const newMedia = currentMedia?.filter((f: any, index: number) => index !== topIndex);
-        setCurrentMedia(newMedia);
+        const newMedia = value?.filter((f: any, index: number) => index !== topIndex);
         onChange({ target: { name, value: newMedia } });
       },
-      [currentMedia]
+      [value]
     );
   
     const designMedia = useCallback(() => {
@@ -114,8 +106,8 @@ export const MultiMediaComponent: FC<{
               </Button>
             </div>
   
-            {!!currentMedia &&
-              currentMedia.map((media: { path: string ; }, index: number) => (
+            {!!value &&
+              value.map((media: { path: string ; }, index: number) => (
                 <>
                   <div className="cursor-pointer w-[40px] h-[40px] border-2 border-tableBorder relative flex">
                     <div

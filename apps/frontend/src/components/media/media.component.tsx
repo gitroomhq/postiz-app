@@ -4,7 +4,6 @@ import { FC, useCallback, useEffect, useState } from 'react';
 import { Button } from '@gitroom/react/form/button';
 import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
-import EventEmitter from 'events';
 import dynamic from 'next/dynamic';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { MediaBox } from './mediabox.component';
@@ -28,17 +27,19 @@ export const MediaComponent: FC<{
   const { name, type, label, description, onChange, value, width, height } = props;
   const { getValues } = useSettings();
   const user = useUser();
+ 
+  const [modal, setShowModal] = useState(false);
+  const [mediaModal, setMediaModal] = useState(false);
+  const [currentMedia, setCurrentMedia] = useState(value);
+  const mediaDirectory = useMediaDirectory();
+
   useEffect(() => {
     const settings = getValues()[props.name];
     if (settings) {
       setCurrentMedia(settings);
     }
   }, []);
-  const [modal, setShowModal] = useState(false);
-  const [mediaModal, setMediaModal] = useState(false);
-  const [currentMedia, setCurrentMedia] = useState(value);
-  const mediaDirectory = useMediaDirectory();
-
+  
   const closeDesignModal = useCallback(() => {
     setMediaModal(false);
   }, [modal]);
