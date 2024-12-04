@@ -50,6 +50,9 @@ import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import Image from 'next/image';
 import { weightedLength } from '@gitroom/helpers/utils/count.length';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
+import Uppy from '@uppy/core';
+import { getUppyUploadPlugin } from '@gitroom/react/helpers/uppy.upload';
 
 function countCharacters(text: string, type: string): number {
   if (type !== 'x') {
@@ -383,6 +386,38 @@ export const AddEditModal: FC<{
     });
   }, [data, postFor, selectedIntegrations]);
 
+
+  const {backendUrl, storageProvider} = useVariables();
+  
+  const uploadImageToServer = (_file: any, index:number) => {
+    const uppy2 = new Uppy({
+      autoProceed: true,
+      restrictions: {
+        maxNumberOfFiles: 1,
+        // allowedFileTypes: allowedFileTypes.split(','),
+        maxFileSize: 1000000000,
+      },
+    });
+   
+    const { plugin, options } = getUppyUploadPlugin(storageProvider, fetch, backendUrl)
+    uppy2.use(plugin, options)
+    // Set additional metadata when a file is added
+
+    uppy2.addFile(_file)
+
+    uppy2.on('complete', (result) => {
+      if(result){
+        const targetImage = result?.successful![0].response?.body
+        const newMedia = [...( value?.image || []), targetImage];
+  
+        const addToState = { target: { name:"image", value: newMedia } };
+  
+        const r = changeImage(index)
+        r(addToState)
+      }
+    });
+  }
+
   return (
     <>
       {user?.tier?.ai && (
@@ -486,6 +521,21 @@ export const AddEditModal: FC<{
                             preview="edit"
                             // @ts-ignore
                             onChange={changeValue(index)}
+                            onPaste={(event) => {
+                              const clipboardData = event.clipboardData || window.clipboardData;
+                              if (clipboardData && clipboardData.items) {
+                                console.log("clipboardData.items", clipboardData.items)
+                                for (const item of clipboardData.items) {
+                                  if (item.type.indexOf('image') !== -1) {
+                                    const blob = item.getAsFile();
+                                    console.log("blob", blob);
+                                    uploadImageToServer(blob, index)
+                                  }
+                                }
+                              } else {
+                                // console.log('Text Data:', clipboardData.getData('text'));
+                              }
+                            }}
                           />
 
                           {showError &&
@@ -596,10 +646,10 @@ export const AddEditModal: FC<{
                         {!canSendForPublication
                           ? 'Not matching order'
                           : postFor
-                          ? 'Submit for order'
-                          : !existingData.integration
-                          ? 'Add to calendar'
-                          : 'Update'}
+                            ? 'Submit for order'
+                            : !existingData.integration
+                              ? 'Add to calendar'
+                              : 'Update'}
                       </div>
                       {!postFor && (
                         <div className="h-full flex items-center">

@@ -54,6 +54,7 @@ export const Editor = forwardRef<
               textareaPurpose: `Assist me in writing social media posts.`,
               chatApiConfigs: {},
             }}
+            onPaste={props.onPaste}
           />
         ) : (
           <MDEditor {...props} ref={ref} />
