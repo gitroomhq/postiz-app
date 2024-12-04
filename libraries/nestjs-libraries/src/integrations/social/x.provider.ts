@@ -19,8 +19,8 @@ export class XProvider extends SocialAbstract implements SocialProvider {
 
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const startingClient = new TwitterApi({
-      clientId: process.env.TWITTER_CLIENT_ID!,
-      clientSecret: process.env.TWITTER_CLIENT_SECRET!,
+      clientId: process.env.TWITTER_CLIENT_ID! || process.env.X_CLIENT_ID!,
+      clientSecret: process.env.TWITTER_CLIENT_SECRET! || process.env.X_CLIENT_SECRET!,
     });
     const {
       accessToken,

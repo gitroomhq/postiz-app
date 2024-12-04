@@ -49,6 +49,15 @@ import { CopilotPopup } from '@copilotkit/react-ui';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import Image from 'next/image';
+import { weightedLength } from '@gitroom/helpers/utils/count.length';
+
+function countCharacters(text: string, type: string): number {
+  if (type !== 'x') {
+    return text.length;
+  }
+
+  return weightedLength(text);
+}
 
 export const AddEditModal: FC<{
   date: dayjs.Dayjs;
@@ -277,7 +286,9 @@ export const AddEditModal: FC<{
 
         if (
           key.value.some(
-            (p) => p.content.length > (key.maximumCharacters || 1000000)
+            (p) => {
+              return countCharacters(p.content, key?.integration?.identifier || '') > (key.maximumCharacters || 1000000);
+            }
           )
         ) {
           if (
@@ -385,16 +396,16 @@ export const AddEditModal: FC<{
           instructions="You are an assistant that help the user to schedule their social media posts, everytime somebody write something, try to use a function call, if not prompt the user that the request is invalid and you are here to assists with social media posts"
         />
       )}
-      <div 
+      <div
         id="add-edit-modal"
-        className={clsx('flex flex-col md:flex-row p-[10px] rounded-[4px] bg-primary gap-[20px]')}
+        className={clsx(
+          'flex flex-col md:flex-row p-[10px] rounded-[4px] bg-primary gap-[20px]'
+        )}
       >
         <div
           className={clsx(
             'flex flex-col gap-[16px] transition-all duration-700 whitespace-nowrap',
-            !expend.expend
-              ? 'flex-1 animate-overflow'
-              : 'w-0 overflow-hidden'
+            !expend.expend ? 'flex-1 animate-overflow' : 'w-0 overflow-hidden'
           )}
         >
           <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-customColor6 bg-sixth p-[16px] pt-0">
@@ -420,7 +431,7 @@ export const AddEditModal: FC<{
             ) : (
               <div
                 className={clsx(
-                  'relative w-[34px] h-[34px] rounded-full flex justify-center items-center bg-fifth filter transition-all duration-500',
+                  'relative w-[34px] h-[34px] rounded-full flex justify-center items-center bg-fifth filter transition-all duration-500'
                 )}
               >
                 <Image
@@ -542,11 +553,11 @@ export const AddEditModal: FC<{
           </div>
           <div className="relative min-h-[68px] flex flex-col rounded-[4px] border border-customColor6 bg-sixth">
             <div className="gap-[10px] relative flex flex-col justify-center items-center min-h-full pr-[16px]">
-              <div id = "add-edit-post-dialog-buttons" className="flex flex-row flex-wrap w-full h-full gap-[10px] justify-end items-center">
-                <Button
-                  className="rounded-[4px]"
-                  onClick={askClose}
-                >
+              <div
+                id="add-edit-post-dialog-buttons"
+                className="flex flex-row flex-wrap w-full h-full gap-[10px] justify-end items-center"
+              >
+                <Button className="rounded-[4px]" onClick={askClose}>
                   Cancel
                 </Button>
                 <Submitted

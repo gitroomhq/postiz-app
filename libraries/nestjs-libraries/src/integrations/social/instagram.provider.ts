@@ -9,7 +9,6 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { timer } from '@gitroom/helpers/utils/timer';
 import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
-import { string } from 'yup';
 
 export class InstagramProvider
   extends SocialAbstract
@@ -357,8 +356,8 @@ export class InstagramProvider
     accessToken: string,
     date: number
   ): Promise<AnalyticsData[]> {
-    const until = dayjs().format('YYYY-MM-DD');
-    const since = dayjs().subtract(date, 'day').format('YYYY-MM-DD');
+    const until = dayjs().endOf('day').unix();
+    const since = dayjs().subtract(date, 'day').unix();
 
     const { data, ...all } = await (
       await fetch(
