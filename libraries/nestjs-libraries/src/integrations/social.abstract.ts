@@ -20,7 +20,11 @@ export class NotEnoughScopes {
 }
 
 export abstract class SocialAbstract {
-  async fetch(url: string, options: RequestInit = {}, identifier = ''): Promise<Response> {
+  async fetch(
+    url: string,
+    options: RequestInit = {},
+    identifier = ''
+  ): Promise<Response> {
     const request = await fetch(url, options);
 
     if (request.status === 200 || request.status === 201) {
@@ -40,7 +44,10 @@ export abstract class SocialAbstract {
       return this.fetch(url, options, identifier);
     }
 
-    if (request.status === 401 || json.includes('OAuthException')) {
+    if (
+      request.status === 401 ||
+      (json.includes('OAuthException') && !json.includes("Unsupported format") && !json.includes('2207018'))
+    ) {
       throw new RefreshToken(identifier, json, options.body!);
     }
 
