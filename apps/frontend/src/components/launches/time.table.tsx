@@ -13,6 +13,7 @@ import useKeypress from 'react-use-keypress';
 import { useModals } from '@mantine/modals';
 import { sortBy } from 'lodash';
 import { usePreventWindowUnload } from '@gitroom/react/helpers/use.prevent.window.unload';
+import { useTranslations } from 'next-intl';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -39,12 +40,13 @@ export const TimeTable: FC<{
   const fetch = useFetch();
   const modal = useModals();
   usePreventWindowUnload(true);
+  const t = useTranslations("Lanuches");
 
   const askClose = useCallback(async () => {
     if (
       !(await deleteDialog(
-        'Are you sure you want to close the window?',
-        'Yes, close'
+        t("DeleteTimetable.Message"),
+        t("DeleteTimetable.ConfirmedButton")
       ))
     ) {
       return;
@@ -57,7 +59,7 @@ export const TimeTable: FC<{
 
   const removeSlot = useCallback(
     (index: number) => async () => {
-      if (!(await deleteDialog('Are you sure you want to delete this slot?'))) {
+      if (!(await deleteDialog(t('DeleteTimetable.RemoveMessage')))) {
         return;
       }
       setCurrentTimes((prev) => prev.filter((_, i) => i !== index));
@@ -102,7 +104,7 @@ export const TimeTable: FC<{
 
   return (
     <div className="rounded-[4px] border border-customColor6 bg-sixth px-[16px] pb-[16px] relative w-full">
-      <TopTitle title={`Time Table Slots`} />
+      <TopTitle title={t("TitleTimeTable")} />
       <button
         onClick={askClose}
         className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
@@ -125,7 +127,7 @@ export const TimeTable: FC<{
       </button>
 
       <div>
-        <div className="text-[16px] font-bold mt-[16px]">Add Time Slot</div>
+        <div className="text-[16px] font-bold mt-[16px]">{t('AddSlotTimeTable')}</div>
         <div className="flex flex-col">
           <div className="mt-[16px] flex justify-center gap-[16px]">
             <div className="w-[100px]">
@@ -165,7 +167,7 @@ export const TimeTable: FC<{
           </div>
           <div className="flex w-[215px] mx-auto justify-center mb-[50px]">
             <Button type="button" className="w-full" onClick={addHour}>
-              Add Slot
+            {t("AddSlot")}
             </Button>
           </div>
         </div>
@@ -185,7 +187,7 @@ export const TimeTable: FC<{
       </div>
       <div className="flex w-[215px] mx-auto justify-center mb-[50px]">
         <Button type="button" className="w-full" onClick={save}>
-          Save
+          {t("Save")}
         </Button>
       </div>
     </div>

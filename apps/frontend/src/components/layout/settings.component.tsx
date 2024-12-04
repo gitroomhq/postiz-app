@@ -19,6 +19,7 @@ import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.comp
 import { useSearchParams } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { CustomSelect } from "@gitroom/react/form/custom.select"
+import {locales} from "../../i18n/locales"
 
 export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
   const {isGeneral} = useVariables();
@@ -80,6 +81,8 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
       fetch('/user/changeLanguage', {
         method: 'POST',
         body: JSON.stringify({language: language.value}),
+      }).then(() => {
+        toast.show('Language updated');
       });
     }
 
@@ -208,7 +211,7 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
             </div>
           )}
           {!!user?.tier?.team_members && isGeneral && <TeamsComponent />}
-          <CustomSelect onChange={setCurrentLanguage} options={[{label: "English", value: "en"}, {label: "French", value: "fr"}]} label='Preffered Language' name='language' />
+          <CustomSelect onChange={setCurrentLanguage} options={locales} label='Preferred Language' name='language' placeholder='Select Preferred Language'/>
           {showLogout && <LogoutComponent />}
         </div>
       </form>

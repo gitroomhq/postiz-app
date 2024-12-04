@@ -8,6 +8,7 @@ import { useModals } from '@mantine/modals';
 import { TimeTable } from '@gitroom/frontend/components/launches/time.table';
 import { useCalendar } from '@gitroom/frontend/components/launches/calendar.context';
 import { BotPicture } from '@gitroom/frontend/components/launches/bot.picture';
+import { useTranslations } from 'next-intl';
 
 export const Menu: FC<{
   canEnable: boolean;
@@ -35,6 +36,7 @@ export const Menu: FC<{
   const ref = useClickOutside<HTMLDivElement>(() => {
     setShow(false);
   });
+  const t = useTranslations("Lanuches");
 
   const changeShow: MouseEventHandler<HTMLDivElement> = useCallback((e) => {
     e.stopPropagation();
@@ -44,8 +46,8 @@ export const Menu: FC<{
   const disableChannel = useCallback(async () => {
     if (
       !(await deleteDialog(
-        'Are you sure you want to disable this channel?',
-        'Disable Channel'
+        t('DisableMenu.Message'),
+        t('DisableMenu.ConfirmedButton')
       ))
     ) {
       return;
@@ -55,7 +57,7 @@ export const Menu: FC<{
       body: JSON.stringify({ id }),
     });
 
-    toast.show('Channel Disabled', 'success');
+    toast.show(t('DisableMenu.Success'), 'success');
     setShow(false);
     onChange(false);
   }, []);
@@ -63,8 +65,8 @@ export const Menu: FC<{
   const deleteChannel = useCallback(async () => {
     if (
       !(await deleteDialog(
-        'Are you sure you want to delete this channel?',
-        'Delete Channel'
+        t('DeleteMenu.Message'),
+        t('DeleteMenu.ConfirmedButton')
       ))
     ) {
       return;
@@ -76,13 +78,13 @@ export const Menu: FC<{
 
     if (deleteIntegration.status === 406) {
       toast.show(
-        'You have to delete all the posts associated with this channel before deleting it',
+        t('DeleteMenu.Warning'),
         'warning'
       );
       return;
     }
 
-    toast.show('Channel Deleted', 'success');
+    toast.show(t('DeleteMenu.Success'), 'success');
     setShow(false);
     onChange(true);
   }, []);
@@ -93,7 +95,7 @@ export const Menu: FC<{
       body: JSON.stringify({ id }),
     });
 
-    toast.show('Channel Enabled', 'success');
+    toast.show(t('EnabledMenu.Success'), 'success');
     setShow(false);
     onChange(false);
   }, []);
@@ -182,7 +184,7 @@ export const Menu: FC<{
                 </svg>
               </div>
               <div className="text-[12px]">
-                Change Bot{' '}
+                {t('MenuText.Changebot')}{' '}
                 {[
                   canChangeProfilePicture && 'Picture',
                   canChangeNickName && 'Nickname',
@@ -207,7 +209,7 @@ export const Menu: FC<{
                 />
               </svg>
             </div>
-            <div className="text-[12px]">Edit Time Slots</div>
+            <div className="text-[12px]">{t('MenuText.EditTimeSlots')}</div>
           </div>
           {canEnable && (
             <div
@@ -228,7 +230,7 @@ export const Menu: FC<{
                   />
                 </svg>
               </div>
-              <div className="text-[12px]">Enable Channel</div>
+              <div className="text-[12px]">{t('MenuText.EnableChannel')}</div>
             </div>
           )}
 
@@ -251,7 +253,7 @@ export const Menu: FC<{
                   />
                 </svg>
               </div>
-              <div className="text-[12px]">Disable Channel</div>
+              <div className="text-[12px]">{t('MenuText.DisableChannel')}</div>
             </div>
           )}
 
@@ -270,7 +272,7 @@ export const Menu: FC<{
                 />
               </svg>
             </div>
-            <div className="text-[12px]">Delete</div>
+            <div className="text-[12px]">{t('MenuText.Delete')}</div>
           </div>
         </div>
       )}

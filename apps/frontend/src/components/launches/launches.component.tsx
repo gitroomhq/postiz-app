@@ -18,6 +18,7 @@ import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
 import { Calendar } from './calendar';
+import { useTranslations } from 'next-intl';
 
 export const LaunchesComponent = () => {
   const fetch = useFetch();
@@ -25,6 +26,7 @@ export const LaunchesComponent = () => {
   const search = useSearchParams();
   const toast = useToaster();
   const fireEvents = useFireEvents();
+  const t = useTranslations("Lanuches");
 
   const [reload, setReload] = useState(false);
   const load = useCallback(async (path: string) => {
@@ -117,10 +119,10 @@ export const LaunchesComponent = () => {
         <div className="flex flex-1 relative">
           <div className="outline-none w-full h-full grid grid-cols[1fr] md:grid-cols-[220px_minmax(0,1fr)] gap-[30px] scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary">
             <div className="bg-third p-[16px] flex flex-col gap-[24px] min-h-[100%]">
-              <h2 className="text-[20px]">Channels</h2>
+              <h2 className="text-[20px]">{t("Channels")}</h2>
               <div className="gap-[16px] flex flex-col">
                 {sortedIntegrations.length === 0 && (
-                  <div className="text-[12px]">No channels</div>
+                  <div className="text-[12px]">{t("No channels")}</div>
                 )}
                 {sortedIntegrations.map((integration) => (
                   <div

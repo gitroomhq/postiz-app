@@ -1,0 +1,36 @@
+{
+  "Lanuches": {
+    "Channels": "Channels",
+    "No Channels": "No Channels",
+    "DeleteMenu": {
+      "Message": "Are you sure you want to delete this channel?",
+      "ConfirmedButton": "Delete Channel",
+      "Warning": "You have to delete all the posts associated with this channel before deleting it",
+      "Success": "Channel Deleted"
+    },
+    "DisableMenu": {
+      "Message": "Are you sure you want to disable this channel?",
+      "ConfirmedButton": "Disable Channel",
+      "Success": "Channel Disabled"
+    },
+    "EnabledMenu": {
+      "Success": "Channel Enabled"
+    },
+    "DeleteTimetable": {
+      "Message": "Are you sure you want to close the window?",
+      "ConfirmedButton": "Yes, close",
+      "RemoveMessage": "Are you sure you want to delete this slot?"
+    },
+    "TitleTimeTable": "Time Table Slots",
+    "AddTimeSlotTimeTable": "Add Time Slot",
+    "AddSlot": "Add Slot",
+    "Save": "Save",
+    "MenuText": {
+      "Changebot": "Change Bot",
+      "EditTimeSlots": "Edit Time Slots",
+      "EnableChannel": "Enable Channel",
+      "DisableChannel": "Disable Channel",
+      "Delete": "Delete"
+    }
+  }
+}
