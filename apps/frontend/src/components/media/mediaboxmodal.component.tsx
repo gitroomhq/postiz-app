@@ -31,9 +31,9 @@ export const ShowMediaBoxModal: FC = () => {
     }, []);
     if (!showModal) return null;
   
-    return (
+    return callBack && (
       <div className="text-textColor">
-        <MediaBox setMedia={callBack!} closeModal={closeModal} />
+        <MediaBox setMedia={callBack} closeModal={closeModal} />
       </div>
     );
   };

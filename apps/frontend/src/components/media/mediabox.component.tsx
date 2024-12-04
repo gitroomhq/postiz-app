@@ -7,7 +7,6 @@ import { TopTitle } from "../launches/helpers/top.title.component";
 import { MultipartFileUploader } from "./new.uploader";
 import clsx from "clsx";
 import { VideoFrame } from '@gitroom/react/helpers/video.frame';
-import { LoadingComponent } from "../layout/loading";
 import Image from "next/image";
 
 export const MediaBox: FC<{
@@ -19,8 +18,6 @@ export const MediaBox: FC<{
     const [mediaList, setListMedia] = useState<Media[]>([]);
     const fetch = useFetch();
     const mediaDirectory = useMediaDirectory();
-  
-    const [loading, setLoading] = useState(false);
   
     const loadMedia = useCallback(async () => {
       return (await fetch('/media')).json();
@@ -37,11 +34,9 @@ export const MediaBox: FC<{
     const { data, mutate } = useSWR('get-media', loadMedia);
   
     useEffect(() => {
-      setLoading(true)
       if (data?.results && data?.results?.length) {
         setListMedia([...data.results]);
       }
-      setLoading(false)
     }, [data]);
   
     return (
@@ -144,13 +139,6 @@ export const MediaBox: FC<{
                   )}
                 </div>
               ))}
-            {loading && (
-              <div className="w-[200px] h-[200px] flex border-tableBorder border-2 cursor-pointer relative">
-                <div className="absolute left-0 top-0 w-full h-full -mt-[50px] flex justify-center items-center">
-                  <LoadingComponent />
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
