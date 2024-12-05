@@ -7,6 +7,7 @@ import clsx from 'clsx';
 import { useClickAway } from '@uidotdev/usehooks';
 import interClass from '@gitroom/react/helpers/inter.font';
 import ReactLoading from 'react-loading';
+import { useTranslations } from 'next-intl';
 
 function replaceLinks(text: string) {
   const urlRegex =
@@ -38,13 +39,14 @@ export const NotificationOpenComponent = () => {
   const loadNotifications = useCallback(async () => {
     return await (await fetch('/notifications/list')).json();
   }, []);
+  const t = useTranslations("Notification")
 
   const { data, isLoading } = useSWR('notifications', loadNotifications);
 
   return (
     <div id="notification-popup" className="opacity-0 animate-normalFadeDown mt-[10px] absolute w-[420px] min-h-[200px] top-[100%] right-0 bg-third text-textColor rounded-[16px] flex flex-col border border-tableBorder z-[2]">
       <div className={`p-[16px] border-b border-tableBorder ${interClass} font-bold`}>
-        Notifications
+        {t("Notifications")}
       </div>
 
       <div className="flex flex-col">
@@ -55,7 +57,7 @@ export const NotificationOpenComponent = () => {
         )}
         {!isLoading && !data.notifications.length && (
           <div className="text-center p-[16px] text-textColor flex-1 flex justify-center items-center mt-[20px]">
-            No notifications
+            {t("NoNotifications")}
           </div>
         )}
         {!isLoading &&

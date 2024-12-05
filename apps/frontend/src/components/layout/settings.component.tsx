@@ -20,6 +20,7 @@ import { useSearchParams } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { CustomSelect } from "@gitroom/react/form/custom.select"
 import {locales} from "../../i18n/locales"
+import { useTranslations } from 'next-intl';
 
 export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
   const {isGeneral} = useVariables();
@@ -28,6 +29,7 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
   const toast = useToaster();
   const swr = useSWRConfig();
   const user = useUser();
+  const t = useTranslations("Settings")
 
   const resolver = useMemo(() => {
     return classValidatorResolver(UserDetailDto);
@@ -127,18 +129,18 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
             </button>
           )}
           {!getRef && (
-            <div className="text-[24px] font-[600]">Profile Settings</div>
+            <div className="text-[24px] font-[600]">{t("Settings.ProfileSettings")}</div>
           )}
           <div className="flex flex-col gap-[4px]">
-            <div className="text-[20px] font-[500]">Profile</div>
+            <div className="text-[20px] font-[500]">{t("Settings.Profile")}</div>
             <div className="text-[14px] text-customColor18 font-[400]">
-              Add profile information
+            {t("Settings.AddProfileInformation")}
             </div>
           </div>
           <div className="rounded-[4px] border border-customColor6 p-[24px] flex flex-col">
             <div className="flex justify-between items-center">
               <div className="w-[455px]">
-                <Input label="Full Name" name="fullname" />
+                <Input label={t("Settings.FullName")} name="fullname" />
               </div>
               <div className="flex gap-[8px] mb-[10px]">
                 <div className="w-[48px] h-[48px] rounded-full bg-customColor38">
@@ -151,7 +153,7 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
                   )}
                 </div>
                 <div className="flex flex-col gap-[2px]">
-                  <div className="text-[14px]">Profile Picture</div>
+                  <div className="text-[14px]">{t("Settings.ProfilePicture")}</div>
                   <div className="flex gap-[8px]">
                     <button
                       className="h-[24px] w-[120px] bg-forth rounded-[4px] flex justify-center gap-[4px] items-center cursor-pointer"
@@ -172,7 +174,7 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
                         </svg>
                       </div>
                       <div className="text-[12px] text-white" onClick={openMedia}>
-                        Upload image
+                      {t("Settings.UploadImage")}
                       </div>
                     </button>
                     <button
@@ -194,7 +196,7 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
                         </svg>
                       </div>
                       <div className="text-[12px] " onClick={remove}>
-                        Remove
+                      {t("Settings.Remove")}
                       </div>
                     </button>
                   </div>
@@ -202,16 +204,16 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
               </div>
             </div>
             <div>
-              <Textarea label="Bio" name="bio" className="resize-none" />
+              <Textarea label={t("Settings.Bio")} name="bio" className="resize-none" />
             </div>
           </div>
           {!getRef && (
             <div className="justify-end flex">
-              <Button type="submit" className='rounded-md'>Save</Button>
+              <Button type="submit" className='rounded-md'>{t("Settings.Save")}</Button>
             </div>
           )}
           {!!user?.tier?.team_members && isGeneral && <TeamsComponent />}
-          <CustomSelect onChange={setCurrentLanguage} options={locales} label='Preferred Language' name='language' placeholder='Select Preferred Language'/>
+          <CustomSelect onChange={setCurrentLanguage} options={locales} label={t('Settings.PreferredLanguage')} name='language' placeholder={t('Settings.SelectPreferredLanguage')}/>
           {showLogout && <LogoutComponent />}
         </div>
       </form>

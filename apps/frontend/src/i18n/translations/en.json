@@ -1,4 +1,22 @@
 {
+  "Navigation": {
+    "Analytics" : "Analytics",
+    "Calendar": "Calendar",
+    "Launches": "Launches",
+    "Settings": "Settings",
+    "Marketplace": "Marketplace",
+    "Messages": "Messages",
+    "Billing": "Billing"
+  },
+  "Week": {
+    "Monday": "Monday",
+    "Tuesday":"Tuesday",
+    "Wednesday":"Wednesday",
+    "Thursday":"Thursday",
+    "Friday":"Friday",
+    "Saturday": "Saturday",
+    "Sunday": "Sunday"
+  },
   "Lanuches": {
     "Channels": "Channels",
     "No Channels": "No Channels",
@@ -62,9 +80,59 @@
       "Day": "Day",
       "Week": "Week",
       "Month": "Month"
+    },
+    "Months": {
+        "January": "January",
+        "February": "February",
+        "March": "March",
+        "April": "April",
+        "May": "May",
+        "June": "June",
+        "July": "July",
+        "August": "August",
+        "September": "September",
+        "October": "October",
+        "November": "November",
+        "December": "December"
+    }     
+  },
+  "Notification": {
+    "Notifications": "Notifications",
+    "NoNotifications": "No notifications"
+  },
+  "Analytics": {
+    "ThisChannelNeedsToBeRefreshed": "This channel needs to be refreshed",
+    "Days": "Days",
+    "Channels": "Channels",
+    "Error": {
+      "CantShowAnalyticsYet": "Can't show analytics yet",
+      "YouHaveToAddSocialMediaChannels": "You have to add Social Media channels",
+      "Supported":"Supported",
+      "GoToTheCalendarToAddChannels": "Go to the calendar to add channels"
     }
   },
   "Settings": {
+    "Settings": {
+      "ProfileSettings": "Profile Settings",
+      "Profile": "Profile",
+      "AddProfileInformation": "Add profile information",
+      "FullName": "Full Name",
+      "ProfilePicture": "Profile Picture",
+      "UploadImage": "Upload Image",
+      "Remove": "Remove",
+      "Bio": "Bio",
+      "Save": "Save",
+      "AreYouSureYouWantToRemoveThisTeamMember": "Are you sure you want to remove this team member?",
+      "TeamMembers": "Team Members",
+      "AccountManagers": "Account Managers",
+      "InviteYourAssistantOrTeamMemberToManageYourAccount": "Invite your assistant or team member to manage your account",
+      "AddAnotherMember": "Add another member",
+      "PreferredLanguage": "Preferred Language",
+      "SelectPreferredLanguage" : "Select Preferred Language",
+      "LogoutFrom": "Logout from",
+      "AreYouSureYouWantToLogout": "Are you sure you want to logout?",
+      "YesLogout": "Yes logout"
+    },
     "Github": {
       "AreYouSureYouWantToDisconnectThisRepository": "Are you sure you want to disconnect this repository?",
       "Connected": "Connected",
@@ -75,5 +143,10 @@
       "FullGitHubURL": "Full GitHub URL",
       "Connect" : "Connect"
     }
+  },
+  "PostModal" : {
+    "EditPost": "Edit Post",
+    "CreatePost": "Create Post",
+    "YouAreInGlobalEditingMode": "You are in global editing mode"
   }
 }

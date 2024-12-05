@@ -1,0 +1,149 @@
+{
+  "Navigation": {
+    "Analytics" : "Analytique",
+    "Calendar": "Calendrier",
+    "Launches": "Lancements",
+    "Settings": "Paramètres",
+    "Marketplace": "Marché",
+    "Messages": "Messages",
+    "Billing": "Facturation"
+  },
+  "Week": {
+    "Monday": "Lundi",
+    "Tuesday": "Mardi",
+    "Wednesday": "Mercredi",
+    "Thursday": "Jeudi",
+    "Friday": "Vendredi",
+    "Saturday": "Samedi",
+    "Sunday": "Dimanche"
+  },
+  "Notification": {
+    "Notifications": "Notifications",
+    "NoNotifications": "Aucune notification"
+},
+    "Lanuches": {
+      "Channels": "Chaînes",
+      "No Channels": "Aucune chaîne",
+      "DeleteMenu": {
+        "Message": "Êtes-vous sûr de vouloir supprimer cette chaîne ?",
+        "ConfirmedButton": "Supprimer la chaîne",
+        "Warning": "Vous devez supprimer tous les messages associés à cette chaîne avant de la supprimer",
+        "Success": "Chaîne supprimée"
+      },
+      "DisableMenu": {
+        "Message": "Êtes-vous sûr de vouloir désactiver cette chaîne ?",
+        "ConfirmedButton": "Désactiver la chaîne",
+        "Success": "Chaîne désactivée"
+      },
+      "EnabledMenu": {
+        "Success": "Chaîne activée"
+      },
+      "DeleteTimetable": {
+        "Message": "Êtes-vous sûr de vouloir fermer la fenêtre ?",
+        "ConfirmedButton": "Oui, fermer",
+        "RemoveMessage": "Êtes-vous sûr de vouloir supprimer ce créneau ?"
+      },
+      "TitleTimeTable": "Créneaux horaires",
+      "AddTimeSlotTimeTable": "Ajouter un créneau horaire",
+      "AddSlot": "Ajouter un créneau",
+      "Save": "Sauvegarder",
+      "MenuText": {
+        "Changebot": "Changer de bot",
+        "EditTimeSlots": "Modifier les créneaux horaires",
+        "EnableChannel": "Activer la chaîne",
+        "DisableChannel": "Désactiver la chaîne",
+        "Delete": "Supprimer"
+      },
+      "TooltipDisabled": "Cette chaîne est désactivée, veuillez mettre à jour votre plan pour l'activer.",
+      "Provider": {
+        "AddButton": "Ajouter une chaîne",
+        "ConnectionError": "Impossible de se connecter à la plateforme"
+      },
+      "UrlModal": {
+        "Instance": "URL de l'instance",
+        "Formsubmit": "Se connecter",
+        "InputField": "URL"
+      },
+      "CutomVariables": {
+        "isInvalid": "est invalide",
+        "CustomUrl": "URL personnalisée",
+        "FormSubmit": "Se connecter"
+      },
+      "AddProvider": {
+        "AddChannel": "Ajouter une chaîne",
+        "Social": "Social",
+        "Articles": "Articles"
+      },
+      "ApiModal": {
+        "InvalidApiKey": "Clé API invalide",
+        "AddApiKeyFor": "Ajouter une clé API pour",
+        "ApiKey": "Clé API",
+        "AddPlatform": "Ajouter une plateforme"
+      },
+      "Filters": {
+        "Day": "Jour",
+        "Week": "Semaine",
+        "Month": "Mois"
+      },
+      "Months": {
+        "January": "Janvier",
+        "February": "Février",
+        "March": "Mars",
+        "April": "Avril",
+        "May": "Mai",
+        "June": "Juin",
+        "July": "Juillet",
+        "August": "Août",
+        "September": "Septembre",
+        "October": "Octobre",
+        "November": "Novembre",
+        "December": "Décembre"
+    }           
+    },
+    "Analytics": {
+      "ThisChannelNeedsToBeRefreshed": "Ce canal doit être actualisé",
+      "Days": "Jours",
+      "Channels": "Canaux",
+      "Error": {
+          "CantShowAnalyticsYet": "Impossible d'afficher les analyses pour le moment",
+          "YouHaveToAddSocialMediaChannels": "Vous devez ajouter des canaux de médias sociaux",
+          "Supported": "Pris en charge",
+          "GoToTheCalendarToAddChannels": "Allez dans le calendrier pour ajouter des canaux"
+      }
+    },
+    "Settings": {
+      "Settings": {
+      "ProfileSettings": "Paramètres du profil",
+      "Profile": "Profil",
+      "AddProfileInformation": "Ajouter des informations sur le profil",
+      "FullName": "Nom complet",
+      "ProfilePicture": "Photo de profil",
+      "UploadImage": "Télécharger l'image",
+      "Remove": "Supprimer",
+      "Bio": "Bio",
+      "Save": "Enregistrer",
+      "AreYouSureYouWantToRemoveThisTeamMember": "Êtes-vous sûr de vouloir supprimer ce membre de l'équipe ?",
+      "TeamMembers": "Membres de l'équipe",
+      "AccountManagers": "Responsables de compte",
+      "InviteYourAssistantOrTeamMemberToManageYourAccount": "Invitez votre assistant ou membre de l'équipe à gérer votre compte",
+      "AddAnotherMember": "Ajouter un autre membre",
+      "PreferredLanguage": "Langue préférée",
+      "SelectPreferredLanguage": "Sélectionner la langue préférée",
+      "LogoutFrom": "Se déconnecter de",
+      "AreYouSureYouWantToLogout": "Êtes-vous sûr de vouloir vous déconnecter ?",
+      "YesLogout": "Oui, se déconnecter"
+  },
+      "Github": {
+        "AreYouSureYouWantToDisconnectThisRepository": "Êtes-vous sûr de vouloir déconnecter ce référentiel ?",
+        "Connected": "Connecté",
+        "Disconnect": "Déconnecter",
+        "RepositoryNotFound": "Référentiel non trouvé",
+        "ConnectYourRepository": "Connectez votre référentiel",
+        "Cancel": "Annuler",
+        "FullGitHubURL": "URL complète de GitHub",
+        "Connect": "Connecter"
+      }
+    }
+
+  }
+  

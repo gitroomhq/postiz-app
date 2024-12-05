@@ -16,6 +16,7 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import copy from 'copy-to-clipboard';
 import interClass from '@gitroom/react/helpers/inter.font';
+import { useTranslations } from 'next-intl';
 
 const roles = [
   {
@@ -134,6 +135,7 @@ export const TeamsComponent = () => {
   const fetch = useFetch();
   const user = useUser();
   const modals = useModals();
+  const t = useTranslations("Settings")
 
   const myLevel = user?.role === 'USER' ? 0 : user?.role === 'ADMIN' ? 1 : 2;
   const getLevel = useCallback(
@@ -169,7 +171,7 @@ export const TeamsComponent = () => {
     (toRemove: { user: { id: string } }) => async () => {
       if (
         !(await deleteDialog(
-          'Are you sure you want to remove this team member?'
+          t("Settings.AreYouSureYouWantToRemoveThisTeamMember")
         ))
       ) {
         return;
@@ -186,10 +188,10 @@ export const TeamsComponent = () => {
 
   return (
     <div className="flex flex-col">
-      <h2 className="text-[24px] mb-[24px]">Team Members</h2>
-      <h3 className="text-[20px]">Account Managers</h3>
+      <h2 className="text-[24px] mb-[24px]">{t("Settings.TeamMembers")}</h2>
+      <h3 className="text-[20px]">{t("Settings.AccountManagers")}</h3>
       <div className="text-customColor18 mt-[4px]">
-        Invite your assistant or team member to manage your account
+      {t("Settings.InviteYourAssistantOrTeamMemberToManageYourAccount")}
       </div>
       <div className="my-[16px] mt-[16px] bg-sixth border-fifth border rounded-[4px] p-[24px] flex flex-col gap-[24px]">
         <div className="flex flex-col gap-[16px]">
@@ -227,7 +229,7 @@ export const TeamsComponent = () => {
                           />
                         </svg>
                       </div>
-                      <div>Remove</div>
+                      <div>{t("Settings.Remove")}</div>
                     </div>
                   </Button>
                 </div>
@@ -239,7 +241,7 @@ export const TeamsComponent = () => {
         </div>
         <div>
           <Button className="rounded-[4px]" onClick={addMember}>
-            Add another member
+          {t("Settings.AddAnotherMember")}
           </Button>
         </div>
       </div>

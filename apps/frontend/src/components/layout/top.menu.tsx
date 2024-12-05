@@ -6,6 +6,7 @@ import clsx from 'clsx';
 import { usePathname } from 'next/navigation';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { useTranslations } from 'next-intl';
 
 export const useMenuItems = () => {
   const {isGeneral} = useVariables();
@@ -68,6 +69,7 @@ export const TopMenu: FC = () => {
   const user = useUser();
   const {billingEnabled} = useVariables();
   const menuItems = useMenuItems();
+  const t = useTranslations("Navigation")
 
   return (
     <div className="flex flex-col h-full animate-normalFadeDown order-3 md:order-2 col-span-2 md:col-span-1">
@@ -102,7 +104,7 @@ export const TopMenu: FC = () => {
                     : 'text-gray'
                 )}
               >
-                <span>{item.name}</span>
+                <span>{t(item.name)}</span>
               </Link>
             </li>
           ))}

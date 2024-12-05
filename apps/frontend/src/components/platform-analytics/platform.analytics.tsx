@@ -12,6 +12,7 @@ import { Select } from '@gitroom/react/form/select';
 import { Button } from '@gitroom/react/form/button';
 import { useRouter } from 'next/navigation';
 import { useToaster } from '@gitroom/react/toaster/toaster';
+import { useTranslations } from 'next-intl';
 
 const allowedIntegrations = [
   'facebook',
@@ -34,6 +35,7 @@ export const PlatformAnalytics = () => {
     const int = (await (await fetch('/integrations/list')).json()).integrations;
     return int.filter((f: any) => allowedIntegrations.includes(f.identifier));
   }, []);
+  const t = useTranslations("Analytics")
 
   const { data, isLoading } = useSWR('analytics-list', load, {
     fallbackData: [],
@@ -68,7 +70,7 @@ export const PlatformAnalytics = () => {
     ) {
       arr.push({
         key: 7,
-        value: '7 Days',
+        value: `7 ${t("Days")}`,
       });
     }
 
@@ -84,7 +86,7 @@ export const PlatformAnalytics = () => {
     ) {
       arr.push({
         key: 30,
-        value: '30 Days',
+        value: `30 ${t("Days")}`,
       });
     }
 
@@ -95,7 +97,7 @@ export const PlatformAnalytics = () => {
     ) {
       arr.push({
         key: 90,
-        value: '90 Days',
+        value: `90 ${t("Days")}`,
       });
     }
 
@@ -124,15 +126,15 @@ export const PlatformAnalytics = () => {
           <img src="/peoplemarketplace.svg" />
         </div>
         <div className="text-[48px]">
-          Can{"'"}t show analytics yet
+          {t("Error.CantShowAnalyticsYet")}
           <br />
-          You have to add Social Media channels
+          {t("Error.YouHaveToAddSocialMediaChannels")}
         </div>
         <div className="text-[20px]">
-          Supported: {allowedIntegrations.map((p) => capitalize(p)).join(', ')}
+        {t("Error.Supported")}: {allowedIntegrations.map((p) => capitalize(p)).join(', ')}
         </div>
         <Button onClick={() => router.push('/launches')}>
-          Go to the calendar to add channels
+          {t("Error.GoToTheCalendarToAddChannels")}
         </Button>
       </div>
     );
@@ -142,7 +144,7 @@ export const PlatformAnalytics = () => {
     <div className="flex gap-[30px] flex-1">
       <div className="p-[16px] bg-customColor48 overflow-hidden flex w-[220px]">
         <div className="flex gap-[16px] flex-col overflow-hidden">
-          <div className="text-[20px] mb-[8px]">Channels</div>
+          <div className="text-[20px] mb-[8px]">{t("Channels")}</div>
           {sortedIntegrations.map((integration, index) => (
             <div
               key={integration.id}

@@ -50,6 +50,7 @@ import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import Image from 'next/image';
 import { weightedLength } from '@gitroom/helpers/utils/count.length';
+import { useTranslations } from 'next-intl';
 
 function countCharacters(text: string, type: string): number {
   if (type !== 'x') {
@@ -67,6 +68,7 @@ export const AddEditModal: FC<{
 }> = (props) => {
   const { date, integrations, reopenModal, mutate } = props;
   const [dateState, setDateState] = useState(date);
+  const t= useTranslations("PostModal")
 
   // hook to open a new modal
   const modal = useModals();
@@ -409,7 +411,7 @@ export const AddEditModal: FC<{
           )}
         >
           <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-customColor6 bg-sixth p-[16px] pt-0">
-            <TopTitle title={existingData?.group ? 'Edit Post' : 'Create Post'}>
+            <TopTitle title={existingData?.group ? t('EditPost') : t('CreatePost')}>
               <div className="flex items-center">
                 <PostToOrganization
                   selected={existingData?.posts?.[0]?.submittedForOrderId!}
@@ -464,7 +466,7 @@ export const AddEditModal: FC<{
             />
             {!existingData.integration && !showHide.hideTopEditor ? (
               <>
-                <div>You are in global editing mode</div>
+                <div>{t("YouAreInGlobalEditingMode")}</div>
                 {value.map((p, index) => (
                   <Fragment key={`edit_${index}`}>
                     <div>

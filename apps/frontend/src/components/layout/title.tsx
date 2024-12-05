@@ -3,6 +3,7 @@
 import {usePathname} from "next/navigation";
 import {useMemo} from "react";
 import { useMenuItems } from '@gitroom/frontend/components/layout/top.menu';
+import { useTranslations } from "next-intl";
 
 export const Title = () => {
     const path = usePathname();
@@ -10,10 +11,11 @@ export const Title = () => {
     const currentTitle = useMemo(() => {
         return menuItems.find(item => path.indexOf(item.path) > -1)?.name;
     }, [path]);
+    const t = useTranslations("Navigation")
 
     return (
         <div className="flex">
-            <h1 className="text-[24px] mb-5 flex-1">{currentTitle}</h1>
+            <h1 className="text-[24px] mb-5 flex-1">{t(currentTitle)}</h1>
         </div>
     );
 }
