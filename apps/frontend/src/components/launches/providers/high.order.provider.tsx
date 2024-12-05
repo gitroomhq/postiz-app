@@ -68,15 +68,16 @@ export const EditorWrapper: FC<{ children: ReactNode }> = ({ children }) => {
   return children;
 };
 
-export const withProvider = (
+export const withProvider = function <T extends object>(
   SettingsComponent: FC<{values?: any}> | null,
   CustomPreviewComponent?: FC<{maximumCharacters?: number}>,
   dto?: any,
   checkValidity?: (
-    value: Array<Array<{ path: string }>>
+    value: Array<Array<{ path: string }>>,
+    settings: T
   ) => Promise<string | true>,
   maximumCharacters?: number
-) => {
+) {
   return (props: {
     identifier: string;
     id: string;
