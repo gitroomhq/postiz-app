@@ -13,6 +13,7 @@ import { VariableContextComponent } from '@gitroom/react/helpers/variable.contex
 import { Fragment } from 'react';
 import { PHProvider } from '@gitroom/react/helpers/posthog';
 import UtmSaver from '@gitroom/helpers/utils/utm.saver';
+import { ToltScript } from '@gitroom/frontend/components/layout/tolt.script';
 
 const chakra = Chakra_Petch({ weight: '400', subsets: ['latin'] });
 
@@ -42,7 +43,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           frontEndUrl={process.env.FRONTEND_URL!}
           isGeneral={!!process.env.IS_GENERAL}
           uploadDirectory={process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY!}
+          tolt={process.env.NEXT_PUBLIC_TOLT!}
         >
+          <ToltScript />
           <Plausible
             domain={!!process.env.IS_GENERAL ? 'postiz.com' : 'gitroom.com'}
           >
