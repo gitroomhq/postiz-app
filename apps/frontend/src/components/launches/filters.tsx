@@ -4,9 +4,12 @@ import clsx from 'clsx';
 import dayjs from 'dayjs';
 import { useCallback } from 'react';
 import { isUSCitizen } from './helpers/isuscitizen.utils';
+import { useTranslations } from 'next-intl';
 
 export const Filters = () => {
-  const week = useCalendar();
+  const week = useCalendar();  
+  const t = useTranslations("Lanuches");
+
   const betweenDates =
     week.display === 'day'
       ? dayjs()
@@ -197,7 +200,7 @@ export const Filters = () => {
 		  )}
 		  onClick={setDay}
 		>
-		  Day
+		  {t("Filters.Day")}
 		</div>
 		<div
 		  className={clsx(
@@ -206,7 +209,7 @@ export const Filters = () => {
 		  )}
 		  onClick={setWeek}
 		>
-		  Week
+		  {t("Filters.Week")}
 		</div>
 		<div
 		  className={clsx(
@@ -215,7 +218,7 @@ export const Filters = () => {
 		  )}
 		  onClick={setMonth}
 		>
-		  Month
+		  {t("Filters.Month")}
 		</div>
 	  </div>
     </div>

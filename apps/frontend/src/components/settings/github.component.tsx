@@ -7,18 +7,20 @@ import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { Input } from '@gitroom/react/form/input';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import interClass from '@gitroom/react/helpers/inter.font';
+import { useTranslations } from 'next-intl';
 
 const ConnectedComponent: FC<{
   id: string;
   login: string;
   deleteRepository: () => void;
 }> = (props) => {
-  const { id, login, deleteRepository } = props;
+  const { id, login, deleteRepository } = props;  
+  const t = useTranslations("Settings.Github");
   const fetch = useFetch();
   const disconnect = useCallback(async () => {
     if (
       !(await deleteDialog(
-        'Are you sure you want to disconnect this repository?'
+        t("AreYouSureYouWantToDisconnectThisRepository")
       ))
     ) {
       return;
@@ -35,9 +37,9 @@ const ConnectedComponent: FC<{
           <Image src="/icons/github.svg" alt="GitHub" width={40} height={40} />
         </div>
         <div className="flex-1">
-          <strong>Connected:</strong> {login}
+          <strong>{t("Connected")}:</strong> {login}
         </div>
-        <Button onClick={disconnect}>Disconnect</Button>
+        <Button onClick={disconnect}>{t("Disconnect")}</Button>
       </div>
     </div>
   );
@@ -53,7 +55,8 @@ const ConnectComponent: FC<{
   const { id, setConnected, deleteRepository } = props;
   const [url, setUrl] = useState('');
   const fetch = useFetch();
-  const toast = useToaster();
+  const toast = useToaster(); 
+  const t = useTranslations("Settings.Github");
 
   const cancelConnection = useCallback(async () => {
     await (
@@ -76,7 +79,7 @@ const ConnectComponent: FC<{
     });
 
     if (response.status === 404) {
-      toast.show('Repository not found', 'warning');
+      toast.show(t('RepositoryNotFound'), 'warning');
       return ;
     }
 
@@ -90,12 +93,12 @@ const ConnectComponent: FC<{
         <div>
           <Image src="/icons/github.svg" alt="GitHub" width={40} height={40} />
         </div>
-        <div className="flex-1">Connect your repository</div>
+        <div className="flex-1">{t("ConnectYourRepository")}</div>
         <Button
           className="bg-transparent border-0 text-gray mt-[7px]"
           onClick={cancelConnection}
         >
-          Cancel
+          {t("Cancel")}
         </Button>
         <Input
           value={url}
@@ -104,7 +107,7 @@ const ConnectComponent: FC<{
           onChange={(e) => setUrl(e.target.value)}
           name="github"
           label=""
-          placeholder="Full GitHub URL"
+          placeholder={t("FullGitHubURL")}
         />
         <Button
           className="h-[44px] mt-[7px]"
@@ -115,7 +118,7 @@ const ConnectComponent: FC<{
           }
           onClick={completeConnection}
         >
-          Connect
+          {t("Connect")}
         </Button>
       </div>
     </div>
@@ -128,7 +131,8 @@ export const GithubComponent: FC<{
 }> = (props) => {
   if (typeof window !== 'undefined' && window.opener) {
     window.close();
-  }
+  } 
+  const t = useTranslations("Settings.Github");
   const { github, organizations } = props;
   const [githubState, setGithubState] = useState(github);
   useEffect(() => {
@@ -193,8 +197,8 @@ export const GithubComponent: FC<{
                 height={40}
               />
             </div>
-            <div className="flex-1">Connect your repository</div>
-            <Button onClick={connect}>Connect</Button>
+            <div className="flex-1">{t("ConnectYourRepository")}</div>
+            <Button onClick={connect}>{t("Connect")}</Button>
           </div>
         </div>
       )}

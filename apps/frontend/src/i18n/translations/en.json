@@ -31,6 +31,49 @@
       "EnableChannel": "Enable Channel",
       "DisableChannel": "Disable Channel",
       "Delete": "Delete"
+    },
+    "TooltipDisabled": "This channel is disabled, please upgrade your plan to enable it.",
+    "Provider": {
+      "AddButton": "Add Channel",
+      "ConnectionError": "Could not connect to the platform"
+    },
+    "UrlModal": {
+      "Instance": "Instance URL",
+      "Formsubmit": "Connect",
+      "InputField": "URL"
+    },
+    "CutomVariables": {
+      "isInvalid": "is invalid",
+      "CustomUrl": "Custom URL",
+      "FormSubmit": "Connect"
+    },
+    "AddProvider": {
+      "AddChannel": "Add Channel",
+      "Social": "Social",
+      "Articles": "Articles"
+    },
+    "ApiModal": {
+      "InvalidApiKey": "Invalid API key",
+      "AddApiKeyFor": "Add API key for",
+      "ApiKey": "API Key",
+      "AddPlatform": "Add platform"
+    },
+    "Filters": {
+      "Day": "Day",
+      "Week": "Week",
+      "Month": "Month"
+    }
+  },
+  "Settings": {
+    "Github": {
+      "AreYouSureYouWantToDisconnectThisRepository": "Are you sure you want to disconnect this repository?",
+      "Connected": "Connected",
+      "Disconnect" : "Disconnect",
+      "RepositoryNotFound": "Repository not found",
+      "ConnectYourRepository":"Connect your repository",
+      "Cancel" : "Cancel",
+      "FullGitHubURL": "Full GitHub URL",
+      "Connect" : "Connect"
     }
   }
 }

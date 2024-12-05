@@ -187,7 +187,7 @@ export const LaunchesComponent = () => {
                         ? {
                             'data-tooltip-id': 'tooltip',
                             'data-tooltip-content':
-                              'This channel is disabled, please upgrade your plan to enable it.',
+                             t("TooltipDisabled") ,
                           }
                         : {})}
                       className={clsx(

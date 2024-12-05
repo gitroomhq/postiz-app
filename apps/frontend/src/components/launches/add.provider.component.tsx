@@ -14,6 +14,7 @@ import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { object, string } from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useTranslations } from 'next-intl';
 
 const resolver = classValidatorResolver(ApiKeyDto);
 
@@ -35,11 +36,12 @@ export const useAddProvider = (update?: () => void) => {
 };
 
 export const AddProviderButton: FC<{ update?: () => void }> = (props) => {
+  const t = useTranslations("Lanuches");
   const { update } = props;
   const add = useAddProvider(update);
   return (
     <button className="text-white p-[8px] rounded-md bg-forth" onClick={add}>
-      Add Channel
+      {t("Provider.AddButton")}
     </button>
   );
 };
@@ -58,6 +60,8 @@ export const ApiModal: FC<{
     mode: 'onChange',
     resolver,
   });
+  const t = useTranslations("Lanuches");
+
 
   const close = useCallback(() => {
     if (closePopup) {
@@ -87,13 +91,13 @@ export const ApiModal: FC<{
     }
 
     methods.setError('api', {
-      message: 'Invalid API key',
+      message: t("ApiModal.InvalidApiKey"),
     });
   }, []);
 
   return (
     <div className="rounded-[4px] border border-customColor6 bg-sixth px-[16px] pb-[16px] relative">
-      <TopTitle title={`Add API key for ${name}`} />
+      <TopTitle title={`${t("ApiModal.AddApiKeyFor")} ${name}`} />
       <button
         onClick={close}
         className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
@@ -120,10 +124,10 @@ export const ApiModal: FC<{
           onSubmit={methods.handleSubmit(submit)}
         >
           <div className="pt-[10px]">
-            <Input label="API Key" name="api" />
+            <Input label={t("ApiModal.ApiKey")} name="api" />
           </div>
           <div>
-            <Button type="submit">Add platform</Button>
+            <Button type="submit">{t("ApiModal.AddPlatform")}</Button>
           </div>
         </form>
       </FormProvider>
@@ -135,6 +139,7 @@ export const UrlModal: FC<{
   gotoUrl(url: string): void;
 }> = (props) => {
   const { gotoUrl } = props;
+  const t = useTranslations("Lanuches");
   const methods = useForm({
     mode: 'onChange',
   });
@@ -145,7 +150,7 @@ export const UrlModal: FC<{
 
   return (
     <div className="rounded-[4px] border border-customColor6 bg-sixth px-[16px] pb-[16px] relative">
-      <TopTitle title={`Instance URL`} />
+      <TopTitle title={t("UrlModal.Instance")} />
       <button
         onClick={close}
         className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
@@ -172,10 +177,10 @@ export const UrlModal: FC<{
           onSubmit={methods.handleSubmit(submit)}
         >
           <div className="pt-[10px]">
-            <Input label="URL" name="url" />
+            <Input label={t("UrlModal.InputField")} name="url" />
           </div>
           <div>
-            <Button type="submit">Connect</Button>
+            <Button type="submit">{t("UrlModal.Formsubmit")}</Button>
           </div>
         </form>
       </FormProvider>
@@ -196,6 +201,7 @@ export const CustomVariables: FC<{
 }> = (props) => {
   const { gotoUrl, identifier, variables } = props;
   const modals = useModals();
+  const t = useTranslations("Lanuches");
   const schema = useMemo(() => {
     return object({
       ...variables.reduce((aIcc, item) => {
@@ -207,7 +213,7 @@ export const CustomVariables: FC<{
         return {
           ...aIcc,
           [item.key]: string()
-            .matches(regex, `${item.label} is invalid`)
+            .matches(regex, `${item.label} ${t("CutomVariables.isInvalid")}`)
             .required(),
         };
       }, {}),
@@ -239,7 +245,7 @@ export const CustomVariables: FC<{
 
   return (
     <div className="rounded-[4px] border border-customColor6 bg-sixth px-[16px] pb-[16px] relative">
-      <TopTitle title={`Custom URL`} />
+      <TopTitle title={t("CutomVariables.CustomUrl")} />
       <button
         onClick={modals.closeAll}
         className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
@@ -275,7 +281,7 @@ export const CustomVariables: FC<{
             </div>
           ))}
           <div>
-            <Button type="submit">Connect</Button>
+            <Button type="submit">{t("CutomVariables.FormSubmit")}</Button>
           </div>
         </form>
       </FormProvider>
@@ -304,6 +310,7 @@ export const AddProviderComponent: FC<{
   const router = useRouter();
   const fetch = useFetch();
   const modal = useModals();
+  const t = useTranslations("Lanuches");
   const getSocialLink = useCallback(
     (
         identifier: string,
@@ -327,7 +334,7 @@ export const AddProviderComponent: FC<{
           ).json();
 
           if (err) {
-            toaster.show('Could not connect to the platform', 'warning');
+            toaster.show(t("Provider.ConnectionError"), 'warning');
             return;
           }
           window.location.href = url;
@@ -395,7 +402,7 @@ export const AddProviderComponent: FC<{
   return (
     <div className="w-full flex flex-col gap-[20px] rounded-[4px] border border-customColor6 bg-sixth px-[16px] pb-[16px] relative">
       <div className="flex flex-col">
-        <TopTitle title="Add Channel" />
+        <TopTitle title={t("AddProvider.AddChannel")} />
         <button
           onClick={close}
           className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
@@ -416,7 +423,7 @@ export const AddProviderComponent: FC<{
             ></path>
           </svg>
         </button>
-        <h2 className="pt-[16px] pb-[10px]">Social</h2>
+        <h2 className="pt-[16px] pb-[10px]">{t("AddProvider.Social")}</h2>
         <div className="grid grid-cols-3 gap-[10px] justify-items-center justify-center">
           {social.map((item) => (
             <div
@@ -447,7 +454,7 @@ export const AddProviderComponent: FC<{
       </div>
       {!isGeneral && (
         <div className="flex flex-col">
-          <h2 className="pb-[10px]">Articles</h2>
+          <h2 className="pb-[10px]">{t("AddProvider.Articles")}</h2>
           <div className="grid grid-cols-3 gap-[10px]">
             {article.map((item) => (
               <div
