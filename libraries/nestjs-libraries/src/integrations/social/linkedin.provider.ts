@@ -410,12 +410,12 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
                   ? `urn:li:person:${id}`
                   : `urn:li:organization:${id}`,
               object: topPostId,
-              message: {
-                text: removeMarkdown({
-                  text: post.message.replace('\n', '𝔫𝔢𝔴𝔩𝔦𝔫𝔢'),
-                  except: [/@\[(.*?)]\(urn:li:organization:(\d+)\)/g],
-                }).replace('𝔫𝔢𝔴𝔩𝔦𝔫𝔢', '\n'),
-              },
+              message: post.message
+                .replace(/\*/g, '\\*')
+                .replace(/\(/g, '\\(')
+                .replace(/\)/g, '\\)')
+                .replace(/\{/g, '\\{')
+                .replace(/}/g, '\\}'),
             }),
           }
         )
