@@ -150,7 +150,7 @@ export const LaunchesComponent = () => {
                           }
                         >
                           <div className="bg-red-500 w-[15px] h-[15px] rounded-full -left-[5px] -top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
-                            !
+                            ! 
                           </div>
                           <div className="bg-primary/60 w-[39px] h-[46px] left-0 top-0 absolute rounded-full z-[199]" />
                         </div>

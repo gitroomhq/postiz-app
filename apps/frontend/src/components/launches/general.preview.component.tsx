@@ -10,6 +10,7 @@ const chakra = Chakra_Petch({ weight: '400', subsets: ['latin'] });
 
 export const GeneralPreviewComponent: FC<{maximumCharacters?: number}> = (props) => {
   const { value: topValue, integration } = useIntegration();
+
   const mediaDir = useMediaDirectory();
   const newValues = useFormatting(topValue, {
     removeMarkdown: true,
@@ -22,7 +23,7 @@ export const GeneralPreviewComponent: FC<{maximumCharacters?: number}> = (props)
 
   return (
     <div className={clsx('w-full md:w-[555px] px-[16px]')}>
-      <div className="w-full h-full relative flex flex-col">
+      <div className="relative flex flex-col w-full h-full">
         {newValues.map((value, index) => (
           <div
             key={`tweet_${index}`}
