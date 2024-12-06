@@ -9,6 +9,7 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { timer } from '@gitroom/helpers/utils/timer';
 import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { InstagramDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/instagram.dto';
 
 export class InstagramProvider
   extends SocialAbstract
@@ -203,10 +204,11 @@ export class InstagramProvider
   async post(
     id: string,
     accessToken: string,
-    postDetails: PostDetails[]
+    postDetails: PostDetails<InstagramDto>[]
   ): Promise<PostResponse[]> {
     const [firstPost, ...theRest] = postDetails;
-
+    console.log('in progress');
+    const isStory = firstPost.settings.post_type === 'story';
     const medias = await Promise.all(
       firstPost?.media?.map(async (m) => {
         const caption =
@@ -218,18 +220,34 @@ export class InstagramProvider
         const mediaType =
           m.url.indexOf('.mp4') > -1
             ? firstPost?.media?.length === 1
-              ? `video_url=${m.url}&media_type=REELS`
+              ? isStory
+                ? `video_url=${m.url}&media_type=STORIES`
+                : `video_url=${m.url}&media_type=REELS`
+              : isStory
+              ? `video_url=${m.url}&media_type=STORIES`
               : `video_url=${m.url}&media_type=VIDEO`
+            : isStory
+            ? `image_url=${m.url}&media_type=STORIES`
             : `image_url=${m.url}`;
+        console.log('in progress1');
 
+        const collaborators =
+          firstPost?.settings?.collaborators?.length && !isStory
+            ? `&collaborators=${JSON.stringify(
+                firstPost?.settings?.collaborators.map((p) => p.label)
+              )}`
+            : ``;
+
+        console.log(collaborators);
         const { id: photoId } = await (
           await this.fetch(
-            `https://graph.facebook.com/v20.0/${id}/media?${mediaType}${isCarousel}&access_token=${accessToken}${caption}`,
+            `https://graph.facebook.com/v20.0/${id}/media?${mediaType}${isCarousel}${collaborators}&access_token=${accessToken}${caption}`,
             {
               method: 'POST',
             }
           )
         ).json();
+        console.log('in progress2');
 
         let status = 'IN_PROGRESS';
         while (status === 'IN_PROGRESS') {
@@ -241,6 +259,7 @@ export class InstagramProvider
           await timer(3000);
           status = status_code;
         }
+        console.log('in progress3');
 
         return photoId;
       }) || []
@@ -374,6 +393,14 @@ export class InstagramProvider
           date: dayjs(v.end_time).format('YYYY-MM-DD'),
         })),
       })) || []
+    );
+  }
+
+  music(accessToken: string, data: { q: string }) {
+    return this.fetch(
+      `https://graph.facebook.com/v20.0/music/search?q=${encodeURIComponent(
+        data.q
+      )}&access_token=${accessToken}`
     );
   }
 }

@@ -340,10 +340,12 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           type === 'personal'
             ? `urn:li:person:${id}`
             : `urn:li:organization:${id}`,
-        commentary: removeMarkdown({
-          text: firstPost.message.replace('\n', '𝔫𝔢𝔴𝔩𝔦𝔫𝔢'),
-          except: [/@\[(.*?)]\(urn:li:organization:(\d+)\)/g],
-        }).replace('𝔫𝔢𝔴𝔩𝔦𝔫𝔢', '\n'),
+        commentary: firstPost.message
+          .replace(/\*/g, '\\*')
+          .replace(/\(/g, '\\(')
+          .replace(/\)/g, '\\)')
+          .replace(/\{/g, '\\{')
+          .replace(/}/g, '\\}'),
         visibility: 'PUBLIC',
         distribution: {
           feedDistribution: 'MAIN_FEED',
@@ -408,12 +410,12 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
                   ? `urn:li:person:${id}`
                   : `urn:li:organization:${id}`,
               object: topPostId,
-              message: {
-                text: removeMarkdown({
-                  text: post.message.replace('\n', '𝔫𝔢𝔴𝔩𝔦𝔫𝔢'),
-                  except: [/@\[(.*?)]\(urn:li:organization:(\d+)\)/g],
-                }).replace('𝔫𝔢𝔴𝔩𝔦𝔫𝔢', '\n'),
-              },
+              message: post.message
+                .replace(/\*/g, '\\*')
+                .replace(/\(/g, '\\(')
+                .replace(/\)/g, '\\)')
+                .replace(/\{/g, '\\{')
+                .replace(/}/g, '\\}'),
             }),
           }
         )
