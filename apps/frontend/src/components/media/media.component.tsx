@@ -224,6 +224,7 @@ export const MultiMediaComponent: FC<{
   const changeMedia = useCallback(
     (m: { path: string; id: string }) => {
       const newMedia = [...(value || []), m];
+      console.log('new media inside component', newMedia);
       // setCurrentMedia(newMedia);
       onChange({ target: { name, value: newMedia } });
     },

@@ -89,6 +89,7 @@ export const AddEditModal: FC<{
   >([{ content: '' }]);
 
   const fetch = useFetch();
+  const { backendUrl, storageProvider } = useVariables();
 
   const user = useUser();
 
@@ -288,11 +289,12 @@ export const AddEditModal: FC<{
         }
 
         if (
-          key.value.some(
-            (p) => {
-              return countCharacters(p.content, key?.integration?.identifier || '') > (key.maximumCharacters || 1000000);
-            }
-          )
+          key.value.some((p) => {
+            return (
+              countCharacters(p.content, key?.integration?.identifier || '') >
+              (key.maximumCharacters || 1000000)
+            );
+          })
         ) {
           if (
             !(await deleteDialog(
@@ -386,37 +388,41 @@ export const AddEditModal: FC<{
     });
   }, [data, postFor, selectedIntegrations]);
 
-
-  const {backendUrl, storageProvider} = useVariables();
-  
-  const uploadImageToServer = (_file: any, index:number) => {
+  const uploadMediaToServer = (_file: any, index: number) => {
     const uppy2 = new Uppy({
       autoProceed: true,
       restrictions: {
         maxNumberOfFiles: 1,
-        // allowedFileTypes: allowedFileTypes.split(','),
+        allowedFileTypes: 'image/*,video/mp4'.split(','),
         maxFileSize: 1000000000,
       },
     });
-   
-    const { plugin, options } = getUppyUploadPlugin(storageProvider, fetch, backendUrl)
-    uppy2.use(plugin, options)
-    // Set additional metadata when a file is added
 
-    uppy2.addFile(_file)
+    const { plugin, options } = getUppyUploadPlugin(
+      storageProvider,
+      fetch,
+      backendUrl
+    );
+    uppy2.use(plugin, options);
+    uppy2.addFile(_file);
 
     uppy2.on('complete', (result) => {
-      if(result){
-        const targetImage = result?.successful![0].response?.body
-        const newMedia = [...( value?.image || []), targetImage];
-  
-        const addToState = { target: { name:"image", value: newMedia } };
-  
-        const r = changeImage(index)
-        r(addToState)
+      if (result) {
+        const mediaToAdd = result?.successful![0].response?.body;
+
+        if (mediaToAdd && mediaToAdd.path && mediaToAdd.id) {
+          const newMedia: {
+            path: string;
+            id: string;
+          }[] = [
+            ...(value[index].image || []),
+            { path: mediaToAdd.path, id: mediaToAdd.id },
+          ];
+          changeImage(index)({ target: { name: 'image', value: newMedia } });
+        }
       }
     });
-  }
+  };
 
   return (
     <>
@@ -522,18 +528,20 @@ export const AddEditModal: FC<{
                             // @ts-ignore
                             onChange={changeValue(index)}
                             onPaste={(event) => {
-                              const clipboardData = event.clipboardData || window.clipboardData;
+                              const clipboardData = event.clipboardData;
                               if (clipboardData && clipboardData.items) {
-                                console.log("clipboardData.items", clipboardData.items)
-                                for (const item of clipboardData.items) {
-                                  if (item.type.indexOf('image') !== -1) {
+                                for (const item of Array.from(
+                                  clipboardData.items
+                                )) {
+                                  const mediaTypes = ['image', 'video'];
+
+                                  if (
+                                    mediaTypes.some((type) => item.type.indexOf(type) !== -1)
+                                  ) {
                                     const blob = item.getAsFile();
-                                    console.log("blob", blob);
-                                    uploadImageToServer(blob, index)
+                                    uploadMediaToServer(blob, index);
                                   }
                                 }
-                              } else {
-                                // console.log('Text Data:', clipboardData.getData('text'));
                               }
                             }}
                           />
@@ -646,10 +654,10 @@ export const AddEditModal: FC<{
                         {!canSendForPublication
                           ? 'Not matching order'
                           : postFor
-                            ? 'Submit for order'
-                            : !existingData.integration
-                              ? 'Add to calendar'
-                              : 'Update'}
+                          ? 'Submit for order'
+                          : !existingData.integration
+                          ? 'Add to calendar'
+                          : 'Update'}
                       </div>
                       {!postFor && (
                         <div className="h-full flex items-center">
