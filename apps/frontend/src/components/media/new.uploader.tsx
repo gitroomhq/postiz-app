@@ -85,13 +85,9 @@ export function MultipartFileUploaderAfter({
 
     uppy2.on('complete', (result) => {
       onUploadSuccess(result);
-      console.log('uppy complete:', result)
     });
 
-    uppy2.on('upload-success', (file, response) => {
-      console.log('uppy upload success:file', file)
-      console.log('uppy upload success:response', response)
-      
+    uppy2.on('upload-success', (file, response) => {   
       // @ts-ignore
       uppy.setFileState(file.id, {
         // @ts-ignore
