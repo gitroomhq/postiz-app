@@ -190,6 +190,7 @@ export const CustomVariables: FC<{
     defaultValue?: string;
     validation: string;
     type: 'text' | 'password';
+    placeholder?: string;
   }>;
   identifier: string;
   gotoUrl(url: string): void;
@@ -228,6 +229,7 @@ export const CustomVariables: FC<{
 
   const submit = useCallback(
     async (data: FieldValues) => {
+      console.log({ data });
       gotoUrl(
         `/integrations/social/${identifier}?state=nostate&code=${Buffer.from(
           JSON.stringify(data)
@@ -271,6 +273,7 @@ export const CustomVariables: FC<{
                 label={variable.label}
                 name={variable.key}
                 type={variable.type == 'text' ? 'text' : 'password'}
+                placeholder={variable.placeholder ?? ''}
               />
             </div>
           ))}
@@ -314,6 +317,7 @@ export const AddProviderComponent: FC<{
           validation: string;
           defaultValue?: string;
           type: 'text' | 'password';
+          placeholder?: string;
         }>
       ) =>
       async () => {

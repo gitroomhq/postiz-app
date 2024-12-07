@@ -30,7 +30,8 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
       {
         key: 'identifier',
         label: 'Identifier',
-        validation: `/^.{3,}$/`,
+        placeholder: 'johndoe.bsky.social',
+        validation: `/^[a-zA-Z0-9]{3,}$/`,
         type: 'text' as const,
       },
       {
@@ -116,7 +117,7 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
 
     let loadCid = '';
     let loadUri = '';
-    const cidUrl = [] as { cid: string; url: string, rev: string }[];
+    const cidUrl = [] as { cid: string; url: string; rev: string }[];
     for (const post of postDetails) {
       const images = await Promise.all(
         post.media?.map(async (p) => {
@@ -134,9 +135,9 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
 
       const rt = new RichText({
         text: post.message,
-      })
+      });
 
-      await rt.detectFacets(agent)
+      await rt.detectFacets(agent);
 
       // @ts-ignore
       const { cid, uri, commit } = await agent.post({
@@ -181,7 +182,9 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
       id: p.id,
       postId: cidUrl[index].cid,
       status: 'completed',
-      releaseURL: `https://bsky.app/profile/${id}/post/${cidUrl[index].url.split('/').pop()}`,
+      releaseURL: `https://bsky.app/profile/${id}/post/${cidUrl[index].url
+        .split('/')
+        .pop()}`,
     }));
   }
 }
