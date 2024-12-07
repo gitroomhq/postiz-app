@@ -66,6 +66,14 @@ export class IntegrationService {
     );
   }
 
+  updateIntegrationGroup(org: string, id: string, group: string) {
+    return this._integrationRepository.updateIntegrationGroup(org, id, group);
+  }
+
+  updateOnCustomerName(org: string, id: string, name: string) {
+    return this._integrationRepository.updateOnCustomerName(org, id, name);
+  }
+
   getIntegrationsList(org: string) {
     return this._integrationRepository.getIntegrationsList(org);
   }
@@ -361,5 +369,9 @@ export class IntegrationService {
     }
 
     return [];
+  }
+
+  customers(orgId: string) {
+    return this._integrationRepository.customers(orgId);
   }
 }
