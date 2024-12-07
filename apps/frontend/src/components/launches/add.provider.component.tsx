@@ -229,7 +229,6 @@ export const CustomVariables: FC<{
 
   const submit = useCallback(
     async (data: FieldValues) => {
-      console.log({ data });
       gotoUrl(
         `/integrations/social/${identifier}?state=nostate&code=${Buffer.from(
           JSON.stringify(data)

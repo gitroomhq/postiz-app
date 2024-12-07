@@ -31,7 +31,7 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
         key: 'identifier',
         label: 'Identifier',
         placeholder: 'johndoe.bsky.social',
-        validation: `/^[a-zA-Z0-9]{3,}$/`,
+        validation: `/^[a-zA-Z0-9]+\\.[a-zA-Z0-9]+\\.[a-zA-Z0-9]+$/`,
         type: 'text' as const,
       },
       {
