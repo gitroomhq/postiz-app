@@ -408,9 +408,17 @@ export class IntegrationsController {
       );
     }
 
+    let validName = name;
+    if (!validName) {
+      if (username) {
+        validName = username.split('.')[0];
+      } else {
+        validName = '';
+      }
+    }
     return this._integrationService.createOrUpdateIntegration(
       org.id,
-      name,
+      validName,
       picture,
       'social',
       String(id),
