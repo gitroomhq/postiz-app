@@ -69,32 +69,45 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
     codeVerifier: string;
     refresh?: string;
   }) {
-    const body = JSON.parse(Buffer.from(params.code, 'base64').toString());
+    try {
+      const body = JSON.parse(Buffer.from(params.code, 'base64').toString());
 
-    const agent = new BskyAgent({
-      service: body.service,
-    });
+      const agent = new BskyAgent({
+        service: body.service,
+      });
 
-    const {
-      data: { accessJwt, refreshJwt, handle, did },
-    } = await agent.login({
-      identifier: body.identifier,
-      password: body.password,
-    });
+      const {
+        data: { accessJwt, refreshJwt, handle, did },
+      } = await agent.login({
+        identifier: body.identifier,
+        password: body.password,
+      });
 
-    const profile = await agent.getProfile({
-      actor: did,
-    });
+      const profile = await agent.getProfile({
+        actor: did,
+      });
 
-    return {
-      refreshToken: refreshJwt,
-      expiresIn: dayjs().add(100, 'years').unix() - dayjs().unix(),
-      accessToken: accessJwt,
-      id: did,
-      name: profile.data.displayName!,
-      picture: profile.data.avatar!,
-      username: profile.data.handle!,
-    };
+      return {
+        refreshToken: refreshJwt,
+        expiresIn: dayjs().add(100, 'years').unix() - dayjs().unix(),
+        accessToken: accessJwt,
+        id: did,
+        name: profile.data.displayName!,
+        picture: profile.data.avatar!,
+        username: profile.data.handle!,
+      };
+    } catch (error) {
+      console.error('Error occurred in the authenticate function:', error);
+      return {
+        refreshToken: '',
+        expiresIn: 0,
+        accessToken: '',
+        id: '',
+        name: '',
+        picture: '',
+        username: '',
+      };
+    }
   }
 
   async post(
