@@ -384,3 +384,14 @@ div div .set-font-family {
   font-style: normal !important;
   font-weight: 400 !important;
 }
+
+.col-calendar:hover:before {
+  content: "Date passed";
+  color: white;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  opacity: 30%;
+}
