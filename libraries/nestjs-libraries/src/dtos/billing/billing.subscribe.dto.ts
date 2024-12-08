@@ -8,4 +8,6 @@ export class BillingSubscribeDto {
   billing: 'STANDARD' | 'PRO' | 'TEAM' | 'ULTIMATE';
 
   utm: string;
+
+  tolt: string;
 }

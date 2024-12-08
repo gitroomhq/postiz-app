@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   Post,
+  Put,
   Query,
   UseFilters,
 } from '@nestjs/common';
@@ -48,6 +49,37 @@ export class IntegrationsController {
     return this._integrationManager.getAllIntegrations();
   }
 
+  @Get('/customers')
+  getCustomers(@GetOrgFromRequest() org: Organization) {
+    return this._integrationService.customers(org.id);
+  }
+
+  @Put('/:id/group')
+  async updateIntegrationGroup(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: { group: string }
+  ) {
+    return this._integrationService.updateIntegrationGroup(
+      org.id,
+      id,
+      body.group
+    );
+  }
+
+  @Put('/:id/customer-name')
+  async updateOnCustomerName(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: { name: string }
+  ) {
+    return this._integrationService.updateOnCustomerName(
+      org.id,
+      id,
+      body.name
+    );
+  }
+
   @Get('/list')
   async getIntegrationList(@GetOrgFromRequest() org: Organization) {
     return {
@@ -71,6 +103,7 @@ export class IntegrationsController {
           time: JSON.parse(p.postingTimes),
           changeProfilePicture: !!findIntegration?.changeProfilePicture,
           changeNickName: !!findIntegration?.changeNickname,
+          customer: p.customer,
         };
       }),
     };
@@ -408,9 +441,17 @@ export class IntegrationsController {
       );
     }
 
+    let validName = name;
+    if (!validName) {
+      if (username) {
+        validName = username.split('.')[0] ?? username;
+      } else {
+        validName = `Channel_${String(id).slice(0, 8)}`;
+      }
+    }
     return this._integrationService.createOrUpdateIntegration(
       org.id,
-      name,
+      validName.trim(),
       picture,
       'social',
       String(id),

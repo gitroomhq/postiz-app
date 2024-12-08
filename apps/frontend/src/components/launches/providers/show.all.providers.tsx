@@ -7,7 +7,7 @@ import RedditProvider from "@gitroom/frontend/components/launches/providers/redd
 import MediumProvider from "@gitroom/frontend/components/launches/providers/medium/medium.provider";
 import HashnodeProvider from "@gitroom/frontend/components/launches/providers/hashnode/hashnode.provider";
 import FacebookProvider from '@gitroom/frontend/components/launches/providers/facebook/facebook.provider';
-import InstagramProvider from '@gitroom/frontend/components/launches/providers/instagram/instagram.provider';
+import InstagramProvider from '@gitroom/frontend/components/launches/providers/instagram/instagram.collaborators';
 import YoutubeProvider from '@gitroom/frontend/components/launches/providers/youtube/youtube.provider';
 import TiktokProvider from '@gitroom/frontend/components/launches/providers/tiktok/tiktok.provider';
 import PinterestProvider from '@gitroom/frontend/components/launches/providers/pinterest/pinterest.provider';

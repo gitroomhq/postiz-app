@@ -286,6 +286,11 @@ export class StripeService {
           uniqueId,
         },
       },
+      ...body.tolt ? {
+        metadata: {
+          tolt_referral: body.tolt,
+        }
+      } : {},
       allow_promotion_codes: true,
       line_items: [
         {

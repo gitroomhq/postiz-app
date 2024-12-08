@@ -11,6 +11,7 @@ export class IntegrationRepository {
   private storage = UploadFactory.createStorage();
   constructor(
     private _integration: PrismaRepository<'integration'>,
+    private _customers: PrismaRepository<'customer'>,
     private _posts: PrismaRepository<'post'>
   ) {}
 
@@ -215,11 +216,78 @@ export class IntegrationRepository {
     return integration?.integration;
   }
 
+  async updateOnCustomerName(org: string, id: string, name: string) {
+    const customer = !name
+      ? undefined
+      : (await this._customers.model.customer.findFirst({
+          where: {
+            orgId: org,
+            name,
+          },
+        })) ||
+        (await this._customers.model.customer.create({
+          data: {
+            name,
+            orgId: org,
+          },
+        }));
+
+    return this._integration.model.integration.update({
+      where: {
+        id,
+        organizationId: org,
+      },
+      data: {
+        customer: !customer
+          ? { disconnect: true }
+          : {
+              connect: {
+                id: customer.id,
+              },
+            },
+      },
+    });
+  }
+
+  updateIntegrationGroup(org: string, id: string, group: string) {
+    return this._integration.model.integration.update({
+      where: {
+        id,
+        organizationId: org,
+      },
+      data: !group
+        ? {
+            customer: {
+              disconnect: true,
+            },
+          }
+        : {
+            customer: {
+              connect: {
+                id: group,
+              },
+            },
+          },
+    });
+  }
+
+  customers(orgId: string) {
+    return this._customers.model.customer.findMany({
+      where: {
+        orgId,
+        deletedAt: null,
+      },
+    });
+  }
+
   getIntegrationsList(org: string) {
     return this._integration.model.integration.findMany({
       where: {
         organizationId: org,
         deletedAt: null,
+      },
+      include: {
+        customer: true,
       },
     });
   }

@@ -8,6 +8,7 @@ import { useModals } from '@mantine/modals';
 import { TimeTable } from '@gitroom/frontend/components/launches/time.table';
 import { useCalendar } from '@gitroom/frontend/components/launches/calendar.context';
 import { BotPicture } from '@gitroom/frontend/components/launches/bot.picture';
+import { CustomerModal } from '@gitroom/frontend/components/launches/customer.modal';
 
 export const Menu: FC<{
   canEnable: boolean;
@@ -36,10 +37,13 @@ export const Menu: FC<{
     setShow(false);
   });
 
-  const changeShow: MouseEventHandler<HTMLDivElement> = useCallback((e) => {
-    e.stopPropagation();
-    setShow(!show);
-  }, [show]);
+  const changeShow: MouseEventHandler<HTMLDivElement> = useCallback(
+    (e) => {
+      e.stopPropagation();
+      setShow(!show);
+    },
+    [show]
+  );
 
   const disableChannel = useCallback(async () => {
     if (
@@ -139,6 +143,34 @@ export const Menu: FC<{
     setShow(false);
   }, [integrations]);
 
+  const addToCustomer = useCallback(() => {
+    const findIntegration = integrations.find(
+      (integration) => integration.id === id
+    );
+
+    modal.openModal({
+      classNames: {
+        modal: 'w-[100%] max-w-[600px] bg-transparent text-textColor',
+      },
+      size: '100%',
+      withCloseButton: false,
+      closeOnEscape: true,
+      closeOnClickOutside: true,
+      children: (
+        <CustomerModal
+          // @ts-ignore
+          integration={findIntegration}
+          onClose={() => {
+            mutate();
+            toast.show('Customer Updated', 'success');
+          }}
+        />
+      ),
+    });
+
+    setShow(false);
+  }, [integrations]);
+
   return (
     <div
       className="cursor-pointer relative select-none"
@@ -192,6 +224,23 @@ export const Menu: FC<{
               </div>
             </div>
           )}
+          <div className="flex gap-[12px] items-center" onClick={addToCustomer}>
+            <div>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width={18}
+                height={18}
+                viewBox="0 0 32 32"
+                fill="none"
+              >
+                <path
+                  d="M31.9997 17C31.9997 17.2652 31.8943 17.5196 31.7068 17.7071C31.5192 17.8946 31.2649 18 30.9997 18H28.9997V20C28.9997 20.2652 28.8943 20.5196 28.7068 20.7071C28.5192 20.8946 28.2649 21 27.9997 21C27.7345 21 27.4801 20.8946 27.2926 20.7071C27.105 20.5196 26.9997 20.2652 26.9997 20V18H24.9997C24.7345 18 24.4801 17.8946 24.2926 17.7071C24.105 17.5196 23.9997 17.2652 23.9997 17C23.9997 16.7348 24.105 16.4804 24.2926 16.2929C24.4801 16.1054 24.7345 16 24.9997 16H26.9997V14C26.9997 13.7348 27.105 13.4804 27.2926 13.2929C27.4801 13.1054 27.7345 13 27.9997 13C28.2649 13 28.5192 13.1054 28.7068 13.2929C28.8943 13.4804 28.9997 13.7348 28.9997 14V16H30.9997C31.2649 16 31.5192 16.1054 31.7068 16.2929C31.8943 16.4804 31.9997 16.7348 31.9997 17ZM24.7659 24.3562C24.9367 24.5595 25.0197 24.8222 24.9967 25.0866C24.9737 25.351 24.8466 25.5955 24.6434 25.7662C24.4402 25.937 24.1775 26.02 23.9131 25.997C23.6486 25.974 23.4042 25.847 23.2334 25.6437C20.7184 22.6487 17.2609 21 13.4997 21C9.73843 21 6.28093 22.6487 3.76593 25.6437C3.59519 25.8468 3.35079 25.9737 3.08648 25.9966C2.82217 26.0194 2.55961 25.9364 2.35655 25.7656C2.15349 25.5949 2.02658 25.3505 2.00372 25.0862C1.98087 24.8219 2.06394 24.5593 2.23468 24.3562C4.10218 22.1337 6.42468 20.555 9.00593 19.71C7.43831 18.7336 6.23133 17.2733 5.56759 15.5498C4.90386 13.8264 4.81949 11.9337 5.32724 10.1581C5.83499 8.38242 6.90724 6.82045 8.38176 5.70847C9.85629 4.59649 11.6529 3.995 13.4997 3.995C15.3465 3.995 17.1431 4.59649 18.6176 5.70847C20.0921 6.82045 21.1644 8.38242 21.6721 10.1581C22.1799 11.9337 22.0955 13.8264 21.4318 15.5498C20.768 17.2733 19.561 18.7336 17.9934 19.71C20.5747 20.555 22.8972 22.1337 24.7659 24.3562ZM13.4997 19C14.7853 19 16.042 18.6188 17.1109 17.9045C18.1798 17.1903 19.0129 16.1752 19.5049 14.9874C19.9969 13.7997 20.1256 12.4928 19.8748 11.2319C19.624 9.97103 19.0049 8.81284 18.0959 7.9038C17.1868 6.99476 16.0286 6.37569 14.7678 6.12489C13.5069 5.87409 12.2 6.00281 11.0122 6.49478C9.82451 6.98675 8.80935 7.81987 8.09512 8.88879C7.38089 9.95771 6.99968 11.2144 6.99968 12.5C7.00166 14.2233 7.68712 15.8754 8.90567 17.094C10.1242 18.3126 11.7764 18.998 13.4997 19Z"
+                  fill="green"
+                />
+              </svg>
+            </div>
+            <div className="text-[12px]">Move / add to customer</div>
+          </div>
           <div className="flex gap-[12px] items-center" onClick={editTimeTable}>
             <div>
               <svg
