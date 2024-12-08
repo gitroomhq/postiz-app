@@ -26,6 +26,9 @@ export const useFormatting = (
       if (params.removeMarkdown) {
         newText = removeMd(newText);
       }
+      newText = newText.replace(/@\w{1,15}/g, function(match) {
+        return `<strong>${match}</strong>`;
+      });
       if (params.saveBreaklines) {
         newText = newText.replace('𝔫𝔢𝔴𝔩𝔦𝔫𝔢', '\n');
       }
