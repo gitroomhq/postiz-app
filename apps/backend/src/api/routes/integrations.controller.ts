@@ -441,9 +441,17 @@ export class IntegrationsController {
       );
     }
 
+    let validName = name;
+    if (!validName) {
+      if (username) {
+        validName = username.split('.')[0] ?? username;
+      } else {
+        validName = `Channel_${String(id).slice(0, 8)}`;
+      }
+    }
     return this._integrationService.createOrUpdateIntegration(
       org.id,
-      name,
+      validName.trim(),
       picture,
       'social',
       String(id),
