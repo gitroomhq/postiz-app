@@ -27,7 +27,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       <head>
         <link
           rel="icon"
-          href={!!process.env.IS_GENERAL ? '/favicon.png' : '/postiz-fav.png'}
+          href="/favicon.ico"
           sizes="any"
         />
       </head>
