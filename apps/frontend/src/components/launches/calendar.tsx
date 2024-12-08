@@ -27,6 +27,7 @@ import { groupBy, sortBy } from 'lodash';
 import Image from 'next/image';
 import { extend } from 'dayjs';
 import { isUSCitizen } from './helpers/isuscitizen.utils';
+import removeMd from 'remove-markdown';
 extend(isSameOrAfter);
 extend(isSameOrBefore);
 
@@ -604,7 +605,7 @@ const CalendarItem: FC<{
       </div>
       <div className="whitespace-pre-wrap line-clamp-3">
         {state === 'DRAFT' ? 'Draft: ' : ''}
-        {post.content}
+        {removeMd(post.content).replace(/\n/g, ' ')}
       </div>
     </div>
   );
