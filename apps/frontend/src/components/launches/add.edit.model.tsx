@@ -388,12 +388,12 @@ export const AddEditModal: FC<{
     });
   }, [data, postFor, selectedIntegrations]);
 
-  const uploadMediaToServer = (_file: any, index: number) => {
+  const uploadMediaToServer = (_file: File, index: number) => {
     const uppy2 = new Uppy({
       autoProceed: true,
       restrictions: {
         maxNumberOfFiles: 1,
-        allowedFileTypes: 'image/*,video/mp4'.split(','),
+        allowedFileTypes: ['image/*', 'video/mp4'],
         maxFileSize: 1000000000,
       },
     });
@@ -528,7 +528,14 @@ export const AddEditModal: FC<{
                             // @ts-ignore
                             onChange={changeValue(index)}
                             onPaste={(event) => {
-                              const clipboardData = event.clipboardData;
+                              const clipboardData =
+                                event.clipboardData ||
+                                (
+                                  window as Window &
+                                    typeof globalThis & {
+                                      clipboardData: DataTransfer;
+                                    }
+                                ).clipboardData;
                               if (clipboardData && clipboardData.items) {
                                 for (const item of Array.from(
                                   clipboardData.items
@@ -536,10 +543,14 @@ export const AddEditModal: FC<{
                                   const mediaTypes = ['image', 'video'];
 
                                   if (
-                                    mediaTypes.some((type) => item.type.indexOf(type) !== -1)
+                                    mediaTypes.some(
+                                      (type) => item.type.indexOf(type) !== -1
+                                    )
                                   ) {
-                                    const blob = item.getAsFile();
-                                    uploadMediaToServer(blob, index);
+                                    const media = item.getAsFile();
+                                    if(media){
+                                      uploadMediaToServer(media, index);
+                                    }
                                   }
                                 }
                               }
