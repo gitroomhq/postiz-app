@@ -11,6 +11,7 @@ import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import sharp from 'sharp';
+import { isValidHandle } from '@gitroom/helpers/integrations/bluesky.provider';
 
 export class BlueskyProvider extends SocialAbstract implements SocialProvider {
   identifier = 'bluesky';
@@ -31,7 +32,7 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
         key: 'identifier',
         label: 'Identifier',
         placeholder: 'johndoe.bsky.social',
-        validation: `/^[a-zA-Z0-9]+\\.[a-zA-Z0-9]+\\.[a-zA-Z0-9]+$/`,
+        validation: `/^.{3,}$/`,
         type: 'text' as const,
       },
       {
@@ -76,6 +77,10 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
         service: body.service,
       });
 
+      if (!isValidHandle(body.identifier)) {
+        throw new Error('Invalid handle');
+      }
+
       const {
         data: { accessJwt, refreshJwt, handle, did },
       } = await agent.login({
@@ -97,7 +102,10 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
         username: profile.data.handle!,
       };
     } catch (error) {
-      console.error('Error occurred in the authenticate function:', error);
+      console.error(
+        'Error occurred in the +Bluesky authenticate function',
+        error
+      );
       return {
         refreshToken: '',
         expiresIn: 0,
