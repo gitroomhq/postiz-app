@@ -6,8 +6,8 @@ import {
   selectWord,
   TextAreaTextApi,
 } from '@uiw/react-md-editor';
-import { showMediaBox } from '@gitroom/frontend/components/media/media.component';
 import { loadVars } from '@gitroom/react/helpers/variable.context';
+import { showMediaBox } from '../../media/mediaboxmodal.component';
 
 export const newImage: ICommand = {
   name: 'image',

@@ -21,7 +21,6 @@ import {
   IntegrationContext,
   useIntegration,
 } from '@gitroom/frontend/components/launches/helpers/use.integration';
-import { MultiMediaComponent } from '@gitroom/frontend/components/media/media.component';
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 import { newImage } from '@gitroom/frontend/components/launches/helpers/new.image.component';
@@ -37,6 +36,7 @@ import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
 import { AddPostButton } from '@gitroom/frontend/components/launches/add.post.button';
 import { GeneralPreviewComponent } from '@gitroom/frontend/components/launches/general.preview.component';
 import { capitalize } from 'lodash';
+import { MultiMediaComponent } from '../../media/multimedia.component';
 import { useModals } from '@mantine/modals';
 
 // Simple component to change back to settings on after changing tab
@@ -375,7 +375,7 @@ export const withProvider = function <T extends object>(
                               onChange={changeValue(index)}
                             />
                             {(!val.content || val.content.length < 6) && (
-                              <div className="my-[5px] text-customColor19 text-[12px] font-[500]">
+                              <div className="my-[5px] text-red-500 text-[12px] font-[500]">
                                 The post should be at least 6 characters long
                               </div>
                             )}

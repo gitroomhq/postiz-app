@@ -26,7 +26,6 @@ import {
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useMoveToIntegration } from '@gitroom/frontend/components/launches/helpers/use.move.to.integration';
 import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
-import { MultiMediaComponent } from '@gitroom/frontend/components/media/media.component';
 import { useExpend } from '@gitroom/frontend/components/launches/helpers/use.expend';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { PickPlatforms } from '@gitroom/frontend/components/launches/helpers/pick.platform.component';
@@ -50,6 +49,7 @@ import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import Image from 'next/image';
 import { weightedLength } from '@gitroom/helpers/utils/count.length';
+import { MultiMediaComponent } from '../media/multimedia.component';
 import { uniqBy } from 'lodash';
 import { Select } from '@gitroom/react/form/select';
 
@@ -512,7 +512,7 @@ export const AddEditModal: FC<{
                   <Fragment key={`edit_${index}`}>
                     <div>
                       <div className="flex gap-[4px]">
-                        <div className="flex-1 editor text-textColor">
+                        <div className="flex-1"> 
                           <Editor
                             order={index}
                             height={value.length > 1 ? 150 : 250}
@@ -533,7 +533,7 @@ export const AddEditModal: FC<{
 
                           {showError &&
                             (!p.content || p.content.length < 6) && (
-                              <div className="my-[5px] text-customColor19 text-[12px] font-[500]">
+                              <div className="text-red-500 text-[12px] my-[5px]">
                                 The post should be at least 6 characters long
                               </div>
                             )}

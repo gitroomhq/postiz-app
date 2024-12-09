@@ -6,7 +6,6 @@ import { ContextWrapper } from '@gitroom/frontend/components/layout/user.context
 import { TopMenu } from '@gitroom/frontend/components/layout/top.menu';
 import { MantineWrapper } from '@gitroom/react/helpers/mantine.wrapper';
 import { ToolTip } from '@gitroom/frontend/components/layout/top.tip';
-import { ShowMediaBoxModal } from '@gitroom/frontend/components/media/media.component';
 import Image from 'next/image';
 import { Toaster } from '@gitroom/react/toaster/toaster';
 import { ShowPostSelector } from '@gitroom/frontend/components/post-url-selector/post.url.selector';
@@ -37,6 +36,7 @@ const ModeComponent = dynamic(
 );
 
 import { extend } from 'dayjs';
+import { ShowMediaBoxModal } from '../media/mediaboxmodal.component';
 
 extend(utc);
 extend(weekOfYear);
