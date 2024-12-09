@@ -8,6 +8,7 @@ import {
   Sections,
 } from '@gitroom/backend/services/auth/permissions/permissions.service';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
+import { ConfigurationVariableService } from '@gitroom/nestjs-libraries/database/prisma/configuration/configuration.variable.service';
 import {AddTeamMemberDto} from "@gitroom/nestjs-libraries/dtos/settings/add.team.member.dto";
 import {ApiTags} from "@nestjs/swagger";
 
@@ -16,8 +17,17 @@ import {ApiTags} from "@nestjs/swagger";
 export class SettingsController {
   constructor(
     private _starsService: StarsService,
-    private _organizationService: OrganizationService
+    private _organizationService: OrganizationService,
+    private _configurationVariableService: ConfigurationVariableService
   ) {}
+
+  @Get('/cvars/all')
+  @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
+  async getConfigurationVariables() {
+    return {
+      configurationVariables: await this._configurationVariableService.getAll(),
+    };
+  }
 
   @Get('/github')
   @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])

@@ -4,6 +4,7 @@ import { GithubComponent } from '@gitroom/frontend/components/settings/github.co
 import { useCallback, useEffect } from 'react';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { TeamsComponent } from '@gitroom/frontend/components/settings/teams.component';
+import { ConfigurationVariableEditorComponent } from '@gitroom/frontend/components/settings/configuration-variable-editor.component';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
@@ -70,6 +71,9 @@ export const SettingsComponent = () => {
           {/*</div>*/}
         </div>
       )}
+
+	  <ConfigurationVariableEditorComponent />
+
       {!!user?.tier?.team_members && <TeamsComponent />}
     </div>
   );
