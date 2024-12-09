@@ -5,6 +5,35 @@ export const dynamic = 'force-dynamic';
 import { internalFetch } from '@gitroom/helpers/utils/internal.fetch';
 import { redirect } from 'next/navigation';
 import { Redirect } from '@gitroom/frontend/components/layout/redirect';
+import Link from 'next/link';
+
+const ErrorMessage = () => {
+  return (
+    <>
+      <div className="mt-[50px] text-lg text-red-600">
+        <span className="font-semibold">
+          An error occurred while adding the provider.
+        </span>
+        <br />
+        <span className="text-gray text-base">
+          If you are a user of this system, without administrator permissions,
+          you will need to ask your administrator to help fix this with you.
+        </span>
+        <br />
+        <span className="text-gray text-base">
+          If you are the administrator of this system, the error provided in
+          full is provided in the application logs.
+        </span>
+      </div>
+      <Link
+        href={'/launches'}
+        className="hover:underline text-lg hover:text-forth"
+      >
+        Click here to go back to the homepage.
+      </Link>
+    </>
+  );
+};
 
 export default async function Page({
   params: { provider },
@@ -40,16 +69,7 @@ export default async function Page({
       data.status !== HttpStatusCode.Ok &&
       data.status !== HttpStatusCode.Created
     ) {
-      return (
-        <>
-          <div className="mt-[50px] text-[50px]">
-            Could not add provider.
-            <br />
-            You are being redirected back
-          </div>
-          <Redirect url="/launches" delay={3000} />
-        </>
-      );
+      return <ErrorMessage />;
     }
 
     const { inBetweenSteps, id } = await data.json();
@@ -82,11 +102,7 @@ export default async function Page({
     // Fallback UI or redirection in case of an error
     return (
       <>
-        <div className="mt-[50px] text-[20px] text-red-600">
-          An error occurred. Please try again later. You will be redirected to
-          home page in 10 seconds.
-        </div>
-        <Redirect url="/launches" delay={10000} />
+        <ErrorMessage />
       </>
     );
   }
