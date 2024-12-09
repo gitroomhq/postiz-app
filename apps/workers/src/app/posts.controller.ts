@@ -12,7 +12,7 @@ export class PostsController {
   }
 
   @EventPattern('submit', Transport.REDIS)
-  async payout(data: { id: string, releaseURL: string }) {
+  async payout(data: { id: string; releaseURL: string }) {
     return this._postsService.payout(data.id, data.releaseURL);
   }
 }

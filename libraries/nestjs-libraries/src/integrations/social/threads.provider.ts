@@ -10,6 +10,8 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { capitalize, chunk } from 'lodash';
+import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
+import { Integration } from '@prisma/client';
 
 export class ThreadsProvider extends SocialAbstract implements SocialProvider {
   identifier = 'threads';
@@ -152,7 +154,6 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
 
     let globalThread = '';
     let link = '';
-
     if (firstPost?.media?.length! <= 1) {
       const type = !firstPost?.media?.[0]?.url
         ? undefined
@@ -344,5 +345,74 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
             })),
       })) || []
     );
+  }
+
+  @Plug({
+    identifier: 'threads-autoPlugPost',
+    title: 'Auto plug post',
+    description:
+      'When a post reached a certain number of likes, add another post to it so you followers get a notification about your promotion',
+    runEveryMilliseconds: 21600000,
+    totalRuns: 3,
+    fields: [
+      {
+        name: 'likesAmount',
+        type: 'number',
+        placeholder: 'Amount of likes',
+        description: 'The amount of likes to trigger the repost',
+        validation: /^\d+$/,
+      },
+      {
+        name: 'post',
+        type: 'richtext',
+        placeholder: 'Post to plug',
+        description: 'Message content to plug',
+        validation: /^[\s\S]{3,}$/g,
+      },
+    ],
+  })
+  async autoPlugPost(
+    integration: Integration,
+    id: string,
+    fields: { likesAmount: string; post: string }
+  ) {
+    const { data } = await (
+      await fetch(
+        `https://graph.threads.net/v1.0/${id}/insights?metric=likes&access_token=${integration.token}`
+      )
+    ).json();
+
+    const {
+      values: [value],
+    } = data.find((p: any) => p.name === 'likes');
+
+    if (value.value >= fields.likesAmount) {
+      await timer(2000);
+
+      const form = new FormData();
+      form.append('media_type', 'TEXT');
+      form.append('text', fields.post);
+      form.append('reply_to_id', id);
+      form.append('access_token', integration.token);
+
+      const { id: replyId } = await (
+        await this.fetch('https://graph.threads.net/v1.0/me/threads', {
+          method: 'POST',
+          body: form,
+        })
+      ).json();
+
+      await (
+        await this.fetch(
+          `https://graph.threads.net/v1.0/${integration.internalId}/threads_publish?creation_id=${replyId}&access_token=${integration.token}`,
+          {
+            method: 'POST',
+          }
+        )
+      ).json();
+      return true;
+    }
+
+    return false;
   }
 }

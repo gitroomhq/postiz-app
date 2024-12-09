@@ -28,13 +28,17 @@ import { newImage } from '@gitroom/frontend/components/launches/helpers/new.imag
 import { postSelector } from '@gitroom/frontend/components/post-url-selector/post.url.selector';
 import { UpDownArrow } from '@gitroom/frontend/components/launches/up.down.arrow';
 import { arrayMoveImmutable } from 'array-move';
-import { linkedinCompany } from '@gitroom/frontend/components/launches/helpers/linkedin.component';
+import {
+  LinkedinCompany,
+  linkedinCompany,
+} from '@gitroom/frontend/components/launches/helpers/linkedin.component';
 import { Editor } from '@gitroom/frontend/components/launches/editor';
 import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
 import { AddPostButton } from '@gitroom/frontend/components/launches/add.post.button';
 import { GeneralPreviewComponent } from '@gitroom/frontend/components/launches/general.preview.component';
 import { capitalize } from 'lodash';
 import { useTranslations } from 'next-intl';
+import { useModals } from '@mantine/modals';
 
 // Simple component to change back to settings on after changing tab
 export const SetTab: FC<{ changeTab: () => void }> = (props) => {
@@ -70,8 +74,8 @@ export const EditorWrapper: FC<{ children: ReactNode }> = ({ children }) => {
 };
 
 export const withProvider = function <T extends object>(
-  SettingsComponent: FC<{values?: any}> | null,
-  CustomPreviewComponent?: FC<{maximumCharacters?: number}>,
+  SettingsComponent: FC<{ values?: any }> | null,
+  CustomPreviewComponent?: FC<{ maximumCharacters?: number }>,
   dto?: any,
   checkValidity?: (
     value: Array<Array<{ path: string }>>,
@@ -92,6 +96,8 @@ export const withProvider = function <T extends object>(
   }) => {
     const existingData = useExistingData();
     const { integration, date } = useIntegration();
+    const [showLinkedinPopUp, setShowLinkedinPopUp] = useState<any>(false);
+
     useCopilotReadable({
       description:
         integration?.type === 'social'
@@ -256,6 +262,21 @@ export const withProvider = function <T extends object>(
       },
     });
 
+    const tagPersonOrCompany = useCallback(
+      (integration: string, editor: (value: string) => void) => () => {
+        setShowLinkedinPopUp(
+          <LinkedinCompany
+            onSelect={(tag) => {
+              editor(tag);
+            }}
+            id={integration}
+            onClose={() => setShowLinkedinPopUp(false)}
+          />
+        );
+      },
+      []
+    );
+
     // this is a trick to prevent the data from being deleted, yet we don't render the elements
     if (!props.show) {
       return null;
@@ -265,6 +286,7 @@ export const withProvider = function <T extends object>(
     return (
       <FormProvider {...form}>
         <SetTab changeTab={() => setShowTab(0)} />
+        {showLinkedinPopUp ? showLinkedinPopUp : null}
         <div className="mt-[15px] w-full flex flex-col flex-1">
           {!props.hideMenu && (
             <div className="flex gap-[4px]">
@@ -321,6 +343,20 @@ export const withProvider = function <T extends object>(
                       <div>
                         <div className="flex gap-[4px]">
                           <div className="flex-1 text-textColor editor">
+                            {integration?.identifier === 'linkedin' && (
+                              <Button
+                                className="mb-[5px]"
+                                onClick={tagPersonOrCompany(
+                                  integration.id,
+                                  (newValue: string) =>
+                                    changeValue(index)(
+                                      val.content + newValue
+                                    )
+                                )}
+                              >
+                                Tag a company
+                              </Button>
+                            )}
                             <Editor
                               order={index}
                               height={InPlaceValue.length > 1 ? 200 : 250}

@@ -51,6 +51,8 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import Image from 'next/image';
 import { weightedLength } from '@gitroom/helpers/utils/count.length';
 import { useTranslations } from 'next-intl';
+import { uniqBy } from 'lodash';
+import { Select } from '@gitroom/react/form/select';
 
 function countCharacters(text: string, type: string): number {
   if (type !== 'x') {
@@ -66,17 +68,38 @@ export const AddEditModal: FC<{
   reopenModal: () => void;
   mutate: () => void;
 }> = (props) => {
-  const { date, integrations, reopenModal, mutate } = props;
+  const { date, integrations: ints, reopenModal, mutate } = props;
   const [dateState, setDateState] = useState(date);
   const t= useTranslations("PostModal")
 
   // hook to open a new modal
   const modal = useModals();
+  const [customer, setCustomer] = useState('');
 
   // selected integrations to allow edit
   const [selectedIntegrations, setSelectedIntegrations] = useStateCallback<
     Integrations[]
   >([]);
+
+  const integrations = useMemo(() => {
+    if (!customer) {
+      return ints;
+    }
+
+    const list = ints.filter((f) => f?.customer?.id === customer);
+    if (list.length === 1) {
+      setSelectedIntegrations([list[0]]);
+    }
+
+    return list;
+  }, [customer, ints]);
+
+  const totalCustomers = useMemo(() => {
+    return uniqBy(ints, (i) => i?.customer?.id).length;
+  }, [ints]);
+
+
+  // hook to open a new modal
 
   // value of each editor
   const [value, setValue] = useState<
@@ -288,11 +311,12 @@ export const AddEditModal: FC<{
         }
 
         if (
-          key.value.some(
-            (p) => {
-              return countCharacters(p.content, key?.integration?.identifier || '') > (key.maximumCharacters || 1000000);
-            }
-          )
+          key.value.some((p) => {
+            return (
+              countCharacters(p.content, key?.integration?.identifier || '') >
+              (key.maximumCharacters || 1000000)
+            );
+          })
         ) {
           if (
             !(await deleteDialog(
@@ -419,6 +443,26 @@ export const AddEditModal: FC<{
                   information={data}
                   onChange={setPostFor}
                 />
+                {totalCustomers > 1 && (
+                  <Select
+                    hideErrors={true}
+                    label=""
+                    name="customer"
+                    value={customer}
+                    onChange={(e) => {
+                      setCustomer(e.target.value);
+                      setSelectedIntegrations([]);
+                    }}
+                    disableForm={true}
+                  >
+                    <option value="">Selected Customer</option>
+                    {uniqBy(ints, (u) => u?.customer?.name).map((p) => (
+                      <option key={p.customer?.id} value={p.customer?.id}>
+                        Customer: {p.customer?.name}
+                      </option>
+                    ))}
+                  </Select>
+                )}
                 <DatePicker onChange={setDateState} date={dateState} />
               </div>
             </TopTitle>

@@ -13,6 +13,7 @@ import {
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Input } from '@gitroom/react/form/input';
 import { Button } from '@gitroom/react/form/button';
+import { useToaster } from '@gitroom/react/toaster/toaster';
 
 const postUrlEmitter = new EventEmitter();
 
@@ -76,26 +77,32 @@ export const LinkedinCompany: FC<{
   const { onClose, onSelect, id } = props;
   const fetch = useFetch();
   const [company, setCompany] = useState<any>(null);
+  const toast = useToaster();
 
   const getCompany = async () => {
     if (!company) {
-      return ;
+      return;
     }
-    const {options} = await (
-      await fetch('/integrations/function', {
-        method: 'POST',
-        body: JSON.stringify({
-          id,
-          name: 'company',
-          data: {
-            url: company,
-          },
-        }),
-      })
-    ).json();
 
-    onSelect(options.value);
-    onClose();
+    try {
+      const { options } = await (
+        await fetch('/integrations/function', {
+          method: 'POST',
+          body: JSON.stringify({
+            id,
+            name: 'company',
+            data: {
+              url: company,
+            },
+          }),
+        })
+      ).json();
+
+      onSelect(options.value);
+      onClose();
+    } catch (e) {
+      toast.show('Failed to load profile', 'warning');
+    }
   };
 
   return (

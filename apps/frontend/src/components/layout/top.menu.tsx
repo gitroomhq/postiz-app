@@ -9,16 +9,16 @@ import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useTranslations } from 'next-intl';
 
 export const useMenuItems = () => {
-  const {isGeneral} = useVariables();
+  const { isGeneral } = useVariables();
   return [
     ...(!isGeneral
       ? [
-        {
-          name: 'Analytics',
-          icon: 'analytics',
-          path: '/analytics',
-        },
-      ]
+          {
+            name: 'Analytics',
+            icon: 'analytics',
+            path: '/analytics',
+          },
+        ]
       : []),
     {
       name: isGeneral ? 'Calendar' : 'Launches',
@@ -27,32 +27,27 @@ export const useMenuItems = () => {
     },
     ...(isGeneral
       ? [
-        {
-          name: 'Analytics',
-          icon: 'analytics',
-          path: '/analytics',
-        },
-      ]
+          {
+            name: 'Analytics',
+            icon: 'analytics',
+            path: '/analytics',
+          },
+        ]
       : []),
     ...(!isGeneral
       ? [
-        {
-          name: 'Settings',
-          icon: 'settings',
-          path: '/settings',
-          role: ['ADMIN', 'SUPERADMIN'],
-        },
-      ]
+          {
+            name: 'Settings',
+            icon: 'settings',
+            path: '/settings',
+            role: ['ADMIN', 'SUPERADMIN'],
+          },
+        ]
       : []),
     {
-      name: 'Marketplace',
-      icon: 'marketplace',
-      path: '/marketplace',
-    },
-    {
-      name: 'Messages',
-      icon: 'messages',
-      path: '/messages',
+      name: 'Plugs',
+      icon: 'plugs',
+      path: '/plugs',
     },
     {
       name: 'Billing',
@@ -61,13 +56,20 @@ export const useMenuItems = () => {
       role: ['ADMIN', 'SUPERADMIN'],
       requireBilling: true,
     },
+    {
+      name: 'Affiliate',
+      icon: 'affiliate',
+      path: 'https://affiliate.postiz.com',
+      role: ['ADMIN', 'SUPERADMIN', 'USER'],
+      requireBilling: true,
+    },
   ];
-}
+};
 
 export const TopMenu: FC = () => {
   const path = usePathname();
   const user = useUser();
-  const {billingEnabled} = useVariables();
+  const { billingEnabled } = useVariables();
   const menuItems = useMenuItems();
   const t = useTranslations("Navigation")
 
@@ -88,6 +90,7 @@ export const TopMenu: FC = () => {
             <li key={item.name}>
               <Link
                 prefetch={true}
+                target={item.path.indexOf('http') > -1 ? '_blank' : '_self'}
                 href={item.path}
                 className={clsx(
                   'flex gap-2 items-center box px-[6px] md:px-[24px] py-[8px]',

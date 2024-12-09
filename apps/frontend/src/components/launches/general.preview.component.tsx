@@ -3,10 +3,9 @@ import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
 import { useFormatting } from '@gitroom/frontend/components/launches/helpers/use.formatting';
 import clsx from 'clsx';
 import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
-import { Chakra_Petch } from 'next/font/google';
 import { FC } from 'react';
 import { textSlicer } from '@gitroom/helpers/utils/count.length';
-const chakra = Chakra_Petch({ weight: '400', subsets: ['latin'] });
+import interClass from '@gitroom/react/helpers/inter.font';
 
 export const GeneralPreviewComponent: FC<{maximumCharacters?: number}> = (props) => {
   const { value: topValue, integration } = useIntegration();
@@ -64,7 +63,7 @@ export const GeneralPreviewComponent: FC<{maximumCharacters?: number}> = (props)
                   {integration?.display || '@username'}
                 </div>
               </div>
-              <pre className={clsx('text-wrap', chakra.className)} dangerouslySetInnerHTML={{__html: value.text}} />
+              <pre className={clsx('text-wrap', interClass)} dangerouslySetInnerHTML={{__html: value.text}} />
               {!!value?.images?.length && (
                 <div className={clsx("w-full rounded-[16px] overflow-hidden mt-[12px]", value?.images?.length > 3 ? 'grid grid-cols-2 gap-[4px]' : 'flex gap-[4px]')}>
                   {value.images.map((image, index) => (
