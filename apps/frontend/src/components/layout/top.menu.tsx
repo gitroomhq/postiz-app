@@ -44,14 +44,9 @@ export const useMenuItems = () => {
         ]
       : []),
     {
-      name: 'Marketplace',
-      icon: 'marketplace',
-      path: '/marketplace',
-    },
-    {
-      name: 'Messages',
-      icon: 'messages',
-      path: '/messages',
+      name: 'Plugs',
+      icon: 'plugs',
+      path: '/plugs',
     },
     {
       name: 'Billing',

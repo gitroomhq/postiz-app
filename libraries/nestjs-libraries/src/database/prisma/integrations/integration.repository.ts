@@ -5,14 +5,17 @@ import { Integration } from '@prisma/client';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { IntegrationTimeDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.time.dto';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
+import { PlugDto } from '@gitroom/nestjs-libraries/dtos/plugs/plug.dto';
 
 @Injectable()
 export class IntegrationRepository {
   private storage = UploadFactory.createStorage();
   constructor(
     private _integration: PrismaRepository<'integration'>,
-    private _customers: PrismaRepository<'customer'>,
-    private _posts: PrismaRepository<'post'>
+    private _posts: PrismaRepository<'post'>,
+    private _plugs: PrismaRepository<'plugs'>,
+    private _exisingPlugData: PrismaRepository<'exisingPlugData'>,
+    private _customers: PrismaRepository<'customer'>
   ) {}
 
   async setTimes(org: string, id: string, times: IntegrationTimeDto) {
@@ -26,6 +29,35 @@ export class IntegrationRepository {
       },
       data: {
         postingTimes: JSON.stringify(times.time),
+      },
+    });
+  }
+
+  getPlug(plugId: string) {
+    return this._plugs.model.plugs.findFirst({
+      where: {
+        id: plugId,
+      },
+      include: {
+        integration: true
+      }
+    });
+  }
+
+  async getPlugs(orgId: string, integrationId: string) {
+    return this._plugs.model.plugs.findMany({
+      where: {
+        integrationId,
+        organizationId: orgId,
+        activated: true,
+      },
+      include: {
+        integration: {
+          select: {
+            id: true,
+            providerIdentifier: true,
+          },
+        },
       },
     });
   }
@@ -377,5 +409,81 @@ export class IntegrationRepository {
         },
       });
     }
+  }
+
+  getPlugsByIntegrationId(org: string, id: string) {
+    return this._plugs.model.plugs.findMany({
+      where: {
+        organizationId: org,
+        integrationId: id,
+      },
+    });
+  }
+
+  createOrUpdatePlug(org: string, integrationId: string, body: PlugDto) {
+    return this._plugs.model.plugs.upsert({
+      where: {
+        organizationId: org,
+        plugFunction_integrationId: {
+          integrationId,
+          plugFunction: body.func,
+        },
+      },
+      create: {
+        integrationId,
+        organizationId: org,
+        plugFunction: body.func,
+        data: JSON.stringify(body.fields),
+        activated: true,
+      },
+      update: {
+        data: JSON.stringify(body.fields),
+      },
+      select: {
+        activated: true,
+      },
+    });
+  }
+
+  changePlugActivation(orgId: string, plugId: string, status: boolean) {
+    return this._plugs.model.plugs.update({
+      where: {
+        organizationId: orgId,
+        id: plugId,
+      },
+      data: {
+        activated: !!status,
+      },
+    });
+  }
+
+  async loadExisingData(
+    methodName: string,
+    integrationId: string,
+    id: string[]
+  ) {
+    return this._exisingPlugData.model.exisingPlugData.findMany({
+      where: {
+        integrationId,
+        methodName,
+        value: {
+          in: id,
+        },
+      },
+    });
+  }
+
+  async saveExisingData(
+    methodName: string,
+    integrationId: string,
+    value: string[]
+  ) {
+    return this._exisingPlugData.model.exisingPlugData.createMany({
+      data: value.map((p) => ({
+        integrationId,
+        methodName,
+        value: p,
+      })),
+    });
   }
 }

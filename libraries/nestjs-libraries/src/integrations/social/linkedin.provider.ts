@@ -14,13 +14,13 @@ import {
   SocialAbstract,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { Integration } from '@prisma/client';
-
 export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   identifier = 'linkedin';
   name = 'LinkedIn';
   isBetweenSteps = false;
   scopes = ['openid', 'profile', 'w_member_social', 'r_basicprofile'];
   refreshWait = true;
+
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     const {
@@ -282,7 +282,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     }
   }
 
-  private fixText(text: string) {
+  protected fixText(text: string) {
     const pattern = /@\[.+?]\(urn:li:organization.+?\)/g;
     const matches = text.match(pattern) || [];
     const splitAll = text.split(pattern);
@@ -431,7 +431,9 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
                   ? `urn:li:person:${id}`
                   : `urn:li:organization:${id}`,
               object: topPostId,
-              message: this.fixText(post.message),
+              message: {
+                text: this.fixText(post.message)
+              },
             }),
           }
         )
