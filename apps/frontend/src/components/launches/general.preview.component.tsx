@@ -3,9 +3,9 @@ import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
 import { useFormatting } from '@gitroom/frontend/components/launches/helpers/use.formatting';
 import clsx from 'clsx';
 import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
-import { Chakra_Petch } from 'next/font/google';
 import { FC } from 'react';
-const chakra = Chakra_Petch({ weight: '400', subsets: ['latin'] });
+import { textSlicer } from '@gitroom/helpers/utils/count.length';
+import interClass from '@gitroom/react/helpers/inter.font';
 
 export const GeneralPreviewComponent: FC<{maximumCharacters?: number}> = (props) => {
   const { value: topValue, integration } = useIntegration();
@@ -14,12 +14,13 @@ export const GeneralPreviewComponent: FC<{maximumCharacters?: number}> = (props)
     removeMarkdown: true,
     saveBreaklines: true,
     specialFunc: (text: string) => {
-      return text.slice(0, props.maximumCharacters || 10000) + '<mark class="bg-red-500" data-tooltip-id="tooltip" data-tooltip-content="This text will be cropped">' + text?.slice(props.maximumCharacters || 10000) + '</mark>';
+      const {start, end} = textSlicer(integration?.identifier || '', props.maximumCharacters || 10000, text);
+      return text.slice(start, end) + '<mark class="bg-red-500" data-tooltip-id="tooltip" data-tooltip-content="This text will be cropped">' + text?.slice(end) + '</mark>';
     },
   });
 
   return (
-    <div className={clsx('w-[555px] px-[16px]')}>
+    <div className={clsx('w-full md:w-[555px] px-[16px]')}>
       <div className="w-full h-full relative flex flex-col">
         {newValues.map((value, index) => (
           <div
@@ -62,7 +63,7 @@ export const GeneralPreviewComponent: FC<{maximumCharacters?: number}> = (props)
                   {integration?.display || '@username'}
                 </div>
               </div>
-              <pre className={clsx('text-wrap', chakra.className)} dangerouslySetInnerHTML={{__html: value.text}} />
+              <pre className={clsx('text-wrap', interClass)} dangerouslySetInnerHTML={{__html: value.text}} />
               {!!value?.images?.length && (
                 <div className={clsx("w-full rounded-[16px] overflow-hidden mt-[12px]", value?.images?.length > 3 ? 'grid grid-cols-2 gap-[4px]' : 'flex gap-[4px]')}>
                   {value.images.map((image, index) => (

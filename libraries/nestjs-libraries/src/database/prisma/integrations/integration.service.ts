@@ -41,7 +41,7 @@ export class IntegrationService {
   async createOrUpdateIntegration(
     org: string,
     name: string,
-    picture: string,
+    picture: string | undefined,
     type: 'article' | 'social',
     internalId: string,
     provider: string,
@@ -54,7 +54,9 @@ export class IntegrationService {
     timezone?: number,
     customInstanceDetails?: string
   ) {
-    const uploadedPicture = await this.storage.uploadSimple(picture);
+    const uploadedPicture = picture
+      ? await this.storage.uploadSimple(picture)
+      : undefined;
     return this._integrationRepository.createOrUpdateIntegration(
       org,
       name,
@@ -71,6 +73,14 @@ export class IntegrationService {
       timezone,
       customInstanceDetails
     );
+  }
+
+  updateIntegrationGroup(org: string, id: string, group: string) {
+    return this._integrationRepository.updateIntegrationGroup(org, id, group);
+  }
+
+  updateOnCustomerName(org: string, id: string, name: string) {
+    return this._integrationRepository.updateOnCustomerName(org, id, name);
   }
 
   getIntegrationsList(org: string) {
@@ -153,7 +163,7 @@ export class IntegrationService {
       await this.createOrUpdateIntegration(
         integration.organizationId,
         integration.name,
-        integration.picture!,
+        undefined,
         'social',
         integration.internalId,
         integration.providerIdentifier,
@@ -378,6 +388,10 @@ export class IntegrationService {
     return [];
   }
 
+  customers(orgId: string) {
+    return this._integrationRepository.customers(orgId);
+  }
+
   getPlugsByIntegrationId(org: string, integrationId: string) {
     return this._integrationRepository.getPlugsByIntegrationId(
       org,
@@ -385,54 +399,61 @@ export class IntegrationService {
     );
   }
 
-  processPlugs(
-    orgId: string,
-    integrationId: string,
-    delay: number,
-    funcName: string
-  ) {
-    return this._workerServiceProducer.emit('plugs', {
-      id: integrationId + '-' + funcName,
+  async processPlugs(data: {
+    plugId: string;
+    postId: string;
+    delay: number;
+    totalRuns: number;
+    currentRun: number;
+  }) {
+    const getPlugById = await this._integrationRepository.getPlug(data.plugId);
+    if (!getPlugById) {
+      return ;
+    }
+
+    const integration = this._integrationManager.getSocialIntegration(
+      getPlugById.integration.providerIdentifier
+    );
+
+    const findPlug = this._integrationManager
+      .getAllPlugs()
+      .find(
+        (p) => p.identifier === getPlugById.integration.providerIdentifier
+      )!;
+
+    console.log(data.postId);
+
+    // @ts-ignore
+    const process = await integration[getPlugById.plugFunction](
+      getPlugById.integration,
+      data.postId,
+      JSON.parse(getPlugById.data).reduce((all: any, current: any) => {
+        all[current.name] = current.value;
+        return all;
+      }, {})
+    );
+
+    if (process) {
+      return ;
+    }
+
+    if (data.totalRuns === data.currentRun) {
+      return ;
+    }
+
+    this._workerServiceProducer.emit('plugs', {
+      id: 'plug_' + data.postId + '_' + findPlug.identifier,
       options: {
-        delay: 0, // delay,
+        delay: 0, // runPlug.runEveryMilliseconds,
       },
       payload: {
-        retry: 1,
-        delay,
-        orgId,
-        integrationId: integrationId,
-        funcName: funcName,
+        plugId: data.plugId,
+        postId: data.postId,
+        delay: data.delay,
+        totalRuns: data.totalRuns,
+        currentRun: data.currentRun + 1,
       },
     });
-  }
-
-  async activatedPlug(
-    orgId: string,
-    integrationId: string,
-    funcName: string,
-    type: 'add' | 'remove'
-  ) {
-    const loadIntegration = await this.getIntegrationById(orgId, integrationId);
-    const allPlugs = this._integrationManager.getAllPlugs();
-    const findPlug = allPlugs.find(
-      (p) => p.identifier === loadIntegration?.providerIdentifier!
-    )!;
-    const plug = findPlug.plugs.find((p: any) => p.methodName === funcName)!;
-
-    if (type === 'add') {
-      return this.processPlugs(
-        orgId,
-        integrationId,
-        plug.runEveryMilliseconds,
-        funcName
-      );
-    } else {
-      console.log(integrationId + '-' + funcName);
-      return this._workerServiceProducer.delete(
-        'plugs',
-        integrationId + '-' + funcName
-      );
-    }
   }
 
   async createOrUpdatePlug(
@@ -446,9 +467,9 @@ export class IntegrationService {
       body
     );
 
-    if (activated) {
-      await this.activatedPlug(orgId, integrationId, body.func, 'add');
-    }
+    return {
+      activated,
+    };
   }
 
   async changePlugActivation(orgId: string, plugId: string, status: boolean) {
@@ -459,58 +480,24 @@ export class IntegrationService {
         status
       );
 
-    if (status) {
-      await this.activatedPlug(orgId, integrationId, plugFunction, 'add');
-    } else {
-      await this.activatedPlug(orgId, integrationId, plugFunction, 'remove');
-    }
-
     return { id };
   }
 
-  async loadExisingData (methodName: string, integrationId: string, id: string[]) {
-    const exisingData = await this._integrationRepository.loadExisingData(methodName, integrationId, id);
-    const loadOnlyIds = exisingData.map(p => p.value);
-    return difference(id, loadOnlyIds);
+  async getPlugs(orgId: string, integrationId: string) {
+    return this._integrationRepository.getPlugs(orgId, integrationId);
   }
 
-  async startPlug(data: {
-    orgId: string;
-    integrationId: string;
-    funcName: string;
-    retry: number;
-    delay: number;
-  }) {
-    const integration = await this.getIntegrationById(
-      data.orgId,
-      data.integrationId
+  async loadExisingData(
+    methodName: string,
+    integrationId: string,
+    id: string[]
+  ) {
+    const exisingData = await this._integrationRepository.loadExisingData(
+      methodName,
+      integrationId,
+      id
     );
-
-    if (!integration) {
-      return;
-    }
-
-    const plugInformation = (
-      await this._integrationRepository.getPlugsByIntegrationId(
-        data.orgId,
-        data.integrationId
-      )
-    ).find((p) => p.plugFunction === data.funcName)!;
-
-    const plugData = JSON.parse(plugInformation.data).reduce(
-      (all: any, current: any) => ({
-        ...all,
-        [current.name]: current.value,
-      }),
-      {}
-    );
-
-    const integrationInstance = this._integrationManager.getSocialIntegration(
-      integration.providerIdentifier
-    );
-
-    // @ts-ignore
-    const ids = await integrationInstance[data.funcName](integration, plugData, this.loadExisingData.bind(this));
-    return this._integrationRepository.saveExisingData(data.funcName, data.integrationId, ids);
+    const loadOnlyIds = exisingData.map((p) => p.value);
+    return difference(id, loadOnlyIds);
   }
 }

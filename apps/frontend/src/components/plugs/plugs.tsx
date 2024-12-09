@@ -71,7 +71,6 @@ export const Plugs = () => {
     };
   }, [currentIntegration, plugList]);
 
-  console.log(currentIntegrationPlug);
   if (isLoading || plugLoading) {
     return null;
   }
@@ -83,9 +82,9 @@ export const Plugs = () => {
           <img src="/peoplemarketplace.svg" />
         </div>
         <div className="text-[48px]">
-          Can{"'"}t show analytics yet
+          There are not plugs matching your channels
           <br />
-          You have to add Social Media channels
+          You have to add: X or LinkedIn or Threads
         </div>
         <Button onClick={() => router.push('/launches')}>
           Go to the calendar to add channels

@@ -30,6 +30,7 @@ model Organization {
   usedCodes    UsedCodes[]
   credits      Credits[]
   plugs        Plugs[]
+  customers    Customer[]
 }
 
 model User {
@@ -242,6 +243,19 @@ model Subscription {
   @@index([deletedAt])
 }
 
+model Customer {
+  id        String   @id @default(uuid())
+  name      String
+  orgId     String
+  organization Organization @relation(fields: [orgId], references: [id])
+  integrations Integration[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@unique([orgId, name, deletedAt])
+}
+
 model Integration {
   id                    String          @id @default(cuid())
   internalId            String
@@ -265,6 +279,8 @@ model Integration {
   refreshNeeded         Boolean         @default(false)
   postingTimes          String          @default("[{\"time\":120}, {\"time\":400}, {\"time\":700}]")
   customInstanceDetails String?
+  customerId            String?
+  customer              Customer?       @relation(fields: [customerId], references: [id])
   plugs                 Plugs[]
   exisingPlugData       ExisingPlugData[]
 

@@ -1,9 +1,11 @@
 import 'reflect-metadata';
 
 export function Plug(params: {
+  identifier: string;
   title: string;
   description: string;
   runEveryMilliseconds: number;
+  totalRuns: number;
   fields: {
     name: string;
     description: string;

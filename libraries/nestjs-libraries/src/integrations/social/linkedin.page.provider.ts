@@ -10,6 +10,7 @@ import { LinkedinProvider } from '@gitroom/nestjs-libraries/integrations/social/
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
+import { timer } from '@gitroom/helpers/utils/timer';
 
 export class LinkedinPageProvider
   extends LinkedinProvider
@@ -363,35 +364,32 @@ export class LinkedinPageProvider
   }
 
   @Plug({
+    identifier: 'linkedin-page-autoRepostPost',
     title: 'Auto Repost Posts',
     description:
       'When a post reached a certain number of likes, repost it to increase engagement (1 week old posts)',
-    runEveryMilliseconds: 7200000,
+    runEveryMilliseconds: 21600000,
+    totalRuns: 3,
     fields: [
       {
         name: 'likesAmount',
         type: 'number',
         placeholder: 'Amount of likes',
-        description: 'The amount of likes to trigger the post',
+        description: 'The amount of likes to trigger the repost',
         validation: /^\d+$/,
       },
     ],
   })
   async autoRepostPost(
     integration: Integration,
-    fields: { likesAmount: number },
-    loadExisingData: (
-      methodName: string,
-      integrationId: string,
-      id: string[]
-    ) => Promise<string[]>
+    id: string,
+    fields: { likesAmount: string }
   ) {
-    const all = await // const { elements } = await (
-    (
+    const {
+      likesSummary: { totalLikes },
+    } = await (
       await this.fetch(
-        `https://api.linkedin.com/rest/posts?author=${encodeURIComponent(
-          `urn:li:organization:${integration.internalId}`
-        )}&q=author&count=10&sortBy=LAST_MODIFIED`,
+        `https://api.linkedin.com/v2/socialActions/${encodeURIComponent(id)}`,
         {
           method: 'GET',
           headers: {
@@ -404,82 +402,36 @@ export class LinkedinPageProvider
       )
     ).json();
 
-    // only post published in the last week
-    const lastWeekPosts = all.elements.filter((element: any) => {
-      const postDate = new Date(element.publishedAt).getTime();
-      const weekAgo = new Date().getTime() - 604800000;
-      return postDate > weekAgo;
-    });
-
-    const getLastFiveLikes = await Promise.all(
-      lastWeekPosts.map(async (element: any) => {
-        const {
-          likesSummary: { totalLikes },
-        } = await (
-          await this.fetch(
-            `https://api.linkedin.com/v2/socialActions/${encodeURIComponent(
-              element.id
-            )}`,
-            {
-              method: 'GET',
-              headers: {
-                'X-Restli-Protocol-Version': '2.0.0',
-                'Content-Type': 'application/json',
-                'LinkedIn-Version': '202402',
-                Authorization: `Bearer ${integration.token}`,
-              },
-            }
-          )
-        ).json();
-
-        return { id: element.id, totalLikes };
-      })
-    );
-
-    const findLikes = getLastFiveLikes.filter(
-      (element) => element.totalLikes >= fields.likesAmount
-    );
-
-    if (findLikes.length === 0) {
-      return [];
+    if (totalLikes >= +fields.likesAmount) {
+      await timer(2000);
+      await this.fetch(`https://api.linkedin.com/rest/posts`, {
+        body: JSON.stringify({
+          author: `urn:li:organization:${integration.internalId}`,
+          commentary: '',
+          visibility: 'PUBLIC',
+          distribution: {
+            feedDistribution: 'MAIN_FEED',
+            targetEntities: [],
+            thirdPartyDistributionChannels: [],
+          },
+          lifecycleState: 'PUBLISHED',
+          isReshareDisabledByAuthor: false,
+          reshareContext: {
+            parent: id,
+          },
+        }),
+        method: 'POST',
+        headers: {
+          'X-Restli-Protocol-Version': '2.0.0',
+          'Content-Type': 'application/json',
+          'LinkedIn-Version': '202402',
+          Authorization: `Bearer ${integration.token}`,
+        },
+      });
+      return true;
     }
 
-    const checkIfAlreadyPosted = await loadExisingData(
-      'autoRepostPost',
-      integration.id,
-      findLikes.map((p) => p.id)
-    );
-
-    if (checkIfAlreadyPosted.length === 0) {
-      return [];
-    }
-
-    await this.fetch(`https://api.linkedin.com/rest/posts`, {
-      body: JSON.stringify({
-        author: `urn:li:organization:${integration.internalId}`,
-        commentary: '',
-        visibility: 'PUBLIC',
-        distribution: {
-          feedDistribution: 'MAIN_FEED',
-          targetEntities: [],
-          thirdPartyDistributionChannels: [],
-        },
-        lifecycleState: 'PUBLISHED',
-        isReshareDisabledByAuthor: false,
-        reshareContext: {
-          parent: checkIfAlreadyPosted[0],
-        },
-      }),
-      method: 'POST',
-      headers: {
-        'X-Restli-Protocol-Version': '2.0.0',
-        'Content-Type': 'application/json',
-        'LinkedIn-Version': '202402',
-        Authorization: `Bearer ${integration.token}`,
-      },
-    });
-
-    return [checkIfAlreadyPosted[0]];
+    return false;
   }
 }
 

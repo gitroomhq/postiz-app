@@ -30,12 +30,7 @@ export class ConfigurationChecker {
     this.checkIsValidUrl('FRONTEND_URL')
     this.checkIsValidUrl('NEXT_PUBLIC_BACKEND_URL')
     this.checkIsValidUrl('BACKEND_INTERNAL_URL')
-    this.checkNonEmpty('CLOUDFLARE_ACCOUNT_ID', 'Needed to setup providers.')
-    this.checkNonEmpty('CLOUDFLARE_ACCESS_KEY', 'Needed to setup providers.')
-    this.checkNonEmpty('CLOUDFLARE_SECRET_ACCESS_KEY', 'Needed to setup providers.')
-    this.checkNonEmpty('CLOUDFLARE_BUCKETNAME', 'Needed to setup providers.')
-    this.checkNonEmpty('CLOUDFLARE_BUCKET_URL', 'Needed to setup providers.')
-    this.checkNonEmpty('CLOUDFLARE_REGION', 'Needed to setup providers.')
+    this.checkNonEmpty('STORAGE_PROVIDER', 'Needed to setup storage.')
   }
 
   checkNonEmpty (key: string, description?: string): boolean {

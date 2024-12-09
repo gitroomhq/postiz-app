@@ -13,7 +13,6 @@ import clsx from 'clsx';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { ExistingDataContextProvider } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { useDrag, useDrop } from 'react-dnd';
-import { DNDProvider } from '@gitroom/frontend/components/launches/helpers/dnd.provider';
 import { Integration, Post, State } from '@prisma/client';
 import { useAddProvider } from '@gitroom/frontend/components/launches/add.provider.component';
 import { CommentComponent } from '@gitroom/frontend/components/launches/comments/comment.component';
@@ -26,8 +25,19 @@ import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import { groupBy, sortBy } from 'lodash';
 import Image from 'next/image';
-dayjs.extend(isSameOrAfter);
-dayjs.extend(isSameOrBefore);
+import { extend } from 'dayjs';
+import { isUSCitizen } from './helpers/isuscitizen.utils';
+import removeMd from 'remove-markdown';
+extend(isSameOrAfter);
+extend(isSameOrBefore);
+
+const convertTimeFormatBasedOnLocality = (time: number) => {
+  if (isUSCitizen()) {
+    return `${time === 12 ? 12 : time % 12}:00 ${time >= 12 ? 'PM' : 'AM'}`;
+  } else {
+    return `${time}:00`;
+  }
+};
 
 export const days = [
   'Monday',
@@ -90,7 +100,7 @@ export const DayView = () => {
               .startOf('day')
               .add(option[0].time, 'minute')
               .local()
-              .format('HH:mm')}
+              .format(isUSCitizen() ? 'hh:mm A' : 'HH:mm')}
           </div>
           <div
             key={option[0].time}
@@ -139,7 +149,8 @@ export const WeekView = () => {
           {hours.map((hour) => (
             <Fragment key={hour}>
               <div className="p-2 pr-4 bg-secondary text-center items-center justify-center flex">
-                {hour.toString().padStart(2, '0')}:00
+                {/* {hour.toString().padStart(2, '0')}:00 */}
+                {convertTimeFormatBasedOnLocality(hour)}
               </div>
               {days.map((day, indexDay) => (
                 <Fragment key={`${day}-${hour}`}>
@@ -230,7 +241,7 @@ export const Calendar = () => {
   const { display } = useCalendar();
 
   return (
-    <DNDProvider>
+    <>
       {display === 'day' ? (
         <DayView />
       ) : display === 'week' ? (
@@ -238,7 +249,7 @@ export const Calendar = () => {
       ) : (
         <MonthView />
       )}
-    </DNDProvider>
+    </>
   );
 };
 
@@ -432,8 +443,9 @@ export const CalendarColumn: FC<{
       )}
       <div
         className={clsx(
-          'relative flex flex-col flex-1',
-          canDrop && 'bg-white/80'
+          'relative flex flex-col flex-1 text-white',
+          canDrop && 'bg-white/80',
+          isBeforeNow && postList.length === 0 && 'cursor-not-allowed'
         )}
       >
         <div
@@ -444,8 +456,9 @@ export const CalendarColumn: FC<{
               }
             : {})}
           className={clsx(
-            'flex-col text-[12px] pointer w-full cursor-pointer overflow-hidden overflow-x-auto flex scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary',
-            isBeforeNow && 'bg-customColor23 flex-1',
+            'flex-col text-[12px] pointer w-full overflow-hidden overflow-x-auto flex scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary',
+            isBeforeNow ? 'bg-customColor23 flex-1' : 'cursor-pointer',
+            isBeforeNow && postList.length === 0 && 'col-calendar',
             canBeTrending && 'bg-customColor24'
           )}
         >
@@ -499,7 +512,10 @@ export const CalendarColumn: FC<{
                   className={`w-full h-full rounded-[10px] hover:border hover:border-seventh flex justify-center items-center gap-[20px] opacity-30 grayscale hover:grayscale-0 hover:opacity-100`}
                 >
                   {integrations.map((selectedIntegrations) => (
-                    <div className="relative" key={selectedIntegrations.identifier}>
+                    <div
+                      className="relative"
+                      key={selectedIntegrations.identifier}
+                    >
                       <div
                         className={clsx(
                           'relative w-[34px] h-[34px] rounded-full flex justify-center items-center bg-fifth filter transition-all duration-500'
@@ -589,7 +605,7 @@ const CalendarItem: FC<{
       </div>
       <div className="whitespace-pre-wrap line-clamp-3">
         {state === 'DRAFT' ? 'Draft: ' : ''}
-        {post.content}
+        {removeMd(post.content).replace(/\n/g, ' ')}
       </div>
     </div>
   );

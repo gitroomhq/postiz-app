@@ -14,7 +14,8 @@ export class IntegrationRepository {
     private _integration: PrismaRepository<'integration'>,
     private _posts: PrismaRepository<'post'>,
     private _plugs: PrismaRepository<'plugs'>,
-    private _exisingPlugData: PrismaRepository<'exisingPlugData'>
+    private _exisingPlugData: PrismaRepository<'exisingPlugData'>,
+    private _customers: PrismaRepository<'customer'>
   ) {}
 
   async setTimes(org: string, id: string, times: IntegrationTimeDto) {
@@ -28,6 +29,35 @@ export class IntegrationRepository {
       },
       data: {
         postingTimes: JSON.stringify(times.time),
+      },
+    });
+  }
+
+  getPlug(plugId: string) {
+    return this._plugs.model.plugs.findFirst({
+      where: {
+        id: plugId,
+      },
+      include: {
+        integration: true
+      }
+    });
+  }
+
+  async getPlugs(orgId: string, integrationId: string) {
+    return this._plugs.model.plugs.findMany({
+      where: {
+        integrationId,
+        organizationId: orgId,
+        activated: true,
+      },
+      include: {
+        integration: {
+          select: {
+            id: true,
+            providerIdentifier: true,
+          },
+        },
       },
     });
   }
@@ -66,7 +96,7 @@ export class IntegrationRepository {
   createOrUpdateIntegration(
     org: string,
     name: string,
-    picture: string,
+    picture: string | undefined,
     type: 'article' | 'social',
     internalId: string,
     provider: string,
@@ -101,7 +131,7 @@ export class IntegrationRepository {
         providerIdentifier: provider,
         token,
         profile: username,
-        picture,
+        ...(picture ? { picture } : {}),
         inBetweenSteps: isBetweenSteps,
         refreshToken,
         ...(expiresIn
@@ -120,7 +150,7 @@ export class IntegrationRepository {
               inBetweenSteps: isBetweenSteps,
             }
           : {}),
-        picture,
+        ...(picture ? { picture } : {}),
         profile: username,
         providerIdentifier: provider,
         token,
@@ -218,11 +248,78 @@ export class IntegrationRepository {
     return integration?.integration;
   }
 
+  async updateOnCustomerName(org: string, id: string, name: string) {
+    const customer = !name
+      ? undefined
+      : (await this._customers.model.customer.findFirst({
+          where: {
+            orgId: org,
+            name,
+          },
+        })) ||
+        (await this._customers.model.customer.create({
+          data: {
+            name,
+            orgId: org,
+          },
+        }));
+
+    return this._integration.model.integration.update({
+      where: {
+        id,
+        organizationId: org,
+      },
+      data: {
+        customer: !customer
+          ? { disconnect: true }
+          : {
+              connect: {
+                id: customer.id,
+              },
+            },
+      },
+    });
+  }
+
+  updateIntegrationGroup(org: string, id: string, group: string) {
+    return this._integration.model.integration.update({
+      where: {
+        id,
+        organizationId: org,
+      },
+      data: !group
+        ? {
+            customer: {
+              disconnect: true,
+            },
+          }
+        : {
+            customer: {
+              connect: {
+                id: group,
+              },
+            },
+          },
+    });
+  }
+
+  customers(orgId: string) {
+    return this._customers.model.customer.findMany({
+      where: {
+        orgId,
+        deletedAt: null,
+      },
+    });
+  }
+
   getIntegrationsList(org: string) {
     return this._integration.model.integration.findMany({
       where: {
         organizationId: org,
         deletedAt: null,
+      },
+      include: {
+        customer: true,
       },
     });
   }
