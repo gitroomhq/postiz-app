@@ -37,6 +37,7 @@ import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
 import { AddPostButton } from '@gitroom/frontend/components/launches/add.post.button';
 import { GeneralPreviewComponent } from '@gitroom/frontend/components/launches/general.preview.component';
 import { capitalize } from 'lodash';
+import { useTranslations } from 'next-intl';
 import { useModals } from '@mantine/modals';
 
 // Simple component to change back to settings on after changing tab
@@ -280,6 +281,7 @@ export const withProvider = function <T extends object>(
     if (!props.show) {
       return null;
     }
+    const t = useTranslations('PostModal')
 
     return (
       <FormProvider {...form}>
@@ -294,7 +296,7 @@ export const withProvider = function <T extends object>(
                   secondary={showTab !== 0}
                   onClick={() => setShowTab(0)}
                 >
-                  Preview
+                  {t('Preview')}
                 </Button>
               </div>
               {!!SettingsComponent && (
@@ -307,7 +309,7 @@ export const withProvider = function <T extends object>(
                     secondary={showTab !== 2}
                     onClick={() => setShowTab(2)}
                   >
-                    Settings
+                    {t('Settings')}
                   </Button>
                 </div>
               )}
@@ -318,8 +320,8 @@ export const withProvider = function <T extends object>(
                   onClick={changeToEditor}
                 >
                   {editInPlace
-                    ? 'Edit globally'
-                    : `Edit only ${integration?.name} (${capitalize(
+                    ? t('EditGlobally')
+                    : `${t('EditOnly')} ${integration?.name} (${capitalize(
                         integration?.identifier.replace('-', ' ')
                       )})`}
                 </Button>

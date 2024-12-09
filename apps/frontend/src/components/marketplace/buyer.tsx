@@ -28,6 +28,7 @@ import { FormProvider, SubmitHandler, useForm } from 'react-hook-form';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { NewConversationDto } from '@gitroom/nestjs-libraries/dtos/marketplace/new.conversation.dto';
 import { OrderList } from '@gitroom/frontend/components/marketplace/order.list';
+import { useTranslations } from 'next-intl';
 
 export interface Root {
   list: List[];
@@ -221,6 +222,7 @@ export const Options: FC<{
       : optionsGroupList;
   const router = useRouter();
   const searchParams = (useSearchParams().get(query) || '')?.split(',') || [];
+  const t = useTranslations("Market")
 
   const change = (value: string, state: boolean) => {
     if (onChange) {
@@ -253,7 +255,7 @@ export const Options: FC<{
   return (
     <>
       <div className="h-[56px] text-[20px] font-[600] flex items-center px-[24px] bg-customColor8">
-        {title}
+        {t(`Titles.${title}`)}
       </div>
       <div className="bg-customColor3 flex px-[32px] py-[24px]">
         {optionsGroup.map((options, key) => (
@@ -265,7 +267,7 @@ export const Options: FC<{
               <div key={option.key} className="flex gap-[10px]">
                 <LabelCheckbox
                   value={option.key}
-                  label={option.value}
+                  label={t(`Services.${option.value}`)}
                   checked={
                     selected?.indexOf(option.key) > -1 ||
                     searchParams.indexOf(option.key) > -1
@@ -492,6 +494,7 @@ export const Buyer = () => {
   const services = search.get('services');
   const page = +(search.get('page') || 1);
   const router = useRouter();
+  const t = useTranslations("Market")
 
   const fetch = useFetch();
 
@@ -524,9 +527,9 @@ export const Buyer = () => {
         <img src="/peoplemarketplace.svg" />
       </div>
       <div className="text-[48px]">
-        The marketplace is not opened yet
+        {t("TheMarketplaceIsNotOpenedYet")}
         <br />
-        Check again soon!
+        {t("CheckAgainSoon")}
       </div>
     </div>
   );

@@ -13,25 +13,27 @@ import { OrderList } from '@gitroom/frontend/components/marketplace/order.list';
 import { useModals } from '@mantine/modals';
 import { Select } from '@gitroom/react/form/select';
 import { countries } from '@gitroom/nestjs-libraries/services/stripe.country.list';
+import { useTranslations } from 'next-intl';
 
 export const AddAccount: FC<{ openBankAccount: (country: string) => void }> = (
   props
 ) => {
+  const t = useTranslations('Market')
   const { openBankAccount } = props;
   const [country, setCountry] = useState('');
   const [loading, setLoading] = useState(false);
   return (
     <div className="bg-sixth p-[32px] text-[20px] w-full max-w-[600px] mx-auto flex flex-col gap-[24px] rounded-[4px] border border-customColor6 relative">
-      Please select your country where your business is.
+      {t("PleaseSelectYourCountryWhereYourBusinessIs")}
       <br />
       <Select
-        label="Country"
+        label={t("Country")}
         name="country"
         disableForm={true}
         value={country}
         onChange={(e) => setCountry(e.target.value)}
       >
-        <option value="">--SELECT COUNTRY--</option>
+        <option value="">{t("SELECTCOUNTRY")}</option>
         {countries.map((country) => (
           <option key={country.value} value={country.value}>
             {country.label}
@@ -48,7 +50,7 @@ export const AddAccount: FC<{ openBankAccount: (country: string) => void }> = (
           setLoading(true);
         }}
       >
-        Connect Bank Account
+        {t("ConnectBankAccount")}
       </Button>
     </div>
   );
@@ -64,6 +66,7 @@ export const Seller = () => {
   const [state, setState] = useState(true);
   const [audience, setAudience] = useState<number>(0);
   const modals = useModals();
+  const t= useTranslations("Market")
 
   const accountInformation = useCallback(async () => {
     const account = await (
@@ -171,7 +174,7 @@ export const Seller = () => {
       <OrderList type="seller" />
       <div className="flex mt-[29px] w-full gap-[26px]">
         <div className="w-[328px] flex flex-col gap-[16px]">
-          <h2 className="text-[20px]">Seller Mode</h2>
+          <h2 className="text-[20px]">{t("SellerMode")}</h2>
           <div className="flex p-[24px] bg-sixth rounded-[4px] border border-customColor6 flex-col items-center gap-[16px]">
             <div className="w-[64px] h-[64px] bg-customColor38 rounded-full">
               {!!data?.picture?.path && (
@@ -190,7 +193,7 @@ export const Seller = () => {
                   value={state ? 'on' : 'off'}
                   onChange={changeMarketplace}
                 />
-                <div className="text-[18px]">Active</div>
+                <div className="text-[18px]">{t("Active")}</div>
               </div>
             )}
             <div className="border-t border-t-customColor43 w-full" />
@@ -201,8 +204,8 @@ export const Seller = () => {
                 loading={connectedLoading}
               >
                 {!data?.connectedAccount
-                  ? 'Connect Bank Account'
-                  : 'Update Bank Account'}
+                  ? t("ConnectBankAccount")
+                  : t('UpdateBankAccount')}
               </Button>
             </div>
           </div>
@@ -222,12 +225,12 @@ export const Seller = () => {
               />
             ))}
             <div className="h-[56px] text-[20px] font-[600] flex items-center px-[24px] bg-customColor8">
-              Audience Size
+              {t("AudienceSize")}
             </div>
             <div className="bg-customColor3 flex px-[32px] py-[24px]">
               <div className="flex-1">
                 <Input
-                  label="Audience size on all platforms"
+                  label={t("AudienceSizeOnAllPlatforms")}
                   name="audience"
                   type="text"
                   pattern="\d*"

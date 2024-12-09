@@ -10,6 +10,7 @@ import { useSWRConfig } from 'swr';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useRouter } from 'next/navigation';
 import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
+import { useTranslations } from 'next-intl';
 
 export const LifetimeDeal = () => {
   const fetch = useFetch();
@@ -19,6 +20,7 @@ export const LifetimeDeal = () => {
   const { mutate } = useSWRConfig();
   const router = useRouter();
   const fireEvents = useFireEvents();
+  const t= useTranslations("Lifetime")
 
   const claim = useCallback(async () => {
     const { success } = await (
@@ -33,10 +35,10 @@ export const LifetimeDeal = () => {
 
     if (success) {
       mutate('/user/self');
-      toast.show('Successfully claimed the code');
+      toast.show(t('Successfully claimed the code'));
       fireEvents('lifetime_claimed');
     } else {
-      toast.show('Code already claimed or invalid code', 'warning');
+      toast.show(t('Code already claimed or invalid code'), 'warning');
     }
 
     setCode('');
@@ -115,7 +117,7 @@ export const LifetimeDeal = () => {
     <div className="flex gap-[30px]">
       <div className="border border-customColor6 bg-sixth p-[24px] flex flex-col gap-[20px] flex-1 rounded-[4px]">
         <div className="text-[30px]">
-          Current Package: {user?.totalChannels > 8 ? 'EXTRA' : user?.tier?.current}
+          {t("Current Package")}: {user?.totalChannels > 8 ? 'EXTRA' : user?.tier?.current}
         </div>
 
         <div className="flex flex-col gap-[10px] justify-center text-[16px] text-customColor18">
@@ -143,7 +145,7 @@ export const LifetimeDeal = () => {
 
       <div className="border border-customColor6 bg-sixth p-[24px] flex flex-col gap-[20px] flex-1 rounded-[4px]">
         <div className="text-[30px]">
-          Next Package:{' '}
+          {t("Next Package")}:{' '}
           {user?.tier?.current === 'PRO' ? 'EXTRA' : !user?.tier?.current ? 'FREE' : user?.tier?.current === 'STANDARD' ? 'PRO' : 'STANDARD'}
         </div>
 
@@ -174,8 +176,8 @@ export const LifetimeDeal = () => {
           <div className="mt-[20px] flex items-center gap-[10px]">
             <div className="flex-1">
               <Input
-                label="Code"
-                placeholder="Enter your code"
+                label={t("Code")}
+                placeholder={t("Enter your code")}
                 disableForm={true}
                 name="code"
                 value={code}
@@ -184,7 +186,7 @@ export const LifetimeDeal = () => {
             </div>
             <div>
               <Button disabled={code.length < 4} onClick={claim}>
-                Claim
+                {t("Claim")}
               </Button>
             </div>
           </div>

@@ -4,12 +4,14 @@ import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { ChartSocial } from '@gitroom/frontend/components/analytics/chart-social';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
+import { useTranslations } from 'next-intl';
 
 export const RenderAnalytics: FC<{ integration: Integration; date: number }> = (
   props
 ) => {
   const { integration, date } = props;
   const [loading, setLoading] = useState(true);
+  const t= useTranslations("Analytics")
 
   const fetch = useFetch();
 
@@ -58,7 +60,7 @@ export const RenderAnalytics: FC<{ integration: Integration; date: number }> = (
   return (
     <div className="grid grid-cols-3 gap-[20px]">
       {data?.length === 0 && (
-        <div>This channel needs to be refreshed</div>
+        <div>{t("ThisChannelNeedsToBeRefreshed")}</div>
       )}
       {data?.map((p: any, index: number) => (
         <div key={`pl-${index}`} className="flex">

@@ -165,7 +165,7 @@ export const Filters = () => {
 			/>
 		  </svg>
 		</div>
-		<div className="w-[80px] text-center">
+		<div className="w-[90px] text-center">
 		  {week.display === 'day'
 			? `${dayjs()
 				.month(week.currentMonth)
@@ -173,8 +173,8 @@ export const Filters = () => {
 				.day(week.currentDay)
 				.format('dddd')}`
 			: week.display === 'week'
-			? `Week ${week.currentWeek}`
-			: `${dayjs().month(week.currentMonth).format('MMMM')}`}
+			? `${t("Filters.Week")} ${week.currentWeek}`
+			: t(`Months.${dayjs().month(week.currentMonth).format('MMMM')}`)}
 		</div>
 		<div onClick={next} className="cursor-pointer">
 		  <svg

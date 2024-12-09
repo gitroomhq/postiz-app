@@ -6,6 +6,7 @@ import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
 import { CopilotTextarea } from '@copilotkit/react-textarea';
 import clsx from 'clsx';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { useTranslations } from 'next-intl';
 
 export const Editor = forwardRef<
   RefMDEditor,
@@ -20,14 +21,15 @@ export const Editor = forwardRef<
     ref: React.ForwardedRef<RefMDEditor>
   ) => {
     const user = useUser();
+    const t = useTranslations('PostModal')
     useCopilotReadable({
-      description: 'Content of the post number ' + (props.order + 1),
+      description: t('ContentOfThePostNumber') + (props.order + 1),
       value: props.content,
     });
 
     useCopilotAction({
       name: 'editPost_' + props.order,
-      description: `Edit the content of post number ${props.order + 1}`,
+      description: `${t('EditTheContentOfPostNumber')} ${props.order + 1}`,
       parameters: [
         {
           name: 'content',
@@ -49,7 +51,7 @@ export const Editor = forwardRef<
             )}
             value={props.value}
             onChange={(e) => props?.onChange?.(e.target.value)}
-            placeholder="Write your reply..."
+            placeholder={t('WriteYourReply')}
             autosuggestionsConfig={{
               textareaPurpose: `Assist me in writing social media posts.`,
               chatApiConfigs: {},
