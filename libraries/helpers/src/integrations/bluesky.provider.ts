@@ -80,13 +80,9 @@ export const normalizeAndEnsureValidHandle = (handle: string): string => {
 export const isValidHandle = (handle: string): boolean => {
   try {
     ensureValidHandle(handle);
+    return true;
   } catch (err) {
     console.log('Error in bluesky handle validation:', err);
-    if (err instanceof Error) {
-      return false;
-    }
     return false;
   }
-
-  return true;
 };
