@@ -21,7 +21,6 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   scopes = ['openid', 'profile', 'w_member_social', 'r_basicprofile'];
   refreshWait = true;
 
-
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     const {
       access_token: accessToken,
@@ -331,6 +330,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
                   : await sharp(await readOrFetch(m.url), {
                       animated: lookup(m.url) === 'image/gif',
                     })
+                      .toFormat('jpeg')
                       .resize({
                         width: 1000,
                       })
@@ -432,7 +432,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
                   : `urn:li:organization:${id}`,
               object: topPostId,
               message: {
-                text: this.fixText(post.message)
+                text: this.fixText(post.message),
               },
             }),
           }
