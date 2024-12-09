@@ -1,6 +1,6 @@
 {
   "Navigation": {
-    "Analytics" : "Analytics",
+    "Analytics": "Analytics",
     "Calendar": "Calendar",
     "Launches": "Launches",
     "Settings": "Settings",
@@ -10,10 +10,10 @@
   },
   "Week": {
     "Monday": "Monday",
-    "Tuesday":"Tuesday",
-    "Wednesday":"Wednesday",
-    "Thursday":"Thursday",
-    "Friday":"Friday",
+    "Tuesday": "Tuesday",
+    "Wednesday": "Wednesday",
+    "Thursday": "Thursday",
+    "Friday": "Friday",
     "Saturday": "Saturday",
     "Sunday": "Sunday"
   },
@@ -82,19 +82,70 @@
       "Month": "Month"
     },
     "Months": {
-        "January": "January",
-        "February": "February",
-        "March": "March",
-        "April": "April",
-        "May": "May",
-        "June": "June",
-        "July": "July",
-        "August": "August",
-        "September": "September",
-        "October": "October",
-        "November": "November",
-        "December": "December"
-    }     
+      "January": "January",
+      "February": "February",
+      "March": "March",
+      "April": "April",
+      "May": "May",
+      "June": "June",
+      "July": "July",
+      "August": "August",
+      "September": "September",
+      "October": "October",
+      "November": "November",
+      "December": "December"
+    }
+  },
+  "Billing": {
+    "YourTeamMembersWillBeRemovedFromYourOrganization": "Your team members will be removed from your organization",
+    "AreYouSureYouWantToCancelYourSubscription": "Are you sure you want to cancel your subscription?",
+    "YesCancel": "Yes, cancel",
+    "OhNo": "Oh no",
+    "CancelSubscription": "Cancel Subscription",
+    "WeAreSorryToSeeYouGo": "We are sorry to see you go :(",
+    "WouldYouMindShortlyTellUsWhatWeCouldHaveDoneBetter": "Would you mind shortly tell us what we could have done better?",
+    "Feedback": "Feedback",
+    "SubscriptionSetToCanceledSuccessfully": "Subscription set to canceled successfully",
+    "SubscriptionReactivatedSuccessfully": "Subscription reactivated successfully",
+    "YesContinue": "Yes, continue",
+    "WeCouldNotChargeYourCreditCard": "We could not charge your credit card, please update your payment method",
+    "Update": "Update",
+    "PaymentMethodRequired": "Payment Method Required",
+    "SubscriptionUpdatedSuccessfully": "Subscription updated successfully",
+    "Plans": "Plans",
+    "YEARLY": "YEARLY",
+    "ReactivateSubscription": "Reactivate subscription",
+    "CurrentPlan": "Current Plan",
+    "DowngradeOn": "Downgrade on",
+    "StartDaysFreeTrial": "Start 7 days free trial",
+    "Purchase": "Purchase",
+    "PayToday": "Pay Today",
+    "UpdatePaymentMethod": "Update Payment Method",
+    "YourSubscriptionWillBeCancelAt": "Your subscription will be cancel at",
+    "YouWillNeverBeChargedAgain": "You will never be charged again",
+    "FrequentlyAskedQuestions": "Frequently Asked Questions",
+    "Can I trust": "Can I trust",
+    "is proudly open-source! We believe in an ethical and transparent culture, meaning that": "is proudly open-source! We believe in an ethical and transparent culture, meaning that",
+    "will live forever. You can check out the entire code or use it for personal projects. To view the open-source repository,": "will live forever. You can check out the entire code or use it for personal projects. To view the open-source repository,",
+    "click here": "click here",
+    "What are channels?": "What are channels?",
+    "allows you to schedule your posts between different channels. A channel is a publishing platform where you can schedule your posts. For example, you can schedule your posts on X, Facebook, Instagram, TikTok, YouTube, Reddit, Linkedin, Dribbble, Threads and Pinterest.": "allows you to schedule your posts between different channels. A channel is a publishing platform where you can schedule your posts. For example, you can schedule your posts on X, Facebook, Instagram, TikTok, YouTube, Reddit, Linkedin, Dribbble, Threads and Pinterest.",
+    "What are team members?": "What are team members?",
+    "If you have a team with multiple members, you can invite them to your workspace to collaborate on your posts and add their personal channels": "If you have a team with multiple members, you can invite them to your workspace to collaborate on your posts and add their personal channels",
+    "What is AI auto-complete?": "What is AI auto-complete?",
+    "We automate ChatGPT to help you write your social posts and articles": "We automate ChatGPT to help you write your social posts and articles"
+  },
+  "Lifetime": {
+    "Successfully claimed the code": "Successfully claimed the code",
+    "Code already claimed or invalid code": "Code already claimed or invalid code",
+    "Current Package": "Current Package",
+    "Next Package": "Next Package",
+    "Code":"Code",
+    "Enter your code":"Enter your code",
+    "Claim":"Claim"
+  },
+  "Error": {
+    "We are experiencing some difficulty, try to refresh the page":"We are experiencing some difficulty, try to refresh the page"
   },
   "Notification": {
     "Notifications": "Notifications",
@@ -105,9 +156,10 @@
     "Days": "Days",
     "Channels": "Channels",
     "Error": {
+      "PleaseRefreshTheIntegrationFromTheCalendar": "Please refresh the integration from the calendar",
       "CantShowAnalyticsYet": "Can't show analytics yet",
       "YouHaveToAddSocialMediaChannels": "You have to add Social Media channels",
-      "Supported":"Supported",
+      "Supported": "Supported",
       "GoToTheCalendarToAddChannels": "Go to the calendar to add channels"
     }
   },
@@ -128,7 +180,7 @@
       "InviteYourAssistantOrTeamMemberToManageYourAccount": "Invite your assistant or team member to manage your account",
       "AddAnotherMember": "Add another member",
       "PreferredLanguage": "Preferred Language",
-      "SelectPreferredLanguage" : "Select Preferred Language",
+      "SelectPreferredLanguage": "Select Preferred Language",
       "LogoutFrom": "Logout from",
       "AreYouSureYouWantToLogout": "Are you sure you want to logout?",
       "YesLogout": "Yes logout"
@@ -136,17 +188,82 @@
     "Github": {
       "AreYouSureYouWantToDisconnectThisRepository": "Are you sure you want to disconnect this repository?",
       "Connected": "Connected",
-      "Disconnect" : "Disconnect",
+      "Disconnect": "Disconnect",
       "RepositoryNotFound": "Repository not found",
-      "ConnectYourRepository":"Connect your repository",
-      "Cancel" : "Cancel",
+      "ConnectYourRepository": "Connect your repository",
+      "Cancel": "Cancel",
       "FullGitHubURL": "Full GitHub URL",
-      "Connect" : "Connect"
+      "Connect": "Connect"
     }
   },
-  "PostModal" : {
+  "PostModal": {
     "EditPost": "Edit Post",
     "CreatePost": "Create Post",
-    "YouAreInGlobalEditingMode": "You are in global editing mode"
+    "YouAreInGlobalEditingMode": "You are in global editing mode",
+    "ContentOfThePostNumber": "Content of the post number ",
+    "EditTheContentOfPostNumber": "Edit the content of post number",
+    "WriteYourReply": "Write your reply...",
+    "ThePostShouldBeAtLeastCharactersLong": "The post should be at least 6 characters long",
+    "NotMatchingOrder": "Not matching order",
+    "SaveAsDraft": "Save as draft",
+    "DeletePost": "Delete Post",
+    "Cancel": "Cancel",
+    "SubmitForOrder": "Submit for order",
+    "AddToCalendar": "Add to calendar",
+    "Update": "Update",
+    "PostNow": "Post now",
+    "AddAPostAfterThePostNumber ": "Add a post after the post number ",
+    "AddComment": "Add comment",
+    "Preview": "Preview",
+    "Settings": "Settings",
+    "EditGlobally": "Edit globally",
+    "EditOnly": "Edit only",
+    "InsertMedia": "Insert Media",
+    "DesignMedia": "Design Media",
+    "AreYouSureYouWantToCloseThisModal": "Are you sure you want to close this modal? (all data will be lost)",
+    "YesCloseit": "Yes, close it!"
+  },
+  "Market": {
+    "Seller": "Seller",
+    "Buyer": "Buyer",
+    "TheMarketplaceIsNotOpenedYet": "The marketplace is not opened yet",
+    "CheckAgainSoon": "Check again soon!",
+    "Titles": {
+      "Services": "Services",
+      "Niches": "Niches",
+      "Technologies": "Technologies"
+    },
+    "Services": {
+      "Content Writer": "Content Writer",
+      "Influencers": "Influencers",
+      "Kubernetes": "Kubernetes",
+      "Fullstack": "Fullstack",
+      "Security": "Security",
+      "Infrastructure": "Infrastructure",
+      "Productivity": "Productivity",
+      "Web3": "Web3",
+      "CloudNative": "Cloud Native",
+      "ML": "ML",
+      "HTML": "HTML",
+      "CSS": "CSS",
+      "JavaScript": "JavaScript",
+      "TypeScript": "TypeScript",
+      "Rust": "Rust",
+      "Go": "Go",
+      "Python": "Python",
+      "Java": "Java",
+      "PHP": "PHP",
+      "Ruby": "Ruby",
+      "C/C++": "C/C++"
+    },
+    "AudienceSize": "Audience Size",
+    "AudienceSizeOnAllPlatforms": "Audience size on all platforms",
+    "PleaseSelectYourCountryWhereYourBusinessIs": "Please select your country where your business is.",
+    "Country": "Country",
+    "SELECTCOUNTRY": "--SELECT COUNTRY--",
+    "ConnectBankAccount": "Connect Bank Account",
+    "SellerMode": "Seller Mode",
+    "Active": "Active",
+    "UpdateBankAccount": "Update Bank Account"
   }
 }

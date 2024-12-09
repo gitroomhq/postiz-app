@@ -150,7 +150,7 @@ export const PlatformAnalytics = () => {
               key={integration.id}
               onClick={() => {
                 if (integration.refreshNeeded) {
-                  toaster.show('Please refresh the integration from the calendar', 'warning');
+                  toaster.show(t('PleaseRefreshTheIntegrationFromTheCalendar'), 'warning');
                   return ;
                 }
                 setRefresh(true);

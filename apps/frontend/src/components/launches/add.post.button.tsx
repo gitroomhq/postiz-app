@@ -1,15 +1,17 @@
 import { Button } from '@gitroom/react/form/button';
 import React, { FC } from 'react';
 import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
+import { useTranslations } from 'next-intl';
 
 export const AddPostButton: FC<{ onClick: () => void; num: number }> = (
   props
 ) => {
   const { onClick, num } = props;
+  const t= useTranslations('PostModal')
 
   useCopilotAction({
     name: 'addPost_' + num,
-    description: 'Add a post after the post number ' + (num + 1),
+    description: t('AddAPostAfterThePostNumber') + (num + 1),
     handler: () => {
       onClick();
     },
@@ -18,7 +20,7 @@ export const AddPostButton: FC<{ onClick: () => void; num: number }> = (
   return (
     <Button
       onClick={onClick}
-      className="!h-[24px] rounded-[3px] flex gap-[4px] w-[102px] text-[12px] font-[500]"
+      className="!h-[24px] rounded-[3px] flex gap-[4px] w-[150px] text-[12px] font-[500]"
     >
       <div>
         <svg
@@ -34,7 +36,7 @@ export const AddPostButton: FC<{ onClick: () => void; num: number }> = (
           />
         </svg>
       </div>
-      <div className="text-white">Add comment</div>
+      <div className="text-white">{t('AddComment')}</div>
     </Button>
   );
 };

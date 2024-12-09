@@ -1,10 +1,10 @@
 {
   "Navigation": {
-    "Analytics" : "Analytique",
+    "Analytics": "Analytique",
     "Calendar": "Calendrier",
     "Launches": "Lancements",
     "Settings": "Paramètres",
-    "Marketplace": "Marché",
+    "Marketplace": "Place de marché",
     "Messages": "Messages",
     "Billing": "Facturation"
   },
@@ -17,133 +17,253 @@
     "Saturday": "Samedi",
     "Sunday": "Dimanche"
   },
+  "Lanuches": {
+    "Channels": "Canaux",
+    "No Channels": "Aucun canal",
+    "DeleteMenu": {
+      "Message": "Êtes-vous sûr de vouloir supprimer ce canal ?",
+      "ConfirmedButton": "Supprimer le canal",
+      "Warning": "Vous devez supprimer toutes les publications associées à ce canal avant de le supprimer",
+      "Success": "Canal supprimé"
+    },
+    "DisableMenu": {
+      "Message": "Êtes-vous sûr de vouloir désactiver ce canal ?",
+      "ConfirmedButton": "Désactiver le canal",
+      "Success": "Canal désactivé"
+    },
+    "EnabledMenu": {
+      "Success": "Canal activé"
+    },
+    "DeleteTimetable": {
+      "Message": "Êtes-vous sûr de vouloir fermer la fenêtre ?",
+      "ConfirmedButton": "Oui, fermer",
+      "RemoveMessage": "Êtes-vous sûr de vouloir supprimer ce créneau horaire ?"
+    },
+    "TitleTimeTable": "Créneaux horaires",
+    "AddTimeSlotTimeTable": "Ajouter un créneau horaire",
+    "AddSlot": "Ajouter un créneau",
+    "Save": "Sauvegarder",
+    "MenuText": {
+      "Changebot": "Changer le bot",
+      "EditTimeSlots": "Modifier les créneaux horaires",
+      "EnableChannel": "Activer le canal",
+      "DisableChannel": "Désactiver le canal",
+      "Delete": "Supprimer"
+    },
+    "TooltipDisabled": "Ce canal est désactivé, veuillez mettre à jour votre plan pour l'activer.",
+    "Provider": {
+      "AddButton": "Ajouter un canal",
+      "ConnectionError": "Impossible de se connecter à la plateforme"
+    },
+    "UrlModal": {
+      "Instance": "URL de l'instance",
+      "Formsubmit": "Connecter",
+      "InputField": "URL"
+    },
+    "CutomVariables": {
+      "isInvalid": "est invalide",
+      "CustomUrl": "URL personnalisée",
+      "FormSubmit": "Connecter"
+    },
+    "AddProvider": {
+      "AddChannel": "Ajouter un canal",
+      "Social": "Social",
+      "Articles": "Articles"
+    },
+    "ApiModal": {
+      "InvalidApiKey": "Clé API invalide",
+      "AddApiKeyFor": "Ajouter une clé API pour",
+      "ApiKey": "Clé API",
+      "AddPlatform": "Ajouter une plateforme"
+    },
+    "Filters": {
+      "Day": "Jour",
+      "Week": "Semaine",
+      "Month": "Mois"
+    },
+    "Months": {
+      "January": "Janvier",
+      "February": "Février",
+      "March": "Mars",
+      "April": "Avril",
+      "May": "Mai",
+      "June": "Juin",
+      "July": "Juillet",
+      "August": "Août",
+      "September": "Septembre",
+      "October": "Octobre",
+      "November": "Novembre",
+      "December": "Décembre"
+    }
+  },
+  "Billing": {
+    "YourTeamMembersWillBeRemovedFromYourOrganization": "Les membres de votre équipe seront retirés de votre organisation",
+    "AreYouSureYouWantToCancelYourSubscription": "Êtes-vous sûr de vouloir annuler votre abonnement ?",
+    "YesCancel": "Oui, annuler",
+    "OhNo": "Oh non",
+    "CancelSubscription": "Annuler l'abonnement",
+    "WeAreSorryToSeeYouGo": "Nous sommes désolés de vous voir partir :(",
+    "WouldYouMindShortlyTellUsWhatWeCouldHaveDoneBetter": "Cela vous dérangerait-il de nous dire brièvement ce que nous aurions pu faire mieux ?",
+    "Feedback": "Retour d'information",
+    "SubscriptionSetToCanceledSuccessfully": "Abonnement annulé avec succès",
+    "SubscriptionReactivatedSuccessfully": "Abonnement réactivé avec succès",
+    "YesContinue": "Oui, continuer",
+    "WeCouldNotChargeYourCreditCard": "Nous n'avons pas pu facturer votre carte de crédit, veuillez mettre à jour votre méthode de paiement",
+    "Update": "Mettre à jour",
+    "PaymentMethodRequired": "Méthode de paiement requise",
+    "SubscriptionUpdatedSuccessfully": "Abonnement mis à jour avec succès",
+    "Plans": "Forfaits",
+    "YEARLY": "ANNUEL",
+    "ReactivateSubscription": "Réactiver l'abonnement",
+    "CurrentPlan": "Plan actuel",
+    "DowngradeOn": "Abaisser le niveau le",
+    "StartDaysFreeTrial": "Commencer l'essai gratuit de 7 jours",
+    "Purchase": "Acheter",
+    "PayToday": "Payer aujourd'hui",
+    "UpdatePaymentMethod": "Mettre à jour la méthode de paiement",
+    "YourSubscriptionWillBeCancelAt": "Votre abonnement sera annulé le",
+    "YouWillNeverBeChargedAgain": "Vous ne serez plus jamais facturé",
+    "FrequentlyAskedQuestions": "Questions fréquemment posées",
+    "Can I trust": "Puis-je faire confiance à",
+    "is proudly open-source! We believe in an ethical and transparent culture, meaning that": "est fièrement open-source ! Nous croyons en une culture éthique et transparente, ce qui signifie que",
+    "will live forever. You can check out the entire code or use it for personal projects. To view the open-source repository,": "vivra éternellement. Vous pouvez consulter l'intégralité du code ou l'utiliser pour des projets personnels. Pour voir le dépôt open-source,",
+    "click here": "cliquez ici",
+    "What are channels?": "Qu'est-ce que les canaux ?",
+    "allows you to schedule your posts between different channels. A channel is a publishing platform where you can schedule your posts. For example, you can schedule your posts on X, Facebook, Instagram, TikTok, YouTube, Reddit, Linkedin, Dribbble, Threads and Pinterest.": "vous permet de planifier vos publications entre différents canaux. Un canal est une plateforme de publication où vous pouvez planifier vos publications. Par exemple, vous pouvez planifier vos publications sur X, Facebook, Instagram, TikTok, YouTube, Reddit, Linkedin, Dribbble, Threads et Pinterest.",
+    "What are team members?": "Qu'est-ce que les membres de l'équipe ?",
+    "If you have a team with multiple members, you can invite them to your workspace to collaborate on your posts and add their personal channels": "Si vous avez une équipe avec plusieurs membres, vous pouvez les inviter à votre espace de travail pour collaborer sur vos publications et ajouter leurs canaux personnels",
+    "What is AI auto-complete?": "Qu'est-ce que l'auto-complétion AI ?",
+    "We automate ChatGPT to help you write your social posts and articles": "Nous automatisons ChatGPT pour vous aider à rédiger vos publications sociales et articles"
+  },
+  "Lifetime": {
+    "Successfully claimed the code": "Code réclamé avec succès",
+    "Code already claimed or invalid code": "Code déjà réclamé ou code invalide",
+    "Current Package": "Forfait actuel",
+    "Next Package": "Prochain forfait",
+    "Code": "Code",
+    "Enter your code": "Entrez votre code",
+    "Claim": "Réclamer"
+  },
+  "Error": {
+    "We are experiencing some difficulty, try to refresh the page": "Nous rencontrons des difficultés, essayez de rafraîchir la page"
+  },
   "Notification": {
     "Notifications": "Notifications",
     "NoNotifications": "Aucune notification"
-},
-    "Lanuches": {
-      "Channels": "Chaînes",
-      "No Channels": "Aucune chaîne",
-      "DeleteMenu": {
-        "Message": "Êtes-vous sûr de vouloir supprimer cette chaîne ?",
-        "ConfirmedButton": "Supprimer la chaîne",
-        "Warning": "Vous devez supprimer tous les messages associés à cette chaîne avant de la supprimer",
-        "Success": "Chaîne supprimée"
-      },
-      "DisableMenu": {
-        "Message": "Êtes-vous sûr de vouloir désactiver cette chaîne ?",
-        "ConfirmedButton": "Désactiver la chaîne",
-        "Success": "Chaîne désactivée"
-      },
-      "EnabledMenu": {
-        "Success": "Chaîne activée"
-      },
-      "DeleteTimetable": {
-        "Message": "Êtes-vous sûr de vouloir fermer la fenêtre ?",
-        "ConfirmedButton": "Oui, fermer",
-        "RemoveMessage": "Êtes-vous sûr de vouloir supprimer ce créneau ?"
-      },
-      "TitleTimeTable": "Créneaux horaires",
-      "AddTimeSlotTimeTable": "Ajouter un créneau horaire",
-      "AddSlot": "Ajouter un créneau",
-      "Save": "Sauvegarder",
-      "MenuText": {
-        "Changebot": "Changer de bot",
-        "EditTimeSlots": "Modifier les créneaux horaires",
-        "EnableChannel": "Activer la chaîne",
-        "DisableChannel": "Désactiver la chaîne",
-        "Delete": "Supprimer"
-      },
-      "TooltipDisabled": "Cette chaîne est désactivée, veuillez mettre à jour votre plan pour l'activer.",
-      "Provider": {
-        "AddButton": "Ajouter une chaîne",
-        "ConnectionError": "Impossible de se connecter à la plateforme"
-      },
-      "UrlModal": {
-        "Instance": "URL de l'instance",
-        "Formsubmit": "Se connecter",
-        "InputField": "URL"
-      },
-      "CutomVariables": {
-        "isInvalid": "est invalide",
-        "CustomUrl": "URL personnalisée",
-        "FormSubmit": "Se connecter"
-      },
-      "AddProvider": {
-        "AddChannel": "Ajouter une chaîne",
-        "Social": "Social",
-        "Articles": "Articles"
-      },
-      "ApiModal": {
-        "InvalidApiKey": "Clé API invalide",
-        "AddApiKeyFor": "Ajouter une clé API pour",
-        "ApiKey": "Clé API",
-        "AddPlatform": "Ajouter une plateforme"
-      },
-      "Filters": {
-        "Day": "Jour",
-        "Week": "Semaine",
-        "Month": "Mois"
-      },
-      "Months": {
-        "January": "Janvier",
-        "February": "Février",
-        "March": "Mars",
-        "April": "Avril",
-        "May": "Mai",
-        "June": "Juin",
-        "July": "Juillet",
-        "August": "Août",
-        "September": "Septembre",
-        "October": "Octobre",
-        "November": "Novembre",
-        "December": "Décembre"
-    }           
-    },
-    "Analytics": {
-      "ThisChannelNeedsToBeRefreshed": "Ce canal doit être actualisé",
-      "Days": "Jours",
-      "Channels": "Canaux",
-      "Error": {
-          "CantShowAnalyticsYet": "Impossible d'afficher les analyses pour le moment",
-          "YouHaveToAddSocialMediaChannels": "Vous devez ajouter des canaux de médias sociaux",
-          "Supported": "Pris en charge",
-          "GoToTheCalendarToAddChannels": "Allez dans le calendrier pour ajouter des canaux"
-      }
-    },
+  },
+  "Analytics": {
+    "ThisChannelNeedsToBeRefreshed": "Ce canal doit être actualisé",
+    "Days": "Jours",
+    "Channels": "Canaux",
+    "Error": {
+      "PleaseRefreshTheIntegrationFromTheCalendar": "Veuillez actualiser l'intégration depuis le calendrier",
+      "CantShowAnalyticsYet": "Les analyses ne peuvent pas encore être affichées",
+      "YouHaveToAddSocialMediaChannels": "Vous devez ajouter des canaux de médias sociaux",
+      "Supported": "Supporté",
+      "GoToTheCalendarToAddChannels": "Allez dans le calendrier pour ajouter des canaux"
+    }
+  },
+  "Settings": {
     "Settings": {
-      "Settings": {
       "ProfileSettings": "Paramètres du profil",
       "Profile": "Profil",
-      "AddProfileInformation": "Ajouter des informations sur le profil",
+      "AddProfileInformation": "Ajouter des informations de profil",
       "FullName": "Nom complet",
       "ProfilePicture": "Photo de profil",
-      "UploadImage": "Télécharger l'image",
+      "UploadImage": "Télécharger une image",
       "Remove": "Supprimer",
       "Bio": "Bio",
-      "Save": "Enregistrer",
+      "Save": "Sauvegarder",
       "AreYouSureYouWantToRemoveThisTeamMember": "Êtes-vous sûr de vouloir supprimer ce membre de l'équipe ?",
       "TeamMembers": "Membres de l'équipe",
       "AccountManagers": "Responsables de compte",
       "InviteYourAssistantOrTeamMemberToManageYourAccount": "Invitez votre assistant ou membre de l'équipe à gérer votre compte",
       "AddAnotherMember": "Ajouter un autre membre",
       "PreferredLanguage": "Langue préférée",
-      "SelectPreferredLanguage": "Sélectionner la langue préférée",
+      "SelectPreferredLanguage": "Sélectionnez la langue préférée",
       "LogoutFrom": "Se déconnecter de",
       "AreYouSureYouWantToLogout": "Êtes-vous sûr de vouloir vous déconnecter ?",
       "YesLogout": "Oui, se déconnecter"
-  },
-      "Github": {
-        "AreYouSureYouWantToDisconnectThisRepository": "Êtes-vous sûr de vouloir déconnecter ce référentiel ?",
-        "Connected": "Connecté",
-        "Disconnect": "Déconnecter",
-        "RepositoryNotFound": "Référentiel non trouvé",
-        "ConnectYourRepository": "Connectez votre référentiel",
-        "Cancel": "Annuler",
-        "FullGitHubURL": "URL complète de GitHub",
-        "Connect": "Connecter"
-      }
+    },
+    "Github": {
+      "AreYouSureYouWantToDisconnectThisRepository": "Êtes-vous sûr de vouloir déconnecter ce dépôt ?",
+      "Connected": "Connecté",
+      "Disconnect": "Déconnecter",
+      "RepositoryNotFound": "Dépôt introuvable",
+      "ConnectYourRepository": "Connectez votre dépôt",
+      "Cancel": "Annuler",
+      "FullGitHubURL": "URL complète de GitHub",
+      "Connect": "Connecter"
     }
-
+  },
+  "PostModal": {
+    "EditPost": "Modifier la publication",
+    "CreatePost": "Créer une publication",
+    "YouAreInGlobalEditingMode": "Vous êtes en mode édition global",
+    "ContentOfThePostNumber": "Contenu de la publication numéro ",
+    "EditTheContentOfPostNumber": "Modifier le contenu de la publication numéro",
+    "WriteYourReply": "Écrivez votre réponse...",
+    "ThePostShouldBeAtLeastCharactersLong": "La publication doit comporter au moins 6 caractères",
+    "NotMatchingOrder": "Pas d'ordre correspondant",
+    "SaveAsDraft": "Enregistrer comme brouillon",
+    "DeletePost": "Supprimer la publication",
+    "Cancel": "Annuler",
+    "SubmitForOrder": "Soumettre pour commande",
+    "AddToCalendar": "Ajouter au calendrier",
+    "Update": "Mettre à jour",
+    "PostNow": "Publier maintenant",
+    "AddAPostAfterThePostNumber ": "Ajouter une publication après la publication numéro ",
+    "AddComment": "Ajouter un commentaire",
+    "Preview": "Aperçu",
+    "Settings": "Paramètres",
+    "EditGlobally": "Modifier globalement",
+    "EditOnly": "Modifier uniquement",
+    "InsertMedia": "Insérer des médias",
+    "DesignMedia": "Concevoir des médias",
+    "AreYouSureYouWantToCloseThisModal": "Êtes-vous sûr de vouloir fermer cette fenêtre ? (toutes les données seront perdues)",
+    "YesCloseit": "Oui, fermez-le !"
+  },
+  "Market": {
+    "Seller": "Vendeur",
+    "Buyer": "Acheteur",
+    "TheMarketplaceIsNotOpenedYet": "Le marché n'est pas encore ouvert",
+    "CheckAgainSoon": "Vérifiez à nouveau bientôt !",
+    "Titles": {
+      "Services": "Services",
+      "Niches": "Niches",
+      "Technologies": "Technologies"
+    },
+    "Services": {
+      "Content Writer": "Rédacteur de contenu",
+      "Influencers": "Influenceurs",
+      "Kubernetes": "Kubernetes",
+      "Fullstack": "Fullstack",
+      "Security": "Sécurité",
+      "Infrastructure": "Infrastructure",
+      "Productivity": "Productivité",
+      "Web3": "Web3",
+      "CloudNative": "Cloud Native",
+      "ML": "ML",
+      "HTML": "HTML",
+      "CSS": "CSS",
+      "JavaScript": "JavaScript",
+      "TypeScript": "TypeScript",
+      "Rust": "Rust",
+      "Go": "Go",
+      "Python": "Python",
+      "Java": "Java",
+      "PHP": "PHP",
+      "Ruby": "Ruby",
+      "C/C++": "C/C++"
+    },
+    "AudienceSize": "Taille de l'audience",
+    "AudienceSizeOnAllPlatforms": "Taille de l'audience sur toutes les plateformes",
+    "PleaseSelectYourCountryWhereYourBusinessIs": "Veuillez sélectionner votre pays où se trouve votre entreprise.",
+    "Country": "Pays",
+    "SELECTCOUNTRY": "--SÉLECTIONNER LE PAYS--",
+    "ConnectBankAccount": "Connecter un compte bancaire",
+    "SellerMode": "Mode vendeur",
+    "Active": "Actif",
+    "UpdateBankAccount": "Mettre à jour le compte bancaire"
   }
-  
+}

@@ -13,7 +13,6 @@ import { VariableContextComponent } from '@gitroom/react/helpers/variable.contex
 import { Fragment } from 'react';
 import { PHProvider } from '@gitroom/react/helpers/posthog';
 import UtmSaver from '@gitroom/helpers/utils/utm.saver';
-import { ToltScript } from '@gitroom/frontend/components/layout/tolt.script';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 
@@ -35,30 +34,32 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         />
       </head>
       <body className={clsx(chakra.className, 'text-primary dark')}>
-        <VariableContextComponent
-          storageProvider={
-            process.env.STORAGE_PROVIDER! as 'local' | 'cloudflare'
-          }
-          backendUrl={process.env.NEXT_PUBLIC_BACKEND_URL!}
-          plontoKey={process.env.NEXT_PUBLIC_POLOTNO!}
-          billingEnabled={!!process.env.STRIPE_PUBLISHABLE_KEY}
-          discordUrl={process.env.NEXT_PUBLIC_DISCORD_SUPPORT!}
-          frontEndUrl={process.env.FRONTEND_URL!}
-          isGeneral={!!process.env.IS_GENERAL}
-          uploadDirectory={process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY!}
-        >
-          <Plausible
-            domain={!!process.env.IS_GENERAL ? 'postiz.com' : 'gitroom.com'}
+        <NextIntlClientProvider messages={messages}>
+          <VariableContextComponent
+            storageProvider={
+              process.env.STORAGE_PROVIDER! as 'local' | 'cloudflare'
+            }
+            backendUrl={process.env.NEXT_PUBLIC_BACKEND_URL!}
+            plontoKey={process.env.NEXT_PUBLIC_POLOTNO!}
+            billingEnabled={!!process.env.STRIPE_PUBLISHABLE_KEY}
+            discordUrl={process.env.NEXT_PUBLIC_DISCORD_SUPPORT!}
+            frontEndUrl={process.env.FRONTEND_URL!}
+            isGeneral={!!process.env.IS_GENERAL}
+            uploadDirectory={process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY!}
           >
-            <PHProvider
-              phkey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
-              host={process.env.NEXT_PUBLIC_POSTHOG_HOST}
+            <Plausible
+              domain={!!process.env.IS_GENERAL ? 'postiz.com' : 'gitroom.com'}
             >
-              <UtmSaver />
-              <LayoutContext>{children}</LayoutContext>
-            </PHProvider>
-          </Plausible>
-        </VariableContextComponent>
+              <PHProvider
+                phkey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
+                host={process.env.NEXT_PUBLIC_POSTHOG_HOST}
+              >
+                <UtmSaver />
+                <LayoutContext>{children}</LayoutContext>
+              </PHProvider>
+            </Plausible>
+          </VariableContextComponent>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

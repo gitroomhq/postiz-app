@@ -4,29 +4,29 @@ import { FC, useCallback, useState } from 'react';
 import clsx from 'clsx';
 import interClass from '@gitroom/react/helpers/inter.font';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { useTranslations } from 'next-intl';
 
 const useFaqList = () => {
   const {isGeneral} = useVariables();
+  const t = useTranslations('Billing')
   return [
     {
-      title: `Can I trust ${isGeneral ? 'Postiz' : 'Gitroom'}?`,
-      description: `${isGeneral ? 'Postiz' : 'Gitroom'} is proudly open-source! We believe in an ethical and transparent culture, meaning that ${isGeneral ? 'Postiz' : 'Gitroom'} will live forever. You can check out the entire code or use it for personal projects. To view the open-source repository, <a href="https://github.com/gitroomhq/postiz-app" target="_blank" style="text-decoration: underline;">click here</a>.`,
+      title: `${t('Can I trust')} ${isGeneral ? 'Postiz' : 'Gitroom'}?`,
+      description: `${isGeneral ? 'Postiz' : 'Gitroom'} ${t("is proudly open-source! We believe in an ethical and transparent culture, meaning that")} ${isGeneral ? 'Postiz' : 'Gitroom'} ${t("will live forever. You can check out the entire code or use it for personal projects. To view the open-source repository,")} <a href="https://github.com/gitroomhq/postiz-app" target="_blank" style="text-decoration: underline;">${t("click here")}</a>.`,
     },
     {
-      title: 'What are channels?',
+      title: t('What are channels?'),
       description: `${
         isGeneral ? 'Postiz' : 'Gitroom'
-      } allows you to schedule your posts between different channels.
-A channel is a publishing platform where you can schedule your posts.
-For example, you can schedule your posts on X, Facebook, Instagram, TikTok, YouTube, Reddit, Linkedin, Dribbble, Threads and Pinterest.`,
+      } ${t("allows you to schedule your posts between different channels. A channel is a publishing platform where you can schedule your posts. For example, you can schedule your posts on X, Facebook, Instagram, TikTok, YouTube, Reddit, Linkedin, Dribbble, Threads and Pinterest.")}`,
     },
     {
-      title: 'What are team members?',
-      description: `If you have a team with multiple members, you can invite them to your workspace to collaborate on your posts and add their personal channels`,
+      title: t('What are team members?'),
+      description: t(`If you have a team with multiple members, you can invite them to your workspace to collaborate on your posts and add their personal channels`),
     },
     {
-      title: 'What is AI auto-complete?',
-      description: `We automate ChatGPT to help you write your social posts and articles`,
+      title: t('What is AI auto-complete?'),
+      description: t(`We automate ChatGPT to help you write your social posts and articles`),
     },
   ];
 }
@@ -104,10 +104,11 @@ export const FAQSection: FC<{ title: string; description: string }> = (
 
 export const FAQComponent: FC = () => {
   const list = useFaqList();
+  const t = useTranslations('Billing')
   return (
     <div>
       <h3 className="text-[24px] text-center mt-[81px] mb-[40px]">
-        Frequently Asked Questions
+        {t('FrequentlyAskedQuestions')}
       </h3>
       <div className="gap-[24px] flex-col flex select-none">
         {list.map((item, index) => (
