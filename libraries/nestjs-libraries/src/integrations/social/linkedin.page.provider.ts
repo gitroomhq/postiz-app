@@ -9,6 +9,8 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { LinkedinProvider } from '@gitroom/nestjs-libraries/integrations/social/linkedin.provider';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
+import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
+import { timer } from '@gitroom/helpers/utils/timer';
 
 export class LinkedinPageProvider
   extends LinkedinProvider
@@ -97,7 +99,7 @@ export class LinkedinPageProvider
   }
 
   async companies(accessToken: string) {
-    const { elements } = await (
+    const { elements, ...all } = await (
       await fetch(
         'https://api.linkedin.com/v2/organizationalEntityAcls?q=roleAssignee&role=ADMINISTRATOR&projection=(elements*(organizationalTarget~(localizedName,vanityName,logoV2(original~:playableStreams))))',
         {
@@ -359,6 +361,150 @@ export class LinkedinPageProvider
       ],
       percentageChange: 5,
     }));
+  }
+
+  @Plug({
+    identifier: 'linkedin-page-autoRepostPost',
+    title: 'Auto Repost Posts',
+    description:
+      'When a post reached a certain number of likes, repost it to increase engagement (1 week old posts)',
+    runEveryMilliseconds: 21600000,
+    totalRuns: 3,
+    fields: [
+      {
+        name: 'likesAmount',
+        type: 'number',
+        placeholder: 'Amount of likes',
+        description: 'The amount of likes to trigger the repost',
+        validation: /^\d+$/,
+      },
+    ],
+  })
+  async autoRepostPost(
+    integration: Integration,
+    id: string,
+    fields: { likesAmount: string }
+  ) {
+    const {
+      likesSummary: { totalLikes },
+    } = await (
+      await this.fetch(
+        `https://api.linkedin.com/v2/socialActions/${encodeURIComponent(id)}`,
+        {
+          method: 'GET',
+          headers: {
+            'X-Restli-Protocol-Version': '2.0.0',
+            'Content-Type': 'application/json',
+            'LinkedIn-Version': '202402',
+            Authorization: `Bearer ${integration.token}`,
+          },
+        }
+      )
+    ).json();
+
+    if (totalLikes >= +fields.likesAmount) {
+      await timer(2000);
+      await this.fetch(`https://api.linkedin.com/rest/posts`, {
+        body: JSON.stringify({
+          author: `urn:li:organization:${integration.internalId}`,
+          commentary: '',
+          visibility: 'PUBLIC',
+          distribution: {
+            feedDistribution: 'MAIN_FEED',
+            targetEntities: [],
+            thirdPartyDistributionChannels: [],
+          },
+          lifecycleState: 'PUBLISHED',
+          isReshareDisabledByAuthor: false,
+          reshareContext: {
+            parent: id,
+          },
+        }),
+        method: 'POST',
+        headers: {
+          'X-Restli-Protocol-Version': '2.0.0',
+          'Content-Type': 'application/json',
+          'LinkedIn-Version': '202402',
+          Authorization: `Bearer ${integration.token}`,
+        },
+      });
+      return true;
+    }
+
+    return false;
+  }
+
+  @Plug({
+    identifier: 'linkedin-page-autoPlugPost',
+    title: 'Auto plug post',
+    description:
+      'When a post reached a certain number of likes, add another post to it so you followers get a notification about your promotion',
+    runEveryMilliseconds: 21600000,
+    totalRuns: 3,
+    fields: [
+      {
+        name: 'likesAmount',
+        type: 'number',
+        placeholder: 'Amount of likes',
+        description: 'The amount of likes to trigger the repost',
+        validation: /^\d+$/,
+      },
+      {
+        name: 'post',
+        type: 'richtext',
+        placeholder: 'Post to plug',
+        description: 'Message content to plug',
+        validation: /^[\s\S]{3,}$/g,
+      },
+    ],
+  })
+  async autoPlugPost(
+    integration: Integration,
+    id: string,
+    fields: { likesAmount: string; post: string }
+  ) {
+    const {
+      likesSummary: { totalLikes },
+    } = await (
+      await this.fetch(
+        `https://api.linkedin.com/v2/socialActions/${encodeURIComponent(id)}`,
+        {
+          method: 'GET',
+          headers: {
+            'X-Restli-Protocol-Version': '2.0.0',
+            'Content-Type': 'application/json',
+            'LinkedIn-Version': '202402',
+            Authorization: `Bearer ${integration.token}`,
+          },
+        }
+      )
+    ).json();
+
+    if (totalLikes >= fields.likesAmount) {
+      await timer(2000);
+      await this.fetch(
+        `https://api.linkedin.com/v2/socialActions/${decodeURIComponent(
+          id
+        )}/comments`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${integration.token}`,
+          },
+          body: JSON.stringify({
+            actor: `urn:li:organization:${integration.internalId}`,
+            object: id,
+            message: {
+              text: this.fixText(fields.post)
+            },
+          }),
+        }
+      );
+      return true;
+    }
+
+    return false;
   }
 }
 

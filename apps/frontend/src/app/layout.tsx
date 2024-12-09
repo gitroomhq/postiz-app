@@ -15,6 +15,7 @@ import { PHProvider } from '@gitroom/react/helpers/posthog';
 import UtmSaver from '@gitroom/helpers/utils/utm.saver';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
+import { ToltScript } from '@gitroom/frontend/components/layout/tolt.script';
 
 const chakra = Chakra_Petch({ weight: '400', subsets: ['latin'] });
 
@@ -29,7 +30,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       <head>
         <link
           rel="icon"
-          href={!!process.env.IS_GENERAL ? '/favicon.png' : '/postiz-fav.png'}
+          href="/favicon.ico"
           sizes="any"
         />
       </head>
