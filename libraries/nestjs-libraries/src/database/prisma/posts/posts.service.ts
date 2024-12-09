@@ -342,12 +342,12 @@ export class PostsService {
       this._workerServiceProducer.emit('plugs', {
         id: 'plug_' + postId + '_' + runPlug.identifier,
         options: {
-          delay: 0, // runPlug.runEveryMilliseconds,
+          delay: runPlug.runEveryMilliseconds,
         },
         payload: {
           plugId: plug.id,
           postId,
-          delay: 0, // runPlug.runEveryMilliseconds,
+          delay: runPlug.runEveryMilliseconds,
           totalRuns: runPlug.totalRuns,
           currentRun: 1,
         },

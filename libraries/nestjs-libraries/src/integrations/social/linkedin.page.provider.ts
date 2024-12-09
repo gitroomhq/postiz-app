@@ -433,6 +433,79 @@ export class LinkedinPageProvider
 
     return false;
   }
+
+  @Plug({
+    identifier: 'linkedin-page-autoPlugPost',
+    title: 'Auto plug post',
+    description:
+      'When a post reached a certain number of likes, add another post to it so you followers get a notification about your promotion',
+    runEveryMilliseconds: 21600000,
+    totalRuns: 3,
+    fields: [
+      {
+        name: 'likesAmount',
+        type: 'number',
+        placeholder: 'Amount of likes',
+        description: 'The amount of likes to trigger the repost',
+        validation: /^\d+$/,
+      },
+      {
+        name: 'post',
+        type: 'richtext',
+        placeholder: 'Post to plug',
+        description: 'Message content to plug',
+        validation: /^[\s\S]{3,}$/g,
+      },
+    ],
+  })
+  async autoPlugPost(
+    integration: Integration,
+    id: string,
+    fields: { likesAmount: string; post: string }
+  ) {
+    const {
+      likesSummary: { totalLikes },
+    } = await (
+      await this.fetch(
+        `https://api.linkedin.com/v2/socialActions/${encodeURIComponent(id)}`,
+        {
+          method: 'GET',
+          headers: {
+            'X-Restli-Protocol-Version': '2.0.0',
+            'Content-Type': 'application/json',
+            'LinkedIn-Version': '202402',
+            Authorization: `Bearer ${integration.token}`,
+          },
+        }
+      )
+    ).json();
+
+    if (totalLikes >= fields.likesAmount) {
+      await timer(2000);
+      await this.fetch(
+        `https://api.linkedin.com/v2/socialActions/${decodeURIComponent(
+          id
+        )}/comments`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${integration.token}`,
+          },
+          body: JSON.stringify({
+            actor: `urn:li:organization:${integration.internalId}`,
+            object: id,
+            message: {
+              text: this.fixText(fields.post)
+            },
+          }),
+        }
+      );
+      return true;
+    }
+
+    return false;
+  }
 }
 
 export interface Root {
