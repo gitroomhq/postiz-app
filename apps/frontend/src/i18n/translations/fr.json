@@ -226,7 +226,8 @@
     "InsertMedia": "Insérer des médias",
     "DesignMedia": "Concevoir des médias",
     "AreYouSureYouWantToCloseThisModal": "Êtes-vous sûr de vouloir fermer cette fenêtre ? (toutes les données seront perdues)",
-    "YesCloseit": "Oui, fermez-le !"
+    "YesCloseit": "Oui, fermez-le !",
+    "NoContentYet": "Aucun contenu pour le moment"
   },
   "Market": {
     "Seller": "Vendeur",

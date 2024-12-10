@@ -226,7 +226,8 @@
     "InsertMedia": "Insert Media",
     "DesignMedia": "Design Media",
     "AreYouSureYouWantToCloseThisModal": "Are you sure you want to close this modal? (all data will be lost)",
-    "YesCloseit": "Yes, close it!"
+    "YesCloseit": "Yes, close it!",
+    "NoContentYet": "No Content Yet"
   },
   "Market": {
     "Seller": "Seller",
