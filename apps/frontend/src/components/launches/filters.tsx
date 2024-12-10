@@ -8,7 +8,7 @@ import { useTranslations } from 'next-intl';
 
 export const Filters = () => {
   const week = useCalendar();  
-  const t = useTranslations("Lanuches");
+  const t = useTranslations("Launches");
 
   const betweenDates =
     week.display === 'day'
@@ -173,8 +173,8 @@ export const Filters = () => {
 				.day(week.currentDay)
 				.format('dddd')}`
 			: week.display === 'week'
-			? `${t("Filters.Week")} ${week.currentWeek}`
-			: t(`Months.${dayjs().month(week.currentMonth).format('MMMM')}`)}
+			? t("Filters.Week", {week: week.currentWeek})
+			: t("Months." + dayjs().month(week.currentMonth).format('MMMM').toLowerCase())}
 		</div>
 		<div onClick={next} className="cursor-pointer">
 		  <svg

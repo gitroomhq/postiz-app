@@ -18,7 +18,7 @@
     "Saturday": "Samedi",
     "Sunday": "Dimanche"
   },
-  "Lanuches": {
+  "Launches": {
     "Channels": "Canaux",
     "No Channels": "Aucun canal",
     "DeleteMenu": {
@@ -61,7 +61,7 @@
       "Formsubmit": "Connecter",
       "InputField": "URL"
     },
-    "CutomVariables": {
+    "CustomVariables": {
       "isInvalid": "est invalide",
       "CustomUrl": "URL personnalisée",
       "FormSubmit": "Connecter"
@@ -79,7 +79,7 @@
     },
     "Filters": {
       "Day": "Jour",
-      "Week": "Semaine",
+      "Week": "Semaine {week}",
       "Month": "Mois"
     },
     "Months": {
@@ -99,7 +99,7 @@
   },
   "Billing": {
     "YourTeamMembersWillBeRemovedFromYourOrganization": "Les membres de votre équipe seront retirés de votre organisation",
-    "AreYouSureYouWantToCancelYourSubscription": "Êtes-vous sûr de vouloir annuler votre abonnement ?",
+    "AreYouSureYouWantToCancelYourSubscription": "Êtes-vous sûr de vouloir annuler votre abonnement ? {message}",
     "YesCancel": "Oui, annuler",
     "OhNo": "Oh non",
     "CancelSubscription": "Annuler l'abonnement",
@@ -117,7 +117,7 @@
     "YEARLY": "ANNUEL",
     "ReactivateSubscription": "Réactiver l'abonnement",
     "CurrentPlan": "Plan actuel",
-    "DowngradeOn": "Abaisser le niveau le",
+    "DowngradeOn": "Abaisser le niveau le {date}",
     "StartDaysFreeTrial": "Commencer l'essai gratuit de 7 jours",
     "Purchase": "Acheter",
     "PayToday": "Payer aujourd'hui",
@@ -125,8 +125,8 @@
     "YourSubscriptionWillBeCancelAt": "Votre abonnement sera annulé le",
     "YouWillNeverBeChargedAgain": "Vous ne serez plus jamais facturé",
     "FrequentlyAskedQuestions": "Questions fréquemment posées",
-    "Can I trust": "Puis-je faire confiance à",
-    "is proudly open-source! We believe in an ethical and transparent culture, meaning that": "est fièrement open-source ! Nous croyons en une culture éthique et transparente, ce qui signifie que",
+    "trust_title": "Puis-je faire confiance à {product}",
+    "is proudly open-source! We believe in an ethical and transparent culture, meaning that": "{product} est fièrement open-source ! Nous croyons en une culture éthique et transparente, ce qui signifie que",
     "will live forever": "vivra éternellement",
     "You can check out the entire code or use it for personal projects": "Vous pouvez consulter l'intégralité du code ou l'utiliser pour des projets personnels",
     "To view the open-source repository,": "Pour voir le dépôt open-source,",
@@ -150,7 +150,7 @@
     "Claim": "Réclamer"
   },
   "Error": {
-    "We are experiencing some difficulty, try to refresh the page": "Nous rencontrons des difficultés, essayez de rafraîchir la page"
+    "errorMsg": "Nous rencontrons des difficultés, essayez de rafraîchir la page"
   },
   "Notification": {
     "Notifications": "Notifications",
@@ -158,7 +158,7 @@
   },
   "Analytics": {
     "ThisChannelNeedsToBeRefreshed": "Ce canal doit être actualisé",
-    "Days": "Jours",
+    "Days": "{number} Jours",
     "Channels": "Canaux",
     "Error": {
       "PleaseRefreshTheIntegrationFromTheCalendar": "Veuillez actualiser l'intégration depuis le calendrier",
@@ -205,8 +205,8 @@
     "EditPost": "Modifier la publication",
     "CreatePost": "Créer une publication",
     "YouAreInGlobalEditingMode": "Vous êtes en mode édition global",
-    "ContentOfThePostNumber": "Contenu de la publication numéro ",
-    "EditTheContentOfPostNumber": "Modifier le contenu de la publication numéro",
+    "ContentOfThePostNumber": "Contenu de la publication numéro {number}",
+    "EditTheContentOfPostNumber": "Modifier le contenu de la publication numéro {number}",
     "WriteYourReply": "Écrivez votre réponse...",
     "ThePostShouldBeAtLeastCharactersLong": "La publication doit comporter au moins 6 caractères",
     "NotMatchingOrder": "Pas d'ordre correspondant",
@@ -217,7 +217,7 @@
     "AddToCalendar": "Ajouter au calendrier",
     "Update": "Mettre à jour",
     "PostNow": "Publier maintenant",
-    "AddAPostAfterThePostNumber ": "Ajouter une publication après la publication numéro ",
+    "AddAPostAfterThePostNumber ": "Ajouter une publication après la publication numéro {number}",
     "AddComment": "Ajouter un commentaire",
     "Preview": "Aperçu",
     "Settings": "Paramètres",

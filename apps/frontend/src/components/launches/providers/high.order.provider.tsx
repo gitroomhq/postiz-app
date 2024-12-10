@@ -467,7 +467,7 @@ export const withProvider = function <T extends object>(
                     />
                   )
                 ) : (
-                  <>No Content Yet</>
+                  <>{t('NoContentYet')}</>
                 )}
               </IntegrationContext.Provider>
             </div>

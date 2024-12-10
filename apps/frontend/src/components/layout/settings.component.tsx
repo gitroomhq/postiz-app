@@ -214,7 +214,13 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
             </div>
           )}
           {!!user?.tier?.team_members && isGeneral && <TeamsComponent />}
-          <CustomSelect onChange={setCurrentLanguage} options={locales} label={t('Settings.PreferredLanguage')} name='language' placeholder={t('Settings.SelectPreferredLanguage')}/>
+          <CustomSelect
+            onChange={setCurrentLanguage}
+            options={locales}
+            label={t('Settings.PreferredLanguage')}
+            name='language'
+            placeholder={t('Settings.SelectPreferredLanguage')}
+          />
           {showLogout && <LogoutComponent />}
         </div>
       </form>

@@ -37,7 +37,7 @@ export const Menu: FC<{
   const ref = useClickOutside<HTMLDivElement>(() => {
     setShow(false);
   });
-  const t = useTranslations("Lanuches");
+  const t = useTranslations("Launches");
 
   const changeShow: MouseEventHandler<HTMLDivElement> = useCallback(
     (e) => {

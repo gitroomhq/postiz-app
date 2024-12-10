@@ -11,8 +11,8 @@ const useFaqList = () => {
   const t = useTranslations('Billing')
   return [
     {
-      title: `${t('Can I trust')} ${isGeneral ? 'Postiz' : 'Gitroom'}?`,
-      description: `${isGeneral ? 'Postiz' : 'Gitroom'} ${t("is proudly open-source! We believe in an ethical and transparent culture, meaning that")} ${isGeneral ? 'Postiz' : 'Gitroom'} ${t("will live forever")}. ${t("You can check out the entire code or use it for personal projects")}. ${t("To view the open-source repository,")} <a href="https://github.com/gitroomhq/postiz-app" target="_blank" style="text-decoration: underline;">${t("click here")}</a>.`,
+      title: `${t('trust_title', {product: isGeneral ? 'Postiz' : 'Gitroom'})}?`,
+      description: `${t("trust_desc", {product: isGeneral ? 'Postiz' : 'Gitroom'})} ${isGeneral ? 'Postiz' : 'Gitroom'} ${t("will live forever")}. ${t("You can check out the entire code or use it for personal projects")}. ${t("To view the open-source repository,")} <a href="https://github.com/gitroomhq/postiz-app" target="_blank" style="text-decoration: underline;">${t("click here")}</a>.`,
     },
     {
       title: t('What are channels?'),

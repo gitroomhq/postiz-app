@@ -11,7 +11,7 @@ export const AddPostButton: FC<{ onClick: () => void; num: number }> = (
 
   useCopilotAction({
     name: 'addPost_' + num,
-    description: t('AddAPostAfterThePostNumber') + (num + 1),
+    description: t('AddAPostAfterThePostNumber', {number: num + 1}),
     handler: () => {
       onClick();
     },

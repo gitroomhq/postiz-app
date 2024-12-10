@@ -297,9 +297,9 @@ export const MainBillingComponent: FC<{
         if (
           subscription?.cancelAt ||
           (await deleteDialog(
-            `${t('AreYouSureYouWantToCancelYourSubscription')} ${messages.join(
+            t('AreYouSureYouWantToCancelYourSubscription', {message: messages.join(
               ', '
-            )}`,
+            )}),
             t('YesCancel'),
             t('CancelSubscription')
           ))
@@ -470,10 +470,10 @@ export const MainBillingComponent: FC<{
                       ? t('CurrentPlan')
                       : name.toUpperCase() === 'FREE'
                       ? subscription?.cancelAt
-                        ? `${t('DowngradeOn')} ${dayjs
-                            .utc(subscription?.cancelAt)
-                            .local()
-                            .format('D MMM, YYYY')}`
+                        ? t('DowngradeOn' , {date: dayjs
+                          .utc(subscription?.cancelAt)
+                          .local()
+                          .format('D MMM, YYYY')})
                         : t('CancelSubscription')
                       : // @ts-ignore
                       user?.tier === 'FREE' || user?.tier?.current === 'FREE'

@@ -36,7 +36,7 @@ export const useAddProvider = (update?: () => void) => {
 };
 
 export const AddProviderButton: FC<{ update?: () => void }> = (props) => {
-  const t = useTranslations("Lanuches");
+  const t = useTranslations("Launches");
   const { update } = props;
   const add = useAddProvider(update);
   return (
@@ -60,7 +60,7 @@ export const ApiModal: FC<{
     mode: 'onChange',
     resolver,
   });
-  const t = useTranslations("Lanuches");
+  const t = useTranslations("Launches");
 
 
   const close = useCallback(() => {
@@ -139,7 +139,7 @@ export const UrlModal: FC<{
   gotoUrl(url: string): void;
 }> = (props) => {
   const { gotoUrl } = props;
-  const t = useTranslations("Lanuches");
+  const t = useTranslations("Launches");
   const methods = useForm({
     mode: 'onChange',
   });
@@ -201,7 +201,7 @@ export const CustomVariables: FC<{
 }> = (props) => {
   const { gotoUrl, identifier, variables } = props;
   const modals = useModals();
-  const t = useTranslations("Lanuches");
+  const t = useTranslations("Launches");
   const schema = useMemo(() => {
     return object({
       ...variables.reduce((aIcc, item) => {
@@ -213,7 +213,7 @@ export const CustomVariables: FC<{
         return {
           ...aIcc,
           [item.key]: string()
-            .matches(regex, `${item.label} ${t("CutomVariables.isInvalid")}`)
+            .matches(regex, `${item.label} ${t("CustomVariables.isInvalid")}`)
             .required(),
         };
       }, {}),
@@ -245,7 +245,7 @@ export const CustomVariables: FC<{
 
   return (
     <div className="rounded-[4px] border border-customColor6 bg-sixth px-[16px] pb-[16px] relative">
-      <TopTitle title={t("CutomVariables.CustomUrl")} />
+      <TopTitle title={t("CustomVariables.CustomUrl")} />
       <button
         onClick={modals.closeAll}
         className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
@@ -281,7 +281,7 @@ export const CustomVariables: FC<{
             </div>
           ))}
           <div>
-            <Button type="submit">{t("CutomVariables.FormSubmit")}</Button>
+            <Button type="submit">{t("CustomVariables.FormSubmit")}</Button>
           </div>
         </form>
       </FormProvider>
@@ -310,7 +310,7 @@ export const AddProviderComponent: FC<{
   const router = useRouter();
   const fetch = useFetch();
   const modal = useModals();
-  const t = useTranslations("Lanuches");
+  const t = useTranslations("Launches");
   const getSocialLink = useCallback(
     (
         identifier: string,

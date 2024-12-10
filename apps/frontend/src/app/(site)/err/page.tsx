@@ -9,6 +9,6 @@ export const metadata: Metadata = {
 export default async function Page() {
   const t= useTranslations('Error')
     return (
-        <div>{t("We are experiencing some difficulty, try to refresh the page")}</div>
+        <div>{t("errorMsg")}</div>
     )
 }

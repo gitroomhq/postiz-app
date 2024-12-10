@@ -7,6 +7,11 @@ export default getRequestConfig(async () => {
 
   return {
     locale,
-    messages: (await import(`./translations/${locale}.json`)).default,
+    messages: await import(`./translations/${locale}.json`)
+    .then(module => module.default)
+    .catch(async () => {
+      console.error(`Translation file for locale "${locale}" not found, falling back to "en"`);
+      return (await import('./translations/en.json')).default;
+    }),
   };
 });

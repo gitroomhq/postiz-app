@@ -70,7 +70,7 @@ export const PlatformAnalytics = () => {
     ) {
       arr.push({
         key: 7,
-        value: `7 ${t("Days")}`,
+        value: t("Days", {number: 7}),
       });
     }
 
@@ -86,7 +86,7 @@ export const PlatformAnalytics = () => {
     ) {
       arr.push({
         key: 30,
-        value: `30 ${t("Days")}`,
+        value: `${t("Days", {number: 30})}`,
       });
     }
 
@@ -97,7 +97,7 @@ export const PlatformAnalytics = () => {
     ) {
       arr.push({
         key: 90,
-        value: `90 ${t("Days")}`,
+        value: t("Days", {number: 90}),
       });
     }
 

@@ -40,7 +40,7 @@ export const TimeTable: FC<{
   const fetch = useFetch();
   const modal = useModals();
   usePreventWindowUnload(true);
-  const t = useTranslations("Lanuches");
+  const t = useTranslations("Launches");
 
   const askClose = useCallback(async () => {
     if (

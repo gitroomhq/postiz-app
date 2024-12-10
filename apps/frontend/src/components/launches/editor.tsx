@@ -7,6 +7,7 @@ import { CopilotTextarea } from '@copilotkit/react-textarea';
 import clsx from 'clsx';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useTranslations } from 'next-intl';
+import { number } from 'yargs';
 
 export const Editor = forwardRef<
   RefMDEditor,
@@ -23,13 +24,13 @@ export const Editor = forwardRef<
     const user = useUser();
     const t = useTranslations('PostModal')
     useCopilotReadable({
-      description: t('ContentOfThePostNumber') + (props.order + 1),
+      description: t('ContentOfThePostNumber', {number:props.order + 1 }),
       value: props.content,
     });
 
     useCopilotAction({
       name: 'editPost_' + props.order,
-      description: `${t('EditTheContentOfPostNumber')} ${props.order + 1}`,
+      description: t('EditTheContentOfPostNumber', {number: props.order + 1 }),
       parameters: [
         {
           name: 'content',

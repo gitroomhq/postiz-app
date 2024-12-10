@@ -18,7 +18,7 @@
     "Saturday": "Saturday",
     "Sunday": "Sunday"
   },
-  "Lanuches": {
+  "Launches": {
     "Channels": "Channels",
     "No Channels": "No Channels",
     "DeleteMenu": {
@@ -61,7 +61,7 @@
       "Formsubmit": "Connect",
       "InputField": "URL"
     },
-    "CutomVariables": {
+    "CustomVariables": {
       "isInvalid": "is invalid",
       "CustomUrl": "Custom URL",
       "FormSubmit": "Connect"
@@ -99,7 +99,7 @@
   },
   "Billing": {
     "YourTeamMembersWillBeRemovedFromYourOrganization": "Your team members will be removed from your organization",
-    "AreYouSureYouWantToCancelYourSubscription": "Are you sure you want to cancel your subscription?",
+    "AreYouSureYouWantToCancelYourSubscription": "Are you sure you want to cancel your subscription? {message}",
     "YesCancel": "Yes, cancel",
     "OhNo": "Oh no",
     "CancelSubscription": "Cancel Subscription",
@@ -117,7 +117,7 @@
     "YEARLY": "YEARLY",
     "ReactivateSubscription": "Reactivate subscription",
     "CurrentPlan": "Current Plan",
-    "DowngradeOn": "Downgrade on",
+    "DowngradeOn": "Downgrade on {date}",
     "StartDaysFreeTrial": "Start 7 days free trial",
     "Purchase": "Purchase",
     "PayToday": "Pay Today",
@@ -125,8 +125,8 @@
     "YourSubscriptionWillBeCancelAt": "Your subscription will be cancel at",
     "YouWillNeverBeChargedAgain": "You will never be charged again",
     "FrequentlyAskedQuestions": "Frequently Asked Questions",
-    "Can I trust": "Can I trust",
-    "is proudly open-source! We believe in an ethical and transparent culture, meaning that": "is proudly open-source! We believe in an ethical and transparent culture, meaning that",
+    "trust_title": "Can I trust {product}",
+    "is proudly open-source! We believe in an ethical and transparent culture, meaning that": "{product} is proudly open-source! We believe in an ethical and transparent culture, meaning that",
     "will live forever": "will live forever",
     "You can check out the entire code or use it for personal projects":"You can check out the entire code or use it for personal projects",
     "To view the open-source repository,": "To view the open-source repository,",
@@ -150,7 +150,7 @@
     "Claim":"Claim"
   },
   "Error": {
-    "We are experiencing some difficulty, try to refresh the page":"We are experiencing some difficulty, try to refresh the page"
+    "errorMsg":"We are experiencing some difficulty, try to refresh the page"
   },
   "Notification": {
     "Notifications": "Notifications",
@@ -158,7 +158,7 @@
   },
   "Analytics": {
     "ThisChannelNeedsToBeRefreshed": "This channel needs to be refreshed",
-    "Days": "Days",
+    "Days": "Days {number}",
     "Channels": "Channels",
     "Error": {
       "PleaseRefreshTheIntegrationFromTheCalendar": "Please refresh the integration from the calendar",
@@ -205,8 +205,8 @@
     "EditPost": "Edit Post",
     "CreatePost": "Create Post",
     "YouAreInGlobalEditingMode": "You are in global editing mode",
-    "ContentOfThePostNumber": "Content of the post number ",
-    "EditTheContentOfPostNumber": "Edit the content of post number",
+    "ContentOfThePostNumber": "Content of the post number {number}",
+    "EditTheContentOfPostNumber": "Edit the content of post number {number}",
     "WriteYourReply": "Write your reply...",
     "ThePostShouldBeAtLeastCharactersLong": "The post should be at least 6 characters long",
     "NotMatchingOrder": "Not matching order",
@@ -217,7 +217,7 @@
     "AddToCalendar": "Add to calendar",
     "Update": "Update",
     "PostNow": "Post now",
-    "AddAPostAfterThePostNumber ": "Add a post after the post number ",
+    "AddAPostAfterThePostNumber ": "Add a post after the post number {number}",
     "AddComment": "Add comment",
     "Preview": "Preview",
     "Settings": "Settings",

@@ -27,6 +27,13 @@ import { ApiTags } from '@nestjs/swagger';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
 import { HttpForbiddenException } from '@gitroom/nestjs-libraries/services/exception.filter';
+import { IsIn } from 'class-validator';
+
+
+class ChangeLanguageDto {
+  @IsIn(['en', 'fr'])
+  language: string;
+}
 
 @ApiTags('User')
 @Controller('/user')
@@ -205,17 +212,21 @@ export class UsersController {
   }
 
   @Post('/changeLanguage')
-  changeLanguage(@Body('language') language: string, @Res({ passthrough: true }) response: Response) {
-    const maxAge = 1000 * 60 * 60 * 24 * 365 * 10; // 10 years in milliseconds
-    response.cookie('NEXT_LOCALE', language, {
-      domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-      secure: true,
-      httpOnly: true,
-      maxAge: maxAge,
-      expires:  new Date(Date.now() + maxAge),
-      sameSite: 'none',
-    });
+  async changeLanguage(@Body() { language }: ChangeLanguageDto, @Res({ passthrough: true }) response: Response) {
+    const maxAge = 1000 * 60 * 60 * 24 * 365 * 1; // 1 years in milliseconds
+    try {
+      response.cookie('NEXT_LOCALE', language, {
+        domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+        secure: true,
+        httpOnly: true,
+        maxAge: maxAge,
+        expires:  new Date(Date.now() + maxAge),
+        sameSite: 'none',
+      });
 
-    response.status(200).send();
+      response.status(200).send();
+  } catch (error) {
+    throw new HttpException('Failed to set language preference', 500);
+  }
   }
 }
