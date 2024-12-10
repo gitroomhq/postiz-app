@@ -12,13 +12,13 @@ const useFaqList = () => {
   return [
     {
       title: `${t('Can I trust')} ${isGeneral ? 'Postiz' : 'Gitroom'}?`,
-      description: `${isGeneral ? 'Postiz' : 'Gitroom'} ${t("is proudly open-source! We believe in an ethical and transparent culture, meaning that")} ${isGeneral ? 'Postiz' : 'Gitroom'} ${t("will live forever. You can check out the entire code or use it for personal projects. To view the open-source repository,")} <a href="https://github.com/gitroomhq/postiz-app" target="_blank" style="text-decoration: underline;">${t("click here")}</a>.`,
+      description: `${isGeneral ? 'Postiz' : 'Gitroom'} ${t("is proudly open-source! We believe in an ethical and transparent culture, meaning that")} ${isGeneral ? 'Postiz' : 'Gitroom'} ${t("will live forever")}. ${t("You can check out the entire code or use it for personal projects")}. ${t("To view the open-source repository,")} <a href="https://github.com/gitroomhq/postiz-app" target="_blank" style="text-decoration: underline;">${t("click here")}</a>.`,
     },
     {
       title: t('What are channels?'),
       description: `${
         isGeneral ? 'Postiz' : 'Gitroom'
-      } ${t("allows you to schedule your posts between different channels. A channel is a publishing platform where you can schedule your posts. For example, you can schedule your posts on X, Facebook, Instagram, TikTok, YouTube, Reddit, Linkedin, Dribbble, Threads and Pinterest.")}`,
+      } ${t("allows you to schedule your posts between different channels")}. ${t("A channel is a publishing platform where you can schedule your posts")}. ${t("For example, you can schedule your posts on X, Facebook, Instagram, TikTok, YouTube, Reddit, Linkedin, Dribbble, Threads and Pinterest")}.`,
     },
     {
       title: t('What are team members?'),

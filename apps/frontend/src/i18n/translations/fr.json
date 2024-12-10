@@ -6,7 +6,8 @@
     "Settings": "Paramètres",
     "Marketplace": "Place de marché",
     "Messages": "Messages",
-    "Billing": "Facturation"
+    "Billing": "Facturation",
+    "Plugs": "Plugs"
   },
   "Week": {
     "Monday": "Lundi",
@@ -126,10 +127,14 @@
     "FrequentlyAskedQuestions": "Questions fréquemment posées",
     "Can I trust": "Puis-je faire confiance à",
     "is proudly open-source! We believe in an ethical and transparent culture, meaning that": "est fièrement open-source ! Nous croyons en une culture éthique et transparente, ce qui signifie que",
-    "will live forever. You can check out the entire code or use it for personal projects. To view the open-source repository,": "vivra éternellement. Vous pouvez consulter l'intégralité du code ou l'utiliser pour des projets personnels. Pour voir le dépôt open-source,",
+    "will live forever": "vivra éternellement",
+    "You can check out the entire code or use it for personal projects": "Vous pouvez consulter l'intégralité du code ou l'utiliser pour des projets personnels",
+    "To view the open-source repository,": "Pour voir le dépôt open-source,",
     "click here": "cliquez ici",
     "What are channels?": "Qu'est-ce que les canaux ?",
-    "allows you to schedule your posts between different channels. A channel is a publishing platform where you can schedule your posts. For example, you can schedule your posts on X, Facebook, Instagram, TikTok, YouTube, Reddit, Linkedin, Dribbble, Threads and Pinterest.": "vous permet de planifier vos publications entre différents canaux. Un canal est une plateforme de publication où vous pouvez planifier vos publications. Par exemple, vous pouvez planifier vos publications sur X, Facebook, Instagram, TikTok, YouTube, Reddit, Linkedin, Dribbble, Threads et Pinterest.",
+    "allows you to schedule your posts between different channels": "vous permet de planifier vos publications entre différents canaux",
+    "A channel is a publishing platform where you can schedule your posts": "Un canal est une plateforme de publication où vous pouvez planifier vos publications",
+    "For example, you can schedule your posts on X, Facebook, Instagram, TikTok, YouTube, Reddit, Linkedin, Dribbble, Threads and Pinterest": "Par exemple, vous pouvez planifier vos publications sur X, Facebook, Instagram, TikTok, YouTube, Reddit, Linkedin, Dribbble, Threads et Pinterest",
     "What are team members?": "Qu'est-ce que les membres de l'équipe ?",
     "If you have a team with multiple members, you can invite them to your workspace to collaborate on your posts and add their personal channels": "Si vous avez une équipe avec plusieurs membres, vous pouvez les inviter à votre espace de travail pour collaborer sur vos publications et ajouter leurs canaux personnels",
     "What is AI auto-complete?": "Qu'est-ce que l'auto-complétion AI ?",

@@ -85,6 +85,7 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
         body: JSON.stringify({language: language.value}),
       }).then(() => {
         toast.show('Language updated');
+        window.location.reload()
       });
     }
 

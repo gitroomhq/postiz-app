@@ -6,7 +6,8 @@
     "Settings": "Settings",
     "Marketplace": "Marketplace",
     "Messages": "Messages",
-    "Billing": "Billing"
+    "Billing": "Billing",
+    "Plugs": "Plugs"
   },
   "Week": {
     "Monday": "Monday",
@@ -126,10 +127,14 @@
     "FrequentlyAskedQuestions": "Frequently Asked Questions",
     "Can I trust": "Can I trust",
     "is proudly open-source! We believe in an ethical and transparent culture, meaning that": "is proudly open-source! We believe in an ethical and transparent culture, meaning that",
-    "will live forever. You can check out the entire code or use it for personal projects. To view the open-source repository,": "will live forever. You can check out the entire code or use it for personal projects. To view the open-source repository,",
+    "will live forever": "will live forever",
+    "You can check out the entire code or use it for personal projects":"You can check out the entire code or use it for personal projects",
+    "To view the open-source repository,": "To view the open-source repository,",
     "click here": "click here",
     "What are channels?": "What are channels?",
-    "allows you to schedule your posts between different channels. A channel is a publishing platform where you can schedule your posts. For example, you can schedule your posts on X, Facebook, Instagram, TikTok, YouTube, Reddit, Linkedin, Dribbble, Threads and Pinterest.": "allows you to schedule your posts between different channels. A channel is a publishing platform where you can schedule your posts. For example, you can schedule your posts on X, Facebook, Instagram, TikTok, YouTube, Reddit, Linkedin, Dribbble, Threads and Pinterest.",
+    "allows you to schedule your posts between different channels": "allows you to schedule your posts between different channels",
+    "A channel is a publishing platform where you can schedule your posts": "A channel is a publishing platform where you can schedule your posts",
+    "For example, you can schedule your posts on X, Facebook, Instagram, TikTok, YouTube, Reddit, Linkedin, Dribbble, Threads and Pinterest": "For example, you can schedule your posts on X, Facebook, Instagram, TikTok, YouTube, Reddit, Linkedin, Dribbble, Threads and Pinterest",
     "What are team members?": "What are team members?",
     "If you have a team with multiple members, you can invite them to your workspace to collaborate on your posts and add their personal channels": "If you have a team with multiple members, you can invite them to your workspace to collaborate on your posts and add their personal channels",
     "What is AI auto-complete?": "What is AI auto-complete?",
