@@ -36,6 +36,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       </head>
       <body className={clsx(chakra.className, 'text-primary dark')}>
         <NextIntlClientProvider messages={messages}>
+        {/* @ts-ignore */}
           <VariableContextComponent
             storageProvider={
               process.env.STORAGE_PROVIDER! as 'local' | 'cloudflare'

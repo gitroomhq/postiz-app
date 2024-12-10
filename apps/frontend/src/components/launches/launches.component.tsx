@@ -220,7 +220,6 @@ export const LaunchesComponent = () => {
   const search = useSearchParams();
   const toast = useToaster();
   const fireEvents = useFireEvents();
-  const t = useTranslations("Lanuches");
 
   const [reload, setReload] = useState(false);
   const load = useCallback(async (path: string) => {
