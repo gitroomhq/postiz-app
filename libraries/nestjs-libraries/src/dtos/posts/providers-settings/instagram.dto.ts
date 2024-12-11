@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsDefined, IsIn, IsString, ValidateNested } from 'class-validator';
+import { IsArray, IsDefined, IsIn, IsString, ValidateNested, IsOptional } from 'class-validator';
 
 export class Collaborators {
   @IsDefined()
@@ -14,5 +14,6 @@ export class InstagramDto {
   @Type(() => Collaborators)
   @ValidateNested({ each: true })
   @IsArray()
+  @IsOptional()
   collaborators: Collaborators[];
 }

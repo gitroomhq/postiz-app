@@ -37,7 +37,9 @@ const InstagramCollaborators: FC<{ values?: any }> = (props) => {
       {postCurrentType !== 'story' && (
         <InstagramCollaboratorsTags
           label="Collaborators (max 3) - accounts can't be private"
-          {...register('collaborators')}
+          {...register('collaborators', {
+            value: []
+          })}
         />
       )}
     </>
