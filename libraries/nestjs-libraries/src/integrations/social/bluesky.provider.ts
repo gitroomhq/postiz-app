@@ -11,8 +11,10 @@ import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import sharp from 'sharp';
+import { isValidHandle } from '@gitroom/helpers/integrations/bluesky.provider';
 import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
 import { timer } from '@gitroom/helpers/utils/timer';
+
 
 export class BlueskyProvider extends SocialAbstract implements SocialProvider {
   identifier = 'bluesky';
@@ -32,6 +34,7 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
       {
         key: 'identifier',
         label: 'Identifier',
+        placeholder: 'johndoe.bsky.social',
         validation: `/^.{3,}$/`,
         type: 'text' as const,
       },
@@ -70,32 +73,52 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
     codeVerifier: string;
     refresh?: string;
   }) {
-    const body = JSON.parse(Buffer.from(params.code, 'base64').toString());
+    try {
+      const body = JSON.parse(Buffer.from(params.code, 'base64').toString());
 
-    const agent = new BskyAgent({
-      service: body.service,
-    });
+      const agent = new BskyAgent({
+        service: body.service,
+      });
 
-    const {
-      data: { accessJwt, refreshJwt, handle, did },
-    } = await agent.login({
-      identifier: body.identifier,
-      password: body.password,
-    });
+      if (!isValidHandle(body.identifier)) {
+        throw new Error('Invalid handle');
+      }
 
-    const profile = await agent.getProfile({
-      actor: did,
-    });
+      const {
+        data: { accessJwt, refreshJwt, handle, did },
+      } = await agent.login({
+        identifier: body.identifier,
+        password: body.password,
+      });
 
-    return {
-      refreshToken: refreshJwt,
-      expiresIn: dayjs().add(100, 'years').unix() - dayjs().unix(),
-      accessToken: accessJwt,
-      id: did,
-      name: profile.data.displayName!,
-      picture: profile.data.avatar!,
-      username: profile.data.handle!,
-    };
+      const profile = await agent.getProfile({
+        actor: did,
+      });
+
+      return {
+        refreshToken: refreshJwt,
+        expiresIn: dayjs().add(100, 'years').unix() - dayjs().unix(),
+        accessToken: accessJwt,
+        id: did,
+        name: profile.data.displayName!,
+        picture: profile.data.avatar!,
+        username: profile.data.handle!,
+      };
+    } catch (error) {
+      console.error(
+        'Error occurred in the +Bluesky authenticate function',
+        error
+      );
+      return {
+        refreshToken: '',
+        expiresIn: 0,
+        accessToken: '',
+        id: '',
+        name: '',
+        picture: '',
+        username: '',
+      };
+    }
   }
 
   async post(
