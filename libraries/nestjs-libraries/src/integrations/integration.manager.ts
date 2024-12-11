@@ -21,9 +21,11 @@ import { DiscordProvider } from '@gitroom/nestjs-libraries/integrations/social/d
 import { SlackProvider } from '@gitroom/nestjs-libraries/integrations/social/slack.provider';
 import { MastodonProvider } from '@gitroom/nestjs-libraries/integrations/social/mastodon.provider';
 import { BlueskyProvider } from '@gitroom/nestjs-libraries/integrations/social/bluesky.provider';
+import { GMBProvider } from '@gitroom/nestjs-libraries/integrations/social/googlemybusiness.provider';
 // import { MastodonCustomProvider } from '@gitroom/nestjs-libraries/integrations/social/mastodon.custom.provider';
 
 const socialIntegrationList: SocialProvider[] = [
+  new GMBProvider(),
   new XProvider(),
   new LinkedinProvider(),
   new LinkedinPageProvider(),

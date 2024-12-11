@@ -427,7 +427,7 @@ export const AddProviderComponent: FC<{
                 item.customFields
               )}
               className={
-                'w-[120px] h-[100px] bg-input text-textColor justify-center items-center flex flex-col gap-[10px] cursor-pointer'
+                'w-[160px] h-[100px] bg-input text-textColor justify-center items-center flex flex-col gap-[10px] cursor-pointer'
               }
             >
               <div>
