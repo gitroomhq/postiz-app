@@ -15,6 +15,7 @@ import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import { MultipartFileUploader } from '@gitroom/frontend/components/media/new.uploader';
 import dynamic from 'next/dynamic';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { useTranslations } from 'next-intl';
 const Polonto = dynamic(
   () => import('@gitroom/frontend/components/launches/polonto')
 );
@@ -236,6 +237,8 @@ export const MultiMediaComponent: FC<{
     [currentMedia]
   );
 
+  const t = useTranslations('PostModal')
+
   const showModal = useCallback(() => {
     setShowModal(!modal);
   }, [modal]);
@@ -285,7 +288,7 @@ export const MultiMediaComponent: FC<{
                   />
                 </svg>
               </div>
-              <div className="text-[12px] font-[500] text-primary">Insert Media</div>
+              <div className="text-[12px] font-[500] text-primary">{t('InsertMedia')}</div>
             </Button>
 
             <Button
@@ -306,7 +309,7 @@ export const MultiMediaComponent: FC<{
                   />
                 </svg>
               </div>
-              <div className="text-[12px] font-[500] !text-white">Design Media</div>
+              <div className="text-[12px] font-[500] !text-white">{t('DesignMedia')}</div>
             </Button>
           </div>
 
