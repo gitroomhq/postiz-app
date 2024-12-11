@@ -10,6 +10,9 @@ import sharp from 'sharp';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
 import removeMd from 'remove-markdown';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
+import { Integration } from '@prisma/client';
+import { timer } from '@gitroom/helpers/utils/timer';
 
 export class XProvider extends SocialAbstract implements SocialProvider {
   identifier = 'x';
@@ -17,10 +20,112 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   isBetweenSteps = false;
   scopes = [];
 
+  @Plug({
+    identifier: 'x-autoRepostPost',
+    title: 'Auto Repost Posts',
+    description:
+      'When a post reached a certain number of likes, repost it to increase engagement (1 week old posts)',
+    runEveryMilliseconds: 21600000,
+    totalRuns: 3,
+    fields: [
+      {
+        name: 'likesAmount',
+        type: 'number',
+        placeholder: 'Amount of likes',
+        description: 'The amount of likes to trigger the repost',
+        validation: /^\d+$/,
+      },
+    ],
+  })
+  async autoRepostPost(
+    integration: Integration,
+    id: string,
+    fields: { likesAmount: string }
+  ) {
+    // @ts-ignore
+    // eslint-disable-next-line prefer-rest-params
+    const [accessTokenSplit, accessSecretSplit] = integration.token.split(':');
+    const client = new TwitterApi({
+      appKey: process.env.X_API_KEY!,
+      appSecret: process.env.X_API_SECRET!,
+      accessToken: accessTokenSplit,
+      accessSecret: accessSecretSplit,
+    });
+
+    if (
+      (await client.v2.tweetLikedBy(id)).meta.result_count >=
+      +fields.likesAmount
+    ) {
+      await timer(2000);
+      await client.v2.retweet(integration.internalId, id);
+      return true;
+    }
+
+    return false;
+  }
+
+  @Plug({
+    identifier: 'x-autoPlugPost',
+    title: 'Auto plug post',
+    description:
+      'When a post reached a certain number of likes, add another post to it so you followers get a notification about your promotion',
+    runEveryMilliseconds: 21600000,
+    totalRuns: 3,
+    fields: [
+      {
+        name: 'likesAmount',
+        type: 'number',
+        placeholder: 'Amount of likes',
+        description: 'The amount of likes to trigger the repost',
+        validation: /^\d+$/,
+      },
+      {
+        name: 'post',
+        type: 'richtext',
+        placeholder: 'Post to plug',
+        description: 'Message content to plug',
+        validation: /^[\s\S]{3,}$/g,
+      },
+    ],
+  })
+  async autoPlugPost(
+    integration: Integration,
+    id: string,
+    fields: { likesAmount: string; post: string }
+  ) {
+    // @ts-ignore
+    // eslint-disable-next-line prefer-rest-params
+    const [accessTokenSplit, accessSecretSplit] = integration.token.split(':');
+    const client = new TwitterApi({
+      appKey: process.env.X_API_KEY!,
+      appSecret: process.env.X_API_SECRET!,
+      accessToken: accessTokenSplit,
+      accessSecret: accessSecretSplit,
+    });
+
+    if (
+      (await client.v2.tweetLikedBy(id)).meta.result_count >=
+      +fields.likesAmount
+    ) {
+      await timer(2000);
+
+      await client.v2.tweet({
+        text: removeMd(fields.post.replace('\n', '𝔫𝔢𝔴𝔩𝔦𝔫𝔢')).replace(
+          '𝔫𝔢𝔴𝔩𝔦𝔫𝔢',
+          '\n'
+        ),
+        reply: { in_reply_to_tweet_id: id },
+      });
+      return true;
+    }
+
+    return false;
+  }
+
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const startingClient = new TwitterApi({
-      clientId: process.env.TWITTER_CLIENT_ID! || process.env.X_CLIENT_ID!,
-      clientSecret: process.env.TWITTER_CLIENT_SECRET! || process.env.X_CLIENT_SECRET!,
+      appKey: process.env.X_API_KEY!,
+      appSecret: process.env.X_API_SECRET!,
     });
     const {
       accessToken,

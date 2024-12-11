@@ -14,7 +14,6 @@ import {
   SocialAbstract,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { Integration } from '@prisma/client';
-
 export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   identifier = 'linkedin';
   name = 'LinkedIn';
@@ -156,7 +155,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   async company(token: string, data: { url: string }) {
     const { url } = data;
     const getCompanyVanity = url.match(
-      /^https?:\/\/?www\.?linkedin\.com\/company\/([^/]+)\/$/
+      /^https?:\/\/(?:www\.)?linkedin\.com\/company\/([^/]+)\/?$/
     );
     if (!getCompanyVanity || !getCompanyVanity?.length) {
       throw new Error('Invalid LinkedIn company URL');
@@ -282,6 +281,32 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     }
   }
 
+  protected fixText(text: string) {
+    const pattern = /@\[.+?]\(urn:li:organization.+?\)/g;
+    const matches = text.match(pattern) || [];
+    const splitAll = text.split(pattern);
+    const splitTextReformat = splitAll.map((p) => {
+      return p
+        .replace(/\*/g, '\\*')
+        .replace(/\(/g, '\\(')
+        .replace(/\)/g, '\\)')
+        .replace(/\{/g, '\\{')
+        .replace(/}/g, '\\}')
+        .replace(/@/g, '\\@');
+    });
+
+    const connectAll = splitTextReformat.reduce((all, current) => {
+      const match = matches.shift();
+      all.push(current);
+      if (match) {
+        all.push(match);
+      }
+      return all;
+    }, [] as string[]);
+
+    return connectAll.join('');
+  }
+
   async post(
     id: string,
     accessToken: string,
@@ -305,6 +330,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
                   : await sharp(await readOrFetch(m.url), {
                       animated: lookup(m.url) === 'image/gif',
                     })
+                      .toFormat('jpeg')
                       .resize({
                         width: 1000,
                       })
@@ -340,12 +366,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           type === 'personal'
             ? `urn:li:person:${id}`
             : `urn:li:organization:${id}`,
-        commentary: firstPost.message
-          .replace(/\*/g, '\\*')
-          .replace(/\(/g, '\\(')
-          .replace(/\)/g, '\\)')
-          .replace(/\{/g, '\\{')
-          .replace(/}/g, '\\}'),
+        commentary: this.fixText(firstPost.message),
         visibility: 'PUBLIC',
         distribution: {
           feedDistribution: 'MAIN_FEED',
@@ -410,12 +431,9 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
                   ? `urn:li:person:${id}`
                   : `urn:li:organization:${id}`,
               object: topPostId,
-              message: post.message
-                .replace(/\*/g, '\\*')
-                .replace(/\(/g, '\\(')
-                .replace(/\)/g, '\\)')
-                .replace(/\{/g, '\\{')
-                .replace(/}/g, '\\}'),
+              message: {
+                text: this.fixText(post.message),
+              },
             }),
           }
         )
