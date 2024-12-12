@@ -109,6 +109,7 @@
     "ioredis": "^5.3.2",
     "json-to-graphql-query": "^2.2.5",
     "jsonwebtoken": "^9.0.2",
+    "lemmy-js-client": "^0.20.0-reports-combined.3",
     "lodash": "^4.17.21",
     "md5": "^2.3.0",
     "mime": "^3.0.0",
