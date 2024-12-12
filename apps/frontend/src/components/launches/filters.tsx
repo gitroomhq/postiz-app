@@ -3,6 +3,7 @@ import { useCalendar } from '@gitroom/frontend/components/launches/calendar.cont
 import clsx from 'clsx';
 import dayjs from 'dayjs';
 import { useCallback } from 'react';
+import { isUSCitizen } from './helpers/isuscitizen.utils';
 
 export const Filters = () => {
   const week = useCalendar();
@@ -12,30 +13,30 @@ export const Filters = () => {
           .year(week.currentYear)
           .isoWeek(week.currentWeek)
           .day(week.currentDay)
-          .format('DD/MM/YYYY')
+          .format(isUSCitizen() ? 'MM/DD/YYYY' :'DD/MM/YYYY')
       : week.display === 'week'
       ? dayjs()
           .year(week.currentYear)
           .isoWeek(week.currentWeek)
           .startOf('isoWeek')
-          .format('DD/MM/YYYY') +
+          .format(isUSCitizen() ? 'MM/DD/YYYY' :'DD/MM/YYYY') +
         ' - ' +
         dayjs()
           .year(week.currentYear)
           .isoWeek(week.currentWeek)
           .endOf('isoWeek')
-          .format('DD/MM/YYYY')
+          .format(isUSCitizen() ? 'MM/DD/YYYY' :'DD/MM/YYYY')
       : dayjs()
           .year(week.currentYear)
           .month(week.currentMonth)
           .startOf('month')
-          .format('DD/MM/YYYY') +
+          .format(isUSCitizen() ? 'MM/DD/YYYY' :'DD/MM/YYYY') +
         ' - ' +
         dayjs()
           .year(week.currentYear)
           .month(week.currentMonth)
           .endOf('month')
-          .format('DD/MM/YYYY');
+          .format(isUSCitizen() ? 'MM/DD/YYYY' :'DD/MM/YYYY');
 
   const setDay = useCallback(() => {
     week.setFilters({

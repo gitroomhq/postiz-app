@@ -1,12 +1,5 @@
 import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Post,
-  Query,
-  UseFilters,
+  Body, Controller, Delete, Get, Param, Post, Put, Query, UseFilters
 } from '@nestjs/common';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { ConnectIntegrationDto } from '@gitroom/nestjs-libraries/dtos/integrations/connect.integration.dto';
@@ -29,6 +22,7 @@ import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/po
 import { IntegrationTimeDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.time.dto';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { AuthTokenDetails } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { PlugDto } from '@gitroom/nestjs-libraries/dtos/plugs/plug.dto';
 import {
   NotEnoughScopes,
   RefreshToken,
@@ -46,6 +40,37 @@ export class IntegrationsController {
   @Get('/')
   getIntegration() {
     return this._integrationManager.getAllIntegrations();
+  }
+
+  @Get('/customers')
+  getCustomers(@GetOrgFromRequest() org: Organization) {
+    return this._integrationService.customers(org.id);
+  }
+
+  @Put('/:id/group')
+  async updateIntegrationGroup(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: { group: string }
+  ) {
+    return this._integrationService.updateIntegrationGroup(
+      org.id,
+      id,
+      body.group
+    );
+  }
+
+  @Put('/:id/customer-name')
+  async updateOnCustomerName(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: { name: string }
+  ) {
+    return this._integrationService.updateOnCustomerName(
+      org.id,
+      id,
+      body.name
+    );
   }
 
   @Get('/list')
@@ -71,6 +96,7 @@ export class IntegrationsController {
           time: JSON.parse(p.postingTimes),
           changeProfilePicture: !!findIntegration?.changeProfilePicture,
           changeNickName: !!findIntegration?.changeNickname,
+          customer: p.customer,
         };
       }),
     };
@@ -368,6 +394,7 @@ export class IntegrationsController {
     }
 
     const {
+      error,
       accessToken,
       expiresIn,
       refreshToken,
@@ -386,6 +413,17 @@ export class IntegrationsController {
         details ? JSON.parse(details) : undefined
       );
 
+      if (typeof auth === 'string') {
+        return res({
+          error: auth,
+          accessToken: '',
+          id: '',
+          name: '',
+          picture: '',
+          username: '',
+        });
+      }
+
       if (refresh && integrationProvider.reConnect) {
         const newAuth = await integrationProvider.reConnect(
           auth.id,
@@ -398,6 +436,10 @@ export class IntegrationsController {
       return res(auth);
     });
 
+    if (error) {
+      throw new NotEnoughScopes(error);
+    }
+
     if (!id) {
       throw new NotEnoughScopes('Invalid API key');
     }
@@ -408,9 +450,17 @@ export class IntegrationsController {
       );
     }
 
+    let validName = name;
+    if (!validName) {
+      if (username) {
+        validName = username.split('.')[0] ?? username;
+      } else {
+        validName = `Channel_${String(id).slice(0, 8)}`;
+      }
+    }
     return this._integrationService.createOrUpdateIntegration(
       org.id,
-      name,
+      validName.trim(),
       picture,
       'social',
       String(id),
@@ -496,5 +546,36 @@ export class IntegrationsController {
     }
 
     return this._integrationService.deleteChannel(org.id, id);
+  }
+
+  @Get('/plug/list')
+  async getPlugList() {
+    return { plugs: this._integrationManager.getAllPlugs() };
+  }
+
+  @Get('/:id/plugs')
+  async getPlugsByIntegrationId(
+    @Param('id') id: string,
+    @GetOrgFromRequest() org: Organization
+  ) {
+    return this._integrationService.getPlugsByIntegrationId(org.id, id);
+  }
+
+  @Post('/:id/plugs')
+  async postPlugsByIntegrationId(
+    @Param('id') id: string,
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: PlugDto
+  ) {
+    return this._integrationService.createOrUpdatePlug(org.id, id, body);
+  }
+
+  @Put('/plugs/:id/activate')
+  async changePlugActivation(
+    @Param('id') id: string,
+    @GetOrgFromRequest() org: Organization,
+    @Body('status') status: boolean
+  ) {
+    return this._integrationService.changePlugActivation(org.id, id, status);
   }
 }

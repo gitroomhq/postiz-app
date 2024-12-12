@@ -223,7 +223,7 @@ export class StripeService {
           customer,
           status: 'all',
         })
-      ).data.filter((f) => f.status === 'active' || f.status === 'trialing'),
+      ).data,
     };
 
     const { cancel_at } = await stripe.subscriptions.update(
@@ -286,6 +286,11 @@ export class StripeService {
           uniqueId,
         },
       },
+      ...body.tolt ? {
+        metadata: {
+          tolt_referral: body.tolt,
+        }
+      } : {},
       allow_promotion_codes: true,
       line_items: [
         {

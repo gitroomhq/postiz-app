@@ -23,6 +23,7 @@ import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.titl
 import { Textarea } from '@gitroom/react/form/textarea';
 import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
 import { useUtmUrl } from '@gitroom/helpers/utils/utm.saver';
+import { useTolt } from '@gitroom/frontend/components/layout/tolt.script';
 
 export interface Tiers {
   month: Array<{
@@ -221,6 +222,7 @@ export const MainBillingComponent: FC<{
   const modal = useModals();
   const router = useRouter();
   const utm = useUtmUrl();
+  const tolt = useTolt();
 
   const [subscription, setSubscription] = useState<Subscription | undefined>(
     sub
@@ -348,6 +350,7 @@ export const MainBillingComponent: FC<{
             period: monthlyOrYearly === 'on' ? 'YEARLY' : 'MONTHLY',
             utm,
             billing,
+            tolt: tolt()
           }),
         })
       ).json();

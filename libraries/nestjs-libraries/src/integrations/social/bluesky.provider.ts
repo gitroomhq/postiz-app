@@ -5,12 +5,14 @@ import {
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { NotEnoughScopes, SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { BskyAgent, RichText } from '@atproto/api';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import sharp from 'sharp';
+import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
+import { timer } from '@gitroom/helpers/utils/timer';
 
 export class BlueskyProvider extends SocialAbstract implements SocialProvider {
   identifier = 'bluesky';
@@ -70,30 +72,34 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
   }) {
     const body = JSON.parse(Buffer.from(params.code, 'base64').toString());
 
-    const agent = new BskyAgent({
-      service: body.service,
-    });
+    try {
+      const agent = new BskyAgent({
+        service: body.service,
+      });
 
-    const {
-      data: { accessJwt, refreshJwt, handle, did },
-    } = await agent.login({
-      identifier: body.identifier,
-      password: body.password,
-    });
+      const {
+        data: { accessJwt, refreshJwt, handle, did },
+      } = await agent.login({
+        identifier: body.identifier,
+        password: body.password,
+      });
 
-    const profile = await agent.getProfile({
-      actor: did,
-    });
+      const profile = await agent.getProfile({
+        actor: did,
+      });
 
-    return {
-      refreshToken: refreshJwt,
-      expiresIn: dayjs().add(100, 'years').unix() - dayjs().unix(),
-      accessToken: accessJwt,
-      id: did,
-      name: profile.data.displayName!,
-      picture: profile.data.avatar!,
-      username: profile.data.handle!,
-    };
+      return {
+        refreshToken: refreshJwt,
+        expiresIn: dayjs().add(100, 'years').unix() - dayjs().unix(),
+        accessToken: accessJwt,
+        id: did,
+        name: profile.data.displayName!,
+        picture: profile.data.avatar!,
+        username: profile.data.handle!,
+      };
+    } catch (e) {
+      return 'Invalid credentials';
+    }
   }
 
   async post(
@@ -116,7 +122,7 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
 
     let loadCid = '';
     let loadUri = '';
-    const cidUrl = [] as { cid: string; url: string, rev: string }[];
+    const cidUrl = [] as { cid: string; url: string; rev: string }[];
     for (const post of postDetails) {
       const images = await Promise.all(
         post.media?.map(async (p) => {
@@ -134,9 +140,9 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
 
       const rt = new RichText({
         text: post.message,
-      })
+      });
 
-      await rt.detectFacets(agent)
+      await rt.detectFacets(agent);
 
       // @ts-ignore
       const { cid, uri, commit } = await agent.post({
@@ -179,9 +185,143 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
 
     return postDetails.map((p, index) => ({
       id: p.id,
-      postId: cidUrl[index].cid,
+      postId: cidUrl[index].url,
       status: 'completed',
-      releaseURL: `https://bsky.app/profile/${id}/post/${cidUrl[index].url.split('/').pop()}`,
+      releaseURL: `https://bsky.app/profile/${id}/post/${cidUrl[index].url
+        .split('/')
+        .pop()}`,
     }));
+  }
+
+  @Plug({
+    identifier: 'bluesky-autoRepostPost',
+    title: 'Auto Repost Posts',
+    description:
+      'When a post reached a certain number of likes, repost it to increase engagement (1 week old posts)',
+    runEveryMilliseconds: 21600000,
+    totalRuns: 3,
+    fields: [
+      {
+        name: 'likesAmount',
+        type: 'number',
+        placeholder: 'Amount of likes',
+        description: 'The amount of likes to trigger the repost',
+        validation: /^\d+$/,
+      },
+    ],
+  })
+  async autoRepostPost(
+    integration: Integration,
+    id: string,
+    fields: { likesAmount: string }
+  ) {
+    const body = JSON.parse(
+      AuthService.fixedDecryption(integration.customInstanceDetails!)
+    );
+    const agent = new BskyAgent({
+      service: body.service,
+    });
+
+    await agent.login({
+      identifier: body.identifier,
+      password: body.password,
+    });
+
+    const getThread = await agent.getPostThread({
+      uri: id,
+      depth: 0,
+    });
+
+    // @ts-ignore
+    if (getThread.data.thread.post?.likeCount >= +fields.likesAmount) {
+      await timer(2000);
+      await agent.repost(
+        // @ts-ignore
+        getThread.data.thread.post?.uri,
+        // @ts-ignore
+        getThread.data.thread.post?.cid
+      );
+      return true;
+    }
+
+    return true;
+  }
+
+  @Plug({
+    identifier: 'bluesky-autoPlugPost',
+    title: 'Auto plug post',
+    description:
+      'When a post reached a certain number of likes, add another post to it so you followers get a notification about your promotion',
+    runEveryMilliseconds: 21600000,
+    totalRuns: 3,
+    fields: [
+      {
+        name: 'likesAmount',
+        type: 'number',
+        placeholder: 'Amount of likes',
+        description: 'The amount of likes to trigger the repost',
+        validation: /^\d+$/,
+      },
+      {
+        name: 'post',
+        type: 'richtext',
+        placeholder: 'Post to plug',
+        description: 'Message content to plug',
+        validation: /^[\s\S]{3,}$/g,
+      },
+    ],
+  })
+  async autoPlugPost(
+    integration: Integration,
+    id: string,
+    fields: { likesAmount: string; post: string }
+  ) {
+    const body = JSON.parse(
+      AuthService.fixedDecryption(integration.customInstanceDetails!)
+    );
+    const agent = new BskyAgent({
+      service: body.service,
+    });
+
+    await agent.login({
+      identifier: body.identifier,
+      password: body.password,
+    });
+
+    const getThread = await agent.getPostThread({
+      uri: id,
+      depth: 0,
+    });
+
+    // @ts-ignore
+    if (getThread.data.thread.post?.likeCount >= +fields.likesAmount) {
+      await timer(2000);
+      const rt = new RichText({
+        text: fields.post,
+      });
+
+      await agent.post({
+        text: rt.text,
+        facets: rt.facets,
+        createdAt: new Date().toISOString(),
+        reply: {
+          root: {
+            // @ts-ignore
+            uri: getThread.data.thread.post?.uri,
+            // @ts-ignore
+            cid: getThread.data.thread.post?.cid,
+          },
+          parent: {
+            // @ts-ignore
+            uri: getThread.data.thread.post?.uri,
+            // @ts-ignore
+            cid: getThread.data.thread.post?.cid,
+          },
+        },
+      });
+      return true;
+    }
+
+    return true;
   }
 }

@@ -1,7 +1,7 @@
 name: "🙏🏻 Installation Problem"
 description: "Report an issue with installation"
 title: "Installation Problem"
-labels: ["installation"]
+labels: ["type: installation"]
 body:
   - type: markdown
     attributes:
@@ -13,4 +13,7 @@ body:
     attributes:
       label: For installation issues, please visit our https://discord.postiz.com for assistance.
       description: For installation issues, please visit our [Discord Support](https://discord.postiz.com) for assistance.
-      placeholder: For installation issues, please visit our https://discord.postiz.com for assistance.
+      placeholder: |
+        For installation issues, please visit our https://discord.postiz.com for assistance.
+        Please do not save this issue - do not submit installation issues on GitHub.
+

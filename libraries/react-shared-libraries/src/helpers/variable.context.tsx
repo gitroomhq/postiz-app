@@ -11,6 +11,7 @@ interface VariableContextInterface {
   backendUrl: string;
   discordUrl: string;
   uploadDirectory: string;
+  tolt: string;
 }
 const VariableContext = createContext({
   billingEnabled: false,
@@ -21,6 +22,7 @@ const VariableContext = createContext({
   backendUrl: '',
   discordUrl: '',
   uploadDirectory: '',
+  tolt: '',
 } as VariableContextInterface);
 
 export const VariableContextComponent: FC<

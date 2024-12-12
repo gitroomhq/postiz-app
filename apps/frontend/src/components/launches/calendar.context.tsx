@@ -62,6 +62,10 @@ export interface Integrations {
   changeProfilePicture: boolean;
   changeNickName: boolean;
   time: { time: number }[];
+  customer?: {
+    name?: string;
+    id?: string;
+  }
 }
 
 function getWeekNumber(date: Date) {
