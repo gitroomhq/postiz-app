@@ -394,6 +394,7 @@ export class IntegrationsController {
     }
 
     const {
+      error,
       accessToken,
       expiresIn,
       refreshToken,
@@ -412,6 +413,17 @@ export class IntegrationsController {
         details ? JSON.parse(details) : undefined
       );
 
+      if (typeof auth === 'string') {
+        return res({
+          error: auth,
+          accessToken: '',
+          id: '',
+          name: '',
+          picture: '',
+          username: '',
+        });
+      }
+
       if (refresh && integrationProvider.reConnect) {
         const newAuth = await integrationProvider.reConnect(
           auth.id,
@@ -423,6 +435,10 @@ export class IntegrationsController {
 
       return res(auth);
     });
+
+    if (error) {
+      throw new NotEnoughScopes(error);
+    }
 
     if (!id) {
       throw new NotEnoughScopes('Invalid API key');

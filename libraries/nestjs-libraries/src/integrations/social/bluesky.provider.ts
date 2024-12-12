@@ -5,7 +5,7 @@ import {
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { NotEnoughScopes, SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { BskyAgent, RichText } from '@atproto/api';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
@@ -72,30 +72,34 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
   }) {
     const body = JSON.parse(Buffer.from(params.code, 'base64').toString());
 
-    const agent = new BskyAgent({
-      service: body.service,
-    });
+    try {
+      const agent = new BskyAgent({
+        service: body.service,
+      });
 
-    const {
-      data: { accessJwt, refreshJwt, handle, did },
-    } = await agent.login({
-      identifier: body.identifier,
-      password: body.password,
-    });
+      const {
+        data: { accessJwt, refreshJwt, handle, did },
+      } = await agent.login({
+        identifier: body.identifier,
+        password: body.password,
+      });
 
-    const profile = await agent.getProfile({
-      actor: did,
-    });
+      const profile = await agent.getProfile({
+        actor: did,
+      });
 
-    return {
-      refreshToken: refreshJwt,
-      expiresIn: dayjs().add(100, 'years').unix() - dayjs().unix(),
-      accessToken: accessJwt,
-      id: did,
-      name: profile.data.displayName!,
-      picture: profile.data.avatar!,
-      username: profile.data.handle!,
-    };
+      return {
+        refreshToken: refreshJwt,
+        expiresIn: dayjs().add(100, 'years').unix() - dayjs().unix(),
+        accessToken: accessJwt,
+        id: did,
+        name: profile.data.displayName!,
+        picture: profile.data.avatar!,
+        username: profile.data.handle!,
+      };
+    } catch (e) {
+      return 'Invalid credentials';
+    }
   }
 
   async post(

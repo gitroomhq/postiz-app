@@ -13,7 +13,7 @@ export interface IAuthenticator {
       refresh?: string;
     },
     clientInformation?: ClientInformation
-  ): Promise<AuthTokenDetails>;
+  ): Promise<AuthTokenDetails|string>;
   refreshToken(refreshToken: string): Promise<AuthTokenDetails>;
   reConnect?(id: string, requiredId: string, accessToken: string): Promise<AuthTokenDetails>;
   generateAuthUrl(
@@ -51,6 +51,7 @@ export type GenerateAuthUrlResponse = {
 export type AuthTokenDetails = {
   id: string;
   name: string;
+  error?: string;
   accessToken: string; // The obtained access token
   refreshToken?: string; // The refresh token, if applicable
   expiresIn?: number; // The duration in seconds for which the access token is valid
