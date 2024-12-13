@@ -223,7 +223,7 @@ export class StripeService {
           customer,
           status: 'all',
         })
-      ).data.filter((f) => f.status === 'active' || f.status === 'trialing'),
+      ).data,
     };
 
     const { cancel_at } = await stripe.subscriptions.update(

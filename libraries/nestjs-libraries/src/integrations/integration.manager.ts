@@ -1,3 +1,5 @@
+import 'reflect-metadata';
+
 import { Injectable } from '@nestjs/common';
 import { XProvider } from '@gitroom/nestjs-libraries/integrations/social/x.provider';
 import { SocialProvider } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
@@ -64,6 +66,27 @@ export class IntegrationManager {
       })),
     };
   }
+
+  getAllPlugs() {
+    return socialIntegrationList
+      .map((p) => {
+        return {
+          name: p.name,
+          identifier: p.identifier,
+          plugs: (
+            Reflect.getMetadata('custom:plug', p.constructor.prototype) || []
+          ).map((p: any) => ({
+            ...p,
+            fields: p.fields.map((c: any) => ({
+              ...c,
+              validation: c?.validation?.toString(),
+            })),
+          })),
+        };
+      })
+      .filter((f) => f.plugs.length);
+  }
+
   getAllowedSocialsIntegrations() {
     return socialIntegrationList.map((p) => p.identifier);
   }
