@@ -21,7 +21,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
     ThrottlerModule.forRoot([
       {
         ttl: 3600000,
-        limit: 20,
+        limit: 30,
       },
     ]),
   ],
