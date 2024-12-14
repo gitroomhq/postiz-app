@@ -10,8 +10,6 @@ export const metadata: Metadata = {
   description: '',
 };
 
-const a = '';
-
 export default async function Index() {
   return (
     <>
