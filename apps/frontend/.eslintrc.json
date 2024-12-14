@@ -11,7 +11,11 @@
       "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
       "rules": {
         "@next/next/no-html-link-for-pages": ["error", "apps/frontend/pages"],
-        "no-extra-boolean-cast": "off"
+        "no-extra-boolean-cast": "off",
+        "no-unused-vars": [
+          "warn",
+          { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }
+        ]
       }
     },
     {
