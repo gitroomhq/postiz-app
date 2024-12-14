@@ -215,25 +215,19 @@ export const MultiMediaComponent: FC<{
 }> = (props) => {
   const { name, label, error, description, onChange, value } = props;
   const user = useUser();
-  useEffect(() => {
-    if (value) {
-      setCurrentMedia(value);
-    }
-  }, []);
 
   const [modal, setShowModal] = useState(false);
   const [mediaModal, setMediaModal] = useState(false);
 
-  const [currentMedia, setCurrentMedia] = useState(value);
   const mediaDirectory = useMediaDirectory();
 
   const changeMedia = useCallback(
     (m: { path: string; id: string }) => {
-      const newMedia = [...(currentMedia || []), m];
-      setCurrentMedia(newMedia);
+      const newMedia = [...(value || []), m];
+      // setCurrentMedia(newMedia);
       onChange({ target: { name, value: newMedia } });
     },
-    [currentMedia]
+    [value]
   );
 
   const showModal = useCallback(() => {
@@ -246,11 +240,11 @@ export const MultiMediaComponent: FC<{
 
   const clearMedia = useCallback(
     (topIndex: number) => () => {
-      const newMedia = currentMedia?.filter((f, index) => index !== topIndex);
-      setCurrentMedia(newMedia);
+      const newMedia = value?.filter((f, index) => index !== topIndex);
+      // setCurrentMedia(newMedia);
       onChange({ target: { name, value: newMedia } });
     },
-    [currentMedia]
+    [value]
   );
 
   const designMedia = useCallback(() => {
@@ -310,8 +304,8 @@ export const MultiMediaComponent: FC<{
             </Button>
           </div>
 
-          {!!currentMedia &&
-            currentMedia.map((media, index) => (
+          {!!value &&
+            value.map((media, index) => (
               <>
                 <div className="cursor-pointer w-[40px] h-[40px] border-2 border-tableBorder relative flex">
                   <div

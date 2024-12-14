@@ -50,8 +50,12 @@ import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import Image from 'next/image';
 import { weightedLength } from '@gitroom/helpers/utils/count.length';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
+import Uppy from '@uppy/core';
+import { getUppyUploadPlugin } from '@gitroom/react/helpers/uppy.upload';
 import { uniqBy } from 'lodash';
 import { Select } from '@gitroom/react/form/select';
+
 
 function countCharacters(text: string, type: string): number {
   if (type !== 'x') {
@@ -107,6 +111,7 @@ export const AddEditModal: FC<{
   >([{ content: '' }]);
 
   const fetch = useFetch();
+  const { backendUrl, storageProvider } = useVariables();
 
   const user = useUser();
 
@@ -406,6 +411,42 @@ export const AddEditModal: FC<{
     });
   }, [data, postFor, selectedIntegrations]);
 
+  const uploadMediaToServer = (_file: File, index: number) => {
+    const uppy2 = new Uppy({
+      autoProceed: true,
+      restrictions: {
+        maxNumberOfFiles: 1,
+        allowedFileTypes: ['image/*', 'video/mp4'],
+        maxFileSize: 1000000000,
+      },
+    });
+
+    const { plugin, options } = getUppyUploadPlugin(
+      storageProvider,
+      fetch,
+      backendUrl
+    );
+    uppy2.use(plugin, options);
+    uppy2.addFile(_file);
+
+    uppy2.on('complete', (result) => {
+      if (result) {
+        const mediaToAdd = result?.successful![0].response?.body;
+
+        if (mediaToAdd && mediaToAdd.path && mediaToAdd.id) {
+          const newMedia: {
+            path: string;
+            id: string;
+          }[] = [
+            ...(value[index].image || []),
+            { path: mediaToAdd.path, id: mediaToAdd.id },
+          ];
+          changeImage(index)({ target: { name: 'image', value: newMedia } });
+        }
+      }
+    });
+  };
+
   return (
     <>
       {user?.tier?.ai && (
@@ -529,6 +570,34 @@ export const AddEditModal: FC<{
                             preview="edit"
                             // @ts-ignore
                             onChange={changeValue(index)}
+                            onPaste={(event) => {
+                              const clipboardData =
+                                event.clipboardData ||
+                                (
+                                  window as Window &
+                                    typeof globalThis & {
+                                      clipboardData: DataTransfer;
+                                    }
+                                ).clipboardData;
+                              if (clipboardData && clipboardData.items) {
+                                for (const item of Array.from(
+                                  clipboardData.items
+                                )) {
+                                  const mediaTypes = ['image', 'video'];
+
+                                  if (
+                                    mediaTypes.some(
+                                      (type) => item.type.indexOf(type) !== -1
+                                    )
+                                  ) {
+                                    const media = item.getAsFile();
+                                    if(media){
+                                      uploadMediaToServer(media, index);
+                                    }
+                                  }
+                                }
+                              }
+                            }}
                           />
 
                           {showError &&

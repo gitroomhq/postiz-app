@@ -60,6 +60,7 @@ export function MultipartFileUploaderAfter({
   allowedFileTypes: string;
 }) {
   const {storageProvider, backendUrl} = useVariables();
+
   const fetch = useFetch();
   
   const uppy = useMemo(() => {
@@ -86,7 +87,7 @@ export function MultipartFileUploaderAfter({
       onUploadSuccess(result);
     });
 
-    uppy2.on('upload-success', (file, response) => {
+    uppy2.on('upload-success', (file, response) => {   
       // @ts-ignore
       uppy.setFileState(file.id, {
         // @ts-ignore
