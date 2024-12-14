@@ -331,9 +331,11 @@ export const LaunchesComponent = () => {
     }
     if (search.get('msg')) {
       toast.show(search.get('msg')!, 'warning');
+      window?.opener?.postMessage({msg: search.get('msg')!, success: false}, '*');
     }
     if (search.get('added')) {
       fireEvents('channel_added');
+      window?.opener?.postMessage({msg: 'Channel added', success: true}, '*');
     }
     if (window.opener) {
       window.close();
