@@ -29,7 +29,8 @@
     "docker-build": "./var/docker/docker-build.sh",
     "docker-create": "./var/docker/docker-create.sh",
     "postinstall": "npm run update-plugins && npm run prisma-generate",
-    "prepare": "husky"
+    "prepare": "husky",
+    "lint":"nx lint --project=frontend"
   },
   "private": true,
   "dependencies": {
@@ -206,5 +207,11 @@
   },
   "volta": {
     "node": "20.17.0"
+  },
+  "lint-staged": {
+    "(apps)/**/*.{js,ts,jsx,tsx}": [
+      "prettier --write",
+      "eslint --fix"
+    ]
   }
 }

@@ -77,9 +77,8 @@ const ConnectComponent: FC<{
 
     if (response.status === 404) {
       toast.show('Repository not found', 'warning');
-      return ;
+      return;
     }
-
 
     setConnected(`${select}/${repo}`);
   }, [url]);
@@ -138,7 +137,7 @@ export const GithubComponent: FC<{
 
   const connect = useCallback(async () => {
     const { url } = await (await fetch('/settings/github/url')).json();
-    window.open(url, "Github Connect", "width=700,height=700");
+    window.open(url, 'Github Connect', 'width=700,height=700');
   }, []);
 
   const setConnected = useCallback(
