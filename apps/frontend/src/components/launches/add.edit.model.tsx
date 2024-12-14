@@ -50,6 +50,7 @@ import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import Image from 'next/image';
 import { weightedLength } from '@gitroom/helpers/utils/count.length';
+import { useTranslations } from 'next-intl';
 import { uniqBy } from 'lodash';
 import { Select } from '@gitroom/react/form/select';
 
@@ -68,6 +69,11 @@ export const AddEditModal: FC<{
   mutate: () => void;
 }> = (props) => {
   const { date, integrations: ints, reopenModal, mutate } = props;
+  const [dateState, setDateState] = useState(date);
+  const t= useTranslations("PostModal")
+
+  // hook to open a new modal
+  const modal = useModals();
   const [customer, setCustomer] = useState('');
 
   // selected integrations to allow edit
@@ -92,10 +98,8 @@ export const AddEditModal: FC<{
     return uniqBy(ints, (i) => i?.customer?.id).length;
   }, [ints]);
 
-  const [dateState, setDateState] = useState(date);
 
   // hook to open a new modal
-  const modal = useModals();
 
   // value of each editor
   const [value, setValue] = useState<
@@ -240,8 +244,8 @@ export const AddEditModal: FC<{
   const askClose = useCallback(async () => {
     if (
       await deleteDialog(
-        'Are you sure you want to close this modal? (all data will be lost)',
-        'Yes, close it!'
+        t('AreYouSureYouWantToCloseThisModal'),
+        t('YesCloseit')
       )
     ) {
       modal.closeAll();
@@ -432,7 +436,7 @@ export const AddEditModal: FC<{
           )}
         >
           <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-customColor6 bg-sixth p-[16px] pt-0">
-            <TopTitle title={existingData?.group ? 'Edit Post' : 'Create Post'}>
+            <TopTitle title={existingData?.group ? t('EditPost') : t('CreatePost')}>
               <div className="flex items-center">
                 <PostToOrganization
                   selected={existingData?.posts?.[0]?.submittedForOrderId!}
@@ -507,7 +511,7 @@ export const AddEditModal: FC<{
             />
             {!existingData.integration && !showHide.hideTopEditor ? (
               <>
-                <div>You are in global editing mode</div>
+                <div>{t("YouAreInGlobalEditingMode")}</div>
                 {value.map((p, index) => (
                   <Fragment key={`edit_${index}`}>
                     <div>
@@ -534,7 +538,7 @@ export const AddEditModal: FC<{
                           {showError &&
                             (!p.content || p.content.length < 6) && (
                               <div className="my-[5px] text-customColor19 text-[12px] font-[500]">
-                                The post should be at least 6 characters long
+                                {t('ThePostShouldBeAtLeastCharactersLong')}
                               </div>
                             )}
                           <div className="flex">
@@ -601,7 +605,7 @@ export const AddEditModal: FC<{
                 className="flex flex-row flex-wrap w-full h-full gap-[10px] justify-end items-center"
               >
                 <Button className="rounded-[4px]" onClick={askClose}>
-                  Cancel
+                  {t("Cancel")}
                 </Button>
                 <Submitted
                   updateOrder={updateOrder}
@@ -614,7 +618,7 @@ export const AddEditModal: FC<{
                       className="rounded-[4px] border-2 border-red-400 text-red-400"
                       secondary={true}
                     >
-                      Delete Post
+                      {t('DeletePost')}
                     </Button>
                   )}
                   <Button
@@ -623,7 +627,7 @@ export const AddEditModal: FC<{
                     secondary={true}
                     disabled={selectedIntegrations.length === 0}
                   >
-                    Save as draft
+                    {t('SaveAsDraft')}
                   </Button>
 
                   <Button
@@ -637,12 +641,12 @@ export const AddEditModal: FC<{
                     <div className="flex justify-center items-center gap-[5px] h-full">
                       <div className="h-full flex items-center text-white">
                         {!canSendForPublication
-                          ? 'Not matching order'
+                          ? t('NotMatchingOrder')
                           : postFor
-                          ? 'Submit for order'
+                          ? t('SubmitForOrder')
                           : !existingData.integration
-                          ? 'Add to calendar'
-                          : 'Update'}
+                          ? t('AddToCalendar')
+                          : t('Update')}
                       </div>
                       {!postFor && (
                         <div className="h-full flex items-center">
@@ -662,7 +666,7 @@ export const AddEditModal: FC<{
                             onClick={postNow}
                             className="hidden group-hover:flex hover:flex flex-col justify-center absolute left-0 top-[100%] w-full h-[40px] bg-customColor22 border border-tableBorder"
                           >
-                            Post now
+                            {t('PostNow')}
                           </div>
                         </div>
                       )}
