@@ -14,7 +14,7 @@
         "no-extra-boolean-cast": "off",
         "@typescript-eslint/no-unused-vars": [
           "error",
-          { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }
+          { "caughtErrors": "all" }
         ]
       }
     },

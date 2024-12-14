@@ -9,7 +9,6 @@ import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 
 export const AnalyticsComponent: FC = () => {
   const fetch = useFetch();
-  const unusedVar = 'dsfwe';
 
   const load = useCallback(async (path: string) => {
     return await (await fetch(path)).json();
