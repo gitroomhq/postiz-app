@@ -1,5 +1,12 @@
 import {
-  Body, Controller, Get, HttpException, Post, UploadedFile, UseInterceptors
+  Body,
+  Controller,
+  Get,
+  HttpException,
+  Post,
+  Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
@@ -15,6 +22,7 @@ import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/po
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
+import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 
 @ApiTags('Public API')
 @Controller('/public/v1')
@@ -34,7 +42,7 @@ export class PublicIntegrationsController {
     @UploadedFile('file') file: Express.Multer.File
   ) {
     if (!file) {
-      throw new HttpException({msg: 'No file provided'}, 400);
+      throw new HttpException({ msg: 'No file provided' }, 400);
     }
 
     const getFile = await this.storage.uploadFile(file);
@@ -43,6 +51,19 @@ export class PublicIntegrationsController {
       getFile.originalname,
       getFile.path
     );
+  }
+
+  @Get('/posts')
+  async getPosts(
+    @GetOrgFromRequest() org: Organization,
+    @Query() query: GetPostsDto
+  ) {
+    const posts = await this._postsService.getPosts(org.id, query);
+
+    return {
+      posts,
+      // comments,
+    };
   }
 
   @Post('/posts')
