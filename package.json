@@ -206,5 +206,11 @@
   },
   "volta": {
     "node": "20.17.0"
+  },
+  "lint-staged": {
+    "**/*.{js,ts,jsx,tsx}": [
+      "prettier --write",
+      "eslint --fix"
+    ]
   }
 }
