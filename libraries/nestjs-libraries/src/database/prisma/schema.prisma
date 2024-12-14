@@ -11,24 +11,25 @@ datasource db {
 }
 
 model Organization {
-  id           String             @id @default(uuid())
-  name         String
-  description  String?
-  users        UserOrganization[]
-  media        Media[]
-  paymentId    String?
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
-  github       GitHub[]
-  subscription Subscription?
-  Integration  Integration[]
-  post         Post[] @relation("organization")
-  submittedPost Post[] @relation("submittedForOrg")
-  Comments     Comments[]
-  notifications Notifications[]
+  id                String             @id @default(uuid())
+  name              String
+  description       String?
+  apiKey            String?
+  users             UserOrganization[]
+  media             Media[]
+  paymentId         String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  github            GitHub[]
+  subscription      Subscription?
+  Integration       Integration[]
+  post              Post[] @relation("organization")
+  submittedPost     Post[] @relation("submittedForOrg")
+  Comments          Comments[]
+  notifications     Notifications[]
   buyerOrganization MessagesGroup[]
-  usedCodes    UsedCodes[]
-  credits      Credits[]
+  usedCodes         UsedCodes[]
+  credits           Credits[]
   plugs        Plugs[]
   customers    Customer[]
 }

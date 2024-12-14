@@ -10,7 +10,6 @@ import handleR2Upload from '@gitroom/nestjs-libraries/upload/r2.uploader';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CustomFileValidationPipe } from '@gitroom/nestjs-libraries/upload/custom.upload.validation';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
-import { basename } from 'path';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 
 @ApiTags('Media')

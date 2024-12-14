@@ -51,6 +51,7 @@
     "@nestjs/platform-express": "^10.0.2",
     "@nestjs/schedule": "^4.0.0",
     "@nestjs/swagger": "^7.3.0",
+    "@nestjs/throttler": "^6.3.0",
     "@nx/eslint": "19.7.2",
     "@nx/eslint-plugin": "19.7.2",
     "@nx/jest": "19.7.2",

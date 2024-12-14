@@ -12,6 +12,7 @@ export const UserContext = createContext<
   | (User & {
       orgId: string;
       tier: PricingInnerInterface;
+      publicApi: string;
       role: 'USER' | 'ADMIN' | 'SUPERADMIN';
       totalChannels: number;
       isLifetime?: boolean;
@@ -24,6 +25,7 @@ export const ContextWrapper: FC<{
     orgId: string;
     tier: 'FREE' | 'STANDARD' | 'PRO' | 'ULTIMATE' | 'TEAM';
     role: 'USER' | 'ADMIN' | 'SUPERADMIN';
+    publicApi: string;
     totalChannels: number;
   };
   children: ReactNode;
