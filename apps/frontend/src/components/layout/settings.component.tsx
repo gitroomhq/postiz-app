@@ -196,7 +196,7 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
             </div>
           )}
           {!!user?.tier?.team_members && isGeneral && <TeamsComponent />}
-          {!!user?.tier?.public_api && isGeneral && <PublicComponent />}
+          {!!user?.tier?.public_api && isGeneral && showLogout && <PublicComponent />}
           {showLogout && <LogoutComponent />}
         </div>
       </form>

@@ -25,6 +25,14 @@ export const PublicComponent = () => {
       <h2 className="text-[24px]">Public API</h2>
       <div className="text-customColor18 mt-[4px]">
         Use Postiz API to integrate with your tools.
+        <br />
+        <a
+          className="underline hover:text-white"
+          href="https://docs.postiz.com/public-api"
+          target="_blank"
+        >
+          Read how to use it over the documentation.
+        </a>
       </div>
       <div className="my-[16px] mt-[16px] bg-sixth border-fifth items-center border rounded-[4px] p-[24px] flex gap-[24px]">
         <div className="flex items-center">
