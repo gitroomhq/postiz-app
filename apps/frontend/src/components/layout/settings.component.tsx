@@ -18,6 +18,7 @@ import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
 import { useSearchParams } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { PublicComponent } from '@gitroom/frontend/components/public-api/public.component';
 
 export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
   const {isGeneral} = useVariables();
@@ -38,7 +39,7 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
   }, []);
 
   const url = useSearchParams();
-  const showLogout = !url.get('onboarding');
+  const showLogout = !url.get('onboarding') || user?.tier?.current === "FREE";
 
   const loadProfile = useCallback(async () => {
     const personal = await (await fetch('/user/personal')).json();
@@ -195,6 +196,7 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
             </div>
           )}
           {!!user?.tier?.team_members && isGeneral && <TeamsComponent />}
+          {!!user?.tier?.public_api && isGeneral && <PublicComponent />}
           {showLogout && <LogoutComponent />}
         </div>
       </form>

@@ -3,6 +3,7 @@ import dayjs from 'dayjs';
 import { Calendar, TimeInput } from '@mantine/dates';
 import { useClickOutside } from '@mantine/hooks';
 import { Button } from '@gitroom/react/form/button';
+import { isUSCitizen } from './isuscitizen.utils';
 
 export const DatePicker: FC<{
   date: dayjs.Dayjs;
@@ -39,7 +40,7 @@ export const DatePicker: FC<{
       onClick={changeShow}
       ref={ref}
     >
-      <div className="cursor-pointer">{date.format('DD/MM/YYYY HH:mm')}</div>
+      <div className="cursor-pointer">{date.format(isUSCitizen() ? 'MM/DD/YYYY hh:mm A' : 'DD/MM/YYYY HH:mm')}</div>
       <div className="cursor-pointer">
         <svg
           xmlns="http://www.w3.org/2000/svg"

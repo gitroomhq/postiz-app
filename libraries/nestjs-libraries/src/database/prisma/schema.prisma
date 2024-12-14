@@ -30,6 +30,8 @@ model Organization {
   buyerOrganization MessagesGroup[]
   usedCodes         UsedCodes[]
   credits           Credits[]
+  plugs        Plugs[]
+  customers    Customer[]
 }
 
 model User {
@@ -242,6 +244,19 @@ model Subscription {
   @@index([deletedAt])
 }
 
+model Customer {
+  id        String   @id @default(uuid())
+  name      String
+  orgId     String
+  organization Organization @relation(fields: [orgId], references: [id])
+  integrations Integration[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@unique([orgId, name, deletedAt])
+}
+
 model Integration {
   id                    String          @id @default(cuid())
   internalId            String
@@ -265,6 +280,10 @@ model Integration {
   refreshNeeded         Boolean         @default(false)
   postingTimes          String          @default("[{\"time\":120}, {\"time\":400}, {\"time\":700}]")
   customInstanceDetails String?
+  customerId            String?
+  customer              Customer?       @relation(fields: [customerId], references: [id])
+  plugs                 Plugs[]
+  exisingPlugData       ExisingPlugData[]
 
   @@index([updatedAt])
   @@index([deletedAt])
@@ -438,6 +457,30 @@ model Messages {
   @@index([groupId])
   @@index([createdAt])
   @@index([deletedAt])
+}
+
+model Plugs {
+  id                String   @id @default(uuid())
+  organizationId    String
+  organization      Organization @relation(fields: [organizationId], references: [id])
+  plugFunction      String
+  data              String
+  integrationId     String
+  integration       Integration @relation(fields: [integrationId], references: [id])
+  activated         Boolean @default(true)
+
+  @@unique([plugFunction, integrationId])
+  @@index([organizationId])
+}
+
+model ExisingPlugData {
+  id                String   @id @default(uuid())
+  integrationId     String
+  integration       Integration @relation(fields: [integrationId], references: [id])
+  methodName        String
+  value             String
+
+  @@unique([integrationId, methodName, value])
 }
 
 enum OrderStatus {

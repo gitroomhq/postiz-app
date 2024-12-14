@@ -17,7 +17,10 @@ export class OrganizationService {
   async createOrgAndUser(
     body: Omit<CreateOrgUserDto, 'providerToken'> & { providerId?: string }
   ) {
-    return this._organizationRepository.createOrgAndUser(body, this._notificationsService.hasEmailProvider());
+    return this._organizationRepository.createOrgAndUser(
+      body,
+      this._notificationsService.hasEmailProvider()
+    );
   }
 
   addUserToOrg(
@@ -31,6 +34,10 @@ export class OrganizationService {
 
   getOrgById(id: string) {
     return this._organizationRepository.getOrgById(id);
+  }
+
+  getOrgByApiKey(api: string) {
+    return this._organizationRepository.getOrgByApiKey(api);
   }
 
   getUserOrg(id: string) {
@@ -50,7 +57,7 @@ export class OrganizationService {
   }
 
   async inviteTeamMember(orgId: string, body: AddTeamMemberDto) {
-    const timeLimit = dayjs().add(15, 'minutes').format('YYYY-MM-DD HH:mm:ss');
+    const timeLimit = dayjs().add(1, 'hour').format('YYYY-MM-DD HH:mm:ss');
     const id = makeId(5);
     const url =
       process.env.FRONTEND_URL +
@@ -59,7 +66,7 @@ export class OrganizationService {
       await this._notificationsService.sendEmail(
         body.email,
         'You have been invited to join an organization',
-        `You have been invited to join an organization. Click <a href="${url}">here</a> to join.<br />The link will expire in 15 minutes.`
+        `You have been invited to join an organization. Click <a href="${url}">here</a> to join.<br />The link will expire in 1 hour.`
       );
     }
     return { url };
@@ -86,6 +93,9 @@ export class OrganizationService {
   }
 
   disableOrEnableNonSuperAdminUsers(orgId: string, disable: boolean) {
-    return this._organizationRepository.disableOrEnableNonSuperAdminUsers(orgId, disable);
+    return this._organizationRepository.disableOrEnableNonSuperAdminUsers(
+      orgId,
+      disable
+    );
   }
 }

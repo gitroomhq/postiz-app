@@ -40,8 +40,8 @@ export class BullMqClient extends ClientProxy {
     const job = await queue.add(packet.pattern, packet.data, {
       jobId: packet.data.id ?? v4(),
       ...packet.data.options,
-      removeOnComplete: true,
-      removeOnFail: true,
+      removeOnComplete: !packet.data.options.attempts,
+      removeOnFail: !packet.data.options.attempts,
     });
 
     try {

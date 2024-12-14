@@ -6,4 +6,4 @@ export default withProvider(null, undefined, undefined, async (posts) => {
   }
 
   return true;
-});
+}, 300);

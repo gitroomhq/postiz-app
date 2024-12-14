@@ -299,6 +299,13 @@ export class PostsService {
         true
       );
 
+      await this.checkPlugs(
+        integration.organizationId,
+        getIntegration.identifier,
+        integration.id,
+        publishedPosts[0].postId
+      );
+
       return {
         postId: publishedPosts[0].postId,
         releaseURL: publishedPosts[0].releaseURL,
@@ -309,6 +316,42 @@ export class PostsService {
       }
 
       throw err;
+    }
+  }
+
+  private async checkPlugs(
+    orgId: string,
+    providerName: string,
+    integrationId: string,
+    postId: string
+  ) {
+    const loadAllPlugs = this._integrationManager.getAllPlugs();
+    const getPlugs = await this._integrationService.getPlugs(
+      orgId,
+      integrationId
+    );
+
+    const currentPlug = loadAllPlugs.find((p) => p.identifier === providerName);
+
+    for (const plug of getPlugs) {
+      const runPlug = currentPlug?.plugs?.find((p: any) => p.methodName === plug.plugFunction)!;
+      if (!runPlug) {
+        continue;
+      }
+
+      this._workerServiceProducer.emit('plugs', {
+        id: 'plug_' + postId + '_' + runPlug.identifier,
+        options: {
+          delay: runPlug.runEveryMilliseconds,
+        },
+        payload: {
+          plugId: plug.id,
+          postId,
+          delay: runPlug.runEveryMilliseconds,
+          totalRuns: runPlug.totalRuns,
+          currentRun: 1,
+        },
+      });
     }
   }
 

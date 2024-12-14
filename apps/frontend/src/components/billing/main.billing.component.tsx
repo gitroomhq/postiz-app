@@ -3,8 +3,6 @@
 import { Slider } from '@gitroom/react/form/slider';
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@gitroom/react/form/button';
-import { sortBy } from 'lodash';
-import { Track } from '@gitroom/react/form/track';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Subscription } from '@prisma/client';
 import { useDebouncedCallback } from 'use-debounce';
@@ -21,9 +19,11 @@ import interClass from '@gitroom/react/helpers/inter.font';
 import { useRouter } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useModals } from '@mantine/modals';
-import { AddProviderComponent } from '@gitroom/frontend/components/launches/add.provider.component';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { Textarea } from '@gitroom/react/form/textarea';
+import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
+import { useUtmUrl } from '@gitroom/helpers/utils/utm.saver';
+import { useTolt } from '@gitroom/frontend/components/layout/tolt.script';
 
 export interface Tiers {
   month: Array<{
@@ -156,9 +156,11 @@ export const Features: FC<{
 const Info: FC<{ proceed: (feedback: string) => void }> = (props) => {
   const [feedback, setFeedback] = useState('');
   const modal = useModals();
+  const events = useFireEvents();
 
   const cancel = useCallback(() => {
     props.proceed(feedback);
+    events('cancel_subscription');
     modal.closeAll();
   }, [modal, feedback]);
 
@@ -219,6 +221,8 @@ export const MainBillingComponent: FC<{
   const user = useUser();
   const modal = useModals();
   const router = useRouter();
+  const utm = useUtmUrl();
+  const tolt = useTolt();
 
   const [subscription, setSubscription] = useState<Subscription | undefined>(
     sub
@@ -344,7 +348,9 @@ export const MainBillingComponent: FC<{
           method: 'POST',
           body: JSON.stringify({
             period: monthlyOrYearly === 'on' ? 'YEARLY' : 'MONTHLY',
+            utm,
             billing,
+            tolt: tolt()
           }),
         })
       ).json();
@@ -386,7 +392,7 @@ export const MainBillingComponent: FC<{
 
       setLoading(false);
     },
-    [monthlyOrYearly, subscription, user]
+    [monthlyOrYearly, subscription, user, utm]
   );
 
   if (user?.isLifetime) {

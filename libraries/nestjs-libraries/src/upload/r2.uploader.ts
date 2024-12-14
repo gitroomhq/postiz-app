@@ -3,6 +3,9 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Request, Response } from 'express';
+import crypto from 'crypto';
+import path from 'path';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 
 const { CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_ACCESS_KEY, CLOUDFLARE_SECRET_ACCESS_KEY, CLOUDFLARE_BUCKETNAME, CLOUDFLARE_BUCKET_URL } =
   process.env;
@@ -16,12 +19,16 @@ const R2 = new S3Client({
   },
 });
 
+// Function to generate a random string
+function generateRandomString() {
+  return makeId(20);
+}
+
 export default async function handleR2Upload(
   endpoint: string,
   req: Request,
   res: Response
 ) {
-
   switch (endpoint) {
     case 'create-multipart-upload':
       return createMultipartUpload(req, res);
@@ -39,10 +46,13 @@ export default async function handleR2Upload(
   return res.status(404).end();
 }
 
-export async function simpleUpload(data: Buffer, key: string, contentType: string) {
+export async function simpleUpload(data: Buffer, originalFilename: string, contentType: string) {
+  const fileExtension = path.extname(originalFilename); // Extract extension
+  const randomFilename = generateRandomString() + fileExtension; // Append extension
+
   const params = {
     Bucket: CLOUDFLARE_BUCKETNAME,
-    Key: key,
+    Key: randomFilename,
     Body: data,
     ContentType: contentType,
   };
@@ -50,7 +60,7 @@ export async function simpleUpload(data: Buffer, key: string, contentType: strin
   const command = new PutObjectCommand({ ...params });
   await R2.send(command);
 
-  return CLOUDFLARE_BUCKET_URL + '/' + key;
+  return CLOUDFLARE_BUCKET_URL + '/' + randomFilename;
 }
 
 export async function createMultipartUpload(
@@ -58,11 +68,13 @@ export async function createMultipartUpload(
   res: Response
 ) {
   const { file, fileHash, contentType } = req.body;
-  const filename = file.name;
+  const fileExtension = path.extname(file.name); // Extract extension
+  const randomFilename = generateRandomString() + fileExtension; // Append extension
+
   try {
     const params = {
       Bucket: CLOUDFLARE_BUCKETNAME,
-      Key: `resources/${fileHash}/${filename}`,
+      Key: `${randomFilename}`,
       ContentType: contentType,
       Metadata: {
         'x-amz-meta-file-hash': fileHash,

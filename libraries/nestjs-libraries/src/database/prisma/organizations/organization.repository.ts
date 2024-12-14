@@ -13,6 +13,23 @@ export class OrganizationRepository {
     private _user: PrismaRepository<'user'>
   ) {}
 
+  getOrgByApiKey(api: string) {
+    return this._organization.model.organization.findFirst({
+      where: {
+        apiKey: api,
+      },
+      include: {
+        subscription: {
+          select: {
+            subscriptionTier: true,
+            totalChannels: true,
+            isLifetime: true,
+          },
+        },
+      },
+    });
+  }
+
   getUserOrg(id: string) {
     return this._userOrg.model.userOrganization.findFirst({
       where: {
@@ -161,9 +178,9 @@ export class OrganizationRepository {
       });
 
     if (
-      !process.env.STRIPE_PUBLISHABLE_KEY ||
-      checkForSubscription?.subscription?.subscriptionTier !==
-        SubscriptionTier.PRO
+      process.env.STRIPE_PUBLISHABLE_KEY &&
+      checkForSubscription?.subscription?.subscriptionTier ===
+        SubscriptionTier.STANDARD
     ) {
       return false;
     }

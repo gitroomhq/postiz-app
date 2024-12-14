@@ -76,7 +76,7 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
       access_token: accessToken,
       refresh_token: refreshToken,
       expires_in: expiresIn,
-      scope
+      scope,
     } = await (
       await this.fetch('https://www.reddit.com/api/v1/access_token', {
         method: 'POST',
@@ -300,18 +300,28 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
       )
     ).json();
 
-    const newData = await (
-      await this.fetch(
-        `https://oauth.reddit.com/${data.subreddit}/api/link_flair_v2`,
-        {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-        }
-      )
-    ).json();
+    // eslint-disable-next-line no-async-promise-executor
+    const newData = await new Promise<{id: string, name: string}[]>(async (res) => {
+      try {
+        const flair = await (
+          await this.fetch(
+            `https://oauth.reddit.com/${data.subreddit}/api/link_flair_v2`,
+            {
+              method: 'GET',
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/x-www-form-urlencoded',
+              },
+            }
+          )
+        ).json();
+
+        res(flair);
+      }
+      catch (err) {
+        return res([]);
+      }
+    });
 
     return {
       subreddit: data.subreddit,

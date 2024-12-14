@@ -47,7 +47,7 @@ export class UsersController {
     if (!organization) {
       throw new HttpForbiddenException();
     }
-
+    // @ts-ignore
     return {
       ...user,
       orgId: organization.id,
@@ -61,6 +61,8 @@ export class UsersController {
       isLifetime: !!organization?.subscription?.isLifetime,
       admin: !!user.isSuperAdmin,
       impersonate: !!req.cookies.impersonate,
+      // @ts-ignore
+      publicApi: (organization?.users[0]?.role === 'SUPERADMIN' || organization?.users[0]?.role === 'ADMIN') ? organization?.apiKey : '',
     };
   }
 
