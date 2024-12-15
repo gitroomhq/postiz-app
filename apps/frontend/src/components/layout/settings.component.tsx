@@ -21,7 +21,7 @@ import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { PublicComponent } from '@gitroom/frontend/components/public-api/public.component';
 
 export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
-  const {isGeneral} = useVariables();
+  const { isGeneral, enabledOpenaiSelf } = useVariables();
   const { getRef } = props;
   const fetch = useFetch();
   const toast = useToaster();
@@ -39,11 +39,12 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
   }, []);
 
   const url = useSearchParams();
-  const showLogout = !url.get('onboarding') || user?.tier?.current === "FREE";
+  const showLogout = !url.get('onboarding') || user?.tier?.current === 'FREE';
 
   const loadProfile = useCallback(async () => {
     const personal = await (await fetch('/user/personal')).json();
     form.setValue('fullname', personal.name || '');
+    form.setValue('openAIAPIKey', personal.openAIAPIKey || '');
     form.setValue('bio', personal.bio || '');
     form.setValue('picture', personal.picture);
   }, []);
@@ -76,6 +77,8 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
   useEffect(() => {
     loadProfile();
   }, []);
+
+  console.log('zaaa', enabledOpenaiSelf);
 
   return (
     <FormProvider {...form}>
@@ -156,7 +159,10 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
                           />
                         </svg>
                       </div>
-                      <div className="text-[12px] text-white" onClick={openMedia}>
+                      <div
+                        className="text-[12px] text-white"
+                        onClick={openMedia}
+                      >
                         Upload image
                       </div>
                     </button>
@@ -189,10 +195,17 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
             <div>
               <Textarea label="Bio" name="bio" className="resize-none" />
             </div>
+            {enabledOpenaiSelf && (
+              <div>
+                <Input label="OpenAI API Key" name="openAIAPIKey" />
+              </div>
+            )}
           </div>
           {!getRef && (
             <div className="justify-end flex">
-              <Button type="submit" className='rounded-md'>Save</Button>
+              <Button type="submit" className="rounded-md">
+                Save
+              </Button>
             </div>
           )}
           {!!user?.tier?.team_members && isGeneral && <TeamsComponent />}

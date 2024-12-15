@@ -128,6 +128,7 @@ export class UsersRepository {
         id: true,
         name: true,
         bio: true,
+        openAIAPIKey: true,
         picture: {
           select: {
             id: true,
@@ -148,6 +149,7 @@ export class UsersRepository {
       data: {
         name: body.fullname,
         bio: body.bio,
+        openAIAPIKey: body.openAIAPIKey,
         picture: body.picture
           ? {
               connect: {

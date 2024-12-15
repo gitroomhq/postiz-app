@@ -87,7 +87,7 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
                 >
                   <div className="min-w-[55px]">
                     <Image
-                      src={isGeneral ? '/postiz.svg' : '/logo.svg'}
+                      src={!isGeneral ? '/postiz.svg' : '/logo.svg'}
                       width={55}
                       height={53}
                       alt="Logo"
@@ -132,7 +132,10 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
                 ) : (
                   <div />
                 )}
-                <div id = "systray-buttons" className="flex items-center justify-self-end gap-[8px] order-2 md:order-3">
+                <div
+                  id="systray-buttons"
+                  className="flex items-center justify-self-end gap-[8px] order-2 md:order-3"
+                >
                   <ModeComponent />
                   <SettingsComponent />
                   <NotificationComponent />
