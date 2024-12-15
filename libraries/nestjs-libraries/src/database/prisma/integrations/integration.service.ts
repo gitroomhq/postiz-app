@@ -54,9 +54,11 @@ export class IntegrationService {
     timezone?: number,
     customInstanceDetails?: string
   ) {
+    console.log('XXXX UPLOADING');
     const uploadedPicture = picture
       ? await this.storage.uploadSimple(picture)
       : undefined;
+    console.log('XXXX UPLOAD DONE');
     return this._integrationRepository.createOrUpdateIntegration(
       org,
       name,
@@ -408,7 +410,7 @@ export class IntegrationService {
   }) {
     const getPlugById = await this._integrationRepository.getPlug(data.plugId);
     if (!getPlugById) {
-      return ;
+      return;
     }
 
     const integration = this._integrationManager.getSocialIntegration(
@@ -434,11 +436,11 @@ export class IntegrationService {
     );
 
     if (process) {
-      return ;
+      return;
     }
 
     if (data.totalRuns === data.currentRun) {
-      return ;
+      return;
     }
 
     this._workerServiceProducer.emit('plugs', {

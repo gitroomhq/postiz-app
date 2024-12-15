@@ -25,11 +25,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   return (
     <html className={interClass}>
       <head>
-        <link
-          rel="icon"
-          href="/favicon.ico"
-          sizes="any"
-        />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
       <body className={clsx(chakra.className, 'text-primary dark')}>
         <VariableContextComponent
@@ -42,6 +38,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           discordUrl={process.env.NEXT_PUBLIC_DISCORD_SUPPORT!}
           frontEndUrl={process.env.FRONTEND_URL!}
           isGeneral={!!process.env.IS_GENERAL}
+          enabledOpenaiSelf={!!process.env.ENABLE_OPENAI_SELF}
           uploadDirectory={process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY!}
           tolt={process.env.NEXT_PUBLIC_TOLT!}
         >

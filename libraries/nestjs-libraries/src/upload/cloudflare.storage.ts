@@ -3,7 +3,7 @@ import 'multer';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import mime from 'mime-types';
 // @ts-ignore
-import {getExtension} from 'mime';
+import { getExtension } from 'mime';
 import { IUploadProvider } from './upload.interface';
 import axios from 'axios';
 
@@ -30,7 +30,9 @@ class CloudflareStorage implements IUploadProvider {
 
   async uploadSimple(path: string) {
     const loadImage = await axios.get(path, { responseType: 'arraybuffer' });
-    const contentType = loadImage?.headers?.['content-type'] || loadImage?.headers?.['Content-Type'];
+    const contentType =
+      loadImage?.headers?.['content-type'] ||
+      loadImage?.headers?.['Content-Type'];
     const extension = getExtension(contentType)!;
     const id = makeId(10);
 
@@ -42,7 +44,11 @@ class CloudflareStorage implements IUploadProvider {
     };
 
     const command = new PutObjectCommand({ ...params });
-    await this._client.send(command);
+    try {
+      await this._client.send(command);
+    } catch (e) {
+      console.log(e);
+    }
 
     return `${this._uploadUrl}/${id}.${extension}`;
   }

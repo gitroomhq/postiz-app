@@ -42,7 +42,7 @@ export class UsersController {
   async getSelf(
     @GetUserFromRequest() user: User,
     @GetOrgFromRequest() organization: Organization,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     if (!organization) {
       throw new HttpForbiddenException();
@@ -52,9 +52,14 @@ export class UsersController {
       ...user,
       orgId: organization.id,
       // @ts-ignore
-      totalChannels: organization?.subscription?.totalChannels || pricing.FREE.channel,
+      totalChannels:
+        // @ts-ignore
+        organization?.subscription?.totalChannels || pricing.FREE.channel,
       // @ts-ignore
-      tier: organization?.subscription?.subscriptionTier || (!process.env.STRIPE_PUBLISHABLE_KEY ? 'ULTIMATE' : 'FREE'),
+      tier:
+        // @ts-ignore
+        organization?.subscription?.subscriptionTier ||
+        (!process.env.STRIPE_PUBLISHABLE_KEY ? 'ULTIMATE' : 'FREE'),
       // @ts-ignore
       role: organization?.users[0]?.role,
       // @ts-ignore

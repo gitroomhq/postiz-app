@@ -42,6 +42,7 @@ model User {
   lastName      String?
   isSuperAdmin  Boolean            @default(false)
   bio           String?
+  openAIAPIKey  String?
   audience      Int                @default(0)
   pictureId     String?
   picture       Media?             @relation(fields: [pictureId], references: [id])
