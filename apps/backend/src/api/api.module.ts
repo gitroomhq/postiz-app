@@ -26,6 +26,7 @@ import { CopilotController } from '@gitroom/backend/api/routes/copilot.controlle
 import { AgenciesController } from '@gitroom/backend/api/routes/agencies.controller';
 import { PublicController } from '@gitroom/backend/api/routes/public.controller';
 import { RootController } from '@gitroom/backend/api/routes/root.controller';
+import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
 
 const authenticatedController = [
   UsersController,
@@ -63,6 +64,7 @@ const authenticatedController = [
     PermissionsService,
     CodesService,
     IntegrationManager,
+    TrackService,
   ],
   get exports() {
     return [...this.imports, ...this.providers];

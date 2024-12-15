@@ -15,11 +15,15 @@ export class OrganizationService {
     private _notificationsService: NotificationService
   ) {}
   async createOrgAndUser(
-    body: Omit<CreateOrgUserDto, 'providerToken'> & { providerId?: string }
+    body: Omit<CreateOrgUserDto, 'providerToken'> & { providerId?: string },
+    ip: string,
+    userAgent: string
   ) {
     return this._organizationRepository.createOrgAndUser(
       body,
-      this._notificationsService.hasEmailProvider()
+      this._notificationsService.hasEmailProvider(),
+      ip,
+      userAgent
     );
   }
 

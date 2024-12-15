@@ -207,7 +207,9 @@ export class OrganizationRepository {
 
   async createOrgAndUser(
     body: Omit<CreateOrgUserDto, 'providerToken'> & { providerId?: string },
-    hasEmail: boolean
+    hasEmail: boolean,
+    ip: string,
+    userAgent: string
   ) {
     return this._organization.model.organization.create({
       data: {
@@ -226,6 +228,8 @@ export class OrganizationRepository {
                 providerName: body.provider,
                 providerId: body.providerId || '',
                 timezone: 0,
+                ip,
+                agent: userAgent,
               },
             },
           },
