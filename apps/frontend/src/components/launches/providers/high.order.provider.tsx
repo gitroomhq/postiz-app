@@ -37,7 +37,6 @@ import { GeneralPreviewComponent } from '@gitroom/frontend/components/launches/g
 import { capitalize } from 'lodash';
 
 import { useToaster } from '@gitroom/react/toaster/toaster';
-import { useModals } from '@mantine/modals';
 
 // Simple component to change back to settings on after changing tab
 export const SetTab: FC<{ changeTab: () => void }> = (props) => {
@@ -228,11 +227,12 @@ export const withProvider = function <T extends object>(
 
     // Share Post
     const handleShare = async () => {
-      if (!existingData.posts[0].id) {
+      if (!existingData.posts.length) {
         return toast.show('No posts available to share', 'warning');
       }
 
       const postId = existingData.posts[0].id;
+
       const previewPath = new URL(
         `/preview/${postId}`,
         window.location.origin
