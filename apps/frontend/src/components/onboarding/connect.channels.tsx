@@ -1,12 +1,6 @@
 'use client';
 
-import React, {
-  FC,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { orderBy } from 'lodash';
@@ -14,9 +8,17 @@ import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import clsx from 'clsx';
 import Image from 'next/image';
 import { Menu } from '@gitroom/frontend/components/launches/menu/menu';
-import { ApiModal } from '@gitroom/frontend/components/launches/add.provider.component';
+import {
+  AddProviderComponent,
+  ApiModal,
+  CustomVariables,
+  UrlModal,
+} from '@gitroom/frontend/components/launches/add.provider.component';
 import { useRouter } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { string } from 'yup';
+import { useToaster } from '@gitroom/react/toaster/toaster';
+import { useModals } from '@mantine/modals';
 
 export const ConnectChannels: FC = () => {
   const fetch = useFetch();
@@ -24,6 +26,9 @@ export const ConnectChannels: FC = () => {
   const router = useRouter();
   const [identifier, setIdentifier] = useState<any>(undefined);
   const [popup, setPopups] = useState<undefined | string[]>(undefined);
+  const toaster = useToaster();
+  const modal = useModals();
+  const [showCustom, setShowCustom] = useState<any>(undefined);
 
   const getIntegrations = useCallback(async () => {
     return (await fetch('/integrations')).json();
@@ -31,14 +36,98 @@ export const ConnectChannels: FC = () => {
 
   const [reload, setReload] = useState(false);
 
-  const getSocialLink = useCallback(
-    (identifier: string) => async () => {
-      const { url } = await (
-        await fetch('/integrations/social/' + identifier)
-      ).json();
+  // const getSocialLink = useCallback(
+  //   (identifier: string) => async () => {
+  //     const { url } = await (
+  //       await fetch('/integrations/social/' + identifier)
+  //     ).json();
+  //
+  //     window.open(url, 'Social Connect', 'width=700,height=700');
+  //   },
+  //   []
+  // );
 
-      window.open(url, 'Social Connect', 'width=700,height=700');
+  const addMessage = useCallback(
+    (event: MessageEvent<{ msg: string; success: boolean }>) => {
+      if (!event.data.msg) {
+        return;
+      }
+
+      toaster.show(event.data.msg, event.data.success ? 'success' : 'warning');
+      setShowCustom(undefined);
     },
+    []
+  );
+
+  useEffect(() => {
+    window.addEventListener('message', addMessage);
+    return () => {
+      window.removeEventListener('message', addMessage);
+    };
+  });
+
+  const getSocialLink = useCallback(
+    (
+        identifier: string,
+        isExternal: boolean,
+        customFields?: Array<{
+          key: string;
+          label: string;
+          validation: string;
+          defaultValue?: string;
+          type: 'text' | 'password';
+        }>
+      ) =>
+      async () => {
+        const gotoIntegration = async (externalUrl?: string) => {
+          const { url, err } = await (
+            await fetch(
+              `/integrations/social/${identifier}${
+                externalUrl ? `?externalUrl=${externalUrl}` : ``
+              }`
+            )
+          ).json();
+
+          if (err) {
+            toaster.show('Could not connect to the platform', 'warning');
+            return;
+          }
+
+          setShowCustom(undefined);
+          window.open(url, 'Social Connect', 'width=700,height=700');
+        };
+
+        // if (isExternal) {
+        //   modal.closeAll();
+        //
+        //   modal.openModal({
+        //     title: '',
+        //     withCloseButton: false,
+        //     classNames: {
+        //       modal: 'bg-transparent text-textColor',
+        //     },
+        //     children: <UrlModal gotoUrl={gotoIntegration} />,
+        //   });
+        //
+        //   return;
+        // }
+
+        if (customFields) {
+          setShowCustom(
+            <CustomVariables
+              identifier={identifier}
+              gotoUrl={(url: string) =>
+                window.open(url, 'Social Connect', 'width=700,height=700')
+              }
+              variables={customFields}
+              close={() => setShowCustom(undefined)}
+            />
+          );
+          return;
+        }
+
+        await gotoIntegration();
+      },
     []
   );
 
@@ -114,6 +203,13 @@ export const ConnectChannels: FC = () => {
 
   return (
     <>
+      {!!showCustom && (
+        <div className="absolute w-full h-full top-0 left-0 bg-black/40 z-[400]">
+          <div className="absolute w-full h-full bg-primary/80 left-0 top-0 z-[200] p-[50px] flex justify-center">
+            <div className="w-[400px]">{showCustom}</div>
+          </div>
+        </div>
+      )}
       {!!identifier && (
         <div className="absolute w-full h-full bg-primary/80 left-0 top-0 z-[200] p-[30px] flex items-center justify-center">
           <div className="w-[400px]">
@@ -141,7 +237,11 @@ export const ConnectChannels: FC = () => {
               {data?.social.map((social: any) => (
                 <div
                   key={social.identifier}
-                  onClick={getSocialLink(social.identifier)}
+                  onClick={getSocialLink(
+                    social.identifier,
+                    social.isExternal,
+                    social.customFields
+                  )}
                   className="h-[96px] bg-input flex flex-col justify-center items-center gap-[10px] cursor-pointer"
                 >
                   <div>

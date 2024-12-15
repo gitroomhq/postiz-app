@@ -191,10 +191,11 @@ export const CustomVariables: FC<{
     validation: string;
     type: 'text' | 'password';
   }>;
+  close?: () => void;
   identifier: string;
   gotoUrl(url: string): void;
 }> = (props) => {
-  const { gotoUrl, identifier, variables } = props;
+  const { close, gotoUrl, identifier, variables } = props;
   const modals = useModals();
   const schema = useMemo(() => {
     return object({
@@ -241,7 +242,7 @@ export const CustomVariables: FC<{
     <div className="rounded-[4px] border border-customColor6 bg-sixth px-[16px] pb-[16px] relative">
       <TopTitle title={`Custom URL`} />
       <button
-        onClick={modals.closeAll}
+        onClick={close || modals.closeAll}
         className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
         type="button"
       >

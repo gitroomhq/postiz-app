@@ -15,9 +15,16 @@ export class OrganizationService {
     private _notificationsService: NotificationService
   ) {}
   async createOrgAndUser(
-    body: Omit<CreateOrgUserDto, 'providerToken'> & { providerId?: string }
+    body: Omit<CreateOrgUserDto, 'providerToken'> & { providerId?: string },
+    ip: string,
+    userAgent: string
   ) {
-    return this._organizationRepository.createOrgAndUser(body, this._notificationsService.hasEmailProvider());
+    return this._organizationRepository.createOrgAndUser(
+      body,
+      this._notificationsService.hasEmailProvider(),
+      ip,
+      userAgent
+    );
   }
 
   addUserToOrg(
@@ -33,12 +40,20 @@ export class OrganizationService {
     return this._organizationRepository.getOrgById(id);
   }
 
+  getOrgByApiKey(api: string) {
+    return this._organizationRepository.getOrgByApiKey(api);
+  }
+
   getUserOrg(id: string) {
     return this._organizationRepository.getUserOrg(id);
   }
 
   getOrgsByUserId(userId: string) {
     return this._organizationRepository.getOrgsByUserId(userId);
+  }
+
+  updateApiKey(orgId: string) {
+    return this._organizationRepository.updateApiKey(orgId);
   }
 
   getTeam(orgId: string) {
@@ -82,6 +97,9 @@ export class OrganizationService {
   }
 
   disableOrEnableNonSuperAdminUsers(orgId: string, disable: boolean) {
-    return this._organizationRepository.disableOrEnableNonSuperAdminUsers(orgId, disable);
+    return this._organizationRepository.disableOrEnableNonSuperAdminUsers(
+      orgId,
+      disable
+    );
   }
 }
