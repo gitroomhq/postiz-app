@@ -17,7 +17,7 @@ export const Preview = ({ id }: PreviewProps) => {
 
   const getPostsMarketplace = useCallback(async () => {
     return (await fetch(`/posts/${id}`)).json();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const { data, isLoading, error } = useSWR(
@@ -30,7 +30,9 @@ export const Preview = ({ id }: PreviewProps) => {
   if (!data?.posts || error)
     return (
       <main className="flex mx-auto">
-        <h1>{!data?.posts ? 'No post founded.' : 'Oops! Something went wrong.'} </h1>
+        <h1>
+          {!data?.posts ? 'No post founded.' : 'Oops! Something went wrong.'}{' '}
+        </h1>
       </main>
     );
 
