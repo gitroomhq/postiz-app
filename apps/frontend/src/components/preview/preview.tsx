@@ -36,16 +36,19 @@ export const Preview = ({ id }: PreviewProps) => {
       </main>
     );
 
+  const post = data?.posts?.[0];
+  if (!post) return null;
+
   return (
     <IntegrationContext.Provider
       value={{
         date: dayjs(),
-        integration: data?.posts[0]?.integration,
+        integration: post.integration,
         value: [
           {
-            content: data?.posts[0]?.content,
-            id: data?.posts[0]?.id,
-            image: data?.posts[0]?.image,
+            content: post.content,
+            id: post.id,
+            image: post.image,
           },
         ],
       }}

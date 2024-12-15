@@ -227,16 +227,26 @@ export const withProvider = function <T extends object>(
     );
 
     // Share Post
-    const handleShare = () => {
+    const handleShare = async () => {
+      if (!existingData.posts[0].id) {
+        return toast.show('No posts available to share', 'warning');
+      }
+
       const postId = existingData.posts[0].id;
-      const origin = window.location.origin;
-      const previewPath = `${origin}/preview/${postId}`;
+      const previewPath = new URL(
+        `/preview/${postId}`,
+        window.location.origin
+      ).toString();
 
       try {
-        navigator.clipboard.writeText(previewPath);
+        if (!navigator.clipboard) {
+          throw new Error('Clipboard API not available');
+        }
+        await navigator.clipboard.writeText(previewPath);
         return toast.show('Link copied to clipboard.', 'success');
       } catch (err) {
-        toast.show('Failed to copy the link.', 'warning');
+        if (err instanceof Error)
+          toast.show(`Failed to copy the link. ${err.message}`, 'warning');
       }
     };
 
@@ -363,9 +373,7 @@ export const withProvider = function <T extends object>(
                                 onClick={tagPersonOrCompany(
                                   integration.id,
                                   (newValue: string) =>
-                                    changeValue(index)(
-                                      val.content + newValue
-                                    )
+                                    changeValue(index)(val.content + newValue)
                                 )}
                               >
                                 Tag a company
