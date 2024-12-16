@@ -38,8 +38,13 @@ export class TrackService {
     const current_timestamp = Math.floor(new Date() / 1000);
 
     const userData = new UserData();
-    userData.setClientIpAddress(ip || user?.ip || '');
-    userData.setClientUserAgent(agent || user?.agent || '');
+    if (ip || user?.ip) {
+      userData.setClientIpAddress(ip || user?.ip || '');
+    }
+
+    if (agent || user?.agent) {
+      userData.setClientUserAgent(agent || user?.agent || '');
+    }
     if (fbclid) {
       userData.setFbc(fbclid);
     }
