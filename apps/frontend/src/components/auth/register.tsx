@@ -1,6 +1,6 @@
 'use client';
 
-import { useForm, SubmitHandler, FormProvider } from 'react-hook-form';
+import { FormProvider, SubmitHandler, useForm } from 'react-hook-form';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import Link from 'next/link';
 import { Button } from '@gitroom/react/form/button';
@@ -16,6 +16,8 @@ import clsx from 'clsx';
 import { GoogleProvider } from '@gitroom/frontend/components/auth/providers/google.provider';
 import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { useTrack } from '@gitroom/react/helpers/use.track';
+import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
 
 type Inputs = {
   email: string;
@@ -83,10 +85,11 @@ export function RegisterAfter({
   token: string;
   provider: string;
 }) {
-  const {isGeneral} = useVariables();
+  const { isGeneral } = useVariables();
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const fireEvents = useFireEvents();
+  const track = useTrack();
 
   const isAfterProvider = useMemo(() => {
     return !!token && !!provider;
@@ -112,27 +115,33 @@ export function RegisterAfter({
     await fetchData('/auth/register', {
       method: 'POST',
       body: JSON.stringify({ ...data }),
-    }).then((response) => {
-      setLoading(false);
-
-      if (response.status === 200) {
-        fireEvents('register')
-
-        if (response.headers.get('activate') === "true") {
-          router.push('/auth/activate');
-        } else {
-          router.push('/auth/login');
-        }
-      } else {
-        form.setError('email', {
-          message: getHelpfulReasonForRegistrationFailure(response.status),
-        });
-      }
-    }).catch(e => {
-      form.setError("email", {
-        message: 'General error: ' + e.toString() + '. Please check your browser console.',
-      });
     })
+      .then((response) => {
+        setLoading(false);
+
+        if (response.status === 200) {
+          fireEvents('register');
+          return track(TrackEnum.CompleteRegistration).then(() => {
+            if (response.headers.get('activate') === 'true') {
+              router.push('/auth/activate');
+            } else {
+              router.push('/auth/login');
+            }
+          });
+        } else {
+          form.setError('email', {
+            message: getHelpfulReasonForRegistrationFailure(response.status),
+          });
+        }
+      })
+      .catch((e) => {
+        form.setError('email', {
+          message:
+            'General error: ' +
+            e.toString() +
+            '. Please check your browser console.',
+        });
+      });
   };
 
   return (
@@ -143,7 +152,8 @@ export function RegisterAfter({
             Sign Up
           </h1>
         </div>
-        {!isAfterProvider && (!isGeneral ? <GithubProvider /> : <GoogleProvider />)}
+        {!isAfterProvider &&
+          (!isGeneral ? <GithubProvider /> : <GoogleProvider />)}
         {!isAfterProvider && (
           <div className="h-[20px] mb-[24px] mt-[24px] relative">
             <div className="absolute w-full h-[1px] bg-fifth top-[50%] -translate-y-[50%]" />
@@ -198,7 +208,11 @@ export function RegisterAfter({
         </div>
         <div className="text-center mt-6">
           <div className="w-full flex">
-            <Button type="submit" className="flex-1 rounded-[4px]" loading={loading}>
+            <Button
+              type="submit"
+              className="flex-1 rounded-[4px]"
+              loading={loading}
+            >
               Create Account
             </Button>
           </div>

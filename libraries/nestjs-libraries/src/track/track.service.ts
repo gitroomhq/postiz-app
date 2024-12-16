@@ -45,7 +45,7 @@ export class TrackService {
     }
 
     if (user && user.email) {
-      userData.setEmails([this.hashValue(user.email)]);
+      userData.setEmail(this.hashValue(user.email));
     }
 
     let customData = null;

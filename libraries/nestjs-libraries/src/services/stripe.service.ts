@@ -9,6 +9,9 @@ import { capitalize, groupBy } from 'lodash';
 import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
+import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
+import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
+import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-04-10',
@@ -19,7 +22,9 @@ export class StripeService {
   constructor(
     private _subscriptionService: SubscriptionService,
     private _organizationService: OrganizationService,
-    private _messagesService: MessagesService
+    private _userService: UsersService,
+    private _messagesService: MessagesService,
+    private _trackService: TrackService
   ) {}
   validateRequest(rawBody: Buffer, signature: string, endpointSecret: string) {
     return stripe.webhooks.constructEvent(rawBody, signature, endpointSecret);
@@ -265,10 +270,12 @@ export class StripeService {
   }
 
   private async createCheckoutSession(
+    ud: string,
     uniqueId: string,
     customer: string,
     body: BillingSubscribeDto,
-    price: string
+    price: string,
+    userId: string
   ) {
     const isUtm = body.utm ? `&utm_source=${body.utm}` : '';
     const { url } = await stripe.checkout.sessions.create({
@@ -283,14 +290,18 @@ export class StripeService {
         metadata: {
           service: 'gitroom',
           ...body,
+          userId,
           uniqueId,
+          ud,
         },
       },
-      ...body.tolt ? {
-        metadata: {
-          tolt_referral: body.tolt,
-        }
-      } : {},
+      ...(body.tolt
+        ? {
+            metadata: {
+              tolt_referral: body.tolt,
+            },
+          }
+        : {}),
       allow_promotion_codes: true,
       line_items: [
         {
@@ -416,7 +427,12 @@ export class StripeService {
     return { url };
   }
 
-  async subscribe(organizationId: string, body: BillingSubscribeDto) {
+  async subscribe(
+    uniqueId: string,
+    organizationId: string,
+    userId: string,
+    body: BillingSubscribeDto
+  ) {
     const id = makeId(10);
     const priceData = pricing[body.billing];
     const org = await this._organizationService.getOrgById(organizationId);
@@ -475,7 +491,14 @@ export class StripeService {
     };
 
     if (!currentUserSubscription.data.length) {
-      return this.createCheckoutSession(id, customer, body, findPrice!.id);
+      return this.createCheckoutSession(
+        uniqueId,
+        id,
+        customer,
+        body,
+        findPrice!.id,
+        userId
+      );
     }
 
     try {
@@ -484,7 +507,9 @@ export class StripeService {
         metadata: {
           service: 'gitroom',
           ...body,
+          userId,
           id,
+          ud: uniqueId,
         },
         proration_behavior: 'always_invoice',
         items: [
@@ -503,6 +528,23 @@ export class StripeService {
         portal: url,
       };
     }
+  }
+
+  async paymentSucceeded(event: Stripe.InvoicePaymentSucceededEvent) {
+    // get subscription from payment
+    const subscription = await stripe.subscriptions.retrieve(
+      event.data.object.subscription as string
+    );
+
+    const { userId, ud } = subscription.metadata;
+    const user = await this._userService.getUserById(userId);
+    if (user && user.ip && user.agent) {
+      this._trackService.track(ud, user.ip, user.agent, TrackEnum.Purchase, {
+        value: event.data.object.amount_paid / 100,
+      });
+    }
+
+    return { ok: true };
   }
 
   async updateOrder(event: Stripe.CheckoutSessionCompletedEvent) {

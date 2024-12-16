@@ -222,10 +222,11 @@ export class UsersController {
     @GetUserFromRequest() user: User,
     @RealIP() ip: string,
     @UserAgent() userAgent: string,
-    @Body() body: { tt: TrackEnum; additional: Record<string, any> }
+    @Body() body: { tt: TrackEnum; fbclid: string, additional: Record<string, any> }
   ) {
     const uniqueId = req?.cookies?.track || makeId(10);
-    await this._trackService.track(req?.cookies?.track, ip, userAgent, body.tt, body.additional, null, user);
+    const fbclid = req?.cookies?.fbclid || body.fbclid;
+    await this._trackService.track(uniqueId, ip, userAgent, body.tt, body.additional, fbclid, user);
     if (!req.cookies.track) {
       res.cookie('track', uniqueId, {
         domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
@@ -236,6 +237,7 @@ export class UsersController {
       });
     }
 
+    console.log('hello');
     res.status(200).send();
   }
 }
