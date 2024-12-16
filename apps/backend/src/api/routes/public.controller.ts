@@ -77,6 +77,8 @@ export class PublicController {
       });
     }
 
-    res.status(200).send();
+    res.status(200).json({
+      track: uniqueId,
+    });
   }
 }

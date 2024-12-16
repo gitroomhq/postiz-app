@@ -7,7 +7,7 @@ import { useVariables } from '@gitroom/react/helpers/variable.context';
 export const useTrack = () => {
   const user = useUser();
   const fetch = useFetch();
-  const {facebookPixel} = useVariables();
+  const { facebookPixel } = useVariables();
 
   return useCallback(
     async (track: TrackEnum, additional?: Record<string, any>) => {
@@ -16,22 +16,24 @@ export const useTrack = () => {
       }
 
       try {
+        const { track: uq } = await (
+          await fetch(user ? `/user/t` : `/public/t`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              tt: track,
+              ...(additional ? { additional } : {}),
+            }),
+          })
+        ).json();
+
         if (window.fbq) {
           // @ts-ignore
-          window.fbq('track', TrackEnum[track], additional);
+          window.fbq('track', TrackEnum[track], additional, {eventID: uq});
         }
-
-        await fetch(user ? `/user/t` : `/public/t`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            tt: track,
-            ...(additional ? { additional } : {}),
-          }),
-        });
       } catch (e) {
         console.log(e);
       }

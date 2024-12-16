@@ -238,6 +238,8 @@ export class UsersController {
     }
 
     console.log('hello');
-    res.status(200).send();
+    res.status(200).json({
+      track: uniqueId,
+    });
   }
 }
