@@ -41,6 +41,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           isGeneral={!!process.env.IS_GENERAL}
           uploadDirectory={process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY!}
           tolt={process.env.NEXT_PUBLIC_TOLT!}
+          facebookPixel={process.env.NEXT_PUBLIC_FACEBOOK_PIXEL!}
         >
           <ToltScript />
           <FacebookComponent />
