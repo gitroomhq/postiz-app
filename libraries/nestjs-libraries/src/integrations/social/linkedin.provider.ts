@@ -18,7 +18,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   identifier = 'linkedin';
   name = 'LinkedIn';
   isBetweenSteps = false;
-  scopes = ['openid', 'profile', 'w_member_social', 'r_basicprofile'];
+  scopes = ['openid', 'profile', 'w_member_social'];
   refreshWait = true;
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
@@ -41,19 +41,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       })
     ).json();
 
-    const { vanityName } = await (
-      await this.fetch('https://api.linkedin.com/v2/me', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-    ).json();
-
-    const {
-      name,
-      sub: id,
-      picture,
-    } = await (
+    const userinfo = await (
       await this.fetch('https://api.linkedin.com/v2/userinfo', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -62,13 +50,13 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     ).json();
 
     return {
-      id,
+      id: userinfo.sub,
       accessToken,
       refreshToken,
       expiresIn: expires_in,
-      name,
-      picture,
-      username: vanityName,
+      name: userinfo.name,
+      picture: userinfo.picture,
+      username: userinfo.name,
     };
   }
 
@@ -121,11 +109,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
 
     this.checkScopes(this.scopes, scope);
 
-    const {
-      name,
-      sub: id,
-      picture,
-    } = await (
+    const userinfo = await (
       await this.fetch('https://api.linkedin.com/v2/userinfo', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -133,22 +117,14 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       })
     ).json();
 
-    const { vanityName } = await (
-      await this.fetch('https://api.linkedin.com/v2/me', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-    ).json();
-
     return {
-      id,
+      id: userinfo.sub,
       accessToken,
       refreshToken,
       expiresIn,
-      name,
-      picture,
-      username: vanityName,
+      name: userinfo.name,
+      picture: userinfo.picture,
+      username: userinfo.name,
     };
   }
 
