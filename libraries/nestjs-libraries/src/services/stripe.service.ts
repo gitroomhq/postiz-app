@@ -54,7 +54,10 @@ export class StripeService {
       return false;
     }
 
-    const getOrgFromCustomer = await this._organizationService.getOrgByCustomerId(event.data.object.customer as string);
+    const getOrgFromCustomer =
+      await this._organizationService.getOrgByCustomerId(
+        event.data.object.customer as string
+      );
 
     if (!getOrgFromCustomer?.allowTrial) {
       return true;
@@ -74,28 +77,32 @@ export class StripeService {
       return prev;
     });
 
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: 100,
-      currency: 'usd',
-      payment_method: latestMethod.id,
-      customer: event.data.object.customer as string,
-      automatic_payment_methods: {
-        allow_redirects: 'never',
-        enabled: true,
-      },
-      capture_method: 'manual', // Authorize without capturing
-      confirm: true, // Confirm the PaymentIntent
-    });
+    try {
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: 100,
+        currency: 'usd',
+        payment_method: latestMethod.id,
+        customer: event.data.object.customer as string,
+        automatic_payment_methods: {
+          allow_redirects: 'never',
+          enabled: true,
+        },
+        capture_method: 'manual', // Authorize without capturing
+        confirm: true, // Confirm the PaymentIntent
+      });
 
-    if (paymentIntent.status !== 'requires_capture') {
-      console.error('Cant charge');
-      await stripe.paymentMethods.detach(paymentMethods.data[0].id);
-      await stripe.subscriptions.cancel(event.data.object.id as string);
+      if (paymentIntent.status !== 'requires_capture') {
+        console.error('Cant charge');
+        await stripe.paymentMethods.detach(paymentMethods.data[0].id);
+        await stripe.subscriptions.cancel(event.data.object.id as string);
+        return false;
+      }
+
+      await stripe.paymentIntents.cancel(paymentIntent.id as string);
+      return true;
+    } catch (err) {
       return false;
     }
-
-    await stripe.paymentIntents.cancel(paymentIntent.id as string);
-    return true;
   }
 
   async createSubscription(event: Stripe.CustomerSubscriptionCreatedEvent) {
