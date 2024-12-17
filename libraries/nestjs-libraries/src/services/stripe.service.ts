@@ -101,6 +101,10 @@ export class StripeService {
       await stripe.paymentIntents.cancel(paymentIntent.id as string);
       return true;
     } catch (err) {
+      try {
+        await stripe.paymentMethods.detach(paymentMethods.data[0].id);
+        await stripe.subscriptions.cancel(event.data.object.id as string);
+      } catch (err) {/*dont do anything*/}
       return false;
     }
   }
