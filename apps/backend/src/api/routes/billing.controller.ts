@@ -24,10 +24,10 @@ export class BillingController {
     @Param('id') body: string
   ) {
     return {
-      exists: !!(await this._subscriptionService.checkSubscription(
+      status: await this._stripeService.checkSubscription(
         org.id,
         body
-      )),
+      ),
     };
   }
 
@@ -39,7 +39,7 @@ export class BillingController {
     @Req() req: Request
   ) {
     const uniqueId = req?.cookies?.track;
-    return this._stripeService.subscribe(uniqueId, org.id, user.id, body);
+    return this._stripeService.subscribe(uniqueId, org.id, user.id, body, org.allowTrial);
   }
 
   @Get('/portal')

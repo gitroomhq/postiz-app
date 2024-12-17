@@ -25,6 +25,7 @@ model Organization {
   Integration       Integration[]
   post              Post[] @relation("organization")
   submittedPost     Post[] @relation("submittedForOrg")
+  allowTrial        Boolean            @default(false)
   Comments          Comments[]
   notifications     Notifications[]
   buyerOrganization MessagesGroup[]

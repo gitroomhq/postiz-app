@@ -17,6 +17,7 @@ export const UserContext = createContext<
       totalChannels: number;
       isLifetime?: boolean;
       impersonate: boolean;
+      allowTrial: boolean;
     })
 >(undefined);
 

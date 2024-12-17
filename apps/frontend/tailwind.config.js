@@ -131,11 +131,11 @@ module.exports = {
           '100%': { overflow: 'hidden' },
         },
         fadeDown: {
-          '0%': { opacity: 0, transform: 'translateY(-30px)' },
-          '10%': { opacity: 1, transform: 'translateY(0)' },
-          '85%': { opacity: 1, transform: 'translateY(0)' },
-          '90%': { opacity: 1, transform: 'translateY(10px)' },
-          '100%': { opacity: 0, transform: 'translateY(-30px)' },
+          '0%': { opacity: 0, marginTop: -30},
+          '10%': { opacity: 1, marginTop: 0 },
+          '85%': { opacity: 1, marginTop: 0 },
+          '90%': { opacity: 1, marginTop: 10 },
+          '100%': { opacity: 0, marginTop: -30 },
         },
         normalFadeDown: {
           '0%': { opacity: 0, transform: 'translateY(-30px)' },

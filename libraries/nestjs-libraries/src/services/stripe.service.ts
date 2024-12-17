@@ -45,20 +45,79 @@ export class StripeService {
     );
   }
 
-  createSubscription(event: Stripe.CustomerSubscriptionCreatedEvent) {
+  async checkValidCard(
+    event:
+      | Stripe.CustomerSubscriptionCreatedEvent
+      | Stripe.CustomerSubscriptionUpdatedEvent
+  ) {
+    if (event.data.object.status === 'incomplete') {
+      return false;
+    }
+
+    const getOrgFromCustomer = await this._organizationService.getOrgByCustomerId(event.data.object.customer as string);
+
+    if (!getOrgFromCustomer?.allowTrial) {
+      return true;
+    }
+
+    console.log('Checking card');
+
+    const paymentMethods = await stripe.paymentMethods.list({
+      customer: event.data.object.customer as string,
+    });
+
+    // find the last one created
+    const latestMethod = paymentMethods.data.reduce((prev, current) => {
+      if (prev.created < current.created) {
+        return current;
+      }
+      return prev;
+    });
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: 100,
+      currency: 'usd',
+      payment_method: latestMethod.id,
+      customer: event.data.object.customer as string,
+      automatic_payment_methods: {
+        allow_redirects: 'never',
+        enabled: true,
+      },
+      capture_method: 'manual', // Authorize without capturing
+      confirm: true, // Confirm the PaymentIntent
+    });
+
+    if (paymentIntent.status !== 'requires_capture') {
+      console.error('Cant charge');
+      await stripe.paymentMethods.detach(paymentMethods.data[0].id);
+      await stripe.subscriptions.cancel(event.data.object.id as string);
+      return false;
+    }
+
+    await stripe.paymentIntents.cancel(paymentIntent.id as string);
+    return true;
+  }
+
+  async createSubscription(event: Stripe.CustomerSubscriptionCreatedEvent) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     const {
-      id,
+      uniqueId,
       billing,
       period,
     }: {
       billing: 'STANDARD' | 'PRO';
       period: 'MONTHLY' | 'YEARLY';
-      id: string;
+      uniqueId: string;
     } = event.data.object.metadata;
+
+    const check = await this.checkValidCard(event);
+    if (!check) {
+      return { ok: false };
+    }
+
     return this._subscriptionService.createOrUpdateSubscription(
-      id,
+      uniqueId,
       event.data.object.customer as string,
       pricing[billing].channel!,
       billing,
@@ -66,20 +125,26 @@ export class StripeService {
       event.data.object.cancel_at
     );
   }
-  updateSubscription(event: Stripe.CustomerSubscriptionUpdatedEvent) {
+  async updateSubscription(event: Stripe.CustomerSubscriptionUpdatedEvent) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     const {
-      id,
+      uniqueId,
       billing,
       period,
     }: {
       billing: 'STANDARD' | 'PRO';
       period: 'MONTHLY' | 'YEARLY';
-      id: string;
+      uniqueId: string;
     } = event.data.object.metadata;
+
+    const check = await this.checkValidCard(event);
+    if (!check) {
+      return { ok: false };
+    }
+
     return this._subscriptionService.createOrUpdateSubscription(
-      id,
+      uniqueId,
       event.data.object.customer as string,
       pricing[billing].channel!,
       billing,
@@ -218,6 +283,15 @@ export class StripeService {
     }
   }
 
+  async getCustomerSubscriptions(organizationId: string) {
+    const org = (await this._organizationService.getOrgById(organizationId))!;
+    const customer = org.paymentId;
+    return stripe.subscriptions.list({
+      customer: customer!,
+      status: 'all',
+    });
+  }
+
   async setToCancel(organizationId: string) {
     const id = makeId(10);
     const org = await this._organizationService.getOrgById(organizationId);
@@ -228,7 +302,7 @@ export class StripeService {
           customer,
           status: 'all',
         })
-      ).data,
+      ).data.filter((f) => f.status !== 'canceled'),
     };
 
     const { cancel_at } = await stripe.subscriptions.update(
@@ -275,7 +349,8 @@ export class StripeService {
     customer: string,
     body: BillingSubscribeDto,
     price: string,
-    userId: string
+    userId: string,
+    allowTrial: boolean
   ) {
     const isUtm = body.utm ? `&utm_source=${body.utm}` : '';
     const { url } = await stripe.checkout.sessions.create({
@@ -286,7 +361,7 @@ export class StripeService {
         `/launches?onboarding=true&check=${uniqueId}${isUtm}`,
       mode: 'subscription',
       subscription_data: {
-        trial_period_days: 7,
+        ...(allowTrial ? { trial_period_days: 7 } : {}),
         metadata: {
           service: 'gitroom',
           ...body,
@@ -370,6 +445,34 @@ export class StripeService {
     return accountLink.url;
   }
 
+  async checkSubscription(organizationId: string, subscriptionId: string) {
+    const orgValue = await this._subscriptionService.checkSubscription(
+      organizationId,
+      subscriptionId
+    );
+
+    if (orgValue) {
+      return 2;
+    }
+
+    const getCustomerSubscriptions = await this.getCustomerSubscriptions(
+      organizationId
+    );
+    if (getCustomerSubscriptions.data.length === 0) {
+      return 0;
+    }
+
+    if (
+      getCustomerSubscriptions.data.find(
+        (p) => p.metadata.uniqueId === subscriptionId
+      )?.canceled_at
+    ) {
+      return 1;
+    }
+
+    return 0;
+  }
+
   async payAccountStepOne(
     userId: string,
     organization: Organization,
@@ -431,7 +534,8 @@ export class StripeService {
     uniqueId: string,
     organizationId: string,
     userId: string,
-    body: BillingSubscribeDto
+    body: BillingSubscribeDto,
+    allowTrial: boolean
   ) {
     const id = makeId(10);
     const priceData = pricing[body.billing];
@@ -481,6 +585,21 @@ export class StripeService {
         },
       }));
 
+    const getCurrentSubscriptions =
+      await this._subscriptionService.getSubscription(organizationId);
+
+    if (!getCurrentSubscriptions) {
+      return this.createCheckoutSession(
+        uniqueId,
+        id,
+        customer,
+        body,
+        findPrice!.id,
+        userId,
+        allowTrial
+      );
+    }
+
     const currentUserSubscription = {
       data: (
         await stripe.subscriptions.list({
@@ -489,17 +608,6 @@ export class StripeService {
         })
       ).data.filter((f) => f.status === 'active' || f.status === 'trialing'),
     };
-
-    if (!currentUserSubscription.data.length) {
-      return this.createCheckoutSession(
-        uniqueId,
-        id,
-        customer,
-        body,
-        findPrice!.id,
-        userId
-      );
-    }
 
     try {
       await stripe.subscriptions.update(currentUserSubscription.data[0].id, {

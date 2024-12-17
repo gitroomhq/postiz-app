@@ -481,7 +481,7 @@ export const MainBillingComponent: FC<{
                             .format('D MMM, YYYY')}`
                         : 'Cancel subscription'
                       : // @ts-ignore
-                      user?.tier === 'FREE' || user?.tier?.current === 'FREE'
+                        (user?.tier === 'FREE' || user?.tier?.current === 'FREE') && user.allowTrial
                       ? 'Start 7 days free trial'
                       : 'Purchase'}
                   </Button>

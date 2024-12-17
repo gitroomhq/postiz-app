@@ -68,6 +68,7 @@ export class UsersController {
       isLifetime: !!organization?.subscription?.isLifetime,
       admin: !!user.isSuperAdmin,
       impersonate: !!req.cookies.impersonate,
+      allowTrial: organization?.allowTrial,
       // @ts-ignore
       publicApi: organization?.users[0]?.role === 'SUPERADMIN' || organization?.users[0]?.role === 'ADMIN'
           ? organization?.apiKey

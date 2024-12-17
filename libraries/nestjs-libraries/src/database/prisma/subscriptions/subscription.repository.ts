@@ -64,6 +64,17 @@ export class SubscriptionRepository {
     });
   }
 
+  getCustomerIdByOrgId(organizationId: string) {
+    return this._organization.model.organization.findFirst({
+      where: {
+        id: organizationId,
+      },
+      select: {
+        paymentId: true,
+      },
+    });
+  }
+
   checkSubscription(organizationId: string, subscriptionId: string) {
     return this._subscription.model.subscription.findFirst({
       where: {
@@ -155,6 +166,15 @@ export class SubscriptionRepository {
         cancelAt: cancelAt ? new Date(cancelAt * 1000) : null,
         identifier,
         deletedAt: null,
+      },
+    });
+
+    await this._organization.model.organization.update({
+      where: {
+        id: findOrg.id,
+      },
+      data: {
+        allowTrial: false,
       },
     });
 
