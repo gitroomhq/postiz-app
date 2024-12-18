@@ -68,6 +68,7 @@ export class UsersController {
       isLifetime: !!organization?.subscription?.isLifetime,
       admin: !!user.isSuperAdmin,
       impersonate: !!req.cookies.impersonate,
+      allowTrial: organization?.allowTrial,
       // @ts-ignore
       publicApi: organization?.users[0]?.role === 'SUPERADMIN' || organization?.users[0]?.role === 'ADMIN'
           ? organization?.apiKey
@@ -222,10 +223,11 @@ export class UsersController {
     @GetUserFromRequest() user: User,
     @RealIP() ip: string,
     @UserAgent() userAgent: string,
-    @Body() body: { tt: TrackEnum; additional: Record<string, any> }
+    @Body() body: { tt: TrackEnum; fbclid: string, additional: Record<string, any> }
   ) {
     const uniqueId = req?.cookies?.track || makeId(10);
-    await this._trackService.track(req?.cookies?.track, ip, userAgent, body.tt, body.additional, null, user);
+    const fbclid = req?.cookies?.fbclid || body.fbclid;
+    await this._trackService.track(uniqueId, ip, userAgent, body.tt, body.additional, fbclid, user);
     if (!req.cookies.track) {
       res.cookie('track', uniqueId, {
         domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
@@ -236,6 +238,9 @@ export class UsersController {
       });
     }
 
-    res.status(200).send();
+    console.log('hello');
+    res.status(200).json({
+      track: uniqueId,
+    });
   }
 }

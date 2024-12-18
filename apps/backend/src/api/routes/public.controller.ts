@@ -48,21 +48,14 @@ export class PublicController {
     body: { fbclid?: string; tt: TrackEnum; additional: Record<string, any> }
   ) {
     const uniqueId = req?.cookies?.track || makeId(10);
-    console.log(
-      req?.cookies?.track,
-      ip,
-      userAgent,
-      body.tt,
-      body.additional,
-      body.fbclid
-    );
+    const fbclid = req?.cookies?.fbclid || body.fbclid;
     await this._trackService.track(
-      req?.cookies?.track,
+      uniqueId,
       ip,
       userAgent,
       body.tt,
       body.additional,
-      body.fbclid
+      fbclid
     );
     if (!req.cookies.track) {
       res.cookie('track', uniqueId, {
@@ -84,6 +77,8 @@ export class PublicController {
       });
     }
 
-    res.status(200).send();
+    res.status(200).json({
+      track: uniqueId,
+    });
   }
 }

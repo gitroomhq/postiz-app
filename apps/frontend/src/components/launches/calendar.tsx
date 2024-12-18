@@ -153,7 +153,7 @@ export const WeekView = () => {
                 {convertTimeFormatBasedOnLocality(hour)}
               </div>
               {days.map((day, indexDay) => (
-                <Fragment key={`${day}-${hour}`}>
+                <Fragment key={`${currentYear}-${currentWeek}-${day}-${hour}`}>
                   <div className="relative bg-secondary">
                     <CalendarColumn
                       getDate={dayjs()

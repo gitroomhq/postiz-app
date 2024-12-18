@@ -21,6 +21,7 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/client';
 import { timer } from '@gitroom/helpers/utils/timer';
+import { AuthTokenDetails } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 
 type PostWithConditionals = Post & {
   integration?: Integration;
@@ -220,7 +221,22 @@ export class PostsService {
 
     if (dayjs(integration?.tokenExpiration).isBefore(dayjs()) || forceRefresh) {
       const { accessToken, expiresIn, refreshToken } =
-        await getIntegration.refreshToken(integration.refreshToken!);
+        await new Promise<AuthTokenDetails>((res) => {
+          getIntegration
+            .refreshToken(integration.refreshToken!)
+            .then((r) => res(r))
+            .catch(() =>
+              res({
+                accessToken: '',
+                expiresIn: 0,
+                refreshToken: '',
+                id: '',
+                name: '',
+                username: '',
+                picture: '',
+              })
+            );
+        });
 
       if (!accessToken) {
         await this._integrationService.refreshNeeded(
@@ -334,7 +350,9 @@ export class PostsService {
     const currentPlug = loadAllPlugs.find((p) => p.identifier === providerName);
 
     for (const plug of getPlugs) {
-      const runPlug = currentPlug?.plugs?.find((p: any) => p.methodName === plug.plugFunction)!;
+      const runPlug = currentPlug?.plugs?.find(
+        (p: any) => p.methodName === plug.plugFunction
+      )!;
       if (!runPlug) {
         continue;
       }

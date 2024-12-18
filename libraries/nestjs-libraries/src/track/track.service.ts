@@ -38,14 +38,19 @@ export class TrackService {
     const current_timestamp = Math.floor(new Date() / 1000);
 
     const userData = new UserData();
-    userData.setClientIpAddress(user?.ip || ip);
-    userData.setClientUserAgent(user?.agent || agent);
+    if (ip || user?.ip) {
+      userData.setClientIpAddress(ip || user?.ip || '');
+    }
+
+    if (agent || user?.agent) {
+      userData.setClientUserAgent(agent || user?.agent || '');
+    }
     if (fbclid) {
       userData.setFbc(fbclid);
     }
 
     if (user && user.email) {
-      userData.setEmails([this.hashValue(user.email)]);
+      userData.setEmail(this.hashValue(user.email));
     }
 
     let customData = null;

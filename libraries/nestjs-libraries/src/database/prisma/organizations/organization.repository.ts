@@ -215,6 +215,7 @@ export class OrganizationRepository {
       data: {
         name: body.company,
         apiKey: AuthService.fixedEncryption(makeId(20)),
+        allowTrial: true,
         users: {
           create: {
             role: Role.SUPERADMIN,
@@ -242,6 +243,14 @@ export class OrganizationRepository {
             user: true,
           },
         },
+      },
+    });
+  }
+
+  getOrgByCustomerId(customerId: string) {
+    return this._organization.model.organization.findFirst({
+      where: {
+        paymentId: customerId,
       },
     });
   }
