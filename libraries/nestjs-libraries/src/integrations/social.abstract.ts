@@ -46,7 +46,7 @@ export abstract class SocialAbstract {
 
     if (
       request.status === 401 ||
-      (json.includes('OAuthException') && !json.includes("Unsupported format") && !json.includes('2207018'))
+      (json.includes('OAuthException') && !json.includes("Unsupported format") && !json.includes('2207018') && !json.includes('REVOKED_ACCESS_TOKEN'))
     ) {
       throw new RefreshToken(identifier, json, options.body!);
     }

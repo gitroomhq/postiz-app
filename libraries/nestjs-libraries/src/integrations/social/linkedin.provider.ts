@@ -27,7 +27,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       refresh_token: refreshToken,
       expires_in,
     } = await (
-      await this.fetch('https://www.linkedin.com/oauth/v2/accessToken', {
+      await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -40,6 +40,8 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
         }),
       })
     ).json();
+
+    console.log('refreshToken', refreshToken);
 
     const { vanityName } = await (
       await this.fetch('https://api.linkedin.com/v2/me', {
@@ -191,94 +193,84 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     picture: any,
     type = 'personal' as 'company' | 'personal'
   ) {
-    try {
-      const {
-        value: { uploadUrl, image, video, uploadInstructions, ...all },
-      } = await (
-        await this.fetch(
-          `https://api.linkedin.com/rest/${
-            fileName.indexOf('mp4') > -1 ? 'videos' : 'images'
-          }?action=initializeUpload`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Restli-Protocol-Version': '2.0.0',
-              'LinkedIn-Version': '202402',
-              Authorization: `Bearer ${accessToken}`,
-            },
-            body: JSON.stringify({
-              initializeUploadRequest: {
-                owner:
-                  type === 'personal'
-                    ? `urn:li:person:${personId}`
-                    : `urn:li:organization:${personId}`,
-                ...(fileName.indexOf('mp4') > -1
-                  ? {
-                      fileSizeBytes: picture.length,
-                      uploadCaptions: false,
-                      uploadThumbnail: false,
-                    }
-                  : {}),
-              },
-            }),
-          }
-        )
-      ).json();
-
-      const sendUrlRequest = uploadInstructions?.[0]?.uploadUrl || uploadUrl;
-      const finalOutput = video || image;
-
-      const etags = [];
-      for (let i = 0; i < picture.length; i += 1024 * 1024 * 2) {
-        const upload = await this.fetch(sendUrlRequest, {
-          method: 'PUT',
+    const {
+      value: { uploadUrl, image, video, uploadInstructions, ...all },
+    } = await (
+      await this.fetch(
+        `https://api.linkedin.com/rest/${
+          fileName.indexOf('mp4') > -1 ? 'videos' : 'images'
+        }?action=initializeUpload`,
+        {
+          method: 'POST',
           headers: {
+            'Content-Type': 'application/json',
             'X-Restli-Protocol-Version': '2.0.0',
             'LinkedIn-Version': '202402',
             Authorization: `Bearer ${accessToken}`,
-            ...(fileName.indexOf('mp4') > -1
-              ? { 'Content-Type': 'application/octet-stream' }
-              : {}),
           },
-          body: picture.slice(i, i + 1024 * 1024 * 2),
-        });
-
-        etags.push(upload.headers.get('etag'));
-      }
-
-      if (fileName.indexOf('mp4') > -1) {
-        const a = await this.fetch(
-          'https://api.linkedin.com/rest/videos?action=finalizeUpload',
-          {
-            method: 'POST',
-            body: JSON.stringify({
-              finalizeUploadRequest: {
-                video,
-                uploadToken: '',
-                uploadedPartIds: etags,
-              },
-            }),
-            headers: {
-              'X-Restli-Protocol-Version': '2.0.0',
-              'LinkedIn-Version': '202402',
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${accessToken}`,
+          body: JSON.stringify({
+            initializeUploadRequest: {
+              owner:
+                type === 'personal'
+                  ? `urn:li:person:${personId}`
+                  : `urn:li:organization:${personId}`,
+              ...(fileName.indexOf('mp4') > -1
+                ? {
+                    fileSizeBytes: picture.length,
+                    uploadCaptions: false,
+                    uploadThumbnail: false,
+                  }
+                : {}),
             },
-          }
-        );
-      }
+          }),
+        }
+      )
+    ).json();
 
-      return finalOutput;
-    } catch (err: any) {
-      throw new BadBody('error-posting-to-linkedin', JSON.stringify(err), {
-        // @ts-ignore
-        fileName,
-        personId,
-        picture,
-        type,
+    const sendUrlRequest = uploadInstructions?.[0]?.uploadUrl || uploadUrl;
+    const finalOutput = video || image;
+
+    const etags = [];
+    for (let i = 0; i < picture.length; i += 1024 * 1024 * 2) {
+      const upload = await this.fetch(sendUrlRequest, {
+        method: 'PUT',
+        headers: {
+          'X-Restli-Protocol-Version': '2.0.0',
+          'LinkedIn-Version': '202402',
+          Authorization: `Bearer ${accessToken}`,
+          ...(fileName.indexOf('mp4') > -1
+            ? { 'Content-Type': 'application/octet-stream' }
+            : {}),
+        },
+        body: picture.slice(i, i + 1024 * 1024 * 2),
       });
+
+      etags.push(upload.headers.get('etag'));
     }
+
+    if (fileName.indexOf('mp4') > -1) {
+      const a = await this.fetch(
+        'https://api.linkedin.com/rest/videos?action=finalizeUpload',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            finalizeUploadRequest: {
+              video,
+              uploadToken: '',
+              uploadedPartIds: etags,
+            },
+          }),
+          headers: {
+            'X-Restli-Protocol-Version': '2.0.0',
+            'LinkedIn-Version': '202402',
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+    }
+
+    return finalOutput;
   }
 
   protected fixText(text: string) {
