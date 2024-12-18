@@ -5,10 +5,13 @@ export const dynamic = 'force-dynamic';
 import { Metadata } from 'next';
 import { isGeneralServerSide } from '@gitroom/helpers/utils/is.general.server.side';
 import Image from 'next/image';
-import clsx from 'clsx';
 import Link from 'next/link';
 import { Button } from '@gitroom/react/form/button';
+import { CommentsComponents } from '@gitroom/frontend/components/preview/comments.components';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
 
+dayjs.extend(utc);
 export const metadata: Metadata = {
   title: `${isGeneralServerSide() ? 'Postiz' : 'Gitroom'} Preview`,
   description: '',
@@ -16,13 +19,10 @@ export const metadata: Metadata = {
 
 export default async function Auth({
   params: { id },
-  searchParams,
 }: {
   params: { id: string };
-  searchParams: any;
 }) {
   const post = await (await internalFetch(`/public/posts/${id}`)).json();
-  console.log(JSON.stringify(post, null, 2));
   return (
     <div>
       <div className="mx-auto w-full max-w-[1346px] py-3 text-white">
@@ -73,16 +73,16 @@ export default async function Auth({
             </div>
           </div>
           <div className="text-sm text-gray-400">
-            Publication Date: December 14, 2024
+            Publication Date: {dayjs.utc(post[0].createdAt).local().format('MMMM D, YYYY h:mm A')}
           </div>
         </div>
       </div>
 
       <div className="flex flex-col lg:flex-row text-white w-full max-w-[1346px] mx-auto">
-        <div className="flex-1 bg-third border border-tableBorder">
-          <div>
+        <div className="flex-1">
+          <div className="gap-[20px] flex flex-col">
             {post.map((p: any, index: number) => (
-              <div key={String(p.id)} className="relative px-4 py-4">
+              <div key={String(p.id)} className="relative px-4 py-4 bg-third border border-tableBorder">
                 <div className="flex space-x-3">
                   <div>
                     <span className="flex shrink-0 overflow-hidden rounded-full h-30 w-30">
@@ -92,9 +92,6 @@ export default async function Auth({
                         src={post[0].integration.picture}
                       />
                     </span>
-                    {post.length - 1 !== index && (
-                      <div className="absolute left-10 top-5 h-full w-0.5 -translate-x-1/2 bg-tableBorder" />
-                    )}
                   </div>
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center space-x-2">
@@ -172,73 +169,9 @@ export default async function Auth({
           </div>
         </div>
         <div className="w-full lg:w-96 lg:flex-shrink-0">
-          <div className="border-l border-tableBorder p-4">
+          <div className="p-4">
             <h2 className="mb-4 text-xl font-bold">Add a comment</h2>
-            <div className="mb-6 flex space-x-3">
-              <div className="flex-1 space-y-2">
-                <textarea
-                  className="flex w-full rounded-md border border-input px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 min-h-[80px] resize-none bg-transparent text-white placeholder-gray-500 focus:ring-0"
-                  placeholder="What's happening?"
-                  defaultValue={''}
-                />
-                <div className="flex justify-end">
-                  <Button>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width={24}
-                      height={24}
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="lucide lucide-send mr-2 h-4 w-4"
-                    >
-                      <path d="m22 2-7 20-4-9-9-4Z" />
-                      <path d="M22 2 11 13" />
-                    </svg>
-                    Post
-                  </Button>
-                </div>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Comments</h3>
-              <div className="flex space-x-3 border-t border-tableBorder py-3">
-                <div className="flex-1 space-y-1">
-                  <div className="flex items-center space-x-2">
-                    <h3 className="text-sm font-semibold">Alice Smith</h3>
-                    <span className="text-xs text-gray-500">· 1h</span>
-                  </div>
-                  <p className="text-sm text-gray-300">
-                    Looks great! Congrats on the launch!
-                  </p>
-                </div>
-              </div>
-              <div className="flex space-x-3 border-t border-tableBorder py-3">
-                <div className="flex-1 space-y-1">
-                  <div className="flex items-center space-x-2">
-                    <h3 className="text-sm font-semibold">Bob Johnson</h3>
-                    <span className="text-xs text-gray-500">· 30m</span>
-                  </div>
-                  <p className="text-sm text-gray-300">
-                    Nice work! The design is really sleek.
-                  </p>
-                </div>
-              </div>
-              <div className="flex space-x-3 border-t border-tableBorder py-3">
-                <div className="flex-1 space-y-1">
-                  <div className="flex items-center space-x-2">
-                    <h3 className="text-sm font-semibold">Charlie Brown</h3>
-                    <span className="text-xs text-gray-500">· 4h</span>
-                  </div>
-                  <p className="text-sm text-gray-300">
-                    Can{"'"}t wait to hear your talk!
-                  </p>
-                </div>
-              </div>
-            </div>
+            <CommentsComponents />
           </div>
         </div>
       </div>

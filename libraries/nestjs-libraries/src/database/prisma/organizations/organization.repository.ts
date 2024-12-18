@@ -207,12 +207,15 @@ export class OrganizationRepository {
 
   async createOrgAndUser(
     body: Omit<CreateOrgUserDto, 'providerToken'> & { providerId?: string },
-    hasEmail: boolean
+    hasEmail: boolean,
+    ip: string,
+    userAgent: string
   ) {
     return this._organization.model.organization.create({
       data: {
         name: body.company,
         apiKey: AuthService.fixedEncryption(makeId(20)),
+        allowTrial: true,
         users: {
           create: {
             role: Role.SUPERADMIN,
@@ -226,6 +229,8 @@ export class OrganizationRepository {
                 providerName: body.provider,
                 providerId: body.providerId || '',
                 timezone: 0,
+                ip,
+                agent: userAgent,
               },
             },
           },
@@ -238,6 +243,14 @@ export class OrganizationRepository {
             user: true,
           },
         },
+      },
+    });
+  }
+
+  getOrgByCustomerId(customerId: string) {
+    return this._organization.model.organization.findFirst({
+      where: {
+        paymentId: customerId,
       },
     });
   }

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Req } from '@nestjs/common';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
@@ -7,6 +7,7 @@ import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/bill
 import { ApiTags } from '@nestjs/swagger';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
+import { Request } from 'express';
 
 @ApiTags('Billing')
 @Controller('/billing')
@@ -23,19 +24,22 @@ export class BillingController {
     @Param('id') body: string
   ) {
     return {
-      exists: !!(await this._subscriptionService.checkSubscription(
+      status: await this._stripeService.checkSubscription(
         org.id,
         body
-      )),
+      ),
     };
   }
 
   @Post('/subscribe')
   subscribe(
     @GetOrgFromRequest() org: Organization,
-    @Body() body: BillingSubscribeDto
+    @GetUserFromRequest() user: User,
+    @Body() body: BillingSubscribeDto,
+    @Req() req: Request
   ) {
-    return this._stripeService.subscribe(org.id, body);
+    const uniqueId = req?.cookies?.track;
+    return this._stripeService.subscribe(uniqueId, org.id, user.id, body, org.allowTrial);
   }
 
   @Get('/portal')

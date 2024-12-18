@@ -4,13 +4,28 @@ import { FC, useCallback, useState } from 'react';
 import clsx from 'clsx';
 import interClass from '@gitroom/react/helpers/inter.font';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
 
 const useFaqList = () => {
-  const {isGeneral} = useVariables();
+  const { isGeneral } = useVariables();
+  const user = useUser();
   return [
+    ...(user?.allowTrial
+      ? [
+          {
+            title: 'Am I going to be charged by Postiz?',
+            description:
+              'To confirm credit card information Postiz will hold $2 and release it immediately',
+          },
+        ]
+      : []),
     {
       title: `Can I trust ${isGeneral ? 'Postiz' : 'Gitroom'}?`,
-      description: `${isGeneral ? 'Postiz' : 'Gitroom'} is proudly open-source! We believe in an ethical and transparent culture, meaning that ${isGeneral ? 'Postiz' : 'Gitroom'} will live forever. You can check out the entire code or use it for personal projects. To view the open-source repository, <a href="https://github.com/gitroomhq/postiz-app" target="_blank" style="text-decoration: underline;">click here</a>.`,
+      description: `${
+        isGeneral ? 'Postiz' : 'Gitroom'
+      } is proudly open-source! We believe in an ethical and transparent culture, meaning that ${
+        isGeneral ? 'Postiz' : 'Gitroom'
+      } will live forever. You can check out the entire code or use it for personal projects. To view the open-source repository, <a href="https://github.com/gitroomhq/postiz-app" target="_blank" style="text-decoration: underline;">click here</a>.`,
     },
     {
       title: 'What are channels?',
@@ -29,7 +44,7 @@ For example, you can schedule your posts on X, Facebook, Instagram, TikTok, YouT
       description: `We automate ChatGPT to help you write your social posts and articles`,
     },
   ];
-}
+};
 
 export const FAQSection: FC<{ title: string; description: string }> = (
   props

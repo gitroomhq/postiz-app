@@ -29,6 +29,7 @@ import { ExtractContentService } from '@gitroom/nestjs-libraries/openai/extract.
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { AgenciesService } from '@gitroom/nestjs-libraries/database/prisma/agencies/agencies.service';
 import { AgenciesRepository } from '@gitroom/nestjs-libraries/database/prisma/agencies/agencies.repository';
+import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
 
 @Global()
 @Module({
@@ -66,6 +67,7 @@ import { AgenciesRepository } from '@gitroom/nestjs-libraries/database/prisma/ag
     ExtractContentService,
     OpenaiService,
     EmailService,
+    TrackService,
   ],
   get exports() {
     return this.providers;

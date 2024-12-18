@@ -24,6 +24,8 @@ import { Textarea } from '@gitroom/react/form/textarea';
 import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
 import { useUtmUrl } from '@gitroom/helpers/utils/utm.saver';
 import { useTolt } from '@gitroom/frontend/components/layout/tolt.script';
+import { useTrack } from '@gitroom/react/helpers/use.track';
+import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
 
 export interface Tiers {
   month: Array<{
@@ -223,6 +225,7 @@ export const MainBillingComponent: FC<{
   const router = useRouter();
   const utm = useUtmUrl();
   const tolt = useTolt();
+  const track = useTrack();
 
   const [subscription, setSubscription] = useState<Subscription | undefined>(
     sub
@@ -350,12 +353,18 @@ export const MainBillingComponent: FC<{
             period: monthlyOrYearly === 'on' ? 'YEARLY' : 'MONTHLY',
             utm,
             billing,
-            tolt: tolt()
+            tolt: tolt(),
           }),
         })
       ).json();
 
       if (url) {
+        await track(TrackEnum.InitiateCheckout, {
+          value:
+            pricing[billing][
+              monthlyOrYearly === 'on' ? 'year_price' : 'month_price'
+            ],
+        });
         window.location.href = url;
         return;
       }
@@ -412,13 +421,13 @@ export const MainBillingComponent: FC<{
           <div>YEARLY</div>
         </div>
       </div>
-      <div className="flex gap-[16px]">
+      <div className="flex gap-[16px] [@media(max-width:1024px)]:flex-col [@media(max-width:1024px)]:text-center">
         {Object.entries(pricing)
           .filter((f) => !isGeneral || f[0] !== 'FREE')
           .map(([name, values]) => (
             <div
               key={name}
-              className="flex-1 bg-sixth border border-customColor6 rounded-[4px] p-[24px] gap-[16px] flex flex-col"
+              className="flex-1 bg-sixth border border-customColor6 rounded-[4px] p-[24px] gap-[16px] flex flex-col [@media(max-width:1024px)]:items-center"
             >
               <div className="text-[18px]">{name}</div>
               <div className="text-[38px] flex gap-[2px] items-center">
@@ -472,7 +481,7 @@ export const MainBillingComponent: FC<{
                             .format('D MMM, YYYY')}`
                         : 'Cancel subscription'
                       : // @ts-ignore
-                      user?.tier === 'FREE' || user?.tier?.current === 'FREE'
+                        (user?.tier === 'FREE' || user?.tier?.current === 'FREE') && user.allowTrial
                       ? 'Start 7 days free trial'
                       : 'Purchase'}
                   </Button>

@@ -18,11 +18,13 @@ export class AuthService {
     private _userService: UsersService,
     private _organizationService: OrganizationService,
     private _notificationService: NotificationService,
-    private _emailService: EmailService,
+    private _emailService: EmailService
   ) {}
   async routeAuth(
     provider: Provider,
     body: CreateOrgUserDto | LoginUserDto,
+    ip: string,
+    userAgent: string,
     addToOrg?: boolean | { orgId: string; role: 'USER' | 'ADMIN'; id: string }
   ) {
     if (provider === Provider.LOCAL) {
@@ -32,7 +34,11 @@ export class AuthService {
           throw new Error('User already exists');
         }
 
-        const create = await this._organizationService.createOrgAndUser(body);
+        const create = await this._organizationService.createOrgAndUser(
+          body,
+          ip,
+          userAgent
+        );
 
         const addedOrg =
           addToOrg && typeof addToOrg !== 'boolean'
@@ -45,7 +51,11 @@ export class AuthService {
             : false;
 
         const obj = { addedOrg, jwt: await this.jwt(create.users[0].user) };
-        await this._emailService.sendEmail(body.email, 'Activate your account', `Click <a href="${process.env.FRONTEND_URL}/auth/activate/${obj.jwt}">here</a> to activate your account`);
+        await this._emailService.sendEmail(
+          body.email,
+          'Activate your account',
+          `Click <a href="${process.env.FRONTEND_URL}/auth/activate/${obj.jwt}">here</a> to activate your account`
+        );
         return obj;
       }
 
@@ -62,7 +72,9 @@ export class AuthService {
 
     const user = await this.loginOrRegisterProvider(
       provider,
-      body as CreateOrgUserDto
+      body as CreateOrgUserDto,
+      ip,
+      userAgent
     );
 
     const addedOrg =
@@ -101,7 +113,9 @@ export class AuthService {
 
   private async loginOrRegisterProvider(
     provider: Provider,
-    body: CreateOrgUserDto
+    body: CreateOrgUserDto,
+    ip: string,
+    userAgent: string
   ) {
     const providerInstance = ProvidersFactory.loadProvider(provider);
     const providerUser = await providerInstance.getUser(body.providerToken);
@@ -118,15 +132,19 @@ export class AuthService {
       return user;
     }
 
-    const create = await this._organizationService.createOrgAndUser({
-      company: body.company,
-      email: providerUser.email,
-      password: '',
-      provider,
-      providerId: providerUser.id,
-    });
+    const create = await this._organizationService.createOrgAndUser(
+      {
+        company: body.company,
+        email: providerUser.email,
+        password: '',
+        provider,
+        providerId: providerUser.id,
+      },
+      ip,
+      userAgent
+    );
 
-    NewsletterService.register(providerUser.email);
+    await NewsletterService.register(providerUser.email);
 
     return create.users[0].user;
   }
@@ -162,7 +180,11 @@ export class AuthService {
   }
 
   async activate(code: string) {
-    const user = AuthChecker.verifyJWT(code) as { id: string, activated: boolean, email: string };
+    const user = AuthChecker.verifyJWT(code) as {
+      id: string;
+      activated: boolean;
+      email: string;
+    };
     if (user.id && !user.activated) {
       const getUserAgain = await this._userService.getUserByEmail(user.email);
       if (getUserAgain.activated) {

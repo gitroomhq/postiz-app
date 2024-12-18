@@ -25,13 +25,14 @@ model Organization {
   Integration       Integration[]
   post              Post[] @relation("organization")
   submittedPost     Post[] @relation("submittedForOrg")
+  allowTrial        Boolean            @default(false)
   Comments          Comments[]
   notifications     Notifications[]
   buyerOrganization MessagesGroup[]
   usedCodes         UsedCodes[]
   credits           Credits[]
-  plugs        Plugs[]
-  customers    Customer[]
+  plugs             Plugs[]
+  customers         Customer[]
 }
 
 model User {
@@ -66,6 +67,8 @@ model User {
   payoutProblems    PayoutProblems[]
   lastOnline   DateTime          @default(now())
   agencies     SocialMediaAgency[]
+  ip           String?
+  agent        String?
 
   @@unique([email, providerName])
   @@index([lastReadNotifications])
