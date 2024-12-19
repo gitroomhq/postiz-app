@@ -21,10 +21,11 @@ import { DiscordProvider } from '@gitroom/nestjs-libraries/integrations/social/d
 import { SlackProvider } from '@gitroom/nestjs-libraries/integrations/social/slack.provider';
 import { MastodonProvider } from '@gitroom/nestjs-libraries/integrations/social/mastodon.provider';
 import { BlueskyProvider } from '@gitroom/nestjs-libraries/integrations/social/bluesky.provider';
+import { XSelfProvider } from '@gitroom/nestjs-libraries/integrations/social/xself.provider';
 // import { MastodonCustomProvider } from '@gitroom/nestjs-libraries/integrations/social/mastodon.custom.provider';
 
 const socialIntegrationList: SocialProvider[] = [
-  new XProvider(),
+  process.env.ENABLE_X_SELF === 'true' ? new XSelfProvider() : new XProvider(),
   new LinkedinProvider(),
   new LinkedinPageProvider(),
   new RedditProvider(),
