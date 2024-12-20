@@ -101,6 +101,7 @@ export const MenuComponent: FC<
       identifier: string;
       changeProfilePicture: boolean;
       changeNickName: boolean;
+      refreshNeeded?: boolean;
     };
   }
 > = (props) => {
@@ -201,6 +202,7 @@ export const MenuComponent: FC<
       <Menu
         canChangeProfilePicture={integration.changeProfilePicture}
         canChangeNickName={integration.changeNickName}
+        refreshChannel={refreshChannel}
         mutate={mutate}
         onChange={update}
         id={integration.id}

@@ -5,6 +5,7 @@ import { InstagramProvider } from '@gitroom/nestjs-libraries/integrations/social
 import { FacebookProvider } from '@gitroom/nestjs-libraries/integrations/social/facebook.provider';
 import {
   AnalyticsData,
+  AuthTokenDetails,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { Integration, Organization } from '@prisma/client';
@@ -329,7 +330,21 @@ export class IntegrationService {
       forceRefresh
     ) {
       const { accessToken, expiresIn, refreshToken } =
-        await integrationProvider.refreshToken(getIntegration.refreshToken!);
+        await new Promise<AuthTokenDetails>((res) => {
+          return integrationProvider
+            .refreshToken(getIntegration.refreshToken!)
+            .then((r) => res(r))
+            .catch(() => {
+              res({
+                error: '',
+                accessToken: '',
+                id: '',
+                name: '',
+                picture: '',
+                username: '',
+              });
+            });
+        });
 
       if (accessToken) {
         await this.createOrUpdateIntegration(
@@ -380,7 +395,7 @@ export class IntegrationService {
         return loadAnalytics;
       } catch (e) {
         if (e instanceof RefreshToken) {
-          return this.checkAnalytics(org, integration, date);
+          return this.checkAnalytics(org, integration, date, true);
         }
       }
     }
@@ -408,7 +423,7 @@ export class IntegrationService {
   }) {
     const getPlugById = await this._integrationRepository.getPlug(data.plugId);
     if (!getPlugById) {
-      return ;
+      return;
     }
 
     const integration = this._integrationManager.getSocialIntegration(
@@ -434,11 +449,11 @@ export class IntegrationService {
     );
 
     if (process) {
-      return ;
+      return;
     }
 
     if (data.totalRuns === data.currentRun) {
-      return ;
+      return;
     }
 
     this._workerServiceProducer.emit('plugs', {

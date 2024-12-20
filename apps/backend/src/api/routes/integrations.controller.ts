@@ -444,7 +444,7 @@ export class IntegrationsController {
       throw new NotEnoughScopes('Invalid API key');
     }
 
-    if (refresh && id !== refresh) {
+    if (refresh && String(id) !== String(refresh)) {
       throw new NotEnoughScopes(
         'Please refresh the channel that needs to be refreshed'
       );
