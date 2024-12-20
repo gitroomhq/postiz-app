@@ -9,16 +9,13 @@ import clsx from 'clsx';
 import Image from 'next/image';
 import { Menu } from '@gitroom/frontend/components/launches/menu/menu';
 import {
-  AddProviderComponent,
   ApiModal,
   CustomVariables,
-  UrlModal,
 } from '@gitroom/frontend/components/launches/add.provider.component';
 import { useRouter } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
-import { string } from 'yup';
 import { useToaster } from '@gitroom/react/toaster/toaster';
-import { useModals } from '@mantine/modals';
+import { Integration } from '@prisma/client';
 
 export const ConnectChannels: FC = () => {
   const fetch = useFetch();
@@ -27,7 +24,6 @@ export const ConnectChannels: FC = () => {
   const [identifier, setIdentifier] = useState<any>(undefined);
   const [popup, setPopups] = useState<undefined | string[]>(undefined);
   const toaster = useToaster();
-  const modal = useModals();
   const [showCustom, setShowCustom] = useState<any>(undefined);
 
   const getIntegrations = useCallback(async () => {
@@ -46,6 +42,22 @@ export const ConnectChannels: FC = () => {
   //   },
   //   []
   // );
+
+  const refreshChannel = useCallback(
+    (integration: Integration & { identifier: string }) => async () => {
+      const { url } = await (
+        await fetch(
+          `/integrations/social/${integration.identifier}?refresh=${integration.internalId}`,
+          {
+            method: 'GET',
+          }
+        )
+      ).json();
+
+      window.location.href = url;
+    },
+    []
+  );
 
   const addMessage = useCallback(
     (event: MessageEvent<{ msg: string; success: boolean }>) => {
@@ -346,6 +358,7 @@ export const ConnectChannels: FC = () => {
                   mutate={mutate}
                   onChange={update}
                   id={integration.id}
+                  refreshChannel={refreshChannel}
                   canEnable={
                     user?.totalChannels! > totalNonDisabledChannels &&
                     integration.disabled
