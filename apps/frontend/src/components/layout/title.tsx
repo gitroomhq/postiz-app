@@ -9,7 +9,8 @@ export const Title = () => {
     const path = usePathname();
     const menuItems = useMenuItems();
     const currentTitle = useMemo(() => {
-        return menuItems.find(item => path.indexOf(item.path) > -1)?.name;
+        const items = menuItems.find(item => path.indexOf(item.path) > -1);
+        return return item?.name || 'Calendar';
     }, [path]);
     const t = useTranslations("Navigation")
 
