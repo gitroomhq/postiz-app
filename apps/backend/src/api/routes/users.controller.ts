@@ -216,7 +216,7 @@ export class UsersController {
     const maxAge = 1000 * 60 * 60 * 24 * 365 * 1; // 1 years in milliseconds
     try {
       response.cookie('NEXT_LOCALE', language, {
-        domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+        domain: getCookieUrlFromDomain(process.env.FRONTEND_URL ?? ''),
         secure: true,
         httpOnly: true,
         maxAge: maxAge,
