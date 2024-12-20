@@ -5,9 +5,7 @@
   "overrides": [
     {
       "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
-      "rules": {
-         "@typescript-eslint/no-non-null-assertion": "off"
-      }
+      "rules": {}
     },
     {
       "files": ["*.ts", "*.tsx"],
@@ -23,6 +21,12 @@
       "files": ["*.js", "*.jsx"],
       "extends": ["plugin:@nx/javascript"],
       "rules": {}
-    }
+    },
+    {
+      "files": ["**/i18n/**/*.ts", "**/app/layout.ts"],
+      "rules": {
+        "@typescript-eslint/no-non-null-assertion": "off"
+      }
+    },
   ]
 }
