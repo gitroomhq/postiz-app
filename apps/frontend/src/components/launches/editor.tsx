@@ -7,7 +7,6 @@ import { CopilotTextarea } from '@copilotkit/react-textarea';
 import clsx from 'clsx';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useTranslations } from 'next-intl';
-import { number } from 'yargs';
 
 export const Editor = forwardRef<
   RefMDEditor,
