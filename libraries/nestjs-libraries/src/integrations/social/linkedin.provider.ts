@@ -287,12 +287,12 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     const splitAll = text.split(pattern);
     const splitTextReformat = splitAll.map((p) => {
       return p
+        .replace(/\\/g, '\\\\')
         .replace(/</g, '\\<')
         .replace(/>/g, '\\>')
         .replace(/#/g, '\\#')
         .replace(/~/g, '\\~')
         .replace(/_/g, '\\_')
-        .replace(/\\/g, '\\\\')
         .replace(/\|/g, '\\|')
         .replace(/\[/g, '\\[')
         .replace(/]/g, '\\]')
