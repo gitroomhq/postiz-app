@@ -11,14 +11,16 @@ const useFaqList = () => {
   const t = useTranslations('Billing')
   return [
     {
-      title: `${t('trust_title', {product: isGeneral ? 'Postiz' : 'Gitroom'})}?`,
-      description: `${t("trust_desc", {product: isGeneral ? 'Postiz' : 'Gitroom'})} ${isGeneral ? 'Postiz' : 'Gitroom'} ${t("will live forever")}. ${t("You can check out the entire code or use it for personal projects")}. ${t("To view the open-source repository,")} <a href="https://github.com/gitroomhq/postiz-app" target="_blank" style="text-decoration: underline;">${t("click here")}</a>.`,
+      title: t('trust_title', {product: isGeneral ? 'Postiz' : 'Gitroom'}),
+      description: t('trust_description', {
+        product: isGeneral ? 'Postiz' : 'Gitroom',
+        repoLink: '<a href="https://github.com/gitroomhq/postiz-app" target="_blank" style="text-decoration: underline;">',
+        repoLinkEnd: '</a>'
+      }),
     },
     {
       title: t('What are channels?'),
-      description: `${
-        isGeneral ? 'Postiz' : 'Gitroom'
-      } ${t("allows you to schedule your posts between different channels")}. ${t("A channel is a publishing platform where you can schedule your posts")}. ${t("For example, you can schedule your posts on X, Facebook, Instagram, TikTok, YouTube, Reddit, Linkedin, Dribbble, Threads and Pinterest")}.`,
+      description: t('channels_answer?', {product: isGeneral ? 'Postiz' : 'Gitroom'})
     },
     {
       title: t('What are team members?'),
