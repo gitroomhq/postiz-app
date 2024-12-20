@@ -210,7 +210,12 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
           </div>
           {!getRef && (
             <div className="justify-end flex">
-              <Button type="submit" className='rounded-md'>{t("Settings.Save")}</Button>
+              <Button 
+                type="submit" 
+                className='rounded-md'
+                >
+                {form.formState.isSubmitting ? t("Settings.Saving") : t("Settings.Save")}
+              </Button>
             </div>
           )}
           {!!user?.tier?.team_members && isGeneral && <TeamsComponent />}
@@ -220,6 +225,7 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
             label={t('Settings.PreferredLanguage')}
             name='language'
             placeholder={t('Settings.SelectPreferredLanguage')}
+            disabled={form.formState.isSubmitting}
           />
           {showLogout && <LogoutComponent />}
         </div>
