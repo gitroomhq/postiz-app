@@ -18,7 +18,6 @@ import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
 import { Calendar } from './calendar';
-import { useTranslations } from 'next-intl';
 import { useDrag, useDrop } from 'react-dnd';
 import { DNDProvider } from '@gitroom/frontend/components/launches/helpers/dnd.provider';
 
