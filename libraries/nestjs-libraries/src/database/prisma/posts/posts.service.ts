@@ -6,12 +6,9 @@ import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integ
 import { Integration, Post, Media, From } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
-import { capitalize, shuffle } from 'lodash';
+import { capitalize, shuffle, uniq } from 'lodash';
 import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
 import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
-import { GeneratorDto } from '@gitroom/nestjs-libraries/dtos/generator/generator.dto';
-import { ExtractContentService } from '@gitroom/nestjs-libraries/openai/extract.content.service';
-import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { CreateGeneratedPostsDto } from '@gitroom/nestjs-libraries/dtos/generator/create.generated.posts.dto';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
@@ -22,6 +19,8 @@ import {
 import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/client';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { AuthTokenDetails } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import utc from 'dayjs/plugin/utc';
+dayjs.extend(utc);
 
 type PostWithConditionals = Post & {
   integration?: Integration;
@@ -37,8 +36,6 @@ export class PostsService {
     private _notificationService: NotificationService,
     private _messagesService: MessagesService,
     private _stripeService: StripeService,
-    private _extractContentService: ExtractContentService,
-    private _openAiService: OpenaiService,
     private _integrationService: IntegrationService
   ) {}
 
@@ -606,26 +603,6 @@ export class PostsService {
     }
   }
 
-  async loadPostContent(postId: string) {
-    const post = await this._postRepository.getPostById(postId);
-    if (!post) {
-      return '';
-    }
-
-    return post.content;
-  }
-
-  async generatePosts(orgId: string, body: GeneratorDto) {
-    const content = body.url
-      ? await this._extractContentService.extractContent(body.url)
-      : await this.loadPostContent(body.post);
-
-    const value = body.url
-      ? await this._openAiService.extractWebsiteText(content!)
-      : await this._openAiService.generatePosts(content!);
-    return { list: value };
-  }
-
   async generatePostsDraft(orgId: string, body: CreateGeneratedPostsDto) {
     const getAllIntegrations = (
       await this._integrationService.getIntegrationsList(orgId)
@@ -701,5 +678,60 @@ export class PostsService {
         });
       }
     }
+  }
+
+  findAllExistingCategories() {
+    return this._postRepository.findAllExistingCategories();
+  }
+
+  findAllExistingTopicsOfCategory(category: string) {
+    return this._postRepository.findAllExistingTopicsOfCategory(category);
+  }
+
+  findPopularPosts(category: string, topic?: string) {
+    return this._postRepository.findPopularPosts(category, topic);
+  }
+
+  async findFreeDateTime(orgId: string) {
+    const findTimes = await this._integrationService.findFreeDateTime(orgId);
+    return this.findFreeDateTimeRecursive(
+      orgId,
+      findTimes,
+      dayjs.utc().startOf('day')
+    );
+  }
+
+  async createPopularPosts(post: {
+    category: string;
+    topic: string;
+    content: string;
+    hook: string;
+  }) {
+    return this._postRepository.createPopularPosts(post);
+  }
+
+  private async findFreeDateTimeRecursive(
+    orgId: string,
+    times: number[],
+    date: dayjs.Dayjs
+  ): Promise<string> {
+    const list = await this._postRepository.getPostsCountsByDates(
+      orgId,
+      times,
+      date
+    );
+
+    if (!list.length) {
+      return this.findFreeDateTimeRecursive(orgId, times, date.add(1, 'day'));
+    }
+
+    const num = list.reduce<null | number>((prev, curr) => {
+      if (prev === null || prev > curr) {
+        return curr;
+      }
+      return prev;
+    }, null) as number;
+
+    return date.clone().add(num, 'minutes').format('YYYY-MM-DDTHH:mm:00');
   }
 }

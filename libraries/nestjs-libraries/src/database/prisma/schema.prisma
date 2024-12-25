@@ -486,6 +486,16 @@ model ExisingPlugData {
   @@unique([integrationId, methodName, value])
 }
 
+model PopularPosts {
+  id         String   @id @default(uuid())
+  category   String
+  topic      String
+  content    String
+  hook       String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
 enum OrderStatus {
   PENDING
   ACCEPTED

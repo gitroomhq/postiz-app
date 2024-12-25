@@ -17,6 +17,7 @@
     "dev:cron": "npx nx run cron:serve:development",
     "dev:docker": "docker compose -f ./docker-compose.dev.yaml up -d",
     "start:prod": "node dist/apps/backend/main.js",
+    "commands:build:development": "npx nx run commands:build:development",
     "start:prod:frontend": "nx run frontend:serve:production",
     "start:prod:workers": "node dist/apps/workers/main.js",
     "start:prod:cron": "node dist/apps/cron/main.js",
@@ -41,6 +42,10 @@
     "@copilotkit/react-ui": "^1.4.7",
     "@copilotkit/runtime": "^1.4.7",
     "@hookform/resolvers": "^3.3.4",
+    "@langchain/community": "^0.3.19",
+    "@langchain/core": "^0.3.26",
+    "@langchain/langgraph": "^0.2.34",
+    "@langchain/openai": "^0.3.16",
     "@mantine/core": "^5.10.5",
     "@mantine/dates": "^5.10.5",
     "@mantine/hooks": "^5.10.5",
@@ -91,6 +96,8 @@
     "@uppy/react": "^4.0.2",
     "@uppy/status-bar": "^4.0.3",
     "@uppy/xhr-upload": "^4.1.0",
+    "ai": "^4.0.22",
+    "algoliasearch": "^5.18.0",
     "array-move": "^4.0.0",
     "axios": "^1.7.7",
     "bcrypt": "^5.1.1",
@@ -157,7 +164,8 @@
     "utf-8-validate": "^5.0.10",
     "uuid": "^10.0.0",
     "yargs": "^17.7.2",
-    "yup": "^1.4.0"
+    "yup": "^1.4.0",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@nestjs/schematics": "^10.0.1",

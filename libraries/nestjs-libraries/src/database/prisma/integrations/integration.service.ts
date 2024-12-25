@@ -19,7 +19,9 @@ import { IntegrationTimeDto } from '@gitroom/nestjs-libraries/dtos/integrations/
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { PlugDto } from '@gitroom/nestjs-libraries/dtos/plugs/plug.dto';
 import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/client';
-import { difference } from 'lodash';
+import { difference, uniq } from 'lodash';
+import utc from 'dayjs/plugin/utc';
+dayjs.extend(utc);
 
 @Injectable()
 export class IntegrationService {
@@ -514,5 +516,17 @@ export class IntegrationService {
     );
     const loadOnlyIds = exisingData.map((p) => p.value);
     return difference(id, loadOnlyIds);
+  }
+
+  async findFreeDateTime(orgId: string): Promise<number[]> {
+    const findTimes = await this._integrationRepository.getPostingTimes(orgId);
+    return uniq(
+      findTimes.reduce((all: any, current: any) => {
+        return [
+          ...all,
+          ...JSON.parse(current.postingTimes).map((p: { time: number }) => p.time),
+        ];
+      }, [] as number[])
+    );
   }
 }

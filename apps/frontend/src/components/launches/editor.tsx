@@ -22,7 +22,7 @@ export const Editor = forwardRef<
     const user = useUser();
     useCopilotReadable({
       description: 'Content of the post number ' + (props.order + 1),
-      value: props.content,
+      value: props.value,
     });
 
     useCopilotAction({

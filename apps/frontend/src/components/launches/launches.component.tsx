@@ -20,6 +20,8 @@ import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
 import { Calendar } from './calendar';
 import { useDrag, useDrop } from 'react-dnd';
 import { DNDProvider } from '@gitroom/frontend/components/launches/helpers/dnd.provider';
+import { GeneratorComponent } from './generator/generator';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 
 interface MenuComponentInterface {
   refreshChannel: (
@@ -217,6 +219,8 @@ export const MenuComponent: FC<
 };
 export const LaunchesComponent = () => {
   const fetch = useFetch();
+  const user = useUser();
+  const {billingEnabled} = useVariables();
   const router = useRouter();
   const search = useSearchParams();
   const toast = useToaster();
@@ -333,11 +337,14 @@ export const LaunchesComponent = () => {
     }
     if (search.get('msg')) {
       toast.show(search.get('msg')!, 'warning');
-      window?.opener?.postMessage({msg: search.get('msg')!, success: false}, '*');
+      window?.opener?.postMessage(
+        { msg: search.get('msg')!, success: false },
+        '*'
+      );
     }
     if (search.get('added')) {
       fireEvents('channel_added');
-      window?.opener?.postMessage({msg: 'Channel added', success: true}, '*');
+      window?.opener?.postMessage({ msg: 'Channel added', success: true }, '*');
     }
     if (window.opener) {
       window.close();
@@ -375,7 +382,7 @@ export const LaunchesComponent = () => {
                   ))}
                 </div>
                 <AddProviderButton update={() => update(true)} />
-                {/*{sortedIntegrations?.length > 0 && user?.tier?.ai && <GeneratorComponent />}*/}
+                {sortedIntegrations?.length > 0 && user?.tier?.ai && billingEnabled && <GeneratorComponent />}
               </div>
               <div className="flex-1 flex flex-col gap-[14px]">
                 <Filters />

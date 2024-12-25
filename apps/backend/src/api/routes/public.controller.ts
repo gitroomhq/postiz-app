@@ -10,14 +10,29 @@ import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.req
 import { User } from '@prisma/client';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
+import { AgentGraphService } from '@gitroom/nestjs-libraries/agent/agent.graph.service';
+import { AgentGraphInsertService } from '@gitroom/nestjs-libraries/agent/agent.graph.insert.service';
 
 @ApiTags('Public')
 @Controller('/public')
 export class PublicController {
   constructor(
     private _agenciesService: AgenciesService,
-    private _trackService: TrackService
+    private _trackService: TrackService,
+    private _agentGraphInsertService: AgentGraphInsertService
   ) {}
+  @Post('/agent')
+  async createAgent(@Body() body: { text: string; apiKey: string }) {
+    if (
+      !body.apiKey ||
+      !process.env.AGENT_API_KEY ||
+      body.apiKey !== process.env.AGENT_API_KEY
+    ) {
+      return;
+    }
+    return this._agentGraphInsertService.newPost(body.text);
+  }
+
   @Get('/agencies-list')
   async getAgencyByUser() {
     return this._agenciesService.getAllAgencies();

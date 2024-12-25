@@ -66,8 +66,13 @@ export const AddEditModal: FC<{
   integrations: Integrations[];
   reopenModal: () => void;
   mutate: () => void;
+  onlyValues?: Array<{
+    content: string;
+    id?: string;
+    image?: Array<{ id: string; path: string }>;
+  }>;
 }> = (props) => {
-  const { date, integrations: ints, reopenModal, mutate } = props;
+  const { date, integrations: ints, reopenModal, mutate, onlyValues } = props;
   const [customer, setCustomer] = useState('');
 
   // selected integrations to allow edit
@@ -104,7 +109,7 @@ export const AddEditModal: FC<{
       id?: string;
       image?: Array<{ id: string; path: string }>;
     }>
-  >([{ content: '' }]);
+  >(onlyValues ? onlyValues : [{ content: '' }]);
 
   const fetch = useFetch();
 
