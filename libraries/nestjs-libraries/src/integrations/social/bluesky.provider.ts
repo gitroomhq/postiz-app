@@ -5,7 +5,10 @@ import {
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { NotEnoughScopes, SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  NotEnoughScopes,
+  SocialAbstract,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { BskyAgent, RichText } from '@atproto/api';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
@@ -126,14 +129,8 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
     for (const post of postDetails) {
       const images = await Promise.all(
         post.media?.map(async (p) => {
-          const a = await fetch(p.url);
-          console.log(p.url);
           return await agent.uploadBlob(
-            new Blob([
-              await sharp(await (await fetch(p.url)).arrayBuffer())
-                .resize({ width: 400 })
-                .toBuffer(),
-            ])
+            new Blob([await (await fetch(p.url)).arrayBuffer()])
           );
         }) || []
       );

@@ -73,7 +73,7 @@ export const DatePicker: FC<{
               }
 
               if (modifiers.selected) {
-                return '!text-textColor !bg-seventh !outline-none';
+                return '!text-white !bg-seventh !outline-none';
               }
 
               return '!text-textColor';
@@ -95,7 +95,7 @@ export const DatePicker: FC<{
             defaultValue={date.toDate()}
           />
           <Button className="mt-[12px]" onClick={changeShow}>
-            Close
+            Save
           </Button>
         </div>
       )}

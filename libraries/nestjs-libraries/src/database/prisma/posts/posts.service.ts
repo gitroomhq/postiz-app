@@ -146,7 +146,7 @@ export class PostsService {
         });
       }
     } catch (err: any) {
-      await this._postRepository.changeState(firstPost.id, 'ERROR');
+      await this._postRepository.changeState(firstPost.id, 'ERROR', err);
       await this._notificationService.inAppNotification(
         firstPost.organizationId,
         `Error posting on ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,

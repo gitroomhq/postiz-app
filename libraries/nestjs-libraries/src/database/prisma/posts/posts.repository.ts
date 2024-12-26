@@ -189,13 +189,14 @@ export class PostsRepository {
     });
   }
 
-  changeState(id: string, state: State) {
+  changeState(id: string, state: State, err?: string) {
     return this._post.model.post.update({
       where: {
         id,
       },
       data: {
         state,
+        error: typeof err === 'string' ? err : JSON.stringify(err),
       },
     });
   }

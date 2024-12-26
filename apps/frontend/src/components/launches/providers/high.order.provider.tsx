@@ -331,7 +331,7 @@ export const withProvider = function <T extends object>(
               <EditorWrapper>
                 <div className="flex flex-col gap-[20px]">
                   {!existingData?.integration && (
-                    <div className="bg-red-800">
+                    <div className="bg-red-800 text-white">
                       You are now editing only {integration?.name} (
                       {capitalize(integration?.identifier.replace('-', ' '))})
                     </div>

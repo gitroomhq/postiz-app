@@ -3,13 +3,14 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Uppy, { UploadResult } from '@uppy/core';
 // @ts-ignore
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import { getUppyUploadPlugin } from '@gitroom/react/helpers/uppy.upload'; 
+import { getUppyUploadPlugin } from '@gitroom/react/helpers/uppy.upload';
 import { FileInput, ProgressBar } from '@uppy/react';
 
 // Uppy styles
 import '@uppy/core/dist/style.min.css';
 import '@uppy/dashboard/dist/style.min.css';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
+import Compressor from '@uppy/compressor';
 
 export function MultipartFileUploader({
   onUploadSuccess,
@@ -22,10 +23,13 @@ export function MultipartFileUploader({
   const [loaded, setLoaded] = useState(false);
   const [reload, setReload] = useState(false);
 
-  const onUploadSuccessExtended = useCallback((result: UploadResult<any,any>) => {
-    setReload(true);
-    onUploadSuccess(result);
-  }, [onUploadSuccess]);
+  const onUploadSuccessExtended = useCallback(
+    (result: UploadResult<any, any>) => {
+      setReload(true);
+      onUploadSuccess(result);
+    },
+    [onUploadSuccess]
+  );
 
   useEffect(() => {
     if (reload) {
@@ -59,9 +63,9 @@ export function MultipartFileUploaderAfter({
   onUploadSuccess: (result: UploadResult) => void;
   allowedFileTypes: string;
 }) {
-  const {storageProvider, backendUrl} = useVariables();
+  const { storageProvider, backendUrl } = useVariables();
   const fetch = useFetch();
-  
+
   const uppy = useMemo(() => {
     const uppy2 = new Uppy({
       autoProceed: true,
@@ -71,16 +75,25 @@ export function MultipartFileUploaderAfter({
         maxFileSize: 1000000000,
       },
     });
-   
-    const { plugin, options } = getUppyUploadPlugin(storageProvider, fetch, backendUrl)
-    uppy2.use(plugin, options)
+
+    const { plugin, options } = getUppyUploadPlugin(
+      storageProvider,
+      fetch,
+      backendUrl
+    );
+    uppy2.use(plugin, options);
+    uppy2.use(Compressor, {
+      convertTypes: ['image/jpeg'],
+      maxWidth: 1000,
+      maxHeight: 1000,
+    });
     // Set additional metadata when a file is added
     uppy2.on('file-added', (file) => {
-        uppy2.setFileMeta(file.id, {
-          useCloudflare: storageProvider === 'cloudflare' ? 'true' : 'false', // Example of adding a custom field
-          // Add more fields as needed
-        });
+      uppy2.setFileMeta(file.id, {
+        useCloudflare: storageProvider === 'cloudflare' ? 'true' : 'false', // Example of adding a custom field
+        // Add more fields as needed
       });
+    });
 
     uppy2.on('complete', (result) => {
       onUploadSuccess(result);
@@ -111,9 +124,9 @@ export function MultipartFileUploaderAfter({
           strings: {
             chooseFiles: 'Upload',
           },
-          pluralize: (n) => n
+          pluralize: (n) => n,
         }}
-      /> 
+      />
     </>
   );
 }

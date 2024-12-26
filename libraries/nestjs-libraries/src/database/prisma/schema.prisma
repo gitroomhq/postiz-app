@@ -342,6 +342,7 @@ model Post {
   lastMessageId       String?
   lastMessage         Messages? @relation(fields: [lastMessageId], references: [id])
   payoutProblems      PayoutProblems[]
+  error               String?
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt
   deletedAt           DateTime?
