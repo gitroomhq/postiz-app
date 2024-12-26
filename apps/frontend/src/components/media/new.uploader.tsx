@@ -86,6 +86,7 @@ export function MultipartFileUploaderAfter({
       convertTypes: ['image/jpeg'],
       maxWidth: 1000,
       maxHeight: 1000,
+      quality: 1
     });
     // Set additional metadata when a file is added
     uppy2.on('file-added', (file) => {
