@@ -69,7 +69,7 @@ export const GeneralPreviewComponent: FC<{maximumCharacters?: number}> = (props)
                   {value.images.map((image, index) => (
                     <a
                       key={`image_${index}`}
-                      className="flex-1 h-[270px]"
+                      className="flex-1"
                       href={mediaDir.set(image.path)}
                       target="_blank"
                     >
