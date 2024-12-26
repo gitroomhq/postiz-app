@@ -20,13 +20,13 @@ const tools = !process.env.TAVILY_API_KEY ? [] : [new TavilySearchResults({ maxR
 const toolNode = new ToolNode(tools);
 
 const model = new ChatOpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
   model: 'gpt-4o-2024-08-06',
   temperature: 0.7,
 });
 
 const dalle = new DallEAPIWrapper({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
   model: 'dall-e-3',
 });
 
