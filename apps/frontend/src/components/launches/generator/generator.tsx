@@ -297,7 +297,7 @@ export const GeneratorComponent = () => {
 
   return (
     <button
-      className="text-textColor p-[8px] rounded-md bg-red-700 flex justify-center items-center gap-[5px] outline-none"
+      className="p-[8px] rounded-md bg-red-700 flex justify-center items-center gap-[5px] outline-none text-white"
       onClick={generate}
     >
       <svg

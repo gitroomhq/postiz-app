@@ -16,6 +16,7 @@ export const PickPlatforms: FC<{
   singleSelect: boolean;
   hide?: boolean;
   isMain: boolean;
+  toolTip?: boolean;
 }> = (props) => {
   const { hide, isMain, integrations, selectedIntegrations, onChange } = props;
   const ref = useRef<HTMLDivElement>(null);
@@ -65,7 +66,7 @@ export const PickPlatforms: FC<{
   useMoveToIntegrationListener(
     [integrations],
     props.singleSelect,
-    ({identifier, toPreview}: {identifier: string, toPreview: boolean}) => {
+    ({ identifier, toPreview }: { identifier: string; toPreview: boolean }) => {
       const findIntegration = integrations.find((p) => p.id === identifier);
 
       if (findIntegration) {
@@ -162,11 +163,11 @@ export const PickPlatforms: FC<{
       .filter((p) => p);
 
     setSelectedAccounts(newIntegrations, () => {
-      console.log('changed')
+      console.log('changed');
     });
 
     onChange(newIntegrations, () => {
-      console.log('changed')
+      console.log('changed');
     });
   };
 
@@ -253,6 +254,10 @@ export const PickPlatforms: FC<{
                     <div
                       key={integration.id}
                       className="flex gap-[8px] items-center mr-[10px]"
+                      {...(props.toolTip && {
+                        'data-tooltip-id': 'tooltip',
+                        'data-tooltip-content': integration.name,
+                      })}
                     >
                       <div
                         onClick={addPlatform(integration)}

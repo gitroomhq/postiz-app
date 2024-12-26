@@ -469,13 +469,16 @@ export const AddEditModal: FC<{
             </TopTitle>
 
             {!existingData.integration && integrations.length > 1 ? (
-              <PickPlatforms
-                integrations={integrations.filter((f) => !f.disabled)}
-                selectedIntegrations={[]}
-                singleSelect={false}
-                onChange={setSelectedIntegrations}
-                isMain={true}
-              />
+              <div className="w-full max-w-[600px] overflow-y-auto pb-[10px]">
+                <PickPlatforms
+                  toolTip={true}
+                  integrations={integrations.filter((f) => !f.disabled)}
+                  selectedIntegrations={[]}
+                  singleSelect={false}
+                  onChange={setSelectedIntegrations}
+                  isMain={true}
+                />
+              </div>
             ) : (
               <div
                 className={clsx(

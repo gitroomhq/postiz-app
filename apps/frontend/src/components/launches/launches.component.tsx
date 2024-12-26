@@ -33,6 +33,30 @@ interface MenuComponentInterface {
   update: (shouldReload: boolean) => void;
 }
 
+export const OpenClose: FC<{
+  isOpen: boolean;
+}> = (props) => {
+  const { isOpen } = props;
+  return (
+    <svg
+      width="11"
+      height="6"
+      viewBox="0 0 22 12"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={clsx(
+        'rotate-180 transition-all',
+        isOpen ? 'rotate-180' : 'rotate-90'
+      )}
+    >
+      <path
+        d="M21.9245 11.3823C21.8489 11.5651 21.7207 11.7213 21.5563 11.8312C21.3919 11.9411 21.1986 11.9998 21.0008 11.9998H1.00079C0.802892 12 0.609399 11.9414 0.444805 11.8315C0.280212 11.7217 0.151917 11.5654 0.076165 11.3826C0.000412494 11.1998 -0.0193921 10.9986 0.0192583 10.8045C0.0579087 10.6104 0.153276 10.4322 0.293288 10.2923L10.2933 0.29231C10.3862 0.199333 10.4964 0.125575 10.6178 0.0752506C10.7392 0.0249263 10.8694 -0.000976562 11.0008 -0.000976562C11.1322 -0.000976562 11.2623 0.0249263 11.3837 0.0752506C11.5051 0.125575 11.6154 0.199333 11.7083 0.29231L21.7083 10.2923C21.8481 10.4322 21.9433 10.6105 21.9818 10.8045C22.0202 10.9985 22.0003 11.1996 21.9245 11.3823Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+};
+
 export const MenuGroupComponent: FC<
   MenuComponentInterface & {
     changeItemGroup: (id: string, group: string) => void;
@@ -59,6 +83,19 @@ export const MenuGroupComponent: FC<
     changeItemGroup,
   } = props;
 
+  const [isOpen, setIsOpen] = useState(
+    !!+(localStorage.getItem(group.name + '_isOpen') || '1')
+  );
+
+  const changeOpenClose = useCallback(
+    (e: any) => {
+      setIsOpen(!isOpen);
+      localStorage.setItem(group.name + '_isOpen', isOpen ? '0' : '1');
+      e.stopPropagation();
+    },
+    [isOpen]
+  );
+
   const [collectedProps, drop] = useDrop(() => ({
     accept: 'menu',
     drop: (item: { id: string }, monitor) => {
@@ -82,18 +119,27 @@ export const MenuGroupComponent: FC<
           </div>
         </div>
       )}
-      {!!group.name && <div>{group.name}</div>}
-      {group.values.map((integration) => (
-        <MenuComponent
-          key={integration.id}
-          integration={integration}
-          mutate={mutate}
-          continueIntegration={continueIntegration}
-          update={update}
-          refreshChannel={refreshChannel}
-          totalNonDisabledChannels={totalNonDisabledChannels}
-        />
-      ))}
+      {!!group.name && (
+        <div className="flex items-center gap-[5px] cursor-pointer" onClick={changeOpenClose}>
+          <div>
+            <OpenClose isOpen={isOpen} />
+          </div>
+          <div>{group.name}</div>
+        </div>
+      )}
+      <div className={clsx("gap-[16px] flex flex-col relative", !isOpen && 'hidden')}>
+        {group.values.map((integration) => (
+          <MenuComponent
+            key={integration.id}
+            integration={integration}
+            mutate={mutate}
+            continueIntegration={continueIntegration}
+            update={update}
+            refreshChannel={refreshChannel}
+            totalNonDisabledChannels={totalNonDisabledChannels}
+          />
+        ))}
+      </div>
     </div>
   );
 };
@@ -220,7 +266,7 @@ export const MenuComponent: FC<
 export const LaunchesComponent = () => {
   const fetch = useFetch();
   const user = useUser();
-  const {billingEnabled} = useVariables();
+  const { billingEnabled } = useVariables();
   const router = useRouter();
   const search = useSearchParams();
   const toast = useToaster();
@@ -382,7 +428,9 @@ export const LaunchesComponent = () => {
                   ))}
                 </div>
                 <AddProviderButton update={() => update(true)} />
-                {sortedIntegrations?.length > 0 && user?.tier?.ai && billingEnabled && <GeneratorComponent />}
+                {sortedIntegrations?.length > 0 &&
+                  user?.tier?.ai &&
+                  billingEnabled && <GeneratorComponent />}
               </div>
               <div className="flex-1 flex flex-col gap-[14px]">
                 <Filters />
