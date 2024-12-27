@@ -413,7 +413,7 @@ export const withProvider = function <T extends object>(
                       <div>
                         <div className="flex gap-[4px]">
                           <div className="flex-1 text-textColor editor">
-                            {integration?.identifier === 'linkedin' && (
+                            {(integration?.identifier === 'linkedin' || integration?.identifier === 'linkedin-page') && (
                               <Button
                                 className="mb-[5px]"
                                 onClick={tagPersonOrCompany(

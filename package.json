@@ -115,6 +115,7 @@
     "copy-to-clipboard": "^3.3.3",
     "crypto-hash": "^3.0.0",
     "dayjs": "^1.11.10",
+    "emoji-picker-react": "^4.12.0",
     "facebook-nodejs-business-sdk": "^21.0.5",
     "google-auth-library": "^9.11.0",
     "googleapis": "^137.1.0",
