@@ -538,7 +538,7 @@ export const AddEditModal: FC<{
                     disableForm={true}
                   >
                     <option value="">Selected Customer</option>
-                    {uniqBy(ints, (u) => u?.customer?.name).map((p) => (
+                    {uniqBy(ints, (u) => u?.customer?.name).filter(f => f.customer?.name).map((p) => (
                       <option key={p.customer?.id} value={p.customer?.id}>
                         Customer: {p.customer?.name}
                       </option>
