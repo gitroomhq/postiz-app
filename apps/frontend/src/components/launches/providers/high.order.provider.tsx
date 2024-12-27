@@ -8,6 +8,7 @@ import React, {
   useEffect,
   useMemo,
   useState,
+  ClipboardEvent,
 } from 'react';
 import { Button } from '@gitroom/react/form/button';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
@@ -38,6 +39,9 @@ import { AddPostButton } from '@gitroom/frontend/components/launches/add.post.bu
 import { GeneralPreviewComponent } from '@gitroom/frontend/components/launches/general.preview.component';
 import { capitalize } from 'lodash';
 import { useModals } from '@mantine/modals';
+import { useUppyUploader } from '@gitroom/frontend/components/media/new.uploader';
+import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
+import { DropFiles } from '@gitroom/frontend/components/layout/drop.files';
 
 // Simple component to change back to settings on after changing tab
 export const SetTab: FC<{ changeTab: () => void }> = (props) => {
@@ -96,6 +100,7 @@ export const withProvider = function <T extends object>(
     const existingData = useExistingData();
     const { integration, date } = useIntegration();
     const [showLinkedinPopUp, setShowLinkedinPopUp] = useState<any>(false);
+    const [uploading, setUploading] = useState(false);
 
     useCopilotReadable({
       description:
@@ -276,6 +281,68 @@ export const withProvider = function <T extends object>(
       []
     );
 
+    const uppy = useUppyUploader({
+      onUploadSuccess: () => {
+        /**empty**/
+      },
+      allowedFileTypes: 'image/*,video/mp4',
+    });
+
+    const pasteImages = useCallback(
+      (index: number, currentValue: any[], isFile?: boolean) => {
+        return async (event: ClipboardEvent<HTMLDivElement> | File[]) => {
+          // @ts-ignore
+          const clipboardItems = isFile
+            ? // @ts-ignore
+              event.map((p) => ({ kind: 'file', getAsFile: () => p }))
+            : // @ts-ignore
+              event.clipboardData?.items; // Ensure clipboardData is available
+          if (!clipboardItems) {
+            return;
+          }
+
+          const files: File[] = [];
+
+          // @ts-ignore
+          for (const item of clipboardItems) {
+            console.log(item);
+            if (item.kind === 'file') {
+              const file = item.getAsFile();
+              if (file) {
+                const isImage = file.type.startsWith('image/');
+                const isVideo = file.type.startsWith('video/');
+                if (isImage || isVideo) {
+                  files.push(file); // Collect images or videos
+                }
+              }
+            }
+          }
+          if (files.length === 0) {
+            return;
+          }
+
+          setUploading(true);
+          const lastValues = [...currentValue];
+          for (const file of files) {
+            uppy.addFile(file);
+            const upload = await uppy.upload();
+            uppy.clear();
+            if (upload?.successful?.length) {
+              lastValues.push(upload?.successful[0]?.response?.body?.saved!);
+              changeImage(index)({
+                target: {
+                  name: 'image',
+                  value: [...lastValues],
+                },
+              });
+            }
+          }
+          setUploading(false);
+        };
+      },
+      [changeImage]
+    );
+
     // this is a trick to prevent the data from being deleted, yet we don't render the elements
     if (!props.show) {
       return null;
@@ -329,6 +396,11 @@ export const withProvider = function <T extends object>(
           {editInPlace &&
             createPortal(
               <EditorWrapper>
+                {uploading && (
+                  <div className="absolute left-0 top-0 w-full h-full bg-black/40 z-[600] flex justify-center items-center">
+                    <LoadingComponent width={100} height={100} />
+                  </div>
+                )}
                 <div className="flex flex-col gap-[20px]">
                   {!existingData?.integration && (
                     <div className="bg-red-800 text-white">
@@ -347,33 +419,36 @@ export const withProvider = function <T extends object>(
                                 onClick={tagPersonOrCompany(
                                   integration.id,
                                   (newValue: string) =>
-                                    changeValue(index)(
-                                      val.content + newValue
-                                    )
+                                    changeValue(index)(val.content + newValue)
                                 )}
                               >
                                 Tag a company
                               </Button>
                             )}
-                            <Editor
-                              order={index}
-                              height={InPlaceValue.length > 1 ? 200 : 250}
-                              value={val.content}
-                              commands={[
-                                // ...commands
-                                //   .getCommands()
-                                //   .filter((f) => f.name !== 'image'),
-                                // newImage,
-                                postSelector(date),
-                                ...linkedinCompany(
-                                  integration?.identifier!,
-                                  integration?.id!
-                                ),
-                              ]}
-                              preview="edit"
-                              // @ts-ignore
-                              onChange={changeValue(index)}
-                            />
+                            <DropFiles
+                              onDrop={pasteImages(index, val.image || [], true)}
+                            >
+                              <Editor
+                                order={index}
+                                height={InPlaceValue.length > 1 ? 200 : 250}
+                                value={val.content}
+                                commands={[
+                                  // ...commands
+                                  //   .getCommands()
+                                  //   .filter((f) => f.name !== 'image'),
+                                  // newImage,
+                                  postSelector(date),
+                                  ...linkedinCompany(
+                                    integration?.identifier!,
+                                    integration?.id!
+                                  ),
+                                ]}
+                                preview="edit"
+                                onPaste={pasteImages(index, val.image || [])}
+                                // @ts-ignore
+                                onChange={changeValue(index)}
+                              />
+                            </DropFiles>
                             {(!val.content || val.content.length < 6) && (
                               <div className="my-[5px] text-customColor19 text-[12px] font-[500]">
                                 The post should be at least 6 characters long

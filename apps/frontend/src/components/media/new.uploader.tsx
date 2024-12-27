@@ -55,18 +55,16 @@ export function MultipartFileUploader({
   );
 }
 
-export function MultipartFileUploaderAfter({
-  onUploadSuccess,
-  allowedFileTypes,
-}: {
+export function useUppyUploader(props: {
   // @ts-ignore
   onUploadSuccess: (result: UploadResult) => void;
   allowedFileTypes: string;
 }) {
   const { storageProvider, backendUrl } = useVariables();
+  const { onUploadSuccess, allowedFileTypes } = props;
   const fetch = useFetch();
 
-  const uppy = useMemo(() => {
+  return useMemo(() => {
     const uppy2 = new Uppy({
       autoProceed: true,
       restrictions: {
@@ -86,7 +84,7 @@ export function MultipartFileUploaderAfter({
       convertTypes: ['image/jpeg'],
       maxWidth: 1000,
       maxHeight: 1000,
-      quality: 1
+      quality: 1,
     });
     // Set additional metadata when a file is added
     uppy2.on('file-added', (file) => {
@@ -102,9 +100,9 @@ export function MultipartFileUploaderAfter({
 
     uppy2.on('upload-success', (file, response) => {
       // @ts-ignore
-      uppy.setFileState(file.id, {
+      uppy2.setFileState(file.id, {
         // @ts-ignore
-        progress: uppy.getState().files[file.id].progress,
+        progress: uppy2.getState().files[file.id].progress,
         // @ts-ignore
         uploadURL: response.body.Location,
         response: response,
@@ -114,6 +112,17 @@ export function MultipartFileUploaderAfter({
 
     return uppy2;
   }, []);
+}
+
+export function MultipartFileUploaderAfter({
+  onUploadSuccess,
+  allowedFileTypes,
+}: {
+  // @ts-ignore
+  onUploadSuccess: (result: UploadResult) => void;
+  allowedFileTypes: string;
+}) {
+  const uppy = useUppyUploader({ onUploadSuccess, allowedFileTypes });
 
   return (
     <>

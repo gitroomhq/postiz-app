@@ -49,6 +49,7 @@ export const Editor = forwardRef<
             )}
             value={props.value}
             onChange={(e) => props?.onChange?.(e.target.value)}
+            onPaste={props.onPaste}
             placeholder="Write your reply..."
             autosuggestionsConfig={{
               textareaPurpose: `Assist me in writing social media posts.`,

@@ -83,6 +83,11 @@ export const MediaBox: FC<{
 
   const { data, mutate } = useSWR('get-media', loadMedia);
 
+  const finishUpload = useCallback(async () => {
+    const newData = await mutate();
+    setNewMedia(newData.results[0])();
+  }, [mutate, setNewMedia]);
+
   useEffect(() => {
     if (data?.pages) {
       setPages(data.pages);
@@ -127,7 +132,7 @@ export const MediaBox: FC<{
             >
               <div className="relative flex gap-2 items-center justify-center">
                 <MultipartFileUploader
-                  onUploadSuccess={mutate}
+                  onUploadSuccess={finishUpload}
                   allowedFileTypes={
                     type === 'video'
                       ? 'video/mp4'
@@ -152,7 +157,7 @@ export const MediaBox: FC<{
               <div>Click the button below to upload one</div>
               <div className="mt-[10px] justify-center items-center flex flex-col-reverse gap-[10px]">
                 <MultipartFileUploader
-                  onUploadSuccess={mutate}
+                  onUploadSuccess={finishUpload}
                   allowedFileTypes={
                     type === 'video'
                       ? 'video/mp4'
@@ -185,7 +190,7 @@ export const MediaBox: FC<{
                   <img
                     className="w-full h-full object-cover"
                     src={mediaDirectory.set(media.path)}
-                    alt='media'
+                    alt="media"
                   />
                 )}
               </div>
@@ -215,11 +220,12 @@ export const MultiMediaComponent: FC<{
 }> = (props) => {
   const { name, label, error, description, onChange, value } = props;
   const user = useUser();
+
   useEffect(() => {
     if (value) {
       setCurrentMedia(value);
     }
-  }, []);
+  }, [value]);
 
   const [modal, setShowModal] = useState(false);
   const [mediaModal, setMediaModal] = useState(false);
@@ -261,7 +267,7 @@ export const MultiMediaComponent: FC<{
     <>
       <div className="flex flex-col gap-[8px] bg-input rounded-bl-[8px]">
         {modal && <MediaBox setMedia={changeMedia} closeModal={showModal} />}
-        {mediaModal && !!user?.tier?.ai &&  (
+        {mediaModal && !!user?.tier?.ai && (
           <Polonto setMedia={changeMedia} closeModal={closeDesignModal} />
         )}
         <div className="flex gap-[10px]">
@@ -285,7 +291,9 @@ export const MultiMediaComponent: FC<{
                   />
                 </svg>
               </div>
-              <div className="text-[12px] font-[500] text-primary">Insert Media</div>
+              <div className="text-[12px] font-[500] text-primary">
+                Insert Media
+              </div>
             </Button>
 
             <Button
@@ -306,7 +314,9 @@ export const MultiMediaComponent: FC<{
                   />
                 </svg>
               </div>
-              <div className="text-[12px] font-[500] !text-white">Design Media</div>
+              <div className="text-[12px] font-[500] !text-white">
+                Design Media
+              </div>
             </Button>
           </div>
 
@@ -354,7 +364,8 @@ export const MediaComponent: FC<{
   width?: number;
   height?: number;
 }> = (props) => {
-  const { name, type, label, description, onChange, value, width, height } = props;
+  const { name, type, label, description, onChange, value, width, height } =
+    props;
   const { getValues } = useSettings();
   const user = useUser();
   useEffect(() => {

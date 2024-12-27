@@ -98,6 +98,7 @@ module.exports = {
       },
       animation: {
         fade: 'fadeOut 0.5s ease-in-out',
+        normalFadeIn: 'normalFadeIn 0.5s ease-in-out',
         normalFadeOut: 'normalFadeOut 0.5s linear 5s forwards',
         overflow: 'overFlow 0.5s ease-in-out forwards',
         overflowReverse: 'overFlowReverse 0.5s ease-in-out forwards',
@@ -120,6 +121,10 @@ module.exports = {
           '0%': { opacity: 1 },
           '100%': { opacity: 0 },
         },
+        normalFadeIn: {
+          '0%': { opacity: 0 },
+          '100%': { opacity: 1 },
+        },
         overFlow: {
           '0%': { overflow: 'hidden' },
           '99%': { overflow: 'hidden' },
@@ -131,7 +136,7 @@ module.exports = {
           '100%': { overflow: 'hidden' },
         },
         fadeDown: {
-          '0%': { opacity: 0, marginTop: -30},
+          '0%': { opacity: 0, marginTop: -30 },
           '10%': { opacity: 1, marginTop: 0 },
           '85%': { opacity: 1, marginTop: 0 },
           '90%': { opacity: 1, marginTop: 10 },
@@ -144,12 +149,15 @@ module.exports = {
         newMessages: {
           '0%': { backgroundColor: 'var(--color-seventh)', fontWeight: 'bold' },
           '99%': { backgroundColor: 'var(--color-third)', fontWeight: 'bold' },
-          '100%': { backgroundColor: 'var(--color-third)', fontWeight: 'normal' },
+          '100%': {
+            backgroundColor: 'var(--color-third)',
+            fontWeight: 'normal',
+          },
         },
       }),
       screens: {
         custom: { raw: '(max-height: 800px)' },
-        xs: { max: '401px'} ,
+        xs: { max: '401px' },
       },
     },
   },

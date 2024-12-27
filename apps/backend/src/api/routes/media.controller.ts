@@ -76,9 +76,9 @@ export class MediaController {
     const name = upload.Location.split('/').pop();
 
     // @ts-ignore
-    await this._mediaService.saveFile(org.id, name, upload.Location);
+    const saveFile = await this._mediaService.saveFile(org.id, name, upload.Location);
 
-    res.status(200).json(upload);
+    res.status(200).json({...upload, saved: saveFile});
     // const filePath =
     //   file.path.indexOf('http') === 0
     //     ? file.path

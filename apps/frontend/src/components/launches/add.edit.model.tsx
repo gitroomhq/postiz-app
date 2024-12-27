@@ -1,7 +1,16 @@
 'use client';
 
 import React, {
-  FC, Fragment, MouseEventHandler, useCallback, useEffect, useMemo, useRef, useState
+  ClipboardEventHandler,
+  FC,
+  Fragment,
+  MouseEventHandler,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  ClipboardEvent,
+  useState,
 } from 'react';
 import dayjs from 'dayjs';
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
@@ -47,6 +56,9 @@ import { weightedLength } from '@gitroom/helpers/utils/count.length';
 import { uniqBy } from 'lodash';
 import { Select } from '@gitroom/react/form/select';
 import { useClickOutside } from '@gitroom/frontend/components/layout/click.outside';
+import { useUppyUploader } from '@gitroom/frontend/components/media/new.uploader';
+import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
+import { DropFiles } from '@gitroom/frontend/components/layout/drop.files';
 
 function countCharacters(text: string, type: string): number {
   if (type !== 'x') {
@@ -69,6 +81,8 @@ export const AddEditModal: FC<{
 }> = (props) => {
   const { date, integrations: ints, reopenModal, mutate, onlyValues } = props;
   const [customer, setCustomer] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   // selected integrations to allow edit
   const [selectedIntegrations, setSelectedIntegrations] = useStateCallback<
@@ -265,12 +279,14 @@ export const AddEditModal: FC<{
   const schedule = useCallback(
     (type: 'draft' | 'now' | 'schedule' | 'delete') => async () => {
       if (type === 'delete') {
+        setLoading(true);
         if (
           !(await deleteDialog(
             'Are you sure you want to delete this post?',
             'Yes, delete it!'
           ))
         ) {
+          setLoading(false);
           return;
         }
         await fetch(`/posts/${existingData.group}`, {
@@ -341,6 +357,7 @@ export const AddEditModal: FC<{
         }
       }
 
+      setLoading(true);
       await fetch('/posts', {
         method: 'POST',
         body: JSON.stringify({
@@ -375,6 +392,68 @@ export const AddEditModal: FC<{
       existingData,
       selectedIntegrations,
     ]
+  );
+
+  const uppy = useUppyUploader({
+    onUploadSuccess: () => {
+      /**empty**/
+    },
+    allowedFileTypes: 'image/*,video/mp4',
+  });
+
+  const pasteImages = useCallback(
+    (index: number, currentValue: any[], isFile?: boolean) => {
+      return async (event: ClipboardEvent<HTMLDivElement> | File[]) => {
+        // @ts-ignore
+        const clipboardItems = isFile
+          ? // @ts-ignore
+            event.map((p) => ({ kind: 'file', getAsFile: () => p }))
+          : // @ts-ignore
+            event.clipboardData?.items; // Ensure clipboardData is available
+        if (!clipboardItems) {
+          return;
+        }
+
+        const files: File[] = [];
+
+        // @ts-ignore
+        for (const item of clipboardItems) {
+          console.log(item);
+          if (item.kind === 'file') {
+            const file = item.getAsFile();
+            if (file) {
+              const isImage = file.type.startsWith('image/');
+              const isVideo = file.type.startsWith('video/');
+              if (isImage || isVideo) {
+                files.push(file); // Collect images or videos
+              }
+            }
+          }
+        }
+        if (files.length === 0) {
+          return;
+        }
+
+        setUploading(true);
+        const lastValues = [...currentValue];
+        for (const file of files) {
+          uppy.addFile(file);
+          const upload = await uppy.upload();
+          uppy.clear();
+          if (upload?.successful?.length) {
+            lastValues.push(upload?.successful[0]?.response?.body?.saved!);
+            changeImage(index)({
+              target: {
+                name: 'image',
+                value: [...lastValues],
+              },
+            });
+          }
+        }
+        setUploading(false);
+      };
+    },
+    [changeImage]
   );
 
   const getPostsMarketplace = useCallback(async () => {
@@ -427,6 +506,11 @@ export const AddEditModal: FC<{
           'flex flex-col md:flex-row p-[10px] rounded-[4px] bg-primary gap-[20px]'
         )}
       >
+        {uploading && (
+          <div className="absolute left-0 top-0 w-full h-full bg-black/40 z-[600] flex justify-center items-center">
+            <LoadingComponent width={100} height={100} />
+          </div>
+        )}
         <div
           className={clsx(
             'flex flex-col gap-[16px] transition-all duration-700 whitespace-nowrap',
@@ -534,23 +618,28 @@ export const AddEditModal: FC<{
                     <div>
                       <div className="flex gap-[4px]">
                         <div className="flex-1 editor text-textColor">
-                          <Editor
-                            order={index}
-                            height={value.length > 1 ? 150 : 250}
-                            commands={
-                              [
-                                // ...commands
-                                //   .getCommands()
-                                //   .filter((f) => f.name === 'image'),
-                                // newImage,
-                                // postSelector(dateState),
-                              ]
-                            }
-                            value={p.content}
-                            preview="edit"
-                            // @ts-ignore
-                            onChange={changeValue(index)}
-                          />
+                          <DropFiles
+                            onDrop={pasteImages(index, p.image || [], true)}
+                          >
+                            <Editor
+                              order={index}
+                              height={value.length > 1 ? 150 : 250}
+                              commands={
+                                [
+                                  // ...commands
+                                  //   .getCommands()
+                                  //   .filter((f) => f.name === 'image'),
+                                  // newImage,
+                                  // postSelector(dateState),
+                                ]
+                              }
+                              value={p.content}
+                              preview="edit"
+                              onPaste={pasteImages(index, p.image || [])}
+                              // @ts-ignore
+                              onChange={changeValue(index)}
+                            />
+                          </DropFiles>
 
                           {showError &&
                             (!p.content || p.content.length < 6) && (
@@ -649,6 +738,7 @@ export const AddEditModal: FC<{
                     className="rounded-[4px] relative group"
                     disabled={
                       selectedIntegrations.length === 0 ||
+                      loading ||
                       !canSendForPublication
                     }
                   >
@@ -678,7 +768,11 @@ export const AddEditModal: FC<{
                           </svg>
                           <div
                             onClick={postNow}
-                            className="hidden group-hover:flex hover:flex flex-col justify-center absolute left-0 top-[100%] w-full h-[40px] bg-customColor22 border border-tableBorder"
+                            className={clsx(
+                              'hidden group-hover:flex hover:flex flex-col justify-center absolute left-0 top-[100%] w-full h-[40px] bg-customColor22 border border-tableBorder',
+                              loading &&
+                                'cursor-not-allowed pointer-events-none opacity-50'
+                            )}
                           >
                             Post now
                           </div>
