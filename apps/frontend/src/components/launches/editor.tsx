@@ -1,7 +1,6 @@
 import { forwardRef } from 'react';
 import type { MDEditorProps } from '@uiw/react-md-editor/src/Types';
 import { RefMDEditor } from '@uiw/react-md-editor/src/Editor';
-import MDEditor from '@uiw/react-md-editor';
 import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
 import { CopilotTextarea } from '@copilotkit/react-textarea';
 import clsx from 'clsx';
@@ -41,24 +40,21 @@ export const Editor = forwardRef<
 
     return (
       <div className="relative bg-customColor2">
-        {user?.tier?.ai ? (
-          <CopilotTextarea
-            disableBranding={true}
-            className={clsx(
-              '!min-h-40 !max-h-80 p-2 overflow-hidden bg-customColor2 outline-none'
-            )}
-            value={props.value}
-            onChange={(e) => props?.onChange?.(e.target.value)}
-            onPaste={props.onPaste}
-            placeholder="Write your reply..."
-            autosuggestionsConfig={{
-              textareaPurpose: `Assist me in writing social media posts.`,
-              chatApiConfigs: {},
-            }}
-          />
-        ) : (
-          <MDEditor {...props} ref={ref} />
-        )}
+        <CopilotTextarea
+          disableBranding={true}
+          className={clsx(
+            '!min-h-40 !max-h-80 p-2 overflow-x-hidden scrollbar scrollbar-thumb-[#612AD5] bg-customColor2 outline-none'
+          )}
+          value={props.value}
+          onChange={(e) => props?.onChange?.(e.target.value)}
+          onPaste={props.onPaste}
+          placeholder="Write your reply..."
+          autosuggestionsConfig={{
+            textareaPurpose: `Assist me in writing social media posts.`,
+            chatApiConfigs: {},
+            disabled: !user?.tier?.ai,
+          }}
+        />
       </div>
     );
   }
