@@ -3,7 +3,13 @@ import { useEffect } from 'react';
 export const useClickOutside = (callback: () => Promise<void>) => {
   const handleClick = (event: MouseEvent) => {
     const selector = document.querySelector('#add-edit-modal');
-    if (selector && !selector.contains(event.target as HTMLElement)) {
+    const copilotkit = document.querySelector('.copilotKitPopup');
+    if (
+      selector &&
+      !selector.contains(event.target as HTMLElement) &&
+      copilotkit &&
+      !copilotkit.contains(event.target as HTMLElement)
+    ) {
       callback();
     }
   };
