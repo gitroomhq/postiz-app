@@ -9,6 +9,8 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { Transforms } from 'slate';
 import EmojiPicker from 'emoji-picker-react';
 import { Theme } from 'emoji-picker-react';
+import { BoldText } from '@gitroom/frontend/components/launches/bold.text';
+import { UText } from '@gitroom/frontend/components/launches/u.text';
 
 export const Editor = forwardRef<
   RefMDEditor,
@@ -24,7 +26,7 @@ export const Editor = forwardRef<
   ) => {
     const user = useUser();
     const [id] = useState(makeId(10));
-    const newRef = useRef(null);
+    const newRef = useRef<any>(null);
     const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
 
     useCopilotReadable({
@@ -56,7 +58,15 @@ export const Editor = forwardRef<
 
     return (
       <>
-        <div className="flex justify-end -mt-[30px]">
+        <div className="flex gap-[5px] justify-end -mt-[30px]">
+          <UText
+            editor={newRef?.current?.editor!}
+            currentValue={props.value!}
+          />
+          <BoldText
+            editor={newRef?.current?.editor!}
+            currentValue={props.value!}
+          />
           <div
             className="select-none cursor-pointer bg-customColor2 w-[40px] p-[5px] text-center rounded-tl-lg rounded-tr-lg"
             onClick={() => setEmojiPickerOpen(!emojiPickerOpen)}
@@ -66,7 +76,7 @@ export const Editor = forwardRef<
         </div>
         <div className="absolute z-[200] right-0">
           <EmojiPicker
-            theme={localStorage.getItem('mode') as Theme || Theme.DARK}
+            theme={(localStorage.getItem('mode') as Theme) || Theme.DARK}
             onEmojiClick={(e) => {
               addText(e.emoji);
               setEmojiPickerOpen(false);
