@@ -32,6 +32,13 @@ import { UserAgent } from '@gitroom/nestjs-libraries/user/user.agent';
 import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
 import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { IsIn } from 'class-validator';
+
+
+class ChangeLanguageDto {
+  @IsIn(['en', 'fr'])
+  language: string;
+}
 
 @ApiTags('User')
 @Controller('/user')
@@ -215,7 +222,26 @@ export class UsersController {
 
     response.status(200).send();
   }
+  
+  @Post('/changeLanguage')
+  async changeLanguage(@Body() { language }: ChangeLanguageDto, @Res({ passthrough: true }) response: Response) {
+    const maxAge = 1000 * 60 * 60 * 24 * 365 * 1; // 1 years in milliseconds
+    try {
+      response.cookie('NEXT_LOCALE', language, {
+        domain: getCookieUrlFromDomain(process.env.FRONTEND_URL ?? ''),
+        secure: true,
+        httpOnly: true,
+        maxAge: maxAge,
+        expires:  new Date(Date.now() + maxAge),
+        sameSite: 'none',
+      });
 
+      response.status(200).send();
+  } catch (error) {
+    throw new HttpException('Failed to set language preference', 500);
+  }
+}
+  
   @Post('/t')
   async trackEvent(
     @Res({ passthrough: true }) res: Response,

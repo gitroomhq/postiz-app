@@ -24,6 +24,7 @@ import { Textarea } from '@gitroom/react/form/textarea';
 import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
 import { useUtmUrl } from '@gitroom/helpers/utils/utm.saver';
 import { useTolt } from '@gitroom/frontend/components/layout/tolt.script';
+import { useTranslations } from 'next-intl';
 import { useTrack } from '@gitroom/react/helpers/use.track';
 import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
 
@@ -45,6 +46,7 @@ export const Prorate: FC<{
   pack: 'STANDARD' | 'PRO';
 }> = (props) => {
   const { period, pack } = props;
+  const t = useTranslations('Billing')
   const fetch = useFetch();
   const [price, setPrice] = useState<number | false>(0);
   const [loading, setLoading] = useState(false);
@@ -86,7 +88,7 @@ export const Prorate: FC<{
 
   return (
     <div className="text-[12px] flex pt-[12px]">
-      (Pay Today ${(price < 0 ? 0 : price)?.toFixed(1)})
+      ({t('PayToday')} ${(price < 0 ? 0 : price)?.toFixed(1)})
     </div>
   );
 };
@@ -159,6 +161,7 @@ const Info: FC<{ proceed: (feedback: string) => void }> = (props) => {
   const [feedback, setFeedback] = useState('');
   const modal = useModals();
   const events = useFireEvents();
+  const t= useTranslations('Billing')
 
   const cancel = useCallback(() => {
     props.proceed(feedback);
@@ -168,7 +171,7 @@ const Info: FC<{ proceed: (feedback: string) => void }> = (props) => {
 
   return (
     <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-customColor6 bg-sixth p-[16px] pt-0 w-[500px]">
-      <TopTitle title="Oh no" />
+      <TopTitle title={t('OhNo')} />
       <button
         className="outline-none absolute right-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
         type="button"
@@ -190,13 +193,13 @@ const Info: FC<{ proceed: (feedback: string) => void }> = (props) => {
       </button>
 
       <div>
-        We are sorry to see you go :(
+        {t('WeAreSorryToSeeYouGo')}
         <br />
-        Would you mind shortly tell us what we could have done better?
+        {t('WouldYouMindShortlyTellUsWhatWeCouldHaveDoneBetter')}
       </div>
       <div>
         <Textarea
-          label={'Feedback'}
+          label={t('Feedback')}
           name="feedback"
           disableForm={true}
           value={feedback}
@@ -205,7 +208,7 @@ const Info: FC<{ proceed: (feedback: string) => void }> = (props) => {
       </div>
       <div>
         <Button disabled={feedback.length < 20} onClick={cancel}>
-          Cancel Subscription
+          {t('CancelSubscription')}
         </Button>
       </div>
     </div>
@@ -242,6 +245,7 @@ export const MainBillingComponent: FC<{
   const [initialChannels, setInitialChannels] = useState(
     sub?.totalChannels || 1
   );
+  const t = useTranslations('Billing')
 
   useEffect(() => {
     if (initialChannels !== sub?.totalChannels) {
@@ -288,7 +292,7 @@ export const MainBillingComponent: FC<{
         pricing[subscription?.subscriptionTier!]?.team_members
       ) {
         messages.push(
-          `Your team members will be removed from your organization`
+          t('YourTeamMembersWillBeRemovedFromYourOrganization')
         );
       }
 
@@ -296,11 +300,11 @@ export const MainBillingComponent: FC<{
         if (
           subscription?.cancelAt ||
           (await deleteDialog(
-            `Are you sure you want to cancel your subscription? ${messages.join(
+            t('AreYouSureYouWantToCancelYourSubscription', {message: messages.join(
               ', '
-            )}`,
-            'Yes, cancel',
-            'Cancel Subscription'
+            )}),
+            t('YesCancel'),
+            t('CancelSubscription')
           ))
         ) {
           const info = await new Promise((res) => {
@@ -330,8 +334,8 @@ export const MainBillingComponent: FC<{
 
           setSubscription((subs) => ({ ...subs!, cancelAt: cancel_at }));
           if (cancel_at)
-            toast.show('Subscription set to canceled successfully');
-          if (!cancel_at) toast.show('Subscription reactivated successfully');
+            toast.show(t('SubscriptionSetToCanceledSuccessfully'));
+          if (!cancel_at) toast.show(t('SubscriptionReactivatedSuccessfully'));
 
           setLoading(false);
         }
@@ -340,7 +344,7 @@ export const MainBillingComponent: FC<{
 
       if (
         messages.length &&
-        !(await deleteDialog(messages.join(', '), 'Yes, continue'))
+        !(await deleteDialog(messages.join(', '), t('YesContinue')))
       ) {
         return;
       }
@@ -372,9 +376,9 @@ export const MainBillingComponent: FC<{
       if (portal) {
         if (
           await deleteDialog(
-            'We could not charge your credit card, please update your payment method',
-            'Update',
-            'Payment Method Required'
+            t('WeCouldNotChargeYourCreditCard'),
+            t('Update'),
+            t('PaymentMethodRequired')
           )
         ) {
           window.open(portal);
@@ -396,7 +400,7 @@ export const MainBillingComponent: FC<{
             revalidate: false,
           }
         );
-        toast.show('Subscription updated successfully');
+        toast.show(t('SubscriptionUpdatedSuccessfully'));
       }
 
       setLoading(false);
@@ -412,13 +416,13 @@ export const MainBillingComponent: FC<{
   return (
     <div className="flex flex-col gap-[16px]">
       <div className="flex flex-row">
-        <div className="flex-1 text-[20px]">Plans</div>
+        <div className="flex-1 text-[20px]">{t('Plans')}</div>
         <div className="flex items-center gap-[16px]">
-          <div>MONTHLY</div>
+          <div>{t('MONTHLY')}</div>
           <div>
             <Slider value={monthlyOrYearly} onChange={setMonthlyOrYearly} />
           </div>
-          <div>YEARLY</div>
+          <div>{t('YEARLY')}</div>
         </div>
       </div>
       <div className="flex gap-[16px] [@media(max-width:1024px)]:flex-col [@media(max-width:1024px)]:text-center">
@@ -450,7 +454,7 @@ export const MainBillingComponent: FC<{
                         onClick={moveToCheckout('FREE')}
                         loading={loading}
                       >
-                        Reactivate subscription
+                        {t('ReactivateSubscription')}
                       </Button>
                     </div>
                   </div>
@@ -472,18 +476,18 @@ export const MainBillingComponent: FC<{
                     )}
                   >
                     {currentPackage === name.toUpperCase()
-                      ? 'Current Plan'
+                      ? t('CurrentPlan')
                       : name.toUpperCase() === 'FREE'
                       ? subscription?.cancelAt
-                        ? `Downgrade on ${dayjs
-                            .utc(subscription?.cancelAt)
-                            .local()
-                            .format('D MMM, YYYY')}`
-                        : 'Cancel subscription'
+                        ? t('DowngradeOn' , {date: dayjs
+                          .utc(subscription?.cancelAt)
+                          .local()
+                          .format('D MMM, YYYY')})
+                        : t('CancelSubscription')
                       : // @ts-ignore
-                        (user?.tier === 'FREE' || user?.tier?.current === 'FREE') && user.allowTrial
-                      ? 'Start 7 days free trial'
-                      : 'Purchase'}
+                      user?.tier === 'FREE' || user?.tier?.current === 'FREE'
+                      ? t('StartDaysFreeTrial')
+                      : t('Purchase')}
                   </Button>
                 )}
                 {subscription &&
@@ -504,24 +508,24 @@ export const MainBillingComponent: FC<{
       </div>
       {!!subscription?.id && (
         <div className="flex justify-center mt-[20px] gap-[10px]">
-          <Button onClick={updatePayment}>Update Payment Method</Button>
+          <Button onClick={updatePayment}>{t('UpdatePaymentMethod')}</Button>
           {isGeneral && !subscription?.cancelAt && (
             <Button
               className="bg-red-500"
               loading={loading}
               onClick={moveToCheckout('FREE')}
             >
-              Cancel subscription
+              {t('CancelSubscription')}
             </Button>
           )}
         </div>
       )}
       {subscription?.cancelAt && isGeneral && (
         <div className="text-center">
-          Your subscription will be cancel at{' '}
+          {t('YourSubscriptionWillBeCancelAt')}
           {dayjs(subscription.cancelAt).local().format('D MMM, YYYY')}
           <br />
-          You will never be charged again
+          {t('YouWillNeverBeChargedAgain')}
         </div>
       )}
       <FAQComponent />

@@ -13,6 +13,8 @@ import { VariableContextComponent } from '@gitroom/react/helpers/variable.contex
 import { Fragment } from 'react';
 import { PHProvider } from '@gitroom/react/helpers/posthog';
 import UtmSaver from '@gitroom/helpers/utils/utm.saver';
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale, getMessages } from 'next-intl/server';
 import { ToltScript } from '@gitroom/frontend/components/layout/tolt.script';
 import { FacebookComponent } from '@gitroom/frontend/components/layout/facebook.component';
 
@@ -22,9 +24,10 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const Plausible = !!process.env.STRIPE_PUBLISHABLE_KEY
     ? PlausibleProvider
     : Fragment;
-
+  const locale = await getLocale();
+  const messages = await getMessages();
   return (
-    <html className={interClass}>
+    <html className={interClass} lang={locale}>
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
@@ -44,7 +47,6 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           facebookPixel={process.env.NEXT_PUBLIC_FACEBOOK_PIXEL!}
         >
           <ToltScript />
-          <FacebookComponent />
           <Plausible
             domain={!!process.env.IS_GENERAL ? 'postiz.com' : 'gitroom.com'}
           >

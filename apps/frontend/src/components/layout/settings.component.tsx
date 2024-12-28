@@ -18,6 +18,9 @@ import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
 import { useSearchParams } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { CustomSelect } from "@gitroom/react/form/custom.select"
+import {locales} from "../../i18n/locales"
+import { useTranslations } from 'next-intl';
 import { PublicComponent } from '@gitroom/frontend/components/public-api/public.component';
 
 export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
@@ -27,6 +30,7 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
   const toast = useToaster();
   const swr = useSWRConfig();
   const user = useUser();
+  const t = useTranslations("Settings")
 
   const resolver = useMemo(() => {
     return classValidatorResolver(UserDetailDto);
@@ -72,6 +76,21 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
     swr.mutate('/marketplace/account');
     close();
   }, []);
+
+  const setCurrentLanguage = () => {
+    const language = form.getValues("language")
+    if(language && language.value) {
+
+      fetch('/user/changeLanguage', {
+        method: 'POST',
+        body: JSON.stringify({language: language.value}),
+      }).then(() => {
+        toast.show('Language updated');
+        window.location.reload()
+      });
+    }
+
+  }
 
   useEffect(() => {
     loadProfile();
@@ -197,6 +216,13 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
           {/*)}*/}
           {!!user?.tier?.team_members && isGeneral && <TeamsComponent />}
           {!!user?.tier?.public_api && isGeneral && showLogout && <PublicComponent />}
+          <CustomSelect
+            onChange={setCurrentLanguage}
+            options={locales}
+            label={t('Settings.PreferredLanguage')}
+            name='language'
+            placeholder={t('Settings.SelectPreferredLanguage')}
+          />
           {showLogout && <LogoutComponent />}
         </div>
       </form>

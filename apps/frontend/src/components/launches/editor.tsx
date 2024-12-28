@@ -5,6 +5,7 @@ import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
 import { CopilotTextarea } from '@copilotkit/react-textarea';
 import clsx from 'clsx';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { useTranslations } from 'next-intl';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { Transforms } from 'slate';
 import EmojiPicker from 'emoji-picker-react';
@@ -28,15 +29,16 @@ export const Editor = forwardRef<
     const [id] = useState(makeId(10));
     const newRef = useRef<any>(null);
     const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
-
+    
+    const t = useTranslations('PostModal')
     useCopilotReadable({
-      description: 'Content of the post number ' + (props.order + 1),
+      description: t('ContentOfThePostNumber', {number:props.order + 1 }),
       value: props.value,
     });
 
     useCopilotAction({
       name: 'editPost_' + props.order,
-      description: `Edit the content of post number ${props.order + 1}`,
+      description: t('EditTheContentOfPostNumber', {number: props.order + 1 }),
       parameters: [
         {
           name: 'content',
@@ -96,7 +98,7 @@ export const Editor = forwardRef<
               props?.onChange?.(e.target.value);
             }}
             onPaste={props.onPaste}
-            placeholder="Write your reply..."
+            placeholder={t('WriteYourReply')}
             autosuggestionsConfig={{
               textareaPurpose: `Assist me in writing social media posts.`,
               chatApiConfigs: {},

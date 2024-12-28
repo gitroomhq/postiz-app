@@ -27,7 +27,9 @@ import { groupBy, sortBy } from 'lodash';
 import Image from 'next/image';
 import { extend } from 'dayjs';
 import { isUSCitizen } from './helpers/isuscitizen.utils';
+import { useTranslations } from 'next-intl';
 import removeMd from 'remove-markdown';
+
 extend(isSameOrAfter);
 extend(isSameOrBefore);
 
@@ -132,6 +134,7 @@ export const DayView = () => {
 
 export const WeekView = () => {
   const { currentYear, currentWeek } = useCalendar();
+  const t = useTranslations("Week")
 
   return (
     <div className="flex flex-col h-screen overflow-hidden text-textColor flex-1">
@@ -143,7 +146,7 @@ export const WeekView = () => {
               key={day}
               className="sticky top-0 z-10 bg-customColor20 p-2 text-center"
             >
-              <div>{day}</div>
+              <div>{t(day)}</div>
             </div>
           ))}
           {hours.map((hour) => (
@@ -176,6 +179,7 @@ export const WeekView = () => {
 
 export const MonthView = () => {
   const { currentYear, currentMonth } = useCalendar();
+  const t = useTranslations("Week")
 
   const calendarDays = useMemo(() => {
     const startOfMonth = dayjs(new Date(currentYear, currentMonth, 1));
@@ -217,7 +221,7 @@ export const MonthView = () => {
               key={day}
               className="sticky top-0 z-10 bg-customColor20 p-2 text-center"
             >
-              <div>{day}</div>
+              <div>{t(day)}</div>
             </div>
           ))}
           {calendarDays.map((date, index) => (
