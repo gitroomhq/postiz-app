@@ -91,6 +91,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     try {
       await client.v2.retweet(id, postId);
     } catch (err) {
+      /** nothing **/
     }
   }
 

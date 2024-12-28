@@ -83,6 +83,15 @@ export class LinkedinPageProvider
     };
   }
 
+  override async repostPostUsers(
+    integration: Integration,
+    originalIntegration: Integration,
+    postId: string,
+    information: any
+  ) {
+    return super.repostPostUsers(integration, originalIntegration, postId, information, false);
+  }
+
   override async generateAuthUrl() {
     const state = makeId(6);
     const codeVerifier = makeId(30);

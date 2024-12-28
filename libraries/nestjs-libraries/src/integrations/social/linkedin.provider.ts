@@ -8,12 +8,10 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import sharp from 'sharp';
 import { lookup } from 'mime-types';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
-import { removeMarkdown } from '@gitroom/helpers/utils/remove.markdown';
-import {
-  BadBody,
-  SocialAbstract,
-} from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { Integration } from '@prisma/client';
+import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
+
 export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   identifier = 'linkedin';
   name = 'LinkedIn';
@@ -457,5 +455,51 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     }
 
     return ids;
+  }
+
+  @PostPlug({
+    identifier: 'linkedin-repost-post-users',
+    title: 'Add Re-posters',
+    description: 'Add accounts to repost your post',
+    pickIntegration: ['linkedin', 'linkedin-page'],
+    fields: [],
+  })
+  async repostPostUsers(
+    integration: Integration,
+    originalIntegration: Integration,
+    postId: string,
+    information: any,
+    isPersonal = true
+  ) {
+    try {
+      await this.fetch(`https://api.linkedin.com/rest/posts`, {
+        body: JSON.stringify({
+          author:
+            (isPersonal ? 'urn:li:person:' : `urn:li:organization:`) +
+            `${integration.internalId}`,
+          commentary: '',
+          visibility: 'PUBLIC',
+          distribution: {
+            feedDistribution: 'MAIN_FEED',
+            targetEntities: [],
+            thirdPartyDistributionChannels: [],
+          },
+          lifecycleState: 'PUBLISHED',
+          isReshareDisabledByAuthor: false,
+          reshareContext: {
+            parent: postId,
+          },
+        }),
+        method: 'POST',
+        headers: {
+          'X-Restli-Protocol-Version': '2.0.0',
+          'Content-Type': 'application/json',
+          'LinkedIn-Version': '202402',
+          Authorization: `Bearer ${integration.token}`,
+        },
+      });
+    } catch (err) {
+      return;
+    }
   }
 }
