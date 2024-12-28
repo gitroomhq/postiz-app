@@ -89,7 +89,13 @@ export class LinkedinPageProvider
     postId: string,
     information: any
   ) {
-    return super.repostPostUsers(integration, originalIntegration, postId, information, false);
+    return super.repostPostUsers(
+      integration,
+      originalIntegration,
+      postId,
+      information,
+      false
+    );
   }
 
   override async generateAuthUrl() {
@@ -505,7 +511,7 @@ export class LinkedinPageProvider
             actor: `urn:li:organization:${integration.internalId}`,
             object: id,
             message: {
-              text: this.fixText(fields.post)
+              text: this.fixText(fields.post),
             },
           }),
         }
@@ -514,6 +520,71 @@ export class LinkedinPageProvider
     }
 
     return false;
+  }
+
+  async history(accessToken: string, id: string, start = 0) {
+    return (await this.historyProcess(accessToken, id, start)).map((p: any) => [p]);
+  }
+
+  async historyProcess(
+    accessToken: string,
+    id: string,
+    start = 0
+  ): Promise<any> {
+    await timer(2000);
+    const list = await (
+      await fetch(
+        `https://api.linkedin.com/rest/posts?author=${encodeURIComponent(
+          `urn:li:organization:${id}`
+        )}&q=author&count=100&sortBy=LAST_MODIFIED&viewContext=AUTHOR&start=${start}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'LinkedIn-Version': '202411',
+          },
+        }
+      )
+    ).json();
+
+    return [
+      ...(await Promise.all(
+        list.elements.map(async (e: any) => ({
+          id: e.id,
+          content: e.commentary,
+          date: dayjs.unix(e.publishedAt / 1000),
+          images: await Promise.all(
+            [e?.content?.media || undefined]
+              .filter((f) => f)
+              .map(async (m: any) => {
+                const loadImage = await (
+                  await fetch(
+                    `https://api.linkedin.com/rest/${
+                      m.id.indexOf('video') > -1 ? 'videos' : 'images'
+                    }/${m.id}`,
+                    {
+                      headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                        'LinkedIn-Version': '202411',
+                      },
+                    }
+                  )
+                ).json();
+                return {
+                  id: m.id,
+                  path: loadImage.downloadUrl,
+                };
+              })
+          ),
+        }))
+      )),
+      ...(list.paging.start + list.paging.count < list.paging.total
+        ? await this.historyProcess(
+            accessToken,
+            id,
+            list.paging.start + list.paging.count
+          )
+        : []),
+    ];
   }
 }
 

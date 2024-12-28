@@ -15,4 +15,9 @@ export class PostsController {
   async payout(data: { id: string; releaseURL: string }) {
     return this._postsService.payout(data.id, data.releaseURL);
   }
+
+  @EventPattern('sync_posts', Transport.REDIS)
+  async syncPosts(data: { orgId: string; integrationId: string }) {
+    return this._postsService.syncPosts(data);
+  }
 }

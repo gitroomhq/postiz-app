@@ -110,10 +110,7 @@ export class PostsController {
     @Res({ passthrough: false }) res: Response
   ) {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    for await (const event of this._agentGraphService.start(
-      org.id,
-      body,
-    )) {
+    for await (const event of this._agentGraphService.start(org.id, body)) {
       res.write(JSON.stringify(event) + '\n');
     }
 

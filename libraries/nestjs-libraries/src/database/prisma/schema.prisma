@@ -33,6 +33,7 @@ model Organization {
   credits           Credits[]
   plugs             Plugs[]
   customers         Customer[]
+  history           History[]
 }
 
 model User {
@@ -290,6 +291,7 @@ model Integration {
 
   @@index([updatedAt])
   @@index([deletedAt])
+  @@index([providerIdentifier])
   @@unique([organizationId, internalId])
 }
 

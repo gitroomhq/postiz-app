@@ -41,6 +41,22 @@ export class IntegrationService {
     return this._integrationRepository.setTimes(orgId, integrationId, times);
   }
 
+  syncPosts(orgId: string, providerIdentifier: string, integrationId: string) {
+    const allSocials =
+      this._integrationManager.getSocialIntegration(providerIdentifier);
+    if (!allSocials.history) {
+      return;
+    }
+
+    return this._workerServiceProducer.emit('sync_posts', {
+      id: 'sync_' + orgId + '_' + integrationId,
+      payload: {
+        orgId,
+        integrationId,
+      },
+    });
+  }
+
   async createOrUpdateIntegration(
     org: string,
     name: string,
@@ -53,29 +69,36 @@ export class IntegrationService {
     expiresIn?: number,
     username?: string,
     isBetweenSteps = false,
-    refresh?: string,
+    refresh?: boolean,
     timezone?: number,
     customInstanceDetails?: string
   ) {
     const uploadedPicture = picture
       ? await this.storage.uploadSimple(picture)
       : undefined;
-    return this._integrationRepository.createOrUpdateIntegration(
-      org,
-      name,
-      uploadedPicture,
-      type,
-      internalId,
-      provider,
-      token,
-      refreshToken,
-      expiresIn,
-      username,
-      isBetweenSteps,
-      refresh,
-      timezone,
-      customInstanceDetails
-    );
+    const cOrUpdate =
+      await this._integrationRepository.createOrUpdateIntegration(
+        org,
+        name,
+        uploadedPicture,
+        type,
+        internalId,
+        provider,
+        token,
+        refreshToken,
+        expiresIn,
+        username,
+        isBetweenSteps,
+        refresh,
+        timezone,
+        customInstanceDetails
+      );
+
+    if (!isBetweenSteps && !refresh) {
+      this.syncPosts(org, provider, String(cOrUpdate.id));
+    }
+
+    return cOrUpdate;
   }
 
   updateIntegrationGroup(org: string, id: string, group: string) {
@@ -239,6 +262,8 @@ export class IntegrationService {
       profile: getIntegrationInformation.username,
     });
 
+    this.syncPosts(org, 'instagram', getIntegrationInformation.id);
+
     return { success: true };
   }
 
@@ -274,6 +299,8 @@ export class IntegrationService {
       profile: getIntegrationInformation.username,
     });
 
+    this.syncPosts(org, 'linkedin-page', String(id));
+
     return { success: true };
   }
 
@@ -295,6 +322,7 @@ export class IntegrationService {
     );
 
     await this.checkForDeletedOnceAndUpdate(org, getIntegrationInformation.id);
+
     await this._integrationRepository.updateIntegration(id, {
       picture: getIntegrationInformation.picture,
       internalId: getIntegrationInformation.id,
@@ -303,6 +331,8 @@ export class IntegrationService {
       token: getIntegrationInformation.access_token,
       profile: getIntegrationInformation.username,
     });
+
+    this.syncPosts(org, 'facebook', id);
 
     return { success: true };
   }
@@ -425,10 +455,11 @@ export class IntegrationService {
     delay: number;
     information: any;
   }) {
-    const originalIntegration = await this._integrationRepository.getIntegrationById(
-      data.orgId,
-      data.originalIntegration
-    );
+    const originalIntegration =
+      await this._integrationRepository.getIntegrationById(
+        data.orgId,
+        data.originalIntegration
+      );
 
     const getIntegration = await this._integrationRepository.getIntegrationById(
       data.orgId,
@@ -548,20 +579,6 @@ export class IntegrationService {
 
   async getPlugs(orgId: string, integrationId: string) {
     return this._integrationRepository.getPlugs(orgId, integrationId);
-  }
-
-  async loadExisingData(
-    methodName: string,
-    integrationId: string,
-    id: string[]
-  ) {
-    const exisingData = await this._integrationRepository.loadExisingData(
-      methodName,
-      integrationId,
-      id
-    );
-    const loadOnlyIds = exisingData.map((p) => p.value);
-    return difference(id, loadOnlyIds);
   }
 
   async findFreeDateTime(orgId: string): Promise<number[]> {

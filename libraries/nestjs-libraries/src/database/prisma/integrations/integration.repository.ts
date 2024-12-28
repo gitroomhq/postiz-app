@@ -14,7 +14,6 @@ export class IntegrationRepository {
     private _integration: PrismaRepository<'integration'>,
     private _posts: PrismaRepository<'post'>,
     private _plugs: PrismaRepository<'plugs'>,
-    private _exisingPlugData: PrismaRepository<'exisingPlugData'>,
     private _customers: PrismaRepository<'customer'>
   ) {}
 
@@ -105,7 +104,7 @@ export class IntegrationRepository {
     expiresIn = 999999999,
     username?: string,
     isBetweenSteps = false,
-    refresh?: string,
+    refresh?: boolean,
     timezone?: number,
     customInstanceDetails?: string
   ) {
@@ -145,11 +144,7 @@ export class IntegrationRepository {
       },
       update: {
         type: type as any,
-        ...(!refresh
-          ? {
-              inBetweenSteps: isBetweenSteps,
-            }
-          : {}),
+        inBetweenSteps: isBetweenSteps,
         ...(picture ? { picture } : {}),
         profile: username,
         providerIdentifier: provider,
@@ -457,36 +452,6 @@ export class IntegrationRepository {
     });
   }
 
-  async loadExisingData(
-    methodName: string,
-    integrationId: string,
-    id: string[]
-  ) {
-    return this._exisingPlugData.model.exisingPlugData.findMany({
-      where: {
-        integrationId,
-        methodName,
-        value: {
-          in: id,
-        },
-      },
-    });
-  }
-
-  async saveExisingData(
-    methodName: string,
-    integrationId: string,
-    value: string[]
-  ) {
-    return this._exisingPlugData.model.exisingPlugData.createMany({
-      data: value.map((p) => ({
-        integrationId,
-        methodName,
-        value: p,
-      })),
-    });
-  }
-
   async getPostingTimes(orgId: string) {
     return this._integration.model.integration.findMany({
       where: {
@@ -497,6 +462,6 @@ export class IntegrationRepository {
       select: {
         postingTimes: true,
       },
-    })
+    });
   }
 }

@@ -1,4 +1,5 @@
 import { Integration } from '@prisma/client';
+import dayjs from 'dayjs';
 
 export interface ClientInformation {
   client_id: string;
@@ -13,9 +14,13 @@ export interface IAuthenticator {
       refresh?: string;
     },
     clientInformation?: ClientInformation
-  ): Promise<AuthTokenDetails|string>;
+  ): Promise<AuthTokenDetails | string>;
   refreshToken(refreshToken: string): Promise<AuthTokenDetails>;
-  reConnect?(id: string, requiredId: string, accessToken: string): Promise<AuthTokenDetails>;
+  reConnect?(
+    id: string,
+    requiredId: string,
+    accessToken: string
+  ): Promise<AuthTokenDetails>;
   generateAuthUrl(
     clientInformation?: ClientInformation
   ): Promise<GenerateAuthUrlResponse>;
@@ -114,4 +119,8 @@ export interface SocialProvider
   externalUrl?: (
     url: string
   ) => Promise<{ client_id: string; client_secret: string }>;
+  history?: (
+    accessToken: string,
+    id: string,
+  ) => Promise<{ id: string; date: dayjs.Dayjs; content: string; images: { id: string; path: string }[] }[][]>;
 }

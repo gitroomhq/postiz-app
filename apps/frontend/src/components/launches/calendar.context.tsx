@@ -29,7 +29,7 @@ export const CalendarContext = createContext({
   currentYear: dayjs().year(),
   currentMonth: dayjs().month(),
   comments: [] as Array<{ date: string; total: number }>,
-  integrations: [] as (Integrations & {refreshNeeded?: boolean})[],
+  integrations: [] as (Integrations & { refreshNeeded?: boolean })[],
   trendings: [] as string[],
   posts: [] as Array<Post & { integration: Integration }>,
   reloadCalendarView: () => {
@@ -65,7 +65,7 @@ export interface Integrations {
   customer?: {
     name?: string;
     id?: string;
-  }
+  };
 }
 
 function getWeekNumber(date: Date) {

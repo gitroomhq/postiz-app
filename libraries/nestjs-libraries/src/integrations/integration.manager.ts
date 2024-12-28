@@ -67,6 +67,10 @@ export class IntegrationManager {
     };
   }
 
+  getAllSocials() {
+    return [...socialIntegrationList];
+  }
+
   getAllPlugs() {
     return socialIntegrationList
       .map((p) => {

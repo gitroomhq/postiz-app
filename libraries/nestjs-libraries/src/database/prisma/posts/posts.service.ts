@@ -20,6 +20,8 @@ import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/cl
 import { timer } from '@gitroom/helpers/utils/timer';
 import { AuthTokenDetails } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import utc from 'dayjs/plugin/utc';
+import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
+import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 dayjs.extend(utc);
 
 type PostWithConditionals = Post & {
@@ -29,6 +31,7 @@ type PostWithConditionals = Post & {
 
 @Injectable()
 export class PostsService {
+  private storage = UploadFactory.createStorage();
   constructor(
     private _postRepository: PostsRepository,
     private _workerServiceProducer: BullMqClient,
@@ -36,7 +39,8 @@ export class PostsService {
     private _notificationService: NotificationService,
     private _messagesService: MessagesService,
     private _stripeService: StripeService,
-    private _integrationService: IntegrationService
+    private _integrationService: IntegrationService,
+    private _mediaService: MediaService
   ) {}
 
   async getPostsRecursively(
@@ -581,6 +585,72 @@ export class PostsService {
     }
 
     return this._postRepository.changeDate(orgId, id, date);
+  }
+
+  async syncPosts(data: { orgId: string; integrationId: string }) {
+    const integration = await this._integrationService.getIntegrationById(
+      data.orgId,
+      data.integrationId
+    );
+
+    if (!integration) {
+      return;
+    }
+
+    const findIntegration = this._integrationManager.getSocialIntegration(
+      integration.providerIdentifier
+    );
+    if (!findIntegration?.history) {
+      return;
+    }
+
+    const list = await findIntegration?.history(
+      integration.token,
+      integration.internalId
+    );
+    for (const post of list) {
+      await this.createPost(data.orgId, {
+        type: 'draft',
+        order: '',
+        date: post[0].date.format('YYYY-MM-DDTHH:mm:00'),
+        posts: [
+          {
+            group: makeId(10),
+            integration: {
+              id: integration.id,
+            },
+            settings: {
+              subtitle: '',
+              title: '',
+              tags: [],
+              subreddit: [],
+            },
+            value: await Promise.all(
+              post.map(async (l) => ({
+                id: l.id,
+                content: l.content,
+                image: await Promise.all(
+                  l.images.map(async (i) => {
+                    const upload = await this.storage.uploadSimple(i.path);
+                    const name = upload.split('/').pop()!;
+                    const media = await this._mediaService.saveFile(
+                      data.orgId,
+                      name,
+                      upload
+                    );
+
+                    return {
+                      id: media.id,
+                      path: media.path,
+                    };
+                  })
+                ),
+              }))
+            ),
+          },
+        ],
+      });
+    }
   }
 
   async payout(id: string, url: string) {

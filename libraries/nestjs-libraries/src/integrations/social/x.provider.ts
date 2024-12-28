@@ -14,6 +14,8 @@ import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
 import { Integration } from '@prisma/client';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
+import dayjs from 'dayjs';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 
 export class XProvider extends SocialAbstract implements SocialProvider {
   identifier = 'x';
@@ -86,7 +88,9 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       accessSecret: accessSecretSplit,
     });
 
-    const {data: {id}} = await client.v2.me();
+    const {
+      data: { id },
+    } = await client.v2.me();
 
     try {
       await client.v2.retweet(id, postId);
@@ -217,9 +221,8 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       accessSecret: oauth_token_secret,
     });
 
-    const { accessToken, client, accessSecret, userId } = await startingClient.login(
-      code
-    );
+    const { accessToken, client, accessSecret, userId } =
+      await startingClient.login(code);
 
     const { id, name, profile_image_url_https } = await client.currentUser(
       true
@@ -324,5 +327,33 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       ...p,
       status: 'posted',
     }));
+  }
+
+  async history(accessToken: string, id: string) {
+    const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
+    const client = new TwitterApi({
+      appKey: process.env.X_API_KEY!,
+      appSecret: process.env.X_API_SECRET!,
+      accessToken: accessTokenSplit,
+      accessSecret: accessSecretSplit,
+    });
+
+    const loadUserTimeline = await client.v2.userTimeline(
+      id,
+      {
+        max_results: process?.env?.STRIPE_PUBLISHABLE_KEY ? 500 : 50,
+        exclude: ['replies', 'retweets'],
+        'tweet.fields': ['created_at', 'id', 'text']
+      }
+    );
+
+    return loadUserTimeline.data.data.map((p) => [
+      {
+        id: p.id,
+        content: p.text.split('https://t.co/').slice(0, -1).join(''),
+        date: dayjs.utc(p.created_at),
+        images: [],
+      },
+    ]).filter((f) => f[0].content);
   }
 }

@@ -479,7 +479,7 @@ export class IntegrationsController {
       expiresIn,
       username,
       refresh ? false : integrationProvider.isBetweenSteps,
-      body.refresh,
+      !!refresh,
       +body.timezone,
       details
         ? AuthService.fixedEncryption(details)
