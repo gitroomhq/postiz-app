@@ -1,5 +1,6 @@
 import { FC, useCallback } from 'react';
 import { Editor, Transforms } from 'slate';
+import { ReactEditor } from 'slate-react';
 
 const underlineMap = {
   a: 'a̲',
@@ -80,6 +81,7 @@ export const UText: FC<{ editor: any; currentValue: string }> = ({
       .join('');
 
     Transforms.insertText(editor, newText);
+    ReactEditor.focus(editor);
   };
 
   return (

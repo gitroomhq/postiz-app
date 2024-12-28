@@ -1,5 +1,6 @@
 import { FC, useCallback } from 'react';
 import { Editor, Transforms } from 'slate';
+import { ReactEditor } from 'slate-react';
 
 const originalMap = {
   a: '𝗮',
@@ -80,7 +81,9 @@ export const BoldText: FC<{ editor: any; currentValue: string }> = ({
       .map((char) => originalMap?.[char] || char)
       .join('');
 
+
     Transforms.insertText(editor, newText);
+    ReactEditor.focus(editor);
   };
 
   return (

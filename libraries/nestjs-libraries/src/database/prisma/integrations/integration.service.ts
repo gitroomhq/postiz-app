@@ -416,6 +416,54 @@ export class IntegrationService {
     );
   }
 
+  async processInternalPlug(data: {
+    post: string;
+    originalIntegration: string;
+    integration: string;
+    plugName: string;
+    orgId: string;
+    delay: number;
+    information: any;
+  }) {
+    const originalIntegration = await this._integrationRepository.getIntegrationById(
+      data.orgId,
+      data.originalIntegration
+    );
+
+    const getIntegration = await this._integrationRepository.getIntegrationById(
+      data.orgId,
+      data.integration
+    );
+
+    if (!getIntegration || !originalIntegration) {
+      return;
+    }
+
+    const getAllInternalPlugs = this._integrationManager
+      .getInternalPlugs(getIntegration.providerIdentifier)
+      .internalPlugs.find((p: any) => p.identifier === data.plugName);
+
+    if (!getAllInternalPlugs) {
+      return;
+    }
+
+    const getSocialIntegration = this._integrationManager.getSocialIntegration(
+      getIntegration.providerIdentifier
+    );
+
+    try {
+      // @ts-ignore
+      await getSocialIntegration?.[getAllInternalPlugs.methodName]?.(
+        getIntegration,
+        originalIntegration,
+        data.post,
+        data.information
+      );
+    } catch (err) {
+      return;
+    }
+  }
+
   async processPlugs(data: {
     plugId: string;
     postId: string;
@@ -437,8 +485,6 @@ export class IntegrationService {
       .find(
         (p) => p.identifier === getPlugById.integration.providerIdentifier
       )!;
-
-    console.log(data.postId);
 
     // @ts-ignore
     const process = await integration[getPlugById.plugFunction](
@@ -524,7 +570,9 @@ export class IntegrationService {
       findTimes.reduce((all: any, current: any) => {
         return [
           ...all,
-          ...JSON.parse(current.postingTimes).map((p: { time: number }) => p.time),
+          ...JSON.parse(current.postingTimes).map(
+            (p: { time: number }) => p.time
+          ),
         ];
       }, [] as number[])
     );

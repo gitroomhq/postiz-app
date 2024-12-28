@@ -42,6 +42,9 @@ import { useModals } from '@mantine/modals';
 import { useUppyUploader } from '@gitroom/frontend/components/media/new.uploader';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import { DropFiles } from '@gitroom/frontend/components/layout/drop.files';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import useSWR from 'swr';
+import { InternalChannels } from '@gitroom/frontend/components/launches/internal.channels';
 
 // Simple component to change back to settings on after changing tab
 export const SetTab: FC<{ changeTab: () => void }> = (props) => {
@@ -101,6 +104,7 @@ export const withProvider = function <T extends object>(
     const { integration, date } = useIntegration();
     const [showLinkedinPopUp, setShowLinkedinPopUp] = useState<any>(false);
     const [uploading, setUploading] = useState(false);
+    const fetch = useFetch();
 
     useCopilotReadable({
       description:
@@ -343,6 +347,12 @@ export const withProvider = function <T extends object>(
       [changeImage]
     );
 
+    const getInternalPlugs = useCallback(async () => {
+      return (await fetch(`/integrations/${props.identifier}/internal-plugs`)).json();
+    }, [props.identifier]);
+
+    const {data} = useSWR(`internal-${props.identifier}`, getInternalPlugs);
+
     // this is a trick to prevent the data from being deleted, yet we don't render the elements
     if (!props.show) {
       return null;
@@ -364,7 +374,7 @@ export const withProvider = function <T extends object>(
                   Preview
                 </Button>
               </div>
-              {!!SettingsComponent && (
+              {(!!SettingsComponent || !!data?.internalPlugs?.length) && (
                 <div className="flex-1 flex">
                   <Button
                     className={clsx(
@@ -516,6 +526,9 @@ export const withProvider = function <T extends object>(
           {(showTab === 0 || showTab === 2) && (
             <div className={clsx('mt-[20px]', showTab !== 2 && 'hidden')}>
               <Component values={editInPlace ? InPlaceValue : props.value} />
+              {data?.internalPlugs?.length && (
+                <InternalChannels plugs={data?.internalPlugs}  />
+              )}
             </div>
           )}
           {showTab === 0 && (
