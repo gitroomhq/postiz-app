@@ -101,7 +101,7 @@ export const withProvider = function <T extends object>(
     show: boolean;
   }) => {
     const existingData = useExistingData();
-    const { integration, date } = useIntegration();
+    const { allIntegrations, integration, date } = useIntegration();
     const [showLinkedinPopUp, setShowLinkedinPopUp] = useState<any>(false);
     const [uploading, setUploading] = useState(false);
     const fetch = useFetch();
@@ -535,6 +535,7 @@ export const withProvider = function <T extends object>(
             <div className="mt-[20px] flex flex-col items-center">
               <IntegrationContext.Provider
                 value={{
+                  allIntegrations,
                   date,
                   value: editInPlace ? InPlaceValue : props.value,
                   integration,
