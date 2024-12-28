@@ -7,7 +7,6 @@ import Image from 'next/image';
 import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
 import { useStateCallback } from '@gitroom/react/helpers/use.state.callback';
 import { timer } from '@gitroom/helpers/utils/timer';
-import dayjs from 'dayjs';
 
 export const PickPlatforms: FC<{
   integrations: Integrations[];

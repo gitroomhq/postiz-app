@@ -71,6 +71,7 @@ function countCharacters(text: string, type: string): number {
 export const AddEditModal: FC<{
   date: dayjs.Dayjs;
   integrations: Integrations[];
+  allIntegrations?: Integrations[];
   reopenModal: () => void;
   mutate: () => void;
   onlyValues?: Array<{
@@ -538,11 +539,13 @@ export const AddEditModal: FC<{
                     disableForm={true}
                   >
                     <option value="">Selected Customer</option>
-                    {uniqBy(ints, (u) => u?.customer?.name).filter(f => f.customer?.name).map((p) => (
-                      <option key={p.customer?.id} value={p.customer?.id}>
-                        Customer: {p.customer?.name}
-                      </option>
-                    ))}
+                    {uniqBy(ints, (u) => u?.customer?.name)
+                      .filter((f) => f.customer?.name)
+                      .map((p) => (
+                        <option key={p.customer?.id} value={p.customer?.id}>
+                          Customer: {p.customer?.name}
+                        </option>
+                      ))}
                   </Select>
                 )}
                 <DatePicker onChange={setDateState} date={dateState} />
@@ -814,6 +817,7 @@ export const AddEditModal: FC<{
           {!!selectedIntegrations.length && (
             <div className="flex-1 flex flex-col p-[16px] pt-0">
               <ProvidersOptions
+                allIntegrations={props.allIntegrations || []}
                 integrations={selectedIntegrations}
                 editorValue={value}
                 date={dateState}

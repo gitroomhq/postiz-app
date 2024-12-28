@@ -87,6 +87,15 @@ export class IntegrationManager {
       .filter((f) => f.plugs.length);
   }
 
+  getInternalPlugs(providerName: string) {
+    const p = socialIntegrationList.find((p) => p.identifier === providerName)!;
+    return {
+      internalPlugs:
+        Reflect.getMetadata('custom:internal_plug', p.constructor.prototype) ||
+        [],
+    };
+  }
+
   getAllowedSocialsIntegrations() {
     return socialIntegrationList.map((p) => p.identifier);
   }

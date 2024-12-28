@@ -1,5 +1,13 @@
 import {
-  Body, Controller, Delete, Get, Param, Post, Put, Query, UseFilters
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  UseFilters,
 } from '@nestjs/common';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { ConnectIntegrationDto } from '@gitroom/nestjs-libraries/dtos/integrations/connect.integration.dto';
@@ -42,6 +50,11 @@ export class IntegrationsController {
     return this._integrationManager.getAllIntegrations();
   }
 
+  @Get('/:identifier/internal-plugs')
+  getInternalPlugs(@Param('identifier') identifier: string) {
+    return this._integrationManager.getInternalPlugs(identifier);
+  }
+
   @Get('/customers')
   getCustomers(@GetOrgFromRequest() org: Organization) {
     return this._integrationService.customers(org.id);
@@ -66,11 +79,7 @@ export class IntegrationsController {
     @Param('id') id: string,
     @Body() body: { name: string }
   ) {
-    return this._integrationService.updateOnCustomerName(
-      org.id,
-      id,
-      body.name
-    );
+    return this._integrationService.updateOnCustomerName(org.id, id, body.name);
   }
 
   @Get('/list')

@@ -143,6 +143,7 @@ const FirstStep: FC = (props) => {
         },
         children: (
           <AddEditModal
+            allIntegrations={integrations.map((p) => ({ ...p }))}
             integrations={integrations.slice(0).map((p) => ({ ...p }))}
             mutate={reloadCalendarView}
             date={dayjs.utc(load.date).local()}

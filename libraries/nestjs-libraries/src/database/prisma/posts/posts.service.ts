@@ -319,6 +319,13 @@ export class PostsService {
         publishedPosts[0].postId
       );
 
+      await this.checkInternalPlug(
+        integration,
+        integration.organizationId,
+        publishedPosts[0].postId,
+        JSON.parse(newPosts[0].settings || '{}')
+      );
+
       return {
         postId: publishedPosts[0].postId,
         releaseURL: publishedPosts[0].releaseURL,
@@ -329,6 +336,55 @@ export class PostsService {
       }
 
       throw err;
+    }
+  }
+
+  private async checkInternalPlug(
+    integration: Integration,
+    orgId: string,
+    id: string,
+    settings: any
+  ) {
+    const plugs = Object.entries(settings).filter(([key]) => {
+      return key.indexOf('plug-') > -1;
+    });
+
+    if (plugs.length === 0) {
+      return;
+    }
+
+    const parsePlugs = plugs.reduce((all, [key, value]) => {
+      const [_, name, identifier] = key.split('--');
+      all[name] = all[name] || { name };
+      all[name][identifier] = value;
+      return all;
+    }, {} as any);
+
+    const list: {
+      name: string;
+      integrations: { id: string }[];
+      delay: string;
+      active: boolean;
+    }[] = Object.values(parsePlugs);
+
+    for (const trigger of list) {
+      for (const int of trigger.integrations) {
+        this._workerServiceProducer.emit('internal-plugs', {
+          id: 'plug_' + id + '_' + trigger.name + '_' + int.id,
+          options: {
+            delay: +trigger.delay,
+          },
+          payload: {
+            post: id,
+            originalIntegration: integration.id,
+            integration: int.id,
+            plugName: trigger.name,
+            orgId: orgId,
+            delay: +trigger.delay,
+            information: trigger,
+          },
+        });
+      }
     }
   }
 
