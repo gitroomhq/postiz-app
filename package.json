@@ -130,7 +130,7 @@
     "nestjs-command": "^3.1.4",
     "nestjs-real-ip": "^3.0.1",
     "next": "^14.2.14",
-    "next-intl": "^3.25.3",
+    "next-intl": "^3.26.3",
     "next-plausible": "^3.12.0",
     "nodemailer": "^6.9.15",
     "nx": "19.7.2",
