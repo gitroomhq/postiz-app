@@ -222,7 +222,6 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
             label={t('Settings.PreferredLanguage')}
             name='language'
             placeholder={t('Settings.SelectPreferredLanguage')}
-            disabled={form.formState.isSubmitting}
           />
           {showLogout && <LogoutComponent />}
         </div>
