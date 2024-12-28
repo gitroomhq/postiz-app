@@ -11,26 +11,28 @@ datasource db {
 }
 
 model Organization {
-  id           String             @id @default(uuid())
-  name         String
-  description  String?
-  users        UserOrganization[]
-  media        Media[]
-  paymentId    String?
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
-  github       GitHub[]
-  subscription Subscription?
-  Integration  Integration[]
-  post         Post[] @relation("organization")
-  submittedPost Post[] @relation("submittedForOrg")
-  Comments     Comments[]
-  notifications Notifications[]
+  id                String             @id @default(uuid())
+  name              String
+  description       String?
+  apiKey            String?
+  users             UserOrganization[]
+  media             Media[]
+  paymentId         String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  github            GitHub[]
+  subscription      Subscription?
+  Integration       Integration[]
+  post              Post[] @relation("organization")
+  submittedPost     Post[] @relation("submittedForOrg")
+  allowTrial        Boolean            @default(false)
+  Comments          Comments[]
+  notifications     Notifications[]
   buyerOrganization MessagesGroup[]
-  usedCodes    UsedCodes[]
-  credits      Credits[]
-  plugs        Plugs[]
-  customers    Customer[]
+  usedCodes         UsedCodes[]
+  credits           Credits[]
+  plugs             Plugs[]
+  customers         Customer[]
 }
 
 model User {
@@ -65,6 +67,8 @@ model User {
   payoutProblems    PayoutProblems[]
   lastOnline   DateTime          @default(now())
   agencies     SocialMediaAgency[]
+  ip           String?
+  agent        String?
 
   @@unique([email, providerName])
   @@index([lastReadNotifications])
@@ -338,6 +342,7 @@ model Post {
   lastMessageId       String?
   lastMessage         Messages? @relation(fields: [lastMessageId], references: [id])
   payoutProblems      PayoutProblems[]
+  error               String?
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt
   deletedAt           DateTime?
@@ -480,6 +485,16 @@ model ExisingPlugData {
   value             String
 
   @@unique([integrationId, methodName, value])
+}
+
+model PopularPosts {
+  id         String   @id @default(uuid())
+  category   String
+  topic      String
+  content    String
+  hook       String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 enum OrderStatus {

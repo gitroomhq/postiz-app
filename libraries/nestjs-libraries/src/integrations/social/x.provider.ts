@@ -13,6 +13,7 @@ import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.ab
 import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
 import { Integration } from '@prisma/client';
 import { timer } from '@gitroom/helpers/utils/timer';
+import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
 
 export class XProvider extends SocialAbstract implements SocialProvider {
   identifier = 'x';
@@ -62,6 +63,36 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     }
 
     return false;
+  }
+
+  @PostPlug({
+    identifier: 'x-repost-post-users',
+    title: 'Add Re-posters',
+    description: 'Add accounts to repost your post',
+    pickIntegration: ['x'],
+    fields: [],
+  })
+  async repostPostUsers(
+    integration: Integration,
+    originalIntegration: Integration,
+    postId: string,
+    information: any
+  ) {
+    const [accessTokenSplit, accessSecretSplit] = integration.token.split(':');
+    const client = new TwitterApi({
+      appKey: process.env.X_API_KEY!,
+      appSecret: process.env.X_API_SECRET!,
+      accessToken: accessTokenSplit,
+      accessSecret: accessSecretSplit,
+    });
+
+    const {data: {id}} = await client.v2.me();
+
+    try {
+      await client.v2.retweet(id, postId);
+    } catch (err) {
+      /** nothing **/
+    }
   }
 
   @Plug({
@@ -186,7 +217,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       accessSecret: oauth_token_secret,
     });
 
-    const { accessToken, client, accessSecret } = await startingClient.login(
+    const { accessToken, client, accessSecret, userId } = await startingClient.login(
       code
     );
 

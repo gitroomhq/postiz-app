@@ -156,7 +156,7 @@ export const WeekView = () => {
                 {convertTimeFormatBasedOnLocality(hour)}
               </div>
               {days.map((day, indexDay) => (
-                <Fragment key={`${day}-${hour}`}>
+                <Fragment key={`${currentYear}-${currentWeek}-${day}-${hour}`}>
                   <div className="relative bg-secondary">
                     <CalendarColumn
                       getDate={dayjs()
@@ -361,6 +361,7 @@ export const CalendarColumn: FC<{
         children: (
           <IntegrationContext.Provider
             value={{
+              allIntegrations: [],
               date: dayjs(),
               integration,
               value: [],
@@ -396,6 +397,7 @@ export const CalendarColumn: FC<{
         children: (
           <ExistingDataContextProvider value={data}>
             <AddEditModal
+              allIntegrations={integrations.map((p) => ({ ...p }))}
               reopenModal={editPost(post)}
               mutate={reloadCalendarView}
               integrations={integrations
@@ -423,6 +425,7 @@ export const CalendarColumn: FC<{
       },
       children: (
         <AddEditModal
+          allIntegrations={integrations.map((p) => ({ ...p }))}
           integrations={integrations.slice(0).map((p) => ({ ...p }))}
           mutate={reloadCalendarView}
           date={

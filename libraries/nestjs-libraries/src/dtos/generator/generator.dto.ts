@@ -1,24 +1,20 @@
 import {
-  IsDefined,
-  IsInt,
-  IsString,
-  IsUrl,
-  ValidateIf,
-  ValidateNested,
+  IsBoolean, IsIn, IsString, MinLength
 } from 'class-validator';
 
 export class GeneratorDto {
   @IsString()
-  @ValidateIf((o) => !o.post)
-  @IsUrl(
-    {},
-    {
-      message: 'Invalid URL',
-    }
-  )
-  url: string;
+  @MinLength(10)
+  research: string;
 
-  @ValidateIf((o) => !o.url)
+  @IsBoolean()
+  isPicture: boolean;
+
   @IsString()
-  post: string;
+  @IsIn(['one_short', 'one_long', 'thread_short', 'thread_long'])
+  format: 'one_short' | 'one_long' | 'thread_short' | 'thread_long';
+
+  @IsString()
+  @IsIn(['personal', 'company'])
+  tone: 'personal' | 'company';
 }

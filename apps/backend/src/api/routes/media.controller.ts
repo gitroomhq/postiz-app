@@ -10,7 +10,6 @@ import handleR2Upload from '@gitroom/nestjs-libraries/upload/r2.uploader';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CustomFileValidationPipe } from '@gitroom/nestjs-libraries/upload/custom.upload.validation';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
-import { basename } from 'path';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 
 @ApiTags('Media')
@@ -77,9 +76,9 @@ export class MediaController {
     const name = upload.Location.split('/').pop();
 
     // @ts-ignore
-    await this._mediaService.saveFile(org.id, name, upload.Location);
+    const saveFile = await this._mediaService.saveFile(org.id, name, upload.Location);
 
-    res.status(200).json(upload);
+    res.status(200).json({...upload, saved: saveFile});
     // const filePath =
     //   file.path.indexOf('http') === 0
     //     ? file.path

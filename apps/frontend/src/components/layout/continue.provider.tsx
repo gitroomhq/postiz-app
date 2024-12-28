@@ -76,11 +76,12 @@ export const ContinueProvider: FC = () => {
               ></path>
             </svg>
           </button>
-          <div className="pt-[16px]">
+          <div className="pt-[16px] max-h-[600px] overflow-hidden overflow-y-auto">
             <IntegrationContext.Provider
               value={{
                 date: dayjs(),
                 value: [],
+                allIntegrations: [],
                 integration: {
                   display: '',
                   time: [{time: 0}],

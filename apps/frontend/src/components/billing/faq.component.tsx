@@ -5,11 +5,22 @@ import clsx from 'clsx';
 import interClass from '@gitroom/react/helpers/inter.font';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useTranslations } from 'next-intl';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
 
 const useFaqList = () => {
-  const {isGeneral} = useVariables();
+  const { isGeneral } = useVariables();
   const t = useTranslations('Billing')
+  const user = useUser();
   return [
+    ...(user?.allowTrial
+      ? [
+          {
+            title: 'Am I going to be charged by Postiz?',
+            description:
+              'To confirm credit card information Postiz will hold $2 and release it immediately',
+          },
+        ]
+      : []),
     {
       title: t('trust_title', {product: isGeneral ? 'Postiz' : 'Gitroom'}),
       description: t('trust_description', {
@@ -31,7 +42,7 @@ const useFaqList = () => {
       description: t(`We automate ChatGPT to help you write your social posts and articles`),
     },
   ];
-}
+};
 
 export const FAQSection: FC<{ title: string; description: string }> = (
   props

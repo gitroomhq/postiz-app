@@ -395,3 +395,24 @@ div div .set-font-family {
   white-space: nowrap;
   opacity: 30%;
 }
+
+.loading-shimmer {
+    position: relative;
+    color: rgba(255, 255, 255, .5);
+}
+
+.loading-shimmer:before {
+    content: attr(data-text);
+    position: absolute;
+    overflow: hidden;
+    max-width: 100%;
+    white-space: nowrap;
+    color: white;
+    animation: loading 4s linear 0s infinite;
+    filter: blur(0.4px);
+}
+@keyframes loading {
+    0% {
+        max-width: 0;
+    }
+}

@@ -16,6 +16,7 @@ import UtmSaver from '@gitroom/helpers/utils/utm.saver';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import { ToltScript } from '@gitroom/frontend/components/layout/tolt.script';
+import { FacebookComponent } from '@gitroom/frontend/components/layout/facebook.component';
 
 const chakra = Chakra_Petch({ weight: '400', subsets: ['latin'] });
 
@@ -28,40 +29,37 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   return (
     <html className={interClass} lang={locale}>
       <head>
-        <link
-          rel="icon"
-          href="/favicon.ico"
-          sizes="any"
-        />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
       <body className={clsx(chakra.className, 'text-primary dark')}>
-        <NextIntlClientProvider messages={messages}>
-        {/* @ts-expect-error majorly due to the env variables error */}
-          <VariableContextComponent
-            storageProvider={
-              process.env.STORAGE_PROVIDER as 'local' | 'cloudflare'
-            }
-            backendUrl={process.env.NEXT_PUBLIC_BACKEND_URL}
-            plontoKey={process.env.NEXT_PUBLIC_POLOTNO}
-            billingEnabled={!!process.env.STRIPE_PUBLISHABLE_KEY}
-            discordUrl={process.env.NEXT_PUBLIC_DISCORD_SUPPORT!}
-            frontEndUrl={process.env.FRONTEND_URL!}
-            isGeneral={!!process.env.IS_GENERAL}
-            uploadDirectory={process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY!}
+        <VariableContextComponent
+          storageProvider={
+            process.env.STORAGE_PROVIDER! as 'local' | 'cloudflare'
+          }
+          backendUrl={process.env.NEXT_PUBLIC_BACKEND_URL!}
+          plontoKey={process.env.NEXT_PUBLIC_POLOTNO!}
+          billingEnabled={!!process.env.STRIPE_PUBLISHABLE_KEY}
+          discordUrl={process.env.NEXT_PUBLIC_DISCORD_SUPPORT!}
+          frontEndUrl={process.env.FRONTEND_URL!}
+          isGeneral={!!process.env.IS_GENERAL}
+          uploadDirectory={process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY!}
+          tolt={process.env.NEXT_PUBLIC_TOLT!}
+        >
+          <ToltScript />
+          <Plausible
+            domain={!!process.env.IS_GENERAL ? 'postiz.com' : 'gitroom.com'}
           >
-            <Plausible
-              domain={!!process.env.IS_GENERAL ? 'postiz.com' : 'gitroom.com'}
+            <PHProvider
+              phkey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
+              host={process.env.NEXT_PUBLIC_POSTHOG_HOST}
             >
-              <PHProvider
-                phkey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
-                host={process.env.NEXT_PUBLIC_POSTHOG_HOST}
-              >
+              <LayoutContext>
                 <UtmSaver />
-                <LayoutContext>{children}</LayoutContext>
-              </PHProvider>
-            </Plausible>
-          </VariableContextComponent>
-        </NextIntlClientProvider>
+                {children}
+              </LayoutContext>
+            </PHProvider>
+          </Plausible>
+        </VariableContextComponent>
       </body>
     </html>
   );

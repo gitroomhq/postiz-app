@@ -81,6 +81,10 @@ export class AuthMiddleware implements NestMiddleware {
         throw new HttpForbiddenException();
       }
 
+      if (!setOrg.apiKey) {
+        await this._organizationService.updateApiKey(setOrg.id);
+      }
+
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-expect-error
       req.user = user;

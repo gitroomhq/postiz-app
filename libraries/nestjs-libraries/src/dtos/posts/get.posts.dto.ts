@@ -27,7 +27,7 @@ export class GetPostsDto {
 
   @Type(() => Number)
   @IsNumber()
-  @Max(52)
+  @Max(12)
   @Min(1)
   month: number;
 

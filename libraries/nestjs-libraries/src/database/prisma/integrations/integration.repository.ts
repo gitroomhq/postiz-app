@@ -39,8 +39,8 @@ export class IntegrationRepository {
         id: plugId,
       },
       include: {
-        integration: true
-      }
+        integration: true,
+      },
     });
   }
 
@@ -485,5 +485,18 @@ export class IntegrationRepository {
         value: p,
       })),
     });
+  }
+
+  async getPostingTimes(orgId: string) {
+    return this._integration.model.integration.findMany({
+      where: {
+        organizationId: orgId,
+        disabled: false,
+        deletedAt: null,
+      },
+      select: {
+        postingTimes: true,
+      },
+    })
   }
 }

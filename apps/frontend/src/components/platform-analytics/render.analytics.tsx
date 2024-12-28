@@ -34,19 +34,34 @@ export const RenderAnalytics: FC<{ integration: Integration; date: number }> = (
     revalidateOnMount: true,
   });
 
+  const refreshChannel = useCallback(
+    (integration: Integration & { identifier: string }) => async () => {
+      const { url } = await (
+        await fetch(
+          `/integrations/social/${integration.identifier}?refresh=${integration.internalId}`,
+          {
+            method: 'GET',
+          }
+        )
+      ).json();
+
+      window.location.href = url;
+    },
+    []
+  );
+
   const total = useMemo(() => {
-    return data?.map(
-      (p: any) => {
-        const value = (p?.data.reduce((acc: number, curr: any) => acc + curr.total, 0) || 0) /
-          (p.average ? p.data.length : 1);
+    return data?.map((p: any) => {
+      const value =
+        (p?.data.reduce((acc: number, curr: any) => acc + curr.total, 0) || 0) /
+        (p.average ? p.data.length : 1);
 
-        if (p.average) {
-          return value.toFixed(2) + '%';
-        }
-
-        return value;
+      if (p.average) {
+        return value.toFixed(2) + '%';
       }
-    );
+
+      return value;
+    });
   }, [data]);
 
   if (loading) {
@@ -60,7 +75,10 @@ export const RenderAnalytics: FC<{ integration: Integration; date: number }> = (
   return (
     <div className="grid grid-cols-3 gap-[20px]">
       {data?.length === 0 && (
-        <div>{t("ThisChannelNeedsToBeRefreshed")}</div>
+        <div>
+          {t("ThisChannelNeedsToBeRefreshed")}{' '}
+          <div className="underline hover:font-bold cursor-pointer" onClick={refreshChannel(integration as any)}>click here to refresh</div>
+        </div>
       )}
       {data?.map((p: any, index: number) => (
         <div key={`pl-${index}`} className="flex">

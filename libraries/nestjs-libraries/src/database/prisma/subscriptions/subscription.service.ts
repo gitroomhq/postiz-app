@@ -6,13 +6,14 @@ import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/o
 import { Organization } from '@prisma/client';
 import dayjs from 'dayjs';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
 
 @Injectable()
 export class SubscriptionService {
   constructor(
     private readonly _subscriptionRepository: SubscriptionRepository,
     private readonly _integrationService: IntegrationService,
-    private readonly _organizationService: OrganizationService
+    private readonly _organizationService: OrganizationService,
   ) {}
 
   getSubscriptionByOrganizationId(organizationId: string) {
@@ -55,8 +56,8 @@ export class SubscriptionService {
     );
   }
 
-  checkSubscription(organizationId: string, subscriptionId: string) {
-    return this._subscriptionRepository.checkSubscription(
+  async checkSubscription(organizationId: string, subscriptionId: string) {
+    return await this._subscriptionRepository.checkSubscription(
       organizationId,
       subscriptionId
     );
@@ -197,9 +198,7 @@ export class SubscriptionService {
       'MONTHLY',
       null,
       undefined,
-       orgId
+      orgId
     );
   }
-
-
 }
