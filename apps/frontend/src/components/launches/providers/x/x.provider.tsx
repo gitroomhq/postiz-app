@@ -26,7 +26,13 @@ export default withProvider(
     }
     return true;
   },
-  280
+  (settings) => {
+    if (settings?.[0]?.value) {
+      console.log(4000);
+      return 4000;
+    }
+    return 280;
+  }
 );
 
 const checkVideoDuration = async (url: string): Promise<boolean> => {

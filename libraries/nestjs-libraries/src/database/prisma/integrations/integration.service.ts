@@ -5,6 +5,7 @@ import { InstagramProvider } from '@gitroom/nestjs-libraries/integrations/social
 import { FacebookProvider } from '@gitroom/nestjs-libraries/integrations/social/facebook.provider';
 import {
   AnalyticsData,
+  AuthTokenDetails,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { Integration, Organization } from '@prisma/client';
@@ -18,7 +19,9 @@ import { IntegrationTimeDto } from '@gitroom/nestjs-libraries/dtos/integrations/
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { PlugDto } from '@gitroom/nestjs-libraries/dtos/plugs/plug.dto';
 import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/client';
-import { difference } from 'lodash';
+import { difference, uniq } from 'lodash';
+import utc from 'dayjs/plugin/utc';
+dayjs.extend(utc);
 
 @Injectable()
 export class IntegrationService {
@@ -38,7 +41,27 @@ export class IntegrationService {
     return this._integrationRepository.setTimes(orgId, integrationId, times);
   }
 
+  updateProviderSettings(
+    org: string,
+    id: string,
+    additionalSettings: string
+  ) {
+    return this._integrationRepository.updateProviderSettings(
+      org,
+      id,
+      additionalSettings
+    );
+  }
+
   async createOrUpdateIntegration(
+    additionalSettings: {
+      title: string;
+      description: string;
+      type: 'checkbox' | 'text' | 'textarea';
+      value: any;
+      regex?: string;
+    }[] | undefined,
+    oneTimeToken: boolean,
     org: string,
     name: string,
     picture: string | undefined,
@@ -58,6 +81,8 @@ export class IntegrationService {
       ? await this.storage.uploadSimple(picture)
       : undefined;
     return this._integrationRepository.createOrUpdateIntegration(
+      additionalSettings,
+      oneTimeToken,
       org,
       name,
       uploadedPicture,
@@ -161,6 +186,8 @@ export class IntegrationService {
       const { refreshToken, accessToken, expiresIn } = data;
 
       await this.createOrUpdateIntegration(
+        undefined,
+        !!provider.oneTimeToken,
         integration.organizationId,
         integration.name,
         undefined,
@@ -328,11 +355,28 @@ export class IntegrationService {
       dayjs(getIntegration?.tokenExpiration).isBefore(dayjs()) ||
       forceRefresh
     ) {
-      const { accessToken, expiresIn, refreshToken } =
-        await integrationProvider.refreshToken(getIntegration.refreshToken!);
+      const { accessToken, expiresIn, refreshToken, additionalSettings } =
+        await new Promise<AuthTokenDetails>((res) => {
+          return integrationProvider
+            .refreshToken(getIntegration.refreshToken!)
+            .then((r) => res(r))
+            .catch(() => {
+              res({
+                error: '',
+                accessToken: '',
+                id: '',
+                name: '',
+                picture: '',
+                username: '',
+                additionalSettings: undefined,
+              });
+            });
+        });
 
       if (accessToken) {
         await this.createOrUpdateIntegration(
+          additionalSettings,
+          !!integrationProvider.oneTimeToken,
           getIntegration.organizationId,
           getIntegration.name,
           getIntegration.picture!,
@@ -380,7 +424,7 @@ export class IntegrationService {
         return loadAnalytics;
       } catch (e) {
         if (e instanceof RefreshToken) {
-          return this.checkAnalytics(org, integration, date);
+          return this.checkAnalytics(org, integration, date, true);
         }
       }
     }
@@ -399,6 +443,55 @@ export class IntegrationService {
     );
   }
 
+  async processInternalPlug(data: {
+    post: string;
+    originalIntegration: string;
+    integration: string;
+    plugName: string;
+    orgId: string;
+    delay: number;
+    information: any;
+  }) {
+    const originalIntegration =
+      await this._integrationRepository.getIntegrationById(
+        data.orgId,
+        data.originalIntegration
+      );
+
+    const getIntegration = await this._integrationRepository.getIntegrationById(
+      data.orgId,
+      data.integration
+    );
+
+    if (!getIntegration || !originalIntegration) {
+      return;
+    }
+
+    const getAllInternalPlugs = this._integrationManager
+      .getInternalPlugs(getIntegration.providerIdentifier)
+      .internalPlugs.find((p: any) => p.identifier === data.plugName);
+
+    if (!getAllInternalPlugs) {
+      return;
+    }
+
+    const getSocialIntegration = this._integrationManager.getSocialIntegration(
+      getIntegration.providerIdentifier
+    );
+
+    try {
+      // @ts-ignore
+      await getSocialIntegration?.[getAllInternalPlugs.methodName]?.(
+        getIntegration,
+        originalIntegration,
+        data.post,
+        data.information
+      );
+    } catch (err) {
+      return;
+    }
+  }
+
   async processPlugs(data: {
     plugId: string;
     postId: string;
@@ -408,7 +501,7 @@ export class IntegrationService {
   }) {
     const getPlugById = await this._integrationRepository.getPlug(data.plugId);
     if (!getPlugById) {
-      return ;
+      return;
     }
 
     const integration = this._integrationManager.getSocialIntegration(
@@ -421,8 +514,6 @@ export class IntegrationService {
         (p) => p.identifier === getPlugById.integration.providerIdentifier
       )!;
 
-    console.log(data.postId);
-
     // @ts-ignore
     const process = await integration[getPlugById.plugFunction](
       getPlugById.integration,
@@ -434,11 +525,11 @@ export class IntegrationService {
     );
 
     if (process) {
-      return ;
+      return;
     }
 
     if (data.totalRuns === data.currentRun) {
-      return ;
+      return;
     }
 
     this._workerServiceProducer.emit('plugs', {
@@ -499,5 +590,19 @@ export class IntegrationService {
     );
     const loadOnlyIds = exisingData.map((p) => p.value);
     return difference(id, loadOnlyIds);
+  }
+
+  async findFreeDateTime(orgId: string): Promise<number[]> {
+    const findTimes = await this._integrationRepository.getPostingTimes(orgId);
+    return uniq(
+      findTimes.reduce((all: any, current: any) => {
+        return [
+          ...all,
+          ...JSON.parse(current.postingTimes).map(
+            (p: { time: number }) => p.time
+          ),
+        ];
+      }, [] as number[])
+    );
   }
 }

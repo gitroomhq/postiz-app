@@ -46,7 +46,11 @@ export abstract class SocialAbstract {
 
     if (
       request.status === 401 ||
-      (json.includes('OAuthException') && !json.includes("Unsupported format") && !json.includes('2207018') && !json.includes('REVOKED_ACCESS_TOKEN'))
+      (json.includes('OAuthException') &&
+        !json.includes('The user is not an Instagram Business') &&
+        !json.includes('Unsupported format') &&
+        !json.includes('2207018') &&
+        !json.includes('REVOKED_ACCESS_TOKEN'))
     ) {
       throw new RefreshToken(identifier, json, options.body!);
     }

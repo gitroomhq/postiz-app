@@ -282,6 +282,7 @@ export const Post: FC<{
       children: (
         <IntegrationContext.Provider
           value={{
+            allIntegrations: [],
             date: dayjs(),
             integration,
             value: [],

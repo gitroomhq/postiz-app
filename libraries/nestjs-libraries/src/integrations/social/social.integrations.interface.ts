@@ -13,9 +13,13 @@ export interface IAuthenticator {
       refresh?: string;
     },
     clientInformation?: ClientInformation
-  ): Promise<AuthTokenDetails|string>;
+  ): Promise<AuthTokenDetails | string>;
   refreshToken(refreshToken: string): Promise<AuthTokenDetails>;
-  reConnect?(id: string, requiredId: string, accessToken: string): Promise<AuthTokenDetails>;
+  reConnect?(
+    id: string,
+    requiredId: string,
+    accessToken: string
+  ): Promise<AuthTokenDetails>;
   generateAuthUrl(
     clientInformation?: ClientInformation
   ): Promise<GenerateAuthUrlResponse>;
@@ -57,6 +61,13 @@ export type AuthTokenDetails = {
   expiresIn?: number; // The duration in seconds for which the access token is valid
   picture?: string;
   username: string;
+  additionalSettings?: {
+    title: string;
+    description: string;
+    type: 'checkbox' | 'text' | 'textarea';
+    value: any,
+    regex?: string;
+  }[];
 };
 
 export interface ISocialMediaIntegration {
@@ -109,6 +120,7 @@ export interface SocialProvider
     }[]
   >;
   name: string;
+  oneTimeToken?: boolean;
   isBetweenSteps: boolean;
   scopes: string[];
   externalUrl?: (

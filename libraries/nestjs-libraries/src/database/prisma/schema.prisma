@@ -287,7 +287,10 @@ model Integration {
   customer              Customer?       @relation(fields: [customerId], references: [id])
   plugs                 Plugs[]
   exisingPlugData       ExisingPlugData[]
+  rootInternalId        String?
+  additionalSettings    String?        @default("[]")
 
+  @@index([rootInternalId])
   @@index([updatedAt])
   @@index([deletedAt])
   @@unique([organizationId, internalId])
@@ -342,6 +345,7 @@ model Post {
   lastMessageId       String?
   lastMessage         Messages? @relation(fields: [lastMessageId], references: [id])
   payoutProblems      PayoutProblems[]
+  error               String?
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt
   deletedAt           DateTime?
@@ -484,6 +488,16 @@ model ExisingPlugData {
   value             String
 
   @@unique([integrationId, methodName, value])
+}
+
+model PopularPosts {
+  id         String   @id @default(uuid())
+  category   String
+  topic      String
+  content    String
+  hook       String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 enum OrderStatus {

@@ -8,6 +8,7 @@ import React, {
   useEffect,
   useMemo,
   useState,
+  ClipboardEvent,
 } from 'react';
 import { Button } from '@gitroom/react/form/button';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
@@ -37,6 +38,13 @@ import { GeneralPreviewComponent } from '@gitroom/frontend/components/launches/g
 import { capitalize } from 'lodash';
 
 import { useToaster } from '@gitroom/react/toaster/toaster';
+import { useModals } from '@mantine/modals';
+import { useUppyUploader } from '@gitroom/frontend/components/media/new.uploader';
+import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
+import { DropFiles } from '@gitroom/frontend/components/layout/drop.files';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import useSWR from 'swr';
+import { InternalChannels } from '@gitroom/frontend/components/launches/internal.channels';
 
 // Simple component to change back to settings on after changing tab
 export const SetTab: FC<{ changeTab: () => void }> = (props) => {
@@ -79,7 +87,7 @@ export const withProvider = function <T extends object>(
     value: Array<Array<{ path: string }>>,
     settings: T
   ) => Promise<string | true>,
-  maximumCharacters?: number
+  maximumCharacters?: number | ((settings: any) => number)
 ) {
   return (props: {
     identifier: string;
@@ -94,8 +102,10 @@ export const withProvider = function <T extends object>(
   }) => {
     const toast = useToaster();
     const existingData = useExistingData();
-    const { integration, date } = useIntegration();
+    const { allIntegrations, integration, date } = useIntegration();
     const [showLinkedinPopUp, setShowLinkedinPopUp] = useState<any>(false);
+    const [uploading, setUploading] = useState(false);
+    const fetch = useFetch();
 
     useCopilotReadable({
       description:
@@ -147,7 +157,11 @@ export const withProvider = function <T extends object>(
       editInPlace ? InPlaceValue : props.value,
       dto,
       checkValidity,
-      maximumCharacters
+      !maximumCharacters
+        ? undefined
+        : typeof maximumCharacters === 'number'
+        ? maximumCharacters
+        : maximumCharacters(JSON.parse(integration?.additionalSettings || '[]'))
     );
 
     // change editor value
@@ -302,6 +316,76 @@ export const withProvider = function <T extends object>(
       []
     );
 
+    const uppy = useUppyUploader({
+      onUploadSuccess: () => {
+        /**empty**/
+      },
+      allowedFileTypes: 'image/*,video/mp4',
+    });
+
+    const pasteImages = useCallback(
+      (index: number, currentValue: any[], isFile?: boolean) => {
+        return async (event: ClipboardEvent<HTMLDivElement> | File[]) => {
+          // @ts-ignore
+          const clipboardItems = isFile
+            ? // @ts-ignore
+              event.map((p) => ({ kind: 'file', getAsFile: () => p }))
+            : // @ts-ignore
+              event.clipboardData?.items; // Ensure clipboardData is available
+          if (!clipboardItems) {
+            return;
+          }
+
+          const files: File[] = [];
+
+          // @ts-ignore
+          for (const item of clipboardItems) {
+            console.log(item);
+            if (item.kind === 'file') {
+              const file = item.getAsFile();
+              if (file) {
+                const isImage = file.type.startsWith('image/');
+                const isVideo = file.type.startsWith('video/');
+                if (isImage || isVideo) {
+                  files.push(file); // Collect images or videos
+                }
+              }
+            }
+          }
+          if (files.length === 0) {
+            return;
+          }
+
+          setUploading(true);
+          const lastValues = [...currentValue];
+          for (const file of files) {
+            uppy.addFile(file);
+            const upload = await uppy.upload();
+            uppy.clear();
+            if (upload?.successful?.length) {
+              lastValues.push(upload?.successful[0]?.response?.body?.saved!);
+              changeImage(index)({
+                target: {
+                  name: 'image',
+                  value: [...lastValues],
+                },
+              });
+            }
+          }
+          setUploading(false);
+        };
+      },
+      [changeImage]
+    );
+
+    const getInternalPlugs = useCallback(async () => {
+      return (
+        await fetch(`/integrations/${props.identifier}/internal-plugs`)
+      ).json();
+    }, [props.identifier]);
+
+    const { data } = useSWR(`internal-${props.identifier}`, getInternalPlugs);
+
     // this is a trick to prevent the data from being deleted, yet we don't render the elements
     if (!props.show) {
       return null;
@@ -323,8 +407,10 @@ export const withProvider = function <T extends object>(
                   Preview
                 </Button>
               </div>
-              {!!SettingsComponent && (
-                <div className="flex flex-1">
+
+              {(!!SettingsComponent || !!data?.internalPlugs?.length) && (
+                <div className="flex-1 flex">
+
                   <Button
                     className={clsx(
                       'flex-1 overflow-hidden whitespace-nowrap',
@@ -355,9 +441,14 @@ export const withProvider = function <T extends object>(
           {editInPlace &&
             createPortal(
               <EditorWrapper>
+                {uploading && (
+                  <div className="absolute left-0 top-0 w-full h-full bg-black/40 z-[600] flex justify-center items-center">
+                    <LoadingComponent width={100} height={100} />
+                  </div>
+                )}
                 <div className="flex flex-col gap-[20px]">
                   {!existingData?.integration && (
-                    <div className="bg-red-800">
+                    <div className="bg-red-800 text-white">
                       You are now editing only {integration?.name} (
                       {capitalize(integration?.identifier.replace('-', ' '))})
                     </div>
@@ -367,7 +458,8 @@ export const withProvider = function <T extends object>(
                       <div>
                         <div className="flex gap-[4px]">
                           <div className="flex-1 text-textColor editor">
-                            {integration?.identifier === 'linkedin' && (
+                            {(integration?.identifier === 'linkedin' ||
+                              integration?.identifier === 'linkedin-page') && (
                               <Button
                                 className="mb-[5px]"
                                 onClick={tagPersonOrCompany(
@@ -379,25 +471,30 @@ export const withProvider = function <T extends object>(
                                 Tag a company
                               </Button>
                             )}
-                            <Editor
-                              order={index}
-                              height={InPlaceValue.length > 1 ? 200 : 250}
-                              value={val.content}
-                              commands={[
-                                // ...commands
-                                //   .getCommands()
-                                //   .filter((f) => f.name !== 'image'),
-                                // newImage,
-                                postSelector(date),
-                                ...linkedinCompany(
-                                  integration?.identifier!,
-                                  integration?.id!
-                                ),
-                              ]}
-                              preview="edit"
-                              // @ts-ignore
-                              onChange={changeValue(index)}
-                            />
+                            <DropFiles
+                              onDrop={pasteImages(index, val.image || [], true)}
+                            >
+                              <Editor
+                                order={index}
+                                height={InPlaceValue.length > 1 ? 200 : 250}
+                                value={val.content}
+                                commands={[
+                                  // ...commands
+                                  //   .getCommands()
+                                  //   .filter((f) => f.name !== 'image'),
+                                  // newImage,
+                                  postSelector(date),
+                                  ...linkedinCompany(
+                                    integration?.identifier!,
+                                    integration?.id!
+                                  ),
+                                ]}
+                                preview="edit"
+                                onPaste={pasteImages(index, val.image || [])}
+                                // @ts-ignore
+                                onChange={changeValue(index)}
+                              />
+                            </DropFiles>
                             {(!val.content || val.content.length < 6) && (
                               <div className="my-[5px] text-customColor19 text-[12px] font-[500]">
                                 The post should be at least 6 characters long
@@ -406,6 +503,7 @@ export const withProvider = function <T extends object>(
                             <div className="flex">
                               <div className="flex-1">
                                 <MultiMediaComponent
+                                  text={val.content}
                                   label="Attachments"
                                   description=""
                                   name="image"
@@ -487,12 +585,16 @@ export const withProvider = function <T extends object>(
           {(showTab === 0 || showTab === 2) && (
             <div className={clsx('mt-[20px]', showTab !== 2 && 'hidden')}>
               <Component values={editInPlace ? InPlaceValue : props.value} />
+              {data?.internalPlugs?.length && (
+                <InternalChannels plugs={data?.internalPlugs} />
+              )}
             </div>
           )}
           {showTab === 0 && (
             <div className="mt-[20px] flex flex-col items-center">
               <IntegrationContext.Provider
                 value={{
+                  allIntegrations,
                   date,
                   value: editInPlace ? InPlaceValue : props.value,
                   integration,
@@ -503,11 +605,31 @@ export const withProvider = function <T extends object>(
                   .join('').length ? (
                   CustomPreviewComponent ? (
                     <CustomPreviewComponent
-                      maximumCharacters={maximumCharacters}
+                      maximumCharacters={
+                        !maximumCharacters
+                          ? undefined
+                          : typeof maximumCharacters === 'number'
+                          ? maximumCharacters
+                          : maximumCharacters(
+                              JSON.parse(
+                                integration?.additionalSettings || '[]'
+                              )
+                            )
+                      }
                     />
                   ) : (
                     <GeneralPreviewComponent
-                      maximumCharacters={maximumCharacters}
+                      maximumCharacters={
+                        !maximumCharacters
+                          ? undefined
+                          : typeof maximumCharacters === 'number'
+                          ? maximumCharacters
+                          : maximumCharacters(
+                              JSON.parse(
+                                integration?.additionalSettings || '[]'
+                              )
+                            )
+                      }
                     />
                   )
                 ) : (

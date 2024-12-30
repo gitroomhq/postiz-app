@@ -1,19 +1,50 @@
 import { Injectable } from '@nestjs/common';
 import OpenAI from 'openai';
 import { shuffle } from 'lodash';
+import { zodResponseFormat } from 'openai/helpers/zod';
+import { z } from 'zod';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
 });
 
+const PicturePrompt = z.object({
+  prompt: z.string(),
+});
+
 @Injectable()
 export class OpenaiService {
-  async generateImage(prompt: string) {
-    return (await openai.images.generate({
-      prompt,
-      response_format: 'b64_json',
-      model: 'dall-e-3',
-    })).data[0].b64_json;
+  async generateImage(prompt: string, isUrl: boolean) {
+    const generate = (
+      await openai.images.generate({
+        prompt,
+        response_format: isUrl ? 'url' : 'b64_json',
+        model: 'dall-e-3',
+      })
+    ).data[0];
+
+    return isUrl ? generate.url : generate.b64_json;
+  }
+
+  async generatePromptForPicture(prompt: string) {
+    return (
+      (
+        await openai.beta.chat.completions.parse({
+          model: 'gpt-4o-2024-08-06',
+          messages: [
+            {
+              role: 'system',
+              content: `You are an assistant that take a description and style and generate a prompt that will be used later to generate images, make it a very long and descriptive explanation, and write a lot of things for the renderer like, if it${"'"}s realistic describe the camera`,
+            },
+            {
+              role: 'user',
+              content: `prompt: ${prompt}`,
+            },
+          ],
+          response_format: zodResponseFormat(PicturePrompt, 'picturePrompt'),
+        })
+      ).choices[0].message.parsed?.prompt || ''
+    );
   }
 
   async generatePosts(content: string) {

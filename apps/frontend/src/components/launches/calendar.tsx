@@ -357,6 +357,7 @@ export const CalendarColumn: FC<{
         children: (
           <IntegrationContext.Provider
             value={{
+              allIntegrations: [],
               date: dayjs(),
               integration,
               value: [],
@@ -392,6 +393,7 @@ export const CalendarColumn: FC<{
         children: (
           <ExistingDataContextProvider value={data}>
             <AddEditModal
+              allIntegrations={integrations.map((p) => ({ ...p }))}
               reopenModal={editPost(post)}
               mutate={reloadCalendarView}
               integrations={integrations
@@ -419,6 +421,7 @@ export const CalendarColumn: FC<{
       },
       children: (
         <AddEditModal
+          allIntegrations={integrations.map((p) => ({ ...p }))}
           integrations={integrations.slice(0).map((p) => ({ ...p }))}
           mutate={reloadCalendarView}
           date={
@@ -469,7 +472,7 @@ export const CalendarColumn: FC<{
                 'text-textColor p-[2.5px] relative flex flex-col justify-center items-center'
               )}
             >
-              <div className="relative w-full flex flex-col items-center p-[2.5px]">
+              <div className="relative w-full flex flex-col items-center p-[2.5px] h-[56px]">
                 <CalendarItem
                   display={display as 'day' | 'week' | 'month'}
                   isBeforeNow={isBeforeNow}
@@ -603,9 +606,11 @@ const CalendarItem: FC<{
           src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
         />
       </div>
-      <div className="whitespace-pre-wrap line-clamp-3">
-        {state === 'DRAFT' ? 'Draft: ' : ''}
-        {removeMd(post.content).replace(/\n/g, ' ')}
+      <div className="whitespace-nowrap line-clamp-2">
+        <div className="text-left">{state === 'DRAFT' ? 'Draft: ' : ''}</div>
+        <div className="w-full overflow-hidden overflow-ellipsis text-left">
+          {removeMd(post.content).replace(/\n/g, ' ')}
+        </div>
       </div>
     </div>
   );
