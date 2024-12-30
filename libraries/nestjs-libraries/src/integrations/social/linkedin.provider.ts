@@ -15,6 +15,8 @@ import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
 export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   identifier = 'linkedin';
   name = 'LinkedIn';
+  oneTimeToken = true;
+
   isBetweenSteps = false;
   scopes = [
     'openid',

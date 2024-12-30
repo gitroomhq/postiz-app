@@ -42,6 +42,7 @@ export class IntegrationService {
   }
 
   async createOrUpdateIntegration(
+    oneTimeToken: boolean,
     org: string,
     name: string,
     picture: string | undefined,
@@ -61,6 +62,7 @@ export class IntegrationService {
       ? await this.storage.uploadSimple(picture)
       : undefined;
     return this._integrationRepository.createOrUpdateIntegration(
+      oneTimeToken,
       org,
       name,
       uploadedPicture,
@@ -164,6 +166,7 @@ export class IntegrationService {
       const { refreshToken, accessToken, expiresIn } = data;
 
       await this.createOrUpdateIntegration(
+        !!provider.oneTimeToken,
         integration.organizationId,
         integration.name,
         undefined,
@@ -350,6 +353,7 @@ export class IntegrationService {
 
       if (accessToken) {
         await this.createOrUpdateIntegration(
+          !!integrationProvider.oneTimeToken,
           getIntegration.organizationId,
           getIntegration.name,
           getIntegration.picture!,

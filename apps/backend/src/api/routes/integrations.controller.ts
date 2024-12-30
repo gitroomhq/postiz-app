@@ -264,6 +264,7 @@ export class IntegrationsController {
 
             if (accessToken) {
               await this._integrationService.createOrUpdateIntegration(
+                !!integrationProvider.oneTimeToken,
                 getIntegration.organizationId,
                 getIntegration.name,
                 getIntegration.picture!,
@@ -345,6 +346,7 @@ export class IntegrationsController {
     }
 
     return this._integrationService.createOrUpdateIntegration(
+      true,
       org.id,
       name,
       picture,
@@ -468,6 +470,7 @@ export class IntegrationsController {
       }
     }
     return this._integrationService.createOrUpdateIntegration(
+      !!integrationProvider.oneTimeToken,
       org.id,
       validName.trim(),
       picture,

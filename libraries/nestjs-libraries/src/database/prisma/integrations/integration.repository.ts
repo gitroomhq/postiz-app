@@ -93,7 +93,8 @@ export class IntegrationRepository {
     });
   }
 
-  createOrUpdateIntegration(
+  async createOrUpdateIntegration(
+    oneTimeToken: boolean,
     org: string,
     name: string,
     picture: string | undefined,
@@ -118,7 +119,7 @@ export class IntegrationRepository {
           ]),
         }
       : {};
-    return this._integration.model.integration.upsert({
+    const upsert = await this._integration.model.integration.upsert({
       where: {
         organizationId_internalId: {
           internalId,
@@ -141,6 +142,7 @@ export class IntegrationRepository {
         ...postTimes,
         organizationId: org,
         refreshNeeded: false,
+        rootInternalId: internalId.split('_').pop(),
         ...(customInstanceDetails ? { customInstanceDetails } : {}),
       },
       update: {
@@ -164,6 +166,27 @@ export class IntegrationRepository {
         refreshNeeded: false,
       },
     });
+
+    if (oneTimeToken) {
+      await this._integration.model.integration.updateMany({
+        where: {
+          id: {
+            not: upsert.id,
+          },
+          organizationId: org,
+          rootInternalId: internalId.split('_').pop(),
+        },
+        data: {
+          token,
+          refreshToken,
+          ...(expiresIn
+            ? { tokenExpiration: new Date(Date.now() + expiresIn * 1000) }
+            : {}),
+        },
+      });
+    }
+
+    return upsert;
   }
 
   needsToBeRefreshed() {
@@ -497,6 +520,6 @@ export class IntegrationRepository {
       select: {
         postingTimes: true,
       },
-    })
+    });
   }
 }

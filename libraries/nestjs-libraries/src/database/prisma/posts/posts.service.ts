@@ -249,6 +249,7 @@ export class PostsService {
       }
 
       await this._integrationService.createOrUpdateIntegration(
+        !!getIntegration.oneTimeToken,
         integration.organizationId,
         integration.name,
         integration.picture!,

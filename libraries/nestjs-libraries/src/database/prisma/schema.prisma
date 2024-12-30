@@ -287,7 +287,9 @@ model Integration {
   customer              Customer?       @relation(fields: [customerId], references: [id])
   plugs                 Plugs[]
   exisingPlugData       ExisingPlugData[]
+  rootInternalId        String?
 
+  @@index([rootInternalId])
   @@index([updatedAt])
   @@index([deletedAt])
   @@unique([organizationId, internalId])

@@ -109,6 +109,7 @@ export interface SocialProvider
     }[]
   >;
   name: string;
+  oneTimeToken?: boolean;
   isBetweenSteps: boolean;
   scopes: string[];
   externalUrl?: (
