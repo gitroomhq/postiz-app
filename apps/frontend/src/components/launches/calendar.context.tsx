@@ -60,6 +60,7 @@ export interface Integrations {
   type: string;
   picture: string;
   changeProfilePicture: boolean;
+  additionalSettings: string;
   changeNickName: boolean;
   time: { time: number }[];
   customer?: {

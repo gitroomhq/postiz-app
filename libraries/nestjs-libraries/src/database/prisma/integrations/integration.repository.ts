@@ -18,6 +18,18 @@ export class IntegrationRepository {
     private _customers: PrismaRepository<'customer'>
   ) {}
 
+  updateProviderSettings(org: string, id: string, settings: string) {
+    return this._integration.model.integration.update({
+      where: {
+        id,
+        organizationId: org,
+      },
+      data: {
+        additionalSettings: settings,
+      },
+    });
+  }
+
   async setTimes(org: string, id: string, times: IntegrationTimeDto) {
     return this._integration.model.integration.update({
       select: {
@@ -94,6 +106,15 @@ export class IntegrationRepository {
   }
 
   async createOrUpdateIntegration(
+    additionalSettings:
+      | {
+          title: string;
+          description: string;
+          type: 'checkbox' | 'text' | 'textarea';
+          value: any;
+          regex?: string;
+        }[]
+      | undefined,
     oneTimeToken: boolean,
     org: string,
     name: string,
@@ -144,6 +165,9 @@ export class IntegrationRepository {
         refreshNeeded: false,
         rootInternalId: internalId.split('_').pop(),
         ...(customInstanceDetails ? { customInstanceDetails } : {}),
+        additionalSettings: additionalSettings
+          ? JSON.stringify(additionalSettings)
+          : '[]',
       },
       update: {
         type: type as any,
@@ -168,17 +192,28 @@ export class IntegrationRepository {
     });
 
     if (oneTimeToken) {
+      const rootId =
+        (
+          await this._integration.model.integration.findFirst({
+            where: {
+              organizationId: org,
+              internalId: internalId,
+            },
+          })
+        )?.rootInternalId || internalId.split('_').pop()!;
+
       await this._integration.model.integration.updateMany({
         where: {
           id: {
             not: upsert.id,
           },
           organizationId: org,
-          rootInternalId: internalId.split('_').pop(),
+          rootInternalId: rootId,
         },
         data: {
           token,
           refreshToken,
+          refreshNeeded: false,
           ...(expiresIn
             ? { tokenExpiration: new Date(Date.now() + expiresIn * 1000) }
             : {}),

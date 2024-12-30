@@ -49,8 +49,6 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       })
     ).json();
 
-    console.log('refreshToken', refreshToken);
-
     const { vanityName } = await (
       await this.fetch('https://api.linkedin.com/v2/me', {
         headers: {

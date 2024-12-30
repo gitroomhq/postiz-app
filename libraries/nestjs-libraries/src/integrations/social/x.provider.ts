@@ -86,7 +86,9 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       accessSecret: accessSecretSplit,
     });
 
-    const {data: {id}} = await client.v2.me();
+    const {
+      data: { id },
+    } = await client.v2.me();
 
     try {
       await client.v2.retweet(id, postId);
@@ -153,35 +155,15 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     return false;
   }
 
-  async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
-    const startingClient = new TwitterApi({
-      appKey: process.env.X_API_KEY!,
-      appSecret: process.env.X_API_SECRET!,
-    });
-    const {
-      accessToken,
-      refreshToken: newRefreshToken,
-      expiresIn,
-      client,
-    } = await startingClient.refreshOAuth2Token(refreshToken);
-    const {
-      data: { id, name, profile_image_url },
-    } = await client.v2.me();
-
-    const {
-      data: { username },
-    } = await client.v2.me({
-      'user.fields': 'username',
-    });
-
+  async refreshToken(): Promise<AuthTokenDetails> {
     return {
-      id,
-      name,
-      accessToken,
-      refreshToken: newRefreshToken,
-      expiresIn,
-      picture: profile_image_url,
-      username,
+      id: '',
+      name: '',
+      accessToken: '',
+      refreshToken: '',
+      expiresIn: 0,
+      picture: '',
+      username: '',
     };
   }
 
@@ -217,18 +199,13 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       accessSecret: oauth_token_secret,
     });
 
-    const { accessToken, client, accessSecret, userId } = await startingClient.login(
-      code
-    );
-
-    const { id, name, profile_image_url_https } = await client.currentUser(
-      true
-    );
+    const { accessToken, client, accessSecret } =
+      await startingClient.login(code);
 
     const {
-      data: { username },
+      data: { username, verified, profile_image_url, name, id },
     } = await client.v2.me({
-      'user.fields': 'username',
+      'user.fields': ['username', 'verified', 'verified_type', 'profile_image_url', 'name'],
     });
 
     return {
@@ -237,8 +214,16 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       name,
       refreshToken: '',
       expiresIn: 999999999,
-      picture: profile_image_url_https,
+      picture: profile_image_url,
       username,
+      additionalSettings: [
+        {
+          title: 'Verified',
+          description: 'Is this a verified user? (Premium)',
+          type: 'checkbox' as const,
+          value: verified,
+        },
+      ],
     };
   }
 

@@ -288,6 +288,7 @@ model Integration {
   plugs                 Plugs[]
   exisingPlugData       ExisingPlugData[]
   rootInternalId        String?
+  additionalSettings    String?        @default("[]")
 
   @@index([rootInternalId])
   @@index([updatedAt])

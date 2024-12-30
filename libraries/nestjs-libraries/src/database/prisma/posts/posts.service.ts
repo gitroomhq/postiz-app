@@ -217,7 +217,7 @@ export class PostsService {
     }
 
     if (dayjs(integration?.tokenExpiration).isBefore(dayjs()) || forceRefresh) {
-      const { accessToken, expiresIn, refreshToken } =
+      const { accessToken, expiresIn, refreshToken, additionalSettings } =
         await new Promise<AuthTokenDetails>((res) => {
           getIntegration
             .refreshToken(integration.refreshToken!)
@@ -231,6 +231,7 @@ export class PostsService {
                 name: '',
                 username: '',
                 picture: '',
+                additionalSettings: undefined,
               })
             );
         });
@@ -249,6 +250,7 @@ export class PostsService {
       }
 
       await this._integrationService.createOrUpdateIntegration(
+        additionalSettings,
         !!getIntegration.oneTimeToken,
         integration.organizationId,
         integration.name,
