@@ -474,6 +474,7 @@ export const withProvider = function <T extends object>(
                             <div className="flex">
                               <div className="flex-1">
                                 <MultiMediaComponent
+                                  text={val.content}
                                   label="Attachments"
                                   description=""
                                   name="image"
@@ -558,7 +559,11 @@ export const withProvider = function <T extends object>(
                           ? undefined
                           : typeof maximumCharacters === 'number'
                           ? maximumCharacters
-                          : maximumCharacters(JSON.parse(integration?.additionalSettings || '[]'))
+                          : maximumCharacters(
+                              JSON.parse(
+                                integration?.additionalSettings || '[]'
+                              )
+                            )
                       }
                     />
                   ) : (
@@ -568,7 +573,11 @@ export const withProvider = function <T extends object>(
                           ? undefined
                           : typeof maximumCharacters === 'number'
                           ? maximumCharacters
-                          : maximumCharacters(JSON.parse(integration?.additionalSettings || '[]'))
+                          : maximumCharacters(
+                              JSON.parse(
+                                integration?.additionalSettings || '[]'
+                              )
+                            )
                       }
                     />
                   )

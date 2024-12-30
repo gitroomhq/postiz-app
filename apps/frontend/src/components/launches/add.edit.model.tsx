@@ -655,6 +655,7 @@ export const AddEditModal: FC<{
                           <div className="flex">
                             <div className="flex-1">
                               <MultiMediaComponent
+                                text={p.content}
                                 label="Attachments"
                                 description=""
                                 value={p.image}

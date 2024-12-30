@@ -45,6 +45,12 @@ export class PostsController {
     return this._messagesService.getMarketplaceAvailableOffers(org.id, id);
   }
 
+  @Post('/posts/generate-image')
+  @CheckPolicies([AuthorizationActions.Create, Sections.POSTS_PER_MONTH])
+  generateImage(@Body() body: { text: string; type: string }) {
+
+  }
+
   @Get('/')
   async getPosts(
     @GetOrgFromRequest() org: Organization,

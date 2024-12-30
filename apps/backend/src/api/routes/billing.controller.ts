@@ -61,12 +61,14 @@ export class BillingController {
   @Post('/cancel')
   async cancel(
     @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User,
     @Body() body: { feedback: string }
   ) {
     await this._notificationService.sendEmail(
       process.env.EMAIL_FROM_ADDRESS,
       'Subscription Cancelled',
-      `Organization ${org.name} has cancelled their subscription because: ${body.feedback}`
+      `${user.name} from Organization ${org.name} has cancelled their subscription because: ${body.feedback}`,
+      user.email
     );
 
     return this._stripeService.setToCancel(org.id);

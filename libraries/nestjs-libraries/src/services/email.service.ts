@@ -32,7 +32,7 @@ export class EmailService {
     }
   }
 
-  async sendEmail(to: string, subject: string, html: string) {
+  async sendEmail(to: string, subject: string, html: string, replyTo?: string) {
     if (!process.env.EMAIL_FROM_ADDRESS || !process.env.EMAIL_FROM_NAME) {
       console.log(
         'Email sender information not found in environment variables'
@@ -96,7 +96,8 @@ export class EmailService {
       subject,
       modifiedHtml,
       process.env.EMAIL_FROM_NAME,
-      process.env.EMAIL_FROM_ADDRESS
+      process.env.EMAIL_FROM_ADDRESS,
+      replyTo
     );
     console.log(sends);
   }
