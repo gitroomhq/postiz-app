@@ -83,6 +83,7 @@ export const ContinueProvider: FC = () => {
                 value: [],
                 allIntegrations: [],
                 integration: {
+                  additionalSettings: '',
                   display: '',
                   time: [{time: 0}],
                   id: continueId,
