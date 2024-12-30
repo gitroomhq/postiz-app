@@ -311,50 +311,52 @@ export const AddEditModal: FC<{
         maximumCharacters: values[v].maximumCharacters,
       }));
 
-      for (const key of allKeys) {
-        if (key.checkValidity) {
-          const check = await key.checkValidity(
-            key?.value.map((p: any) => p.image || []),
-            key.settings
-          );
-          if (typeof check === 'string') {
-            toaster.show(check, 'warning');
-            return;
-          }
-        }
-
-        if (
-          key.value.some((p) => {
-            return (
-              countCharacters(p.content, key?.integration?.identifier || '') >
-              (key.maximumCharacters || 1000000)
+      if (type !== 'draft') {
+        for (const key of allKeys) {
+          if (key.checkValidity) {
+            const check = await key.checkValidity(
+              key?.value.map((p: any) => p.image || []),
+              key.settings
             );
-          })
-        ) {
+            if (typeof check === 'string') {
+              toaster.show(check, 'warning');
+              return;
+            }
+          }
+
           if (
-            !(await deleteDialog(
-              `${key?.integration?.name} post is too long, it will be cropped, do you want to continue?`,
-              'Yes, continue'
-            ))
+            key.value.some((p) => {
+              return (
+                countCharacters(p.content, key?.integration?.identifier || '') >
+                (key.maximumCharacters || 1000000)
+              );
+            })
           ) {
-            await key.trigger();
-            moveToIntegration({
-              identifier: key?.integration?.id!,
-              toPreview: true,
-            });
+            if (
+              !(await deleteDialog(
+                `${key?.integration?.name} post is too long, it will be cropped, do you want to continue?`,
+                'Yes, continue'
+              ))
+            ) {
+              await key.trigger();
+              moveToIntegration({
+                identifier: key?.integration?.id!,
+                toPreview: true,
+              });
+              return;
+            }
+          }
+
+          if (key.value.some((p) => !p.content || p.content.length < 6)) {
+            setShowError(true);
             return;
           }
-        }
 
-        if (key.value.some((p) => !p.content || p.content.length < 6)) {
-          setShowError(true);
-          return;
-        }
-
-        if (!key.valid) {
-          await key.trigger();
-          moveToIntegration({ identifier: key?.integration?.id! });
-          return;
+          if (!key.valid) {
+            await key.trigger();
+            moveToIntegration({ identifier: key?.integration?.id! });
+            return;
+          }
         }
       }
 
@@ -753,6 +755,9 @@ export const AddEditModal: FC<{
                           ? 'Submit for order'
                           : !existingData.integration
                           ? 'Add to calendar'
+                          : // @ts-ignore
+                          existingData?.posts?.[0]?.state === 'DRAFT'
+                          ? 'Schedule'
                           : 'Update'}
                       </div>
                       {!postFor && (
