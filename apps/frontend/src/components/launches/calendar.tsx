@@ -1,6 +1,13 @@
 'use client';
 
-import React, { FC, Fragment, useCallback, useMemo } from 'react';
+import React, {
+  FC,
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import {
   CalendarContext,
   Integrations,
@@ -23,11 +30,12 @@ import { IntegrationContext } from '@gitroom/frontend/components/launches/helper
 import { PreviewPopup } from '@gitroom/frontend/components/marketplace/special.message';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-import { groupBy, sortBy } from 'lodash';
+import { groupBy, random, sortBy } from 'lodash';
 import Image from 'next/image';
 import { extend } from 'dayjs';
 import { isUSCitizen } from './helpers/isuscitizen.utils';
 import removeMd from 'remove-markdown';
+import { useInterval } from '@mantine/hooks';
 extend(isSameOrAfter);
 extend(isSameOrBefore);
 
@@ -258,6 +266,8 @@ export const CalendarColumn: FC<{
   randomHour?: boolean;
 }> = (props) => {
   const { getDate, randomHour } = props;
+  const [num, setNum] = useState(0);
+
   const user = useUser();
   const {
     integrations,
@@ -299,7 +309,22 @@ export const CalendarColumn: FC<{
 
   const isBeforeNow = useMemo(() => {
     return getDate.startOf('hour').isBefore(dayjs().startOf('hour'));
-  }, [getDate]);
+  }, [getDate, num]);
+
+  const { start, stop } = useInterval(useCallback(() => {
+    if (isBeforeNow) {
+      return ;
+    }
+    setNum(num + 1);
+  }, [isBeforeNow]), random(120000, 150000));
+
+  useEffect(() => {
+    start();
+
+    return () => {
+      stop();
+    };
+  }, []);
 
   const [{ canDrop }, drop] = useDrop(() => ({
     accept: 'post',
