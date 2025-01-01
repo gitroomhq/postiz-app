@@ -298,6 +298,22 @@ export const CalendarColumn: FC<{
     });
   }, [posts, display, getDate]);
 
+  const [showAll, setShowAll] = useState(false);
+  const showAllFunc = useCallback(() => {
+    setShowAll(true);
+  }, []);
+
+  const showLessFunc = useCallback(() => {
+    setShowAll(false);
+  }, []);
+
+  const list = useMemo(() => {
+    if (showAll) {
+      return postList;
+    }
+    return postList.slice(0, 3);
+  }, [postList, showAll]);
+
   const canBeTrending = useMemo(() => {
     return !!trendings.find((trend) => {
       return dayjs
@@ -404,42 +420,56 @@ export const CalendarColumn: FC<{
   );
 
   const editPost = useCallback(
-    (post: Post & { integration: Integration }, isDuplicate?: boolean) => async () => {
-      if (user?.orgId === post.submittedForOrganizationId) {
-        return previewPublication(post);
-      }
-      const data = await (await fetch(`/posts/${post.id}`)).json();
-      const date = !isDuplicate ? null : (await (await fetch('/posts/find-slot')).json()).date;
-      const publishDate = dayjs.utc(date || data.posts[0].publishDate).local();
+    (post: Post & { integration: Integration }, isDuplicate?: boolean) =>
+      async () => {
+        if (user?.orgId === post.submittedForOrganizationId) {
+          return previewPublication(post);
+        }
+        const data = await (await fetch(`/posts/${post.id}`)).json();
+        const date = !isDuplicate
+          ? null
+          : (await (await fetch('/posts/find-slot')).json()).date;
+        const publishDate = dayjs
+          .utc(date || data.posts[0].publishDate)
+          .local();
 
-      const ExistingData = !isDuplicate ? ExistingDataContextProvider : Fragment;
+        const ExistingData = !isDuplicate
+          ? ExistingDataContextProvider
+          : Fragment;
 
-      modal.openModal({
-        closeOnClickOutside: false,
-        closeOnEscape: false,
-        withCloseButton: false,
-        classNames: {
-          modal: 'w-[100%] max-w-[1400px] bg-transparent text-textColor',
-        },
-        children: (
-          <ExistingData value={data}>
-            <AddEditModal
-              {...isDuplicate ? {onlyValues: data.posts} : {}}
-              allIntegrations={integrations.map((p) => ({ ...p }))}
-              reopenModal={editPost(post)}
-              mutate={reloadCalendarView}
-              integrations={isDuplicate ? integrations : integrations
-                .slice(0)
-                .filter((f) => f.id === data.integration)
-                .map((p) => ({ ...p, picture: data.integrationPicture }))}
-              date={publishDate}
-            />
-          </ExistingData>
-        ),
-        size: '80%',
-        title: ``,
-      });
-    },
+        modal.openModal({
+          closeOnClickOutside: false,
+          closeOnEscape: false,
+          withCloseButton: false,
+          classNames: {
+            modal: 'w-[100%] max-w-[1400px] bg-transparent text-textColor',
+          },
+          children: (
+            <ExistingData value={data}>
+              <AddEditModal
+                {...(isDuplicate ? { onlyValues: data.posts } : {})}
+                allIntegrations={integrations.map((p) => ({ ...p }))}
+                reopenModal={editPost(post)}
+                mutate={reloadCalendarView}
+                integrations={
+                  isDuplicate
+                    ? integrations
+                    : integrations
+                        .slice(0)
+                        .filter((f) => f.id === data.integration)
+                        .map((p) => ({
+                          ...p,
+                          picture: data.integrationPicture,
+                        }))
+                }
+                date={publishDate}
+              />
+            </ExistingData>
+          ),
+          size: '80%',
+          title: ``,
+        });
+      },
     [integrations]
   );
 
@@ -497,7 +527,7 @@ export const CalendarColumn: FC<{
             canBeTrending && 'bg-customColor24'
           )}
         >
-          {postList.map((post) => (
+          {list.map((post) => (
             <div
               key={post.id}
               className={clsx(
@@ -518,6 +548,22 @@ export const CalendarColumn: FC<{
               </div>
             </div>
           ))}
+          {!showAll && postList.length > 3 && (
+            <div
+              className="text-center hover:underline py-[5px]"
+              onClick={showAllFunc}
+            >
+              + Show more ({postList.length - 3})
+            </div>
+          )}
+          {showAll && postList.length > 3 && (
+            <div
+              className="text-center hover:underline py-[5px]"
+              onClick={showLessFunc}
+            >
+              - Show less
+            </div>
+          )}
         </div>
         {(display === 'day'
           ? !isBeforeNow && postList.length === 0
@@ -602,7 +648,8 @@ const CalendarItem: FC<{
   display: 'day' | 'week' | 'month';
   post: Post & { integration: Integration };
 }> = (props) => {
-  const { editPost, duplicatePost, post, date, isBeforeNow, state, display } = props;
+  const { editPost, duplicatePost, post, date, isBeforeNow, state, display } =
+    props;
 
   const preview = useCallback(() => {
     window.open(`/p/` + post.id + '?share=true', '_blank');
@@ -626,15 +673,25 @@ const CalendarItem: FC<{
       style={{ opacity }}
     >
       <div className="bg-forth text-[11px] h-[15px] w-full rounded-tr-[10px] rounded-tl-[10px] flex justify-center gap-[10px] px-[5px]">
-        <div className="hidden group-hover:block hover:underline cursor-pointer" onClick={duplicatePost}>Duplicate</div>
-        <div className="hidden group-hover:block hover:underline cursor-pointer" onClick={preview}>Preview</div>
+        <div
+          className="hidden group-hover:block hover:underline cursor-pointer"
+          onClick={duplicatePost}
+        >
+          Duplicate
+        </div>
+        <div
+          className="hidden group-hover:block hover:underline cursor-pointer"
+          onClick={preview}
+        >
+          Preview
+        </div>
       </div>
       <div
         onClick={editPost}
         className={clsx(
           'gap-[5px] w-full flex h-full flex-1 rounded-br-[10px] rounded-bl-[10px] border border-seventh px-[5px] p-[2.5px]',
           'relative',
-          (isBeforeNow) && '!grayscale'
+          isBeforeNow && '!grayscale'
         )}
       >
         <div
