@@ -146,9 +146,9 @@ export default async function Auth({
                         {JSON.parse(p?.image || '[]').map((p: any) => (
                           <div
                             key={p.name}
-                            className="flex-1 rounded-[10px] overflow-hidden"
+                            className="flex-1 rounded-[10px] max-h-[500px] overflow-hidden"
                           >
-                            <VideoOrImage src={p.path} autoplay={true} />
+                            <VideoOrImage isContain={true} src={p.path} autoplay={true} />
                           </div>
                         ))}
                       </div>
