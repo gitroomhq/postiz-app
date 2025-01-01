@@ -23,7 +23,7 @@ export const VideoOrImage: FC<{
     <img
       className={clsx(
         isContain ? 'object-contain' : 'object-cover',
-        'w-full h-full object-cover'
+        'w-full h-full'
       )}
       src={src}
     />
