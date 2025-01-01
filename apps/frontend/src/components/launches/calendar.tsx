@@ -311,12 +311,15 @@ export const CalendarColumn: FC<{
     return getDate.startOf('hour').isBefore(dayjs().startOf('hour'));
   }, [getDate, num]);
 
-  const { start, stop } = useInterval(useCallback(() => {
-    if (isBeforeNow) {
-      return ;
-    }
-    setNum(num + 1);
-  }, [isBeforeNow]), random(120000, 150000));
+  const { start, stop } = useInterval(
+    useCallback(() => {
+      if (isBeforeNow) {
+        return;
+      }
+      setNum(num + 1);
+    }, [isBeforeNow]),
+    random(120000, 150000)
+  );
 
   useEffect(() => {
     start();
@@ -401,12 +404,15 @@ export const CalendarColumn: FC<{
   );
 
   const editPost = useCallback(
-    (post: Post & { integration: Integration }) => async () => {
+    (post: Post & { integration: Integration }, isDuplicate?: boolean) => async () => {
       if (user?.orgId === post.submittedForOrganizationId) {
         return previewPublication(post);
       }
       const data = await (await fetch(`/posts/${post.id}`)).json();
-      const publishDate = dayjs.utc(data.posts[0].publishDate).local();
+      const date = !isDuplicate ? null : (await (await fetch('/posts/find-slot')).json()).date;
+      const publishDate = dayjs.utc(date || data.posts[0].publishDate).local();
+
+      const ExistingData = !isDuplicate ? ExistingDataContextProvider : Fragment;
 
       modal.openModal({
         closeOnClickOutside: false,
@@ -416,18 +422,19 @@ export const CalendarColumn: FC<{
           modal: 'w-[100%] max-w-[1400px] bg-transparent text-textColor',
         },
         children: (
-          <ExistingDataContextProvider value={data}>
+          <ExistingData value={data}>
             <AddEditModal
+              {...isDuplicate ? {onlyValues: data.posts} : {}}
               allIntegrations={integrations.map((p) => ({ ...p }))}
               reopenModal={editPost(post)}
               mutate={reloadCalendarView}
-              integrations={integrations
+              integrations={isDuplicate ? integrations : integrations
                 .slice(0)
                 .filter((f) => f.id === data.integration)
                 .map((p) => ({ ...p, picture: data.integrationPicture }))}
               date={publishDate}
             />
-          </ExistingDataContextProvider>
+          </ExistingData>
         ),
         size: '80%',
         title: ``,
@@ -484,7 +491,7 @@ export const CalendarColumn: FC<{
               }
             : {})}
           className={clsx(
-            'flex-col text-[12px] pointer w-full overflow-hidden overflow-x-auto flex scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary',
+            'flex-col text-[12px] pointer w-full flex scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary',
             isBeforeNow ? 'bg-customColor23 flex-1' : 'cursor-pointer',
             isBeforeNow && postList.length === 0 && 'col-calendar',
             canBeTrending && 'bg-customColor24'
@@ -497,13 +504,14 @@ export const CalendarColumn: FC<{
                 'text-textColor p-[2.5px] relative flex flex-col justify-center items-center'
               )}
             >
-              <div className="relative w-full flex flex-col items-center p-[2.5px] h-[56px]">
+              <div className="relative w-full flex flex-col items-center p-[2.5px] h-[66px]">
                 <CalendarItem
                   display={display as 'day' | 'week' | 'month'}
                   isBeforeNow={isBeforeNow}
                   date={getDate}
                   state={post.state}
-                  editPost={editPost(post)}
+                  editPost={editPost(post, false)}
+                  duplicatePost={editPost(post, true)}
                   post={post}
                   integrations={integrations}
                 />
@@ -588,12 +596,18 @@ const CalendarItem: FC<{
   date: dayjs.Dayjs;
   isBeforeNow: boolean;
   editPost: () => void;
+  duplicatePost: () => void;
   integrations: Integrations[];
   state: State;
   display: 'day' | 'week' | 'month';
   post: Post & { integration: Integration };
 }> = (props) => {
-  const { editPost, post, date, isBeforeNow, state, display } = props;
+  const { editPost, duplicatePost, post, date, isBeforeNow, state, display } = props;
+
+  const preview = useCallback(() => {
+    window.open(`/p/` + post.id + '?share=true', '_blank');
+  }, [post]);
+
   const [{ opacity }, dragRef] = useDrag(
     () => ({
       type: 'post',
@@ -608,33 +622,41 @@ const CalendarItem: FC<{
     <div
       // @ts-ignore
       ref={dragRef}
-      onClick={editPost}
-      className={clsx(
-        'gap-[5px] w-full flex h-full flex-1 rounded-[10px] border border-seventh px-[5px] p-[2.5px]',
-        'relative',
-        (state === 'DRAFT' || isBeforeNow) && '!grayscale'
-      )}
+      className={clsx('w-full flex h-full flex-1 flex-col group', 'relative')}
       style={{ opacity }}
     >
+      <div className="bg-forth text-[11px] h-[15px] w-full rounded-tr-[10px] rounded-tl-[10px] flex justify-center gap-[10px] px-[5px]">
+        <div className="hidden group-hover:block hover:underline cursor-pointer" onClick={duplicatePost}>Duplicate</div>
+        <div className="hidden group-hover:block hover:underline cursor-pointer" onClick={preview}>Preview</div>
+      </div>
       <div
+        onClick={editPost}
         className={clsx(
-          'relative min-w-[20px] h-[20px]',
-          display === 'day' ? 'h-[40px]' : 'h-[20px]'
+          'gap-[5px] w-full flex h-full flex-1 rounded-br-[10px] rounded-bl-[10px] border border-seventh px-[5px] p-[2.5px]',
+          'relative',
+          (isBeforeNow) && '!grayscale'
         )}
       >
-        <img
-          className="w-[20px] h-[20px] rounded-full"
-          src={post.integration.picture!}
-        />
-        <img
-          className="w-[12px] h-[12px] rounded-full absolute z-10 top-[10px] right-0 border border-fifth"
-          src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
-        />
-      </div>
-      <div className="whitespace-nowrap line-clamp-2">
-        <div className="text-left">{state === 'DRAFT' ? 'Draft: ' : ''}</div>
-        <div className="w-full overflow-hidden overflow-ellipsis text-left">
-          {removeMd(post.content).replace(/\n/g, ' ')}
+        <div
+          className={clsx(
+            'relative min-w-[20px] h-[20px]',
+            display === 'day' ? 'h-[40px]' : 'h-[20px]'
+          )}
+        >
+          <img
+            className="w-[20px] h-[20px] rounded-full"
+            src={post.integration.picture!}
+          />
+          <img
+            className="w-[12px] h-[12px] rounded-full absolute z-10 top-[10px] right-0 border border-fifth"
+            src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
+          />
+        </div>
+        <div className="whitespace-nowrap line-clamp-2">
+          <div className="text-left">{state === 'DRAFT' ? 'Draft: ' : ''}</div>
+          <div className="w-full overflow-hidden overflow-ellipsis text-left">
+            {removeMd(post.content).replace(/\n/g, ' ')}
+          </div>
         </div>
       </div>
     </div>

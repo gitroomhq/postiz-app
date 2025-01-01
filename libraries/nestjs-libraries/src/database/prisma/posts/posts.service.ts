@@ -52,11 +52,15 @@ export class PostsService {
       isFirst
     );
 
+    if (!post) {
+      return [];
+    }
+
     return [
       post!,
       ...(post?.childrenPost?.length
         ? await this.getPostsRecursively(
-            post.childrenPost[0].id,
+            post?.childrenPost?.[0]?.id,
             false,
             orgId,
             false
@@ -792,5 +796,13 @@ export class PostsService {
     }, null) as number;
 
     return date.clone().add(num, 'minutes').format('YYYY-MM-DDTHH:mm:00');
+  }
+
+  getComments(postId: string) {
+    return this._postRepository.getComments(postId);
+  }
+
+  createComment(orgId: string, userId: string, postId: string, comment: string) {
+    return this._postRepository.createComment(orgId, userId, postId, comment);
   }
 }
