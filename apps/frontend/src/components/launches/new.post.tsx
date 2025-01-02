@@ -31,7 +31,7 @@ export const NewPost = () => {
       size: '80%',
       title: ``,
     });
-  }, []);
+  }, [integrations]);
 
   return (
     <button

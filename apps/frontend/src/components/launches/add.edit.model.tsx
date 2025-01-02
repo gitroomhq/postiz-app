@@ -1,16 +1,7 @@
 'use client';
 
 import React, {
-  ClipboardEventHandler,
-  FC,
-  Fragment,
-  MouseEventHandler,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  ClipboardEvent,
-  useState,
+  ClipboardEventHandler, FC, Fragment, MouseEventHandler, useCallback, useEffect, useMemo, useRef, ClipboardEvent, useState, memo
 } from 'react';
 import dayjs from 'dayjs';
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
@@ -79,7 +70,7 @@ export const AddEditModal: FC<{
     id?: string;
     image?: Array<{ id: string; path: string }>;
   }>;
-}> = (props) => {
+}> = memo((props) => {
   const { date, integrations: ints, reopenModal, mutate, onlyValues } = props;
   const [customer, setCustomer] = useState('');
   const [loading, setLoading] = useState(false);
@@ -834,4 +825,4 @@ export const AddEditModal: FC<{
       </div>
     </>
   );
-};
+});

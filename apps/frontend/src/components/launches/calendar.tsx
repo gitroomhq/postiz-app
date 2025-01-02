@@ -1,12 +1,7 @@
 'use client';
 
 import React, {
-  FC,
-  Fragment,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
+  FC, Fragment, memo, useCallback, useEffect, useMemo, useState
 } from 'react';
 import {
   CalendarContext,
@@ -264,7 +259,7 @@ export const Calendar = () => {
 export const CalendarColumn: FC<{
   getDate: dayjs.Dayjs;
   randomHour?: boolean;
-}> = (props) => {
+}> = memo((props) => {
   const { getDate, randomHour } = props;
   const [num, setNum] = useState(0);
 
@@ -636,7 +631,7 @@ export const CalendarColumn: FC<{
       </div>
     </div>
   );
-};
+});
 
 const CalendarItem: FC<{
   date: dayjs.Dayjs;
@@ -647,7 +642,7 @@ const CalendarItem: FC<{
   state: State;
   display: 'day' | 'week' | 'month';
   post: Post & { integration: Integration };
-}> = (props) => {
+}> = memo((props) => {
   const { editPost, duplicatePost, post, date, isBeforeNow, state, display } =
     props;
 
@@ -718,69 +713,4 @@ const CalendarItem: FC<{
       </div>
     </div>
   );
-};
-
-export const CommentBox: FC<{ totalComments: number; date: dayjs.Dayjs }> = (
-  props
-) => {
-  const { totalComments, date } = props;
-  const { mutate } = useSWRConfig();
-
-  const openCommentsModal = useCallback(() => {
-    openModal({
-      children: <CommentComponent date={date} />,
-      withCloseButton: false,
-      onClose() {
-        mutate(`/posts`);
-      },
-      classNames: {
-        modal: 'bg-transparent text-textColor',
-      },
-      size: '80%',
-    });
-  }, [date]);
-
-  return (
-    <div
-      className={
-        totalComments === 0
-          ? 'transition-opacity opacity-0 group-hover:opacity-100'
-          : ''
-      }
-    >
-      <div
-        onClick={openCommentsModal}
-        data-tooltip-id="tooltip"
-        data-tooltip-content="Add / View comments"
-        className={clsx(
-          'group absolute right-0 bottom-0 w-[20px] h-[20px] z-[10] hover:opacity-95 cursor-pointer hover:right-[3px] hover:bottom-[3px] transition-all duration-300 ease-in-out',
-          totalComments === 0 ? 'opacity-50' : 'opacity-95'
-        )}
-      >
-        <div
-          className={clsx(
-            'relative w-full h-full group-hover:opacity-100',
-            totalComments === 0 && 'opacity-0'
-          )}
-        >
-          {totalComments > 0 && (
-            <div className="absolute right-0 bottom-[10px] w-[10px] h-[10px] text-[8px] bg-red-500 z-[20] rounded-full flex justify-center items-center text-textColor">
-              {totalComments}
-            </div>
-          )}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 32 32"
-            id="comment"
-          >
-            <path
-              fill="#fff"
-              d="M25.784 21.017A10.992 10.992 0 0 0 27 16c0-6.065-4.935-11-11-11S5 9.935 5 16s4.935 11 11 11c1.742 0 3.468-.419 5.018-1.215l4.74 1.185a.996.996 0 0 0 .949-.263 1 1 0 0 0 .263-.95l-1.186-4.74zm-2.033.11.874 3.498-3.498-.875a1.006 1.006 0 0 0-.731.098A8.99 8.99 0 0 1 16 25c-4.963 0-9-4.038-9-9s4.037-9 9-9 9 4.038 9 9a8.997 8.997 0 0 1-1.151 4.395.995.995 0 0 0-.098.732z"
-            ></path>
-          </svg>
-        </div>
-        <div className="absolute right-0 bottom-0 w-[0] h-[0] shadow-yellow bg-[rgba(0,0,0,0)]"></div>
-      </div>
-    </div>
-  );
-};
+});

@@ -1,14 +1,7 @@
 'use client';
 
 import React, {
-  FC,
-  Fragment,
-  ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  ClipboardEvent,
+  FC, Fragment, ReactNode, useCallback, useEffect, useMemo, useState, ClipboardEvent, memo
 } from 'react';
 import { Button } from '@gitroom/react/form/button';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
@@ -89,7 +82,7 @@ export const withProvider = function <T extends object>(
   ) => Promise<string | true>,
   maximumCharacters?: number | ((settings: any) => number)
 ) {
-  return (props: {
+  return memo((props: {
     identifier: string;
     id: string;
     value: Array<{
@@ -590,5 +583,5 @@ export const withProvider = function <T extends object>(
         </div>
       </FormProvider>
     );
-  };
+  });
 };
