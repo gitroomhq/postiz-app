@@ -518,7 +518,7 @@ export const MainBillingComponent: FC<{
       )}
       {subscription?.cancelAt && isGeneral && (
         <div className="text-center">
-          Your subscription will be cancel at{' '}
+          Your subscription will be canceled at{' '}
           {dayjs(subscription.cancelAt).local().format('D MMM, YYYY')}
           <br />
           You will never be charged again
