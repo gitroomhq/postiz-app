@@ -21,6 +21,8 @@ export const UpDown: FC<{ name: string; param: string }> = (props) => {
   const { name, param } = props;
   const router = useRouter();
   const searchParams = useSearchParams();
+  const startDate = searchParams.get('startDate');
+  const endDate = searchParams.get('endDate');
 
   const state = useMemo(() => {
     const newName = searchParams.get('key');
@@ -35,18 +37,28 @@ export const UpDown: FC<{ name: string; param: string }> = (props) => {
 
   const changeStateUrl = useCallback(
     (newState: string) => {
-      const query =
-        newState === 'none' ? `` : `?key=${param}&state=${newState}`;
-      router.replace(`/analytics${query}`);
+      const params = new URLSearchParams();
+      if (startDate) {
+        params.set('startDate', startDate);
+      }
+      if (endDate) {
+        params.set('endDate', endDate);
+      }
+
+      if (newState !== 'none') {
+        params.set('key', param);
+        params.set('state', newState);
+      }
+      router.replace(`/analytics?${params.toString()}`);
     },
-    [state, param]
+    [state, param, startDate, endDate]
   );
 
   const changeState = useCallback(() => {
     changeStateUrl(
       state === 'none' ? 'desc' : state === 'desc' ? 'asc' : 'none'
     );
-  }, [state, param]);
+  }, [state, param, startDate, endDate]);
 
   return (
     <div
@@ -96,6 +108,10 @@ export const StarsTableComponent = () => {
   const page = +(searchParams.get('page') || 1);
   const key = searchParams.get('key');
   const state = searchParams.get('state');
+
+  const startDate = searchParams.get('startDate');
+  const endDate = searchParams.get('endDate');
+
   const [loading, setLoading] = useState(false);
   const [, startTransition] = useTransition();
 
@@ -148,11 +164,23 @@ export const StarsTableComponent = () => {
 
   const changePage = useCallback(
     (type: 'increase' | 'decrease') => () => {
-      const newPage = type === 'increase' ? page + 1 : page - 1;
-      const keyAndState = key && state ? `&key=${key}&state=${state}` : '';
-      router.replace(`/analytics?page=${newPage}${keyAndState}`);
+      const params = new URLSearchParams();
+      const pageValue = type === 'increase' ? page + 1 : page - 1;
+      params.set('page', pageValue.toString());
+      if (key && state) {
+        params.set('key', key);
+        params.set('state', state);
+      }
+
+      if (startDate) {
+        params.set('startDate', startDate);
+      }
+      if (endDate) {
+        params.set('endDate', endDate);
+      }
+      router.replace(`/analytics?${params.toString()}`);
     },
-    [page, key, state]
+    [page, key, state, startDate, endDate]
   );
 
   return (
