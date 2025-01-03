@@ -111,7 +111,7 @@ export class OpenaiService {
         {
           role: 'assistant',
           content:
-            'Your take a full website text, and extract only the article content',
+            'You take a full website text, and extract only the article content',
         },
         {
           role: 'user',
