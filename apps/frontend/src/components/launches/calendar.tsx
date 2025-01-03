@@ -1,6 +1,8 @@
 'use client';
 
-import React, { FC, Fragment, useCallback, useMemo } from 'react';
+import React, {
+  FC, Fragment, memo, useCallback, useEffect, useMemo, useState
+} from 'react';
 import {
   CalendarContext,
   Integrations,
@@ -23,11 +25,12 @@ import { IntegrationContext } from '@gitroom/frontend/components/launches/helper
 import { PreviewPopup } from '@gitroom/frontend/components/marketplace/special.message';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-import { groupBy, sortBy } from 'lodash';
+import { groupBy, random, sortBy } from 'lodash';
 import Image from 'next/image';
 import { extend } from 'dayjs';
 import { isUSCitizen } from './helpers/isuscitizen.utils';
 import removeMd from 'remove-markdown';
+import { useInterval } from '@mantine/hooks';
 extend(isSameOrAfter);
 extend(isSameOrBefore);
 
@@ -153,7 +156,7 @@ export const WeekView = () => {
                 {convertTimeFormatBasedOnLocality(hour)}
               </div>
               {days.map((day, indexDay) => (
-                <Fragment key={`${day}-${hour}`}>
+                <Fragment key={`${currentYear}-${currentWeek}-${day}-${hour}`}>
                   <div className="relative bg-secondary">
                     <CalendarColumn
                       getDate={dayjs()
@@ -256,8 +259,10 @@ export const Calendar = () => {
 export const CalendarColumn: FC<{
   getDate: dayjs.Dayjs;
   randomHour?: boolean;
-}> = (props) => {
+}> = memo((props) => {
   const { getDate, randomHour } = props;
+  const [num, setNum] = useState(0);
+
   const user = useUser();
   const {
     integrations,
@@ -288,6 +293,22 @@ export const CalendarColumn: FC<{
     });
   }, [posts, display, getDate]);
 
+  const [showAll, setShowAll] = useState(false);
+  const showAllFunc = useCallback(() => {
+    setShowAll(true);
+  }, []);
+
+  const showLessFunc = useCallback(() => {
+    setShowAll(false);
+  }, []);
+
+  const list = useMemo(() => {
+    if (showAll) {
+      return postList;
+    }
+    return postList.slice(0, 3);
+  }, [postList, showAll]);
+
   const canBeTrending = useMemo(() => {
     return !!trendings.find((trend) => {
       return dayjs
@@ -299,7 +320,25 @@ export const CalendarColumn: FC<{
 
   const isBeforeNow = useMemo(() => {
     return getDate.startOf('hour').isBefore(dayjs().startOf('hour'));
-  }, [getDate]);
+  }, [getDate, num]);
+
+  const { start, stop } = useInterval(
+    useCallback(() => {
+      if (isBeforeNow) {
+        return;
+      }
+      setNum(num + 1);
+    }, [isBeforeNow]),
+    random(120000, 150000)
+  );
+
+  useEffect(() => {
+    start();
+
+    return () => {
+      stop();
+    };
+  }, []);
 
   const [{ canDrop }, drop] = useDrop(() => ({
     accept: 'post',
@@ -357,6 +396,7 @@ export const CalendarColumn: FC<{
         children: (
           <IntegrationContext.Provider
             value={{
+              allIntegrations: [],
               date: dayjs(),
               integration,
               value: [],
@@ -375,37 +415,56 @@ export const CalendarColumn: FC<{
   );
 
   const editPost = useCallback(
-    (post: Post & { integration: Integration }) => async () => {
-      if (user?.orgId === post.submittedForOrganizationId) {
-        return previewPublication(post);
-      }
-      const data = await (await fetch(`/posts/${post.id}`)).json();
-      const publishDate = dayjs.utc(data.posts[0].publishDate).local();
+    (post: Post & { integration: Integration }, isDuplicate?: boolean) =>
+      async () => {
+        if (user?.orgId === post.submittedForOrganizationId) {
+          return previewPublication(post);
+        }
+        const data = await (await fetch(`/posts/${post.id}`)).json();
+        const date = !isDuplicate
+          ? null
+          : (await (await fetch('/posts/find-slot')).json()).date;
+        const publishDate = dayjs
+          .utc(date || data.posts[0].publishDate)
+          .local();
 
-      modal.openModal({
-        closeOnClickOutside: false,
-        closeOnEscape: false,
-        withCloseButton: false,
-        classNames: {
-          modal: 'w-[100%] max-w-[1400px] bg-transparent text-textColor',
-        },
-        children: (
-          <ExistingDataContextProvider value={data}>
-            <AddEditModal
-              reopenModal={editPost(post)}
-              mutate={reloadCalendarView}
-              integrations={integrations
-                .slice(0)
-                .filter((f) => f.id === data.integration)
-                .map((p) => ({ ...p, picture: data.integrationPicture }))}
-              date={publishDate}
-            />
-          </ExistingDataContextProvider>
-        ),
-        size: '80%',
-        title: ``,
-      });
-    },
+        const ExistingData = !isDuplicate
+          ? ExistingDataContextProvider
+          : Fragment;
+
+        modal.openModal({
+          closeOnClickOutside: false,
+          closeOnEscape: false,
+          withCloseButton: false,
+          classNames: {
+            modal: 'w-[100%] max-w-[1400px] bg-transparent text-textColor',
+          },
+          children: (
+            <ExistingData value={data}>
+              <AddEditModal
+                {...(isDuplicate ? { onlyValues: data.posts } : {})}
+                allIntegrations={integrations.map((p) => ({ ...p }))}
+                reopenModal={editPost(post)}
+                mutate={reloadCalendarView}
+                integrations={
+                  isDuplicate
+                    ? integrations
+                    : integrations
+                        .slice(0)
+                        .filter((f) => f.id === data.integration)
+                        .map((p) => ({
+                          ...p,
+                          picture: data.integrationPicture,
+                        }))
+                }
+                date={publishDate}
+              />
+            </ExistingData>
+          ),
+          size: '80%',
+          title: ``,
+        });
+      },
     [integrations]
   );
 
@@ -419,6 +478,7 @@ export const CalendarColumn: FC<{
       },
       children: (
         <AddEditModal
+          allIntegrations={integrations.map((p) => ({ ...p }))}
           integrations={integrations.slice(0).map((p) => ({ ...p }))}
           mutate={reloadCalendarView}
           date={
@@ -456,32 +516,49 @@ export const CalendarColumn: FC<{
               }
             : {})}
           className={clsx(
-            'flex-col text-[12px] pointer w-full overflow-hidden overflow-x-auto flex scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary',
+            'flex-col text-[12px] pointer w-full flex scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary',
             isBeforeNow ? 'bg-customColor23 flex-1' : 'cursor-pointer',
             isBeforeNow && postList.length === 0 && 'col-calendar',
             canBeTrending && 'bg-customColor24'
           )}
         >
-          {postList.map((post) => (
+          {list.map((post) => (
             <div
               key={post.id}
               className={clsx(
                 'text-textColor p-[2.5px] relative flex flex-col justify-center items-center'
               )}
             >
-              <div className="relative w-full flex flex-col items-center p-[2.5px]">
+              <div className="relative w-full flex flex-col items-center p-[2.5px] h-[66px]">
                 <CalendarItem
                   display={display as 'day' | 'week' | 'month'}
                   isBeforeNow={isBeforeNow}
                   date={getDate}
                   state={post.state}
-                  editPost={editPost(post)}
+                  editPost={editPost(post, false)}
+                  duplicatePost={editPost(post, true)}
                   post={post}
                   integrations={integrations}
                 />
               </div>
             </div>
           ))}
+          {!showAll && postList.length > 3 && (
+            <div
+              className="text-center hover:underline py-[5px]"
+              onClick={showAllFunc}
+            >
+              + Show more ({postList.length - 3})
+            </div>
+          )}
+          {showAll && postList.length > 3 && (
+            <div
+              className="text-center hover:underline py-[5px]"
+              onClick={showLessFunc}
+            >
+              - Show less
+            </div>
+          )}
         </div>
         {(display === 'day'
           ? !isBeforeNow && postList.length === 0
@@ -554,18 +631,25 @@ export const CalendarColumn: FC<{
       </div>
     </div>
   );
-};
+});
 
 const CalendarItem: FC<{
   date: dayjs.Dayjs;
   isBeforeNow: boolean;
   editPost: () => void;
+  duplicatePost: () => void;
   integrations: Integrations[];
   state: State;
   display: 'day' | 'week' | 'month';
   post: Post & { integration: Integration };
-}> = (props) => {
-  const { editPost, post, date, isBeforeNow, state, display } = props;
+}> = memo((props) => {
+  const { editPost, duplicatePost, post, date, isBeforeNow, state, display } =
+    props;
+
+  const preview = useCallback(() => {
+    window.open(`/p/` + post.id + '?share=true', '_blank');
+  }, [post]);
+
   const [{ opacity }, dragRef] = useDrag(
     () => ({
       type: 'post',
@@ -580,98 +664,53 @@ const CalendarItem: FC<{
     <div
       // @ts-ignore
       ref={dragRef}
-      onClick={editPost}
-      className={clsx(
-        'gap-[5px] w-full flex h-full flex-1 rounded-[10px] border border-seventh px-[5px] p-[2.5px]',
-        'relative',
-        (state === 'DRAFT' || isBeforeNow) && '!grayscale'
-      )}
+      className={clsx('w-full flex h-full flex-1 flex-col group', 'relative')}
       style={{ opacity }}
     >
-      <div
-        className={clsx(
-          'relative min-w-[20px] h-[20px]',
-          display === 'day' ? 'h-[40px]' : 'h-[20px]'
-        )}
-      >
-        <img
-          className="w-[20px] h-[20px] rounded-full"
-          src={post.integration.picture!}
-        />
-        <img
-          className="w-[12px] h-[12px] rounded-full absolute z-10 top-[10px] right-0 border border-fifth"
-          src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
-        />
+      <div className="bg-forth text-[11px] h-[15px] w-full rounded-tr-[10px] rounded-tl-[10px] flex justify-center gap-[10px] px-[5px]">
+        <div
+          className="hidden group-hover:block hover:underline cursor-pointer"
+          onClick={duplicatePost}
+        >
+          Duplicate
+        </div>
+        <div
+          className="hidden group-hover:block hover:underline cursor-pointer"
+          onClick={preview}
+        >
+          Preview
+        </div>
       </div>
-      <div className="whitespace-pre-wrap line-clamp-3">
-        {state === 'DRAFT' ? 'Draft: ' : ''}
-        {removeMd(post.content).replace(/\n/g, ' ')}
-      </div>
-    </div>
-  );
-};
-
-export const CommentBox: FC<{ totalComments: number; date: dayjs.Dayjs }> = (
-  props
-) => {
-  const { totalComments, date } = props;
-  const { mutate } = useSWRConfig();
-
-  const openCommentsModal = useCallback(() => {
-    openModal({
-      children: <CommentComponent date={date} />,
-      withCloseButton: false,
-      onClose() {
-        mutate(`/posts`);
-      },
-      classNames: {
-        modal: 'bg-transparent text-textColor',
-      },
-      size: '80%',
-    });
-  }, [date]);
-
-  return (
-    <div
-      className={
-        totalComments === 0
-          ? 'transition-opacity opacity-0 group-hover:opacity-100'
-          : ''
-      }
-    >
       <div
-        onClick={openCommentsModal}
-        data-tooltip-id="tooltip"
-        data-tooltip-content="Add / View comments"
+        onClick={editPost}
         className={clsx(
-          'group absolute right-0 bottom-0 w-[20px] h-[20px] z-[10] hover:opacity-95 cursor-pointer hover:right-[3px] hover:bottom-[3px] transition-all duration-300 ease-in-out',
-          totalComments === 0 ? 'opacity-50' : 'opacity-95'
+          'gap-[5px] w-full flex h-full flex-1 rounded-br-[10px] rounded-bl-[10px] border border-seventh px-[5px] p-[2.5px]',
+          'relative',
+          isBeforeNow && '!grayscale'
         )}
       >
         <div
           className={clsx(
-            'relative w-full h-full group-hover:opacity-100',
-            totalComments === 0 && 'opacity-0'
+            'relative min-w-[20px] h-[20px]',
+            display === 'day' ? 'h-[40px]' : 'h-[20px]'
           )}
         >
-          {totalComments > 0 && (
-            <div className="absolute right-0 bottom-[10px] w-[10px] h-[10px] text-[8px] bg-red-500 z-[20] rounded-full flex justify-center items-center text-textColor">
-              {totalComments}
-            </div>
-          )}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 32 32"
-            id="comment"
-          >
-            <path
-              fill="#fff"
-              d="M25.784 21.017A10.992 10.992 0 0 0 27 16c0-6.065-4.935-11-11-11S5 9.935 5 16s4.935 11 11 11c1.742 0 3.468-.419 5.018-1.215l4.74 1.185a.996.996 0 0 0 .949-.263 1 1 0 0 0 .263-.95l-1.186-4.74zm-2.033.11.874 3.498-3.498-.875a1.006 1.006 0 0 0-.731.098A8.99 8.99 0 0 1 16 25c-4.963 0-9-4.038-9-9s4.037-9 9-9 9 4.038 9 9a8.997 8.997 0 0 1-1.151 4.395.995.995 0 0 0-.098.732z"
-            ></path>
-          </svg>
+          <img
+            className="w-[20px] h-[20px] rounded-full"
+            src={post.integration.picture!}
+          />
+          <img
+            className="w-[12px] h-[12px] rounded-full absolute z-10 top-[10px] right-0 border border-fifth"
+            src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
+          />
         </div>
-        <div className="absolute right-0 bottom-0 w-[0] h-[0] shadow-yellow bg-[rgba(0,0,0,0)]"></div>
+        <div className="whitespace-nowrap line-clamp-2">
+          <div className="text-left">{state === 'DRAFT' ? 'Draft: ' : ''}</div>
+          <div className="w-full overflow-hidden overflow-ellipsis text-left">
+            {removeMd(post.content).replace(/\n/g, ' ')}
+          </div>
+        </div>
       </div>
     </div>
   );
-};
+});

@@ -1,5 +1,13 @@
 import {
-  Body, Controller, Delete, Get, Param, Post, Put, Query, UseFilters
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  UseFilters,
 } from '@nestjs/common';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { ConnectIntegrationDto } from '@gitroom/nestjs-libraries/dtos/integrations/connect.integration.dto';
@@ -42,6 +50,11 @@ export class IntegrationsController {
     return this._integrationManager.getAllIntegrations();
   }
 
+  @Get('/:identifier/internal-plugs')
+  getInternalPlugs(@Param('identifier') identifier: string) {
+    return this._integrationManager.getInternalPlugs(identifier);
+  }
+
   @Get('/customers')
   getCustomers(@GetOrgFromRequest() org: Organization) {
     return this._integrationService.customers(org.id);
@@ -66,11 +79,7 @@ export class IntegrationsController {
     @Param('id') id: string,
     @Body() body: { name: string }
   ) {
-    return this._integrationService.updateOnCustomerName(
-      org.id,
-      id,
-      body.name
-    );
+    return this._integrationService.updateOnCustomerName(org.id, id, body.name);
   }
 
   @Get('/list')
@@ -97,11 +106,24 @@ export class IntegrationsController {
           changeProfilePicture: !!findIntegration?.changeProfilePicture,
           changeNickName: !!findIntegration?.changeNickname,
           customer: p.customer,
+          additionalSettings: p.additionalSettings || '[]',
         };
       }),
     };
   }
 
+  @Post('/:id/settings')
+  async updateProviderSettings(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body('additionalSettings') body: string
+  ) {
+    if (typeof body !== 'string') {
+      throw new Error('Invalid body');
+    }
+
+    await this._integrationService.updateProviderSettings(org.id, id, body);
+  }
   @Post('/:id/nickname')
   async setNickname(
     @GetOrgFromRequest() org: Organization,
@@ -242,19 +264,22 @@ export class IntegrationsController {
           const load = await integrationProvider[body.name](
             getIntegration.token,
             body.data,
-            getIntegration.internalId
+            getIntegration.internalId,
+            getIntegration
           );
 
           return load;
         } catch (err) {
           if (err instanceof RefreshToken) {
-            const { accessToken, refreshToken, expiresIn } =
+            const { accessToken, refreshToken, expiresIn, additionalSettings } =
               await integrationProvider.refreshToken(
                 getIntegration.refreshToken
               );
 
             if (accessToken) {
               await this._integrationService.createOrUpdateIntegration(
+                additionalSettings,
+                !!integrationProvider.oneTimeToken,
                 getIntegration.organizationId,
                 getIntegration.name,
                 getIntegration.picture!,
@@ -336,6 +361,8 @@ export class IntegrationsController {
     }
 
     return this._integrationService.createOrUpdateIntegration(
+      undefined,
+      true,
       org.id,
       name,
       picture,
@@ -402,6 +429,7 @@ export class IntegrationsController {
       name,
       picture,
       username,
+      additionalSettings,
       // eslint-disable-next-line no-async-promise-executor
     } = await new Promise<AuthTokenDetails>(async (res) => {
       const auth = await integrationProvider.authenticate(
@@ -421,6 +449,7 @@ export class IntegrationsController {
           name: '',
           picture: '',
           username: '',
+          additionalSettings: [],
         });
       }
 
@@ -444,7 +473,7 @@ export class IntegrationsController {
       throw new NotEnoughScopes('Invalid API key');
     }
 
-    if (refresh && id !== refresh) {
+    if (refresh && String(id) !== String(refresh)) {
       throw new NotEnoughScopes(
         'Please refresh the channel that needs to be refreshed'
       );
@@ -459,6 +488,8 @@ export class IntegrationsController {
       }
     }
     return this._integrationService.createOrUpdateIntegration(
+      additionalSettings,
+      !!integrationProvider.oneTimeToken,
       org.id,
       validName.trim(),
       picture,

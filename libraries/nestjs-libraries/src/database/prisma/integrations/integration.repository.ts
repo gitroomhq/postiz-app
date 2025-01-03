@@ -18,6 +18,18 @@ export class IntegrationRepository {
     private _customers: PrismaRepository<'customer'>
   ) {}
 
+  updateProviderSettings(org: string, id: string, settings: string) {
+    return this._integration.model.integration.update({
+      where: {
+        id,
+        organizationId: org,
+      },
+      data: {
+        additionalSettings: settings,
+      },
+    });
+  }
+
   async setTimes(org: string, id: string, times: IntegrationTimeDto) {
     return this._integration.model.integration.update({
       select: {
@@ -39,8 +51,8 @@ export class IntegrationRepository {
         id: plugId,
       },
       include: {
-        integration: true
-      }
+        integration: true,
+      },
     });
   }
 
@@ -93,7 +105,17 @@ export class IntegrationRepository {
     });
   }
 
-  createOrUpdateIntegration(
+  async createOrUpdateIntegration(
+    additionalSettings:
+      | {
+          title: string;
+          description: string;
+          type: 'checkbox' | 'text' | 'textarea';
+          value: any;
+          regex?: string;
+        }[]
+      | undefined,
+    oneTimeToken: boolean,
     org: string,
     name: string,
     picture: string | undefined,
@@ -118,7 +140,7 @@ export class IntegrationRepository {
           ]),
         }
       : {};
-    return this._integration.model.integration.upsert({
+    const upsert = await this._integration.model.integration.upsert({
       where: {
         organizationId_internalId: {
           internalId,
@@ -141,7 +163,11 @@ export class IntegrationRepository {
         ...postTimes,
         organizationId: org,
         refreshNeeded: false,
+        rootInternalId: internalId.split('_').pop(),
         ...(customInstanceDetails ? { customInstanceDetails } : {}),
+        additionalSettings: additionalSettings
+          ? JSON.stringify(additionalSettings)
+          : '[]',
       },
       update: {
         type: type as any,
@@ -164,6 +190,38 @@ export class IntegrationRepository {
         refreshNeeded: false,
       },
     });
+
+    if (oneTimeToken) {
+      const rootId =
+        (
+          await this._integration.model.integration.findFirst({
+            where: {
+              organizationId: org,
+              internalId: internalId,
+            },
+          })
+        )?.rootInternalId || internalId.split('_').pop()!;
+
+      await this._integration.model.integration.updateMany({
+        where: {
+          id: {
+            not: upsert.id,
+          },
+          organizationId: org,
+          rootInternalId: rootId,
+        },
+        data: {
+          token,
+          refreshToken,
+          refreshNeeded: false,
+          ...(expiresIn
+            ? { tokenExpiration: new Date(Date.now() + expiresIn * 1000) }
+            : {}),
+        },
+      });
+    }
+
+    return upsert;
   }
 
   needsToBeRefreshed() {
@@ -484,6 +542,19 @@ export class IntegrationRepository {
         methodName,
         value: p,
       })),
+    });
+  }
+
+  async getPostingTimes(orgId: string) {
+    return this._integration.model.integration.findMany({
+      where: {
+        organizationId: orgId,
+        disabled: false,
+        deletedAt: null,
+      },
+      select: {
+        postingTimes: true,
+      },
     });
   }
 }

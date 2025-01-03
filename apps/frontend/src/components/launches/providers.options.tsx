@@ -8,6 +8,7 @@ import { useStateCallback } from '@gitroom/react/helpers/use.state.callback';
 
 export const ProvidersOptions: FC<{
   integrations: Integrations[];
+  allIntegrations: Integrations[];
   editorValue: Array<{ id?: string; content: string }>;
   date: dayjs.Dayjs;
 }> = (props) => {
@@ -32,7 +33,7 @@ export const ProvidersOptions: FC<{
         isMain={false}
       />
       <IntegrationContext.Provider
-        value={{ value: editorValue, integration: selectedIntegrations?.[0], date }}
+        value={{ value: editorValue, integration: selectedIntegrations?.[0], date, allIntegrations: props.allIntegrations }}
       >
         <ShowAllProviders
           value={editorValue}

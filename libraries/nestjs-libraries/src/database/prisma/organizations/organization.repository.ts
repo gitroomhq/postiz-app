@@ -3,6 +3,7 @@ import { Role, SubscriptionTier } from '@prisma/client';
 import { Injectable } from '@nestjs/common';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 
 @Injectable()
 export class OrganizationRepository {
@@ -11,6 +12,23 @@ export class OrganizationRepository {
     private _userOrg: PrismaRepository<'userOrganization'>,
     private _user: PrismaRepository<'user'>
   ) {}
+
+  getOrgByApiKey(api: string) {
+    return this._organization.model.organization.findFirst({
+      where: {
+        apiKey: api,
+      },
+      include: {
+        subscription: {
+          select: {
+            subscriptionTier: true,
+            totalChannels: true,
+            isLifetime: true,
+          },
+        },
+      },
+    });
+  }
 
   getUserOrg(id: string) {
     return this._userOrg.model.userOrganization.findFirst({
@@ -79,6 +97,17 @@ export class OrganizationRepository {
             email: true,
           },
         },
+      },
+    });
+  }
+
+  updateApiKey(orgId: string) {
+    return this._organization.model.organization.update({
+      where: {
+        id: orgId,
+      },
+      data: {
+        apiKey: AuthService.fixedEncryption(makeId(20)),
       },
     });
   }
@@ -178,11 +207,15 @@ export class OrganizationRepository {
 
   async createOrgAndUser(
     body: Omit<CreateOrgUserDto, 'providerToken'> & { providerId?: string },
-    hasEmail: boolean
+    hasEmail: boolean,
+    ip: string,
+    userAgent: string
   ) {
     return this._organization.model.organization.create({
       data: {
         name: body.company,
+        apiKey: AuthService.fixedEncryption(makeId(20)),
+        allowTrial: true,
         users: {
           create: {
             role: Role.SUPERADMIN,
@@ -196,6 +229,8 @@ export class OrganizationRepository {
                 providerName: body.provider,
                 providerId: body.providerId || '',
                 timezone: 0,
+                ip,
+                agent: userAgent,
               },
             },
           },
@@ -208,6 +243,14 @@ export class OrganizationRepository {
             user: true,
           },
         },
+      },
+    });
+  }
+
+  getOrgByCustomerId(customerId: string) {
+    return this._organization.model.organization.findFirst({
+      where: {
+        paymentId: customerId,
       },
     });
   }

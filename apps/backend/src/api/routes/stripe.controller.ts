@@ -54,11 +54,13 @@ export class StripeController {
     // Maybe it comes from another stripe webhook
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    if (event?.data?.object?.metadata?.service !== 'gitroom') {
+    if (event?.data?.object?.metadata?.service !== 'gitroom' && event.type !== 'invoice.payment_succeeded') {
       return { ok: true };
     }
 
     switch (event.type) {
+      case 'invoice.payment_succeeded':
+        return this._stripeService.paymentSucceeded(event);
       case 'checkout.session.completed':
         return this._stripeService.updateOrder(event);
       case 'account.updated':

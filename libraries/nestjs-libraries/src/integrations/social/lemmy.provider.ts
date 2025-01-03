@@ -5,17 +5,12 @@ import {
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import {
-  SocialAbstract,
-} from '@gitroom/nestjs-libraries/integrations/social.abstract';
-import { BskyAgent, RichText } from '@atproto/api';
+import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
-import sharp from 'sharp';
-import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
-import { timer } from '@gitroom/helpers/utils/timer';
-import { LemmyHttp } from 'lemmy-js-client';
+import { LemmySettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/lemmy.dto';
+import { groupBy } from 'lodash';
 
 export class LemmyProvider extends SocialAbstract implements SocialProvider {
   identifier = 'lemmy';
@@ -29,7 +24,7 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
         key: 'service',
         label: 'Service',
         defaultValue: 'https://lemmy.world',
-        validation: `/^(https?:\\/\\/)?((([a-zA-Z0-9\\-_]{1,256}\\.[a-zA-Z]{2,6})|(([0-9]{1,3}\\.){3}[0-9]{1,3}))(:[0-9]{1,5})?)(\\/[^\\s]*)?$/`,
+        validation: `/^https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_\\+.~#?&//=]*)$/`,
         type: 'text' as const,
       },
       {
@@ -75,24 +70,43 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
   }) {
     const body = JSON.parse(Buffer.from(params.code, 'base64').toString());
 
-    try {
-      const client: LemmyHttp = new LemmyHttp(body.service);
-      const { jwt } = await client.login({
+    const load = await fetch(body.service + '/api/v3/user/login', {
+      body: JSON.stringify({
         username_or_email: body.identifier,
         password: body.password,
-      });
+      }),
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-      client.setHeaders({ Authorization: `Bearer ${jwt}` });
-      const user = await client.getMyUser();
+    if (load.status === 401) {
+      return 'Invalid credentials';
+    }
+
+    const { jwt } = await load.json();
+
+    try {
+      const user = await (
+        await fetch(body.service + `/api/v3/user?username=${body.identifier}`, {
+          headers: {
+            Authorization: `Bearer ${jwt}`,
+          },
+        })
+      ).json();
 
       return {
         refreshToken: jwt!,
         expiresIn: dayjs().add(100, 'years').unix() - dayjs().unix(),
         accessToken: jwt!,
-        id: String(user.local_user_view.person.id),
-        name: user.local_user_view.person.name || '',
-        picture: user.local_user_view.person.avatar || '',
-        username: user.local_user_view.person.display_name || '',
+        id: String(user.person_view.person.id),
+        name:
+          user.person_view.person.display_name ||
+          user.person_view.person.name ||
+          '',
+        picture: user.person_view.person.avatar || '',
+        username: body.identifier || '',
       };
     } catch (e) {
       console.log(e);
@@ -103,223 +117,129 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
   async post(
     id: string,
     accessToken: string,
-    postDetails: PostDetails[],
+    postDetails: PostDetails<LemmySettingsDto>[],
     integration: Integration
   ): Promise<PostResponse[]> {
+    const [firstPost, ...restPosts] = postDetails;
+
     const body = JSON.parse(
       AuthService.fixedDecryption(integration.customInstanceDetails!)
     );
-    const agent = new BskyAgent({
-      service: body.service,
-    });
 
-    await agent.login({
-      identifier: body.identifier,
-      password: body.password,
-    });
+    const { jwt } = await (
+      await fetch(body.service + '/api/v3/user/login', {
+        body: JSON.stringify({
+          username_or_email: body.identifier,
+          password: body.password,
+        }),
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+    ).json();
 
-    let loadCid = '';
-    let loadUri = '';
-    const cidUrl = [] as { cid: string; url: string; rev: string }[];
-    for (const post of postDetails) {
-      const images = await Promise.all(
-        post.media?.map(async (p) => {
-          const a = await fetch(p.url);
-          console.log(p.url);
-          return await agent.uploadBlob(
-            new Blob([
-              await sharp(await (await fetch(p.url)).arrayBuffer())
-                .resize({ width: 400 })
-                .toBuffer(),
-            ])
-          );
-        }) || []
-      );
+    const valueArray: PostResponse[] = [];
 
-      const rt = new RichText({
-        text: post.message,
+    for (const lemmy of firstPost.settings.subreddit) {
+      const { post_view, ...all } = await (
+        await fetch(body.service + '/api/v3/post', {
+          body: JSON.stringify({
+            community_id: +lemmy.value.id,
+            name: lemmy.value.title,
+            body: firstPost.message,
+            ...(lemmy.value.url ? { url: lemmy.value.url } : {}),
+            ...(firstPost.media?.length
+              ? { custom_thumbnail: firstPost.media[0].url }
+              : {}),
+            nsfw: false,
+          }),
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${jwt}`,
+            'Content-Type': 'application/json',
+          },
+        })
+      ).json();
+
+      valueArray.push({
+        postId: post_view.post.id,
+        releaseURL: body.service + '/post/' + post_view.post.id,
+        id: firstPost.id,
+        status: 'published',
       });
 
-      await rt.detectFacets(agent);
+      for (const comment of restPosts) {
+        const { comment_view } = await (
+          await fetch(body.service + '/api/v3/comment', {
+            body: JSON.stringify({
+              post_id: post_view.post.id,
+              content: comment.message,
+            }),
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${jwt}`,
+              'Content-Type': 'application/json',
+            },
+          })
+        ).json();
 
-      // @ts-ignore
-      const { cid, uri, commit } = await agent.post({
-        text: rt.text,
-        facets: rt.facets,
-        createdAt: new Date().toISOString(),
-        ...(images.length
-          ? {
-              embed: {
-                $type: 'app.bsky.embed.images',
-                images: images.map((p) => ({
-                  // can be an array up to 4 values
-                  alt: 'image', // the alt text
-                  image: p.data.blob,
-                })),
-              },
-            }
-          : {}),
-        ...(loadCid
-          ? {
-              reply: {
-                root: {
-                  uri: loadUri,
-                  cid: loadCid,
-                },
-                parent: {
-                  uri: loadUri,
-                  cid: loadCid,
-                },
-              },
-            }
-          : {}),
-      });
-
-      loadCid = loadCid || cid;
-      loadUri = loadUri || uri;
-
-      cidUrl.push({ cid, url: uri, rev: commit.rev });
+        valueArray.push({
+          postId: comment_view.post.id,
+          releaseURL: body.service + '/comment/' + comment_view.comment.id,
+          id: comment.id,
+          status: 'published',
+        });
+      }
     }
 
-    return postDetails.map((p, index) => ({
-      id: p.id,
-      postId: cidUrl[index].url,
-      status: 'completed',
-      releaseURL: `https://bsky.app/profile/${id}/post/${cidUrl[index].url
-        .split('/')
-        .pop()}`,
+    return Object.values(groupBy(valueArray, (p) => p.id)).map((p) => ({
+      id: p[0].id,
+      postId: p.map((p) => String(p.postId)).join(','),
+      releaseURL: p.map((p) => p.releaseURL).join(','),
+      status: 'published',
     }));
   }
 
-  @Plug({
-    identifier: 'bluesky-autoRepostPost',
-    title: 'Auto Repost Posts',
-    description:
-      'When a post reached a certain number of likes, repost it to increase engagement (1 week old posts)',
-    runEveryMilliseconds: 21600000,
-    totalRuns: 3,
-    fields: [
-      {
-        name: 'likesAmount',
-        type: 'number',
-        placeholder: 'Amount of likes',
-        description: 'The amount of likes to trigger the repost',
-        validation: /^\d+$/,
-      },
-    ],
-  })
-  async autoRepostPost(
-    integration: Integration,
+  async subreddits(
+    accessToken: string,
+    data: any,
     id: string,
-    fields: { likesAmount: string }
+    integration: Integration
   ) {
     const body = JSON.parse(
       AuthService.fixedDecryption(integration.customInstanceDetails!)
     );
-    const agent = new BskyAgent({
-      service: body.service,
-    });
 
-    await agent.login({
-      identifier: body.identifier,
-      password: body.password,
-    });
-
-    const getThread = await agent.getPostThread({
-      uri: id,
-      depth: 0,
-    });
-
-    // @ts-ignore
-    if (getThread.data.thread.post?.likeCount >= +fields.likesAmount) {
-      await timer(2000);
-      await agent.repost(
-        // @ts-ignore
-        getThread.data.thread.post?.uri,
-        // @ts-ignore
-        getThread.data.thread.post?.cid
-      );
-      return true;
-    }
-
-    return true;
-  }
-
-  @Plug({
-    identifier: 'bluesky-autoPlugPost',
-    title: 'Auto plug post',
-    description:
-      'When a post reached a certain number of likes, add another post to it so you followers get a notification about your promotion',
-    runEveryMilliseconds: 21600000,
-    totalRuns: 3,
-    fields: [
-      {
-        name: 'likesAmount',
-        type: 'number',
-        placeholder: 'Amount of likes',
-        description: 'The amount of likes to trigger the repost',
-        validation: /^\d+$/,
-      },
-      {
-        name: 'post',
-        type: 'richtext',
-        placeholder: 'Post to plug',
-        description: 'Message content to plug',
-        validation: /^[\s\S]{3,}$/g,
-      },
-    ],
-  })
-  async autoPlugPost(
-    integration: Integration,
-    id: string,
-    fields: { likesAmount: string; post: string }
-  ) {
-    const body = JSON.parse(
-      AuthService.fixedDecryption(integration.customInstanceDetails!)
-    );
-    const agent = new BskyAgent({
-      service: body.service,
-    });
-
-    await agent.login({
-      identifier: body.identifier,
-      password: body.password,
-    });
-
-    const getThread = await agent.getPostThread({
-      uri: id,
-      depth: 0,
-    });
-
-    // @ts-ignore
-    if (getThread.data.thread.post?.likeCount >= +fields.likesAmount) {
-      await timer(2000);
-      const rt = new RichText({
-        text: fields.post,
-      });
-
-      await agent.post({
-        text: rt.text,
-        facets: rt.facets,
-        createdAt: new Date().toISOString(),
-        reply: {
-          root: {
-            // @ts-ignore
-            uri: getThread.data.thread.post?.uri,
-            // @ts-ignore
-            cid: getThread.data.thread.post?.cid,
-          },
-          parent: {
-            // @ts-ignore
-            uri: getThread.data.thread.post?.uri,
-            // @ts-ignore
-            cid: getThread.data.thread.post?.cid,
-          },
+    const { jwt } = await (
+      await fetch(body.service + '/api/v3/user/login', {
+        body: JSON.stringify({
+          username_or_email: body.identifier,
+          password: body.password,
+        }),
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      });
-      return true;
-    }
+      })
+    ).json();
 
-    return true;
+    const { communities } = await (
+      await fetch(
+        body.service +
+          `/api/v3/search?type_=Communities&sort=Active&q=${data.word}`,
+        {
+          headers: {
+            Authorization: `Bearer ${jwt}`,
+          },
+        }
+      )
+    ).json();
+
+    return communities.map((p: any) => ({
+      title: p.community.title,
+      name: p.community.title,
+      id: p.community.id,
+    }));
   }
 }

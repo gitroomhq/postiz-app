@@ -1,5 +1,15 @@
 import {
-  Body, Controller, Get, Param, Post, Query, Req, Res, UploadedFile, UseInterceptors, UsePipes
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  Req,
+  Res,
+  UploadedFile,
+  UseInterceptors,
+  UsePipes,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
@@ -10,7 +20,6 @@ import handleR2Upload from '@gitroom/nestjs-libraries/upload/r2.uploader';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CustomFileValidationPipe } from '@gitroom/nestjs-libraries/upload/custom.upload.validation';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
-import { basename } from 'path';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 
 @ApiTags('Media')
@@ -26,14 +35,35 @@ export class MediaController {
   async generateImage(
     @GetOrgFromRequest() org: Organization,
     @Req() req: Request,
-    @Body('prompt') prompt: string
+    @Body('prompt') prompt: string,
+    isPicturePrompt = false
   ) {
     const total = await this._subscriptionService.checkCredits(org);
     if (total.credits <= 0) {
       return false;
     }
 
-    return {output: 'data:image/png;base64,' + await this._mediaService.generateImage(prompt, org)};
+    return {
+      output:
+        (isPicturePrompt ? '' : 'data:image/png;base64,') +
+        (await this._mediaService.generateImage(prompt, org, isPicturePrompt)),
+    };
+  }
+
+  @Post('/generate-image-with-prompt')
+  async generateImageFromText(
+    @GetOrgFromRequest() org: Organization,
+    @Req() req: Request,
+    @Body('prompt') prompt: string
+  ) {
+    const image = await this.generateImage(org, req, prompt, true);
+    if (!image) {
+      return false;
+    }
+
+    const file = await this.storage.uploadSimple(image.output);
+
+    return this._mediaService.saveFile(org.id, file.split('/').pop(), file);
   }
 
   @Post('/upload-server')
@@ -44,7 +74,11 @@ export class MediaController {
     @UploadedFile() file: Express.Multer.File
   ) {
     const uploadedFile = await this.storage.uploadFile(file);
-    return this._mediaService.saveFile(org.id, uploadedFile.originalname, uploadedFile.path);
+    return this._mediaService.saveFile(
+      org.id,
+      uploadedFile.originalname,
+      uploadedFile.path
+    );
   }
 
   @Post('/upload-simple')
@@ -54,7 +88,11 @@ export class MediaController {
     @UploadedFile('file') file: Express.Multer.File
   ) {
     const getFile = await this.storage.uploadFile(file);
-    return this._mediaService.saveFile(org.id, getFile.originalname, getFile.path);
+    return this._mediaService.saveFile(
+      org.id,
+      getFile.originalname,
+      getFile.path
+    );
   }
 
   @Post('/:endpoint')
@@ -76,10 +114,14 @@ export class MediaController {
     // @ts-ignore
     const name = upload.Location.split('/').pop();
 
-    // @ts-ignore
-    await this._mediaService.saveFile(org.id, name, upload.Location);
+    const saveFile = await this._mediaService.saveFile(
+      org.id,
+      name,
+      // @ts-ignore
+      upload.Location
+    );
 
-    res.status(200).json(upload);
+    res.status(200).json({ ...upload, saved: saveFile });
     // const filePath =
     //   file.path.indexOf('http') === 0
     //     ? file.path

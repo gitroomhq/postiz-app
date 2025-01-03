@@ -11,26 +11,28 @@ datasource db {
 }
 
 model Organization {
-  id           String             @id @default(uuid())
-  name         String
-  description  String?
-  users        UserOrganization[]
-  media        Media[]
-  paymentId    String?
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
-  github       GitHub[]
-  subscription Subscription?
-  Integration  Integration[]
-  post         Post[] @relation("organization")
-  submittedPost Post[] @relation("submittedForOrg")
-  Comments     Comments[]
-  notifications Notifications[]
+  id                String             @id @default(uuid())
+  name              String
+  description       String?
+  apiKey            String?
+  users             UserOrganization[]
+  media             Media[]
+  paymentId         String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  github            GitHub[]
+  subscription      Subscription?
+  Integration       Integration[]
+  post              Post[] @relation("organization")
+  submittedPost     Post[] @relation("submittedForOrg")
+  allowTrial        Boolean            @default(false)
+  Comments          Comments[]
+  notifications     Notifications[]
   buyerOrganization MessagesGroup[]
-  usedCodes    UsedCodes[]
-  credits      Credits[]
-  plugs        Plugs[]
-  customers    Customer[]
+  usedCodes         UsedCodes[]
+  credits           Credits[]
+  plugs             Plugs[]
+  customers         Customer[]
 }
 
 model User {
@@ -65,6 +67,8 @@ model User {
   payoutProblems    PayoutProblems[]
   lastOnline   DateTime          @default(now())
   agencies     SocialMediaAgency[]
+  ip           String?
+  agent        String?
 
   @@unique([email, providerName])
   @@index([lastReadNotifications])
@@ -283,9 +287,13 @@ model Integration {
   customer              Customer?       @relation(fields: [customerId], references: [id])
   plugs                 Plugs[]
   exisingPlugData       ExisingPlugData[]
+  rootInternalId        String?
+  additionalSettings    String?        @default("[]")
 
+  @@index([rootInternalId])
   @@index([updatedAt])
   @@index([deletedAt])
+  @@index([customerId])
   @@unique([organizationId, internalId])
 }
 
@@ -294,20 +302,18 @@ model Comments {
   content           String
   organizationId    String
   organization      Organization @relation(fields: [organizationId], references: [id])
+  postId            String
+  post              Post       @relation(fields: [postId], references: [id])
   userId            String
   user              User       @relation(fields: [userId], references: [id])
-  date              DateTime
-  parentCommentId   String?
-  parentComment     Comments?  @relation("parentCommentId", fields: [parentCommentId], references: [id])
-  childrenComment   Comments[] @relation("parentCommentId")
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
   deletedAt         DateTime?
 
   @@index([createdAt])
   @@index([organizationId])
-  @@index([date])
   @@index([userId])
+  @@index([postId])
   @@index([deletedAt])
 }
 
@@ -338,6 +344,8 @@ model Post {
   lastMessageId       String?
   lastMessage         Messages? @relation(fields: [lastMessageId], references: [id])
   payoutProblems      PayoutProblems[]
+  comments            Comments[]
+  error               String?
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt
   deletedAt           DateTime?
@@ -480,6 +488,16 @@ model ExisingPlugData {
   value             String
 
   @@unique([integrationId, methodName, value])
+}
+
+model PopularPosts {
+  id         String   @id @default(uuid())
+  category   String
+  topic      String
+  content    String
+  hook       String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 enum OrderStatus {

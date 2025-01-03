@@ -13,7 +13,11 @@ dayjs.extend(weekOfYear);
 
 @Injectable()
 export class PostsRepository {
-  constructor(private _post: PrismaRepository<'post'>) {}
+  constructor(
+    private _post: PrismaRepository<'post'>,
+    private _popularPosts: PrismaRepository<'popularPosts'>,
+    private _comments: PrismaRepository<'comments'>
+  ) {}
 
   getOldPosts(orgId: string, date: string) {
     return this._post.model.post.findMany({
@@ -106,6 +110,11 @@ export class PostsRepository {
         },
         deletedAt: null,
         parentPostId: null,
+        ...query.customer ? {
+          integration: {
+            customerId: query.customer,
+          }
+        }: {},
       },
       select: {
         id: true,
@@ -186,13 +195,14 @@ export class PostsRepository {
     });
   }
 
-  changeState(id: string, state: State) {
+  changeState(id: string, state: State, err?: string) {
     return this._post.model.post.update({
       where: {
         id,
       },
       data: {
         state,
+        error: typeof err === 'string' ? err : JSON.stringify(err),
       },
     });
   }
@@ -384,6 +394,113 @@ export class PostsRepository {
             },
           },
         },
+      },
+    });
+  }
+
+  findAllExistingCategories() {
+    return this._popularPosts.model.popularPosts.findMany({
+      select: {
+        category: true,
+      },
+      distinct: ['category'],
+    });
+  }
+
+  findAllExistingTopicsOfCategory(category: string) {
+    return this._popularPosts.model.popularPosts.findMany({
+      where: {
+        category,
+      },
+      select: {
+        topic: true,
+      },
+      distinct: ['topic'],
+    });
+  }
+
+  findPopularPosts(category: string, topic?: string) {
+    return this._popularPosts.model.popularPosts.findMany({
+      where: {
+        category,
+        ...(topic ? { topic } : {}),
+      },
+      select: {
+        content: true,
+        hook: true,
+      },
+    });
+  }
+
+  createPopularPosts(post: {
+    category: string;
+    topic: string;
+    content: string;
+    hook: string;
+  }) {
+    return this._popularPosts.model.popularPosts.create({
+      data: {
+        category: 'category',
+        topic: 'topic',
+        content: 'content',
+        hook: 'hook',
+      },
+    });
+  }
+
+  async getPostsCountsByDates(
+    orgId: string,
+    times: number[],
+    date: dayjs.Dayjs
+  ) {
+    const dates = await this._post.model.post.findMany({
+      where: {
+        deletedAt: null,
+        organizationId: orgId,
+        publishDate: {
+          in: times.map((time) => {
+            return date.clone().add(time, 'minutes').toDate();
+          }),
+        },
+      },
+    });
+
+    return times.filter(
+      (time) =>
+        date.clone().add(time, 'minutes').isAfter(dayjs.utc()) &&
+        !dates.find((dateFind) => {
+          return (
+            dayjs
+              .utc(dateFind.publishDate)
+              .diff(date.clone().startOf('day'), 'minutes') == time
+          );
+        })
+    );
+  }
+
+  async getComments(postId: string) {
+    return this._comments.model.comments.findMany({
+      where: {
+        postId,
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
+  }
+
+  createComment(
+    orgId: string,
+    userId: string,
+    postId: string,
+    content: string
+  ) {
+    return this._comments.model.comments.create({
+      data: {
+        organizationId: orgId,
+        userId,
+        postId,
+        content,
       },
     });
   }

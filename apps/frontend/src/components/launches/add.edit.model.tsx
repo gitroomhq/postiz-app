@@ -1,13 +1,17 @@
 'use client';
 
 import React, {
+  ClipboardEventHandler,
   FC,
   Fragment,
   MouseEventHandler,
   useCallback,
   useEffect,
   useMemo,
+  useRef,
+  ClipboardEvent,
   useState,
+  memo,
 } from 'react';
 import dayjs from 'dayjs';
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
@@ -52,6 +56,11 @@ import Image from 'next/image';
 import { weightedLength } from '@gitroom/helpers/utils/count.length';
 import { uniqBy } from 'lodash';
 import { Select } from '@gitroom/react/form/select';
+import { useClickOutside } from '@gitroom/frontend/components/layout/click.outside';
+import { useUppyUploader } from '@gitroom/frontend/components/media/new.uploader';
+import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
+import { DropFiles } from '@gitroom/frontend/components/layout/drop.files';
+import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
 
 function countCharacters(text: string, type: string): number {
   if (type !== 'x') {
@@ -64,11 +73,19 @@ function countCharacters(text: string, type: string): number {
 export const AddEditModal: FC<{
   date: dayjs.Dayjs;
   integrations: Integrations[];
+  allIntegrations?: Integrations[];
   reopenModal: () => void;
   mutate: () => void;
-}> = (props) => {
-  const { date, integrations: ints, reopenModal, mutate } = props;
+  onlyValues?: Array<{
+    content: string;
+    id?: string;
+    image?: Array<{ id: string; path: string }>;
+  }>;
+}> = memo((props) => {
+  const { date, integrations: ints, reopenModal, mutate, onlyValues } = props;
   const [customer, setCustomer] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   // selected integrations to allow edit
   const [selectedIntegrations, setSelectedIntegrations] = useStateCallback<
@@ -88,10 +105,6 @@ export const AddEditModal: FC<{
     return list;
   }, [customer, ints]);
 
-  const totalCustomers = useMemo(() => {
-    return uniqBy(ints, (i) => i?.customer?.id).length;
-  }, [ints]);
-
   const [dateState, setDateState] = useState(date);
 
   // hook to open a new modal
@@ -104,7 +117,7 @@ export const AddEditModal: FC<{
       id?: string;
       image?: Array<{ id: string; path: string }>;
     }>
-  >([{ content: '' }]);
+  >(onlyValues ? onlyValues : [{ content: '' }]);
 
   const fetch = useFetch();
 
@@ -265,12 +278,14 @@ export const AddEditModal: FC<{
   const schedule = useCallback(
     (type: 'draft' | 'now' | 'schedule' | 'delete') => async () => {
       if (type === 'delete') {
+        setLoading(true);
         if (
           !(await deleteDialog(
             'Are you sure you want to delete this post?',
             'Yes, delete it!'
           ))
         ) {
+          setLoading(false);
           return;
         }
         await fetch(`/posts/${existingData.group}`, {
@@ -294,53 +309,56 @@ export const AddEditModal: FC<{
         maximumCharacters: values[v].maximumCharacters,
       }));
 
-      for (const key of allKeys) {
-        if (key.checkValidity) {
-          const check = await key.checkValidity(
-            key?.value.map((p: any) => p.image || []),
-            key.settings
-          );
-          if (typeof check === 'string') {
-            toaster.show(check, 'warning');
-            return;
-          }
-        }
-
-        if (
-          key.value.some((p) => {
-            return (
-              countCharacters(p.content, key?.integration?.identifier || '') >
-              (key.maximumCharacters || 1000000)
+      if (type !== 'draft') {
+        for (const key of allKeys) {
+          if (key.checkValidity) {
+            const check = await key.checkValidity(
+              key?.value.map((p: any) => p.image || []),
+              key.settings
             );
-          })
-        ) {
+            if (typeof check === 'string') {
+              toaster.show(check, 'warning');
+              return;
+            }
+          }
+
           if (
-            !(await deleteDialog(
-              `${key?.integration?.name} post is too long, it will be cropped, do you want to continue?`,
-              'Yes, continue'
-            ))
+            key.value.some((p) => {
+              return (
+                countCharacters(p.content, key?.integration?.identifier || '') >
+                (key.maximumCharacters || 1000000)
+              );
+            })
           ) {
-            await key.trigger();
-            moveToIntegration({
-              identifier: key?.integration?.id!,
-              toPreview: true,
-            });
+            if (
+              !(await deleteDialog(
+                `${key?.integration?.name} post is too long, it will be cropped, do you want to continue?`,
+                'Yes, continue'
+              ))
+            ) {
+              await key.trigger();
+              moveToIntegration({
+                identifier: key?.integration?.id!,
+                toPreview: true,
+              });
+              return;
+            }
+          }
+
+          if (key.value.some((p) => !p.content || p.content.length < 6)) {
+            setShowError(true);
             return;
           }
-        }
 
-        if (key.value.some((p) => !p.content || p.content.length < 6)) {
-          setShowError(true);
-          return;
-        }
-
-        if (!key.valid) {
-          await key.trigger();
-          moveToIntegration({ identifier: key?.integration?.id! });
-          return;
+          if (!key.valid) {
+            await key.trigger();
+            moveToIntegration({ identifier: key?.integration?.id! });
+            return;
+          }
         }
       }
 
+      setLoading(true);
       await fetch('/posts', {
         method: 'POST',
         body: JSON.stringify({
@@ -377,6 +395,68 @@ export const AddEditModal: FC<{
     ]
   );
 
+  const uppy = useUppyUploader({
+    onUploadSuccess: () => {
+      /**empty**/
+    },
+    allowedFileTypes: 'image/*,video/mp4',
+  });
+
+  const pasteImages = useCallback(
+    (index: number, currentValue: any[], isFile?: boolean) => {
+      return async (event: ClipboardEvent<HTMLDivElement> | File[]) => {
+        // @ts-ignore
+        const clipboardItems = isFile
+          ? // @ts-ignore
+            event.map((p) => ({ kind: 'file', getAsFile: () => p }))
+          : // @ts-ignore
+            event.clipboardData?.items; // Ensure clipboardData is available
+        if (!clipboardItems) {
+          return;
+        }
+
+        const files: File[] = [];
+
+        // @ts-ignore
+        for (const item of clipboardItems) {
+          console.log(item);
+          if (item.kind === 'file') {
+            const file = item.getAsFile();
+            if (file) {
+              const isImage = file.type.startsWith('image/');
+              const isVideo = file.type.startsWith('video/');
+              if (isImage || isVideo) {
+                files.push(file); // Collect images or videos
+              }
+            }
+          }
+        }
+        if (files.length === 0) {
+          return;
+        }
+
+        setUploading(true);
+        const lastValues = [...currentValue];
+        for (const file of files) {
+          uppy.addFile(file);
+          const upload = await uppy.upload();
+          uppy.clear();
+          if (upload?.successful?.length) {
+            lastValues.push(upload?.successful[0]?.response?.body?.saved!);
+            changeImage(index)({
+              target: {
+                name: 'image',
+                value: [...lastValues],
+              },
+            });
+          }
+        }
+        setUploading(false);
+      };
+    },
+    [changeImage]
+  );
+
   const getPostsMarketplace = useCallback(async () => {
     return (
       await fetch(`/posts/marketplace/${existingData?.posts?.[0]?.id}`)
@@ -406,6 +486,8 @@ export const AddEditModal: FC<{
     });
   }, [data, postFor, selectedIntegrations]);
 
+  useClickOutside(askClose);
+
   return (
     <>
       {user?.tier?.ai && (
@@ -425,6 +507,11 @@ export const AddEditModal: FC<{
           'flex flex-col md:flex-row p-[10px] rounded-[4px] bg-primary gap-[20px]'
         )}
       >
+        {uploading && (
+          <div className="absolute left-0 top-0 w-full h-full bg-black/40 z-[600] flex justify-center items-center">
+            <LoadingComponent width={100} height={100} />
+          </div>
+        )}
         <div
           className={clsx(
             'flex flex-col gap-[16px] transition-all duration-700 whitespace-nowrap',
@@ -439,38 +526,44 @@ export const AddEditModal: FC<{
                   information={data}
                   onChange={setPostFor}
                 />
-                {totalCustomers > 1 && (
-                  <Select
-                    hideErrors={true}
-                    label=""
-                    name="customer"
-                    value={customer}
-                    onChange={(e) => {
-                      setCustomer(e.target.value);
-                      setSelectedIntegrations([]);
-                    }}
-                    disableForm={true}
-                  >
-                    <option value="">Selected Customer</option>
-                    {uniqBy(ints, (u) => u?.customer?.name).map((p) => (
-                      <option key={p.customer?.id} value={p.customer?.id}>
-                        Customer: {p.customer?.name}
-                      </option>
-                    ))}
-                  </Select>
-                )}
+                <SelectCustomer
+                  integrations={ints}
+                  onChange={(val) => {
+                    setCustomer(val);
+                    setSelectedIntegrations([]);
+                  }}
+                />
                 <DatePicker onChange={setDateState} date={dateState} />
+                {!selectedIntegrations.length && (
+                  <svg
+                    width="10"
+                    height="11"
+                    viewBox="0 0 10 11"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="cursor-pointer"
+                    onClick={askClose}
+                  >
+                    <path
+                      d="M9.85403 9.64628C9.90048 9.69274 9.93733 9.74789 9.96247 9.80859C9.98762 9.86928 10.0006 9.93434 10.0006 10C10.0006 10.0657 9.98762 10.1308 9.96247 10.1915C9.93733 10.2522 9.90048 10.3073 9.85403 10.3538C9.80757 10.4002 9.75242 10.4371 9.69173 10.4622C9.63103 10.4874 9.56598 10.5003 9.50028 10.5003C9.43458 10.5003 9.36953 10.4874 9.30883 10.4622C9.24813 10.4371 9.19298 10.4002 9.14653 10.3538L5.00028 6.20691L0.854028 10.3538C0.760208 10.4476 0.63296 10.5003 0.500278 10.5003C0.367596 10.5003 0.240348 10.4476 0.146528 10.3538C0.0527077 10.26 2.61548e-09 10.1327 0 10C-2.61548e-09 9.86735 0.0527077 9.7401 0.146528 9.64628L4.2934 5.50003L0.146528 1.35378C0.0527077 1.25996 0 1.13272 0 1.00003C0 0.867352 0.0527077 0.740104 0.146528 0.646284C0.240348 0.552464 0.367596 0.499756 0.500278 0.499756C0.63296 0.499756 0.760208 0.552464 0.854028 0.646284L5.00028 4.79316L9.14653 0.646284C9.24035 0.552464 9.3676 0.499756 9.50028 0.499756C9.63296 0.499756 9.76021 0.552464 9.85403 0.646284C9.94785 0.740104 10.0006 0.867352 10.0006 1.00003C10.0006 1.13272 9.94785 1.25996 9.85403 1.35378L5.70715 5.50003L9.85403 9.64628Z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                )}
               </div>
             </TopTitle>
 
             {!existingData.integration && integrations.length > 1 ? (
-              <PickPlatforms
-                integrations={integrations.filter((f) => !f.disabled)}
-                selectedIntegrations={[]}
-                singleSelect={false}
-                onChange={setSelectedIntegrations}
-                isMain={true}
-              />
+              <div className="w-full max-w-[600px] overflow-y-auto pb-[10px]">
+                <PickPlatforms
+                  toolTip={true}
+                  integrations={integrations.filter((f) => !f.disabled)}
+                  selectedIntegrations={[]}
+                  singleSelect={false}
+                  onChange={setSelectedIntegrations}
+                  isMain={true}
+                />
+              </div>
             ) : (
               <div
                 className={clsx(
@@ -513,23 +606,28 @@ export const AddEditModal: FC<{
                     <div>
                       <div className="flex gap-[4px]">
                         <div className="flex-1 editor text-textColor">
-                          <Editor
-                            order={index}
-                            height={value.length > 1 ? 150 : 250}
-                            commands={
-                              [
-                                // ...commands
-                                //   .getCommands()
-                                //   .filter((f) => f.name === 'image'),
-                                // newImage,
-                                // postSelector(dateState),
-                              ]
-                            }
-                            value={p.content}
-                            preview="edit"
-                            // @ts-ignore
-                            onChange={changeValue(index)}
-                          />
+                          <DropFiles
+                            onDrop={pasteImages(index, p.image || [], true)}
+                          >
+                            <Editor
+                              order={index}
+                              height={value.length > 1 ? 150 : 250}
+                              commands={
+                                [
+                                  // ...commands
+                                  //   .getCommands()
+                                  //   .filter((f) => f.name === 'image'),
+                                  // newImage,
+                                  // postSelector(dateState),
+                                ]
+                              }
+                              value={p.content}
+                              preview="edit"
+                              onPaste={pasteImages(index, p.image || [])}
+                              // @ts-ignore
+                              onChange={changeValue(index)}
+                            />
+                          </DropFiles>
 
                           {showError &&
                             (!p.content || p.content.length < 6) && (
@@ -540,6 +638,7 @@ export const AddEditModal: FC<{
                           <div className="flex">
                             <div className="flex-1">
                               <MultiMediaComponent
+                                text={p.content}
                                 label="Attachments"
                                 description=""
                                 value={p.image}
@@ -600,9 +699,6 @@ export const AddEditModal: FC<{
                 id="add-edit-post-dialog-buttons"
                 className="flex flex-row flex-wrap w-full h-full gap-[10px] justify-end items-center"
               >
-                <Button className="rounded-[4px]" onClick={askClose}>
-                  Cancel
-                </Button>
                 <Submitted
                   updateOrder={updateOrder}
                   postId={existingData?.posts?.[0]?.id}
@@ -631,6 +727,7 @@ export const AddEditModal: FC<{
                     className="rounded-[4px] relative group"
                     disabled={
                       selectedIntegrations.length === 0 ||
+                      loading ||
                       !canSendForPublication
                     }
                   >
@@ -642,6 +739,9 @@ export const AddEditModal: FC<{
                           ? 'Submit for order'
                           : !existingData.integration
                           ? 'Add to calendar'
+                          : // @ts-ignore
+                          existingData?.posts?.[0]?.state === 'DRAFT'
+                          ? 'Schedule'
                           : 'Update'}
                       </div>
                       {!postFor && (
@@ -660,7 +760,11 @@ export const AddEditModal: FC<{
                           </svg>
                           <div
                             onClick={postNow}
-                            className="hidden group-hover:flex hover:flex flex-col justify-center absolute left-0 top-[100%] w-full h-[40px] bg-customColor22 border border-tableBorder"
+                            className={clsx(
+                              'hidden group-hover:flex hover:flex flex-col justify-center absolute left-0 top-[100%] w-full h-[40px] bg-customColor22 border border-tableBorder',
+                              loading &&
+                                'cursor-not-allowed pointer-events-none opacity-50'
+                            )}
                           >
                             Post now
                           </div>
@@ -682,16 +786,27 @@ export const AddEditModal: FC<{
           )}
         >
           <div className="mx-[16px]">
-            <TopTitle
-              title=""
-              expend={expend.show}
-              collapse={expend.hide}
-              shouldExpend={expend.expend}
-            />
+            <TopTitle title="">
+              <svg
+                width="10"
+                height="11"
+                viewBox="0 0 10 11"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                className="cursor-pointer"
+                onClick={askClose}
+              >
+                <path
+                  d="M9.85403 9.64628C9.90048 9.69274 9.93733 9.74789 9.96247 9.80859C9.98762 9.86928 10.0006 9.93434 10.0006 10C10.0006 10.0657 9.98762 10.1308 9.96247 10.1915C9.93733 10.2522 9.90048 10.3073 9.85403 10.3538C9.80757 10.4002 9.75242 10.4371 9.69173 10.4622C9.63103 10.4874 9.56598 10.5003 9.50028 10.5003C9.43458 10.5003 9.36953 10.4874 9.30883 10.4622C9.24813 10.4371 9.19298 10.4002 9.14653 10.3538L5.00028 6.20691L0.854028 10.3538C0.760208 10.4476 0.63296 10.5003 0.500278 10.5003C0.367596 10.5003 0.240348 10.4476 0.146528 10.3538C0.0527077 10.26 2.61548e-09 10.1327 0 10C-2.61548e-09 9.86735 0.0527077 9.7401 0.146528 9.64628L4.2934 5.50003L0.146528 1.35378C0.0527077 1.25996 0 1.13272 0 1.00003C0 0.867352 0.0527077 0.740104 0.146528 0.646284C0.240348 0.552464 0.367596 0.499756 0.500278 0.499756C0.63296 0.499756 0.760208 0.552464 0.854028 0.646284L5.00028 4.79316L9.14653 0.646284C9.24035 0.552464 9.3676 0.499756 9.50028 0.499756C9.63296 0.499756 9.76021 0.552464 9.85403 0.646284C9.94785 0.740104 10.0006 0.867352 10.0006 1.00003C10.0006 1.13272 9.94785 1.25996 9.85403 1.35378L5.70715 5.50003L9.85403 9.64628Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </TopTitle>
           </div>
           {!!selectedIntegrations.length && (
             <div className="flex-1 flex flex-col p-[16px] pt-0">
               <ProvidersOptions
+                allIntegrations={props.allIntegrations || []}
                 integrations={selectedIntegrations}
                 editorValue={value}
                 date={dateState}
@@ -702,4 +817,4 @@ export const AddEditModal: FC<{
       </div>
     </>
   );
-};
+});

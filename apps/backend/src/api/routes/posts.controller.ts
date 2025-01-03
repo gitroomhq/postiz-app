@@ -7,6 +7,7 @@ import {
   Post,
   Put,
   Query,
+  Res,
 } from '@nestjs/common';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
@@ -23,6 +24,9 @@ import { ApiTags } from '@nestjs/swagger';
 import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
 import { GeneratorDto } from '@gitroom/nestjs-libraries/dtos/generator/generator.dto';
 import { CreateGeneratedPostsDto } from '@gitroom/nestjs-libraries/dtos/generator/create.generated.posts.dto';
+import { AgentGraphService } from '@gitroom/nestjs-libraries/agent/agent.graph.service';
+import { Response } from 'express';
+import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 
 @ApiTags('Posts')
 @Controller('/posts')
@@ -30,7 +34,8 @@ export class PostsController {
   constructor(
     private _postsService: PostsService,
     private _starsService: StarsService,
-    private _messagesService: MessagesService
+    private _messagesService: MessagesService,
+    private _agentGraphService: AgentGraphService
   ) {}
 
   @Get('/marketplace/:id?')
@@ -39,6 +44,16 @@ export class PostsController {
     @Param('id') id: string
   ) {
     return this._messagesService.getMarketplaceAvailableOffers(org.id, id);
+  }
+
+  @Post('/:id/comments')
+  async createComment(
+    @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User,
+    @Param('id') id: string,
+    @Body() body: { comment: string }
+  ) {
+    return this._postsService.createComment(org.id, user.id, id, body.comment);
   }
 
   @Get('/')
@@ -59,6 +74,13 @@ export class PostsController {
       posts,
       // comments,
     };
+  }
+
+  @Get('/find-slot')
+  async findSlot(
+    @GetOrgFromRequest() org: Organization,
+  ) {
+    return {date: await this._postsService.findFreeDateTime(org.id)}
   }
 
   @Get('/predict-trending')
@@ -100,11 +122,20 @@ export class PostsController {
 
   @Post('/generator')
   @CheckPolicies([AuthorizationActions.Create, Sections.POSTS_PER_MONTH])
-  generatePosts(
+  async generatePosts(
     @GetOrgFromRequest() org: Organization,
-    @Body() body: GeneratorDto
+    @Body() body: GeneratorDto,
+    @Res({ passthrough: false }) res: Response
   ) {
-    return this._postsService.generatePosts(org.id, body);
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    for await (const event of this._agentGraphService.start(
+      org.id,
+      body,
+    )) {
+      res.write(JSON.stringify(event) + '\n');
+    }
+
+    res.end();
   }
 
   @Delete('/:group')

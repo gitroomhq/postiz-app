@@ -14,6 +14,7 @@ import { Fragment } from 'react';
 import { PHProvider } from '@gitroom/react/helpers/posthog';
 import UtmSaver from '@gitroom/helpers/utils/utm.saver';
 import { ToltScript } from '@gitroom/frontend/components/layout/tolt.script';
+import { FacebookComponent } from '@gitroom/frontend/components/layout/facebook.component';
 
 const chakra = Chakra_Petch({ weight: '400', subsets: ['latin'] });
 
@@ -25,11 +26,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   return (
     <html className={interClass}>
       <head>
-        <link
-          rel="icon"
-          href="/favicon.ico"
-          sizes="any"
-        />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
       <body className={clsx(chakra.className, 'text-primary dark')}>
         <VariableContextComponent
@@ -44,8 +41,10 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           isGeneral={!!process.env.IS_GENERAL}
           uploadDirectory={process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY!}
           tolt={process.env.NEXT_PUBLIC_TOLT!}
+          facebookPixel={process.env.NEXT_PUBLIC_FACEBOOK_PIXEL!}
         >
           <ToltScript />
+          <FacebookComponent />
           <Plausible
             domain={!!process.env.IS_GENERAL ? 'postiz.com' : 'gitroom.com'}
           >
@@ -53,8 +52,10 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
               phkey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
               host={process.env.NEXT_PUBLIC_POSTHOG_HOST}
             >
-              <UtmSaver />
-              <LayoutContext>{children}</LayoutContext>
+              <LayoutContext>
+                <UtmSaver />
+                {children}
+              </LayoutContext>
             </PHProvider>
           </Plausible>
         </VariableContextComponent>

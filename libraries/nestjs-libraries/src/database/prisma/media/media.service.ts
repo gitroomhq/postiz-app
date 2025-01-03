@@ -12,8 +12,12 @@ export class MediaService {
         private _subscriptionService: SubscriptionService
     ){}
 
-    async generateImage(prompt: string, org: Organization) {
-        const image = await this._openAi.generateImage(prompt);
+    async generateImage(prompt: string, org: Organization, generatePromptFirst?: boolean) {
+        if (generatePromptFirst) {
+            prompt = await this._openAi.generatePromptForPicture(prompt);
+            console.log('Prompt:', prompt);
+        }
+        const image = await this._openAi.generateImage(prompt, !!generatePromptFirst);
         await this._subscriptionService.useCredit(org);
         return image;
     }

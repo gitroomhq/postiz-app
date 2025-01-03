@@ -14,7 +14,6 @@ import { SettingsController } from '@gitroom/backend/api/routes/settings.control
 import { PostsController } from '@gitroom/backend/api/routes/posts.controller';
 import { MediaController } from '@gitroom/backend/api/routes/media.controller';
 import { UploadModule } from '@gitroom/nestjs-libraries/upload/upload.module';
-import { CommentsController } from '@gitroom/backend/api/routes/comments.controller';
 import { BillingController } from '@gitroom/backend/api/routes/billing.controller';
 import { NotificationsController } from '@gitroom/backend/api/routes/notifications.controller';
 import { MarketplaceController } from '@gitroom/backend/api/routes/marketplace.controller';
@@ -26,6 +25,7 @@ import { CopilotController } from '@gitroom/backend/api/routes/copilot.controlle
 import { AgenciesController } from '@gitroom/backend/api/routes/agencies.controller';
 import { PublicController } from '@gitroom/backend/api/routes/public.controller';
 import { RootController } from '@gitroom/backend/api/routes/root.controller';
+import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
 
 const authenticatedController = [
   UsersController,
@@ -34,7 +34,6 @@ const authenticatedController = [
   SettingsController,
   PostsController,
   MediaController,
-  CommentsController,
   BillingController,
   NotificationsController,
   MarketplaceController,
@@ -63,6 +62,7 @@ const authenticatedController = [
     PermissionsService,
     CodesService,
     IntegrationManager,
+    TrackService,
   ],
   get exports() {
     return [...this.imports, ...this.providers];
