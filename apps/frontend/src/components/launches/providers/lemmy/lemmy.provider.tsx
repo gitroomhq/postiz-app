@@ -44,7 +44,7 @@ const LemmySettings: FC = () => {
           </div>
         ))}
       </div>
-      <Button onClick={addField}>Add Subreddit</Button>
+      <Button onClick={addField}>Add Community</Button>
       {fields.length === 0 && (
         <div className="text-red-500 text-[12px] mt-[10px]">
           Please add at least one Subreddit
