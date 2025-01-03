@@ -3,6 +3,9 @@ import { hashSync, compareSync } from 'bcrypt';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 
+// encryption algorithm
+const algorithm = 'aes-256-ctr';
+
 export class AuthService {
   static hashPassword(password: string) {
     return hashSync(password, 10);
@@ -18,27 +21,28 @@ export class AuthService {
   }
 
   static fixedEncryption(value: string) {
-    // encryption algorithm
-    const algorithm = 'aes-256-cbc';
-
     // create a cipher object
-    const cipher = crypto.createCipher(algorithm, process.env.JWT_SECRET);
+    const iv = new Buffer(crypto.randomBytes(16));
+    const cipher = crypto.createCipheriv(algorithm, Buffer.from(process.env.JWT_SECRET), iv);
 
     // encrypt the plain text
-    let encrypted = cipher.update(value, 'utf8', 'hex');
-    encrypted += cipher.final('hex');
+    let encrypted = cipher.update(value);
+    encrypted = Buffer.concat([encrypted, cipher.final()]);
 
-    return encrypted;
+    return iv.toString('hex') + ":" + encrypted.toString('hex');
   }
 
   static fixedDecryption(hash: string) {
-    const algorithm = 'aes-256-cbc';
-    const decipher = crypto.createDecipher(algorithm, process.env.JWT_SECRET);
+    // create decipher object
+    let textParts = hash.split(':');
+    let iv = Buffer.from(textParts.shift(), 'hex');
+    let encryptedText = Buffer.from(textParts.join(':'), 'hex');
+    let decipher = crypto.createDecipheriv(algorithm, Buffer.from(process.env.JWT_SECRET, 'hex'), iv);
 
-    // decrypt the encrypted text
-    let decrypted = decipher.update(hash, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
+    // decrypt the text
+    let decrypted = decipher.update(encryptedText);
+    decrypted = Buffer.concat([decrypted, decipher.final()]);
 
-    return decrypted;
+    return decrypted.toString();
   }
 }
