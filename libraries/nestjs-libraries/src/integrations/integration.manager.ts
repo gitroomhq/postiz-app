@@ -21,6 +21,7 @@ import { DiscordProvider } from '@gitroom/nestjs-libraries/integrations/social/d
 import { SlackProvider } from '@gitroom/nestjs-libraries/integrations/social/slack.provider';
 import { MastodonProvider } from '@gitroom/nestjs-libraries/integrations/social/mastodon.provider';
 import { BlueskyProvider } from '@gitroom/nestjs-libraries/integrations/social/bluesky.provider';
+import { LemmyProvider } from '@gitroom/nestjs-libraries/integrations/social/lemmy.provider';
 // import { MastodonCustomProvider } from '@gitroom/nestjs-libraries/integrations/social/mastodon.custom.provider';
 
 const socialIntegrationList: SocialProvider[] = [
@@ -39,6 +40,7 @@ const socialIntegrationList: SocialProvider[] = [
   new SlackProvider(),
   new MastodonProvider(),
   new BlueskyProvider(),
+  new LemmyProvider(),
   // new MastodonCustomProvider(),
 ];
 

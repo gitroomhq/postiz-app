@@ -1,10 +1,6 @@
 import { Type } from 'class-transformer';
 import {
-  IsDefined,
-  IsIn,
-  IsNumber,
-  Max,
-  Min,
+  IsDefined, IsIn, IsNumber, IsOptional, IsString, Max, Min
 } from 'class-validator';
 import dayjs from 'dayjs';
 
@@ -36,4 +32,8 @@ export class GetPostsDto {
   @Max(dayjs().add(10, 'year').year())
   @Min(2022)
   year: number;
+
+  @IsOptional()
+  @IsString()
+  customer: string;
 }

@@ -293,6 +293,7 @@ model Integration {
   @@index([rootInternalId])
   @@index([updatedAt])
   @@index([deletedAt])
+  @@index([customerId])
   @@unique([organizationId, internalId])
 }
 
