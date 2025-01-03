@@ -110,6 +110,11 @@ export class PostsRepository {
         },
         deletedAt: null,
         parentPostId: null,
+        ...query.customer ? {
+          integration: {
+            customerId: query.customer,
+          }
+        }: {},
       },
       select: {
         id: true,
