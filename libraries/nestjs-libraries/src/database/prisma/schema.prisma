@@ -293,6 +293,7 @@ model Integration {
   @@index([rootInternalId])
   @@index([updatedAt])
   @@index([deletedAt])
+  @@index([customerId])
   @@unique([organizationId, internalId])
 }
 
@@ -301,20 +302,18 @@ model Comments {
   content           String
   organizationId    String
   organization      Organization @relation(fields: [organizationId], references: [id])
+  postId            String
+  post              Post       @relation(fields: [postId], references: [id])
   userId            String
   user              User       @relation(fields: [userId], references: [id])
-  date              DateTime
-  parentCommentId   String?
-  parentComment     Comments?  @relation("parentCommentId", fields: [parentCommentId], references: [id])
-  childrenComment   Comments[] @relation("parentCommentId")
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
   deletedAt         DateTime?
 
   @@index([createdAt])
   @@index([organizationId])
-  @@index([date])
   @@index([userId])
+  @@index([postId])
   @@index([deletedAt])
 }
 
@@ -345,6 +344,7 @@ model Post {
   lastMessageId       String?
   lastMessage         Messages? @relation(fields: [lastMessageId], references: [id])
   payoutProblems      PayoutProblems[]
+  comments            Comments[]
   error               String?
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt

@@ -7,7 +7,7 @@ import { internalFetch } from '@gitroom/helpers/utils/internal.fetch';
 export async function middleware(request: NextRequest) {
   const nextUrl = request.nextUrl;
   const authCookie = request.cookies.get('auth');
-  if (nextUrl.pathname.startsWith('/uploads/')) {
+  if (nextUrl.pathname.startsWith('/uploads/') || nextUrl.pathname.startsWith('/p/') || nextUrl.pathname.startsWith('/icons/')) {
     return NextResponse.next();
   }
   // If the URL is logout, delete the cookie and redirect to login

@@ -20,6 +20,10 @@ function LayoutContextInner(params: { children: ReactNode }) {
 
   const afterRequest = useCallback(
     async (url: string, options: RequestInit, response: Response) => {
+      if (typeof window !== 'undefined' && window.location.href.includes('/p/')) {
+        return true;
+      }
+
       const reloadOrOnboarding =
         response?.headers?.get('reload') ||
         response?.headers?.get('onboarding');

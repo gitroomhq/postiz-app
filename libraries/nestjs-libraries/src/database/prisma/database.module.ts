@@ -16,8 +16,6 @@ import { PostsRepository } from '@gitroom/nestjs-libraries/database/prisma/posts
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 import { MediaRepository } from '@gitroom/nestjs-libraries/database/prisma/media/media.repository';
-import { CommentsRepository } from '@gitroom/nestjs-libraries/database/prisma/comments/comments.repository';
-import { CommentsService } from '@gitroom/nestjs-libraries/database/prisma/comments/comments.service';
 import { NotificationsRepository } from '@gitroom/nestjs-libraries/database/prisma/notifications/notifications.repository';
 import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 import { ItemUserRepository } from '@gitroom/nestjs-libraries/database/prisma/marketplace/item.user.repository';
@@ -56,13 +54,11 @@ import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
     MessagesRepository,
     MediaService,
     MediaRepository,
-    CommentsRepository,
     ItemUserRepository,
     AgenciesService,
     AgenciesRepository,
     ItemUserService,
     MessagesService,
-    CommentsService,
     IntegrationManager,
     ExtractContentService,
     OpenaiService,

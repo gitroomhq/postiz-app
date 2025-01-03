@@ -11,6 +11,7 @@ import React, {
   useRef,
   ClipboardEvent,
   useState,
+  memo,
 } from 'react';
 import dayjs from 'dayjs';
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
@@ -59,6 +60,7 @@ import { useClickOutside } from '@gitroom/frontend/components/layout/click.outsi
 import { useUppyUploader } from '@gitroom/frontend/components/media/new.uploader';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import { DropFiles } from '@gitroom/frontend/components/layout/drop.files';
+import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
 
 function countCharacters(text: string, type: string): number {
   if (type !== 'x') {
@@ -79,7 +81,7 @@ export const AddEditModal: FC<{
     id?: string;
     image?: Array<{ id: string; path: string }>;
   }>;
-}> = (props) => {
+}> = memo((props) => {
   const { date, integrations: ints, reopenModal, mutate, onlyValues } = props;
   const [customer, setCustomer] = useState('');
   const [loading, setLoading] = useState(false);
@@ -102,10 +104,6 @@ export const AddEditModal: FC<{
 
     return list;
   }, [customer, ints]);
-
-  const totalCustomers = useMemo(() => {
-    return uniqBy(ints, (i) => i?.customer?.id).length;
-  }, [ints]);
 
   const [dateState, setDateState] = useState(date);
 
@@ -528,28 +526,13 @@ export const AddEditModal: FC<{
                   information={data}
                   onChange={setPostFor}
                 />
-                {totalCustomers > 1 && (
-                  <Select
-                    hideErrors={true}
-                    label=""
-                    name="customer"
-                    value={customer}
-                    onChange={(e) => {
-                      setCustomer(e.target.value);
-                      setSelectedIntegrations([]);
-                    }}
-                    disableForm={true}
-                  >
-                    <option value="">Selected Customer</option>
-                    {uniqBy(ints, (u) => u?.customer?.name)
-                      .filter((f) => f.customer?.name)
-                      .map((p) => (
-                        <option key={p.customer?.id} value={p.customer?.id}>
-                          Customer: {p.customer?.name}
-                        </option>
-                      ))}
-                  </Select>
-                )}
+                <SelectCustomer
+                  integrations={ints}
+                  onChange={(val) => {
+                    setCustomer(val);
+                    setSelectedIntegrations([]);
+                  }}
+                />
                 <DatePicker onChange={setDateState} date={dateState} />
                 {!selectedIntegrations.length && (
                   <svg
@@ -836,4 +819,4 @@ export const AddEditModal: FC<{
       </div>
     </>
   );
-};
+});

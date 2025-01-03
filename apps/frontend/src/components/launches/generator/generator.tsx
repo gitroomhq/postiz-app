@@ -320,7 +320,7 @@ export const GeneratorComponent = () => {
           fill="currentColor"
         />
       </svg>
-      Generate Posts
+      <div className="flex-1 text-left">Generate Posts</div>
     </button>
   );
 };

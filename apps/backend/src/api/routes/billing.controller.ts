@@ -67,7 +67,7 @@ export class BillingController {
     await this._notificationService.sendEmail(
       process.env.EMAIL_FROM_ADDRESS,
       'Subscription Cancelled',
-      `${user.name} from Organization ${org.name} has cancelled their subscription because: ${body.feedback}`,
+      `Organization ${org.name} has cancelled their subscription because: ${body.feedback}`,
       user.email
     );
 

@@ -15,7 +15,8 @@ dayjs.extend(weekOfYear);
 export class PostsRepository {
   constructor(
     private _post: PrismaRepository<'post'>,
-    private _popularPosts: PrismaRepository<'popularPosts'>
+    private _popularPosts: PrismaRepository<'popularPosts'>,
+    private _comments: PrismaRepository<'comments'>
   ) {}
 
   getOldPosts(orgId: string, date: string) {
@@ -109,6 +110,11 @@ export class PostsRepository {
         },
         deletedAt: null,
         parentPostId: null,
+        ...query.customer ? {
+          integration: {
+            customerId: query.customer,
+          }
+        }: {},
       },
       select: {
         id: true,
@@ -470,5 +476,32 @@ export class PostsRepository {
           );
         })
     );
+  }
+
+  async getComments(postId: string) {
+    return this._comments.model.comments.findMany({
+      where: {
+        postId,
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
+  }
+
+  createComment(
+    orgId: string,
+    userId: string,
+    postId: string,
+    content: string
+  ) {
+    return this._comments.model.comments.create({
+      data: {
+        organizationId: orgId,
+        userId,
+        postId,
+        content,
+      },
+    });
   }
 }

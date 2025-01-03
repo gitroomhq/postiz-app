@@ -22,6 +22,7 @@ import { useDrag, useDrop } from 'react-dnd';
 import { DNDProvider } from '@gitroom/frontend/components/launches/helpers/dnd.provider';
 import { GeneratorComponent } from './generator/generator';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { NewPost } from '@gitroom/frontend/components/launches/new.post';
 
 interface MenuComponentInterface {
   refreshChannel: (
@@ -120,14 +121,22 @@ export const MenuGroupComponent: FC<
         </div>
       )}
       {!!group.name && (
-        <div className="flex items-center gap-[5px] cursor-pointer" onClick={changeOpenClose}>
+        <div
+          className="flex items-center gap-[5px] cursor-pointer"
+          onClick={changeOpenClose}
+        >
           <div>
             <OpenClose isOpen={isOpen} />
           </div>
           <div>{group.name}</div>
         </div>
       )}
-      <div className={clsx("gap-[16px] flex flex-col relative", !isOpen && 'hidden')}>
+      <div
+        className={clsx(
+          'gap-[16px] flex flex-col relative',
+          !isOpen && 'hidden'
+        )}
+      >
         {group.values.map((integration) => (
           <MenuComponent
             key={integration.id}
@@ -427,10 +436,13 @@ export const LaunchesComponent = () => {
                     />
                   ))}
                 </div>
-                <AddProviderButton update={() => update(true)} />
-                {sortedIntegrations?.length > 0 &&
-                  user?.tier?.ai &&
-                  billingEnabled && <GeneratorComponent />}
+                <div className="flex flex-col gap-[10px]">
+                  <AddProviderButton update={() => update(true)} />
+                  {sortedIntegrations?.length > 0 && <NewPost />}
+                  {sortedIntegrations?.length > 0 &&
+                    user?.tier?.ai &&
+                    billingEnabled && <GeneratorComponent />}
+                </div>
               </div>
               <div className="flex-1 flex flex-col gap-[14px]">
                 <Filters />

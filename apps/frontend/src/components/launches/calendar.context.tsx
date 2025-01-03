@@ -28,8 +28,9 @@ export const CalendarContext = createContext({
   currentWeek: dayjs().week(),
   currentYear: dayjs().year(),
   currentMonth: dayjs().month(),
+  customer: null as string | null,
   comments: [] as Array<{ date: string; total: number }>,
-  integrations: [] as (Integrations & {refreshNeeded?: boolean})[],
+  integrations: [] as (Integrations & { refreshNeeded?: boolean })[],
   trendings: [] as string[],
   posts: [] as Array<Post & { integration: Integration }>,
   reloadCalendarView: () => {
@@ -42,6 +43,7 @@ export const CalendarContext = createContext({
     currentDay: 0 | 1 | 2 | 3 | 4 | 5 | 6;
     currentMonth: number;
     display: 'week' | 'month' | 'day';
+    customer: string | null;
   }) => {
     /** empty **/
   },
@@ -66,7 +68,7 @@ export interface Integrations {
   customer?: {
     name?: string;
     id?: string;
-  }
+  };
 }
 
 function getWeekNumber(date: Date) {
@@ -94,6 +96,7 @@ export const CalendarWeekProvider: FC<{
   const fetch = useFetch();
   const [internalData, setInternalData] = useState([] as any[]);
   const [trendings] = useState<string[]>([]);
+
   const searchParams = useSearchParams();
 
   const display = searchParams.get('display') || 'week';
@@ -110,6 +113,7 @@ export const CalendarWeekProvider: FC<{
     currentWeek: +(searchParams.get('week') || getWeekNumber(new Date())),
     currentMonth: +(searchParams.get('month') || dayjs().month()),
     currentYear: +(searchParams.get('year') || dayjs().year()),
+    customer: (searchParams.get('customer') as string) || null,
     display,
   });
 
@@ -120,6 +124,7 @@ export const CalendarWeekProvider: FC<{
       week: filters.currentWeek.toString(),
       month: (filters.currentMonth + 1).toString(),
       year: filters.currentYear.toString(),
+      customer: filters?.customer?.toString() || '',
     }).toString();
   }, [filters, display]);
 
@@ -142,6 +147,7 @@ export const CalendarWeekProvider: FC<{
       currentYear: number;
       currentMonth: number;
       display: 'week' | 'month' | 'day';
+      customer: string | null;
     }) => {
       setFilters(filters);
       setInternalData([]);
@@ -152,6 +158,7 @@ export const CalendarWeekProvider: FC<{
         `month=${filters.currentMonth}`,
         `year=${filters.currentYear}`,
         `display=${filters.display}`,
+        filters.customer ? `customer=${filters.customer}` : ``,
       ].filter((f) => f);
       window.history.replaceState(null, '', `/launches?${path.join('&')}`);
     },
