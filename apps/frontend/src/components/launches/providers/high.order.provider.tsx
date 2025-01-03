@@ -527,7 +527,7 @@ export const withProvider = function <T extends object>(
           {(showTab === 0 || showTab === 2) && (
             <div className={clsx('mt-[20px]', showTab !== 2 && 'hidden')}>
               <Component values={editInPlace ? InPlaceValue : props.value} />
-              {data?.internalPlugs?.length && (
+              {!!data?.internalPlugs?.length && (
                 <InternalChannels plugs={data?.internalPlugs} />
               )}
             </div>

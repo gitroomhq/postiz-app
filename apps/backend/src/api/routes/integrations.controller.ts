@@ -264,7 +264,8 @@ export class IntegrationsController {
           const load = await integrationProvider[body.name](
             getIntegration.token,
             body.data,
-            getIntegration.internalId
+            getIntegration.internalId,
+            getIntegration
           );
 
           return load;

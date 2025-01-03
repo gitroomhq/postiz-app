@@ -17,6 +17,7 @@ import DiscordProvider from '@gitroom/frontend/components/launches/providers/dis
 import SlackProvider from '@gitroom/frontend/components/launches/providers/slack/slack.provider';
 import MastodonProvider from '@gitroom/frontend/components/launches/providers/mastodon/mastodon.provider';
 import BlueskyProvider from '@gitroom/frontend/components/launches/providers/bluesky/bluesky.provider';
+import LemmyProvider from '@gitroom/frontend/components/launches/providers/lemmy/lemmy.provider';
 
 export const Providers = [
     {identifier: 'devto', component: DevtoProvider},
@@ -37,6 +38,7 @@ export const Providers = [
     {identifier: 'slack', component: SlackProvider},
     {identifier: 'mastodon', component: MastodonProvider},
     {identifier: 'bluesky', component: BlueskyProvider},
+    {identifier: 'lemmy', component: LemmyProvider},
 ];
 
 
