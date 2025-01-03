@@ -5,7 +5,6 @@ import React, {
 } from 'react';
 import { Button } from '@gitroom/react/form/button';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
-import MDEditor, { commands } from '@uiw/react-md-editor';
 import { useHideTopEditor } from '@gitroom/frontend/components/launches/helpers/use.hide.top.editor';
 import { useValues } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { FormProvider } from 'react-hook-form';
@@ -18,7 +17,6 @@ import {
 import { MultiMediaComponent } from '@gitroom/frontend/components/media/media.component';
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
-import { newImage } from '@gitroom/frontend/components/launches/helpers/new.image.component';
 import { postSelector } from '@gitroom/frontend/components/post-url-selector/post.url.selector';
 import { UpDownArrow } from '@gitroom/frontend/components/launches/up.down.arrow';
 import { arrayMoveImmutable } from 'array-move';
@@ -31,6 +29,8 @@ import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
 import { AddPostButton } from '@gitroom/frontend/components/launches/add.post.button';
 import { GeneralPreviewComponent } from '@gitroom/frontend/components/launches/general.preview.component';
 import { capitalize } from 'lodash';
+
+import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useModals } from '@mantine/modals';
 import { useUppyUploader } from '@gitroom/frontend/components/media/new.uploader';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
@@ -93,6 +93,7 @@ export const withProvider = function <T extends object>(
     hideMenu?: boolean;
     show: boolean;
   }) => {
+    const toast = useToaster();
     const existingData = useExistingData();
     const { allIntegrations, integration, date } = useIntegration();
     const [showLinkedinPopUp, setShowLinkedinPopUp] = useState<any>(false);
@@ -123,6 +124,7 @@ export const withProvider = function <T extends object>(
           }))
         : [{ content: '' }]
     );
+
     const [showTab, setShowTab] = useState(0);
 
     const Component = useMemo(() => {
@@ -229,6 +231,31 @@ export const withProvider = function <T extends object>(
       },
       [InPlaceValue]
     );
+
+    // Share Post
+    const handleShare = async () => {
+      if (!existingData.posts.length) {
+        return toast.show('No posts available to share', 'warning');
+      }
+
+      const postId = existingData.posts[0].id;
+
+      const previewPath = new URL(
+        `/preview/${postId}`,
+        window.location.origin
+      ).toString();
+
+      try {
+        if (!navigator.clipboard) {
+          throw new Error('Clipboard API not available');
+        }
+        await navigator.clipboard.writeText(previewPath);
+        return toast.show('Link copied to clipboard.', 'success');
+      } catch (err) {
+        if (err instanceof Error)
+          toast.show(`Failed to copy the link. ${err.message}`, 'warning');
+      }
+    };
 
     // This is a function if we want to switch from the global editor to edit in place
     const changeToEditor = useCallback(async () => {
@@ -364,7 +391,7 @@ export const withProvider = function <T extends object>(
         <div className="mt-[15px] w-full flex flex-col flex-1">
           {!props.hideMenu && (
             <div className="flex gap-[4px]">
-              <div className="flex-1 flex">
+              <div className="flex flex-1">
                 <Button
                   className="rounded-[4px] flex-1 overflow-hidden whitespace-nowrap"
                   secondary={showTab !== 0}
@@ -373,8 +400,10 @@ export const withProvider = function <T extends object>(
                   Preview
                 </Button>
               </div>
+
               {(!!SettingsComponent || !!data?.internalPlugs?.length) && (
                 <div className="flex-1 flex">
+
                   <Button
                     className={clsx(
                       'flex-1 overflow-hidden whitespace-nowrap',
@@ -387,7 +416,7 @@ export const withProvider = function <T extends object>(
                   </Button>
                 </div>
               )}
-              <div className="flex-1 flex">
+              <div className="flex flex-1">
                 <Button
                   className="text-white rounded-[4px] flex-1 !bg-red-700 overflow-hidden whitespace-nowrap"
                   secondary={showTab !== 1}
@@ -515,8 +544,30 @@ export const withProvider = function <T extends object>(
                           </div>
                         </div>
                       </div>
-                      <div>
+                      <div className="flex gap-[8px] items-center">
                         <AddPostButton onClick={addValue(index)} num={index} />
+                        <Button
+                          onClick={handleShare}
+                          className="!h-[24px] rounded-[3px] flex gap-[4px] w-[102px] text-[12px] font-[500]"
+                        >
+                          <div>
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              version="1.1"
+                              x="0px"
+                              y="0px"
+                              viewBox="0 0 800 1000"
+                              className="max-w-[20px] max-h-[20px] fill-current h-[1.25em]"
+                            >
+                              <path
+                                fill="white"
+                                d="M443.25,529.42c2.9,1.32,6.32,0.83,8.73-1.27l211.28-183.37c1.79-1.55,2.81-3.79,2.81-6.16c0-2.37-1.02-4.61-2.81-6.16  L451.98,149.11c-2.41-2.1-5.83-2.59-8.73-1.27c-2.91,1.33-4.77,4.23-4.77,7.42v109.52c-168.67,5.27-304.54,173.69-304.54,379.94  c0,3.81,2.63,7.11,6.35,7.95c0.61,0.14,1.21,0.21,1.81,0.21c3.08,0,5.97-1.75,7.35-4.63c81.79-170.48,158.11-233.12,289.03-235.58  V522C438.47,525.19,440.34,528.09,443.25,529.42z M151.83,607.06c15.41-182.94,141.74-326.08,294.8-326.08  c4.51,0,8.16-3.65,8.16-8.16v-99.67l190.67,165.48L454.79,504.11v-99.67c0-4.51-3.65-8.16-8.16-8.16  C314.35,396.29,231.89,454.14,151.83,607.06z"
+                              />
+                            </svg>
+                          </div>
+
+                          <div className="text-white">Share</div>
+                        </Button>
                       </div>
                     </Fragment>
                   ))}
