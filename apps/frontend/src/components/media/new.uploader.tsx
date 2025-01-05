@@ -15,10 +15,12 @@ import Compressor from '@uppy/compressor';
 export function MultipartFileUploader({
   onUploadSuccess,
   allowedFileTypes,
+  uppRef,
 }: {
   // @ts-ignore
   onUploadSuccess: (result: UploadResult) => void;
   allowedFileTypes: string;
+  uppRef?: any;
 }) {
   const [loaded, setLoaded] = useState(false);
   const [reload, setReload] = useState(false);
@@ -49,6 +51,7 @@ export function MultipartFileUploader({
 
   return (
     <MultipartFileUploaderAfter
+      uppRef={uppRef || {}}
       onUploadSuccess={onUploadSuccessExtended}
       allowedFileTypes={allowedFileTypes}
     />
@@ -68,7 +71,7 @@ export function useUppyUploader(props: {
     const uppy2 = new Uppy({
       autoProceed: true,
       restrictions: {
-        maxNumberOfFiles: 1,
+        maxNumberOfFiles: 5,
         allowedFileTypes: allowedFileTypes.split(','),
         maxFileSize: 1000000000,
       },
@@ -117,19 +120,27 @@ export function useUppyUploader(props: {
 export function MultipartFileUploaderAfter({
   onUploadSuccess,
   allowedFileTypes,
+  uppRef,
 }: {
   // @ts-ignore
   onUploadSuccess: (result: UploadResult) => void;
   allowedFileTypes: string;
+  uppRef: any;
 }) {
   const uppy = useUppyUploader({ onUploadSuccess, allowedFileTypes });
+  const uppyInstance = useMemo(() => {
+    uppRef.current = uppy;
+    return uppy;
+  }, []);
 
   return (
     <>
       {/* <Dashboard uppy={uppy} /> */}
-      <ProgressBar uppy={uppy} />
+      <div className="pointer-events-none">
+        <ProgressBar uppy={uppyInstance} />
+      </div>
       <FileInput
-        uppy={uppy}
+        uppy={uppyInstance}
         locale={{
           strings: {
             chooseFiles: 'Upload',
