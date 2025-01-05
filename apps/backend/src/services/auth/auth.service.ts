@@ -34,6 +34,10 @@ export class AuthService {
           throw new Error('User already exists');
         }
 
+        if (process.env.DISABLE_SIGNUP === 'true') {
+          throw new Error('Signup is disabled');
+        }
+
         const create = await this._organizationService.createOrgAndUser(
           body,
           ip,
@@ -130,6 +134,10 @@ export class AuthService {
     );
     if (user) {
       return user;
+    }
+
+    if (process.env.DISABLE_SIGNUP === 'true') {
+      throw new Error('Signup is disabled');
     }
 
     const create = await this._organizationService.createOrgAndUser(

@@ -37,6 +37,10 @@ export class AuthController {
     @UserAgent() userAgent: string
   ) {
     try {
+      if (process.env.DISABLE_SIGNUP === 'true') {
+        response.status(400).json({ error: 'Signup is disabled' });
+        return;
+      }
       const getOrgFromCookie = this._authService.getOrgFromCookie(
         req?.cookies?.org
       );
