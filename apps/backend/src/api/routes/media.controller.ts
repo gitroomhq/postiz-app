@@ -39,7 +39,7 @@ export class MediaController {
     isPicturePrompt = false
   ) {
     const total = await this._subscriptionService.checkCredits(org);
-    if (total.credits <= 0) {
+    if (process.env.STRIPE_PUBLISHABLE_KEY && total.credits <= 0) {
       return false;
     }
 
