@@ -22,6 +22,7 @@ import { SlackProvider } from '@gitroom/nestjs-libraries/integrations/social/sla
 import { MastodonProvider } from '@gitroom/nestjs-libraries/integrations/social/mastodon.provider';
 import { BlueskyProvider } from '@gitroom/nestjs-libraries/integrations/social/bluesky.provider';
 import { LemmyProvider } from '@gitroom/nestjs-libraries/integrations/social/lemmy.provider';
+import { InstagramStandaloneProvider } from '@gitroom/nestjs-libraries/integrations/social/instagram.standalone.provider';
 // import { MastodonCustomProvider } from '@gitroom/nestjs-libraries/integrations/social/mastodon.custom.provider';
 
 const socialIntegrationList: SocialProvider[] = [
@@ -29,8 +30,9 @@ const socialIntegrationList: SocialProvider[] = [
   new LinkedinProvider(),
   new LinkedinPageProvider(),
   new RedditProvider(),
-  new FacebookProvider(),
   new InstagramProvider(),
+  new InstagramStandaloneProvider(),
+  new FacebookProvider(),
   new ThreadsProvider(),
   new YoutubeProvider(),
   new TiktokProvider(),
@@ -58,6 +60,7 @@ export class IntegrationManager {
         socialIntegrationList.map(async (p) => ({
           name: p.name,
           identifier: p.identifier,
+          toolTip: p.toolTip,
           isExternal: !!p.externalUrl,
           ...(p.customFields ? { customFields: await p.customFields() } : {}),
         }))

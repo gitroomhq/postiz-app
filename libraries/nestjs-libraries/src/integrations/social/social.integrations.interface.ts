@@ -120,6 +120,7 @@ export interface SocialProvider
     }[]
   >;
   name: string;
+  toolTip?: string;
   oneTimeToken?: boolean;
   isBetweenSteps: boolean;
   scopes: string[];
