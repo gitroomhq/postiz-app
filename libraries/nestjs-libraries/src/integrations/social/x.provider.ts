@@ -20,6 +20,8 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   name = 'X';
   isBetweenSteps = false;
   scopes = [];
+  toolTip =
+    'You will be logged in into your current account, if you would like a different account, change it first on X';
 
   @Plug({
     identifier: 'x-autoRepostPost',
@@ -199,13 +201,20 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       accessSecret: oauth_token_secret,
     });
 
-    const { accessToken, client, accessSecret } =
-      await startingClient.login(code);
+    const { accessToken, client, accessSecret } = await startingClient.login(
+      code
+    );
 
     const {
       data: { username, verified, profile_image_url, name, id },
     } = await client.v2.me({
-      'user.fields': ['username', 'verified', 'verified_type', 'profile_image_url', 'name'],
+      'user.fields': [
+        'username',
+        'verified',
+        'verified_type',
+        'profile_image_url',
+        'name',
+      ],
     });
 
     return {

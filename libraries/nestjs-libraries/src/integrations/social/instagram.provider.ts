@@ -10,14 +10,16 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { InstagramDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/instagram.dto';
+import { Integration } from '@prisma/client';
 
 export class InstagramProvider
   extends SocialAbstract
   implements SocialProvider
 {
   identifier = 'instagram';
-  name = 'Instagram';
+  name = 'Instagram\n(Facebook Business)';
   isBetweenSteps = true;
+  toolTip = 'Instagram must be business and connected to a Facebook page';
   scopes = [
     'instagram_basic',
     'pages_show_list',
@@ -204,7 +206,9 @@ export class InstagramProvider
   async post(
     id: string,
     accessToken: string,
-    postDetails: PostDetails<InstagramDto>[]
+    postDetails: PostDetails<InstagramDto>[],
+    integration: Integration,
+    type = 'graph.facebook.com'
   ): Promise<PostResponse[]> {
     const [firstPost, ...theRest] = postDetails;
     console.log('in progress');
@@ -241,7 +245,7 @@ export class InstagramProvider
         console.log(collaborators);
         const { id: photoId } = await (
           await this.fetch(
-            `https://graph.facebook.com/v20.0/${id}/media?${mediaType}${isCarousel}${collaborators}&access_token=${accessToken}${caption}`,
+            `https://${type}/v20.0/${id}/media?${mediaType}${isCarousel}${collaborators}&access_token=${accessToken}${caption}`,
             {
               method: 'POST',
             }
@@ -253,7 +257,7 @@ export class InstagramProvider
         while (status === 'IN_PROGRESS') {
           const { status_code } = await (
             await this.fetch(
-              `https://graph.facebook.com/v20.0/${photoId}?access_token=${accessToken}&fields=status_code`
+              `https://${type}/v20.0/${photoId}?access_token=${accessToken}&fields=status_code`
             )
           ).json();
           await timer(3000);
@@ -272,7 +276,7 @@ export class InstagramProvider
     if (medias.length === 1) {
       const { id: mediaId } = await (
         await this.fetch(
-          `https://graph.facebook.com/v20.0/${id}/media_publish?creation_id=${medias[0]}&access_token=${accessToken}&field=id`,
+          `https://${type}/v20.0/${id}/media_publish?creation_id=${medias[0]}&access_token=${accessToken}&field=id`,
           {
             method: 'POST',
           }
@@ -283,7 +287,7 @@ export class InstagramProvider
 
       const { permalink } = await (
         await this.fetch(
-          `https://graph.facebook.com/v20.0/${mediaId}?fields=permalink&access_token=${accessToken}`
+          `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${accessToken}`
         )
       ).json();
 
@@ -298,7 +302,7 @@ export class InstagramProvider
     } else {
       const { id: containerId, ...all3 } = await (
         await this.fetch(
-          `https://graph.facebook.com/v20.0/${id}/media?caption=${encodeURIComponent(
+          `https://${type}/v20.0/${id}/media?caption=${encodeURIComponent(
             firstPost?.message
           )}&media_type=CAROUSEL&children=${encodeURIComponent(
             medias.join(',')
@@ -313,7 +317,7 @@ export class InstagramProvider
       while (status === 'IN_PROGRESS') {
         const { status_code } = await (
           await this.fetch(
-            `https://graph.facebook.com/v20.0/${containerId}?fields=status_code&access_token=${accessToken}`
+            `https://${type}/v20.0/${containerId}?fields=status_code&access_token=${accessToken}`
           )
         ).json();
         await timer(3000);
@@ -322,7 +326,7 @@ export class InstagramProvider
 
       const { id: mediaId, ...all4 } = await (
         await this.fetch(
-          `https://graph.facebook.com/v20.0/${id}/media_publish?creation_id=${containerId}&access_token=${accessToken}&field=id`,
+          `https://${type}/v20.0/${id}/media_publish?creation_id=${containerId}&access_token=${accessToken}&field=id`,
           {
             method: 'POST',
           }
@@ -333,7 +337,7 @@ export class InstagramProvider
 
       const { permalink } = await (
         await this.fetch(
-          `https://graph.facebook.com/v20.0/${mediaId}?fields=permalink&access_token=${accessToken}`
+          `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${accessToken}`
         )
       ).json();
 
@@ -350,7 +354,7 @@ export class InstagramProvider
     for (const post of theRest) {
       const { id: commentId } = await (
         await this.fetch(
-          `https://graph.facebook.com/v20.0/${containerIdGlobal}/comments?message=${encodeURIComponent(
+          `https://${type}/v20.0/${containerIdGlobal}/comments?message=${encodeURIComponent(
             post.message
           )}&access_token=${accessToken}`,
           {
