@@ -738,7 +738,9 @@ export const AddEditModal: FC<{
                           : postFor
                           ? 'Submit for order'
                           : !existingData.integration
-                          ? 'Add to calendar'
+                          ? selectedIntegrations.length === 0
+                            ? `Select channels from the circles above`
+                            : 'Add to calendar'
                           : // @ts-ignore
                           existingData?.posts?.[0]?.state === 'DRAFT'
                           ? 'Schedule'
