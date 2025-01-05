@@ -1,7 +1,13 @@
 'use client';
 
 import React, {
-  FC, Fragment, memo, useCallback, useEffect, useMemo, useState
+  FC,
+  Fragment,
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
 } from 'react';
 import {
   CalendarContext,
@@ -442,7 +448,19 @@ export const CalendarColumn: FC<{
           children: (
             <ExistingData value={data}>
               <AddEditModal
-                {...(isDuplicate ? { onlyValues: data.posts } : {})}
+                {...(isDuplicate
+                  ? {
+                      onlyValues: data.posts.map(
+                        ({ image, settings, content }: any) => {
+                          return {
+                            image,
+                            settings,
+                            content,
+                          };
+                        }
+                      ),
+                    }
+                  : {})}
                 allIntegrations={integrations.map((p) => ({ ...p }))}
                 reopenModal={editPost(post)}
                 mutate={reloadCalendarView}
