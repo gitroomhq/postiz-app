@@ -37,7 +37,7 @@ export class AuthController {
     @UserAgent() userAgent: string
   ) {
     try {
-      if (process.env.DISABLE_SIGNUP === 'true') {
+      if (process.env.USER_REGISTRATION === 'true') {
         response.status(400).json({ error: 'Signup is disabled' });
         return;
       }
