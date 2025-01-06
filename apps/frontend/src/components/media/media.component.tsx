@@ -439,11 +439,21 @@ export const MultiMediaComponent: FC<{
   text: string;
   name: string;
   error?: any;
+  onOpen?: () => void;
+  onClose?: () => void;
   onChange: (event: {
     target: { name: string; value?: Array<{ id: string; path: string }> };
   }) => void;
 }> = (props) => {
-  const { name, label, error, text, description, onChange, value } = props;
+  const {
+    onOpen,
+    onClose,
+    name,
+    error,
+    text,
+    onChange,
+    value,
+  } = props;
   const user = useUser();
 
   useEffect(() => {
@@ -469,10 +479,16 @@ export const MultiMediaComponent: FC<{
   );
 
   const showModal = useCallback(() => {
+    if (!modal) {
+      onOpen?.();
+    } else {
+      onClose?.();
+    }
     setShowModal(!modal);
-  }, [modal]);
+  }, [modal, onOpen, onClose]);
 
   const closeDesignModal = useCallback(() => {
+    onClose?.();
     setMediaModal(false);
   }, [modal]);
 
@@ -486,6 +502,7 @@ export const MultiMediaComponent: FC<{
   );
 
   const designMedia = useCallback(() => {
+    onOpen?.();
     setMediaModal(true);
   }, []);
 
