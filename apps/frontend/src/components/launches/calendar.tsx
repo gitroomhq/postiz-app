@@ -15,7 +15,7 @@ import {
   useCalendar,
 } from '@gitroom/frontend/components/launches/calendar.context';
 import dayjs from 'dayjs';
-import { openModal, useModals } from '@mantine/modals';
+import { useModals } from '@mantine/modals';
 import { AddEditModal } from '@gitroom/frontend/components/launches/add.edit.model';
 import clsx from 'clsx';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
@@ -23,8 +23,6 @@ import { ExistingDataContextProvider } from '@gitroom/frontend/components/launch
 import { useDrag, useDrop } from 'react-dnd';
 import { Integration, Post, State } from '@prisma/client';
 import { useAddProvider } from '@gitroom/frontend/components/launches/add.provider.component';
-import { CommentComponent } from '@gitroom/frontend/components/launches/comments/comment.component';
-import { useSWRConfig } from 'swr';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { IntegrationContext } from '@gitroom/frontend/components/launches/helpers/use.integration';

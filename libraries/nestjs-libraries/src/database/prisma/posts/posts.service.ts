@@ -374,8 +374,8 @@ export class PostsService {
       active: boolean;
     }[] = Object.values(parsePlugs);
 
-    for (const trigger of list) {
-      for (const int of trigger.integrations) {
+    for (const trigger of list || []) {
+      for (const int of trigger?.integrations || []) {
         this._workerServiceProducer.emit('internal-plugs', {
           id: 'plug_' + id + '_' + trigger.name + '_' + int.id,
           options: {
