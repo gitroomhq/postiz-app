@@ -1,5 +1,7 @@
 export const allTwoLevelSubdomain = [
     ".net.ac",
+    ".ddns.net",
+    ".com.de",
     ".gov.ac",
     ".org.ac",
     ".mil.ac",
