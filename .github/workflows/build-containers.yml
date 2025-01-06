@@ -59,9 +59,6 @@ jobs:
           docker tag localhost/postiz-devcontainer ghcr.io/gitroomhq/postiz-devcontainer:${{ env.CONTAINERVER }}-${{ matrix.arch }}
           docker push ghcr.io/gitroomhq/postiz-devcontainer:${{ env.CONTAINERVER }}-${{ matrix.arch }}
 
-          docker tag ghcr.io/gitroomhq/postiz-devcontainer:${{ env.CONTAINERVER }} ghcr.io/gitroomhq/postiz-devcontainer:latest
-          docker push ghcr.io/gitroomhq/postiz-devcontainer:latest
-
   build-container-manifest:
     needs: [build-containers, build-containers-common]
     runs-on: ubuntu-latest
@@ -83,3 +80,10 @@ jobs:
             ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }}-amd64
 
           docker manifest push ghcr.io/gitroomhq/postiz-app:latest
+
+          docker manifest create \
+            ghcr.io/gitroomhq/postiz-devcontainer:latest \
+            ghcr.io/gitroomhq/postiz-devcontainer:${{ env.CONTAINERVER }}-arm64 \
+            ghcr.io/gitroomhq/postiz-devcontainer:${{ env.CONTAINERVER }}-amd64
+
+          docker manifest push ghcr.io/gitroomhq/postiz-devcontainer:latest
