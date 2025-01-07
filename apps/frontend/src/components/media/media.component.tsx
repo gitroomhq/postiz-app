@@ -75,8 +75,8 @@ export const Pagination: FC<{
             aria-current="page"
             onClick={() => setPage(page)}
             className={clsx(
-              'cursor-pointer inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border hover:bg-forth h-10 w-10 hover:text-white border-[#1F1F1F] text-white',
-              current === page && 'bg-forth'
+              'cursor-pointer inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border hover:bg-forth h-10 w-10 hover:text-white border-[#1F1F1F]',
+              current === page ? 'bg-forth !text-white' : 'text-textColor hover:text-white'
             )}
           >
             {page + 1}
@@ -89,7 +89,7 @@ export const Pagination: FC<{
         )}
       >
         <a
-          className="cursor-pointer inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-10 px-4 py-2 gap-1 pr-2.5 text-gray-400 hover:text-white border-[#1F1F1F] hover:bg-forth"
+          className="text-textColor hover:text-white group cursor-pointer inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-10 px-4 py-2 gap-1 pr-2.5 text-gray-400 border-[#1F1F1F] hover:bg-forth"
           aria-label="Go to next page"
           onClick={() => setPage(current + 1)}
         >
@@ -292,7 +292,7 @@ export const MediaBox: FC<{
   }, [data]);
 
   return (
-    <div className="fixed left-0 top-0 bg-primary/80 z-[300] w-full min-h-full p-4 md:p-[60px] animate-fade">
+    <div className="removeEditor fixed left-0 top-0 bg-primary/80 z-[300] w-full min-h-full p-4 md:p-[60px] animate-fade">
       <div className="max-w-[1000px] w-full h-full bg-sixth border-tableBorder border-2 rounded-xl relative mx-auto">
         <DropFiles onDrop={dragAndDrop}>
           <div className="pb-[20px] px-[20px] w-full h-full">
@@ -375,8 +375,10 @@ export const MediaBox: FC<{
               ) : (
                 <>
                   {selectedMedia.length > 0 && (
-                    <div className="flex justify-center absolute top-[7px]">
-                      <Button onClick={addMedia}>Add selected media</Button>
+                    <div className="flex justify-center absolute top-[7px] text-white">
+                      <Button onClick={addMedia} className="!text-white">
+                        <span className="!text-white">Add selected media</span>
+                      </Button>
                     </div>
                   )}
                 </>
@@ -403,7 +405,7 @@ export const MediaBox: FC<{
                   >
                     <div
                       onClick={removeItem(media)}
-                      className="border border-red-400 text-white flex justify-center items-center absolute w-[20px] h-[20px] rounded-full bg-red-700 -top-[5px] -right-[5px]"
+                      className="border border-red-400 !text-white flex justify-center items-center absolute w-[20px] h-[20px] rounded-full bg-red-700 -top-[5px] -right-[5px]"
                     >
                       X
                     </div>
@@ -445,15 +447,7 @@ export const MultiMediaComponent: FC<{
     target: { name: string; value?: Array<{ id: string; path: string }> };
   }) => void;
 }> = (props) => {
-  const {
-    onOpen,
-    onClose,
-    name,
-    error,
-    text,
-    onChange,
-    value,
-  } = props;
+  const { onOpen, onClose, name, error, text, onChange, value } = props;
   const user = useUser();
 
   useEffect(() => {
@@ -577,14 +571,14 @@ export const MultiMediaComponent: FC<{
                 <div className="cursor-pointer w-[40px] h-[40px] border-2 border-tableBorder relative flex">
                   <div
                     className="w-full h-full"
-                    onClick={() => window.open(mediaDirectory.set(media.path))}
+                    onClick={() => window.open(mediaDirectory.set(media?.path))}
                   >
-                    {media.path.indexOf('mp4') > -1 ? (
-                      <VideoFrame url={mediaDirectory.set(media.path)} />
+                    {media?.path?.indexOf('mp4') > -1 ? (
+                      <VideoFrame url={mediaDirectory.set(media?.path)} />
                     ) : (
                       <img
                         className="w-full h-full object-cover"
-                        src={mediaDirectory.set(media.path)}
+                        src={mediaDirectory.set(media?.path)}
                       />
                     )}
                   </div>

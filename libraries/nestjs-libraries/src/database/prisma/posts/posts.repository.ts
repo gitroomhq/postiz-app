@@ -51,6 +51,17 @@ export class PostsRepository {
     });
   }
 
+  updateImages(id: string, images: string) {
+    return this._post.model.post.update({
+      where: {
+        id,
+      },
+      data: {
+        image: images,
+      },
+    });
+  }
+
   getPostUrls(orgId: string, ids: string[]) {
     return this._post.model.post.findMany({
       where: {

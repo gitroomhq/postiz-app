@@ -19,6 +19,14 @@ export class MediaRepository {
     });
   }
 
+  getMediaById(id: string) {
+    return this._media.model.media.findUnique({
+      where: {
+        id,
+      },
+    });
+  }
+
   deleteMedia(org: string, id: string) {
     return this._media.model.media.update({
       where: {
