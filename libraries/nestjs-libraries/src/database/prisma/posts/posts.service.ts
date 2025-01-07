@@ -549,6 +549,7 @@ export class PostsService {
   }
 
   async createPost(orgId: string, body: CreatePostDto) {
+    const postList = [];
     for (const post of body.posts) {
       const { previousPost, posts } =
         await this._postRepository.createOrUpdatePost(
@@ -596,7 +597,14 @@ export class PostsService {
           },
         });
       }
+
+      postList.push({
+        postId: posts[0].id,
+        integration: post.integration.id,
+      })
     }
+
+    return postList;
   }
 
   async changeDate(orgId: string, id: string, date: string) {
