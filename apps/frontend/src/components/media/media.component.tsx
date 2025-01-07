@@ -577,14 +577,14 @@ export const MultiMediaComponent: FC<{
                 <div className="cursor-pointer w-[40px] h-[40px] border-2 border-tableBorder relative flex">
                   <div
                     className="w-full h-full"
-                    onClick={() => window.open(mediaDirectory.set(media.path))}
+                    onClick={() => window.open(mediaDirectory.set(media?.path))}
                   >
-                    {media.path.indexOf('mp4') > -1 ? (
-                      <VideoFrame url={mediaDirectory.set(media.path)} />
+                    {media?.path?.indexOf('mp4') > -1 ? (
+                      <VideoFrame url={mediaDirectory.set(media?.path)} />
                     ) : (
                       <img
                         className="w-full h-full object-cover"
-                        src={mediaDirectory.set(media.path)}
+                        src={mediaDirectory.set(media?.path)}
                       />
                     )}
                   </div>
