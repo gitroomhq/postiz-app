@@ -282,7 +282,7 @@ html {
   width: auto !important;
 }
 
-.editor * {
+.editor :not(.removeEditor *) {
   @apply text-textColor;
 }
 

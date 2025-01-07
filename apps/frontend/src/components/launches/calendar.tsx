@@ -561,7 +561,7 @@ export const CalendarColumn: FC<{
           ))}
           {!showAll && postList.length > 3 && (
             <div
-              className="text-center hover:underline py-[5px]"
+              className="text-center hover:underline py-[5px] text-textColor"
               onClick={showAllFunc}
             >
               + Show more ({postList.length - 3})
@@ -683,7 +683,7 @@ const CalendarItem: FC<{
       className={clsx('w-full flex h-full flex-1 flex-col group', 'relative')}
       style={{ opacity }}
     >
-      <div className="bg-forth text-[11px] h-[15px] w-full rounded-tr-[10px] rounded-tl-[10px] flex justify-center gap-[10px] px-[5px]">
+      <div className="text-primary bg-forth text-[11px] h-[15px] w-full rounded-tr-[10px] rounded-tl-[10px] flex justify-center gap-[10px] px-[5px]">
         <div
           className="hidden group-hover:block hover:underline cursor-pointer"
           onClick={duplicatePost}
