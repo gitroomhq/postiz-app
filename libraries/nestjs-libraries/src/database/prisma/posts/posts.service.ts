@@ -505,7 +505,10 @@ export class PostsService {
     const post = await this._postRepository.deletePost(orgId, group);
     if (post?.id) {
       await this._workerServiceProducer.delete('post', post.id);
+      return {id: post.id};
     }
+
+    return {error: true};
   }
 
   async countPostsFromDay(orgId: string, date: Date) {
