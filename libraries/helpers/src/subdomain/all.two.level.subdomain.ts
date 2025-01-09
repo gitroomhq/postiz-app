@@ -1,4 +1,5 @@
 export const allTwoLevelSubdomain = [
+    ".com.de",
     ".net.ac",
     ".ddns.net",
     ".tplinkdns.com",
