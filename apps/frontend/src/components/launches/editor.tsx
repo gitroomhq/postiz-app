@@ -50,8 +50,10 @@ export const Editor = forwardRef<
 
     const addText = useCallback(
       (emoji: string) => {
-        // @ts-ignore
-        Transforms.insertText(newRef?.current?.editor!, emoji);
+        setTimeout(() => {
+          // @ts-ignore
+          Transforms.insertText(newRef?.current?.editor!, emoji);
+        }, 10);
       },
       [props.value, id]
     );

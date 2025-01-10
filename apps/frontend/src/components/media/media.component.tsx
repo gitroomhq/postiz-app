@@ -1,6 +1,14 @@
 'use client';
 
-import { FC, useCallback, useEffect, useState } from 'react';
+import {
+  ClipboardEvent,
+  FC,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { Button } from '@gitroom/react/form/button';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
@@ -16,11 +24,95 @@ import { MultipartFileUploader } from '@gitroom/frontend/components/media/new.up
 import dynamic from 'next/dynamic';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { AiImage } from '@gitroom/frontend/components/launches/ai.image';
+import Image from 'next/image';
+import { DropFiles } from '@gitroom/frontend/components/layout/drop.files';
+import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
+
 const Polonto = dynamic(
   () => import('@gitroom/frontend/components/launches/polonto')
 );
 const showModalEmitter = new EventEmitter();
 
+export const Pagination: FC<{
+  current: number;
+  totalPages: number;
+  setPage: (num: number) => void;
+}> = (props) => {
+  const { current, totalPages, setPage } = props;
+
+  const totalPagesList = useMemo(() => {
+    return Array.from({ length: totalPages }, (_, i) => i);
+  }, [totalPages]);
+
+  return (
+    <ul className="flex flex-row items-center gap-1 justify-center mt-[15px]">
+      <li className={clsx(current === 0 && 'opacity-20 pointer-events-none')}>
+        <div
+          className="cursor-pointer inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-10 px-4 py-2 gap-1 pl-2.5 text-gray-400 hover:text-white border-[#1F1F1F] hover:bg-forth"
+          aria-label="Go to previous page"
+          onClick={() => setPage(current - 1)}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width={24}
+            height={24}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="lucide lucide-chevron-left h-4 w-4"
+          >
+            <path d="m15 18-6-6 6-6" />
+          </svg>
+          <span>Previous</span>
+        </div>
+      </li>
+      {totalPagesList.map((page) => (
+        <li key={page} className="">
+          <div
+            aria-current="page"
+            onClick={() => setPage(page)}
+            className={clsx(
+              'cursor-pointer inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border hover:bg-forth h-10 w-10 hover:text-white border-[#1F1F1F]',
+              current === page ? 'bg-forth !text-white' : 'text-textColor hover:text-white'
+            )}
+          >
+            {page + 1}
+          </div>
+        </li>
+      ))}
+      <li
+        className={clsx(
+          current + 1 === totalPages && 'opacity-20 pointer-events-none'
+        )}
+      >
+        <a
+          className="text-textColor hover:text-white group cursor-pointer inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-10 px-4 py-2 gap-1 pr-2.5 text-gray-400 border-[#1F1F1F] hover:bg-forth"
+          aria-label="Go to next page"
+          onClick={() => setPage(current + 1)}
+        >
+          <span>Next</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width={24}
+            height={24}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="lucide lucide-chevron-right h-4 w-4"
+          >
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        </a>
+      </li>
+    </ul>
+  );
+};
 export const ShowMediaBoxModal: FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [callBack, setCallBack] =
@@ -63,31 +155,132 @@ export const MediaBox: FC<{
   closeModal: () => void;
 }> = (props) => {
   const { setMedia, type, closeModal } = props;
-  const [pages, setPages] = useState(0);
   const [mediaList, setListMedia] = useState<Media[]>([]);
   const fetch = useFetch();
   const mediaDirectory = useMediaDirectory();
+  const [page, setPage] = useState(0);
+  const [pages, setPages] = useState(0);
 
-  const [loading, setLoading] = useState(false);
+  const [selectedMedia, setSelectedMedia] = useState<Media[]>([]);
+  const ref = useRef<any>(null);
 
   const loadMedia = useCallback(async () => {
-    return (await fetch('/media')).json();
-  }, []);
+    return (await fetch(`/media?page=${page + 1}`)).json();
+  }, [page]);
 
   const setNewMedia = useCallback(
     (media: Media) => () => {
-      setMedia(media);
-      closeModal();
+      setSelectedMedia(
+        selectedMedia.find((p) => p.id === media.id)
+          ? selectedMedia.filter((f) => f.id !== media.id)
+          : [...selectedMedia.map((p) => ({ ...p })), { ...media }]
+      );
+      // closeModal();
     },
-    []
+    [selectedMedia]
   );
 
-  const { data, mutate } = useSWR('get-media', loadMedia);
+  const removeMedia = useCallback(
+    (media: Media) => () => {
+      setSelectedMedia(selectedMedia.filter((f) => f.id !== media.id));
+      setListMedia(mediaList.filter((f) => f.id !== media.id));
+    },
+    [selectedMedia]
+  );
+
+  const addNewMedia = useCallback(
+    (media: Media[]) => () => {
+      setSelectedMedia((currentMedia) => [...currentMedia, ...media]);
+      // closeModal();
+    },
+    [selectedMedia]
+  );
+
+  const addMedia = useCallback(async () => {
+    // @ts-ignore
+    setMedia(selectedMedia);
+    closeModal();
+  }, [selectedMedia]);
+
+  const { data, mutate } = useSWR(`get-media-${page}`, loadMedia);
 
   const finishUpload = useCallback(async () => {
+    const lastMedia = mediaList?.[0]?.id;
     const newData = await mutate();
-    setNewMedia(newData.results[0])();
-  }, [mutate, setNewMedia]);
+    const untilLastMedia = newData.results.findIndex(
+      (f: any) => f.id === lastMedia
+    );
+    const onlyNewMedia = newData.results.slice(
+      0,
+      untilLastMedia === -1 ? newData.results.length : untilLastMedia
+    );
+
+    addNewMedia(onlyNewMedia)();
+  }, [mutate, addNewMedia, mediaList, selectedMedia]);
+
+  const dragAndDrop = useCallback(
+    async (event: ClipboardEvent<HTMLDivElement> | File[]) => {
+      // @ts-ignore
+      const clipboardItems = event.map((p) => ({
+        kind: 'file',
+        getAsFile: () => p,
+      }));
+
+      if (!clipboardItems) {
+        return;
+      }
+
+      const files: File[] = [];
+
+      // @ts-ignore
+      for (const item of clipboardItems) {
+        if (item.kind === 'file') {
+          const file = item.getAsFile();
+          if (file) {
+            const isImage = file.type.startsWith('image/');
+            const isVideo = file.type.startsWith('video/');
+            if (isImage || isVideo) {
+              files.push(file); // Collect images or videos
+            }
+          }
+        }
+      }
+      if (files.length === 0) {
+        return;
+      }
+
+      ref.current.setOptions({
+        autoProceed: false,
+      });
+      for (const file of files) {
+        ref.current.addFile(file);
+        await ref.current.upload();
+        ref.current.clear();
+      }
+      ref.current.setOptions({
+        autoProceed: true,
+      });
+
+      finishUpload();
+    },
+    [mutate, addNewMedia, mediaList, selectedMedia]
+  );
+
+  const removeItem = useCallback(
+    (media: Media) => async (e: any) => {
+      e.stopPropagation();
+      if (!(await deleteDialog('Are you sure you want to delete the image?'))) {
+        return;
+      }
+
+      await fetch(`/media/${media.id}`, {
+        method: 'DELETE',
+      });
+
+      mutate();
+    },
+    [mutate]
+  );
 
   useEffect(() => {
     if (data?.pages) {
@@ -99,111 +292,143 @@ export const MediaBox: FC<{
   }, [data]);
 
   return (
-    <div className="fixed left-0 top-0 bg-primary/80 z-[300] w-full min-h-full p-4 md:p-[60px] animate-fade">
-      <div className="max-w-[1000px] w-full h-full bg-sixth border-tableBorder border-2 rounded-xl pb-[20px] px-[20px] relative mx-auto">
-        <div className="flex flex-col">
-          <div className="flex-1">
-            <TopTitle title="Media Library" />
-          </div>
-          <button
-            onClick={closeModal}
-            className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root bg-primary hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
-            type="button"
-          >
-            <svg
-              viewBox="0 0 15 15"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-            >
-              <path
-                d="M11.7816 4.03157C12.0062 3.80702 12.0062 3.44295 11.7816 3.2184C11.5571 2.99385 11.193 2.99385 10.9685 3.2184L7.50005 6.68682L4.03164 3.2184C3.80708 2.99385 3.44301 2.99385 3.21846 3.2184C2.99391 3.44295 2.99391 3.80702 3.21846 4.03157L6.68688 7.49999L3.21846 10.9684C2.99391 11.193 2.99391 11.557 3.21846 11.7816C3.44301 12.0061 3.80708 12.0061 4.03164 11.7816L7.50005 8.31316L10.9685 11.7816C11.193 12.0061 11.5571 12.0061 11.7816 11.7816C12.0062 11.557 12.0062 11.193 11.7816 10.9684L8.31322 7.49999L11.7816 4.03157Z"
-                fill="currentColor"
-                fillRule="evenodd"
-                clipRule="evenodd"
-              ></path>
-            </svg>
-          </button>
-
-          {!!mediaList.length && (
-            <button
-              className="flex absolute right-[40px] top-[7px] pointer hover:bg-third rounded-lg transition-all group px-2.5 py-2.5 text-sm font-semibold bg-transparent text-gray-800 hover:bg-gray-100 focus:text-primary-500"
-              type="button"
-            >
-              <div className="relative flex gap-2 items-center justify-center">
-                <MultipartFileUploader
-                  onUploadSuccess={finishUpload}
-                  allowedFileTypes={
-                    type === 'video'
-                      ? 'video/mp4'
-                      : type === 'image'
-                      ? 'image/*'
-                      : 'image/*,video/mp4'
-                  }
-                />
+    <div className="removeEditor fixed left-0 top-0 bg-primary/80 z-[300] w-full min-h-full p-4 md:p-[60px] animate-fade">
+      <div className="max-w-[1000px] w-full h-full bg-sixth border-tableBorder border-2 rounded-xl relative mx-auto">
+        <DropFiles onDrop={dragAndDrop}>
+          <div className="pb-[20px] px-[20px] w-full h-full">
+            <div className="flex flex-col">
+              <div className="flex-1">
+                <TopTitle title="Media Library" />
               </div>
-            </button>
-          )}
-        </div>
-        <div
-          className={clsx(
-            'flex flex-wrap gap-[10px] mt-[35px] pt-[20px]',
-            !!mediaList.length && 'justify-center items-center text-textColor'
-          )}
-        >
-          {!mediaList.length && (
-            <div className="flex flex-col text-center items-center justify-center mx-auto">
-              <div>You don{"'"}t have any assets yet.</div>
-              <div>Click the button below to upload one</div>
-              <div className="mt-[10px] justify-center items-center flex flex-col-reverse gap-[10px]">
-                <MultipartFileUploader
-                  onUploadSuccess={finishUpload}
-                  allowedFileTypes={
-                    type === 'video'
-                      ? 'video/mp4'
-                      : type === 'image'
-                      ? 'image/*'
-                      : 'image/*,video/mp4'
-                  }
-                />
-              </div>
-            </div>
-          )}
-          {mediaList
-            .filter((f) => {
-              if (type === 'video') {
-                return f.path.indexOf('mp4') > -1;
-              } else if (type === 'image') {
-                return f.path.indexOf('mp4') === -1;
-              }
-              return true;
-            })
-            .map((media) => (
-              <div
-                key={media.id}
-                className="w-[120px] h-[120px] flex border-tableBorder border-2 cursor-pointer"
-                onClick={setNewMedia(media)}
+              <button
+                onClick={closeModal}
+                className="outline-none z-[300] absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root bg-primary hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+                type="button"
               >
-                {media.path.indexOf('mp4') > -1 ? (
-                  <VideoFrame url={mediaDirectory.set(media.path)} />
-                ) : (
-                  <img
-                    className="w-full h-full object-cover"
-                    src={mediaDirectory.set(media.path)}
-                    alt="media"
-                  />
-                )}
+                <svg
+                  viewBox="0 0 15 15"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                >
+                  <path
+                    d="M11.7816 4.03157C12.0062 3.80702 12.0062 3.44295 11.7816 3.2184C11.5571 2.99385 11.193 2.99385 10.9685 3.2184L7.50005 6.68682L4.03164 3.2184C3.80708 2.99385 3.44301 2.99385 3.21846 3.2184C2.99391 3.44295 2.99391 3.80702 3.21846 4.03157L6.68688 7.49999L3.21846 10.9684C2.99391 11.193 2.99391 11.557 3.21846 11.7816C3.44301 12.0061 3.80708 12.0061 4.03164 11.7816L7.50005 8.31316L10.9685 11.7816C11.193 12.0061 11.5571 12.0061 11.7816 11.7816C12.0062 11.557 12.0062 11.193 11.7816 10.9684L8.31322 7.49999L11.7816 4.03157Z"
+                    fill="currentColor"
+                    fillRule="evenodd"
+                    clipRule="evenodd"
+                  ></path>
+                </svg>
+              </button>
+
+              <div className="absolute flex justify-center mt-[55px] items-center pointer-events-none text-center h-[57px] w-full left-0 rounded-lg transition-all group text-sm font-semibold bg-transparent text-gray-800 hover:bg-gray-100 focus:text-primary-500">
+                Select or upload pictures (maximum 5 at a time)
+                <br />
+                You can also drag & drop pictures
               </div>
-            ))}
-          {loading && (
-            <div className="w-[200px] h-[200px] flex border-tableBorder border-2 cursor-pointer relative">
-              <div className="absolute left-0 top-0 w-full h-full -mt-[50px] flex justify-center items-center">
-                <LoadingComponent />
-              </div>
+
+              {!!mediaList.length && (
+                <>
+                  <div className="flex absolute h-[57px] w-full left-0 top-0 rounded-lg transition-all group text-sm font-semibold bg-transparent text-gray-800 hover:bg-gray-100 focus:text-primary-500">
+                    <div className="relative flex flex-1 pr-[45px] gap-2 items-center justify-center">
+                      <div className="flex-1" />
+                      <MultipartFileUploader
+                        uppRef={ref}
+                        onUploadSuccess={finishUpload}
+                        allowedFileTypes={
+                          type === 'video'
+                            ? 'video/mp4'
+                            : type === 'image'
+                            ? 'image/*'
+                            : 'image/*,video/mp4'
+                        }
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
-          )}
-        </div>
+            <div
+              className={clsx(
+                'flex flex-wrap gap-[10px] mt-[35px] pt-[20px]',
+                !!mediaList.length &&
+                  'justify-center items-center text-textColor'
+              )}
+            >
+              {!mediaList.length ? (
+                <div className="flex flex-col text-center items-center justify-center mx-auto">
+                  <div>You don{"'"}t have any assets yet.</div>
+                  <div>Click the button below to upload one</div>
+                  <div className="mt-[10px] justify-center items-center flex flex-col-reverse gap-[10px]">
+                    <MultipartFileUploader
+                      onUploadSuccess={finishUpload}
+                      allowedFileTypes={
+                        type === 'video'
+                          ? 'video/mp4'
+                          : type === 'image'
+                          ? 'image/*'
+                          : 'image/*,video/mp4'
+                      }
+                    />
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {selectedMedia.length > 0 && (
+                    <div className="flex justify-center absolute top-[7px] text-white">
+                      <Button onClick={addMedia} className="!text-white">
+                        <span className="!text-white">Add selected media</span>
+                      </Button>
+                    </div>
+                  )}
+                </>
+              )}
+              {mediaList
+                .filter((f) => {
+                  if (type === 'video') {
+                    return f.path.indexOf('mp4') > -1;
+                  } else if (type === 'image') {
+                    return f.path.indexOf('mp4') === -1;
+                  }
+                  return true;
+                })
+                .map((media) => (
+                  <div
+                    key={media.id}
+                    className={clsx(
+                      'w-[120px] h-[120px] flex select-none relative cursor-pointer',
+                      selectedMedia.find((p) => p.id === media.id)
+                        ? 'border-4 border-forth'
+                        : 'border-tableBorder border-2'
+                    )}
+                    onClick={setNewMedia(media)}
+                  >
+                    <div
+                      onClick={removeItem(media)}
+                      className="border border-red-400 !text-white flex justify-center items-center absolute w-[20px] h-[20px] rounded-full bg-red-700 -top-[5px] -right-[5px]"
+                    >
+                      X
+                    </div>
+
+                    {media.path.indexOf('mp4') > -1 ? (
+                      <VideoFrame url={mediaDirectory.set(media.path)} />
+                    ) : (
+                      <Image
+                        width={120}
+                        height={120}
+                        className="w-full h-full object-cover"
+                        src={mediaDirectory.set(media.path)}
+                        alt="media"
+                      />
+                    )}
+                  </div>
+                ))}
+            </div>
+            {(pages || 0) > 1 && (
+              <Pagination current={page} totalPages={pages} setPage={setPage} />
+            )}
+          </div>
+        </DropFiles>
       </div>
     </div>
   );
@@ -216,11 +441,13 @@ export const MultiMediaComponent: FC<{
   text: string;
   name: string;
   error?: any;
+  onOpen?: () => void;
+  onClose?: () => void;
   onChange: (event: {
     target: { name: string; value?: Array<{ id: string; path: string }> };
   }) => void;
 }> = (props) => {
-  const { name, label, error, text, description, onChange, value } = props;
+  const { onOpen, onClose, name, error, text, onChange, value } = props;
   const user = useUser();
 
   useEffect(() => {
@@ -236,8 +463,9 @@ export const MultiMediaComponent: FC<{
   const mediaDirectory = useMediaDirectory();
 
   const changeMedia = useCallback(
-    (m: { path: string; id: string }) => {
-      const newMedia = [...(currentMedia || []), m];
+    (m: { path: string; id: string } | { path: string; id: string }[]) => {
+      const mediaArray = Array.isArray(m) ? m : [m];
+      const newMedia = [...(currentMedia || []), ...mediaArray];
       setCurrentMedia(newMedia);
       onChange({ target: { name, value: newMedia } });
     },
@@ -245,10 +473,16 @@ export const MultiMediaComponent: FC<{
   );
 
   const showModal = useCallback(() => {
+    if (!modal) {
+      onOpen?.();
+    } else {
+      onClose?.();
+    }
     setShowModal(!modal);
-  }, [modal]);
+  }, [modal, onOpen, onClose]);
 
   const closeDesignModal = useCallback(() => {
+    onClose?.();
     setMediaModal(false);
   }, [modal]);
 
@@ -262,12 +496,13 @@ export const MultiMediaComponent: FC<{
   );
 
   const designMedia = useCallback(() => {
+    onOpen?.();
     setMediaModal(true);
   }, []);
 
   return (
     <>
-      <div className="flex flex-col gap-[8px] bg-input rounded-bl-[8px]">
+      <div className="flex flex-col gap-[8px] bg-input rounded-bl-[8px] select-none">
         {modal && <MediaBox setMedia={changeMedia} closeModal={showModal} />}
         {mediaModal && !!user?.tier?.ai && (
           <Polonto setMedia={changeMedia} closeModal={closeDesignModal} />
@@ -326,10 +561,7 @@ export const MultiMediaComponent: FC<{
             </Button>
 
             {!!user?.tier?.ai && (
-              <AiImage
-                value={text}
-                onChange={changeMedia}
-              />
+              <AiImage value={text} onChange={changeMedia} />
             )}
           </div>
 
@@ -338,14 +570,15 @@ export const MultiMediaComponent: FC<{
               <>
                 <div className="cursor-pointer w-[40px] h-[40px] border-2 border-tableBorder relative flex">
                   <div
-                    onClick={() => window.open(mediaDirectory.set(media.path))}
+                    className="w-full h-full"
+                    onClick={() => window.open(mediaDirectory.set(media?.path))}
                   >
-                    {media.path.indexOf('mp4') > -1 ? (
-                      <VideoFrame url={mediaDirectory.set(media.path)} />
+                    {media?.path?.indexOf('mp4') > -1 ? (
+                      <VideoFrame url={mediaDirectory.set(media?.path)} />
                     ) : (
                       <img
                         className="w-full h-full object-cover"
-                        src={mediaDirectory.set(media.path)}
+                        src={mediaDirectory.set(media?.path)}
                       />
                     )}
                   </div>

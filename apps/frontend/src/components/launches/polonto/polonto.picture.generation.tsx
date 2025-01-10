@@ -11,15 +11,20 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { Button } from '@gitroom/react/form/button';
 import { useToaster } from '@gitroom/react/toaster/toaster';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 
 const GenerateTab = observer(({ store }: any) => {
   const inputRef = React.useRef<any>(null);
   const [image, setImage] = React.useState(null);
   const [loading, setLoading] = React.useState(false);
+  const {billingEnabled} = useVariables();
   const fetch = useFetch();
   const toast = useToaster();
 
   const loadCredits = useCallback(async () => {
+    if (!billingEnabled) {
+      return {credits: 1000};
+    }
     return (
       await fetch(`/copilot/credits`, {
         method: 'GET',

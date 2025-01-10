@@ -20,6 +20,7 @@ import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/cl
 import { timer } from '@gitroom/helpers/utils/timer';
 import { AuthTokenDetails } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import utc from 'dayjs/plugin/utc';
+import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 dayjs.extend(utc);
 
 type PostWithConditionals = Post & {
@@ -36,7 +37,8 @@ export class PostsService {
     private _notificationService: NotificationService,
     private _messagesService: MessagesService,
     private _stripeService: StripeService,
-    private _integrationService: IntegrationService
+    private _integrationService: IntegrationService,
+    private _mediaService: MediaService
   ) {}
 
   async getPostsRecursively(
@@ -73,18 +75,63 @@ export class PostsService {
     return this._postRepository.getPosts(orgId, query);
   }
 
+  async updateMedia(id: string, imagesList: any[]) {
+    let imageUpdateNeeded = false;
+    const getImageList = (
+      await Promise.all(
+        imagesList.map(async (p: any) => {
+          if (!p.path && p.id) {
+            imageUpdateNeeded = true;
+            return this._mediaService.getMediaById(p.id);
+          }
+
+          return p;
+        })
+      )
+    ).map((m) => {
+      return {
+        ...m,
+        url:
+          m.path.indexOf('http') === -1
+            ? process.env.FRONTEND_URL +
+              '/' +
+              process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
+              m.path
+            : m.path,
+        type: 'image',
+        path:
+          m.path.indexOf('http') === -1
+            ? process.env.UPLOAD_DIRECTORY + m.path
+            : m.path,
+      };
+    });
+
+    if (imageUpdateNeeded) {
+      await this._postRepository.updateImages(id, JSON.stringify(getImageList));
+    }
+
+    return getImageList;
+  }
+
   async getPost(orgId: string, id: string) {
     const posts = await this.getPostsRecursively(id, true, orgId, true);
-    return {
+    const list = {
       group: posts?.[0]?.group,
-      posts: posts.map((post) => ({
-        ...post,
-        image: JSON.parse(post.image || '[]'),
-      })),
+      posts: await Promise.all(
+        posts.map(async (post) => ({
+          ...post,
+          image: await this.updateMedia(
+            post.id,
+            JSON.parse(post.image || '[]')
+          ),
+        }))
+      ),
       integrationPicture: posts[0]?.integration?.picture,
       integration: posts[0].integrationId,
       settings: JSON.parse(posts[0].settings || '{}'),
     };
+
+    return list;
   }
 
   async getOldPosts(orgId: string, date: string) {
@@ -280,25 +327,14 @@ export class PostsService {
       const publishedPosts = await getIntegration.post(
         integration.internalId,
         integration.token,
-        newPosts.map((p) => ({
-          id: p.id,
-          message: p.content,
-          settings: JSON.parse(p.settings || '{}'),
-          media: (JSON.parse(p.image || '[]') as Media[]).map((m) => ({
-            url:
-              m.path.indexOf('http') === -1
-                ? process.env.FRONTEND_URL +
-                  '/' +
-                  process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
-                  m.path
-                : m.path,
-            type: 'image',
-            path:
-              m.path.indexOf('http') === -1
-                ? process.env.UPLOAD_DIRECTORY + m.path
-                : m.path,
-          })),
-        })),
+        await Promise.all(
+          newPosts.map(async (p) => ({
+            id: p.id,
+            message: p.content,
+            settings: JSON.parse(p.settings || '{}'),
+            media: await this.updateMedia(p.id, JSON.parse(p.image || '[]')),
+          }))
+        ),
         integration
       );
 
@@ -374,8 +410,8 @@ export class PostsService {
       active: boolean;
     }[] = Object.values(parsePlugs);
 
-    for (const trigger of list) {
-      for (const int of trigger.integrations) {
+    for (const trigger of list || []) {
+      for (const int of trigger?.integrations || []) {
         this._workerServiceProducer.emit('internal-plugs', {
           id: 'plug_' + id + '_' + trigger.name + '_' + int.id,
           options: {
@@ -469,7 +505,10 @@ export class PostsService {
     const post = await this._postRepository.deletePost(orgId, group);
     if (post?.id) {
       await this._workerServiceProducer.delete('post', post.id);
+      return {id: post.id};
     }
+
+    return {error: true};
   }
 
   async countPostsFromDay(orgId: string, date: Date) {
@@ -513,6 +552,7 @@ export class PostsService {
   }
 
   async createPost(orgId: string, body: CreatePostDto) {
+    const postList = [];
     for (const post of body.posts) {
       const { previousPost, posts } =
         await this._postRepository.createOrUpdatePost(
@@ -560,7 +600,14 @@ export class PostsService {
           },
         });
       }
+
+      postList.push({
+        postId: posts[0].id,
+        integration: post.integration.id,
+      })
     }
+
+    return postList;
   }
 
   async changeDate(orgId: string, id: string, date: string) {
@@ -802,7 +849,12 @@ export class PostsService {
     return this._postRepository.getComments(postId);
   }
 
-  createComment(orgId: string, userId: string, postId: string, comment: string) {
+  createComment(
+    orgId: string,
+    userId: string,
+    postId: string,
+    comment: string
+  ) {
     return this._postRepository.createComment(orgId, userId, postId, comment);
   }
 }

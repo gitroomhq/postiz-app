@@ -316,7 +316,7 @@ export const PickPlatforms: FC<{
                               height={15}
                             />
                           </div>
-                          <div>{integration.name}</div>
+                          <div>{integration.name.slice(0, 10)}{integration.name.length > 10 ? '...' : ''}</div>
                         </div>
                       </div>
                     </div>

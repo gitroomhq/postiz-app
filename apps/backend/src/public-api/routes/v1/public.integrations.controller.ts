@@ -1,12 +1,5 @@
 import {
-  Body,
-  Controller,
-  Get,
-  HttpException,
-  Post,
-  Query,
-  UploadedFile,
-  UseInterceptors,
+  Body, Controller, Delete, Get, HttpException, Param, Post, Query, UploadedFile, UseInterceptors
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
@@ -74,6 +67,15 @@ export class PublicIntegrationsController {
   ) {
     console.log(JSON.stringify(body, null, 2));
     return this._postsService.createPost(org.id, body);
+  }
+
+  @Delete('/posts/:id')
+  async deletePost(
+    @GetOrgFromRequest() org: Organization,
+    @Param() body: { id: string }
+  ) {
+    const getPostById = await this._postsService.getPost(org.id, body.id);
+    return this._postsService.deletePost(org.id, getPostById.group);
   }
 
   @Get('/integrations')

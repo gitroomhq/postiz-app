@@ -173,6 +173,7 @@ model Media {
   updatedAt      DateTime     @updatedAt
   userPicture    User[]
   agencies       SocialMediaAgency[]
+  deletedAt      DateTime?
 
   @@index([organizationId])
 }

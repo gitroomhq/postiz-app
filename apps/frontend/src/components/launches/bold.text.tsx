@@ -67,20 +67,24 @@ const originalMap = {
   '0': '𝟬',
 };
 
+const reverseMap = Object.fromEntries(
+  Object.entries(originalMap).map(([key, value]) => [value, key])
+);
+
 export const BoldText: FC<{ editor: any; currentValue: string }> = ({
   editor,
 }) => {
   const mark = () => {
     const selectedText = Editor.string(editor, editor.selection);
 
-    const newText = (
+    const newText = Array.from(
       !selectedText ? prompt('What do you want to write?') || '' : selectedText
     )
-      .split('')
-      // @ts-ignore
-      .map((char) => originalMap?.[char] || char)
+      .map((char) => {
+        // @ts-ignore
+        return originalMap?.[char] || reverseMap?.[char] || char;
+      })
       .join('');
-
 
     Transforms.insertText(editor, newText);
     ReactEditor.focus(editor);

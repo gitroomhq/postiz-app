@@ -1,7 +1,13 @@
 'use client';
 
 import React, {
-  FC, Fragment, memo, useCallback, useEffect, useMemo, useState
+  FC,
+  Fragment,
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
 } from 'react';
 import {
   CalendarContext,
@@ -9,7 +15,7 @@ import {
   useCalendar,
 } from '@gitroom/frontend/components/launches/calendar.context';
 import dayjs from 'dayjs';
-import { openModal, useModals } from '@mantine/modals';
+import { useModals } from '@mantine/modals';
 import { AddEditModal } from '@gitroom/frontend/components/launches/add.edit.model';
 import clsx from 'clsx';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
@@ -17,8 +23,6 @@ import { ExistingDataContextProvider } from '@gitroom/frontend/components/launch
 import { useDrag, useDrop } from 'react-dnd';
 import { Integration, Post, State } from '@prisma/client';
 import { useAddProvider } from '@gitroom/frontend/components/launches/add.provider.component';
-import { CommentComponent } from '@gitroom/frontend/components/launches/comments/comment.component';
-import { useSWRConfig } from 'swr';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { IntegrationContext } from '@gitroom/frontend/components/launches/helpers/use.integration';
@@ -442,7 +446,19 @@ export const CalendarColumn: FC<{
           children: (
             <ExistingData value={data}>
               <AddEditModal
-                {...(isDuplicate ? { onlyValues: data.posts } : {})}
+                {...(isDuplicate
+                  ? {
+                      onlyValues: data.posts.map(
+                        ({ image, settings, content }: any) => {
+                          return {
+                            image,
+                            settings,
+                            content,
+                          };
+                        }
+                      ),
+                    }
+                  : {})}
                 allIntegrations={integrations.map((p) => ({ ...p }))}
                 reopenModal={editPost(post)}
                 mutate={reloadCalendarView}
@@ -545,7 +561,7 @@ export const CalendarColumn: FC<{
           ))}
           {!showAll && postList.length > 3 && (
             <div
-              className="text-center hover:underline py-[5px]"
+              className="text-center hover:underline py-[5px] text-textColor"
               onClick={showAllFunc}
             >
               + Show more ({postList.length - 3})
@@ -667,7 +683,7 @@ const CalendarItem: FC<{
       className={clsx('w-full flex h-full flex-1 flex-col group', 'relative')}
       style={{ opacity }}
     >
-      <div className="bg-forth text-[11px] h-[15px] w-full rounded-tr-[10px] rounded-tl-[10px] flex justify-center gap-[10px] px-[5px]">
+      <div className="text-primary bg-forth text-[11px] h-[15px] w-full rounded-tr-[10px] rounded-tl-[10px] flex justify-center gap-[10px] px-[5px]">
         <div
           className="hidden group-hover:block hover:underline cursor-pointer"
           onClick={duplicatePost}

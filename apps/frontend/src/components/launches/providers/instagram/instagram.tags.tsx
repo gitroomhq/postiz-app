@@ -2,6 +2,8 @@ import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { ReactTags } from 'react-tag-autocomplete';
 import interClass from '@gitroom/react/helpers/inter.font';
+import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
+import clsx from 'clsx';
 
 export const InstagramCollaboratorsTags: FC<{
   name: string;
@@ -10,6 +12,7 @@ export const InstagramCollaboratorsTags: FC<{
 }> = (props) => {
   const { onChange, name, label } = props;
   const { getValues } = useSettings();
+  const { integration } = useIntegration();
   const [tagValue, setTagValue] = useState<any[]>([]);
   const [suggestions, setSuggestions] = useState<string>('');
 
@@ -42,20 +45,38 @@ export const InstagramCollaboratorsTags: FC<{
   }, []);
 
   const suggestionsArray = useMemo(() => {
-    return [...tagValue, { label: suggestions, value: suggestions }].filter(f => f.label);
+    return [...tagValue, { label: suggestions, value: suggestions }].filter(
+      (f) => f.label
+    );
   }, [suggestions, tagValue]);
 
   return (
-    <div>
-      <div className={`${interClass} text-[14px] mb-[6px]`}>{label}</div>
-      <ReactTags
-        placeholderText="Add a tag"
-        suggestions={suggestionsArray}
-        selected={tagValue}
-        onAdd={onAddition}
-        onInput={setSuggestions}
-        onDelete={onDelete}
-      />
+    <div
+      {...(integration?.identifier === 'instagram-standalone'
+        ? {
+            'data-tooltip-id': 'tooltip',
+            'data-tooltip-content': 'Instagram Standalone does not support collaborators',
+          }
+        : {})}
+    >
+      <div
+        className={clsx(
+          integration?.identifier === 'instagram-standalone' &&
+            'opacity-50 pointer-events-none'
+        )}
+      >
+        <div className={clsx(`${interClass} text-[14px] mb-[6px]`)}>
+          {label}
+        </div>
+        <ReactTags
+          placeholderText="Add a tag"
+          suggestions={suggestionsArray}
+          selected={tagValue}
+          onAdd={onAddition}
+          onInput={setSuggestions}
+          onDelete={onDelete}
+        />
+      </div>
     </div>
   );
 };

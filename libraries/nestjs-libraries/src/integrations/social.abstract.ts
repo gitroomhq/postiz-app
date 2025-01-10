@@ -23,7 +23,8 @@ export abstract class SocialAbstract {
   async fetch(
     url: string,
     options: RequestInit = {},
-    identifier = ''
+    identifier = '',
+    totalRetries = 0
   ): Promise<Response> {
     const request = await fetch(url, options);
 
@@ -53,6 +54,11 @@ export abstract class SocialAbstract {
         !json.includes('REVOKED_ACCESS_TOKEN'))
     ) {
       throw new RefreshToken(identifier, json, options.body!);
+    }
+
+    if (totalRetries < 2) {
+      await timer(2000);
+      return this.fetch(url, options, identifier, totalRetries + 1);
     }
 
     throw new BadBody(identifier, json, options.body!);

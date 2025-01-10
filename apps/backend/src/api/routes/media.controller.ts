@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -31,6 +32,10 @@ export class MediaController {
     private _subscriptionService: SubscriptionService
   ) {}
 
+  @Delete('/:id')
+  deleteMedia(@GetOrgFromRequest() org: Organization, @Param('id') id: string) {
+    return this._mediaService.deleteMedia(org.id, id);
+  }
   @Post('/generate-image')
   async generateImage(
     @GetOrgFromRequest() org: Organization,
@@ -39,7 +44,7 @@ export class MediaController {
     isPicturePrompt = false
   ) {
     const total = await this._subscriptionService.checkCredits(org);
-    if (total.credits <= 0) {
+    if (process.env.STRIPE_PUBLISHABLE_KEY && total.credits <= 0) {
       return false;
     }
 
@@ -96,15 +101,11 @@ export class MediaController {
   }
 
   @Post('/:endpoint')
-  // @UseInterceptors(FileInterceptor('file'))
-  // @UsePipes(new CustomFileValidationPipe())
   async uploadFile(
     @GetOrgFromRequest() org: Organization,
     @Req() req: Request,
     @Res() res: Response,
     @Param('endpoint') endpoint: string
-    // @UploadedFile('file')
-    // file: Express.Multer.File
   ) {
     const upload = await handleR2Upload(endpoint, req, res);
     if (endpoint !== 'complete-multipart-upload') {
@@ -122,11 +123,6 @@ export class MediaController {
     );
 
     res.status(200).json({ ...upload, saved: saveFile });
-    // const filePath =
-    //   file.path.indexOf('http') === 0
-    //     ? file.path
-    //     : file.path.replace(process.env.UPLOAD_DIRECTORY, '');
-    // return this._mediaService.saveFile(org.id, file.originalname, filePath);
   }
 
   @Get('/')

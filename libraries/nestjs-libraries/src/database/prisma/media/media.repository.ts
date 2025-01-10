@@ -19,6 +19,26 @@ export class MediaRepository {
     });
   }
 
+  getMediaById(id: string) {
+    return this._media.model.media.findUnique({
+      where: {
+        id,
+      },
+    });
+  }
+
+  deleteMedia(org: string, id: string) {
+    return this._media.model.media.update({
+      where: {
+        id,
+        organizationId: org,
+      },
+      data: {
+        deletedAt: new Date(),
+      }
+    });
+  }
+
   async getMedia(org: string, page: number) {
     const pageNum = (page || 1) - 1;
     const query = {
@@ -30,19 +50,18 @@ export class MediaRepository {
     };
     const pages =
       pageNum === 0
-        ? Math.ceil((await this._media.model.media.count(query)) / 10)
+        ? Math.ceil((await this._media.model.media.count(query)) / 28)
         : 0;
     const results = await this._media.model.media.findMany({
       where: {
-        organization: {
-          id: org,
-        },
+        organizationId: org,
+        deletedAt: null,
       },
       orderBy: {
         createdAt: 'desc',
-      }
-      // skip: pageNum * 10,
-      // take: 10,
+      },
+      skip: pageNum * 28,
+      take: 28,
     });
 
     return {

@@ -86,6 +86,7 @@ export const AddEditModal: FC<{
   const [customer, setCustomer] = useState('');
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [canUseClose, setCanUseClose] = useState(true);
 
   // selected integrations to allow edit
   const [selectedIntegrations, setSelectedIntegrations] = useStateCallback<
@@ -251,6 +252,10 @@ export const AddEditModal: FC<{
 
   // override the close modal to ask the user if he is sure to close
   const askClose = useCallback(async () => {
+    if (!canUseClose) {
+      return;
+    }
+
     if (
       await deleteDialog(
         'Are you sure you want to close this modal? (all data will be lost)',
@@ -259,7 +264,7 @@ export const AddEditModal: FC<{
     ) {
       modal.closeAll();
     }
-  }, []);
+  }, [canUseClose]);
 
   // sometimes it's easier to click escape to close
   useKeypress('Escape', askClose);
@@ -644,6 +649,8 @@ export const AddEditModal: FC<{
                                 value={p.image}
                                 name="image"
                                 onChange={changeImage(index)}
+                                onOpen={() => setCanUseClose(false)}
+                                onClose={() => setCanUseClose(true)}
                               />
                             </div>
                             <div className="flex bg-customColor20 rounded-br-[8px] text-customColor19">
@@ -738,7 +745,9 @@ export const AddEditModal: FC<{
                           : postFor
                           ? 'Submit for order'
                           : !existingData.integration
-                          ? 'Add to calendar'
+                          ? selectedIntegrations.length === 0
+                            ? `Select channels from the circles above`
+                            : 'Add to calendar'
                           : // @ts-ignore
                           existingData?.posts?.[0]?.state === 'DRAFT'
                           ? 'Schedule'

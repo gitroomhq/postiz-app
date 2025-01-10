@@ -29,6 +29,7 @@ export const Providers = [
     {identifier: 'hashnode', component: HashnodeProvider},
     {identifier: 'facebook', component: FacebookProvider},
     {identifier: 'instagram', component: InstagramProvider},
+    {identifier: 'instagram-standalone', component: InstagramProvider},
     {identifier: 'youtube', component: YoutubeProvider},
     {identifier: 'tiktok', component: TiktokProvider},
     {identifier: 'pinterest', component: PinterestProvider},
