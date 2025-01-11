@@ -44,7 +44,7 @@ export class IntegrationsController {
     private _integrationManager: IntegrationManager,
     private _integrationService: IntegrationService,
     private _postService: PostsService
-  ) {}
+  ) { }
   @Get('/')
   getIntegration() {
     return this._integrationManager.getAllIntegrations();
@@ -147,18 +147,18 @@ export class IntegrationsController {
 
     const { url } = manager.changeProfilePicture
       ? await manager.changeProfilePicture(
-          integration.internalId,
-          integration.token,
-          body.picture
-        )
+        integration.internalId,
+        integration.token,
+        body.picture
+      )
       : { url: '' };
 
     const { name } = manager.changeNickname
       ? await manager.changeNickname(
-          integration.internalId,
-          integration.token,
-          body.name
-        )
+        integration.internalId,
+        integration.token,
+        body.name
+      )
       : { name: '' };
 
     return this._integrationService.updateNameAndUrl(id, name, url);
@@ -204,9 +204,9 @@ export class IntegrationsController {
     try {
       const getExternalUrl = integrationProvider.externalUrl
         ? {
-            ...(await integrationProvider.externalUrl(externalUrl)),
-            instanceUrl: externalUrl,
-          }
+          ...(await integrationProvider.externalUrl(externalUrl)),
+          instanceUrl: externalUrl,
+        }
         : undefined;
 
       const { codeVerifier, state, url } =
@@ -506,10 +506,10 @@ export class IntegrationsController {
       details
         ? AuthService.fixedEncryption(details)
         : integrationProvider.customFields
-        ? AuthService.fixedEncryption(
+          ? AuthService.fixedEncryption(
             Buffer.from(body.code, 'base64').toString()
           )
-        : undefined
+          : undefined
     );
   }
 
@@ -608,5 +608,29 @@ export class IntegrationsController {
     @Body('status') status: boolean
   ) {
     return this._integrationService.changePlugActivation(org.id, id, status);
+  }
+
+  @Post('/deploy')
+  async deployToEnvironment(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: { environment: string }
+  ) {
+    // Add logic to automate deployment to various environments
+    return this._integrationService.deployToEnvironment(org.id, body.environment);
+  }
+
+  @Get('/monitor-performance')
+  async monitorSystemPerformance(@GetOrgFromRequest() org: Organization) {
+    // Add logic to monitor system performance and identify potential issues
+    return this._integrationService.monitorSystemPerformance(org.id);
+  }
+
+  @Post('/bug-fix')
+  async automateBugFixes(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: { feedback: string }
+  ) {
+    // Add logic to automate bug fixes and updates based on user feedback and system logs
+    return this._integrationService.automateBugFixes(org.id, body.feedback);
   }
 }

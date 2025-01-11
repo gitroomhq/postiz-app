@@ -27,6 +27,9 @@ import { CreateGeneratedPostsDto } from '@gitroom/nestjs-libraries/dtos/generato
 import { AgentGraphService } from '@gitroom/nestjs-libraries/agent/agent.graph.service';
 import { Response } from 'express';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
+import { CodeGenerationService } from '@gitroom/backend/services/code-generation/code-generation.service';
+import { TestingService } from '@gitroom/backend/services/testing/testing.service';
+import { CICDService } from '@gitroom/backend/services/cicd/cicd.service';
 
 @ApiTags('Posts')
 @Controller('/posts')
@@ -35,7 +38,10 @@ export class PostsController {
     private _postsService: PostsService,
     private _starsService: StarsService,
     private _messagesService: MessagesService,
-    private _agentGraphService: AgentGraphService
+    private _agentGraphService: AgentGraphService,
+    private _codeGenerationService: CodeGenerationService,
+    private _testingService: TestingService,
+    private _cicdService: CICDService
   ) {}
 
   @Get('/marketplace/:id?')
@@ -136,6 +142,34 @@ export class PostsController {
     }
 
     res.end();
+  }
+
+  @Post('/code-generation')
+  async generateCode(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: { userStoryId: string }
+  ) {
+    return this._codeGenerationService.generateCode(org.id, body.userStoryId);
+  }
+
+  @Post('/testing/unit')
+  async runUnitTests(@GetOrgFromRequest() org: Organization) {
+    return this._testingService.runUnitTests(org.id);
+  }
+
+  @Post('/testing/integration')
+  async runIntegrationTests(@GetOrgFromRequest() org: Organization) {
+    return this._testingService.runIntegrationTests(org.id);
+  }
+
+  @Post('/testing/e2e')
+  async runE2ETests(@GetOrgFromRequest() org: Organization) {
+    return this._testingService.runE2ETests(org.id);
+  }
+
+  @Post('/cicd/pipeline')
+  async triggerCICDPipeline(@GetOrgFromRequest() org: Organization) {
+    return this._cicdService.triggerPipeline(org.id);
   }
 
   @Delete('/:group')
