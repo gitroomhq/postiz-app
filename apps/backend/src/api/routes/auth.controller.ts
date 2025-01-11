@@ -20,13 +20,15 @@ import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.man
 import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 import { RealIP } from 'nestjs-real-ip';
 import { UserAgent } from '@gitroom/nestjs-libraries/user/user.agent';
+import { ProjectManagementService } from '@gitroom/backend/services/project-management/project-management.service';
 
 @ApiTags('Auth')
 @Controller('/auth')
 export class AuthController {
   constructor(
     private _authService: AuthService,
-    private _emailService: EmailService
+    private _emailService: EmailService,
+    private _projectManagementService: ProjectManagementService
   ) {}
   @Post('/register')
   async register(
@@ -206,5 +208,85 @@ export class AuthController {
     response.status(200).json({
       login: true,
     });
+  }
+
+  @Post('/project-management/create-roadmap')
+  async createRoadmap(
+    @Body() body: { title: string; description: string },
+    @Res() response: Response
+  ) {
+    try {
+      const roadmap = await this._projectManagementService.createRoadmap(
+        body.title,
+        body.description
+      );
+      response.status(201).json(roadmap);
+    } catch (e) {
+      response.status(400).send(e.message);
+    }
+  }
+
+  @Post('/project-management/create-user-story')
+  async createUserStory(
+    @Body() body: { roadmapId: string; title: string; description: string },
+    @Res() response: Response
+  ) {
+    try {
+      const userStory = await this._projectManagementService.createUserStory(
+        body.roadmapId,
+        body.title,
+        body.description
+      );
+      response.status(201).json(userStory);
+    } catch (e) {
+      response.status(400).send(e.message);
+    }
+  }
+
+  @Post('/project-management/create-task')
+  async createTask(
+    @Body() body: { userStoryId: string; title: string; description: string },
+    @Res() response: Response
+  ) {
+    try {
+      const task = await this._projectManagementService.createTask(
+        body.userStoryId,
+        body.title,
+        body.description
+      );
+      response.status(201).json(task);
+    } catch (e) {
+      response.status(400).send(e.message);
+    }
+  }
+
+  @Get('/project-management/track-progress')
+  async trackProgress(@Res() response: Response) {
+    try {
+      const progress = await this._projectManagementService.trackProgress();
+      response.status(200).json(progress);
+    } catch (e) {
+      response.status(400).send(e.message);
+    }
+  }
+
+  @Get('/project-management/estimate-timelines')
+  async estimateTimelines(@Res() response: Response) {
+    try {
+      const timelines = await this._projectManagementService.estimateTimelines();
+      response.status(200).json(timelines);
+    } catch (e) {
+      response.status(400).send(e.message);
+    }
+  }
+
+  @Get('/project-management/identify-roadblocks')
+  async identifyRoadblocks(@Res() response: Response) {
+    try {
+      const roadblocks = await this._projectManagementService.identifyRoadblocks();
+      response.status(200).json(roadblocks);
+    } catch (e) {
+      response.status(400).send(e.message);
+    }
   }
 }

@@ -48,6 +48,41 @@ services:
     networks:
       - postiz-network
     restart: always
+  postiz-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      target: devcontainer
+    container_name: postiz-backend
+    restart: always
+    environment:
+      DATABASE_URL: "postgresql://postiz-local:postiz-local-pwd@postiz-postgres:5432/postiz-db-local"
+      REDIS_URL: "redis://postiz-redis:6379"
+      JWT_SECRET: "random string for your JWT secret, make it long"
+      FRONTEND_URL: "http://localhost:4200"
+      NEXT_PUBLIC_BACKEND_URL: "http://localhost:3000"
+      BACKEND_INTERNAL_URL: "http://localhost:3000"
+    volumes:
+      - ./apps/backend:/app
+    ports:
+      - 3000:3000
+    networks:
+      - postiz-network
+  postiz-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      target: devcontainer
+    container_name: postiz-frontend
+    restart: always
+    environment:
+      NEXT_PUBLIC_BACKEND_URL: "http://localhost:3000"
+    volumes:
+      - ./apps/frontend:/app
+    ports:
+      - 4200:4200
+    networks:
+      - postiz-network
 
 volumes:
   redisinsight:
