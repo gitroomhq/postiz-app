@@ -94,8 +94,8 @@
 ## Quick Start
 To have the project up and running, please follow the [Quick Start Guide](https://docs.postiz.com/quickstart)
 
-##
-
+## Postiz on Pumpfun!
+https://pump.fun/coin/DMsTbeCfX1crgAse5tver98KAMarPWeP3d6U3Gmmpump
 
 # License
 
