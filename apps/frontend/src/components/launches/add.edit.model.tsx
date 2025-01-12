@@ -1,14 +1,12 @@
 'use client';
 
 import React, {
-  ClipboardEventHandler,
   FC,
   Fragment,
   MouseEventHandler,
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   ClipboardEvent,
   useState,
   memo,
@@ -363,12 +361,33 @@ export const AddEditModal: FC<{
         }
       }
 
+      const shortLinkUrl = await (
+        await fetch('/posts/should-shortlink', {
+          method: 'POST',
+          body: JSON.stringify({
+            messages: allKeys.flatMap((p) =>
+              p.value.flatMap((a) =>
+                a.content.slice(0, p.maximumCharacters || 1000000)
+              )
+            ),
+          }),
+        })
+      ).json();
+
+      const shortLink = !shortLinkUrl.ask
+        ? false
+        : await deleteDialog(
+            'Do you want to shortlink the URLs? it will let you get statistics over clicks',
+            'Yes, shortlink it!'
+          );
+
       setLoading(true);
       await fetch('/posts', {
         method: 'POST',
         body: JSON.stringify({
           ...(postFor ? { order: postFor.id } : {}),
           type,
+          shortLink,
           date: dateState.utc().format('YYYY-MM-DDTHH:mm:ss'),
           posts: allKeys.map((p) => ({
             ...p,

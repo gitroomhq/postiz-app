@@ -21,6 +21,7 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import { AuthTokenDetails } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import utc from 'dayjs/plugin/utc';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
+import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.link.service';
 dayjs.extend(utc);
 
 type PostWithConditionals = Post & {
@@ -38,8 +39,19 @@ export class PostsService {
     private _messagesService: MessagesService,
     private _stripeService: StripeService,
     private _integrationService: IntegrationService,
-    private _mediaService: MediaService
+    private _mediaService: MediaService,
+    private _shortLinkService: ShortLinkService
   ) {}
+
+  async getStatistics(orgId: string, id: string) {
+    const getPost = await this.getPostsRecursively(id, true, orgId, true);
+    const content = getPost.map((p) => p.content);
+    const shortLinksTracking = await this._shortLinkService.getStatistics(content);
+
+    return {
+      clicks: shortLinksTracking
+    }
+  }
 
   async getPostsRecursively(
     id: string,
@@ -554,6 +566,14 @@ export class PostsService {
   async createPost(orgId: string, body: CreatePostDto) {
     const postList = [];
     for (const post of body.posts) {
+      const messages = post.value.map(p => p.content);
+      const updateContent = !body.shortLink ? messages : await this._shortLinkService.convertTextToShortLinks(orgId, messages);
+
+      post.value = post.value.map((p, i) => ({
+        ...p,
+        content: updateContent[i],
+      }));
+
       const { previousPost, posts } =
         await this._postRepository.createOrUpdatePost(
           body.type,
@@ -757,6 +777,7 @@ export class PostsService {
           type: 'draft',
           date: randomDate,
           order: '',
+          shortLink: false,
           posts: [
             {
               group,

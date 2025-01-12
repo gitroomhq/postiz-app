@@ -27,6 +27,7 @@ import { CreateGeneratedPostsDto } from '@gitroom/nestjs-libraries/dtos/generato
 import { AgentGraphService } from '@gitroom/nestjs-libraries/agent/agent.graph.service';
 import { Response } from 'express';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
+import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.link.service';
 
 @ApiTags('Posts')
 @Controller('/posts')
@@ -35,8 +36,22 @@ export class PostsController {
     private _postsService: PostsService,
     private _starsService: StarsService,
     private _messagesService: MessagesService,
-    private _agentGraphService: AgentGraphService
+    private _agentGraphService: AgentGraphService,
+    private _shortLinkService: ShortLinkService
   ) {}
+
+  @Get('/:id/statistics')
+  async getStatistics(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string
+  ) {
+    return this._postsService.getStatistics(org.id, id);
+  }
+
+  @Post('/should-shortlink')
+  async shouldShortlink(@Body() body: { messages: string[] }) {
+    return { ask: this._shortLinkService.askShortLinkedin(body.messages) };
+  }
 
   @Get('/marketplace/:id?')
   async getMarketplacePosts(
@@ -61,26 +76,16 @@ export class PostsController {
     @GetOrgFromRequest() org: Organization,
     @Query() query: GetPostsDto
   ) {
-    const [posts] = await Promise.all([
-      this._postsService.getPosts(org.id, query),
-      // this._commentsService.getAllCommentsByWeekYear(
-      //   org.id,
-      //   query.year,
-      //   query.week
-      // ),
-    ]);
+    const posts = await this._postsService.getPosts(org.id, query);
 
     return {
       posts,
-      // comments,
     };
   }
 
   @Get('/find-slot')
-  async findSlot(
-    @GetOrgFromRequest() org: Organization,
-  ) {
-    return {date: await this._postsService.findFreeDateTime(org.id)}
+  async findSlot(@GetOrgFromRequest() org: Organization) {
+    return { date: await this._postsService.findFreeDateTime(org.id) };
   }
 
   @Get('/predict-trending')
@@ -128,10 +133,7 @@ export class PostsController {
     @Res({ passthrough: false }) res: Response
   ) {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    for await (const event of this._agentGraphService.start(
-      org.id,
-      body,
-    )) {
+    for await (const event of this._agentGraphService.start(org.id, body)) {
       res.write(JSON.stringify(event) + '\n');
     }
 
