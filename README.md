@@ -55,11 +55,13 @@
   <br/>
     <a href="https://platform.postiz.com">Register</a>
     ·
-    <a href="https://discord.postiz.com">Join Our Discord</a>
+    <a href="https://discord.postiz.com">Join Our Discord (devs only)</a>
     ·
     <a href="https://twitter.com/nevodavid">X</a>
     ·
     <a href="https://gitroom.com">Gitroom</a>
+    ·
+    <a href="https://git.sn/telegram">Telegram (Crypto)</a>
   </p>
 
 <br />
