@@ -57,7 +57,7 @@
     ·
     <a href="https://discord.postiz.com">Join Our Discord (devs only)</a>
     ·
-    <a href="https://twitter.com/nevodavid">X</a>
+    <a href="https://twitter.com/getpostiz">X</a>
     ·
     <a href="https://gitroom.com">Gitroom</a>
     ·
