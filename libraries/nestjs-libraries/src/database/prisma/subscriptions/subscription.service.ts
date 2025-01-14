@@ -13,7 +13,7 @@ export class SubscriptionService {
   constructor(
     private readonly _subscriptionRepository: SubscriptionRepository,
     private readonly _integrationService: IntegrationService,
-    private readonly _organizationService: OrganizationService,
+    private readonly _organizationService: OrganizationService
   ) {}
 
   getSubscriptionByOrganizationId(organizationId: string) {
@@ -186,6 +186,19 @@ export class SubscriptionService {
     return {
       credits: imageGenerationCount - totalUse,
     };
+  }
+
+  async lifeTime(orgId: string, identifier: string, subscription: any) {
+    return this.createOrUpdateSubscription(
+      identifier,
+      identifier,
+      pricing[subscription].channel!,
+      subscription,
+      'YEARLY',
+      null,
+      identifier,
+      orgId
+    );
   }
 
   async addSubscription(orgId: string, userId: string, subscription: any) {

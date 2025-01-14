@@ -10,6 +10,7 @@ import { Request, Response } from 'express';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
 import { AgentGraphInsertService } from '@gitroom/nestjs-libraries/agent/agent.graph.insert.service';
+import { Nowpayments } from '@gitroom/nestjs-libraries/crypto/nowpayments';
 
 @ApiTags('Public')
 @Controller('/public')
@@ -18,7 +19,8 @@ export class PublicController {
     private _agenciesService: AgenciesService,
     private _trackService: TrackService,
     private _agentGraphInsertService: AgentGraphInsertService,
-    private _postsService: PostsService
+    private _postsService: PostsService,
+    private _nowpayments: Nowpayments
   ) {}
   @Post('/agent')
   async createAgent(@Body() body: { text: string; apiKey: string }) {
@@ -119,5 +121,14 @@ export class PublicController {
     res.status(200).json({
       track: uniqueId,
     });
+  }
+
+  @Post('/crypto/:path')
+  async cryptoPost(
+    @Body() body: any,
+    @Param('path') path: string
+  ) {
+    console.log('cryptoPost', body, path);
+    return this._nowpayments.processPayment(path, body);
   }
 }

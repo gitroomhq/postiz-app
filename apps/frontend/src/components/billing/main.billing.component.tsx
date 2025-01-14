@@ -26,6 +26,7 @@ import { useUtmUrl } from '@gitroom/helpers/utils/utm.saver';
 import { useTolt } from '@gitroom/frontend/components/layout/tolt.script';
 import { useTrack } from '@gitroom/react/helpers/use.track';
 import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
+import { PurchaseCrypto } from '@gitroom/frontend/components/billing/purchase.crypto';
 
 export interface Tiers {
   month: Array<{
@@ -502,6 +503,7 @@ export const MainBillingComponent: FC<{
             </div>
           ))}
       </div>
+      <PurchaseCrypto />
       {!!subscription?.id && (
         <div className="flex justify-center mt-[20px] gap-[10px]">
           <Button onClick={updatePayment}>Update Payment Method</Button>
