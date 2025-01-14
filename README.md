@@ -101,7 +101,7 @@ https://pump.fun/coin/DMsTbeCfX1crgAse5tver98KAMarPWeP3d6U3Gmmpump
 
 # License
 
-This repository's source code is available under the [Apache 2.0 License](LICENSE).
+This repository's source code is available under the [AGPL-3.0 license](LICENSE).
 
 <br /><br /><br />
 
