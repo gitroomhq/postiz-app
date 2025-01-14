@@ -32,8 +32,8 @@ export class Nowpayments {
     }
 
     if (
-      decrypt.payment_status !== 'confirmed' &&
-      decrypt.payment_status !== 'finished'
+      body.payment_status !== 'confirmed' &&
+      body.payment_status !== 'finished'
     ) {
       return;
     }
