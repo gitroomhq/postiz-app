@@ -566,6 +566,7 @@ enum Provider {
   GITHUB
   GOOGLE
   FARCASTER
+  AUTHENTIK
 }
 
 enum Role {
