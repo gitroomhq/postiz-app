@@ -5,9 +5,10 @@ import { createContext, FC, ReactNode, useContext, useEffect } from 'react';
 interface VariableContextInterface {
   billingEnabled: boolean;
   isGeneral: boolean;
+  authentikOIDC: boolean;
   frontEndUrl: string;
   plontoKey: string;
-  storageProvider: 'local' | 'cloudflare',
+  storageProvider: 'local' | 'cloudflare';
   backendUrl: string;
   discordUrl: string;
   uploadDirectory: string;
@@ -20,6 +21,7 @@ interface VariableContextInterface {
 const VariableContext = createContext({
   billingEnabled: false,
   isGeneral: true,
+  authentikOIDC: false,
   frontEndUrl: '',
   storageProvider: 'local',
   plontoKey: '',
@@ -52,9 +54,9 @@ export const VariableContextComponent: FC<
 
 export const useVariables = () => {
   return useContext(VariableContext);
-}
+};
 
 export const loadVars = () => {
   // @ts-ignore
   return window.vars as VariableContextInterface;
-}
+};
