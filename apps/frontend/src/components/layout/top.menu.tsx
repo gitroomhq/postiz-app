@@ -79,6 +79,9 @@ export const TopMenu: FC = () => {
             if (f.requireBilling && !billingEnabled) {
               return false;
             }
+            if (f.name === 'Billing' && user?.isLifetime) {
+              return false;
+            }
             if (f.role) {
               return f.role.includes(user?.role!);
             }

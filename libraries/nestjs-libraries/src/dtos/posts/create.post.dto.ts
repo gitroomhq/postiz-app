@@ -1,5 +1,5 @@
 import {
-  ArrayMinSize, IsArray, IsDateString, IsDefined, IsIn, IsOptional, IsString, MinLength, ValidateIf, ValidateNested
+  ArrayMinSize, IsArray, IsBoolean, IsDateString, IsDefined, IsIn, IsOptional, IsString, MinLength, ValidateIf, ValidateNested
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { DevToSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dev.to.settings.dto';
@@ -88,6 +88,10 @@ export class CreatePostDto {
   @IsOptional()
   @IsString()
   order: string;
+
+  @IsDefined()
+  @IsBoolean()
+  shortLink: boolean;
 
   @IsDefined()
   @IsDateString()

@@ -26,6 +26,8 @@ import { AgenciesController } from '@gitroom/backend/api/routes/agencies.control
 import { PublicController } from '@gitroom/backend/api/routes/public.controller';
 import { RootController } from '@gitroom/backend/api/routes/root.controller';
 import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
+import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.link.service';
+import { Nowpayments } from '@gitroom/nestjs-libraries/crypto/nowpayments';
 
 const authenticatedController = [
   UsersController,
@@ -63,6 +65,8 @@ const authenticatedController = [
     CodesService,
     IntegrationManager,
     TrackService,
+    ShortLinkService,
+    Nowpayments,
   ],
   get exports() {
     return [...this.imports, ...this.providers];

@@ -28,6 +28,7 @@ import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { AgenciesService } from '@gitroom/nestjs-libraries/database/prisma/agencies/agencies.service';
 import { AgenciesRepository } from '@gitroom/nestjs-libraries/database/prisma/agencies/agencies.repository';
 import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
+import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.link.service';
 
 @Global()
 @Module({
@@ -64,6 +65,7 @@ import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
     OpenaiService,
     EmailService,
     TrackService,
+    ShortLinkService,
   ],
   get exports() {
     return this.providers;
