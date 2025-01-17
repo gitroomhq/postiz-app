@@ -34,7 +34,7 @@ export class AuthService {
           throw new Error('User already exists');
         }
 
-        if (process.env.USER_REGISTRATION === 'true') {
+        if (process.env.DISABLE_REGISTRATION === 'true') {
           throw new Error('Signup is disabled');
         }
 
@@ -136,7 +136,7 @@ export class AuthService {
       return user;
     }
 
-    if (process.env.USER_REGISTRATION === 'true') {
+    if (process.env.DISABLE_REGISTRATION === 'true') {
       throw new Error('Signup is disabled');
     }
 

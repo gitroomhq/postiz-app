@@ -26,6 +26,7 @@ export class ConfigurationChecker {
   check () {
     this.checkDatabaseServers()
     this.checkNonEmpty('JWT_SECRET')
+    this.checkNonEmpty('DISABLE_REGISTRATION', 'Set to true to disable signup')
     this.checkIsValidUrl('MAIN_URL')
     this.checkIsValidUrl('FRONTEND_URL')
     this.checkIsValidUrl('NEXT_PUBLIC_BACKEND_URL')
