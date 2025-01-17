@@ -10,5 +10,5 @@
     "src/**/*.test.ts",
     "src/**/*.spec.ts",
     "src/**/*.d.ts"
-  ]
+, "src/services/auth/permissions/permissions.guard.spec.ts"  ]
 }
