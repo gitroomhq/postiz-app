@@ -3,7 +3,7 @@ import 'multer';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import mime from 'mime-types';
 // @ts-ignore
-import {getExtension} from 'mime';
+import { getExtension } from 'mime';
 import { IUploadProvider } from './upload.interface';
 import axios from 'axios';
 
@@ -26,11 +26,41 @@ class CloudflareStorage implements IUploadProvider {
         secretAccessKey: secretKey,
       },
     });
+
+    this._client.middlewareStack.add(
+      (next) =>
+        async (args): Promise<any> => {
+          const request = args.request as RequestInit;
+
+          // Remove checksum headers
+          const headers = request.headers as Record<string, string>;
+          delete headers['x-amz-checksum-crc32'];
+          delete headers['x-amz-checksum-crc32c'];
+          delete headers['x-amz-checksum-sha1'];
+          delete headers['x-amz-checksum-sha256'];
+          request.headers = headers;
+
+          Object.entries(request.headers).forEach(
+            // @ts-ignore
+            ([key, value]: [string, string]): void => {
+              if (!request.headers) {
+                request.headers = {};
+              }
+              (request.headers as Record<string, string>)[key] = value;
+            }
+          );
+
+          return next(args);
+        },
+      { step: 'build', name: 'customHeaders' }
+    );
   }
 
   async uploadSimple(path: string) {
     const loadImage = await axios.get(path, { responseType: 'arraybuffer' });
-    const contentType = loadImage?.headers?.['content-type'] || loadImage?.headers?.['Content-Type'];
+    const contentType =
+      loadImage?.headers?.['content-type'] ||
+      loadImage?.headers?.['Content-Type'];
     const extension = getExtension(contentType)!;
     const id = makeId(10);
 
