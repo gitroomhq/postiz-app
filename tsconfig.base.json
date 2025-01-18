@@ -30,5 +30,11 @@
       "@gitroom/workers/*": ["apps/workers/src/*"],
     }
   },
-  "exclude": ["node_modules", "tmp"]
+  "exclude": ["node_modules", "tmp"],
+  "include": [
+    "tests/**/*.spec.ts", 
+    "tests/**/*.test.ts",
+    "libs/**/*.ts",
+    "apps/**/*.ts"
+  ]
 }
