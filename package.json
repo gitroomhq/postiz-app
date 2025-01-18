@@ -29,7 +29,8 @@
     "prisma-reset": "cd ./libraries/nestjs-libraries/src/database/prisma && npx prisma db push --force-reset && npx prisma db push",
     "docker-build": "./var/docker/docker-build.sh",
     "docker-create": "./var/docker/docker-create.sh",
-    "postinstall": "npm run update-plugins && npm run prisma-generate"
+    "postinstall": "npm run update-plugins && npm run prisma-generate",
+    "test": "jest --coverage"
   },
   "private": true,
   "dependencies": {
