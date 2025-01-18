@@ -21,7 +21,7 @@ export class FarcasterProvider
   implements SocialProvider
 {
   identifier = 'wrapcast';
-  name = 'Wrapcast';
+  name = 'Warpcast';
   isBetweenSteps = false;
   isWeb3 = true;
   scopes = [];
