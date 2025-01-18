@@ -31,7 +31,7 @@ class CloudflareStorage implements IUploadProvider {
   async uploadSimple(path: string) {
     const loadImage = await axios.get(path, { responseType: 'arraybuffer' });
     const contentType = loadImage?.headers?.['content-type'] || loadImage?.headers?.['Content-Type'];
-    const extension = getExtension(contentType)!;
+    const extension = getExtension(contentType || 'image/png')!;
     const id = makeId(10);
 
     const params = {
@@ -39,6 +39,7 @@ class CloudflareStorage implements IUploadProvider {
       Key: `${id}.${extension}`,
       Body: loadImage.data,
       ContentType: contentType,
+      ChecksumMode: 'DISABLED'
     };
 
     const command = new PutObjectCommand({ ...params });
