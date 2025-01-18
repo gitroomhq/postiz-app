@@ -6,7 +6,7 @@ import { PermissionsService } from './permissions.service';
 import { AuthorizationActions, Sections } from './permissions.service';
 import { Period, SubscriptionTier } from '@prisma/client';
 
-// Mock dos serviços dependentes
+// Mock of dependent services
 const mockSubscriptionService = mock<SubscriptionService>();
 const mockPostsService = mock<PostsService>();
 const mockIntegrationService = mock<IntegrationService>();
@@ -14,7 +14,7 @@ const mockIntegrationService = mock<IntegrationService>();
 describe('PermissionsService', () => {
   let service: PermissionsService;
 
-  // Configuração inicial antes de cada teste
+  // Initial setup before each test
   beforeEach(() => {
     process.env.STRIPE_PUBLISHABLE_KEY = 'mock_stripe_key';
     service = new PermissionsService(
@@ -24,7 +24,7 @@ describe('PermissionsService', () => {
     );
   });
 
-  // Mocks reutilizáveis para `getPackageOptions`
+  // Reusable mocks for `getPackageOptions`
   const baseSubscription = {
     id: 'mock-id',
     organizationId: 'mock-org-id',
@@ -95,59 +95,59 @@ describe('PermissionsService', () => {
   };
 
   describe('check()', () => {
-    describe('Bypass de verificação (64)', () => {
+    describe('Verification Bypass (64)', () => {
 
-      it('CT1 - Bypass por Lista Vazia', async () => {
-        // Configuração: STRIPE_PUBLISHABLE_KEY existe e requestedPermission está vazia
+      it('Bypass for Empty List', async () => {
+        // Setup: STRIPE_PUBLISHABLE_KEY exists and requestedPermission is empty
 
-        // Execução: chamada do método check com lista vazia de permissões
+        // Execution: call the check method with an empty list of permissions
         const result = await service.check(
           'mock-org-id',
           new Date(),
           'ADMIN',
-          [] // requestedPermission vazia
+          [] // empty requestedPermission
         );
 
-        // Verificação: não foi solicitado, não tem autorização
+        // Verification: not requested, no authorization
         expect(result.cannot(AuthorizationActions.Create, Sections.CHANNEL)).toBe(true);
       });
 
-      it('CT2 - Bypass por Stripe Ausente', async () => {
-        // Configuração: STRIPE_PUBLISHABLE_KEY não existe
+      it('Bypass for Missing Stripe', async () => {
+        // Setup: STRIPE_PUBLISHABLE_KEY does not exist
         process.env.STRIPE_PUBLISHABLE_KEY = undefined;
-        // Mock necessário para evitar o erro de filter undefined
+        // Necessary mock to avoid undefined filter error
         jest.spyOn(mockIntegrationService, 'getIntegrationsList').mockResolvedValue([
           { ...baseIntegration, refreshNeeded: false }
         ]);
-        // Mock do getPackageOptions (mesmo que não seja usado devido ao bypass)
+        // Mock of getPackageOptions (even if not used due to bypass)
         jest.spyOn(service, 'getPackageOptions').mockResolvedValue({
           subscription: baseSubscription,
           options: baseOptions,
         });
-        // Lista com permissões solicitadas
+        // List of requested permissions
         const requestedPermissions: Array<[AuthorizationActions, Sections]> = [
           [AuthorizationActions.Read, Sections.CHANNEL],
           [AuthorizationActions.Create, Sections.AI]
         ];
-        // Execução: chamada do método check
+        // Execution: call the check method
         const result = await service.check(
           'mock-org-id',
           new Date(),
           'USER',
           requestedPermissions
         );
-        // Verificação: deve permitir todas as ações solicitadas devido à ausência da chave Stripe
+        // Verification: should allow all requested actions due to the absence of the Stripe key
         expect(result.can(AuthorizationActions.Read, Sections.CHANNEL)).toBe(true);
         expect(result.can(AuthorizationActions.Create, Sections.AI)).toBe(true);
       });
 
-      it('CT3 - Sem Bypass', async () => {
-        // Lista com permissões solicitadas
+      it('No Bypass', async () => {
+        // List of requested permissions
         const requestedPermissions: Array<[AuthorizationActions, Sections]> = [
           [AuthorizationActions.Read, Sections.CHANNEL],
           [AuthorizationActions.Create, Sections.AI]
         ];
-        // Mock do getPackageOptions para forçar um cenário sem permissões
+        // Mock of getPackageOptions to force a scenario without permissions
         jest.spyOn(service, 'getPackageOptions').mockResolvedValue({
           subscription: { ...baseSubscription, totalChannels: 0 },
           options: {
@@ -156,241 +156,242 @@ describe('PermissionsService', () => {
             ai: false
           },
         });
-        // Mock do getIntegrationsList para o cenário de canais
+        // Mock of getIntegrationsList for the channel scenario
         jest.spyOn(mockIntegrationService, 'getIntegrationsList').mockResolvedValue([
           { ...baseIntegration, refreshNeeded: false }
         ]);
-        // Execução: chamada do método check
+        // Execution: call the check method
         const result = await service.check(
           'mock-org-id',
           new Date(),
           'USER',
           requestedPermissions
         );
-        // Verificação: não deve permitir as ações solicitadas pois não há bypass
+        // Verification: should not allow the requested actions as there is no bypass
         expect(result.can(AuthorizationActions.Read, Sections.CHANNEL)).toBe(false);
         expect(result.can(AuthorizationActions.Create, Sections.AI)).toBe(false);
       });
     });
 
-    describe('Permissão de Canais (82/87)', () => {
-      it('CT4 - Todas as Condições Verdadeiras', async () => {
-        // Mock do getPackageOptions para configurar limites de canais
+    describe('Channel Permission (82/87)', () => {
+      it('All Conditions True', async () => {
+        // Mock of getPackageOptions to set channel limits
         jest.spyOn(service, 'getPackageOptions').mockResolvedValue({
           subscription: { ...baseSubscription, totalChannels: 10 },
           options: { ...baseOptions, channel: 10 },
         });
 
-        // Mock do getIntegrationsList para configurar canais existentes
+        // Mock of getIntegrationsList to set existing channels
         jest.spyOn(mockIntegrationService, 'getIntegrationsList').mockResolvedValue([
           { ...baseIntegration, refreshNeeded: false },
           { ...baseIntegration, refreshNeeded: false },
           { ...baseIntegration, refreshNeeded: false },
         ]);
 
-        // Lista com permissões solicitadas
+        // List of requested permissions
         const requestedPermissions: Array<[AuthorizationActions, Sections]> = [
           [AuthorizationActions.Create, Sections.CHANNEL]
         ];
 
-        // Execução: chamada do método check
+        // Execution: call the check method
         const result = await service.check(
           'mock-org-id',
           new Date(),
           'USER',
           requestedPermissions
         );
-        // Verificação: deve permitir a ação solicitada
+        // Verification: should allow the requested action
         expect(result.can(AuthorizationActions.Create, Sections.CHANNEL)).toBe(true);
       });
 
-      it('CT5 - Canal Com Limite de Opções', async () => {
-        // Mock do getPackageOptions para configurar limites de canais
+      it('Channel With Option Limit', async () => {
+        // Mock of getPackageOptions to set channel limits
         jest.spyOn(service, 'getPackageOptions').mockResolvedValue({
           subscription: { ...baseSubscription, totalChannels: 3 },
           options: { ...baseOptions, channel: 10 },
         });
-        // Mock do getIntegrationsList para configurar canais existentes
+        // Mock of getIntegrationsList to set existing channels
         jest.spyOn(mockIntegrationService, 'getIntegrationsList').mockResolvedValue([
           { ...baseIntegration, refreshNeeded: false },
           { ...baseIntegration, refreshNeeded: false },
           { ...baseIntegration, refreshNeeded: false },
         ]);
-        // Lista com permissões solicitadas
+        // List of requested permissions
         const requestedPermissions: Array<[AuthorizationActions, Sections]> = [
           [AuthorizationActions.Create, Sections.CHANNEL]
         ];
-        // Execução: chamada do método check
+        // Execution: call the check method
         const result = await service.check(
           'mock-org-id',
           new Date(),
           'USER',
           requestedPermissions
         );
-        // Verificação: deve permitir a ação solicitada
+        // Verification: should allow the requested action
         expect(result.can(AuthorizationActions.Create, Sections.CHANNEL)).toBe(true);
       });
-      it('CT6 - Canal Com Limite de Subscrição', async () => {
-        // Mock do getPackageOptions para configurar limites de canais
+
+      it('Channel With Subscription Limit', async () => {
+        // Mock of getPackageOptions to set channel limits
         jest.spyOn(service, 'getPackageOptions').mockResolvedValue({
           subscription: { ...baseSubscription, totalChannels: 10 },
           options: { ...baseOptions, channel: 3 },
         });
-        // Mock do getIntegrationsList para configurar canais existentes
+        // Mock of getIntegrationsList to set existing channels
         jest.spyOn(mockIntegrationService, 'getIntegrationsList').mockResolvedValue([
           { ...baseIntegration, refreshNeeded: false },
           { ...baseIntegration, refreshNeeded: false },
           { ...baseIntegration, refreshNeeded: false },
         ]);
 
-        // Lista com permissões solicitadas
+        // List of requested permissions
         const requestedPermissions: Array<[AuthorizationActions, Sections]> = [
           [AuthorizationActions.Create, Sections.CHANNEL]
         ];
-        // Execução: chamada do método check
+        // Execution: call the check method
         const result = await service.check(
           'mock-org-id',
           new Date(),
           'USER',
           requestedPermissions
         );
-        // Verificação: deve permitir a ação solicitada
+        // Verification: should allow the requested action
         expect(result.can(AuthorizationActions.Create, Sections.CHANNEL)).toBe(true);
       });
-      it('CT7 - Canal Sem Limites Disponíveis', async () => {
-        // Mock do getPackageOptions para configurar limites de canais
+      it('Channel Without Available Limits', async () => {
+        // Mock of getPackageOptions to set channel limits
         jest.spyOn(service, 'getPackageOptions').mockResolvedValue({
           subscription: { ...baseSubscription, totalChannels: 3 },
           options: { ...baseOptions, channel: 3 },
         });
-        // Mock do getIntegrationsList para configurar canais existentes
+        // Mock of getIntegrationsList to set existing channels
         jest.spyOn(mockIntegrationService, 'getIntegrationsList').mockResolvedValue([
           { ...baseIntegration, refreshNeeded: false },
           { ...baseIntegration, refreshNeeded: false },
           { ...baseIntegration, refreshNeeded: false },
         ]);
-        // Lista com permissões solicitadas
+        // List of requested permissions
         const requestedPermissions: Array<[AuthorizationActions, Sections]> = [
           [AuthorizationActions.Create, Sections.CHANNEL]
         ];
-        // Execução: chamada do método check
+        // Execution: call the check method
         const result = await service.check(
           'mock-org-id',
           new Date(),
           'USER',
           requestedPermissions
         );
-        // Verificação: não deve permitir a ação solicitada
+        // Verification: should not allow the requested action
         expect(result.can(AuthorizationActions.Create, Sections.CHANNEL)).toBe(false);
       });
-      it('CT8 - Seção Diferente de Canal', async () => {
-        // Mock do getPackageOptions para configurar limites de canais
+      it('Section Different from Channel', async () => {
+        // Mock of getPackageOptions to set channel limits
         jest.spyOn(service, 'getPackageOptions').mockResolvedValue({
           subscription: { ...baseSubscription, totalChannels: 10 },
           options: { ...baseOptions, channel: 10 },
         });
-        // Mock do getIntegrationsList para configurar canais existentes
+        // Mock of getIntegrationsList to set existing channels
         jest.spyOn(mockIntegrationService, 'getIntegrationsList').mockResolvedValue([
           { ...baseIntegration, refreshNeeded: false },
           { ...baseIntegration, refreshNeeded: false },
           { ...baseIntegration, refreshNeeded: false },
         ]);
-        // Lista com permissões solicitadas
+        // List of requested permissions
         const requestedPermissions: Array<[AuthorizationActions, Sections]> = [
-          [AuthorizationActions.Create, Sections.AI]  // Solicitando permissão para AI em vez de CHANNEL
+          [AuthorizationActions.Create, Sections.AI]  // Requesting permission for AI instead of CHANNEL
         ];
-        // Execução: chamada do método check
+        // Execution: call the check method
         const result = await service.check(
           'mock-org-id',
           new Date(),
           'USER',
           requestedPermissions
         );
-        // Verificação: não deve permitir a ação solicitada em CHANNEL
+        // Verification: should not allow the requested action in CHANNEL
         expect(result.can(AuthorizationActions.Create, Sections.CHANNEL)).toBe(false);
       });
     });
-    describe('Permissão de Posts Mensais (97/110)', () => {
-      it('CT9 - Posts Dentro do Limite', async () => {
-        // Mock do getPackageOptions para configurar limite de posts
+    describe('Monthly Posts Permission (97/110)', () => {
+      it('Posts Within Limit', async () => {
+        // Mock of getPackageOptions to set post limits
         jest.spyOn(service, 'getPackageOptions').mockResolvedValue({
           subscription: baseSubscription,
           options: { ...baseOptions, posts_per_month: 100 },
         });
-        // Mock do getSubscription
+        // Mock of getSubscription
         jest.spyOn(mockSubscriptionService, 'getSubscription').mockResolvedValue({
           ...baseSubscription,
           createdAt: new Date(),
         });
-        // Mock do countPostsFromDay para retornar quantidade dentro do limite
+        // Mock of countPostsFromDay to return quantity within the limit
         jest.spyOn(mockPostsService, 'countPostsFromDay').mockResolvedValue(50);
-        // Lista com permissões solicitadas
+        // List of requested permissions
         const requestedPermissions: Array<[AuthorizationActions, Sections]> = [
           [AuthorizationActions.Create, Sections.POSTS_PER_MONTH]
         ];
-        // Execução: chamada do método check
+        // Execution: call the check method
         const result = await service.check(
           'mock-org-id',
           new Date(),
           'USER',
           requestedPermissions
         );
-        // Verificação: deve permitir a ação solicitada
+        // Verification: should allow the requested action
         expect(result.can(AuthorizationActions.Create, Sections.POSTS_PER_MONTH)).toBe(true);
       });
-      it('CT10 - Posts Excedem o Limite', async () => {
-        // Mock do getPackageOptions para configurar limite de posts
+      it('Posts Exceed Limit', async () => {
+        // Mock of getPackageOptions to set post limits
         jest.spyOn(service, 'getPackageOptions').mockResolvedValue({
           subscription: baseSubscription,
           options: { ...baseOptions, posts_per_month: 100 },
         });
-        // Mock do getSubscription
+        // Mock of getSubscription
         jest.spyOn(mockSubscriptionService, 'getSubscription').mockResolvedValue({
           ...baseSubscription,
           createdAt: new Date(),
         });
-        // Mock do countPostsFromDay para retornar quantidade acima do limite
+        // Mock of countPostsFromDay to return quantity above the limit
         jest.spyOn(mockPostsService, 'countPostsFromDay').mockResolvedValue(150);
 
-        // Lista com permissões solicitadas
+        // List of requested permissions
         const requestedPermissions: Array<[AuthorizationActions, Sections]> = [
           [AuthorizationActions.Create, Sections.POSTS_PER_MONTH]
         ];
-        // Execução: chamada do método check
+        // Execution: call the check method
         const result = await service.check(
           'mock-org-id',
           new Date(),
           'USER',
           requestedPermissions
         );
-        // Verificação: não deve permitir a ação solicitada
+        // Verification: should not allow the requested action
         expect(result.can(AuthorizationActions.Create, Sections.POSTS_PER_MONTH)).toBe(false);
       });
-      it('CT11 - Seção Diferente Com Posts Dentro do Limite', async () => {
-        // Mock do getPackageOptions para configurar limite de posts
+      it('Section Different with Posts Within Limit', async () => {
+        // Mock of getPackageOptions to set post limits
         jest.spyOn(service, 'getPackageOptions').mockResolvedValue({
           subscription: baseSubscription,
           options: { ...baseOptions, posts_per_month: 100 },
         });
-        // Mock do getSubscription
+        // Mock of getSubscription
         jest.spyOn(mockSubscriptionService, 'getSubscription').mockResolvedValue({
           ...baseSubscription,
           createdAt: new Date(),
         });
-        // Mock do countPostsFromDay para retornar quantidade dentro do limite
+        // Mock of countPostsFromDay to return quantity within the limit
         jest.spyOn(mockPostsService, 'countPostsFromDay').mockResolvedValue(50);
-        // Lista com permissões solicitadas
+        // List of requested permissions
         const requestedPermissions: Array<[AuthorizationActions, Sections]> = [
-          [AuthorizationActions.Create, Sections.AI]  // Solicitando permissão para AI em vez de POSTS_PER_MONTH
+          [AuthorizationActions.Create, Sections.AI]  // Requesting permission for AI instead of POSTS_PER_MONTH
         ];
-        // Execução: chamada do método check
+        // Execution: call the check method
         const result = await service.check(
           'mock-org-id',
           new Date(),
           'USER',
           requestedPermissions
         );
-        // Verificação: não deve permitir a ação solicitada em POSTS_PER_MONTH
+        // Verification: should not allow the requested action in POSTS_PER_MONTH
         expect(result.can(AuthorizationActions.Create, Sections.POSTS_PER_MONTH)).toBe(false);
       });
     });
