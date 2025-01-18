@@ -69,6 +69,7 @@ class CloudflareStorage implements IUploadProvider {
       Key: `${id}.${extension}`,
       Body: loadImage.data,
       ContentType: contentType,
+      ChecksumMode: 'DISABLED'
     };
 
     const command = new PutObjectCommand({ ...params });

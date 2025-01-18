@@ -23,7 +23,7 @@ import { MastodonProvider } from '@gitroom/nestjs-libraries/integrations/social/
 import { BlueskyProvider } from '@gitroom/nestjs-libraries/integrations/social/bluesky.provider';
 import { LemmyProvider } from '@gitroom/nestjs-libraries/integrations/social/lemmy.provider';
 import { InstagramStandaloneProvider } from '@gitroom/nestjs-libraries/integrations/social/instagram.standalone.provider';
-// import { MastodonCustomProvider } from '@gitroom/nestjs-libraries/integrations/social/mastodon.custom.provider';
+import { FarcasterProvider } from '@gitroom/nestjs-libraries/integrations/social/farcaster.provider';
 
 const socialIntegrationList: SocialProvider[] = [
   new XProvider(),
@@ -43,6 +43,7 @@ const socialIntegrationList: SocialProvider[] = [
   new MastodonProvider(),
   new BlueskyProvider(),
   new LemmyProvider(),
+  new FarcasterProvider(),
   // new MastodonCustomProvider(),
 ];
 
@@ -62,6 +63,7 @@ export class IntegrationManager {
           identifier: p.identifier,
           toolTip: p.toolTip,
           isExternal: !!p.externalUrl,
+          isWeb3: !!p.isWeb3,
           ...(p.customFields ? { customFields: await p.customFields() } : {}),
         }))
       ),
