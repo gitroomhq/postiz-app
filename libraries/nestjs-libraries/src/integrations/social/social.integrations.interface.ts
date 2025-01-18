@@ -110,6 +110,7 @@ export interface SocialProvider
     ISocialMediaIntegration {
   identifier: string;
   refreshWait?: boolean;
+  isWeb3?: boolean;
   customFields?: () => Promise<
     {
       key: string;

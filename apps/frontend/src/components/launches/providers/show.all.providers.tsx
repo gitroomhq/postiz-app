@@ -18,6 +18,7 @@ import SlackProvider from '@gitroom/frontend/components/launches/providers/slack
 import MastodonProvider from '@gitroom/frontend/components/launches/providers/mastodon/mastodon.provider';
 import BlueskyProvider from '@gitroom/frontend/components/launches/providers/bluesky/bluesky.provider';
 import LemmyProvider from '@gitroom/frontend/components/launches/providers/lemmy/lemmy.provider';
+import WarpcastProvider from '@gitroom/frontend/components/launches/providers/warpcast/warpcast.provider';
 
 export const Providers = [
     {identifier: 'devto', component: DevtoProvider},
@@ -40,6 +41,7 @@ export const Providers = [
     {identifier: 'mastodon', component: MastodonProvider},
     {identifier: 'bluesky', component: BlueskyProvider},
     {identifier: 'lemmy', component: LemmyProvider},
+    {identifier: 'wrapcast', component: WarpcastProvider},
 ];
 
 

@@ -14,6 +14,7 @@ import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { object, string } from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { web3List } from '@gitroom/frontend/components/launches/web3/web3.list';
 
 const resolver = classValidatorResolver(ApiKeyDto);
 
@@ -307,6 +308,7 @@ export const AddProviderComponent: FC<{
     name: string;
     toolTip?: string;
     isExternal: boolean;
+    isWeb3: boolean;
     customFields?: Array<{
       key: string;
       label: string;
@@ -327,6 +329,7 @@ export const AddProviderComponent: FC<{
     (
         identifier: string,
         isExternal: boolean,
+        isWeb3: boolean,
         customFields?: Array<{
           key: string;
           label: string;
@@ -336,6 +339,32 @@ export const AddProviderComponent: FC<{
         }>
       ) =>
       async () => {
+        const openWeb3 = async () => {
+          const { component: Web3Providers } = web3List.find(
+            (item) => item.identifier === identifier
+          )!;
+
+          const { url } = await (
+            await fetch(`/integrations/social/${identifier}`)
+          ).json();
+
+          modal.openModal({
+            title: '',
+            withCloseButton: false,
+            classNames: {
+              modal: 'bg-transparent text-textColor',
+            },
+            children: (
+              <Web3Providers
+                onComplete={(code, newState) => {
+                  window.location.href = `/integrations/social/${identifier}?code=${code}&state=${newState}`;
+                }}
+                nonce={url}
+              />
+            ),
+          });
+          return;
+        };
         const gotoIntegration = async (externalUrl?: string) => {
           const { url, err } = await (
             await fetch(
@@ -351,6 +380,11 @@ export const AddProviderComponent: FC<{
           }
           window.location.href = url;
         };
+
+        if (isWeb3) {
+          openWeb3();
+          return;
+        }
 
         if (isExternal) {
           modal.closeAll();
@@ -443,6 +477,7 @@ export const AddProviderComponent: FC<{
               onClick={getSocialLink(
                 item.identifier,
                 item.isExternal,
+                item.isWeb3,
                 item.customFields
               )}
               {...(!!item.toolTip
