@@ -25,6 +25,7 @@ class CloudflareStorage implements IUploadProvider {
         accessKeyId: accessKey,
         secretAccessKey: secretKey,
       },
+      requestChecksumCalculation: "WHEN_REQUIRED",
     });
 
     this._client.middlewareStack.add(
