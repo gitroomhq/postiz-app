@@ -26,12 +26,27 @@ export class ConfigurationChecker {
   check () {
     this.checkDatabaseServers()
     this.checkNonEmpty('JWT_SECRET')
-    this.checkNonEmpty('DISABLE_REGISTRATION', 'Set to true to disable signup')
+    this.checkIsBoolean('DISABLE_REGISTRATION', 'Set to true to disable signup')
     this.checkIsValidUrl('MAIN_URL')
     this.checkIsValidUrl('FRONTEND_URL')
     this.checkIsValidUrl('NEXT_PUBLIC_BACKEND_URL')
     this.checkIsValidUrl('BACKEND_INTERNAL_URL')
     this.checkNonEmpty('STORAGE_PROVIDER', 'Needed to setup storage.')
+  }
+
+  checkIsBoolean (key: string, description?: string): boolean {
+    const v = this.get(key)
+
+    if (!description) {
+      description = ''
+    }
+
+    if (v !== 'true' && v !== 'false') {
+      this.issues.push(key + ' is not a boolean. ' + description)
+      return false
+    }
+
+    return true
   }
 
   checkNonEmpty (key: string, description?: string): boolean {
