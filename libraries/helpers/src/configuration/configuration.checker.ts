@@ -36,13 +36,16 @@ export class ConfigurationChecker {
 
   checkIsBoolean (key: string, description?: string): boolean {
     const v = this.get(key)
+    description = description || ''
 
-    if (!description) {
-      description = ''
+    if (!v) {
+      this.issues.push(`${key} not set. ${description}`)
+      return false
     }
 
-    if (v !== 'true' && v !== 'false') {
-      this.issues.push(key + ' is not a boolean. ' + description)
+    const normalized = v.toLowerCase()
+    if (normalized !== 'true' && normalized !== 'false') {
+      this.issues.push(`${key} is not a boolean. ${description}`)
       return false
     }
 
