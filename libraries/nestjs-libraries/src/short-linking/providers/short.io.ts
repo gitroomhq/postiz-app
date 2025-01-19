@@ -9,7 +9,7 @@ const options = {
 };
 
 export class ShortIo implements ShortLinking {
-  shortLinkDomain = 'aniket.short.gy';
+  shortLinkDomain = 'short.io';
 
   async linksStatistics ( links: string[] ) {
     return Promise.all(
@@ -31,31 +31,31 @@ export class ShortIo implements ShortLinking {
     );
   }
 
-  async convertLinkToShortLink(id: string, link: string) {
-    return (
-      await (
-        await fetch(`https://api.dub.co/links`, {
-          ...options,
-          method: 'POST',
-          body: JSON.stringify({
-            url: link,
-            tenantId: id,
-            domain: this.shortLinkDomain,
-          }),
-        })
-      ).json()
-    ).shortLink;
+  async convertLinkToShortLink ( id: string, link: string ) {
+    const response = await fetch( `https://api.short.io/links`, {
+      ...options,
+      method: 'POST',
+      body: JSON.stringify( {
+        url: link,
+        tenantId: id,
+        domain: this.shortLinkDomain,
+        originalURL: link
+
+      } ),
+    } ).then( ( res ) => res.json() );
+
+    return response.shortURL;
   }
 
   async convertShortLinkToLink(shortLink: string) {
-    return await (
-      await (
+    return await(
+      await(
         await fetch(
-          `https://api.dub.co/links/info?domain=${shortLink}`,
+          `https://api.short.io/links/expand?domain=${this.shortLinkDomain}&path=${shortLink.split('/').pop()}`,
           options
         )
       ).json()
-    ).url;
+    ).originalURL;
   }
 
   // recursive functions that gets maximum 100 links per request if there are less than 100 links stop the recursion
@@ -65,16 +65,22 @@ export class ShortIo implements ShortLinking {
   ): Promise<{ short: string; original: string; clicks: string }[]> {
     const response = await (
       await fetch(
-        `https://api.dub.co/links?tenantId=${id}&page=${page}&pageSize=100`,
+        `https://api.short.io/api/links?domain_id=${id}&limit=150`,
         options
       )
     ).json();
 
-    const mapLinks = response.links.map((link: any) => ({
-      short: link,
-      original: response.url,
-      clicks: response.clicks,
-    }));
+    const mapLinks = response.links.map(async ( link: any ) => {
+      const linkStatisticsUrl = `https://statistics.short.io/statistics/link/${response.id}?period=last30&tz=UTC`;
+
+      const statResponse = await(fetch(linkStatisticsUrl, options).then((res) => res.json()));
+
+      return {
+        short: link,
+        original: response.url,
+        clicks: statResponse.totalClicks,
+      };
+    } );
 
     if (mapLinks.length < 100) {
       return mapLinks;
