@@ -39,7 +39,7 @@ export const GoogleProvider = () => {
           />
         </svg>
       </div>
-      <div>Sign in with Google</div>
+      <div>Continue with Google</div>
     </div>
   );
 };
