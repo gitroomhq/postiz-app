@@ -1,17 +1,22 @@
-import { useCallback } from 'react';
+import { FC, useCallback } from 'react';
 import interClass from '@gitroom/react/helpers/inter.font';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { NeynarContextProvider, Theme, useNeynarContext } from '@neynar/react';
 import { NeynarAuthButton } from '@gitroom/frontend/components/auth/nayner.auth.button';
-import { useRouter } from 'next/navigation';
 
 export const FarcasterProvider = () => {
-  const { neynarClientId } = useVariables();
-
   const gotoLogin = useCallback(async (code: string) => {
     window.location.href = `/auth?provider=FARCASTER&code=${code}`;
   }, []);
 
+  return (
+    <ButtonCaster login={gotoLogin} />
+  );
+};
+
+export const ButtonCaster: FC<{ login: (code: string) => void }> = (props) => {
+  const { login } = props;
+  const { neynarClientId } = useVariables();
   return (
     <NeynarContextProvider
       settings={{
@@ -19,7 +24,7 @@ export const FarcasterProvider = () => {
         defaultTheme: Theme.Dark,
       }}
     >
-      <NeynarAuthButton onLogin={gotoLogin}>
+      <NeynarAuthButton onLogin={login}>
         <div
           className={`cursor-pointer bg-[#855ECD] h-[44px] rounded-[4px] flex justify-center items-center text-white ${interClass} gap-[4px]`}
         >
