@@ -1,6 +1,11 @@
 export class NewsletterService {
   static async register(email: string) {
-    if (!process.env.BEEHIIVE_API_KEY || !process.env.BEEHIIVE_PUBLICATION_ID || process.env.NODE_ENV === 'development') {
+    if (
+      !process.env.BEEHIIVE_API_KEY ||
+      !process.env.BEEHIIVE_PUBLICATION_ID ||
+      process.env.NODE_ENV === 'development' ||
+      email.indexOf('@') === -1
+    ) {
       return;
     }
     const body = {

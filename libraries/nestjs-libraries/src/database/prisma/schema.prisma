@@ -536,6 +536,7 @@ enum Provider {
   LOCAL
   GITHUB
   GOOGLE
+  FARCASTER
 }
 
 enum Role {

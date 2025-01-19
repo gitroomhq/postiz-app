@@ -68,7 +68,7 @@ export default async function AuthLayout({
               <div className="absolute top-0 bg-gradient-to-t from-customColor9 w-[1px] translate-x-[22px] h-full" />
             </div>
             <div>
-              <div className="absolute right-0 bg-gradient-to-l from-customColor9 h-[1px] translate-y-[22px] w-full" />
+              <div className="absolute right-0 bg-gradient-to-l from-customColor9 h-[1px] translate-y-[60px] w-full" />
             </div>
           </div>
           <div className="absolute top-0 bg-gradient-to-t from-customColor9 w-[1px] -translate-x-[22px] h-full" />

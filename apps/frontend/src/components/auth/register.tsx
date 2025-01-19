@@ -18,6 +18,7 @@ import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useTrack } from '@gitroom/react/helpers/use.track';
 import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
+import { FarcasterProvider } from '@gitroom/frontend/components/auth/providers/farcaster.provider';
 
 type Inputs = {
   email: string;
@@ -85,7 +86,7 @@ export function RegisterAfter({
   token: string;
   provider: string;
 }) {
-  const { isGeneral } = useVariables();
+  const { isGeneral, neynarClientId } = useVariables();
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const fireEvents = useFireEvents();
@@ -153,7 +154,14 @@ export function RegisterAfter({
           </h1>
         </div>
         {!isAfterProvider &&
-          (!isGeneral ? <GithubProvider /> : <GoogleProvider />)}
+          (!isGeneral ? (
+            <GithubProvider />
+          ) : (
+            <div className="gap-[5px] flex flex-col">
+              <GoogleProvider />
+              {!!neynarClientId && <FarcasterProvider />}
+            </div>
+          ))}
         {!isAfterProvider && (
           <div className="h-[20px] mb-[24px] mt-[24px] relative">
             <div className="absolute w-full h-[1px] bg-fifth top-[50%] -translate-y-[50%]" />
