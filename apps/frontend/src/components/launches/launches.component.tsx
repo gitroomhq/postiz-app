@@ -215,7 +215,7 @@ export const MenuComponent: FC<
         )}
         <ImageWithFallback
           fallbackSrc={`/icons/platforms/${integration.identifier}.png`}
-          src={integration.picture!}
+          src={integration.picture || '/no-picture.jpg'}
           className="rounded-full"
           alt={integration.identifier}
           width={32}
