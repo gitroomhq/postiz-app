@@ -36,6 +36,7 @@ import {
   RefreshToken,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { timer } from '@gitroom/helpers/utils/timer';
+import { TelegramProvider } from '@gitroom/nestjs-libraries/integrations/social/telegram.provider';
 
 @ApiTags('Integrations')
 @Controller('/integrations')
@@ -608,5 +609,12 @@ export class IntegrationsController {
     @Body('status') status: boolean
   ) {
     return this._integrationService.changePlugActivation(org.id, id, status);
+  }
+
+  @Get('/telegram/updates')
+  async getUpdates(
+    @Query() query: { word: string; id?: number },
+  ) {
+    return new TelegramProvider().getBotId(query);
   }
 }
