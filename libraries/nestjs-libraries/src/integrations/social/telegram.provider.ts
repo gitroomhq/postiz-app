@@ -94,8 +94,7 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
     const ids: PostResponse[] = [];
     for (const message of postDetails) {
       if (
-        (message?.media?.length || 0) < 3 &&
-        (message?.media?.length || 0) > 0
+        (message?.media?.length || 0) === 1
       ) {
         const [{ message_id }] = await telegramBot.sendMediaGroup(
           accessToken,
