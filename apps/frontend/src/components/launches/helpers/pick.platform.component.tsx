@@ -263,7 +263,7 @@ export const PickPlatforms: FC<{
                         )}
                       >
                         <Image
-                          src={integration.picture}
+                          src={integration.picture || '/no-picture.jpg'}
                           className="rounded-full"
                           alt={integration.identifier}
                           width={32}
@@ -302,7 +302,7 @@ export const PickPlatforms: FC<{
                         <div className="flex items-center justify-center gap-[10px]">
                           <div className="relative">
                             <img
-                              src={integration.picture}
+                              src={integration.picture || '/no-picture.jpg'}
                               className="rounded-full"
                               alt={integration.identifier}
                               width={24}

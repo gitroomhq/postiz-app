@@ -33,6 +33,10 @@ export class EmailService {
   }
 
   async sendEmail(to: string, subject: string, html: string, replyTo?: string) {
+    if (to.indexOf('@') === -1) {
+      return ;
+    }
+
     if (!process.env.EMAIL_FROM_ADDRESS || !process.env.EMAIL_FROM_NAME) {
       console.log(
         'Email sender information not found in environment variables'

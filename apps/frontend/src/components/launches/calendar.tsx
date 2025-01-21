@@ -634,7 +634,7 @@ export const CalendarColumn: FC<{
                         )}
                       >
                         <Image
-                          src={selectedIntegrations.picture}
+                          src={selectedIntegrations.picture || '/no-picture.jpg'}
                           className="rounded-full"
                           alt={selectedIntegrations.identifier}
                           width={32}
@@ -747,7 +747,7 @@ const CalendarItem: FC<{
         >
           <img
             className="w-[20px] h-[20px] rounded-full"
-            src={post.integration.picture!}
+            src={post.integration.picture! || '/no-picture.jpg'}
           />
           <img
             className="w-[12px] h-[12px] rounded-full absolute z-10 top-[10px] right-0 border border-fifth"

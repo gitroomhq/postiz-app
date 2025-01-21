@@ -595,7 +595,7 @@ export const AddEditModal: FC<{
                 )}
               >
                 <Image
-                  src={selectedIntegrations?.[0]?.picture}
+                  src={selectedIntegrations?.[0]?.picture || '/no-picture.jpg'}
                   className="rounded-full"
                   alt={selectedIntegrations?.[0]?.identifier}
                   width={32}

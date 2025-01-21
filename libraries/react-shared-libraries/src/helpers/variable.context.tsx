@@ -12,6 +12,8 @@ interface VariableContextInterface {
   discordUrl: string;
   uploadDirectory: string;
   facebookPixel: string;
+  telegramBotName: string;
+  neynarClientId: string;
   tolt: string;
 }
 const VariableContext = createContext({
@@ -23,7 +25,9 @@ const VariableContext = createContext({
   backendUrl: '',
   discordUrl: '',
   uploadDirectory: '',
+  telegramBotName: '',
   facebookPixel: '',
+  neynarClientId: '',
   tolt: '',
 } as VariableContextInterface);
 
