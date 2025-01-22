@@ -30,6 +30,10 @@ export class OrganizationRepository {
     });
   }
 
+  getCount() {
+    return this._organization.model.organization.count();
+  }
+
   getUserOrg(id: string) {
     return this._userOrg.model.userOrganization.findFirst({
       where: {

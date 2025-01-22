@@ -27,6 +27,10 @@ export class OrganizationService {
     );
   }
 
+  async getCount() {
+    return this._organizationRepository.getCount();
+  }
+
   addUserToOrg(
     userId: string,
     id: string,

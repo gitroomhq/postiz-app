@@ -28,6 +28,12 @@ export class AuthController {
     private _authService: AuthService,
     private _emailService: EmailService
   ) {}
+
+  @Get('/can-register')
+  async canRegister() {
+    return {register: await this._authService.canRegister()};
+  }
+
   @Post('/register')
   async register(
     @Req() req: Request,
