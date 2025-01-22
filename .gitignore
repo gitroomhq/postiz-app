@@ -58,5 +58,7 @@ Thumbs.db
 libraries/plugins/src/plugins.ts
 
 # custum files
-helper.txt
+.env.prod
+docker-compose.prod.yaml
 apps/frontend/public/uploads/
+helper.txt
