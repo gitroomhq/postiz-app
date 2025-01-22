@@ -28,6 +28,10 @@ import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { AgenciesService } from '@gitroom/nestjs-libraries/database/prisma/agencies/agencies.service';
 import { AgenciesRepository } from '@gitroom/nestjs-libraries/database/prisma/agencies/agencies.repository';
 import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
+import { SocialMediaPlatformConfigService } from '@gitroom/nestjs-libraries/database/prisma/social-media-platform-config/social-media-platform-config.service';
+import { SocialMediaPlatformConfigRepository } from '@gitroom/nestjs-libraries/database/prisma/social-media-platform-config/social-media-platform-config.repository';
+import { CustomersRepository } from '@gitroom/nestjs-libraries/database/prisma/customers/customers.repository';
+import { CustomersService } from '@gitroom/nestjs-libraries/database/prisma/customers/customers.service';
 import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.link.service';
 
 @Global()
@@ -65,6 +69,10 @@ import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.
     OpenaiService,
     EmailService,
     TrackService,
+    SocialMediaPlatformConfigRepository,
+    SocialMediaPlatformConfigService,
+    CustomersRepository,
+    CustomersService,
     ShortLinkService,
   ],
   get exports() {

@@ -271,8 +271,10 @@ export class PostsService {
     posts: Post[],
     forceRefresh = false
   ): Promise<Partial<{ postId: string; releaseURL: string }>> {
-    const getIntegration = this._integrationManager.getSocialIntegration(
-      integration.providerIdentifier
+    const getIntegration = await this._integrationManager.getSocialIntegration(
+      integration.providerIdentifier,
+      integration.organizationId,
+      integration.customerId
     );
 
     if (!getIntegration) {
@@ -316,6 +318,7 @@ export class PostsService {
         additionalSettings,
         !!getIntegration.oneTimeToken,
         integration.organizationId,
+        integration.customerId,
         integration.name,
         integration.picture!,
         'social',

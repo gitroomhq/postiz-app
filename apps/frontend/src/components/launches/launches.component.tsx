@@ -241,12 +241,12 @@ export const MenuComponent: FC<
         // @ts-ignore
         ref={drag}
         {...(integration.disabled &&
-        totalNonDisabledChannels === user?.totalChannels
+          totalNonDisabledChannels === user?.totalChannels
           ? {
-              'data-tooltip-id': 'tooltip',
-              'data-tooltip-content':
-                'This channel is disabled, please upgrade your plan to enable it.',
-            }
+            'data-tooltip-id': 'tooltip',
+            'data-tooltip-content':
+              'This channel is disabled, please upgrade your plan to enable it.',
+          }
           : {})}
         role="Handle"
         className={clsx(
@@ -374,7 +374,7 @@ export const LaunchesComponent = () => {
     (integration: Integration & { identifier: string }) => async () => {
       const { url } = await (
         await fetch(
-          `/integrations/social/${integration.identifier}?refresh=${integration.internalId}`,
+          `/integrations/social/${integration.identifier}?customerId=${integration.customerId}&refresh=${integration.internalId}`,
           {
             method: 'GET',
           }

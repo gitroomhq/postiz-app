@@ -23,6 +23,8 @@ import { MastodonProvider } from '@gitroom/nestjs-libraries/integrations/social/
 import { BlueskyProvider } from '@gitroom/nestjs-libraries/integrations/social/bluesky.provider';
 import { LemmyProvider } from '@gitroom/nestjs-libraries/integrations/social/lemmy.provider';
 import { InstagramStandaloneProvider } from '@gitroom/nestjs-libraries/integrations/social/instagram.standalone.provider';
+import { SocialMediaPlatformConfigService } from '../database/prisma/social-media-platform-config/social-media-platform-config.service';
+// import { MastodonCustomProvider } from '@gitroom/nestjs-libraries/integrations/social/mastodon.custom.provider';
 import { FarcasterProvider } from '@gitroom/nestjs-libraries/integrations/social/farcaster.provider';
 import { TelegramProvider } from '@gitroom/nestjs-libraries/integrations/social/telegram.provider';
 
@@ -57,6 +59,9 @@ const articleIntegrationList = [
 
 @Injectable()
 export class IntegrationManager {
+
+  constructor(private _socialMediaPlatformConfigService: SocialMediaPlatformConfigService) {}
+
   async getAllIntegrations() {
     return {
       social: await Promise.all(
@@ -108,13 +113,54 @@ export class IntegrationManager {
   getAllowedSocialsIntegrations() {
     return socialIntegrationList.map((p) => p.identifier);
   }
-  getSocialIntegration(integration: string): SocialProvider {
-    return socialIntegrationList.find((i) => i.identifier === integration)!;
+  async getSocialIntegration(integration: string, orgId : string | null | undefined, customerId : string | null | undefined): Promise<SocialProvider> {
+    const integrationProvider = socialIntegrationList.find((i) => i.identifier === integration);
+    
+    if (!integrationProvider) {
+      throw new Error(`SocialProvider with identifier '${integration}' not found`);
+    }
+  
+    await this.setSocialIntegrationConfig(integrationProvider, orgId, customerId);
+  
+    return integrationProvider;
   }
+  
   getAllowedArticlesIntegrations() {
     return articleIntegrationList.map((p) => p.identifier);
   }
   getArticlesIntegration(integration: string): ArticleProvider {
     return articleIntegrationList.find((i) => i.identifier === integration)!;
   }
+
+  async setSocialIntegrationConfig(socialIntegration: SocialProvider, orgId : string | null | undefined,  customerId : string | null | undefined): Promise<void> {
+    if (socialIntegration && orgId) {
+      try {
+        // Fetch the platform configuration using `await`
+        const config = await this._socialMediaPlatformConfigService.getPlatformConfig(
+          socialIntegration.identifier,
+          orgId,
+          customerId
+        );
+  
+        // Transform the `config` array into a key-value object
+        if (config?.config) {
+          const configObject = config.config.reduce((acc, item) => {
+            acc[item.key] = item.value;
+            return acc;
+          }, {} as Record<string, string>);
+    
+          // Set the configuration on the socialIntegration object if `setConfig` exists
+          if (typeof socialIntegration.setConfig === 'function') {
+            socialIntegration.setConfig(configObject);
+          }
+        }
+        else{
+            throw new Error(`${socialIntegration.identifier} Configuration not found`);
+        }
+      } catch (error) {
+        throw new Error(`Error fetching platform config`);
+      }
+    }
+  }
+  
 }

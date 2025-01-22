@@ -47,7 +47,7 @@ export const ConnectChannels: FC = () => {
     (integration: Integration & { identifier: string }) => async () => {
       const { url } = await (
         await fetch(
-          `/integrations/social/${integration.identifier}?refresh=${integration.internalId}`,
+          `/integrations/social/${integration.identifier}?customerId=${integration.customerId}&refresh=${integration.internalId}`,
           {
             method: 'GET',
           }
@@ -80,22 +80,22 @@ export const ConnectChannels: FC = () => {
 
   const getSocialLink = useCallback(
     (
-        identifier: string,
-        isExternal: boolean,
-        customFields?: Array<{
-          key: string;
-          label: string;
-          validation: string;
-          defaultValue?: string;
-          type: 'text' | 'password';
-        }>
-      ) =>
+      identifier: string,
+      isExternal: boolean,
+      customFields?: Array<{
+        key: string;
+        label: string;
+        validation: string;
+        defaultValue?: string;
+        type: 'text' | 'password';
+      }>,
+      customerId?: string,
+    ) =>
       async () => {
         const gotoIntegration = async (externalUrl?: string) => {
           const { url, err } = await (
             await fetch(
-              `/integrations/social/${identifier}${
-                externalUrl ? `?externalUrl=${externalUrl}` : ``
+              `/integrations/social/${identifier}?customerId=${customerId || null}${externalUrl ? `externalUrl=${externalUrl}` : ``
               }`
             )
           ).json();
@@ -252,7 +252,8 @@ export const ConnectChannels: FC = () => {
                   onClick={getSocialLink(
                     social.identifier,
                     social.isExternal,
-                    social.customFields
+                    social.customFields,
+                    social.customerId
                   )}
                   className="h-[96px] bg-input flex flex-col justify-center items-center gap-[10px] cursor-pointer"
                 >
@@ -338,12 +339,12 @@ export const ConnectChannels: FC = () => {
                 </div>
                 <div
                   {...(integration.disabled &&
-                  totalNonDisabledChannels === user?.totalChannels
+                    totalNonDisabledChannels === user?.totalChannels
                     ? {
-                        'data-tooltip-id': 'tooltip',
-                        'data-tooltip-content':
-                          'This channel is disabled, please upgrade your plan to enable it.',
-                      }
+                      'data-tooltip-id': 'tooltip',
+                      'data-tooltip-content':
+                        'This channel is disabled, please upgrade your plan to enable it.',
+                    }
                     : {})}
                   className={clsx(
                     'flex-1',

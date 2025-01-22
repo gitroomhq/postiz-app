@@ -1,7 +1,7 @@
 'use client';
 
 import { useModals } from '@mantine/modals';
-import React, { FC, useCallback, useMemo } from 'react';
+import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Input } from '@gitroom/react/form/input';
 import { FieldValues, FormProvider, useForm } from 'react-hook-form';
@@ -14,6 +14,8 @@ import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { object, string } from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { Select } from '@mantine/core';
+import { SocialMediaConfig } from '@gitroom/frontend/app/context/social-media/types';
 import { web3List } from '@gitroom/frontend/components/launches/web3/web3.list';
 
 const resolver = classValidatorResolver(ApiKeyDto);
@@ -212,8 +214,9 @@ export const CustomVariables: FC<{
   close?: () => void;
   identifier: string;
   gotoUrl(url: string): void;
+  customerId?: string | null,
 }> = (props) => {
-  const { close, gotoUrl, identifier, variables } = props;
+  const { close, gotoUrl, identifier, variables, customerId } = props;
   const modals = useModals();
   const schema = useMemo(() => {
     return object({
@@ -248,7 +251,7 @@ export const CustomVariables: FC<{
   const submit = useCallback(
     async (data: FieldValues) => {
       gotoUrl(
-        `/integrations/social/${identifier}?state=nostate&code=${Buffer.from(
+        `/integrations/social/${identifier}?customerId=${customerId || null}&state=nostate&code=${Buffer.from(
           JSON.stringify(data)
         ).toString('base64')}`
       );
@@ -325,19 +328,24 @@ export const AddProviderComponent: FC<{
   const router = useRouter();
   const fetch = useFetch();
   const modal = useModals();
+  const [customer, setCustomer] = useState<any | null>(null);
+  const [customerList, setCustomerList]: any[] | any = useState([]);
+  const [customerSocialMediaConfigList, setCustomerSocialMediaConfigList]: SocialMediaConfig[] | any = useState([]);
+
   const getSocialLink = useCallback(
     (
-        identifier: string,
-        isExternal: boolean,
-        isWeb3: boolean,
-        customFields?: Array<{
-          key: string;
-          label: string;
-          validation: string;
-          defaultValue?: string;
-          type: 'text' | 'password';
-        }>
-      ) =>
+      identifier: string,
+      isExternal: boolean,
+      isWeb3: boolean,
+      customFields?: Array<{
+        key: string;
+        label: string;
+        validation: string;
+        defaultValue?: string;
+        type: 'text' | 'password';
+      }>,
+      customerId?: string
+    ) =>
       async () => {
         const openWeb3 = async () => {
           const { component: Web3Providers } = web3List.find(
@@ -368,8 +376,7 @@ export const AddProviderComponent: FC<{
         const gotoIntegration = async (externalUrl?: string) => {
           const { url, err } = await (
             await fetch(
-              `/integrations/social/${identifier}${
-                externalUrl ? `?externalUrl=${externalUrl}` : ``
+              `/integrations/social/${identifier}?customerId=${customerId || null}${externalUrl ? `&externalUrl=${externalUrl}` : ``
               }`
             )
           ).json();
@@ -415,6 +422,7 @@ export const AddProviderComponent: FC<{
                 identifier={identifier}
                 gotoUrl={(url: string) => router.push(url)}
                 variables={customFields}
+                customerId={customerId}
               />
             ),
           });
@@ -445,6 +453,64 @@ export const AddProviderComponent: FC<{
     },
     []
   );
+
+  const loadCustomerList = async () => {
+    try {
+      const apiUrl = `/customers`; // Construct the full URL
+
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+      });
+
+      if (response.ok) {
+        const result: any[] = await response.json();
+        setCustomerList(result || []);
+      } else {
+        console.error(`Failed to fetch social media config: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error("Failed to fetch social media config:", error);
+    }
+  };
+
+  const loadCustomerSocialMediaConfigList = async (customerId: string) => {
+
+    try {
+      const apiUrl = `/social-media-platform-config?customerId=${customerId}`; // Construct the full URL
+      const response = await fetch(apiUrl, { method: 'GET' });
+      if (response.ok) {
+        const result: SocialMediaConfig[] = await response.json();
+        setCustomerSocialMediaConfigList(result);
+      } else {
+        console.error(`Failed to fetch social media config: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error("Failed to fetch social media config:", error);
+    }
+  };
+
+  const isSocialMediaConfigured = useCallback(
+    (identifier: string) => {
+      return customerSocialMediaConfigList.some(
+        (config: SocialMediaConfig) => config.platformKey === identifier
+      );
+    },
+    [customerSocialMediaConfigList]
+  );
+
+
+  useEffect(() => {
+    setCustomerSocialMediaConfigList([]);
+    if (customer && customer.id) {
+      loadCustomerSocialMediaConfigList(customer.id);
+    }
+  }, [customer]);
+
+  useEffect(() => {
+    loadCustomerList();
+  }, []);
+
+
   return (
     <div className="w-full flex flex-col gap-[20px] rounded-[4px] border border-customColor6 bg-sixth px-[16px] pb-[16px] relative">
       <div className="flex flex-col">
@@ -469,59 +535,130 @@ export const AddProviderComponent: FC<{
             ></path>
           </svg>
         </button>
-        <h2 className="pt-[16px] pb-[10px]">Social</h2>
+
+
         <div className="grid grid-cols-3 gap-[10px] justify-items-center justify-center">
-          {social.map((item) => (
-            <div
-              key={item.identifier}
-              onClick={getSocialLink(
-                item.identifier,
-                item.isExternal,
-                item.isWeb3,
-                item.customFields
-              )}
-              {...(!!item.toolTip
-                ? {
-                    'data-tooltip-id': 'tooltip',
-                    'data-tooltip-content': item.toolTip,
-                  }
-                : {})}
-              className={
-                'w-[200px] h-[100px] text-[14px] bg-input text-textColor relative justify-center items-center flex flex-col gap-[10px] cursor-pointer'
-              }
-            >
+          <div>
+            <Select
+              value={customer?.name || ''} // Display the name of the selected customer
+              onChange={(name) => {
+                const selectedCustomer = customerList.find((c: any) => c.name === name);
+                setCustomer(selectedCustomer); // Update the state with the whole object
+              }}
+              placeholder="Select Customer..."
+              data={customerList.map((customer: any) => ({
+                value: customer.name,
+                label: customer.name,
+              }))}
+            />
+            {customer && (
+              <div className="mt-[16px]">
+                <p><strong>Selected Customer:</strong></p>
+                <p>Name: {customer.name}</p>
+                <p>Email: {customer.email}</p>
+              </div>
+            )}
+          </div>
+
+        </div >
+
+        {
+          customer ?
+            (
               <div>
-                {item.identifier === 'youtube' ? (
-                  <img src={`/icons/platforms/youtube.svg`} />
-                ) : (
-                  <img
-                    className="w-[32px] h-[32px] rounded-full"
-                    src={`/icons/platforms/${item.identifier}.png`}
-                  />
-                )}
+
+                <h2 className="pt-[16px] pb-[10px]">Social</h2>
+                <div className="grid grid-cols-3 gap-[10px] justify-items-center justify-center">
+                  {social.map((item) => (
+                    <div
+                      aria-disabled={isSocialMediaConfigured(item.identifier)}
+                      key={item.identifier}
+                      onClick={
+                        isSocialMediaConfigured(item.identifier) ?
+                          getSocialLink(
+                            item.identifier,
+                            item.isExternal,
+                            item.isWeb3,
+                            item.customFields,
+                            customer.id
+                          ) : undefined
+                      }
+                      {...(!!item.toolTip
+                        ? {
+                          'data-tooltip-id': 'tooltip',
+                          'data-tooltip-content': item.toolTip,
+                        }
+                        : {})}
+
+                      className={
+                        `w-[200px] h-[100px] text-[14px] bg-input text-textColor relative justify-center items-center flex flex-col gap-[10px]
+                        ${isSocialMediaConfigured(item.identifier) ? "cursor-pointer" : "bg-gray-300 cursor-not-allowed"
+                        }
+                        `
+                      }
+                    >
+                      <div>
+                        {item.identifier === 'youtube' ? (
+                          <img src={`/icons/platforms/youtube.svg`} />
+                        ) : (
+                          <img
+                            className="w-[32px] h-[32px] rounded-full"
+                            src={`/icons/platforms/${item.identifier}.png`}
+                          />
+                        )}
+                      </div>
+                      <div className="whitespace-pre-wrap text-center">
+                        {item.name}
+                        {!!item.toolTip && (
+                          <svg
+                            width="15"
+                            height="15"
+                            viewBox="0 0 26 26"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="absolute top-[10px] right-[10px]"
+                          >
+                            <path
+                              d="M13 0C10.4288 0 7.91543 0.762437 5.77759 2.1909C3.63975 3.61935 1.97351 5.64968 0.989572 8.02512C0.0056327 10.4006 -0.251811 13.0144 0.249797 15.5362C0.751405 18.0579 1.98953 20.3743 3.80762 22.1924C5.6257 24.0105 7.94208 25.2486 10.4638 25.7502C12.9856 26.2518 15.5995 25.9944 17.9749 25.0104C20.3503 24.0265 22.3807 22.3603 23.8091 20.2224C25.2376 18.0846 26 15.5712 26 13C25.9964 9.5533 24.6256 6.24882 22.1884 3.81163C19.7512 1.37445 16.4467 0.00363977 13 0ZM13 21C12.7033 21 12.4133 20.912 12.1667 20.7472C11.92 20.5824 11.7277 20.3481 11.6142 20.074C11.5007 19.7999 11.471 19.4983 11.5288 19.2074C11.5867 18.9164 11.7296 18.6491 11.9393 18.4393C12.1491 18.2296 12.4164 18.0867 12.7074 18.0288C12.9983 17.9709 13.2999 18.0007 13.574 18.1142C13.8481 18.2277 14.0824 18.42 14.2472 18.6666C14.412 18.9133 14.5 19.2033 14.5 19.5C14.5 19.8978 14.342 20.2794 14.0607 20.5607C13.7794 20.842 13.3978 21 13 21ZM14 14.91V15C14 15.2652 13.8946 15.5196 13.7071 15.7071C13.5196 15.8946 13.2652 16 13 16C12.7348 16 12.4804 15.8946 12.2929 15.7071C12.1054 15.5196 12 15.2652 12 15V14C12 13.7348 12.1054 13.4804 12.2929 13.2929C12.4804 13.1054 12.7348 13 13 13C14.6538 13 16 11.875 16 10.5C16 9.125 14.6538 8 13 8C11.3463 8 10 9.125 10 10.5V11C10 11.2652 9.89465 11.5196 9.70711 11.7071C9.51958 11.8946 9.26522 12 9.00001 12C8.73479 12 8.48044 11.8946 8.2929 11.7071C8.10536 11.5196 8.00001 11.2652 8.00001 11V10.5C8.00001 8.01875 10.2425 6 13 6C15.7575 6 18 8.01875 18 10.5C18 12.6725 16.28 14.4913 14 14.91Z"
+                              fill="currentColor"
+                            />
+                          </svg>
+                        )}
+
+                        {!isSocialMediaConfigured(item.identifier) && (
+                          <svg
+                            width="15"
+                            height="15"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="absolute top-[10px] left-[10px]"
+                          >
+                            <path
+                              d="M12 2C12.37 2 12.73 2.21 12.91 2.58L22.91 20.58C23.1 20.95 23.06 21.42 22.8 21.74C22.54 22.06 22.1 22.22 21.67 22.14H2.33C1.9 22.22 1.46 22.06 1.2 21.74C0.94 21.42 0.9 20.95 1.09 20.58L11.09 2.58C11.27 2.21 11.63 2 12 2ZM12 8C11.59 8 11.25 8.34 11.25 8.75V13.25C11.25 13.66 11.59 14 12 14C12.41 14 12.75 13.66 12.75 13.25V8.75C12.75 8.34 12.41 8 12 8ZM12 16C11.59 16 11.25 16.34 11.25 16.75C11.25 17.16 11.59 17.5 12 17.5C12.41 17.5 12.75 17.16 12.75 16.75C12.75 16.34 12.41 16 12 16Z"
+                              fill="currentColor"
+                            />
+                          </svg>
+
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+              </div >
+
+            )
+            :
+            (
+              <div>
+                <p>No customer selected.</p>
               </div>
-              <div className="whitespace-pre-wrap text-center">
-                {item.name}
-                {!!item.toolTip && (
-                  <svg
-                    width="15"
-                    height="15"
-                    viewBox="0 0 26 26"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="absolute top-[10px] right-[10px]"
-                  >
-                    <path
-                      d="M13 0C10.4288 0 7.91543 0.762437 5.77759 2.1909C3.63975 3.61935 1.97351 5.64968 0.989572 8.02512C0.0056327 10.4006 -0.251811 13.0144 0.249797 15.5362C0.751405 18.0579 1.98953 20.3743 3.80762 22.1924C5.6257 24.0105 7.94208 25.2486 10.4638 25.7502C12.9856 26.2518 15.5995 25.9944 17.9749 25.0104C20.3503 24.0265 22.3807 22.3603 23.8091 20.2224C25.2376 18.0846 26 15.5712 26 13C25.9964 9.5533 24.6256 6.24882 22.1884 3.81163C19.7512 1.37445 16.4467 0.00363977 13 0ZM13 21C12.7033 21 12.4133 20.912 12.1667 20.7472C11.92 20.5824 11.7277 20.3481 11.6142 20.074C11.5007 19.7999 11.471 19.4983 11.5288 19.2074C11.5867 18.9164 11.7296 18.6491 11.9393 18.4393C12.1491 18.2296 12.4164 18.0867 12.7074 18.0288C12.9983 17.9709 13.2999 18.0007 13.574 18.1142C13.8481 18.2277 14.0824 18.42 14.2472 18.6666C14.412 18.9133 14.5 19.2033 14.5 19.5C14.5 19.8978 14.342 20.2794 14.0607 20.5607C13.7794 20.842 13.3978 21 13 21ZM14 14.91V15C14 15.2652 13.8946 15.5196 13.7071 15.7071C13.5196 15.8946 13.2652 16 13 16C12.7348 16 12.4804 15.8946 12.2929 15.7071C12.1054 15.5196 12 15.2652 12 15V14C12 13.7348 12.1054 13.4804 12.2929 13.2929C12.4804 13.1054 12.7348 13 13 13C14.6538 13 16 11.875 16 10.5C16 9.125 14.6538 8 13 8C11.3463 8 10 9.125 10 10.5V11C10 11.2652 9.89465 11.5196 9.70711 11.7071C9.51958 11.8946 9.26522 12 9.00001 12C8.73479 12 8.48044 11.8946 8.2929 11.7071C8.10536 11.5196 8.00001 11.2652 8.00001 11V10.5C8.00001 8.01875 10.2425 6 13 6C15.7575 6 18 8.01875 18 10.5C18 12.6725 16.28 14.4913 14 14.91Z"
-                      fill="currentColor"
-                    />
-                  </svg>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+            )
+
+        }
+
+      </div >
       {!isGeneral && (
         <div className="flex flex-col">
           <h2 className="pb-[10px]">Articles</h2>
@@ -544,6 +681,6 @@ export const AddProviderComponent: FC<{
           </div>
         </div>
       )}
-    </div>
+    </div >
   );
 };

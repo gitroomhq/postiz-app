@@ -61,6 +61,7 @@ export class IntegrationService {
       | undefined,
     oneTimeToken: boolean,
     org: string,
+    customerId: string | null,
     name: string,
     picture: string | undefined,
     type: 'article' | 'social',
@@ -85,6 +86,7 @@ export class IntegrationService {
       additionalSettings,
       oneTimeToken,
       org,
+      customerId,
       name,
       uploadedPicture,
       type,
@@ -166,8 +168,10 @@ export class IntegrationService {
   async refreshTokens() {
     const integrations = await this._integrationRepository.needsToBeRefreshed();
     for (const integration of integrations) {
-      const provider = this._integrationManager.getSocialIntegration(
-        integration.providerIdentifier
+      const provider = await this._integrationManager.getSocialIntegration(
+        integration.providerIdentifier,
+        integration.organizationId,
+        integration.customerId
       );
 
       const data = await this.refreshToken(provider, integration.refreshToken!);
@@ -190,6 +194,7 @@ export class IntegrationService {
         undefined,
         !!provider.oneTimeToken,
         integration.organizationId,
+        integration.customerId,
         integration.name,
         undefined,
         'social',
@@ -246,8 +251,10 @@ export class IntegrationService {
       throw new HttpException('Invalid request', HttpStatus.BAD_REQUEST);
     }
 
-    const instagram = this._integrationManager.getSocialIntegration(
-      'instagram'
+    const instagram = await this._integrationManager.getSocialIntegration(
+      'instagram',
+      getIntegration?.organizationId,
+      getIntegration?.customerId
     ) as InstagramProvider;
     const getIntegrationInformation = await instagram.fetchPageInformation(
       getIntegration?.token!,
@@ -276,8 +283,10 @@ export class IntegrationService {
       throw new HttpException('Invalid request', HttpStatus.BAD_REQUEST);
     }
 
-    const linkedin = this._integrationManager.getSocialIntegration(
-      'linkedin-page'
+    const linkedin = await this._integrationManager.getSocialIntegration(
+      'linkedin-page',
+      getIntegration?.organizationId,
+      getIntegration?.customerId
     ) as LinkedinPageProvider;
 
     const getIntegrationInformation = await linkedin.fetchPageInformation(
@@ -311,8 +320,10 @@ export class IntegrationService {
       throw new HttpException('Invalid request', HttpStatus.BAD_REQUEST);
     }
 
-    const facebook = this._integrationManager.getSocialIntegration(
-      'facebook'
+    const facebook = await this._integrationManager.getSocialIntegration(
+      'facebook',
+      getIntegration?.organizationId,
+      getIntegration?.customerId
     ) as FacebookProvider;
     const getIntegrationInformation = await facebook.fetchPageInformation(
       getIntegration?.token!,
@@ -348,8 +359,10 @@ export class IntegrationService {
       return [];
     }
 
-    const integrationProvider = this._integrationManager.getSocialIntegration(
-      getIntegration.providerIdentifier
+    const integrationProvider = await this._integrationManager.getSocialIntegration(
+      getIntegration.providerIdentifier,
+      getIntegration.organizationId,
+      getIntegration.customerId
     );
 
     if (
@@ -379,6 +392,7 @@ export class IntegrationService {
           additionalSettings,
           !!integrationProvider.oneTimeToken,
           getIntegration.organizationId,
+          getIntegration.customerId,
           getIntegration.name,
           getIntegration.picture!,
           'social',
@@ -476,8 +490,10 @@ export class IntegrationService {
       return;
     }
 
-    const getSocialIntegration = this._integrationManager.getSocialIntegration(
-      getIntegration.providerIdentifier
+    const getSocialIntegration = await this._integrationManager.getSocialIntegration(
+      getIntegration.providerIdentifier,
+      getIntegration.organizationId,
+      getIntegration.customerId
     );
 
     try {
@@ -505,8 +521,10 @@ export class IntegrationService {
       return;
     }
 
-    const integration = this._integrationManager.getSocialIntegration(
-      getPlugById.integration.providerIdentifier
+    const integration = await this._integrationManager.getSocialIntegration(
+      getPlugById.integration.providerIdentifier,
+      getPlugById.integration.organizationId,
+      getPlugById.integration.customerId
     );
 
     const findPlug = this._integrationManager

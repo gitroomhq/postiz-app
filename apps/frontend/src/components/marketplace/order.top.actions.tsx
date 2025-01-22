@@ -5,7 +5,7 @@ import { useModals } from '@mantine/modals';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { Input } from '@gitroom/react/form/input';
 import { CustomSelect } from '@gitroom/react/form/custom.select';
-import { FormProvider, useFieldArray, useForm } from 'react-hook-form';
+import { FormProvider, SubmitHandler, useFieldArray, useForm } from 'react-hook-form';
 import { Total } from '@gitroom/react/form/total';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
@@ -128,7 +128,7 @@ export const NewOrder: FC<{ group: string }> = (props) => {
     return modal.closeAll();
   }, []);
 
-  const submit = useCallback(async (data: any) => {
+  const submit: SubmitHandler<any> = useCallback(async (data: any) => {
     await (
       await fetch('/marketplace/offer', {
         method: 'POST',

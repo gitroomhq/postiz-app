@@ -5,7 +5,7 @@ import React, { FC, Ref, useCallback, useEffect, useMemo } from 'react';
 import { Input } from '@gitroom/react/form/input';
 import { Button } from '@gitroom/react/form/button';
 import { Textarea } from '@gitroom/react/form/textarea';
-import { FormProvider, useForm } from 'react-hook-form';
+import { FormProvider, SubmitHandler, useForm } from 'react-hook-form';
 import { showMediaBox } from '@gitroom/frontend/components/media/media.component';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
@@ -21,7 +21,7 @@ import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { PublicComponent } from '@gitroom/frontend/components/public-api/public.component';
 
 export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
-  const {isGeneral} = useVariables();
+  const { isGeneral } = useVariables();
   const { getRef } = props;
   const fetch = useFetch();
   const toast = useToaster();
@@ -58,7 +58,7 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
     form.setValue('picture', null);
   }, []);
 
-  const submit = useCallback(async (val: any) => {
+  const submit: SubmitHandler<any> = useCallback(async (val: any) => {
     await fetch('/user/personal', {
       method: 'POST',
       body: JSON.stringify(val),

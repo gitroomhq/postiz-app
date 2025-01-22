@@ -36,7 +36,7 @@ export const RenderAnalytics: FC<{ integration: Integration; date: number }> = (
     (integration: Integration & { identifier: string }) => async () => {
       const { url } = await (
         await fetch(
-          `/integrations/social/${integration.identifier}?refresh=${integration.internalId}`,
+          `/integrations/social/${integration.identifier}?customerId=${integration.customerId}&refresh=${integration.internalId}`,
           {
             method: 'GET',
           }

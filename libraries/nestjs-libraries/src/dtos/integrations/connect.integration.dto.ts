@@ -16,4 +16,9 @@ export class ConnectIntegrationDto {
   @IsString()
   @IsOptional()
   refresh?: string;
+
+  @IsString()
+  @IsOptional()
+  customerId?: string;
+
 }

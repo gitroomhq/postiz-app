@@ -11,6 +11,7 @@ export interface IAuthenticator {
       code: string;
       codeVerifier: string;
       refresh?: string;
+      customerId?:string;
     },
     clientInformation?: ClientInformation
   ): Promise<AuthTokenDetails | string>;
@@ -21,7 +22,8 @@ export interface IAuthenticator {
     accessToken: string
   ): Promise<AuthTokenDetails>;
   generateAuthUrl(
-    clientInformation?: ClientInformation
+    clientInformation?: ClientInformation,
+    customerId?: string
   ): Promise<GenerateAuthUrlResponse>;
   analytics?(
     id: string,
@@ -128,4 +130,6 @@ export interface SocialProvider
   externalUrl?: (
     url: string
   ) => Promise<{ client_id: string; client_secret: string }>;
+  setConfig?: (config: Record<string, string>) => void;
+  getConfig?: () => Record<string, string>;
 }

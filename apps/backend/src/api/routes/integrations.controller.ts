@@ -85,13 +85,16 @@ export class IntegrationsController {
 
   @Get('/list')
   async getIntegrationList(@GetOrgFromRequest() org: Organization) {
-    return {
-      integrations: (
-        await this._integrationService.getIntegrationsList(org.id)
-      ).map((p) => {
-        const findIntegration = this._integrationManager.getSocialIntegration(
-          p.providerIdentifier
+    const integrationsList = await this._integrationService.getIntegrationsList(org.id);
+  
+    const integrations = await Promise.all(
+      integrationsList.map(async (p) => {
+        const findIntegration = await this._integrationManager.getSocialIntegration(
+          p.providerIdentifier,
+          p.organizationId,
+          p.customerId
         );
+  
         return {
           name: p.name,
           id: p.id,
@@ -107,11 +110,15 @@ export class IntegrationsController {
           changeProfilePicture: !!findIntegration?.changeProfilePicture,
           changeNickName: !!findIntegration?.changeNickname,
           customer: p.customer,
+          customerId: p.customerId,
           additionalSettings: p.additionalSettings || '[]',
         };
-      }),
-    };
+      })
+    );
+  
+    return { integrations };
   }
+  
 
   @Post('/:id/settings')
   async updateProviderSettings(
@@ -139,8 +146,10 @@ export class IntegrationsController {
       throw new Error('Invalid integration');
     }
 
-    const manager = this._integrationManager.getSocialIntegration(
-      integration.providerIdentifier
+    const manager = await this._integrationManager.getSocialIntegration(
+      integration.providerIdentifier, 
+      integration.organizationId,
+      integration.customerId
     );
     if (!manager.changeProfilePicture && !manager.changeNickname) {
       throw new Error('Invalid integration');
@@ -183,9 +192,12 @@ export class IntegrationsController {
   @Get('/social/:integration')
   @CheckPolicies([AuthorizationActions.Create, Sections.CHANNEL])
   async getIntegrationUrl(
+    @GetOrgFromRequest() org: Organization,
     @Param('integration') integration: string,
     @Query('refresh') refresh: string,
-    @Query('externalUrl') externalUrl: string
+    @Query('externalUrl') externalUrl: string,
+    @Query('customerId') customerId: string
+
   ) {
     if (
       !this._integrationManager
@@ -196,8 +208,7 @@ export class IntegrationsController {
     }
 
     const integrationProvider =
-      this._integrationManager.getSocialIntegration(integration);
-
+      await this._integrationManager.getSocialIntegration(integration, org.id, customerId);
     if (integrationProvider.externalUrl && !externalUrl) {
       throw new Error('Missing external url');
     }
@@ -211,7 +222,7 @@ export class IntegrationsController {
         : undefined;
 
       const { codeVerifier, state, url } =
-        await integrationProvider.generateAuthUrl(getExternalUrl);
+        await integrationProvider.generateAuthUrl(getExternalUrl, customerId);
 
       if (refresh) {
         await ioRedis.set(`refresh:${state}`, refresh, 'EX', 300);
@@ -253,8 +264,10 @@ export class IntegrationsController {
     }
 
     if (getIntegration.type === 'social') {
-      const integrationProvider = this._integrationManager.getSocialIntegration(
-        getIntegration.providerIdentifier
+      const integrationProvider = await this._integrationManager.getSocialIntegration(
+        getIntegration.providerIdentifier,
+        getIntegration.organizationId,
+        getIntegration.customerId
       );
       if (!integrationProvider) {
         throw new Error('Invalid provider');
@@ -282,6 +295,7 @@ export class IntegrationsController {
                 additionalSettings,
                 !!integrationProvider.oneTimeToken,
                 getIntegration.organizationId,
+                getIntegration.customerId,
                 getIntegration.name,
                 getIntegration.picture!,
                 'social',
@@ -361,10 +375,12 @@ export class IntegrationsController {
       throw new Error('Invalid api key');
     }
 
+    const customrId = ''; // TODO
     return this._integrationService.createOrUpdateIntegration(
       undefined,
       true,
       org.id,
+      customrId,
       name,
       picture,
       'article',
@@ -394,8 +410,14 @@ export class IntegrationsController {
       throw new Error('Integration not allowed');
     }
 
+    // Use a regular expression to extract the values
+    const customerIdMatch = body.state.match(/customerId:([^,]+)/);
+
+    // Extract the values or assign null if not found
+    body.customerId = customerIdMatch ? customerIdMatch[1] : null;
+
     const integrationProvider =
-      this._integrationManager.getSocialIntegration(integration);
+      await this._integrationManager.getSocialIntegration(integration, org.id, body.customerId);
 
     const getCodeVerifier = integrationProvider.customFields
       ? 'none'
@@ -438,6 +460,7 @@ export class IntegrationsController {
           code: body.code,
           codeVerifier: getCodeVerifier,
           refresh: body.refresh,
+          customerId : body.customerId
         },
         details ? JSON.parse(details) : undefined
       );
@@ -492,6 +515,7 @@ export class IntegrationsController {
       additionalSettings,
       !!integrationProvider.oneTimeToken,
       org.id,
+      body.customerId,
       validName.trim(),
       picture,
       'social',

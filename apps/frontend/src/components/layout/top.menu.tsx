@@ -12,12 +12,12 @@ export const useMenuItems = () => {
   return [
     ...(!isGeneral
       ? [
-          {
-            name: 'Analytics',
-            icon: 'analytics',
-            path: '/analytics',
-          },
-        ]
+        {
+          name: 'Analytics',
+          icon: 'analytics',
+          path: '/analytics',
+        },
+      ]
       : []),
     {
       name: isGeneral ? 'Calendar' : 'Launches',
@@ -26,27 +26,37 @@ export const useMenuItems = () => {
     },
     ...(isGeneral
       ? [
-          {
-            name: 'Analytics',
-            icon: 'analytics',
-            path: '/analytics',
-          },
-        ]
+        {
+          name: 'Analytics',
+          icon: 'analytics',
+          path: '/analytics',
+        },
+      ]
       : []),
     ...(!isGeneral
       ? [
-          {
-            name: 'Settings',
-            icon: 'settings',
-            path: '/settings',
-            role: ['ADMIN', 'SUPERADMIN'],
-          },
-        ]
+        {
+          name: 'Settings',
+          icon: 'settings',
+          path: '/settings',
+          role: ['ADMIN', 'SUPERADMIN'],
+        },
+      ]
       : []),
     {
       name: 'Plugs',
       icon: 'plugs',
       path: '/plugs',
+    },
+    {
+      name: 'Customers',
+      icon: 'customers',
+      path: '/customers',
+    },
+    {
+      name: 'Social Media',
+      icon: 'social-media',
+      path: '/social-media',
     },
     {
       name: 'Billing',

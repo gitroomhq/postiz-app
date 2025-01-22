@@ -59,3 +59,4 @@ libraries/plugins/src/plugins.ts
 
 # custum files
 helper.txt
+apps/frontend/public/uploads/

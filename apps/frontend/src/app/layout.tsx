@@ -15,6 +15,7 @@ import { PHProvider } from '@gitroom/react/helpers/posthog';
 import UtmSaver from '@gitroom/helpers/utils/utm.saver';
 import { ToltScript } from '@gitroom/frontend/components/layout/tolt.script';
 import { FacebookComponent } from '@gitroom/frontend/components/layout/facebook.component';
+import { SocialMediaProvider } from './context/social-media/context';
 
 const chakra = Chakra_Petch({ weight: '400', subsets: ['latin'] });
 
@@ -56,7 +57,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             >
               <LayoutContext>
                 <UtmSaver />
-                {children}
+                <SocialMediaProvider>
+                  {children}
+                </SocialMediaProvider>
               </LayoutContext>
             </PHProvider>
           </Plausible>
