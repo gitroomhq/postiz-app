@@ -218,6 +218,16 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     }
   }
 
+  private postingMethod(method: TikTokDto["content_posting_method"]): string {
+      switch (method) {
+        case 'UPLOAD':
+          return '/inbox/video/init/';
+        case 'DIRECT_POST':
+        default:
+        return '/video/init/';
+    }
+  }
+
   async post(
     id: string,
     accessToken: string,
@@ -225,22 +235,11 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     integration: Integration
   ): Promise<PostResponse[]> {
     const [firstPost, ...comments] = postDetails;
-
-    const endpoint: string = (() => {
-      switch (firstPost.settings.content_posting_method) {
-        case 'UPLOAD':
-          return '/inbox/video/init/';
-        case 'DIRECT_POST':
-        default:
-          return '/video/init/';
-      }
-    })();
-
     const {
       data: { publish_id },
     } = await (
       await this.fetch(
-        `https://open.tiktokapis.com/v2/post/publish${endpoint}`,
+        `https://open.tiktokapis.com/v2/post/publish${this.postingMethod(firstPost.settings.content_posting_method)}`,
         {
           method: 'POST',
           headers: {
