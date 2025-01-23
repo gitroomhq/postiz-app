@@ -220,7 +220,7 @@ disabled={isUploadMode}
           </div>
         )}
         <div className="text-[14px] my-[10px] text-balance">
-          Turn on to disclose that this video promotes good or services in
+          Turn on to disclose that this video promotes goods or services in
           exchange for something of value. You video could promote yourself, a
           third party, or both.
         </div>
