@@ -33,6 +33,17 @@ const privacyLevel = [
   },
 ];
 
+const contentPostingMethod = [
+  {
+    value: 'DIRECT_POST',
+    label: 'Post content directly to TikTok',
+  },
+  {
+    value: 'UPLOAD',
+    label: 'Upload content to TikTok without posting it',
+  },
+];
+
 const yesNo = [
   {
     value: 'true',
@@ -121,6 +132,19 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
       >
         <option value="">Select</option>
         {privacyLevel.map((item) => (
+          <option key={item.value} value={item.value}>
+            {item.label}
+          </option>
+        ))}
+      </Select>
+      <Select
+        label="Content posting method"
+        {...register('content_posting_method', {
+          value: 'DIRECT_POST',
+        })}
+      >
+        <option value="">Select</option>
+        {contentPostingMethod.map((item) => (
           <option key={item.value} value={item.value}>
             {item.label}
           </option>
