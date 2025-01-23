@@ -1,6 +1,7 @@
 import {
   AnalyticsData,
   AuthTokenDetails,
+  ClientInformation,
   PostDetails,
   PostResponse,
   SocialProvider,
@@ -29,6 +30,18 @@ export class InstagramProvider
     'instagram_manage_comments',
     'instagram_manage_insights',
   ];
+  config = {
+    FACEBOOK_APP_ID: process.env.FACEBOOK_APP_ID || '',
+    FACEBOOK_APP_SECRET: process.env.FACEBOOK_APP_SECRET || '',
+  };
+  
+  setConfig(newConfig: Record<string, string>): void {
+    this.config = { ...this.config, ...newConfig }; 
+  }
+  
+  getConfig(): Record<string, string> {
+    return this.config;
+  }
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     return {
@@ -67,16 +80,18 @@ export class InstagramProvider
     };
   }
 
-  async generateAuthUrl() {
-    const state = makeId(6);
+  async generateAuthUrl(clientInformation: ClientInformation, customerId: string) {
+    // const state = makeId(6);
+    const state = `customerId:${customerId},uniqueState:${makeId(6)}`;
     return {
       url:
         'https://www.facebook.com/v20.0/dialog/oauth' +
-        `?client_id=${process.env.FACEBOOK_APP_ID}` +
+        `?client_id=${this.config.FACEBOOK_APP_ID}` +
         `&redirect_uri=${encodeURIComponent(
           `${process.env.FRONTEND_URL}/integrations/social/instagram`
         )}` +
-        `&state=${state}` +
+        // `&state=${state}` +
+        `&state=${encodeURIComponent(state)}` +
         `&scope=${encodeURIComponent(this.scopes.join(','))}`,
       codeVerifier: makeId(10),
       state,
@@ -91,13 +106,13 @@ export class InstagramProvider
     const getAccessToken = await (
       await this.fetch(
         'https://graph.facebook.com/v20.0/oauth/access_token' +
-          `?client_id=${process.env.FACEBOOK_APP_ID}` +
+          `?client_id=${this.config.FACEBOOK_APP_ID}` +
           `&redirect_uri=${encodeURIComponent(
             `${process.env.FRONTEND_URL}/integrations/social/instagram${
               params.refresh ? `?refresh=${params.refresh}` : ''
             }`
           )}` +
-          `&client_secret=${process.env.FACEBOOK_APP_SECRET}` +
+          `&client_secret=${this.config.FACEBOOK_APP_SECRET}` +
           `&code=${params.code}`
       )
     ).json();
@@ -106,8 +121,8 @@ export class InstagramProvider
       await this.fetch(
         'https://graph.facebook.com/v20.0/oauth/access_token' +
           '?grant_type=fb_exchange_token' +
-          `&client_id=${process.env.FACEBOOK_APP_ID}` +
-          `&client_secret=${process.env.FACEBOOK_APP_SECRET}` +
+          `&client_id=${this.config.FACEBOOK_APP_ID}` +
+          `&client_secret=${this.config.FACEBOOK_APP_SECRET}` +
           `&fb_exchange_token=${getAccessToken.access_token}`
       )
     ).json();
