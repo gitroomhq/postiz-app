@@ -226,11 +226,21 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   ): Promise<PostResponse[]> {
     const [firstPost, ...comments] = postDetails;
 
+    const endpoint: string = (() => {
+      switch (firstPost.settings.content_posting_method) {
+        case 'UPLOAD':
+          return '/inbox/video/init/';
+        case 'DIRECT_POST':
+        default:
+          return '/video/init/';
+      }
+    })();
+
     const {
       data: { publish_id },
     } = await (
       await this.fetch(
-        'https://open.tiktokapis.com/v2/post/publish/video/init/',
+        `https://open.tiktokapis.com/v2/post/publish${endpoint}`,
         {
           method: 'POST',
           headers: {
@@ -238,15 +248,17 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
             Authorization: `Bearer ${accessToken}`,
           },
           body: JSON.stringify({
-            post_info: {
-              title: firstPost.message,
-              privacy_level: firstPost.settings.privacy_level,
-              disable_duet: !firstPost.settings.duet,
-              disable_comment: !firstPost.settings.comment,
-              disable_stitch: !firstPost.settings.stitch,
-              brand_content_toggle: firstPost.settings.brand_content_toggle,
-              brand_organic_toggle: firstPost.settings.brand_organic_toggle,
-            },
+            ...(firstPost.settings.content_posting_method === 'DIRECT_POST' ? {
+              post_info: {
+                title: firstPost.message,
+                privacy_level: firstPost.settings.privacy_level,
+                disable_duet: !firstPost.settings.duet,
+                disable_comment: !firstPost.settings.comment,
+                disable_stitch: !firstPost.settings.stitch,
+                brand_content_toggle: firstPost.settings.brand_content_toggle,
+                brand_organic_toggle: firstPost.settings.brand_organic_toggle,
+              }
+            } : {}),
             source_info: {
               source: 'PULL_FROM_URL',
               video_url: firstPost?.media?.[0]?.url!,
