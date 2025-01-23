@@ -133,6 +133,21 @@ const initializeDefaultConfig = (customerId: string): SocialMediaConfig[] => [
   },
   {
     customerId: customerId,
+    platform: "Instagram (Standalone)",
+    platformKey: "instagram-standalone",
+    config: [
+      {
+        key: "INSTAGRAM_APP_ID",
+        value: "",
+      },
+      {
+        key: "INSTAGRAM_APP_SECRET",
+        value: "",
+      },
+    ],
+  },
+  {
+    customerId: customerId,
     platform: "Youtube",
     platformKey: "youtube",
     config: [
