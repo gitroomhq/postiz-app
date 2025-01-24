@@ -10,9 +10,13 @@ import { HttpForbiddenException } from '@gitroom/nestjs-libraries/services/excep
 export const removeAuth = (res: Response) => {
   res.cookie('auth', '', {
     domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-    secure: true,
-    httpOnly: true,
-    sameSite: 'none',
+    ...(!process.env.NOT_SECURED
+      ? {
+          secure: true,
+          httpOnly: true,
+          sameSite: 'none',
+        }
+      : {}),
     expires: new Date(0),
     maxAge: -1,
   });
@@ -43,9 +47,10 @@ export class AuthMiddleware implements NestMiddleware {
         throw new HttpForbiddenException();
       }
 
-      if (user?.isSuperAdmin && req.cookies.impersonate) {
+      const impersonate = req.cookies.impersonate || req.headers.impersonate;
+      if (user?.isSuperAdmin && impersonate) {
         const loadImpersonate = await this._organizationService.getUserOrg(
-          req.cookies.impersonate
+          impersonate
         );
 
         if (loadImpersonate) {
