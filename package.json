@@ -135,6 +135,7 @@
     "next-plausible": "^3.12.0",
     "node-telegram-bot-api": "^0.66.0",
     "nodemailer": "^6.9.15",
+    "nostr-tools": "^2.10.4",
     "nx": "19.7.2",
     "openai": "^4.47.1",
     "polotno": "^2.10.5",
@@ -171,6 +172,7 @@
     "utf-8-validate": "^5.0.10",
     "uuid": "^10.0.0",
     "viem": "^2.22.9",
+    "ws": "^8.18.0",
     "yargs": "^17.7.2",
     "yup": "^1.4.0",
     "zod": "^3.24.1"
