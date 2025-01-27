@@ -21,6 +21,7 @@
     "start:prod:frontend": "nx run frontend:serve:production",
     "start:prod:workers": "node dist/apps/workers/main.js",
     "start:prod:cron": "node dist/apps/cron/main.js",
+    "start:production": "npm-run-all --parallel start:prod start:prod:frontend start:prod:workers start:prod:cron",
     "workers": "npx nx run workers:serve:development",
     "cron": "npx nx run cron:serve:development",
     "command": "rm -rf dist/apps/commands && npx nx run commands:build && npx nx run commands:command",
