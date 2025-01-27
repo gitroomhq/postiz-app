@@ -10,10 +10,14 @@ import { PublicApiModule } from '@gitroom/backend/public-api/public.api.module';
 import { ThrottlerBehindProxyGuard } from '@gitroom/nestjs-libraries/throttler/throttler.provider';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AgentModule } from '@gitroom/nestjs-libraries/agent/agent.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Global()
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     BullMqModule,
     DatabaseModule,
     ApiModule,
@@ -39,7 +43,16 @@ import { AgentModule } from '@gitroom/nestjs-libraries/agent/agent.module';
     },
   ],
   get exports() {
-    return [...this.imports];
+    return [
+      BullMqModule,
+      DatabaseModule,
+      ApiModule,
+      PluginModule,
+      PublicApiModule,
+      AgentModule,
+      ThrottlerModule,
+    ]
+    // return [...this.imports];
   },
 })
 export class AppModule {}

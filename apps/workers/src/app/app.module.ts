@@ -6,9 +6,16 @@ import { TrendingService } from '@gitroom/nestjs-libraries/services/trending.ser
 import { PostsController } from '@gitroom/workers/app/posts.controller';
 import { BullMqModule } from '@gitroom/nestjs-libraries/bull-mq-transport-new/bull.mq.module';
 import { PlugsController } from '@gitroom/workers/app/plugs.controller';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [DatabaseModule, BullMqModule],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    DatabaseModule, 
+    BullMqModule
+  ],
   controllers: [
     ...(!process.env.IS_GENERAL ? [StarsController] : []),
     PostsController,
