@@ -59,6 +59,7 @@ libraries/plugins/src/plugins.ts
 
 # custum files
 .env.prod
+docker-compose.yaml
 docker-compose.prod.yaml
 apps/frontend/public/uploads/
 helper.txt
