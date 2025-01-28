@@ -86,30 +86,37 @@ export class IntegrationsController {
   @Get('/list')
   async getIntegrationList(@GetOrgFromRequest() org: Organization) {
     return {
-      integrations: (
-        await this._integrationService.getIntegrationsList(org.id)
-      ).map((p) => {
-        const findIntegration = this._integrationManager.getSocialIntegration(
-          p.providerIdentifier
-        );
-        return {
-          name: p.name,
-          id: p.id,
-          internalId: p.internalId,
-          disabled: p.disabled,
-          picture: p.picture || '/no-picture.jpg',
-          identifier: p.providerIdentifier,
-          inBetweenSteps: p.inBetweenSteps,
-          refreshNeeded: p.refreshNeeded,
-          display: p.profile,
-          type: p.type,
-          time: JSON.parse(p.postingTimes),
-          changeProfilePicture: !!findIntegration?.changeProfilePicture,
-          changeNickName: !!findIntegration?.changeNickname,
-          customer: p.customer,
-          additionalSettings: p.additionalSettings || '[]',
-        };
-      }),
+      integrations: await Promise.all(
+        (await this._integrationService.getIntegrationsList(org.id)).map(
+          async (p) => {
+            const findIntegration =
+              this._integrationManager.getSocialIntegration(
+                p.providerIdentifier
+              );
+            return {
+              name: p.name,
+              id: p.id,
+              internalId: p.internalId,
+              disabled: p.disabled,
+              picture: p.picture || '/no-picture.jpg',
+              identifier: p.providerIdentifier,
+              inBetweenSteps: p.inBetweenSteps,
+              refreshNeeded: p.refreshNeeded,
+              isCustomFields: !!findIntegration.customFields,
+              ...(findIntegration.customFields
+                ? { customFields: await findIntegration.customFields() }
+                : {}),
+              display: p.profile,
+              type: p.type,
+              time: JSON.parse(p.postingTimes),
+              changeProfilePicture: !!findIntegration?.changeProfilePicture,
+              changeNickName: !!findIntegration?.changeNickname,
+              customer: p.customer,
+              additionalSettings: p.additionalSettings || '[]',
+            };
+          }
+        )
+      ),
     };
   }
 
@@ -612,9 +619,7 @@ export class IntegrationsController {
   }
 
   @Get('/telegram/updates')
-  async getUpdates(
-    @Query() query: { word: string; id?: number },
-  ) {
+  async getUpdates(@Query() query: { word: string; id?: number }) {
     return new TelegramProvider().getBotId(query);
   }
 }

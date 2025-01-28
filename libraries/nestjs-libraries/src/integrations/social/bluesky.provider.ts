@@ -69,7 +69,7 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
       {
         key: 'identifier',
         label: 'Identifier',
-        validation: `/^.{3,}$/`,
+        validation: `/^.+$/`,
         type: 'text' as const,
       },
       {
