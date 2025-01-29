@@ -170,6 +170,7 @@ export class IntegrationRepository {
           : '[]',
       },
       update: {
+        ...additionalSettings ? { additionalSettings: JSON.stringify(additionalSettings) } : {},
         type: type as any,
         ...(!refresh
           ? {

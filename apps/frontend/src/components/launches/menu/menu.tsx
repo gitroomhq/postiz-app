@@ -229,7 +229,7 @@ export const Menu: FC<{
       children: (
         <CustomVariables
           identifier={findIntegration.identifier}
-          gotoUrl={(url: string) => router.push(url + '&refresh=true')}
+          gotoUrl={(url: string) => router.push(url)}
           variables={findIntegration.customFields}
         />
       ),
