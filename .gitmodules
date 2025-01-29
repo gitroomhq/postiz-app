@@ -1,6 +1,7 @@
 [submodule "libraries/plugins/src/list/public-api"]
   path = libraries/plugins/src/list/public-api
-  url = https://github.com/gitroomhq/public-api.git
+  url = git@github.com:gitroomhq/public-api.git
+
 
 
 
