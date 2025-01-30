@@ -10,7 +10,6 @@ If you discover a security vulnerability in the Postiz app, please report it to 
 
 * @nevo-david
 * @egelhaus ([email](mailto:gelhausenno@outlook.de))
-* @jonathan-irvin ([email](mailto:offendingcommit@gmail.com))
 
 When reporting a security vulnerability, please provide as much detail as possible, including:
 
