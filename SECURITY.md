@@ -9,7 +9,7 @@ The Postiz app is committed to ensuring the security and integrity of our users'
 If you discover a security vulnerability in the Postiz app, please report it to us privately via email to one of the maintainers:
 
 * @nevo-david
-* @jamesread ([email](mailto:contact@jread.com))
+* @egelhaus ([email](mailto:gelhausenno@outlook.de))
 * @jonathan-irvin ([email](mailto:offendingcommit@gmail.com))
 
 When reporting a security vulnerability, please provide as much detail as possible, including:
