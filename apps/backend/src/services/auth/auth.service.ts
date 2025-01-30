@@ -20,6 +20,14 @@ export class AuthService {
     private _notificationService: NotificationService,
     private _emailService: EmailService
   ) {}
+  async canRegister() {
+    if (!process.env.DISABLE_REGISTRATION) {
+      return true;
+    }
+
+    return (await this._organizationService.getCount()) === 0;
+  }
+
   async routeAuth(
     provider: Provider,
     body: CreateOrgUserDto | LoginUserDto,
@@ -32,6 +40,10 @@ export class AuthService {
       if (body instanceof CreateOrgUserDto) {
         if (user) {
           throw new Error('User already exists');
+        }
+
+        if (!(await this.canRegister())) {
+          throw new Error('Registration is disabled');
         }
 
         const create = await this._organizationService.createOrgAndUser(
@@ -130,6 +142,10 @@ export class AuthService {
     );
     if (user) {
       return user;
+    }
+
+    if (!(await this.canRegister())) {
+      throw new Error('Registration is disabled');
     }
 
     const create = await this._organizationService.createOrgAndUser(

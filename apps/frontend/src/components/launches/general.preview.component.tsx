@@ -33,7 +33,7 @@ export const GeneralPreviewComponent: FC<{maximumCharacters?: number}> = (props)
           >
             <div className="w-[40px] flex flex-col items-center">
               <img
-                src={integration?.picture}
+                src={integration?.picture || '/no-picture.jpg'}
                 alt="x"
                 className="rounded-full relative z-[2]"
               />

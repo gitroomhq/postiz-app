@@ -6,8 +6,7 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import {
-  NotEnoughScopes,
-  SocialAbstract,
+  NotEnoughScopes, RefreshToken, SocialAbstract
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { BskyAgent, RichText } from '@atproto/api';
 import dayjs from 'dayjs';
@@ -69,7 +68,7 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
       {
         key: 'identifier',
         label: 'Identifier',
-        validation: `/^.{3,}$/`,
+        validation: `/^.+$/`,
         type: 'text' as const,
       },
       {
@@ -152,10 +151,14 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
       service: body.service,
     });
 
-    await agent.login({
-      identifier: body.identifier,
-      password: body.password,
-    });
+    try {
+      await agent.login({
+        identifier: body.identifier,
+        password: body.password,
+      });
+    } catch (err) {
+      throw new RefreshToken('bluesky', JSON.stringify(err), {} as BodyInit);
+    }
 
     let loadCid = '';
     let loadUri = '';
