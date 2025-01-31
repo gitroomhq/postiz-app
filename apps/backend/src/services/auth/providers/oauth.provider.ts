@@ -1,36 +1,51 @@
 import { ProvidersInterface } from '@gitroom/backend/services/auth/providers.interface';
 
-export class AuthentikProvider implements ProvidersInterface {
+export class OauthProvider implements ProvidersInterface {
+  private readonly authUrl: string;
   private readonly baseUrl: string;
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly frontendUrl: string;
+  private readonly tokenUrl: string;
+  private readonly userInfoUrl: string;
 
   constructor() {
     const {
-      AUTHENTIK_URL,
-      AUTHENTIK_CLIENT_ID,
-      AUTHENTIK_CLIENT_SECRET,
+      POSTIZ_OAUTH_AUTH_URL,
+      POSTIZ_OAUTH_CLIENT_ID,
+      POSTIZ_OAUTH_CLIENT_SECRET,
+      POSTIZ_OAUTH_TOKEN_URL,
+      POSTIZ_OAUTH_URL,
+      POSTIZ_OAUTH_USERINFO_URL,
       FRONTEND_URL,
     } = process.env;
 
-    if (!AUTHENTIK_URL)
-      throw new Error('AUTHENTIK_URL environment variable is not set');
-    if (!AUTHENTIK_CLIENT_ID)
-      throw new Error('AUTHENTIK_CLIENT_ID environment variable is not set');
-    if (!AUTHENTIK_CLIENT_SECRET)
+    if (!POSTIZ_OAUTH_USERINFO_URL)
       throw new Error(
-        'AUTHENTIK_CLIENT_SECRET environment variable is not set'
+        'POSTIZ_OAUTH_USERINFO_URL environment variable is not set'
       );
+    if (!POSTIZ_OAUTH_URL)
+      throw new Error('POSTIZ_OAUTH_URL environment variable is not set');
+    if (!POSTIZ_OAUTH_TOKEN_URL)
+      throw new Error('POSTIZ_OAUTH_TOKEN_URL environment variable is not set');
+    if (!POSTIZ_OAUTH_CLIENT_ID)
+      throw new Error('POSTIZ_OAUTH_CLIENT_ID environment variable is not set');
+    if (!POSTIZ_OAUTH_CLIENT_SECRET)
+      throw new Error(
+        'POSTIZ_OAUTH_CLIENT_SECRET environment variable is not set'
+      );
+    if (!POSTIZ_OAUTH_AUTH_URL)
+      throw new Error('POSTIZ_OAUTH_AUTH_URL environment variable is not set');
     if (!FRONTEND_URL)
       throw new Error('FRONTEND_URL environment variable is not set');
 
-    this.baseUrl = AUTHENTIK_URL.endsWith('/')
-      ? AUTHENTIK_URL.slice(0, -1)
-      : AUTHENTIK_URL;
-    this.clientId = AUTHENTIK_CLIENT_ID;
-    this.clientSecret = AUTHENTIK_CLIENT_SECRET;
+    this.authUrl = POSTIZ_OAUTH_AUTH_URL;
+    this.baseUrl = POSTIZ_OAUTH_URL;
+    this.clientId = POSTIZ_OAUTH_CLIENT_ID;
+    this.clientSecret = POSTIZ_OAUTH_CLIENT_SECRET;
     this.frontendUrl = FRONTEND_URL;
+    this.tokenUrl = POSTIZ_OAUTH_TOKEN_URL;
+    this.userInfoUrl = POSTIZ_OAUTH_USERINFO_URL;
   }
 
   generateLink(): string {
@@ -41,11 +56,11 @@ export class AuthentikProvider implements ProvidersInterface {
       redirect_uri: `${this.frontendUrl}/settings`,
     });
 
-    return `${this.baseUrl}/application/o/authorize/?${params.toString()}`;
+    return `${this.authUrl}/?${params.toString()}`;
   }
 
   async getToken(code: string): Promise<string> {
-    const response = await fetch(`${this.baseUrl}/application/o/token/`, {
+    const response = await fetch(`${this.tokenUrl}/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -70,7 +85,7 @@ export class AuthentikProvider implements ProvidersInterface {
   }
 
   async getUser(access_token: string): Promise<{ email: string; id: string }> {
-    const response = await fetch(`${this.baseUrl}/application/o/userinfo/`, {
+    const response = await fetch(`${this.userInfoUrl}/`, {
       headers: {
         Authorization: `Bearer ${access_token}`,
         Accept: 'application/json',

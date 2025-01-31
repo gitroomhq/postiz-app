@@ -3,7 +3,7 @@ import { GithubProvider } from '@gitroom/backend/services/auth/providers/github.
 import { ProvidersInterface } from '@gitroom/backend/services/auth/providers.interface';
 import { GoogleProvider } from '@gitroom/backend/services/auth/providers/google.provider';
 import { FarcasterProvider } from '@gitroom/backend/services/auth/providers/farcaster.provider';
-import { AuthentikProvider } from '@gitroom/backend/services/auth/providers/authentik.provider';
+import { OauthProvider } from '@gitroom/backend/services/auth/providers/oauth.provider';
 
 export class ProvidersFactory {
   static loadProvider(provider: Provider): ProvidersInterface {
@@ -14,8 +14,8 @@ export class ProvidersFactory {
         return new GoogleProvider();
       case Provider.FARCASTER:
         return new FarcasterProvider();
-      case Provider.AUTHENTIK:
-        return new AuthentikProvider();
+      case Provider.GENERIC:
+        return new OauthProvider();
     }
   }
 }
