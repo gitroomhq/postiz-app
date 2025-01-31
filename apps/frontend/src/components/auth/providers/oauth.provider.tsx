@@ -2,13 +2,15 @@ import { useCallback } from 'react';
 import Image from 'next/image';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import interClass from '@gitroom/react/helpers/inter.font';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 
-export const AuthentikProvider = () => {
+export const OauthProvider = () => {
   const fetch = useFetch();
+  const { oauthLogoUrl, oauthDisplayName } = useVariables();
 
   const gotoLogin = useCallback(async () => {
     try {
-      const response = await fetch('/auth/oauth/AUTHENTIK');
+      const response = await fetch('/auth/oauth/GENERIC');
       if (!response.ok) {
         throw new Error(
           `Login link request failed with status ${response.status}`
@@ -17,7 +19,7 @@ export const AuthentikProvider = () => {
       const link = await response.text();
       window.location.href = link;
     } catch (error) {
-      console.error('Failed to get Authentik login link:', error);
+      console.error('Failed to get generic oauth login link:', error);
     }
   }, []);
 
@@ -28,13 +30,13 @@ export const AuthentikProvider = () => {
     >
       <div>
         <Image
-          src="/icons/authentik.svg"
-          alt="Authentik"
+          src={oauthLogoUrl || '/icons/generic-oauth.svg'}
+          alt="genericOauth"
           width={40}
           height={40}
         />
       </div>
-      <div>Sign in with Authentik </div>
+      <div>Sign in with {oauthDisplayName || 'OAuth'}</div>
     </div>
   );
 };

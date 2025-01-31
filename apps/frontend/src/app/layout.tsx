@@ -39,7 +39,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           discordUrl={process.env.NEXT_PUBLIC_DISCORD_SUPPORT!}
           frontEndUrl={process.env.FRONTEND_URL!}
           isGeneral={!!process.env.IS_GENERAL}
-          authentikOIDC={!!process.env.AUTHENTIK_OIDC}
+          genericOauth={!!process.env.POSTIZ_GENERIC_OAUTH}
+          oauthLogoUrl={process.env.NEXT_PUBLIC_POSTIZ_OAUTH_LOGO_URL!}
+          oauthDisplayName={process.env.NEXT_PUBLIC_POSTIZ_OAUTH_DISPLAY_NAME!}
           uploadDirectory={process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY!}
           tolt={process.env.NEXT_PUBLIC_TOLT!}
           facebookPixel={process.env.NEXT_PUBLIC_FACEBOOK_PIXEL!}
