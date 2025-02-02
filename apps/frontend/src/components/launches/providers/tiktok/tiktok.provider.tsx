@@ -142,8 +142,8 @@ disabled={isUploadMode}
         ))}
       </Select>
       <div className="text-[14px] mb-[10px] text-balance">
-        Choose upload without posting if you want to review and edit your content within TikTok's app before publishing.
-        This gives you access to TikTok's built-in editing tools and lets you make final adjustments before posting.
+        {`Choose upload without posting if you want to review and edit your content within TikTok's app before publishing.
+        This gives you access to TikTok's built-in editing tools and lets you make final adjustments before posting.`}
       </div>
       <Select
         label="Content posting method"
