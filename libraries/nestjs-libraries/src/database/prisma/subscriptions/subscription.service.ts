@@ -75,6 +75,10 @@ export class SubscriptionService {
     totalChannels: number,
     billing: 'FREE' | 'STANDARD' | 'PRO'
   ) {
+    if (!customerId) {
+      return ;
+    }
+
     const getOrgByCustomerId =
       await this._subscriptionRepository.getOrganizationByCustomerId(
         customerId
@@ -84,6 +88,11 @@ export class SubscriptionService {
       (await this._subscriptionRepository.getSubscriptionByCustomerId(
         customerId
       ))!;
+
+    if (getCurrentSubscription.isLifetime) {
+      return ;
+    }
+
     const from = pricing[getCurrentSubscription?.subscriptionTier || 'FREE'];
     const to = pricing[billing];
 
