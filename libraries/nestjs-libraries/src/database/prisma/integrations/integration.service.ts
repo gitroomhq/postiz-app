@@ -41,11 +41,7 @@ export class IntegrationService {
     return this._integrationRepository.setTimes(orgId, integrationId, times);
   }
 
-  updateProviderSettings(
-    org: string,
-    id: string,
-    additionalSettings: string
-  ) {
+  updateProviderSettings(org: string, id: string, additionalSettings: string) {
     return this._integrationRepository.updateProviderSettings(
       org,
       id,
@@ -54,13 +50,15 @@ export class IntegrationService {
   }
 
   async createOrUpdateIntegration(
-    additionalSettings: {
-      title: string;
-      description: string;
-      type: 'checkbox' | 'text' | 'textarea';
-      value: any;
-      regex?: string;
-    }[] | undefined,
+    additionalSettings:
+      | {
+          title: string;
+          description: string;
+          type: 'checkbox' | 'text' | 'textarea';
+          value: any;
+          regex?: string;
+        }[]
+      | undefined,
     oneTimeToken: boolean,
     org: string,
     name: string,
@@ -78,8 +76,11 @@ export class IntegrationService {
     customInstanceDetails?: string
   ) {
     const uploadedPicture = picture
-      ? await this.storage.uploadSimple(picture)
+      ? picture?.indexOf('imagedelivery.net') > -1
+        ? picture
+        : await this.storage.uploadSimple(picture)
       : undefined;
+
     return this._integrationRepository.createOrUpdateIntegration(
       additionalSettings,
       oneTimeToken,

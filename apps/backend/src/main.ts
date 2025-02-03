@@ -14,8 +14,13 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     rawBody: true,
     cors: {
-      credentials: true,
-      exposedHeaders: ['reload', 'onboarding', 'activate'],
+      ...(!process.env.NOT_SECURED ? { credentials: true } : {}),
+      exposedHeaders: [
+        'reload',
+        'onboarding',
+        'activate',
+        ...(process.env.NOT_SECURED ? ['auth', 'showorg', 'impersonate'] : []),
+      ],
       origin: [
         process.env.FRONTEND_URL,
         ...(process.env.MAIN_URL ? [process.env.MAIN_URL] : []),
@@ -39,8 +44,8 @@ async function bootstrap() {
 
   try {
     await app.listen(port);
-    
-    checkConfiguration() // Do this last, so that users will see obvious issues at the end of the startup log without having to scroll up.
+
+    checkConfiguration(); // Do this last, so that users will see obvious issues at the end of the startup log without having to scroll up.
 
     Logger.log(`🚀 Backend is running on: http://localhost:${port}`);
   } catch (e) {
@@ -50,17 +55,17 @@ async function bootstrap() {
 
 function checkConfiguration() {
   const checker = new ConfigurationChecker();
-  checker.readEnvFromProcess()
-  checker.check()
+  checker.readEnvFromProcess();
+  checker.check();
 
   if (checker.hasIssues()) {
     for (const issue of checker.getIssues()) {
-      Logger.warn(issue, 'Configuration issue')
+      Logger.warn(issue, 'Configuration issue');
     }
 
-    Logger.warn("Configuration issues found: " + checker.getIssuesCount())
+    Logger.warn('Configuration issues found: ' + checker.getIssuesCount());
   } else {
-    Logger.log("Configuration check completed without any issues.")
+    Logger.log('Configuration check completed without any issues.');
   }
 }
 
