@@ -160,7 +160,7 @@ const Welcome: FC = () => {
     <div className="bg-sixth p-[32px] w-full max-w-[920px] mx-auto flex flex-col gap-[24px] rounded-[4px] border border-customColor6 relative">
       <h1 className="text-[24px]">Onboarding</h1>
       <div className="flex">
-        <Step title="Profile" step={1} currentStep={step} lastStep={lastStep} />
+        <Step title="Connect Channels" step={1} currentStep={step} lastStep={lastStep} />
         <StepSpace />
         {!isGeneral && (
           <>
@@ -168,19 +168,19 @@ const Welcome: FC = () => {
               title="Connect Github"
               step={2}
               currentStep={step}
-              lastStep={4}
+              lastStep={2}
             />
             <StepSpace />
           </>
         )}
         <Step
-          title="Connect Channels"
+          title="Finish"
           step={3 - (isGeneral ? 1 : 0)}
           currentStep={step}
-          lastStep={4}
+          lastStep={2}
         />
-        <StepSpace />
-        <Step title="Finish" step={4 - (isGeneral ? 1 : 0)} currentStep={step} lastStep={lastStep} />
+        {/*<StepSpace />*/}
+        {/*<Step title="Finish" step={4 - (isGeneral ? 1 : 0)} currentStep={step} lastStep={lastStep} />*/}
         {seller && (
           <>
             <StepSpace />
@@ -193,36 +193,25 @@ const Welcome: FC = () => {
           </>
         )}
       </div>
-      {step === 1 && (
-        <>
-          <div>
-            <SettingsPopup getRef={ref} />
-          </div>
-          <div className="flex justify-end gap-[8px]">
-            <SkipOnboarding />
-            <Button onClick={firstNext}>Next</Button>
-          </div>
-        </>
-      )}
-      {step === 2 && !isGeneral && (
+      {step === 1 && !isGeneral && (
         <div>
           <GithubOnboarding />
           <div className="flex justify-end gap-[8px]">
-            <SkipOnboarding />
+            {/*<SkipOnboarding />*/}
+            <Button onClick={nextStep()}>Next</Button>
+          </div>
+        </div>
+      )}
+      {step === 2 - (isGeneral ? 1 : 0) && (
+        <div>
+          <ConnectChannels />
+          <div className="flex justify-end gap-[8px]">
+            {/*<SkipOnboarding />*/}
             <Button onClick={nextStep()}>Next</Button>
           </div>
         </div>
       )}
       {step === 3 - (isGeneral ? 1 : 0) && (
-        <div>
-          <ConnectChannels />
-          <div className="flex justify-end gap-[8px]">
-            <SkipOnboarding />
-            <Button onClick={nextStep()}>Next</Button>
-          </div>
-        </div>
-      )}
-      {step === 4 - (isGeneral ? 1 : 0) && (
         <div className="items-center justify-center flex flex-col gap-[24px]">
           <div className="items-center justify-center flex flex-col">
             <img src="/success.svg" alt="success" />
@@ -238,14 +227,14 @@ const Welcome: FC = () => {
               <Button onClick={goToLaunches}>Schedule a new post</Button>
             </div>
 
-            <div className="grid grid-cols-2 gap-[8px]">
-              <Button onClick={buyPosts}>Buy posts from Influencers</Button>
-              <Button onClick={sellPosts}>Sell your services</Button>
-            </div>
+            {/*<div className="grid grid-cols-2 gap-[8px]">*/}
+            {/*  /!*<Button onClick={buyPosts}>Buy posts from Influencers</Button>*!/*/}
+            {/*  /!*<Button onClick={sellPosts}>Sell your services</Button>*!/*/}
+            {/*</div>*/}
           </div>
         </div>
       )}
-      {step === 5 - (isGeneral ? 1 : 0) && (
+      {step === 4 - (isGeneral ? 1 : 0) && (
         <div>
           <div className="text-[24px] mb-[24px]">To sell posts you would have to:</div>
           <ul>

@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   Post,
+  Put,
   Query,
   UseFilters,
 } from '@nestjs/common';
@@ -28,6 +29,14 @@ import { NotEnoughScopesFilter } from '@gitroom/nestjs-libraries/integrations/in
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import { IntegrationTimeDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.time.dto';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
+import { AuthTokenDetails } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { PlugDto } from '@gitroom/nestjs-libraries/dtos/plugs/plug.dto';
+import {
+  NotEnoughScopes,
+  RefreshToken,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { timer } from '@gitroom/helpers/utils/timer';
+import { TelegramProvider } from '@gitroom/nestjs-libraries/integrations/social/telegram.provider';
 
 @ApiTags('Integrations')
 @Controller('/integrations')
@@ -42,33 +51,87 @@ export class IntegrationsController {
     return this._integrationManager.getAllIntegrations();
   }
 
+  @Get('/:identifier/internal-plugs')
+  getInternalPlugs(@Param('identifier') identifier: string) {
+    return this._integrationManager.getInternalPlugs(identifier);
+  }
+
+  @Get('/customers')
+  getCustomers(@GetOrgFromRequest() org: Organization) {
+    return this._integrationService.customers(org.id);
+  }
+
+  @Put('/:id/group')
+  async updateIntegrationGroup(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: { group: string }
+  ) {
+    return this._integrationService.updateIntegrationGroup(
+      org.id,
+      id,
+      body.group
+    );
+  }
+
+  @Put('/:id/customer-name')
+  async updateOnCustomerName(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: { name: string }
+  ) {
+    return this._integrationService.updateOnCustomerName(org.id, id, body.name);
+  }
+
   @Get('/list')
   async getIntegrationList(@GetOrgFromRequest() org: Organization) {
     return {
-      integrations: (
-        await this._integrationService.getIntegrationsList(org.id)
-      ).map((p) => {
-        const findIntegration = this._integrationManager.getSocialIntegration(
-          p.providerIdentifier
-        );
-        return {
-          name: p.name,
-          id: p.id,
-          internalId: p.internalId,
-          disabled: p.disabled,
-          picture: p.picture,
-          identifier: p.providerIdentifier,
-          inBetweenSteps: p.inBetweenSteps,
-          refreshNeeded: p.refreshNeeded,
-          type: p.type,
-          time: JSON.parse(p.postingTimes),
-          changeProfilePicture: !!findIntegration?.changeProfilePicture,
-          changeNickName: !!findIntegration?.changeNickname,
-        };
-      }),
+      integrations: await Promise.all(
+        (await this._integrationService.getIntegrationsList(org.id)).map(
+          async (p) => {
+            const findIntegration =
+              this._integrationManager.getSocialIntegration(
+                p.providerIdentifier
+              );
+            return {
+              name: p.name,
+              id: p.id,
+              internalId: p.internalId,
+              disabled: p.disabled,
+              picture: p.picture || '/no-picture.jpg',
+              identifier: p.providerIdentifier,
+              inBetweenSteps: p.inBetweenSteps,
+              refreshNeeded: p.refreshNeeded,
+              isCustomFields: !!findIntegration.customFields,
+              ...(findIntegration.customFields
+                ? { customFields: await findIntegration.customFields() }
+                : {}),
+              display: p.profile,
+              type: p.type,
+              time: JSON.parse(p.postingTimes),
+              changeProfilePicture: !!findIntegration?.changeProfilePicture,
+              changeNickName: !!findIntegration?.changeNickname,
+              customer: p.customer,
+              additionalSettings: p.additionalSettings || '[]',
+            };
+          }
+        )
+      ),
     };
   }
 
+  @Post('/:id/settings')
+  async updateProviderSettings(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body('additionalSettings') body: string
+  ) {
+    if (typeof body !== 'string') {
+      throw new Error('Invalid body');
+    }
+
+    await this._integrationService.updateProviderSettings(org.id, id, body);
+  }
   @Post('/:id/nickname')
   async setNickname(
     @GetOrgFromRequest() org: Organization,
@@ -155,7 +218,12 @@ export class IntegrationsController {
         : undefined;
 
       const { codeVerifier, state, url } =
-        await integrationProvider.generateAuthUrl(refresh, getExternalUrl);
+        await integrationProvider.generateAuthUrl(getExternalUrl);
+
+      if (refresh) {
+        await ioRedis.set(`refresh:${state}`, refresh, 'EX', 300);
+      }
+
       await ioRedis.set(`login:${state}`, codeVerifier, 'EX', 300);
       await ioRedis.set(
         `external:${state}`,
@@ -200,11 +268,54 @@ export class IntegrationsController {
       }
 
       if (integrationProvider[body.name]) {
-        return integrationProvider[body.name](
-          getIntegration.token,
-          body.data,
-          getIntegration.internalId
-        );
+        try {
+          const load = await integrationProvider[body.name](
+            getIntegration.token,
+            body.data,
+            getIntegration.internalId,
+            getIntegration
+          );
+
+          return load;
+        } catch (err) {
+          if (err instanceof RefreshToken) {
+            const { accessToken, refreshToken, expiresIn, additionalSettings } =
+              await integrationProvider.refreshToken(
+                getIntegration.refreshToken
+              );
+
+            if (accessToken) {
+              await this._integrationService.createOrUpdateIntegration(
+                additionalSettings,
+                !!integrationProvider.oneTimeToken,
+                getIntegration.organizationId,
+                getIntegration.name,
+                getIntegration.picture!,
+                'social',
+                getIntegration.internalId,
+                getIntegration.providerIdentifier,
+                accessToken,
+                refreshToken,
+                expiresIn
+              );
+
+              getIntegration.token = accessToken;
+
+              if (integrationProvider.refreshWait) {
+                await timer(10000);
+              }
+              return this.functionIntegration(org, body);
+            } else {
+              await this._integrationService.disconnectChannel(
+                org.id,
+                getIntegration
+              );
+              return false;
+            }
+          }
+
+          return false;
+        }
       }
       throw new Error('Function not found');
     }
@@ -258,6 +369,8 @@ export class IntegrationsController {
     }
 
     return this._integrationService.createOrUpdateIntegration(
+      undefined,
+      true,
       org.id,
       name,
       picture,
@@ -288,15 +401,19 @@ export class IntegrationsController {
       throw new Error('Integration not allowed');
     }
 
-    const getCodeVerifier = await ioRedis.get(`login:${body.state}`);
+    const integrationProvider =
+      this._integrationManager.getSocialIntegration(integration);
+
+    const getCodeVerifier = integrationProvider.customFields
+      ? 'none'
+      : await ioRedis.get(`login:${body.state}`);
     if (!getCodeVerifier) {
       throw new Error('Invalid state');
     }
 
-    await ioRedis.del(`login:${body.state}`);
-
-    const integrationProvider =
-      this._integrationManager.getSocialIntegration(integration);
+    if (!integrationProvider.customFields) {
+      await ioRedis.del(`login:${body.state}`);
+    }
 
     const details = integrationProvider.externalUrl
       ? await ioRedis.get(`external:${body.state}`)
@@ -306,7 +423,13 @@ export class IntegrationsController {
       await ioRedis.del(`external:${body.state}`);
     }
 
+    const refresh = await ioRedis.get(`refresh:${body.state}`);
+    if (refresh) {
+      await ioRedis.del(`refresh:${body.state}`);
+    }
+
     const {
+      error,
       accessToken,
       expiresIn,
       refreshToken,
@@ -314,22 +437,69 @@ export class IntegrationsController {
       name,
       picture,
       username,
-    } = await integrationProvider.authenticate(
-      {
-        code: body.code,
-        codeVerifier: getCodeVerifier,
-        refresh: body.refresh,
-      },
-      details ? JSON.parse(details) : undefined
-    );
+      additionalSettings,
+      // eslint-disable-next-line no-async-promise-executor
+    } = await new Promise<AuthTokenDetails>(async (res) => {
+      const auth = await integrationProvider.authenticate(
+        {
+          code: body.code,
+          codeVerifier: getCodeVerifier,
+          refresh: body.refresh,
+        },
+        details ? JSON.parse(details) : undefined
+      );
 
-    if (!id) {
-      throw new Error('Invalid api key');
+      if (typeof auth === 'string') {
+        return res({
+          error: auth,
+          accessToken: '',
+          id: '',
+          name: '',
+          picture: '',
+          username: '',
+          additionalSettings: [],
+        });
+      }
+
+      if (refresh && integrationProvider.reConnect) {
+        const newAuth = await integrationProvider.reConnect(
+          auth.id,
+          refresh,
+          auth.accessToken
+        );
+        return res(newAuth);
+      }
+
+      return res(auth);
+    });
+
+    if (error) {
+      throw new NotEnoughScopes(error);
     }
 
+    if (!id) {
+      throw new NotEnoughScopes('Invalid API key');
+    }
+
+    if (refresh && String(id) !== String(refresh)) {
+      throw new NotEnoughScopes(
+        'Please refresh the channel that needs to be refreshed'
+      );
+    }
+
+    let validName = name;
+    if (!validName) {
+      if (username) {
+        validName = username.split('.')[0] ?? username;
+      } else {
+        validName = `Channel_${String(id).slice(0, 8)}`;
+      }
+    }
     return this._integrationService.createOrUpdateIntegration(
+      additionalSettings,
+      !!integrationProvider.oneTimeToken,
       org.id,
-      name,
+      validName.trim(),
       picture,
       'social',
       String(id),
@@ -338,10 +508,16 @@ export class IntegrationsController {
       refreshToken,
       expiresIn,
       username,
-      integrationProvider.isBetweenSteps,
+      refresh ? false : integrationProvider.isBetweenSteps,
       body.refresh,
       +body.timezone,
-      details ? AuthService.fixedEncryption(details) : undefined
+      details
+        ? AuthService.fixedEncryption(details)
+        : integrationProvider.customFields
+        ? AuthService.fixedEncryption(
+            Buffer.from(body.code, 'base64').toString()
+          )
+        : undefined
     );
   }
 
@@ -409,5 +585,41 @@ export class IntegrationsController {
     }
 
     return this._integrationService.deleteChannel(org.id, id);
+  }
+
+  @Get('/plug/list')
+  async getPlugList() {
+    return { plugs: this._integrationManager.getAllPlugs() };
+  }
+
+  @Get('/:id/plugs')
+  async getPlugsByIntegrationId(
+    @Param('id') id: string,
+    @GetOrgFromRequest() org: Organization
+  ) {
+    return this._integrationService.getPlugsByIntegrationId(org.id, id);
+  }
+
+  @Post('/:id/plugs')
+  async postPlugsByIntegrationId(
+    @Param('id') id: string,
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: PlugDto
+  ) {
+    return this._integrationService.createOrUpdatePlug(org.id, id, body);
+  }
+
+  @Put('/plugs/:id/activate')
+  async changePlugActivation(
+    @Param('id') id: string,
+    @GetOrgFromRequest() org: Organization,
+    @Body('status') status: boolean
+  ) {
+    return this._integrationService.changePlugActivation(org.id, id, status);
+  }
+
+  @Get('/telegram/updates')
+  async getUpdates(@Query() query: { word: string; id?: number }) {
+    return new TelegramProvider().getBotId(query);
   }
 }

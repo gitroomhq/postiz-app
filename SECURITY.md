@@ -9,8 +9,7 @@ The Postiz app is committed to ensuring the security and integrity of our users'
 If you discover a security vulnerability in the Postiz app, please report it to us privately via email to one of the maintainers:
 
 * @nevo-david
-* @jamesread ([email](mailto:contact@jread.com))
-* @jonathan-irvin ([email](mailto:offendingcommit@gmail.com))
+* @egelhaus ([email](mailto:gelhausenno@outlook.de))
 
 When reporting a security vulnerability, please provide as much detail as possible, including:
 
@@ -39,6 +38,6 @@ We take security vulnerabilities seriously and will respond promptly to reports 
 
 ## Template Attribution
 
-This SECURITY.md file is based on the [GitHub Security Policy Template](https://github.com/github/security/blob/master/SECURITY.md).
+This SECURITY.md file is based on the [GitHub Security Policy Template](https://docs.github.com/en/code-security/getting-started/adding-a-security-policy-to-your-repository).
 
 Thank you for helping to keep the `postiz-app` secure!

@@ -10,54 +10,173 @@ import sharp from 'sharp';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
 import removeMd from 'remove-markdown';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
+import { Integration } from '@prisma/client';
+import { timer } from '@gitroom/helpers/utils/timer';
+import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
 
 export class XProvider extends SocialAbstract implements SocialProvider {
   identifier = 'x';
   name = 'X';
   isBetweenSteps = false;
   scopes = [];
+  toolTip =
+    'You will be logged in into your current account, if you would like a different account, change it first on X';
 
-  async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
-    const startingClient = new TwitterApi({
-      clientId: process.env.TWITTER_CLIENT_ID!,
-      clientSecret: process.env.TWITTER_CLIENT_SECRET!,
+  @Plug({
+    identifier: 'x-autoRepostPost',
+    title: 'Auto Repost Posts',
+    description:
+      'When a post reached a certain number of likes, repost it to increase engagement (1 week old posts)',
+    runEveryMilliseconds: 21600000,
+    totalRuns: 3,
+    fields: [
+      {
+        name: 'likesAmount',
+        type: 'number',
+        placeholder: 'Amount of likes',
+        description: 'The amount of likes to trigger the repost',
+        validation: /^\d+$/,
+      },
+    ],
+  })
+  async autoRepostPost(
+    integration: Integration,
+    id: string,
+    fields: { likesAmount: string }
+  ) {
+    // @ts-ignore
+    // eslint-disable-next-line prefer-rest-params
+    const [accessTokenSplit, accessSecretSplit] = integration.token.split(':');
+    const client = new TwitterApi({
+      appKey: process.env.X_API_KEY!,
+      appSecret: process.env.X_API_SECRET!,
+      accessToken: accessTokenSplit,
+      accessSecret: accessSecretSplit,
     });
+
+    if (
+      (await client.v2.tweetLikedBy(id)).meta.result_count >=
+      +fields.likesAmount
+    ) {
+      await timer(2000);
+      await client.v2.retweet(integration.internalId, id);
+      return true;
+    }
+
+    return false;
+  }
+
+  @PostPlug({
+    identifier: 'x-repost-post-users',
+    title: 'Add Re-posters',
+    description: 'Add accounts to repost your post',
+    pickIntegration: ['x'],
+    fields: [],
+  })
+  async repostPostUsers(
+    integration: Integration,
+    originalIntegration: Integration,
+    postId: string,
+    information: any
+  ) {
+    const [accessTokenSplit, accessSecretSplit] = integration.token.split(':');
+    const client = new TwitterApi({
+      appKey: process.env.X_API_KEY!,
+      appSecret: process.env.X_API_SECRET!,
+      accessToken: accessTokenSplit,
+      accessSecret: accessSecretSplit,
+    });
+
     const {
-      accessToken,
-      refreshToken: newRefreshToken,
-      expiresIn,
-      client,
-    } = await startingClient.refreshOAuth2Token(refreshToken);
-    const {
-      data: { id, name, profile_image_url },
+      data: { id },
     } = await client.v2.me();
 
-    const {
-      data: { username },
-    } = await client.v2.me({
-      'user.fields': 'username',
+    try {
+      await client.v2.retweet(id, postId);
+    } catch (err) {
+      /** nothing **/
+    }
+  }
+
+  @Plug({
+    identifier: 'x-autoPlugPost',
+    title: 'Auto plug post',
+    description:
+      'When a post reached a certain number of likes, add another post to it so you followers get a notification about your promotion',
+    runEveryMilliseconds: 21600000,
+    totalRuns: 3,
+    fields: [
+      {
+        name: 'likesAmount',
+        type: 'number',
+        placeholder: 'Amount of likes',
+        description: 'The amount of likes to trigger the repost',
+        validation: /^\d+$/,
+      },
+      {
+        name: 'post',
+        type: 'richtext',
+        placeholder: 'Post to plug',
+        description: 'Message content to plug',
+        validation: /^[\s\S]{3,}$/g,
+      },
+    ],
+  })
+  async autoPlugPost(
+    integration: Integration,
+    id: string,
+    fields: { likesAmount: string; post: string }
+  ) {
+    // @ts-ignore
+    // eslint-disable-next-line prefer-rest-params
+    const [accessTokenSplit, accessSecretSplit] = integration.token.split(':');
+    const client = new TwitterApi({
+      appKey: process.env.X_API_KEY!,
+      appSecret: process.env.X_API_SECRET!,
+      accessToken: accessTokenSplit,
+      accessSecret: accessSecretSplit,
     });
 
+    if (
+      (await client.v2.tweetLikedBy(id)).meta.result_count >=
+      +fields.likesAmount
+    ) {
+      await timer(2000);
+
+      await client.v2.tweet({
+        text: removeMd(fields.post.replace('\n', '𝔫𝔢𝔴𝔩𝔦𝔫𝔢')).replace(
+          '𝔫𝔢𝔴𝔩𝔦𝔫𝔢',
+          '\n'
+        ),
+        reply: { in_reply_to_tweet_id: id },
+      });
+      return true;
+    }
+
+    return false;
+  }
+
+  async refreshToken(): Promise<AuthTokenDetails> {
     return {
-      id,
-      name,
-      accessToken,
-      refreshToken: newRefreshToken,
-      expiresIn,
-      picture: profile_image_url,
-      username,
+      id: '',
+      name: '',
+      accessToken: '',
+      refreshToken: '',
+      expiresIn: 0,
+      picture: '',
+      username: '',
     };
   }
 
-  async generateAuthUrl(refresh?: string) {
+  async generateAuthUrl() {
     const client = new TwitterApi({
       appKey: process.env.X_API_KEY!,
       appSecret: process.env.X_API_SECRET!,
     });
     const { url, oauth_token, oauth_token_secret } =
       await client.generateAuthLink(
-        process.env.FRONTEND_URL +
-          `/integrations/social/x${refresh ? `?refresh=${refresh}` : ''}`,
+        process.env.FRONTEND_URL + `/integrations/social/x`,
         {
           authAccessType: 'write',
           linkMode: 'authenticate',
@@ -86,14 +205,16 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       code
     );
 
-    const { id, name, profile_image_url_https } = await client.currentUser(
-      true
-    );
-
     const {
-      data: { username },
+      data: { username, verified, profile_image_url, name, id },
     } = await client.v2.me({
-      'user.fields': 'username',
+      'user.fields': [
+        'username',
+        'verified',
+        'verified_type',
+        'profile_image_url',
+        'name',
+      ],
     });
 
     return {
@@ -102,8 +223,16 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       name,
       refreshToken: '',
       expiresIn: 999999999,
-      picture: profile_image_url_https,
+      picture: profile_image_url,
       username,
+      additionalSettings: [
+        {
+          title: 'Verified',
+          description: 'Is this a verified user? (Premium)',
+          type: 'checkbox' as const,
+          value: verified,
+        },
+      ],
     };
   }
 
@@ -132,10 +261,10 @@ export class XProvider extends SocialAbstract implements SocialProvider {
           p?.media?.flatMap(async (m) => {
             return {
               id: await client.v1.uploadMedia(
-                m.path.indexOf('mp4') > -1
-                  ? Buffer.from(await readOrFetch(m.path))
-                  : await sharp(await readOrFetch(m.path), {
-                      animated: lookup(m.path) === 'image/gif',
+                m.url.indexOf('mp4') > -1
+                  ? Buffer.from(await readOrFetch(m.url))
+                  : await sharp(await readOrFetch(m.url), {
+                      animated: lookup(m.url) === 'image/gif',
                     })
                       .resize({
                         width: 1000,
@@ -143,7 +272,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
                       .gif()
                       .toBuffer(),
                 {
-                  mimeType: lookup(m.path) || '',
+                  mimeType: lookup(m.url) || '',
                 }
               ),
               postId: p.id,

@@ -6,10 +6,7 @@ import { Input } from '@gitroom/react/form/input';
 import { Button } from '@gitroom/react/form/button';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
-import {
-  MediaComponent,
-  showMediaBox,
-} from '@gitroom/frontend/components/media/media.component';
+import { showMediaBox } from '@gitroom/frontend/components/media/media.component';
 
 export const BotPicture: FC<{
   integration: Integrations;
@@ -20,7 +17,7 @@ export const BotPicture: FC<{
   const modal = useModals();
   const toast = useToaster();
   const [nick, setNickname] = useState(props.integration.name);
-  const [picture, setPicture] = useState(props.integration.picture);
+  const [picture, setPicture] = useState(props.integration.picture || '/no-picture.jpg');
 
   const fetch = useFetch();
   const submitForm: FormEventHandler<HTMLFormElement> = useCallback(

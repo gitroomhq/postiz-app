@@ -1,5 +1,5 @@
 import {
-  ArrayMinSize, IsArray, IsDateString, IsDefined, IsIn, IsOptional, IsString, MinLength, ValidateNested,
+  ArrayMinSize, IsArray, IsBoolean, IsDateString, IsDefined, IsIn, IsOptional, IsString, MinLength, ValidateIf, ValidateNested
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { DevToSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dev.to.settings.dto';
@@ -14,6 +14,7 @@ import { DribbbleDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-sett
 import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
 import { DiscordDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/discord.dto';
 import { SlackDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/slack.dto';
+import { LemmySettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/lemmy.dto';
 
 export class EmptySettings {}
 export class Integration {
@@ -66,6 +67,7 @@ export class Post {
           { value: MediumSettingsDto, name: 'medium' },
           { value: HashnodeSettingsDto, name: 'hashnode' },
           { value: RedditSettingsDto, name: 'reddit' },
+          { value: LemmySettingsDto, name: 'lemmy' },
           { value: YoutubeSettingsDto, name: 'youtube' },
           { value: PinterestSettingsDto, name: 'pinterest' },
           { value: DribbbleDto, name: 'dribbble' },
@@ -88,9 +90,14 @@ export class CreatePostDto {
   order: string;
 
   @IsDefined()
+  @IsBoolean()
+  shortLink: boolean;
+
+  @IsDefined()
   @IsDateString()
   date: string;
 
+  @ValidateIf((o) => o.type !== 'draft')
   @IsDefined()
   @Type(() => Post)
   @IsArray()

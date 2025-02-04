@@ -1,0 +1,87 @@
+---
+name: "Build Containers Enterprise"
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build-containers-common:
+    runs-on: ubuntu-latest
+    outputs:
+      containerver: ${{ steps.getcontainerver.outputs.containerver }}
+    steps:
+      - name: Get Container Version
+        id: getcontainerver
+        run: |
+          echo "containerver=$(date +'%s')" >> "$GITHUB_OUTPUT"
+
+  build-containers:
+    needs: build-containers-common
+    strategy: 
+      matrix:
+        include:
+          - runnertags: ubuntu-latest
+            arch: amd64
+          - runnertags: [self-hosted, ARM64]
+            arch: arm64
+
+    runs-on: ${{ matrix.runnertags }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: 'true'
+          token: ${{ secrets.PAT_TOKEN }}
+
+      - name: Login to ghcr
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: docker build
+        run: ./var/docker/docker-build.sh
+
+      - name: Print post-build debug info
+        run: |
+          docker images
+
+      - name: docker tag
+        env: 
+          CONTAINERVER: ${{ needs.build-containers-common.outputs.containerver }}
+        run: |
+          docker tag localhost/postiz ghcr.io/gitroomhq/postiz-app-enterprise:${{ matrix.arch }}-${{ env.CONTAINERVER }}
+          docker push ghcr.io/gitroomhq/postiz-app-enterprise:${{ matrix.arch }}-${{ env.CONTAINERVER }}
+
+          docker tag localhost/postiz-devcontainer ghcr.io/gitroomhq/postiz-devcontainer-enterprise:${{ env.CONTAINERVER }}
+          docker push ghcr.io/gitroomhq/postiz-devcontainer-enterprise:${{ env.CONTAINERVER }}
+
+          docker tag ghcr.io/gitroomhq/postiz-devcontainer-enterprise:${{ env.CONTAINERVER }} ghcr.io/gitroomhq/postiz-devcontainer-enterprise:latest
+          docker push ghcr.io/gitroomhq/postiz-devcontainer-enterprise:latest
+
+  build-container-manifest:
+    needs: [build-containers, build-containers-common]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login to ghcr
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Create Docker Manifest 
+        env: 
+          CONTAINERVER: ${{ needs.build-containers-common.outputs.containerver }}
+        run: |
+          docker manifest create \
+            ghcr.io/gitroomhq/postiz-app-enterprise:latest \
+            ghcr.io/gitroomhq/postiz-app-enterprise:amd64-${{ env.CONTAINERVER }} \
+            ghcr.io/gitroomhq/postiz-app-enterprise:arm64-${{ env.CONTAINERVER }}
+
+          docker manifest push ghcr.io/gitroomhq/postiz-app-enterprise:latest

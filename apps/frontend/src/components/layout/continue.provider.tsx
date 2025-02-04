@@ -1,4 +1,4 @@
-import React, { FC, useCallback, useEffect, useMemo } from 'react';
+import React, { FC, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { continueProviderList } from '@gitroom/frontend/components/launches/providers/continue-provider/list';
@@ -76,12 +76,15 @@ export const ContinueProvider: FC = () => {
               ></path>
             </svg>
           </button>
-          <div className="pt-[16px]">
+          <div className="pt-[16px] max-h-[600px] overflow-hidden overflow-y-auto">
             <IntegrationContext.Provider
               value={{
                 date: dayjs(),
                 value: [],
+                allIntegrations: [],
                 integration: {
+                  additionalSettings: '',
+                  display: '',
                   time: [{time: 0}],
                   id: continueId,
                   type: '',

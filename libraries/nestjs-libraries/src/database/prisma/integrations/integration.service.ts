@@ -1,43 +1,68 @@
-import {
-  HttpException,
-  HttpStatus,
-  Injectable,
-  Param,
-  Query,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { IntegrationRepository } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.repository';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { InstagramProvider } from '@gitroom/nestjs-libraries/integrations/social/instagram.provider';
 import { FacebookProvider } from '@gitroom/nestjs-libraries/integrations/social/facebook.provider';
-import { AnalyticsData, SocialProvider } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import {
+  AnalyticsData,
+  AuthTokenDetails,
+  SocialProvider,
+} from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { Integration, Organization } from '@prisma/client';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { LinkedinPageProvider } from '@gitroom/nestjs-libraries/integrations/social/linkedin.page.provider';
-import { simpleUpload } from '@gitroom/nestjs-libraries/upload/r2.uploader';
-import axios from 'axios';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { IntegrationTimeDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.time.dto';
+import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
+import { PlugDto } from '@gitroom/nestjs-libraries/dtos/plugs/plug.dto';
+import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/client';
+import { difference, uniq } from 'lodash';
+import utc from 'dayjs/plugin/utc';
+dayjs.extend(utc);
 
 @Injectable()
 export class IntegrationService {
+  private storage = UploadFactory.createStorage();
   constructor(
     private _integrationRepository: IntegrationRepository,
     private _integrationManager: IntegrationManager,
-    private _notificationService: NotificationService
+    private _notificationService: NotificationService,
+    private _workerServiceProducer: BullMqClient
   ) {}
 
-  async setTimes(orgId: string, integrationId: string, times: IntegrationTimeDto) {
+  async setTimes(
+    orgId: string,
+    integrationId: string,
+    times: IntegrationTimeDto
+  ) {
     return this._integrationRepository.setTimes(orgId, integrationId, times);
   }
 
+  updateProviderSettings(org: string, id: string, additionalSettings: string) {
+    return this._integrationRepository.updateProviderSettings(
+      org,
+      id,
+      additionalSettings
+    );
+  }
+
   async createOrUpdateIntegration(
+    additionalSettings:
+      | {
+          title: string;
+          description: string;
+          type: 'checkbox' | 'text' | 'textarea';
+          value: any;
+          regex?: string;
+        }[]
+      | undefined,
+    oneTimeToken: boolean,
     org: string,
     name: string,
-    picture: string,
+    picture: string | undefined,
     type: 'article' | 'social',
     internalId: string,
     provider: string,
@@ -50,14 +75,15 @@ export class IntegrationService {
     timezone?: number,
     customInstanceDetails?: string
   ) {
-    const loadImage = await axios.get(picture, { responseType: 'arraybuffer' });
-    const uploadedPicture = await simpleUpload(
-      loadImage.data,
-      `${makeId(10)}.png`,
-      'image/png'
-    );
+    const uploadedPicture = picture
+      ? picture?.indexOf('imagedelivery.net') > -1
+        ? picture
+        : await this.storage.uploadSimple(picture)
+      : undefined;
 
     return this._integrationRepository.createOrUpdateIntegration(
+      additionalSettings,
+      oneTimeToken,
       org,
       name,
       uploadedPicture,
@@ -73,6 +99,14 @@ export class IntegrationService {
       timezone,
       customInstanceDetails
     );
+  }
+
+  updateIntegrationGroup(org: string, id: string, group: string) {
+    return this._integrationRepository.updateIntegrationGroup(org, id, group);
+  }
+
+  updateOnCustomerName(org: string, id: string, name: string) {
+    return this._integrationRepository.updateOnCustomerName(org, id, name);
   }
 
   getIntegrationsList(org: string) {
@@ -153,9 +187,11 @@ export class IntegrationService {
       const { refreshToken, accessToken, expiresIn } = data;
 
       await this.createOrUpdateIntegration(
+        undefined,
+        !!provider.oneTimeToken,
         integration.organizationId,
         integration.name,
-        integration.picture!,
+        undefined,
         'social',
         integration.internalId,
         integration.providerIdentifier,
@@ -296,7 +332,12 @@ export class IntegrationService {
     return { success: true };
   }
 
-  async checkAnalytics(org: Organization, integration: string, date: string, forceRefresh = false): Promise<AnalyticsData[]> {
+  async checkAnalytics(
+    org: Organization,
+    integration: string,
+    date: string,
+    forceRefresh = false
+  ): Promise<AnalyticsData[]> {
     const getIntegration = await this.getIntegrationById(org.id, integration);
 
     if (!getIntegration) {
@@ -311,12 +352,32 @@ export class IntegrationService {
       getIntegration.providerIdentifier
     );
 
-    if (dayjs(getIntegration?.tokenExpiration).isBefore(dayjs()) || forceRefresh) {
-      const { accessToken, expiresIn, refreshToken } =
-        await integrationProvider.refreshToken(getIntegration.refreshToken!);
+    if (
+      dayjs(getIntegration?.tokenExpiration).isBefore(dayjs()) ||
+      forceRefresh
+    ) {
+      const { accessToken, expiresIn, refreshToken, additionalSettings } =
+        await new Promise<AuthTokenDetails>((res) => {
+          return integrationProvider
+            .refreshToken(getIntegration.refreshToken!)
+            .then((r) => res(r))
+            .catch(() => {
+              res({
+                error: '',
+                accessToken: '',
+                id: '',
+                name: '',
+                picture: '',
+                username: '',
+                additionalSettings: undefined,
+              });
+            });
+        });
 
       if (accessToken) {
         await this.createOrUpdateIntegration(
+          additionalSettings,
+          !!integrationProvider.oneTimeToken,
           getIntegration.organizationId,
           getIntegration.name,
           getIntegration.picture!,
@@ -364,11 +425,185 @@ export class IntegrationService {
         return loadAnalytics;
       } catch (e) {
         if (e instanceof RefreshToken) {
-          return this.checkAnalytics(org, integration, date);
+          return this.checkAnalytics(org, integration, date, true);
         }
       }
     }
 
     return [];
+  }
+
+  customers(orgId: string) {
+    return this._integrationRepository.customers(orgId);
+  }
+
+  getPlugsByIntegrationId(org: string, integrationId: string) {
+    return this._integrationRepository.getPlugsByIntegrationId(
+      org,
+      integrationId
+    );
+  }
+
+  async processInternalPlug(data: {
+    post: string;
+    originalIntegration: string;
+    integration: string;
+    plugName: string;
+    orgId: string;
+    delay: number;
+    information: any;
+  }) {
+    const originalIntegration =
+      await this._integrationRepository.getIntegrationById(
+        data.orgId,
+        data.originalIntegration
+      );
+
+    const getIntegration = await this._integrationRepository.getIntegrationById(
+      data.orgId,
+      data.integration
+    );
+
+    if (!getIntegration || !originalIntegration) {
+      return;
+    }
+
+    const getAllInternalPlugs = this._integrationManager
+      .getInternalPlugs(getIntegration.providerIdentifier)
+      .internalPlugs.find((p: any) => p.identifier === data.plugName);
+
+    if (!getAllInternalPlugs) {
+      return;
+    }
+
+    const getSocialIntegration = this._integrationManager.getSocialIntegration(
+      getIntegration.providerIdentifier
+    );
+
+    try {
+      // @ts-ignore
+      await getSocialIntegration?.[getAllInternalPlugs.methodName]?.(
+        getIntegration,
+        originalIntegration,
+        data.post,
+        data.information
+      );
+    } catch (err) {
+      return;
+    }
+  }
+
+  async processPlugs(data: {
+    plugId: string;
+    postId: string;
+    delay: number;
+    totalRuns: number;
+    currentRun: number;
+  }) {
+    const getPlugById = await this._integrationRepository.getPlug(data.plugId);
+    if (!getPlugById) {
+      return;
+    }
+
+    const integration = this._integrationManager.getSocialIntegration(
+      getPlugById.integration.providerIdentifier
+    );
+
+    const findPlug = this._integrationManager
+      .getAllPlugs()
+      .find(
+        (p) => p.identifier === getPlugById.integration.providerIdentifier
+      )!;
+
+    // @ts-ignore
+    const process = await integration[getPlugById.plugFunction](
+      getPlugById.integration,
+      data.postId,
+      JSON.parse(getPlugById.data).reduce((all: any, current: any) => {
+        all[current.name] = current.value;
+        return all;
+      }, {})
+    );
+
+    if (process) {
+      return;
+    }
+
+    if (data.totalRuns === data.currentRun) {
+      return;
+    }
+
+    this._workerServiceProducer.emit('plugs', {
+      id: 'plug_' + data.postId + '_' + findPlug.identifier,
+      options: {
+        delay: 0, // runPlug.runEveryMilliseconds,
+      },
+      payload: {
+        plugId: data.plugId,
+        postId: data.postId,
+        delay: data.delay,
+        totalRuns: data.totalRuns,
+        currentRun: data.currentRun + 1,
+      },
+    });
+  }
+
+  async createOrUpdatePlug(
+    orgId: string,
+    integrationId: string,
+    body: PlugDto
+  ) {
+    const { activated } = await this._integrationRepository.createOrUpdatePlug(
+      orgId,
+      integrationId,
+      body
+    );
+
+    return {
+      activated,
+    };
+  }
+
+  async changePlugActivation(orgId: string, plugId: string, status: boolean) {
+    const { id, integrationId, plugFunction } =
+      await this._integrationRepository.changePlugActivation(
+        orgId,
+        plugId,
+        status
+      );
+
+    return { id };
+  }
+
+  async getPlugs(orgId: string, integrationId: string) {
+    return this._integrationRepository.getPlugs(orgId, integrationId);
+  }
+
+  async loadExisingData(
+    methodName: string,
+    integrationId: string,
+    id: string[]
+  ) {
+    const exisingData = await this._integrationRepository.loadExisingData(
+      methodName,
+      integrationId,
+      id
+    );
+    const loadOnlyIds = exisingData.map((p) => p.value);
+    return difference(id, loadOnlyIds);
+  }
+
+  async findFreeDateTime(orgId: string): Promise<number[]> {
+    const findTimes = await this._integrationRepository.getPostingTimes(orgId);
+    return uniq(
+      findTimes.reduce((all: any, current: any) => {
+        return [
+          ...all,
+          ...JSON.parse(current.postingTimes).map(
+            (p: { time: number }) => p.time
+          ),
+        ];
+      }, [] as number[])
+    );
   }
 }

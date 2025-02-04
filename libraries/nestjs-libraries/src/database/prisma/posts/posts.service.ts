@@ -6,12 +6,9 @@ import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integ
 import { Integration, Post, Media, From } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
-import { capitalize, shuffle } from 'lodash';
+import { capitalize, shuffle, uniq } from 'lodash';
 import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
 import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
-import { GeneratorDto } from '@gitroom/nestjs-libraries/dtos/generator/generator.dto';
-import { ExtractContentService } from '@gitroom/nestjs-libraries/openai/extract.content.service';
-import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { CreateGeneratedPostsDto } from '@gitroom/nestjs-libraries/dtos/generator/create.generated.posts.dto';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
@@ -21,6 +18,11 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/client';
 import { timer } from '@gitroom/helpers/utils/timer';
+import { AuthTokenDetails } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import utc from 'dayjs/plugin/utc';
+import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
+import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.link.service';
+dayjs.extend(utc);
 
 type PostWithConditionals = Post & {
   integration?: Integration;
@@ -36,10 +38,20 @@ export class PostsService {
     private _notificationService: NotificationService,
     private _messagesService: MessagesService,
     private _stripeService: StripeService,
-    private _extractContentService: ExtractContentService,
-    private _openAiService: OpenaiService,
-    private _integrationService: IntegrationService
+    private _integrationService: IntegrationService,
+    private _mediaService: MediaService,
+    private _shortLinkService: ShortLinkService
   ) {}
+
+  async getStatistics(orgId: string, id: string) {
+    const getPost = await this.getPostsRecursively(id, true, orgId, true);
+    const content = getPost.map((p) => p.content);
+    const shortLinksTracking = await this._shortLinkService.getStatistics(content);
+
+    return {
+      clicks: shortLinksTracking
+    }
+  }
 
   async getPostsRecursively(
     id: string,
@@ -54,11 +66,15 @@ export class PostsService {
       isFirst
     );
 
+    if (!post) {
+      return [];
+    }
+
     return [
       post!,
       ...(post?.childrenPost?.length
         ? await this.getPostsRecursively(
-            post.childrenPost[0].id,
+            post?.childrenPost?.[0]?.id,
             false,
             orgId,
             false
@@ -71,18 +87,63 @@ export class PostsService {
     return this._postRepository.getPosts(orgId, query);
   }
 
+  async updateMedia(id: string, imagesList: any[]) {
+    let imageUpdateNeeded = false;
+    const getImageList = (
+      await Promise.all(
+        imagesList.map(async (p: any) => {
+          if (!p.path && p.id) {
+            imageUpdateNeeded = true;
+            return this._mediaService.getMediaById(p.id);
+          }
+
+          return p;
+        })
+      )
+    ).map((m) => {
+      return {
+        ...m,
+        url:
+          m.path.indexOf('http') === -1
+            ? process.env.FRONTEND_URL +
+              '/' +
+              process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
+              m.path
+            : m.path,
+        type: 'image',
+        path:
+          m.path.indexOf('http') === -1
+            ? process.env.UPLOAD_DIRECTORY + m.path
+            : m.path,
+      };
+    });
+
+    if (imageUpdateNeeded) {
+      await this._postRepository.updateImages(id, JSON.stringify(getImageList));
+    }
+
+    return getImageList;
+  }
+
   async getPost(orgId: string, id: string) {
     const posts = await this.getPostsRecursively(id, true, orgId, true);
-    return {
+    const list = {
       group: posts?.[0]?.group,
-      posts: posts.map((post) => ({
-        ...post,
-        image: JSON.parse(post.image || '[]'),
-      })),
+      posts: await Promise.all(
+        posts.map(async (post) => ({
+          ...post,
+          image: await this.updateMedia(
+            post.id,
+            JSON.parse(post.image || '[]')
+          ),
+        }))
+      ),
       integrationPicture: posts[0]?.integration?.picture,
       integration: posts[0].integrationId,
       settings: JSON.parse(posts[0].settings || '{}'),
     };
+
+    return list;
   }
 
   async getOldPosts(orgId: string, date: string) {
@@ -148,7 +209,7 @@ export class PostsService {
         });
       }
     } catch (err: any) {
-      await this._postRepository.changeState(firstPost.id, 'ERROR');
+      await this._postRepository.changeState(firstPost.id, 'ERROR', err);
       await this._notificationService.inAppNotification(
         firstPost.organizationId,
         `Error posting on ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
@@ -219,8 +280,24 @@ export class PostsService {
     }
 
     if (dayjs(integration?.tokenExpiration).isBefore(dayjs()) || forceRefresh) {
-      const { accessToken, expiresIn, refreshToken } =
-        await getIntegration.refreshToken(integration.refreshToken!);
+      const { accessToken, expiresIn, refreshToken, additionalSettings } =
+        await new Promise<AuthTokenDetails>((res) => {
+          getIntegration
+            .refreshToken(integration.refreshToken!)
+            .then((r) => res(r))
+            .catch(() =>
+              res({
+                accessToken: '',
+                expiresIn: 0,
+                refreshToken: '',
+                id: '',
+                name: '',
+                username: '',
+                picture: '',
+                additionalSettings: undefined,
+              })
+            );
+        });
 
       if (!accessToken) {
         await this._integrationService.refreshNeeded(
@@ -236,6 +313,8 @@ export class PostsService {
       }
 
       await this._integrationService.createOrUpdateIntegration(
+        additionalSettings,
+        !!getIntegration.oneTimeToken,
         integration.organizationId,
         integration.name,
         integration.picture!,
@@ -260,25 +339,14 @@ export class PostsService {
       const publishedPosts = await getIntegration.post(
         integration.internalId,
         integration.token,
-        newPosts.map((p) => ({
-          id: p.id,
-          message: p.content,
-          settings: JSON.parse(p.settings || '{}'),
-          media: (JSON.parse(p.image || '[]') as Media[]).map((m) => ({
-            url:
-              m.path.indexOf('http') === -1
-                ? process.env.FRONTEND_URL +
-                  '/' +
-                  process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
-                  m.path
-                : m.path,
-            type: 'image',
-            path:
-              m.path.indexOf('http') === -1
-                ? process.env.UPLOAD_DIRECTORY + m.path
-                : m.path,
-          })),
-        })),
+        await Promise.all(
+          newPosts.map(async (p) => ({
+            id: p.id,
+            message: p.content,
+            settings: JSON.parse(p.settings || '{}'),
+            media: await this.updateMedia(p.id, JSON.parse(p.image || '[]')),
+          }))
+        ),
         integration
       );
 
@@ -299,6 +367,20 @@ export class PostsService {
         true
       );
 
+      await this.checkPlugs(
+        integration.organizationId,
+        getIntegration.identifier,
+        integration.id,
+        publishedPosts[0].postId
+      );
+
+      await this.checkInternalPlug(
+        integration,
+        integration.organizationId,
+        publishedPosts[0].postId,
+        JSON.parse(newPosts[0].settings || '{}')
+      );
+
       return {
         postId: publishedPosts[0].postId,
         releaseURL: publishedPosts[0].releaseURL,
@@ -309,6 +391,93 @@ export class PostsService {
       }
 
       throw err;
+    }
+  }
+
+  private async checkInternalPlug(
+    integration: Integration,
+    orgId: string,
+    id: string,
+    settings: any
+  ) {
+    const plugs = Object.entries(settings).filter(([key]) => {
+      return key.indexOf('plug-') > -1;
+    });
+
+    if (plugs.length === 0) {
+      return;
+    }
+
+    const parsePlugs = plugs.reduce((all, [key, value]) => {
+      const [_, name, identifier] = key.split('--');
+      all[name] = all[name] || { name };
+      all[name][identifier] = value;
+      return all;
+    }, {} as any);
+
+    const list: {
+      name: string;
+      integrations: { id: string }[];
+      delay: string;
+      active: boolean;
+    }[] = Object.values(parsePlugs);
+
+    for (const trigger of list || []) {
+      for (const int of trigger?.integrations || []) {
+        this._workerServiceProducer.emit('internal-plugs', {
+          id: 'plug_' + id + '_' + trigger.name + '_' + int.id,
+          options: {
+            delay: +trigger.delay,
+          },
+          payload: {
+            post: id,
+            originalIntegration: integration.id,
+            integration: int.id,
+            plugName: trigger.name,
+            orgId: orgId,
+            delay: +trigger.delay,
+            information: trigger,
+          },
+        });
+      }
+    }
+  }
+
+  private async checkPlugs(
+    orgId: string,
+    providerName: string,
+    integrationId: string,
+    postId: string
+  ) {
+    const loadAllPlugs = this._integrationManager.getAllPlugs();
+    const getPlugs = await this._integrationService.getPlugs(
+      orgId,
+      integrationId
+    );
+
+    const currentPlug = loadAllPlugs.find((p) => p.identifier === providerName);
+
+    for (const plug of getPlugs) {
+      const runPlug = currentPlug?.plugs?.find(
+        (p: any) => p.methodName === plug.plugFunction
+      )!;
+      if (!runPlug) {
+        continue;
+      }
+
+      this._workerServiceProducer.emit('plugs', {
+        id: 'plug_' + postId + '_' + runPlug.identifier,
+        options: {
+          delay: runPlug.runEveryMilliseconds,
+        },
+        payload: {
+          plugId: plug.id,
+          postId,
+          delay: runPlug.runEveryMilliseconds,
+          totalRuns: runPlug.totalRuns,
+          currentRun: 1,
+        },
+      });
     }
   }
 
@@ -348,7 +517,10 @@ export class PostsService {
     const post = await this._postRepository.deletePost(orgId, group);
     if (post?.id) {
       await this._workerServiceProducer.delete('post', post.id);
+      return {id: post.id};
     }
+
+    return {error: true};
   }
 
   async countPostsFromDay(orgId: string, date: Date) {
@@ -392,7 +564,16 @@ export class PostsService {
   }
 
   async createPost(orgId: string, body: CreatePostDto) {
+    const postList = [];
     for (const post of body.posts) {
+      const messages = post.value.map(p => p.content);
+      const updateContent = !body.shortLink ? messages : await this._shortLinkService.convertTextToShortLinks(orgId, messages);
+
+      post.value = post.value.map((p, i) => ({
+        ...p,
+        content: updateContent[i],
+      }));
+
       const { previousPost, posts } =
         await this._postRepository.createOrUpdatePost(
           body.type,
@@ -439,7 +620,14 @@ export class PostsService {
           },
         });
       }
+
+      postList.push({
+        postId: posts[0].id,
+        integration: post.integration.id,
+      })
     }
+
+    return postList;
   }
 
   async changeDate(orgId: string, id: string, date: string) {
@@ -545,26 +733,6 @@ export class PostsService {
     }
   }
 
-  async loadPostContent(postId: string) {
-    const post = await this._postRepository.getPostById(postId);
-    if (!post) {
-      return '';
-    }
-
-    return post.content;
-  }
-
-  async generatePosts(orgId: string, body: GeneratorDto) {
-    const content = body.url
-      ? await this._extractContentService.extractContent(body.url)
-      : await this.loadPostContent(body.post);
-
-    const value = body.url
-      ? await this._openAiService.extractWebsiteText(content!)
-      : await this._openAiService.generatePosts(content!);
-    return { list: value };
-  }
-
   async generatePostsDraft(orgId: string, body: CreateGeneratedPostsDto) {
     const getAllIntegrations = (
       await this._integrationService.getIntegrationsList(orgId)
@@ -609,6 +777,7 @@ export class PostsService {
           type: 'draft',
           date: randomDate,
           order: '',
+          shortLink: false,
           posts: [
             {
               group,
@@ -640,5 +809,73 @@ export class PostsService {
         });
       }
     }
+  }
+
+  findAllExistingCategories() {
+    return this._postRepository.findAllExistingCategories();
+  }
+
+  findAllExistingTopicsOfCategory(category: string) {
+    return this._postRepository.findAllExistingTopicsOfCategory(category);
+  }
+
+  findPopularPosts(category: string, topic?: string) {
+    return this._postRepository.findPopularPosts(category, topic);
+  }
+
+  async findFreeDateTime(orgId: string) {
+    const findTimes = await this._integrationService.findFreeDateTime(orgId);
+    return this.findFreeDateTimeRecursive(
+      orgId,
+      findTimes,
+      dayjs.utc().startOf('day')
+    );
+  }
+
+  async createPopularPosts(post: {
+    category: string;
+    topic: string;
+    content: string;
+    hook: string;
+  }) {
+    return this._postRepository.createPopularPosts(post);
+  }
+
+  private async findFreeDateTimeRecursive(
+    orgId: string,
+    times: number[],
+    date: dayjs.Dayjs
+  ): Promise<string> {
+    const list = await this._postRepository.getPostsCountsByDates(
+      orgId,
+      times,
+      date
+    );
+
+    if (!list.length) {
+      return this.findFreeDateTimeRecursive(orgId, times, date.add(1, 'day'));
+    }
+
+    const num = list.reduce<null | number>((prev, curr) => {
+      if (prev === null || prev > curr) {
+        return curr;
+      }
+      return prev;
+    }, null) as number;
+
+    return date.clone().add(num, 'minutes').format('YYYY-MM-DDTHH:mm:00');
+  }
+
+  getComments(postId: string) {
+    return this._postRepository.getComments(postId);
+  }
+
+  createComment(
+    orgId: string,
+    userId: string,
+    postId: string,
+    comment: string
+  ) {
+    return this._postRepository.createComment(orgId, userId, postId, comment);
   }
 }

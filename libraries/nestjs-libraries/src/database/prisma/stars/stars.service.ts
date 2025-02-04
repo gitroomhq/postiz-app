@@ -61,7 +61,6 @@ export class StarsService {
       ...new Set([...Object.keys(loadAllStars), ...Object.keys(loadAllForks)]),
     ];
 
-    console.log(allDates);
     const sortedArray = allDates.sort(
       (a, b) => dayjs(a).unix() - dayjs(b).unix()
     );

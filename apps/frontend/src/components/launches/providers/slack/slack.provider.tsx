@@ -4,10 +4,6 @@ import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.v
 import { SlackChannelSelect } from '@gitroom/frontend/components/launches/providers/slack/slack.channel.select';
 import { SlackDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/slack.dto';
 
-const Empty: FC = () => {
-  return null;
-};
-
 const SlackComponent: FC = () => {
   const form = useSettings();
   return (
@@ -18,7 +14,7 @@ const SlackComponent: FC = () => {
 };
 export default withProvider(
   SlackComponent,
-  Empty,
+  undefined,
   SlackDto,
   undefined,
   280

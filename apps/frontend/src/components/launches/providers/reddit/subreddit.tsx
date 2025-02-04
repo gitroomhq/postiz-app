@@ -237,6 +237,7 @@ export const Subreddit: FC<{
               <div className="w-full h-[10px] bg-input rounded-tr-[8px] rounded-tl-[8px]" />
               <div className="flex flex-col text-nowrap">
                 <MultiMediaComponent
+                  text=""
                   description=""
                   name="media"
                   label="Media"

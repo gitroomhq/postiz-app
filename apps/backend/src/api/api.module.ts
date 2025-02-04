@@ -14,8 +14,6 @@ import { SettingsController } from '@gitroom/backend/api/routes/settings.control
 import { PostsController } from '@gitroom/backend/api/routes/posts.controller';
 import { MediaController } from '@gitroom/backend/api/routes/media.controller';
 import { UploadModule } from '@gitroom/nestjs-libraries/upload/upload.module';
-import { ServeStaticModule } from '@nestjs/serve-static';
-import { CommentsController } from '@gitroom/backend/api/routes/comments.controller';
 import { BillingController } from '@gitroom/backend/api/routes/billing.controller';
 import { NotificationsController } from '@gitroom/backend/api/routes/notifications.controller';
 import { MarketplaceController } from '@gitroom/backend/api/routes/marketplace.controller';
@@ -27,6 +25,9 @@ import { CopilotController } from '@gitroom/backend/api/routes/copilot.controlle
 import { AgenciesController } from '@gitroom/backend/api/routes/agencies.controller';
 import { PublicController } from '@gitroom/backend/api/routes/public.controller';
 import { RootController } from '@gitroom/backend/api/routes/root.controller';
+import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
+import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.link.service';
+import { Nowpayments } from '@gitroom/nestjs-libraries/crypto/nowpayments';
 
 const authenticatedController = [
   UsersController,
@@ -35,7 +36,6 @@ const authenticatedController = [
   SettingsController,
   PostsController,
   MediaController,
-  CommentsController,
   BillingController,
   NotificationsController,
   MarketplaceController,
@@ -46,18 +46,6 @@ const authenticatedController = [
 @Module({
   imports: [
     UploadModule,
-    ...(!!process.env.UPLOAD_DIRECTORY &&
-    !!process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY
-      ? [
-          ServeStaticModule.forRoot({
-            rootPath: process.env.UPLOAD_DIRECTORY,
-            serveRoot: '/' + process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY,
-            serveStaticOptions: {
-              index: false,
-            },
-          }),
-        ]
-      : []),
   ],
   controllers: [
     RootController,
@@ -76,6 +64,9 @@ const authenticatedController = [
     PermissionsService,
     CodesService,
     IntegrationManager,
+    TrackService,
+    ShortLinkService,
+    Nowpayments,
   ],
   get exports() {
     return [...this.imports, ...this.providers];

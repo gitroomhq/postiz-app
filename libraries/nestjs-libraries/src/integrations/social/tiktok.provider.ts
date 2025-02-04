@@ -10,12 +10,19 @@ import {
   SocialAbstract,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
+import { timer } from '@gitroom/helpers/utils/timer';
+import { Integration } from '@prisma/client';
 
 export class TiktokProvider extends SocialAbstract implements SocialProvider {
   identifier = 'tiktok';
   name = 'Tiktok';
   isBetweenSteps = false;
-  scopes = ['user.info.basic', 'video.publish', 'video.upload'];
+  scopes = [
+    'user.info.basic',
+    'video.publish',
+    'video.upload',
+    'user.info.profile',
+  ];
 
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const value = {
@@ -37,11 +44,11 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
     const {
       data: {
-        user: { avatar_url, display_name, open_id },
+        user: { avatar_url, display_name, open_id, username },
       },
     } = await (
       await fetch(
-        'https://open.tiktokapis.com/v2/user/info/?fields=open_id,avatar_url,display_name',
+        'https://open.tiktokapis.com/v2/user/info/?fields=open_id,avatar_url,display_name,union_id,username',
         {
           method: 'GET',
           headers: {
@@ -58,11 +65,11 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       id: open_id.replace(/-/g, ''),
       name: display_name,
       picture: avatar_url,
-      username: display_name.toLowerCase(),
+      username: username,
     };
   }
 
-  async generateAuthUrl(refresh?: string) {
+  async generateAuthUrl() {
     const state = Math.random().toString(36).substring(2);
 
     return {
@@ -71,10 +78,10 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
         `?client_key=${process.env.TIKTOK_CLIENT_ID}` +
         `&redirect_uri=${encodeURIComponent(
           `${
-            process.env.NODE_ENV === 'development' || !process.env.NODE_ENV
-              ? `https://integration.git.sn/integrations/social/tiktok`
-              : `${process.env.FRONTEND_URL}/integrations/social/tiktok`
-          }${refresh ? `?refresh=${refresh}` : ''}`
+            process?.env?.FRONTEND_URL?.indexOf('https') === -1
+              ? 'https://redirectmeto.com/'
+              : ''
+          }${process?.env?.FRONTEND_URL}/integrations/social/tiktok`
         )}` +
         `&state=${state}` +
         `&response_type=code` +
@@ -95,10 +102,11 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       code: params.code,
       grant_type: 'authorization_code',
       code_verifier: params.codeVerifier,
-      redirect_uri:
-        process.env.NODE_ENV === 'development' || !process.env.NODE_ENV
-          ? `https://integration.git.sn/integrations/social/tiktok`
-          : `${process.env.FRONTEND_URL}/integrations/social/tiktok`,
+      redirect_uri: `${
+            process?.env?.FRONTEND_URL?.indexOf('https') === -1
+              ? 'https://redirectmeto.com/'
+              : ''
+          }${process?.env?.FRONTEND_URL}/integrations/social/tiktok`
     };
 
     const { access_token, refresh_token, scope } = await (
@@ -111,15 +119,16 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       })
     ).json();
 
+    console.log(this.scopes, scope);
     this.checkScopes(this.scopes, scope);
 
     const {
       data: {
-        user: { avatar_url, display_name, open_id },
+        user: { avatar_url, display_name, open_id, username },
       },
     } = await (
       await fetch(
-        'https://open.tiktokapis.com/v2/user/info/?fields=open_id,avatar_url,display_name',
+        'https://open.tiktokapis.com/v2/user/info/?fields=open_id,avatar_url,display_name,union_id,username',
         {
           method: 'GET',
           headers: {
@@ -136,22 +145,41 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       refreshToken: refresh_token,
       expiresIn: dayjs().add(23, 'hours').unix() - dayjs().unix(),
       picture: avatar_url,
-      username: display_name.toLowerCase(),
+      username: username,
     };
   }
 
-  async post(
+  async maxVideoLength(accessToken: string) {
+    const {
+      data: { max_video_post_duration_sec },
+    } = await (
+      await this.fetch(
+        'https://open.tiktokapis.com/v2/post/publish/creator_info/query/',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json; charset=UTF-8',
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      )
+    ).json();
+
+    return {
+      maxDurationSeconds: max_video_post_duration_sec,
+    };
+  }
+
+  private async uploadedVideoSuccess(
     id: string,
-    accessToken: string,
-    postDetails: PostDetails<TikTokDto>[]
-  ): Promise<PostResponse[]> {
-    try {
-      const [firstPost, ...comments] = postDetails;
-      const {
-        data: { publish_id },
-      } = await (
+    publishId: string,
+    accessToken: string
+  ): Promise<{ url: string; id: number }> {
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const post = await (
         await this.fetch(
-          'https://open.tiktokapis.com/v2/post/publish/video/init/',
+          'https://open.tiktokapis.com/v2/post/publish/status/fetch/',
           {
             method: 'POST',
             headers: {
@@ -159,37 +187,88 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
               Authorization: `Bearer ${accessToken}`,
             },
             body: JSON.stringify({
-              post_info: {
-                title: firstPost.message,
-                privacy_level: firstPost.settings.privacy_level,
-                disable_duet: firstPost.settings.disable_duet,
-                disable_comment: firstPost.settings.disable_comment,
-                disable_stitch: firstPost.settings.disable_stitch,
-                brand_content_toggle: firstPost.settings.brand_content_toggle,
-                brand_organic_toggle: firstPost.settings.brand_organic_toggle,
-              },
-              source_info: {
-                source: 'PULL_FROM_URL',
-                video_url: firstPost?.media?.[0]?.url!,
-              },
+              publish_id: publishId,
             }),
           }
         )
       ).json();
 
-      return [
-        {
-          id: firstPost.id,
-          releaseURL: `https://www.tiktok.com`,
-          postId: publish_id,
-          status: 'success',
-        },
-      ];
-    } catch (err) {
-      throw new BadBody('titok-error', JSON.stringify(err), {
-        // @ts-ignore
-        postDetails
-      });
+      const { status, publicaly_available_post_id } = post.data;
+
+      if (status === 'PUBLISH_COMPLETE') {
+        return {
+          url: !publicaly_available_post_id
+            ? `https://www.tiktok.com/@${id}`
+            : `https://www.tiktok.com/@${id}/video/` +
+              publicaly_available_post_id,
+          id: !publicaly_available_post_id
+            ? publishId
+            : publicaly_available_post_id?.[0],
+        };
+      }
+
+      if (status === 'FAILED') {
+        throw new BadBody('titok-error-upload', JSON.stringify(post), {
+          // @ts-ignore
+          postDetails,
+        });
+      }
+
+      await timer(3000);
     }
+  }
+
+  async post(
+    id: string,
+    accessToken: string,
+    postDetails: PostDetails<TikTokDto>[],
+    integration: Integration
+  ): Promise<PostResponse[]> {
+    const [firstPost, ...comments] = postDetails;
+
+    const {
+      data: { publish_id },
+    } = await (
+      await this.fetch(
+        'https://open.tiktokapis.com/v2/post/publish/video/init/',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json; charset=UTF-8',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            post_info: {
+              title: firstPost.message,
+              privacy_level: firstPost.settings.privacy_level,
+              disable_duet: !firstPost.settings.duet,
+              disable_comment: !firstPost.settings.comment,
+              disable_stitch: !firstPost.settings.stitch,
+              brand_content_toggle: firstPost.settings.brand_content_toggle,
+              brand_organic_toggle: firstPost.settings.brand_organic_toggle,
+            },
+            source_info: {
+              source: 'PULL_FROM_URL',
+              video_url: firstPost?.media?.[0]?.url!,
+            },
+          }),
+        }
+      )
+    ).json();
+
+    const { url, id: videoId } = await this.uploadedVideoSuccess(
+      integration.profile!,
+      publish_id,
+      accessToken
+    );
+
+    return [
+      {
+        id: firstPost.id,
+        releaseURL: url,
+        postId: String(videoId),
+        status: 'success',
+      },
+    ];
   }
 }

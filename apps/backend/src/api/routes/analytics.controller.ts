@@ -15,9 +15,6 @@ import { StarsListDto } from '@gitroom/nestjs-libraries/dtos/analytics/stars.lis
 import { ApiTags } from '@nestjs/swagger';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
-import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
-import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
-import { timer } from '@gitroom/helpers/utils/timer';
 
 @ApiTags('Analytics')
 @Controller('/analytics')
@@ -25,7 +22,6 @@ export class AnalyticsController {
   constructor(
     private _starsService: StarsService,
     private _integrationService: IntegrationService,
-    private _integrationManager: IntegrationManager
   ) {}
   @Get('/')
   async getStars(@GetOrgFromRequest() org: Organization) {

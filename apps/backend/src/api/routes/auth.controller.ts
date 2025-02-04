@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Post, Req, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Ip,
+  Param,
+  Post,
+  Req,
+  Res,
+} from '@nestjs/common';
 import { Response, Request } from 'express';
 
 import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
@@ -9,6 +18,8 @@ import { ForgotPasswordDto } from '@gitroom/nestjs-libraries/dtos/auth/forgot.pa
 import { ApiTags } from '@nestjs/swagger';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
 import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
+import { RealIP } from 'nestjs-real-ip';
+import { UserAgent } from '@gitroom/nestjs-libraries/user/user.agent';
 
 @ApiTags('Auth')
 @Controller('/auth')
@@ -17,11 +28,19 @@ export class AuthController {
     private _authService: AuthService,
     private _emailService: EmailService
   ) {}
+
+  @Get('/can-register')
+  async canRegister() {
+    return { register: await this._authService.canRegister() };
+  }
+
   @Post('/register')
   async register(
     @Req() req: Request,
     @Body() body: CreateOrgUserDto,
-    @Res({ passthrough: true }) response: Response
+    @Res({ passthrough: true }) response: Response,
+    @RealIP() ip: string,
+    @UserAgent() userAgent: string
   ) {
     try {
       const getOrgFromCookie = this._authService.getOrgFromCookie(
@@ -31,10 +50,13 @@ export class AuthController {
       const { jwt, addedOrg } = await this._authService.routeAuth(
         body.provider,
         body,
+        ip,
+        userAgent,
         getOrgFromCookie
       );
 
-      const activationRequired = body.provider === 'LOCAL' && this._emailService.hasProvider();
+      const activationRequired =
+        body.provider === 'LOCAL' && this._emailService.hasProvider();
 
       if (activationRequired) {
         response.header('activate', 'true');
@@ -44,20 +66,36 @@ export class AuthController {
 
       response.cookie('auth', jwt, {
         domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-        secure: true,
-        httpOnly: true,
-        sameSite: 'none',
+        ...(!process.env.NOT_SECURED
+          ? {
+              secure: true,
+              httpOnly: true,
+              sameSite: 'none',
+            }
+          : {}),
         expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
       });
+
+      if (process.env.NOT_SECURED) {
+        response.header('auth', jwt);
+      }
 
       if (typeof addedOrg !== 'boolean' && addedOrg?.organizationId) {
         response.cookie('showorg', addedOrg.organizationId, {
           domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-          secure: true,
-          httpOnly: true,
-          sameSite: 'none',
+          ...(!process.env.NOT_SECURED
+            ? {
+                secure: true,
+                httpOnly: true,
+                sameSite: 'none',
+              }
+            : {}),
           expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
         });
+
+        if (process.env.NOT_SECURED) {
+          response.header('showorg', addedOrg.organizationId);
+        }
       }
 
       response.header('onboarding', 'true');
@@ -73,7 +111,9 @@ export class AuthController {
   async login(
     @Req() req: Request,
     @Body() body: LoginUserDto,
-    @Res({ passthrough: true }) response: Response
+    @Res({ passthrough: true }) response: Response,
+    @RealIP() ip: string,
+    @UserAgent() userAgent: string
   ) {
     try {
       const getOrgFromCookie = this._authService.getOrgFromCookie(
@@ -83,25 +123,43 @@ export class AuthController {
       const { jwt, addedOrg } = await this._authService.routeAuth(
         body.provider,
         body,
+        ip,
+        userAgent,
         getOrgFromCookie
       );
 
       response.cookie('auth', jwt, {
         domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-        secure: true,
-        httpOnly: true,
-        sameSite: 'none',
+        ...(!process.env.NOT_SECURED
+          ? {
+              secure: true,
+              httpOnly: true,
+              sameSite: 'none',
+            }
+          : {}),
         expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
       });
+
+      if (process.env.NOT_SECURED) {
+        response.header('auth', jwt);
+      }
 
       if (typeof addedOrg !== 'boolean' && addedOrg?.organizationId) {
         response.cookie('showorg', addedOrg.organizationId, {
           domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-          secure: true,
-          httpOnly: true,
-          sameSite: 'none',
+          ...(!process.env.NOT_SECURED
+            ? {
+                secure: true,
+                httpOnly: true,
+                sameSite: 'none',
+              }
+            : {}),
           expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
         });
+
+        if (process.env.NOT_SECURED) {
+          response.header('showorg', addedOrg.organizationId);
+        }
       }
 
       response.header('reload', 'true');
@@ -152,11 +210,19 @@ export class AuthController {
 
     response.cookie('auth', activate, {
       domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-      secure: true,
-      httpOnly: true,
-      sameSite: 'none',
+      ...(!process.env.NOT_SECURED
+        ? {
+            secure: true,
+            httpOnly: true,
+            sameSite: 'none',
+          }
+        : {}),
       expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
     });
+
+    if (process.env.NOT_SECURED) {
+      response.header('auth', activate);
+    }
 
     response.header('onboarding', 'true');
     return response.status(200).send({ can: true });
@@ -175,11 +241,19 @@ export class AuthController {
 
     response.cookie('auth', jwt, {
       domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-      secure: true,
-      httpOnly: true,
-      sameSite: 'none',
+      ...(!process.env.NOT_SECURED
+        ? {
+            secure: true,
+            httpOnly: true,
+            sameSite: 'none',
+          }
+        : {}),
       expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
     });
+
+    if (process.env.NOT_SECURED) {
+      response.header('auth', jwt);
+    }
 
     response.header('reload', 'true');
 

@@ -72,7 +72,6 @@ const Polonto: FC<{
   const { setMedia, type, closeModal } = props;
   const user = useUser();
 
-  console.log(user);
   const features = useMemo(() => {
     return [
       ...DEFAULT_SECTIONS,
@@ -91,7 +90,7 @@ const Polonto: FC<{
     };
   }, []);
   return (
-    <div className="fixed left-0 top-0 bg-primary/80 z-[300] w-full min-h-full p-[60px] animate-fade">
+    <div className="fixed left-0 top-0 bg-primary/80 z-[300] w-full min-h-full px-[60px] animate-fade">
       <div className="w-full h-full bg-sixth border-tableBorder border-2 rounded-xl pb-[20px] px-[20px] relative">
         <div className="flex">
           <div className="flex-1">
@@ -122,7 +121,7 @@ const Polonto: FC<{
           <CloseContext.Provider
             value={{ close: () => closeModal(), setMedia }}
           >
-            <PolotnoContainer style={{ width: '100%', height: '1000px' }}>
+            <PolotnoContainer style={{ width: '100%', height: '700px' }}>
               <SidePanelWrap>
                 <SidePanel store={store} sections={features} />
               </SidePanelWrap>

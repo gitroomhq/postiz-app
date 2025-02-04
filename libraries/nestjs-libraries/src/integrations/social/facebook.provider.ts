@@ -33,21 +33,40 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
-  async generateAuthUrl(refresh?: string) {
+  async generateAuthUrl() {
     const state = makeId(6);
     return {
       url:
         'https://www.facebook.com/v20.0/dialog/oauth' +
         `?client_id=${process.env.FACEBOOK_APP_ID}` +
         `&redirect_uri=${encodeURIComponent(
-          `${process.env.FRONTEND_URL}/integrations/social/facebook${
-            refresh ? `?refresh=${refresh}` : ''
-          }`
+          `${process.env.FRONTEND_URL}/integrations/social/facebook`
         )}` +
         `&state=${state}` +
         `&scope=${this.scopes.join(',')}`,
       codeVerifier: makeId(10),
       state,
+    };
+  }
+
+  async reConnect(
+    id: string,
+    requiredId: string,
+    accessToken: string
+  ): Promise<AuthTokenDetails> {
+    const information = await this.fetchPageInformation(
+      accessToken,
+      requiredId
+    );
+
+    return {
+      id: information.id,
+      name: information.name,
+      accessToken: information.access_token,
+      refreshToken: information.access_token,
+      expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
+      picture: information.picture,
+      username: information.username,
     };
   }
 
@@ -90,22 +109,6 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       .filter((d: any) => d.status === 'granted')
       .map((p: any) => p.permission);
     this.checkScopes(this.scopes, permissions);
-
-    if (params.refresh) {
-      const information = await this.fetchPageInformation(
-        access_token,
-        params.refresh
-      );
-      return {
-        id: information.id,
-        name: information.name,
-        accessToken: information.access_token,
-        refreshToken: information.access_token,
-        expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
-        picture: information.picture,
-        username: information.username,
-      };
-    }
 
     const {
       id,
@@ -173,9 +176,12 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
 
     let finalId = '';
     let finalUrl = '';
-    if ((firstPost?.media?.[0]?.path?.indexOf('mp4') || -2) > -1) {
-      console.log('mp4');
-      const { id: videoId, permalink_url, ...all } = await (
+    if ((firstPost?.media?.[0]?.url?.indexOf('mp4') || -2) > -1) {
+      const {
+        id: videoId,
+        permalink_url,
+        ...all
+      } = await (
         await this.fetch(
           `https://graph.facebook.com/v20.0/${id}/videos?access_token=${accessToken}&fields=id,permalink_url`,
           {
@@ -291,8 +297,8 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     accessToken: string,
     date: number
   ): Promise<AnalyticsData[]> {
-    const until = dayjs().format('YYYY-MM-DD');
-    const since = dayjs().subtract(date, 'day').format('YYYY-MM-DD');
+    const until = dayjs().endOf('day').unix()
+    const since = dayjs().subtract(date, 'day').unix();
 
     const { data } = await (
       await this.fetch(

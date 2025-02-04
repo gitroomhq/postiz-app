@@ -1,3 +1,5 @@
+import { timer } from '@gitroom/helpers/utils/timer';
+
 export class RefreshToken {
   constructor(
     public identifier: string,
@@ -13,10 +15,17 @@ export class BadBody {
   ) {}
 }
 
-export class NotEnoughScopes {}
+export class NotEnoughScopes {
+  constructor(public message = 'Not enough scopes') {}
+}
 
 export abstract class SocialAbstract {
-  async fetch(url: string, options: RequestInit = {}, identifier = '') {
+  async fetch(
+    url: string,
+    options: RequestInit = {},
+    identifier = '',
+    totalRetries = 0
+  ): Promise<Response> {
     const request = await fetch(url, options);
 
     if (request.status === 200 || request.status === 201) {
@@ -26,12 +35,30 @@ export abstract class SocialAbstract {
     let json = '{}';
     try {
       json = await request.text();
+      console.log(json);
     } catch (err) {
       json = '{}';
     }
 
-    if (request.status === 401) {
+    if (json.includes('rate_limit_exceeded') || json.includes('Rate limit')) {
+      await timer(2000);
+      return this.fetch(url, options, identifier);
+    }
+
+    if (
+      request.status === 401 ||
+      (json.includes('OAuthException') &&
+        !json.includes('The user is not an Instagram Business') &&
+        !json.includes('Unsupported format') &&
+        !json.includes('2207018') &&
+        !json.includes('REVOKED_ACCESS_TOKEN'))
+    ) {
       throw new RefreshToken(identifier, json, options.body!);
+    }
+
+    if (totalRetries < 2) {
+      await timer(2000);
+      return this.fetch(url, options, identifier, totalRetries + 1);
     }
 
     throw new BadBody(identifier, json, options.body!);

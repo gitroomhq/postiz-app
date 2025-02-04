@@ -75,15 +75,13 @@ export class DribbbleProvider extends SocialAbstract implements SocialProvider {
     );
   }
 
-  async generateAuthUrl(refresh?: string) {
+  async generateAuthUrl() {
     const state = makeId(6);
     return {
       url: `https://dribbble.com/oauth/authorize?client_id=${
         process.env.DRIBBBLE_CLIENT_ID
       }&redirect_uri=${encodeURIComponent(
-        `${process.env.FRONTEND_URL}/integrations/social/dribbble${
-          refresh ? `?refresh=${refresh}` : ''
-        }`
+        `${process.env.FRONTEND_URL}/integrations/social/dribbble`
       )}&response_type=code&scope=${this.scopes.join('+')}&state=${state}`,
       codeVerifier: makeId(10),
       state,

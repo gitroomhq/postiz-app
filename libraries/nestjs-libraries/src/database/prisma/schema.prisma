@@ -11,24 +11,28 @@ datasource db {
 }
 
 model Organization {
-  id           String             @id @default(uuid())
-  name         String
-  description  String?
-  users        UserOrganization[]
-  media        Media[]
-  paymentId    String?
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
-  github       GitHub[]
-  subscription Subscription?
-  Integration  Integration[]
-  post         Post[] @relation("organization")
-  submittedPost Post[] @relation("submittedForOrg")
-  Comments     Comments[]
-  notifications Notifications[]
+  id                String             @id @default(uuid())
+  name              String
+  description       String?
+  apiKey            String?
+  users             UserOrganization[]
+  media             Media[]
+  paymentId         String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  github            GitHub[]
+  subscription      Subscription?
+  Integration       Integration[]
+  post              Post[] @relation("organization")
+  submittedPost     Post[] @relation("submittedForOrg")
+  allowTrial        Boolean            @default(false)
+  Comments          Comments[]
+  notifications     Notifications[]
   buyerOrganization MessagesGroup[]
-  usedCodes    UsedCodes[]
-  credits      Credits[]
+  usedCodes         UsedCodes[]
+  credits           Credits[]
+  plugs             Plugs[]
+  customers         Customer[]
 }
 
 model User {
@@ -63,6 +67,8 @@ model User {
   payoutProblems    PayoutProblems[]
   lastOnline   DateTime          @default(now())
   agencies     SocialMediaAgency[]
+  ip           String?
+  agent        String?
 
   @@unique([email, providerName])
   @@index([lastReadNotifications])
@@ -167,6 +173,7 @@ model Media {
   updatedAt      DateTime     @updatedAt
   userPicture    User[]
   agencies       SocialMediaAgency[]
+  deletedAt      DateTime?
 
   @@index([organizationId])
 }
@@ -241,6 +248,19 @@ model Subscription {
   @@index([deletedAt])
 }
 
+model Customer {
+  id        String   @id @default(uuid())
+  name      String
+  orgId     String
+  organization Organization @relation(fields: [orgId], references: [id])
+  integrations Integration[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@unique([orgId, name, deletedAt])
+}
+
 model Integration {
   id                    String          @id @default(cuid())
   internalId            String
@@ -264,9 +284,17 @@ model Integration {
   refreshNeeded         Boolean         @default(false)
   postingTimes          String          @default("[{\"time\":120}, {\"time\":400}, {\"time\":700}]")
   customInstanceDetails String?
+  customerId            String?
+  customer              Customer?       @relation(fields: [customerId], references: [id])
+  plugs                 Plugs[]
+  exisingPlugData       ExisingPlugData[]
+  rootInternalId        String?
+  additionalSettings    String?        @default("[]")
 
+  @@index([rootInternalId])
   @@index([updatedAt])
   @@index([deletedAt])
+  @@index([customerId])
   @@unique([organizationId, internalId])
 }
 
@@ -275,20 +303,18 @@ model Comments {
   content           String
   organizationId    String
   organization      Organization @relation(fields: [organizationId], references: [id])
+  postId            String
+  post              Post       @relation(fields: [postId], references: [id])
   userId            String
   user              User       @relation(fields: [userId], references: [id])
-  date              DateTime
-  parentCommentId   String?
-  parentComment     Comments?  @relation("parentCommentId", fields: [parentCommentId], references: [id])
-  childrenComment   Comments[] @relation("parentCommentId")
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
   deletedAt         DateTime?
 
   @@index([createdAt])
   @@index([organizationId])
-  @@index([date])
   @@index([userId])
+  @@index([postId])
   @@index([deletedAt])
 }
 
@@ -319,6 +345,8 @@ model Post {
   lastMessageId       String?
   lastMessage         Messages? @relation(fields: [lastMessageId], references: [id])
   payoutProblems      PayoutProblems[]
+  comments            Comments[]
+  error               String?
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt
   deletedAt           DateTime?
@@ -439,6 +467,40 @@ model Messages {
   @@index([deletedAt])
 }
 
+model Plugs {
+  id                String   @id @default(uuid())
+  organizationId    String
+  organization      Organization @relation(fields: [organizationId], references: [id])
+  plugFunction      String
+  data              String
+  integrationId     String
+  integration       Integration @relation(fields: [integrationId], references: [id])
+  activated         Boolean @default(true)
+
+  @@unique([plugFunction, integrationId])
+  @@index([organizationId])
+}
+
+model ExisingPlugData {
+  id                String   @id @default(uuid())
+  integrationId     String
+  integration       Integration @relation(fields: [integrationId], references: [id])
+  methodName        String
+  value             String
+
+  @@unique([integrationId, methodName, value])
+}
+
+model PopularPosts {
+  id         String   @id @default(uuid())
+  category   String
+  topic      String
+  content    String
+  hook       String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
 enum OrderStatus {
   PENDING
   ACCEPTED
@@ -474,6 +536,7 @@ enum Provider {
   LOCAL
   GITHUB
   GOOGLE
+  FARCASTER
 }
 
 enum Role {

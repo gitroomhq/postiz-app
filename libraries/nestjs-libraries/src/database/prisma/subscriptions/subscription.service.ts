@@ -6,6 +6,7 @@ import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/o
 import { Organization } from '@prisma/client';
 import dayjs from 'dayjs';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
 
 @Injectable()
 export class SubscriptionService {
@@ -55,8 +56,8 @@ export class SubscriptionService {
     );
   }
 
-  checkSubscription(organizationId: string, subscriptionId: string) {
-    return this._subscriptionRepository.checkSubscription(
+  async checkSubscription(organizationId: string, subscriptionId: string) {
+    return await this._subscriptionRepository.checkSubscription(
       organizationId,
       subscriptionId
     );
@@ -74,6 +75,10 @@ export class SubscriptionService {
     totalChannels: number,
     billing: 'FREE' | 'STANDARD' | 'PRO'
   ) {
+    if (!customerId) {
+      return false;
+    }
+
     const getOrgByCustomerId =
       await this._subscriptionRepository.getOrganizationByCustomerId(
         customerId
@@ -83,6 +88,11 @@ export class SubscriptionService {
       (await this._subscriptionRepository.getSubscriptionByCustomerId(
         customerId
       ))!;
+
+    if (getCurrentSubscription || getCurrentSubscription?.isLifetime) {
+      return false;
+    }
+
     const from = pricing[getCurrentSubscription?.subscriptionTier || 'FREE'];
     const to = pricing[billing];
 
@@ -113,6 +123,8 @@ export class SubscriptionService {
       );
     }
 
+    return true;
+
     // if (to.faq < from.faq) {
     //   await this._faqRepository.deleteFAQs(getCurrentSubscription?.organizationId, from.faq - to.faq);
     // }
@@ -142,7 +154,18 @@ export class SubscriptionService {
     org?: string
   ) {
     if (!code) {
-      await this.modifySubscription(customerId, totalChannels, billing);
+      try {
+        const load = await this.modifySubscription(
+          customerId,
+          totalChannels,
+          billing
+        );
+        if (!load) {
+          return {};
+        }
+      } catch (e) {
+        return {};
+      }
     }
     return this._subscriptionRepository.createOrUpdateSubscription(
       identifier,
@@ -187,6 +210,19 @@ export class SubscriptionService {
     };
   }
 
+  async lifeTime(orgId: string, identifier: string, subscription: any) {
+    return this.createOrUpdateSubscription(
+      identifier,
+      identifier,
+      pricing[subscription].channel!,
+      subscription,
+      'YEARLY',
+      null,
+      identifier,
+      orgId
+    );
+  }
+
   async addSubscription(orgId: string, userId: string, subscription: any) {
     await this._subscriptionRepository.setCustomerId(orgId, orgId);
     return this.createOrUpdateSubscription(
@@ -197,9 +233,7 @@ export class SubscriptionService {
       'MONTHLY',
       null,
       undefined,
-       orgId
+      orgId
     );
   }
-
-
 }

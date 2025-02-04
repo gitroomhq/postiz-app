@@ -16,11 +16,11 @@ jobs:
       - name: Get Container Version
         id: getcontainerver
         run: |
-          echo "containerver=$(date +'%s')" >> "$GITHUB_OUTPUT"
+          echo "containerver=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
 
   build-containers:
     needs: build-containers-common
-    strategy: 
+    strategy:
       matrix:
         include:
           - runnertags: ubuntu-latest
@@ -50,17 +50,14 @@ jobs:
           docker images
 
       - name: docker tag
-        env: 
+        env:
           CONTAINERVER: ${{ needs.build-containers-common.outputs.containerver }}
         run: |
-          docker tag localhost/postiz ghcr.io/gitroomhq/postiz-app:${{ matrix.arch }}-${{ env.CONTAINERVER }}
-          docker push ghcr.io/gitroomhq/postiz-app:${{ matrix.arch }}-${{ env.CONTAINERVER }}
+          docker tag localhost/postiz ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }}-${{ matrix.arch }}
+          docker push ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }}-${{ matrix.arch }}
 
-          docker tag localhost/postiz-devcontainer ghcr.io/gitroomhq/postiz-devcontainer:${{ env.CONTAINERVER }}
-          docker push ghcr.io/gitroomhq/postiz-devcontainer:${{ env.CONTAINERVER }}
-
-          docker tag ghcr.io/gitroomhq/postiz-devcontainer:${{ env.CONTAINERVER }} ghcr.io/gitroomhq/postiz-devcontainer:latest
-          docker push ghcr.io/gitroomhq/postiz-devcontainer:latest
+          docker tag localhost/postiz-devcontainer ghcr.io/gitroomhq/postiz-devcontainer:${{ env.CONTAINERVER }}-${{ matrix.arch }}
+          docker push ghcr.io/gitroomhq/postiz-devcontainer:${{ env.CONTAINERVER }}-${{ matrix.arch }}
 
   build-container-manifest:
     needs: [build-containers, build-containers-common]
@@ -73,13 +70,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ github.token }}
 
-      - name: Create Docker Manifest 
-        env: 
+      - name: Create Docker Manifest
+        env:
           CONTAINERVER: ${{ needs.build-containers-common.outputs.containerver }}
         run: |
           docker manifest create \
             ghcr.io/gitroomhq/postiz-app:latest \
-            ghcr.io/gitroomhq/postiz-app:amd64-${{ env.CONTAINERVER }} \
-            ghcr.io/gitroomhq/postiz-app:arm64-${{ env.CONTAINERVER }}
+            ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }}-arm64 \
+            ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }}-amd64
 
           docker manifest push ghcr.io/gitroomhq/postiz-app:latest
+
+          docker manifest create \
+            ghcr.io/gitroomhq/postiz-devcontainer:latest \
+            ghcr.io/gitroomhq/postiz-devcontainer:${{ env.CONTAINERVER }}-arm64 \
+            ghcr.io/gitroomhq/postiz-devcontainer:${{ env.CONTAINERVER }}-amd64
+
+          docker manifest push ghcr.io/gitroomhq/postiz-devcontainer:latest

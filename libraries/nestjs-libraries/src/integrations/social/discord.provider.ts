@@ -49,15 +49,13 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
       username: '',
     };
   }
-  async generateAuthUrl(refresh?: string) {
+  async generateAuthUrl() {
     const state = makeId(6);
     return {
       url: `https://discord.com/oauth2/authorize?client_id=${
         process.env.DISCORD_CLIENT_ID
       }&permissions=377957124096&response_type=code&redirect_uri=${encodeURIComponent(
-        `${process.env.FRONTEND_URL}/integrations/social/discord${
-          refresh ? `?refresh=${refresh}` : ''
-        }`
+        `${process.env.FRONTEND_URL}/integrations/social/discord`
       )}&integration_type=0&scope=bot+identify+guilds&state=${state}`,
       codeVerifier: makeId(10),
       state,
@@ -118,10 +116,8 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
       })
     ).json();
 
-    console.log(list);
-
     return list
-      .filter((p: any) => p.type === 0 || p.type === 15)
+      .filter((p: any) => p.type === 0 || p.type === 5 || p.type === 15)
       .map((p: any) => ({
         id: String(p.id),
         name: p.name,

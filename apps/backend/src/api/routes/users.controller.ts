@@ -27,6 +27,11 @@ import { ApiTags } from '@nestjs/swagger';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
 import { HttpForbiddenException } from '@gitroom/nestjs-libraries/services/exception.filter';
+import { RealIP } from 'nestjs-real-ip';
+import { UserAgent } from '@gitroom/nestjs-libraries/user/user.agent';
+import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
+import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 
 @ApiTags('User')
 @Controller('/user')
@@ -36,31 +41,38 @@ export class UsersController {
     private _stripeService: StripeService,
     private _authService: AuthService,
     private _orgService: OrganizationService,
-    private _userService: UsersService
+    private _userService: UsersService,
+    private _trackService: TrackService
   ) {}
   @Get('/self')
   async getSelf(
     @GetUserFromRequest() user: User,
     @GetOrgFromRequest() organization: Organization,
-    @Req() req: Request,
+    @Req() req: Request
   ) {
     if (!organization) {
       throw new HttpForbiddenException();
     }
 
+    const impersonate = req.cookies.impersonate || req.headers.impersonate;
+    // @ts-ignore
     return {
       ...user,
       orgId: organization.id,
       // @ts-ignore
       totalChannels: organization?.subscription?.totalChannels || pricing.FREE.channel,
       // @ts-ignore
-      tier: organization?.subscription?.subscriptionTier || (!process.env.STRIPE_PUBLISHABLE_KEY ? 'ULTIMATE' : 'FREE'),
+      tier: organization?.subscription?.subscriptionTier ||
+        (!process.env.STRIPE_PUBLISHABLE_KEY ? 'ULTIMATE' : 'FREE'),
       // @ts-ignore
       role: organization?.users[0]?.role,
       // @ts-ignore
       isLifetime: !!organization?.subscription?.isLifetime,
       admin: !!user.isSuperAdmin,
-      impersonate: !!req.cookies.impersonate,
+      impersonate: !!impersonate,
+      allowTrial: organization?.allowTrial,
+      // @ts-ignore
+      publicApi: organization?.users[0]?.role === 'SUPERADMIN' || organization?.users[0]?.role === 'ADMIN' ? organization?.apiKey  : '',
     };
   }
 
@@ -93,11 +105,19 @@ export class UsersController {
 
     response.cookie('impersonate', id, {
       domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-      secure: true,
-      httpOnly: true,
-      sameSite: 'none',
+      ...(!process.env.NOT_SECURED
+        ? {
+            secure: true,
+            httpOnly: true,
+            sameSite: 'none',
+          }
+        : {}),
       expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
     });
+
+    if (process.env.NOT_SECURED) {
+      response.header('impersonate', id);
+    }
   }
 
   @Post('/personal')
@@ -163,11 +183,19 @@ export class UsersController {
   ) {
     response.cookie('showorg', id, {
       domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-      secure: true,
-      httpOnly: true,
-      sameSite: 'none',
+      ...(!process.env.NOT_SECURED
+        ? {
+            secure: true,
+            httpOnly: true,
+            sameSite: 'none',
+          }
+        : {}),
       expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
     });
+
+    if (process.env.NOT_SECURED) {
+      response.header('showorg', id);
+    }
 
     response.status(200).send();
   }
@@ -176,31 +204,83 @@ export class UsersController {
   logout(@Res({ passthrough: true }) response: Response) {
     response.cookie('auth', '', {
       domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-      secure: true,
-      httpOnly: true,
+      ...(!process.env.NOT_SECURED
+        ? {
+            secure: true,
+            httpOnly: true,
+            sameSite: 'none',
+          }
+        : {}),
       maxAge: -1,
       expires: new Date(0),
-      sameSite: 'none',
     });
 
     response.cookie('showorg', '', {
       domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-      secure: true,
-      httpOnly: true,
+      ...(!process.env.NOT_SECURED
+        ? {
+            secure: true,
+            httpOnly: true,
+            sameSite: 'none',
+          }
+        : {}),
       maxAge: -1,
       expires: new Date(0),
-      sameSite: 'none',
     });
 
     response.cookie('impersonate', '', {
       domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-      secure: true,
-      httpOnly: true,
+      ...(!process.env.NOT_SECURED
+        ? {
+            secure: true,
+            httpOnly: true,
+            sameSite: 'none',
+          }
+        : {}),
       maxAge: -1,
       expires: new Date(0),
-      sameSite: 'none',
     });
 
     response.status(200).send();
+  }
+
+  @Post('/t')
+  async trackEvent(
+    @Res({ passthrough: true }) res: Response,
+    @Req() req: Request,
+    @GetUserFromRequest() user: User,
+    @RealIP() ip: string,
+    @UserAgent() userAgent: string,
+    @Body()
+    body: { tt: TrackEnum; fbclid: string; additional: Record<string, any> }
+  ) {
+    const uniqueId = req?.cookies?.track || makeId(10);
+    const fbclid = req?.cookies?.fbclid || body.fbclid;
+    await this._trackService.track(
+      uniqueId,
+      ip,
+      userAgent,
+      body.tt,
+      body.additional,
+      fbclid,
+      user
+    );
+    if (!req.cookies.track) {
+      res.cookie('track', uniqueId, {
+        domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+        ...(!process.env.NOT_SECURED
+          ? {
+              secure: true,
+              httpOnly: true,
+              sameSite: 'none',
+            }
+          : {}),
+        expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
+      });
+    }
+
+    res.status(200).json({
+      track: uniqueId,
+    });
   }
 }

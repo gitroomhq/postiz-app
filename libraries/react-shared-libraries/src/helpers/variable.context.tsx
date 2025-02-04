@@ -7,18 +7,30 @@ interface VariableContextInterface {
   isGeneral: boolean;
   frontEndUrl: string;
   plontoKey: string;
+  storageProvider: 'local' | 'cloudflare',
   backendUrl: string;
   discordUrl: string;
   uploadDirectory: string;
+  facebookPixel: string;
+  telegramBotName: string;
+  neynarClientId: string;
+  isSecured: boolean;
+  tolt: string;
 }
 const VariableContext = createContext({
   billingEnabled: false,
   isGeneral: true,
   frontEndUrl: '',
+  storageProvider: 'local',
   plontoKey: '',
   backendUrl: '',
   discordUrl: '',
   uploadDirectory: '',
+  isSecured: false,
+  telegramBotName: '',
+  facebookPixel: '',
+  neynarClientId: '',
+  tolt: '',
 } as VariableContextInterface);
 
 export const VariableContextComponent: FC<

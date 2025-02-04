@@ -3,7 +3,6 @@
 import { ReactNode, useCallback } from 'react';
 import { FetchWrapperComponent } from '@gitroom/helpers/utils/custom.fetch';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
-import { isGeneral } from '@gitroom/react/helpers/is.general';
 import { useReturnUrl } from '@gitroom/frontend/app/auth/return.url.component';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 
@@ -15,12 +14,60 @@ export default function LayoutContext(params: { children: ReactNode }) {
 
   return <></>;
 }
+
+export function setCookie(cname: string, cvalue: string, exdays: number) {
+  if (typeof document === 'undefined') {
+    return;
+  }
+  const d = new Date();
+  d.setTime(d.getTime() + exdays * 24 * 60 * 60 * 1000);
+  const expires = 'expires=' + d.toUTCString();
+  document.cookie = cname + '=' + cvalue + ';' + expires + ';path=/';
+}
+
 function LayoutContextInner(params: { children: ReactNode }) {
   const returnUrl = useReturnUrl();
-  const {backendUrl, isGeneral} = useVariables();
+  const { backendUrl, isGeneral, isSecured } = useVariables();
 
   const afterRequest = useCallback(
     async (url: string, options: RequestInit, response: Response) => {
+      if (
+        typeof window !== 'undefined' &&
+        window.location.href.includes('/p/')
+      ) {
+        return true;
+      }
+
+      const headerAuth =
+        response?.headers?.get('auth') || response?.headers?.get('Auth');
+      const showOrg =
+        response?.headers?.get('showorg') || response?.headers?.get('Showorg');
+      const impersonate =
+        response?.headers?.get('impersonate') ||
+        response?.headers?.get('Impersonate');
+      const logout =
+        response?.headers?.get('logout') || response?.headers?.get('Logout');
+
+      if (headerAuth) {
+        setCookie('auth', headerAuth, 365);
+      }
+
+      if (showOrg) {
+        setCookie('showorg', showOrg, 365);
+      }
+
+      if (impersonate) {
+        setCookie('impersonate', impersonate, 365);
+      }
+
+      if (logout && !isSecured) {
+        setCookie('auth', '', -10);
+        setCookie('showorg', '', -10);
+        setCookie('impersonate', '', -10);
+        window.location.href = '/';
+        return true;
+      }
+
       const reloadOrOnboarding =
         response?.headers?.get('reload') ||
         response?.headers?.get('onboarding');
@@ -47,6 +94,11 @@ function LayoutContextInner(params: { children: ReactNode }) {
       }
 
       if (response.status === 401) {
+        if (!isSecured) {
+          setCookie('auth', '', -10);
+          setCookie('showorg', '', -10);
+          setCookie('impersonate', '', -10);
+        }
         window.location.href = '/';
       }
 
@@ -71,10 +123,7 @@ function LayoutContextInner(params: { children: ReactNode }) {
   );
 
   return (
-    <FetchWrapperComponent
-      baseUrl={backendUrl}
-      afterRequest={afterRequest}
-    >
+    <FetchWrapperComponent baseUrl={backendUrl} afterRequest={afterRequest}>
       {params?.children || <></>}
     </FetchWrapperComponent>
   );
