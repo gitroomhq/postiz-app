@@ -89,7 +89,7 @@ export class SubscriptionService {
         customerId
       ))!;
 
-    if (getCurrentSubscription.isLifetime) {
+    if (!getCurrentSubscription || getCurrentSubscription?.isLifetime) {
       return false;
     }
 
