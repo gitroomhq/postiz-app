@@ -104,7 +104,9 @@ export class StripeService {
       try {
         await stripe.paymentMethods.detach(paymentMethods.data[0].id);
         await stripe.subscriptions.cancel(event.data.object.id as string);
-      } catch (err) {/*dont do anything*/}
+      } catch (err) {
+        /*dont do anything*/
+      }
       return false;
     }
   }
@@ -122,8 +124,12 @@ export class StripeService {
       uniqueId: string;
     } = event.data.object.metadata;
 
-    const check = await this.checkValidCard(event);
-    if (!check) {
+    try {
+      const check = await this.checkValidCard(event);
+      if (!check) {
+        return { ok: false };
+      }
+    } catch (err) {
       return { ok: false };
     }
 
