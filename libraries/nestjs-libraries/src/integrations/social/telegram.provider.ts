@@ -89,6 +89,39 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
     );
     // get correct chatId based on the channel type
     const chatId = match?.message?.chat?.id || match?.channel_post?.chat?.id;
+
+    // prevents the code from running while chatId is still undefined to avoid the error 'ETELEGRAM: 400 Bad Request: chat_id is empty'. the code would still work eventually but console spam is not pretty
+    if (chatId) {
+      //get the numberic ID of the bot
+      const botId = (await telegramBot.getMe()).id;
+      // check if the bot is an admin in the chat
+      const isAdmin = await this.botIsAdmin(chatId, botId);
+      // get the messageId of the message that triggered the connection
+      const connectMessageId =
+        match?.message?.message_id || match?.channel_post?.message_id;
+
+      if (!isAdmin) {
+        // alternatively you can replace this with a console.log if you do not want to inform the user of the bot's admin status
+        telegramBot.sendMessage(
+          chatId,
+          "Connection Successful. I don't have admin privileges to delete these messages, please go ahead and remove them yourself."
+        );
+      } else {
+        // Delete the message that triggered the connection
+        await telegramBot.deleteMessage(chatId, connectMessageId);
+        // Send success message to the chat
+        const successMessage = await telegramBot.sendMessage(
+          chatId,
+          'Connection Successful. Message will be deleted in 10 seconds.'
+        );
+        // Delete the success message after 10 seconds
+        setTimeout(async () => {
+          await telegramBot.deleteMessage(chatId, successMessage.message_id);
+          console.log('Success message deleted.');
+        }, 10000);
+      }
+    }
+
     // modified lastChatId to work with any type of channel (private/public groups/channels)
     return chatId
       ? { chatId }
@@ -213,5 +246,24 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
       result.push(media.slice(i, i + size));
     }
     return result;
+  }
+
+  async botIsAdmin(chatId: number, botId: number): Promise<boolean> {
+    try {
+      const chatMember = await telegramBot.getChatMember(chatId, botId);
+
+      if (
+        chatMember.status === 'administrator' ||
+        chatMember.status === 'creator'
+      ) {
+        const permissions = chatMember.can_delete_messages;
+        return !!permissions; // Return true if bot can delete messages
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Error checking bot privileges:', error);
+      return false;
+    }
   }
 }
