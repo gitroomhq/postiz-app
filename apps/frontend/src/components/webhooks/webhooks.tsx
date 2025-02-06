@@ -175,6 +175,51 @@ export const AddOrEditWebhook: FC<{ data?: any; reload: () => void }> = (
     [data, integrations]
   );
 
+  const sendTest = useCallback(async () => {
+    const url = form.getValues('url');
+    toast.show('Webhook send', 'success');
+    try {
+      await fetch(`/webhooks/send?url=${encodeURIComponent(url)}`, {
+        method: 'POST',
+        headers: {
+          contentType: 'application/json',
+        },
+        body: JSON.stringify([
+          {
+            id: 'cm6tcts4f0005qcwit25cis26',
+            content: 'This is the first post to instagram',
+            publishDate: '2025-02-06T13:09:00.000Z',
+            releaseURL: 'https://facebook.com/release/release',
+            state: 'PUBLISHED',
+            integration: {
+              id: 'cm6s4uyou0001i2r47pxix6z1',
+              name: 'test',
+              providerIdentifier: 'instagram',
+              picture: 'https://uploads.gitroom.com/F6LSCD8wrrQ.jpeg',
+              type: 'social',
+            },
+          },
+          {
+            id: 'cm6tcts4f0005qcwit25cis26',
+            content: 'This is the second post to facebook',
+            publishDate: '2025-02-06T13:09:00.000Z',
+            releaseURL: 'https://facebook.com/release2/release2',
+            state: 'PUBLISHED',
+            integration: {
+              id: 'cm6s4uyou0001i2r47pxix6z1',
+              name: 'test2',
+              providerIdentifier: 'facebook',
+              picture: 'https://uploads.gitroom.com/F6LSCD8wrrQ.jpeg',
+              type: 'social',
+            },
+          },
+        ]),
+      });
+    } catch (e: any) {
+      /** empty **/
+    }
+  }, []);
+
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(callBack)}>
@@ -227,16 +272,32 @@ export const AddOrEditWebhook: FC<{ data?: any; reload: () => void }> = (
                 isMain={true}
               />
             )}
-            <Button
-              type="submit"
-              className="mt-[24px]"
-              disabled={
-                !form.formState.isValid ||
-                (allIntegrations.value === 'specific' && !integrations?.length)
-              }
-            >
-              Save
-            </Button>
+            <div className="flex gap-[10px]">
+              <Button
+                type="submit"
+                className="mt-[24px]"
+                disabled={
+                  !form.formState.isValid ||
+                  (allIntegrations.value === 'specific' &&
+                    !integrations?.length)
+                }
+              >
+                Save
+              </Button>
+              <Button
+                type="button"
+                secondary={true}
+                className="mt-[24px]"
+                onClick={sendTest}
+                disabled={
+                  !form.formState.isValid ||
+                  (allIntegrations.value === 'specific' &&
+                    !integrations?.length)
+                }
+              >
+                Send Test
+              </Button>
+            </div>
           </div>
         </div>
       </form>

@@ -73,10 +73,12 @@ export class WebhooksService {
         );
       }
 
-      sendList.push({
-        url: webhook.url,
-        data: toSend,
-      });
+      if (toSend.length) {
+        sendList.push({
+          url: webhook.url,
+          data: toSend,
+        });
+      }
     }
 
     return Promise.all(

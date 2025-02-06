@@ -1,4 +1,13 @@
-import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+} from '@nestjs/common';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization } from '@prisma/client';
 import { ApiTags } from '@nestjs/swagger';
@@ -46,5 +55,20 @@ export class WebhookController {
     @Param('id') id: string
   ) {
     return this._webhooksService.deleteWebhook(org.id, id);
+  }
+
+  @Post('/send')
+  async sendWebhook(@Body() body: any, @Query('url') url: string) {
+    try {
+      await fetch(url, {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: { 'Content-Type': 'application/json' },
+      });
+    } catch (err) {
+      /** sent **/
+    }
+
+    return { send: true };
   }
 }
