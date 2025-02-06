@@ -77,10 +77,17 @@ export function useUppyUploader(props: {
       },
     });
 
+    const s3Config = {
+      bucket: process.env.AWS_BUCKET_NAME || '',
+      region: process.env.AWS_REGION || '',
+      uploadUrl: process.env.S3_UPLOAD_URL || '',
+    };
+
     const { plugin, options } = getUppyUploadPlugin(
       storageProvider,
       fetch,
-      backendUrl
+      backendUrl,
+      s3Config
     );
     uppy2.use(plugin, options);
     uppy2.use(Compressor, {

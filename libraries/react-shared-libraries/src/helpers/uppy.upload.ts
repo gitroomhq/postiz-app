@@ -58,11 +58,11 @@ export const getUppyUploadPlugin = (provider: string, fetch: any, backendUrl: st
       return {
         plugin: AwsS3Multipart,
         options: {
-          shouldUseMultipart: (file: any) => file.size > 5 * 1024 * 1024, // Use multipart for files > 5MB
-          endpoint: `${s3Config?.uploadUrl}/multipart-upload`, // Backend API to handle multipart uploads
+          shouldUseMultipart: (file: any) => true,
+          endpoint: '', // Backend API to handle multipart uploads
           createMultipartUpload: async (file: any) => {
             const arrayBuffer = await new Response(file.data).arrayBuffer();
-            const fileHash = await sha256(Buffer.from(arrayBuffer));
+            const fileHash = sha256(Buffer.from(arrayBuffer));
             const contentType = file.type;
 
             return fetchUploadApiEndpoint(fetch, 'create-multipart-upload', {
