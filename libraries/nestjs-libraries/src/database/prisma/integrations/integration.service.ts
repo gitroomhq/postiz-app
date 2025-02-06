@@ -210,7 +210,7 @@ export class IntegrationService {
     const integrations = (
       await this._integrationRepository.getIntegrationsList(org)
     ).filter((f) => !f.disabled);
-    if (integrations.length >= totalChannels) {
+    if (!!process.env.STRIPE_PUBLISHABLE_KEY && integrations.length >= totalChannels) {
       throw new Error('You have reached the maximum number of channels');
     }
 
