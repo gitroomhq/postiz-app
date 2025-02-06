@@ -186,8 +186,7 @@ export const TeamsComponent = () => {
 
   return (
     <div className="flex flex-col">
-      <h2 className="text-[24px] mb-[24px]">Team Members</h2>
-      <h3 className="text-[20px]">Account Managers</h3>
+      <h3 className="text-[20px]">Team Members</h3>
       <div className="text-customColor18 mt-[4px]">
         Invite your assistant or team member to manage your account
       </div>
@@ -238,7 +237,7 @@ export const TeamsComponent = () => {
           ))}
         </div>
         <div>
-          <Button className="rounded-[4px]" onClick={addMember}>
+          <Button onClick={addMember}>
             Add another member
           </Button>
         </div>

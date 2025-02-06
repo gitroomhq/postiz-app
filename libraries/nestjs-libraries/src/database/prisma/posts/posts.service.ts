@@ -22,6 +22,7 @@ import { AuthTokenDetails } from '@gitroom/nestjs-libraries/integrations/social/
 import utc from 'dayjs/plugin/utc';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.link.service';
+import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
 dayjs.extend(utc);
 
 type PostWithConditionals = Post & {
@@ -40,7 +41,8 @@ export class PostsService {
     private _stripeService: StripeService,
     private _integrationService: IntegrationService,
     private _mediaService: MediaService,
-    private _shortLinkService: ShortLinkService
+    private _shortLinkService: ShortLinkService,
+    private _webhookService: WebhooksService
   ) {}
 
   async getStatistics(orgId: string, id: string) {
@@ -370,6 +372,11 @@ export class PostsService {
         )} at ${publishedPosts[0].releaseURL}`,
         true,
         true
+      );
+
+      await this._webhookService.digestWebhooks(
+        integration.organizationId,
+        dayjs(newPosts[0].publishDate).format('YYYY-MM-DDTHH:mm:00')
       );
 
       await this.checkPlugs(

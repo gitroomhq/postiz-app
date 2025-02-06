@@ -28,6 +28,7 @@ import { RootController } from '@gitroom/backend/api/routes/root.controller';
 import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
 import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.link.service';
 import { Nowpayments } from '@gitroom/nestjs-libraries/crypto/nowpayments';
+import { WebhookController } from '@gitroom/backend/api/routes/webhooks.controller';
 
 const authenticatedController = [
   UsersController,
@@ -42,6 +43,7 @@ const authenticatedController = [
   MessagesController,
   CopilotController,
   AgenciesController,
+  WebhookController,
 ];
 @Module({
   imports: [

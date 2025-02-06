@@ -17,7 +17,6 @@ import { BotPicture } from '@gitroom/frontend/components/launches/bot.picture';
 import { CustomerModal } from '@gitroom/frontend/components/launches/customer.modal';
 import { Integration } from '@prisma/client';
 import { SettingsModal } from '@gitroom/frontend/components/launches/settings.modal';
-import { string } from 'yup';
 import { CustomVariables } from '@gitroom/frontend/components/launches/add.provider.component';
 import { useRouter } from 'next/navigation';
 
