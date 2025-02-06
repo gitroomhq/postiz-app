@@ -15,4 +15,9 @@ export class PostsController {
   async payout(data: { id: string; releaseURL: string }) {
     return this._postsService.payout(data.id, data.releaseURL);
   }
+
+  @EventPattern('sendDigestEmail', Transport.REDIS)
+  async sendDigestEmail(data: { subject: string, org: string; since: string }) {
+    return this._postsService.sendDigestEmail(data.subject, data.org, data.since);
+  }
 }
