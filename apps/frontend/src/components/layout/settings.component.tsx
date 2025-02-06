@@ -21,6 +21,7 @@ import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { PublicComponent } from '@gitroom/frontend/components/public-api/public.component';
 import Link from 'next/link';
 import { Webhooks } from '@gitroom/frontend/components/webhooks/webhooks';
+import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 
 export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
   const { isGeneral } = useVariables();
@@ -210,8 +211,30 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
 };
 
 export const SettingsComponent = () => {
+  const settings = useModals();
+  const user = useUser();
+
+  const openModal = useCallback(() => {
+    if (user?.tier.current !== 'FREE') {
+      return;
+    }
+
+    settings.openModal({
+      children: (
+        <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-customColor6 bg-sixth p-[16px] w-[500px] mx-auto">
+          <SettingsPopup />
+        </div>
+      ),
+      classNames: {
+        modal: 'bg-transparent text-textColor',
+      },
+      withCloseButton: false,
+      size: '100%',
+    });
+  }, [user]);
+
   return (
-    <Link href="/settings">
+    <Link href="/settings" onClick={openModal}>
       <svg
         width="40"
         height="40"

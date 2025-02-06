@@ -77,7 +77,6 @@ export const TopMenu: FC = () => {
   const user = useUser();
   const { billingEnabled } = useVariables();
   const menuItems = useMenuItems();
-
   return (
     <div className="flex flex-col h-full animate-normalFadeDown order-3 md:order-2 col-span-2 md:col-span-1">
       <ul className="gap-0 md:gap-5 flex flex-1 items-center text-[18px]">
