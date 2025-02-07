@@ -2,6 +2,7 @@ import { mock } from 'jest-mock-extended';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
+import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
 import { PermissionsService } from './permissions.service';
 import { AuthorizationActions, Sections } from './permissions.service';
 import { Period, SubscriptionTier } from '@prisma/client';
@@ -10,6 +11,7 @@ import { Period, SubscriptionTier } from '@prisma/client';
 const mockSubscriptionService = mock<SubscriptionService>();
 const mockPostsService = mock<PostsService>();
 const mockIntegrationService = mock<IntegrationService>();
+const mockWebHookService = mock<WebhooksService>();
 
 describe('PermissionsService', () => {
   let service: PermissionsService;
@@ -20,7 +22,8 @@ describe('PermissionsService', () => {
     service = new PermissionsService(
       mockSubscriptionService,
       mockPostsService,
-      mockIntegrationService
+      mockIntegrationService,
+      mockWebHookService
     );
   });
 
@@ -58,6 +61,7 @@ describe('PermissionsService', () => {
     image_generator: false,
     image_generation_count: 50,
     public_api: true,
+    webhooks: 10
   };
 
   const baseIntegration = {
