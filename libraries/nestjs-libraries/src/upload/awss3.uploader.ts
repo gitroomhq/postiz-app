@@ -17,7 +17,7 @@ const getBucketName = () => {
 }
 
 const getBucketURL = () => {
-  return process.env.AWS_BUCKET_URL;
+  return process.env.AWS_BUCKET_BASE_URL;
 }
 
 const getRegion = () => {
