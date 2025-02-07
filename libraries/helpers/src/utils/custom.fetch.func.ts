@@ -1,4 +1,3 @@
-
 export interface Params {
   baseUrl: string;
   beforeRequest?: (url: string, options: RequestInit) => Promise<RequestInit>;
@@ -11,21 +10,48 @@ export interface Params {
 export const customFetch = (
   params: Params,
   auth?: string,
-  showorg?: string
+  showorg?: string,
+  secured: boolean = true
 ) => {
   return async function newFetch(url: string, options: RequestInit = {}) {
     const newRequestObject = await params?.beforeRequest?.(url, options);
+    const authNonSecuredCookie = typeof document === 'undefined' ? null : document.cookie
+      .split(';')
+      .find((p) => p.includes('auth='))
+      ?.split('=')[1];
+
+    const authNonSecuredOrg = typeof document === 'undefined' ? null : document.cookie
+      .split(';')
+      .find((p) => p.includes('showorg='))
+      ?.split('=')[1];
+
+    const authNonSecuredImpersonate = typeof document === 'undefined' ? null : document.cookie
+      .split(';')
+      .find((p) => p.includes('impersonate='))
+      ?.split('=')[1];
+
     const fetchRequest = await fetch(params.baseUrl + url, {
-      credentials: 'include',
+      ...(secured ? { credentials: 'include' } : {}),
       ...(newRequestObject || options),
       headers: {
-        ...(auth ? { auth } : {}),
-        ...(showorg ? { showorg } : {}),
+        ...(showorg
+          ? { showorg }
+          : authNonSecuredOrg
+          ? { showorg: authNonSecuredOrg }
+          : {}),
         ...(options.body instanceof FormData
           ? {}
           : { 'Content-Type': 'application/json' }),
         Accept: 'application/json',
         ...options?.headers,
+        ...(auth
+          ? { auth }
+          : authNonSecuredCookie
+          ? { auth: authNonSecuredCookie }
+          : {}),
+        ...(authNonSecuredImpersonate
+          ? { impersonate: authNonSecuredImpersonate }
+          : {}),
       },
       // @ts-ignore
       ...(!options.next && options.cache !== 'force-cache'

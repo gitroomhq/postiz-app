@@ -2,10 +2,15 @@ import { Dub } from '@gitroom/nestjs-libraries/short-linking/providers/dub';
 import { Empty } from '@gitroom/nestjs-libraries/short-linking/providers/empty';
 import { ShortLinking } from '@gitroom/nestjs-libraries/short-linking/short-linking.interface';
 import { Injectable } from '@nestjs/common';
+import { ShortIo } from './providers/short.io';
 
 const getProvider = (): ShortLinking => {
   if (process.env.DUB_TOKEN) {
     return new Dub();
+  }
+
+  if ( process.env.SHORT_IO_SECRET_KEY ) {
+    return new ShortIo();
   }
 
   return new Empty();

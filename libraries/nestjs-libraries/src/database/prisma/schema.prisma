@@ -33,6 +33,7 @@ model Organization {
   credits           Credits[]
   plugs             Plugs[]
   customers         Customer[]
+  webhooks          Webhooks[]
 }
 
 model User {
@@ -290,6 +291,7 @@ model Integration {
   exisingPlugData       ExisingPlugData[]
   rootInternalId        String?
   additionalSettings    String?        @default("[]")
+  webhooks              IntegrationsWebhooks[]
 
   @@index([rootInternalId])
   @@index([updatedAt])
@@ -499,6 +501,33 @@ model PopularPosts {
   hook       String
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+}
+
+model IntegrationsWebhooks {
+  integrationId String
+  integration   Integration @relation(fields: [integrationId], references: [id])
+  webhookId     String
+  webhook       Webhooks   @relation(fields: [webhookId], references: [id])
+
+  @@unique([integrationId, webhookId])
+  @@id([integrationId, webhookId])
+  @@index([integrationId])
+  @@index([webhookId])
+}
+
+model Webhooks {
+  id         String   @id @default(uuid())
+  name       String
+  organizationId String
+  organization Organization @relation(fields: [organizationId], references: [id])
+  integrations IntegrationsWebhooks[]
+  url        String
+  deletedAt  DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([deletedAt])
 }
 
 enum OrderStatus {

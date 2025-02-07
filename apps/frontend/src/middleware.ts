@@ -7,7 +7,11 @@ import { internalFetch } from '@gitroom/helpers/utils/internal.fetch';
 export async function middleware(request: NextRequest) {
   const nextUrl = request.nextUrl;
   const authCookie = request.cookies.get('auth');
-  if (nextUrl.pathname.startsWith('/uploads/') || nextUrl.pathname.startsWith('/p/') || nextUrl.pathname.startsWith('/icons/')) {
+  if (
+    nextUrl.pathname.startsWith('/uploads/') ||
+    nextUrl.pathname.startsWith('/p/') ||
+    nextUrl.pathname.startsWith('/icons/')
+  ) {
     return NextResponse.next();
   }
   // If the URL is logout, delete the cookie and redirect to login
@@ -17,9 +21,13 @@ export async function middleware(request: NextRequest) {
     );
     response.cookies.set('auth', '', {
       path: '/',
-      sameSite: false,
-      httpOnly: true,
-      secure: true,
+      ...(!process.env.NOT_SECURED
+        ? {
+            secure: true,
+            httpOnly: true,
+            sameSite: false,
+          }
+        : {}),
       maxAge: -1,
       domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
     });
@@ -53,12 +61,16 @@ export async function middleware(request: NextRequest) {
     if (org) {
       const redirect = NextResponse.redirect(new URL(`/`, nextUrl.href));
       redirect.cookies.set('org', org, {
-        path: '/',
-        sameSite: false,
-        httpOnly: true,
-        secure: true,
+        ...(!process.env.NOT_SECURED
+          ? {
+              path: '/',
+              secure: true,
+              httpOnly: true,
+              sameSite: false,
+              domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+            }
+          : {}),
         expires: new Date(Date.now() + 15 * 60 * 1000),
-        domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
       });
       return redirect;
     }
@@ -81,12 +93,16 @@ export async function middleware(request: NextRequest) {
       );
       if (id) {
         redirect.cookies.set('showorg', id, {
-          path: '/',
-          sameSite: false,
-          httpOnly: true,
-          secure: true,
+          ...(!process.env.NOT_SECURED
+            ? {
+                path: '/',
+                secure: true,
+                httpOnly: true,
+                sameSite: false,
+                domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+              }
+            : {}),
           expires: new Date(Date.now() + 15 * 60 * 1000),
-          domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
         });
       }
 
@@ -112,9 +128,13 @@ export async function middleware(request: NextRequest) {
 
       next.cookies.set('marketplace', type === 'seller' ? 'seller' : 'buyer', {
         path: '/',
-        sameSite: false,
-        httpOnly: true,
-        secure: true,
+        ...(!process.env.NOT_SECURED
+          ? {
+              secure: true,
+              httpOnly: true,
+              sameSite: false,
+            }
+          : {}),
         expires: new Date(Date.now() + 15 * 60 * 1000),
         domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
       });
@@ -122,6 +142,7 @@ export async function middleware(request: NextRequest) {
 
     return next;
   } catch (err) {
+    console.log('err', err);
     return NextResponse.redirect(new URL('/auth/logout', nextUrl.href));
   }
 }

@@ -75,6 +75,10 @@ export class SubscriptionService {
     totalChannels: number,
     billing: 'FREE' | 'STANDARD' | 'PRO'
   ) {
+    if (!customerId) {
+      return false;
+    }
+
     const getOrgByCustomerId =
       await this._subscriptionRepository.getOrganizationByCustomerId(
         customerId
@@ -84,6 +88,11 @@ export class SubscriptionService {
       (await this._subscriptionRepository.getSubscriptionByCustomerId(
         customerId
       ))!;
+
+    if (getCurrentSubscription && getCurrentSubscription?.isLifetime) {
+      return false;
+    }
+
     const from = pricing[getCurrentSubscription?.subscriptionTier || 'FREE'];
     const to = pricing[billing];
 
@@ -114,6 +123,8 @@ export class SubscriptionService {
       );
     }
 
+    return true;
+
     // if (to.faq < from.faq) {
     //   await this._faqRepository.deleteFAQs(getCurrentSubscription?.organizationId, from.faq - to.faq);
     // }
@@ -143,7 +154,18 @@ export class SubscriptionService {
     org?: string
   ) {
     if (!code) {
-      await this.modifySubscription(customerId, totalChannels, billing);
+      try {
+        const load = await this.modifySubscription(
+          customerId,
+          totalChannels,
+          billing
+        );
+        if (!load) {
+          return {};
+        }
+      } catch (e) {
+        return {};
+      }
     }
     return this._subscriptionRepository.createOrUpdateSubscription(
       identifier,

@@ -16,6 +16,9 @@ import { useRouter } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { Integration } from '@prisma/client';
+import { web3List } from '@gitroom/frontend/components/launches/web3/web3.list';
+import { timer } from '@gitroom/helpers/utils/timer';
+import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 
 export const ConnectChannels: FC = () => {
   const fetch = useFetch();
@@ -42,6 +45,33 @@ export const ConnectChannels: FC = () => {
   //   },
   //   []
   // );
+
+  const openWeb3 = async (id: string) => {
+    const { component: Web3Providers } = web3List.find(
+      (item) => item.identifier === id
+    )!;
+
+    const { url } = await (await fetch(`/integrations/social/${id}`)).json();
+
+    setShowCustom(
+      <Web3Providers
+        onComplete={async (code, newState) => {
+          if (await deleteDialog('Connection found, should we continue?', 'Continue')) {
+            window.open(
+              `/integrations/social/${id}?code=${code}&state=${newState}`,
+              'Social Connect',
+              'width=700,height=700'
+            );
+            return ;
+          }
+
+          setShowCustom(undefined);
+        }}
+        nonce={url}
+      />
+    );
+    return;
+  };
 
   const refreshChannel = useCallback(
     (integration: Integration & { identifier: string }) => async () => {
@@ -82,6 +112,7 @@ export const ConnectChannels: FC = () => {
     (
         identifier: string,
         isExternal: boolean,
+        isWeb3: boolean,
         customFields?: Array<{
           key: string;
           label: string;
@@ -123,6 +154,11 @@ export const ConnectChannels: FC = () => {
         //
         //   return;
         // }
+
+        if (isWeb3) {
+          openWeb3(identifier);
+          return;
+        }
 
         if (customFields) {
           setShowCustom(
@@ -252,6 +288,7 @@ export const ConnectChannels: FC = () => {
                   onClick={getSocialLink(
                     social.identifier,
                     social.isExternal,
+                    social.isWeb3,
                     social.customFields
                   )}
                   className="h-[96px] bg-input flex flex-col justify-center items-center gap-[10px] cursor-pointer"

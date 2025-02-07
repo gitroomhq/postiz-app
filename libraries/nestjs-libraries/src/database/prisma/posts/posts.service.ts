@@ -22,6 +22,7 @@ import { AuthTokenDetails } from '@gitroom/nestjs-libraries/integrations/social/
 import utc from 'dayjs/plugin/utc';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.link.service';
+import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
 dayjs.extend(utc);
 
 type PostWithConditionals = Post & {
@@ -40,17 +41,20 @@ export class PostsService {
     private _stripeService: StripeService,
     private _integrationService: IntegrationService,
     private _mediaService: MediaService,
-    private _shortLinkService: ShortLinkService
+    private _shortLinkService: ShortLinkService,
+    private _webhookService: WebhooksService
   ) {}
 
   async getStatistics(orgId: string, id: string) {
     const getPost = await this.getPostsRecursively(id, true, orgId, true);
     const content = getPost.map((p) => p.content);
-    const shortLinksTracking = await this._shortLinkService.getStatistics(content);
+    const shortLinksTracking = await this._shortLinkService.getStatistics(
+      content
+    );
 
     return {
-      clicks: shortLinksTracking
-    }
+      clicks: shortLinksTracking,
+    };
   }
 
   async getPostsRecursively(
@@ -363,8 +367,16 @@ export class PostsService {
         `Your post has been published on ${capitalize(
           integration.providerIdentifier
         )}`,
-        `Your post has been published at ${publishedPosts[0].releaseURL}`,
+        `Your post has been published on ${capitalize(
+          integration.providerIdentifier
+        )} at ${publishedPosts[0].releaseURL}`,
+        true,
         true
+      );
+
+      await this._webhookService.digestWebhooks(
+        integration.organizationId,
+        dayjs(newPosts[0].publishDate).format('YYYY-MM-DDTHH:mm:00')
       );
 
       await this.checkPlugs(
@@ -517,10 +529,10 @@ export class PostsService {
     const post = await this._postRepository.deletePost(orgId, group);
     if (post?.id) {
       await this._workerServiceProducer.delete('post', post.id);
-      return {id: post.id};
+      return { id: post.id };
     }
 
-    return {error: true};
+    return { error: true };
   }
 
   async countPostsFromDay(orgId: string, date: Date) {
@@ -566,8 +578,10 @@ export class PostsService {
   async createPost(orgId: string, body: CreatePostDto) {
     const postList = [];
     for (const post of body.posts) {
-      const messages = post.value.map(p => p.content);
-      const updateContent = !body.shortLink ? messages : await this._shortLinkService.convertTextToShortLinks(orgId, messages);
+      const messages = post.value.map((p) => p.content);
+      const updateContent = !body.shortLink
+        ? messages
+        : await this._shortLinkService.convertTextToShortLinks(orgId, messages);
 
       post.value = post.value.map((p, i) => ({
         ...p,
@@ -624,7 +638,7 @@ export class PostsService {
       postList.push({
         postId: posts[0].id,
         integration: post.integration.id,
-      })
+      });
     }
 
     return postList;
@@ -877,5 +891,24 @@ export class PostsService {
     comment: string
   ) {
     return this._postRepository.createComment(orgId, userId, postId, comment);
+  }
+
+  async sendDigestEmail(subject: string, orgId: string, since: string) {
+    const getNotificationsForOrgSince =
+      await this._notificationService.getNotificationsSince(orgId, since);
+    if (getNotificationsForOrgSince.length === 0) {
+      return;
+    }
+
+    const message = getNotificationsForOrgSince
+      .map((p) => p.content)
+      .join('<br />');
+    await this._notificationService.sendEmailsToOrg(
+      orgId,
+      getNotificationsForOrgSince.length === 1
+        ? subject
+        : '[Postiz] Your latest notifications',
+      message
+    );
   }
 }
