@@ -339,8 +339,8 @@ export const MediaBox: FC<{
                           type === 'video'
                             ? 'video/mp4'
                             : type === 'image'
-                            ? 'image/*'
-                            : 'image/*,video/mp4'
+                              ? 'image/*'
+                              : 'image/*,video/mp4'
                         }
                       />
                     </div>
@@ -352,7 +352,7 @@ export const MediaBox: FC<{
               className={clsx(
                 'flex flex-wrap gap-[10px] mt-[35px] pt-[20px]',
                 !!mediaList.length &&
-                  'justify-center items-center text-textColor'
+                'justify-center items-center text-textColor'
               )}
             >
               {!mediaList.length ? (
@@ -366,8 +366,8 @@ export const MediaBox: FC<{
                         type === 'video'
                           ? 'video/mp4'
                           : type === 'image'
-                          ? 'image/*'
-                          : 'image/*,video/mp4'
+                            ? 'image/*'
+                            : 'image/*,video/mp4'
                       }
                     />
                   </div>
