@@ -215,11 +215,11 @@ export class AuthService {
     return false;
   }
 
-  oauthLink(provider: string) {
+  oauthLink(provider: string, query?: any) {
     const providerInstance = ProvidersFactory.loadProvider(
       provider as Provider
     );
-    return providerInstance.generateLink();
+    return providerInstance.generateLink(query);
   }
 
   async checkExists(provider: string, code: string) {
