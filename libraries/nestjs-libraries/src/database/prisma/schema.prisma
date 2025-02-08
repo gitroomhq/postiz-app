@@ -566,6 +566,7 @@ enum Provider {
   GITHUB
   GOOGLE
   FARCASTER
+  WALLET
 }
 
 enum Role {
