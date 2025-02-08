@@ -1,0 +1,4 @@
+[phases.setup]
+nixPkgs = ['...','python312']
+aptPkgs = ['build-essential','libudev-dev']
+providers = ["node", "python"]
