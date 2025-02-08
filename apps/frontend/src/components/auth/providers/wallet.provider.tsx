@@ -32,7 +32,8 @@ import {
   TrustWalletAdapter,
   XDEFIWalletAdapter,
   TokenPocketWalletAdapter,
-} from '@solana/wallet-adapter-wallets';
+} from '@postiz/wallets';
+
 import {
   WalletModalProvider,
   useWalletModal,
