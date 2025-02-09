@@ -7,6 +7,7 @@ import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 import { v4 as uuidv4 } from 'uuid';
+import { CreateTagDto } from '@gitroom/nestjs-libraries/dtos/posts/create.tag.dto';
 
 dayjs.extend(isoWeek);
 dayjs.extend(weekOfYear);
@@ -16,7 +17,9 @@ export class PostsRepository {
   constructor(
     private _post: PrismaRepository<'post'>,
     private _popularPosts: PrismaRepository<'popularPosts'>,
-    private _comments: PrismaRepository<'comments'>
+    private _comments: PrismaRepository<'comments'>,
+    private _tags: PrismaRepository<'tags'>,
+    private _tagsPosts: PrismaRepository<'tagsPosts'>
   ) {}
 
   getOldPosts(orgId: string, date: string) {
@@ -121,11 +124,13 @@ export class PostsRepository {
         },
         deletedAt: null,
         parentPostId: null,
-        ...query.customer ? {
-          integration: {
-            customerId: query.customer,
-          }
-        }: {},
+        ...(query.customer
+          ? {
+              integration: {
+                customerId: query.customer,
+              },
+            }
+          : {}),
       },
       select: {
         id: true,
@@ -135,6 +140,11 @@ export class PostsRepository {
         submittedForOrganizationId: true,
         submittedForOrderId: true,
         state: true,
+        tags: {
+          select: {
+            tag: true,
+          },
+        },
         integration: {
           select: {
             id: true,
@@ -186,6 +196,11 @@ export class PostsRepository {
         ...(includeIntegration
           ? {
               integration: true,
+              tags: {
+                select: {
+                  tag: true,
+                },
+              },
             }
           : {}),
         childrenPost: true,
@@ -256,7 +271,8 @@ export class PostsRepository {
     state: 'draft' | 'schedule' | 'now',
     orgId: string,
     date: string,
-    body: PostBody
+    body: PostBody,
+    tags: { value: string; label: string }[]
   ) {
     const posts: Post[] = [];
     const uuid = uuidv4();
@@ -315,6 +331,44 @@ export class PostsRepository {
           },
         })
       );
+
+      if (posts.length === 1) {
+        await this._tagsPosts.model.tagsPosts.deleteMany({
+          where: {
+            post: {
+              id: posts[0].id,
+            },
+          },
+        });
+
+        if (tags.length) {
+          const tagsList = await this._tags.model.tags.findMany({
+            where: {
+              orgId: orgId,
+              name: {
+                in: tags.map((tag) => tag.label),
+              },
+            },
+          });
+
+          if (tagsList.length) {
+            await this._post.model.post.update({
+              where: {
+                id: posts[posts.length - 1].id,
+              },
+              data: {
+                tags: {
+                  createMany: {
+                    data: tagsList.map((tag) => ({
+                      tagId: tag.id,
+                    })),
+                  },
+                },
+              },
+            });
+          }
+        }
+      }
     }
 
     const previousPost = body.group
@@ -496,6 +550,36 @@ export class PostsRepository {
       },
       orderBy: {
         createdAt: 'asc',
+      },
+    });
+  }
+
+  async getTags(orgId: string) {
+    return this._tags.model.tags.findMany({
+      where: {
+        orgId,
+      },
+    });
+  }
+
+  createTag(orgId: string, body: CreateTagDto) {
+    return this._tags.model.tags.create({
+      data: {
+        orgId,
+        name: body.name,
+        color: body.color,
+      },
+    });
+  }
+
+  editTag(id: string, orgId: string, body: CreateTagDto) {
+    return this._tags.model.tags.update({
+      where: {
+        id,
+      },
+      data: {
+        name: body.name,
+        color: body.color,
       },
     });
   }

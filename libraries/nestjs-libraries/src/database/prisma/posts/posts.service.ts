@@ -23,6 +23,7 @@ import utc from 'dayjs/plugin/utc';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.link.service';
 import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
+import { CreateTagDto } from '@gitroom/nestjs-libraries/dtos/posts/create.tag.dto';
 dayjs.extend(utc);
 
 type PostWithConditionals = Post & {
@@ -595,7 +596,8 @@ export class PostsService {
           body.type === 'now'
             ? dayjs().format('YYYY-MM-DDTHH:mm:00')
             : body.date,
-          post
+          post,
+          body.tags
         );
 
       if (!posts?.length) {
@@ -792,6 +794,7 @@ export class PostsService {
           date: randomDate,
           order: '',
           shortLink: false,
+          tags: [],
           posts: [
             {
               group,
@@ -882,6 +885,18 @@ export class PostsService {
 
   getComments(postId: string) {
     return this._postRepository.getComments(postId);
+  }
+
+  getTags(orgId: string) {
+    return this._postRepository.getTags(orgId);
+  }
+
+  createTag(orgId: string, body: CreateTagDto) {
+    return this._postRepository.createTag(orgId, body);
+  }
+
+  editTag(id: string, orgId: string, body: CreateTagDto) {
+    return this._postRepository.editTag(id, orgId, body);
   }
 
   createComment(

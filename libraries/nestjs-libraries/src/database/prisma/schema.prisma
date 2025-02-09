@@ -34,6 +34,34 @@ model Organization {
   plugs             Plugs[]
   customers         Customer[]
   webhooks          Webhooks[]
+  tags              Tags[]
+}
+
+model Tags {
+  id        String   @id @default(uuid())
+  name      String
+  color     String
+  orgId     String
+  organization Organization @relation(fields: [orgId], references: [id])
+  posts     TagsPosts[]
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([orgId])
+  @@index([deletedAt])
+}
+
+model TagsPosts {
+  postId    String
+  post      Post   @relation(fields: [postId], references: [id])
+  tagId     String
+  tag       Tags   @relation(fields: [tagId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([postId, tagId])
+  @@unique([postId, tagId])
 }
 
 model User {
@@ -348,6 +376,7 @@ model Post {
   lastMessage         Messages? @relation(fields: [lastMessageId], references: [id])
   payoutProblems      PayoutProblems[]
   comments            Comments[]
+  tags                TagsPosts[]
   error               String?
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt
