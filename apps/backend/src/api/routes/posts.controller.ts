@@ -28,6 +28,7 @@ import { AgentGraphService } from '@gitroom/nestjs-libraries/agent/agent.graph.s
 import { Response } from 'express';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.link.service';
+import { CreateTagDto } from '@gitroom/nestjs-libraries/dtos/posts/create.tag.dto';
 
 @ApiTags('Posts')
 @Controller('/posts')
@@ -69,6 +70,28 @@ export class PostsController {
     @Body() body: { comment: string }
   ) {
     return this._postsService.createComment(org.id, user.id, id, body.comment);
+  }
+
+  @Get('/tags')
+  async getTags(@GetOrgFromRequest() org: Organization) {
+    return { tags: await this._postsService.getTags(org.id) };
+  }
+
+  @Post('/tags')
+  async createTag(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: CreateTagDto
+  ) {
+    return this._postsService.createTag(org.id, body);
+  }
+
+  @Put('/tags/:id')
+  async editTag(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: CreateTagDto,
+    @Param('id') id: string
+  ) {
+    return this._postsService.editTag(id, org.id, body);
   }
 
   @Get('/')

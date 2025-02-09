@@ -1,8 +1,8 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@import "./colors.scss";
-@import "./polonto.css";
+@import './colors.scss';
+@import './polonto.css';
 
 body,
 html {
@@ -379,14 +379,14 @@ html {
   -webkit-text-fill-color: white !important;
 }
 div div .set-font-family {
-  font-family: "Helvetica Neue", Helvetica !important;
+  font-family: 'Helvetica Neue', Helvetica !important;
   font-stretch: 100% !important;
   font-style: normal !important;
   font-weight: 400 !important;
 }
 
 .col-calendar:hover:before {
-  content: "Date passed";
+  content: 'Date passed';
   color: white;
   position: absolute;
   left: 50%;
@@ -397,26 +397,68 @@ div div .set-font-family {
 }
 
 .loading-shimmer {
-    position: relative;
-    color: rgba(255, 255, 255, .5);
+  position: relative;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .loading-shimmer:before {
-    content: attr(data-text);
-    position: absolute;
-    overflow: hidden;
-    max-width: 100%;
-    white-space: nowrap;
-    color: white;
-    animation: loading 4s linear 0s infinite;
-    filter: blur(0.4px);
+  content: attr(data-text);
+  position: absolute;
+  overflow: hidden;
+  max-width: 100%;
+  white-space: nowrap;
+  color: white;
+  animation: loading 4s linear 0s infinite;
+  filter: blur(0.4px);
 }
 @keyframes loading {
-    0% {
-        max-width: 0;
-    }
+  0% {
+    max-width: 0;
+  }
 }
 
 .tbaom7c {
   display: none;
+}
+
+.tags-top > div {
+  flex: 1;
+  margin-right: 20px;
+  border: 0 !important;
+  background: transparent !important;
+  padding-left: 0 !important;
+}
+
+.tags-top .react-tags__combobox {
+  margin-left: 5px;
+}
+
+.tags-top .react-tags__combobox {
+  height: 35px;
+  display: flex;
+  background-color: #141c2c;
+  padding-left: 10px;
+  padding-right: 10px;
+  min-width: 150px;
+  text-align: left;
+  border-width: 1px;
+  border-radius: 4px;
+  border-color: var(--color-fifth);
+}
+
+.tags-top .react-tags__list,
+.tags-top .react-tags__list li,
+.tags-top .react-tags__list li > div {
+  height: 35px;
+}
+
+.tags-top .react-tags__listbox {
+  z-index: 1000 !important;
+}
+
+.tags-top .react-tags__list-item > div {
+  display: flex;
+  align-items: center;
+  padding-left: 5px;
+  padding-right: 5px;
 }
