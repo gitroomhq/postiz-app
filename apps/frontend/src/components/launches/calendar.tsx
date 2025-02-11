@@ -420,8 +420,13 @@ export const CalendarColumn: FC<{
   );
 
   const editPost = useCallback(
-    (post: Post & { integration: Integration }, isDuplicate?: boolean) =>
+    (loadPost: Post & { integration: Integration }, isDuplicate?: boolean) =>
       async () => {
+        const post = {
+          ...loadPost,
+          // @ts-ignore
+          publishDate: loadPost.actualDate || loadPost.publishDate,
+        };
         if (user?.orgId === post.submittedForOrganizationId) {
           return previewPublication(post);
         }

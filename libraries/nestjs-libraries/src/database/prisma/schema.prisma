@@ -374,6 +374,7 @@ model Post {
   approvedSubmitForOrder APPROVED_SUBMIT_FOR_ORDER @default(NO)
   lastMessageId       String?
   lastMessage         Messages? @relation(fields: [lastMessageId], references: [id])
+  intervalInDays      Int?
   payoutProblems      PayoutProblems[]
   comments            Comments[]
   tags                TagsPosts[]
@@ -389,6 +390,7 @@ model Post {
   @@index([organizationId])
   @@index([parentPostId])
   @@index([submittedForOrderId])
+  @@index([intervalInDays])
   @@index([approvedSubmitForOrder])
   @@index([lastMessageId])
   @@index([createdAt])

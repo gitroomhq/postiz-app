@@ -6,11 +6,15 @@ import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto'
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
+import utc from 'dayjs/plugin/utc';
 import { v4 as uuidv4 } from 'uuid';
 import { CreateTagDto } from '@gitroom/nestjs-libraries/dtos/posts/create.tag.dto';
 
 dayjs.extend(isoWeek);
 dayjs.extend(weekOfYear);
+dayjs.extend(isSameOrAfter);
+dayjs.extend(utc);
 
 @Injectable()
 export class PostsRepository {
@@ -80,7 +84,7 @@ export class PostsRepository {
     });
   }
 
-  getPosts(orgId: string, query: GetPostsDto) {
+  async getPosts(orgId: string, query: GetPostsDto) {
     const dateYear = dayjs().year(query.year);
     const date =
       query.display === 'day'
@@ -108,20 +112,35 @@ export class PostsRepository {
       .add(2, 'hours')
       .toDate();
 
-    return this._post.model.post.findMany({
+    const list = await this._post.model.post.findMany({
       where: {
-        OR: [
+        AND: [
           {
-            organizationId: orgId,
+            OR: [
+              {
+                organizationId: orgId,
+              },
+              {
+                submittedForOrganizationId: orgId,
+              },
+            ],
           },
           {
-            submittedForOrganizationId: orgId,
+            OR: [
+              {
+                publishDate: {
+                  gte: startDate,
+                  lte: endDate,
+                },
+              },
+              {
+                intervalInDays: {
+                  not: null,
+                },
+              },
+            ],
           },
         ],
-        publishDate: {
-          gte: startDate,
-          lte: endDate,
-        },
         deletedAt: null,
         parentPostId: null,
         ...(query.customer
@@ -140,6 +159,7 @@ export class PostsRepository {
         submittedForOrganizationId: true,
         submittedForOrderId: true,
         state: true,
+        intervalInDays: true,
         tags: {
           select: {
             tag: true,
@@ -155,6 +175,28 @@ export class PostsRepository {
         },
       },
     });
+
+    return list.reduce((all, post) => {
+      if (!post.intervalInDays) {
+        return [...all, post];
+      }
+
+      const addMorePosts = [];
+      let startingDate = dayjs.utc(post.publishDate);
+      while (dayjs.utc(endDate).isSameOrAfter(startingDate)) {
+        if (dayjs(startingDate).isSameOrAfter(dayjs.utc(post.publishDate))) {
+          addMorePosts.push({
+            ...post,
+            publishDate: startingDate.toDate(),
+            actualDate: post.publishDate,
+          });
+        }
+
+        startingDate = startingDate.add(post.intervalInDays, 'days');
+      }
+
+      return [...all, ...addMorePosts];
+    }, [] as any[]);
   }
 
   async deletePost(orgId: string, group: string) {
@@ -272,7 +314,8 @@ export class PostsRepository {
     orgId: string,
     date: string,
     body: PostBody,
-    tags: { value: string; label: string }[]
+    tags: { value: string; label: string }[],
+    inter?: number,
   ) {
     const posts: Post[] = [];
     const uuid = uuidv4();
@@ -303,6 +346,7 @@ export class PostsRepository {
           : {}),
         content: value.content,
         group: uuid,
+        intervalInDays: inter ? +inter : null,
         approvedSubmitForOrder: APPROVED_SUBMIT_FOR_ORDER.NO,
         state: state === 'draft' ? ('DRAFT' as const) : ('QUEUE' as const),
         image: JSON.stringify(value.image),
