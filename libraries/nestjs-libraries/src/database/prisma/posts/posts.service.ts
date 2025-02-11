@@ -88,7 +88,7 @@ export class PostsService {
     ];
   }
 
-  getPosts(orgId: string, query: GetPostsDto) {
+  async getPosts(orgId: string, query: GetPostsDto) {
     return this._postRepository.getPosts(orgId, query);
   }
 
@@ -203,6 +203,18 @@ export class PostsService {
         );
 
         return;
+      }
+
+      if (firstPost?.intervalInDays) {
+        this._workerServiceProducer.emit('post', {
+          id,
+          options: {
+            delay: firstPost.intervalInDays * 86400000,
+          },
+          payload: {
+            id: id,
+          },
+        });
       }
 
       if (firstPost.submittedForOrderId) {
@@ -597,7 +609,8 @@ export class PostsService {
             ? dayjs().format('YYYY-MM-DDTHH:mm:00')
             : body.date,
           post,
-          body.tags
+          body.tags,
+          body.inter,
         );
 
       if (!posts?.length) {
@@ -633,6 +646,10 @@ export class PostsService {
           },
           payload: {
             id: posts[0].id,
+            delay:
+              body.type === 'now'
+                ? 0
+                : dayjs(posts[0].publishDate).diff(dayjs(), 'millisecond'),
           },
         });
       }
@@ -666,6 +683,7 @@ export class PostsService {
         },
         payload: {
           id: id,
+          delay: dayjs(date).diff(dayjs(), 'millisecond'),
         },
       });
     }

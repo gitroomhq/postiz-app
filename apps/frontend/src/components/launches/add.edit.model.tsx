@@ -58,6 +58,7 @@ import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import { DropFiles } from '@gitroom/frontend/components/layout/drop.files';
 import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
 import { TagsComponent } from './tags.component';
+import { RepeatComponent } from '@gitroom/frontend/components/launches/repeat.component';
 
 function countCharacters(text: string, type: string): number {
   if (type !== 'x') {
@@ -139,6 +140,8 @@ export const AddEditModal: FC<{
 
   // are we in edit mode?
   const existingData = useExistingData();
+
+  const [inter, setInter] = useState(existingData?.posts?.[0]?.intervalInDays);
 
   const [tags, setTags] = useState<any[]>(
     // @ts-ignore
@@ -394,6 +397,7 @@ export const AddEditModal: FC<{
         body: JSON.stringify({
           ...(postFor ? { order: postFor.id } : {}),
           type,
+          inter,
           tags,
           shortLink,
           date: dateState.utc().format('YYYY-MM-DDTHH:mm:ss'),
@@ -418,6 +422,7 @@ export const AddEditModal: FC<{
       modal.closeAll();
     },
     [
+      inter,
       postFor,
       dateState,
       value,
@@ -566,6 +571,7 @@ export const AddEditModal: FC<{
                     setSelectedIntegrations([]);
                   }}
                 />
+                <RepeatComponent repeat={inter} onChange={setInter} />
                 <DatePicker onChange={setDateState} date={dateState} />
                 {!selectedIntegrations.length && (
                   <svg
