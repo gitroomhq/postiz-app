@@ -31,6 +31,8 @@ import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
 import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.link.service';
 import { WebhooksRepository } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.repository';
 import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
+import { SignatureRepository } from '@gitroom/nestjs-libraries/database/prisma/signatures/signature.repository';
+import { SignatureService } from '@gitroom/nestjs-libraries/database/prisma/signatures/signature.service';
 
 @Global()
 @Module({
@@ -57,6 +59,8 @@ import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webho
     PostsRepository,
     StripeService,
     MessagesRepository,
+    SignatureRepository,
+    SignatureService,
     MediaService,
     MediaRepository,
     ItemUserRepository,

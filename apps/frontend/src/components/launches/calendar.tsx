@@ -490,7 +490,9 @@ export const CalendarColumn: FC<{
     [integrations]
   );
 
-  const addModal = useCallback(() => {
+  const addModal = useCallback(async () => {
+    const signature = await (await fetch('/signatures/default')).json();
+
     modal.openModal({
       closeOnClickOutside: false,
       closeOnEscape: false,
@@ -503,6 +505,11 @@ export const CalendarColumn: FC<{
           allIntegrations={integrations.map((p) => ({ ...p }))}
           integrations={integrations.slice(0).map((p) => ({ ...p }))}
           mutate={reloadCalendarView}
+          {...(signature?.id
+            ? {
+                onlyValues: [{ content: '\n' + signature.content }],
+              }
+            : {})}
           date={
             randomHour ? getDate.hour(Math.floor(Math.random() * 24)) : getDate
           }
