@@ -14,7 +14,7 @@ import {
 import dayjs from 'dayjs';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import { Post, Integration } from '@prisma/client';
+import { Post, Integration, Tags } from '@prisma/client';
 import { useSearchParams } from 'next/navigation';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
@@ -32,7 +32,7 @@ export const CalendarContext = createContext({
   comments: [] as Array<{ date: string; total: number }>,
   integrations: [] as (Integrations & { refreshNeeded?: boolean })[],
   trendings: [] as string[],
-  posts: [] as Array<Post & { integration: Integration }>,
+  posts: [] as Array<Post & { integration: Integration, tags: {tag: Tags}[] }>,
   reloadCalendarView: () => {
     /** empty **/
   },

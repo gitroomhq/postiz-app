@@ -52,13 +52,13 @@ import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import Image from 'next/image';
 import { weightedLength } from '@gitroom/helpers/utils/count.length';
-import { uniqBy } from 'lodash';
-import { Select } from '@gitroom/react/form/select';
 import { useClickOutside } from '@gitroom/frontend/components/layout/click.outside';
 import { useUppyUploader } from '@gitroom/frontend/components/media/new.uploader';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import { DropFiles } from '@gitroom/frontend/components/layout/drop.files';
 import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
+import { TagsComponent } from './tags.component';
+import { RepeatComponent } from '@gitroom/frontend/components/launches/repeat.component';
 
 function countCharacters(text: string, type: string): number {
   if (type !== 'x') {
@@ -140,6 +140,16 @@ export const AddEditModal: FC<{
 
   // are we in edit mode?
   const existingData = useExistingData();
+
+  const [inter, setInter] = useState(existingData?.posts?.[0]?.intervalInDays);
+
+  const [tags, setTags] = useState<any[]>(
+    // @ts-ignore
+    existingData?.posts?.[0]?.tags?.map((p: any) => ({
+      label: p.tag.name,
+      value: p.tag.name,
+    })) || []
+  );
 
   // Post for
   const [postFor, setPostFor] = useState<Information | undefined>();
@@ -387,6 +397,8 @@ export const AddEditModal: FC<{
         body: JSON.stringify({
           ...(postFor ? { order: postFor.id } : {}),
           type,
+          inter,
+          tags,
           shortLink,
           date: dateState.utc().format('YYYY-MM-DDTHH:mm:ss'),
           posts: allKeys.map((p) => ({
@@ -410,12 +422,14 @@ export const AddEditModal: FC<{
       modal.closeAll();
     },
     [
+      inter,
       postFor,
       dateState,
       value,
       integrations,
       existingData,
       selectedIntegrations,
+      tags,
     ]
   );
 
@@ -557,6 +571,7 @@ export const AddEditModal: FC<{
                     setSelectedIntegrations([]);
                   }}
                 />
+                <RepeatComponent repeat={inter} onChange={setInter} />
                 <DatePicker onChange={setDateState} date={dateState} />
                 {!selectedIntegrations.length && (
                   <svg
@@ -814,7 +829,13 @@ export const AddEditModal: FC<{
           )}
         >
           <div className="mx-[16px]">
-            <TopTitle title="">
+            <TopTitle title="" removeTitle={true}>
+              <TagsComponent
+                name="tags"
+                label="Tags"
+                initial={tags}
+                onChange={(e) => setTags(e.target.value)}
+              />
               <svg
                 width="10"
                 height="11"

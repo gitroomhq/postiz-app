@@ -5,6 +5,7 @@ import {
   Ip,
   Param,
   Post,
+  Query,
   Req,
   Res,
 } from '@nestjs/common';
@@ -194,8 +195,8 @@ export class AuthController {
   }
 
   @Get('/oauth/:provider')
-  async oauthLink(@Param('provider') provider: string) {
-    return this._authService.oauthLink(provider);
+  async oauthLink(@Param('provider') provider: string, @Query() query: any) {
+    return this._authService.oauthLink(provider, query);
   }
 
   @Post('/activate')

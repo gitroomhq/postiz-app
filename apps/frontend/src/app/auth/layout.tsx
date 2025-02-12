@@ -60,7 +60,7 @@ export default async function AuthLayout({
               </div>
             </div>
           </div>
-          <div className="p-[32px] w-full h-[614px] text-textColor">
+          <div className="p-[32px] w-full h-[660px] text-textColor">
             {children}
           </div>
           <div className="flex flex-1 flex-col">
