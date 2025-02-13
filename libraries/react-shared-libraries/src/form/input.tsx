@@ -16,6 +16,7 @@ export const Input: FC<
     label: string;
     name: string;
     icon?: ReactNode;
+    type: string;
   }
 > = (props) => {
   const {
@@ -45,16 +46,21 @@ export const Input: FC<
 
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   useEffect(() => {
-    if (type === 'email' && form) {
-      form.register(props.name, {
-        pattern: {
-          value: emailPattern,
-          message: 'Please enter a valid email address'
-        },
-        setValueAs: (value: string) => value?.trim()
+    if (form) {
+      form.register(props.type, {
+        ...(props.type === 'email' && {
+          pattern: {
+            value: emailPattern,
+            message: 'Please enter a valid email address'
+          }
+        }),
+        setValueAs: (value: string) => value?.trim(),
+        onChange: (e) => {
+          e.target.value = e.target.value.replace(/\s/g, '');
+        }
       });
     }
-  }, [type, form]);
+  }, [props.type, form]);
 
   return (
     <div className="flex flex-col gap-[6px]">
