@@ -105,7 +105,12 @@ export const AddMember = () => {
           </button>
 
           {sendEmail && (
-            <Input label="Email" placeholder="Enter email" name="email" />
+            <Input 
+              label="Email" 
+              placeholder="Enter email" 
+              name="email"
+              type="email" 
+            />
           )}
           <Select label="Role" name="role">
             <option value="">Select Role</option>

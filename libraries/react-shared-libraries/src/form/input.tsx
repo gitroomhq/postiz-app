@@ -26,6 +26,7 @@ export const Input: FC<
     className,
     disableForm,
     error,
+    type,
     ...rest
   } = props;
   const form = useFormContext();
@@ -41,6 +42,12 @@ export const Input: FC<
       customUpdate();
     }
   }, [watch]);
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (type === 'email' && event.key === ' ') {
+      event.preventDefault();
+    }
+  };
 
   return (
     <div className="flex flex-col gap-[6px]">
@@ -59,6 +66,7 @@ export const Input: FC<
           )}
           {...(disableForm ? {} : form.register(props.name))}
           {...rest}
+          onKeyDown={handleKeyDown}
         />
       </div>
       {!removeError && (
