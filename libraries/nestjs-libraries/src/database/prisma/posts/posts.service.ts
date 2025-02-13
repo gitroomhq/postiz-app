@@ -193,18 +193,6 @@ export class PostsService {
               ...morePosts,
             ]);
 
-      if (!finalPost?.postId || !finalPost?.releaseURL) {
-        await this._postRepository.changeState(firstPost.id, 'ERROR');
-        await this._notificationService.inAppNotification(
-          firstPost.organizationId,
-          `Error posting on ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
-          `An error occurred while posting on ${firstPost.integration?.providerIdentifier}`,
-          true
-        );
-
-        return;
-      }
-
       if (firstPost?.intervalInDays) {
         this._workerServiceProducer.emit('post', {
           id,
@@ -215,6 +203,18 @@ export class PostsService {
             id: id,
           },
         });
+      }
+
+      if (!finalPost?.postId || !finalPost?.releaseURL) {
+        await this._postRepository.changeState(firstPost.id, 'ERROR');
+        await this._notificationService.inAppNotification(
+          firstPost.organizationId,
+          `Error posting on ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
+          `An error occurred while posting on ${firstPost.integration?.providerIdentifier}`,
+          true
+        );
+
+        return;
       }
 
       if (firstPost.submittedForOrderId) {
@@ -610,7 +610,7 @@ export class PostsService {
             : body.date,
           post,
           body.tags,
-          body.inter,
+          body.inter
         );
 
       if (!posts?.length) {

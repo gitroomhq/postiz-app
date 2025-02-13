@@ -11,6 +11,7 @@ import EmojiPicker from 'emoji-picker-react';
 import { Theme } from 'emoji-picker-react';
 import { BoldText } from '@gitroom/frontend/components/launches/bold.text';
 import { UText } from '@gitroom/frontend/components/launches/u.text';
+import { SignatureBox } from '@gitroom/frontend/components/signature';
 
 export const Editor = forwardRef<
   RefMDEditor,
@@ -61,6 +62,7 @@ export const Editor = forwardRef<
     return (
       <>
         <div className="flex gap-[5px] justify-end -mt-[30px]">
+          <SignatureBox editor={newRef?.current?.editor!} />
           <UText
             editor={newRef?.current?.editor!}
             currentValue={props.value!}
