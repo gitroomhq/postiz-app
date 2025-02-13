@@ -15,6 +15,7 @@ export const Input: FC<
     customUpdate?: () => void;
     label: string;
     name: string;
+    type: string;
     icon?: ReactNode;
   }
 > = (props) => {
@@ -26,6 +27,7 @@ export const Input: FC<
     className,
     disableForm,
     error,
+    type,
     ...rest
   } = props;
   const form = useFormContext();
@@ -59,7 +61,7 @@ export const Input: FC<
           )}
           {...(disableForm ? {} : form.register(props.name))}
           onKeyDown={(e) => {
-            if (props.name === 'email' && e.key === ' ') {
+            if (props.type === 'email' && e.key === ' ') {
               e.preventDefault();
             }
           }}
