@@ -45,7 +45,7 @@ export class IntegrationsController {
     private _integrationManager: IntegrationManager,
     private _integrationService: IntegrationService,
     private _postService: PostsService
-  ) {}
+  ) { }
   @Get('/')
   getIntegration() {
     return this._integrationManager.getAllIntegrations();
@@ -86,7 +86,7 @@ export class IntegrationsController {
   @Get('/list')
   async getIntegrationList(@GetOrgFromRequest() org: Organization) {
     const integrationsList = await this._integrationService.getIntegrationsList(org.id);
-  
+
     const integrations = await Promise.all(
       integrationsList.map(async (p) => {
         const findIntegration = await this._integrationManager.getSocialIntegration(
@@ -94,7 +94,7 @@ export class IntegrationsController {
           p.organizationId,
           p.customerId
         );
-  
+
         return {
           name: p.name,
           id: p.id,
@@ -115,10 +115,10 @@ export class IntegrationsController {
         };
       })
     );
-  
+
     return { integrations };
   }
-  
+
 
   @Post('/:id/settings')
   async updateProviderSettings(
@@ -147,7 +147,7 @@ export class IntegrationsController {
     }
 
     const manager = await this._integrationManager.getSocialIntegration(
-      integration.providerIdentifier, 
+      integration.providerIdentifier,
       integration.organizationId,
       integration.customerId
     );
@@ -157,18 +157,18 @@ export class IntegrationsController {
 
     const { url } = manager.changeProfilePicture
       ? await manager.changeProfilePicture(
-          integration.internalId,
-          integration.token,
-          body.picture
-        )
+        integration.internalId,
+        integration.token,
+        body.picture
+      )
       : { url: '' };
 
     const { name } = manager.changeNickname
       ? await manager.changeNickname(
-          integration.internalId,
-          integration.token,
-          body.name
-        )
+        integration.internalId,
+        integration.token,
+        body.name
+      )
       : { name: '' };
 
     return this._integrationService.updateNameAndUrl(id, name, url);
@@ -216,9 +216,9 @@ export class IntegrationsController {
     try {
       const getExternalUrl = integrationProvider.externalUrl
         ? {
-            ...(await integrationProvider.externalUrl(externalUrl)),
-            instanceUrl: externalUrl,
-          }
+          ...(await integrationProvider.externalUrl(externalUrl)),
+          instanceUrl: externalUrl,
+        }
         : undefined;
 
       const { codeVerifier, state, url } =
@@ -410,11 +410,13 @@ export class IntegrationsController {
       throw new Error('Integration not allowed');
     }
 
-    // Use a regular expression to extract the values
-    const customerIdMatch = body.state.match(/customerId:([^,]+)/);
+    if (!body.customerId) {
+      // Use a regular expression to extract the values
+      const customerIdMatch = body.state.match(/customerId:([^,]+)/);
 
-    // Extract the values or assign null if not found
-    body.customerId = customerIdMatch ? customerIdMatch[1] : null;
+      // Extract the values or assign null if not found
+      body.customerId = customerIdMatch ? customerIdMatch[1] : null;
+    }
 
     const integrationProvider =
       await this._integrationManager.getSocialIntegration(integration, org.id, body.customerId);
@@ -460,7 +462,7 @@ export class IntegrationsController {
           code: body.code,
           codeVerifier: getCodeVerifier,
           refresh: body.refresh,
-          customerId : body.customerId
+          customerId: body.customerId
         },
         details ? JSON.parse(details) : undefined
       );
@@ -531,10 +533,10 @@ export class IntegrationsController {
       details
         ? AuthService.fixedEncryption(details)
         : integrationProvider.customFields
-        ? AuthService.fixedEncryption(
+          ? AuthService.fixedEncryption(
             Buffer.from(body.code, 'base64').toString()
           )
-        : undefined
+          : undefined
     );
   }
 

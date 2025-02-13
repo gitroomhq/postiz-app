@@ -1,6 +1,7 @@
 import { TwitterApi } from 'twitter-api-v2';
 import {
   AuthTokenDetails,
+  ClientInformation,
   PostDetails,
   PostResponse,
   SocialProvider,
@@ -22,6 +23,20 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   scopes = [];
   toolTip =
     'You will be logged in into your current account, if you would like a different account, change it first on X';
+
+  config = {
+    X_API_KEY: process.env.X_API_KEY || '',
+    X_API_SECRET: process.env.X_API_SECRET || '',
+  };
+
+  setConfig(newConfig: Record<string, string>): void {
+    this.config = { ...this.config, ...newConfig };
+  }
+
+  getConfig(): Record<string, string> {
+    return this.config;
+  }
+
 
   @Plug({
     identifier: 'x-autoRepostPost',
@@ -49,8 +64,8 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     // eslint-disable-next-line prefer-rest-params
     const [accessTokenSplit, accessSecretSplit] = integration.token.split(':');
     const client = new TwitterApi({
-      appKey: process.env.X_API_KEY!,
-      appSecret: process.env.X_API_SECRET!,
+      appKey: this.config.X_API_KEY!,
+      appSecret: this.config.X_API_SECRET!,
       accessToken: accessTokenSplit,
       accessSecret: accessSecretSplit,
     });
@@ -82,8 +97,8 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   ) {
     const [accessTokenSplit, accessSecretSplit] = integration.token.split(':');
     const client = new TwitterApi({
-      appKey: process.env.X_API_KEY!,
-      appSecret: process.env.X_API_SECRET!,
+      appKey: this.config.X_API_KEY!,
+      appSecret: this.config.X_API_SECRET!,
       accessToken: accessTokenSplit,
       accessSecret: accessSecretSplit,
     });
@@ -132,8 +147,8 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     // eslint-disable-next-line prefer-rest-params
     const [accessTokenSplit, accessSecretSplit] = integration.token.split(':');
     const client = new TwitterApi({
-      appKey: process.env.X_API_KEY!,
-      appSecret: process.env.X_API_SECRET!,
+      appKey: this.config.X_API_KEY!,
+      appSecret: this.config.X_API_SECRET!,
       accessToken: accessTokenSplit,
       accessSecret: accessSecretSplit,
     });
@@ -169,14 +184,15 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
-  async generateAuthUrl() {
+  async generateAuthUrl(clientInformation: ClientInformation, customerId: string) {
+
     const client = new TwitterApi({
-      appKey: process.env.X_API_KEY!,
-      appSecret: process.env.X_API_SECRET!,
+      appKey: this.config.X_API_KEY!,
+      appSecret: this.config.X_API_SECRET!,
     });
     const { url, oauth_token, oauth_token_secret } =
       await client.generateAuthLink(
-        process.env.FRONTEND_URL + `/integrations/social/x`,
+        process.env.FRONTEND_URL + `/integrations/social/x?customerId=${customerId}`,
         {
           authAccessType: 'write',
           linkMode: 'authenticate',
@@ -195,8 +211,8 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     const [oauth_token, oauth_token_secret] = codeVerifier.split(':');
 
     const startingClient = new TwitterApi({
-      appKey: process.env.X_API_KEY!,
-      appSecret: process.env.X_API_SECRET!,
+      appKey: this.config.X_API_KEY!,
+      appSecret: this.config.X_API_SECRET!,
       accessToken: oauth_token,
       accessSecret: oauth_token_secret,
     });
@@ -243,8 +259,8 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   ): Promise<PostResponse[]> {
     const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
     const client = new TwitterApi({
-      appKey: process.env.X_API_KEY!,
-      appSecret: process.env.X_API_SECRET!,
+      appKey: this.config.X_API_KEY!,
+      appSecret: this.config.X_API_SECRET!,
       accessToken: accessTokenSplit,
       accessSecret: accessSecretSplit,
     });
@@ -264,13 +280,13 @@ export class XProvider extends SocialAbstract implements SocialProvider {
                 m.url.indexOf('mp4') > -1
                   ? Buffer.from(await readOrFetch(m.url))
                   : await sharp(await readOrFetch(m.url), {
-                      animated: lookup(m.url) === 'image/gif',
+                    animated: lookup(m.url) === 'image/gif',
+                  })
+                    .resize({
+                      width: 1000,
                     })
-                      .resize({
-                        width: 1000,
-                      })
-                      .gif()
-                      .toBuffer(),
+                    .gif()
+                    .toBuffer(),
                 {
                   mimeType: lookup(m.url) || '',
                 }

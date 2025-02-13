@@ -60,7 +60,7 @@ const articleIntegrationList = [
 @Injectable()
 export class IntegrationManager {
 
-  constructor(private _socialMediaPlatformConfigService: SocialMediaPlatformConfigService) {}
+  constructor(private _socialMediaPlatformConfigService: SocialMediaPlatformConfigService) { }
 
   async getAllIntegrations() {
     return {
@@ -113,18 +113,18 @@ export class IntegrationManager {
   getAllowedSocialsIntegrations() {
     return socialIntegrationList.map((p) => p.identifier);
   }
-  async getSocialIntegration(integration: string, orgId : string | null | undefined, customerId : string | null | undefined): Promise<SocialProvider> {
+  async getSocialIntegration(integration: string, orgId: string | null | undefined, customerId: string | null | undefined): Promise<SocialProvider> {
     const integrationProvider = socialIntegrationList.find((i) => i.identifier === integration);
-    
+
     if (!integrationProvider) {
       throw new Error(`SocialProvider with identifier '${integration}' not found`);
     }
-  
+
     await this.setSocialIntegrationConfig(integrationProvider, orgId, customerId);
-  
+
     return integrationProvider;
   }
-  
+
   getAllowedArticlesIntegrations() {
     return articleIntegrationList.map((p) => p.identifier);
   }
@@ -132,7 +132,8 @@ export class IntegrationManager {
     return articleIntegrationList.find((i) => i.identifier === integration)!;
   }
 
-  async setSocialIntegrationConfig(socialIntegration: SocialProvider, orgId : string | null | undefined,  customerId : string | null | undefined): Promise<void> {
+  async setSocialIntegrationConfig(socialIntegration: SocialProvider, orgId: string | null | undefined, customerId: string | null | undefined): Promise<void> {
+
     if (socialIntegration && orgId) {
       try {
         // Fetch the platform configuration using `await`
@@ -141,26 +142,26 @@ export class IntegrationManager {
           orgId,
           customerId
         );
-  
+
         // Transform the `config` array into a key-value object
         if (config?.config) {
           const configObject = config.config.reduce((acc, item) => {
             acc[item.key] = item.value;
             return acc;
           }, {} as Record<string, string>);
-    
+
           // Set the configuration on the socialIntegration object if `setConfig` exists
           if (typeof socialIntegration.setConfig === 'function') {
             socialIntegration.setConfig(configObject);
           }
         }
-        else{
-            throw new Error(`${socialIntegration.identifier} Configuration not found`);
+        else {
+          throw new Error(`${socialIntegration.identifier} Configuration not found`);
         }
       } catch (error) {
         throw new Error(`Error fetching platform config`);
       }
     }
   }
-  
+
 }

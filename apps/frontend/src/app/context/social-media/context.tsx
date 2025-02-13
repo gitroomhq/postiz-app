@@ -31,14 +31,14 @@ const initializeDefaultConfig = (customerId: string): SocialMediaConfig[] => [
         key: "X_API_SECRET",
         value: "",
       },
-      {
-        key: "X_CLIENT",
-        value: "",
-      },
-      {
-        key: "X_SECRET",
-        value: "",
-      },
+      // {
+      //   key: "X_CLIENT",
+      //   value: "",
+      // },
+      // {
+      //   key: "X_SECRET",
+      //   value: "",
+      // },
     ],
   },
   {

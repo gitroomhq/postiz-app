@@ -19,6 +19,7 @@ export default async function Page({
       state: searchParams.oauth_token || '',
       code: searchParams.oauth_verifier || '',
       refresh: searchParams.refresh || '',
+      customerId: searchParams.customerId || null,
     };
   }
 
