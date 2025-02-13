@@ -74,7 +74,6 @@ export const Input: FC<
           )}
           {...(disableForm ? {} : form.register(props.name))}
           {...rest}
-          onKeyDown={handleKeyDown}
         />
       </div>
       {!removeError && (
