@@ -62,7 +62,7 @@ export const Input: FC<
             icon ? 'pl-[8px] pr-[16px]' : 'px-[16px]'
           )}
           {...(disableForm ? {} : form.register(props.name))}
-          { ...form.register(type, {
+          {...form.register(type, {
               required: 'Email is required',
               pattern: {
                 value: emailPattern,
