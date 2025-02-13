@@ -42,8 +42,6 @@ export const Input: FC<
     }
   }, [watch]);
 
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
   return (
     <div className="flex flex-col gap-[6px]">
       {!!label && (<div className={`${interClass} text-[14px]`}>{label}</div>)}
@@ -60,16 +58,11 @@ export const Input: FC<
             icon ? 'pl-[8px] pr-[16px]' : 'px-[16px]'
           )}
           {...(disableForm ? {} : form.register(props.name))}
-          {...form.register(props.name, {
-            ...(props.name === 'email' ? {
-              required: 'Email is required',
-              pattern: {
-                value: emailPattern,
-                message: 'Please enter a valid email address'
-              },
-              setValueAs: (value) => value?.trim() || ''
-            } : {})
-          })}
+            onKeyDown={(e) => {
+              if (props.name === 'email' && e.key === ' ') {
+                e.preventDefault();
+              }
+            }}
           {...rest}
         />
       </div>
