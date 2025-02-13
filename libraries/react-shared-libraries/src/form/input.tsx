@@ -58,11 +58,11 @@ export const Input: FC<
             icon ? 'pl-[8px] pr-[16px]' : 'px-[16px]'
           )}
           {...(disableForm ? {} : form.register(props.name))}
-            onKeyDown={(e) => {
-              if (props.name === 'email' && e.key === ' ') {
-                e.preventDefault();
-              }
-            }}
+          onKeyDown={(e) => {
+            if (props.name === 'email' && e.key === ' ') {
+              e.preventDefault();
+            }
+          }}
           {...rest}
         />
       </div>
