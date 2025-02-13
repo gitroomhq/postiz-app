@@ -15,8 +15,7 @@ import { Integration } from '@prisma/client';
 
 export class InstagramProvider
   extends SocialAbstract
-  implements SocialProvider
-{
+  implements SocialProvider {
   identifier = 'instagram';
   name = 'Instagram\n(Facebook Business)';
   isBetweenSteps = true;
@@ -34,11 +33,11 @@ export class InstagramProvider
     FACEBOOK_APP_ID: process.env.FACEBOOK_APP_ID || '',
     FACEBOOK_APP_SECRET: process.env.FACEBOOK_APP_SECRET || '',
   };
-  
+
   setConfig(newConfig: Record<string, string>): void {
-    this.config = { ...this.config, ...newConfig }; 
+    this.config = { ...this.config, ...newConfig };
   }
-  
+
   getConfig(): Record<string, string> {
     return this.config;
   }
@@ -106,24 +105,23 @@ export class InstagramProvider
     const getAccessToken = await (
       await this.fetch(
         'https://graph.facebook.com/v20.0/oauth/access_token' +
-          `?client_id=${this.config.FACEBOOK_APP_ID}` +
-          `&redirect_uri=${encodeURIComponent(
-            `${process.env.FRONTEND_URL}/integrations/social/instagram${
-              params.refresh ? `?refresh=${params.refresh}` : ''
-            }`
-          )}` +
-          `&client_secret=${this.config.FACEBOOK_APP_SECRET}` +
-          `&code=${params.code}`
+        `?client_id=${this.config.FACEBOOK_APP_ID}` +
+        `&redirect_uri=${encodeURIComponent(
+          `${process.env.FRONTEND_URL}/integrations/social/instagram${params.refresh ? `?refresh=${params.refresh}` : ''
+          }`
+        )}` +
+        `&client_secret=${this.config.FACEBOOK_APP_SECRET}` +
+        `&code=${params.code}`
       )
     ).json();
 
     const { access_token, expires_in, ...all } = await (
       await this.fetch(
         'https://graph.facebook.com/v20.0/oauth/access_token' +
-          '?grant_type=fb_exchange_token' +
-          `&client_id=${this.config.FACEBOOK_APP_ID}` +
-          `&client_secret=${this.config.FACEBOOK_APP_SECRET}` +
-          `&fb_exchange_token=${getAccessToken.access_token}`
+        '?grant_type=fb_exchange_token' +
+        `&client_id=${this.config.FACEBOOK_APP_ID}` +
+        `&client_secret=${this.config.FACEBOOK_APP_SECRET}` +
+        `&fb_exchange_token=${getAccessToken.access_token}`
       )
     ).json();
 
@@ -243,18 +241,18 @@ export class InstagramProvider
                 ? `video_url=${m.url}&media_type=STORIES`
                 : `video_url=${m.url}&media_type=REELS`
               : isStory
-              ? `video_url=${m.url}&media_type=STORIES`
-              : `video_url=${m.url}&media_type=VIDEO`
+                ? `video_url=${m.url}&media_type=STORIES`
+                : `video_url=${m.url}&media_type=VIDEO`
             : isStory
-            ? `image_url=${m.url}&media_type=STORIES`
-            : `image_url=${m.url}`;
+              ? `image_url=${m.url}&media_type=STORIES`
+              : `image_url=${m.url}`;
         console.log('in progress1');
 
         const collaborators =
           firstPost?.settings?.collaborators?.length && !isStory
             ? `&collaborators=${JSON.stringify(
-                firstPost?.settings?.collaborators.map((p) => p.label)
-              )}`
+              firstPost?.settings?.collaborators.map((p) => p.label)
+            )}`
             : ``;
 
         console.log(collaborators);
