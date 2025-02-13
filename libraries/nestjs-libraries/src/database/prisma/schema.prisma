@@ -35,6 +35,7 @@ model Organization {
   customers         Customer[]
   webhooks          Webhooks[]
   tags              Tags[]
+  signatures        Signatures[]
 }
 
 model Tags {
@@ -326,6 +327,21 @@ model Integration {
   @@index([deletedAt])
   @@index([customerId])
   @@unique([organizationId, internalId])
+}
+
+model Signatures {
+  id                String   @id @default(uuid())
+  organizationId    String
+  organization      Organization @relation(fields: [organizationId], references: [id])
+  content           String
+  autoAdd           Boolean
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  deletedAt         DateTime?
+
+  @@index([createdAt])
+  @@index([organizationId])
+  @@index([deletedAt])
 }
 
 model Comments {
