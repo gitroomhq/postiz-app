@@ -68,10 +68,7 @@ export const Input: FC<
               value: emailPattern,
               message: 'Please enter a valid email address'
             },
-            setValueAs: (value) => value.trim(),
-            onChange: (e) => {
-              e.target.value = e.target.value.replace(/\s/g, '');
-            }})
+            setValueAs: (value) => value.trim()})
           }
           {...rest}
         />
