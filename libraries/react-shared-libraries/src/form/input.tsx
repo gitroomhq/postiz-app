@@ -71,8 +71,7 @@ export const Input: FC<
             setValueAs: (value) => value.trim(),
             onChange: (e) => {
               e.target.value = e.target.value.replace(/\s/g, '');
-            }
-            })
+            }})
           }
           {...rest}
         />
