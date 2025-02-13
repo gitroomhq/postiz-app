@@ -1,5 +1,6 @@
 import {
   AuthTokenDetails,
+  ClientInformation,
   PostDetails,
   PostResponse,
   SocialProvider,
@@ -15,8 +16,7 @@ const instagramProvider = new InstagramProvider();
 
 export class InstagramStandaloneProvider
   extends SocialAbstract
-  implements SocialProvider
-{
+  implements SocialProvider {
   identifier = 'instagram-standalone';
   name = 'Instagram\n(Standalone)';
   isBetweenSteps = false;
@@ -30,11 +30,11 @@ export class InstagramStandaloneProvider
     INSTAGRAM_APP_ID: process.env.INSTAGRAM_APP_ID || '',
     INSTAGRAM_APP_SECRET: process.env.INSTAGRAM_APP_SECRET || '',
   };
-  
+
   setConfig(newConfig: Record<string, string>): void {
-    this.config = { ...this.config, ...newConfig }; 
+    this.config = { ...this.config, ...newConfig };
   }
-  
+
   getConfig(): Record<string, string> {
     return this.config;
   }
@@ -51,21 +51,22 @@ export class InstagramStandaloneProvider
     };
   }
 
-  async generateAuthUrl() {
-    const state = makeId(6);
+  async generateAuthUrl(clientInformation: ClientInformation, customerId: string) {
+    // const state = makeId(6);
+    const state = `customerId:${customerId},uniqueState:${makeId(6)}`;
     return {
       url:
-        `https://www.instagram.com/oauth/authorize?enable_fb_login=0&client_id=${
-          this.config.INSTAGRAM_APP_ID
+        `https://www.instagram.com/oauth/authorize?enable_fb_login=0&client_id=${this.config.INSTAGRAM_APP_ID
         }&redirect_uri=${encodeURIComponent(
-          `${
-            process?.env.FRONTEND_URL?.indexOf('https') == -1
-              ? `https://redirectmeto.com/${process?.env.FRONTEND_URL}`
-              : `${process?.env.FRONTEND_URL}`
+          `${process?.env.FRONTEND_URL?.indexOf('https') == -1
+            ? `https://redirectmeto.com/${process?.env.FRONTEND_URL}`
+            : `${process?.env.FRONTEND_URL}`
           }/integrations/social/instagram-standalone`
         )}&response_type=code&scope=${encodeURIComponent(
           this.scopes.join(',')
-        )}` + `&state=${state}`,
+        )}` +
+        // `&state=${state}`,
+        `&state=${encodeURIComponent(state)}`,
       codeVerifier: makeId(10),
       state,
     };
@@ -82,10 +83,9 @@ export class InstagramStandaloneProvider
     formData.append('grant_type', 'authorization_code');
     formData.append(
       'redirect_uri',
-      `${
-        process?.env.FRONTEND_URL?.indexOf('https') == -1
-          ? `https://redirectmeto.com/${process?.env.FRONTEND_URL}`
-          : `${process?.env.FRONTEND_URL}`
+      `${process?.env.FRONTEND_URL?.indexOf('https') == -1
+        ? `https://redirectmeto.com/${process?.env.FRONTEND_URL}`
+        : `${process?.env.FRONTEND_URL}`
       }/integrations/social/instagram-standalone`
     );
     formData.append('code', params.code);
@@ -100,10 +100,10 @@ export class InstagramStandaloneProvider
     const { access_token, expires_in, ...all } = await (
       await this.fetch(
         'https://graph.instagram.com/access_token' +
-          '?grant_type=ig_exchange_token' +
-          `&client_id=${this.config.INSTAGRAM_APP_ID}` +
-          `&client_secret=${this.config.INSTAGRAM_APP_SECRET}` +
-          `&access_token=${getAccessToken.access_token}`
+        '?grant_type=ig_exchange_token' +
+        `&client_id=${this.config.INSTAGRAM_APP_ID}` +
+        `&client_secret=${this.config.INSTAGRAM_APP_SECRET}` +
+        `&access_token=${getAccessToken.access_token}`
       )
     ).json();
 
