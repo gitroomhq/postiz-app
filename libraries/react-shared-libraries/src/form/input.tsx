@@ -16,7 +16,6 @@ export const Input: FC<
     label: string;
     name: string;
     icon?: ReactNode;
-    type: string;
   }
 > = (props) => {
   const {
@@ -27,7 +26,6 @@ export const Input: FC<
     className,
     disableForm,
     error,
-    type,
     ...rest
   } = props;
   const form = useFormContext();
@@ -62,14 +60,16 @@ export const Input: FC<
             icon ? 'pl-[8px] pr-[16px]' : 'px-[16px]'
           )}
           {...(disableForm ? {} : form.register(props.name))}
-          {...form.register(props.type, {
-            required: 'Email is required',
-            pattern: {
-              value: emailPattern,
-              message: 'Please enter a valid email address'
-            },
-            setValueAs: (value) => value.trim()})
-          }
+          {...form.register(props.name, {
+            ...(props.name === 'email' ? {
+              required: 'Email is required',
+              pattern: {
+                value: emailPattern,
+                message: 'Please enter a valid email address'
+              },
+              setValueAs: (value) => value?.trim() || ''
+            } : {})
+          })}
           {...rest}
         />
       </div>
