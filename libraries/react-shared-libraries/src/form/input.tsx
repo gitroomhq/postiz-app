@@ -62,16 +62,18 @@ export const Input: FC<
             icon ? 'pl-[8px] pr-[16px]' : 'px-[16px]'
           )}
           {...(disableForm ? {} : form.register(props.name))}
-          {...form.register(type, {
-              required: 'Email is required',
-              pattern: {
-                value: emailPattern,
-                message: 'Please enter a valid email address'
-              },
-              onChange: (e) => {
-                e.target.value = e.target.value.replace(/\s/g, '');
-              }
-          })}
+          {...form.register(props.type, {
+            required: 'Email is required',
+            pattern: {
+              value: emailPattern,
+              message: 'Please enter a valid email address'
+            },
+            setValueAs: (value) => value.trim(),
+            onChange: (e) => {
+              e.target.value = e.target.value.replace(/\s/g, '');
+            }
+            })
+          }
           {...rest}
         />
       </div>
