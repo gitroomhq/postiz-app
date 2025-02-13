@@ -44,7 +44,6 @@ export const Input: FC<
   }, [watch]);
 
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  
   useEffect(() => {
     if (type === 'email' && form) {
       form.register(props.name, {
