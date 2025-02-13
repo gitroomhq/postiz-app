@@ -43,11 +43,19 @@ export const Input: FC<
     }
   }, [watch]);
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (type === 'email' && event.key === ' ') {
-      event.preventDefault();
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  
+  useEffect(() => {
+    if (type === 'email' && form) {
+      form.register(props.name, {
+        pattern: {
+          value: emailPattern,
+          message: 'Please enter a valid email address'
+        },
+        setValueAs: (value: string) => value?.trim()
+      });
     }
-  };
+  }, [type, form]);
 
   return (
     <div className="flex flex-col gap-[6px]">
