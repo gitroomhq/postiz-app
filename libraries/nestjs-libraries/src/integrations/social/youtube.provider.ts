@@ -1,6 +1,7 @@
 import {
   AnalyticsData,
   AuthTokenDetails,
+  ClientInformation,
   PostDetails,
   PostResponse,
   SocialProvider,
@@ -15,10 +16,10 @@ import * as process from 'node:process';
 import dayjs from 'dayjs';
 import { GaxiosError } from 'gaxios/build/src/common';
 
-const clientAndYoutube = () => {
+const clientAndYoutube = (config: { YOUTUBE_CLIENT_ID: string, YOUTUBE_CLIENT_SECRET: string }) => {
   const client = new google.auth.OAuth2({
-    clientId: process.env.YOUTUBE_CLIENT_ID,
-    clientSecret: process.env.YOUTUBE_CLIENT_SECRET,
+    clientId: config.YOUTUBE_CLIENT_ID,
+    clientSecret: config.YOUTUBE_CLIENT_SECRET,
     redirectUri: `${process.env.FRONTEND_URL}/integrations/social/youtube`,
   });
 
@@ -59,8 +60,21 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     'https://www.googleapis.com/auth/yt-analytics.readonly',
   ];
 
+  config = {
+    YOUTUBE_CLIENT_ID: process.env.FACEBOOK_APP_ID || '',
+    YOUTUBE_CLIENT_SECRET: process.env.FACEBOOK_APP_SECRET || '',
+  };
+
+  setConfig(newConfig: Record<string, string>): void {
+    this.config = { ...this.config, ...newConfig };
+  }
+
+  getConfig(): Record<string, string> {
+    return this.config;
+  }
+
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
-    const { client, oauth2 } = clientAndYoutube();
+    const { client, oauth2 } = clientAndYoutube(this.config);
     client.setCredentials({ refresh_token });
     const { credentials } = await client.refreshAccessToken();
     const user = oauth2(client);
@@ -82,9 +96,11 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
-  async generateAuthUrl() {
-    const state = makeId(7);
-    const { client } = clientAndYoutube();
+  async generateAuthUrl(clientInformation: ClientInformation, customerId: string) {
+    // const state = makeId(7);
+    const state = `customerId:${customerId},uniqueState:${makeId(6)}`;
+
+    const { client } = clientAndYoutube(this.config);
     return {
       url: client.generateAuthUrl({
         access_type: 'offline',
@@ -103,7 +119,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     codeVerifier: string;
     refresh?: string;
   }) {
-    const { client, oauth2 } = clientAndYoutube();
+    const { client, oauth2 } = clientAndYoutube(this.config);
     const { tokens } = await client.getToken(params.code);
     client.setCredentials(tokens);
     const { scopes } = await client.getTokenInfo(tokens.access_token!);
@@ -135,7 +151,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
   ): Promise<PostResponse[]> {
     const [firstPost, ...comments] = postDetails;
 
-    const { client, youtube } = clientAndYoutube();
+    const { client, youtube } = clientAndYoutube(this.config);
     client.setCredentials({ access_token: accessToken });
     const youtubeClient = youtube(client);
 
@@ -241,7 +257,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       const endDate = dayjs().format('YYYY-MM-DD');
       const startDate = dayjs().subtract(date, 'day').format('YYYY-MM-DD');
 
-      const { client, youtubeAnalytics } = clientAndYoutube();
+      const { client, youtubeAnalytics } = clientAndYoutube(this.config);
       client.setCredentials({ access_token: accessToken });
 
       const youtubeClient = youtubeAnalytics(client);
