@@ -1,6 +1,7 @@
 import {
   AnalyticsData,
   AuthTokenDetails,
+  ClientInformation,
   PostDetails,
   PostResponse,
   SocialProvider,
@@ -24,6 +25,19 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     'threads_manage_insights',
   ];
 
+  config = {
+    THREADS_APP_ID: process.env.THREADS_APP_ID || '',
+    THREADS_APP_SECRET: process.env.THREADS_APP_SECRET || '',
+  };
+
+  setConfig(newConfig: Record<string, string>): void {
+    this.config = { ...this.config, ...newConfig };
+  }
+
+  getConfig(): Record<string, string> {
+    return this.config;
+  }
+
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     return {
       refreshToken: '',
@@ -36,20 +50,21 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
-  async generateAuthUrl() {
-    const state = makeId(6);
+  async generateAuthUrl(clientInformation: ClientInformation, customerId: string) {
+    // const state = makeId(6);
+    const state = `customerId:${customerId},uniqueState:${makeId(6)}`;
     return {
       url:
         'https://threads.net/oauth/authorize' +
-        `?client_id=${process.env.THREADS_APP_ID}` +
+        `?client_id=${this.config.THREADS_APP_ID}` +
         `&redirect_uri=${encodeURIComponent(
-          `${
-            process?.env.FRONTEND_URL?.indexOf('https') == -1
-              ? `https://redirectmeto.com/${process?.env.FRONTEND_URL}`
-              : `${process?.env.FRONTEND_URL}`
+          `${process?.env.FRONTEND_URL?.indexOf('https') == -1
+            ? `https://redirectmeto.com/${process?.env.FRONTEND_URL}`
+            : `${process?.env.FRONTEND_URL}`
           }/integrations/social/threads`
         )}` +
-        `&state=${state}` +
+        // `&state=${state}` +
+        `&state=${encodeURIComponent(state)}` +
         `&scope=${encodeURIComponent(this.scopes.join(','))}`,
       codeVerifier: makeId(10),
       state,
@@ -64,26 +79,25 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     const getAccessToken = await (
       await this.fetch(
         'https://graph.threads.net/oauth/access_token' +
-          `?client_id=${process.env.THREADS_APP_ID}` +
-          `&redirect_uri=${encodeURIComponent(
-            `${
-              process?.env.FRONTEND_URL?.indexOf('https') == -1
-                ? `https://redirectmeto.com/${process?.env.FRONTEND_URL}`
-                : `${process?.env.FRONTEND_URL}`
-            }/integrations/social/threads`
-          )}` +
-          `&grant_type=authorization_code` +
-          `&client_secret=${process.env.THREADS_APP_SECRET}` +
-          `&code=${params.code}`
+        `?client_id=${this.config.THREADS_APP_ID}` +
+        `&redirect_uri=${encodeURIComponent(
+          `${process?.env.FRONTEND_URL?.indexOf('https') == -1
+            ? `https://redirectmeto.com/${process?.env.FRONTEND_URL}`
+            : `${process?.env.FRONTEND_URL}`
+          }/integrations/social/threads`
+        )}` +
+        `&grant_type=authorization_code` +
+        `&client_secret=${this.config.THREADS_APP_SECRET}` +
+        `&code=${params.code}`
       )
     ).json();
 
     const { access_token } = await (
       await this.fetch(
         'https://graph.threads.net/access_token' +
-          '?grant_type=th_exchange_token' +
-          `&client_secret=${process.env.THREADS_APP_SECRET}` +
-          `&access_token=${getAccessToken.access_token}&fields=access_token,expires_in`
+        '?grant_type=th_exchange_token' +
+        `&client_secret=${this.config.THREADS_APP_SECRET}` +
+        `&access_token=${getAccessToken.access_token}&fields=access_token,expires_in`
       )
     ).json();
 
@@ -158,8 +172,8 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       const type = !firstPost?.media?.[0]?.url
         ? undefined
         : firstPost?.media![0].url.indexOf('.mp4') > -1
-        ? 'video_url'
-        : 'image_url';
+          ? 'video_url'
+          : 'image_url';
 
       const media = new URLSearchParams({
         ...(type === 'video_url'
@@ -172,8 +186,8 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
           type === 'video_url'
             ? 'VIDEO'
             : type === 'image_url'
-            ? 'IMAGE'
-            : 'TEXT',
+              ? 'IMAGE'
+              : 'TEXT',
         text: firstPost?.message,
         access_token: accessToken,
       });
@@ -220,8 +234,8 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
             type === 'video_url'
               ? 'VIDEO'
               : type === 'image_url'
-              ? 'IMAGE'
-              : 'TEXT',
+                ? 'IMAGE'
+                : 'TEXT',
           text: firstPost?.message,
           access_token: accessToken,
         });
@@ -244,8 +258,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
 
       const { id: containerId } = await (
         await this.fetch(
-          `https://graph.threads.net/v1.0/${id}/threads?text=${
-            firstPost?.message
+          `https://graph.threads.net/v1.0/${id}/threads?text=${firstPost?.message
           }&media_type=CAROUSEL&children=${medias.join(
             ','
           )}&access_token=${accessToken}`,
@@ -340,9 +353,9 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
         data: d.total_value
           ? [{ total: d.total_value.value, date: dayjs().format('YYYY-MM-DD') }]
           : d.values.map((v: any) => ({
-              total: v.value,
-              date: dayjs(v.end_time).format('YYYY-MM-DD'),
-            })),
+            total: v.value,
+            date: dayjs(v.end_time).format('YYYY-MM-DD'),
+          })),
       })) || []
     );
   }
