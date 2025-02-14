@@ -2,12 +2,14 @@ import { Controller } from '@nestjs/common';
 import { EventPattern, Transport } from '@nestjs/microservices';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
+import { AutopostService } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.service';
 
 @Controller()
 export class PostsController {
   constructor(
     private _postsService: PostsService,
-    private _webhooksService: WebhooksService
+    private _webhooksService: WebhooksService,
+    private _autopostsService: AutopostService
   ) {}
 
   @EventPattern('post', Transport.REDIS)
@@ -32,9 +34,11 @@ export class PostsController {
 
   @EventPattern('webhooks', Transport.REDIS)
   async webhooks(data: { org: string; since: string }) {
-    return this._webhooksService.fireWebhooks(
-      data.org,
-      data.since
-    );
+    return this._webhooksService.fireWebhooks(data.org, data.since);
+  }
+
+  @EventPattern('cron', Transport.REDIS)
+  async cron(data: { id: string }) {
+    return this._autopostsService.startAutopost(data.id);
   }
 }

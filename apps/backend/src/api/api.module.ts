@@ -30,6 +30,7 @@ import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.
 import { Nowpayments } from '@gitroom/nestjs-libraries/crypto/nowpayments';
 import { WebhookController } from '@gitroom/backend/api/routes/webhooks.controller';
 import { SignatureController } from '@gitroom/backend/api/routes/signature.controller';
+import { AutopostController } from '@gitroom/backend/api/routes/autopost.controller';
 
 const authenticatedController = [
   UsersController,
@@ -46,6 +47,7 @@ const authenticatedController = [
   AgenciesController,
   WebhookController,
   SignatureController,
+  AutopostController,
 ];
 @Module({
   imports: [UploadModule],

@@ -33,6 +33,8 @@ import { WebhooksRepository } from '@gitroom/nestjs-libraries/database/prisma/we
 import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
 import { SignatureRepository } from '@gitroom/nestjs-libraries/database/prisma/signatures/signature.repository';
 import { SignatureService } from '@gitroom/nestjs-libraries/database/prisma/signatures/signature.service';
+import { AutopostRepository } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.repository';
+import { AutopostService } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.service';
 
 @Global()
 @Module({
@@ -60,6 +62,8 @@ import { SignatureService } from '@gitroom/nestjs-libraries/database/prisma/sign
     StripeService,
     MessagesRepository,
     SignatureRepository,
+    AutopostRepository,
+    AutopostService,
     SignatureService,
     MediaService,
     MediaRepository,

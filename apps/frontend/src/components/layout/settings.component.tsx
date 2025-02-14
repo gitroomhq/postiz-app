@@ -24,6 +24,7 @@ import { Webhooks } from '@gitroom/frontend/components/webhooks/webhooks';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { Tabs } from '@mantine/core';
 import { SignaturesComponent } from '@gitroom/frontend/components/settings/signatures.component';
+import { Autopost } from '@gitroom/frontend/components/autopost/autopost';
 
 export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
   const { isGeneral } = useVariables();
@@ -127,6 +128,9 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
               {!!user?.tier?.webhooks && (
                 <Tabs.Tab value="webhooks">Webhooks</Tabs.Tab>
               )}
+              {!!user?.tier?.autoPost && (
+                <Tabs.Tab value="autopost">Auto Post</Tabs.Tab>
+              )}
               <Tabs.Tab value="signatures">Signatures</Tabs.Tab>
               {!!user?.tier?.public_api && isGeneral && showLogout && (
                 <Tabs.Tab value="api">Public API</Tabs.Tab>
@@ -224,6 +228,12 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
             {!!user?.tier?.webhooks && (
               <Tabs.Panel value="webhooks" pt="md">
                 <Webhooks />
+              </Tabs.Panel>
+            )}
+
+            {!!user?.tier?.autoPost && (
+              <Tabs.Panel value="autopost" pt="md">
+                <Autopost />
               </Tabs.Panel>
             )}
 

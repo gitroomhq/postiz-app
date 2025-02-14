@@ -21,6 +21,8 @@ import { PlugDto } from '@gitroom/nestjs-libraries/dtos/plugs/plug.dto';
 import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/client';
 import { difference, uniq } from 'lodash';
 import utc from 'dayjs/plugin/utc';
+import { AutopostRepository } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.repository';
+
 dayjs.extend(utc);
 
 @Injectable()
@@ -28,10 +30,23 @@ export class IntegrationService {
   private storage = UploadFactory.createStorage();
   constructor(
     private _integrationRepository: IntegrationRepository,
+    private _autopostsRepository: AutopostRepository,
     private _integrationManager: IntegrationManager,
     private _notificationService: NotificationService,
     private _workerServiceProducer: BullMqClient
   ) {}
+
+  async changeActiveCron(orgId: string) {
+    const data = await this._autopostsRepository.getAutoposts(
+      orgId,
+    );
+
+    for (const item of data.filter(f => f.active)) {
+      await this._workerServiceProducer.deleteScheduler('cron', item.id);
+    }
+
+    return true;
+  }
 
   async setTimes(
     orgId: string,
@@ -210,7 +225,10 @@ export class IntegrationService {
     const integrations = (
       await this._integrationRepository.getIntegrationsList(org)
     ).filter((f) => !f.disabled);
-    if (!!process.env.STRIPE_PUBLISHABLE_KEY && integrations.length >= totalChannels) {
+    if (
+      !!process.env.STRIPE_PUBLISHABLE_KEY &&
+      integrations.length >= totalChannels
+    ) {
       throw new Error('You have reached the maximum number of channels');
     }
 

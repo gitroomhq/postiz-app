@@ -36,6 +36,7 @@ model Organization {
   webhooks          Webhooks[]
   tags              Tags[]
   signatures        Signatures[]
+  autoPost          AutoPost[]
 }
 
 model Tags {
@@ -574,6 +575,27 @@ model Webhooks {
   updatedAt  DateTime @updatedAt
 
   @@index([organizationId])
+  @@index([deletedAt])
+}
+
+model AutoPost {
+  id              String   @id @default(uuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  title           String
+  content         String?
+  onSlot          Boolean
+  syncLast        Boolean
+  url             String
+  lastUrl         String
+  active          Boolean
+  addPicture      Boolean
+  generateContent Boolean
+  integrations    String
+  deletedAt       DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
   @@index([deletedAt])
 }
 
