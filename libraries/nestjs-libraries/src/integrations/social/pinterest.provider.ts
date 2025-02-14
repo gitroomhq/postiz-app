@@ -1,6 +1,7 @@
 import {
   AnalyticsData,
   AuthTokenDetails,
+  ClientInformation,
   PostDetails,
   PostResponse,
   SocialProvider,
@@ -15,8 +16,7 @@ import dayjs from 'dayjs';
 
 export class PinterestProvider
   extends SocialAbstract
-  implements SocialProvider
-{
+  implements SocialProvider {
   identifier = 'pinterest';
   name = 'Pinterest';
   isBetweenSteps = false;
@@ -28,6 +28,19 @@ export class PinterestProvider
     'user_accounts:read',
   ];
 
+  config = {
+    PINTEREST_CLIENT_ID: process.env.PINTEREST_CLIENT_ID || '',
+    PINTEREST_CLIENT_SECRET: process.env.PINTEREST_CLIENT_SECRET || '',
+  };
+
+  setConfig(newConfig: Record<string, string>): void {
+    this.config = { ...this.config, ...newConfig };
+  }
+
+  getConfig(): Record<string, string> {
+    return this.config;
+  }
+
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const { access_token, expires_in } = await (
       await this.fetch('https://api.pinterest.com/v5/oauth/token', {
@@ -35,7 +48,7 @@ export class PinterestProvider
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           Authorization: `Basic ${Buffer.from(
-            `${process.env.PINTEREST_CLIENT_ID}:${process.env.PINTEREST_CLIENT_SECRET}`
+            `${this.config.PINTEREST_CLIENT_ID}:${this.config.PINTEREST_CLIENT_SECRET}`
           ).toString('base64')}`,
         },
         body: new URLSearchParams({
@@ -67,16 +80,16 @@ export class PinterestProvider
     };
   }
 
-  async generateAuthUrl() {
-    const state = makeId(6);
+  async generateAuthUrl(clientInformation: ClientInformation, customerId: string) {
+    // const state = makeId(6);
+    const state = `customerId:${customerId},uniqueState:${makeId(6)}`;
     return {
-      url: `https://www.pinterest.com/oauth/?client_id=${
-        process.env.PINTEREST_CLIENT_ID
-      }&redirect_uri=${encodeURIComponent(
-        `${process.env.FRONTEND_URL}/integrations/social/pinterest`
-      )}&response_type=code&scope=${encodeURIComponent(
-        'boards:read,boards:write,pins:read,pins:write,user_accounts:read'
-      )}&state=${state}`,
+      url: `https://www.pinterest.com/oauth/?client_id=${this.config.PINTEREST_CLIENT_ID
+        }&redirect_uri=${encodeURIComponent(
+          `${process.env.FRONTEND_URL}/integrations/social/pinterest`
+        )}&response_type=code&scope=${encodeURIComponent(
+          'boards:read,boards:write,pins:read,pins:write,user_accounts:read'
+        )}&state=${encodeURIComponent(state)}`,
       codeVerifier: makeId(10),
       state,
     };
@@ -93,7 +106,7 @@ export class PinterestProvider
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           Authorization: `Basic ${Buffer.from(
-            `${process.env.PINTEREST_CLIENT_ID}:${process.env.PINTEREST_CLIENT_SECRET}`
+            `${this.config.PINTEREST_CLIENT_ID}:${this.config.PINTEREST_CLIENT_SECRET}`
           ).toString('base64')}`,
         },
         body: new URLSearchParams({
@@ -232,16 +245,16 @@ export class PinterestProvider
             board_id: postDetails?.[0]?.settings.board,
             media_source: mediaId
               ? {
-                  source_type: 'video_id',
-                  media_id: mediaId,
-                  cover_image_url: picture?.url,
-                }
+                source_type: 'video_id',
+                media_id: mediaId,
+                cover_image_url: picture?.url,
+              }
               : mapImages?.length === 1
-              ? {
+                ? {
                   source_type: 'image_url',
                   url: mapImages?.[0]?.url,
                 }
-              : {
+                : {
                   source_type: 'multiple_image_urls',
                   items: mapImages,
                 },

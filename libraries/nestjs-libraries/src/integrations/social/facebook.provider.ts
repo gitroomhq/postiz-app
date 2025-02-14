@@ -48,6 +48,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
   }
 
   async generateAuthUrl(clientInformation: ClientInformation, customerId: string) {
+    // const state = makeId(6);
     // Generate a unique state value that includes the customerId
     const state = `customerId:${customerId},uniqueState:${makeId(6)}`;
 

@@ -195,6 +195,22 @@ const initializeDefaultConfig = (customerId: string): SocialMediaConfig[] => [
       },
     ],
   },
+  {
+    customerId: customerId,
+    platform: "Pinterest",
+    platformKey: "pinterest",
+    config: [
+      {
+        key: "PINTEREST_CLIENT_ID",
+        value: "",
+      },
+      {
+        key: "PINTEREST_CLIENT_SECRET",
+        value: "",
+      }
+    ],
+  },
+
 ];
 
 // Create the provider
