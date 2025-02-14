@@ -80,12 +80,12 @@ export class BullMqClient extends ClientProxy {
   async dispatchEvent(packet: ReadPacket<any>): Promise<any> {
     console.log('event to dispatch: ', packet);
     const queue = this.getQueue(packet.pattern);
-    if (packet.data.options.cron) {
-      const { cron, immediately } = packet.data.options;
+    if (packet.data.options.every) {
+      const { every, immediately } = packet.data.options;
       const id = packet.data.id ?? v4();
       await queue.upsertJobScheduler(
         id,
-        { pattern: cron, ...(immediately ? { immediately } : {}) },
+        { every, ...(immediately ? { immediately } : {}) },
         {
           name: id,
           data: packet.data,

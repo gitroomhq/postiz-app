@@ -101,7 +101,7 @@ export class AutopostService {
       return this._workerServiceProducer.emit('cron', {
         id,
         options: {
-          cron: '1 * * * *',
+          every: 3600000,
           immediately: true,
         },
         payload: {
