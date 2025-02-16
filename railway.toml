@@ -1,3 +1,15 @@
-[phases.setup]
-    nixPkgs = ['nodejs', 'python3']
-    aptPkgs = ['build-essential', 'libudev-dev']
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile.dev"
+
+[deploy]
+startCommand = "npm run start:prod"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+[env]
+NODE_ENV = "production"
+POSTGRES_URL = "postgresql://postgres:${PGPASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB}"
+REDIS_URL = "redis://${REDIS_HOST}:6379"
+NEXT_PUBLIC_BACKEND_URL = "https://${RAILWAY_PUBLIC_DOMAIN}"
+NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY = "uploads"
