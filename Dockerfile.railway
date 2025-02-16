@@ -4,6 +4,11 @@
 # devcontainer - which is used for development, and contains the source code and the node_modules.
 # dist - which is used for production, and contains the built source code and the node_modules.
 
+# This Dockerfile is used for Railway deployment.
+# It is a modified version of Dockerfile.dev, with the following changes:
+# - The entrypoint is modified to copy the .env.example file to the /app/.env file.
+# - The VOLUME /config and VOLUME /uploads are removed. Since Railway only allows 1 volume.
+
 ARG NODE_VERSION="20.17"
 
 # Base image
@@ -28,10 +33,7 @@ COPY var/docker/entrypoint.sh /app/entrypoint.sh
 COPY var/docker/supervisord.conf /etc/supervisord.conf
 COPY var/docker/supervisord /app/supervisord_available_configs/
 COPY var/docker/Caddyfile /app/Caddyfile
-COPY .env.example /config/postiz.env
-
-VOLUME /config
-VOLUME /uploads
+COPY .env.example /vol/config/postiz.env
 
 LABEL org.opencontainers.image.source=https://github.com/gitroomhq/postiz-app
 
@@ -55,9 +57,6 @@ COPY libraries /app/libraries/
 
 RUN npm ci --no-fund && npx nx run-many --target=build --projects=frontend,backend,workers,cron
 
-VOLUME /config
-VOLUME /uploads
-
 LABEL org.opencontainers.image.title="Postiz App (DevContainer)"
 
 # Output image
@@ -70,9 +69,6 @@ COPY --from=devcontainer /app/dist/ /app/dist/
 COPY --from=devcontainer /app/libraries/ /app/libraries/
 
 COPY package.json nx.json /app/
-
-VOLUME /config
-VOLUME /uploads
 
 ## Labels at the bottom, because CI will eventually add dates, commit hashes, etc.
 LABEL org.opencontainers.image.title="Postiz App (Production)"
