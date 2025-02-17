@@ -19,15 +19,21 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   oneTimeToken = true;
 
   isBetweenSteps = false;
+  // scopes = [
+  //   'openid',
+  //   'profile',
+  //   'w_member_social',
+  //   'r_basicprofile',
+  //   'rw_organization_admin',
+  //   'w_organization_social',
+  //   'r_organization_social',
+  // ];
   scopes = [
-    'openid',
-    'profile',
-    'w_member_social',
-    'r_basicprofile',
-    'rw_organization_admin',
-    'w_organization_social',
-    'r_organization_social',
+    'r_liteprofile',  // Fetch user profile
+    'r_emailaddress', // Get user email
+    'w_member_social' // Allow posting
   ];
+
   refreshWait = true;
 
   config = {
