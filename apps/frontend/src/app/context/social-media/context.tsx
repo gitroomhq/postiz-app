@@ -58,6 +58,21 @@ const initializeDefaultConfig = (customerId: string): SocialMediaConfig[] => [
   },
   {
     customerId: customerId,
+    platform: "LinkedIn Page",
+    platformKey: "linkedin-page",
+    config: [
+      {
+        key: "LINKEDIN_CLIENT_ID",
+        value: "",
+      },
+      {
+        key: "LINKEDIN_CLIENT_SECRET",
+        value: "",
+      },
+    ],
+  },
+  {
+    customerId: customerId,
     platform: "Github",
     platformKey: "github",
     config: [
