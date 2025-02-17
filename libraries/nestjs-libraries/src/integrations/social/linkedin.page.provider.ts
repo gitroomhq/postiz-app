@@ -115,7 +115,7 @@ export class LinkedinPageProvider
           headers: {
             Authorization: `Bearer ${accessToken}`,
             'X-Restli-Protocol-Version': '2.0.0',
-            'LinkedIn-Version': '202402',
+            'LinkedIn-Version': '202501',
           },
         }
       )
@@ -257,7 +257,7 @@ export class LinkedinPageProvider
 
     const { elements }: { elements: Root[]; paging: any } = await (
       await this.fetch(
-        `https://api.linkedin.com/rest/organizationPageStatistics?q=organization&organization=${encodeURIComponent(
+        `https://api.linkedin.com/v2/organizationPageStatistics?q=organization&organization=${encodeURIComponent(
           `urn:li:organization:${id}`
         )}&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`,
         {
@@ -272,7 +272,7 @@ export class LinkedinPageProvider
 
     const { elements: elements2 }: { elements: Root[]; paging: any } = await (
       await this.fetch(
-        `https://api.linkedin.com/rest/organizationalEntityFollowerStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(
+        `https://api.linkedin.com/v2/organizationalEntityFollowerStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(
           `urn:li:organization:${id}`
         )}&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`,
         {
@@ -287,7 +287,7 @@ export class LinkedinPageProvider
 
     const { elements: elements3 }: { elements: Root[]; paging: any } = await (
       await this.fetch(
-        `https://api.linkedin.com/rest/organizationalEntityShareStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(
+        `https://api.linkedin.com/v2/organizationalEntityShareStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(
           `urn:li:organization:${id}`
         )}&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`,
         {
@@ -404,7 +404,7 @@ export class LinkedinPageProvider
           headers: {
             'X-Restli-Protocol-Version': '2.0.0',
             'Content-Type': 'application/json',
-            'LinkedIn-Version': '202402',
+            'LinkedIn-Version': '202501',
             Authorization: `Bearer ${integration.token}`,
           },
         }
@@ -413,7 +413,7 @@ export class LinkedinPageProvider
 
     if (totalLikes >= +fields.likesAmount) {
       await timer(2000);
-      await this.fetch(`https://api.linkedin.com/rest/posts`, {
+      await this.fetch(`https://api.linkedin.com/v2/posts`, {
         body: JSON.stringify({
           author: `urn:li:organization:${integration.internalId}`,
           commentary: '',
@@ -433,7 +433,7 @@ export class LinkedinPageProvider
         headers: {
           'X-Restli-Protocol-Version': '2.0.0',
           'Content-Type': 'application/json',
-          'LinkedIn-Version': '202402',
+          'LinkedIn-Version': '202501',
           Authorization: `Bearer ${integration.token}`,
         },
       });
@@ -482,7 +482,7 @@ export class LinkedinPageProvider
           headers: {
             'X-Restli-Protocol-Version': '2.0.0',
             'Content-Type': 'application/json',
-            'LinkedIn-Version': '202402',
+            'LinkedIn-Version': '202501',
             Authorization: `Bearer ${integration.token}`,
           },
         }
