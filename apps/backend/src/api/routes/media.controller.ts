@@ -78,22 +78,12 @@ export class MediaController {
     @GetOrgFromRequest() org: Organization,
     @UploadedFile() file: Express.Multer.File
   ) {
-    console.log('[MediaController] Uploading file to server');
-    try {
-      const uploadedFile = await this.storage.uploadFile(file);
-      console.log(
-        '[MediaController] File uploaded to server with path',
-        uploadedFile.path
-      );
-      return this._mediaService.saveFile(
-        org.id,
-        uploadedFile.originalname,
-        uploadedFile.path
-      );
-    } catch (error: any) {
-      console.error('[MediaController] Error uploading file to server:', error);
-      throw new Error(`Failed to save file: ${error.message}`);
-    }
+    const uploadedFile = await this.storage.uploadFile(file);
+    return this._mediaService.saveFile(
+      org.id,
+      uploadedFile.originalname,
+      uploadedFile.path
+    );
   }
 
   @Post('/upload-simple')
