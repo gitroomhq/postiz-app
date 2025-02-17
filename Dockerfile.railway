@@ -33,7 +33,8 @@ COPY var/docker/entrypoint.sh /app/entrypoint.sh
 COPY var/docker/supervisord.conf /etc/supervisord.conf
 COPY var/docker/supervisord /app/supervisord_available_configs/
 COPY var/docker/Caddyfile /app/Caddyfile
-COPY .env.example /vol/config/postiz.env
+# volumes do not exist in Railway during build time, thankfully all env vars are set for us we don't need to rely on this
+# COPY .env.example /config/postiz.env
 
 LABEL org.opencontainers.image.source=https://github.com/gitroomhq/postiz-app
 

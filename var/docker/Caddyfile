@@ -4,7 +4,7 @@
 	}
 
 	handle_path /uploads/* {
-		root * /uploads/
+		root * {$RAILWAY_VOLUME_MOUNT_PATH}/uploads/
 		file_server
 	}
 

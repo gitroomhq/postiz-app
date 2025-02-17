@@ -3,6 +3,5 @@ builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile.railway"
 
 [deploy]
-# startCommand = "docker run"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3

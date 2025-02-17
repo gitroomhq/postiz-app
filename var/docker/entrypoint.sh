@@ -2,14 +2,16 @@
 
 set -o xtrace
 
-if [[ "$SKIP_CONFIG_CHECK" != "true" ]]; then
-	echo "Entrypoint: Copying /vol/config/postiz.env into /app/.env"
+if [[ -n "$RAILWAY_SERVICE_ID" ]]; then
+	echo "Entrypoint: Railway environment detected, assuming all env vars come from railway provided environment variables at runtime"
+elif [[ "$SKIP_CONFIG_CHECK" != "true" ]]; then
+	echo "Entrypoint: Copying /config/postiz.env into /app/.env"
 
-	if [ ! -f /vol/config/postiz.env ]; then
-		echo "Entrypoint: WARNING: No postiz.env file found in /vol/config/postiz.env"
+	if [ ! -f /config/postiz.env ]; then
+		echo "Entrypoint: WARNING: No postiz.env file found in /config/postiz.env"
 	fi
 
-	cp -vf /vol/config/postiz.env /app/.env
+	cp -vf /config/postiz.env /app/.env
 fi
 
 if [[ "$POSTIZ_APPS" -eq "" ]]; then
