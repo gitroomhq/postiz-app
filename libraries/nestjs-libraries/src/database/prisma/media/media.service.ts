@@ -3,8 +3,6 @@ import { MediaRepository } from '@gitroom/nestjs-libraries/database/prisma/media
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { Organization } from '@prisma/client';
-import * as fs from 'fs';
-import * as path from 'path';
 
 @Injectable()
 export class MediaService {
@@ -44,39 +42,6 @@ export class MediaService {
   }
 
   getMedia(org: string, page: number) {
-    console.log(
-      '[media.service] Fetching media for organization:',
-      org,
-      'page:',
-      page
-    );
-
-    const logDirectory = (directory: string): void => {
-      try {
-        const items = fs.readdirSync(directory);
-        console.log(`[media.service] Contents of ${directory}:`);
-
-        items.forEach((item: string) => {
-          const fullPath = path.join(directory, item);
-          const stats = fs.statSync(fullPath);
-
-          if (stats.isDirectory()) {
-            console.log(`[media.service] [DIR] ${item}`);
-            logDirectory(fullPath);
-          } else {
-            console.log(`[media.service] [FILE] ${item} - ${stats.size} bytes`);
-          }
-        });
-      } catch (err) {
-        console.error(
-          `[media.service] Error reading directory ${directory}:`,
-          err
-        );
-      }
-    };
-
-    logDirectory('/uploads');
-
     return this._mediaRepository.getMedia(org, page);
   }
 }
