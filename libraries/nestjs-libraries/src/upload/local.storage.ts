@@ -10,7 +10,9 @@ export class LocalStorage implements IUploadProvider {
 
   async uploadSimple(path: string) {
     const loadImage = await axios.get(path, { responseType: 'arraybuffer' });
-    const contentType = loadImage?.headers?.['content-type'] || loadImage?.headers?.['Content-Type'];
+    const contentType =
+      loadImage?.headers?.['content-type'] ||
+      loadImage?.headers?.['Content-Type'];
     const findExtension = mime.getExtension(contentType)!;
 
     const now = new Date();
@@ -29,8 +31,15 @@ export class LocalStorage implements IUploadProvider {
 
     const filePath = `${dir}/${randomName}.${findExtension}`;
     const publicPath = `${innerPath}/${randomName}.${findExtension}`;
-    // Logic to save the file to the filesystem goes here
-    writeFileSync(filePath, loadImage.data);
+
+    console.log(`Saving file ${path} to ${filePath}`);
+
+    try {
+      writeFileSync(filePath, loadImage.data);
+    } catch (error: any) {
+      console.error(`Failed to save file ${path} to ${filePath}:`, error);
+      throw new Error(`Failed to save file: ${error.message}`);
+    }
 
     return process.env.FRONTEND_URL + '/uploads' + publicPath;
   }
@@ -55,8 +64,17 @@ export class LocalStorage implements IUploadProvider {
       file.originalname
     )}`;
 
-    // Logic to save the file to the filesystem goes here
-    writeFileSync(filePath, file.buffer);
+    console.log(`Saving file ${file.originalname} to ${filePath}`);
+
+    try {
+      writeFileSync(filePath, file.buffer);
+    } catch (error: any) {
+      console.error(
+        `Failed to save file ${file.originalname} to ${filePath}:`,
+        error
+      );
+      throw new Error(`Failed to save file: ${error.message}`);
+    }
 
     return {
       filename: `${randomName}${extname(file.originalname)}`,
