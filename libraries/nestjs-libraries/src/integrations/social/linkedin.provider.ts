@@ -23,7 +23,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   scopes = [
     'openid',
     'profile',
-    'w_member_social',
+    // 'w_member_social',
     'r_basicprofile',
     // 'rw_organization_admin',
     'w_organization_social',
