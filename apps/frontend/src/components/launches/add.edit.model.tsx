@@ -773,7 +773,7 @@ export const AddEditModal: FC<{
                     }
                   >
                     <div className="flex justify-center items-center gap-[5px] h-full">
-                      <div className="h-full flex items-center text-white">
+                      <div className="flex items-center h-full text-white">
                         {!canSendForPublication
                           ? 'Not matching order'
                           : postFor
@@ -788,7 +788,7 @@ export const AddEditModal: FC<{
                           : 'Update'}
                       </div>
                       {!postFor && (
-                        <div className="h-full flex items-center">
+                        <div className="flex items-center h-full">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             width="18"
@@ -815,6 +815,8 @@ export const AddEditModal: FC<{
                       )}
                     </div>
                   </Button>
+
+     
                 </Submitted>
               </div>
             </div>
