@@ -62,9 +62,6 @@ export default async function handleR2Upload(
   res: Response
 ) {
 
-  console.log(" ==> handleR2Upload()");
-  console.log(" ==> endpoint: ", endpoint);
-
   switch (endpoint) {
     case 'create-multipart-upload':
       return createMultipartUpload(req, res);
@@ -109,9 +106,6 @@ export async function createMultipartUpload(
   const fileExtension = path.extname(file.name); // Extract extension
   const randomFilename = generateRandomString() + fileExtension; // Append extension
 
-  console.log(" ==> createMultipartUpload::: ");
-
-
   const config = {
     region: getRegion(),
     endpoint: getEndpoint(),
@@ -120,9 +114,6 @@ export async function createMultipartUpload(
       secretAccessKey: getSecretAccessKey()!,
     },
   }
-
-  console.log(" ==> config::: ", config);
-
 
   try {
     const params = {
@@ -135,20 +126,14 @@ export async function createMultipartUpload(
       // },
     };
 
-    console.log(" ===> params:: ", params);
-
-
     const command = new CreateMultipartUploadCommand({ ...params });
     const response = await R2_CLIENT().send(command);
-
-    console.log(" ===> response:: ", response);
 
     return res.status(200).json({
       uploadId: response.UploadId,
       key: response.Key,
     });
   } catch (err) {
-    console.log('Error:', err);
     return res.status(500).json({ source: { status: 500 } });
   }
 }
@@ -179,7 +164,6 @@ export async function prepareUploadParts(
       // @ts-ignore
       response.presignedUrls[part.number] = url;
     } catch (err) {
-      console.log('Error', err);
       return res.status(500).json(err);
     }
   }
@@ -201,7 +185,6 @@ export async function listParts(req: Request, res: Response) {
 
     return res.status(200).json(response['Parts']);
   } catch (err) {
-    console.log('Error', err);
     return res.status(500).json(err);
   }
 }
@@ -230,7 +213,6 @@ export async function completeMultipartUpload(
     response.Location = getBucketURL() + '/' + response?.Location?.split('/').at(-1);
     return response;
   } catch (err) {
-    console.log('Error', err);
     return res.status(500).json(err);
   }
 }
@@ -252,7 +234,6 @@ export async function abortMultipartUpload(
 
     return res.status(200).json(response);
   } catch (err) {
-    console.log('Error', err);
     return res.status(500).json(err);
   }
 }
@@ -260,8 +241,6 @@ export async function abortMultipartUpload(
 export async function signPart(req: Request, res: Response) {
   const { key, uploadId } = req.body;
   const partNumber = parseInt(req.body.partNumber);
-
-  console.log(" ==> signPart::: ", key, uploadId, partNumber);
 
   const params = {
     Bucket: getBucketName(),
@@ -271,12 +250,8 @@ export async function signPart(req: Request, res: Response) {
     // Expires: 3600
   };
 
-  console.log(" ==> params::: ", params);
-
   const command = new UploadPartCommand({ ...params });
   const url = await getSignedUrl(R2_CLIENT(), command, { expiresIn: 3600 });
-
-  console.log(" ==> url::: ", url);
 
   return res.status(200).json({
     url: url,

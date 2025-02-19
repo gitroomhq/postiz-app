@@ -123,8 +123,6 @@ export class MediaController {
       return upload;
     }
 
-    console.log("\n ==> upload:: ", upload)
-
     // @ts-ignore
     const name = upload.Location.split('/').pop();
 

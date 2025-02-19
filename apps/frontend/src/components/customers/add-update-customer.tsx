@@ -85,10 +85,6 @@ export const AddUpdateCustomerForm = ({
     [fetch, toast, closeModal, currentCustomer, onCustomerUpdated]
   );
 
-  useEffect(() => {
-    console.log('currentCustomer:: ', currentCustomer);
-  }, [currentCustomer]);
-
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(submit)}>

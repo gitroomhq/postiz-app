@@ -153,7 +153,6 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
 
     }
     catch (error: any) {
-      console.log(" .... (authentication) error: ", error)
       return 'Authentication failed';
     }
   }

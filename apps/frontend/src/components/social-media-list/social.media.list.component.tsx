@@ -93,10 +93,6 @@ export const UpdateSocialMediaConfigForm = ({ config }: { config: SocialMediaCon
     [fetch, toast, updateSocialMediaConfig, closeModal]
   );
 
-  useEffect(() => {
-    console.log("config:: ", config);
-  }, []);
-
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(submit)}>
@@ -186,7 +182,6 @@ const SocialMediaList: React.FC = () => {
   }, [customerList]);
 
   useEffect(() => {
-    console.log("customer::", customer)
     if (customer && customer.id) {
       updateSocialMediaConfigListFromServer(customer.id);
     }

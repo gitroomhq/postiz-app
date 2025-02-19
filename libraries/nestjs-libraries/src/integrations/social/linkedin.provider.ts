@@ -12,7 +12,6 @@ import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { Integration } from '@prisma/client';
 import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
-import { Logger } from '@nestjs/common';
 
 export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   identifier = 'linkedin';
@@ -23,9 +22,9 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   scopes = [
     'openid',
     'profile',
-    // 'w_member_social',
+    'w_member_social',
     'r_basicprofile',
-    // 'rw_organization_admin',
+    'rw_organization_admin',
     'w_organization_social',
     'r_organization_social',
   ];
@@ -103,10 +102,6 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       }&prompt=none&redirect_uri=${encodeURIComponent(
         `${process.env.FRONTEND_URL}/integrations/social/linkedin`
       )}&state=${encodeURIComponent(state)}&scope=${encodeURIComponent(this.scopes.join(' '))}`;
-
-    Logger.log(" ==>  (generateAuthUrl)url:: ", url);
-    Logger.log(" ==>  (generateAuthUrl)codeVerifier:: ", codeVerifier);
-    Logger.log(" ==>  (generateAuthUrl)state:: ", state);
 
     return {
       url,
