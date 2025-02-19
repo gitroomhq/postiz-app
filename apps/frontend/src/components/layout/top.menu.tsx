@@ -66,7 +66,7 @@ export const useMenuItems = () => {
       name: 'Affiliate',
       icon: 'affiliate',
       path: 'https://affiliate.postiz.com',
-      role: ['ADMIN', 'SUPERADMIN', 'USER'],
+      role: ['EDITOR', 'VIEWER', 'ADMIN', 'SUPERADMIN'],
       requireBilling: true,
     },
   ];

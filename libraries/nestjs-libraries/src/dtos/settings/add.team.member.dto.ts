@@ -7,7 +7,7 @@ export class AddTeamMemberDto {
   email: string;
 
   @IsString()
-  @IsIn(['USER', 'ADMIN'])
+  @IsIn(['EDITOR', 'VIEWER', 'ADMIN'])
   role: string;
 
   @IsDefined()

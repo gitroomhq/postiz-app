@@ -19,8 +19,12 @@ import interClass from '@gitroom/react/helpers/inter.font';
 
 const roles = [
   {
-    name: 'User',
-    value: 'USER',
+    name: 'Viewer',
+    value: 'VIEWER',
+  },
+  {
+    name: 'Editor',
+    value: 'EDITOR'
   },
   {
     name: 'Admin',
@@ -135,20 +139,31 @@ export const TeamsComponent = () => {
   const user = useUser();
   const modals = useModals();
 
-  const myLevel = user?.role === 'USER' ? 0 : user?.role === 'ADMIN' ? 1 : 2;
+  const myLevel = user?.role === 'VIEWER' ? 0 : user?.role === 'EDITOR' ? 1 : (user?.role === 'ADMIN' ? 2 : 3);
   const getLevel = useCallback(
-    (role: 'USER' | 'ADMIN' | 'SUPERADMIN') =>
-      role === 'USER' ? 0 : role === 'ADMIN' ? 1 : 2,
+    (role: 'VIEWER' | 'EDITOR' | 'ADMIN' | 'SUPERADMIN') => {
+      switch (role) {
+
+        case 'EDITOR':
+          return 0;
+        case 'VIEWER':
+          return 1;
+        case 'ADMIN':
+          return 2;
+        default:
+          return 3;
+      }
+    },
     []
   );
+
   const loadTeam = useCallback(async () => {
     return (await (await fetch('/settings/team')).json()).users as Array<{
       id: string;
-      role: 'SUPERADMIN' | 'ADMIN' | 'USER';
+      role: 'EDITOR' | 'VIEWER' | 'ADMIN' | 'SUPERADMIN';
       user: { email: string; id: string };
     }>;
   }, []);
-
   const addMember = useCallback(() => {
     modals.openModal({
       classNames: {
@@ -198,8 +213,8 @@ export const TeamsComponent = () => {
                 {capitalize(p.user.email.split('@')[0]).split('.')[0]}
               </div>
               <div className="flex-1">
-                {p.role === 'USER'
-                  ? 'User'
+                {p.role === 'VIEWER'
+                  ? 'Viewer'
                   : p.role === 'ADMIN'
                   ? 'Admin'
                   : 'Super Admin'}

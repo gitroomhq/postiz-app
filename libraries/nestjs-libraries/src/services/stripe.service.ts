@@ -119,7 +119,7 @@ export class StripeService {
       billing,
       period,
     }: {
-      billing: 'STANDARD' | 'PRO';
+        billing: 'BASIC' | 'PRO' | 'BUSINESS';
       period: 'MONTHLY' | 'YEARLY';
       uniqueId: string;
     } = event.data.object.metadata;
@@ -150,7 +150,7 @@ export class StripeService {
       billing,
       period,
     }: {
-      billing: 'STANDARD' | 'PRO';
+        billing: 'BASIC' | 'PRO' | 'BUSINESS';
       period: 'MONTHLY' | 'YEARLY';
       uniqueId: string;
     } = event.data.object.metadata;
@@ -726,7 +726,7 @@ export class StripeService {
         };
       }
 
-      const nextPackage = !getCurrentSubscription ? 'STANDARD' : 'PRO';
+      const nextPackage = !getCurrentSubscription ? 'BASIC' : 'PRO';
       const findPricing = pricing[nextPackage];
 
       await this._subscriptionService.createOrUpdateSubscription(

@@ -57,7 +57,7 @@ export class PermissionsService {
   async check(
     orgId: string,
     created_at: Date,
-    permission: 'USER' | 'ADMIN' | 'SUPERADMIN',
+    permission: 'VIEWER' | 'EDITOR' | 'ADMIN' | 'SUPERADMIN',
     requestedPermission: Array<[AuthorizationActions, Sections]>
   ) {
     const { can, build } = new AbilityBuilder<

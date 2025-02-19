@@ -36,7 +36,7 @@ export class OrganizationService {
     userId: string,
     id: string,
     orgId: string,
-    role: 'USER' | 'ADMIN'
+    role: 'EDITOR' | 'VIEWER' | 'ADMIN'
   ) {
     return this._organizationRepository.addUserToOrg(userId, id, orgId, role);
   }
@@ -95,8 +95,26 @@ export class OrganizationService {
     // @ts-ignore
     const myRole = org.users[0].role;
     const userRole = findOrgToDelete.users[0].role;
-    const myLevel = myRole === 'USER' ? 0 : myRole === 'ADMIN' ? 1 : 2;
-    const userLevel = userRole === 'USER' ? 0 : userRole === 'ADMIN' ? 1 : 2;
+    const LEVELS = {
+      VIEWER: 0,
+      EDITOR: 1,
+      ADMIN: 2,
+      DEFAULT: 3,
+    };
+    const getLevel = (role: string) => {
+      switch (role) {
+        case 'VIEWER':
+          return LEVELS.VIEWER;
+        case 'EDITOR':
+          return LEVELS.EDITOR;
+        case 'ADMIN':
+          return LEVELS.ADMIN;
+        default:
+          return LEVELS.DEFAULT;
+      }
+    };
+    const myLevel = getLevel(myRole);
+    const userLevel = getLevel(userRole);
 
     if (myLevel < userLevel) {
       throw new Error('You do not have permission to delete this user');

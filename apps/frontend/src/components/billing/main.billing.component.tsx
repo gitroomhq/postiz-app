@@ -30,12 +30,12 @@ import { PurchaseCrypto } from '@gitroom/frontend/components/billing/purchase.cr
 
 export interface Tiers {
   month: Array<{
-    name: 'Pro' | 'Standard';
+    name: 'Basic' | 'Pro' | 'Business';
     recurring: 'month' | 'year';
     price: number;
   }>;
   year: Array<{
-    name: 'Pro' | 'Standard';
+    name: 'Basic' | 'Pro' | 'Business';
     recurring: 'month' | 'year';
     price: number;
   }>;
@@ -43,7 +43,7 @@ export interface Tiers {
 
 export const Prorate: FC<{
   period: 'MONTHLY' | 'YEARLY';
-  pack: 'STANDARD' | 'PRO';
+  pack: 'Basic' | 'Pro' | 'Business';
 }> = (props) => {
   const { period, pack } = props;
   const fetch = useFetch();
@@ -93,7 +93,7 @@ export const Prorate: FC<{
 };
 
 export const Features: FC<{
-  pack: 'FREE' | 'STANDARD' | 'PRO';
+  pack: 'BASIC' | 'PRO' | 'BUSINESS' | 'FREE';
 }> = (props) => {
   const { pack } = props;
   const features = useMemo(() => {
@@ -281,7 +281,7 @@ export const MainBillingComponent: FC<{
   }, [subscription, initialChannels, monthlyOrYearly, period]);
 
   const moveToCheckout = useCallback(
-    (billing: 'STANDARD' | 'PRO' | 'FREE') => async () => {
+    (billing: 'BUSINESS' | 'BASIC' | 'PRO' | 'FREE') => async () => {
       const messages = [];
 
       if (
@@ -469,7 +469,7 @@ export const MainBillingComponent: FC<{
                         '!bg-red-500'
                     )}
                     onClick={moveToCheckout(
-                      name.toUpperCase() as 'STANDARD' | 'PRO'
+                      name.toUpperCase() as 'BASIC' | 'PRO' | 'BUSINESS'
                     )}
                   >
                     {currentPackage === name.toUpperCase()
@@ -493,12 +493,12 @@ export const MainBillingComponent: FC<{
                   !!name && (
                     <Prorate
                       period={monthlyOrYearly === 'on' ? 'YEARLY' : 'MONTHLY'}
-                      pack={name.toUpperCase() as 'STANDARD' | 'PRO'}
+                    pack={name.toUpperCase() as 'BASIC' | 'PRO' | 'BUSINESS'}
                     />
                   )}
               </div>
               <Features
-                pack={name.toUpperCase() as 'FREE' | 'STANDARD' | 'PRO'}
+                pack={name.toUpperCase() as 'BASIC' | 'PRO' | 'BUSINESS'}
               />
             </div>
           ))}

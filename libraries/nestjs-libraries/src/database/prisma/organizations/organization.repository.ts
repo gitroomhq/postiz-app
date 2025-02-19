@@ -159,7 +159,7 @@ export class OrganizationRepository {
     userId: string,
     id: string,
     orgId: string,
-    role: 'USER' | 'ADMIN'
+    role: 'EDITOR' | 'VIEWER' | 'ADMIN'
   ) {
     const checkIfInviteExists = await this._user.model.user.findFirst({
       where: {
@@ -184,7 +184,7 @@ export class OrganizationRepository {
     if (
       process.env.STRIPE_PUBLISHABLE_KEY &&
       checkForSubscription?.subscription?.subscriptionTier ===
-        SubscriptionTier.STANDARD
+      SubscriptionTier.BASIC
     ) {
       return false;
     }

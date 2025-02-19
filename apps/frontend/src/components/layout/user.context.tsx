@@ -13,7 +13,7 @@ export const UserContext = createContext<
       orgId: string;
       tier: PricingInnerInterface;
       publicApi: string;
-      role: 'USER' | 'ADMIN' | 'SUPERADMIN';
+    role: 'EDITOR' | 'VIEWER' | 'ADMIN' | 'SUPERADMIN';
       totalChannels: number;
       isLifetime?: boolean;
       impersonate: boolean;
@@ -24,8 +24,8 @@ export const UserContext = createContext<
 export const ContextWrapper: FC<{
   user: User & {
     orgId: string;
-    tier: 'FREE' | 'STANDARD' | 'PRO' | 'ULTIMATE' | 'TEAM';
-    role: 'USER' | 'ADMIN' | 'SUPERADMIN';
+    tier: 'FREE' | 'BASIC' | 'PRO' | 'BUSINESS';
+    role: 'EDITOR' | 'VIEWER' | 'ADMIN' | 'SUPERADMIN';
     publicApi: string;
     totalChannels: number;
   };

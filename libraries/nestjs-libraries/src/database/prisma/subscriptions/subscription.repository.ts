@@ -128,7 +128,7 @@ export class SubscriptionRepository {
     identifier: string,
     customerId: string,
     totalChannels: number,
-    billing: 'STANDARD' | 'PRO',
+    billing: 'BASIC' | 'PRO' | 'BUSINESS',
     period: 'MONTHLY' | 'YEARLY',
     cancelAt: number | null,
     code?: string,

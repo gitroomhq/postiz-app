@@ -72,7 +72,7 @@ export class SubscriptionService {
   async modifySubscription(
     customerId: string,
     totalChannels: number,
-    billing: 'FREE' | 'STANDARD' | 'PRO'
+    billing: 'FREE' | 'BASIC' | 'PRO' | 'BUSINESS'
   ) {
     if (!customerId) {
       return false;
@@ -150,7 +150,7 @@ export class SubscriptionService {
     identifier: string,
     customerId: string,
     totalChannels: number,
-    billing: 'STANDARD' | 'PRO',
+    billing: 'BASIC' | 'PRO' | 'BUSINESS',
     period: 'MONTHLY' | 'YEARLY',
     cancelAt: number | null,
     code?: string,

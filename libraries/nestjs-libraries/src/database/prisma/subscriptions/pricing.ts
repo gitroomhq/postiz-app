@@ -13,7 +13,6 @@ export interface PricingInnerInterface {
   image_generation_count: number;
   public_api: boolean;
   webhooks: number;
-  autoPost: boolean;
 }
 export interface PricingInterface {
   [key: string]: PricingInnerInterface;
@@ -23,9 +22,9 @@ export const pricing: PricingInterface = {
     current: 'FREE',
     month_price: 0,
     year_price: 0,
-    channel: 0,
+    channel: 1,
     image_generation_count: 0,
-    posts_per_month: 0,
+    posts_per_month: 30,
     team_members: false,
     community_features: false,
     featured_by_gitroom: false,
@@ -34,27 +33,25 @@ export const pricing: PricingInterface = {
     image_generator: false,
     public_api: false,
     webhooks: 0,
-    autoPost: false,
   },
-  STANDARD: {
-    current: 'STANDARD',
-    month_price: 29,
-    year_price: 278,
-    channel: 5,
-    posts_per_month: 400,
-    image_generation_count: 20,
+  BASIC: {
+    current: 'BASIC',
+    month_price: 9.99,
+    year_price: 79.99,
+    channel: 1,
+    image_generation_count: 15,
+    posts_per_month: 150,
     team_members: false,
+    community_features: true,
+    featured_by_gitroom: true,
     ai: true,
-    community_features: false,
-    featured_by_gitroom: false,
     import_from_channels: true,
-    image_generator: false,
+    image_generator: true,
     public_api: true,
     webhooks: 2,
-    autoPost: false,
   },
-  TEAM: {
-    current: 'TEAM',
+  PRO: {
+    current: 'PRO',
     month_price: 39,
     year_price: 374,
     channel: 10,
@@ -68,24 +65,22 @@ export const pricing: PricingInterface = {
     image_generator: true,
     public_api: true,
     webhooks: 10,
-    autoPost: true,
   },
-  PRO: {
-    current: 'PRO',
-    month_price: 49,
-    year_price: 470,
-    channel: 30,
-    posts_per_month: 1000000,
-    image_generation_count: 300,
-    community_features: true,
+  BUSINESS: {
+    current: 'BUSINESS',
+    month_price: 29.99,
+    year_price: 199.99,
+    channel: 10,
+    image_generation_count: 100,
+    posts_per_month: 1000,
     team_members: true,
+    community_features: true,
     featured_by_gitroom: true,
     ai: true,
     import_from_channels: true,
     image_generator: true,
     public_api: true,
     webhooks: 30,
-    autoPost: true,
   },
   ULTIMATE: {
     current: 'ULTIMATE',
@@ -102,6 +97,5 @@ export const pricing: PricingInterface = {
     image_generator: true,
     public_api: true,
     webhooks: 10000,
-    autoPost: true,
   },
 };

@@ -33,7 +33,7 @@ export class AuthService {
     body: CreateOrgUserDto | LoginUserDto,
     ip: string,
     userAgent: string,
-    addToOrg?: boolean | { orgId: string; role: 'USER' | 'ADMIN'; id: string }
+    addToOrg?: boolean | { orgId: string; role: 'VIEWER' | 'EDITOR' | 'ADMIN'; id: string }
   ) {
     if (provider === Provider.LOCAL) {
       const user = await this._userService.getUserByEmail(body.email);
@@ -114,7 +114,7 @@ export class AuthService {
 
       return getOrg as {
         email: string;
-        role: 'USER' | 'ADMIN';
+        role: 'EDITOR' | 'VIEWER' | 'ADMIN';
         orgId: string;
         id: string;
       };
