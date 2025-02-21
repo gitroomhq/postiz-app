@@ -493,7 +493,7 @@ export const MainBillingComponent: FC<{
                   !!name && (
                     <Prorate
                       period={monthlyOrYearly === 'on' ? 'YEARLY' : 'MONTHLY'}
-                    pack={name.toUpperCase() as 'BASIC' | 'PRO' | 'BUSINESS'}
+                    pack={name.toUpperCase() as 'Basic' | 'Pro' | 'Business'}
                     />
                   )}
               </div>
