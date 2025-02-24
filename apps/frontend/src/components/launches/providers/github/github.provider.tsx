@@ -11,8 +11,8 @@ const GitHubPreview: FC = () => {
   return (
     <div>
       <h2>GitHub Integration Preview</h2>
-      <p>Connected Repository: {value?.repo || 'No repository connected'}</p>
-      <p>Scopes: {settings?.scopes?.join(', ') || 'Default Scopes'}</p>
+      {/* <p>Connected Repository: {value?.repo || 'No repository connected'}</p>
+      <p>Scopes: {settings?.scopes?.join(', ') || 'Default Scopes'}</p> */}
     </div>
   );
 };
@@ -32,7 +32,7 @@ const GitHubSettings: FC = () => {
     <div>
       <h2>GitHub Integration Settings</h2>
       <button onClick={getOrgs}>Fetch Organizations</button>
-      <p>Last Synced: {date || 'Not Synced'}</p>
+      {/* <p>Last Synced: {date || 'Not Synced'}</p> */}
     </div>
   );
 };
