@@ -11,7 +11,7 @@ const GitHubPreview: FC = () => {
   return (
     <div>
       <h2>GitHub Integration Preview</h2>
-      {/* <p>Connected Repository: {value?.repo || 'No repository connected'}</p>
+      {/* <p>Connected Repository: {value?.content || 'No repository connected'}</p>
       <p>Scopes: {settings?.scopes?.join(', ') || 'Default Scopes'}</p> */}
     </div>
   );
@@ -22,16 +22,19 @@ const GitHubSettings: FC = () => {
   const { date } = useIntegration();
   const customFunc = useCustomProviderFunction();
 
-  const getOrgs = useCallback(() => {
-    customFunc.get('organizations', {
-      anyKey: 'anyValue',
-    });
+  const getRepos = useCallback(async () => {
+    try {
+      const repos = await customFunc.get('repositories', {});
+      console.log('Fetched Repositories:', repos);
+    } catch (error) {
+      console.error('Error fetching repositories:', error);
+    }
   }, [customFunc]);
 
   return (
     <div>
       <h2>GitHub Integration Settings</h2>
-      <button onClick={getOrgs}>Fetch Organizations</button>
+      <button onClick={getRepos}>Fetch Repositories</button>
       {/* <p>Last Synced: {date || 'Not Synced'}</p> */}
     </div>
   );
