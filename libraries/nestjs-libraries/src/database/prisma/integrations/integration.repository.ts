@@ -142,8 +142,9 @@ export class IntegrationRepository {
       }
       : {};
 
-    Logger.log(" ==> customerId:: ", customerId)
-    Logger.log(" ==> org:: ", org)
+    Logger.log(" ==> (*)customerId:: ", customerId)
+    Logger.log(" ==> (*)org:: ", org)
+    Logger.log(" ==> (*)internalId:: ", internalId)
 
     const upsert = await this._integration.model.integration.upsert({
       where: {
@@ -230,6 +231,8 @@ export class IntegrationRepository {
         },
       });
     }
+
+    Logger.log(" ==> (*)INTEGRATION ADDED !!! ")
 
     return upsert;
   }
