@@ -147,31 +147,31 @@ export class IntegrationRepository {
     Logger.log(" ==> (*)internalId:: ", internalId)
 
 
-    const existing = await this._integration.model.integration.findUnique({
-      where: {
-        organizationId_internalId: {
-          internalId,
-          organizationId: org,
-        },
-        customerId: customerId
-      }
-    });
+    // const existing = await this._integration.model.integration.findUnique({
+    //   where: {
+    //     organizationId_internalId: {
+    //       internalId,
+    //       organizationId: org,
+    //     },
+    //     customerId: customerId
+    //   }
+    // });
 
-    Logger.log(" ==> (*)existing:: ", existing)
+    // Logger.log(" ==> (*)existing:: ", existing)
 
-    if (!existing) {
-      await this._integration.model.integration.create({
-        data: {
-          internalId,
-          organizationId: org,
-          customerId: customerId,
-          type,
-          providerIdentifier: provider,
-          token,
-          name,
-        },
-      });
-    }
+    // if (!existing) {
+    //   await this._integration.model.integration.create({
+    //     data: {
+    //       internalId,
+    //       organizationId: org,
+    //       customerId: customerId,
+    //       type,
+    //       providerIdentifier: provider,
+    //       token,
+    //       name,
+    //     },
+    //   });
+    // }
 
     const upsert = await this._integration.model.integration.upsert({
       where: {
