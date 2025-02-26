@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Logger,
   Param,
   Post,
   Put,
@@ -418,8 +419,15 @@ export class IntegrationsController {
       body.customerId = customerIdMatch ? customerIdMatch[1] : null;
     }
 
+    Logger.log(" ==> body::", body)
+
+    Logger.log(" ==> integration::", integration)
+    Logger.log(" ==> org.id::", org.id)
+
     const integrationProvider =
       await this._integrationManager.getSocialIntegration(integration, org.id, body.customerId);
+
+    Logger.log(" ==> integrationProvider::", integrationProvider)
 
     const getCodeVerifier = integrationProvider.customFields
       ? 'none'
@@ -513,6 +521,9 @@ export class IntegrationsController {
         validName = `Channel_${String(id).slice(0, 8)}`;
       }
     }
+
+    Logger.log(" ==> integrationProvider  (createOrUpdateIntegration)START");
+
     return this._integrationService.createOrUpdateIntegration(
       additionalSettings,
       !!integrationProvider.oneTimeToken,
