@@ -80,7 +80,7 @@ export default withProvider<InstagramDto>(
         return 'Instagram stories should be maximum 60 seconds';
       }
 
-      if (video > 90 && settings.post_type === 'post') {
+      if (video > 180 && settings.post_type === 'post') {
         return 'Instagram reel should be maximum 90 seconds';
       }
     }
