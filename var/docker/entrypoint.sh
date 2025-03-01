@@ -2,9 +2,7 @@
 
 set -o xtrace
 
-if [[ -n "$RAILWAY_SERVICE_ID" ]]; then
-	echo "Entrypoint: Railway environment detected, assuming all env vars come from railway provided environment variables at runtime"
-elif [[ "$SKIP_CONFIG_CHECK" != "true" ]]; then
+if [[ "$SKIP_CONFIG_CHECK" != "true" ]]; then
 	echo "Entrypoint: Copying /config/postiz.env into /app/.env"
 
 	if [ ! -f /config/postiz.env ]; then
