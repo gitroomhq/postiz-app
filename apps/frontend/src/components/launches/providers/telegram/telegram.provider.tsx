@@ -7,5 +7,5 @@ export default withProvider(
   async () => {
     return true;
   },
-  500
+  4096
 );
