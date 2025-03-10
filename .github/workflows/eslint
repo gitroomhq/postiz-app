@@ -1,0 +1,60 @@
+---
+name: ESLint
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - package.json
+      - apps/**
+      - '!apps/docs/**'
+      - libraries/**
+
+  pull_request:
+    paths:
+      - package.json
+      - apps/**
+      - '!apps/docs/**'
+      - libraries/**
+
+jobs:
+  eslint:
+    name: Run eslint scanning
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read # only required for a private repository by github/codeql-action/upload-sarif to get the Action run status
+    strategy:
+      matrix:
+        service: ["backend", "frontend"]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: |
+            **/package-lock.json
+
+      - name: Install ESLint
+        run: |
+          npm install eslint
+          npm install @microsoft/eslint-formatter-sarif@2.1.7
+
+      - name: Run ESLint
+        run: npx eslint apps/${{ matrix.service }}/
+          --config apps/${{ matrix.service }}/.eslintrc.json
+          --format @microsoft/eslint-formatter-sarif
+          --output-file apps/${{ matrix.service }}/eslint-results.sarif
+        continue-on-error: true
+
+      - name: Upload analysis results to GitHub
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: apps/${{ matrix.service }}/eslint-results.sarif
+          wait-for-processing: true
