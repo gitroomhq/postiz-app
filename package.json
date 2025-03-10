@@ -47,7 +47,7 @@
     "@langchain/langgraph": "^0.2.34",
     "@langchain/openai": "^0.3.16",
     "@mantine/core": "^5.10.5",
-    "@mantine/dates": "^5.10.5",
+    "@mantine/dates": "^7.17.1",
     "@mantine/hooks": "^5.10.5",
     "@mantine/modals": "^5.10.5",
     "@nestjs/common": "^10.0.2",
