@@ -1,4 +1,3 @@
-# This is required by the Integrations "Postiz-CI/CD"
 pipeline {
     agent any
 
