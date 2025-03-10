@@ -5,18 +5,10 @@ on:
   push:
     branches:
       - main
-    paths:
-      - package.json
-      - apps/**
-      - '!apps/docs/**'
-      - libraries/**
 
   pull_request:
-    paths:
-      - package.json
-      - apps/**
-      - '!apps/docs/**'
-      - libraries/**
+      branches:
+      - main
 
 jobs:
   build:
