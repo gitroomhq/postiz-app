@@ -71,7 +71,7 @@
     "@nx/webpack": "19.7.2",
     "@nx/workspace": "19.7.2",
     "@postiz/wallets": "^0.0.1",
-    "@prisma/client": "^5.8.1",
+    "@prisma/client": "^6.4.1",
     "@solana/wallet-adapter-react": "^0.15.35",
     "@solana/wallet-adapter-react-ui": "^0.9.35",
     "@swc/helpers": "0.5.13",
