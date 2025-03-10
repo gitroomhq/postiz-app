@@ -12,11 +12,11 @@ pipeline {
             }
         }
 
-        stage('Setup Node.js') {
+        stage('Chechout Node.js and npm') {
             steps {
                 script {
-                    sh "curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash -"
-                    sh "sudo apt-get install -y nodejs"
+                    sh "node -v"
+                    sh "npm -v"
                 }
             }
         }
