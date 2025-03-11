@@ -33,6 +33,17 @@ const privacyLevel = [
   },
 ];
 
+const contentPostingMethod = [
+  {
+    value: 'DIRECT_POST',
+    label: 'Post content directly to TikTok',
+  },
+  {
+    value: 'UPLOAD',
+    label: 'Upload content to TikTok without posting it',
+  },
+];
+
 const yesNo = [
   {
     value: 'true',
@@ -109,12 +120,16 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
   const disclose = watch('disclose');
   const brand_organic_toggle = watch('brand_organic_toggle');
   const brand_content_toggle = watch('brand_content_toggle');
+const content_posting_method = watch('content_posting_method');
+
+  const isUploadMode = content_posting_method === 'UPLOAD';
 
   return (
     <div className="flex flex-col">
       <CheckTikTokValidity picture={props?.values?.[0]?.image?.[0]?.path} />
       <Select
         label="Who can see this video?"
+disabled={isUploadMode}
         {...register('privacy_level', {
           value: 'PUBLIC_TO_EVERYONE',
         })}
@@ -126,12 +141,31 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
           </option>
         ))}
       </Select>
+      <div className="text-[14px] mb-[10px] text-balance">
+        {`Choose upload without posting if you want to review and edit your content within TikTok's app before publishing.
+        This gives you access to TikTok's built-in editing tools and lets you make final adjustments before posting.`}
+      </div>
+      <Select
+        label="Content posting method"
+disabled={isUploadMode}
+        {...register('content_posting_method', {
+          value: 'DIRECT_POST',
+        })}
+      >
+        <option value="">Select</option>
+        {contentPostingMethod.map((item) => (
+          <option key={item.value} value={item.value}>
+            {item.label}
+          </option>
+        ))}
+      </Select>
       <hr className="mb-[15px] border-tableBorder" />
       <div className="text-[14px] mb-[10px]">Allow User To:</div>
       <div className="flex gap-[40px]">
         <Checkbox
           variant="hollow"
           label="Duet"
+disabled={isUploadMode}
           {...register('duet', {
             value: false,
           })}
@@ -139,6 +173,7 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
         <Checkbox
           label="Stitch"
           variant="hollow"
+disabled={isUploadMode}
           {...register('stitch', {
             value: false,
           })}
@@ -146,6 +181,7 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
         <Checkbox
           label="Comments"
           variant="hollow"
+disabled={isUploadMode}
           {...register('comment', {
             value: false,
           })}
@@ -156,6 +192,7 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
         <Checkbox
           variant="hollow"
           label="Disclose Video Content"
+disabled={isUploadMode}
           {...register('disclose', {
             value: false,
           })}
@@ -183,7 +220,7 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
           </div>
         )}
         <div className="text-[14px] my-[10px] text-balance">
-          Turn on to disclose that this video promotes good or services in
+          Turn on to disclose that this video promotes goods or services in
           exchange for something of value. You video could promote yourself, a
           third party, or both.
         </div>
@@ -193,6 +230,7 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
         <Checkbox
           variant="hollow"
           label="Your brand"
+disabled={isUploadMode}
           {...register('brand_organic_toggle', {
             value: false,
           })}
@@ -205,6 +243,7 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
         <Checkbox
           variant="hollow"
           label="Branded content"
+disabled={isUploadMode}
           {...register('brand_content_toggle', {
             value: false,
           })}

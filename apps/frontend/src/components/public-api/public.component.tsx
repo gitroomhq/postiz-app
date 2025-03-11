@@ -22,7 +22,7 @@ export const PublicComponent = () => {
 
   return (
     <div className="flex flex-col">
-      <h2 className="text-[24px]">Public API</h2>
+      <h3 className="text-[20px]">Public API</h3>
       <div className="text-customColor18 mt-[4px]">
         Use Postiz API to integrate with your tools.
         <br />

@@ -383,21 +383,47 @@ export class InstagramProvider
     const since = dayjs().subtract(date, 'day').unix();
 
     const { data, ...all } = await (
-      await fetch(
-        `https://graph.facebook.com/v20.0/${id}/insights?metric=follower_count,impressions,reach,profile_views&access_token=${accessToken}&period=day&since=${since}&until=${until}`
+      await this.fetch(
+        `https://graph.facebook.com/v20.0/${id}/insights?metric=follower_count,impressions,reach&access_token=${accessToken}&period=day&since=${since}&until=${until}`
       )
     ).json();
 
-    return (
-      data?.map((d: any) => ({
+    const { data: data2, ...all2 } = await (
+      await this.fetch(
+        `https://graph.facebook.com/v20.0/${id}/insights?metric_type=total_value&metric=likes,comments,shares,saves,replies&access_token=${accessToken}&period=day&since=${since}&until=${until}`
+      )
+    ).json();
+    const analytics = [];
+
+    analytics.push(
+      ...(data?.map((d: any) => ({
         label: d.title,
         percentageChange: 5,
         data: d.values.map((v: any) => ({
           total: v.value,
           date: dayjs(v.end_time).format('YYYY-MM-DD'),
         })),
-      })) || []
+      })) || [])
     );
+
+    analytics.push(
+      ...data2.map((d: any) => ({
+        label: d.title,
+        percentageChange: 5,
+        data: [
+          {
+            total: d.total_value.value,
+            date: dayjs().format('YYYY-MM-DD'),
+          },
+          {
+            total: d.total_value.value,
+            date: dayjs().add(1, 'day').format('YYYY-MM-DD'),
+          },
+        ],
+      }))
+    );
+
+    return analytics;
   }
 
   music(accessToken: string, data: { q: string }) {

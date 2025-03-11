@@ -31,6 +31,11 @@ export class BullMqClient extends ClientProxy {
     return queue.remove(jobId);
   }
 
+  deleteScheduler(pattern: string, jobId: string) {
+    const queue = this.getQueue(pattern);
+    return queue.removeJobScheduler(jobId);
+  }
+
   async publishAsync(
     packet: ReadPacket<any>,
     callback: (packet: WritePacket<any>) => void
@@ -75,6 +80,24 @@ export class BullMqClient extends ClientProxy {
   async dispatchEvent(packet: ReadPacket<any>): Promise<any> {
     console.log('event to dispatch: ', packet);
     const queue = this.getQueue(packet.pattern);
+    if (packet.data.options.every) {
+      const { every, immediately } = packet.data.options;
+      const id = packet.data.id ?? v4();
+      await queue.upsertJobScheduler(
+        id,
+        { every, ...(immediately ? { immediately } : {}) },
+        {
+          name: id,
+          data: packet.data,
+          opts: {
+            removeOnComplete: true,
+            removeOnFail: true,
+          },
+        }
+      );
+      return;
+    }
+
     await queue.add(packet.pattern, packet.data, {
       jobId: packet.data.id ?? v4(),
       ...packet.data.options,

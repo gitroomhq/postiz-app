@@ -29,6 +29,12 @@ import { AgenciesService } from '@gitroom/nestjs-libraries/database/prisma/agenc
 import { AgenciesRepository } from '@gitroom/nestjs-libraries/database/prisma/agencies/agencies.repository';
 import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
 import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.link.service';
+import { WebhooksRepository } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.repository';
+import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
+import { SignatureRepository } from '@gitroom/nestjs-libraries/database/prisma/signatures/signature.repository';
+import { SignatureService } from '@gitroom/nestjs-libraries/database/prisma/signatures/signature.service';
+import { AutopostRepository } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.repository';
+import { AutopostService } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.service';
 
 @Global()
 @Module({
@@ -47,12 +53,18 @@ import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.
     SubscriptionRepository,
     NotificationService,
     NotificationsRepository,
+    WebhooksRepository,
+    WebhooksService,
     IntegrationService,
     IntegrationRepository,
     PostsService,
     PostsRepository,
     StripeService,
     MessagesRepository,
+    SignatureRepository,
+    AutopostRepository,
+    AutopostService,
+    SignatureService,
     MediaService,
     MediaRepository,
     ItemUserRepository,

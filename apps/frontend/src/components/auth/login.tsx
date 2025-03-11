@@ -13,6 +13,7 @@ import interClass from '@gitroom/react/helpers/inter.font';
 import { GoogleProvider } from '@gitroom/frontend/components/auth/providers/google.provider';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { FarcasterProvider } from '@gitroom/frontend/components/auth/providers/farcaster.provider';
+import WalletProvider from '@gitroom/frontend/components/auth/providers/wallet.provider';
 
 type Inputs = {
   email: string;
@@ -23,7 +24,7 @@ type Inputs = {
 
 export function Login() {
   const [loading, setLoading] = useState(false);
-  const { isGeneral, neynarClientId } = useVariables();
+  const { isGeneral, neynarClientId, billingEnabled } = useVariables();
   const resolver = useMemo(() => {
     return classValidatorResolver(LoginUserDto);
   }, []);
@@ -69,6 +70,7 @@ export function Login() {
           <div className="gap-[5px] flex flex-col">
             <GoogleProvider />
             {!!neynarClientId && <FarcasterProvider />}
+            {billingEnabled && <WalletProvider />}
           </div>
         )}
         <div className="h-[20px] mb-[24px] mt-[24px] relative">
