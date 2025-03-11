@@ -3,6 +3,7 @@ import { Empty } from '@gitroom/nestjs-libraries/short-linking/providers/empty';
 import { ShortLinking } from '@gitroom/nestjs-libraries/short-linking/short-linking.interface';
 import { Injectable } from '@nestjs/common';
 import { ShortIo } from './providers/short.io';
+import { Bitly } from '@gitroom/nestjs-libraries/short-linking/providers/bitly';
 
 const getProvider = (): ShortLinking => {
   if (process.env.DUB_TOKEN) {
@@ -11,6 +12,10 @@ const getProvider = (): ShortLinking => {
 
   if ( process.env.SHORT_IO_SECRET_KEY ) {
     return new ShortIo();
+  }
+
+  if(process.env.BITLY_TOKEN){
+    return new Bitly();
   }
 
   return new Empty();
