@@ -4,7 +4,14 @@ name: ESLint
 on:
   push:
     branches:
-      - dev1
+      - main
+    paths:
+      - package.json
+      - apps/**
+      - '!apps/docs/**'
+      - libraries/**
+
+  pull_request:
     paths:
       - package.json
       - apps/**
