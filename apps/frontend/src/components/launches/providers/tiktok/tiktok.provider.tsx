@@ -46,11 +46,11 @@ const contentPostingMethod = [
 
 const yesNo = [
   {
-    value: 'true',
+    value: 'yes',
     label: 'Yes',
   },
   {
-    value: 'false',
+    value: 'no',
     label: 'No',
   },
 ];
@@ -120,7 +120,7 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
   const disclose = watch('disclose');
   const brand_organic_toggle = watch('brand_organic_toggle');
   const brand_content_toggle = watch('brand_content_toggle');
-const content_posting_method = watch('content_posting_method');
+  const content_posting_method = watch('content_posting_method');
 
   const isUploadMode = content_posting_method === 'UPLOAD';
 
@@ -129,7 +129,8 @@ const content_posting_method = watch('content_posting_method');
       <CheckTikTokValidity picture={props?.values?.[0]?.image?.[0]?.path} />
       <Select
         label="Who can see this video?"
-disabled={isUploadMode}
+        hideErrors={true}
+        disabled={isUploadMode}
         {...register('privacy_level', {
           value: 'PUBLIC_TO_EVERYONE',
         })}
@@ -141,13 +142,13 @@ disabled={isUploadMode}
           </option>
         ))}
       </Select>
-      <div className="text-[14px] mb-[10px] text-balance">
+      <div className="text-[14px] mt-[10px] mb-[18px] text-balance">
         {`Choose upload without posting if you want to review and edit your content within TikTok's app before publishing.
         This gives you access to TikTok's built-in editing tools and lets you make final adjustments before posting.`}
       </div>
       <Select
         label="Content posting method"
-disabled={isUploadMode}
+        disabled={isUploadMode}
         {...register('content_posting_method', {
           value: 'DIRECT_POST',
         })}
@@ -159,13 +160,31 @@ disabled={isUploadMode}
           </option>
         ))}
       </Select>
+      <Select
+        hideErrors={true}
+        label="Auto add music"
+        {...register('autoAddMusic', {
+          value: 'no',
+        })}
+      >
+        <option value="">Select</option>
+        {yesNo.map((item) => (
+          <option key={item.value} value={item.value}>
+            {item.label}
+          </option>
+        ))}
+      </Select>
+      <div className="text-[14px] mt-[10px] mb-[24px] text-balance">
+        This feature available only for photos, it will add a default music that
+        you can change later.
+      </div>
       <hr className="mb-[15px] border-tableBorder" />
       <div className="text-[14px] mb-[10px]">Allow User To:</div>
       <div className="flex gap-[40px]">
         <Checkbox
           variant="hollow"
           label="Duet"
-disabled={isUploadMode}
+          disabled={isUploadMode}
           {...register('duet', {
             value: false,
           })}
@@ -173,7 +192,7 @@ disabled={isUploadMode}
         <Checkbox
           label="Stitch"
           variant="hollow"
-disabled={isUploadMode}
+          disabled={isUploadMode}
           {...register('stitch', {
             value: false,
           })}
@@ -181,7 +200,7 @@ disabled={isUploadMode}
         <Checkbox
           label="Comments"
           variant="hollow"
-disabled={isUploadMode}
+          disabled={isUploadMode}
           {...register('comment', {
             value: false,
           })}
@@ -192,7 +211,7 @@ disabled={isUploadMode}
         <Checkbox
           variant="hollow"
           label="Disclose Video Content"
-disabled={isUploadMode}
+          disabled={isUploadMode}
           {...register('disclose', {
             value: false,
           })}
@@ -225,12 +244,11 @@ disabled={isUploadMode}
           third party, or both.
         </div>
       </div>
-
       <div className={clsx(!disclose && 'invisible', 'mt-[20px]')}>
         <Checkbox
           variant="hollow"
           label="Your brand"
-disabled={isUploadMode}
+          disabled={isUploadMode}
           {...register('brand_organic_toggle', {
             value: false,
           })}
@@ -243,7 +261,7 @@ disabled={isUploadMode}
         <Checkbox
           variant="hollow"
           label="Branded content"
-disabled={isUploadMode}
+          disabled={isUploadMode}
           {...register('brand_content_toggle', {
             value: false,
           })}
@@ -290,17 +308,20 @@ export default withProvider(
   TikTokDto,
   async (items) => {
     const [firstItems] = items;
-
     if (items.length !== 1) {
       return 'Tiktok items should be one';
     }
 
-    if (items[0].length !== 1) {
+    if (
+      firstItems.length > 1 &&
+      firstItems?.some((p) => p?.path?.indexOf('mp4') > -1)
+    ) {
+      return 'Only pictures are supported when selecting multiple items';
+    } else if (
+      firstItems?.length !== 1 &&
+      firstItems?.[0]?.path?.indexOf('mp4') > -1
+    ) {
       return 'You need one media';
-    }
-
-    if (firstItems[0].path.indexOf('mp4') === -1) {
-      return 'Item must be a video';
     }
 
     return true;

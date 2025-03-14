@@ -23,15 +23,18 @@ export class TikTokDto {
   @IsBoolean()
   comment: boolean;
 
+  @IsIn(['yes', 'no'])
+  autoAddMusic: 'yes' | 'no';
+
   @IsBoolean()
   brand_content_toggle: boolean;
 
   @IsBoolean()
   brand_organic_toggle: boolean;
 
-  @IsIn(['true'])
-  @IsDefined()
-  isValidVideo: boolean;
+  // @IsIn(['true'])
+  // @IsDefined()
+  // isValidVideo: boolean;
 
   @IsIn(['DIRECT_POST', 'UPLOAD'])
   @IsString()
