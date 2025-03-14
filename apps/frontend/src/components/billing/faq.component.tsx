@@ -13,24 +13,24 @@ const useFaqList = () => {
     ...(user?.allowTrial
       ? [
           {
-            title: 'Am I going to be charged by Postiz?',
+            title: 'Am I going to be charged by Publica?',
             description:
-              'To confirm credit card information Postiz will hold $2 and release it immediately',
+              'To confirm credit card information Publica will hold $2 and release it immediately',
           },
         ]
       : []),
-    {
-      title: `Can I trust ${isGeneral ? 'Postiz' : 'Gitroom'}?`,
-      description: `${
-        isGeneral ? 'Postiz' : 'Gitroom'
-      } is proudly open-source! We believe in an ethical and transparent culture, meaning that ${
-        isGeneral ? 'Postiz' : 'Gitroom'
-      } will live forever. You can check out the entire code or use it for personal projects. To view the open-source repository, <a href="https://github.com/gitroomhq/postiz-app" target="_blank" style="text-decoration: underline;">click here</a>.`,
-    },
+    // {
+    //   title: `Can I trust ${isGeneral ? 'Publica' : 'Gitroom'}?`,
+    //   description: `${
+    //     isGeneral ? 'Publica' : 'Gitroom'
+    //   } is proudly open-source! We believe in an ethical and transparent culture, meaning that ${
+    //     isGeneral ? 'Publica' : 'Gitroom'
+    //   } will live forever. You can check out the entire code or use it for personal projects. To view the open-source repository, <a href="https://github.com/Padilla-core/publica-app" target="_blank" style="text-decoration: underline;">click here</a>.`,
+    // },
     {
       title: 'What are channels?',
       description: `${
-        isGeneral ? 'Postiz' : 'Gitroom'
+        isGeneral ? 'Publica' : 'Gitroom'
       } allows you to schedule your posts between different channels.
 A channel is a publishing platform where you can schedule your posts.
 For example, you can schedule your posts on X, Facebook, Instagram, TikTok, YouTube, Reddit, Linkedin, Dribbble, Threads and Pinterest.`,

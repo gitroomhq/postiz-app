@@ -24,11 +24,11 @@ export const PublicComponent = () => {
     <div className="flex flex-col">
       <h3 className="text-[20px]">Public API</h3>
       <div className="text-customColor18 mt-[4px]">
-        Use Postiz API to integrate with your tools.
+        Use Publica API to integrate with your tools.
         <br />
         <a
           className="underline hover:text-white"
-          href="https://docs.postiz.com/public-api"
+          href="https://docs.publica.do/public-api"
           target="_blank"
         >
           Read how to use it over the documentation.

@@ -8,7 +8,7 @@ import { isGeneralServerSide } from '@gitroom/helpers/utils/is.general.server.si
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: `${isGeneralServerSide() ? 'Postiz' : 'Gitroom'} Register`,
+  title: `${isGeneralServerSide() ? 'Publica' : 'Gitroom'} Register`,
   description: '',
 };
 

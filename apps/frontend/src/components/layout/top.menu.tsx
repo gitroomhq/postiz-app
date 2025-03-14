@@ -43,11 +43,11 @@ export const useMenuItems = () => {
           },
         ]
       : []),
-    {
-      name: 'Plugs',
-      icon: 'plugs',
-      path: '/plugs',
-    },
+    // {
+    //   name: 'Plugs',
+    //   icon: 'plugs',
+    //   path: '/plugs',
+    // },
     {
       name: 'Billing',
       icon: 'billing',
@@ -62,13 +62,13 @@ export const useMenuItems = () => {
       role: ['ADMIN', 'SUPERADMIN'],
       hide: true,
     },
-    {
-      name: 'Affiliate',
-      icon: 'affiliate',
-      path: 'https://affiliate.postiz.com',
-      role: ['ADMIN', 'SUPERADMIN', 'USER'],
-      requireBilling: true,
-    },
+    // {
+    //   name: 'Affiliate',
+    //   icon: 'affiliate',
+    //   path: 'https://affiliate.publica.com',
+    //   role: ['ADMIN', 'SUPERADMIN', 'USER'],
+    //   requireBilling: true,
+    // },
   ];
 };
 

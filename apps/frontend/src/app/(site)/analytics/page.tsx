@@ -6,7 +6,7 @@ import { PlatformAnalytics } from '@gitroom/frontend/components/platform-analyti
 import { isGeneralServerSide } from '@gitroom/helpers/utils/is.general.server.side';
 
 export const metadata: Metadata = {
-  title: `${isGeneralServerSide() ? 'Postiz' : 'Gitroom'} Analytics`,
+  title: `${isGeneralServerSide() ? 'Publica' : 'Gitroom'} Analytics`,
   description: '',
 };
 

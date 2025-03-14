@@ -58,7 +58,7 @@ export const Webhooks: FC = () => {
         Webhooks ({data?.length || 0}/{user?.tier?.webhooks})
       </h3>
       <div className="text-customColor18 mt-[4px]">
-        Webhooks are a way to get notified when something happens in Postiz via
+        Webhooks are a way to get notified when something happens in Publica via
         an HTTP request.
       </div>
       <div className="my-[16px] mt-[16px] bg-sixth border-fifth items-center border rounded-[4px] p-[24px] flex gap-[24px]">

@@ -14,7 +14,7 @@ import { CopyClient } from '@gitroom/frontend/components/preview/copy.client';
 
 dayjs.extend(utc);
 export const metadata: Metadata = {
-  title: `${isGeneralServerSide() ? 'Postiz' : 'Gitroom'} Preview`,
+  title: `${isGeneralServerSide() ? 'Publica' : 'Gitroom'} Preview`,
   description: '',
 };
 
@@ -47,10 +47,11 @@ export default async function Auth({
                   className="text-2xl flex items-center justify-center gap-[10px] text-textColor order-1"
                 >
                   <div className="max-w-[55px]">
+                    sss
                     <Image
                       src={'/postiz.svg'}
-                      width={55}
-                      height={55}
+                      width={155}
+                      height={155}
                       alt="Logo"
                     />
                   </div>

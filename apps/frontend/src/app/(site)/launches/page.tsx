@@ -6,7 +6,7 @@ import {Metadata} from "next";
 import { isGeneralServerSide } from '@gitroom/helpers/utils/is.general.server.side';
 
 export const metadata: Metadata = {
-  title: `${isGeneralServerSide() ? 'Postiz Calendar' : 'Gitroom Launches'}`,
+  title: `${isGeneralServerSide() ? 'Publica Calendar' : 'Gitroom Launches'}`,
   description: '',
 }
 
