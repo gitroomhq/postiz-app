@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <a href="https://postiz.com" target="_blank">
+  <a href="https://postiz.com/" target="_blank">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/765e9d72-3ee7-4a56-9d59-a2c9befe2311">
     <img alt="Postiz Logo" src="https://github.com/user-attachments/assets/f0d30d70-dddb-4142-8876-e9aa6ed1cb99" width="280"/>
