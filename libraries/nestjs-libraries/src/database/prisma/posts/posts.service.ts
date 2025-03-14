@@ -24,6 +24,10 @@ import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/me
 import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.link.service';
 import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
 import { CreateTagDto } from '@gitroom/nestjs-libraries/dtos/posts/create.tag.dto';
+import axios from 'axios';
+import sharp from 'sharp';
+import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
+import { Readable } from 'stream';
 dayjs.extend(utc);
 
 type PostWithConditionals = Post & {
@@ -33,6 +37,7 @@ type PostWithConditionals = Post & {
 
 @Injectable()
 export class PostsService {
+  private storage = UploadFactory.createStorage();
   constructor(
     private _postRepository: PostsRepository,
     private _workerServiceProducer: BullMqClient,
@@ -92,36 +97,90 @@ export class PostsService {
     return this._postRepository.getPosts(orgId, query);
   }
 
-  async updateMedia(id: string, imagesList: any[]) {
+  async updateMedia(id: string, imagesList: any[], convertToJPEG = false) {
     let imageUpdateNeeded = false;
-    const getImageList = (
-      await Promise.all(
-        imagesList.map(async (p: any) => {
-          if (!p.path && p.id) {
-            imageUpdateNeeded = true;
-            return this._mediaService.getMediaById(p.id);
+    const getImageList = await Promise.all(
+      (
+        await Promise.all(
+          imagesList.map(async (p: any) => {
+            if (!p.path && p.id) {
+              imageUpdateNeeded = true;
+              return this._mediaService.getMediaById(p.id);
+            }
+
+            return p;
+          })
+        )
+      )
+        .map((m) => {
+          return {
+            ...m,
+            url:
+              m.path.indexOf('http') === -1
+                ? process.env.FRONTEND_URL +
+                  '/' +
+                  process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
+                  m.path
+                : m.path,
+            type: 'image',
+            path:
+              m.path.indexOf('http') === -1
+                ? process.env.UPLOAD_DIRECTORY + m.path
+                : m.path,
+          };
+        })
+        .map(async (m) => {
+          if (!convertToJPEG) {
+            return m;
           }
 
-          return p;
+          if (m.path.indexOf('.png') > -1) {
+            imageUpdateNeeded = true;
+            const response = await axios.get(m.url, {
+              responseType: 'arraybuffer',
+            });
+
+            const imageBuffer = Buffer.from(response.data);
+
+            // Use sharp to get the metadata of the image
+            const buffer = await sharp(imageBuffer)
+              .jpeg({ quality: 100 })
+              .toBuffer();
+
+            const { path, originalname } = await this.storage.uploadFile({
+              buffer,
+              mimetype: 'image/jpeg',
+              size: buffer.length,
+              path: '',
+              fieldname: '',
+              destination: '',
+              stream: new Readable(),
+              filename: '',
+              originalname: '',
+              encoding: '',
+            });
+
+            return {
+              ...m,
+              name: originalname,
+              url:
+                path.indexOf('http') === -1
+                  ? process.env.FRONTEND_URL +
+                    '/' +
+                    process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
+                    path
+                  : path,
+              type: 'image',
+              path:
+                path.indexOf('http') === -1
+                  ? process.env.UPLOAD_DIRECTORY + path
+                  : path,
+            };
+          }
+
+          return m;
         })
-      )
-    ).map((m) => {
-      return {
-        ...m,
-        url:
-          m.path.indexOf('http') === -1
-            ? process.env.FRONTEND_URL +
-              '/' +
-              process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
-              m.path
-            : m.path,
-        type: 'image',
-        path:
-          m.path.indexOf('http') === -1
-            ? process.env.UPLOAD_DIRECTORY + m.path
-            : m.path,
-      };
-    });
+    );
 
     if (imageUpdateNeeded) {
       await this._postRepository.updateImages(id, JSON.stringify(getImageList));
@@ -130,7 +189,7 @@ export class PostsService {
     return getImageList;
   }
 
-  async getPost(orgId: string, id: string) {
+  async getPost(orgId: string, id: string, convertToJPEG = false) {
     const posts = await this.getPostsRecursively(id, true, orgId, true);
     const list = {
       group: posts?.[0]?.group,
@@ -139,7 +198,8 @@ export class PostsService {
           ...post,
           image: await this.updateMedia(
             post.id,
-            JSON.parse(post.image || '[]')
+            JSON.parse(post.image || '[]'),
+            convertToJPEG,
           ),
         }))
       ),
@@ -361,7 +421,11 @@ export class PostsService {
             id: p.id,
             message: p.content,
             settings: JSON.parse(p.settings || '{}'),
-            media: await this.updateMedia(p.id, JSON.parse(p.image || '[]')),
+            media: await this.updateMedia(
+              p.id,
+              JSON.parse(p.image || '[]'),
+              getIntegration.convertToJPEG
+            ),
           }))
         ),
         integration
