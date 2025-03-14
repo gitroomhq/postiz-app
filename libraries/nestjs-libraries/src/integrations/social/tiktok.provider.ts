@@ -17,6 +17,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   identifier = 'tiktok';
   name = 'Tiktok';
   isBetweenSteps = false;
+  convertToJPEG = true;
   scopes = [
     'user.info.basic',
     'video.publish',
@@ -103,10 +104,10 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       grant_type: 'authorization_code',
       code_verifier: params.codeVerifier,
       redirect_uri: `${
-            process?.env?.FRONTEND_URL?.indexOf('https') === -1
-              ? 'https://redirectmeto.com/'
-              : ''
-          }${process?.env?.FRONTEND_URL}/integrations/social/tiktok`
+        process?.env?.FRONTEND_URL?.indexOf('https') === -1
+          ? 'https://redirectmeto.com/'
+          : ''
+      }${process?.env?.FRONTEND_URL}/integrations/social/tiktok`,
     };
 
     const { access_token, refresh_token, scope } = await (
@@ -208,23 +209,27 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       }
 
       if (status === 'FAILED') {
-        throw new BadBody('titok-error-upload', JSON.stringify(post), {
-          // @ts-ignore
-          postDetails,
-        });
+        throw new BadBody(
+          'titok-error-upload',
+          JSON.stringify(post),
+          Buffer.from(JSON.stringify(post))
+        );
       }
 
       await timer(3000);
     }
   }
 
-  private postingMethod(method: TikTokDto["content_posting_method"]): string {
-      switch (method) {
-        case 'UPLOAD':
-          return '/inbox/video/init/';
-        case 'DIRECT_POST':
-        default:
-        return '/video/init/';
+  private postingMethod(
+    method: TikTokDto['content_posting_method'],
+    isPhoto: boolean
+  ): string {
+    switch (method) {
+      case 'UPLOAD':
+        return isPhoto ? '/content/init/' : '/inbox/video/init/';
+      case 'DIRECT_POST':
+      default:
+        return isPhoto ? '/content/init/' : '/video/init/';
     }
   }
 
@@ -235,11 +240,15 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     integration: Integration
   ): Promise<PostResponse[]> {
     const [firstPost, ...comments] = postDetails;
+
     const {
       data: { publish_id },
     } = await (
       await this.fetch(
-        `https://open.tiktokapis.com/v2/post/publish${this.postingMethod(firstPost.settings.content_posting_method)}`,
+        `https://open.tiktokapis.com/v2/post/publish${this.postingMethod(
+          firstPost.settings.content_posting_method,
+          (firstPost?.media?.[0]?.url?.indexOf('mp4') || -1) === -1
+        )}`,
         {
           method: 'POST',
           headers: {
@@ -247,21 +256,44 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
             Authorization: `Bearer ${accessToken}`,
           },
           body: JSON.stringify({
-            ...(firstPost.settings.content_posting_method === 'DIRECT_POST' ? {
-              post_info: {
-                title: firstPost.message,
-                privacy_level: firstPost.settings.privacy_level,
-                disable_duet: !firstPost.settings.duet,
-                disable_comment: !firstPost.settings.comment,
-                disable_stitch: !firstPost.settings.stitch,
-                brand_content_toggle: firstPost.settings.brand_content_toggle,
-                brand_organic_toggle: firstPost.settings.brand_organic_toggle,
-              }
-            } : {}),
-            source_info: {
-              source: 'PULL_FROM_URL',
-              video_url: firstPost?.media?.[0]?.url!,
-            },
+            ...(firstPost.settings.content_posting_method === 'DIRECT_POST'
+              ? {
+                  post_info: {
+                    title: firstPost.message,
+                    privacy_level: firstPost.settings.privacy_level,
+                    disable_duet: !firstPost.settings.duet,
+                    disable_comment: !firstPost.settings.comment,
+                    disable_stitch: !firstPost.settings.stitch,
+                    brand_content_toggle:
+                      firstPost.settings.brand_content_toggle,
+                    brand_organic_toggle:
+                      firstPost.settings.brand_organic_toggle,
+                    ...((firstPost?.media?.[0]?.url?.indexOf('mp4') || -1) ===
+                    -1
+                      ? {
+                          auto_add_music:
+                            firstPost.settings.autoAddMusic === 'yes',
+                        }
+                      : {}),
+                  },
+                }
+              : {}),
+            ...((firstPost?.media?.[0]?.url?.indexOf('mp4') || -1) > -1
+              ? {
+                  source_info: {
+                    source: 'PULL_FROM_URL',
+                    video_url: firstPost?.media?.[0]?.url!,
+                  },
+                }
+              : {
+                  source_info: {
+                    source: 'PULL_FROM_URL',
+                    photo_cover_index: 1,
+                    photo_images: firstPost.media?.map((p) => p.url),
+                  },
+                  post_mode: 'DIRECT_POST',
+                  media_type: 'PHOTO',
+                }),
           }),
         }
       )
