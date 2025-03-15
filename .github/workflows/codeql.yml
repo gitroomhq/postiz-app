@@ -4,13 +4,7 @@ name: "Code Quality  Analysis"
 on:
   push:
     branches:
-      - main
-    paths:
-      - apps/**
-      - '!apps/docs/**'
-      - libraries/**
-
-  pull_request:
+      - dev1
     paths:
       - apps/**
       - '!apps/docs/**'
