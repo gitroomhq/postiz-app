@@ -29,7 +29,13 @@
     "prisma-reset": "cd ./libraries/nestjs-libraries/src/database/prisma && npx prisma db push --force-reset && npx prisma db push",
     "docker-build": "./var/docker/docker-build.sh",
     "docker-create": "./var/docker/docker-create.sh",
-    "postinstall": "npm run update-plugins && npm run prisma-generate"
+    "postinstall": "npm run update-plugins && npm run prisma-generate",
+    "test": "npx nx run-many --target=test --projects=frontend,backend,workers,cron,commands --parallel=5",
+    "test:frontend": "npx nx run frontend:test",
+    "test:backend": "npx nx run backend:test",
+    "test:workers": "npx nx run workers:test",
+    "test:cron": "npx nx run cron:test",
+    "test:commands": "npx nx run commands:test"
   },
   "private": true,
   "dependencies": {
@@ -221,6 +227,7 @@
     "jest": "29.7.0",
     "jest-environment-jsdom": "29.7.0",
     "jest-environment-node": "^29.4.1",
+    "jest-junit": "^16.0.0",
     "jsdom": "~22.1.0",
     "postcss": "8.4.38",
     "prettier": "^2.6.2",
@@ -235,5 +242,11 @@
   },
   "volta": {
     "node": "20.17.0"
-  }
+  },
+  "jest": {
+  "reporters": [
+    "default",
+    ["jest-junit", { "outputDirectory": "reports", "outputName": "junit.xml" }]
+  ]
+ }
 }
