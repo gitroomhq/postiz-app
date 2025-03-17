@@ -12,7 +12,7 @@ pipeline {
             }
         }
 
-        stage('Chechout Node.js and npm') {
+        stage('Check Node.js and npm') {
             steps {
                 script {
                     sh "node -v"
@@ -27,6 +27,12 @@ pipeline {
             }
         }
 
+        stage('Run Unit Tests') {
+            steps {
+                sh 'npm run test -- --coverage --reporters=jest-junit'
+            }
+        }
+
         stage('Build Project') {
             steps {
                 sh 'npm run build'
@@ -36,14 +42,16 @@ pipeline {
 
     post {
         always {
-            cleanWs(cleanWhenNotBuilt: false,
-                notFailBuild: true)
+            cleanWs(cleanWhenNotBuilt: false, notFailBuild: true)
         }
         success {
             echo 'Build completed successfully!'
+            junit 'reports/junit.xml'
+            archiveArtifacts artifacts: 'reports/**', fingerprint: true
         }
         failure {
             echo 'Build failed!'
+            junit 'reports/junit.xml' // Ensures test results are captured even on failure
         }
     }
 }
