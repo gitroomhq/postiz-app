@@ -47,15 +47,15 @@ export default async function Auth({
                   className="text-2xl flex items-center justify-center gap-[10px] text-textColor order-1"
                 >
                   <div className="max-w-[55px]">
-                    sss
+                    
                     <Image
                       src={'/postiz.svg'}
-                      width={155}
-                      height={155}
+                      width={225}
+                      height={225}
                       alt="Logo"
                     />
                   </div>
-                  <div>
+                  {/* <div>
                     <svg
                       width="80"
                       height="75"
@@ -80,7 +80,7 @@ export default async function Auth({
                         fill="currentColor"
                       />
                     </svg>
-                  </div>
+                  </div> */}
                 </Link>
               </div>
             </div>
