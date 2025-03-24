@@ -30,12 +30,7 @@
     "docker-build": "./var/docker/docker-build.sh",
     "docker-create": "./var/docker/docker-create.sh",
     "postinstall": "npm run update-plugins && npm run prisma-generate",
-    "test": "npx nx run-many --target=test --projects=frontend,backend,workers,cron,commands --parallel=5",
-    "test:frontend": "npx nx run frontend:test",
-    "test:backend": "npx nx run backend:test",
-    "test:workers": "npx nx run workers:test",
-    "test:cron": "npx nx run cron:test",
-    "test:commands": "npx nx run commands:test"
+    "test": "jest --coverage --detectOpenHandles --reporters=default --reporters=jest-junit"
   },
   "private": true,
   "dependencies": {
@@ -77,7 +72,7 @@
     "@nx/webpack": "19.7.2",
     "@nx/workspace": "19.7.2",
     "@postiz/wallets": "^0.0.1",
-    "@prisma/client": "^6.4.1",
+    "@prisma/client": "^6.5.0",
     "@solana/wallet-adapter-react": "^0.15.35",
     "@solana/wallet-adapter-react-ui": "^0.9.35",
     "@swc/helpers": "0.5.13",
@@ -228,10 +223,11 @@
     "jest-environment-jsdom": "29.7.0",
     "jest-environment-node": "^29.4.1",
     "jest-junit": "^16.0.0",
+    "jest-mock-extended": "^4.0.0-beta1",
     "jsdom": "~22.1.0",
     "postcss": "8.4.38",
     "prettier": "^2.6.2",
-    "prisma": "^5.8.1",
+    "prisma": "^6.5.0",
     "react-refresh": "^0.10.0",
     "sass": "1.62.1",
     "ts-jest": "^29.1.0",
@@ -243,10 +239,8 @@
   "volta": {
     "node": "20.17.0"
   },
-  "jest": {
-  "reporters": [
-    "default",
-    ["jest-junit", { "outputDirectory": "reports", "outputName": "junit.xml" }]
-  ]
- }
+  "jest-junit": {
+    "outputDirectory": "./reports",
+    "outputName": "junit.xml"
+  }
 }
