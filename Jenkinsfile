@@ -42,12 +42,12 @@ pipeline {
 
     post {
         always {
+            junit '**/reports/junit.xml'
+            archiveArtifacts artifacts: 'reports/**', fingerprint: true
             cleanWs(cleanWhenNotBuilt: false, notFailBuild: true)
         }
         success {
             echo 'Build completed successfully!'
-            junit '**/reports/junit.xml'
-            archiveArtifacts artifacts: 'reports/**', fingerprint: true
         }
         failure {
             echo 'Build failed!'
