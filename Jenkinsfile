@@ -51,7 +51,6 @@ pipeline {
         }
         failure {
             echo 'Build failed!'
-            junit '**/reports/junit.xml' 
         }
     }
 }
