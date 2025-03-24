@@ -12,7 +12,7 @@ pipeline {
             }
         }
 
-        stage('Chechout Node.js and npm') {
+        stage('Check Node.js and npm') {
             steps {
                 script {
                     sh "node -v"
@@ -27,6 +27,12 @@ pipeline {
             }
         }
 
+        stage('Run Unit Tests') {
+            steps {
+                sh 'npm test'
+            }
+        }
+
         stage('Build Project') {
             steps {
                 sh 'npm run build'
@@ -36,8 +42,9 @@ pipeline {
 
     post {
         always {
-            cleanWs(cleanWhenNotBuilt: false,
-                notFailBuild: true)
+            junit '**/reports/junit.xml'
+            archiveArtifacts artifacts: 'reports/**', fingerprint: true
+            cleanWs(cleanWhenNotBuilt: false, notFailBuild: true)
         }
         success {
             echo 'Build completed successfully!'
