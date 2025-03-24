@@ -29,7 +29,7 @@ pipeline {
 
         stage('Run Unit Tests') {
             steps {
-                sh 'npm run test -- --coverage --reporters=jest-junit'
+                sh 'npm test'
             }
         }
 
@@ -46,12 +46,12 @@ pipeline {
         }
         success {
             echo 'Build completed successfully!'
-            junit 'reports/junit.xml'
+            junit '**/reports/junit.xml'
             archiveArtifacts artifacts: 'reports/**', fingerprint: true
         }
         failure {
             echo 'Build failed!'
-            junit 'reports/junit.xml' // Ensures test results are captured even on failure
+            junit '**/reports/junit.xml' 
         }
     }
 }
