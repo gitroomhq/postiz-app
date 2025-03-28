@@ -35,7 +35,7 @@ pipeline {
 
         stage('Build Project') {
             steps {
-                sh 'npm run build'
+                sh 'npm run build 2>&1 | tee build_report.log'  // Captures build output
             }
         }
     }
@@ -44,6 +44,7 @@ pipeline {
         always {
             junit '**/reports/junit.xml'
             archiveArtifacts artifacts: 'reports/**', fingerprint: true
+            archiveArtifacts artifacts: 'build_report.log', fingerprint: true  
             cleanWs(cleanWhenNotBuilt: false, notFailBuild: true)
         }
         success {
