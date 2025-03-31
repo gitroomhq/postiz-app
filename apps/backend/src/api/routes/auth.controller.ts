@@ -21,7 +21,8 @@ import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.man
 import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 import { RealIP } from 'nestjs-real-ip';
 import { UserAgent } from '@gitroom/nestjs-libraries/user/user.agent';
-
+import { NewsletterDto } from '@gitroom/nestjs-libraries/dtos/auth/newsletter.dto';
+import { NewsletterService } from '@gitroom/nestjs-libraries/services/newsletter.service';
 @ApiTags('Auth')
 @Controller('/auth')
 export class AuthController {
@@ -261,5 +262,19 @@ export class AuthController {
     response.status(200).json({
       login: true,
     });
+  }
+
+  @Post('/newsletter')
+  async newsletter(@Body() body: NewsletterDto) {
+    try {
+      await NewsletterService.register(body.email);
+      return {
+        newsletter: true,
+      };
+    } catch (e) {
+      return {
+        newsletter: false,
+      };
+    }
   }
 }
