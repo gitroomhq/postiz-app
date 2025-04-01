@@ -153,9 +153,7 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
         }
         //get mime type to pass contentType to telegram api.
         //some photos and videos might not pass telegram api restrictions, so they are sent as documents instead of returning errors
-        // @ts-ignore
         const mimeType = mime.getType(mediaUrl); // Detect MIME type
-
         let mediaType: 'photo' | 'video' | 'document';
 
         if (mimeType?.startsWith('image/')) {
