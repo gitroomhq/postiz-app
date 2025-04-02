@@ -38,6 +38,8 @@ export const useValues = (
     criteriaMode: 'all',
   });
 
+  console.log(form.formState.errors);
+
   const getValues = useMemo(() => {
     return () => ({ ...form.getValues(), __type: identifier });
   }, [form, integration]);
