@@ -75,7 +75,7 @@
     "@prisma/client": "^6.5.0",
     "@solana/wallet-adapter-react": "^0.15.35",
     "@solana/wallet-adapter-react-ui": "^0.9.35",
-    "@swc/helpers": "0.5.13",
+    "@swc/helpers": "0.5.15",
     "@sweetalert2/theme-dark": "^5.0.16",
     "@types/bcrypt": "^5.0.2",
     "@types/concat-stream": "^2.0.3",
