@@ -68,7 +68,7 @@
     "@nx/next": "19.7.2",
     "@nx/node": "19.7.2",
     "@nx/react": "19.7.2",
-    "@nx/vite": "19.7.2",
+    "@nx/vite": "20.5.0",
     "@nx/webpack": "19.7.2",
     "@nx/workspace": "19.7.2",
     "@postiz/wallets": "^0.0.1",
