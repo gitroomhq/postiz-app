@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="jest tests" tests="11" failures="0" errors="0" time="31.615">
+  <testsuite name="PermissionsService" errors="0" failures="0" skipped="0" timestamp="2025-03-24T05:53:33" time="31.496" tests="11">
+    <testcase classname="PermissionsService check() Verification Bypass (64) Bypass for Empty List" name="PermissionsService check() Verification Bypass (64) Bypass for Empty List" time="0.01">
+    </testcase>
+    <testcase classname="PermissionsService check() Verification Bypass (64) Bypass for Missing Stripe" name="PermissionsService check() Verification Bypass (64) Bypass for Missing Stripe" time="0.003">
+    </testcase>
+    <testcase classname="PermissionsService check() Verification Bypass (64) No Bypass" name="PermissionsService check() Verification Bypass (64) No Bypass" time="0.002">
+    </testcase>
+    <testcase classname="PermissionsService check() Channel Permission (82/87) All Conditions True" name="PermissionsService check() Channel Permission (82/87) All Conditions True" time="0.003">
+    </testcase>
+    <testcase classname="PermissionsService check() Channel Permission (82/87) Channel With Option Limit" name="PermissionsService check() Channel Permission (82/87) Channel With Option Limit" time="0.003">
+    </testcase>
+    <testcase classname="PermissionsService check() Channel Permission (82/87) Channel With Subscription Limit" name="PermissionsService check() Channel Permission (82/87) Channel With Subscription Limit" time="0.002">
+    </testcase>
+    <testcase classname="PermissionsService check() Channel Permission (82/87) Channel Without Available Limits" name="PermissionsService check() Channel Permission (82/87) Channel Without Available Limits" time="0.003">
+    </testcase>
+    <testcase classname="PermissionsService check() Channel Permission (82/87) Section Different from Channel" name="PermissionsService check() Channel Permission (82/87) Section Different from Channel" time="0.003">
+    </testcase>
+    <testcase classname="PermissionsService check() Monthly Posts Permission (97/110) Posts Within Limit" name="PermissionsService check() Monthly Posts Permission (97/110) Posts Within Limit" time="0.008">
+    </testcase>
+    <testcase classname="PermissionsService check() Monthly Posts Permission (97/110) Posts Exceed Limit" name="PermissionsService check() Monthly Posts Permission (97/110) Posts Exceed Limit" time="0.003">
+    </testcase>
+    <testcase classname="PermissionsService check() Monthly Posts Permission (97/110) Section Different with Posts Within Limit" name="PermissionsService check() Monthly Posts Permission (97/110) Section Different with Posts Within Limit" time="0.003">
+    </testcase>
+  </testsuite>
+</testsuites>
