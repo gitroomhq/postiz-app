@@ -12,7 +12,7 @@ pipeline {
             }
         }
 
-        stage('Chechout Node.js and npm') {
+        stage('Check Node.js and npm') {
             steps {
                 script {
                     sh "node -v"
@@ -27,17 +27,25 @@ pipeline {
             }
         }
 
+        stage('Run Unit Tests') {
+            steps {
+                sh 'npm test'
+            }
+        }
+
         stage('Build Project') {
             steps {
-                sh 'npm run build'
+                sh 'npm run build 2>&1 | tee build_report.log'  // Captures build output
             }
         }
     }
 
     post {
         always {
-            cleanWs(cleanWhenNotBuilt: false,
-                notFailBuild: true)
+            junit '**/reports/junit.xml'
+            archiveArtifacts artifacts: 'reports/**', fingerprint: true
+            archiveArtifacts artifacts: 'build_report.log', fingerprint: true  
+            cleanWs(cleanWhenNotBuilt: false, notFailBuild: true)
         }
         success {
             echo 'Build completed successfully!'

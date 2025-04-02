@@ -56,8 +56,12 @@ export class MarketplaceController {
   connectBankAccount(
     @GetUserFromRequest() user: User,
     @Query('country') country: string
-    ) {
-    return this._stripeService.createAccountProcess(user.id, user.email, country);
+  ) {
+    return this._stripeService.createAccountProcess(
+      user.id,
+      user.email,
+      country
+    );
   }
 
   @Post('/item')
@@ -126,12 +130,19 @@ export class MarketplaceController {
     @GetOrgFromRequest() organization: Organization,
     @Param('id') id: string
   ) {
-    const getPost = await this._messagesService.getPost(user.id, organization.id, id);
+    const getPost = await this._messagesService.getPost(
+      user.id,
+      organization.id,
+      id
+    );
     if (!getPost) {
-      return ;
+      return;
     }
 
-    return {...await this._postsService.getPost(getPost.organizationId, id), providerId: getPost.integration.providerIdentifier};
+    return {
+      ...(await this._postsService.getPost(getPost.organizationId, id)),
+      providerId: getPost.integration.providerIdentifier,
+    };
   }
 
   @Post('/posts/:id/revision')
