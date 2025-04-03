@@ -97,7 +97,7 @@
     "@uiw/react-md-editor": "^4.0.3",
     "@uppy/aws-s3": "^4.1.0",
     "@uppy/compressor": "^2.1.1",
-    "@uppy/core": "^4.2.0",
+    "@uppy/core": "^4.4.3",
     "@uppy/dashboard": "^4.1.0",
     "@uppy/drag-drop": "^4.0.2",
     "@uppy/file-input": "^4.0.1",
