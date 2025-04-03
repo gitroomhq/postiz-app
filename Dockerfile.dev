@@ -14,9 +14,9 @@ ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN apk add --no-cache \
-	caddy \
-	bash=5.2.21-r0 \
-	supervisor=4.2.5-r4
+    caddy \
+    bash=5.2.21-r0 \
+    supervisor=4.2.5-r4
 
 WORKDIR /app
 
@@ -24,7 +24,7 @@ EXPOSE 3000
 EXPOSE 4200
 EXPOSE 5000
 
-COPY var/docker/entrypoint.sh /app/entrypoint.sh
+COPY var/docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY var/docker/supervisord.conf /etc/supervisord.conf
 COPY var/docker/supervisord /app/supervisord_available_configs/
 COPY var/docker/Caddyfile /app/Caddyfile
@@ -35,19 +35,23 @@ VOLUME /uploads
 
 LABEL org.opencontainers.image.source=https://github.com/gitroomhq/postiz-app
 
-ENTRYPOINT ["/app/entrypoint.sh"]
+# Make the entrypoint script executable
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Set the entrypoint
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 # Builder image
 FROM base AS devcontainer
 
 RUN apk add --no-cache \
-	pkgconfig \
-	gcc \
-	pixman-dev \
-	cairo-dev \
-	pango-dev \
-	make \
-	build-base
+    pkgconfig \
+    gcc \
+    pixman-dev \
+    cairo-dev \
+    pango-dev \
+    make \
+    build-base
 
 COPY nx.json tsconfig.base.json package.json package-lock.json build.plugins.js /app/
 COPY apps /app/apps/
