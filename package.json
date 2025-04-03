@@ -81,7 +81,7 @@
     "@types/concat-stream": "^2.0.3",
     "@types/facebook-nodejs-business-sdk": "^20.0.2",
     "@types/jsonwebtoken": "^9.0.5",
-    "@types/lodash": "^4.14.202",
+    "@types/lodash": "^4.17.16",
     "@types/md5": "^2.3.5",
     "@types/mime": "^4.0.0",
     "@types/mime-types": "^2.1.4",
