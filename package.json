@@ -35,8 +35,8 @@
   "private": true,
   "dependencies": {
     "@atproto/api": "^0.13.11",
-    "@aws-sdk/client-s3": "3.712.0",
-    "@aws-sdk/s3-request-presigner": "3.712.0",
+    "@aws-sdk/client-s3": "^3.712.0",
+    "@aws-sdk/s3-request-presigner": "^3.782.0",
     "@casl/ability": "^6.5.0",
     "@copilotkit/react-core": "^1.5.19",
     "@copilotkit/react-textarea": "^1.5.19",
