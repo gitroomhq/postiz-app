@@ -23,7 +23,7 @@ async function bootstrap() {
       ],
       origin: [
         process.env.FRONTEND_URL,
-        'https://wwww.publica.do',
+        'https://www.publica.do',
         'https://publica.do',
         ...(process.env.MAIN_URL ? [process.env.MAIN_URL] : []),
       ],
