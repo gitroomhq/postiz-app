@@ -68,11 +68,11 @@ pipeline {
         }
         success {
             echo 'Build completed successfully!'
-            cleanWs(cleanWhenNotBuilt: false, notFailBuild: true)
+
         }
         failure {
             echo 'Build failed!'
-            cleanWs(cleanWhenNotBuilt: false, notFailBuild: true)
+
         }
     }
 }
