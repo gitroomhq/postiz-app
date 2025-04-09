@@ -12,7 +12,7 @@ pipeline {
                 cacheValidityDecidingFile: '',
                 excludes: '',
                 includes: '**/*',
-                path: ${$WORKSPACE}"/.next/cache"
+                path: ${WORKSPACE}"/.next/cache"
             ),
             arbitraryFileCache(
                 cacheName: 'NPM', // Added a cache name for better clarity
