@@ -86,7 +86,6 @@ pipeline {
                 )
             ], defaultBranch: 'dev', maxCacheSize: 256000, skipRestore: true)
         }
-        }
         failure {
             echo 'Build failed!'
         }
