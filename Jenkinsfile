@@ -6,23 +6,27 @@ pipeline {
     }
 
     stages {
-        options {
-            cache(caches: [
-                arbitraryFileCache(
-                    cacheName: 'Next',
-                    cacheValidityDecidingFile: '',
-                    excludes: '',
-                    includes: '**/*',
-                    path: "./.nx/cache"
-                ),
-                arbitraryFileCache(
-                    cacheName: 'NodeJS', // Added a cache name for better clarity
-                    cacheValidityDecidingFile: '',
-                    excludes: '',
-                    includes: '**/*',
-                    path: "./node_modules" // Use the HOME environment variable for home directory
-                )
-            ], defaultBranch: 'dev', maxCacheSize: 256000)
+        stage('Fetch Cache') {
+            options {
+                cache(caches: [
+                    arbitraryFileCache(
+                        cacheName: 'Next',
+                        cacheValidityDecidingFile: '',
+                        excludes: '',
+                        includes: '**/*',
+                        path: "./.nx/cache"
+                    ),
+                    arbitraryFileCache(
+                        cacheName: 'NodeJS', // Added a cache name for better clarity
+                        cacheValidityDecidingFile: '',
+                        excludes: '',
+                        includes: '**/*',
+                        path: "./node_modules" // Use the HOME environment variable for home directory
+                    )
+                ], defaultBranch: 'dev', maxCacheSize: 256000, skipSave: true)
+            }
+            steps {
+            }
         }
 
         stage('Checkout Repository') {
@@ -55,6 +59,29 @@ pipeline {
         stage('Build Project') {
             steps {
                 sh 'npm run build 2>&1 | tee build_report.log'  // Captures build output
+            }
+        }
+
+        stage('Save Cache') {
+            options {
+                cache(caches: [
+                    arbitraryFileCache(
+                        cacheName: 'Next',
+                        cacheValidityDecidingFile: '',
+                        excludes: '',
+                        includes: '**/*',
+                        path: "./.nx/cache"
+                    ),
+                    arbitraryFileCache(
+                        cacheName: 'NodeJS', // Added a cache name for better clarity
+                        cacheValidityDecidingFile: '',
+                        excludes: '',
+                        includes: '**/*',
+                        path: "./node_modules" // Use the HOME environment variable for home directory
+                    )
+                ], defaultBranch: 'dev', maxCacheSize: 256000, skipRestore: true)
+            }
+            steps {
             }
         }
     }
