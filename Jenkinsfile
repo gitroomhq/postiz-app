@@ -64,7 +64,8 @@ pipeline {
         always {
             junit '**/reports/junit.xml'
             archiveArtifacts artifacts: 'reports/**', fingerprint: true
-            archiveArtifacts artifacts: 'build_report.log', fingerprint: true  
+            archiveArtifacts artifacts: 'build_report.log', fingerprint: true
+            cleanWs(cleanWhenNotBuilt: false, notFailBuild: true)
         }
         success {
             echo 'Build completed successfully!'
