@@ -8,14 +8,22 @@ pipeline {
     options {
         cache(caches: [
             arbitraryFileCache(
-                cacheName: 'NPM', 
-                cacheValidityDecidingFile: '', 
-                excludes: '', 
-                includes: '**/*', 
-                path: '~/.npm'
+                cacheName: 'Next',
+                cacheValidityDecidingFile: '',
+                excludes: '',
+                includes: '**/*',
+                path: "${WORKSPACE}/.next/cache"
+            ),
+            arbitraryFileCache(
+                cacheName: 'NPM', // Added a cache name for better clarity
+                cacheValidityDecidingFile: '',
+                excludes: '',
+                includes: '**/*',
+                path: "${HOME}/.npm" // Use the HOME environment variable for home directory
             )
         ], defaultBranch: 'dev', maxCacheSize: 256000)
     }
+
 
     stages {
         stage('Checkout Repository') {
