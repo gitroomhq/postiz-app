@@ -5,6 +5,18 @@ pipeline {
         NODE_VERSION = '20.17.0'
     }
 
+    options {
+        cache(caches: [
+            arbitraryFileCache(
+                cacheName: 'NPM', 
+                cacheValidityDecidingFile: '', 
+                excludes: '', 
+                includes: '**/*', 
+                path: '~/.npm'
+            )
+        ], defaultBranch: 'dev', maxCacheSize: 256000)
+    }
+
     stages {
         stage('Checkout Repository') {
             steps {
