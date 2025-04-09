@@ -65,10 +65,7 @@ pipeline {
             junit '**/reports/junit.xml'
             archiveArtifacts artifacts: 'reports/**', fingerprint: true
             archiveArtifacts artifacts: 'build_report.log', fingerprint: true  
-            cleanWs(cleanWhenNotBuilt: false, notFailBuild: true)
-        }
-        success {
-            echo 'Build completed successfully!'
+            // Cache after cleanup in 'always'
             cache(caches: [
                 arbitraryFileCache(
                     cacheName: 'Next',
@@ -85,6 +82,11 @@ pipeline {
                     path: "~/.npm" // Use the HOME environment variable for home directory
                 )
             ], defaultBranch: 'dev', maxCacheSize: 256000, skipRestore: true)
+
+            cleanWs(cleanWhenNotBuilt: false, notFailBuild: true)
+        }
+        success {
+            echo 'Build completed successfully!'
         }
         failure {
             echo 'Build failed!'
