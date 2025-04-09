@@ -26,6 +26,7 @@ pipeline {
                 ], defaultBranch: 'dev', maxCacheSize: 256000, skipSave: true)
             }
             steps {
+                echo 'Start fetching Cache.'
             }
         }
 
@@ -82,6 +83,7 @@ pipeline {
                 ], defaultBranch: 'dev', maxCacheSize: 256000, skipRestore: true)
             }
             steps {
+                echo 'Start saving Cache.'
             }
         }
     }
