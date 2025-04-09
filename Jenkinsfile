@@ -5,27 +5,26 @@ pipeline {
         NODE_VERSION = '20.17.0'
     }
 
-    options {
-        cache(caches: [
-            arbitraryFileCache(
-                cacheName: 'Next',
-                cacheValidityDecidingFile: '',
-                excludes: '',
-                includes: '**/*',
-                path: "./.nx/cache"
-            ),
-            arbitraryFileCache(
-                cacheName: 'NodeJS', // Added a cache name for better clarity
-                cacheValidityDecidingFile: '',
-                excludes: '',
-                includes: '**/*',
-                path: "./node_modules" // Use the HOME environment variable for home directory
-            )
-        ], defaultBranch: 'dev', maxCacheSize: 256000)
-    }
-
-
     stages {
+        options {
+            cache(caches: [
+                arbitraryFileCache(
+                    cacheName: 'Next',
+                    cacheValidityDecidingFile: '',
+                    excludes: '',
+                    includes: '**/*',
+                    path: "./.nx/cache"
+                ),
+                arbitraryFileCache(
+                    cacheName: 'NodeJS', // Added a cache name for better clarity
+                    cacheValidityDecidingFile: '',
+                    excludes: '',
+                    includes: '**/*',
+                    path: "./node_modules" // Use the HOME environment variable for home directory
+                )
+            ], defaultBranch: 'dev', maxCacheSize: 256000)
+        }
+
         stage('Checkout Repository') {
             steps {
                 checkout scm
