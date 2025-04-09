@@ -21,7 +21,7 @@ pipeline {
                 includes: '**/*',
                 path: "~/.npm" // Use the HOME environment variable for home directory
             )
-        ], defaultBranch: 'dev', maxCacheSize: 256000, skipSave: true)
+        ], defaultBranch: 'dev', maxCacheSize: 256000)
     }
 
 
@@ -65,31 +65,14 @@ pipeline {
             junit '**/reports/junit.xml'
             archiveArtifacts artifacts: 'reports/**', fingerprint: true
             archiveArtifacts artifacts: 'build_report.log', fingerprint: true  
-            // Cache after cleanup in 'always'
-            cache(caches: [
-                arbitraryFileCache(
-                    cacheName: 'Next',
-                    cacheValidityDecidingFile: '',
-                    excludes: '',
-                    includes: '**/*',
-                    path: "./.next/cache"
-                ),
-                arbitraryFileCache(
-                    cacheName: 'NPM', // Added a cache name for better clarity
-                    cacheValidityDecidingFile: '',
-                    excludes: '',
-                    includes: '**/*',
-                    path: "~/.npm" // Use the HOME environment variable for home directory
-                )
-            ], defaultBranch: 'dev', maxCacheSize: 256000, skipRestore: true)
-
-            cleanWs(cleanWhenNotBuilt: false, notFailBuild: true)
         }
         success {
             echo 'Build completed successfully!'
+            cleanWs(cleanWhenNotBuilt: false, notFailBuild: true)
         }
         failure {
             echo 'Build failed!'
+            cleanWs(cleanWhenNotBuilt: false, notFailBuild: true)
         }
     }
 }
