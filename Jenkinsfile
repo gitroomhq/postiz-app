@@ -19,7 +19,7 @@ pipeline {
                 cacheValidityDecidingFile: '',
                 excludes: '',
                 includes: '**/*',
-                path: "${HOME}/.npm" // Use the HOME environment variable for home directory
+                path: "${JENKINS_HOME}/.npm" // Use the HOME environment variable for home directory
             )
         ], defaultBranch: 'dev', maxCacheSize: 256000)
     }
