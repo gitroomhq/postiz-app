@@ -12,14 +12,14 @@ pipeline {
                 cacheValidityDecidingFile: '',
                 excludes: '',
                 includes: '**/*',
-                path: "./.next/cache"
+                path: "./.nx/cache"
             ),
             arbitraryFileCache(
-                cacheName: 'NPM', // Added a cache name for better clarity
+                cacheName: 'NodeJS', // Added a cache name for better clarity
                 cacheValidityDecidingFile: '',
                 excludes: '',
                 includes: '**/*',
-                path: "~/.npm" // Use the HOME environment variable for home directory
+                path: "./node_modules" // Use the HOME environment variable for home directory
             )
         ], defaultBranch: 'dev', maxCacheSize: 256000)
     }
