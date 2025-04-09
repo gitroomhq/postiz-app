@@ -25,7 +25,7 @@ jobs:
         include:
           - runnertags: ubuntu-latest
             arch: amd64
-          - runnertags: [self-hosted, ARM64]
+          - runnertags: ubuntu-latest
             arch: arm64
 
     runs-on: ${{ matrix.runnertags }}
