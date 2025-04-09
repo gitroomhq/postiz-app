@@ -21,7 +21,7 @@ pipeline {
                 includes: '**/*',
                 path: "~/.npm" // Use the HOME environment variable for home directory
             )
-        ], defaultBranch: 'dev', maxCacheSize: 256000)
+        ], defaultBranch: 'dev', maxCacheSize: 256000, skipSave: true)
     }
 
 
@@ -69,6 +69,23 @@ pipeline {
         }
         success {
             echo 'Build completed successfully!'
+            cache(caches: [
+                arbitraryFileCache(
+                    cacheName: 'Next',
+                    cacheValidityDecidingFile: '',
+                    excludes: '',
+                    includes: '**/*',
+                    path: "./.next/cache"
+                ),
+                arbitraryFileCache(
+                    cacheName: 'NPM', // Added a cache name for better clarity
+                    cacheValidityDecidingFile: '',
+                    excludes: '',
+                    includes: '**/*',
+                    path: "~/.npm" // Use the HOME environment variable for home directory
+                )
+            ], defaultBranch: 'dev', maxCacheSize: 256000, skipRestore: true)
+        }
         }
         failure {
             echo 'Build failed!'
