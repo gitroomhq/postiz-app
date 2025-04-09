@@ -12,14 +12,14 @@ pipeline {
                 cacheValidityDecidingFile: '',
                 excludes: '',
                 includes: '**/*',
-                path: ${WORKSPACE}"/.next/cache"
+                path: "./.next/cache"
             ),
             arbitraryFileCache(
                 cacheName: 'NPM', // Added a cache name for better clarity
                 cacheValidityDecidingFile: '',
                 excludes: '',
                 includes: '**/*',
-                path: ${JENKINS_HOME}"/.npm" // Use the HOME environment variable for home directory
+                path: "~/.npm" // Use the HOME environment variable for home directory
             )
         ], defaultBranch: 'dev', maxCacheSize: 256000)
     }
