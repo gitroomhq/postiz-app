@@ -189,7 +189,7 @@
   },
   "devDependencies": {
     "@nestjs/schematics": "^10.0.1",
-    "@nestjs/testing": "^10.0.2",
+    "@nestjs/testing": "^11.0.16",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.7",
     "@svgr/webpack": "^8.0.1",
     "@swc-node/register": "1.9.2",
