@@ -145,7 +145,8 @@ export function MultipartFileUploaderAfter({
           strings: {
             chooseFiles: 'Upload',
           },
-          pluralize: (n) => n,
+          // @ts-ignore
+          pluralize: (n: any) => n,
         }}
       />
     </>
