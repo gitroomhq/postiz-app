@@ -193,7 +193,7 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
                                 />
                               </svg>
                             </div>
-                            <div>Pay nothing for the first 7 days</div>
+                            <div>Pay nothing for the first 14 days</div>
                           </div>
                           <div className="flex gap-[5px] items-center">
                             <div>
