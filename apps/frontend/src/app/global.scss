@@ -301,46 +301,46 @@ html {
 .mantine-Paper-root {
   outline: none !important;
 }
+//
+//:root {
+//  --copilot-kit-primary-color: #612ad5 !important;
+//  --copilot-kit-background-color: #0b0f1c !important;
+//  --copilot-kit-separator-color: #1f2941 !important;
+//  --copilot-kit-contrast-color: #ffffff !important;
+//  --copilot-kit-secondary-contrast-color: #ffffff !important;
+//  --copilot-kit-secondary-color: #000 !important;
+//  --copilot-kit-response-button-background-color: #000 !important;
+//  --copilot-kit-response-button-color: #fff !important;
+//}
 
-:root {
-  --copilot-kit-primary-color: #612ad5 !important;
-  --copilot-kit-background-color: #0b0f1c !important;
-  --copilot-kit-separator-color: #1f2941 !important;
-  --copilot-kit-contrast-color: #ffffff !important;
-  --copilot-kit-secondary-contrast-color: #ffffff !important;
-  --copilot-kit-secondary-color: #000 !important;
-  --copilot-kit-response-button-background-color: #000 !important;
-  --copilot-kit-response-button-color: #fff !important;
-}
+//.copilotKitWindow {
+//  @apply bg-customColor3 #{!important};
+//}
 
-.copilotKitWindow {
-  @apply bg-customColor3 #{!important};
-}
-
-.copilotKitButtonIconOpen svg {
-  display: none !important;
-}
-
-.copilotKitButtonIconOpen:after {
-  @apply text-textColor;
-  content: '';
-  display: block;
-  position: relative;
-  z-index: 1;
-  object-fit: contain;
-  background: url('/magic.svg') no-repeat center center / contain;
-  width: 30px;
-  height: 30px;
-}
-
-.copilotKitPopup {
-  right: -2rem !important;
-  bottom: 2rem !important;
-}
-
-.copilotKitWindow {
-  /*right: -5rem !important;*/
-}
+//.copilotKitButtonIconOpen svg {
+//  display: none !important;
+//}
+//
+//.copilotKitButtonIconOpen:after {
+//  @apply text-textColor;
+//  content: '';
+//  display: block;
+//  position: relative;
+//  z-index: 1;
+//  object-fit: contain;
+//  background: url('/magic.svg') no-repeat center center / contain;
+//  width: 30px;
+//  height: 30px;
+//}
+//
+//.copilotKitPopup {
+//  right: -2rem !important;
+//  bottom: 2rem !important;
+//}
+//
+//.copilotKitWindow {
+//  /*right: -5rem !important;*/
+//}
 
 .uppy-FileInput-container {
   @apply cursor-pointer font-[500] flex justify-center items-center gap-[4px] text-[12px] rounded-[4px] w-[107px] h-[25px] text-textColor border-[2px];
