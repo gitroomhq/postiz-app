@@ -5,6 +5,7 @@ import { RedditSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/provider
 import { PinterestSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/pinterest.dto';
 import { YoutubeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/youtube.settings.dto';
 import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
+import { GithubSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/github.provider-settings.dto.ts';
 
 export type AllProvidersSettings =
   | DevToSettingsDto
@@ -13,4 +14,5 @@ export type AllProvidersSettings =
   | RedditSettingsDto
   | YoutubeSettingsDto
   | PinterestSettingsDto
-  | TikTokDto;
+  | TikTokDto
+  | GithubSettingsDto;
