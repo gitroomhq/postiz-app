@@ -326,5 +326,5 @@ export default withProvider(
 
     return true;
   },
-  2200
+  90
 );
