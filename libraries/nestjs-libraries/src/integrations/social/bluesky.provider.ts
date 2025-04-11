@@ -191,6 +191,7 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
               embed: {
                 $type: 'app.bsky.embed.images',
                 images: images.map((p) => ({
+                  alt: 'picture',
                   // can be an array up to 4 values
                   // alt: 'image', // the alt text - commented this out for now until there is a way to set this from within Postiz
                   image: p.data.blob,
