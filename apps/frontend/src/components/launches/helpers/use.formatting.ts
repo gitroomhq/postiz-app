@@ -1,4 +1,3 @@
-import removeMd from 'remove-markdown';
 import { useMemo } from 'react';
 
 export const useFormatting = (
@@ -22,9 +21,6 @@ export const useFormatting = (
       }
       if (params.saveBreaklines) {
         newText = newText.replace('\n', '𝔫𝔢𝔴𝔩𝔦𝔫𝔢');
-      }
-      if (params.removeMarkdown) {
-        newText = removeMd(newText);
       }
       newText = newText.replace(/@\w{1,15}/g, function(match) {
         return `<strong>${match}</strong>`;

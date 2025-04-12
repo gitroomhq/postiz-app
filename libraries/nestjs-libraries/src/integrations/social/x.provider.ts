@@ -145,10 +145,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       await timer(2000);
 
       await client.v2.tweet({
-        text: removeMd(fields.post.replace('\n', '𝔫𝔢𝔴𝔩𝔦𝔫𝔢')).replace(
-          '𝔫𝔢𝔴𝔩𝔦𝔫𝔢',
-          '\n'
-        ),
+        text: fields.post,
         reply: { in_reply_to_tweet_id: id },
       });
       return true;
@@ -297,10 +294,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
 
       // @ts-ignore
       const { data }: { data: { id: string } } = await client.v2.tweet({
-        text: removeMd(post.message.replace('\n', '𝔫𝔢𝔴𝔩𝔦𝔫𝔢')).replace(
-          '𝔫𝔢𝔴𝔩𝔦𝔫𝔢',
-          '\n'
-        ),
+        text: post.message,
         ...(media_ids.length ? { media: { media_ids } } : {}),
         ...(ids.length
           ? { reply: { in_reply_to_tweet_id: ids[ids.length - 1].postId } }
