@@ -10,6 +10,7 @@ import { PublicApiModule } from '@gitroom/backend/public-api/public.api.module';
 import { ThrottlerBehindProxyGuard } from '@gitroom/nestjs-libraries/throttler/throttler.provider';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AgentModule } from '@gitroom/nestjs-libraries/agent/agent.module';
+import { McpModule } from '@gitroom/backend/mcp/mcp.module';
 
 @Global()
 @Module({
@@ -20,6 +21,7 @@ import { AgentModule } from '@gitroom/nestjs-libraries/agent/agent.module';
     PluginModule,
     PublicApiModule,
     AgentModule,
+    McpModule,
     ThrottlerModule.forRoot([
       {
         ttl: 3600000,

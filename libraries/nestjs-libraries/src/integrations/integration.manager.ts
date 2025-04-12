@@ -27,7 +27,7 @@ import { FarcasterProvider } from '@gitroom/nestjs-libraries/integrations/social
 import { TelegramProvider } from '@gitroom/nestjs-libraries/integrations/social/telegram.provider';
 import { NostrProvider } from '@gitroom/nestjs-libraries/integrations/social/nostr.provider';
 
-const socialIntegrationList: SocialProvider[] = [
+export const socialIntegrationList: SocialProvider[] = [
   new XProvider(),
   new LinkedinProvider(),
   new LinkedinPageProvider(),
