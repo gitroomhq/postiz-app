@@ -51,6 +51,7 @@
     "@mantine/dates": "^5.10.5",
     "@mantine/hooks": "^5.10.5",
     "@mantine/modals": "^5.10.5",
+    "@modelcontextprotocol/sdk": "^1.9.0",
     "@nestjs/common": "^10.0.2",
     "@nestjs/core": "^10.0.2",
     "@nestjs/microservices": "^10.3.1",
