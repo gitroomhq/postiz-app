@@ -1,9 +1,5 @@
 name: Make sure new PRs are sent to development
 
-on:
-  pull_request_target:
-    types: [opened, edited]
-
 jobs:
   check-branch:
     runs-on: ubuntu-latest
