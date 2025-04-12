@@ -15,13 +15,6 @@ pipeline {
                         excludes: '',
                         includes: '**/*',
                         path: "./.nx/cache"
-                    ),
-                    arbitraryFileCache(
-                        cacheName: 'NodeJS', // Added a cache name for better clarity
-                        cacheValidityDecidingFile: '',
-                        excludes: '',
-                        includes: '**/*',
-                        path: "./node_modules" // Use the HOME environment variable for home directory
                     )
                 ], defaultBranch: 'dev', maxCacheSize: 256000, skipSave: true)
             }
@@ -72,13 +65,6 @@ pipeline {
                         excludes: '',
                         includes: '**/*',
                         path: "./.nx/cache"
-                    ),
-                    arbitraryFileCache(
-                        cacheName: 'NodeJS', // Added a cache name for better clarity
-                        cacheValidityDecidingFile: '',
-                        excludes: '',
-                        includes: '**/*',
-                        path: "./node_modules" // Use the HOME environment variable for home directory
                     )
                 ], defaultBranch: 'dev', maxCacheSize: 256000, skipRestore: true)
             }
