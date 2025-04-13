@@ -38,7 +38,7 @@ pipeline {
                 sh 'npm run build 2>&1 | tee build_report.log'  // Captures build output
             }
         }
-
+    }
     post {
         always {
             junit '**/reports/junit.xml'
