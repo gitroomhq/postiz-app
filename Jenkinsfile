@@ -47,12 +47,10 @@ pipeline {
                     '''
                     // Build Docker image
                     sh '''
-                        source image.env
                         docker build -f Dockerfile.dev -t $IMAGE_TAG .
                     '''
                     // Push Docker image to GitHub Container Registry
                     sh '''
-                        source image.env
                         docker push $IMAGE_TAG
                     '''
                 }
