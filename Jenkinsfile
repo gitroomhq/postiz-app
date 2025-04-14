@@ -34,9 +34,6 @@ pipeline {
         }
     }
     post {
-        always {
-            cleanWs(cleanWhenNotBuilt: false, notFailBuild: true)
-        }
         success {
             echo 'Build completed successfully!'
 
