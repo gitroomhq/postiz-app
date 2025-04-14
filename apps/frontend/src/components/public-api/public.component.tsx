@@ -9,7 +9,7 @@ import { useVariables } from '@gitroom/react/helpers/variable.context';
 
 export const PublicComponent = () => {
   const user = useUser();
-  const {frontEndUrl} = useVariables();
+  const { backendUrl } = useVariables();
   const toaster = useToaster();
   const [reveal, setReveal] = useState(false);
   const [reveal2, setReveal2] = useState(false);
@@ -17,6 +17,11 @@ export const PublicComponent = () => {
   const copyToClipboard = useCallback(() => {
     toaster.show('API Key copied to clipboard', 'success');
     copy(user?.publicApi!);
+  }, [user]);
+
+  const copyToClipboard2 = useCallback(() => {
+    toaster.show('MCP copied to clipboard', 'success');
+    copy(`${backendUrl}/mcp/` + user?.publicApi + '/sse');
   }, [user]);
 
   if (!user || !user.publicApi) {
@@ -64,11 +69,15 @@ export const PublicComponent = () => {
       <div className="my-[16px] mt-[16px] bg-sixth border-fifth items-center border rounded-[4px] p-[24px] flex gap-[24px]">
         <div className="flex items-center">
           {reveal2 ? (
-            `${frontEndUrl}/mcp/` + user.publicApi + '/sse'
+            `${backendUrl}/mcp/` + user.publicApi + '/sse'
           ) : (
             <>
-              <div className="blur-sm">{(`${frontEndUrl}/mcp/` + user.publicApi + '/sse').slice(0, -5)}</div>
-              <div>{(`${frontEndUrl}/mcp/` + user.publicApi + '/sse').slice(-5)}</div>
+              <div className="blur-sm">
+                {(`${backendUrl}/mcp/` + user.publicApi + '/sse').slice(0, -5)}
+              </div>
+              <div>
+                {(`${backendUrl}/mcp/` + user.publicApi + '/sse').slice(-5)}
+              </div>
             </>
           )}
         </div>
@@ -76,7 +85,7 @@ export const PublicComponent = () => {
           {!reveal2 ? (
             <Button onClick={() => setReveal2(true)}>Reveal</Button>
           ) : (
-            <Button onClick={copyToClipboard}>Copy Key</Button>
+            <Button onClick={copyToClipboard2}>Copy Key</Button>
           )}
         </div>
       </div>
