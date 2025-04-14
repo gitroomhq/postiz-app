@@ -8,6 +8,10 @@ jobs:
   build-and-publish:
     runs-on: ubuntu-latest
 
+  permissions:
+    contents: read      # for actions/checkout and general read access
+    packages: write     # to push images to ghcr.io
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
