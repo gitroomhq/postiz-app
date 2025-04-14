@@ -44,7 +44,7 @@ This project follows a Fork/Feature Branch/Pull Request model. If you're not fam
    ```bash
    git push -u origin feature/your-feature-name
    ```
-9. **Create a pull request**: Propose your changes **to the dev branch**.
+9. **Create a pull request**: Propose your changes **to the main branch**.
 
 
 # Need Help?
