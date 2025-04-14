@@ -65,6 +65,7 @@ pipeline {
                     '''
                 }
             }
+        }
     }
     post {
         success {
