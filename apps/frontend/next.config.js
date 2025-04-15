@@ -16,15 +16,35 @@ const nextConfig = {
   images: {
     remotePatterns: [
       {
+        protocol: 'http',
+        hostname: '**',
+      },
+      {
         protocol: 'https',
         hostname: '**',
       },
     ],
   },
-  env: {
-    isBillingEnabled: String(!!process.env.STRIPE_PUBLISHABLE_KEY),
-    isGeneral: String(!!process.env.IS_GENERAL),
-    frontendUrl: String(process.env.FRONTEND_URL),
+  async redirects() {
+    return [
+      {
+        source: '/api/uploads/:path*',
+        destination:
+          process.env.STORAGE_PROVIDER === 'local' ? '/uploads/:path*' : '/404',
+        permanent: true,
+      },
+    ];
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/uploads/:path*',
+        destination:
+          process.env.STORAGE_PROVIDER === 'local'
+            ? '/api/uploads/:path*'
+            : '/404',
+      },
+    ];
   },
 };
 

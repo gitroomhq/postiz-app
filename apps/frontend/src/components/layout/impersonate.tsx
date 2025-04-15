@@ -6,6 +6,8 @@ import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { Select } from '@gitroom/react/form/select';
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { setCookie } from '@gitroom/frontend/components/layout/layout.context';
 
 export const Subscription = () => {
   const fetch = useFetch();
@@ -53,6 +55,7 @@ export const Subscription = () => {
 export const Impersonate = () => {
   const fetch = useFetch();
   const [name, setName] = useState('');
+  const { isSecured } = useVariables();
   const user = useUser();
 
   const load = useCallback(async () => {
@@ -65,10 +68,14 @@ export const Impersonate = () => {
   }, [name]);
 
   const stopImpersonating = useCallback(async () => {
-    await fetch(`/user/impersonate`, {
-      method: 'POST',
-      body: JSON.stringify({ id: '' }),
-    });
+    if (!isSecured) {
+      setCookie('impersonate', '', -10);
+    } else {
+      await fetch(`/user/impersonate`, {
+        method: 'POST',
+        body: JSON.stringify({ id: '' }),
+      });
+    }
 
     window.location.reload();
   }, []);
@@ -107,7 +114,7 @@ export const Impersonate = () => {
   }, [data]);
 
   return (
-    <div className="px-[23px]">
+    <div>
       <div className="bg-forth h-[52px] flex justify-center items-center border-input border rounded-[8px]">
         <div className="relative flex flex-col w-[600px]">
           <div className="relative z-[999]">

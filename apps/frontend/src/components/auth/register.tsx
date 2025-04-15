@@ -1,6 +1,6 @@
 'use client';
 
-import { useForm, SubmitHandler, FormProvider } from 'react-hook-form';
+import { FormProvider, SubmitHandler, useForm } from 'react-hook-form';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import Link from 'next/link';
 import { Button } from '@gitroom/react/form/button';
@@ -12,11 +12,19 @@ import { GithubProvider } from '@gitroom/frontend/components/auth/providers/gith
 import { useRouter, useSearchParams } from 'next/navigation';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import interClass from '@gitroom/react/helpers/inter.font';
-import { isGeneral } from '@gitroom/react/helpers/is.general';
 import clsx from 'clsx';
 import { GoogleProvider } from '@gitroom/frontend/components/auth/providers/google.provider';
 import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
-
+import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { useTrack } from '@gitroom/react/helpers/use.track';
+import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
+import { FarcasterProvider } from '@gitroom/frontend/components/auth/providers/farcaster.provider';
+import dynamic from 'next/dynamic';
+import { WalletUiProvider } from '@gitroom/frontend/components/auth/providers/placeholder/wallet.ui.provider';
+const WalletProvider = dynamic(
+  () => import('@gitroom/frontend/components/auth/providers/wallet.provider'),
+  { ssr: false, loading: () => <WalletUiProvider /> }
+);
 type Inputs = {
   email: string;
   password: string;
@@ -65,6 +73,17 @@ export function Register() {
   );
 }
 
+function getHelpfulReasonForRegistrationFailure(httpCode: number) {
+  switch (httpCode) {
+    case 400:
+      return 'Email already exists';
+    case 404:
+      return 'Your browser got a 404 when trying to contact the API, the most likely reasons for this are the NEXT_PUBLIC_BACKEND_URL is set incorrectly, or the backend is not running.';
+  }
+
+  return 'Unhandled error: ' + httpCode;
+}
+
 export function RegisterAfter({
   token,
   provider,
@@ -72,10 +91,11 @@ export function RegisterAfter({
   token: string;
   provider: string;
 }) {
+  const { isGeneral, neynarClientId, billingEnabled } = useVariables();
   const [loading, setLoading] = useState(false);
-  const getQuery = useSearchParams();
   const router = useRouter();
   const fireEvents = useFireEvents();
+  const track = useTrack();
 
   const isAfterProvider = useMemo(() => {
     return !!token && !!provider;
@@ -97,35 +117,38 @@ export function RegisterAfter({
 
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
     setLoading(true);
-    const register = await fetchData('/auth/register', {
+
+    await fetchData('/auth/register', {
       method: 'POST',
       body: JSON.stringify({ ...data }),
-    });
-    if (register.status === 400) {
-      form.setError('email', {
-        message: 'Email already exists',
+    })
+      .then((response) => {
+        setLoading(false);
+
+        if (response.status === 200) {
+          fireEvents('register');
+          return track(TrackEnum.CompleteRegistration).then(() => {
+            if (response.headers.get('activate') === 'true') {
+              router.push('/auth/activate');
+            } else {
+              router.push('/auth/login');
+            }
+          });
+        } else {
+          form.setError('email', {
+            message: getHelpfulReasonForRegistrationFailure(response.status),
+          });
+        }
+      })
+      .catch((e) => {
+        form.setError('email', {
+          message:
+            'General error: ' +
+            e.toString() +
+            '. Please check your browser console.',
+        });
       });
-
-      setLoading(false);
-    }
-
-    fireEvents('register');
-
-    if (register.headers.get('activate')) {
-      router.push('/auth/activate');
-    }
   };
-
-  const rootDomain = useMemo(() => {
-    const url = new URL(process.env.frontendUrl!);
-    const hostname = url.hostname;
-    const parts = hostname.split('.');
-    if (parts.length > 2) {
-      return url.protocol + '//' + url.hostname?.replace(/^[^.]+\./, '');
-    }
-
-    return process.env.frontendUrl;
-  }, []);
 
   return (
     <FormProvider {...form}>
@@ -135,7 +158,16 @@ export function RegisterAfter({
             Sign Up
           </h1>
         </div>
-        {!isAfterProvider && (!isGeneral() ? <GithubProvider /> : <GoogleProvider />)}
+        {!isAfterProvider &&
+          (!isGeneral ? (
+            <GithubProvider />
+          ) : (
+            <div className="gap-[5px] flex flex-col">
+              <GoogleProvider />
+              {!!neynarClientId && <FarcasterProvider />}
+              {billingEnabled && <WalletProvider />}
+            </div>
+          ))}
         {!isAfterProvider && (
           <div className="h-[20px] mb-[24px] mt-[24px] relative">
             <div className="absolute w-full h-[1px] bg-fifth top-[50%] -translate-y-[50%]" />
@@ -175,14 +207,14 @@ export function RegisterAfter({
         <div className={clsx('text-[12px]', interClass)}>
           By registering you agree to our{' '}
           <a
-            href={`${rootDomain}/terms`}
+            href={`https://postiz.com/terms`}
             className="underline hover:font-bold"
           >
             Terms of Service
           </a>{' '}
           and{' '}
           <a
-            href={`${rootDomain}/privacy`}
+            href={`https://postiz.com/privacy`}
             className="underline hover:font-bold"
           >
             Privacy Policy
@@ -190,7 +222,11 @@ export function RegisterAfter({
         </div>
         <div className="text-center mt-6">
           <div className="w-full flex">
-            <Button type="submit" className="flex-1" loading={loading}>
+            <Button
+              type="submit"
+              className="flex-1 rounded-[4px]"
+              loading={loading}
+            >
               Create Account
             </Button>
           </div>

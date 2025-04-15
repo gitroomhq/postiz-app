@@ -1,23 +1,86 @@
 import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
 import dayjs from 'dayjs';
-import * as console from 'node:console';
 import { Integration } from '@prisma/client';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { simpleUpload } from '@gitroom/nestjs-libraries/upload/r2.uploader';
-import axios from 'axios';
+import { IntegrationTimeDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.time.dto';
+import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
+import { PlugDto } from '@gitroom/nestjs-libraries/dtos/plugs/plug.dto';
 
 @Injectable()
 export class IntegrationRepository {
+  private storage = UploadFactory.createStorage();
   constructor(
     private _integration: PrismaRepository<'integration'>,
-    private _posts: PrismaRepository<'post'>
+    private _posts: PrismaRepository<'post'>,
+    private _plugs: PrismaRepository<'plugs'>,
+    private _exisingPlugData: PrismaRepository<'exisingPlugData'>,
+    private _customers: PrismaRepository<'customer'>
   ) {}
 
+  updateProviderSettings(org: string, id: string, settings: string) {
+    return this._integration.model.integration.update({
+      where: {
+        id,
+        organizationId: org,
+      },
+      data: {
+        additionalSettings: settings,
+      },
+    });
+  }
+
+  async setTimes(org: string, id: string, times: IntegrationTimeDto) {
+    return this._integration.model.integration.update({
+      select: {
+        id: true,
+      },
+      where: {
+        id,
+        organizationId: org,
+      },
+      data: {
+        postingTimes: JSON.stringify(times.time),
+      },
+    });
+  }
+
+  getPlug(plugId: string) {
+    return this._plugs.model.plugs.findFirst({
+      where: {
+        id: plugId,
+      },
+      include: {
+        integration: true,
+      },
+    });
+  }
+
+  async getPlugs(orgId: string, integrationId: string) {
+    return this._plugs.model.plugs.findMany({
+      where: {
+        integrationId,
+        organizationId: orgId,
+        activated: true,
+      },
+      include: {
+        integration: {
+          select: {
+            id: true,
+            providerIdentifier: true,
+          },
+        },
+      },
+    });
+  }
+
   async updateIntegration(id: string, params: Partial<Integration>) {
-    if (params.picture && params.picture.indexOf(process.env.CLOUDFLARE_BUCKET_URL!) === -1) {
-      const picture = await axios.get(params.picture, { responseType: 'arraybuffer' });
-      params.picture = await simpleUpload(picture.data, `${makeId(10)}.png`, 'image/png');
+    if (
+      params.picture &&
+      (params.picture.indexOf(process.env.CLOUDFLARE_BUCKET_URL!) === -1 ||
+        params.picture.indexOf(process.env.FRONTEND_URL!) === -1)
+    ) {
+      params.picture = await this.storage.uploadSimple(params.picture);
     }
 
     return this._integration.model.integration.update({
@@ -42,10 +105,20 @@ export class IntegrationRepository {
     });
   }
 
-  createOrUpdateIntegration(
+  async createOrUpdateIntegration(
+    additionalSettings:
+      | {
+          title: string;
+          description: string;
+          type: 'checkbox' | 'text' | 'textarea';
+          value: any;
+          regex?: string;
+        }[]
+      | undefined,
+    oneTimeToken: boolean,
     org: string,
     name: string,
-    picture: string,
+    picture: string | undefined,
     type: 'article' | 'social',
     internalId: string,
     provider: string,
@@ -54,9 +127,20 @@ export class IntegrationRepository {
     expiresIn = 999999999,
     username?: string,
     isBetweenSteps = false,
-    refresh?: string
+    refresh?: string,
+    timezone?: number,
+    customInstanceDetails?: string
   ) {
-    return this._integration.model.integration.upsert({
+    const postTimes = timezone
+      ? {
+          postingTimes: JSON.stringify([
+            { time: 560 - timezone },
+            { time: 850 - timezone },
+            { time: 1140 - timezone },
+          ]),
+        }
+      : {};
+    const upsert = await this._integration.model.integration.upsert({
       where: {
         organizationId_internalId: {
           internalId,
@@ -69,25 +153,34 @@ export class IntegrationRepository {
         providerIdentifier: provider,
         token,
         profile: username,
-        picture,
+        ...(picture ? { picture } : {}),
         inBetweenSteps: isBetweenSteps,
         refreshToken,
         ...(expiresIn
           ? { tokenExpiration: new Date(Date.now() + expiresIn * 1000) }
           : {}),
         internalId,
+        ...postTimes,
         organizationId: org,
         refreshNeeded: false,
+        rootInternalId: internalId.split('_').pop(),
+        ...(customInstanceDetails ? { customInstanceDetails } : {}),
+        additionalSettings: additionalSettings
+          ? JSON.stringify(additionalSettings)
+          : '[]',
       },
       update: {
+        ...(additionalSettings
+          ? { additionalSettings: JSON.stringify(additionalSettings) }
+          : {}),
+        ...(customInstanceDetails ? { customInstanceDetails } : {}),
         type: type as any,
         ...(!refresh
           ? {
               inBetweenSteps: isBetweenSteps,
             }
           : {}),
-        name,
-        picture,
+        ...(picture ? { picture } : {}),
         profile: username,
         providerIdentifier: provider,
         token,
@@ -101,6 +194,38 @@ export class IntegrationRepository {
         refreshNeeded: false,
       },
     });
+
+    if (oneTimeToken) {
+      const rootId =
+        (
+          await this._integration.model.integration.findFirst({
+            where: {
+              organizationId: org,
+              internalId: internalId,
+            },
+          })
+        )?.rootInternalId || internalId.split('_').pop()!;
+
+      await this._integration.model.integration.updateMany({
+        where: {
+          id: {
+            not: upsert.id,
+          },
+          organizationId: org,
+          rootInternalId: rootId,
+        },
+        data: {
+          token,
+          refreshToken,
+          refreshNeeded: false,
+          ...(expiresIn
+            ? { tokenExpiration: new Date(Date.now() + expiresIn * 1000) }
+            : {}),
+        },
+      });
+    }
+
+    return upsert;
   }
 
   needsToBeRefreshed() {
@@ -124,6 +249,18 @@ export class IntegrationRepository {
       },
       data: {
         refreshNeeded: true,
+      },
+    });
+  }
+
+  updateNameAndUrl(id: string, name: string, url: string) {
+    return this._integration.model.integration.update({
+      where: {
+        id,
+      },
+      data: {
+        ...(name ? { name } : {}),
+        ...(url ? { picture: url } : {}),
       },
     });
   }
@@ -173,11 +310,78 @@ export class IntegrationRepository {
     return integration?.integration;
   }
 
+  async updateOnCustomerName(org: string, id: string, name: string) {
+    const customer = !name
+      ? undefined
+      : (await this._customers.model.customer.findFirst({
+          where: {
+            orgId: org,
+            name,
+          },
+        })) ||
+        (await this._customers.model.customer.create({
+          data: {
+            name,
+            orgId: org,
+          },
+        }));
+
+    return this._integration.model.integration.update({
+      where: {
+        id,
+        organizationId: org,
+      },
+      data: {
+        customer: !customer
+          ? { disconnect: true }
+          : {
+              connect: {
+                id: customer.id,
+              },
+            },
+      },
+    });
+  }
+
+  updateIntegrationGroup(org: string, id: string, group: string) {
+    return this._integration.model.integration.update({
+      where: {
+        id,
+        organizationId: org,
+      },
+      data: !group
+        ? {
+            customer: {
+              disconnect: true,
+            },
+          }
+        : {
+            customer: {
+              connect: {
+                id: group,
+              },
+            },
+          },
+    });
+  }
+
+  customers(orgId: string) {
+    return this._customers.model.customer.findMany({
+      where: {
+        orgId,
+        deletedAt: null,
+      },
+    });
+  }
+
   getIntegrationsList(org: string) {
     return this._integration.model.integration.findMany({
       where: {
         organizationId: org,
         deletedAt: null,
+      },
+      include: {
+        customer: true,
       },
     });
   }
@@ -212,7 +416,7 @@ export class IntegrationRepository {
       where: {
         organizationId: org,
         integrationId: id,
-        deletedAt: null
+        deletedAt: null,
       },
     });
   }
@@ -267,5 +471,94 @@ export class IntegrationRepository {
         },
       });
     }
+  }
+
+  getPlugsByIntegrationId(org: string, id: string) {
+    return this._plugs.model.plugs.findMany({
+      where: {
+        organizationId: org,
+        integrationId: id,
+      },
+    });
+  }
+
+  createOrUpdatePlug(org: string, integrationId: string, body: PlugDto) {
+    return this._plugs.model.plugs.upsert({
+      where: {
+        organizationId: org,
+        plugFunction_integrationId: {
+          integrationId,
+          plugFunction: body.func,
+        },
+      },
+      create: {
+        integrationId,
+        organizationId: org,
+        plugFunction: body.func,
+        data: JSON.stringify(body.fields),
+        activated: true,
+      },
+      update: {
+        data: JSON.stringify(body.fields),
+      },
+      select: {
+        activated: true,
+      },
+    });
+  }
+
+  changePlugActivation(orgId: string, plugId: string, status: boolean) {
+    return this._plugs.model.plugs.update({
+      where: {
+        organizationId: orgId,
+        id: plugId,
+      },
+      data: {
+        activated: !!status,
+      },
+    });
+  }
+
+  async loadExisingData(
+    methodName: string,
+    integrationId: string,
+    id: string[]
+  ) {
+    return this._exisingPlugData.model.exisingPlugData.findMany({
+      where: {
+        integrationId,
+        methodName,
+        value: {
+          in: id,
+        },
+      },
+    });
+  }
+
+  async saveExisingData(
+    methodName: string,
+    integrationId: string,
+    value: string[]
+  ) {
+    return this._exisingPlugData.model.exisingPlugData.createMany({
+      data: value.map((p) => ({
+        integrationId,
+        methodName,
+        value: p,
+      })),
+    });
+  }
+
+  async getPostingTimes(orgId: string) {
+    return this._integration.model.integration.findMany({
+      where: {
+        organizationId: orgId,
+        disabled: false,
+        deletedAt: null,
+      },
+      select: {
+        postingTimes: true,
+      },
+    });
   }
 }

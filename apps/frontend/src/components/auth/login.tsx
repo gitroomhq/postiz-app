@@ -10,8 +10,10 @@ import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { LoginUserDto } from '@gitroom/nestjs-libraries/dtos/auth/login.user.dto';
 import { GithubProvider } from '@gitroom/frontend/components/auth/providers/github.provider';
 import interClass from '@gitroom/react/helpers/inter.font';
-import { isGeneral } from '@gitroom/react/helpers/is.general';
 import { GoogleProvider } from '@gitroom/frontend/components/auth/providers/google.provider';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { FarcasterProvider } from '@gitroom/frontend/components/auth/providers/farcaster.provider';
+import WalletProvider from '@gitroom/frontend/components/auth/providers/wallet.provider';
 
 type Inputs = {
   email: string;
@@ -22,6 +24,7 @@ type Inputs = {
 
 export function Login() {
   const [loading, setLoading] = useState(false);
+  const { isGeneral, neynarClientId, billingEnabled } = useVariables();
   const resolver = useMemo(() => {
     return classValidatorResolver(LoginUserDto);
   }, []);
@@ -61,7 +64,15 @@ export function Login() {
           </h1>
         </div>
 
-        {!isGeneral() ? <GithubProvider /> : <GoogleProvider />}
+        {!isGeneral ? (
+          <GithubProvider />
+        ) : (
+          <div className="gap-[5px] flex flex-col">
+            <GoogleProvider />
+            {!!neynarClientId && <FarcasterProvider />}
+            {billingEnabled && <WalletProvider />}
+          </div>
+        )}
         <div className="h-[20px] mb-[24px] mt-[24px] relative">
           <div className="absolute w-full h-[1px] bg-fifth top-[50%] -translate-y-[50%]" />
           <div
@@ -88,7 +99,11 @@ export function Login() {
         </div>
         <div className="text-center mt-6">
           <div className="w-full flex">
-            <Button type="submit" className="flex-1" loading={loading}>
+            <Button
+              type="submit"
+              className="flex-1 rounded-[4px]"
+              loading={loading}
+            >
               Sign in
             </Button>
           </div>

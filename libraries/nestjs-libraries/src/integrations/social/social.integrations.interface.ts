@@ -1,12 +1,43 @@
+import { Integration } from '@prisma/client';
+
+export interface ClientInformation {
+  client_id: string;
+  client_secret: string;
+  instanceUrl: string;
+}
 export interface IAuthenticator {
-  authenticate(params: {
-    code: string;
-    codeVerifier: string;
-    refresh?: string;
-  }): Promise<AuthTokenDetails>;
+  authenticate(
+    params: {
+      code: string;
+      codeVerifier: string;
+      refresh?: string;
+    },
+    clientInformation?: ClientInformation
+  ): Promise<AuthTokenDetails | string>;
   refreshToken(refreshToken: string): Promise<AuthTokenDetails>;
-  generateAuthUrl(refresh?: string): Promise<GenerateAuthUrlResponse>;
-  analytics?(id: string, accessToken: string, date: number): Promise<AnalyticsData[]>;
+  reConnect?(
+    id: string,
+    requiredId: string,
+    accessToken: string
+  ): Promise<AuthTokenDetails>;
+  generateAuthUrl(
+    clientInformation?: ClientInformation
+  ): Promise<GenerateAuthUrlResponse>;
+  analytics?(
+    id: string,
+    accessToken: string,
+    date: number
+  ): Promise<AnalyticsData[]>;
+  changeNickname?(
+    id: string,
+    accessToken: string,
+    name: string
+  ): Promise<{ name: string }>;
+  changeProfilePicture?(
+    id: string,
+    accessToken: string,
+    url: string
+  ): Promise<{ url: string }>;
 }
 
 export interface AnalyticsData {
@@ -24,18 +55,27 @@ export type GenerateAuthUrlResponse = {
 export type AuthTokenDetails = {
   id: string;
   name: string;
+  error?: string;
   accessToken: string; // The obtained access token
   refreshToken?: string; // The refresh token, if applicable
   expiresIn?: number; // The duration in seconds for which the access token is valid
   picture?: string;
   username: string;
+  additionalSettings?: {
+    title: string;
+    description: string;
+    type: 'checkbox' | 'text' | 'textarea';
+    value: any,
+    regex?: string;
+  }[];
 };
 
 export interface ISocialMediaIntegration {
   post(
     id: string,
     accessToken: string,
-    postDetails: PostDetails[]
+    postDetails: PostDetails[],
+    integration: Integration
   ): Promise<PostResponse[]>; // Schedules a new post
 }
 
@@ -69,7 +109,24 @@ export interface SocialProvider
   extends IAuthenticator,
     ISocialMediaIntegration {
   identifier: string;
+  refreshWait?: boolean;
+  convertToJPEG?: boolean;
+  isWeb3?: boolean;
+  customFields?: () => Promise<
+    {
+      key: string;
+      label: string;
+      defaultValue?: string;
+      validation: string;
+      type: 'text' | 'password';
+    }[]
+  >;
   name: string;
+  toolTip?: string;
+  oneTimeToken?: boolean;
   isBetweenSteps: boolean;
   scopes: string[];
+  externalUrl?: (
+    url: string
+  ) => Promise<{ client_id: string; client_secret: string }>;
 }

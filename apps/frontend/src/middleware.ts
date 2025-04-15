@@ -1,14 +1,19 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { fetchBackend } from '@gitroom/helpers/utils/custom.fetch.func';
-import { removeSubdomain } from '@gitroom/helpers/subdomain/subdomain.management';
-import { isGeneral } from '@gitroom/react/helpers/is.general';
+import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
+import { internalFetch } from '@gitroom/helpers/utils/internal.fetch';
 
 // This function can be marked `async` if using `await` inside
 export async function middleware(request: NextRequest) {
   const nextUrl = request.nextUrl;
   const authCookie = request.cookies.get('auth');
-
+  if (
+    nextUrl.pathname.startsWith('/uploads/') ||
+    nextUrl.pathname.startsWith('/p/') ||
+    nextUrl.pathname.startsWith('/icons/')
+  ) {
+    return NextResponse.next();
+  }
   // If the URL is logout, delete the cookie and redirect to login
   if (nextUrl.href.indexOf('/auth/logout') > -1) {
     const response = NextResponse.redirect(
@@ -16,12 +21,15 @@ export async function middleware(request: NextRequest) {
     );
     response.cookies.set('auth', '', {
       path: '/',
-      sameSite: false,
-      httpOnly: true,
-      secure: true,
+      ...(!process.env.NOT_SECURED
+        ? {
+            secure: true,
+            httpOnly: true,
+            sameSite: false,
+          }
+        : {}),
       maxAge: -1,
-      domain:
-        '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
+      domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
     });
     return response;
   }
@@ -31,9 +39,17 @@ export async function middleware(request: NextRequest) {
 
   if (nextUrl.href.indexOf('/auth') === -1 && !authCookie) {
     const providers = ['google', 'settings'];
-    const findIndex = providers.find(p => nextUrl.href.indexOf(p) > -1);
-    const additional = !findIndex ? '' : (url.indexOf('?') > -1 ? '&' : '?') + `provider=${(findIndex === 'settings' ? 'github' : findIndex).toUpperCase()}`;
-    return NextResponse.redirect(new URL(`/auth${url}${additional}`, nextUrl.href));
+    const findIndex = providers.find((p) => nextUrl.href.indexOf(p) > -1);
+    const additional = !findIndex
+      ? ''
+      : (url.indexOf('?') > -1 ? '&' : '?') +
+        `provider=${(findIndex === 'settings'
+          ? 'github'
+          : findIndex
+        ).toUpperCase()}`;
+    return NextResponse.redirect(
+      new URL(`/auth${url}${additional}`, nextUrl.href)
+    );
   }
 
   // If the url is /auth and the cookie exists, redirect to /
@@ -45,13 +61,16 @@ export async function middleware(request: NextRequest) {
     if (org) {
       const redirect = NextResponse.redirect(new URL(`/`, nextUrl.href));
       redirect.cookies.set('org', org, {
-        path: '/',
-        sameSite: false,
-        httpOnly: true,
-        secure: true,
+        ...(!process.env.NOT_SECURED
+          ? {
+              path: '/',
+              secure: true,
+              httpOnly: true,
+              sameSite: false,
+              domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+            }
+          : {}),
         expires: new Date(Date.now() + 15 * 60 * 1000),
-        domain:
-          '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
       });
       return redirect;
     }
@@ -61,13 +80,10 @@ export async function middleware(request: NextRequest) {
   try {
     if (org) {
       const { id } = await (
-        await fetchBackend('/user/join-org', {
+        await internalFetch('/user/join-org', {
           body: JSON.stringify({
             org,
           }),
-          headers: {
-            auth: authCookie?.value!,
-          },
           method: 'POST',
         })
       ).json();
@@ -77,13 +93,16 @@ export async function middleware(request: NextRequest) {
       );
       if (id) {
         redirect.cookies.set('showorg', id, {
-          path: '/',
-          sameSite: false,
-          httpOnly: true,
-          secure: true,
+          ...(!process.env.NOT_SECURED
+            ? {
+                path: '/',
+                secure: true,
+                httpOnly: true,
+                sameSite: false,
+                domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+              }
+            : {}),
           expires: new Date(Date.now() + 15 * 60 * 1000),
-          domain:
-            '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
         });
       }
 
@@ -92,7 +111,10 @@ export async function middleware(request: NextRequest) {
 
     if (nextUrl.pathname === '/') {
       return NextResponse.redirect(
-        new URL(isGeneral() ? '/launches' : `/analytics`, nextUrl.href)
+        new URL(
+          !!process.env.IS_GENERAL ? '/launches' : `/analytics`,
+          nextUrl.href
+        )
       );
     }
 
@@ -106,17 +128,21 @@ export async function middleware(request: NextRequest) {
 
       next.cookies.set('marketplace', type === 'seller' ? 'seller' : 'buyer', {
         path: '/',
-        sameSite: false,
-        httpOnly: true,
-        secure: true,
+        ...(!process.env.NOT_SECURED
+          ? {
+              secure: true,
+              httpOnly: true,
+              sameSite: false,
+            }
+          : {}),
         expires: new Date(Date.now() + 15 * 60 * 1000),
-        domain:
-          '.' + new URL(removeSubdomain(process.env.FRONTEND_URL!)).hostname,
+        domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
       });
     }
 
     return next;
   } catch (err) {
+    console.log('err', err);
     return NextResponse.redirect(new URL('/auth/logout', nextUrl.href));
   }
 }

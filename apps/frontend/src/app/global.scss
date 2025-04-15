@@ -1,8 +1,8 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@import "./colors.scss";
-@import "./polonto.css";
+@import './colors.scss';
+@import './polonto.css';
 
 body,
 html {
@@ -10,7 +10,6 @@ html {
 }
 .box {
   position: relative;
-  padding: 8px 24px;
 }
 .box span {
   position: relative;
@@ -283,7 +282,7 @@ html {
   width: auto !important;
 }
 
-.editor * {
+.editor :not(.removeEditor *) {
   @apply text-textColor;
 }
 
@@ -302,46 +301,46 @@ html {
 .mantine-Paper-root {
   outline: none !important;
 }
+//
+//:root {
+//  --copilot-kit-primary-color: #612ad5 !important;
+//  --copilot-kit-background-color: #0b0f1c !important;
+//  --copilot-kit-separator-color: #1f2941 !important;
+//  --copilot-kit-contrast-color: #ffffff !important;
+//  --copilot-kit-secondary-contrast-color: #ffffff !important;
+//  --copilot-kit-secondary-color: #000 !important;
+//  --copilot-kit-response-button-background-color: #000 !important;
+//  --copilot-kit-response-button-color: #fff !important;
+//}
 
-:root {
-  --copilot-kit-primary-color: #612ad5 !important;
-  --copilot-kit-background-color: #0b0f1c !important;
-  --copilot-kit-separator-color: #1f2941 !important;
-  --copilot-kit-contrast-color: #ffffff !important;
-  --copilot-kit-secondary-contrast-color: #ffffff !important;
-  --copilot-kit-secondary-color: #000 !important;
-  --copilot-kit-response-button-background-color: #000 !important;
-  --copilot-kit-response-button-color: #fff !important;
-}
+//.copilotKitWindow {
+//  @apply bg-customColor3 #{!important};
+//}
 
-.copilotKitWindow {
-  @apply bg-customColor3 #{!important};
-}
-
-.copilotKitButtonIconOpen svg {
-  display: none !important;
-}
-
-.copilotKitButtonIconOpen:after {
-  @apply text-textColor;
-  content: '';
-  display: block;
-  position: relative;
-  z-index: 1;
-  object-fit: contain;
-  background: url('/magic.svg') no-repeat center center / contain;
-  width: 30px;
-  height: 30px;
-}
-
-.copilotKitPopup {
-  right: -2rem !important;
-  bottom: 2rem !important;
-}
-
-.copilotKitWindow {
-  /*right: -5rem !important;*/
-}
+//.copilotKitButtonIconOpen svg {
+//  display: none !important;
+//}
+//
+//.copilotKitButtonIconOpen:after {
+//  @apply text-textColor;
+//  content: '';
+//  display: block;
+//  position: relative;
+//  z-index: 1;
+//  object-fit: contain;
+//  background: url('/magic.svg') no-repeat center center / contain;
+//  width: 30px;
+//  height: 30px;
+//}
+//
+//.copilotKitPopup {
+//  right: -2rem !important;
+//  bottom: 2rem !important;
+//}
+//
+//.copilotKitWindow {
+//  /*right: -5rem !important;*/
+//}
 
 .uppy-FileInput-container {
   @apply cursor-pointer font-[500] flex justify-center items-center gap-[4px] text-[12px] rounded-[4px] w-[107px] h-[25px] text-textColor border-[2px];
@@ -361,6 +360,7 @@ html {
 
 .uppy-ProgressBar-percentage {
   position: absolute;
+  color: red;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
@@ -379,8 +379,86 @@ html {
   -webkit-text-fill-color: white !important;
 }
 div div .set-font-family {
-  font-family: "Helvetica Neue", Helvetica !important;
+  font-family: 'Helvetica Neue', Helvetica !important;
   font-stretch: 100% !important;
   font-style: normal !important;
   font-weight: 400 !important;
+}
+
+.col-calendar:hover:before {
+  content: 'Date passed';
+  color: white;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  opacity: 30%;
+}
+
+.loading-shimmer {
+  position: relative;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.loading-shimmer:before {
+  content: attr(data-text);
+  position: absolute;
+  overflow: hidden;
+  max-width: 100%;
+  white-space: nowrap;
+  color: white;
+  animation: loading 4s linear 0s infinite;
+  filter: blur(0.4px);
+}
+@keyframes loading {
+  0% {
+    max-width: 0;
+  }
+}
+
+.tbaom7c {
+  display: none;
+}
+
+.tags-top > div {
+  flex: 1;
+  margin-right: 20px;
+  border: 0 !important;
+  background: transparent !important;
+  padding-left: 0 !important;
+}
+
+.tags-top .react-tags__combobox {
+  margin-left: 5px;
+}
+
+.tags-top .react-tags__combobox {
+  height: 35px;
+  display: flex;
+  background-color: #141c2c;
+  padding-left: 10px;
+  padding-right: 10px;
+  min-width: 150px;
+  text-align: left;
+  border-width: 1px;
+  border-radius: 4px;
+  border-color: var(--color-fifth);
+}
+
+.tags-top .react-tags__list,
+.tags-top .react-tags__list li,
+.tags-top .react-tags__list li > div {
+  height: 35px;
+}
+
+.tags-top .react-tags__listbox {
+  z-index: 1000 !important;
+}
+
+.tags-top .react-tags__list-item > div {
+  display: flex;
+  align-items: center;
+  padding-left: 5px;
+  padding-right: 5px;
 }

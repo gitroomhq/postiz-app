@@ -6,17 +6,29 @@ import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integ
 import { Integration, Post, Media, From } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
-import { capitalize, shuffle } from 'lodash';
+import { capitalize, shuffle, uniq } from 'lodash';
 import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
 import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
-import { GeneratorDto } from '@gitroom/nestjs-libraries/dtos/generator/generator.dto';
-import { ExtractContentService } from '@gitroom/nestjs-libraries/openai/extract.content.service';
-import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { CreateGeneratedPostsDto } from '@gitroom/nestjs-libraries/dtos/generator/create.generated.posts.dto';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  BadBody,
+  RefreshToken,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/client';
+import { timer } from '@gitroom/helpers/utils/timer';
+import { AuthTokenDetails } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import utc from 'dayjs/plugin/utc';
+import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
+import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.link.service';
+import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
+import { CreateTagDto } from '@gitroom/nestjs-libraries/dtos/posts/create.tag.dto';
+import axios from 'axios';
+import sharp from 'sharp';
+import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
+import { Readable } from 'stream';
+dayjs.extend(utc);
 
 type PostWithConditionals = Post & {
   integration?: Integration;
@@ -25,6 +37,7 @@ type PostWithConditionals = Post & {
 
 @Injectable()
 export class PostsService {
+  private storage = UploadFactory.createStorage();
   constructor(
     private _postRepository: PostsRepository,
     private _workerServiceProducer: BullMqClient,
@@ -32,10 +45,23 @@ export class PostsService {
     private _notificationService: NotificationService,
     private _messagesService: MessagesService,
     private _stripeService: StripeService,
-    private _extractContentService: ExtractContentService,
-    private _openAiService: OpenaiService,
-    private _integrationService: IntegrationService
+    private _integrationService: IntegrationService,
+    private _mediaService: MediaService,
+    private _shortLinkService: ShortLinkService,
+    private _webhookService: WebhooksService
   ) {}
+
+  async getStatistics(orgId: string, id: string) {
+    const getPost = await this.getPostsRecursively(id, true, orgId, true);
+    const content = getPost.map((p) => p.content);
+    const shortLinksTracking = await this._shortLinkService.getStatistics(
+      content
+    );
+
+    return {
+      clicks: shortLinksTracking,
+    };
+  }
 
   async getPostsRecursively(
     id: string,
@@ -50,11 +76,15 @@ export class PostsService {
       isFirst
     );
 
+    if (!post) {
+      return [];
+    }
+
     return [
       post!,
       ...(post?.childrenPost?.length
         ? await this.getPostsRecursively(
-            post.childrenPost[0].id,
+            post?.childrenPost?.[0]?.id,
             false,
             orgId,
             false
@@ -63,22 +93,122 @@ export class PostsService {
     ];
   }
 
-  getPosts(orgId: string, query: GetPostsDto) {
+  async getPosts(orgId: string, query: GetPostsDto) {
     return this._postRepository.getPosts(orgId, query);
   }
 
-  async getPost(orgId: string, id: string) {
+  async updateMedia(id: string, imagesList: any[], convertToJPEG = false) {
+    let imageUpdateNeeded = false;
+    const getImageList = await Promise.all(
+      (
+        await Promise.all(
+          imagesList.map(async (p: any) => {
+            if (!p.path && p.id) {
+              imageUpdateNeeded = true;
+              return this._mediaService.getMediaById(p.id);
+            }
+
+            return p;
+          })
+        )
+      )
+        .map((m) => {
+          return {
+            ...m,
+            url:
+              m.path.indexOf('http') === -1
+                ? process.env.FRONTEND_URL +
+                  '/' +
+                  process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
+                  m.path
+                : m.path,
+            type: 'image',
+            path:
+              m.path.indexOf('http') === -1
+                ? process.env.UPLOAD_DIRECTORY + m.path
+                : m.path,
+          };
+        })
+        .map(async (m) => {
+          if (!convertToJPEG) {
+            return m;
+          }
+
+          if (m.path.indexOf('.png') > -1) {
+            imageUpdateNeeded = true;
+            const response = await axios.get(m.url, {
+              responseType: 'arraybuffer',
+            });
+
+            const imageBuffer = Buffer.from(response.data);
+
+            // Use sharp to get the metadata of the image
+            const buffer = await sharp(imageBuffer)
+              .jpeg({ quality: 100 })
+              .toBuffer();
+
+            const { path, originalname } = await this.storage.uploadFile({
+              buffer,
+              mimetype: 'image/jpeg',
+              size: buffer.length,
+              path: '',
+              fieldname: '',
+              destination: '',
+              stream: new Readable(),
+              filename: '',
+              originalname: '',
+              encoding: '',
+            });
+
+            return {
+              ...m,
+              name: originalname,
+              url:
+                path.indexOf('http') === -1
+                  ? process.env.FRONTEND_URL +
+                    '/' +
+                    process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
+                    path
+                  : path,
+              type: 'image',
+              path:
+                path.indexOf('http') === -1
+                  ? process.env.UPLOAD_DIRECTORY + path
+                  : path,
+            };
+          }
+
+          return m;
+        })
+    );
+
+    if (imageUpdateNeeded) {
+      await this._postRepository.updateImages(id, JSON.stringify(getImageList));
+    }
+
+    return getImageList;
+  }
+
+  async getPost(orgId: string, id: string, convertToJPEG = false) {
     const posts = await this.getPostsRecursively(id, true, orgId, true);
-    return {
+    const list = {
       group: posts?.[0]?.group,
-      posts: posts.map((post) => ({
-        ...post,
-        image: JSON.parse(post.image || '[]'),
-      })),
+      posts: await Promise.all(
+        posts.map(async (post) => ({
+          ...post,
+          image: await this.updateMedia(
+            post.id,
+            JSON.parse(post.image || '[]'),
+            convertToJPEG,
+          ),
+        }))
+      ),
       integrationPicture: posts[0]?.integration?.picture,
       integration: posts[0].integrationId,
       settings: JSON.parse(posts[0].settings || '{}'),
     };
+
+    return list;
   }
 
   async getOldPosts(orgId: string, date: string) {
@@ -123,6 +253,18 @@ export class PostsService {
               ...morePosts,
             ]);
 
+      if (firstPost?.intervalInDays) {
+        this._workerServiceProducer.emit('post', {
+          id,
+          options: {
+            delay: firstPost.intervalInDays * 86400000,
+          },
+          payload: {
+            id: id,
+          },
+        });
+      }
+
       if (!finalPost?.postId || !finalPost?.releaseURL) {
         await this._postRepository.changeState(firstPost.id, 'ERROR');
         await this._notificationService.inAppNotification(
@@ -131,6 +273,7 @@ export class PostsService {
           `An error occurred while posting on ${firstPost.integration?.providerIdentifier}`,
           true
         );
+
         return;
       }
 
@@ -143,7 +286,7 @@ export class PostsService {
         });
       }
     } catch (err: any) {
-      await this._postRepository.changeState(firstPost.id, 'ERROR');
+      await this._postRepository.changeState(firstPost.id, 'ERROR', err);
       await this._notificationService.inAppNotification(
         firstPost.organizationId,
         `Error posting on ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
@@ -155,6 +298,25 @@ export class PostsService {
             : ''
         }`,
         true
+      );
+
+      if (err instanceof BadBody) {
+        console.error(
+          '[Error] posting on',
+          firstPost.integration?.providerIdentifier,
+          err.identifier,
+          err.json,
+          err.body,
+          err
+        );
+
+        return;
+      }
+
+      console.error(
+        '[Error] posting on',
+        firstPost.integration?.providerIdentifier,
+        err
       );
     }
   }
@@ -195,8 +357,24 @@ export class PostsService {
     }
 
     if (dayjs(integration?.tokenExpiration).isBefore(dayjs()) || forceRefresh) {
-      const { accessToken, expiresIn, refreshToken } =
-        await getIntegration.refreshToken(integration.refreshToken!);
+      const { accessToken, expiresIn, refreshToken, additionalSettings } =
+        await new Promise<AuthTokenDetails>((res) => {
+          getIntegration
+            .refreshToken(integration.refreshToken!)
+            .then((r) => res(r))
+            .catch(() =>
+              res({
+                accessToken: '',
+                expiresIn: 0,
+                refreshToken: '',
+                id: '',
+                name: '',
+                username: '',
+                picture: '',
+                additionalSettings: undefined,
+              })
+            );
+        });
 
       if (!accessToken) {
         await this._integrationService.refreshNeeded(
@@ -212,6 +390,8 @@ export class PostsService {
       }
 
       await this._integrationService.createOrUpdateIntegration(
+        additionalSettings,
+        !!getIntegration.oneTimeToken,
         integration.organizationId,
         integration.name,
         integration.picture!,
@@ -224,6 +404,10 @@ export class PostsService {
       );
 
       integration.token = accessToken;
+
+      if (getIntegration.refreshWait) {
+        await timer(10000);
+      }
     }
 
     const newPosts = await this.updateTags(integration.organizationId, posts);
@@ -232,25 +416,19 @@ export class PostsService {
       const publishedPosts = await getIntegration.post(
         integration.internalId,
         integration.token,
-        newPosts.map((p) => ({
-          id: p.id,
-          message: p.content,
-          settings: JSON.parse(p.settings || '{}'),
-          media: (JSON.parse(p.image || '[]') as Media[]).map((m) => ({
-            url:
-              m.path.indexOf('http') === -1
-                ? process.env.FRONTEND_URL +
-                  '/' +
-                  process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
-                  m.path
-                : m.path,
-            type: 'image',
-            path:
-              m.path.indexOf('http') === -1
-                ? process.env.UPLOAD_DIRECTORY + m.path
-                : m.path,
-          })),
-        }))
+        await Promise.all(
+          newPosts.map(async (p) => ({
+            id: p.id,
+            message: p.content,
+            settings: JSON.parse(p.settings || '{}'),
+            media: await this.updateMedia(
+              p.id,
+              JSON.parse(p.image || '[]'),
+              getIntegration.convertToJPEG
+            ),
+          }))
+        ),
+        integration
       );
 
       for (const post of publishedPosts) {
@@ -266,8 +444,30 @@ export class PostsService {
         `Your post has been published on ${capitalize(
           integration.providerIdentifier
         )}`,
-        `Your post has been published at ${publishedPosts[0].releaseURL}`,
+        `Your post has been published on ${capitalize(
+          integration.providerIdentifier
+        )} at ${publishedPosts[0].releaseURL}`,
+        true,
         true
+      );
+
+      await this._webhookService.digestWebhooks(
+        integration.organizationId,
+        dayjs(newPosts[0].publishDate).format('YYYY-MM-DDTHH:mm:00')
+      );
+
+      await this.checkPlugs(
+        integration.organizationId,
+        getIntegration.identifier,
+        integration.id,
+        publishedPosts[0].postId
+      );
+
+      await this.checkInternalPlug(
+        integration,
+        integration.organizationId,
+        publishedPosts[0].postId,
+        JSON.parse(newPosts[0].settings || '{}')
       );
 
       return {
@@ -280,6 +480,93 @@ export class PostsService {
       }
 
       throw err;
+    }
+  }
+
+  private async checkInternalPlug(
+    integration: Integration,
+    orgId: string,
+    id: string,
+    settings: any
+  ) {
+    const plugs = Object.entries(settings).filter(([key]) => {
+      return key.indexOf('plug-') > -1;
+    });
+
+    if (plugs.length === 0) {
+      return;
+    }
+
+    const parsePlugs = plugs.reduce((all, [key, value]) => {
+      const [_, name, identifier] = key.split('--');
+      all[name] = all[name] || { name };
+      all[name][identifier] = value;
+      return all;
+    }, {} as any);
+
+    const list: {
+      name: string;
+      integrations: { id: string }[];
+      delay: string;
+      active: boolean;
+    }[] = Object.values(parsePlugs);
+
+    for (const trigger of list || []) {
+      for (const int of trigger?.integrations || []) {
+        this._workerServiceProducer.emit('internal-plugs', {
+          id: 'plug_' + id + '_' + trigger.name + '_' + int.id,
+          options: {
+            delay: +trigger.delay,
+          },
+          payload: {
+            post: id,
+            originalIntegration: integration.id,
+            integration: int.id,
+            plugName: trigger.name,
+            orgId: orgId,
+            delay: +trigger.delay,
+            information: trigger,
+          },
+        });
+      }
+    }
+  }
+
+  private async checkPlugs(
+    orgId: string,
+    providerName: string,
+    integrationId: string,
+    postId: string
+  ) {
+    const loadAllPlugs = this._integrationManager.getAllPlugs();
+    const getPlugs = await this._integrationService.getPlugs(
+      orgId,
+      integrationId
+    );
+
+    const currentPlug = loadAllPlugs.find((p) => p.identifier === providerName);
+
+    for (const plug of getPlugs) {
+      const runPlug = currentPlug?.plugs?.find(
+        (p: any) => p.methodName === plug.plugFunction
+      )!;
+      if (!runPlug) {
+        continue;
+      }
+
+      this._workerServiceProducer.emit('plugs', {
+        id: 'plug_' + postId + '_' + runPlug.identifier,
+        options: {
+          delay: runPlug.runEveryMilliseconds,
+        },
+        payload: {
+          plugId: plug.id,
+          postId,
+          delay: runPlug.runEveryMilliseconds,
+          totalRuns: runPlug.totalRuns,
+          currentRun: 1,
+        },
+      });
     }
   }
 
@@ -319,7 +606,10 @@ export class PostsService {
     const post = await this._postRepository.deletePost(orgId, group);
     if (post?.id) {
       await this._workerServiceProducer.delete('post', post.id);
+      return { id: post.id };
     }
+
+    return { error: true };
   }
 
   async countPostsFromDay(orgId: string, date: Date) {
@@ -363,7 +653,18 @@ export class PostsService {
   }
 
   async createPost(orgId: string, body: CreatePostDto) {
+    const postList = [];
     for (const post of body.posts) {
+      const messages = post.value.map((p) => p.content);
+      const updateContent = !body.shortLink
+        ? messages
+        : await this._shortLinkService.convertTextToShortLinks(orgId, messages);
+
+      post.value = post.value.map((p, i) => ({
+        ...p,
+        content: updateContent[i],
+      }));
+
       const { previousPost, posts } =
         await this._postRepository.createOrUpdatePost(
           body.type,
@@ -371,7 +672,9 @@ export class PostsService {
           body.type === 'now'
             ? dayjs().format('YYYY-MM-DDTHH:mm:00')
             : body.date,
-          post
+          post,
+          body.tags,
+          body.inter
         );
 
       if (!posts?.length) {
@@ -407,10 +710,21 @@ export class PostsService {
           },
           payload: {
             id: posts[0].id,
+            delay:
+              body.type === 'now'
+                ? 0
+                : dayjs(posts[0].publishDate).diff(dayjs(), 'millisecond'),
           },
         });
       }
+
+      postList.push({
+        postId: posts[0].id,
+        integration: post.integration.id,
+      });
     }
+
+    return postList;
   }
 
   async changeDate(orgId: string, id: string, date: string) {
@@ -433,6 +747,7 @@ export class PostsService {
         },
         payload: {
           id: id,
+          delay: dayjs(date).diff(dayjs(), 'millisecond'),
         },
       });
     }
@@ -516,26 +831,6 @@ export class PostsService {
     }
   }
 
-  async loadPostContent(postId: string) {
-    const post = await this._postRepository.getPostById(postId);
-    if (!post) {
-      return '';
-    }
-
-    return post.content;
-  }
-
-  async generatePosts(orgId: string, body: GeneratorDto) {
-    const content = body.url
-      ? await this._extractContentService.extractContent(body.url)
-      : await this.loadPostContent(body.post);
-
-    const value = body.url
-      ? await this._openAiService.extractWebsiteText(content!)
-      : await this._openAiService.generatePosts(content!);
-    return { list: value };
-  }
-
   async generatePostsDraft(orgId: string, body: CreateGeneratedPostsDto) {
     const getAllIntegrations = (
       await this._integrationService.getIntegrationsList(orgId)
@@ -580,6 +875,8 @@ export class PostsService {
           type: 'draft',
           date: randomDate,
           order: '',
+          shortLink: false,
+          tags: [],
           posts: [
             {
               group,
@@ -611,5 +908,104 @@ export class PostsService {
         });
       }
     }
+  }
+
+  findAllExistingCategories() {
+    return this._postRepository.findAllExistingCategories();
+  }
+
+  findAllExistingTopicsOfCategory(category: string) {
+    return this._postRepository.findAllExistingTopicsOfCategory(category);
+  }
+
+  findPopularPosts(category: string, topic?: string) {
+    return this._postRepository.findPopularPosts(category, topic);
+  }
+
+  async findFreeDateTime(orgId: string) {
+    const findTimes = await this._integrationService.findFreeDateTime(orgId);
+    return this.findFreeDateTimeRecursive(
+      orgId,
+      findTimes,
+      dayjs.utc().startOf('day')
+    );
+  }
+
+  async createPopularPosts(post: {
+    category: string;
+    topic: string;
+    content: string;
+    hook: string;
+  }) {
+    return this._postRepository.createPopularPosts(post);
+  }
+
+  private async findFreeDateTimeRecursive(
+    orgId: string,
+    times: number[],
+    date: dayjs.Dayjs
+  ): Promise<string> {
+    const list = await this._postRepository.getPostsCountsByDates(
+      orgId,
+      times,
+      date
+    );
+
+    if (!list.length) {
+      return this.findFreeDateTimeRecursive(orgId, times, date.add(1, 'day'));
+    }
+
+    const num = list.reduce<null | number>((prev, curr) => {
+      if (prev === null || prev > curr) {
+        return curr;
+      }
+      return prev;
+    }, null) as number;
+
+    return date.clone().add(num, 'minutes').format('YYYY-MM-DDTHH:mm:00');
+  }
+
+  getComments(postId: string) {
+    return this._postRepository.getComments(postId);
+  }
+
+  getTags(orgId: string) {
+    return this._postRepository.getTags(orgId);
+  }
+
+  createTag(orgId: string, body: CreateTagDto) {
+    return this._postRepository.createTag(orgId, body);
+  }
+
+  editTag(id: string, orgId: string, body: CreateTagDto) {
+    return this._postRepository.editTag(id, orgId, body);
+  }
+
+  createComment(
+    orgId: string,
+    userId: string,
+    postId: string,
+    comment: string
+  ) {
+    return this._postRepository.createComment(orgId, userId, postId, comment);
+  }
+
+  async sendDigestEmail(subject: string, orgId: string, since: string) {
+    const getNotificationsForOrgSince =
+      await this._notificationService.getNotificationsSince(orgId, since);
+    if (getNotificationsForOrgSince.length === 0) {
+      return;
+    }
+
+    const message = getNotificationsForOrgSince
+      .map((p) => p.content)
+      .join('<br />');
+    await this._notificationService.sendEmailsToOrg(
+      orgId,
+      getNotificationsForOrgSince.length === 1
+        ? subject
+        : '[Postiz] Your latest notifications',
+      message
+    );
   }
 }

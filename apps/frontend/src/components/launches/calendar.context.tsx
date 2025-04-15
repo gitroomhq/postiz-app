@@ -12,32 +12,38 @@ import {
   useState,
 } from 'react';
 import dayjs from 'dayjs';
-import useSWR, { useSWRConfig } from 'swr';
+import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import { Post, Integration } from '@prisma/client';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { isGeneral } from '@gitroom/react/helpers/is.general';
+import { Post, Integration, Tags } from '@prisma/client';
+import { useSearchParams } from 'next/navigation';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 
-dayjs.extend(isoWeek);
-dayjs.extend(weekOfYear);
+import { extend } from 'dayjs';
+extend(isoWeek);
+extend(weekOfYear);
 
-const CalendarContext = createContext({
+export const CalendarContext = createContext({
+  currentDay: dayjs().day() as 0 | 1 | 2 | 3 | 4 | 5 | 6,
   currentWeek: dayjs().week(),
   currentYear: dayjs().year(),
   currentMonth: dayjs().month(),
+  customer: null as string | null,
   comments: [] as Array<{ date: string; total: number }>,
-  integrations: [] as Integrations[],
+  integrations: [] as (Integrations & { refreshNeeded?: boolean })[],
   trendings: [] as string[],
-  posts: [] as Array<Post & { integration: Integration }>,
-  reloadCalendarView: () => {/** empty **/},
+  posts: [] as Array<Post & { integration: Integration, tags: {tag: Tags}[] }>,
+  reloadCalendarView: () => {
+    /** empty **/
+  },
   display: 'week',
   setFilters: (filters: {
     currentWeek: number;
     currentYear: number;
+    currentDay: 0 | 1 | 2 | 3 | 4 | 5 | 6;
     currentMonth: number;
-    display: 'week' | 'month';
+    display: 'week' | 'month' | 'day';
+    customer: string | null;
   }) => {
     /** empty **/
   },
@@ -51,9 +57,18 @@ export interface Integrations {
   id: string;
   disabled?: boolean;
   inBetweenSteps: boolean;
+  display: string;
   identifier: string;
   type: string;
   picture: string;
+  changeProfilePicture: boolean;
+  additionalSettings: string;
+  changeNickName: boolean;
+  time: { time: number }[];
+  customer?: {
+    name?: string;
+    id?: string;
+  };
 }
 
 function getWeekNumber(date: Date) {
@@ -81,41 +96,42 @@ export const CalendarWeekProvider: FC<{
   const fetch = useFetch();
   const [internalData, setInternalData] = useState([] as any[]);
   const [trendings] = useState<string[]>([]);
+
   const searchParams = useSearchParams();
 
-  const display = searchParams.get('month') ? 'month' : 'week';
+  const display = searchParams.get('display') || 'week';
+
   const [filters, setFilters] = useState({
-    currentWeek:
-      display === 'week'
-        ? +(searchParams.get('week') || getWeekNumber(new Date()))
-        : 0,
-    currentMonth:
-      display === 'week' ? 0 : +(searchParams.get('month') || dayjs().month()),
+    currentDay: +(searchParams.get('day') || dayjs().day()) as
+      | 0
+      | 1
+      | 2
+      | 3
+      | 4
+      | 5
+      | 6,
+    currentWeek: +(searchParams.get('week') || getWeekNumber(new Date())),
+    currentMonth: +(searchParams.get('month') || dayjs().month()),
     currentYear: +(searchParams.get('year') || dayjs().year()),
+    customer: (searchParams.get('customer') as string) || null,
     display,
   });
 
   const params = useMemo(() => {
-    return new URLSearchParams(
-      filters.currentWeek
-        ? {
-            week: filters.currentWeek.toString(),
-            year: filters.currentYear.toString(),
-          }
-        : {
-            year: filters.currentYear.toString(),
-            month: (filters.currentMonth + 1).toString(),
-          }
-    ).toString();
-  }, [filters]);
+    return new URLSearchParams({
+      display: filters.display,
+      day: filters.currentDay.toString(),
+      week: filters.currentWeek.toString(),
+      month: (filters.currentMonth + 1).toString(),
+      year: filters.currentYear.toString(),
+      customer: filters?.customer?.toString() || '',
+    }).toString();
+  }, [filters, display]);
 
-  const loadData = useCallback(
-    async () => {
-      const data = (await fetch(`/posts?${params}`)).json();
-      return data;
-    },
-    [filters, params]
-  );
+  const loadData = useCallback(async () => {
+    const data = (await fetch(`/posts?${params}`)).json();
+    return data;
+  }, [filters, params]);
 
   const swr = useSWR(`/posts-${params}`, loadData, {
     refreshInterval: 3600000,
@@ -126,22 +142,25 @@ export const CalendarWeekProvider: FC<{
 
   const setFiltersWrapper = useCallback(
     (filters: {
+      currentDay: 0 | 1 | 2 | 3 | 4 | 5 | 6;
       currentWeek: number;
       currentYear: number;
       currentMonth: number;
-      display: 'week' | 'month';
+      display: 'week' | 'month' | 'day';
+      customer: string | null;
     }) => {
       setFilters(filters);
       setInternalData([]);
-      window.history.replaceState(
-        null,
-        '',
-        `/launches?${
-          filters.currentWeek
-            ? `week=${filters.currentWeek}`
-            : `month=${filters.currentMonth}`
-        }&year=${filters.currentYear}`
-      );
+
+      const path = [
+        `day=${filters.currentDay}`,
+        `week=${filters.currentWeek}`,
+        `month=${filters.currentMonth}`,
+        `year=${filters.currentYear}`,
+        `display=${filters.display}`,
+        filters.customer ? `customer=${filters.customer}` : ``,
+      ].filter((f) => f);
+      window.history.replaceState(null, '', `/launches?${path.join('&')}`);
     },
     [filters, swr.mutate]
   );

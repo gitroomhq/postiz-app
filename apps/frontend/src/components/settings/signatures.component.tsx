@@ -1,0 +1,208 @@
+import React, { FC, Fragment, useCallback } from 'react';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import useSWR from 'swr';
+import { Button } from '@gitroom/react/form/button';
+import clsx from 'clsx';
+import { useModals } from '@mantine/modals';
+import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
+import { array, boolean, object, string } from 'yup';
+import { FormProvider, useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { CopilotTextarea } from '@copilotkit/react-textarea';
+import { Select } from '@gitroom/react/form/select';
+import { useToaster } from '@gitroom/react/toaster/toaster';
+
+export const SignaturesComponent: FC<{
+  appendSignature?: (value: string) => void;
+}> = (props) => {
+  const { appendSignature } = props;
+  const fetch = useFetch();
+  const modal = useModals();
+  const load = useCallback(async () => {
+    return (await fetch('/signatures')).json();
+  }, []);
+
+  const { data, mutate } = useSWR('signatures', load);
+
+  const addSignature = useCallback(
+    (data?: any) => () => {
+      modal.openModal({
+        title: '',
+        withCloseButton: false,
+        classNames: {
+          modal: 'bg-transparent text-textColor',
+        },
+        children: <AddOrRemoveSignature data={data} reload={mutate} />,
+      });
+    },
+    [mutate]
+  );
+
+  return (
+    <div className="flex flex-col">
+      <h3 className="text-[20px]">Signatures</h3>
+      <div className="text-customColor18 mt-[4px]">
+        You can add signatures to your account to be used in your posts.
+      </div>
+      <div className="my-[16px] mt-[16px] bg-sixth border-fifth items-center border rounded-[4px] p-[24px] flex gap-[24px]">
+        <div className="flex flex-col w-full">
+          {!!data?.length && (
+            <div className={`grid ${!!appendSignature ? 'grid-cols-[1fr,1fr,1fr,1fr,1fr]': 'grid-cols-[1fr,1fr,1fr,1fr]'} w-full gap-y-[10px]`}>
+              <div>Content</div>
+              <div className="text-center">Auto Add?</div>
+              {!!appendSignature && <div className="text-center">Actions</div>}
+              <div className="text-center">Edit</div>
+              <div className="text-center">Delete</div>
+              {data?.map((p: any) => (
+                <Fragment key={p.id}>
+                  <div className="relative flex-1 mr-[20px] overflow-x-hidden">
+                    <div className="absolute left-0 line-clamp-1 top-[50%] -translate-y-[50%] text-ellipsis">
+                      {p.content.slice(0,15) + '...'}
+                    </div>
+                  </div>
+                  <div className="flex flex-col justify-center relative mr-[20px]">
+                    <div className="text-center w-full absolute left-0 line-clamp-1 top-[50%] -translate-y-[50%]">
+                      {p.autoAdd ? 'Yes' : 'No'}
+                    </div>
+                  </div>
+                  {!!appendSignature && (
+                    <div className="flex justify-center">
+                      <Button onClick={() => appendSignature(p.content)}>Use Signature</Button>
+                    </div>
+                  )}
+                  <div className="flex justify-center">
+                    <div>
+                      <Button onClick={addSignature(p)}>Edit</Button>
+                    </div>
+                  </div>
+                  <div className="flex justify-center">
+                    <div>
+                      <Button onClick={addSignature(p)}>Delete</Button>
+                    </div>
+                  </div>
+                </Fragment>
+              ))}
+            </div>
+          )}
+          <div>
+            <Button
+              onClick={addSignature()}
+              className={clsx((data?.length || 0) > 0 && 'my-[16px]')}
+            >
+              Add a signature
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const details = object().shape({
+  content: string().required(),
+  autoAdd: boolean().required(),
+});
+
+const AddOrRemoveSignature: FC<{ data?: any; reload: () => void }> = (
+  props
+) => {
+  const { data, reload } = props;
+  const toast = useToaster();
+  const fetch = useFetch();
+
+  const form = useForm({
+    resolver: yupResolver(details),
+    values: {
+      content: data?.content || '',
+      autoAdd: data?.autoAdd || false,
+    },
+  });
+
+  const text = form.watch('content');
+  const autoAdd = form.watch('autoAdd');
+  const modal = useModals();
+
+  const callBack = useCallback(
+    async (values: any) => {
+      await fetch(data?.id ? `/signatures/${data.id}` : '/signatures', {
+        method: data?.id ? 'PUT' : 'POST',
+        body: JSON.stringify(values),
+      });
+
+      toast.show(
+        data?.id
+          ? 'Webhook updated successfully'
+          : 'Webhook added successfully',
+        'success'
+      );
+
+      modal.closeModal(modal.modals[modal.modals.length - 1].id);
+      reload();
+    },
+    [data, modal]
+  );
+
+  return (
+    <FormProvider {...form}>
+      <form onSubmit={form.handleSubmit(callBack)}>
+        <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-customColor6 bg-sixth p-[16px] pt-0 w-[500px]">
+          <TopTitle title={data ? 'Edit Signature' : 'Add Signature'} />
+          <button
+            className="outline-none absolute right-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+            type="button"
+            onClick={() => modal.closeModal(modal.modals[modal.modals.length - 1].id)}
+          >
+            <svg
+              viewBox="0 0 15 15"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+            >
+              <path
+                d="M11.7816 4.03157C12.0062 3.80702 12.0062 3.44295 11.7816 3.2184C11.5571 2.99385 11.193 2.99385 10.9685 3.2184L7.50005 6.68682L4.03164 3.2184C3.80708 2.99385 3.44301 2.99385 3.21846 3.2184C2.99391 3.44295 2.99391 3.80702 3.21846 4.03157L6.68688 7.49999L3.21846 10.9684C2.99391 11.193 2.99391 11.557 3.21846 11.7816C3.44301 12.0061 3.80708 12.0061 4.03164 11.7816L7.50005 8.31316L10.9685 11.7816C11.193 12.0061 11.5571 12.0061 11.7816 11.7816C12.0062 11.557 12.0062 11.193 11.7816 10.9684L8.31322 7.49999L11.7816 4.03157Z"
+                fill="currentColor"
+                fillRule="evenodd"
+                clipRule="evenodd"
+              ></path>
+            </svg>
+          </button>
+
+          <div className="relative bg-customColor2">
+            <CopilotTextarea
+              disableBranding={true}
+              className={clsx(
+                '!min-h-40 !max-h-80 p-2 overflow-x-hidden scrollbar scrollbar-thumb-[#612AD5] bg-customColor2 outline-none'
+              )}
+              value={text}
+              onChange={(e) => {
+                form.setValue('content', e.target.value);
+              }}
+              placeholder="Write your signature..."
+              autosuggestionsConfig={{
+                textareaPurpose: `Assist me in writing social media signature`,
+                chatApiConfigs: {},
+              }}
+            />
+          </div>
+
+          <Select
+            label="Auto add signature?"
+            {...form.register('autoAdd', {
+              setValueAs: (value) => value === 'true',
+            })}
+          >
+            <option value="false" selected={!autoAdd}>
+              No
+            </option>
+            <option value="true" selected={autoAdd}>
+              Yes
+            </option>
+          </Select>
+
+          <Button type="submit">Save</Button>
+        </div>
+      </form>
+    </FormProvider>
+  );
+};

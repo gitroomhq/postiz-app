@@ -10,13 +10,12 @@ const ModeComponent = () => {
   }, [mode]);
 
   useEffect(() => {
-    console.log(mode);
     document.body.classList.remove('dark', 'light');
     document.body.classList.add(mode);
   }, [mode]);
 
   return (
-    <div onClick={changeMode} className="select-none">
+    <div onClick={changeMode} className="select-none cursor-pointer">
       {mode === 'dark' ? (
         <svg
           xmlns="http://www.w3.org/2000/svg"

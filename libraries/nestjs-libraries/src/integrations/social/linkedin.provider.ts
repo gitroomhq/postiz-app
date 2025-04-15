@@ -8,18 +8,34 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import sharp from 'sharp';
 import { lookup } from 'mime-types';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
-import { removeMarkdown } from '@gitroom/helpers/utils/remove.markdown';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { Integration } from '@prisma/client';
+import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
 
 export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   identifier = 'linkedin';
   name = 'LinkedIn';
+  oneTimeToken = true;
+
   isBetweenSteps = false;
-  scopes = ['openid', 'profile', 'w_member_social', 'r_basicprofile'];
+  scopes = [
+    'openid',
+    'profile',
+    'w_member_social',
+    'r_basicprofile',
+    'rw_organization_admin',
+    'w_organization_social',
+    'r_organization_social',
+  ];
+  refreshWait = true;
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
-    const { access_token: accessToken, refresh_token: refreshToken, expires_in } = await (
-      await this.fetch('https://www.linkedin.com/oauth/v2/accessToken', {
+    const {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      expires_in,
+    } = await (
+      await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -64,15 +80,13 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
-  async generateAuthUrl(refresh?: string) {
+  async generateAuthUrl() {
     const state = makeId(6);
     const codeVerifier = makeId(30);
     const url = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${
       process.env.LINKEDIN_CLIENT_ID
-    }&redirect_uri=${encodeURIComponent(
-      `${process.env.FRONTEND_URL}/integrations/social/linkedin${
-        refresh ? `?refresh=${refresh}` : ''
-      }`
+    }&prompt=none&redirect_uri=${encodeURIComponent(
+      `${process.env.FRONTEND_URL}/integrations/social/linkedin`
     )}&state=${state}&scope=${encodeURIComponent(this.scopes.join(' '))}`;
     return {
       url,
@@ -149,7 +163,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   async company(token: string, data: { url: string }) {
     const { url } = data;
     const getCompanyVanity = url.match(
-      /^https?:\/\/?www\.?linkedin\.com\/company\/([^/]+)\/$/
+      /^https?:\/\/(?:www\.)?linkedin\.com\/company\/([^/]+)\/?$/
     );
     if (!getCompanyVanity || !getCompanyVanity?.length) {
       throw new Error('Invalid LinkedIn company URL');
@@ -157,13 +171,13 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
 
     const { elements } = await (
       await this.fetch(
-        `https://api.linkedin.com/rest/organizations?q=vanityName&vanityName=${getCompanyVanity[1]}`,
+        `https://api.linkedin.com/v2/organizations?q=vanityName&vanityName=${getCompanyVanity[1]}`,
         {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
             'X-Restli-Protocol-Version': '2.0.0',
-            'LinkedIn-Version': '202402',
+            'LinkedIn-Version': '202501',
             Authorization: `Bearer ${token}`,
           },
         }
@@ -185,90 +199,126 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     picture: any,
     type = 'personal' as 'company' | 'personal'
   ) {
-    try {
-      const {
-        value: { uploadUrl, image, video, uploadInstructions, ...all },
-      } = await (
-        await this.fetch(
-          `https://api.linkedin.com/rest/${
-            fileName.indexOf('mp4') > -1 ? 'videos' : 'images'
-          }?action=initializeUpload`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Restli-Protocol-Version': '2.0.0',
-              'LinkedIn-Version': '202402',
-              Authorization: `Bearer ${accessToken}`,
+    const {
+      value: { uploadUrl, image, video, uploadInstructions, ...all },
+    } = await (
+      await this.fetch(
+        `https://api.linkedin.com/v2/${
+          fileName.indexOf('mp4') > -1 ? 'videos' : 'images'
+        }?action=initializeUpload`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Restli-Protocol-Version': '2.0.0',
+            'LinkedIn-Version': '202501',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            initializeUploadRequest: {
+              owner:
+                type === 'personal'
+                  ? `urn:li:person:${personId}`
+                  : `urn:li:organization:${personId}`,
+              ...(fileName.indexOf('mp4') > -1
+                ? {
+                    fileSizeBytes: picture.length,
+                    uploadCaptions: false,
+                    uploadThumbnail: false,
+                  }
+                : {}),
             },
-            body: JSON.stringify({
-              initializeUploadRequest: {
-                owner:
-                  type === 'personal'
-                    ? `urn:li:person:${personId}`
-                    : `urn:li:organization:${personId}`,
-                ...(fileName.indexOf('mp4') > -1
-                  ? {
-                      fileSizeBytes: picture.length,
-                      uploadCaptions: false,
-                      uploadThumbnail: false,
-                    }
-                  : {}),
-              },
-            }),
-          }
-        )
-      ).json();
+          }),
+        }
+      )
+    ).json();
 
-      const sendUrlRequest = uploadInstructions?.[0]?.uploadUrl || uploadUrl;
-      const finalOutput = video || image;
+    const sendUrlRequest = uploadInstructions?.[0]?.uploadUrl || uploadUrl;
+    const finalOutput = video || image;
 
+    const etags = [];
+    for (let i = 0; i < picture.length; i += 1024 * 1024 * 2) {
       const upload = await this.fetch(sendUrlRequest, {
         method: 'PUT',
         headers: {
           'X-Restli-Protocol-Version': '2.0.0',
-          'LinkedIn-Version': '202402',
+          'LinkedIn-Version': '202501',
           Authorization: `Bearer ${accessToken}`,
           ...(fileName.indexOf('mp4') > -1
             ? { 'Content-Type': 'application/octet-stream' }
             : {}),
         },
-        body: picture,
+        body: picture.slice(i, i + 1024 * 1024 * 2),
       });
 
-      if (fileName.indexOf('mp4') > -1) {
-        const etag = upload.headers.get('etag');
-        const a = await this.fetch(
-          'https://api.linkedin.com/rest/videos?action=finalizeUpload',
-          {
-            method: 'POST',
-            body: JSON.stringify({
-              finalizeUploadRequest: {
-                video,
-                uploadToken: '',
-                uploadedPartIds: [etag],
-              },
-            }),
-            headers: {
-              'X-Restli-Protocol-Version': '2.0.0',
-              'LinkedIn-Version': '202402',
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${accessToken}`,
-            },
-          }
-        );
-      }
-
-      return finalOutput;
-    } catch (err: any) {
-      throw 'eerr';
+      etags.push(upload.headers.get('etag'));
     }
+
+    if (fileName.indexOf('mp4') > -1) {
+      const a = await this.fetch(
+        'https://api.linkedin.com/v2/videos?action=finalizeUpload',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            finalizeUploadRequest: {
+              video,
+              uploadToken: '',
+              uploadedPartIds: etags,
+            },
+          }),
+          headers: {
+            'X-Restli-Protocol-Version': '2.0.0',
+            'LinkedIn-Version': '202501',
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+    }
+
+    return finalOutput;
+  }
+
+  protected fixText(text: string) {
+    const pattern = /@\[.+?]\(urn:li:organization.+?\)/g;
+    const matches = text.match(pattern) || [];
+    const splitAll = text.split(pattern);
+    const splitTextReformat = splitAll.map((p) => {
+      return p
+        .replace(/\\/g, '\\\\')
+        .replace(/</g, '\\<')
+        .replace(/>/g, '\\>')
+        .replace(/#/g, '\\#')
+        .replace(/~/g, '\\~')
+        .replace(/_/g, '\\_')
+        .replace(/\|/g, '\\|')
+        .replace(/\[/g, '\\[')
+        .replace(/]/g, '\\]')
+        .replace(/\*/g, '\\*')
+        .replace(/\(/g, '\\(')
+        .replace(/\)/g, '\\)')
+        .replace(/\{/g, '\\{')
+        .replace(/}/g, '\\}')
+        .replace(/@/g, '\\@');
+    });
+
+    const connectAll = splitTextReformat.reduce((all, current) => {
+      const match = matches.shift();
+      all.push(current);
+      if (match) {
+        all.push(match);
+      }
+      return all;
+    }, [] as string[]);
+
+    return connectAll.join('');
   }
 
   async post(
     id: string,
     accessToken: string,
     postDetails: PostDetails[],
+    integration: Integration,
     type = 'personal' as 'company' | 'personal'
   ): Promise<PostResponse[]> {
     const [firstPost, ...restPosts] = postDetails;
@@ -279,14 +329,15 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           p?.media?.flatMap(async (m) => {
             return {
               id: await this.uploadPicture(
-                m.path,
+                m.url,
                 accessToken,
                 id,
-                m.path.indexOf('mp4') > -1
-                  ? Buffer.from(await readOrFetch(m.path))
-                  : await sharp(await readOrFetch(m.path), {
-                      animated: lookup(m.path) === 'image/gif',
+                m.url.indexOf('mp4') > -1
+                  ? Buffer.from(await readOrFetch(m.url))
+                  : await sharp(await readOrFetch(m.url), {
+                      animated: lookup(m.url) === 'image/gif',
                     })
+                      .toFormat('jpeg')
                       .resize({
                         width: 1000,
                       })
@@ -322,10 +373,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           type === 'personal'
             ? `urn:li:person:${id}`
             : `urn:li:organization:${id}`,
-        commentary: removeMarkdown({
-          text: firstPost.message.replace('\n', '𝔫𝔢𝔴𝔩𝔦𝔫𝔢'),
-          except: [/@\[(.*?)]\(urn:li:organization:(\d+)\)/g],
-        }).replace('𝔫𝔢𝔴𝔩𝔦𝔫𝔢', '\n'),
+        commentary: this.fixText(firstPost.message),
         visibility: 'PUBLIC',
         distribution: {
           feedDistribution: 'MAIN_FEED',
@@ -391,10 +439,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
                   : `urn:li:organization:${id}`,
               object: topPostId,
               message: {
-                text: removeMarkdown({
-                  text: post.message.replace('\n', '𝔫𝔢𝔴𝔩𝔦𝔫𝔢'),
-                  except: [/@\[(.*?)]\(urn:li:organization:(\d+)\)/g],
-                }).replace('𝔫𝔢𝔴𝔩𝔦𝔫𝔢', '\n'),
+                text: this.fixText(post.message),
               },
             }),
           }
@@ -410,5 +455,51 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     }
 
     return ids;
+  }
+
+  @PostPlug({
+    identifier: 'linkedin-repost-post-users',
+    title: 'Add Re-posters',
+    description: 'Add accounts to repost your post',
+    pickIntegration: ['linkedin', 'linkedin-page'],
+    fields: [],
+  })
+  async repostPostUsers(
+    integration: Integration,
+    originalIntegration: Integration,
+    postId: string,
+    information: any,
+    isPersonal = true
+  ) {
+    try {
+      await this.fetch(`https://api.linkedin.com/v2/posts`, {
+        body: JSON.stringify({
+          author:
+            (isPersonal ? 'urn:li:person:' : `urn:li:organization:`) +
+            `${integration.internalId}`,
+          commentary: '',
+          visibility: 'PUBLIC',
+          distribution: {
+            feedDistribution: 'MAIN_FEED',
+            targetEntities: [],
+            thirdPartyDistributionChannels: [],
+          },
+          lifecycleState: 'PUBLISHED',
+          isReshareDisabledByAuthor: false,
+          reshareContext: {
+            parent: postId,
+          },
+        }),
+        method: 'POST',
+        headers: {
+          'X-Restli-Protocol-Version': '2.0.0',
+          'Content-Type': 'application/json',
+          'LinkedIn-Version': '202501',
+          Authorization: `Bearer ${integration.token}`,
+        },
+      });
+    } catch (err) {
+      return;
+    }
   }
 }

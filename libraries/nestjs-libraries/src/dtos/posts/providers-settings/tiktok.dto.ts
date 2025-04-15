@@ -1,22 +1,42 @@
-import { IsBoolean, IsIn, IsString } from 'class-validator';
+import { IsBoolean, IsDefined, IsIn, IsString } from 'class-validator';
 
 export class TikTokDto {
-  @IsIn(['PUBLIC_TO_EVERYONE', 'MUTUAL_FOLLOW_FRIENDS', 'FOLLOWER_OF_CREATOR', 'SELF_ONLY'])
+  @IsIn([
+    'PUBLIC_TO_EVERYONE',
+    'MUTUAL_FOLLOW_FRIENDS',
+    'FOLLOWER_OF_CREATOR',
+    'SELF_ONLY',
+  ])
   @IsString()
-  privacy_level: 'PUBLIC_TO_EVERYONE' | 'MUTUAL_FOLLOW_FRIENDS' | 'FOLLOWER_OF_CREATOR' | 'SELF_ONLY';
+  privacy_level:
+    | 'PUBLIC_TO_EVERYONE'
+    | 'MUTUAL_FOLLOW_FRIENDS'
+    | 'FOLLOWER_OF_CREATOR'
+    | 'SELF_ONLY';
 
   @IsBoolean()
-  disable_duet: boolean;
+  duet: boolean;
 
   @IsBoolean()
-  disable_stitch: boolean;
+  stitch: boolean;
 
   @IsBoolean()
-  disable_comment: boolean;
+  comment: boolean;
+
+  @IsIn(['yes', 'no'])
+  autoAddMusic: 'yes' | 'no';
 
   @IsBoolean()
   brand_content_toggle: boolean;
 
   @IsBoolean()
   brand_organic_toggle: boolean;
+
+  // @IsIn(['true'])
+  // @IsDefined()
+  // isValidVideo: boolean;
+
+  @IsIn(['DIRECT_POST', 'UPLOAD'])
+  @IsString()
+  content_posting_method: 'DIRECT_POST' | 'UPLOAD';
 }

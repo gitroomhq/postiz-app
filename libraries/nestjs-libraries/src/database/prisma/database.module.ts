@@ -16,8 +16,6 @@ import { PostsRepository } from '@gitroom/nestjs-libraries/database/prisma/posts
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 import { MediaRepository } from '@gitroom/nestjs-libraries/database/prisma/media/media.repository';
-import { CommentsRepository } from '@gitroom/nestjs-libraries/database/prisma/comments/comments.repository';
-import { CommentsService } from '@gitroom/nestjs-libraries/database/prisma/comments/comments.service';
 import { NotificationsRepository } from '@gitroom/nestjs-libraries/database/prisma/notifications/notifications.repository';
 import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 import { ItemUserRepository } from '@gitroom/nestjs-libraries/database/prisma/marketplace/item.user.repository';
@@ -29,6 +27,14 @@ import { ExtractContentService } from '@gitroom/nestjs-libraries/openai/extract.
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { AgenciesService } from '@gitroom/nestjs-libraries/database/prisma/agencies/agencies.service';
 import { AgenciesRepository } from '@gitroom/nestjs-libraries/database/prisma/agencies/agencies.repository';
+import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
+import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.link.service';
+import { WebhooksRepository } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.repository';
+import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
+import { SignatureRepository } from '@gitroom/nestjs-libraries/database/prisma/signatures/signature.repository';
+import { SignatureService } from '@gitroom/nestjs-libraries/database/prisma/signatures/signature.service';
+import { AutopostRepository } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.repository';
+import { AutopostService } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.service';
 
 @Global()
 @Module({
@@ -47,25 +53,31 @@ import { AgenciesRepository } from '@gitroom/nestjs-libraries/database/prisma/ag
     SubscriptionRepository,
     NotificationService,
     NotificationsRepository,
+    WebhooksRepository,
+    WebhooksService,
     IntegrationService,
     IntegrationRepository,
     PostsService,
     PostsRepository,
     StripeService,
     MessagesRepository,
+    SignatureRepository,
+    AutopostRepository,
+    AutopostService,
+    SignatureService,
     MediaService,
     MediaRepository,
-    CommentsRepository,
     ItemUserRepository,
     AgenciesService,
     AgenciesRepository,
     ItemUserService,
     MessagesService,
-    CommentsService,
     IntegrationManager,
     ExtractContentService,
     OpenaiService,
     EmailService,
+    TrackService,
+    ShortLinkService,
   ],
   get exports() {
     return this.providers;

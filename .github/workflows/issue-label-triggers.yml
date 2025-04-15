@@ -1,0 +1,28 @@
+---
+name: Issue Label Triggers
+on:
+  issues:
+    types:
+      - labeled
+
+jobs:
+  closed-public-website:
+    if: github.event.label.name == 'trigger-public-website'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Add comment
+        run: gh issue comment "$NUMBER" --body "$BODY" && gh issue close "$NUMBER"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          NUMBER: ${{ github.event.issue.number }}
+          BODY: >
+            This issue concerns the public website, which is not open source and is not part of this repository.
+
+
+            If you have a question or concern about the content of the public website, please contact Nevo David.
+
+
+            If you are looking to contribute to the open source Postiz project code, this is the correct repository, and we welcome your contributions in a new GitHub issue.

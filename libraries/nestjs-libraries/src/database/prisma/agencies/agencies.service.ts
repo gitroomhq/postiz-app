@@ -2,13 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { AgenciesRepository } from '@gitroom/nestjs-libraries/database/prisma/agencies/agencies.repository';
 import { User } from '@prisma/client';
 import { CreateAgencyDto } from '@gitroom/nestjs-libraries/dtos/agencies/create.agency.dto';
-import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
+import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 
 @Injectable()
 export class AgenciesService {
   constructor(
     private _agenciesRepository: AgenciesRepository,
-    private _emailService: EmailService
+    private _notificationService: NotificationService
   ) {}
   getAgencyByUser(user: User) {
     return this._agenciesRepository.getAgencyByUser(user);
@@ -35,7 +35,7 @@ export class AgenciesService {
     const agency = await this._agenciesRepository.getAgencyById(id);
 
     if (action === 'approve') {
-      await this._emailService.sendEmail(
+      await this._notificationService.sendEmail(
         agency?.user?.email!,
         'Your Agency has been approved and added to Postiz 🚀',
         `
@@ -59,7 +59,7 @@ export class AgenciesService {
       return;
     }
 
-    await this._emailService.sendEmail(
+    await this._notificationService.sendEmail(
       agency?.user?.email!,
       'Your Agency has been declined 😔',
       `
@@ -84,7 +84,7 @@ export class AgenciesService {
 
   async createAgency(user: User, body: CreateAgencyDto) {
     const agency = await this._agenciesRepository.createAgency(user, body);
-    await this._emailService.sendEmail(
+    await this._notificationService.sendEmail(
       'nevo@postiz.com',
       'New agency created',
       `

@@ -1,5 +1,16 @@
 import {
-  Body, Controller, Get, Param, Post, Query, Req, Res, UploadedFile, UseInterceptors, UsePipes
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Query,
+  Req,
+  Res,
+  UploadedFile,
+  UseInterceptors,
+  UsePipes,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
@@ -10,54 +21,91 @@ import handleR2Upload from '@gitroom/nestjs-libraries/upload/r2.uploader';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CustomFileValidationPipe } from '@gitroom/nestjs-libraries/upload/custom.upload.validation';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
+import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 
 @ApiTags('Media')
 @Controller('/media')
 export class MediaController {
+  private storage = UploadFactory.createStorage();
   constructor(
     private _mediaService: MediaService,
     private _subscriptionService: SubscriptionService
   ) {}
 
+  @Delete('/:id')
+  deleteMedia(@GetOrgFromRequest() org: Organization, @Param('id') id: string) {
+    return this._mediaService.deleteMedia(org.id, id);
+  }
   @Post('/generate-image')
   async generateImage(
     @GetOrgFromRequest() org: Organization,
     @Req() req: Request,
-    @Body('prompt') prompt: string
+    @Body('prompt') prompt: string,
+    isPicturePrompt = false
   ) {
     const total = await this._subscriptionService.checkCredits(org);
-    if (total.credits <= 0) {
+    if (process.env.STRIPE_PUBLISHABLE_KEY && total.credits <= 0) {
       return false;
     }
 
-    return {output: 'data:image/png;base64,' + await this._mediaService.generateImage(prompt, org)};
+    return {
+      output:
+        (isPicturePrompt ? '' : 'data:image/png;base64,') +
+        (await this._mediaService.generateImage(prompt, org, isPicturePrompt)),
+    };
+  }
+
+  @Post('/generate-image-with-prompt')
+  async generateImageFromText(
+    @GetOrgFromRequest() org: Organization,
+    @Req() req: Request,
+    @Body('prompt') prompt: string
+  ) {
+    const image = await this.generateImage(org, req, prompt, true);
+    if (!image) {
+      return false;
+    }
+
+    const file = await this.storage.uploadSimple(image.output);
+
+    return this._mediaService.saveFile(org.id, file.split('/').pop(), file);
+  }
+
+  @Post('/upload-server')
+  @UseInterceptors(FileInterceptor('file'))
+  @UsePipes(new CustomFileValidationPipe())
+  async uploadServer(
+    @GetOrgFromRequest() org: Organization,
+    @UploadedFile() file: Express.Multer.File
+  ) {
+    const uploadedFile = await this.storage.uploadFile(file);
+    return this._mediaService.saveFile(
+      org.id,
+      uploadedFile.originalname,
+      uploadedFile.path
+    );
   }
 
   @Post('/upload-simple')
   @UseInterceptors(FileInterceptor('file'))
-  @UsePipes(new CustomFileValidationPipe())
   async uploadSimple(
     @GetOrgFromRequest() org: Organization,
-    @UploadedFile('file')
-    file: Express.Multer.File
+    @UploadedFile('file') file: Express.Multer.File
   ) {
-    const filePath =
-      file.path.indexOf('http') === 0
-        ? file.path
-        : file.path.replace(process.env.UPLOAD_DIRECTORY, '');
-    return this._mediaService.saveFile(org.id, file.originalname, filePath);
+    const getFile = await this.storage.uploadFile(file);
+    return this._mediaService.saveFile(
+      org.id,
+      getFile.originalname,
+      getFile.path
+    );
   }
 
   @Post('/:endpoint')
-  // @UseInterceptors(FileInterceptor('file'))
-  // @UsePipes(new CustomFileValidationPipe())
   async uploadFile(
     @GetOrgFromRequest() org: Organization,
     @Req() req: Request,
     @Res() res: Response,
     @Param('endpoint') endpoint: string
-    // @UploadedFile('file')
-    // file: Express.Multer.File
   ) {
     const upload = await handleR2Upload(endpoint, req, res);
     if (endpoint !== 'complete-multipart-upload') {
@@ -67,15 +115,14 @@ export class MediaController {
     // @ts-ignore
     const name = upload.Location.split('/').pop();
 
-    // @ts-ignore
-    await this._mediaService.saveFile(org.id, name, upload.Location);
+    const saveFile = await this._mediaService.saveFile(
+      org.id,
+      name,
+      // @ts-ignore
+      upload.Location
+    );
 
-    res.status(200).json(upload);
-    // const filePath =
-    //   file.path.indexOf('http') === 0
-    //     ? file.path
-    //     : file.path.replace(process.env.UPLOAD_DIRECTORY, '');
-    // return this._mediaService.saveFile(org.id, file.originalname, filePath);
+    res.status(200).json({ ...upload, saved: saveFile });
   }
 
   @Get('/')

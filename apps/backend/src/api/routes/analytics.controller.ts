@@ -15,8 +15,6 @@ import { StarsListDto } from '@gitroom/nestjs-libraries/dtos/analytics/stars.lis
 import { ApiTags } from '@nestjs/swagger';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
-import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
-import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
 @ApiTags('Analytics')
 @Controller('/analytics')
@@ -24,7 +22,6 @@ export class AnalyticsController {
   constructor(
     private _starsService: StarsService,
     private _integrationService: IntegrationService,
-    private _integrationManager: IntegrationManager
   ) {}
   @Get('/')
   async getStars(@GetOrgFromRequest() org: Organization) {
@@ -61,78 +58,6 @@ export class AnalyticsController {
     @Param('integration') integration: string,
     @Query('date') date: string
   ) {
-    const getIntegration = await this._integrationService.getIntegrationById(
-      org.id,
-      integration
-    );
-
-    if (!getIntegration) {
-      throw new Error('Invalid integration');
-    }
-
-    if (getIntegration.type !== 'social') {
-      return {};
-    }
-
-    const integrationProvider = this._integrationManager.getSocialIntegration(
-      getIntegration.providerIdentifier
-    );
-
-    if (dayjs(getIntegration?.tokenExpiration).isBefore(dayjs())) {
-      const { accessToken, expiresIn, refreshToken } =
-        await integrationProvider.refreshToken(getIntegration.refreshToken!);
-
-      if (accessToken) {
-        await this._integrationService.createOrUpdateIntegration(
-          getIntegration.organizationId,
-          getIntegration.name,
-          getIntegration.picture!,
-          'social',
-          getIntegration.internalId,
-          getIntegration.providerIdentifier,
-          accessToken,
-          refreshToken,
-          expiresIn
-        );
-
-        getIntegration.token = accessToken;
-      }
-    }
-
-    const getIntegrationData = await ioRedis.get(
-      `integration:${org.id}:${integration}:${date}`
-    );
-    if (getIntegrationData) {
-      return JSON.parse(getIntegrationData);
-    }
-
-    if (integrationProvider.analytics) {
-      try {
-        const loadAnalytics = await integrationProvider.analytics(
-          getIntegration.internalId,
-          getIntegration.token,
-          +date
-        );
-        await ioRedis.set(
-          `integration:${org.id}:${integration}:${date}`,
-          JSON.stringify(loadAnalytics),
-          'EX',
-          !process.env.NODE_ENV || process.env.NODE_ENV === 'development'
-            ? 1
-            : 3600
-        );
-        return loadAnalytics;
-      } catch (e) {
-        if (e instanceof RefreshToken) {
-          await this._integrationService.disconnectChannel(
-            org.id,
-            getIntegration
-          );
-          return [];
-        }
-      }
-    }
-
-    return [];
+    return this._integrationService.checkAnalytics(org, integration, date);
   }
 }

@@ -10,6 +10,8 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { capitalize, chunk } from 'lodash';
+import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
+import { Integration } from '@prisma/client';
 
 export class ThreadsProvider extends SocialAbstract implements SocialProvider {
   identifier = 'threads';
@@ -34,18 +36,18 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
-  async generateAuthUrl(refresh?: string) {
+  async generateAuthUrl() {
     const state = makeId(6);
     return {
       url:
         'https://threads.net/oauth/authorize' +
         `?client_id=${process.env.THREADS_APP_ID}` +
         `&redirect_uri=${encodeURIComponent(
-          process.env.NODE_ENV === 'development' || !process.env.NODE_ENV
-            ? `https://integration.git.sn/integrations/social/threads`
-            : `${process.env.FRONTEND_URL}/integrations/social/threads${
-                refresh ? `?refresh=${refresh}` : ''
-              }`
+          `${
+            process?.env.FRONTEND_URL?.indexOf('https') == -1
+              ? `https://redirectmeto.com/${process?.env.FRONTEND_URL}`
+              : `${process?.env.FRONTEND_URL}`
+          }/integrations/social/threads`
         )}` +
         `&state=${state}` +
         `&scope=${encodeURIComponent(this.scopes.join(','))}`,
@@ -64,11 +66,11 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
         'https://graph.threads.net/oauth/access_token' +
           `?client_id=${process.env.THREADS_APP_ID}` +
           `&redirect_uri=${encodeURIComponent(
-            process.env.NODE_ENV === 'development' || !process.env.NODE_ENV
-              ? `https://integration.git.sn/integrations/social/threads`
-              : `${process.env.FRONTEND_URL}/integrations/social/threads${
-                  params.refresh ? `?refresh=${params.refresh}` : ''
-                }`
+            `${
+              process?.env.FRONTEND_URL?.indexOf('https') == -1
+                ? `https://redirectmeto.com/${process?.env.FRONTEND_URL}`
+                : `${process?.env.FRONTEND_URL}`
+            }/integrations/social/threads`
           )}` +
           `&grant_type=authorization_code` +
           `&client_secret=${process.env.THREADS_APP_SECRET}` +
@@ -104,9 +106,16 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
-  private async checkLoaded(mediaContainerId: string, accessToken: string): Promise<boolean> {
-    const {status, id, error_message} = await (await this.fetch(`https://graph.threads.net/v1.0/${mediaContainerId}?fields=status,error_message&access_token=${accessToken}`)).json();
-    console.log(status, error_message);
+  private async checkLoaded(
+    mediaContainerId: string,
+    accessToken: string
+  ): Promise<boolean> {
+    const { status, id, error_message } = await (
+      await this.fetch(
+        `https://graph.threads.net/v1.0/${mediaContainerId}?fields=status,error_message&access_token=${accessToken}`
+      )
+    ).json();
+
     if (status === 'ERROR') {
       throw new Error(id);
     }
@@ -145,20 +154,19 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
 
     let globalThread = '';
     let link = '';
-
     if (firstPost?.media?.length! <= 1) {
-      const type = !firstPost?.media?.[0]?.path
+      const type = !firstPost?.media?.[0]?.url
         ? undefined
-        : firstPost?.media![0].path.indexOf('.mp4') > -1
+        : firstPost?.media![0].url.indexOf('.mp4') > -1
         ? 'video_url'
         : 'image_url';
 
       const media = new URLSearchParams({
         ...(type === 'video_url'
-          ? { video_url: firstPost?.media![0].path }
+          ? { video_url: firstPost?.media![0].url }
           : {}),
         ...(type === 'image_url'
-          ? { image_url: firstPost?.media![0].path }
+          ? { image_url: firstPost?.media![0].url }
           : {}),
         media_type:
           type === 'video_url'
@@ -202,15 +210,11 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       const medias = [];
       for (const mediaLoad of firstPost.media!) {
         const type =
-          mediaLoad.path.indexOf('.mp4') > -1 ? 'video_url' : 'image_url';
+          mediaLoad.url.indexOf('.mp4') > -1 ? 'video_url' : 'image_url';
 
         const media = new URLSearchParams({
-          ...(type === 'video_url'
-            ? { video_url: mediaLoad.path }
-            : {}),
-          ...(type === 'image_url'
-            ? { image_url: mediaLoad.path }
-            : {}),
+          ...(type === 'video_url' ? { video_url: mediaLoad.url } : {}),
+          ...(type === 'image_url' ? { image_url: mediaLoad.url } : {}),
           is_carousel_item: 'true',
           media_type:
             type === 'video_url'
@@ -234,7 +238,9 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
         medias.push(mediaId);
       }
 
-      await Promise.all(medias.map((p: string) => this.checkLoaded(p, accessToken)));
+      await Promise.all(
+        medias.map((p: string) => this.checkLoaded(p, accessToken))
+      );
 
       const { id: containerId } = await (
         await this.fetch(
@@ -318,8 +324,8 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     accessToken: string,
     date: number
   ): Promise<AnalyticsData[]> {
-    const until = dayjs().format('YYYY-MM-DD');
-    const since = dayjs().subtract(date, 'day').format('YYYY-MM-DD');
+    const until = dayjs().endOf('day').unix();
+    const since = dayjs().subtract(date, 'day').unix();
 
     const { data, ...all } = await (
       await fetch(
@@ -327,7 +333,6 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       )
     ).json();
 
-    console.log(data);
     return (
       data?.map((d: any) => ({
         label: capitalize(d.name),
@@ -340,5 +345,74 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
             })),
       })) || []
     );
+  }
+
+  @Plug({
+    identifier: 'threads-autoPlugPost',
+    title: 'Auto plug post',
+    description:
+      'When a post reached a certain number of likes, add another post to it so you followers get a notification about your promotion',
+    runEveryMilliseconds: 21600000,
+    totalRuns: 3,
+    fields: [
+      {
+        name: 'likesAmount',
+        type: 'number',
+        placeholder: 'Amount of likes',
+        description: 'The amount of likes to trigger the repost',
+        validation: /^\d+$/,
+      },
+      {
+        name: 'post',
+        type: 'richtext',
+        placeholder: 'Post to plug',
+        description: 'Message content to plug',
+        validation: /^[\s\S]{3,}$/g,
+      },
+    ],
+  })
+  async autoPlugPost(
+    integration: Integration,
+    id: string,
+    fields: { likesAmount: string; post: string }
+  ) {
+    const { data } = await (
+      await fetch(
+        `https://graph.threads.net/v1.0/${id}/insights?metric=likes&access_token=${integration.token}`
+      )
+    ).json();
+
+    const {
+      values: [value],
+    } = data.find((p: any) => p.name === 'likes');
+
+    if (value.value >= fields.likesAmount) {
+      await timer(2000);
+
+      const form = new FormData();
+      form.append('media_type', 'TEXT');
+      form.append('text', fields.post);
+      form.append('reply_to_id', id);
+      form.append('access_token', integration.token);
+
+      const { id: replyId } = await (
+        await this.fetch('https://graph.threads.net/v1.0/me/threads', {
+          method: 'POST',
+          body: form,
+        })
+      ).json();
+
+      await (
+        await this.fetch(
+          `https://graph.threads.net/v1.0/${integration.internalId}/threads_publish?creation_id=${replyId}&access_token=${integration.token}`,
+          {
+            method: 'POST',
+          }
+        )
+      ).json();
+      return true;
+    }
+
+    return false;
   }
 }

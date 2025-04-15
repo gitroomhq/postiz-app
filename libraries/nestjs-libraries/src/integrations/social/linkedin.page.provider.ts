@@ -8,6 +8,9 @@ import {
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { LinkedinProvider } from '@gitroom/nestjs-libraries/integrations/social/linkedin.provider';
 import dayjs from 'dayjs';
+import { Integration } from '@prisma/client';
+import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
+import { timer } from '@gitroom/helpers/utils/timer';
 
 export class LinkedinPageProvider
   extends LinkedinProvider
@@ -16,6 +19,7 @@ export class LinkedinPageProvider
   override identifier = 'linkedin-page';
   override name = 'LinkedIn Page';
   override isBetweenSteps = true;
+  override refreshWait = true;
   override scopes = [
     'openid',
     'profile',
@@ -29,7 +33,11 @@ export class LinkedinPageProvider
   override async refreshToken(
     refresh_token: string
   ): Promise<AuthTokenDetails> {
-    const { access_token: accessToken, expires_in, refresh_token: refreshToken } = await (
+    const {
+      access_token: accessToken,
+      expires_in,
+      refresh_token: refreshToken,
+    } = await (
       await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
         method: 'POST',
         headers: {
@@ -75,15 +83,22 @@ export class LinkedinPageProvider
     };
   }
 
-  override async generateAuthUrl(refresh?: string) {
+  override async repostPostUsers(
+    integration: Integration,
+    originalIntegration: Integration,
+    postId: string,
+    information: any
+  ) {
+    return super.repostPostUsers(integration, originalIntegration, postId, information, false);
+  }
+
+  override async generateAuthUrl() {
     const state = makeId(6);
     const codeVerifier = makeId(30);
-    const url = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${
+    const url = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&prompt=none&client_id=${
       process.env.LINKEDIN_CLIENT_ID
     }&redirect_uri=${encodeURIComponent(
-      `${process.env.FRONTEND_URL}/integrations/social/linkedin-page${
-        refresh ? `?refresh=${refresh}` : ''
-      }`
+      `${process.env.FRONTEND_URL}/integrations/social/linkedin-page`
     )}&state=${state}&scope=${encodeURIComponent(this.scopes.join(' '))}`;
     return {
       url,
@@ -93,12 +108,14 @@ export class LinkedinPageProvider
   }
 
   async companies(accessToken: string) {
-    const { elements } = await (
+    const { elements, ...all } = await (
       await fetch(
         'https://api.linkedin.com/v2/organizationalEntityAcls?q=roleAssignee&role=ADMINISTRATOR&projection=(elements*(organizationalTarget~(localizedName,vanityName,logoV2(original~:playableStreams))))',
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
+            'X-Restli-Protocol-Version': '2.0.0',
+            'LinkedIn-Version': '202501',
           },
         }
       )
@@ -113,6 +130,27 @@ export class LinkedinPageProvider
         e['organizationalTarget~'].logoV2?.['original~']?.elements?.[0]
           ?.identifiers?.[0]?.identifier,
     }));
+  }
+
+  async reConnect(
+    id: string,
+    requiredId: string,
+    accessToken: string
+  ): Promise<AuthTokenDetails> {
+    const information = await this.fetchPageInformation(
+      accessToken,
+      requiredId
+    );
+
+    return {
+      id: information.id,
+      name: information.name,
+      accessToken: information.access_token,
+      refreshToken: information.access_token,
+      expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
+      picture: information.picture,
+      username: information.username,
+    };
   }
 
   async fetchPageInformation(accessToken: string, pageId: string) {
@@ -147,9 +185,7 @@ export class LinkedinPageProvider
     body.append('code', params.code);
     body.append(
       'redirect_uri',
-      `${process.env.FRONTEND_URL}/integrations/social/linkedin-page${
-        params.refresh ? `?refresh=${params.refresh}` : ''
-      }`
+      `${process.env.FRONTEND_URL}/integrations/social/linkedin-page`
     );
     body.append('client_id', process.env.LINKEDIN_CLIENT_ID!);
     body.append('client_secret', process.env.LINKEDIN_CLIENT_SECRET!);
@@ -205,9 +241,10 @@ export class LinkedinPageProvider
   override async post(
     id: string,
     accessToken: string,
-    postDetails: PostDetails[]
+    postDetails: PostDetails[],
+    integration: Integration
   ): Promise<PostResponse[]> {
-    return super.post(id, accessToken, postDetails, 'company');
+    return super.post(id, accessToken, postDetails, integration, 'company');
   }
 
   async analytics(
@@ -220,7 +257,7 @@ export class LinkedinPageProvider
 
     const { elements }: { elements: Root[]; paging: any } = await (
       await this.fetch(
-        `https://api.linkedin.com/rest/organizationPageStatistics?q=organization&organization=${encodeURIComponent(
+        `https://api.linkedin.com/v2/organizationPageStatistics?q=organization&organization=${encodeURIComponent(
           `urn:li:organization:${id}`
         )}&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`,
         {
@@ -235,7 +272,7 @@ export class LinkedinPageProvider
 
     const { elements: elements2 }: { elements: Root[]; paging: any } = await (
       await this.fetch(
-        `https://api.linkedin.com/rest/organizationalEntityFollowerStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(
+        `https://api.linkedin.com/v2/organizationalEntityFollowerStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(
           `urn:li:organization:${id}`
         )}&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`,
         {
@@ -250,7 +287,7 @@ export class LinkedinPageProvider
 
     const { elements: elements3 }: { elements: Root[]; paging: any } = await (
       await this.fetch(
-        `https://api.linkedin.com/rest/organizationalEntityShareStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(
+        `https://api.linkedin.com/v2/organizationalEntityShareStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(
           `urn:li:organization:${id}`
         )}&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`,
         {
@@ -333,6 +370,150 @@ export class LinkedinPageProvider
       ],
       percentageChange: 5,
     }));
+  }
+
+  @Plug({
+    identifier: 'linkedin-page-autoRepostPost',
+    title: 'Auto Repost Posts',
+    description:
+      'When a post reached a certain number of likes, repost it to increase engagement (1 week old posts)',
+    runEveryMilliseconds: 21600000,
+    totalRuns: 3,
+    fields: [
+      {
+        name: 'likesAmount',
+        type: 'number',
+        placeholder: 'Amount of likes',
+        description: 'The amount of likes to trigger the repost',
+        validation: /^\d+$/,
+      },
+    ],
+  })
+  async autoRepostPost(
+    integration: Integration,
+    id: string,
+    fields: { likesAmount: string }
+  ) {
+    const {
+      likesSummary: { totalLikes },
+    } = await (
+      await this.fetch(
+        `https://api.linkedin.com/v2/socialActions/${encodeURIComponent(id)}`,
+        {
+          method: 'GET',
+          headers: {
+            'X-Restli-Protocol-Version': '2.0.0',
+            'Content-Type': 'application/json',
+            'LinkedIn-Version': '202501',
+            Authorization: `Bearer ${integration.token}`,
+          },
+        }
+      )
+    ).json();
+
+    if (totalLikes >= +fields.likesAmount) {
+      await timer(2000);
+      await this.fetch(`https://api.linkedin.com/v2/posts`, {
+        body: JSON.stringify({
+          author: `urn:li:organization:${integration.internalId}`,
+          commentary: '',
+          visibility: 'PUBLIC',
+          distribution: {
+            feedDistribution: 'MAIN_FEED',
+            targetEntities: [],
+            thirdPartyDistributionChannels: [],
+          },
+          lifecycleState: 'PUBLISHED',
+          isReshareDisabledByAuthor: false,
+          reshareContext: {
+            parent: id,
+          },
+        }),
+        method: 'POST',
+        headers: {
+          'X-Restli-Protocol-Version': '2.0.0',
+          'Content-Type': 'application/json',
+          'LinkedIn-Version': '202501',
+          Authorization: `Bearer ${integration.token}`,
+        },
+      });
+      return true;
+    }
+
+    return false;
+  }
+
+  @Plug({
+    identifier: 'linkedin-page-autoPlugPost',
+    title: 'Auto plug post',
+    description:
+      'When a post reached a certain number of likes, add another post to it so you followers get a notification about your promotion',
+    runEveryMilliseconds: 21600000,
+    totalRuns: 3,
+    fields: [
+      {
+        name: 'likesAmount',
+        type: 'number',
+        placeholder: 'Amount of likes',
+        description: 'The amount of likes to trigger the repost',
+        validation: /^\d+$/,
+      },
+      {
+        name: 'post',
+        type: 'richtext',
+        placeholder: 'Post to plug',
+        description: 'Message content to plug',
+        validation: /^[\s\S]{3,}$/g,
+      },
+    ],
+  })
+  async autoPlugPost(
+    integration: Integration,
+    id: string,
+    fields: { likesAmount: string; post: string }
+  ) {
+    const {
+      likesSummary: { totalLikes },
+    } = await (
+      await this.fetch(
+        `https://api.linkedin.com/v2/socialActions/${encodeURIComponent(id)}`,
+        {
+          method: 'GET',
+          headers: {
+            'X-Restli-Protocol-Version': '2.0.0',
+            'Content-Type': 'application/json',
+            'LinkedIn-Version': '202501',
+            Authorization: `Bearer ${integration.token}`,
+          },
+        }
+      )
+    ).json();
+
+    if (totalLikes >= fields.likesAmount) {
+      await timer(2000);
+      await this.fetch(
+        `https://api.linkedin.com/v2/socialActions/${decodeURIComponent(
+          id
+        )}/comments`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${integration.token}`,
+          },
+          body: JSON.stringify({
+            actor: `urn:li:organization:${integration.internalId}`,
+            object: id,
+            message: {
+              text: this.fixText(fields.post)
+            },
+          }),
+        }
+      );
+      return true;
+    }
+
+    return false;
   }
 }
 

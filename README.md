@@ -1,22 +1,14 @@
-
 <p align="center">
-  <a href="https://x.com/intent/follow?screen_name=nevodavid" target="_blank">
-    <img alt="Follow me" src="https://github.com/user-attachments/assets/1562c93f-95c6-4307-8a85-e62003e26348" />
+  <a href="https://affiliate.postiz.com">
+    <img src="https://github.com/user-attachments/assets/af9f47b3-e20c-402b-bd11-02f39248d738" />
   </a>
-  <br />
-
-  <a href="https://devfest.ai" target="_blank">
-    <img alt="DevFest" src="https://github.com/user-attachments/assets/cab9a4e5-e88e-4a28-be7d-28ed749e537a" width="850" />
-  </a>
-
-  <br /><br />
 </p>
 
 <p align="center">
-  <a href="https://postiz.com" target="_blank">
+  <a href="https://postiz.com/" target="_blank">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/765e9d72-3ee7-4a56-9d59-a2c9befe2311">
-    <img alt="Novu Logo" src="https://github.com/user-attachments/assets/f0d30d70-dddb-4142-8876-e9aa6ed1cb99" width="280"/>
+    <img alt="Postiz Logo" src="https://github.com/user-attachments/assets/f0d30d70-dddb-4142-8876-e9aa6ed1cb99" width="280"/>
   </picture>
   </a>
 </p>
@@ -48,6 +40,11 @@
   <img alt="Facebook" src="https://postiz.com/svgs/socials/Facebook.svg" width="32">
   <img alt="Pinterest" src="https://postiz.com/svgs/socials/Pinterest.svg" width="32">
   <img alt="Threads" src="https://postiz.com/svgs/socials/Threads.svg" width="32">
+  <img alt="X" src="https://postiz.com/svgs/socials/X.svg" width="32">
+  <img alt="X" src="https://postiz.com/svgs/socials/Slack.svg" width="32">
+  <img alt="X" src="https://postiz.com/svgs/socials/Discord.svg" width="32">
+  <img alt="X" src="https://postiz.com/svgs/socials/Mastodon.svg" width="32">
+  <img alt="X" src="https://postiz.com/svgs/socials/Bluesky.svg" width="32">
 </div>
 
 <p align="center">
@@ -58,11 +55,13 @@
   <br/>
     <a href="https://platform.postiz.com">Register</a>
     ·
-    <a href="https://discord.postiz.com">Join Our Discord</a>
+    <a href="https://discord.postiz.com">Join Our Discord (devs only)</a>
     ·
-    <a href="https://twitter.com/nevodavid">X</a>
+    <a href="https://twitter.com/getpostiz">X</a>
     ·
     <a href="https://gitroom.com">Gitroom</a>
+    ·
+    <a href="https://git.sn/telegram">Telegram (Crypto)</a>
   </p>
 
 <br />
@@ -97,12 +96,12 @@
 ## Quick Start
 To have the project up and running, please follow the [Quick Start Guide](https://docs.postiz.com/quickstart)
 
-##
-
+## Invest in the Postiz Coin :)
+DMsTbeCfX1crgAse5tver98KAMarPWeP3d6U3Gmmpump
 
 # License
 
-This repository's source code is available under the [Apache 2.0 License](LICENSE).
+This repository's source code is available under the [AGPL-3.0 license](LICENSE).
 
 <br /><br /><br />
 

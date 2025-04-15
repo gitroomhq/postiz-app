@@ -1,25 +1,22 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-import concat from 'concat-stream';
-import { StorageEngine } from 'multer';
-import type { Request } from 'express';
-import {makeId} from "@gitroom/nestjs-libraries/services/make.is";
+import 'multer';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import mime from 'mime-types';
+// @ts-ignore
+import { getExtension } from 'mime';
+import { IUploadProvider } from './upload.interface';
+import axios from 'axios';
 
-type CallbackFunction = (
-  error: Error | null,
-  info?: Partial<Express.Multer.File>
-) => void;
-
-class CloudflareStorage implements StorageEngine {
+class CloudflareStorage implements IUploadProvider {
   private _client: S3Client;
 
-  public constructor(
+  constructor(
     accountID: string,
     accessKey: string,
     secretKey: string,
     private region: string,
     private _bucketName: string,
-    private _uploadUrl: string,
+    private _uploadUrl: string
   ) {
     this._client = new S3Client({
       endpoint: `https://${accountID}.r2.cloudflarestorage.com`,
@@ -28,59 +25,96 @@ class CloudflareStorage implements StorageEngine {
         accessKeyId: accessKey,
         secretAccessKey: secretKey,
       },
+      requestChecksumCalculation: "WHEN_REQUIRED",
     });
-  }
 
-  public _handleFile(
-    _req: Request,
-    file: Express.Multer.File,
-    callback: CallbackFunction
-  ): void {
-    file.stream.pipe(
-      concat({ encoding: 'buffer' }, async (data) => {
-        // @ts-ignore
-        callback(null, await this._uploadFile(data, data.length, file.mimetype, mime.extension(file.mimetype)));
-      })
+    this._client.middlewareStack.add(
+      (next) =>
+        async (args): Promise<any> => {
+          const request = args.request as RequestInit;
+
+          // Remove checksum headers
+          const headers = request.headers as Record<string, string>;
+          delete headers['x-amz-checksum-crc32'];
+          delete headers['x-amz-checksum-crc32c'];
+          delete headers['x-amz-checksum-sha1'];
+          delete headers['x-amz-checksum-sha256'];
+          request.headers = headers;
+
+          Object.entries(request.headers).forEach(
+            // @ts-ignore
+            ([key, value]: [string, string]): void => {
+              if (!request.headers) {
+                request.headers = {};
+              }
+              (request.headers as Record<string, string>)[key] = value;
+            }
+          );
+
+          return next(args);
+        },
+      { step: 'build', name: 'customHeaders' }
     );
   }
 
-  public _removeFile(
-    _req: Request,
-    file: Express.Multer.File,
-    callback: (error: Error | null) => void
-  ): void {
-    void this._deleteFile(file.destination, callback);
+  async uploadSimple(path: string) {
+    const loadImage = await axios.get(path, { responseType: 'arraybuffer' });
+    const contentType =
+      loadImage?.headers?.['content-type'] ||
+      loadImage?.headers?.['Content-Type'];
+    const extension = getExtension(contentType)!;
+    const id = makeId(10);
+
+    const params = {
+      Bucket: this._bucketName,
+      Key: `${id}.${extension}`,
+      Body: loadImage.data,
+      ContentType: contentType,
+      ChecksumMode: 'DISABLED'
+    };
+
+    const command = new PutObjectCommand({ ...params });
+    await this._client.send(command);
+
+    return `${this._uploadUrl}/${id}.${extension}`;
   }
 
-  private async _uploadFile(data: Buffer, size: number, mime: string, extension: string): Promise<Express.Multer.File> {
+  async uploadFile(file: Express.Multer.File): Promise<any> {
     const id = makeId(10);
+    const extension = mime.extension(file.mimetype) || '';
+
+    // Create the PutObjectCommand to upload the file to Cloudflare R2
     const command = new PutObjectCommand({
       Bucket: this._bucketName,
       ACL: 'public-read',
       Key: `${id}.${extension}`,
-      Body: data,
+      Body: file.buffer,
     });
 
     await this._client.send(command);
 
     return {
       filename: `${id}.${extension}`,
-      mimetype: mime,
-      size,
-      buffer: data,
+      mimetype: file.mimetype,
+      size: file.size,
+      buffer: file.buffer,
       originalname: `${id}.${extension}`,
       fieldname: 'file',
       path: `${this._uploadUrl}/${id}.${extension}`,
       destination: `${this._uploadUrl}/${id}.${extension}`,
       encoding: '7bit',
-      stream: data as any,
-    }
+      stream: file.buffer as any,
+    };
   }
 
-  private async _deleteFile(
-    filedestination: string,
-    callback: CallbackFunction
-  ) {
+  // Implement the removeFile method from IUploadProvider
+  async removeFile(filePath: string): Promise<void> {
+    // const fileName = filePath.split('/').pop(); // Extract the filename from the path
+    // const command = new DeleteObjectCommand({
+    //   Bucket: this._bucketName,
+    //   Key: fileName,
+    // });
+    // await this._client.send(command);
   }
 }
 

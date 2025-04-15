@@ -25,17 +25,7 @@
       "executor": "nx:run-commands",
       "defaultConfiguration": "development",
       "options": {
-        "buildTarget": "commands:build",
-        "inspect": false,
         "command": "cd dist/apps/commands && node main.js"
-      },
-      "configurations": {
-        "development": {
-          "buildTarget": "commands:build:development"
-        },
-        "production": {
-          "buildTarget": "commands:build:production"
-        }
       }
     },
     "lint": {
