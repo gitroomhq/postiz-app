@@ -43,11 +43,11 @@ export const useMenuItems = () => {
           },
         ]
       : []),
-    // {
-    //   name: 'Plugs',
-    //   icon: 'plugs',
-    //   path: '/plugs',
-    // },
+    {
+      name: 'Plugs',
+      icon: 'plugs',
+      path: '/plugs',
+    },
     {
       name: 'Billing',
       icon: 'billing',
