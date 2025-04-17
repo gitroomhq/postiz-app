@@ -145,178 +145,240 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
+  private async createSingleMediaContent(
+    userId: string,
+    accessToken: string,
+    media: { url: string },
+    message: string,
+    isCarouselItem = false,
+    replyToId?: string
+  ): Promise<string> {
+    const mediaType = media.url.indexOf('.mp4') > -1 ? 'video_url' : 'image_url';
+    const mediaParams = new URLSearchParams({
+      ...(mediaType === 'video_url' ? { video_url: media.url } : {}),
+      ...(mediaType === 'image_url' ? { image_url: media.url } : {}),
+      ...(isCarouselItem ? { is_carousel_item: 'true' } : {}),
+      ...(replyToId ? { reply_to_id: replyToId } : {}),
+      media_type: mediaType === 'video_url' ? 'VIDEO' : 'IMAGE',
+      text: message,
+      access_token: accessToken,
+    });
+
+    console.log(mediaParams);
+
+    const { id: mediaId } = await (
+      await this.fetch(
+        `https://graph.threads.net/v1.0/${userId}/threads?${mediaParams.toString()}`,
+        {
+          method: 'POST',
+        }
+      )
+    ).json();
+
+    return mediaId;
+  }
+
+  private async createCarouselContent(
+    userId: string,
+    accessToken: string,
+    media: { url: string }[],
+    message: string,
+    replyToId?: string
+  ): Promise<string> {
+    // Create each media item
+    const mediaIds = [];
+    for (const mediaItem of media) {
+      const mediaId = await this.createSingleMediaContent(
+        userId,
+        accessToken,
+        mediaItem,
+        message,
+        true
+      );
+      mediaIds.push(mediaId);
+    }
+
+    // Wait for all media to be loaded
+    await Promise.all(
+      mediaIds.map((id: string) => this.checkLoaded(id, accessToken))
+    );
+
+    // Create carousel container
+    const params = new URLSearchParams({
+      text: message,
+      media_type: 'CAROUSEL',
+      children: mediaIds.join(','),
+      ...(replyToId ? { reply_to_id: replyToId } : {}),
+      access_token: accessToken,
+    });
+
+    const { id: containerId } = await (
+      await this.fetch(
+        `https://graph.threads.net/v1.0/${userId}/threads?${params.toString()}`,
+        {
+          method: 'POST',
+        }
+      )
+    ).json();
+
+    return containerId;
+  }
+
+  private async createTextContent(
+    userId: string,
+    accessToken: string,
+    message: string,
+    replyToId?: string
+  ): Promise<string> {
+    const form = new FormData();
+    form.append('media_type', 'TEXT');
+    form.append('text', message);
+    form.append('access_token', accessToken);
+    
+    if (replyToId) {
+      form.append('reply_to_id', replyToId);
+    }
+
+    const { id: contentId } = await (
+      await this.fetch(
+        `https://graph.threads.net/v1.0/${userId}/threads`,
+        {
+          method: 'POST',
+          body: form,
+        }
+      )
+    ).json();
+
+    return contentId;
+  }
+
+  private async publishThread(
+    userId: string,
+    accessToken: string,
+    creationId: string
+  ): Promise<{ threadId: string; permalink: string }> {
+    await this.checkLoaded(creationId, accessToken);
+
+    const { id: threadId } = await (
+      await this.fetch(
+        `https://graph.threads.net/v1.0/${userId}/threads_publish?creation_id=${creationId}&access_token=${accessToken}`,
+        {
+          method: 'POST',
+        }
+      )
+    ).json();
+
+    const { permalink } = await (
+      await this.fetch(
+        `https://graph.threads.net/v1.0/${threadId}?fields=id,permalink&access_token=${accessToken}`
+      )
+    ).json();
+
+    return { threadId, permalink };
+  }
+
+  private async createThreadContent(
+    userId: string,
+    accessToken: string,
+    postDetails: PostDetails,
+    replyToId?: string
+  ): Promise<string> {
+    // Handle content creation based on media type
+    if (!postDetails.media || postDetails.media.length === 0) {
+      // Text-only content
+      return await this.createTextContent(
+        userId,
+        accessToken,
+        postDetails.message,
+        replyToId
+      );
+    } else if (postDetails.media.length === 1) {
+      // Single media content
+      return await this.createSingleMediaContent(
+        userId,
+        accessToken,
+        postDetails.media[0],
+        postDetails.message,
+        false,
+        replyToId
+      );
+    } else {
+      // Carousel content
+      return await this.createCarouselContent(
+        userId,
+        accessToken,
+        postDetails.media,
+        postDetails.message,
+        replyToId
+      );
+    }
+  }
+
   async post(
-    id: string,
+    userId: string,
     accessToken: string,
     postDetails: PostDetails[]
   ): Promise<PostResponse[]> {
-    const [firstPost, ...theRest] = postDetails;
+    if (!postDetails.length) {
+      return [];
+    }
 
-    let globalThread = '';
-    let link = '';
-    if (firstPost?.media?.length! <= 1) {
-      const type = !firstPost?.media?.[0]?.url
-        ? undefined
-        : firstPost?.media![0].url.indexOf('.mp4') > -1
-        ? 'video_url'
-        : 'image_url';
-
-      const media = new URLSearchParams({
-        ...(type === 'video_url'
-          ? { video_url: firstPost?.media![0].url }
-          : {}),
-        ...(type === 'image_url'
-          ? { image_url: firstPost?.media![0].url }
-          : {}),
-        media_type:
-          type === 'video_url'
-            ? 'VIDEO'
-            : type === 'image_url'
-            ? 'IMAGE'
-            : 'TEXT',
-        text: firstPost?.message,
-        access_token: accessToken,
-      });
-
-      const { id: containerId } = await (
-        await this.fetch(
-          `https://graph.threads.net/v1.0/${id}/threads?${media.toString()}`,
-          {
-            method: 'POST',
-          }
-        )
-      ).json();
-
-      await this.checkLoaded(containerId, accessToken);
-
-      const { id: threadId } = await (
-        await this.fetch(
-          `https://graph.threads.net/v1.0/${id}/threads_publish?creation_id=${containerId}&access_token=${accessToken}`,
-          {
-            method: 'POST',
-          }
-        )
-      ).json();
-
-      const { permalink, ...all } = await (
-        await this.fetch(
-          `https://graph.threads.net/v1.0/${threadId}?fields=id,permalink&access_token=${accessToken}`
-        )
-      ).json();
-
-      globalThread = threadId;
-      link = permalink;
-    } else {
-      const medias = [];
-      for (const mediaLoad of firstPost.media!) {
-        const type =
-          mediaLoad.url.indexOf('.mp4') > -1 ? 'video_url' : 'image_url';
-
-        const media = new URLSearchParams({
-          ...(type === 'video_url' ? { video_url: mediaLoad.url } : {}),
-          ...(type === 'image_url' ? { image_url: mediaLoad.url } : {}),
-          is_carousel_item: 'true',
-          media_type:
-            type === 'video_url'
-              ? 'VIDEO'
-              : type === 'image_url'
-              ? 'IMAGE'
-              : 'TEXT',
-          text: firstPost?.message,
-          access_token: accessToken,
-        });
-
-        const { id: mediaId } = await (
-          await this.fetch(
-            `https://graph.threads.net/v1.0/${id}/threads?${media.toString()}`,
-            {
-              method: 'POST',
-            }
-          )
-        ).json();
-
-        medias.push(mediaId);
-      }
-
-      await Promise.all(
-        medias.map((p: string) => this.checkLoaded(p, accessToken))
+    const [firstPost, ...replies] = postDetails;
+    
+    // Create the initial thread
+    const initialContentId = await this.createThreadContent(
+      userId, 
+      accessToken, 
+      firstPost
+    );
+    
+    // Publish the thread
+    const { threadId, permalink } = await this.publishThread(
+      userId, 
+      accessToken, 
+      initialContentId
+    );
+    
+    // Track the responses
+    const responses: PostResponse[] = [{
+      id: firstPost.id,
+      postId: threadId,
+      status: 'success',
+      releaseURL: permalink,
+    }];
+    
+    // Handle replies if any
+    let lastReplyId = threadId;
+    
+    for (const reply of replies) {
+      // Create reply content
+      const replyContentId = await this.createThreadContent(
+        userId,
+        accessToken,
+        reply,
+        lastReplyId
       );
-
-      const { id: containerId } = await (
-        await this.fetch(
-          `https://graph.threads.net/v1.0/${id}/threads?text=${
-            firstPost?.message
-          }&media_type=CAROUSEL&children=${medias.join(
-            ','
-          )}&access_token=${accessToken}`,
-          {
-            method: 'POST',
-          }
-        )
-      ).json();
-
-      await this.checkLoaded(containerId, accessToken);
-
-      const { id: threadId } = await (
-        await this.fetch(
-          `https://graph.threads.net/v1.0/${id}/threads_publish?creation_id=${containerId}&access_token=${accessToken}`,
-          {
-            method: 'POST',
-          }
-        )
-      ).json();
-
-      const { permalink } = await (
-        await this.fetch(
-          `https://graph.threads.net/v1.0/${threadId}?fields=id,permalink&access_token=${accessToken}`
-        )
-      ).json();
-
-      globalThread = threadId;
-      link = permalink;
-    }
-
-    let lastId = globalThread;
-    for (const post of theRest) {
-      const form = new FormData();
-      form.append('media_type', 'TEXT');
-      form.append('text', post.message);
-      form.append('reply_to_id', lastId);
-      form.append('access_token', accessToken);
-
-      const { id: replyId } = await (
-        await this.fetch('https://graph.threads.net/v1.0/me/threads', {
-          method: 'POST',
-          body: form,
-        })
-      ).json();
-
-      const { id: threadMediaId } = await (
-        await this.fetch(
-          `https://graph.threads.net/v1.0/${id}/threads_publish?creation_id=${replyId}&access_token=${accessToken}`,
-          {
-            method: 'POST',
-          }
-        )
-      ).json();
-
-      lastId = threadMediaId;
-    }
-
-    return [
-      {
-        id: firstPost.id,
-        postId: String(globalThread),
+      
+      // Publish the reply
+      const { threadId: replyThreadId } = await this.publishThread(
+        userId,
+        accessToken,
+        replyContentId
+      );
+      
+      // Update the last reply ID for chaining
+      lastReplyId = replyThreadId;
+      
+      // Add to responses
+      responses.push({
+        id: reply.id,
+        postId: threadId, // Main thread ID
         status: 'success',
-        releaseURL: link,
-      },
-      ...theRest.map((p) => ({
-        id: p.id,
-        postId: String(globalThread),
-        status: 'success',
-        releaseURL: link,
-      })),
-    ];
+        releaseURL: permalink, // Main thread URL
+      });
+    }
+    
+    return responses;
   }
 
   async analytics(

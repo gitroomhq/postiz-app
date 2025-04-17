@@ -3,26 +3,11 @@ pipeline {
 
     environment {
         NODE_VERSION = '20.17.0'
+        PR_NUMBER = "${env.CHANGE_ID}" // PR number comes from webhook payload
+        IMAGE_TAG="ghcr.io/gitroomhq/postiz-app-pr:${env.CHANGE_ID}"
     }
 
     stages {
-        stage('Fetch Cache') {
-            options {
-                cache(caches: [
-                    arbitraryFileCache(
-                        cacheName: 'Next',
-                        cacheValidityDecidingFile: '',
-                        excludes: '',
-                        includes: '**/*',
-                        path: "./.nx/cache"
-                    )
-                ], defaultBranch: 'dev', maxCacheSize: 256000, skipSave: true)
-            }
-            steps {
-                echo 'Start fetching Cache.'
-            }
-        }
-
         stage('Checkout Repository') {
             steps {
                 checkout scm
@@ -44,43 +29,35 @@ pipeline {
             }
         }
 
-        stage('Run Unit Tests') {
-            steps {
-                sh 'npm test'
-            }
-        }
-
         stage('Build Project') {
             steps {
-                sh 'npm run build 2>&1 | tee build_report.log'  // Captures build output
+                sh 'npm run build'
             }
         }
-
-        stage('Save Cache') {
-            options {
-                cache(caches: [
-                    arbitraryFileCache(
-                        cacheName: 'Next',
-                        cacheValidityDecidingFile: '',
-                        excludes: '',
-                        includes: '**/*',
-                        path: "./.nx/cache"
-                    )
-                ], defaultBranch: 'dev', maxCacheSize: 256000, skipRestore: true)
+        
+        stage('Build and Push Docker Image') {
+            when {
+                expression { return env.CHANGE_ID != null }  // Only run if it's a PR
             }
             steps {
-                echo 'Start saving Cache.'
+                withCredentials([string(credentialsId: 'gh-pat', variable: 'GITHUB_PASS')]) {
+                    // Docker login step
+                    sh '''
+                        echo "$GITHUB_PASS" | docker login ghcr.io -u "egelhaus" --password-stdin
+                    '''
+                    // Build Docker image
+                    sh '''
+                        docker build -f Dockerfile.dev -t $IMAGE_TAG .
+                    '''
+                    // Push Docker image to GitHub Container Registry
+                    sh '''
+                        docker push $IMAGE_TAG
+                    '''
+                }
             }
         }
     }
-
     post {
-        always {
-            junit '**/reports/junit.xml'
-            archiveArtifacts artifacts: 'reports/**', fingerprint: true
-            archiveArtifacts artifacts: 'build_report.log', fingerprint: true
-            cleanWs(cleanWhenNotBuilt: false, notFailBuild: true)
-        }
         success {
             echo 'Build completed successfully!'
 

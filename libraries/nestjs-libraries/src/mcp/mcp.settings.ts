@@ -3,7 +3,6 @@ import { MainMcp } from '@gitroom/backend/mcp/main.mcp';
 import { socialIntegrationList } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 
 export class McpSettings {
-  static singleton: McpSettings;
   private _server: McpServer;
   createServer(organization: string, service: MainMcp) {
     this._server = new McpServer(
@@ -69,12 +68,6 @@ export class McpSettings {
   }
 
   static load(organization: string, service: MainMcp): McpSettings {
-    if (!McpSettings.singleton) {
-      McpSettings.singleton = new McpSettings().createServer(
-        organization,
-        service
-      );
-    }
-    return McpSettings.singleton;
+    return new McpSettings().createServer(organization, service);
   }
 }
