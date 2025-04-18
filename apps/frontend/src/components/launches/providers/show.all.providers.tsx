@@ -21,6 +21,7 @@ import LemmyProvider from '@gitroom/frontend/components/launches/providers/lemmy
 import WarpcastProvider from '@gitroom/frontend/components/launches/providers/warpcast/warpcast.provider';
 import TelegramProvider from '@gitroom/frontend/components/launches/providers/telegram/telegram.provider';
 import NostrProvider from '@gitroom/frontend/components/launches/providers/nostr/nostr.provider';
+import VkProvider from '@gitroom/frontend/components/launches/providers/vk/vk.provider';
 
 export const Providers = [
     {identifier: 'devto', component: DevtoProvider},
@@ -46,6 +47,7 @@ export const Providers = [
     {identifier: 'wrapcast', component: WarpcastProvider},
     {identifier: 'telegram', component: TelegramProvider},
     {identifier: 'nostr', component: NostrProvider},
+    {identifier: 'vk', component: VkProvider},
 ];
 
 
