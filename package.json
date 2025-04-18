@@ -52,7 +52,7 @@
     "@mantine/hooks": "^5.10.5",
     "@mantine/modals": "^5.10.5",
     "@modelcontextprotocol/sdk": "^1.9.0",
-    "@nestjs/common": "^10.0.2",
+    "@nestjs/common": "^11.0.16",
     "@nestjs/core": "^10.0.2",
     "@nestjs/microservices": "^10.3.1",
     "@nestjs/platform-express": "^10.0.2",
@@ -69,7 +69,7 @@
     "@nx/next": "19.7.2",
     "@nx/node": "19.7.2",
     "@nx/react": "19.7.2",
-    "@nx/vite": "19.7.2",
+    "@nx/vite": "20.7.2",
     "@nx/webpack": "19.7.2",
     "@nx/workspace": "19.7.2",
     "@postiz/wallets": "^0.0.1",
@@ -139,7 +139,7 @@
     "multer": "^1.4.5-lts.1",
     "nestjs-command": "^3.1.4",
     "nestjs-real-ip": "^3.0.1",
-    "next": "^14.2.14",
+    "next": "^15.2.4",
     "next-plausible": "^3.12.0",
     "node-telegram-bot-api": "^0.66.0",
     "nodemailer": "^6.9.15",
@@ -209,8 +209,8 @@
     "@typescript-eslint/eslint-plugin": "7.18.0",
     "@typescript-eslint/parser": "7.18.0",
     "@vitejs/plugin-react": "^4.2.0",
-    "@vitest/coverage-v8": "1.6.0",
-    "@vitest/ui": "1.6.0",
+    "@vitest/coverage-v8": "3.1.1",
+    "@vitest/ui": "3.1.1",
     "autoprefixer": "^10.4.17",
     "babel-jest": "29.7.0",
     "eslint": "8.57.0",
@@ -234,8 +234,8 @@
     "ts-jest": "^29.1.0",
     "ts-node": "10.9.2",
     "typescript": "5.5.4",
-    "vite": "^5.0.0",
-    "vitest": "1.6.0"
+    "vite": "^6.2.6",
+    "vitest": "3.1.1"
   },
   "volta": {
     "node": "20.17.0"
