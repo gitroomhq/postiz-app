@@ -9,6 +9,7 @@ import { useMemo, useState } from 'react';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { LoginUserDto } from '@gitroom/nestjs-libraries/dtos/auth/login.user.dto';
 import { GithubProvider } from '@gitroom/frontend/components/auth/providers/github.provider';
+import { OauthProvider } from '@gitroom/frontend/components/auth/providers/oauth.provider';
 import interClass from '@gitroom/react/helpers/inter.font';
 import { GoogleProvider } from '@gitroom/frontend/components/auth/providers/google.provider';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
@@ -24,7 +25,8 @@ type Inputs = {
 
 export function Login() {
   const [loading, setLoading] = useState(false);
-  const { isGeneral, neynarClientId, billingEnabled } = useVariables();
+  const { isGeneral, neynarClientId, billingEnabled, genericOauth } =
+    useVariables();
   const resolver = useMemo(() => {
     return classValidatorResolver(LoginUserDto);
   }, []);
@@ -63,8 +65,9 @@ export function Login() {
             Sign In
           </h1>
         </div>
-
-        {!isGeneral ? (
+        {isGeneral && genericOauth ? (
+          <OauthProvider />
+        ) : !isGeneral ? (
           <GithubProvider />
         ) : (
           <div className="gap-[5px] flex flex-col">
