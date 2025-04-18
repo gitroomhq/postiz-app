@@ -26,15 +26,44 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
     'video',
   ];
 
-  async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
+  async refreshToken(refresh: string): Promise<AuthTokenDetails> {
+    const [oldRefreshToken, device_id] = refresh.split('&&&&');
+    const formData = new FormData();
+    formData.append('grant_type', 'refresh_token');
+    formData.append('refresh_token', oldRefreshToken);
+    formData.append('client_id', process.env.VK_ID!);
+    formData.append('device_id', device_id);
+    formData.append('state', makeId(32));
+    formData.append('scope', this.scopes.join(' '));
+
+    const { access_token, refresh_token, expires_in } = await (
+      await this.fetch('https://id.vk.com/oauth2/auth', {
+        method: 'POST',
+        body: formData,
+      })
+    ).json();
+
+    const newFormData = new FormData();
+    newFormData.append('client_id', process.env.VK_ID!);
+    newFormData.append('access_token', access_token);
+
+    const {
+      user: { user_id, first_name, last_name, avatar },
+    } = await (
+      await this.fetch('https://id.vk.com/oauth2/user_info', {
+        method: 'POST',
+        body: newFormData,
+      })
+    ).json();
+
     return {
-      refreshToken: '',
-      expiresIn: 0,
-      accessToken: '',
-      id: '',
-      name: '',
-      picture: '',
-      username: '',
+      id: user_id,
+      name: first_name + ' ' + last_name,
+      accessToken: access_token,
+      refreshToken: refresh_token + '&&&&' + device_id,
+      expiresIn: dayjs().add(expires_in, 'seconds').unix() - dayjs().unix(),
+      picture: avatar,
+      username: first_name.toLowerCase(),
     };
   }
 
@@ -92,7 +121,7 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
       }/integrations/social/vk`
     );
 
-    const { access_token, scope, refresh_token } = await (
+    const { access_token, scope, refresh_token, expires_in } = await (
       await this.fetch('https://id.vk.com/oauth2/auth', {
         method: 'POST',
         body: formData,
@@ -116,8 +145,8 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
       id: user_id,
       name: first_name + ' ' + last_name,
       accessToken: access_token,
-      refreshToken: access_token,
-      expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
+      refreshToken: refresh_token + '&&&&' + device_id,
+      expiresIn: dayjs().add(expires_in, 'seconds').unix() - dayjs().unix(),
       picture: avatar,
       username: first_name.toLowerCase(),
     };
@@ -197,7 +226,7 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
 
     let i = 0;
     for (const post of postDetails) {
-      const list = (uploading?.[i] || []);
+      const list = uploading?.[i] || [];
 
       const body = new FormData();
       body.append('message', post.message);
@@ -223,7 +252,6 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
           }
         )
       ).json();
-
 
       values.push({
         id: post.id,
