@@ -12,6 +12,8 @@ import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.v
 import { Select } from '@gitroom/react/form/select';
 import { useCustomProviderFunction } from '@gitroom/frontend/components/launches/helpers/use.custom.provider.function';
 import { Checkbox } from '@gitroom/react/form/checkbox';
+import { Tooltip } from 'react-tooltip';
+
 import clsx from 'clsx';
 
 const privacyLevel = [
@@ -116,18 +118,37 @@ const CheckTikTokValidity: FC<{ picture: string }> = (props) => {
 };
 
 const TikTokSettings: FC<{ values?: any }> = (props) => {
-  const { watch, register, formState, control } = useSettings();
+  const { watch, register, trigger, formState, setValue } = useSettings();
   const disclose = watch('disclose');
-  const brand_organic_toggle = watch('brand_organic_toggle');
-  const brand_content_toggle = watch('brand_content_toggle');
+  const brand_organic_toggle = watch('brand_organic_toggle', false);
+  const brand_content_toggle = watch('brand_content_toggle', false);
   const content_posting_method = watch('content_posting_method');
+  const privacy_level = watch('privacy_level');
 
   const isUploadMode = content_posting_method === 'UPLOAD';
+  const is_private = privacy_level === 'SELF_ONLY' 
+  const cannot_brand_content_toggle = isUploadMode || is_private
+
+  useEffect(() => {
+    if (disclose) {
+      trigger(['brand_organic_toggle', 'brand_content_toggle']);
+    }  {
+      setValue('brand_content_toggle', false)
+      setValue('brand_organic_toggle', false)
+    }
+  }, [disclose]);
+
+  useEffect(()=> {
+    if(cannot_brand_content_toggle) {
+      setValue('brand_content_toggle', false)
+    }
+  }, [privacy_level, isUploadMode])
 
   return (
     <div className="flex flex-col">
       <CheckTikTokValidity picture={props?.values?.[0]?.image?.[0]?.path} />
       <Select
+        title="Selecciona quién podrá ver este contenido"
         label="Who can see this video?"
         hideErrors={true}
         disabled={isUploadMode}
@@ -137,8 +158,8 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
       >
         <option value="">Select</option>
         {privacyLevel.map((item) => (
-          <option key={item.value} value={item.value}>
-            {item.label}
+          <option disabled={item.value === 'SELF_ONLY' &&  brand_content_toggle && !is_private} key={item.value} value={item.value}>
+            {item.value === 'SELF_ONLY' && brand_content_toggle && !is_private ? `${item.label} - "Branded content visibility cannot be set to private."` :item.label}
           </option>
         ))}
       </Select>
@@ -178,6 +199,21 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
         This feature available only for photos, it will add a default music that
         you can change later.
       </div>
+
+      {
+        !disclose &&
+        <div className={clsx('text-[14px] text-balance mb-[20px]')}>
+          By posting, you agree to TikTok's{' '}
+          <a
+            target="_blank"
+            className="text-[#B69DEC] hover:underline"
+            href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en"
+          >
+            Music Usage Confirmation
+          </a>
+        </div>
+      }
+
       <hr className="mb-[15px] border-tableBorder" />
       <div className="text-[14px] mb-[10px]">Allow User To:</div>
       <div className="flex gap-[40px]">
@@ -212,11 +248,12 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
           variant="hollow"
           label="Disclose Video Content"
           disabled={isUploadMode}
+          className={clsx(isUploadMode && 'invisible')}
           {...register('disclose', {
             value: false,
           })}
         />
-        {disclose && (
+        {disclose && (brand_organic_toggle && !brand_content_toggle) && (
           <div className="bg-tableBorder p-[10px] mt-[10px] rounded-[10px] flex gap-[20px] items-center">
             <div>
               <svg
@@ -244,48 +281,71 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
           third party, or both.
         </div>
       </div>
-      <div className={clsx(!disclose && 'invisible', 'mt-[20px]')}>
-        <Checkbox
-          variant="hollow"
-          label="Your brand"
-          disabled={isUploadMode}
-          {...register('brand_organic_toggle', {
-            value: false,
-          })}
-        />
-        <div className="text-balance my-[10px] text-[14px]">
-          You are promoting yourself or your own brand.
-          <br />
-          This video will be classified as Brand Organic.
-        </div>
-        <Checkbox
-          variant="hollow"
-          label="Branded content"
-          disabled={isUploadMode}
-          {...register('brand_content_toggle', {
-            value: false,
-          })}
-        />
-        <div className="text-balance my-[10px] text-[14px]">
-          You are promoting another brand or a third party.
-          <br />
-          This video will be classified as Branded Content.
-        </div>
-        {(brand_organic_toggle || brand_content_toggle) && (
-          <div className="my-[10px] text-[14px] text-balance">
-            By posting, you agree to TikTok{"'"}s{' '}
-            {[
-              brand_organic_toggle || brand_content_toggle ? (
-                <a
-                  target="_blank"
-                  className="text-[#B69DEC] hover:underline"
-                  href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en"
-                >
-                  Music Usage Confirmation
-                </a>
-              ) : undefined,
-              brand_content_toggle ? <> and </> : undefined,
-              brand_content_toggle ? (
+
+      <div className={clsx(!disclose && !isUploadMode && "invisible", "flex flex-col")}>
+        <div className="bg-tableBorder p-[10px] mt-[10px] rounded-[10px]">
+          <div className="mb-[10px] text-[14px] text-balance">
+            Select if your video promotes:
+          </div>
+
+          <div className='flex gap-x-4'>
+            <Checkbox
+              key={brand_organic_toggle}
+              variant="hollow"
+              label="Your brand"
+              {...register('brand_organic_toggle', {
+                value: false,
+              })}
+            />
+
+            <div  data-tooltip-id="brand_content_toggle-tooltip" data-tooltip-content='Branded content visibility cannot be set to "self only".'>
+            {cannot_brand_content_toggle && (
+                <Tooltip id="brand_content_toggle-tooltip" />
+              )}
+              <div className={`${cannot_brand_content_toggle ? 'pointer-events-none opacity-25 duration-700' : ''} transition`}>
+              <Checkbox
+                key={brand_content_toggle}
+                variant="hollow"
+                label="Branded content"
+                {...register('brand_content_toggle', {
+                  value: false,
+                })}
+              />
+              </div>
+            </div>
+          </div>
+
+          {brand_organic_toggle && !brand_content_toggle && (
+            <div className="text-[14px] my-[10px] text-yellow-600">
+              Your photo/video will be labeled as 'Brand Organic'
+            </div>
+          )}
+
+          {brand_content_toggle && (
+            <div className="text-[14px] my-[10px] text-yellow-600">
+              Your photo/video will be labeled as 'Paid partnership'
+            </div>
+          )}
+
+          {(formState?.errors?.brand_organic_toggle && formState?.errors?.brand_content_toggle) ? (
+            <div className="text-[14px] my-[10px] text-red-600">
+              You need to indicate if your content promotes yourself, a third party, or both.
+            </div>
+          ) : null}
+
+          {/* Consentimiento */}
+          <div className="text-[14px] my-[10px] text-balance">
+            By posting, you agree to TikTok's{' '}
+            <a
+              target="_blank"
+              className="text-[#B69DEC] hover:underline"
+              href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en"
+            >
+              Music Usage Confirmation
+            </a>
+            {brand_content_toggle && (
+              <>
+                {' and '}
                 <a
                   target="_blank"
                   className="text-[#B69DEC] hover:underline"
@@ -293,11 +353,19 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
                 >
                   Branded Content Policy
                 </a>
-              ) : undefined,
-            ].filter((f) => f)}
+              </>
+            )}
           </div>
-        )}
+
+          {/* Validación de privacidad */}
+          {brand_content_toggle && privacy_level === 'SELF_ONLY' && (
+            <div className="text-[14px] text-red-600 mt-[10px]">
+              Branded content visibility cannot be set to private.
+            </div>
+          )}
+        </div>
       </div>
+
     </div>
   );
 };
