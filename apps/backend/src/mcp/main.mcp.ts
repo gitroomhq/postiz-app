@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { McpTool } from '@gitroom/nestjs-libraries/mcp/mcp.tool';
+import { McpPrompt, McpTool } from '@gitroom/nestjs-libraries/mcp/mcp.tool';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { string, array, enum as eenum, object, boolean } from 'zod';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
@@ -50,7 +50,7 @@ export class MainMcp {
   @McpTool({
     toolName: 'POSTIZ_SCHEDULE_POST',
     zod: {
-      type: eenum(['draft', 'scheduled']),
+      type: eenum(['draft', 'schedule', 'now']),
       configId: string(),
       generatePictures: boolean(),
       date: string().describe('UTC TIME'),
@@ -61,13 +61,14 @@ export class MainMcp {
   async schedulePost(
     organization: string,
     obj: {
-      type: 'draft' | 'schedule';
+      type: 'draft' | 'schedule' | 'now';
       generatePictures: boolean;
       date: string;
       providerId: string;
-      posts: { text: string }[];
+      posts: { text: string; images?: string[]}[];
     }
   ) {
+    console.log(obj, organization, "edison")
     const create = await this._postsService.createPost(organization, {
       date: obj.date,
       type: obj.type,
@@ -80,7 +81,10 @@ export class MainMcp {
               content: post.text,
               id: makeId(10),
               image: !obj.generatePictures
-                ? []
+                ? (post.images || []).map((img) => ({
+                    id: makeId(10),
+                    path: img,
+                  }))
                 : [
                     {
                       id: makeId(10),
@@ -108,4 +112,5 @@ export class MainMcp {
       },
     ];
   }
+
 }
