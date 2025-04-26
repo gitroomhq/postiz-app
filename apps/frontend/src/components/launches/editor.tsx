@@ -32,12 +32,16 @@ export const Editor = forwardRef<
 
     useCopilotReadable({
       description: 'Content of the post number ' + (props.order + 1),
-      value: props.value,
+      value: JSON.stringify({
+        content: props.value,
+        order: props.order,
+        allowAddContent: props?.value?.length === 0,
+      })
     });
 
     useCopilotAction({
       name: 'editPost_' + props.order,
-      description: `Edit the content of post number ${props.order + 1}`,
+      description: `Edit the content of post number ${props.order}`,
       parameters: [
         {
           name: 'content',

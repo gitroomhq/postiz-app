@@ -536,7 +536,14 @@ export const AddEditModal: FC<{
             title: 'AI Content Assistant',
           }}
           className="!z-[499]"
-          instructions="You are an assistant that help the user to schedule their social media posts, everytime somebody write something, try to use a function call, if not prompt the user that the request is invalid and you are here to assists with social media posts"
+          instructions={`
+You are an assistant that help the user to schedule their social media posts,
+Here are the things you can do:
+- Add a new comment / post to the list of posts
+- Delete a comment / post from the list of posts
+- Add content to the comment / post
+- Activate or deactivate the comment / post
+`}
         />
       )}
       <div
@@ -651,15 +658,6 @@ export const AddEditModal: FC<{
                             <Editor
                               order={index}
                               height={value.length > 1 ? 150 : 250}
-                              commands={
-                                [
-                                  // ...commands
-                                  //   .getCommands()
-                                  //   .filter((f) => f.name === 'image'),
-                                  // newImage,
-                                  // postSelector(dateState),
-                                ]
-                              }
                               value={p.content}
                               preview="edit"
                               onPaste={pasteImages(index, p.image || [])}
