@@ -1,3 +1,4 @@
+
 <p align="center">
   <a href="https://affiliate.postiz.com">
     <img src="https://github.com/user-attachments/assets/af9f47b3-e20c-402b-bd11-02f39248d738" />
