@@ -15,13 +15,19 @@ import { SignatureBox } from '@gitroom/frontend/components/signature';
 
 export const Editor = forwardRef<
   RefMDEditor,
-  MDEditorProps & { order: number; currentWatching: string; isGlobal: boolean }
+  MDEditorProps & {
+    order: number;
+    currentWatching: string;
+    isGlobal: boolean;
+    totalPosts: number;
+  }
 >(
   (
     props: MDEditorProps & {
       order: number;
       currentWatching: string;
       isGlobal: boolean;
+      totalPosts: number;
     },
     ref: React.ForwardedRef<RefMDEditor>
   ) => {
@@ -36,7 +42,7 @@ export const Editor = forwardRef<
         content: props.value,
         order: props.order,
         allowAddContent: props?.value?.length === 0,
-      })
+      }),
     });
 
     useCopilotAction({
@@ -97,7 +103,8 @@ export const Editor = forwardRef<
             disableBranding={true}
             ref={newRef}
             className={clsx(
-              '!min-h-40 !max-h-80 p-2 overflow-x-hidden scrollbar scrollbar-thumb-[#612AD5] bg-customColor2 outline-none'
+              '!min-h-40 p-2 overflow-x-hidden scrollbar scrollbar-thumb-[#612AD5] bg-customColor2 outline-none',
+              props.totalPosts > 1 && '!max-h-80'
             )}
             value={props.value}
             onChange={(e) => {

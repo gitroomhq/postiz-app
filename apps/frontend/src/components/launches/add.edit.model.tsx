@@ -59,6 +59,7 @@ import { DropFiles } from '@gitroom/frontend/components/layout/drop.files';
 import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
 import { TagsComponent } from './tags.component';
 import { RepeatComponent } from '@gitroom/frontend/components/launches/repeat.component';
+import { MergePost } from '@gitroom/frontend/components/launches/merge.post';
 
 function countCharacters(text: string, type: string): number {
   if (type !== 'x') {
@@ -135,6 +136,27 @@ export const AddEditModal: FC<{
 
   // hook to test if the top editor should be hidden
   const showHide = useHideTopEditor();
+
+  // merge all posts and delete all the comments
+  const merge = useCallback(() => {
+    setValue(
+      value.reduce(
+        (all, current) => {
+          all[0].content = all[0].content + current.content + '\n';
+          all[0].image = [...all[0].image, ...(current.image || [])];
+
+          return all;
+        },
+        [
+          {
+            content: '',
+            id: value[0].id,
+            image: [] as { id: string; path: string }[],
+          },
+        ]
+      )
+    );
+  }, [value]);
 
   const [showError, setShowError] = useState(false);
 
@@ -659,6 +681,7 @@ Here are the things you can do:
                               order={index}
                               height={value.length > 1 ? 150 : 250}
                               value={p.content}
+                              totalPosts={value.length}
                               preview="edit"
                               onPaste={pasteImages(index, p.image || [])}
                               // @ts-ignore
@@ -729,6 +752,11 @@ Here are the things you can do:
                     </div>
                   </Fragment>
                 ))}
+                {value.length > 1 && (
+                  <div>
+                    <MergePost merge={merge} />
+                  </div>
+                )}
               </>
             ) : null}
           </div>

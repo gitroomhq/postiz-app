@@ -43,6 +43,7 @@ import { DropFiles } from '@gitroom/frontend/components/layout/drop.files';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { InternalChannels } from '@gitroom/frontend/components/launches/internal.channels';
+import { MergePost } from '@gitroom/frontend/components/launches/merge.post';
 
 // Simple component to change back to settings on after changing tab
 export const SetTab: FC<{ changeTab: () => void }> = (props) => {
@@ -175,6 +176,26 @@ export const withProvider = function <T extends object>(
         },
         [InPlaceValue]
       );
+
+      const merge = useCallback(() => {
+        setInPlaceValue(
+          InPlaceValue.reduce(
+            (all, current) => {
+              all[0].content = all[0].content + current.content + '\n';
+              all[0].image = [...all[0].image, ...(current.image || [])];
+
+              return all;
+            },
+            [
+              {
+                content: '',
+                id: InPlaceValue[0].id,
+                image: [] as { id: string; path: string }[],
+              },
+            ]
+          )
+        );
+      }, [InPlaceValue]);
 
       const changeImage = useCallback(
         (index: number) =>
@@ -464,6 +485,7 @@ export const withProvider = function <T extends object>(
                                   order={index}
                                   height={InPlaceValue.length > 1 ? 200 : 250}
                                   value={val.content}
+                                  totalPosts={InPlaceValue.length}
                                   commands={[
                                     // ...commands
                                     //   .getCommands()
@@ -545,6 +567,11 @@ export const withProvider = function <T extends object>(
                         </div>
                       </Fragment>
                     ))}
+                    {InPlaceValue.length > 1 && (
+                      <div>
+                        <MergePost merge={merge} />
+                      </div>
+                    )}
                   </div>
                 </EditorWrapper>,
                 document.querySelector('#renderEditor')!
