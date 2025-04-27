@@ -3,6 +3,7 @@ import OpenAI from 'openai';
 import { shuffle } from 'lodash';
 import { zodResponseFormat } from 'openai/helpers/zod';
 import { z } from 'zod';
+import { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
@@ -124,5 +125,61 @@ export class OpenaiService {
     const { content: articleContent } = websiteContent.choices[0].message;
 
     return this.generatePosts(articleContent!);
+  }
+
+  async generateWithTools({
+    messages,
+    systemPrompt,
+    temperature = 0.7,
+    maxTokens = 500,
+    tools,
+  }: {
+    messages: { role: "function" | "user" | "assistant" | "system" | "developer" | "tool"; content: { type: 'text'; text: string } }[];
+    systemPrompt?: string;
+    temperature?: number;
+    maxTokens?: number;
+    tools: ChatCompletionTool[];
+  }): Promise<
+    | { type: 'tool_call'; toolName: string; arguments: any }
+    | { type: 'text'; text: string }
+  > {
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4.1',
+      temperature,
+      max_tokens: maxTokens,
+      tool_choice: 'auto',
+      tools,
+      messages: [
+        ...(systemPrompt ? [{ role: 'system' as const, content: systemPrompt }] : []),
+        ...messages.map((m) => ({
+          role: m.role,
+          content: m.content.text,
+        } as ChatCompletionMessageParam)),
+      ],
+    });
+  
+    const res = completion.choices[0];
+  
+    const toolCall = res.message.tool_calls?.[0];
+    if (toolCall?.function?.name && toolCall.function?.arguments) {
+      try {
+        return {
+          type: 'tool_call',
+          toolName: toolCall.function.name,
+          arguments: JSON.parse(toolCall.function.arguments),
+        };
+      } catch (err) {
+        console.error('Error parsing tool arguments:', toolCall.function.arguments);
+        return {
+          type: 'text',
+          text: 'Hubo un error al intentar usar una herramienta. Intenta de nuevo.',
+        };
+      }
+    }
+  
+    return {
+      type: 'text',
+      text: res.message.content ?? '',
+    };
   }
 }

@@ -52,7 +52,7 @@
     "@mantine/dates": "^5.10.5",
     "@mantine/hooks": "^5.10.5",
     "@mantine/modals": "^5.10.5",
-    "@modelcontextprotocol/sdk": "^1.9.0",
+    "@modelcontextprotocol/sdk": "^1.10.1",
     "@nestjs/common": "^10.0.2",
     "@nestjs/core": "^10.0.2",
     "@nestjs/microservices": "^10.3.1",
@@ -187,7 +187,8 @@
     "ws": "^8.18.0",
     "yargs": "^17.7.2",
     "yup": "^1.4.0",
-    "zod": "^3.24.1"
+    "zod": "^3.24.1",
+    "zod-to-json-schema": "^3.24.5"
   },
   "devDependencies": {
     "@nestjs/schematics": "^10.0.1",

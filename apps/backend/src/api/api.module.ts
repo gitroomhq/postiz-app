@@ -33,7 +33,9 @@ import { SignatureController } from '@gitroom/backend/api/routes/signature.contr
 import { AutopostController } from '@gitroom/backend/api/routes/autopost.controller';
 import { McpService } from '@gitroom/nestjs-libraries/mcp/mcp.service';
 import { McpController } from '@gitroom/backend/api/routes/mcp.controller';
-import { McpSettings } from '@gitroom/nestjs-libraries/mcp/mcp.settings';
+import { McpLocalService } from '@gitroom/nestjs-libraries/mcp/local/mcp.local.service';
+import { WhatsappService } from '@gitroom/nestjs-libraries/whatsapp/whatsapp.service';
+import { PublicaController } from './routes/publica.controller';
 
 const authenticatedController = [
   UsersController,
@@ -60,6 +62,7 @@ const authenticatedController = [
     AuthController,
     PublicController,
     McpController,
+    PublicaController,
     ...authenticatedController,
   ],
   providers: [
@@ -75,7 +78,9 @@ const authenticatedController = [
     TrackService,
     ShortLinkService,
     Nowpayments,
-    McpService
+    McpService,
+    McpLocalService,
+    WhatsappService,
   ],
   get exports() {
     return [...this.imports, ...this.providers];
