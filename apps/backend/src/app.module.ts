@@ -25,7 +25,7 @@ import { McpModule } from '@gitroom/backend/mcp/mcp.module';
     ThrottlerModule.forRoot([
       {
         ttl: 3600000,
-        limit: 30,
+        limit: process.env.API_LIMIT || 30,
       },
     ]),
   ],
