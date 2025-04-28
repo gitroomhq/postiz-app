@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Header,
+  HttpException,
   Param,
   Post,
   RawBodyRequest,
@@ -52,27 +53,34 @@ export class StripeController {
     );
 
     // Maybe it comes from another stripe webhook
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    if (event?.data?.object?.metadata?.service !== 'gitroom' && event.type !== 'invoice.payment_succeeded') {
+    if (
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      event?.data?.object?.metadata?.service !== 'gitroom' &&
+      event.type !== 'invoice.payment_succeeded'
+    ) {
       return { ok: true };
     }
 
-    switch (event.type) {
-      case 'invoice.payment_succeeded':
-        return this._stripeService.paymentSucceeded(event);
-      case 'checkout.session.completed':
-        return this._stripeService.updateOrder(event);
-      case 'account.updated':
-        return this._stripeService.updateAccount(event);
-      case 'customer.subscription.created':
-        return this._stripeService.createSubscription(event);
-      case 'customer.subscription.updated':
-        return this._stripeService.updateSubscription(event);
-      case 'customer.subscription.deleted':
-        return this._stripeService.deleteSubscription(event);
-      default:
-        return { ok: true };
+    try {
+      switch (event.type) {
+        case 'invoice.payment_succeeded':
+          return this._stripeService.paymentSucceeded(event);
+        case 'checkout.session.completed':
+          return this._stripeService.updateOrder(event);
+        case 'account.updated':
+          return this._stripeService.updateAccount(event);
+        case 'customer.subscription.created':
+          return this._stripeService.createSubscription(event);
+        case 'customer.subscription.updated':
+          return this._stripeService.updateSubscription(event);
+        case 'customer.subscription.deleted':
+          return this._stripeService.deleteSubscription(event);
+        default:
+          return { ok: true };
+      }
+    } catch (e) {
+      throw new HttpException(e, 500);
     }
   }
 
