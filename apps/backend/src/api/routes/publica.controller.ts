@@ -6,6 +6,7 @@ import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { McpLocalService } from '@gitroom/nestjs-libraries/mcp/local/mcp.local.service';
 import { localpSystemPrompt } from '@gitroom/nestjs-libraries/mcp/local/local.prompts';
 import { WhatsappService } from '@gitroom/nestjs-libraries/whatsapp/whatsapp.service';
+import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 
 @ApiTags('Publica')
 @Controller('/publica')
@@ -14,7 +15,7 @@ export class PublicaController {
     private readonly _mcpLocalService: McpLocalService,
     private readonly _organizationService: OrganizationService,
     private readonly _whatsappService: WhatsappService,
-  ) {}
+  ) { }
 
   @Get('/whatsapp')
   async verifyWebhook(@Query('hub.mode') mode: string, @Query('hub.challenge') challenge: string, @Query('hub.verify_token') verifyToken: string, @Res() res: Response) {
@@ -41,13 +42,6 @@ export class PublicaController {
       return { success: true };
     }
 
-    const from = message.from; 
-    const text = message?.text?.body;
-
-    if (!from || !text) {
-      throw new HttpException('Invalid WhatsApp message format', 400);
-    }
-
     const api = '6e99449a057dbe270f3bd650fb78731123b458287d8b34ab6a7381ff8d246783';
     const apiModel = await this._organizationService.getOrgByApiKey(api);
 
@@ -55,10 +49,44 @@ export class PublicaController {
       throw new HttpException('Invalid API Key', 400);
     }
 
-    const organizationId = apiModel.id;
-    const redisKey = `mcp:context:${organizationId}:${from}`;
+    if (message.type === 'image' || message.type === 'video') {
+      const mediaUrl = await this._whatsappService.downloadMedia(message[message.type].id);
 
-    let previousContext = await ioRedis.get(redisKey);
+      const upload = UploadFactory.createStorage()
+      const file = await upload.uploadSimple(mediaUrl)
+
+      message.text = {
+        body: `Media received: ${file}`,
+      }
+    }
+
+    const from = message.from;
+    const text = message?.text?.body;
+    const messageId = message.id;
+    const organizationId = apiModel.id;
+    const messageContextId = message.context?.id;
+
+    if (!from || !text) {
+      throw new HttpException('Invalid WhatsApp message format', 400);
+    }
+
+    if (messageContextId) {
+      const originalMessageRaw = await ioRedis.get(`mcp:sent:${organizationId}:${from}:${messageContextId}`);
+      const originalMessage = originalMessageRaw ? JSON.parse(originalMessageRaw) : null;
+
+      if (originalMessage?.text) {
+        message.text = {
+          body: `Respondiendo a: "${originalMessage.text}"\n\n${text}`,
+        }
+      }
+    }
+
+    const redisContextKey = `mcp:context:${organizationId}:${from}`;
+    const redisMessageKey = `mcp:sent:${organizationId}:${from}:${messageId}`
+
+    await ioRedis.set(redisMessageKey, JSON.stringify({ text }), 'EX', 60 * 60);
+
+    let previousContext = await ioRedis.get(redisContextKey);
     let messages = previousContext ? JSON.parse(previousContext) : [];
 
     messages.push({
@@ -85,10 +113,13 @@ export class PublicaController {
         },
       });
 
-      await this._whatsappService.sendText(from, response.content.text as string);
+      const { id } = await this._whatsappService.sendText(from, response.content.text as string);
+
+      const redisMessageKey = `mcp:sent:${organizationId}:${from}:${id}`
+      await ioRedis.set(redisMessageKey, JSON.stringify({ text }), 'EX', 60 * 60);
     }
 
-    await ioRedis.set(redisKey, JSON.stringify(messages), 'EX', 60 * 60);
+    await ioRedis.set(redisContextKey, JSON.stringify(messages), 'EX', 60 * 60);
 
     return { success: true };
   }

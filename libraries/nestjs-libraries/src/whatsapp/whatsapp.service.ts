@@ -7,7 +7,7 @@ export class WhatsappService {
   private accessToken = process.env.WHATSAPP_TOKEN;
   private phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
 
-  async sendText(to: string, message: string) {
+  async sendText(to: string, message: string): Promise<{id: string}> {
     if (!this.accessToken || !this.phoneNumberId) {
       throw new HttpException('WhatsApp configuration missing', 500);
     }
@@ -31,9 +31,27 @@ export class WhatsappService {
         }
       );
 
-      return response.data;
+      const id = response.data.messages?.[0]?.id;
+
+      return { id };
     } catch (error) {
       console.error('Failed to send WhatsApp message:', JSON.stringify(error, null, 2));
+
+      throw new HttpException(error!, 500);
     }
+  }
+
+  async downloadMedia(mediaId: string): Promise<string> {
+    const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+    
+    const { data } = await axios.get(`https://graph.facebook.com/v19.0/${mediaId}`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+  
+    const mediaUrl = data.url;
+  
+    return mediaUrl;
   }
 }

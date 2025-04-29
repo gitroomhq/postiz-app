@@ -6,6 +6,7 @@ import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/po
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
+import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 
 @Injectable()
 export class MainMcp {
@@ -13,7 +14,7 @@ export class MainMcp {
     private _integrationService: IntegrationService,
     private _postsService: PostsService,
     private _openAiService: OpenaiService
-  ) {}
+  ) { }
 
   @McpTool({ toolName: 'POSTIZ_GET_CONFIG_ID' })
   async preRun() {
@@ -38,13 +39,13 @@ export class MainMcp {
       profile: org.profile,
       customer: org.customer
         ? {
-            id: org.customer.id,
-            name: org.customer.name,
-          }
+          id: org.customer.id,
+          name: org.customer.name,
+        }
         : undefined,
     }));
 
-    return [{ type: 'text', text: JSON.stringify(list) }];
+    return [{ type: 'text', text: JSON.stringify(list, null, 2) }];
   }
 
   @McpTool({
@@ -65,10 +66,21 @@ export class MainMcp {
       generatePictures: boolean;
       date: string;
       providerId: string;
-      posts: { text: string; images?: string[]}[];
+      posts: { text: string; images?: string[] }[];
     }
   ) {
-    console.log(obj, organization, "edison")
+    const generateImage = async (text: string) => {
+      const pathAI = await this._openAiService.generateImage(
+        text,
+        true
+      )
+
+      const uploader = UploadFactory.createStorage()
+      const path = await uploader.uploadSimple(pathAI)
+
+      return { id: makeId(10), path }
+    }
+
     const create = await this._postsService.createPost(organization, {
       date: obj.date,
       type: obj.type,
@@ -82,18 +94,12 @@ export class MainMcp {
               id: makeId(10),
               image: !obj.generatePictures
                 ? (post.images || []).map((img) => ({
-                    id: makeId(10),
-                    path: img,
-                  }))
+                  id: makeId(10),
+                  path: img,
+                }))
                 : [
-                    {
-                      id: makeId(10),
-                      path: await this._openAiService.generateImage(
-                        post.text,
-                        true
-                      ),
-                    },
-                  ],
+                  await generateImage(post.text)
+                ],
             }))
           ),
           // @ts-ignore
