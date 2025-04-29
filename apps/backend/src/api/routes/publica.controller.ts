@@ -55,9 +55,10 @@ export class PublicaController {
       const upload = UploadFactory.createStorage()
 
       const file = await upload.uploadFile(media)
+      const caption = message[message.type]?.caption
 
       message.text = {
-        body: `Media received: ${file}`,
+        body: caption ? `Media received: ${file.path} \nCaption: ${caption}` : `Media received: ${file.path}`,
       }
     }
 

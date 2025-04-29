@@ -46,9 +46,9 @@ export class WhatsappService {
 
 
   async downloadMedia(mediaId: string): Promise<Express.Multer.File> {
-    const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+    const accessToken = process.env.WHATSAPP_TOKEN;
 
-    const { data } = await axios.get(`https://graph.facebook.com/v19.0/${mediaId}`, {
+    const { data } = await axios.get(`https://graph.facebook.com/v22.0/${mediaId}`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
