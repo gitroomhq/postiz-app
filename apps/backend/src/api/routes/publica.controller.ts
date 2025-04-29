@@ -50,10 +50,11 @@ export class PublicaController {
     }
 
     if (message.type === 'image' || message.type === 'video') {
-      const mediaUrl = await this._whatsappService.downloadMedia(message[message.type].id);
+      const media = await this._whatsappService.downloadMedia(message[message.type].id);
 
       const upload = UploadFactory.createStorage()
-      const file = await upload.uploadSimple(mediaUrl)
+
+      const file = await upload.uploadFile(media)
 
       message.text = {
         body: `Media received: ${file}`,

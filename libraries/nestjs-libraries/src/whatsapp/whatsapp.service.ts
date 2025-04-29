@@ -1,5 +1,8 @@
 import { Injectable, HttpException } from '@nestjs/common';
 import axios from 'axios';
+import { makeId } from '../services/make.is';
+import mime from 'mime-types'
+import { Readable } from 'stream';
 
 @Injectable()
 export class WhatsappService {
@@ -41,9 +44,10 @@ export class WhatsappService {
     }
   }
 
-  async downloadMedia(mediaId: string): Promise<string> {
+
+  async downloadMedia(mediaId: string): Promise<Express.Multer.File> {
     const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
-    
+
     const { data } = await axios.get(`https://graph.facebook.com/v19.0/${mediaId}`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -52,6 +56,33 @@ export class WhatsappService {
   
     const mediaUrl = data.url;
   
-    return mediaUrl;
+    const response = await axios.get(mediaUrl, {
+      responseType: 'arraybuffer',
+      headers: {
+        Authorization: `Bearer ${accessToken}`, 
+      },
+    });
+  
+    const buffer = Buffer.from(response.data);
+    const mimetype = response.headers['content-type'];
+    const extension = mime.extension(mimetype) || '';
+    const id = makeId(10);
+  
+    const filename = `${id}.${extension}`;
+  
+    const multerLikeFile: Express.Multer.File = {
+      fieldname: 'file',
+      originalname: filename,
+      encoding: '7bit',
+      mimetype,
+      size: buffer.length,
+      buffer,
+      stream: Readable.from(buffer),
+      destination: '',
+      filename,
+      path: '',
+    };
+  
+    return multerLikeFile;
   }
 }
