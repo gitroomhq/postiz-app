@@ -42,6 +42,17 @@ export class PublicaController {
       return { success: true };
     }
 
+    // ------- avoid duplicated menssages ------ //
+    const rawMessageId = message.id;
+    const key = `dedup:whatsapp:${rawMessageId}`;
+    if (await ioRedis.get(key)) {
+      return {
+        success: true,
+      }
+    }
+    await ioRedis.set(key, '1', 'EX', 86400); // 24h TTL
+    // ---------------------------------------------- // 
+
     const api = '6e99449a057dbe270f3bd650fb78731123b458287d8b34ab6a7381ff8d246783';
     const apiModel = await this._organizationService.getOrgByApiKey(api);
 
