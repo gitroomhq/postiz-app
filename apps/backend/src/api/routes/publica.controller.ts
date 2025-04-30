@@ -50,7 +50,7 @@ export class PublicaController {
         success: true,
       }
     }
-    await ioRedis.set(key, '1', 'EX', 86400); // 24h TTL
+    await ioRedis.set(key, rawMessageId, 'EX', 86400); // 24h TTL
     // ---------------------------------------------- // 
 
     const api = '6e99449a057dbe270f3bd650fb78731123b458287d8b34ab6a7381ff8d246783';
@@ -61,12 +61,22 @@ export class PublicaController {
     }
 
     if (message.type === 'image' || message.type === 'video') {
-      const media = await this._whatsappService.downloadMedia(message[message.type].id);
+      const mediaObject = message[message.type];
 
+    // ----------------- avoid duplicated media --------------------- //
+      if (await ioRedis.get(`media:${mediaObject.sha256}`)) {
+        return { 
+          success: true,
+        }
+      }
+      await ioRedis.set(`media:${mediaObject.sha256}`, mediaObject.sha256 , 'EX', 86400); // 24h TTL
+    // ------------------------------------------------------------- // 
+
+      const media = await this._whatsappService.downloadMedia(mediaObject.id);
       const upload = UploadFactory.createStorage()
 
       const file = await upload.uploadFile(media)
-      const caption = message[message.type]?.caption
+      const caption = mediaObject?.caption
 
       message.text = {
         body: caption ? `Media received: ${file.path} \nCaption: ${caption}` : `Media received: ${file.path}`,
