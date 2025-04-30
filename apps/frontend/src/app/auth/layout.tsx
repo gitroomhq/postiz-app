@@ -13,7 +13,7 @@ export default async function AuthLayout({
   children: ReactNode;
 }) {
   return (
-    <>
+    <div className="dark !bg-black">
       <ReturnUrlComponent />
       <div className="absolute left-0 top-0 z-[0] h-[100vh] w-[100vw] overflow-hidden bg-loginBg bg-contain bg-no-repeat bg-left-top" />
       <div className="relative z-[1] px-3 lg:pr-[100px] xs:mt-[70px] flex justify-center lg:justify-end items-center h-[100vh] w-[100vw] overflow-hidden">
@@ -75,6 +75,6 @@ export default async function AuthLayout({
           <div className="absolute right-0 bg-gradient-to-l from-customColor9 h-[1px] -translate-y-[22px] w-full" />
         </div>
       </div>
-    </>
+    </div>
   );
 }

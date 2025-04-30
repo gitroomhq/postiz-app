@@ -19,7 +19,7 @@ export class OpenaiService {
       await openai.images.generate({
         prompt,
         response_format: isUrl ? 'url' : 'b64_json',
-        model: 'dall-e-3',
+        model: 'gpt-image-1',
       })
     ).data[0];
 
@@ -30,7 +30,7 @@ export class OpenaiService {
     return (
       (
         await openai.beta.chat.completions.parse({
-          model: 'gpt-4o-2024-08-06',
+          model: 'gpt-4.1',
           messages: [
             {
               role: 'system',
@@ -64,7 +64,7 @@ export class OpenaiService {
           ],
           n: 5,
           temperature: 1,
-          model: 'gpt-4o',
+          model: 'gpt-4.1',
         }),
         openai.chat.completions.create({
           messages: [
@@ -80,7 +80,7 @@ export class OpenaiService {
           ],
           n: 5,
           temperature: 1,
-          model: 'gpt-4o',
+          model: 'gpt-4.1',
         }),
       ])
     ).flatMap((p) => p.choices);
@@ -118,7 +118,7 @@ export class OpenaiService {
           content,
         },
       ],
-      model: 'gpt-4o',
+      model: 'gpt-4.1',
     });
 
     const { content: articleContent } = websiteContent.choices[0].message;
