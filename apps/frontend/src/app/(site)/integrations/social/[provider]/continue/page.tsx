@@ -22,6 +22,14 @@ export default async function Page({
     };
   }
 
+  if (provider === 'vk') {
+    searchParams = {
+      ...searchParams,
+      state: searchParams.state || '',
+      code: searchParams.code + '&&&&' + searchParams.device_id
+    };
+  }
+
   const data = await internalFetch(`/integrations/social/${provider}/connect`, {
     method: 'POST',
     body: JSON.stringify(searchParams),

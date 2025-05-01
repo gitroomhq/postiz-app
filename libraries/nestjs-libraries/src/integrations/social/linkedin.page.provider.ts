@@ -413,7 +413,7 @@ export class LinkedinPageProvider
 
     if (totalLikes >= +fields.likesAmount) {
       await timer(2000);
-      await this.fetch(`https://api.linkedin.com/v2/posts`, {
+      await this.fetch(`https://api.linkedin.com/rest/posts`, {
         body: JSON.stringify({
           author: `urn:li:organization:${integration.internalId}`,
           commentary: '',
@@ -433,7 +433,7 @@ export class LinkedinPageProvider
         headers: {
           'X-Restli-Protocol-Version': '2.0.0',
           'Content-Type': 'application/json',
-          'LinkedIn-Version': '202501',
+          'LinkedIn-Version': '202504',
           Authorization: `Bearer ${integration.token}`,
         },
       });

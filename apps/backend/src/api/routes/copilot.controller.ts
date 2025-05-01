@@ -27,7 +27,7 @@ export class CopilotController {
           req?.body?.variables?.data?.metadata?.requestType ===
           'TextareaCompletion'
             ? 'gpt-4o-mini'
-            : 'gpt-4o-2024-08-06',
+            : 'gpt-4.1',
       }),
     });
 

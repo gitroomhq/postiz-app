@@ -472,7 +472,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     isPersonal = true
   ) {
     try {
-      await this.fetch(`https://api.linkedin.com/v2/posts`, {
+      await this.fetch(`https://api.linkedin.com/rest/posts`, {
         body: JSON.stringify({
           author:
             (isPersonal ? 'urn:li:person:' : `urn:li:organization:`) +
@@ -494,7 +494,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
         headers: {
           'X-Restli-Protocol-Version': '2.0.0',
           'Content-Type': 'application/json',
-          'LinkedIn-Version': '202501',
+          'LinkedIn-Version': '202504',
           Authorization: `Bearer ${integration.token}`,
         },
       });
