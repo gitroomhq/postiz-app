@@ -55,4 +55,12 @@ export class UsersService {
   changePersonal(userId: string, body: UserDetailDto) {
     return this._usersRepository.changePersonal(userId, body);
   }
+
+  updatePhoneNumber(userId: string, phoneNumber: string, isActive: boolean) {
+    return this._usersRepository.updatePhoneNumber(userId, phoneNumber, isActive);
+  }
+
+  isPhoneNumberAvailable(phoneNumber: string, excludeUserId?: string) {
+    return this._usersRepository.isPhoneNumberAvailable(phoneNumber, excludeUserId);
+  }
 }
