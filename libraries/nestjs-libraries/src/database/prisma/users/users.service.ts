@@ -63,4 +63,8 @@ export class UsersService {
   isPhoneNumberAvailable(phoneNumber: string, excludeUserId?: string) {
     return this._usersRepository.isPhoneNumberAvailable(phoneNumber, excludeUserId);
   }
+
+  getUserAndOrganizationByPhone(phoneNumber: string) {
+    return this._usersRepository.getUserAndOrganizationByPhone(phoneNumber);
+  }
 }

@@ -1,19 +1,19 @@
-import { Body, Controller, Get, HttpException, Post, Query, Req, Res } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, Res } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
-import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { McpLocalService } from '@gitroom/nestjs-libraries/mcp/local/mcp.local.service';
 import { localpSystemPrompt } from '@gitroom/nestjs-libraries/mcp/local/local.prompts';
 import { WhatsappService } from '@gitroom/nestjs-libraries/whatsapp/whatsapp.service';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
+import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 
 @ApiTags('Publica')
 @Controller('/publica')
 export class PublicaController {
   constructor(
     private readonly _mcpLocalService: McpLocalService,
-    private readonly _organizationService: OrganizationService,
+    private readonly _usersService: UsersService,
     private readonly _whatsappService: WhatsappService,
   ) { }
 
@@ -53,11 +53,14 @@ export class PublicaController {
     await ioRedis.set(key, rawMessageId, 'EX', 86400); // 24h TTL
     // ---------------------------------------------- // 
 
-    const api = '6e99449a057dbe270f3bd650fb78731123b458287d8b34ab6a7381ff8d246783';
-    const apiModel = await this._organizationService.getOrgByApiKey(api);
+    const user = await this._usersService.getUserAndOrganizationByPhone(message?.from)
 
-    if (!apiModel) {
-      throw new HttpException('Invalid API Key', 400);
+    if (!user) {
+      console.error('User not found: ', message?.from)
+
+      return { 
+        success: true,
+      }
     }
 
     if (message.type === 'image' || message.type === 'video') {
@@ -83,14 +86,19 @@ export class PublicaController {
       }
     }
 
-    const from = message.from;
+    const from = message?.from;
     const text = message?.text?.body;
     const messageId = message.id;
-    const organizationId = apiModel.id;
+    const organizationId = user.organizations[0]?.organization?.id
+
     const messageContextId = message.context?.id;
 
     if (!from || !text) {
-      throw new HttpException('Invalid WhatsApp message format', 400);
+      console.error('Invalid WhatsApp message format');
+
+      return {
+        success: true
+      }
     }
 
     if (messageContextId) {
