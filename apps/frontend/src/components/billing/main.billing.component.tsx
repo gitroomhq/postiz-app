@@ -503,7 +503,7 @@ export const MainBillingComponent: FC<{
             </div>
           ))}
       </div>
-      <PurchaseCrypto />
+      {!subscription?.id && (<PurchaseCrypto />)}
       {!!subscription?.id && (
         <div className="flex justify-center mt-[20px] gap-[10px]">
           <Button onClick={updatePayment}>Update Payment Method / Invoices History</Button>

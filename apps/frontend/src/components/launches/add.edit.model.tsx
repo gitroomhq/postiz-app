@@ -59,6 +59,7 @@ import { DropFiles } from '@gitroom/frontend/components/layout/drop.files';
 import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
 import { TagsComponent } from './tags.component';
 import { RepeatComponent } from '@gitroom/frontend/components/launches/repeat.component';
+import { MergePost } from '@gitroom/frontend/components/launches/merge.post';
 
 function countCharacters(text: string, type: string): number {
   if (type !== 'x') {
@@ -135,6 +136,27 @@ export const AddEditModal: FC<{
 
   // hook to test if the top editor should be hidden
   const showHide = useHideTopEditor();
+
+  // merge all posts and delete all the comments
+  const merge = useCallback(() => {
+    setValue(
+      value.reduce(
+        (all, current) => {
+          all[0].content = all[0].content + current.content + '\n';
+          all[0].image = [...all[0].image, ...(current.image || [])];
+
+          return all;
+        },
+        [
+          {
+            content: '',
+            id: value[0].id,
+            image: [] as { id: string; path: string }[],
+          },
+        ]
+      )
+    );
+  }, [value]);
 
   const [showError, setShowError] = useState(false);
 
@@ -536,7 +558,14 @@ export const AddEditModal: FC<{
             title: 'AI Content Assistant',
           }}
           className="!z-[499]"
-          instructions="You are an assistant that help the user to schedule their social media posts, everytime somebody write something, try to use a function call, if not prompt the user that the request is invalid and you are here to assists with social media posts"
+          instructions={`
+You are an assistant that help the user to schedule their social media posts,
+Here are the things you can do:
+- Add a new comment / post to the list of posts
+- Delete a comment / post from the list of posts
+- Add content to the comment / post
+- Activate or deactivate the comment / post
+`}
         />
       )}
       <div
@@ -651,16 +680,8 @@ export const AddEditModal: FC<{
                             <Editor
                               order={index}
                               height={value.length > 1 ? 150 : 250}
-                              commands={
-                                [
-                                  // ...commands
-                                  //   .getCommands()
-                                  //   .filter((f) => f.name === 'image'),
-                                  // newImage,
-                                  // postSelector(dateState),
-                                ]
-                              }
                               value={p.content}
+                              totalPosts={value.length}
                               preview="edit"
                               onPaste={pasteImages(index, p.image || [])}
                               // @ts-ignore
@@ -731,6 +752,11 @@ export const AddEditModal: FC<{
                     </div>
                   </Fragment>
                 ))}
+                {value.length > 1 && (
+                  <div>
+                    <MergePost merge={merge} />
+                  </div>
+                )}
               </>
             ) : null}
           </div>
