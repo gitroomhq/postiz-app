@@ -268,4 +268,25 @@ export class UsersRepository {
 
     return !user?.phoneNumberVerified
   }
+
+  async getUserAndOrganizationByPhone(phoneNumber: string) {
+    return this._user.model.user.findFirst({
+      where: {
+        phoneNumber,
+        phoneNumberVerified: true,
+      },
+      select: {
+        id: true,
+        organizations: {
+          select: {
+            organization: {
+              select: {
+                id: true
+              }
+            }
+          }
+        }
+      }
+    });
+  }
 }
