@@ -7,6 +7,7 @@ import { localpSystemPrompt } from '@gitroom/nestjs-libraries/mcp/local/local.pr
 import { WhatsappService } from '@gitroom/nestjs-libraries/whatsapp/whatsapp.service';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
+import { parsePhoneNumberWithError } from 'libphonenumber-js';
 
 @ApiTags('Publica')
 @Controller('/publica')
@@ -58,7 +59,7 @@ export class PublicaController {
     if (!user) {
       console.error('User not found: ', message?.from)
 
-      return { 
+      return {
         success: true,
       }
     }
@@ -66,14 +67,14 @@ export class PublicaController {
     if (message.type === 'image' || message.type === 'video') {
       const mediaObject = message[message.type];
 
-    // ----------------- avoid duplicated media --------------------- //
+      // ----------------- avoid duplicated media --------------------- //
       if (await ioRedis.get(`media:${mediaObject.sha256}`)) {
-        return { 
+        return {
           success: true,
         }
       }
-      await ioRedis.set(`media:${mediaObject.sha256}`, mediaObject.sha256 , 'EX', 86400); // 24h TTL
-    // ------------------------------------------------------------- // 
+      await ioRedis.set(`media:${mediaObject.sha256}`, mediaObject.sha256, 'EX', 86400); // 24h TTL
+      // ------------------------------------------------------------- // 
 
       const media = await this._whatsappService.downloadMedia(mediaObject.id);
       const upload = UploadFactory.createStorage()
@@ -129,10 +130,18 @@ export class PublicaController {
     });
 
     const response = await this._mcpLocalService.createMessage(organizationId, {
-      messages,
+      messages: [{
+        role: 'user',
+        content: {
+          type: 'text',
+          text: `My country code is ${this.getCountryCodeByPhone(from)}.`, 
+        }
+      },
+      ...messages
+      ],
       systemPrompt: localpSystemPrompt,
       temperature: 0.7,
-      maxTokens: 500,
+      maxTokens: 600,
     });
 
     if (response?.content?.text) {
@@ -153,5 +162,22 @@ export class PublicaController {
     await ioRedis.set(redisContextKey, JSON.stringify(messages), 'EX', 60 * 60);
 
     return { success: true };
+  }
+
+  getCountryCodeByPhone(phone: string): string {
+    try {
+      const normalized = phone.startsWith('+') ? phone : `+${phone}`;
+      const parsed = parsePhoneNumberWithError(normalized);
+
+      if (parsed.isValid()) {
+        return parsed.country || 'DO';
+      }
+
+      console.warn('Invalid phone number:', phone);
+      return 'DO';
+    } catch (error) {
+      console.error('Error getting country code by phone:', error);
+      return 'DO'; // Fallback por defecto
+    }
   }
 }

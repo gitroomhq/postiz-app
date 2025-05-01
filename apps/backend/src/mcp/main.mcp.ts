@@ -1,17 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { McpPrompt, McpTool } from '@gitroom/nestjs-libraries/mcp/mcp.tool';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
-import { string, array, enum as eenum, object, boolean } from 'zod';
+import { string, array, enum as eenum, object, boolean, optional } from 'zod';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
+import { AllProvidersSettings } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/all.providers.settings';
+import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 
 @Injectable()
 export class MainMcp {
   constructor(
     private _integrationService: IntegrationService,
+    private _integrationManager: IntegrationManager,
     private _postsService: PostsService,
     private _openAiService: OpenaiService
   ) { }
@@ -37,6 +40,7 @@ export class MainMcp {
       picture: org.picture,
       disabled: org.disabled,
       profile: org.profile,
+      internalId: org.internalId, 
       customer: org.customer
         ? {
           id: org.customer.id,
@@ -57,6 +61,7 @@ export class MainMcp {
       date: string().describe('UTC TIME'),
       providerId: string().describe('Use POSTIZ_PROVIDERS_LIST to get the id'),
       posts: array(object({ text: string(), images: array(string()) })),
+      settings: optional(object({}).passthrough()),
     },
   })
   async schedulePost(
@@ -67,8 +72,11 @@ export class MainMcp {
       date: string;
       providerId: string;
       posts: { text: string; images?: string[] }[];
+      settings?: AllProvidersSettings,
     }
   ) {
+    console.log(JSON.stringify(obj, null, 2))
+    
     const generateImage = async (text: string) => {
       const pathAI = await this._openAiService.generateImage(
         text,
@@ -103,7 +111,7 @@ export class MainMcp {
             }))
           ),
           // @ts-ignore
-          settings: {},
+          settings: obj.settings || {},
           integration: {
             id: obj.providerId,
           },
@@ -119,4 +127,22 @@ export class MainMcp {
     ];
   }
 
+  @McpTool({ toolName: 'PUBLICA_LIST_DISCORD_CHANNELS', zod: { internalId: string().describe('Use POSTIZ_PROVIDERS_LIST to get the internalId') }, })
+  async listDiscordChannels(orgId: string, obj: { internalId: string} ) {
+    const integrationProvider = this._integrationManager.getSocialIntegration('discord');
+
+    if (!integrationProvider) {
+      return [{ type: 'text', text: 'Invalid provider' }];
+    }
+
+    const load = await integrationProvider['channels'](
+      '',
+      '',
+      obj.internalId,
+    );
+
+    const text = load.reduce((acc, item: { name: string, id: string }) => (acc + `id: ${item.id}\nname: ${item.name}\n\n`), '')
+
+    return [{ type: 'text', text: `*Discord channels*:\n\n${text}` }];
+  }
 }
