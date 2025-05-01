@@ -239,4 +239,33 @@ export class UsersRepository {
       count,
     };
   }
+
+  async updatePhoneNumber(userId: string, phoneNumber: string, isActive: boolean) {
+    return this._user.model.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        phoneNumber: phoneNumber,
+        phoneNumberVerified: isActive,
+      },
+    });
+  }
+
+  async isPhoneNumberAvailable(phoneNumber: string, excludeUserId?: string) {
+    const user = await this._user.model.user.findFirst({
+      where: {
+        phoneNumber,
+        phoneNumberVerified: true,
+        ...(excludeUserId ? { id: { not: excludeUserId } } : {}),
+      },
+      select: {
+        id: true,
+        phoneNumber: true,
+        phoneNumberVerified: true,
+      },
+    });
+
+    return !user?.phoneNumberVerified
+  }
 }

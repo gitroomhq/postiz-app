@@ -100,7 +100,9 @@ model User {
   agencies     SocialMediaAgency[]
   ip           String?
   agent        String?
-
+  phoneNumber  String?
+  phoneNumberVerified Boolean? @default(false)
+  
   @@unique([email, providerName])
   @@index([lastReadNotifications])
   @@index([inviteId])
