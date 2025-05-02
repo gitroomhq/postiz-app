@@ -36,7 +36,7 @@ import { McpController } from '@gitroom/backend/api/routes/mcp.controller';
 import { McpLocalService } from '@gitroom/nestjs-libraries/mcp/local/mcp.local.service';
 import { WhatsappService } from '@gitroom/nestjs-libraries/whatsapp/whatsapp.service';
 import { PublicaController } from '@gitroom/backend/api/routes/publica.controller';
-import { PhoneNumberController } from '@gitroom/backend/api/routes/phone-number.controller';
+import { PhoneNumberController } from '@gitroom/backend/api/routes/phone.number.controller';
 
 const authenticatedController = [
   UsersController,
