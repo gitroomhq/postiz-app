@@ -27,7 +27,7 @@ const model = new ChatOpenAI({
 
 const dalle = new DallEAPIWrapper({
   apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
-  model: 'gpt-image-1',
+  model: 'dall-e-3',
 });
 
 interface WorkflowChannelsState {
@@ -75,6 +75,7 @@ const contentZod = (
     content: z.string().describe('Content for the new post'),
     website: z
       .string()
+      .nullable()
       .optional()
       .describe(
         "Website for the new post if exists, If one of the post present a brand, website link must be to the root domain of the brand or don't include it, website url should contain the brand name"
