@@ -19,7 +19,7 @@ export class OpenaiService {
       await openai.images.generate({
         prompt,
         response_format: isUrl ? 'url' : 'b64_json',
-        model: 'gpt-image-1',
+        model: 'dall-e-3',
       })
     ).data[0];
 
