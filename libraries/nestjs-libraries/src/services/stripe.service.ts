@@ -75,7 +75,7 @@ export class StripeService {
         return current;
       }
       return prev;
-    });
+    }, {created: -100} as Stripe.PaymentMethod);
 
     try {
       const paymentIntent = await stripe.paymentIntents.create({
