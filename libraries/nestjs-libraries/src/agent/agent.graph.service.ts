@@ -27,7 +27,7 @@ const model = new ChatOpenAI({
 
 const dalle = new DallEAPIWrapper({
   apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
-  model: 'gpt-image-1',
+  model: 'dall-e-3',
 });
 
 interface WorkflowChannelsState {
