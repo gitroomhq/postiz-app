@@ -1,0 +1,34 @@
+/* Oculta el estilo por defecto si no has eliminado el import */
+.react-phone-number-input {
+  all: unset;
+}
+
+/* Contenedor del input */
+.phone-input-wrapper {
+  @apply bg-input h-[44px] border border-fifth rounded-[4px] text-inputText placeholder-inputText flex items-center w-full px-[12px];
+}
+
+/* Input real */
+.phone-input-wrapper input {
+  @apply h-full w-full bg-transparent text-inputText outline-none text-sm;
+}
+
+/* Estilo de bandera */
+.phone-input-wrapper .PhoneInputCountry {
+  @apply mr-[8px] h-full flex items-center;
+}
+
+.phone-input-wrapper .PhoneInputCountrySelect {
+  @apply bg-transparent border-none outline-none cursor-pointer text-inputText;
+}
+
+/* El dropdown de países podría necesitar override manual si quieres oscurecerlo */
+.PhoneInputCountrySelect:focus-visible {
+  outline: none;
+}
+
+.PhoneInputCountryIcon {
+  width: 24px;
+  height: 16px;
+  object-fit: contain;
+}

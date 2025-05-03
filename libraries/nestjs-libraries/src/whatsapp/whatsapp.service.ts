@@ -46,7 +46,7 @@ export class WhatsappService {
 
 
   async downloadMedia(mediaId: string): Promise<Express.Multer.File> {
-    const accessToken = process.env.WHATSAPP_TOKEN;
+    const accessToken = this.accessToken;
 
     const { data } = await axios.get(`https://graph.facebook.com/v22.0/${mediaId}`, {
       headers: {
@@ -85,4 +85,69 @@ export class WhatsappService {
   
     return multerLikeFile;
   }
+
+  async sendVerificationCode(to: string, code: string): Promise<{ id: string }> {
+    if (!this.accessToken || !this.phoneNumberId) {
+      throw new HttpException('WhatsApp configuration missing', 500);
+    }
+
+    const payload = {
+      messaging_product: 'whatsapp',
+      to,
+      type: 'template',
+      template: {
+        name: 'verification_code',
+        language: {
+          code: 'en',
+        },
+        components: [
+          {
+            type: 'body',
+            parameters: [
+              {
+                type: 'text',
+                text: code,
+              },
+            ],
+          },
+          {
+            type: 'button',
+            sub_type: 'url',
+            index: 0,
+            parameters: [
+              {
+                type: 'text',
+                text: code,
+              },
+            ],
+          },
+        ],
+      },
+    };
+    
+  
+    try {
+      const response = await axios.post(
+        `${this.apiUrl}/${this.phoneNumberId}/messages`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${this.accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+  
+      const id = response.data.messages?.[0]?.id;
+      return { id };
+    } catch (error) {
+      console.error(
+        'Failed to send WhatsApp verification code:',
+        // @ts-ignore
+        JSON.stringify(error?.response?.data || error.message || error, null, 2)
+      );
+
+      throw new HttpException('Failed to send verification code. Please try later.', 500);
+    }
+  }  
 }

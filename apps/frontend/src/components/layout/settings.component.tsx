@@ -25,6 +25,7 @@ import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.titl
 import { Tabs } from '@mantine/core';
 import { SignaturesComponent } from '@gitroom/frontend/components/settings/signatures.component';
 import { Autopost } from '@gitroom/frontend/components/autopost/autopost';
+import { PhoneNumberComponent } from '@gitroom/frontend/components/settings/phone.number.component';
 
 export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
   const { isGeneral } = useVariables();
@@ -135,6 +136,9 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
               {!!user?.tier?.public_api && isGeneral && showLogout && (
                 <Tabs.Tab value="api">Public API</Tabs.Tab>
               )}
+              {!!user?.tier?.team_members && isGeneral && (
+                <Tabs.Tab value='whatsapp'> WhatsApp AI Integration </Tabs.Tab>
+              )}
             </Tabs.List>
 
             {/* <Tabs.Panel value="profile" pt="md">
@@ -244,6 +248,12 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
             {!!user?.tier?.public_api && isGeneral && showLogout && (
               <Tabs.Panel value="api" pt="md">
                 <PublicComponent />
+              </Tabs.Panel>
+            )}
+
+            {!!user?.tier?.team_members && isGeneral && (
+              <Tabs.Panel value="whatsapp" pt="md">
+                <PhoneNumberComponent />
               </Tabs.Panel>
             )}
           </Tabs>
