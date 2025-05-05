@@ -137,6 +137,10 @@ export class SubscriptionRepository {
     const findOrg =
       org || (await this.getOrganizationByCustomerId(customerId))!;
 
+    if (!findOrg) {
+      return ;
+    }
+
     await this._subscription.model.subscription.upsert({
       where: {
         organizationId: findOrg.id,
