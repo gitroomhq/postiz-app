@@ -88,7 +88,7 @@ export class SubscriptionService {
         customerId
       ))!;
 
-    if (getCurrentSubscription && getCurrentSubscription?.isLifetime) {
+    if (!getOrgByCustomerId || (getCurrentSubscription && getCurrentSubscription?.isLifetime)) {
       return false;
     }
 
