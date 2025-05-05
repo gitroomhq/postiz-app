@@ -1,7 +1,9 @@
+'use client';
+
 import React, { useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
-import { InputGroup } from '@blueprintjs/core';
-import { Clean } from '@blueprintjs/icons';
+// import { InputGroup } from '@blueprintjs/core';
+// import { Clean } from '@blueprintjs/icons';
 
 import { SectionTab } from 'polotno/side-panel';
 import { getImageSize } from 'polotno/utils/image';
@@ -69,18 +71,18 @@ const GenerateTab = observer(({ store }: any) => {
       <div style={{ height: '40px', paddingTop: '5px' }}>
         Generate image with AI {data?.credits ? `(${data?.credits} left)` : ``}
       </div>
-      <InputGroup
-        placeholder="Type your image generation prompt here..."
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            handleGenerate();
-          }
-        }}
-        style={{
-          marginBottom: '20px',
-        }}
-        inputRef={inputRef}
-      />
+      {/*<InputGroup*/}
+      {/*  placeholder="Type your image generation prompt here..."*/}
+      {/*  onKeyDown={(e) => {*/}
+      {/*    if (e.key === 'Enter') {*/}
+      {/*      handleGenerate();*/}
+      {/*    }*/}
+      {/*  }}*/}
+      {/*  style={{*/}
+      {/*    marginBottom: '20px',*/}
+      {/*  }}*/}
+      {/*  inputRef={inputRef}*/}
+      {/*/>*/}
       <Button
         onClick={handleGenerate}
         loading={loading} innerClassName="invert"
@@ -148,7 +150,7 @@ export const PictureGeneratorSection = {
   name: 'picture-generator-ai',
   Tab: (props: any) => (
     <SectionTab name="AI Img" {...props}>
-      <Clean />
+      {/*<Clean />*/}
     </SectionTab>
   ),
   // we need observer to update component automatically on any store changes

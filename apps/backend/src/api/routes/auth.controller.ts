@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Get,
-  Ip,
   Param,
   Post,
   Query,
@@ -103,7 +102,7 @@ export class AuthController {
       response.status(200).json({
         register: true,
       });
-    } catch (e) {
+    } catch (e: any) {
       response.status(400).send(e.message);
     }
   }
@@ -167,7 +166,7 @@ export class AuthController {
       response.status(200).json({
         login: true,
       });
-    } catch (e) {
+    } catch (e: any) {
       response.status(400).send(e.message);
     }
   }

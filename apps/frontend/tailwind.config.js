@@ -1,20 +1,17 @@
-const { createGlobPatternsForDependencies } = require('@nx/react/tailwind');
 const { join } = require('path');
 
 module.exports = {
   content: [
-    ...createGlobPatternsForDependencies(
-      __dirname + '../../../libraries/react-shared-libraries'
-    ),
+    '@gitroom/react',
     join(
-      __dirname + '../../../libraries/react-shared-libraries',
+      '@gitroom/react',
       '{src,pages,components,app}/**/*!(*.stories|*.spec).{ts,tsx,html}'
     ),
     join(
       __dirname,
       '{src,pages,components,app}/**/*!(*.stories|*.spec).{ts,tsx,html}'
     ),
-    ...createGlobPatternsForDependencies(__dirname),
+    './src/**/*.{ts,tsx,html}',
   ],
   theme: {
     extend: {
