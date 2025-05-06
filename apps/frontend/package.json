@@ -2,11 +2,12 @@
   "name": "postiz-frontend",
   "version": "1.0.0",
   "description": "",
+  "type": "module",
   "scripts": {
     "dev": "dotenv -e ../../.env -- next dev -p 4200",
     "build": "next build",
-    "start": "PORT=4200 next start",
-    "pm2": "PORT=4200 pm2 start pnpm --name frontend -- start"
+    "start": "dotenv -e ../../.env -- next start -p 4200",
+    "pm2": "pm2 start pnpm --name frontend -- start"
   },
   "keywords": [],
   "author": "",

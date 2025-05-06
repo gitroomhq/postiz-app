@@ -44,6 +44,7 @@ export const useValues = (
     return () => ({ ...form.getValues(), __type: identifier });
   }, [form, integration]);
 
+  // @ts-ignore
   finalInformation[integration] = finalInformation[integration] || {};
   finalInformation[integration].posts = value;
   finalInformation[integration].isValid = form.formState.isValid;

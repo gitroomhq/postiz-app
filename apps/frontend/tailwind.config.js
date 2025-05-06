@@ -2,16 +2,8 @@ const { join } = require('path');
 
 module.exports = {
   content: [
-    '@gitroom/react',
-    join(
-      '@gitroom/react',
-      '{src,pages,components,app}/**/*!(*.stories|*.spec).{ts,tsx,html}'
-    ),
-    join(
-      __dirname,
-      '{src,pages,components,app}/**/*!(*.stories|*.spec).{ts,tsx,html}'
-    ),
     './src/**/*.{ts,tsx,html}',
+    '../../libraries/**/*.{ts,tsx,html}',
   ],
   theme: {
     extend: {

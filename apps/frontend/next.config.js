@@ -1,3 +1,6 @@
+// @ts-check
+
+/** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
     proxyTimeout: 90_000,
