@@ -3,7 +3,7 @@
   "collection": "@nestjs/schematics",
   "monorepo": false,
   "sourceRoot": "src",
-  "entryFile": "../../dist/backend/apps/backend/src/main",
+  "entryFile": "../../dist/commands/apps/commands/src/main",
   "language": "ts",
   "generateOptions": {
     "spec": false

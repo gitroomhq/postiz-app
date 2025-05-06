@@ -3,7 +3,7 @@
   "collection": "@nestjs/schematics",
   "monorepo": false,
   "sourceRoot": "src",
-  "entryFile": "../../dist/workers/apps/workers/src/main",
+  "entryFile": "../../dist/cron/apps/cron/src/main",
   "language": "ts",
   "generateOptions": {
     "spec": false
