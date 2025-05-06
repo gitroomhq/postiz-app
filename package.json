@@ -17,6 +17,7 @@
     "pm2-run": "pm2 delete all || true && pnpm run prisma-db-push && pnpm run --parallel pm2 && pm2 logs",
     "dev:stripe": "pnpx concurrently \"stripe listen --forward-to localhost:3000/stripe\" \"pnpm run dev\"",
     "build": "pnpm -r --workspace-concurrency=1 --filter ./apps/frontend --filter ./apps/backend --filter ./apps/workers  --filter ./apps/cron run build",
+    "build:backend": "rm -rf dist/frontend && pnpm --filter ./apps/frontend run build",
     "build:frontend": "rm -rf dist/frontend && pnpm --filter ./apps/frontend run build",
     "build:workers": "rm -rf dist/workers && pnpm --filter ./apps/workers run build",
     "build:cron": "rm -rf dist/cron && pnpm --filter ./apps/cron run build",
