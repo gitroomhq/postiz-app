@@ -28,7 +28,10 @@ export const useValues = (
   maximumCharacters?: number
 ) => {
   const resolver = useMemo(() => {
-    return classValidatorResolver(dto);
+    return dto && typeof dto === 'function'
+    ? classValidatorResolver(dto)
+    : undefined;
+
   }, [integration]);
 
   const form = useForm({
