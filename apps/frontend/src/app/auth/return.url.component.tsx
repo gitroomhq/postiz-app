@@ -1,8 +1,8 @@
 'use client';
 import { useSearchParams } from 'next/navigation';
-import { useCallback, useEffect } from 'react';
+import { FC, useCallback, useEffect } from 'react';
 
-const ReturnUrlComponent = () => {
+const ReturnUrlComponent: FC = () => {
   const params = useSearchParams();
   const url = params.get('returnUrl');
   useEffect(() => {
