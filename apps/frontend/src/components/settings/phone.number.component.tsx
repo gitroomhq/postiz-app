@@ -15,16 +15,20 @@ import clsx from 'clsx';
 import { parsePhoneNumberWithError } from 'libphonenumber-js'
 import { Tooltip } from 'react-tooltip';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { setCookie } from '@gitroom/frontend/components/layout/layout.context';
 
 
-export const AddPhoneNumber = ({ userId }: {userId?: string}) => {
+export const AddPhoneNumber = ({ userId }: { userId?: string }) => {
+  const { isSecured } = useVariables();
   const modals = useModals();
+  const user = useUser();
   const fetch = useFetch();
   const toast = useToaster();
-  const [codeStatus, setCodeStatus] = useState<'sent' | 'sending'| null>(null)
+  const [codeStatus, setCodeStatus] = useState<'sent' | 'sending' | null>(null)
   const [verifying, setVerifying] = useState(false)
 
-  const phoneInputDisabled = codeStatus === 'sent'  || codeStatus === 'sending'
+  const phoneInputDisabled = codeStatus === 'sent' || codeStatus === 'sending'
 
   const resolver = useMemo(() => {
     return classValidatorResolver(VerifyPhoneNumberDto);
@@ -39,14 +43,26 @@ export const AddPhoneNumber = ({ userId }: {userId?: string}) => {
     mode: 'onChange',
   });
 
+  const logout = useCallback(async () => {
+    if (!isSecured) {
+      setCookie('auth', '', -10);
+    } else {
+      await fetch('/user/logout', {
+        method: 'POST',
+      });
+    }
+
+    window.location.href = '/';
+  }, []);
+
   const submit = useCallback(
     async (values: { phoneNumber: string, code: string }) => {
-      const basePath = userId ?  '/phone-number/change' : '/phone-number';
+      const basePath = userId ? '/phone-number/change' : '/phone-number';
 
-      if(codeStatus === 'sent' && (!values.code || values.code?.length !== 6)) {
+      if (codeStatus === 'sent' && (!values.code || values.code?.length !== 6)) {
         toast.show('The Verification Code is required', "warning");
         return
-      } else if(codeStatus === 'sent' && values.code) {
+      } else if (codeStatus === 'sent' && values.code) {
         setVerifying(true)
 
         const response = await (
@@ -59,9 +75,15 @@ export const AddPhoneNumber = ({ userId }: {userId?: string}) => {
           })
         ).json();
 
-        if(response.verified) {
+        if (response.verified) {
           toast.show("Phone number verified!");
-           modals.closeAll()
+          user?.updateUser({ phoneNumber: values.phoneNumber, phoneNumberVerified: true })
+          modals.closeAll()
+
+          const timmer = setTimeout(async () => {
+            await logout()
+            clearTimeout(timmer)
+          }, 60000)
           return;
         }
 
@@ -88,13 +110,14 @@ export const AddPhoneNumber = ({ userId }: {userId?: string}) => {
       }
 
       toast.show("We've sent a code to your phone number.");
+      user?.updateUser({ phoneNumber: values.phoneNumber, phoneNumberVerified: false })
       setCodeStatus('sent')
     },
     [codeStatus]
   );
 
   const closeModal = useCallback(async () => {
-    if(await deleteDialog('Do you want to close it?', 'Yes')) {
+    if (await deleteDialog('Do you want to close it?', 'Yes')) {
       return modals.closeAll();
     }
   }, []);
@@ -126,11 +149,11 @@ export const AddPhoneNumber = ({ userId }: {userId?: string}) => {
           </button>
 
           <PhoneInput
-           className={clsx(phoneInputDisabled && 'pointer-events-none opacity-30')} 
-           required={!phoneInputDisabled}
-           label="Phone number" 
-           placeholder="Phone number" 
-           name="phoneNumber"
+            className={clsx(phoneInputDisabled && 'pointer-events-none opacity-30')}
+            required={!phoneInputDisabled}
+            label="Phone number"
+            placeholder="Phone number"
+            name="phoneNumber"
           />
 
           {codeStatus === 'sent' && (
@@ -156,7 +179,7 @@ export const PhoneNumberComponent = () => {
         modal: 'bg-transparent text-textColor',
       },
       withCloseButton: false,
-      children: <AddPhoneNumber  />,
+      children: <AddPhoneNumber />,
     });
   }, []);
 
@@ -166,7 +189,7 @@ export const PhoneNumberComponent = () => {
         modal: 'bg-transparent text-textColor',
       },
       withCloseButton: false,
-      children: <AddPhoneNumber userId={user?.id}  />,
+      children: <AddPhoneNumber userId={user?.id} />,
     });
   }, [user?.id]);
 
@@ -174,29 +197,29 @@ export const PhoneNumberComponent = () => {
     try {
       return parsePhoneNumberWithError(`+${phone}`).formatInternational()
     } catch (error) {
-      return phone      
+      return phone
     }
   }
 
-  const data =  [ { phoneNumber: user?.phoneNumber , phoneNumberVerified: user?.phoneNumberVerified}]
+  const data = user?.phoneNumber && [{ phoneNumber: user?.phoneNumber, phoneNumberVerified: user?.phoneNumberVerified }]
 
   return (
     <div className="flex flex-col">
       <h3 className="text-[20px]">WhatsApp AI Integration</h3>
       <div className="text-customColor18 mt-[4px]">
-      Connect your WhatsApp number to interact directly with our AI-powered assistant. Automate tasks, get updates, and manage content from your phone.
+        Connect your WhatsApp number to interact directly with our AI-powered assistant. Automate tasks, get updates, and manage content from your phone.
       </div>
       <div className="my-[16px] mt-[16px] bg-sixth border-fifth border rounded-[4px] p-[24px] flex flex-col gap-[24px]">
         <div className="flex flex-col gap-[16px]">
-          {(data || []).map((p) => (
+          {data && data.map((p) => (
             <div key={p.phoneNumber} className="flex items-center">
               <div className='flex-1'>
                 {user?.phoneNumberVerified ? (
                   <>
                     <a
-                      data-tooltip-id="go-whatsapp-tooltip" 
+                      data-tooltip-id="go-whatsapp-tooltip"
                       data-tooltip-content="Go to chat with WhatsApp AI agent"
-                      href='https://wa.me/18294662320?text=Hola, quiero publicar!' 
+                      href='https://wa.me/18294662320?text=Hola, quiero publicar!'
                       target='_blank'
                       className="border-b border-blue-500 text-blue-500 font-bold"
                     >
@@ -204,40 +227,40 @@ export const PhoneNumberComponent = () => {
                     </a>
                     <Tooltip id='go-whatsapp-tooltip' />
                   </>) : (
-                    <p>{p.phoneNumber ? parsePhone(p.phoneNumber) : ''}</p>
-                  )}
+                  <p>{p.phoneNumber ? parsePhone(p.phoneNumber) : ''}</p>
+                )}
               </div>
               <div className={clsx(p.phoneNumberVerified ? 'bg-green-500' : 'bg-red-500', 'px-4')}>
                 {p.phoneNumberVerified ? 'Verified' : 'Unverified'}
               </div>
               <div className="flex-1 flex justify-end">
-                  <Button
-                    className={`!bg-customColor3 !h-[24px] border border-customColor21 rounded-[4px] text-[12px] ${interClass}`}
-                    onClick={changePhoneNumber}
-                    secondary={true}
-                  >
-                    <div className="flex justify-center items-center gap-[4px]">
-                      <div>
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                        >
-                          <path
-                            d="M4 20H20M14.828 4.828C15.5784 4.07762 16.4216 4.07762 17.172 4.828L19.172 6.828C19.9224 7.57843 19.9224 8.42157 19.172 9.172L9 19.344L4 20L4.656 15L14.828 4.828Z"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      </div>
-                      <div>Change</div>
+                <Button
+                  className={`!bg-customColor3 !h-[24px] border border-customColor21 rounded-[4px] text-[12px] ${interClass}`}
+                  onClick={changePhoneNumber}
+                  secondary={true}
+                >
+                  <div className="flex justify-center items-center gap-[4px]">
+                    <div>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                      >
+                        <path
+                          d="M4 20H20M14.828 4.828C15.5784 4.07762 16.4216 4.07762 17.172 4.828L19.172 6.828C19.9224 7.57843 19.9224 8.42157 19.172 9.172L9 19.344L4 20L4.656 15L14.828 4.828Z"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
                     </div>
-                  </Button>
-                </div>
+                    <div>Change</div>
+                  </div>
+                </Button>
+              </div>
             </div>
           ))}
         </div>
