@@ -14,6 +14,7 @@ export class LocalStorage implements IUploadProvider {
       loadImage?.headers?.['content-type'] ||
       loadImage?.headers?.['Content-Type'];
     // const findExtension = mime.getExtension(contentType)!;
+    //@ts-ignore
     const findExtension = mime.extension(contentType)!;
 
     const now = new Date();
