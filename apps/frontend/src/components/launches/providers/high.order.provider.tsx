@@ -384,7 +384,9 @@ export const withProvider = function <T extends object>(
         ).json();
       }, [props.identifier]);
 
-      const { data } = useSWR(`internal-${props.identifier}`, getInternalPlugs);
+      const { data } = useSWR(`internal-${props.identifier}`, getInternalPlugs, {
+        revalidateOnReconnect: true,
+      });
 
       // this is a trick to prevent the data from being deleted, yet we don't render the elements
       if (!props.show) {

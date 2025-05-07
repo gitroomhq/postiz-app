@@ -17,16 +17,12 @@ export const Editor = forwardRef<
   RefMDEditor,
   MDEditorProps & {
     order: number;
-    currentWatching: string;
-    isGlobal: boolean;
     totalPosts: number;
   }
 >(
   (
     props: MDEditorProps & {
       order: number;
-      currentWatching: string;
-      isGlobal: boolean;
       totalPosts: number;
     },
     ref: React.ForwardedRef<RefMDEditor>
