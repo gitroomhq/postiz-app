@@ -28,17 +28,15 @@ export const useValues = (
   maximumCharacters?: number
 ) => {
   const resolver = useMemo(() => {
-    return classValidatorResolver(dto);
+    return dto ? classValidatorResolver(dto) : undefined;
   }, [integration]);
 
   const form = useForm({
-    resolver,
+    ...resolver ? resolver : {},
     values: initialValues,
     mode: 'onChange',
     criteriaMode: 'all',
   });
-
-  console.log(form.formState.errors);
 
   const getValues = useMemo(() => {
     return () => ({ ...form.getValues(), __type: identifier });
