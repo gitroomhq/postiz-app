@@ -87,14 +87,16 @@ const Plug: FC<{
 }> = ({ plug }) => {
   const { allIntegrations, integration } = useIntegration();
   const { watch, setValue, control, register } = useSettings();
+  const [load, setLoad] = useState(false);
   const val = watch(`plug--${plug.identifier}--integrations`);
   const active = watch(`plug--${plug.identifier}--active`);
 
-  // const selectedIntegrationsValue = watch(
-  //   `plug.${plug.identifier}.integrations`
-  // );
-  //
-  // console.log(selectedIntegrationsValue);
+  useEffect(() => {
+    setTimeout(() => {
+      setLoad(true);
+    }, 20);
+  }, []);
+
   const [localValue, setLocalValue] = useState<Integrations[]>(
     (val || []).map((p: any) => ({ ...p }))
   );
@@ -108,6 +110,10 @@ const Plug: FC<{
         plug.pickIntegration.includes(i.identifier) && integration?.id !== i.id
     )
   );
+
+  if (!load) {
+    return null;
+  }
 
   return (
     <div
