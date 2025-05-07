@@ -4,6 +4,7 @@ import { Injectable } from '@nestjs/common';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 
 @Injectable()
 export class OrganizationRepository {
@@ -239,6 +240,15 @@ export class OrganizationRepository {
             },
           },
         },
+        subscription: {
+          create: {
+            subscriptionTier: 'ULTIMATE',
+            totalChannels: pricing.ULTIMATE.channel ?? 100,
+            period: 'MONTHLY',
+            identifier: `FREE-PERIOD-${makeId(20)}`,
+            isLifetime: false,
+          },
+        },
       },
       select: {
         id: true,
@@ -247,6 +257,7 @@ export class OrganizationRepository {
             user: true,
           },
         },
+        subscription: true,
       },
     });
   }
