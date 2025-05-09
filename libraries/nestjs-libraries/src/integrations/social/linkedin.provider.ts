@@ -199,13 +199,17 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     picture: any,
     type = 'personal' as 'company' | 'personal'
   ) {
+    const apiType =
+      fileName.indexOf('mp4') > -1
+        ? 'videos'
+        : fileName.indexOf('pdf') > -1
+        ? 'documents'
+        : 'images';
     const {
-      value: { uploadUrl, image, video, uploadInstructions, ...all },
+      value: { uploadUrl, document, image, video, uploadInstructions, ...all },
     } = await (
       await this.fetch(
-        `https://api.linkedin.com/v2/${
-          fileName.indexOf('mp4') > -1 ? 'videos' : 'images'
-        }?action=initializeUpload`,
+        `https://api.linkedin.com/rest/${apiType}?action=initializeUpload`,
         {
           method: 'POST',
           headers: {
@@ -234,7 +238,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     ).json();
 
     const sendUrlRequest = uploadInstructions?.[0]?.uploadUrl || uploadUrl;
-    const finalOutput = video || image;
+    const finalOutput = video || document || image;
 
     const etags = [];
     for (let i = 0; i < picture.length; i += 1024 * 1024 * 2) {
@@ -246,6 +250,8 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           Authorization: `Bearer ${accessToken}`,
           ...(fileName.indexOf('mp4') > -1
             ? { 'Content-Type': 'application/octet-stream' }
+            : fileName.indexOf('pdf') > -1
+            ? { 'Content-Type': 'application/pdf' }
             : {}),
         },
         body: picture.slice(i, i + 1024 * 1024 * 2),
@@ -256,7 +262,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
 
     if (fileName.indexOf('mp4') > -1) {
       const a = await this.fetch(
-        'https://api.linkedin.com/v2/videos?action=finalizeUpload',
+        'https://api.linkedin.com/rest/videos?action=finalizeUpload',
         {
           method: 'POST',
           body: JSON.stringify({
@@ -332,7 +338,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
                 m.url,
                 accessToken,
                 id,
-                m.url.indexOf('mp4') > -1
+                m.url.indexOf('mp4') > -1 || m.url.indexOf('pdf') > -1
                   ? Buffer.from(await readOrFetch(m.url))
                   : await sharp(await readOrFetch(m.url), {
                       animated: lookup(m.url) === 'image/gif',
@@ -345,6 +351,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
                 type
               ),
               postId: p.id,
+              name: m.name,
             };
           })
         )
@@ -354,12 +361,12 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
         return acc;
       }
       acc[val.postId] = acc[val.postId] || [];
-      acc[val.postId].push(val.id);
+      acc[val.postId].push(val);
 
       return acc;
-    }, {} as Record<string, string[]>);
+    }, {} as Record<string, { id: string; postId: string; name: string }[]>);
 
-    const media_ids = (uploadAll[firstPost.id] || []).filter((f) => f);
+    const media_ids = (uploadAll[firstPost.id] || []).filter((f) => !!f?.id);
 
     const data = await this.fetch('https://api.linkedin.com/v2/posts', {
       method: 'POST',
@@ -388,13 +395,14 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
                   : media_ids.length === 1
                   ? {
                       media: {
-                        id: media_ids[0],
+                        id: media_ids[0].id,
+                        title: media_ids[0].name,
                       },
                     }
                   : {
                       multiImage: {
-                        images: media_ids.map((id) => ({
-                          id,
+                        images: media_ids.map((idObj) => ({
+                          id: idObj.id,
                         })),
                       },
                     }),

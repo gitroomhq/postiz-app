@@ -76,7 +76,9 @@ export const Pagination: FC<{
             onClick={() => setPage(page)}
             className={clsx(
               'cursor-pointer inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border hover:bg-forth h-10 w-10 hover:text-white border-[#1F1F1F]',
-              current === page ? 'bg-forth !text-white' : 'text-textColor hover:text-white'
+              current === page
+                ? 'bg-forth !text-white'
+                : 'text-textColor hover:text-white'
             )}
           >
             {page + 1}
@@ -340,7 +342,7 @@ export const MediaBox: FC<{
                             ? 'video/mp4'
                             : type === 'image'
                             ? 'image/*'
-                            : 'image/*,video/mp4'
+                            : 'image/*,video/mp4,application/pdf'
                         }
                       />
                     </div>
@@ -367,7 +369,7 @@ export const MediaBox: FC<{
                           ? 'video/mp4'
                           : type === 'image'
                           ? 'image/*'
-                          : 'image/*,video/mp4'
+                          : 'image/*,video/mp4,application/pdf'
                       }
                     />
                   </div>
@@ -412,6 +414,14 @@ export const MediaBox: FC<{
 
                     {media.path.indexOf('mp4') > -1 ? (
                       <VideoFrame url={mediaDirectory.set(media.path)} />
+                    ) : media.path.indexOf('pdf') > -1 ? (
+                      <Image
+                        width={120}
+                        height={120}
+                        className="w-full h-full object-cover"
+                        src="/icons/pdf.svg"
+                        alt="media"
+                      />
                     ) : (
                       <Image
                         width={120}
@@ -575,6 +585,11 @@ export const MultiMediaComponent: FC<{
                   >
                     {media?.path?.indexOf('mp4') > -1 ? (
                       <VideoFrame url={mediaDirectory.set(media?.path)} />
+                    ) : media?.path?.indexOf('pdf') > -1 ? (
+                      <img
+                        className="w-full h-full object-cover"
+                        src="/icons/pdf.svg"
+                      />
                     ) : (
                       <img
                         className="w-full h-full object-cover"

@@ -22,7 +22,8 @@ export class CustomFileValidationPipe implements PipeTransform {
     const maxSize = this.getMaxSize(value.mimetype);
     const validation =
       (value.mimetype.startsWith('image/') ||
-        value.mimetype.startsWith('video/mp4')) &&
+        value.mimetype.startsWith('video/mp4') ||
+        value.mimetype.startsWith('application/pdf')) &&
       value.size <= maxSize;
 
     if (validation) {
@@ -35,7 +36,10 @@ export class CustomFileValidationPipe implements PipeTransform {
   }
 
   private getMaxSize(mimeType: string): number {
-    if (mimeType.startsWith('image/')) {
+    if (
+      mimeType.startsWith('image/') ||
+      mimeType.startsWith('application/pdf')
+    ) {
       return 10 * 1024 * 1024; // 10 MB
     } else if (mimeType.startsWith('video/')) {
       return 1024 * 1024 * 1024; // 1 GB

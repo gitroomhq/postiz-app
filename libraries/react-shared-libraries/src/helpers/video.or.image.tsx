@@ -19,6 +19,18 @@ export const VideoOrImage: FC<{
     );
   }
 
+  if (src?.indexOf('pdf') > -1) {
+    return (
+      <img
+        className={clsx(
+          isContain ? 'object-contain' : 'object-cover',
+          'w-full h-full'
+        )}
+        src="/icons/pdf.svg"
+      />
+    );
+  }
+
   return (
     <img
       className={clsx(
