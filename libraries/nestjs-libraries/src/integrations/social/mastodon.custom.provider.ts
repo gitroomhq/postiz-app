@@ -74,7 +74,7 @@ export class MastodonCustomProvider extends MastodonProvider {
     return this.dynamicPost(
       id,
       accessToken,
-      'https://mastodon.social',
+      process.env.MASTODON_URL || 'https://mastodon.social',
       postDetails
     );
   }
