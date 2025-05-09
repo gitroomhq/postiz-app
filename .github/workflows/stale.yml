@@ -30,4 +30,4 @@ jobs:
           exempt-pr-label: "no-stale-bot" 
           
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-          operations_per_run: 90
+          operations-per-run: 180
