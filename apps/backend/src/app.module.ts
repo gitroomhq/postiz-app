@@ -25,7 +25,7 @@ import { McpModule } from '@gitroom/backend/mcp/mcp.module';
     ThrottlerModule.forRoot([
       {
         ttl: 3600000,
-        limit: 30,
+        limit: process.env.API_LIMIT ? Number(process.env.API_LIMIT) : 30,
       },
     ]),
   ],
@@ -40,8 +40,15 @@ import { McpModule } from '@gitroom/backend/mcp/mcp.module';
       useClass: PoliciesGuard,
     },
   ],
-  get exports() {
-    return [...this.imports];
-  },
+  exports: [
+    BullMqModule,
+    DatabaseModule,
+    ApiModule,
+    PluginModule,
+    PublicApiModule,
+    AgentModule,
+    McpModule,
+    ThrottlerModule,
+  ],
 })
 export class AppModule {}

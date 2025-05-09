@@ -44,7 +44,9 @@ export async function middleware(request: NextRequest) {
       ? ''
       : (url.indexOf('?') > -1 ? '&' : '?') +
         `provider=${(findIndex === 'settings'
-          ? 'github'
+          ? process.env.POSTIZ_GENERIC_OAUTH
+            ? 'generic'
+            : 'github'
           : findIndex
         ).toUpperCase()}`;
     return NextResponse.redirect(

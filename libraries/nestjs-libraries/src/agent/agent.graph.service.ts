@@ -21,7 +21,7 @@ const toolNode = new ToolNode(tools);
 
 const model = new ChatOpenAI({
   apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
-  model: 'gpt-4o-2024-08-06',
+  model: 'gpt-4.1',
   temperature: 0.7,
 });
 
@@ -75,6 +75,7 @@ const contentZod = (
     content: z.string().describe('Content for the new post'),
     website: z
       .string()
+      .nullable()
       .optional()
       .describe(
         "Website for the new post if exists, If one of the post present a brand, website link must be to the root domain of the brand or don't include it, website url should contain the brand name"
