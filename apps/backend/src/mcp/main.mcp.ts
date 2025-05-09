@@ -49,7 +49,20 @@ export class MainMcp {
         : undefined,
     }));
 
-    return [{ type: 'text', text: JSON.stringify(list, null, 2) }];
+    const formattedText = list.map((provider, index) => {
+      const status = provider.disabled ? '❌ Deshabilitado' : '✅ Activo';
+      return `*${index + 1}. ${provider.name}* ${status}
+🆔 ID: ${provider.id}
+🔗 Red Social: ${provider.identifier}
+🖼️ Imagen: ${provider.picture || 'No disponible'}
+👤 Perfil: ${provider.profile || 'No disponible'}
+🔑 Internal ID: ${provider.internalId || 'No disponible'}
+${provider.customer ? `👥 Cliente:
+  - ID: ${provider.customer.id}
+  - Nombre: ${provider.customer.name}` : ''}`;
+    }).join('\n\n');
+
+    return [{ type: 'text', text: `*Lista de Proveedores:*\n\n${formattedText}` }];
   }
 
   @McpTool({

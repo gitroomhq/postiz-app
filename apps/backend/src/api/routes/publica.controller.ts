@@ -59,6 +59,24 @@ export class PublicaController {
     if (!user) {
       console.error('User not found: ', message?.from)
 
+      await this._whatsappService.sendText(
+        message?.from, 
+        `Hola! No encontramos una cuenta asociada a tu número de teléfono. Puedes registrarte aquí: ${process.env.FRONTEND_URL}/auth. Si necesitas ayuda, contáctanos por:\n\n📧 Email: servicios@publica.do\n💬 Discord: https://discord.com/invite/ACt8ZbdnaE\n📅 Calendly: https://calendly.com/servicios-publica/30min\n\n¡Estamos aquí para ayudarte! 😊`
+      );
+
+      return {
+        success: true,
+      }
+    }
+
+    if(!user.phoneNumberVerified) {
+      console.error('User phone number unverified: ', message?.from)
+
+      await this._whatsappService.sendText(
+        message?.from, 
+        `Hola! Tu número de teléfono aún no ha sido verificado. Por favor, verifica tu número para acceder a tu cuenta. Si necesitas ayuda, visita ${process.env.FRONTEND_URL}/settings o contáctanos por:\n\n📧 Email: servicios@publica.do\n💬 Discord: https://discord.com/invite/ACt8ZbdnaE\n📅 Calendly: https://calendly.com/servicios-publica/30min\n\n¡Estamos aquí para ayudarte! 😊`
+      );
+  
       return {
         success: true,
       }
@@ -141,7 +159,7 @@ export class PublicaController {
       ],
       systemPrompt: localpSystemPrompt,
       temperature: 0.7,
-      maxTokens: 600,
+      maxTokens: 500,
     });
 
     if (response?.content?.text) {

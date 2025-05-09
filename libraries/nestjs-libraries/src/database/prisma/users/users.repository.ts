@@ -277,6 +277,8 @@ export class UsersRepository {
       },
       select: {
         id: true,
+        phoneNumber: true,
+        phoneNumberVerified: true, 
         organizations: {
           select: {
             organization: {
