@@ -19,7 +19,6 @@ import EventEmitter from 'events';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import clsx from 'clsx';
 import { VideoFrame } from '@gitroom/react/helpers/video.frame';
-import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import { MultipartFileUploader } from '@gitroom/frontend/components/media/new.uploader';
 import dynamic from 'next/dynamic';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
@@ -27,6 +26,7 @@ import { AiImage } from '@gitroom/frontend/components/launches/ai.image';
 import Image from 'next/image';
 import { DropFiles } from '@gitroom/frontend/components/layout/drop.files';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
+import { createPDFThumbnails } from '@gitroom/helpers/utils/pdf-thumbnails';
 
 const Polonto = dynamic(
   () => import('@gitroom/frontend/components/launches/polonto')
@@ -293,6 +293,12 @@ export const MediaBox: FC<{
     }
   }, [data]);
 
+  useEffect(() => {
+    if (mediaList?.length) {
+      createPDFThumbnails();
+    }
+  }, [mediaList]);
+
   return (
     <div className="removeEditor fixed left-0 top-0 bg-primary/80 z-[300] w-full min-h-full p-4 md:p-[60px] animate-fade">
       <div className="max-w-[1000px] w-full h-full bg-sixth border-tableBorder border-2 rounded-xl relative mx-auto">
@@ -419,6 +425,9 @@ export const MediaBox: FC<{
                         width={120}
                         height={120}
                         className="w-full h-full object-cover"
+                        data-pdf-thumbnail-file={mediaDirectory.set(media.path)}
+                        data-pdf-thumbnail-width="120"
+                        data-pdf-thumbnail-height="120"
                         src="/icons/pdf.svg"
                         alt="media"
                       />
@@ -510,6 +519,10 @@ export const MultiMediaComponent: FC<{
     setMediaModal(true);
   }, []);
 
+  useEffect(() => {
+    createPDFThumbnails();
+  }, [currentMedia]);
+
   return (
     <>
       <div className="flex flex-col gap-[8px] bg-input rounded-bl-[8px] select-none">
@@ -588,6 +601,9 @@ export const MultiMediaComponent: FC<{
                     ) : media?.path?.indexOf('pdf') > -1 ? (
                       <img
                         className="w-full h-full object-cover"
+                        data-pdf-thumbnail-file={mediaDirectory.set(
+                          media?.path
+                        )}
                         src="/icons/pdf.svg"
                       />
                     ) : (
