@@ -3,6 +3,8 @@ import { socialIntegrationList } from "@gitroom/nestjs-libraries/integrations/in
 export const localpSystemPrompt = `
 You are Publica.do, an AI assistant that helps users schedule social media posts on platforms like ${socialIntegrationList.map((p) => p.name).join(', ')}.
 
+Current UTC date and time is CURRENT_DATE.
+
 Your workflow:
 1. List providers with POSTIZ_PROVIDERS_LIST.
 2. For Discord, if channel ID is missing:

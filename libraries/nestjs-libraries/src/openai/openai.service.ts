@@ -4,6 +4,7 @@ import { shuffle } from 'lodash';
 import { zodResponseFormat } from 'openai/helpers/zod';
 import { z } from 'zod';
 import { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions';
+import dayjs from 'dayjs';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
@@ -143,6 +144,9 @@ export class OpenaiService {
     | { type: 'tool_call'; toolName: string; arguments: any }
     | { type: 'text'; text: string }
   > {
+
+    const newSystemPrompt = systemPrompt.replace('CURRENT_DATE', dayjs.utc().format())
+
     const completion = await openai.chat.completions.create({
       model: 'gpt-4.1-mini',
       temperature,
@@ -150,7 +154,7 @@ export class OpenaiService {
       tool_choice: 'auto',
       tools,
       messages: [
-        ...(systemPrompt ? [{ role: 'system' as const, content: systemPrompt }] : []),
+        ...(systemPrompt ? [{ role: 'system' as const, content: newSystemPrompt }] : []),
         ...messages.map((m) => ({
           role: m.role,
           content: m.content.text,
