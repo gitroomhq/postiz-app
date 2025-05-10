@@ -51,9 +51,9 @@ export class MainMcp {
 
     const formattedText = list.map((provider, index) => {
       const status = provider.disabled ? '❌ Deshabilitado' : '✅ Activo';
-      return `*${index + 1}. ${provider.name}* ${status}
+      return `*${index + 1}. ${this._integrationManager.getSocialIntegration(provider.identifier)?.name}: ${provider.name}* ${status}
 🆔 ID: ${provider.id}
-🔗 Red Social: ${provider.identifier}
+🔗 Identificador: ${provider.identifier}
 🖼️ Imagen: ${provider.picture || 'No disponible'}
 👤 Perfil: ${provider.profile || 'No disponible'}
 🔑 Internal ID: ${provider.internalId || 'No disponible'}

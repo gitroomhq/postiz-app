@@ -79,14 +79,14 @@ export class McpLocalServer {
             return {
               role: 'assistant',
               messages: output,
-              model: 'gpt-4.1-nano',
+              model: 'gpt-4.1-mini',
               stopReason: 'tool',
             };
           } else {
             return {
               role: 'assistant',
               content: output[0],
-              model: 'gpt-4.1-nano',
+              model: 'gpt-4.1-mini',
               stopReason: 'tool',
             };
           }
@@ -98,7 +98,7 @@ export class McpLocalServer {
             type: 'text',
             text: result.text,
           },
-          model: 'gpt-4.1-nano',
+          model: 'gpt-4.1-mini',
           stopReason: 'endTurn',
         };
       });
