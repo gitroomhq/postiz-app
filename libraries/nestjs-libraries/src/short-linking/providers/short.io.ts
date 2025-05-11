@@ -9,7 +9,7 @@ const options = {
 };
 
 export class ShortIo implements ShortLinking {
-  shortLinkDomain = 'short.io';
+  shortLinkDomain = 'link.publica.cc';
 
   async linksStatistics ( links: string[] ) {
     return Promise.all(
