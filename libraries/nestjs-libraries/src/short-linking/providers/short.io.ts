@@ -3,7 +3,7 @@ import { ShortLinking } from '@gitroom/nestjs-libraries/short-linking/short-link
 
 const options = {
   headers: {
-    Authorization: `Bearer ${process.env.SHORT_IO_SECRET_KEY}`,
+    Authorization: `${process.env.SHORT_IO_SECRET_KEY}`,
     'Content-Type': 'application/json',
   },
 };
