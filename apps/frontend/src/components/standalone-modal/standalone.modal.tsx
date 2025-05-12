@@ -11,7 +11,6 @@ import { usePathname } from 'next/navigation';
 export const StandaloneModal: FC = () => {
   const fetch = useFetch();
   const params = usePathname();
-  const style = params.split('/').pop();
   const load = useCallback(async (path: string) => {
     return (await (await fetch(path)).json()).integrations;
   }, []);
