@@ -227,7 +227,7 @@ export class SubscriptionService {
   }
 
   async addSubscription(orgId: string, userId: string, subscription: any) {
-    await this._subscriptionRepository.setCustomerId(orgId, orgId);
+    await this._subscriptionRepository.setCustomerId(orgId, userId);
     return this.createOrUpdateSubscription(
       makeId(5),
       userId,
