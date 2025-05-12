@@ -75,13 +75,23 @@ export const AddEditModal: FC<{
   allIntegrations?: Integrations[];
   reopenModal: () => void;
   mutate: () => void;
+  padding?: string;
+  customClose?: () => void;
   onlyValues?: Array<{
     content: string;
     id?: string;
     image?: Array<{ id: string; path: string }>;
   }>;
 }> = memo((props) => {
-  const { date, integrations: ints, reopenModal, mutate, onlyValues } = props;
+  const {
+    date,
+    integrations: ints,
+    reopenModal,
+    mutate,
+    onlyValues,
+    padding,
+    customClose,
+  } = props;
   const [customer, setCustomer] = useState('');
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -292,6 +302,10 @@ export const AddEditModal: FC<{
         'Yes, close it!'
       )
     ) {
+      if (customClose) {
+        customClose();
+        return;
+      }
       modal.closeAll();
     }
   }, [canUseClose]);
@@ -441,6 +455,12 @@ export const AddEditModal: FC<{
           ? 'Added successfully'
           : 'Updated successfully'
       );
+
+      if (customClose) {
+        setTimeout(() => {
+          customClose();
+        }, 2000);
+      }
       modal.closeAll();
     },
     [
@@ -573,6 +593,7 @@ Here are the things you can do:
         className={clsx(
           'flex flex-col md:flex-row p-[10px] rounded-[4px] bg-primary gap-[20px]'
         )}
+        style={{ padding }}
       >
         {uploading && (
           <div className="absolute left-0 top-0 w-full h-full bg-black/40 z-[600] flex justify-center items-center">
