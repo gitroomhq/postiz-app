@@ -1,7 +1,7 @@
 import { FC, memo, useCallback, useEffect, useState } from 'react';
 import { ProviderInterface } from '@gitroom/extension/providers/provider.interface';
 
-const Comp: FC<{ removeModal: () => void; style: string }> = (props) => {
+const Comp: FC<{ removeModal: () => void; platform: string, style: string }> = (props) => {
   useEffect(() => {
     if (document.querySelector('iframe#modal-postiz')) {
       return;
@@ -23,7 +23,7 @@ const Comp: FC<{ removeModal: () => void; style: string }> = (props) => {
     iframe.style.backgroundColor = 'transparent';
     // @ts-ignore
     iframe.allowTransparency = 'true';
-    iframe.src = import.meta.env.FRONTEND_URL + `/modal/${props.style}`;
+    iframe.src = import.meta.env.FRONTEND_URL + `/modal/${props.style}/${props.platform}`;
     iframe.id = 'modal-postiz';
     iframe.style.width = '100%';
     iframe.style.height = '100%';
@@ -62,24 +62,26 @@ export const ActionComponent: FC<{
   }, []);
 
   useEffect(() => {
+    const blockingDiv = document.createElement('div');
     if (document.querySelector('#blockingDiv')) {
       return;
     }
 
-    // @ts-ignore
-    const targetInformation = target.getBoundingClientRect();
-    const blockingDiv = document.createElement('div');
-    blockingDiv.style.position = 'absolute';
-    blockingDiv.id = 'blockingDiv';
-    blockingDiv.style.cursor = 'pointer';
-    blockingDiv.style.top = `${targetInformation.top}px`;
-    blockingDiv.style.left = `${targetInformation.left}px`;
-    blockingDiv.style.width = `${targetInformation.width}px`;
-    blockingDiv.style.height = `${targetInformation.height}px`;
-    blockingDiv.style.zIndex = '9999';
+    setTimeout(() => {
+      // @ts-ignore
+      const targetInformation = target.getBoundingClientRect();
+      blockingDiv.style.position = 'absolute';
+      blockingDiv.id = 'blockingDiv';
+      blockingDiv.style.cursor = 'pointer';
+      blockingDiv.style.top = `${targetInformation.top}px`;
+      blockingDiv.style.left = `${targetInformation.left}px`;
+      blockingDiv.style.width = `${targetInformation.width}px`;
+      blockingDiv.style.height = `${targetInformation.height}px`;
+      blockingDiv.style.zIndex = '9999';
 
-    document.body.appendChild(blockingDiv);
-    blockingDiv.addEventListener('click', handle);
+      document.body.appendChild(blockingDiv);
+      blockingDiv.addEventListener('click', handle);
+    }, 1000);
     return () => {
       blockingDiv.removeEventListener('click', handle);
       blockingDiv.remove();
@@ -90,7 +92,7 @@ export const ActionComponent: FC<{
     <div className="g-wrapper" style={{ position: 'relative' }}>
       <div className="absolute left-0 top-0 z-[9999] w-full h-full" />
       {modal && (
-        <Comp style={provider.style} removeModal={() => showModal(false)} />
+        <Comp platform={provider.identifier} style={provider.style} removeModal={() => showModal(false)} />
       )}
     </div>
   );

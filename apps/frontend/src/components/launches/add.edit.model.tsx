@@ -459,7 +459,7 @@ export const AddEditModal: FC<{
       if (customClose) {
         setTimeout(() => {
           customClose();
-        }, 5000);
+        }, 2000);
       }
       modal.closeAll();
     },

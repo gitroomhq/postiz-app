@@ -6,11 +6,18 @@ import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { AddEditModal } from '@gitroom/frontend/components/launches/add.edit.model';
 import dayjs from 'dayjs';
+import { usePathname } from 'next/navigation';
 
 export const StandaloneModal: FC = () => {
   const fetch = useFetch();
+  const params = usePathname();
+  const style = params.split('/').pop();
   const load = useCallback(async (path: string) => {
     return (await (await fetch(path)).json()).integrations;
+  }, []);
+
+  const loadDate = useCallback(async () => {
+    return (await (await fetch('/posts/find-slot')).json()).date;
   }, []);
 
   const {
@@ -21,8 +28,15 @@ export const StandaloneModal: FC = () => {
     fallbackData: [],
   });
 
-  if (isLoading) {
-    return <div className="w-full h-full flex items-center justify-center">Loading...</div>;
+  const {
+    isLoading: isLoading2,
+    data,
+  } = useSWR('/posts/find-slot', loadDate, {
+    fallbackData: [],
+  });
+
+  if (isLoading || isLoading2) {
+    return null;
   }
 
   return (
@@ -35,7 +49,8 @@ export const StandaloneModal: FC = () => {
       integrations={integrations}
       reopenModal={() => {}}
       allIntegrations={integrations}
-      date={dayjs()}
+      onlyValues={[{ content: 'asd', id: integrations[0].id, image: [] }]}
+      date={dayjs.utc(data).local()}
     />
   );
 };
