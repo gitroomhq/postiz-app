@@ -1,3 +1,5 @@
+'use client';
+
 import { FC, useEffect } from 'react';
 import { clsx } from 'clsx';
 import { createPDFThumbnails } from '@gitroom/helpers/utils/pdf-thumbnails';
