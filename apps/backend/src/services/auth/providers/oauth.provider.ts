@@ -60,7 +60,7 @@ export class OauthProvider implements ProvidersInterface {
   }
 
   async getToken(code: string): Promise<string> {
-    const response = await fetch(`${this.tokenUrl}/`, {
+    const response = await fetch(`${this.tokenUrl}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -85,7 +85,7 @@ export class OauthProvider implements ProvidersInterface {
   }
 
   async getUser(access_token: string): Promise<{ email: string; id: string }> {
-    const response = await fetch(`${this.userInfoUrl}/`, {
+    const response = await fetch(`${this.userInfoUrl}`, {
       headers: {
         Authorization: `Bearer ${access_token}`,
         Accept: 'application/json',
