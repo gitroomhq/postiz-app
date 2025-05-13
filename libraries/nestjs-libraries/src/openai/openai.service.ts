@@ -148,7 +148,7 @@ export class OpenaiService {
     const newSystemPrompt = systemPrompt.replace('CURRENT_DATE', dayjs.utc().format())
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4.1-mini',
+      model: 'gpt-4.1',
       temperature,
       max_tokens: maxTokens,
       tool_choice: 'auto',
