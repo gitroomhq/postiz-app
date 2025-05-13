@@ -14,6 +14,7 @@ import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import interClass from '@gitroom/react/helpers/inter.font';
 import clsx from 'clsx';
 import { GoogleProvider } from '@gitroom/frontend/components/auth/providers/google.provider';
+import { OauthProvider } from '@gitroom/frontend/components/auth/providers/oauth.provider';
 import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useTrack } from '@gitroom/react/helpers/use.track';
@@ -91,7 +92,8 @@ export function RegisterAfter({
   token: string;
   provider: string;
 }) {
-  const { isGeneral, neynarClientId, billingEnabled } = useVariables();
+  const { isGeneral, genericOauth, neynarClientId, billingEnabled } =
+    useVariables();
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const fireEvents = useFireEvents();
@@ -163,7 +165,11 @@ export function RegisterAfter({
             <GithubProvider />
           ) : (
             <div className="gap-[5px] flex flex-col">
-              <GoogleProvider />
+              {genericOauth && isGeneral ? (
+                <OauthProvider />
+              ) : (
+                <GoogleProvider />
+              )}
               {!!neynarClientId && <FarcasterProvider />}
               {billingEnabled && <WalletProvider />}
             </div>
