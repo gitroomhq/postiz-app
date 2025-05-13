@@ -23,7 +23,7 @@ const Comp: FC<{ removeModal: () => void; platform: string, style: string }> = (
     iframe.style.backgroundColor = 'transparent';
     // @ts-ignore
     iframe.allowTransparency = 'true';
-    iframe.src = import.meta.env.FRONTEND_URL + `/modal/${props.style}/${props.platform}`;
+    iframe.src = (import.meta.env?.FRONTEND_URL || process?.env?.FRONTEND_URL) + `/modal/${props.style}/${props.platform}`;
     iframe.id = 'modal-postiz';
     iframe.style.width = '100%';
     iframe.style.height = '100%';

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Postiz",
-  "description": "Grow faster on socials",
+  "description": "Your ultimate social media scheduling tool",
   "options_ui": {
     "page": "src/pages/options/index.html"
   },
@@ -14,7 +14,7 @@
   "icons": {
     "128": "icon-128.png"
   },
-  "permissions": ["activeTab", "cookies", "tabs", "storage"],
+  "permissions": ["activeTab"],
   "content_scripts": [
     {
       "matches": ["http://*/*", "https://*/*", "<all_urls>"],
