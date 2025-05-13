@@ -67,6 +67,9 @@ export class PhoneNumberController {
 
     await this._userService.updatePhoneNumber(user.id, phoneNumber, true)
 
+    // Send congratulatory message
+    await this._whatsappService.sendText(phoneNumber, '🎉 ¡Felicidades! Tu número de WhatsApp ha sido verificado exitosamente. ¡Estamos emocionados de tenerte con nosotros! 💫');
+
     return { success: true, verified };
   }
 
@@ -122,6 +125,9 @@ export class PhoneNumberController {
     await ioRedis.del(`change:verify:${phoneNumber}`);
 
     await this._userService.updatePhoneNumber(user.id, phoneNumber, true)
+
+    // Send congratulatory message
+    await this._whatsappService.sendText(phoneNumber, '✨ ¡Felicidades! Tu número de WhatsApp ha sido actualizado exitosamente. ¡Estamos listos para seguir en contacto! 🚀');
 
     return { success: true, verified };
   }
