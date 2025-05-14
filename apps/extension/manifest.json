@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Postiz",
-  "description": "Your ultimate social media scheduling tool",
+  "name": "Publica",
+  "description": "Tu herramienta definitiva para programar tus redes sociales",
   "options_ui": {
     "page": "src/pages/options/index.html"
   },

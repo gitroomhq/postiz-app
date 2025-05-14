@@ -19,7 +19,7 @@ export const fetchRequestUtil = async (request: any) => {
     await fetch(
       (isDev
         ? "http://localhost:4200/v1/api"
-        : "https://platform.postiz.com/v1/api") + request.url,
+        : "https://app.publica.do/v1/api") + request.url,
       {
         method: request.method || "GET",
         headers: {

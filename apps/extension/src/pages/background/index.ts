@@ -31,7 +31,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
       {
         url: isDevelopment
           ? "http://localhost:4200"
-          : "https://platform.postiz.com",
+          : "https://app.publica.do",
         name: request.cookieName,
       },
       function (cookies) {

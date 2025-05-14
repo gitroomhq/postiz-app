@@ -1,5 +1,5 @@
 {
-  "name": "postiz-extension",
+  "name": "publica-extension",
   "version": "1.0.1",
   "description": "A simple chrome & firefox extension template with Vite, React, TypeScript and Tailwind CSS.",
   "scripts": {

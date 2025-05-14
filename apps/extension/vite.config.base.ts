@@ -21,7 +21,7 @@ export const baseManifest = {
   ...manifest,
   host_permissions: [
     ...ProviderList.map((p) => p.baseUrl + "/"),
-    isDev ? "http://localhost:4200/" : "https://platform.postiz.com/",
+    isDev ? "http://localhost:4200/" : "https://app.publica.do/",
   ],
   permissions: [...(manifest.permissions || [])],
   content_scripts: [
@@ -31,7 +31,7 @@ export const baseManifest = {
         [
           isDev
             ? "http://localhost:4200/*"
-            : "https://platform.postiz.com/*",
+            : "https://app.publica.do/*",
         ],
       ),
       ...rest,
