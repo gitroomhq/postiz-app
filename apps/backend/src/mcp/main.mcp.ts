@@ -56,7 +56,7 @@ export class MainMcp {
 🔗 Identificador: ${provider.identifier}
 🖼️ Imagen: ${provider.picture || 'No disponible'}
 👤 Perfil: ${provider.profile || 'No disponible'}
-🔑 Internal ID: ${provider.internalId || 'No disponible'}
+🔑 internalId: ${provider.internalId || 'No disponible'}
 ${provider.customer ? `👥 Cliente:
   - ID: ${provider.customer.id}
   - Nombre: ${provider.customer.name}` : ''}`;
@@ -148,6 +148,7 @@ ${provider.customer ? `👥 Cliente:
       return [{ type: 'text', text: 'Invalid provider' }];
     }
 
+    // @ts-ignore
     const load = await integrationProvider['channels'](
       '',
       '',
