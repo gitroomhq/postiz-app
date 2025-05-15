@@ -211,7 +211,13 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
           {...register('stitch', {
             value: false,
           })}
-        />
+          <option value="">Select</option>
+          {trueFalse.map((item) => (
+            <option key={item.value} value={item.value}>
+              {item.label}
+            </option>
+          ))}
+        </Select>
         <Select
           label="Comments"
           disabled={isUploadMode}
