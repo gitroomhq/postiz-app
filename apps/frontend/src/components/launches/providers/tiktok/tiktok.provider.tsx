@@ -217,7 +217,6 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
               {item.label}
             </option>
           ))}
-        </Select>
         <Select
           label="Comments"
           disabled={isUploadMode}
