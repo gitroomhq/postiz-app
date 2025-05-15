@@ -54,16 +54,6 @@ const yesNo = [
     label: 'No',
   },
 ];
-const trueFalse = [
-  {
-    value: 'true',
-    label: 'Yes',
-  },
-  {
-    value: 'false',
-    label: 'No',
-  },
-];
 
 const CheckTikTokValidity: FC<{ picture: string }> = (props) => {
   const { register } = useSettings();
@@ -191,65 +181,41 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
       <hr className="mb-[15px] border-tableBorder" />
       <div className="text-[14px] mb-[10px]">Allow User To:</div>
       <div className="flex gap-[40px]">
-        <Select
+        <Checkbox
+          variant="hollow"
           label="Duet"
           disabled={isUploadMode}
           {...register('duet', {
             value: false,
           })}
-        >
-          <option value="">Select</option>
-          {trueFalse.map((item) => (
-            <option key={item.value} value={item.value}>
-              {item.label}
-            </option>
-          ))}
-        </Select>
-        <Select
+        />
+        <Checkbox
+          variant="hollow"
           label="Stitch"
           disabled={isUploadMode}
           {...register('stitch', {
             value: false,
           })}
-        >
-          <option value="">Select</option>
-          {trueFalse.map((item) => (
-            <option key={item.value} value={item.value}>
-              {item.label}
-            </option>
-          ))}
-        </Select>
-        <Select
+        />
+        <Checkbox
+          variant="hollow"
           label="Comments"
           disabled={isUploadMode}
           {...register('comment', {
             value: false,
           })}
-        >
-          <option value="">Select</option>
-          {trueFalse.map((item) => (
-            <option key={item.value} value={item.value}>
-              {item.label}
-            </option>
-          ))}
-        </Select>
+        />
       </div>
       <hr className="my-[15px] mb-[25px] border-tableBorder" />
       <div className="flex flex-col">
-        <Select
+        <Checkbox
+          variant="hollow"
           label="Disclose Video Content"
           disabled={isUploadMode}
           {...register('disclose', {
             value: false,
           })}
-        >
-          <option value="">Select</option>
-          {trueFalse.map((item) => (
-            <option key={item.value} value={item.value}>
-              {item.label}
-            </option>
-          ))}
-        </Select>
+        />
         {disclose && (
           <div className="bg-tableBorder p-[10px] mt-[10px] rounded-[10px] flex gap-[20px] items-center">
             <div>
@@ -279,39 +245,27 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
         </div>
       </div>
       <div className={clsx(!disclose && 'invisible', 'mt-[20px]')}>
-        <Select
+        <Checkbox
+          variant="hollow"
           label="Your brand"
           disabled={isUploadMode}
           {...register('brand_organic_toggle', {
             value: false,
           })}
-        >
-          <option value="">Select</option>
-          {trueFalse.map((item) => (
-            <option key={item.value} value={item.value}>
-              {item.label}
-            </option>
-          ))}
-        </Select>
+        />
         <div className="text-balance my-[10px] text-[14px]">
           You are promoting yourself or your own brand.
           <br />
           This video will be classified as Brand Organic.
         </div>
-        <Select
+        <Checkbox
+          variant="hollow"
           label="Branded content"
           disabled={isUploadMode}
           {...register('brand_content_toggle', {
             value: false,
           })}
-        >
-          <option value="">Select</option>
-          {trueFalse.map((item) => (
-            <option key={item.value} value={item.value}>
-              {item.label}
-            </option>
-          ))}
-        </Select>
+        />
         <div className="text-balance my-[10px] text-[14px]">
           You are promoting another brand or a third party.
           <br />
