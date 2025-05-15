@@ -226,16 +226,16 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
           })}
         />
         <Checkbox
-          label="Stitch"
           variant="hollow"
+          label="Stitch"
           disabled={isUploadMode}
           {...register('stitch', {
             value: false,
           })}
         />
         <Checkbox
-          label="Comments"
           variant="hollow"
+          label="Comments"
           disabled={isUploadMode}
           {...register('comment', {
             value: false,

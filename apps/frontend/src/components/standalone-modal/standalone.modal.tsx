@@ -48,7 +48,6 @@ export const StandaloneModal: FC = () => {
       integrations={integrations}
       reopenModal={() => {}}
       allIntegrations={integrations}
-      onlyValues={[{ content: 'asd', id: integrations[0].id, image: [] }]}
       date={dayjs.utc(data).local()}
     />
   );
