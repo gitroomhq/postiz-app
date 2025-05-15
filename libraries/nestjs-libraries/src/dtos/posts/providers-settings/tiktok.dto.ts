@@ -14,23 +14,23 @@ export class TikTokDto {
     | 'FOLLOWER_OF_CREATOR'
     | 'SELF_ONLY';
 
-  @IsBoolean()
-  duet: boolean;
+  @IsIn(['yes', 'no'])
+  duet: 'true' | 'false';
 
-  @IsBoolean()
-  stitch: boolean;
+  @IsIn(['yes', 'no'])
+  stitch: 'true' | 'false';
 
-  @IsBoolean()
-  comment: boolean;
+  @IsIn(['yes', 'no'])
+  comment: 'true' | 'false';
 
   @IsIn(['yes', 'no'])
   autoAddMusic: 'yes' | 'no';
 
-  @IsBoolean()
-  brand_content_toggle: boolean;
+  @IsIn(['yes', 'no'])
+  brand_content_toggle: 'true' | 'false';
 
-  @IsBoolean()
-  brand_organic_toggle: boolean;
+  @IsIn(['yes', 'no'])
+  brand_organic_toggle: 'true' | 'false';
 
   // @IsIn(['true'])
   // @IsDefined()
