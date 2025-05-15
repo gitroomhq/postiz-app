@@ -54,6 +54,16 @@ const yesNo = [
     label: 'No',
   },
 ];
+const trueFalse = [
+  {
+    value: 'true',
+    label: 'Yes',
+  },
+  {
+    value: 'false',
+    label: 'No',
+  },
+];
 
 const CheckTikTokValidity: FC<{ picture: string }> = (props) => {
   const { register } = useSettings();
@@ -187,7 +197,14 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
           {...register('duet', {
             value: false,
           })}
-        />
+        >
+          <option value="">Select</option>
+          {trueFalse.map((item) => (
+            <option key={item.value} value={item.value}>
+              {item.label}
+            </option>
+          ))}
+        </Select>
         <Select
           label="Stitch"
           disabled={isUploadMode}
@@ -201,7 +218,14 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
           {...register('comment', {
             value: false,
           })}
-        />
+        >
+          <option value="">Select</option>
+          {trueFalse.map((item) => (
+            <option key={item.value} value={item.value}>
+              {item.label}
+            </option>
+          ))}
+        </Select>
       </div>
       <hr className="my-[15px] mb-[25px] border-tableBorder" />
       <div className="flex flex-col">
@@ -211,7 +235,14 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
           {...register('disclose', {
             value: false,
           })}
-        />
+        >
+          <option value="">Select</option>
+          {trueFalse.map((item) => (
+            <option key={item.value} value={item.value}>
+              {item.label}
+            </option>
+          ))}
+        </Select>
         {disclose && (
           <div className="bg-tableBorder p-[10px] mt-[10px] rounded-[10px] flex gap-[20px] items-center">
             <div>
@@ -247,7 +278,14 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
           {...register('brand_organic_toggle', {
             value: false,
           })}
-        />
+        >
+          <option value="">Select</option>
+          {trueFalse.map((item) => (
+            <option key={item.value} value={item.value}>
+              {item.label}
+            </option>
+          ))}
+        </Select>
         <div className="text-balance my-[10px] text-[14px]">
           You are promoting yourself or your own brand.
           <br />
@@ -259,7 +297,14 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
           {...register('brand_content_toggle', {
             value: false,
           })}
-        />
+        >
+          <option value="">Select</option>
+          {trueFalse.map((item) => (
+            <option key={item.value} value={item.value}>
+              {item.label}
+            </option>
+          ))}
+        </Select>
         <div className="text-balance my-[10px] text-[14px]">
           You are promoting another brand or a third party.
           <br />
