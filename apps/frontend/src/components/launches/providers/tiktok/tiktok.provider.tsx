@@ -181,7 +181,7 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
       <hr className="mb-[15px] border-tableBorder" />
       <div className="text-[14px] mb-[10px]">Allow User To:</div>
       <div className="flex gap-[40px]">
-        <Checkbox
+        <Select
           variant="hollow"
           label="Duet"
           disabled={isUploadMode}
@@ -189,7 +189,7 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
             value: false,
           })}
         />
-        <Checkbox
+        <Select
           label="Stitch"
           variant="hollow"
           disabled={isUploadMode}
@@ -197,7 +197,7 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
             value: false,
           })}
         />
-        <Checkbox
+        <Select
           label="Comments"
           variant="hollow"
           disabled={isUploadMode}
@@ -208,7 +208,7 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
       </div>
       <hr className="my-[15px] mb-[25px] border-tableBorder" />
       <div className="flex flex-col">
-        <Checkbox
+        <Select
           variant="hollow"
           label="Disclose Video Content"
           disabled={isUploadMode}
@@ -245,7 +245,7 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
         </div>
       </div>
       <div className={clsx(!disclose && 'invisible', 'mt-[20px]')}>
-        <Checkbox
+        <Select
           variant="hollow"
           label="Your brand"
           disabled={isUploadMode}
@@ -258,7 +258,7 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
           <br />
           This video will be classified as Brand Organic.
         </div>
-        <Checkbox
+        <Select
           variant="hollow"
           label="Branded content"
           disabled={isUploadMode}
