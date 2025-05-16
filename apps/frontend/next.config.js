@@ -9,7 +9,7 @@ font-src 'self' chrome-extension:;
 object-src 'none';
 base-uri 'self';
 form-action 'self';
-frame-ancestors 'none';
+frame-src 'self' chrome-extension: https:;
 upgrade-insecure-requests;
 `;
 
