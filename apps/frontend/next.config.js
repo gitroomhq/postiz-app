@@ -1,5 +1,18 @@
 // @ts-check
 
+const cspHeader = `
+default-src 'self' chrome-extension:;
+script-src 'self' 'unsafe-eval' 'unsafe-inline' chrome-extension:;
+style-src 'self' 'unsafe-inline' chrome-extension:;
+img-src 'self' blob: data: chrome-extension:;
+font-src 'self' chrome-extension:;
+object-src 'none';
+base-uri 'self';
+form-action 'self';
+frame-ancestors 'none';
+upgrade-insecure-requests;
+`;
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
@@ -18,6 +31,19 @@ const nextConfig = {
         hostname: '**',
       },
     ],
+  },
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: cspHeader.replace(/\n/g, ''),
+          },
+        ],
+      },
+    ];
   },
   async redirects() {
     return [
