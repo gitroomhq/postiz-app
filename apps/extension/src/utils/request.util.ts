@@ -17,9 +17,7 @@ export const sendRequest = (
 export const fetchRequestUtil = async (request: any) => {
   return (
     await fetch(
-      (isDev
-        ? "http://localhost:4200/v1/api"
-        : "https://platform.postiz.com/v1/api") + request.url,
+      (import.meta.env?.FRONTEND_URL || process?.env?.FRONTEND_URL) + request.url,
       {
         method: request.method || "GET",
         headers: {

@@ -29,9 +29,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   if (request.action === "loadCookie") {
     chrome.cookies.get(
       {
-        url: isDevelopment
-          ? "http://localhost:4200"
-          : "https://platform.postiz.com",
+        url: import.meta.env?.FRONTEND_URL || process?.env?.FRONTEND_URL,
         name: request.cookieName,
       },
       function (cookies) {

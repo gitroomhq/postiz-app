@@ -21,7 +21,7 @@ export const baseManifest = {
   ...manifest,
   host_permissions: [
     ...ProviderList.map((p) => p.baseUrl + "/"),
-    isDev ? "http://localhost:4200/" : "https://platform.postiz.com/",
+    import.meta.env?.FRONTEND_URL || process?.env?.FRONTEND_URL + '/*',
   ],
   permissions: [...(manifest.permissions || [])],
   content_scripts: [
@@ -29,9 +29,7 @@ export const baseManifest = {
       matches: ProviderList.reduce(
         (all, p) => [...all, p.baseUrl + "/*"],
         [
-          isDev
-            ? "http://localhost:4200/*"
-            : "https://platform.postiz.com/*",
+          import.meta.env?.FRONTEND_URL || process?.env?.FRONTEND_URL + '/*',
         ],
       ),
       ...rest,
