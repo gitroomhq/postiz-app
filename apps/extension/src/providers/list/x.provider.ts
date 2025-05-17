@@ -3,7 +3,7 @@ import { ProviderInterface } from '@gitroom/extension/providers/provider.interfa
 export class XProvider implements ProviderInterface {
   identifier = 'x';
   baseUrl = 'https://x.com';
-  element = `[data-testid="tweetTextarea_0_label"]`;
+  element = `[data-testid="primaryColumn"]:has([data-testid="toolBar"]) [data-testid="tweetTextarea_0_label"], [data-testid="SideNav_NewTweet_Button"]`;
   attachTo = `#react-root`;
   style = "dark" as "dark";
   findIdentifier = (element: HTMLElement) => {

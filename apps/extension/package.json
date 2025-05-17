@@ -1,6 +1,6 @@
 {
   "name": "postiz-extension",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A simple chrome & firefox extension template with Vite, React, TypeScript and Tailwind CSS.",
   "scripts": {
     "build": "rm -rf dist && vite build --config vite.config.chrome.ts && zip -r extension.zip dist",

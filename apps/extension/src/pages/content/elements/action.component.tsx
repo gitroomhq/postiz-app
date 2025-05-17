@@ -61,8 +61,9 @@ export const ActionComponent: FC<{
   actionType: string;
   provider: ProviderInterface;
   wrap: boolean;
+  selector: string;
 }> = memo((props) => {
-  const { wrap, provider, target, actionType } = props;
+  const { wrap, provider, selector, target, actionType } = props;
   const [modal, showModal] = useState(false);
   const handle = useCallback(async (e: any) => {
     showModal(true);
@@ -72,7 +73,8 @@ export const ActionComponent: FC<{
 
   useEffect(() => {
     const blockingDiv = document.createElement('div');
-    if (document.querySelector('#blockingDiv')) {
+    if (document.querySelector(`.${selector}`)) {
+      console.log('already exists');
       return;
     }
 
@@ -87,6 +89,7 @@ export const ActionComponent: FC<{
       blockingDiv.style.width = `${targetInformation.width}px`;
       blockingDiv.style.height = `${targetInformation.height}px`;
       blockingDiv.style.zIndex = '9999';
+      blockingDiv.className = selector;
 
       document.body.appendChild(blockingDiv);
       blockingDiv.addEventListener('click', handle);
