@@ -1,5 +1,3 @@
-'use client';
-
 export interface Params {
   baseUrl: string;
   beforeRequest?: (url: string, options: RequestInit) => Promise<RequestInit>;
@@ -16,7 +14,7 @@ export const customFetch = (
   secured: boolean = true
 ) => {
   return async function newFetch(url: string, options: RequestInit = {}) {
-    const loggedAuth = new URL(window.location.href).searchParams.get(
+    const loggedAuth = typeof window === "undefined" ? undefined : new URL(window.location.href).searchParams.get(
       'loggedAuth'
     );
     const newRequestObject = await params?.beforeRequest?.(url, options);
