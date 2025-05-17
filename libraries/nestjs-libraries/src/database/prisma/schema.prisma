@@ -636,6 +636,7 @@ enum Provider {
   GOOGLE
   FARCASTER
   WALLET
+  GENERIC
 }
 
 enum Role {

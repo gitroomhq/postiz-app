@@ -2,12 +2,22 @@
 # any half-built stuff in the build context as a pre-caution (also saves copying
 # 180k files in node_modules that isn't used!).
 **/node_modules
+node_modules/*
+node_modules
+docker-data/*
 dist
 .nx
+/apps/frontend/.next
+/apps/backend/dist
+/apps/workers/dist
+/apps/cron/dist
+/apps/commands/dist
 .devcontainer
 **/.git
-**/dist
 **/*.md
 **/LICENSE
 **/npm-debug.log
 **/*.vscode
+.git
+.github
+reports

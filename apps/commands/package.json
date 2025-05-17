@@ -1,0 +1,13 @@
+{
+  "name": "postiz-command",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "dev": "dotenv -e ../../.env -- nest start --watch --entryFile=./apps/command/src/main",
+    "build": "NODE_ENV=production nest build",
+    "start": "node ./dist/apps/command/src/main.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
