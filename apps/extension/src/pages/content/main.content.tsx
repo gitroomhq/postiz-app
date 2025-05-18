@@ -157,9 +157,30 @@ export const MainContentInner: FC = (props) => {
           actionType={actionEl.actionType}
           provider={provider}
           wrap={true}
+          selector={stringToABC(provider.element.split(',').map(z => z.trim()).find(p => actionEl.element.matches(p)) || '')}
         />,
         actionEl.element
       )}
     </Fragment>
   ));
 };
+
+function stringToABC(text: string, length = 8) {
+  // Simple DJB2-like hash (non-cryptographic!)
+  let hash = 5381;
+  for (let i = 0; i < text.length; i++) {
+    hash = (hash * 33) ^ text.charCodeAt(i);
+  }
+
+  hash = Math.abs(hash);
+
+  // Convert to base-26 string using a–z
+  const alphabet = 'abcdefghijklmnopqrstuvwxyz';
+  let result = '';
+  while (result.length < length) {
+    result = alphabet[hash % 26] + result;
+    hash = Math.floor(hash / 26);
+  }
+
+  return result;
+}

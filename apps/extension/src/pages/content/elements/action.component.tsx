@@ -1,8 +1,12 @@
 import { FC, memo, useCallback, useEffect, useState } from 'react';
 import { ProviderInterface } from '@gitroom/extension/providers/provider.interface';
+import { fetchCookie } from '@gitroom/extension/utils/load.cookie';
 
-const Comp: FC<{ removeModal: () => void; platform: string, style: string }> = (props) => {
-  useEffect(() => {
+const Comp: FC<{ removeModal: () => void; platform: string; style: string }> = (
+  props
+) => {
+  const load = async () => {
+    const cookie = await fetchCookie(`auth`);
     if (document.querySelector('iframe#modal-postiz')) {
       return;
     }
@@ -23,7 +27,9 @@ const Comp: FC<{ removeModal: () => void; platform: string, style: string }> = (
     iframe.style.backgroundColor = 'transparent';
     // @ts-ignore
     iframe.allowTransparency = 'true';
-    iframe.src = (import.meta.env?.FRONTEND_URL || process?.env?.FRONTEND_URL) + `/modal/${props.style}/${props.platform}`;
+    iframe.src =
+      (import.meta.env?.FRONTEND_URL || process?.env?.FRONTEND_URL) +
+      `/modal/${props.style}/${props.platform}?loggedAuth=${cookie}`;
     iframe.id = 'modal-postiz';
     iframe.style.width = '100%';
     iframe.style.height = '100%';
@@ -43,6 +49,9 @@ const Comp: FC<{ removeModal: () => void; platform: string, style: string }> = (
         }
       }
     });
+  };
+  useEffect(() => {
+    load();
   }, []);
   return <></>;
 };
@@ -52,8 +61,9 @@ export const ActionComponent: FC<{
   actionType: string;
   provider: ProviderInterface;
   wrap: boolean;
+  selector: string;
 }> = memo((props) => {
-  const { wrap, provider, target, actionType } = props;
+  const { wrap, provider, selector, target, actionType } = props;
   const [modal, showModal] = useState(false);
   const handle = useCallback(async (e: any) => {
     showModal(true);
@@ -63,7 +73,8 @@ export const ActionComponent: FC<{
 
   useEffect(() => {
     const blockingDiv = document.createElement('div');
-    if (document.querySelector('#blockingDiv')) {
+    if (document.querySelector(`.${selector}`)) {
+      console.log('already exists');
       return;
     }
 
@@ -78,6 +89,7 @@ export const ActionComponent: FC<{
       blockingDiv.style.width = `${targetInformation.width}px`;
       blockingDiv.style.height = `${targetInformation.height}px`;
       blockingDiv.style.zIndex = '9999';
+      blockingDiv.className = selector;
 
       document.body.appendChild(blockingDiv);
       blockingDiv.addEventListener('click', handle);
@@ -92,7 +104,11 @@ export const ActionComponent: FC<{
     <div className="g-wrapper" style={{ position: 'relative' }}>
       <div className="absolute left-0 top-0 z-[9999] w-full h-full" />
       {modal && (
-        <Comp platform={provider.identifier} style={provider.style} removeModal={() => showModal(false)} />
+        <Comp
+          platform={provider.identifier}
+          style={provider.style}
+          removeModal={() => showModal(false)}
+        />
       )}
     </div>
   );
