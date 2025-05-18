@@ -1,6 +1,6 @@
 'use client';
 
-import { DetailedHTMLProps, FC, SelectHTMLAttributes, useMemo } from 'react';
+import { DetailedHTMLProps, FC, forwardRef, SelectHTMLAttributes, useMemo } from 'react';
 import { clsx } from 'clsx';
 import { useFormContext } from 'react-hook-form';
 import interClass from '../helpers/inter.font';
@@ -18,7 +18,7 @@ export const Select: FC<
     name: string;
     hideErrors?: boolean;
   }
-> = (props) => {
+> = forwardRef((props, ref) => {
   const {
     label,
     className,
@@ -39,6 +39,7 @@ export const Select: FC<
     <div className={clsx("flex flex-col", label ? 'gap-[6px]' : '')}>
       <div className={`${interClass} text-[14px]`}>{label}</div>
       <select
+        ref={ref}
         {...(disableForm ? {} : form.register(props.name, extraForm))}
         className={clsx(
           'bg-input h-[44px] px-[16px] outline-none border-fifth border rounded-[4px] text-inputText placeholder-inputText',
@@ -51,4 +52,4 @@ export const Select: FC<
       )}
     </div>
   );
-};
+});

@@ -14,21 +14,33 @@ export const customFetch = (
   secured: boolean = true
 ) => {
   return async function newFetch(url: string, options: RequestInit = {}) {
+    const loggedAuth = typeof window === "undefined" ? undefined : new URL(window.location.href).searchParams.get(
+      'loggedAuth'
+    );
     const newRequestObject = await params?.beforeRequest?.(url, options);
-    const authNonSecuredCookie = typeof document === 'undefined' ? null : document.cookie
-      .split(';')
-      .find((p) => p.includes('auth='))
-      ?.split('=')[1];
+    const authNonSecuredCookie =
+      typeof document === 'undefined'
+        ? null
+        : document.cookie
+            .split(';')
+            .find((p) => p.includes('auth='))
+            ?.split('=')[1];
 
-    const authNonSecuredOrg = typeof document === 'undefined' ? null : document.cookie
-      .split(';')
-      .find((p) => p.includes('showorg='))
-      ?.split('=')[1];
+    const authNonSecuredOrg =
+      typeof document === 'undefined'
+        ? null
+        : document.cookie
+            .split(';')
+            .find((p) => p.includes('showorg='))
+            ?.split('=')[1];
 
-    const authNonSecuredImpersonate = typeof document === 'undefined' ? null : document.cookie
-      .split(';')
-      .find((p) => p.includes('impersonate='))
-      ?.split('=')[1];
+    const authNonSecuredImpersonate =
+      typeof document === 'undefined'
+        ? null
+        : document.cookie
+            .split(';')
+            .find((p) => p.includes('impersonate='))
+            ?.split('=')[1];
 
     const fetchRequest = await fetch(params.baseUrl + url, {
       ...(secured ? { credentials: 'include' } : {}),
@@ -43,6 +55,7 @@ export const customFetch = (
           ? {}
           : { 'Content-Type': 'application/json' }),
         Accept: 'application/json',
+        ...(loggedAuth ? { auth: loggedAuth } : {}),
         ...options?.headers,
         ...(auth
           ? { auth }

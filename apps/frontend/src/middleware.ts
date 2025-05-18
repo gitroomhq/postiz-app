@@ -6,7 +6,8 @@ import { internalFetch } from '@gitroom/helpers/utils/internal.fetch';
 // This function can be marked `async` if using `await` inside
 export async function middleware(request: NextRequest) {
   const nextUrl = request.nextUrl;
-  const authCookie = request.cookies.get('auth');
+  const authCookie = request.cookies.get('auth') || request.headers.get('auth') || nextUrl.searchParams.get('loggedAuth');
+
   if (
     nextUrl.pathname.startsWith('/uploads/') ||
     nextUrl.pathname.startsWith('/p/') ||
