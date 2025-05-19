@@ -9,6 +9,7 @@ import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { parsePhoneNumberWithError } from 'libphonenumber-js';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
+import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 
 @ApiTags('Publica')
 @Controller('/publica')
@@ -18,6 +19,7 @@ export class PublicaController {
     private readonly _usersService: UsersService,
     private readonly _whatsappService: WhatsappService,
     private readonly _mediaService: MediaService,
+    private readonly _integrationService: IntegrationService,
   ) { }
 
   @Get('/whatsapp')
@@ -156,12 +158,20 @@ export class PublicaController {
     });
 
     const response = await this._mcpLocalService.createMessage(organizationId, {
-      messages: [{
+      messages: [
+      {
         role: 'user',
         content: {
           type: 'text',
           text: `My country code is ${this.getCountryCodeByPhone(from)}.`,
         }
+      },
+      {
+        role: 'user',
+        content: {
+          type: 'text', 
+          text: await this.listOfProviders(organizationId),
+        },
       },
       ...messages
       ],
@@ -212,5 +222,37 @@ export class PublicaController {
       console.error('Error getting country code by phone:', error);
       return 'DO'; // Fallback por defecto
     }
+  }
+
+  async listOfProviders(organization: string) {
+    const cacheKey = `${organization}:integrations`;
+    
+    const cachedData = await ioRedis.get(cacheKey);
+    if (cachedData) {
+      return cachedData
+    }
+
+    const list = (
+      await this._integrationService.getIntegrationsList(organization)
+    ).map((org) => ({
+      id: org.id,
+      name: org.name,
+      identifier: org.providerIdentifier,
+      picture: org.picture,
+      disabled: org.disabled,
+      profile: org.profile,
+      internalId: org.internalId,
+      customer: org.customer
+        ? {
+          id: org.customer.id,
+          name: org.customer.name,
+        }
+        : undefined,
+    }));
+
+    const stringified = `Integrations(Show them by customers): \n${JSON.stringify(list)}`;
+    await ioRedis.set(cacheKey, stringified, 'EX', 20 * 60);
+
+    return stringified;
   }
 }

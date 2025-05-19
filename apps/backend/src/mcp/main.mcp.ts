@@ -145,6 +145,69 @@ ${provider.customer ? `👥 Cliente:
     ];
   }
 
+  @McpTool({
+    toolName: 'POSTIZ_SCHEDULE_POSTS',
+    zod: {
+      type: eenum(['draft', 'schedule', 'now']),
+      date: string().describe('UTC TIME'),
+      values: array(
+        object({
+          posts: array(object({ text: string(), images: array(string()) })),
+          providerId: string().describe('Get from integrations'),
+          settings: optional(object({}).passthrough()),
+        })
+      ),
+    },
+  })
+  async schedulePosts(
+    organization: string,
+    obj: {
+      type: 'schedule' | 'now';
+      date: string;
+      value: {
+        providerId: string;
+        posts: { text: string; images?: string[] }[],
+        settings?: AllProvidersSettings;
+      }[];
+    }
+  ) {
+    const promises = obj.value.map(async (post) => {
+      const create = await this._postsService.createPost(organization, {
+        type: obj.type,
+        date: obj.date,
+        tags: [],
+        posts: [{
+          group: makeId(10),
+          // @ts-ignore
+          settings: post.settings || {},
+          integration: {
+            id: post.providerId,
+          },
+          value: post.posts.map(p => ({
+            content: p.text,
+            id: makeId(10),
+            image: p.images.map((img) => ({
+              id: makeId(10),
+              path: img,
+            })),
+          })),
+        }],
+      });
+
+      return `${process.env.FRONTEND_URL}/p/${create[0].postId}`;
+    })
+
+    const urls = (await Promise.all(promises))
+      .map((p) => `${p}`).join('\n');
+
+    return [
+      {
+        type: 'text',
+        text: `Posts created successfully:\n\n${urls}`,
+      },
+    ];
+  }
+
   @McpTool({ toolName: 'PUBLICA_LIST_DISCORD_CHANNELS', zod: { internalId: string().describe('Use POSTIZ_PROVIDERS_LIST to get the internalId') }, })
   async listDiscordChannels(orgId: string, obj: { internalId: string }) {
     const integrationProvider = this._integrationManager.getSocialIntegration('discord');
