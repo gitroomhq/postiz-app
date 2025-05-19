@@ -111,4 +111,8 @@ export class OrganizationService {
       disable
     );
   }
+
+  getOrgByIdWithSubscription(orgId: string) {
+    return this._organizationRepository.getOrgByIdWithSubscription(orgId)
+  }
 }

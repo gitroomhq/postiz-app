@@ -8,6 +8,7 @@ import { WhatsappService } from '@gitroom/nestjs-libraries/whatsapp/whatsapp.ser
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { parsePhoneNumberWithError } from 'libphonenumber-js';
+import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 
 @ApiTags('Publica')
 @Controller('/publica')
@@ -16,6 +17,7 @@ export class PublicaController {
     private readonly _mcpLocalService: McpLocalService,
     private readonly _usersService: UsersService,
     private readonly _whatsappService: WhatsappService,
+    private readonly _mediaService: MediaService,
   ) { }
 
   @Get('/whatsapp')
@@ -55,12 +57,11 @@ export class PublicaController {
     // ---------------------------------------------- // 
 
     const user = await this._usersService.getUserAndOrganizationByPhone(message?.from)
+    const org = user?.organizations[0]?.organization
 
     if (!user) {
-      console.error('User not found: ', message?.from)
-
       await this._whatsappService.sendText(
-        message?.from, 
+        message?.from,
         `Hola! No encontramos una cuenta asociada a tu número de teléfono. Puedes registrarte aquí: ${process.env.FRONTEND_URL}/auth. Si necesitas ayuda, contáctanos por:\n\n📧 Email: servicios@publica.do\n💬 Discord: https://discord.com/invite/ACt8ZbdnaE\n📅 Calendly: https://calendly.com/servicios-publica/30min\n\n¡Estamos aquí para ayudarte! 😊`
       );
 
@@ -69,14 +70,14 @@ export class PublicaController {
       }
     }
 
-    if(!user.phoneNumberVerified) {
+    if (!user.phoneNumberVerified) {
       console.error('User phone number unverified: ', message?.from)
 
       await this._whatsappService.sendText(
-        message?.from, 
+        message?.from,
         `Hola! Tu número de teléfono aún no ha sido verificado. Por favor, verifica tu número para acceder a tu cuenta. Si necesitas ayuda, visita ${process.env.FRONTEND_URL}/settings o contáctanos por:\n\n📧 Email: servicios@publica.do\n💬 Discord: https://discord.com/invite/ACt8ZbdnaE\n📅 Calendly: https://calendly.com/servicios-publica/30min\n\n¡Estamos aquí para ayudarte! 😊`
       );
-  
+
       return {
         success: true,
       }
@@ -84,6 +85,12 @@ export class PublicaController {
 
     if (message.type === 'image' || message.type === 'video') {
       const mediaObject = message[message.type];
+
+      const caption = mediaObject?.caption
+
+      if(caption?.includes('¿Qué te parece esta imagen para tu post? Puedo generar otra si lo prefieres. (Créditos restantes:')) {
+        return true
+      } 
 
       // ----------------- avoid duplicated media --------------------- //
       if (await ioRedis.get(`media:${mediaObject.sha256}`)) {
@@ -98,7 +105,8 @@ export class PublicaController {
       const upload = UploadFactory.createStorage()
 
       const file = await upload.uploadFile(media)
-      const caption = mediaObject?.caption
+
+      await this._mediaService.saveFile(org.id, caption, file);
 
       message.text = {
         body: caption ? `Media received: ${file.path} \nCaption: ${caption}` : `Media received: ${file.path}`,
@@ -152,7 +160,7 @@ export class PublicaController {
         role: 'user',
         content: {
           type: 'text',
-          text: `My country code is ${this.getCountryCodeByPhone(from)}.`, 
+          text: `My country code is ${this.getCountryCodeByPhone(from)}.`,
         }
       },
       ...messages
@@ -171,7 +179,14 @@ export class PublicaController {
         },
       });
 
-      const { id } = await this._whatsappService.sendText(from, response.content.text as string);
+
+      const { id } = await (response?.content?.image
+        ? this._whatsappService.sendImage(from,
+          response?.content?.image as string,
+          response?.content?.caption as string,
+        )
+        : this._whatsappService.sendText(from, response.content.text as string
+        ));
 
       const redisMessageKey = `mcp:sent:${organizationId}:${from}:${id}`
       await ioRedis.set(redisMessageKey, JSON.stringify({ text }), 'EX', 60 * 60);

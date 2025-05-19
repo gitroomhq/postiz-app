@@ -1,5 +1,6 @@
 export interface IUploadProvider {
     uploadSimple(path: string): Promise<string>;
-    uploadFile(file: Express.Multer.File): Promise<any>;
+    //Forze
+    uploadFile(file: Express.Multer.File, contentType?: string): Promise<any>;
     removeFile(filePath: string): Promise<void>;
 }

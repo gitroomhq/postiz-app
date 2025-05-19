@@ -335,4 +335,21 @@ export class OrganizationRepository {
       },
     });
   }
+
+  getOrgByIdWithSubscription(id: string) {
+    return this._organization.model.organization.findFirst({
+      where: {
+        id,
+      },
+      include: {
+        subscription: {
+          select: {
+            subscriptionTier: true,
+            totalChannels: true,
+            isLifetime: true,
+          },
+        },
+      },
+    });
+  }
 }
