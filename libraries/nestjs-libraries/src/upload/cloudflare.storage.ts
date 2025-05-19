@@ -78,8 +78,8 @@ class CloudflareStorage implements IUploadProvider {
 
     return `${this._uploadUrl}/${id}.${extension}`;
   }
-
-  async uploadFile(file: Express.Multer.File): Promise<any> {
+  //Forze
+  async uploadFile(file: Express.Multer.File, contentType: string = undefined): Promise<any> {
     const id = makeId(10);
     const extension = mime.extension(file.mimetype) || '';
 
@@ -89,6 +89,7 @@ class CloudflareStorage implements IUploadProvider {
       ACL: 'public-read',
       Key: `${id}.${extension}`,
       Body: file.buffer,
+      ContentType: contentType,
     });
 
     await this._client.send(command);

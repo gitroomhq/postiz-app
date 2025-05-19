@@ -150,4 +150,48 @@ export class WhatsappService {
       throw new HttpException('Failed to send verification code. Please try later.', 500);
     }
   }  
+
+  async sendImage(to: string, imageUrl: string, caption?: string): Promise<{ id: string }> {
+    if (!this.accessToken || !this.phoneNumberId) {
+      throw new HttpException('WhatsApp configuration missing', 500);
+    }
+
+    try {
+      const payload = {
+        messaging_product: 'whatsapp',
+        to,
+        type: 'image',
+        image: {
+          link: imageUrl,
+          ...(caption && { caption: caption.substring(0, 1024) }),
+        },
+      };
+
+      console.log('Sending WhatsApp image with payload:', JSON.stringify(payload, null, 2));
+
+      const response = await axios.post(
+        `${this.apiUrl}/${this.phoneNumberId}/messages`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${this.accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.data?.messages?.[0]?.id) {
+        throw new Error('No message ID received from WhatsApp API');
+      }
+
+      const id = response.data.messages[0].id;
+      return { id };
+    } catch (error: any) {
+      console.error('Failed to send WhatsApp image:', error.response?.data || error.message);
+      throw new HttpException(
+        error.response?.data?.error?.message || 'Failed to send image. Please try later.',
+        error.response?.status || 500
+      );
+    }
+  }
 }
