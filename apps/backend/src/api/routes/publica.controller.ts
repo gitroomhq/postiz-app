@@ -90,9 +90,9 @@ export class PublicaController {
 
       const caption = mediaObject?.caption
 
-      if(caption?.includes('¿Qué te parece esta imagen para tu post? Puedo generar otra si lo prefieres. (Créditos restantes:')) {
+      if (caption?.includes('¿Qué te parece esta imagen para tu post? Puedo generar otra si lo prefieres. (Créditos restantes:')) {
         return true
-      } 
+      }
 
       // ----------------- avoid duplicated media --------------------- //
       if (await ioRedis.get(`media:${mediaObject.sha256}`)) {
@@ -108,7 +108,7 @@ export class PublicaController {
 
       const file = await upload.uploadFile(media)
 
-      await this._mediaService.saveFile(org.id, caption, file);
+      await this._mediaService.saveFile(org.id, caption, file.path);
 
       message.text = {
         body: caption ? `Media received: ${file.path} \nCaption: ${caption}` : `Media received: ${file.path}`,
@@ -158,24 +158,10 @@ export class PublicaController {
     });
 
     const response = await this._mcpLocalService.createMessage(organizationId, {
-      messages: [
-      {
-        role: 'user',
-        content: {
-          type: 'text',
-          text: `My country code is ${this.getCountryCodeByPhone(from)}.`,
-        }
-      },
-      {
-        role: 'user',
-        content: {
-          type: 'text', 
-          text: await this.listOfProviders(organizationId),
-        },
-      },
-      ...messages
-      ],
-      systemPrompt: localpSystemPrompt,
+      messages,
+      systemPrompt: localpSystemPrompt
+        .replace('X-COUNTRY_CODE', this.getCountryCodeByPhone(from))
+        .replace('X-INTEGRATIONS_CONNECTED', await this.listOfProviders(organizationId)),
       temperature: 0.7,
       maxTokens: 500,
     });
@@ -220,13 +206,13 @@ export class PublicaController {
       return 'DO';
     } catch (error) {
       console.error('Error getting country code by phone:', error);
-      return 'DO'; // Fallback por defecto
+      return 'DO'; 
     }
   }
 
   async listOfProviders(organization: string) {
     const cacheKey = `${organization}:integrations`;
-    
+
     const cachedData = await ioRedis.get(cacheKey);
     if (cachedData) {
       return cachedData
@@ -248,9 +234,9 @@ export class PublicaController {
           name: org.customer.name,
         }
         : undefined,
-    }));
+    }))
 
-    const stringified = `Integrations(Show them by customers): \n${JSON.stringify(list)}`;
+    const stringified = `- Always show grouped by customer: \n${JSON.stringify(list)}`;
     await ioRedis.set(cacheKey, stringified, 'EX', 20 * 60);
 
     return stringified;
