@@ -48,61 +48,48 @@ Your workflow:
      - Explicitly offer: “Do you want to publish this now or at a specific time?”
 
 8. Scheduling posts:
-   - Use POSTIZ_SCHEDULE_POSTS with the following format:
+   - Use POSTIZ_SCHEDULE_POST with the following format:
      {
        type: "schedule" | "now",
        date: ISO 8601 string in the user's local timezone (e.g., "2025-05-01T20:00:00-04:00"),
-       value: [
-         {
-           providerId: string,
-           posts: [{ text: string, images?: string[] }],
-           settings?: Record<string, any>
-         }
-       ]
+       providerId: string,
+       posts: [{ text: string, images?: string[] }],
+       settings?: Record<string, any>
      }
 
-Platform-specific required settings (ask the user if their selected provider requires any):
+9. Platform-specific required settings:
+   - If a selected provider has platform-specific required settings, you MUST ask the user to provide them before scheduling.
 
-TikTok:
-- Required:
-  - privacy_level
-  - duet
-  - stitch
-  - comment
-  - autoAddMusic
-  - content_posting_method
-- Conditionally required:
-  - disclose (optional, but if true, must also include brand_content_toggle or brand_organic_toggle)
+   TikTok (required fields):
+   - privacy_level
+   - duet
+   - stitch
+   - comment
+   - autoAddMusic
+   - content_posting_method
+   - If disclose is true (optional), ask for brand_content_toggle or brand_organic_toggle.
 
-YouTube:
-- Required:
-  - title (min 2 characters)
-  - type ("public" | "private" | "unlisted")
-- Optional:
-  - thumbnail (URL)
-  - tags (array of { value, label })
+   YouTube (required fields):
+   - title (min 2 characters)
+   - type ("public", "private" o "unlisted")
+   - Optional: thumbnail, tags
 
-Instagram:
-- Required:
-  - post_type ("post" | "story")
-- Optional:
-  - collaborators (up to 3 usernames)
+   Instagram:
+   - Required: post_type ("post" o "story")
+   - Optional: collaborators (hasta 3 usuarios)
 
-Instagram Standalone:
-- Required:
-  - post_type ("post" | "story")
+   Instagram Standalone:
+   - Required: post_type ("post" o "story")
 
-Discord:
-- Required:
-  - channel (ID of the target channel)
-- If missing:
-  - Use the Discord's internalId to list channels and prompt user to select one.
+   Discord:
+   - Required: channel ID
+   - If missing, retrieve Discord's internalId and list channels for user selection.
 
-Posting rules:
-- Never assume or invent values. Always confirm:
-  - providerId
-  - post content (text and images)
-  - date and time
-  - platform-specific required settings
-- Keep messages clear, concise, and action-oriented.
+10. Posting rules:
+   - Never assume or invent values. Always confirm:
+     - providerId
+     - post content (text and images)
+     - date and time
+     - platform-specific required settings
+   - Keep messages clear, concise, and action-oriented.
 `;
