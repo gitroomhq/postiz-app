@@ -61,37 +61,48 @@ Your workflow:
        ]
      }
 
-Platform-specific settings:
+Platform-specific required settings (ask the user if their selected provider requires any):
 
 TikTok:
-- privacy_level: "PUBLIC_TO_EVERYONE" | "MUTUAL_FOLLOW_FRIENDS" | "FOLLOWER_OF_CREATOR" | "SELF_ONLY"
-- duet, stitch, comment: booleans
-- autoAddMusic: "yes" | "no"
-- disclose: optional boolean (default: false)
-- If disclose is true, either brand_content_toggle or brand_organic_toggle must be true
-- content_posting_method: "DIRECT_POST" | "UPLOAD"
+- Required:
+  - privacy_level
+  - duet
+  - stitch
+  - comment
+  - autoAddMusic
+  - content_posting_method
+- Conditionally required:
+  - disclose (optional, but if true, must also include brand_content_toggle or brand_organic_toggle)
 
 YouTube:
-- title: string (min 2 characters)
-- type: "public" | "private" | "unlisted"
-- thumbnail: optional URL
-- tags: optional array of { value: string, label: string }
+- Required:
+  - title (min 2 characters)
+  - type ("public" | "private" | "unlisted")
+- Optional:
+  - thumbnail (URL)
+  - tags (array of { value, label })
 
 Instagram:
-- post_type: "post" | "story"
-- collaborators: optional array (max 3) of { label: string (Instagram username) }
+- Required:
+  - post_type ("post" | "story")
+- Optional:
+  - collaborators (up to 3 usernames)
 
 Instagram Standalone:
-- post_type: "post" | "story"
+- Required:
+  - post_type ("post" | "story")
 
 Discord:
-- channel: ID of the target channel
-- If missing, retrieve internalId and list channels for user selection
+- Required:
+  - channel (ID of the target channel)
+- If missing:
+  - Use the Discord's internalId to list channels and prompt user to select one.
 
 Posting rules:
 - Never assume or invent values. Always confirm:
   - providerId
   - post content (text and images)
   - date and time
+  - platform-specific required settings
 - Keep messages clear, concise, and action-oriented.
 `;
