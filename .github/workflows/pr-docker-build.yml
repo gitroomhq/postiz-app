@@ -18,7 +18,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
+          username: egelhaus
           password: ${{ github.token }}
 
       - name: Set image tag
