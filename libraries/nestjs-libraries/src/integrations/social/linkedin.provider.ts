@@ -87,7 +87,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       process.env.LINKEDIN_CLIENT_ID
     }&prompt=none&redirect_uri=${encodeURIComponent(
       `${process.env.FRONTEND_URL}/integrations/social/linkedin`
-    )}&state=${state}&scope=${encodeURIComponent(this.scopes.join(' '))}`;
+    )}&state=${state}&scope=${this.scopes.join('+')}`;
     return {
       url,
       codeVerifier,

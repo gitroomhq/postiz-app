@@ -99,7 +99,7 @@ export class LinkedinPageProvider
       process.env.LINKEDIN_CLIENT_ID
     }&redirect_uri=${encodeURIComponent(
       `${process.env.FRONTEND_URL}/integrations/social/linkedin-page`
-    )}&state=${state}&scope=${encodeURIComponent(this.scopes.join(' '))}`;
+    )}&state=${state}&scope=${this.scopes.join('+')}`;
     return {
       url,
       codeVerifier,
