@@ -41,6 +41,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           telegramBotName={process.env.TELEGRAM_BOT_NAME!}
           neynarClientId={process.env.NEYNAR_CLIENT_ID!}
           isSecured={!process.env.NOT_SECURED}
+          disableImageCompression={!!process.env.DISABLE_IMAGE_COMPRESSION}
         >
           <LayoutContext>
             <UtmSaver />
