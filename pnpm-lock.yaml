@@ -430,8 +430,8 @@ importers:
         specifier: ^3.2.0
         version: 3.2.0
       sweetalert2:
-        specifier: ^11.17.2
-        version: 11.21.0
+        specifier: ^11.4.8
+        version: 11.4.8
       swr:
         specifier: ^2.2.5
         version: 2.3.3(react@18.3.1)
@@ -14049,8 +14049,8 @@ packages:
   swagger-ui-dist@5.17.14:
     resolution: {integrity: sha512-CVbSfaLpstV65OnSjbXfVd6Sta3q3F7Cj/yYuvHMp1P90LztOLs6PfUnKEVAeiIVQt9u2SaPwv0LiH/OyMjHRw==}
 
-  sweetalert2@11.21.0:
-    resolution: {integrity: sha512-fiEK7SqRY/QD/wC2uqEHlfYGZ7qe2UcyQbJpbpj4YRVqplBgcI+euPZLZL+evLINcvbtXmL1SFUdZHKqBHGAAQ==}
+  sweetalert2@11.4.8:
+    resolution: {integrity: sha512-BDS/+E8RwaekGSxCPUbPnsRAyQ439gtXkTF/s98vY2l9DaVEOMjGj1FaQSorfGREKsbbxGSP7UXboibL5vgTMA==}
 
   swr@2.3.3:
     resolution: {integrity: sha512-dshNvs3ExOqtZ6kJBaAsabhPdHyeY4P2cKwRCniDVifBMoG/SVI7tfLWqPXriVspf2Rg4tPzXJTnwaihIeFw2A==}
@@ -33394,7 +33394,7 @@ snapshots:
 
   swagger-ui-dist@5.17.14: {}
 
-  sweetalert2@11.21.0: {}
+  sweetalert2@11.4.8: {}
 
   swr@2.3.3(react@18.3.1):
     dependencies:
