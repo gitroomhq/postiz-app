@@ -63,7 +63,8 @@ export function useUppyUploader(props: {
   onUploadSuccess: (result: UploadResult) => void;
   allowedFileTypes: string;
 }) {
-  const { storageProvider, backendUrl } = useVariables();
+  const { storageProvider, backendUrl, disableImageCompression } =
+    useVariables();
   const { onUploadSuccess, allowedFileTypes } = props;
   const fetch = useFetch();
 
@@ -83,12 +84,14 @@ export function useUppyUploader(props: {
       backendUrl
     );
     uppy2.use(plugin, options);
-    uppy2.use(Compressor, {
-      convertTypes: ['image/jpeg'],
-      maxWidth: 1000,
-      maxHeight: 1000,
-      quality: 1,
-    });
+    if (!disableImageCompression) {
+      uppy2.use(Compressor, {
+        convertTypes: ['image/jpeg'],
+        maxWidth: 1000,
+        maxHeight: 1000,
+        quality: 1,
+      });
+    }
     // Set additional metadata when a file is added
     uppy2.on('file-added', (file) => {
       uppy2.setFileMeta(file.id, {
