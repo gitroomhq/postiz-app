@@ -21,7 +21,7 @@ jobs:
         run: pnpm install
 
       - name: Zip extensions
-        run: FRONTEND_URL=https://platform.postiz.com pnpm run build:extension
+        run: FRONTEND_URL=https://app.publica.do pnpm run build:extension
 
       - name: Upload to Nextcloud
         env:
