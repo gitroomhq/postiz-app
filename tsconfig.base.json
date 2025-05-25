@@ -1,5 +1,4 @@
 {
-  "compileOnSave": false,
   "compilerOptions": {
     "rootDir": ".",
     "sourceMap": true,
@@ -19,6 +18,12 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
+    "incremental": true,
+    "strictNullChecks": false,
+    "noImplicitAny": true,
+    "strictBindCallApply": false,
+    "noFallthroughCasesInSwitch": true,
+    "strict": true,
     "paths": {
       "@gitroom/backend/*": ["apps/backend/src/*"],
       "@gitroom/cron/*": ["apps/cron/src/*"],
@@ -28,6 +33,7 @@
       "@gitroom/react/*": ["libraries/react-shared-libraries/src/*"],
       "@gitroom/plugins/*": ["libraries/plugins/src/*"],
       "@gitroom/workers/*": ["apps/workers/src/*"],
+      "@gitroom/extension/*": ["apps/extension/src/*"]
     }
   },
   "exclude": ["node_modules", "tmp"]

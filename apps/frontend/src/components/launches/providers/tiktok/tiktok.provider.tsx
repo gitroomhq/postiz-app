@@ -312,6 +312,10 @@ export default withProvider(
       return 'Tiktok items should be one';
     }
 
+    if (firstItems.length === 0) {
+      return 'No video / images selected';
+    }
+
     if (
       firstItems.length > 1 &&
       firstItems?.some((p) => p?.path?.indexOf('mp4') > -1)

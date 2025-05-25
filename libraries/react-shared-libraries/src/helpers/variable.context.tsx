@@ -5,9 +5,12 @@ import { createContext, FC, ReactNode, useContext, useEffect } from 'react';
 interface VariableContextInterface {
   billingEnabled: boolean;
   isGeneral: boolean;
+  genericOauth: boolean;
+  oauthLogoUrl: string;
+  oauthDisplayName: string;
   frontEndUrl: string;
   plontoKey: string;
-  storageProvider: 'local' | 'cloudflare',
+  storageProvider: 'local' | 'cloudflare';
   backendUrl: string;
   discordUrl: string;
   uploadDirectory: string;
@@ -15,11 +18,15 @@ interface VariableContextInterface {
   telegramBotName: string;
   neynarClientId: string;
   isSecured: boolean;
+  disableImageCompression: boolean;
   tolt: string;
 }
 const VariableContext = createContext({
   billingEnabled: false,
   isGeneral: true,
+  genericOauth: false,
+  oauthLogoUrl: '',
+  oauthDisplayName: '',
   frontEndUrl: '',
   storageProvider: 'local',
   plontoKey: '',
@@ -30,6 +37,7 @@ const VariableContext = createContext({
   telegramBotName: '',
   facebookPixel: '',
   neynarClientId: '',
+  disableImageCompression: false,
   tolt: '',
 } as VariableContextInterface);
 
@@ -52,9 +60,9 @@ export const VariableContextComponent: FC<
 
 export const useVariables = () => {
   return useContext(VariableContext);
-}
+};
 
 export const loadVars = () => {
   // @ts-ignore
   return window.vars as VariableContextInterface;
-}
+};

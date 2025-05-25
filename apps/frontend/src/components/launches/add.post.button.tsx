@@ -9,7 +9,7 @@ export const AddPostButton: FC<{ onClick: () => void; num: number }> = (
 
   useCopilotAction({
     name: 'addPost_' + num,
-    description: 'Add a post after the post number ' + (num + 1),
+    description: 'Add a post after the post number ' + num,
     handler: () => {
       onClick();
     },

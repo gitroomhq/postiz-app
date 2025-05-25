@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "Postiz",
+  "description": "Your ultimate social media scheduling tool",
+  "options_ui": {
+    "page": "src/pages/options/index.html"
+  },
+  "action": {
+    "default_popup": "src/pages/popup/index.html",
+    "default_icon": {
+      "32": "icon-32.png"
+    }
+  },
+  "icons": {
+    "128": "icon-128.png"
+  },
+  "permissions": ["activeTab", "cookies", "tabs"],
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*", "<all_urls>"],
+      "js": ["src/pages/content/index.tsx"],
+      "css": ["contentStyle.css"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["contentStyle.css", "icon-128.png", "icon-32.png"],
+      "matches": []
+    }
+  ]
+}

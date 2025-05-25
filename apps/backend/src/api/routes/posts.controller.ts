@@ -54,7 +54,7 @@ export class PostsController {
     return { ask: this._shortLinkService.askShortLinkedin(body.messages) };
   }
 
-  @Get('/marketplace/:id?')
+  @Get('/marketplace/:id')
   async getMarketplacePosts(
     @GetOrgFromRequest() org: Organization,
     @Param('id') id: string
