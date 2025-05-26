@@ -89,6 +89,7 @@
     "@solana/wallet-adapter-react-ui": "^0.9.35",
     "@swc/helpers": "0.5.13",
     "@sweetalert2/theme-dark": "^5.0.16",
+    "@tailwindcss/postcss": "^4.1.7",
     "@types/bcrypt": "^5.0.2",
     "@types/concat-stream": "^2.0.3",
     "@types/facebook-nodejs-business-sdk": "^20.0.2",
@@ -184,10 +185,10 @@
     "simple-statistics": "^7.8.3",
     "stripe": "^15.5.0",
     "striptags": "^3.2.0",
-    "sweetalert2": "^11.4.8",
+    "sweetalert2": "11.4.8",
     "swr": "^2.2.5",
     "tailwind-scrollbar": "^3.1.0",
-    "tailwindcss": "3.4.3",
+    "tailwindcss": "4.1.7",
     "tldts": "^6.1.47",
     "tslib": "^2.3.0",
     "tweetnacl": "^1.0.3",
@@ -252,13 +253,12 @@
     "prisma": "^6.5.0",
     "react-refresh": "^0.10.0",
     "sass": "1.62.1",
-    "tailwindcss": "^4.1.5",
     "ts-jest": "^29.1.0",
     "ts-node": "10.9.2",
     "typescript": "5.5.4",
-    "vite": "^5.0.0",
+    "vite": "^6.3.5",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "1.6.0"
+    "vitest": "3.1.4"
   },
   "volta": {
     "node": "20.17.0"
