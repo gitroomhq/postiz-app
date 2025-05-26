@@ -1,0 +1,10 @@
+{
+  "extName": {
+    "message": "name in src/locales/en/messages.json",
+    "description": "Extension name"
+  },
+  "extDescription": {
+    "message": "description in src/locales/en/messages.json",
+    "description": "Extension description"
+  }
+}

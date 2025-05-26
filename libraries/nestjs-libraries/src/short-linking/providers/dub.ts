@@ -1,20 +1,23 @@
 import { ShortLinking } from '@gitroom/nestjs-libraries/short-linking/short-linking.interface';
 
-const options = {
+const DUB_API_ENDPOINT = process.env.DUB_API_ENDPOINT || 'https://api.dub.co';
+const DUB_SHORT_LINK_DOMAIN = process.env.DUB_SHORT_LINK_DOMAIN || 'dub.sh';
+
+const getOptions = () => ({
   headers: {
     Authorization: `Bearer ${process.env.DUB_TOKEN}`,
     'Content-Type': 'application/json',
   },
-};
+});
 
 export class Dub implements ShortLinking {
-  shortLinkDomain = 'dub.sh';
+  shortLinkDomain = DUB_SHORT_LINK_DOMAIN;
 
   async linksStatistics(links: string[]) {
     return Promise.all(
       links.map(async (link) => {
         const response = await (
-          await fetch(`https://api.dub.co/links/info?domain=${this.shortLinkDomain}&key=${link.split('/').pop()}`, options)
+          await fetch(`${DUB_API_ENDPOINT}/links/info?domain=${this.shortLinkDomain}&key=${link.split('/').pop()}`, getOptions())
         ).json();
 
         return {
@@ -29,8 +32,8 @@ export class Dub implements ShortLinking {
   async convertLinkToShortLink(id: string, link: string) {
     return (
       await (
-        await fetch(`https://api.dub.co/links`, {
-          ...options,
+        await fetch(`${DUB_API_ENDPOINT}/links`, {
+          ...getOptions(),
           method: 'POST',
           body: JSON.stringify({
             url: link,
@@ -46,8 +49,8 @@ export class Dub implements ShortLinking {
     return await (
       await (
         await fetch(
-          `https://api.dub.co/links/info?domain=${shortLink}`,
-          options
+          `${DUB_API_ENDPOINT}/links/info?domain=${shortLink}`,
+          getOptions()
         )
       ).json()
     ).url;
@@ -60,8 +63,8 @@ export class Dub implements ShortLinking {
   ): Promise<{ short: string; original: string; clicks: string }[]> {
     const response = await (
       await fetch(
-        `https://api.dub.co/links?tenantId=${id}&page=${page}&pageSize=100`,
-        options
+        `${DUB_API_ENDPOINT}/links?tenantId=${id}&page=${page}&pageSize=100`,
+        getOptions()
       )
     ).json();
 

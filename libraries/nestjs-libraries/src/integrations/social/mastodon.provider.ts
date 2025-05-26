@@ -39,7 +39,7 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
   async generateAuthUrl() {
     const state = makeId(6);
     const url = this.generateUrlDynamic(
-      'https://mastodon.social',
+      process.env.MASTODON_URL || 'https://mastodon.social',
       state,
       process.env.MASTODON_CLIENT_ID!,
       process.env.FRONTEND_URL!
@@ -102,7 +102,7 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
     return this.dynamicAuthenticate(
       process.env.MASTODON_CLIENT_ID!,
       process.env.MASTODON_CLIENT_SECRET!,
-      'https://mastodon.social',
+      process.env.MASTODON_URL || 'https://mastodon.social',
       params.code
     );
   }
@@ -179,7 +179,7 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
     return this.dynamicPost(
       id,
       accessToken,
-      'https://mastodon.social',
+      process.env.MASTODON_URL || 'https://mastodon.social',
       postDetails
     );
   }

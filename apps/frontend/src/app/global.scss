@@ -462,3 +462,7 @@ div div .set-font-family {
   padding-left: 5px;
   padding-right: 5px;
 }
+
+.hideCopilot .copilotKitPopup {
+  display: none !important;
+}

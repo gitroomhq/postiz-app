@@ -1,6 +1,6 @@
 import interClass from '@gitroom/react/helpers/inter.font';
 export const dynamic = 'force-dynamic';
-import './global.scss';
+import '../global.scss';
 import 'react-tooltip/dist/react-tooltip.css';
 import '@copilotkit/react-ui/styles.css';
 
@@ -11,24 +11,17 @@ import PlausibleProvider from 'next-plausible';
 import clsx from 'clsx';
 import { VariableContextComponent } from '@gitroom/react/helpers/variable.context';
 import { Fragment } from 'react';
-import { PHProvider } from '@gitroom/react/helpers/posthog';
 import UtmSaver from '@gitroom/helpers/utils/utm.saver';
-import { ToltScript } from '@gitroom/frontend/components/layout/tolt.script';
-import { FacebookComponent } from '@gitroom/frontend/components/layout/facebook.component';
 
 const chakra = Chakra_Petch({ weight: '400', subsets: ['latin'] });
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
-  const Plausible = !!process.env.STRIPE_PUBLISHABLE_KEY
-    ? PlausibleProvider
-    : Fragment;
-
   return (
     <html className={interClass}>
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
-      <body className={clsx(chakra.className, 'text-primary !bg-primary')}>
+      <body className={clsx(chakra.className, 'dark text-primary !bg-primary')}>
         <VariableContextComponent
           storageProvider={
             process.env.STORAGE_PROVIDER! as 'local' | 'cloudflare'
@@ -48,22 +41,12 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           telegramBotName={process.env.TELEGRAM_BOT_NAME!}
           neynarClientId={process.env.NEYNAR_CLIENT_ID!}
           isSecured={!process.env.NOT_SECURED}
+          disableImageCompression={!!process.env.DISABLE_IMAGE_COMPRESSION}
         >
-          <ToltScript />
-          <FacebookComponent />
-          <Plausible
-            domain={!!process.env.IS_GENERAL ? 'postiz.com' : 'gitroom.com'}
-          >
-            <PHProvider
-              phkey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
-              host={process.env.NEXT_PUBLIC_POSTHOG_HOST}
-            >
-              <LayoutContext>
-                <UtmSaver />
-                {children}
-              </LayoutContext>
-            </PHProvider>
-          </Plausible>
+          <LayoutContext>
+            <UtmSaver />
+            {children}
+          </LayoutContext>
         </VariableContextComponent>
       </body>
     </html>

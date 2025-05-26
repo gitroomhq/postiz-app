@@ -1,0 +1,14 @@
+{
+  "name": "postiz-extension",
+  "version": "1.0.3",
+  "description": "A simple chrome & firefox extension template with Vite, React, TypeScript and Tailwind CSS.",
+  "scripts": {
+    "build": "rm -rf dist && vite build --config vite.config.chrome.ts && zip -r extension.zip dist",
+    "build:chrome": "vite build --config vite.config.chrome.ts",
+    "build:firefox": "vite build --config vite.config.firefox.ts",
+    "dev": "rm -rf dist && dotenv -e ../../.env -- vite build --config vite.config.chrome.ts --mode development --watch",
+    "dev:chrome": "nodemon --config nodemon.chrome.json",
+    "dev:firefox": "nodemon --config nodemon.firefox.json"
+  },
+  "type": "module"
+}

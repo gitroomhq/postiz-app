@@ -1,0 +1,18 @@
+{
+  "env": {
+    "__DEV__": "true"
+  },
+  "watch": [
+    "src",
+    "utils",
+    "vite.config.base.ts",
+    "vite.config.firefox.ts",
+    "manifest.json",
+    "manifest.dev.json"
+  ],
+  "ext": "tsx,css,html,ts,json",
+  "ignore": [
+    "src/**/*.spec.ts"
+  ],
+  "exec": "vite build --config vite.config.firefox.ts --mode development"
+}
