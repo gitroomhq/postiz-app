@@ -16,6 +16,7 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 const allowedIntegrations = [
   'facebook',
   'instagram',
+  'instagram-standalone',
   'linkedin-page',
   // 'tiktok',
   'youtube',
@@ -60,6 +61,7 @@ export const PlatformAnalytics = () => {
       [
         'facebook',
         'instagram',
+        'instagram-standalone',
         'linkedin-page',
         'pinterest',
         'youtube',
@@ -76,6 +78,7 @@ export const PlatformAnalytics = () => {
       [
         'facebook',
         'instagram',
+        'instagram-standalone',
         'linkedin-page',
         'pinterest',
         'youtube',

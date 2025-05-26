@@ -24,8 +24,8 @@ export class InstagramStandaloneProvider
     'instagram_business_basic',
     'instagram_business_content_publish',
     'instagram_business_manage_comments',
+    'instagram_business_manage_insights',
   ];
-  toolTip = 'Standalone does not support insights or tagging';
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     return {
@@ -97,12 +97,7 @@ export class InstagramStandaloneProvider
 
     this.checkScopes(this.scopes, getAccessToken.permissions);
 
-    const {
-      user_id,
-      name,
-      username,
-      profile_picture_url,
-    } = await (
+    const { user_id, name, username, profile_picture_url } = await (
       await this.fetch(
         `https://graph.instagram.com/v21.0/me?fields=user_id,username,name,profile_picture_url&access_token=${access_token}`
       )
@@ -125,6 +120,21 @@ export class InstagramStandaloneProvider
     postDetails: PostDetails<InstagramDto>[],
     integration: Integration
   ): Promise<PostResponse[]> {
-    return instagramProvider.post(id, accessToken, postDetails, integration, 'graph.instagram.com');
+    return instagramProvider.post(
+      id,
+      accessToken,
+      postDetails,
+      integration,
+      'graph.instagram.com'
+    );
+  }
+
+  async analytics(id: string, accessToken: string, date: number) {
+    return instagramProvider.analytics(
+      id,
+      accessToken,
+      date,
+      'graph.instagram.com'
+    );
   }
 }
