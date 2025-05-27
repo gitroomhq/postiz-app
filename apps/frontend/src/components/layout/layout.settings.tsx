@@ -39,6 +39,7 @@ const ModeComponent = dynamic(
 import { extend } from 'dayjs';
 import { useSearchParams } from 'next/navigation';
 import { CheckPayment } from '@gitroom/frontend/components/layout/check.payment';
+import { ChromeExtensionComponent } from '@gitroom/frontend/components/layout/chrome.extension.component';
 
 extend(utc);
 extend(weekOfYear);
@@ -141,6 +142,7 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
                 id="systray-buttons"
                 className="flex items-center justify-self-end gap-[8px] order-2 md:order-3"
               >
+                <ChromeExtensionComponent />
                 <ModeComponent />
                 <SettingsComponent />
                 <NotificationComponent />
