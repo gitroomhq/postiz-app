@@ -20,7 +20,7 @@ export class FarcasterProvider
   extends SocialAbstract
   implements SocialProvider
 {
-  identifier = 'wrapcast';
+  identifier = 'warpcast';
   name = 'Warpcast';
   isBetweenSteps = false;
   isWeb3 = true;

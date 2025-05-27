@@ -44,7 +44,7 @@ export const Providers = [
     {identifier: 'mastodon', component: MastodonProvider},
     {identifier: 'bluesky', component: BlueskyProvider},
     {identifier: 'lemmy', component: LemmyProvider},
-    {identifier: 'wrapcast', component: WarpcastProvider},
+    {identifier: 'warpcast', component: WarpcastProvider},
     {identifier: 'telegram', component: TelegramProvider},
     {identifier: 'nostr', component: NostrProvider},
     {identifier: 'vk', component: VkProvider},

@@ -6,7 +6,7 @@ import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { Button } from '@gitroom/react/form/button';
 import { Subreddit } from './subreddit';
 
-const WrapcastProvider: FC = () => {
+const WarpcastProvider: FC = () => {
   const { register, control } = useSettings();
   const { fields, append, remove } = useFieldArray({
     control, // control props comes from useForm (optional: if you are using FormContext)
@@ -49,7 +49,7 @@ const WrapcastProvider: FC = () => {
 };
 
 export default withProvider(
-  WrapcastProvider,
+  WarpcastProvider,
   undefined,
   undefined,
   async (list) => {

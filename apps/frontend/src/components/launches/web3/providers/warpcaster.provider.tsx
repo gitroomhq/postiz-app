@@ -15,7 +15,7 @@ import {
 import { INeynarAuthenticatedUser } from '@neynar/react/dist/types/common';
 import { ButtonCaster } from '@gitroom/frontend/components/auth/providers/farcaster.provider';
 
-export const WrapcasterProvider: FC<Web3ProviderInterface> = (props) => {
+export const WarpcasterProvider: FC<Web3ProviderInterface> = (props) => {
   const [_, state] = props.nonce.split('||');
   const modal = useModals();
   const [hide, setHide] = useState(false);
@@ -27,7 +27,7 @@ export const WrapcasterProvider: FC<Web3ProviderInterface> = (props) => {
 
   return (
     <div className="rounded-[4px] border border-customColor6 bg-sixth px-[16px] pb-[16px] relative w-full">
-      <TopTitle title={`Add Wrapcast`} />
+      <TopTitle title={`Add Warpcast`} />
       <button
         className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
         type="button"
