@@ -19,7 +19,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   identifier = 'x';
   name = 'X';
   isBetweenSteps = false;
-  scopes = [];
+  scopes = [] as string[];
   toolTip =
     'You will be logged in into your current account, if you would like a different account, change it first on X';
 
@@ -312,5 +312,25 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       ...p,
       status: 'posted',
     }));
+  }
+
+  communities(accessToken: string, data: {search: string}) {
+    const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
+    const client = new TwitterApi({
+      appKey: process.env.X_API_KEY!,
+      appSecret: process.env.X_API_SECRET!,
+      accessToken: accessTokenSplit,
+      accessSecret: accessSecretSplit,
+    });
+
+    return client.v2.searchCommunities(data.search);
+
+    // })).data.map(p => {
+    //   return {
+    //     id: p.id,
+    //     name: p.name,
+    //     accessToken
+    //   }
+    // })
   }
 }
