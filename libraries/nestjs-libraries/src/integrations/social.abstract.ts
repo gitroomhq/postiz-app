@@ -51,6 +51,7 @@ export abstract class SocialAbstract {
         !json.includes('The user is not an Instagram Business') &&
         !json.includes('Unsupported format') &&
         !json.includes('2207018') &&
+        !json.includes('352') &&
         !json.includes('REVOKED_ACCESS_TOKEN'))
     ) {
       throw new RefreshToken(identifier, json, options.body!);
