@@ -28,14 +28,26 @@ export class InstagramStandaloneProvider
   ];
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
+    const { access_token } = await (
+      await this.fetch(
+        `https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${refresh_token}`
+      )
+    ).json();
+
+    const { user_id, name, username, profile_picture_url } = await (
+      await this.fetch(
+        `https://graph.instagram.com/v21.0/me?fields=user_id,username,name,profile_picture_url&access_token=${access_token}`
+      )
+    ).json();
+
     return {
-      refreshToken: '',
-      expiresIn: 0,
-      accessToken: '',
-      id: '',
-      name: '',
-      picture: '',
-      username: '',
+      id: user_id,
+      name,
+      accessToken: access_token,
+      refreshToken: access_token,
+      expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
+      picture: profile_picture_url,
+      username,
     };
   }
 
