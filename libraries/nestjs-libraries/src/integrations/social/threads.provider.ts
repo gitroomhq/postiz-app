@@ -25,13 +25,27 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
   ];
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
+    const { access_token } = await (
+      await this.fetch(
+        `https://graph.threads.net/refresh_access_token?grant_type=th_refresh_token&access_token=${refresh_token}`
+      )
+    ).json();
+
+    const {
+      id,
+      name,
+      picture: {
+        data: { url },
+      },
+    } = await this.fetchPageInformation(access_token);
+
     return {
-      refreshToken: '',
-      expiresIn: 0,
-      accessToken: '',
-      id: '',
-      name: '',
-      picture: '',
+      id,
+      name,
+      accessToken: access_token,
+      refreshToken: access_token,
+      expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
+      picture: url,
       username: '',
     };
   }
@@ -153,7 +167,8 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     isCarouselItem = false,
     replyToId?: string
   ): Promise<string> {
-    const mediaType = media.url.indexOf('.mp4') > -1 ? 'video_url' : 'image_url';
+    const mediaType =
+      media.url.indexOf('.mp4') > -1 ? 'video_url' : 'image_url';
     const mediaParams = new URLSearchParams({
       ...(mediaType === 'video_url' ? { video_url: media.url } : {}),
       ...(mediaType === 'image_url' ? { image_url: media.url } : {}),
@@ -234,19 +249,16 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     form.append('media_type', 'TEXT');
     form.append('text', message);
     form.append('access_token', accessToken);
-    
+
     if (replyToId) {
       form.append('reply_to_id', replyToId);
     }
 
     const { id: contentId } = await (
-      await this.fetch(
-        `https://graph.threads.net/v1.0/${userId}/threads`,
-        {
-          method: 'POST',
-          body: form,
-        }
-      )
+      await this.fetch(`https://graph.threads.net/v1.0/${userId}/threads`, {
+        method: 'POST',
+        body: form,
+      })
     ).json();
 
     return contentId;
@@ -324,32 +336,34 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     }
 
     const [firstPost, ...replies] = postDetails;
-    
+
     // Create the initial thread
     const initialContentId = await this.createThreadContent(
-      userId, 
-      accessToken, 
+      userId,
+      accessToken,
       firstPost
     );
-    
+
     // Publish the thread
     const { threadId, permalink } = await this.publishThread(
-      userId, 
-      accessToken, 
+      userId,
+      accessToken,
       initialContentId
     );
-    
+
     // Track the responses
-    const responses: PostResponse[] = [{
-      id: firstPost.id,
-      postId: threadId,
-      status: 'success',
-      releaseURL: permalink,
-    }];
-    
+    const responses: PostResponse[] = [
+      {
+        id: firstPost.id,
+        postId: threadId,
+        status: 'success',
+        releaseURL: permalink,
+      },
+    ];
+
     // Handle replies if any
     let lastReplyId = threadId;
-    
+
     for (const reply of replies) {
       // Create reply content
       const replyContentId = await this.createThreadContent(
@@ -358,17 +372,17 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
         reply,
         lastReplyId
       );
-      
+
       // Publish the reply
       const { threadId: replyThreadId } = await this.publishThread(
         userId,
         accessToken,
         replyContentId
       );
-      
+
       // Update the last reply ID for chaining
       lastReplyId = replyThreadId;
-      
+
       // Add to responses
       responses.push({
         id: reply.id,
@@ -377,7 +391,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
         releaseURL: permalink, // Main thread URL
       });
     }
-    
+
     return responses;
   }
 
