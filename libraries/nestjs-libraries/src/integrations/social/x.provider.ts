@@ -16,6 +16,7 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
 
 export class XProvider extends SocialAbstract implements SocialProvider {
+  static appLogin;
   identifier = 'x';
   name = 'X';
   isBetweenSteps = false;
@@ -314,7 +315,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     }));
   }
 
-  communities(accessToken: string, data: {search: string}) {
+  async communities(accessToken: string, data: { search: string }) {
     const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
     const client = new TwitterApi({
       appKey: process.env.X_API_KEY!,
@@ -323,7 +324,26 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       accessSecret: accessSecretSplit,
     });
 
-    return client.v2.searchCommunities(data.search);
+    try {
+      const communities = await client.v2.get('communities/search', {
+        query: data.search,
+        'community.fields': [
+          'id',
+          'join_policy',
+          'member_count',
+          'name',
+          'description',
+        ],
+      });
+
+      return communities.data.filter((f: any) => {
+        return f.join_policy.toLowerCase() === 'open' || f.join_policy.toLowerCase() === 'restrictedjoinrequestsrequiremoderatorapproval';
+      });
+
+    } catch (error) {
+      console.log(error);
+      return [];
+    }
 
     // })).data.map(p => {
     //   return {

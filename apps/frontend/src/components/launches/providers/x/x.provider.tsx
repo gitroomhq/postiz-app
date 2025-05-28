@@ -1,6 +1,15 @@
 import { withProvider } from '@gitroom/frontend/components/launches/providers/high.order.provider';
+import { FC } from 'react';
+import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
+import { XCommunitiesSelect } from '@gitroom/react/form/x-communities-select';
+
+const XProviderSettings: FC = (props) => {
+  const { watch, register, formState, control } = useSettings();
+  return <XCommunitiesSelect label="X Community" {...register('community')} />;
+};
+
 export default withProvider(
-  null,
+  XProviderSettings,
   undefined,
   undefined,
   async (posts) => {
