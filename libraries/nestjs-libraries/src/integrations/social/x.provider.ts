@@ -1,5 +1,6 @@
-import { TwitterApi } from 'twitter-api-v2';
+import { TweetV2, TwitterApi } from 'twitter-api-v2';
 import {
+  AnalyticsData,
   AuthTokenDetails,
   PostDetails,
   PostResponse,
@@ -14,6 +15,9 @@ import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
 import { Integration } from '@prisma/client';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
+import { number, string } from 'yup';
+import dayjs from 'dayjs';
+import { uniqBy } from 'lodash';
 
 export class XProvider extends SocialAbstract implements SocialProvider {
   identifier = 'x';
@@ -314,7 +318,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     }));
   }
 
-  communities(accessToken: string, data: {search: string}) {
+  communities(accessToken: string, data: { search: string }) {
     const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
     const client = new TwitterApi({
       appKey: process.env.X_API_KEY!,
@@ -332,5 +336,129 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     //     accessToken
     //   }
     // })
+  }
+
+  private loadAllTweets = async (
+    client: TwitterApi,
+    id: string,
+    until: string,
+    since: string,
+    token = ''
+  ): Promise<TweetV2[]> => {
+    const tweets = await client.v2.userTimeline(id, {
+      'tweet.fields': ['id'],
+      'user.fields': [],
+      'poll.fields': [],
+      'place.fields': [],
+      'media.fields': [],
+      exclude: ['replies', 'retweets'],
+      start_time: since,
+      end_time: until,
+      max_results: 100,
+      ...(token ? { pagination_token: token } : {}),
+    });
+
+    return [
+      ...tweets.data.data,
+      ...(tweets.data.data.length === 100
+        ? await this.loadAllTweets(
+            client,
+            id,
+            until,
+            since,
+            tweets.meta.next_token
+          )
+        : []),
+    ];
+  };
+
+  async analytics(
+    id: string,
+    accessToken: string,
+    date: number
+  ): Promise<AnalyticsData[]> {
+    const until = dayjs().endOf('day');
+    const since = dayjs().subtract(date, 'day');
+
+    const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
+    const client = new TwitterApi({
+      appKey: process.env.X_API_KEY!,
+      appSecret: process.env.X_API_SECRET!,
+      accessToken: accessTokenSplit,
+      accessSecret: accessSecretSplit,
+    });
+
+    try {
+      const tweets = uniqBy(
+        await this.loadAllTweets(
+          client,
+          id,
+          until.format('YYYY-MM-DDTHH:mm:ssZ'),
+          since.format('YYYY-MM-DDTHH:mm:ssZ')
+        ),
+        (p) => p.id
+      );
+
+      if (tweets.length === 0) {
+        return [];
+      }
+
+      console.log(tweets.map((p) => p.id));
+      const data = await client.v2.tweets(
+        tweets.map((p) => p.id),
+        {
+          'tweet.fields': ['public_metrics'],
+        },
+      );
+
+      const metrics = data.data.reduce(
+        (all, current) => {
+          all.impression_count =
+            (all.impression_count || 0) +
+            +current.public_metrics.impression_count;
+          all.bookmark_count =
+            (all.bookmark_count || 0) + +current.public_metrics.bookmark_count;
+          all.like_count =
+            (all.like_count || 0) + +current.public_metrics.like_count;
+          all.quote_count =
+            (all.quote_count || 0) + +current.public_metrics.quote_count;
+          all.reply_count =
+            (all.reply_count || 0) + +current.public_metrics.reply_count;
+          all.retweet_count =
+            (all.retweet_count || 0) + +current.public_metrics.retweet_count;
+
+          return all;
+        },
+        {
+          impression_count: 0,
+          bookmark_count: 0,
+          like_count: 0,
+          quote_count: 0,
+          reply_count: 0,
+          retweet_count: 0,
+        }
+      );
+
+      console.log(metrics);
+      console.log(JSON.stringify(data, null, 2));
+
+      return Object.entries(metrics).map(([key, value]) => ({
+        label: key.replace('_count', '').replace('_', ' ').toUpperCase(),
+        percentageChange: 5,
+        data: [
+          {
+            total: String(0),
+            date: since.format('YYYY-MM-DD'),
+          },
+          {
+            total: String(value),
+            date: until.format('YYYY-MM-DD'),
+          },
+        ],
+      }));
+    } catch (err) {
+      console.log(err);
+    }
+    return [];
   }
 }
