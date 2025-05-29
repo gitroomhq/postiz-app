@@ -288,7 +288,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
               : {
                   source_info: {
                     source: 'PULL_FROM_URL',
-                    photo_cover_index: 1,
+                    photo_cover_index: 0,
                     photo_images: firstPost.media?.map((p) => p.url),
                   },
                   post_mode: 'DIRECT_POST',
