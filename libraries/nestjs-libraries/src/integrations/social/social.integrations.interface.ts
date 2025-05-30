@@ -65,7 +65,7 @@ export type AuthTokenDetails = {
     title: string;
     description: string;
     type: 'checkbox' | 'text' | 'textarea';
-    value: any,
+    value: any;
     regex?: string;
   }[];
 };
@@ -103,6 +103,7 @@ export type MediaContent = {
   type: 'image' | 'video'; // Type of the media content
   url: string; // URL of the media file, if it's already hosted somewhere
   path: string;
+  name: string;
 };
 
 export interface SocialProvider

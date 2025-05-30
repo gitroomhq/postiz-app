@@ -19,7 +19,6 @@ import EventEmitter from 'events';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import clsx from 'clsx';
 import { VideoFrame } from '@gitroom/react/helpers/video.frame';
-import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import { MultipartFileUploader } from '@gitroom/frontend/components/media/new.uploader';
 import dynamic from 'next/dynamic';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
@@ -27,6 +26,7 @@ import { AiImage } from '@gitroom/frontend/components/launches/ai.image';
 import Image from 'next/image';
 import { DropFiles } from '@gitroom/frontend/components/layout/drop.files';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
+import { createPDFThumbnails } from '@gitroom/helpers/utils/pdf-thumbnails';
 
 const Polonto = dynamic(
   () => import('@gitroom/frontend/components/launches/polonto')
@@ -76,7 +76,9 @@ export const Pagination: FC<{
             onClick={() => setPage(page)}
             className={clsx(
               'cursor-pointer inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border hover:bg-forth h-10 w-10 hover:text-white border-[#1F1F1F]',
-              current === page ? 'bg-forth !text-white' : 'text-textColor hover:text-white'
+              current === page
+                ? 'bg-forth !text-white'
+                : 'text-textColor hover:text-white'
             )}
           >
             {page + 1}
@@ -291,6 +293,12 @@ export const MediaBox: FC<{
     }
   }, [data]);
 
+  useEffect(() => {
+    if (mediaList?.length) {
+      createPDFThumbnails();
+    }
+  }, [mediaList]);
+
   return (
     <div className="removeEditor fixed left-0 top-0 bg-primary/80 z-[300] w-full min-h-full p-4 md:p-[60px] animate-fade">
       <div className="max-w-[1000px] w-full h-full bg-sixth border-tableBorder border-2 rounded-xl relative mx-auto">
@@ -340,7 +348,7 @@ export const MediaBox: FC<{
                             ? 'video/mp4'
                             : type === 'image'
                             ? 'image/*'
-                            : 'image/*,video/mp4'
+                            : 'image/*,video/mp4,application/pdf'
                         }
                       />
                     </div>
@@ -367,7 +375,7 @@ export const MediaBox: FC<{
                           ? 'video/mp4'
                           : type === 'image'
                           ? 'image/*'
-                          : 'image/*,video/mp4'
+                          : 'image/*,video/mp4,application/pdf'
                       }
                     />
                   </div>
@@ -412,6 +420,17 @@ export const MediaBox: FC<{
 
                     {media.path.indexOf('mp4') > -1 ? (
                       <VideoFrame url={mediaDirectory.set(media.path)} />
+                    ) : media.path.indexOf('pdf') > -1 ? (
+                      <Image
+                        width={120}
+                        height={120}
+                        className="w-full h-full object-cover"
+                        data-pdf-thumbnail-file={mediaDirectory.set(media.path)}
+                        data-pdf-thumbnail-width="120"
+                        data-pdf-thumbnail-height="120"
+                        src="/icons/pdf.svg"
+                        alt="media"
+                      />
                     ) : (
                       <Image
                         width={120}
@@ -500,6 +519,10 @@ export const MultiMediaComponent: FC<{
     setMediaModal(true);
   }, []);
 
+  useEffect(() => {
+    createPDFThumbnails();
+  }, [currentMedia]);
+
   return (
     <>
       <div className="flex flex-col gap-[8px] bg-input rounded-bl-[8px] select-none">
@@ -575,6 +598,14 @@ export const MultiMediaComponent: FC<{
                   >
                     {media?.path?.indexOf('mp4') > -1 ? (
                       <VideoFrame url={mediaDirectory.set(media?.path)} />
+                    ) : media?.path?.indexOf('pdf') > -1 ? (
+                      <img
+                        className="w-full h-full object-cover"
+                        data-pdf-thumbnail-file={mediaDirectory.set(
+                          media?.path
+                        )}
+                        src="/icons/pdf.svg"
+                      />
                     ) : (
                       <img
                         className="w-full h-full object-cover"
