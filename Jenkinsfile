@@ -4,7 +4,7 @@ pipeline {
     environment {
         NODE_VERSION = '20.17.0'
         PR_NUMBER = "${env.CHANGE_ID}" // PR number comes from webhook payload
-        IMAGE_TAG="ghcr.io/gitroomhq/postiz-app-pr:${env.CHANGE_ID}"
+        IMAGE_TAG = "xtremeverveacr.azurecr.io/postiz-app-pr:${env.CHANGE_ID}"
     }
 
     stages {
@@ -34,37 +34,32 @@ pipeline {
                 sh 'npm run build'
             }
         }
-        
-        stage('Build and Push Docker Image') {
+
+        stage('Build and Push Docker Image to ACR') {
             when {
                 expression { return env.CHANGE_ID != null }  // Only run if it's a PR
             }
             steps {
-                withCredentials([string(credentialsId: 'gh-pat', variable: 'GITHUB_PASS')]) {
-                    // Docker login step
+                withCredentials([
+                    string(credentialsId: 'acr-username', variable: 'ACR_USERNAME'),
+                    string(credentialsId: 'acr-password', variable: 'ACR_PASSWORD')
+                ]) {
                     sh '''
-                        echo "$GITHUB_PASS" | docker login ghcr.io -u "egelhaus" --password-stdin
-                    '''
-                    // Build Docker image
-                    sh '''
+                        echo "$ACR_PASSWORD" | docker login xtremeverveacr.azurecr.io -u "$ACR_USERNAME" --password-stdin
                         docker build -f Dockerfile.dev -t $IMAGE_TAG .
-                    '''
-                    // Push Docker image to GitHub Container Registry
-                    sh '''
                         docker push $IMAGE_TAG
                     '''
                 }
             }
         }
     }
+
     post {
         success {
             echo 'Build completed successfully!'
-
         }
         failure {
             echo 'Build failed!'
-
         }
     }
 }
