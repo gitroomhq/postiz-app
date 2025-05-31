@@ -82,7 +82,7 @@ export const Editor = forwardRef<
             {t('', '\uD83D\uDE00')}
           </div>
         </div>
-        <div className="absolute z-[200] right-0">
+        <div className="absolute z-[200] end-0">
           <EmojiPicker
             theme={(localStorage.getItem('mode') as Theme) || Theme.DARK}
             onEmojiClick={(e) => {
@@ -105,7 +105,7 @@ export const Editor = forwardRef<
               props?.onChange?.(e.target.value);
             }}
             onPaste={props.onPaste}
-            placeholder="Write your reply..."
+            placeholder={t('write_your_reply', 'Write your reply...')}
             autosuggestionsConfig={{
               textareaPurpose: `Assist me in writing social media posts.`,
               chatApiConfigs: {},

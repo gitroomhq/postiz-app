@@ -2,6 +2,8 @@ import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { ReactTags } from 'react-tag-autocomplete';
 import interClass from '@gitroom/react/helpers/inter.font';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
+
 export const MediumTags: FC<{
   name: string;
   label: string;
@@ -16,6 +18,8 @@ export const MediumTags: FC<{
   const { getValues } = useSettings();
   const [tagValue, setTagValue] = useState<any[]>([]);
   const [suggestions, setSuggestions] = useState<string>('');
+  const t = useT();
+
   const onDelete = useCallback(
     (tagIndex: number) => {
       const modify = tagValue.filter((_, i) => i !== tagIndex);
@@ -64,7 +68,7 @@ export const MediumTags: FC<{
     <div>
       <div className={`${interClass} text-[14px] mb-[6px]`}>{label}</div>
       <ReactTags
-        placeholderText="Add a tag"
+        placeholderText={t('add_a_tag', 'Add a tag')}
         suggestions={suggestionsArray}
         selected={tagValue}
         onAdd={onAddition}

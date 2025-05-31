@@ -11,7 +11,7 @@ export const BuyerSeller: FC = () => {
   const pathComputed = path === '/marketplace' ? '/marketplace/seller' : path;
   return (
     <div className="relative">
-      <div className="w-[286px] h-[50px] bg-third p-[9px] flex select-none absolute -translate-y-[63px] right-0">
+      <div className="w-[286px] h-[50px] bg-third p-[9px] flex select-none absolute -translate-y-[63px] end-0">
         <div className="bg-input flex flex-1">
           <Link
             href="/marketplace/seller"

@@ -12,7 +12,15 @@ export const LogoutComponent = () => {
   const t = useT();
 
   const logout = useCallback(async () => {
-    if (await deleteDialog('Are you sure you want to logout?', 'Yes logout')) {
+    if (
+      await deleteDialog(
+        t(
+          'are_you_sure_you_want_to_logout',
+          'Are you sure you want to logout?'
+        ),
+        t('yes_logout', 'Yes logout')
+      )
+    ) {
       if (!isSecured) {
         setCookie('auth', '', -10);
       } else {

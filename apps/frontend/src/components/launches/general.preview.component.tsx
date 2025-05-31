@@ -55,7 +55,7 @@ export const GeneralPreviewComponent: FC<{
                 <div className="h-[22px] text-[15px] font-[700]">
                   {integration?.name}
                 </div>
-                <div className="text-[15px] text-customColor26 mt-[1px] ml-[2px]">
+                <div className="text-[15px] text-customColor26 mt-[1px] ms-[2px]">
                   <svg
                     viewBox="0 0 22 22"
                     aria-label="Verified account"
@@ -68,7 +68,7 @@ export const GeneralPreviewComponent: FC<{
                     </g>
                   </svg>
                 </div>
-                <div className="text-[15px] font-[400] text-customColor27 ml-[4px]">
+                <div className="text-[15px] font-[400] text-customColor27 ms-[4px]">
                   {integration?.display || '@username'}
                 </div>
               </div>

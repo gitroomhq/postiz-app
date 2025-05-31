@@ -52,7 +52,7 @@ export const Pagination: FC<{
     <ul className="flex flex-row items-center gap-1 justify-center mt-[15px]">
       <li className={clsx(current === 0 && 'opacity-20 pointer-events-none')}>
         <div
-          className="cursor-pointer inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-10 px-4 py-2 gap-1 pl-2.5 text-gray-400 hover:text-white border-[#1F1F1F] hover:bg-forth"
+          className="cursor-pointer inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-10 px-4 py-2 gap-1 ps-2.5 text-gray-400 hover:text-white border-[#1F1F1F] hover:bg-forth"
           aria-label="Go to previous page"
           onClick={() => setPage(current - 1)}
         >
@@ -95,7 +95,7 @@ export const Pagination: FC<{
         )}
       >
         <a
-          className="text-textColor hover:text-white group cursor-pointer inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-10 px-4 py-2 gap-1 pr-2.5 text-gray-400 border-[#1F1F1F] hover:bg-forth"
+          className="text-textColor hover:text-white group cursor-pointer inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-10 px-4 py-2 gap-1 pe-2.5 text-gray-400 border-[#1F1F1F] hover:bg-forth"
           aria-label="Go to next page"
           onClick={() => setPage(current + 1)}
         >
@@ -261,7 +261,14 @@ export const MediaBox: FC<{
   const removeItem = useCallback(
     (media: Media) => async (e: any) => {
       e.stopPropagation();
-      if (!(await deleteDialog('Are you sure you want to delete the image?'))) {
+      if (
+        !(await deleteDialog(
+          t(
+            'are_you_sure_you_want_to_delete_the_image',
+            'Are you sure you want to delete the image?'
+          )
+        ))
+      ) {
         return;
       }
       await fetch(`/media/${media.id}`, {
@@ -283,7 +290,7 @@ export const MediaBox: FC<{
   const t = useT();
 
   return (
-    <div className="removeEditor fixed left-0 top-0 bg-primary/80 z-[300] w-full min-h-full p-4 md:p-[60px] animate-fade">
+    <div className="removeEditor fixed start-0 top-0 bg-primary/80 z-[300] w-full min-h-full p-4 md:p-[60px] animate-fade">
       <div className="max-w-[1000px] w-full h-full bg-sixth border-tableBorder border-2 rounded-xl relative mx-auto">
         <DropFiles onDrop={dragAndDrop}>
           <div className="pb-[20px] px-[20px] w-full h-full">
@@ -293,7 +300,7 @@ export const MediaBox: FC<{
               </div>
               <button
                 onClick={closeModal}
-                className="outline-none z-[300] absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root bg-primary hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+                className="outline-none z-[300] absolute end-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root bg-primary hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
                 type="button"
               >
                 <svg
@@ -312,7 +319,7 @@ export const MediaBox: FC<{
                 </svg>
               </button>
 
-              <div className="absolute flex justify-center mt-[55px] items-center pointer-events-none text-center h-[57px] w-full left-0 rounded-lg transition-all group text-sm font-semibold bg-transparent text-gray-800 hover:bg-gray-100 focus:text-primary-500">
+              <div className="absolute flex justify-center mt-[55px] items-center pointer-events-none text-center h-[57px] w-full start-0 rounded-lg transition-all group text-sm font-semibold bg-transparent text-gray-800 hover:bg-gray-100 focus:text-primary-500">
                 {t(
                   'select_or_upload_pictures_maximum_5_at_a_time',
                   'Select or upload pictures (maximum 5 at a time)'
@@ -326,8 +333,8 @@ export const MediaBox: FC<{
 
               {!!mediaList.length && (
                 <>
-                  <div className="flex absolute h-[57px] w-full left-0 top-0 rounded-lg transition-all group text-sm font-semibold bg-transparent text-gray-800 hover:bg-gray-100 focus:text-primary-500">
-                    <div className="relative flex flex-1 pr-[45px] gap-2 items-center justify-center">
+                  <div className="flex absolute h-[57px] w-full start-0 top-0 rounded-lg transition-all group text-sm font-semibold bg-transparent text-gray-800 hover:bg-gray-100 focus:text-primary-500">
+                    <div className="relative flex flex-1 pe-[45px] gap-2 items-center justify-center">
                       <div className="flex-1" />
                       <MultipartFileUploader
                         uppRef={ref}
@@ -414,7 +421,7 @@ export const MediaBox: FC<{
                   >
                     <div
                       onClick={removeItem(media)}
-                      className="border border-red-400 !text-white flex justify-center items-center absolute w-[20px] h-[20px] rounded-full bg-red-700 -top-[5px] -right-[5px]"
+                      className="border border-red-400 !text-white flex justify-center items-center absolute w-[20px] h-[20px] rounded-full bg-red-700 -top-[5px] -end-[5px]"
                     >
                       X
                     </div>
@@ -542,7 +549,7 @@ export const MultiMediaComponent: FC<{
           <div className="flex">
             <Button
               onClick={showModal}
-              className="ml-[10px] rounded-[4px] mb-[10px] gap-[8px] !text-primary justify-center items-center w-[127px] flex border border-dashed border-customColor21 bg-input"
+              className="ms-[10px] rounded-[4px] mb-[10px] gap-[8px] !text-primary justify-center items-center w-[127px] flex border border-dashed border-customColor21 bg-input"
             >
               <div className="flex gap-[5px] items-center">
                 <div>
@@ -568,7 +575,7 @@ export const MultiMediaComponent: FC<{
 
             <Button
               onClick={designMedia}
-              className="ml-[10px] rounded-[4px] mb-[10px] gap-[8px] !text-primary justify-center items-center w-[127px] flex border border-dashed border-customColor21 bg-input"
+              className="ms-[10px] rounded-[4px] mb-[10px] gap-[8px] !text-primary justify-center items-center w-[127px] flex border border-dashed border-customColor21 bg-input"
             >
               <div className="flex gap-[5px] items-center">
                 <div>
@@ -615,7 +622,7 @@ export const MultiMediaComponent: FC<{
                   </div>
                   <div
                     onClick={clearMedia(index)}
-                    className="rounded-full w-[15px] h-[15px] bg-red-800 text-textColor flex justify-center items-center absolute -right-[4px] -top-[4px]"
+                    className="rounded-full w-[15px] h-[15px] bg-red-800 text-textColor flex justify-center items-center absolute -end-[4px] -top-[4px]"
                   >
                     x
                   </div>

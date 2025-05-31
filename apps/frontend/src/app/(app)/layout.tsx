@@ -16,6 +16,8 @@ import { ToltScript } from '@gitroom/frontend/components/layout/tolt.script';
 import { FacebookComponent } from '@gitroom/frontend/components/layout/facebook.component';
 import { headers } from 'next/headers';
 import { headerName } from '@gitroom/react/translation/i18n.config';
+import { HtmlComponent } from '@gitroom/frontend/components/layout/html.component';
+
 const chakra = Chakra_Petch({
   weight: '400',
   subsets: ['latin'],
@@ -26,7 +28,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     ? PlausibleProvider
     : Fragment;
   return (
-    <html className={interClass}>
+    <HtmlComponent className={interClass}>
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
@@ -70,6 +72,6 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           </Plausible>
         </VariableContextComponent>
       </body>
-    </html>
+    </HtmlComponent>
   );
 }

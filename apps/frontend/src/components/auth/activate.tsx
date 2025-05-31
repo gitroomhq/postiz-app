@@ -7,7 +7,7 @@ export function Activate() {
   return (
     <>
       <div>
-        <h1 className="text-3xl font-bold text-left mb-4 cursor-pointer">
+        <h1 className="text-3xl font-bold text-start mb-4 cursor-pointer">
           {t('activate_your_account', 'Activate your account')}
         </h1>
       </div>

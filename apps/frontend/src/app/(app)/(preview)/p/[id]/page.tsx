@@ -30,7 +30,7 @@ export default async function Auth({
   const t = await getT();
   if (!post.length) {
     return (
-      <div className="text-white fixed left-0 top-0 w-full h-full flex justify-center items-center text-[20px]">
+      <div className="text-white fixed start-0 top-0 w-full h-full flex justify-center items-center text-[20px]">
         {t('post_not_found', 'Post not found')}
       </div>
     );
@@ -119,7 +119,7 @@ export default async function Auth({
                           src={post[0].integration.picture}
                         />
                       </div>
-                      <div className="absolute -right-[5px] -bottom-[5px] w-[30px] h-[30px] z-[20]">
+                      <div className="absolute -end-[5px] -bottom-[5px] w-[30px] h-[30px] z-[20]">
                         <img
                           className="w-full h-full bg-black aspect-square rounded-full border-tableBorder"
                           alt={post[0].integration.providerIdentifier}

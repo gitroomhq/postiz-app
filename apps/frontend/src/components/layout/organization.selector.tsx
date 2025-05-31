@@ -70,7 +70,7 @@ export const OrganizationSelector = () => {
         )}
       </div>
       {data?.length > 1 && (
-        <div className="hidden py-[12px] px-[12px] group-hover:flex w-full absolute top-[100%] left-0 bg-third border-tableBorder border-x border-b gap-[12px] cursor-pointer flex-col">
+        <div className="hidden py-[12px] px-[12px] group-hover:flex w-full absolute top-[100%] start-0 bg-third border-tableBorder border-x border-b gap-[12px] cursor-pointer flex-col">
           {withoutCurrent?.map((org: { name: string; id: string }) => (
             <div key={org.id} onClick={changeOrg(org)}>
               {org.name}

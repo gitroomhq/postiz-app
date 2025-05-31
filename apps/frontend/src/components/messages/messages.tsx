@@ -244,7 +244,7 @@ export const Messages = () => {
           </div>
           <div className="flex-1 min-h-[658px] max-h-[658px] relative">
             <div
-              className="pt-[18px] pb-[18px] absolute top-0 left-0 w-full h-full px-[24px] flex flex-col gap-[24px] overflow-x-hidden overflow-y-auto"
+              className="pt-[18px] pb-[18px] absolute top-0 start-0 w-full h-full px-[24px] flex flex-col gap-[24px] overflow-x-hidden overflow-y-auto"
               onScroll={changeScroll}
               ref={ref}
             >

@@ -4,6 +4,8 @@ import { ReactTags } from 'react-tag-autocomplete';
 import interClass from '@gitroom/react/helpers/inter.font';
 import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import clsx from 'clsx';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
+
 export const InstagramCollaboratorsTags: FC<{
   name: string;
   label: string;
@@ -19,6 +21,8 @@ export const InstagramCollaboratorsTags: FC<{
   const { integration } = useIntegration();
   const [tagValue, setTagValue] = useState<any[]>([]);
   const [suggestions, setSuggestions] = useState<string>('');
+  const t = useT();
+
   const onDelete = useCallback(
     (tagIndex: number) => {
       const modify = tagValue.filter((_, i) => i !== tagIndex);
@@ -83,7 +87,7 @@ export const InstagramCollaboratorsTags: FC<{
           {label}
         </div>
         <ReactTags
-          placeholderText="Add a tag"
+          placeholderText={t('add_a_tag', 'Add a tag')}
           suggestions={suggestionsArray}
           selected={tagValue}
           onAdd={onAddition}

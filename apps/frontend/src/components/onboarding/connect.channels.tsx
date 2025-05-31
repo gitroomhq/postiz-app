@@ -242,14 +242,14 @@ export const ConnectChannels: FC = () => {
   return (
     <>
       {!!showCustom && (
-        <div className="absolute w-full h-full top-0 left-0 bg-black/40 z-[400]">
-          <div className="absolute w-full h-full bg-primary/80 left-0 top-0 z-[200] p-[50px] flex justify-center">
+        <div className="absolute w-full h-full top-0 start-0 bg-black/40 z-[400]">
+          <div className="absolute w-full h-full bg-primary/80 start-0 top-0 z-[200] p-[50px] flex justify-center">
             <div className="w-[400px]">{showCustom}</div>
           </div>
         </div>
       )}
       {!!identifier && (
-        <div className="absolute w-full h-full bg-primary/80 left-0 top-0 z-[200] p-[30px] flex items-center justify-center">
+        <div className="absolute w-full h-full bg-primary/80 start-0 top-0 z-[200] p-[30px] flex items-center justify-center">
           <div className="w-[400px]">
             <ApiModal
               close={() => setIdentifier(undefined)}
@@ -347,13 +347,13 @@ export const ConnectChannels: FC = () => {
                 >
                   {integration.inBetweenSteps && (
                     <div
-                      className="absolute left-0 top-0 w-[39px] h-[46px] cursor-pointer"
+                      className="absolute start-0 top-0 w-[39px] h-[46px] cursor-pointer"
                       onClick={continueIntegration(integration)}
                     >
-                      <div className="bg-red-500 w-[15px] h-[15px] rounded-full -left-[5px] -top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
+                      <div className="bg-red-500 w-[15px] h-[15px] rounded-full -start-[5px] -top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
                         !
                       </div>
-                      <div className="bg-primary/60 w-[39px] h-[46px] left-0 top-0 absolute rounded-full z-[199]" />
+                      <div className="bg-primary/60 w-[39px] h-[46px] start-0 top-0 absolute rounded-full z-[199]" />
                     </div>
                   )}
                   <Image
@@ -365,7 +365,7 @@ export const ConnectChannels: FC = () => {
                   />
                   <Image
                     src={`/icons/platforms/${integration.identifier}.png`}
-                    className="rounded-full absolute z-10 -bottom-[5px] -right-[5px] border border-fifth"
+                    className="rounded-full absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
                     alt={integration.identifier}
                     width={20}
                     height={20}

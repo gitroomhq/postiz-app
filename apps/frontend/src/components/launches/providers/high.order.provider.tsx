@@ -474,7 +474,7 @@ export const withProvider = function <T extends object>(
             createPortal(
               <EditorWrapper>
                 {uploading && (
-                  <div className="absolute left-0 top-0 w-full h-full bg-black/40 z-[600] flex justify-center items-center">
+                  <div className="absolute start-0 top-0 w-full h-full bg-black/40 z-[600] flex justify-center items-center">
                     <LoadingComponent width={100} height={100} />
                   </div>
                 )}
@@ -571,7 +571,7 @@ export const withProvider = function <T extends object>(
                                         />
                                       </svg>
                                     </div>
-                                    <div className="text-[12px] font-[500] pr-[10px]">
+                                    <div className="text-[12px] font-[500] pe-[10px]">
                                       {t('delete_post', 'Delete Post')}
                                     </div>
                                   </div>
@@ -656,7 +656,7 @@ export const withProvider = function <T extends object>(
                     />
                   )
                 ) : (
-                  <>No Content Yet</>
+                  <>{t('no_content_yet', 'No Content Yet')}</>
                 )}
               </IntegrationContext.Provider>
             </div>

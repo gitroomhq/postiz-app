@@ -79,7 +79,7 @@ export const AddMember = () => {
           <TopTitle title="Add Member" />
           <button
             onClick={closeModal}
-            className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+            className="outline-none absolute end-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
             type="button"
           >
             <svg
@@ -99,7 +99,11 @@ export const AddMember = () => {
           </button>
 
           {sendEmail && (
-            <Input label="Email" placeholder="Enter email" name="email" />
+            <Input
+              label="Email"
+              placeholder={t('enter_email', 'Enter email')}
+              name="email"
+            />
           )}
           <Select label="Role" name="role">
             <option value="">{t('select_role', 'Select Role')}</option>

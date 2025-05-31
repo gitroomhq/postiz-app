@@ -67,7 +67,7 @@ export const Published: FC<{
               className="w-[24px] h-[24px] rounded-full"
             />
             <img
-              className="absolute left-[15px] top-[15px] w-[15px] h-[15px] rounded-full"
+              className="absolute start-[15px] top-[15px] w-[15px] h-[15px] rounded-full"
               src={`/icons/platforms/${data.data.integration}.png`}
               alt={data.data.name}
             />
@@ -103,7 +103,7 @@ export const PreviewPopup: FC<{
     <div className="bg-primary p-[20px] w-full relative">
       <button
         onClick={close}
-        className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+        className="outline-none absolute end-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
         type="button"
       >
         <svg
@@ -171,7 +171,7 @@ export const Offer: FC<{
                 className="w-[24px] h-[24px] rounded-full"
               />
               <img
-                className="absolute left-[15px] top-[15px] w-[15px] h-[15px] rounded-full"
+                className="absolute start-[15px] top-[15px] w-[15px] h-[15px] rounded-full"
                 src={`/icons/platforms/${item.integration.providerIdentifier}.png`}
                 alt={item.integration.name}
               />
@@ -319,7 +319,7 @@ export const Post: FC<{
               className="w-[24px] h-[24px] rounded-full"
             />
             <img
-              className="absolute left-[15px] top-[15px] w-[15px] h-[15px] rounded-full"
+              className="absolute start-[15px] top-[15px] w-[15px] h-[15px] rounded-full"
               src={`/icons/platforms/${integrationData?.providerIdentifier}.png`}
               alt={integrationData?.name}
             />

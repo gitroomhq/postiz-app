@@ -124,7 +124,7 @@ const Pagination: FC<{
   }
   return (
     <div className="flex items-center relative">
-      <div className="absolute left-0">
+      <div className="absolute start-0">
         {t('showing', 'Showing')}
         {from + 1}
         {t('to', 'to')}
@@ -322,7 +322,7 @@ export const RequestService: FC<{
         <div className="w-full max-w-[920px] mx-auto bg-sixth px-[16px] rounded-[4px] border border-customColor6 gap-[24px] flex flex-col relative">
           <button
             onClick={close}
-            className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+            className="outline-none absolute end-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
             type="button"
           >
             <svg
@@ -407,7 +407,7 @@ export const Card: FC<{
                 className="rounded-full w-full h-full"
               />
             )}
-            <div className="w-[80px] h-[28px] bg-customColor4 absolute bottom-0 left-[50%] -translate-x-[50%] rounded-[30px] flex gap-[4px] justify-center items-center">
+            <div className="w-[80px] h-[28px] bg-customColor4 absolute bottom-0 start-[50%] -translate-x-[50%] rounded-[30px] flex gap-[4px] justify-center items-center">
               <div>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -483,7 +483,7 @@ export const Card: FC<{
           </div>
         </div>
       </div>
-      <div className="ml-[100px] items-center flex">
+      <div className="ms-[100px] items-center flex">
         <Button onClick={requestService}>
           {t('request_service', 'Request Service')}
         </Button>

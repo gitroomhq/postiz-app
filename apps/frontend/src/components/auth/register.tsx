@@ -147,7 +147,7 @@ export function RegisterAfter({
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <div>
-          <h1 className="text-3xl font-bold text-left mb-4 cursor-pointer">
+          <h1 className="text-3xl font-bold text-start mb-4 cursor-pointer">
             {t('sign_up', 'Sign Up')}
           </h1>
         </div>
@@ -169,7 +169,7 @@ export function RegisterAfter({
           <div className="h-[20px] mb-[24px] mt-[24px] relative">
             <div className="absolute w-full h-[1px] bg-fifth top-[50%] -translate-y-[50%]" />
             <div
-              className={`absolute z-[1] ${interClass} justify-center items-center w-full left-0 top-0 flex`}
+              className={`absolute z-[1] ${interClass} justify-center items-center w-full start-0 top-0 flex`}
             >
               <div className="bg-customColor15 px-[16px]">{t('or', 'OR')}</div>
             </div>

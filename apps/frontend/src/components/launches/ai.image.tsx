@@ -64,12 +64,12 @@ ${type}
             }
           : {})}
         className={clsx(
-          'relative ml-[10px] rounded-[4px] mb-[10px] gap-[8px] !text-primary justify-center items-center flex border border-dashed border-customColor21 bg-input',
+          'relative ms-[10px] rounded-[4px] mb-[10px] gap-[8px] !text-primary justify-center items-center flex border border-dashed border-customColor21 bg-input',
           value.length < 30 && 'opacity-25'
         )}
       >
         {loading && (
-          <div className="absolute left-[50%] -translate-x-[50%]">
+          <div className="absolute start-[50%] -translate-x-[50%]">
             <Loading height={30} width={30} type="spin" color="#fff" />
           </div>
         )}
@@ -99,7 +99,7 @@ ${type}
         </div>
       </Button>
       {value.length >= 30 && !loading && (
-        <div className="text-[12px] ml-[10px] -mt-[10px] w-[200px] absolute top-[100%] z-[500] left-0 hidden group-hover:block">
+        <div className="text-[12px] ms-[10px] -mt-[10px] w-[200px] absolute top-[100%] z-[500] start-0 hidden group-hover:block">
           <ul className="cursor-pointer rounded-[4px] border border-dashed border-customColor21 mt-[3px] p-[5px] bg-customColor2">
             {list.map((p) => (
               <li onClick={generateImage(p)} key={p} className="hover:bg-sixth">

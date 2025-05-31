@@ -9,7 +9,10 @@ export const CopyClient = () => {
   const toast = useToaster();
   const t = useT();
   const copyToClipboard = useCallback(() => {
-    toast.show('Link copied to clipboard', 'success');
+    toast.show(
+      t('link_copied_to_clipboard', 'Link copied to clipboard'),
+      'success'
+    );
     copy(window.location.href.split?.('?')?.shift()!);
   }, []);
   return (

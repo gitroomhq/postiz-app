@@ -123,7 +123,7 @@ export const PostSelector: FC<{
           <div
             className={
               !noModal
-                ? 'text-textColor fixed left-0 top-0 bg-primary/80 z-[300] w-full h-full p-[60px] animate-fade'
+                ? 'text-textColor fixed start-0 top-0 bg-primary/80 z-[300] w-full h-full p-[60px] animate-fade'
                 : ''
             }
           >
@@ -146,7 +146,7 @@ export const PostSelector: FC<{
                   </div>
                   <button
                     onClick={onCloseWithEmptyString}
-                    className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root bg-primary hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+                    className="outline-none absolute end-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root bg-primary hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
                     type="button"
                   >
                     <svg
@@ -185,7 +185,7 @@ export const PostSelector: FC<{
                               className="w-[32px] h-[32px] rounded-full"
                             />
                             <img
-                              className="w-[20px] h-[20px] rounded-full absolute z-10 -bottom-[5px] -right-[5px] border border-fifth"
+                              className="w-[20px] h-[20px] rounded-full absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
                               src={
                                 `/icons/platforms/` +
                                 p?.integration?.providerIdentifier +

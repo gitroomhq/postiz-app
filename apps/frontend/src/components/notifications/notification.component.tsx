@@ -50,7 +50,7 @@ export const NotificationOpenComponent = () => {
   return (
     <div
       id="notification-popup"
-      className="opacity-0 animate-normalFadeDown mt-[10px] absolute w-[420px] min-h-[200px] top-[100%] right-0 bg-third text-textColor rounded-[16px] flex flex-col border border-tableBorder z-[20]"
+      className="opacity-0 animate-normalFadeDown mt-[10px] absolute w-[420px] min-h-[200px] top-[100%] end-0 bg-third text-textColor rounded-[16px] flex flex-col border border-tableBorder z-[20]"
     >
       <div
         className={`p-[16px] border-b border-tableBorder ${interClass} font-bold`}
@@ -113,7 +113,7 @@ const NotificationComponent = () => {
     <div className="relative cursor-pointer select-none" ref={ref}>
       <div onClick={changeShow}>
         {data && data.total > 0 && (
-          <div className="w-[13px] h-[13px] bg-red-500 rounded-full absolute -left-[2px] -top-[2px] text-[10px] text-center flex justify-center items-center">
+          <div className="w-[13px] h-[13px] bg-red-500 rounded-full absolute -start-[2px] -top-[2px] text-[10px] text-center flex justify-center items-center">
             {data.total}
           </div>
         )}

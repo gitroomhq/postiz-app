@@ -11,6 +11,8 @@ import {
 import { clsx } from 'clsx';
 import { useFormContext, useWatch } from 'react-hook-form';
 import interClass from '../helpers/inter.font';
+import { TranslatedLabel } from '../translation/translated-label';
+
 export const Input: FC<
   DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement> & {
     removeError?: boolean;
@@ -20,6 +22,8 @@ export const Input: FC<
     label: string;
     name: string;
     icon?: ReactNode;
+    translationKey?: string;
+    translationParams?: Record<string, string | number>;
   }
 > = (props) => {
   const {
@@ -30,6 +34,8 @@ export const Input: FC<
     className,
     disableForm,
     error,
+    translationKey,
+    translationParams,
     ...rest
   } = props;
   const form = useFormContext();
@@ -46,18 +52,26 @@ export const Input: FC<
   }, [watch]);
   return (
     <div className="flex flex-col gap-[6px]">
-      {!!label && <div className={`${interClass} text-[14px]`}>{label}</div>}
+      {!!label && (
+        <div className={`${interClass} text-[14px]`}>
+          <TranslatedLabel
+            label={label}
+            translationKey={translationKey}
+            translationParams={translationParams}
+          />
+        </div>
+      )}
       <div
         className={clsx(
           'bg-input h-[44px] border-fifth border rounded-[4px] text-inputText placeholder-inputText flex items-center justify-center',
           className
         )}
       >
-        {icon && <div className="pl-[16px]">{icon}</div>}
+        {icon && <div className="ps-[16px]">{icon}</div>}
         <input
           className={clsx(
             'h-full bg-transparent outline-none flex-1',
-            icon ? 'pl-[8px] pr-[16px]' : 'px-[16px]'
+            icon ? 'pl-[8px] pe-[16px]' : 'px-[16px]'
           )}
           {...(disableForm ? {} : form.register(props.name))}
           {...rest}

@@ -66,13 +66,13 @@ export const SignaturesComponent: FC<{
               <div className="text-center">{t('delete', 'Delete')}</div>
               {data?.map((p: any) => (
                 <Fragment key={p.id}>
-                  <div className="relative flex-1 mr-[20px] overflow-x-hidden">
-                    <div className="absolute left-0 line-clamp-1 top-[50%] -translate-y-[50%] text-ellipsis">
+                  <div className="relative flex-1 me-[20px] overflow-x-hidden">
+                    <div className="absolute start-0 line-clamp-1 top-[50%] -translate-y-[50%] text-ellipsis">
                       {p.content.slice(0, 15) + '...'}
                     </div>
                   </div>
-                  <div className="flex flex-col justify-center relative mr-[20px]">
-                    <div className="text-center w-full absolute left-0 line-clamp-1 top-[50%] -translate-y-[50%]">
+                  <div className="flex flex-col justify-center relative me-[20px]">
+                    <div className="text-center w-full absolute start-0 line-clamp-1 top-[50%] -translate-y-[50%]">
                       {p.autoAdd ? 'Yes' : 'No'}
                     </div>
                   </div>
@@ -161,7 +161,7 @@ const AddOrRemoveSignature: FC<{
         <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-customColor6 bg-sixth p-[16px] pt-0 w-[500px]">
           <TopTitle title={data ? 'Edit Signature' : 'Add Signature'} />
           <button
-            className="outline-none absolute right-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+            className="outline-none absolute end-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
             type="button"
             onClick={() =>
               modal.closeModal(modal.modals[modal.modals.length - 1].id)
@@ -203,6 +203,7 @@ const AddOrRemoveSignature: FC<{
 
           <Select
             label="Auto add signature?"
+            translationKey="label_auto_add_signature"
             {...form.register('autoAdd', {
               setValueAs: (value) => value === 'true',
             })}

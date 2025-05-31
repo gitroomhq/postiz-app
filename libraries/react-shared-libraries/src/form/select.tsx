@@ -11,6 +11,8 @@ import { clsx } from 'clsx';
 import { useFormContext } from 'react-hook-form';
 import interClass from '../helpers/inter.font';
 import { RegisterOptions } from 'react-hook-form/dist/types/validator';
+import { TranslatedLabel } from '../translation/translated-label';
+
 export const Select: FC<
   DetailedHTMLProps<
     SelectHTMLAttributes<HTMLSelectElement>,
@@ -22,6 +24,8 @@ export const Select: FC<
     label: string;
     name: string;
     hideErrors?: boolean;
+    translationKey?: string;
+    translationParams?: Record<string, string | number>;
   }
 > = forwardRef((props, ref) => {
   const {
@@ -31,6 +35,8 @@ export const Select: FC<
     disableForm,
     error,
     extraForm,
+    translationKey,
+    translationParams,
     ...rest
   } = props;
   const form = useFormContext();
@@ -41,7 +47,13 @@ export const Select: FC<
   }, [form?.formState?.errors?.[props?.name!]?.message, error]);
   return (
     <div className={clsx('flex flex-col', label ? 'gap-[6px]' : '')}>
-      <div className={`${interClass} text-[14px]`}>{label}</div>
+      <div className={`${interClass} text-[14px]`}>
+        <TranslatedLabel
+          label={label}
+          translationKey={translationKey}
+          translationParams={translationParams}
+        />
+      </div>
       <select
         ref={ref}
         {...(disableForm ? {} : form.register(props.name, extraForm))}

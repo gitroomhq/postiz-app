@@ -5,6 +5,8 @@ import { DetailedHTMLProps, FC, InputHTMLAttributes, useMemo } from 'react';
 import clsx from 'clsx';
 import { useFormContext } from 'react-hook-form';
 import interClass from '../helpers/inter.font';
+import { TranslatedLabel } from '../translation/translated-label';
+
 export const Textarea: FC<
   DetailedHTMLProps<
     InputHTMLAttributes<HTMLTextAreaElement>,
@@ -14,9 +16,19 @@ export const Textarea: FC<
     disableForm?: boolean;
     label: string;
     name: string;
+    translationKey?: string;
+    translationParams?: Record<string, string | number>;
   }
 > = (props) => {
-  const { label, className, disableForm, error, ...rest } = props;
+  const {
+    label,
+    className,
+    disableForm,
+    error,
+    translationKey,
+    translationParams,
+    ...rest
+  } = props;
   const form = useFormContext();
   const err = useMemo(() => {
     if (error) return error;
@@ -30,7 +42,13 @@ export const Textarea: FC<
         props.disabled && 'opacity-50'
       )}
     >
-      <div className={`${interClass} text-[14px]`}>{label}</div>
+      <div className={`${interClass} text-[14px]`}>
+        <TranslatedLabel
+          label={label}
+          translationKey={translationKey}
+          translationParams={translationParams}
+        />
+      </div>
       <textarea
         {...(disableForm ? {} : form.register(props.name))}
         className={clsx(

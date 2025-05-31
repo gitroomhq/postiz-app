@@ -70,7 +70,7 @@ export const TelegramProvider: FC<Web3ProviderInterface> = (props) => {
     <div className="rounded-[4px] border border-customColor6 bg-sixth px-[16px] pb-[16px] relative w-[700px]">
       <TopTitle title={`Add Telegram`} />
       <button
-        className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+        className="outline-none absolute end-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
         type="button"
         onClick={() => modal.closeAll()}
       >

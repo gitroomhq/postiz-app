@@ -175,6 +175,7 @@ export const LifetimeDeal = () => {
             <div className="flex-1">
               <Input
                 label="Code"
+                translationKey="label_code"
                 placeholder="Enter your code"
                 disableForm={true}
                 name="code"

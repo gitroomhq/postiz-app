@@ -39,7 +39,7 @@ export function Forgot() {
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <div>
-          <h1 className="text-3xl font-bold text-left mb-4 cursor-pointer">
+          <h1 className="text-3xl font-bold text-start mb-4 cursor-pointer">
             {t('forgot_password_1', 'Forgot Password')}
           </h1>
         </div>
@@ -68,7 +68,7 @@ export function Forgot() {
           </>
         ) : (
           <>
-            <div className="text-left mt-6">
+            <div className="text-start mt-6">
               {t(
                 'we_have_send_you_an_email_with_a_link_to_reset_your_password',
                 'We have send you an email with a link to reset your password.'

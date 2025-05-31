@@ -271,7 +271,7 @@ export const CommentComponent: FC<{
       <TopTitle title={`Comments for ${date.format('DD/MM/YYYY HH:mm')}`} />
       <button
         onClick={closeAll}
-        className="outline-none absolute right-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+        className="outline-none absolute end-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
         type="button"
       >
         <svg
@@ -357,7 +357,7 @@ export const CommentComponent: FC<{
             <div className="flex">
               <div className="relative w-[40px] flex flex-col items-center">
                 <div className="h-[30px] w-[2px] bg-customColor25 absolute top-0 z-[1]" />
-                <div className="h-[2px] w-[21px] bg-customColor25 absolute top-[30px] right-0 z-[1]" />
+                <div className="h-[2px] w-[21px] bg-customColor25 absolute top-[30px] end-0 z-[1]" />
               </div>
               <div className="flex-1">
                 <CommentBox

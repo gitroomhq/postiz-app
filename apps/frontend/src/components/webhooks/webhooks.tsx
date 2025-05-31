@@ -39,7 +39,15 @@ export const Webhooks: FC = () => {
   );
   const deleteHook = useCallback(
     (data: any) => async () => {
-      if (await deleteDialog(`Are you sure you want to delete ${data.name}?`)) {
+      if (
+        await deleteDialog(
+          t(
+            'are_you_sure_you_want_to_delete',
+            `Are you sure you want to delete ${data.name}?`,
+            { name: data.name }
+          )
+        )
+      ) {
         await fetch(`/webhooks/${data.id}`, {
           method: 'DELETE',
         });
@@ -234,7 +242,7 @@ export const AddOrEditWebhook: FC<{
         <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-customColor6 bg-sixth p-[16px] pt-0 w-[500px]">
           <TopTitle title={data ? 'Edit webhook' : 'Add webhook'} />
           <button
-            className="outline-none absolute right-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+            className="outline-none absolute end-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
             type="button"
             onClick={modal.closeAll}
           >
@@ -255,12 +263,21 @@ export const AddOrEditWebhook: FC<{
           </button>
 
           <div>
-            <Input label="Name" {...form.register('name')} />
-            <Input label="URL" {...form.register('url')} />
+            <Input
+              label="Name"
+              translationKey="label_name"
+              {...form.register('name')}
+            />
+            <Input
+              label="URL"
+              translationKey="label_url"
+              {...form.register('url')}
+            />
             <Select
               value={allIntegrations.value}
               name="integrations"
               label="Integrations"
+              translationKey="label_integrations"
               disableForm={true}
               onChange={changeIntegration}
             >

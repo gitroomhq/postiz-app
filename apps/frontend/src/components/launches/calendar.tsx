@@ -15,6 +15,9 @@ import {
   useCalendar,
 } from '@gitroom/frontend/components/launches/calendar.context';
 import dayjs from 'dayjs';
+import 'dayjs/locale/en';
+import 'dayjs/locale/he';
+import localizedFormat from 'dayjs/plugin/localizedFormat';
 import { useModals } from '@mantine/modals';
 import { AddEditModal } from '@gitroom/frontend/components/launches/add.edit.model';
 import clsx from 'clsx';
@@ -37,8 +40,27 @@ import removeMd from 'remove-markdown';
 import { useInterval } from '@mantine/hooks';
 import { StatisticsModal } from '@gitroom/frontend/components/launches/statistics';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import i18next from 'i18next';
+
+// Extend dayjs with necessary plugins
 extend(isSameOrAfter);
 extend(isSameOrBefore);
+extend(localizedFormat);
+
+// Initialize language
+const updateDayjsLocale = () => {
+  const currentLanguage = i18next.resolvedLanguage || 'en';
+  dayjs.locale(currentLanguage);
+};
+
+// Set dayjs locale whenever i18next language changes
+i18next.on('languageChanged', () => {
+  updateDayjsLocale();
+});
+
+// Initial setup
+updateDayjsLocale();
+
 const convertTimeFormatBasedOnLocality = (time: number) => {
   if (isUSCitizen()) {
     return `${time === 12 ? 12 : time % 12}:00 ${time >= 12 ? 'PM' : 'AM'}`;
@@ -66,6 +88,11 @@ export const DayView = () => {
   const calendar = useCalendar();
   const { integrations, posts, currentYear, currentDay, currentWeek } =
     calendar;
+
+  // Set dayjs locale based on current language
+  const currentLanguage = i18next.resolvedLanguage || 'en';
+  dayjs.locale(currentLanguage);
+
   const options = useMemo(() => {
     const createdPosts = posts.map((post) => ({
       integration: [integrations.find((i) => i.id === post.integration.id)!],
@@ -109,7 +136,7 @@ export const DayView = () => {
               .startOf('day')
               .add(option[0].time, 'minute')
               .local()
-              .format(isUSCitizen() ? 'hh:mm A' : 'HH:mm')}
+              .format(isUSCitizen() ? 'hh:mm A' : 'LT')}
           </div>
           <div
             key={option[0].time}
@@ -142,23 +169,35 @@ export const WeekView = () => {
   const { currentYear, currentWeek } = useCalendar();
   const t = useT();
 
+  // Use dayjs to get localized day names
+  const localizedDays = useMemo(() => {
+    const currentLanguage = i18next.resolvedLanguage || 'en';
+    dayjs.locale(currentLanguage);
+
+    const days = [];
+    // Starting from Monday (1) to Sunday (7)
+    for (let i = 1; i <= 7; i++) {
+      days.push(dayjs().day(i).format('dddd'));
+    }
+    return days;
+  }, [i18next.resolvedLanguage]);
+
   return (
     <div className="flex flex-col h-screen overflow-hidden text-textColor flex-1">
       <div className="flex-1">
         <div className="grid grid-cols-8 bg-customColor31 gap-[1px] border-customColor31 border rounded-[10px]">
           <div className="bg-customColor20 sticky top-0 z-10 bg-gray-900"></div>
-          {days.map((day, index) => (
+          {localizedDays.map((day, index) => (
             <div
               key={day}
               className="sticky top-0 z-10 bg-customColor20 p-2 text-center"
             >
-              <div>{t(day.toLowerCase(), day)}</div>
+              <div>{day}</div>
             </div>
           ))}
           {hours.map((hour) => (
             <Fragment key={hour}>
-              <div className="p-2 pr-4 bg-secondary text-center items-center justify-center flex">
-                {/* {hour.toString().padStart(2, '0')}:00 */}
+              <div className="p-2 pe-4 bg-secondary text-center items-center justify-center flex">
                 {convertTimeFormatBasedOnLocality(hour)}
               </div>
               {days.map((day, indexDay) => (
@@ -185,6 +224,19 @@ export const WeekView = () => {
 export const MonthView = () => {
   const { currentYear, currentMonth } = useCalendar();
   const t = useT();
+
+  // Use dayjs to get localized day names
+  const localizedDays = useMemo(() => {
+    const currentLanguage = i18next.resolvedLanguage || 'en';
+    dayjs.locale(currentLanguage);
+
+    const days = [];
+    // Starting from Monday (1) to Sunday (7)
+    for (let i = 1; i <= 7; i++) {
+      days.push(dayjs().day(i).format('dddd'));
+    }
+    return days;
+  }, [i18next.resolvedLanguage]);
 
   const calendarDays = useMemo(() => {
     const startOfMonth = dayjs(new Date(currentYear, currentMonth, 1));
@@ -213,16 +265,17 @@ export const MonthView = () => {
     }
     return calendarDays;
   }, [currentYear, currentMonth]);
+
   return (
     <div className="flex flex-col h-screen overflow-hidden text-textColor flex-1">
       <div className="flex-1 flex">
         <div className="grid grid-cols-7 grid-rows-[40px_auto] bg-customColor31 gap-[1px] border-customColor31 border rounded-[10px] flex-1">
-          {days.map((day) => (
+          {localizedDays.map((day) => (
             <div
               key={day}
               className="sticky top-0 z-10 bg-customColor20 p-2 text-center"
             >
-              <div>{t(day.toLowerCase(), day)}</div>
+              <div>{day}</div>
             </div>
           ))}
           {calendarDays.map((date, index) => (
@@ -618,7 +671,7 @@ export const CalendarColumn: FC<{
                 display === ('month' as any)
                   ? 'flex-1 min-h-[40px] w-full'
                   : !postList.length
-                  ? 'h-full w-full absolute left-0 top-0 p-[5px]'
+                  ? 'h-full w-full absolute start-0 top-0 p-[5px]'
                   : 'min-h-[40px] w-full',
                 'flex items-center justify-center cursor-pointer pb-[2.5px]'
               )}
@@ -656,13 +709,13 @@ export const CalendarColumn: FC<{
                         {selectedIntegrations.identifier === 'youtube' ? (
                           <img
                             src="/icons/platforms/youtube.svg"
-                            className="absolute z-10 -bottom-[5px] -right-[5px]"
+                            className="absolute z-10 -bottom-[5px] -end-[5px]"
                             width={20}
                           />
                         ) : (
                           <Image
                             src={`/icons/platforms/${selectedIntegrations.identifier}.png`}
-                            className="rounded-full absolute z-10 -bottom-[5px] -right-[5px] border border-fifth"
+                            className="rounded-full absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
                             alt={selectedIntegrations.identifier}
                             width={20}
                             height={20}
@@ -795,15 +848,15 @@ const CalendarItem: FC<{
             src={post.integration.picture! || '/no-picture.jpg'}
           />
           <img
-            className="w-[12px] h-[12px] rounded-full absolute z-10 top-[10px] right-0 border border-fifth"
+            className="w-[12px] h-[12px] rounded-full absolute z-10 top-[10px] end-0 border border-fifth"
             src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
           />
         </div>
         <div className="whitespace-nowrap line-clamp-2">
-          <div className="text-left">
+          <div className="text-start">
             {state === 'DRAFT' ? t('draft', 'Draft') + ': ' : ''}
           </div>
-          <div className="w-full overflow-hidden overflow-ellipsis text-left">
+          <div className="w-full overflow-hidden overflow-ellipsis text-start">
             {removeMd(post.content).replace(/\n/g, ' ')}
           </div>
         </div>

@@ -12,6 +12,8 @@ import { useFormContext } from 'react-hook-form';
 import dayjs from 'dayjs';
 import { useShowPostSelector } from '../../../../apps/frontend/src/components/post-url-selector/post.url.selector';
 import interClass from '../helpers/inter.font';
+import { TranslatedLabel } from '../translation/translated-label';
+
 export const Canonical: FC<
   DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement> & {
     error?: any;
@@ -19,9 +21,20 @@ export const Canonical: FC<
     disableForm?: boolean;
     label: string;
     name: string;
+    translationKey?: string;
+    translationParams?: Record<string, string | number>;
   }
 > = (props) => {
-  const { label, date, className, disableForm, error, ...rest } = props;
+  const {
+    label,
+    date,
+    className,
+    disableForm,
+    error,
+    translationKey,
+    translationParams,
+    ...rest
+  } = props;
   const form = useFormContext();
   const err = useMemo(() => {
     if (error) return error;
@@ -46,7 +59,13 @@ export const Canonical: FC<
   return (
     <div className="flex flex-col gap-[6px]">
       <div className="flex items-center gap-[3px]">
-        <div className={`${interClass} text-[14px]`}>{label}</div>
+        <div className={`${interClass} text-[14px]`}>
+          <TranslatedLabel
+            label={label}
+            translationKey={translationKey}
+            translationParams={translationParams}
+          />
+        </div>
         <div>
           <svg
             onClick={onPostSelector}

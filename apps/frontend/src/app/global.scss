@@ -466,3 +466,7 @@ div div .set-font-family {
 .hideCopilot .copilotKitPopup {
   display: none !important;
 }
+
+html[dir='rtl'] [dir='ltr'] {
+  direction: rtl !important;
+}

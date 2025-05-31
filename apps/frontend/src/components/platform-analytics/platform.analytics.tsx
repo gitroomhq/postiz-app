@@ -68,7 +68,7 @@ export const PlatformAnalytics = () => {
     ) {
       arr.push({
         key: 7,
-        value: '7 Days',
+        value: t('7_days', '7 Days'),
       });
     }
     if (
@@ -85,7 +85,7 @@ export const PlatformAnalytics = () => {
     ) {
       arr.push({
         key: 30,
-        value: '30 Days',
+        value: t('30_days', '30 Days'),
       });
     }
     if (
@@ -95,7 +95,7 @@ export const PlatformAnalytics = () => {
     ) {
       arr.push({
         key: 90,
-        value: '90 Days',
+        value: t('90_days', '90 Days'),
       });
     }
     return arr;
@@ -176,11 +176,11 @@ export const PlatformAnalytics = () => {
                 )}
               >
                 {(integration.inBetweenSteps || integration.refreshNeeded) && (
-                  <div className="absolute left-0 top-0 w-[39px] h-[46px] cursor-pointer">
-                    <div className="bg-red-500 w-[15px] h-[15px] rounded-full left-0 -top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
+                  <div className="absolute start-0 top-0 w-[39px] h-[46px] cursor-pointer">
+                    <div className="bg-red-500 w-[15px] h-[15px] rounded-full start-0 -top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
                       !
                     </div>
-                    <div className="bg-primary/60 w-[39px] h-[46px] left-0 top-0 absolute rounded-full z-[199]" />
+                    <div className="bg-primary/60 w-[39px] h-[46px] start-0 top-0 absolute rounded-full z-[199]" />
                   </div>
                 )}
                 <ImageWithFallback
@@ -193,7 +193,7 @@ export const PlatformAnalytics = () => {
                 />
                 <Image
                   src={`/icons/platforms/${integration.identifier}.png`}
-                  className="rounded-full absolute z-10 -bottom-[5px] -right-[5px] border border-fifth"
+                  className="rounded-full absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
                   alt={integration.identifier}
                   width={20}
                   height={20}

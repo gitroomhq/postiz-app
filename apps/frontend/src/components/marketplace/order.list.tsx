@@ -56,7 +56,7 @@ export const OrderList: FC<{
                         className="w-[24px] h-[24px] rounded-full"
                       />
                       <img
-                        className="absolute left-[15px] top-[15px] w-[15px] h-[15px] rounded-full"
+                        className="absolute start-[15px] top-[15px] w-[15px] h-[15px] rounded-full"
                         src={`/icons/platforms/${details.integration.providerIdentifier}.png`}
                         alt={details.integration.name}
                       />

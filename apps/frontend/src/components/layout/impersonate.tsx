@@ -150,10 +150,10 @@ export const Impersonate = () => {
           {!!data?.length && (
             <>
               <div
-                className="bg-primary/80 fixed left-0 top-0 w-full h-full z-[998]"
+                className="bg-primary/80 fixed start-0 top-0 w-full h-full z-[998]"
                 onClick={() => setName('')}
               />
-              <div className="absolute top-[100%] w-full left-0 bg-sixth border border-customColor6 text-textColor z-[999]">
+              <div className="absolute top-[100%] w-full start-0 bg-sixth border border-customColor6 text-textColor z-[999]">
                 {mapData?.map((user: any) => (
                   <div
                     onClick={setUser(user.id)}

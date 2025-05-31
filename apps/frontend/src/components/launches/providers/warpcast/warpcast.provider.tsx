@@ -21,7 +21,12 @@ const WrapcastProvider: FC = () => {
   const deleteField = useCallback(
     (index: number) => async () => {
       if (
-        !(await deleteDialog('Are you sure you want to delete this Subreddit?'))
+        !(await deleteDialog(
+          t(
+            'are_you_sure_you_want_to_delete_this_subreddit',
+            'Are you sure you want to delete this Subreddit?'
+          )
+        ))
       )
         return;
       remove(index);
@@ -35,7 +40,7 @@ const WrapcastProvider: FC = () => {
           <div key={field.id} className="flex flex-col relative">
             <div
               onClick={deleteField(index)}
-              className="absolute -left-[10px] justify-center items-center flex -top-[10px] w-[20px] h-[20px] bg-red-600 rounded-full text-textColor"
+              className="absolute -start-[10px] justify-center items-center flex -top-[10px] w-[20px] h-[20px] bg-red-600 rounded-full text-textColor"
             >
               x
             </div>

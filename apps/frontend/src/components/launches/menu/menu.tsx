@@ -249,7 +249,7 @@ export const Menu: FC<{
       {show && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className={`absolute top-[100%] left-0 p-[8px] px-[20px] bg-fifth flex flex-col gap-[16px] z-[100] rounded-[8px] border border-tableBorder ${interClass} text-nowrap`}
+          className={`absolute top-[100%] start-0 p-[8px] px-[20px] bg-fifth flex flex-col gap-[16px] z-[100] rounded-[8px] border border-tableBorder ${interClass} text-nowrap`}
         >
           {canDisable &&
             findIntegration?.refreshNeeded &&

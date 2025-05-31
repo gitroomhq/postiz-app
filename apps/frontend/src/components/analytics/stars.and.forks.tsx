@@ -41,7 +41,7 @@ export const StarsAndForks: FC<StarsAndForksInterface> = (props) => {
               </div>
             </div>
             <div className="flex-1 relative">
-              <div className="absolute w-full h-full left-0 top-0">
+              <div className="absolute w-full h-full start-0 top-0">
                 {item.stars.length ? (
                   <Chart list={item.stars} />
                 ) : (
@@ -84,7 +84,7 @@ export const StarsAndForks: FC<StarsAndForksInterface> = (props) => {
               </div>
             </div>
             <div className="flex-1 relative">
-              <div className="absolute w-full h-full left-0 top-0">
+              <div className="absolute w-full h-full start-0 top-0">
                 {item.forks.length ? (
                   <Chart list={item.forks} />
                 ) : (
@@ -143,7 +143,7 @@ export const StarsAndForks: FC<StarsAndForksInterface> = (props) => {
               </div>
             </div>
             <div className="flex items-center">
-              <div className="w-[2px] h-[30px] bg-customColor11 mr-[16px]"></div>
+              <div className="w-[2px] h-[30px] bg-customColor11 me-[16px]"></div>
               <div className="text-[24px] flex-1">
                 <UtcToLocalDateRender
                   date={

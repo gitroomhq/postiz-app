@@ -115,8 +115,8 @@ export const MenuGroupComponent: FC<
       ref={drop}
     >
       {collectedProps.isOver && (
-        <div className="absolute left-0 top-0 w-full h-full pointer-events-none">
-          <div className="w-full h-full left-0 top-0 relative">
+        <div className="absolute start-0 top-0 w-full h-full pointer-events-none">
+          <div className="w-full h-full start-0 top-0 relative">
             <div className="bg-white/30 w-full h-full p-[8px] box-content rounded-md" />
           </div>
         </div>
@@ -201,17 +201,17 @@ export const MenuComponent: FC<
       >
         {(integration.inBetweenSteps || integration.refreshNeeded) && (
           <div
-            className="absolute left-0 top-0 w-[39px] h-[46px] cursor-pointer"
+            className="absolute start-0 top-0 w-[39px] h-[46px] cursor-pointer"
             onClick={
               integration.refreshNeeded
                 ? refreshChannel(integration)
                 : continueIntegration(integration)
             }
           >
-            <div className="bg-red-500 w-[15px] h-[15px] rounded-full -left-[5px] -top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
+            <div className="bg-red-500 w-[15px] h-[15px] rounded-full -start-[5px] -top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
               !
             </div>
-            <div className="bg-primary/60 w-[39px] h-[46px] left-0 top-0 absolute rounded-full z-[199]" />
+            <div className="bg-primary/60 w-[39px] h-[46px] start-0 top-0 absolute rounded-full z-[199]" />
           </div>
         )}
         <ImageWithFallback
@@ -225,13 +225,13 @@ export const MenuComponent: FC<
         {integration.identifier === 'youtube' ? (
           <img
             src="/icons/platforms/youtube.svg"
-            className="absolute z-10 -bottom-[5px] -right-[5px]"
+            className="absolute z-10 -bottom-[5px] -end-[5px]"
             width={20}
           />
         ) : (
           <Image
             src={`/icons/platforms/${integration.identifier}.png`}
-            className="rounded-full absolute z-10 -bottom-[5px] -right-[5px] border border-fifth"
+            className="rounded-full absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
             alt={integration.identifier}
             width={20}
             height={20}

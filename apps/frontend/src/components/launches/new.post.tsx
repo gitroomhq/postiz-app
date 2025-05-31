@@ -52,7 +52,7 @@ export const NewPost = () => {
           fill="white"
         />
       </svg>
-      <div className="flex-1 text-left">
+      <div className="flex-1 text-start">
         {t('create_new_post', 'Create New Post')}
       </div>
     </button>

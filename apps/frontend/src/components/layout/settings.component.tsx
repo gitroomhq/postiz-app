@@ -81,11 +81,14 @@ export const SettingsPopup: FC<{
     if (user?.tier?.webhooks) {
       return 'webhooks';
     }
+    if (user?.tier?.autoPost) {
+      return 'autopost';
+    }
     if (user?.tier?.public_api && isGeneral) {
       return 'api';
     }
-    return 'teams';
-  }, []);
+    return 'signatures';
+  }, [user?.tier, isGeneral]);
 
   const t = useT();
 
@@ -146,7 +149,7 @@ export const SettingsPopup: FC<{
               <div className="rounded-[4px] border border-customColor6 p-[24px] flex flex-col">
                 <div className="flex justify-between items-center">
                   <div className="w-[455px]">
-                    <Input label="Full Name" name="fullname" />
+                    <Input label="Full Name" translationKey="label_full_name" name="fullname" />
                   </div>
                   <div className="flex gap-[8px] mb-[10px]">
                     <div className="w-[48px] h-[48px] rounded-full bg-customColor38">
@@ -213,7 +216,7 @@ export const SettingsPopup: FC<{
                   </div>
                 </div>
                 <div>
-                  <Textarea label="Bio" name="bio" className="resize-none" />
+                  <Textarea label="Bio" translationKey="label_bio" name="bio" className="resize-none" />
                 </div>
               </div>
              </Tabs.Panel> */}

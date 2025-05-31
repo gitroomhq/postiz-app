@@ -60,34 +60,48 @@ const FirstStep: FC = (props) => {
             const data = JSON.parse(chunk);
             switch (data.name) {
               case 'agent':
-                setShowStep('Agent starting');
+                setShowStep(t('agent_starting', 'Agent starting'));
                 break;
               case 'research':
-                setShowStep('Researching your content...');
+                setShowStep(
+                  t('researching_your_content', 'Researching your content...')
+                );
                 break;
               case 'find-category':
-                setShowStep('Understanding the category...');
+                setShowStep(
+                  t(
+                    'understanding_the_category',
+                    'Understanding the category...'
+                  )
+                );
                 break;
               case 'find-topic':
-                setShowStep('Finding the topic...');
+                setShowStep(t('finding_the_topic', 'Finding the topic...'));
                 break;
               case 'find-popular-posts':
-                setShowStep('Finding popular posts to match with...');
+                setShowStep(
+                  t(
+                    'finding_popular_posts_to_match_with',
+                    'Finding popular posts to match with...'
+                  )
+                );
                 break;
               case 'generate-hook':
-                setShowStep('Generating hook...');
+                setShowStep(t('generating_hook', 'Generating hook...'));
                 break;
               case 'generate-content':
-                setShowStep('Generating content...');
+                setShowStep(t('generating_content', 'Generating content...'));
                 break;
               case 'generate-picture':
-                setShowStep('Generating pictures...');
+                setShowStep(t('generating_pictures', 'Generating pictures...'));
                 break;
               case 'upload-pictures':
-                setShowStep('Uploading pictures...');
+                setShowStep(t('uploading_pictures', 'Uploading pictures...'));
                 break;
               case 'post-time':
-                setShowStep('Finding time to post...');
+                setShowStep(
+                  t('finding_time_to_post', 'Finding time to post...')
+                );
                 break;
             }
             lastResponse = data;
@@ -97,7 +111,7 @@ const FirstStep: FC = (props) => {
         }
       }
     },
-    []
+    [t]
   );
   const onSubmit: SubmitHandler<{
     research: string;
@@ -182,12 +196,18 @@ const FirstStep: FC = (props) => {
                   </div>
                 )}
                 <Textarea
-                  label="Write anything"
+                  label={t('write_anything', 'Write anything')}
                   disabled={loading}
-                  placeholder="You can write anything you want, and also add links, we will do the research for you..."
+                  placeholder={t(
+                    'you_can_write_anything_you_want_and_also_add_links_we_will_do_the_research_for_you',
+                    'You can write anything you want, and also add links, we will do the research for you...'
+                  )}
                   {...form.register('research')}
                 />
-                <Select label="Output format" {...form.register('format')}>
+                <Select
+                  label={t('output_format', 'Output format')}
+                  {...form.register('format')}
+                >
                   <option value="one_short">
                     {t('short_post', 'Short post')}
                   </option>
@@ -204,7 +224,10 @@ const FirstStep: FC = (props) => {
                     {t('a_thread_with_long_posts', 'A thread with long posts')}
                   </option>
                 </Select>
-                <Select label="Output format" {...form.register('tone')}>
+                <Select
+                  label={t('output_format', 'Output format')}
+                  {...form.register('tone')}
+                >
                   <option value="personal">
                     {t(
                       'personal_voice_i_am_happy_to_announce',
@@ -224,7 +247,7 @@ const FirstStep: FC = (props) => {
                   <Checkbox
                     disabled={loading}
                     {...form.register('isPicture')}
-                    label="Add pictures?"
+                    label={t('add_pictures', 'Add pictures?')}
                   />
                 </div>
               </div>
@@ -255,7 +278,7 @@ export const GeneratorPopup = () => {
     <div className="bg-sixth p-[32px] w-full max-w-[920px] mx-auto flex flex-col rounded-[4px] border border-customColor6 relative">
       <button
         onClick={closeAll}
-        className="outline-none absolute right-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+        className="outline-none absolute end-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
         type="button"
       >
         <svg
@@ -335,7 +358,7 @@ export const GeneratorComponent = () => {
           fill="currentColor"
         />
       </svg>
-      <div className="flex-1 text-left">
+      <div className="flex-1 text-start">
         {t('generate_posts', 'Generate Posts')}
       </div>
     </button>

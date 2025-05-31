@@ -41,7 +41,15 @@ export const Autopost: FC = () => {
   );
   const deleteHook = useCallback(
     (data: any) => async () => {
-      if (await deleteDialog(`Are you sure you want to delete ${data.name}?`)) {
+      if (
+        await deleteDialog(
+          t(
+            'are_you_sure_you_want_to_delete',
+            `Are you sure you want to delete ${data.name}?`,
+            { name: data.name }
+          )
+        )
+      ) {
         await fetch(`/autopost/${data.id}`, {
           method: 'DELETE',
         });
@@ -285,7 +293,7 @@ export const AddOrEditWebhook: FC<{
         <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-customColor6 bg-sixth p-[16px] pt-0 w-[500px]">
           <TopTitle title={data ? 'Edit autopost' : 'Add autopost'} />
           <button
-            className="outline-none absolute right-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+            className="outline-none absolute end-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
             type="button"
             onClick={modal.closeAll}
           >
@@ -306,10 +314,19 @@ export const AddOrEditWebhook: FC<{
           </button>
 
           <div>
-            <Input label="Title" {...form.register('title')} />
-            <Input label="URL" {...form.register('url')} />
+            <Input
+              label="Title"
+              translationKey="label_title"
+              {...form.register('title')}
+            />
+            <Input
+              label="URL"
+              translationKey="label_url"
+              {...form.register('url')}
+            />
             <Select
               label="Should we sync the current last post?"
+              translationKey="label_should_sync_last_post"
               {...form.register('syncLast', {
                 setValueAs: (value) => {
                   return value === 'true' || value === true;
@@ -324,6 +341,7 @@ export const AddOrEditWebhook: FC<{
             </Select>
             <Select
               label="When should we post it?"
+              translationKey="label_when_post"
               {...form.register('onSlot', {
                 setValueAs: (value) => value === 'true' || value === true,
               })}
@@ -336,6 +354,7 @@ export const AddOrEditWebhook: FC<{
             </Select>
             <Select
               label="Autogenerate content"
+              translationKey="label_autogenerate_content"
               {...form.register('generateContent', {
                 setValueAs: (value) => value === 'true' || value === true,
               })}
@@ -370,6 +389,7 @@ export const AddOrEditWebhook: FC<{
             )}
             <Select
               label="Generate Picture?"
+              translationKey="label_generate_picture"
               {...form.register('addPicture', {
                 setValueAs: (value) => value === 'true' || value === true,
               })}
@@ -384,6 +404,7 @@ export const AddOrEditWebhook: FC<{
               value={allIntegrations.value}
               name="integrations"
               label="Integrations"
+              translationKey="label_integrations"
               disableForm={true}
               onChange={changeIntegration}
             >

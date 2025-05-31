@@ -227,7 +227,7 @@ export const PickPlatforms: FC<{
                   !props.singleSelect ? (
                     <div
                       key={integration.id}
-                      className="flex gap-[8px] items-center mr-[10px]"
+                      className="flex gap-[8px] items-center me-[10px]"
                       {...(props.toolTip && {
                         'data-tooltip-id': 'tooltip',
                         'data-tooltip-content': integration.name,
@@ -254,13 +254,13 @@ export const PickPlatforms: FC<{
                         {integration.identifier === 'youtube' ? (
                           <img
                             src="/icons/platforms/youtube.svg"
-                            className="absolute z-10 -bottom-[5px] -right-[5px]"
+                            className="absolute z-10 -bottom-[5px] -end-[5px]"
                             width={20}
                           />
                         ) : (
                           <Image
                             src={`/icons/platforms/${integration.identifier}.png`}
-                            className="rounded-full absolute z-10 -bottom-[5px] -right-[5px] border border-fifth"
+                            className="rounded-full absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
                             alt={integration.identifier}
                             width={20}
                             height={20}
@@ -292,7 +292,7 @@ export const PickPlatforms: FC<{
                             />
                             <Image
                               src={`/icons/platforms/${integration.identifier}.png`}
-                              className="rounded-full absolute z-10 -bottom-[5px] -right-[5px] border border-fifth"
+                              className="rounded-full absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
                               alt={integration.identifier}
                               width={15}
                               height={15}

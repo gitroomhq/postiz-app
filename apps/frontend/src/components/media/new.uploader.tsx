@@ -11,6 +11,8 @@ import '@uppy/core/dist/style.min.css';
 import '@uppy/dashboard/dist/style.min.css';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import Compressor from '@uppy/compressor';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
+
 export function MultipartFileUploader({
   onUploadSuccess,
   allowedFileTypes,
@@ -117,6 +119,7 @@ export function MultipartFileUploaderAfter({
   allowedFileTypes: string;
   uppRef: any;
 }) {
+  const t = useT();
   const uppy = useUppyUploader({
     onUploadSuccess,
     allowedFileTypes,
@@ -135,7 +138,7 @@ export function MultipartFileUploaderAfter({
         uppy={uppyInstance}
         locale={{
           strings: {
-            chooseFiles: 'Upload',
+            chooseFiles: t('upload', 'Upload'),
           },
           // @ts-ignore
           pluralize: (n: any) => n,

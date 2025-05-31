@@ -40,8 +40,11 @@ export const TimeTable: FC<{
   const askClose = useCallback(async () => {
     if (
       !(await deleteDialog(
-        'Are you sure you want to close the window?',
-        'Yes, close'
+        t(
+          'are_you_sure_you_want_to_close_the_window',
+          'Are you sure you want to close the window?'
+        ),
+        t('yes_close', 'Yes, close')
       ))
     ) {
       return;
@@ -51,7 +54,14 @@ export const TimeTable: FC<{
   useKeypress('Escape', askClose);
   const removeSlot = useCallback(
     (index: number) => async () => {
-      if (!(await deleteDialog('Are you sure you want to delete this slot?'))) {
+      if (
+        !(await deleteDialog(
+          t(
+            'are_you_sure_you_want_to_delete_this_slot',
+            'Are you sure you want to delete this slot?'
+          )
+        ))
+      ) {
         return;
       }
       setCurrentTimes((prev) => prev.filter((_, i) => i !== index));
@@ -102,7 +112,7 @@ export const TimeTable: FC<{
       <TopTitle title={`Time Table Slots`} />
       <button
         onClick={askClose}
-        className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+        className="outline-none absolute end-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
         type="button"
       >
         <svg
@@ -172,9 +182,9 @@ export const TimeTable: FC<{
       <div className="mt-[16px] grid grid-cols-2 place-items-center w-[100px] mx-auto">
         {times.map((timeSlot, index) => (
           <Fragment key={timeSlot.formatted}>
-            <div className="text-left w-full">{timeSlot.formatted}</div>
+            <div className="text-start w-full">{timeSlot.formatted}</div>
             <div
-              className="cursor-pointer text-red-400 text-left w-full"
+              className="cursor-pointer text-red-400 text-start w-full"
               onClick={removeSlot(index)}
             >
               X

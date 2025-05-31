@@ -52,7 +52,7 @@ export function ForgotReturn({ token }: { token: string }) {
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <div>
-          <h1 className="text-3xl font-bold text-left mb-4 cursor-pointer">
+          <h1 className="text-3xl font-bold text-start mb-4 cursor-pointer">
             {t('forgot_password_1', 'Forgot Password')}
           </h1>
         </div>
@@ -87,7 +87,7 @@ export function ForgotReturn({ token }: { token: string }) {
           </>
         ) : (
           <>
-            <div className="text-left mt-6">
+            <div className="text-start mt-6">
               {t(
                 'we_successfully_reset_your_password_you_can_now_login_with_your',
                 'We successfully reset your password. You can now login with your'

@@ -45,7 +45,7 @@ const Card: FC<{
         )}
       </div>
       <div className="flex-1 relative">
-        <div className="absolute left-0 top-0 w-full h-full flex flex-col whitespace-nowrap">
+        <div className="absolute start-0 top-0 w-full h-full flex flex-col whitespace-nowrap">
           <div>{showFrom?.name || 'Noname'}</div>
           <div className="text-[12px] w-full overflow-ellipsis overflow-hidden">
             {message.messages[0]?.content}

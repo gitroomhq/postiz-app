@@ -64,7 +64,7 @@ export const NewOrder: FC<{
             alt={p.name}
           />
           <img
-            className="absolute left-[10px] top-[10px] w-[15px] h-[15px] rounded-full"
+            className="absolute start-[10px] top-[10px] w-[15px] h-[15px] rounded-full"
             src={`/icons/platforms/${p.identifier}.png`}
             alt={p.name}
           />
@@ -170,7 +170,7 @@ export const NewOrder: FC<{
         <div className="w-full max-w-[647px] mx-auto bg-sixth px-[16px] rounded-[4px] border border-customColor6 gap-[24px] flex flex-col relative">
           <button
             onClick={close}
-            className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+            className="outline-none absolute end-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
             type="button"
           >
             <svg
@@ -196,7 +196,7 @@ export const NewOrder: FC<{
                   {index !== 0 && (
                     <div
                       onClick={() => remove(index)}
-                      className="cursor-pointer top-[3px] z-[99] w-[15px] h-[15px] bg-red-500 rounded-full text-textColor absolute left-[60px] text-[12px] flex justify-center items-center pb-[2px] select-none"
+                      className="cursor-pointer top-[3px] z-[99] w-[15px] h-[15px] bg-red-500 rounded-full text-textColor absolute start-[60px] text-[12px] flex justify-center items-center pb-[2px] select-none"
                     >
                       x
                     </div>
@@ -208,6 +208,7 @@ export const NewOrder: FC<{
                       options={possibleOptions[index]}
                       placeholder="Select social media"
                       label="Platform"
+                      translationKey="label_platform"
                       disableForm={true}
                     />
                   </div>
@@ -222,6 +223,7 @@ export const NewOrder: FC<{
                       icon={<div className="text-[14px]">$</div>}
                       className="text-[14px]"
                       label="Price per post"
+                      translationKey="label_price_per_post"
                       error={
                         form.formState.errors?.socialMedia?.[index]?.price
                           ?.message

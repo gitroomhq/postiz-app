@@ -44,18 +44,18 @@ export const ContinueProvider: FC = () => {
   }
   return (
     <div
-      className="fixed left-0 top-0 w-full h-full bg-primary/40 z-[499]"
+      className="fixed start-0 top-0 w-full h-full bg-primary/40 z-[499]"
       onClick={closeModal}
     >
       <div
-        className="w-[100%] max-w-[674px] absolute left-[50%] top-[65px] bg-customColor3 z-[500] -translate-x-[50%] text-textColor p-[16px] !pt-0 border border-customColor6 min-h-[300px]"
+        className="w-[100%] max-w-[674px] absolute start-[50%] top-[65px] bg-customColor3 z-[500] -translate-x-[50%] text-textColor p-[16px] !pt-0 border border-customColor6 min-h-[300px]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="w-full h-full relative">
           <TopTitle title="Configure Provider" />
           <button
             onClick={closeModal}
-            className="outline-none absolute right-0 top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+            className="outline-none absolute end-0 top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
             type="button"
           >
             <svg

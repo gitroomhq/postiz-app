@@ -22,7 +22,7 @@ export const ChangeLanguageComponent = () => {
   const [_, setCookie] = useCookie(cookieName, currentLanguage || fallbackLng);
   const handleLanguageChange = (language: string) => {
     setCookie(language);
-    window.location.reload();
+    i18next.changeLanguage(language);
   };
 
   // Function to get language name in its native script
@@ -137,7 +137,7 @@ export const LanguageComponent = () => {
       viewBox="0 0 32 32"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className="mr-2 cursor-pointer"
+      className="me-2 cursor-pointer"
       onClick={openModal}
     >
       <path

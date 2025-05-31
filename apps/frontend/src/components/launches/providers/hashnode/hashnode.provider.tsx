@@ -48,7 +48,7 @@ const HashnodePreview: FC = () => {
           {subtitle}
         </div>
       </div>
-      <div className="px-[60px] text-left">
+      <div className="px-[60px] text-start">
         <MDEditor.Markdown
           style={{
             whiteSpace: 'pre-wrap',

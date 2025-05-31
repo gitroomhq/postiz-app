@@ -312,8 +312,11 @@ export const AddEditModal: FC<{
     }
     if (
       await deleteDialog(
-        'Are you sure you want to close this modal? (all data will be lost)',
-        'Yes, close it!'
+        t(
+          'are_you_sure_you_want_to_close_this_modal_all_data_will_be_lost',
+          'Are you sure you want to close this modal? (all data will be lost)'
+        ),
+        t('yes_close_it', 'Yes, close it!')
       )
     ) {
       if (customClose) {
@@ -595,7 +598,7 @@ Here are the things you can do:
         }}
       >
         {uploading && (
-          <div className="absolute left-0 top-0 w-full h-full bg-black/40 z-[600] flex justify-center items-center">
+          <div className="absolute start-0 top-0 w-full h-full bg-black/40 z-[600] flex justify-center items-center">
             <LoadingComponent width={100} height={100} />
           </div>
         )}
@@ -668,13 +671,13 @@ Here are the things you can do:
                 {selectedIntegrations?.[0]?.identifier === 'youtube' ? (
                   <img
                     src="/icons/platforms/youtube.svg"
-                    className="absolute z-10 -bottom-[5px] -right-[5px]"
+                    className="absolute z-10 -bottom-[5px] -end-[5px]"
                     width={20}
                   />
                 ) : (
                   <Image
                     src={`/icons/platforms/${selectedIntegrations?.[0]?.identifier}.png`}
-                    className="rounded-full absolute z-10 -bottom-[5px] -right-[5px] border border-fifth"
+                    className="rounded-full absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
                     alt={selectedIntegrations?.[0]?.identifier}
                     width={20}
                     height={20}
@@ -727,7 +730,7 @@ Here are the things you can do:
                             <div className="flex-1">
                               <MultiMediaComponent
                                 text={p.content}
-                                label="Attachments"
+                                label={t('attachments', 'Attachments')}
                                 description=""
                                 value={p.image}
                                 name="image"
@@ -756,7 +759,7 @@ Here are the things you can do:
                                       />
                                     </svg>
                                   </div>
-                                  <div className="text-[12px] font-[500] pr-[10px]">
+                                  <div className="text-[12px] font-[500] pe-[10px]">
                                     {t('delete_post', 'Delete Post')}
                                   </div>
                                 </div>
@@ -789,7 +792,7 @@ Here are the things you can do:
             ) : null}
           </div>
           <div className="relative min-h-[68px] flex flex-col rounded-[4px] border border-customColor6 bg-sixth">
-            <div className="gap-[10px] relative flex flex-col justify-center items-center min-h-full pr-[16px]">
+            <div className="gap-[10px] relative flex flex-col justify-center items-center min-h-full pe-[16px]">
               <div
                 id="add-edit-post-dialog-buttons"
                 className="flex flex-row flex-wrap w-full h-full gap-[10px] justify-end items-center"
@@ -829,17 +832,20 @@ Here are the things you can do:
                     <div className="flex justify-center items-center gap-[5px] h-full">
                       <div className="h-full flex items-center text-white">
                         {!canSendForPublication
-                          ? 'Not matching order'
+                          ? t('not_matching_order', 'Not matching order')
                           : postFor
-                          ? 'Submit for order'
+                          ? t('submit_for_order', 'Submit for order')
                           : !existingData.integration
                           ? selectedIntegrations.length === 0
-                            ? `Select channels from the circles above`
-                            : 'Add to calendar'
+                            ? t(
+                                'select_channels_from_circles',
+                                'Select channels from the circles above'
+                              )
+                            : t('add_to_calendar', 'Add to calendar')
                           : // @ts-ignore
                           existingData?.posts?.[0]?.state === 'DRAFT'
-                          ? 'Schedule'
-                          : 'Update'}
+                          ? t('schedule', 'Schedule')
+                          : t('update', 'Update')}
                       </div>
                       {!postFor && (
                         <div className="h-full flex items-center">
@@ -858,7 +864,7 @@ Here are the things you can do:
                           <div
                             onClick={postNow}
                             className={clsx(
-                              'hidden group-hover:flex hover:flex flex-col justify-center absolute left-0 top-[100%] w-full h-[40px] bg-customColor22 border border-tableBorder',
+                              'hidden group-hover:flex hover:flex flex-col justify-center absolute start-0 top-[100%] w-full h-[40px] bg-customColor22 border border-tableBorder',
                               loading &&
                                 'cursor-not-allowed pointer-events-none opacity-50'
                             )}
@@ -886,7 +892,7 @@ Here are the things you can do:
             <TopTitle title="" removeTitle={true}>
               <TagsComponent
                 name="tags"
-                label="Tags"
+                label={t('tags', 'Tags')}
                 initial={tags}
                 onChange={(e) => setTags(e.target.value)}
               />

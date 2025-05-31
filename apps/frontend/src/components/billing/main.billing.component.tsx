@@ -161,7 +161,7 @@ const Info: FC<{
     <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-customColor6 bg-sixth p-[16px] pt-0 w-[500px]">
       <TopTitle title="Oh no" />
       <button
-        className="outline-none absolute right-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+        className="outline-none absolute end-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
         type="button"
       >
         <svg
@@ -461,7 +461,7 @@ export const MainBillingComponent: FC<{
                       (user?.tier === 'FREE' ||
                           user?.tier?.current === 'FREE') &&
                         user.allowTrial
-                      ? 'Start 7 days free trial'
+                      ? t('start_7_days_free_trial', 'Start 7 days free trial')
                       : 'Purchase'}
                   </Button>
                 )}

@@ -158,7 +158,7 @@ export const TagsComponent: FC<{
       {showModal && <ShowModal {...showModal} />}
       <div className="flex-1 flex tags-top">
         <ReactTags
-          placeholderText="Add a tag"
+          placeholderText={t('add_a_tag', 'Add a tag')}
           suggestions={suggestionsArray}
           selected={tagValue}
           onAdd={onAddition}
@@ -171,19 +171,19 @@ export const TagsComponent: FC<{
             );
             return (
               <div
-                className={`min-w-[50px] float-left ml-[4px] p-[3px] rounded-sm relative`}
+                className={`min-w-[50px] float-left ms-[4px] p-[3px] rounded-sm relative`}
                 style={{
                   backgroundColor: findTag?.color,
                 }}
               >
                 <div
-                  className="absolute -top-[5px] left-[10px] text-[12px] text-red-600 bg-white px-[3px] rounded-full"
+                  className="absolute -top-[5px] start-[10px] text-[12px] text-red-600 bg-white px-[3px] rounded-full"
                   onClick={edit(findTag)}
                 >
                   {t('edit', 'Edit')}
                 </div>
                 <div
-                  className="absolute -top-[5px] -left-[5px] text-[12px] text-red-600 bg-white px-[3px] rounded-full"
+                  className="absolute -top-[5px] -start-[5px] text-[12px] text-red-600 bg-white px-[3px] rounded-full"
                   onClick={() => onDelete(findIndex)}
                 >
                   X
@@ -223,11 +223,11 @@ const ShowModal: FC<{
     resolve(tagName);
   }, [tagName, color, id]);
   return (
-    <div className="bg-black/40 fixed left-0 top-0 w-full h-full z-[500]">
+    <div className="bg-black/40 fixed start-0 top-0 w-full h-full z-[500]">
       <div className="relative w-[500px] mx-auto flex gap-[20px] flex-col flex-1 rounded-[4px] border border-customColor6 bg-sixth p-[16px] pt-0">
         <TopTitle title={`Create a new tag`} />
         <button
-          className="outline-none absolute right-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+          className="outline-none absolute end-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
           type="button"
         >
           <svg
