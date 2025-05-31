@@ -20,6 +20,7 @@ import dayjs from 'dayjs';
 import { uniqBy } from 'lodash';
 
 export class XProvider extends SocialAbstract implements SocialProvider {
+  available = !!(process.env.X_API_KEY && process.env.X_API_SECRET);
   identifier = 'x';
   name = 'X';
   isBetweenSteps = false;
@@ -408,7 +409,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         tweets.map((p) => p.id),
         {
           'tweet.fields': ['public_metrics'],
-        },
+        }
       );
 
       const metrics = data.data.reduce(

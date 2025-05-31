@@ -9,11 +9,12 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { timer } from '@gitroom/helpers/utils/timer';
 import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
-import { capitalize, chunk } from 'lodash';
+import { capitalize } from 'lodash';
 import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
 import { Integration } from '@prisma/client';
 
 export class ThreadsProvider extends SocialAbstract implements SocialProvider {
+  available = !!(process.env.THREADS_APP_ID && process.env.THREADS_APP_SECRET);
   identifier = 'threads';
   name = 'Threads';
   isBetweenSteps = false;

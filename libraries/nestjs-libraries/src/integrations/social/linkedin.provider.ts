@@ -13,6 +13,9 @@ import { Integration } from '@prisma/client';
 import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
 
 export class LinkedinProvider extends SocialAbstract implements SocialProvider {
+  available = !!(
+    process.env.LINKEDIN_CLIENT_ID && process.env.LINKEDIN_CLIENT_SECRET
+  );
   identifier = 'linkedin';
   name = 'LinkedIn';
   oneTimeToken = true;
