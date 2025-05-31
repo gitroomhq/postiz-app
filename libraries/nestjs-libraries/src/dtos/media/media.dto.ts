@@ -1,4 +1,4 @@
-import {IsDefined, IsString} from "class-validator";
+import { IsDefined, IsString } from 'class-validator';
 
 export class MediaDto {
   @IsString()

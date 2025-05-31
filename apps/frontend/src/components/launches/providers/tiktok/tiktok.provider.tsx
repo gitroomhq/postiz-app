@@ -13,7 +13,7 @@ import { Select } from '@gitroom/react/form/select';
 import { useCustomProviderFunction } from '@gitroom/frontend/components/launches/helpers/use.custom.provider.function';
 import { Checkbox } from '@gitroom/react/form/checkbox';
 import clsx from 'clsx';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 const privacyLevel = [
   {
     value: 'PUBLIC_TO_EVERYONE',
@@ -32,7 +32,6 @@ const privacyLevel = [
     label: 'Self only',
   },
 ];
-
 const contentPostingMethod = [
   {
     value: 'DIRECT_POST',
@@ -43,7 +42,6 @@ const contentPostingMethod = [
     label: 'Upload content to TikTok without posting it',
   },
 ];
-
 const yesNo = [
   {
     value: 'yes',
@@ -54,30 +52,29 @@ const yesNo = [
     label: 'No',
   },
 ];
-
-const CheckTikTokValidity: FC<{ picture: string }> = (props) => {
+const CheckTikTokValidity: FC<{
+  picture: string;
+}> = (props) => {
   const { register } = useSettings();
+  const t = useT();
+
   const func = useCustomProviderFunction();
   const [maxVideoLength, setMaxVideoLength] = useState(0);
   const [isValidVideo, setIsValidVideo] = useState<undefined | boolean>(
     undefined
   );
-
   const registerVideo = register('isValidVideo');
   const video = useMemo(() => {
     return props.picture;
   }, [props.picture]);
-
   useEffect(() => {
     loadStats();
   }, []);
-
   const loadStats = useCallback(async () => {
     const { maxDurationSeconds } = await func.get('maxVideoLength');
     // setMaxVideoLength(5);
     setMaxVideoLength(maxDurationSeconds);
   }, []);
-
   const loadVideo: ReactEventHandler<HTMLVideoElement> = useCallback(
     (e) => {
       // @ts-ignore
@@ -92,16 +89,19 @@ const CheckTikTokValidity: FC<{ picture: string }> = (props) => {
     },
     [maxVideoLength, registerVideo]
   );
-
   if (!maxVideoLength || !video || video.indexOf('mp4') === -1) {
     return null;
   }
-
   return (
     <>
       {isValidVideo === false && (
         <div className="text-red-600 my-[20px]">
-          Video length is invalid, must be up to {maxVideoLength} seconds
+          {t(
+            'video_length_is_invalid_must_be_up_to',
+            'Video length is invalid, must be up to'
+          )}
+          {maxVideoLength}
+          {t('seconds', 'seconds')}
         </div>
       )}
       <video
@@ -114,16 +114,17 @@ const CheckTikTokValidity: FC<{ picture: string }> = (props) => {
     </>
   );
 };
-
-const TikTokSettings: FC<{ values?: any }> = (props) => {
+const TikTokSettings: FC<{
+  values?: any;
+}> = (props) => {
   const { watch, register, formState, control } = useSettings();
+  const t = useT();
+
   const disclose = watch('disclose');
   const brand_organic_toggle = watch('brand_organic_toggle');
   const brand_content_toggle = watch('brand_content_toggle');
   const content_posting_method = watch('content_posting_method');
-
   const isUploadMode = content_posting_method === 'UPLOAD';
-
   return (
     <div className="flex flex-col">
       <CheckTikTokValidity picture={props?.values?.[0]?.image?.[0]?.path} />
@@ -135,7 +136,7 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
           value: 'PUBLIC_TO_EVERYONE',
         })}
       >
-        <option value="">Select</option>
+        <option value="">{t('select', 'Select')}</option>
         {privacyLevel.map((item) => (
           <option key={item.value} value={item.value}>
             {item.label}
@@ -153,7 +154,7 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
           value: 'DIRECT_POST',
         })}
       >
-        <option value="">Select</option>
+        <option value="">{t('select', 'Select')}</option>
         {contentPostingMethod.map((item) => (
           <option key={item.value} value={item.value}>
             {item.label}
@@ -167,7 +168,7 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
           value: 'no',
         })}
       >
-        <option value="">Select</option>
+        <option value="">{t('select', 'Select')}</option>
         {yesNo.map((item) => (
           <option key={item.value} value={item.value}>
             {item.label}
@@ -175,11 +176,15 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
         ))}
       </Select>
       <div className="text-[14px] mt-[10px] mb-[24px] text-balance">
-        This feature available only for photos, it will add a default music that
-        you can change later.
+        {t(
+          'this_feature_available_only_for_photos_it_will_add_a_default_music_that_you_can_change_later',
+          'This feature available only for photos, it will add a default music that\n        you can change later.'
+        )}
       </div>
       <hr className="mb-[15px] border-tableBorder" />
-      <div className="text-[14px] mb-[10px]">Allow User To:</div>
+      <div className="text-[14px] mb-[10px]">
+        {t('allow_user_to', 'Allow User To:')}
+      </div>
       <div className="flex gap-[40px]">
         <Checkbox
           variant="hollow"
@@ -233,15 +238,23 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
               </svg>
             </div>
             <div>
-              Your video will be labeled {'"'}Promotional Content{'"'}.<br />
-              This cannot be changed once your video is posted.
+              {t(
+                'your_video_will_be_labeled_promotional_content',
+                'Your video will be labeled "Promotional Content".'
+              )}
+              <br />
+              {t(
+                'this_cannot_be_changed_once_your_video_is_posted',
+                'This cannot be changed once your video is posted.'
+              )}
             </div>
           </div>
         )}
         <div className="text-[14px] my-[10px] text-balance">
-          Turn on to disclose that this video promotes goods or services in
-          exchange for something of value. You video could promote yourself, a
-          third party, or both.
+          {t(
+            'turn_on_to_disclose_that_this_video_promotes_goods_or_services',
+            'Turn on to disclose that this video promotes goods or services in\n          exchange for something of value. You video could promote yourself, a\n          third party, or both.'
+          )}
         </div>
       </div>
       <div className={clsx(!disclose && 'invisible', 'mt-[20px]')}>
@@ -254,9 +267,15 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
           })}
         />
         <div className="text-balance my-[10px] text-[14px]">
-          You are promoting yourself or your own brand.
+          {t(
+            'you_are_promoting_yourself_or_your_own_brand',
+            'You are promoting yourself or your own brand.'
+          )}
           <br />
-          This video will be classified as Brand Organic.
+          {t(
+            'this_video_will_be_classified_as_brand_organic',
+            'This video will be classified as Brand Organic.'
+          )}
         </div>
         <Checkbox
           variant="hollow"
@@ -267,13 +286,22 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
           })}
         />
         <div className="text-balance my-[10px] text-[14px]">
-          You are promoting another brand or a third party.
+          {t(
+            'you_are_promoting_another_brand_or_a_third_party',
+            'You are promoting another brand or a third party.'
+          )}
           <br />
-          This video will be classified as Branded Content.
+          {t(
+            'this_video_will_be_classified_as_branded_content',
+            'This video will be classified as Branded Content.'
+          )}
         </div>
         {(brand_organic_toggle || brand_content_toggle) && (
           <div className="my-[10px] text-[14px] text-balance">
-            By posting, you agree to TikTok{"'"}s{' '}
+            {t(
+              'by_posting_you_agree_to_tiktok_s',
+              "By posting, you agree to TikTok's"
+            )}
             {[
               brand_organic_toggle || brand_content_toggle ? (
                 <a
@@ -281,7 +309,7 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
                   className="text-[#B69DEC] hover:underline"
                   href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en"
                 >
-                  Music Usage Confirmation
+                  {t('music_usage_confirmation', 'Music Usage Confirmation')}
                 </a>
               ) : undefined,
               brand_content_toggle ? <> and </> : undefined,
@@ -291,7 +319,7 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
                   className="text-[#B69DEC] hover:underline"
                   href="https://www.tiktok.com/legal/page/global/bc-policy/en"
                 >
-                  Branded Content Policy
+                  {t('branded_content_policy', 'Branded Content Policy')}
                 </a>
               ) : undefined,
             ].filter((f) => f)}
@@ -301,7 +329,6 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
     </div>
   );
 };
-
 export default withProvider(
   TikTokSettings,
   undefined,
@@ -311,11 +338,9 @@ export default withProvider(
     if (items.length !== 1) {
       return 'Tiktok items should be one';
     }
-
     if (firstItems.length === 0) {
       return 'No video / images selected';
     }
-
     if (
       firstItems.length > 1 &&
       firstItems?.some((p) => p?.path?.indexOf('mp4') > -1)
@@ -327,7 +352,6 @@ export default withProvider(
     ) {
       return 'You need one media';
     }
-
     return true;
   },
   90

@@ -20,7 +20,7 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { PictureGeneratorSection } from '@gitroom/frontend/components/launches/polonto/polonto.picture.generation';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { loadVars } from '@gitroom/react/helpers/variable.context';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 const store = createStore({
   get key() {
     return loadVars().plontoKey;
@@ -29,9 +29,12 @@ const store = createStore({
 });
 
 // @ts-ignore
-const CloseContext = createContext({ close: {} as any, setMedia: {} as any });
-
+const CloseContext = createContext({
+  close: {} as any,
+  setMedia: {} as any,
+});
 const ActionControls = ({ store }: any) => {
+  const t = useT();
   const close = useContext(CloseContext);
   const [load, setLoad] = useState(false);
   const fetch = useFetch();
@@ -52,16 +55,18 @@ const ActionControls = ({ store }: any) => {
               body: formData,
             })
           ).json();
-          close.setMedia({ id: data.id, path: data.path });
+          close.setMedia({
+            id: data.id,
+            path: data.path,
+          });
           close.close();
         }}
       >
-        Use this media
+        {t('use_this_media', 'Use this media')}
       </Button>
     </div>
   );
 };
-
 const Polonto: FC<{
   setMedia: (params: { id: string; path: string }) => void;
   type?: 'image' | 'video';
@@ -71,20 +76,17 @@ const Polonto: FC<{
 }> = (props) => {
   const { setMedia, type, closeModal } = props;
   const user = useUser();
-
   const features = useMemo(() => {
     return [
       ...DEFAULT_SECTIONS,
       ...(user?.tier?.image_generator ? [PictureGeneratorSection] : []),
     ] as any[];
   }, [user?.tier?.image_generator]);
-
   useEffect(() => {
     store.addPage({
       width: props.width || 540,
       height: props.height || 675,
     });
-
     return () => {
       store.clear();
     };
@@ -119,9 +121,17 @@ const Polonto: FC<{
         </div>
         <div className="bg-white text-black relative z-[400] polonto">
           <CloseContext.Provider
-            value={{ close: () => closeModal(), setMedia }}
+            value={{
+              close: () => closeModal(),
+              setMedia,
+            }}
           >
-            <PolotnoContainer style={{ width: '100%', height: '700px' }}>
+            <PolotnoContainer
+              style={{
+                width: '100%',
+                height: '700px',
+              }}
+            >
               <SidePanelWrap>
                 <SidePanel store={store} sections={features} />
               </SidePanelWrap>
@@ -142,5 +152,4 @@ const Polonto: FC<{
     </div>
   );
 };
-
 export default Polonto;

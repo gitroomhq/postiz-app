@@ -1,11 +1,16 @@
 'use client';
 
-import { DetailedHTMLProps, FC, forwardRef, SelectHTMLAttributes, useMemo } from 'react';
+import {
+  DetailedHTMLProps,
+  FC,
+  forwardRef,
+  SelectHTMLAttributes,
+  useMemo,
+} from 'react';
 import { clsx } from 'clsx';
 import { useFormContext } from 'react-hook-form';
 import interClass from '../helpers/inter.font';
 import { RegisterOptions } from 'react-hook-form/dist/types/validator';
-
 export const Select: FC<
   DetailedHTMLProps<
     SelectHTMLAttributes<HTMLSelectElement>,
@@ -34,9 +39,8 @@ export const Select: FC<
     if (!form || !form.formState.errors[props?.name!]) return;
     return form?.formState?.errors?.[props?.name!]?.message! as string;
   }, [form?.formState?.errors?.[props?.name!]?.message, error]);
-
   return (
-    <div className={clsx("flex flex-col", label ? 'gap-[6px]' : '')}>
+    <div className={clsx('flex flex-col', label ? 'gap-[6px]' : '')}>
       <div className={`${interClass} text-[14px]`}>{label}</div>
       <select
         ref={ref}

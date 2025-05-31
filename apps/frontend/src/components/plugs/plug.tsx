@@ -1,4 +1,5 @@
 'use client';
+
 import {
   PlugSettings,
   PlugsInterface,
@@ -23,20 +24,20 @@ import { string, object } from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { Slider } from '@gitroom/react/form/slider';
 import { useToaster } from '@gitroom/react/toaster/toaster';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export function convertBackRegex(s: string) {
   const matches = s.match(/\/(.*)\/([a-z]*)/);
   const pattern = matches?.[1] || '';
   const flags = matches?.[2] || '';
-
   return new RegExp(pattern, flags);
 }
-
-export const TextArea: FC<{ name: string; placeHolder: string }> = (props) => {
+export const TextArea: FC<{
+  name: string;
+  placeHolder: string;
+}> = (props) => {
   const form = useFormContext();
   const { onChange, onBlur, ...all } = form.register(props.name);
   const value = form.watch(props.name);
-
   return (
     <>
       <textarea className="hidden" {...all}></textarea>
@@ -48,7 +49,12 @@ export const TextArea: FC<{ name: string; placeHolder: string }> = (props) => {
           '!min-h-40 !max-h-80 p-[24px] overflow-hidden bg-customColor2 outline-none rounded-[4px] border-fifth border'
         )}
         onChange={(e) => {
-          onChange({ target: { name: props.name, value: e.target.value } });
+          onChange({
+            target: {
+              name: props.name,
+              value: e.target.value,
+            },
+          });
         }}
         autosuggestionsConfig={{
           textareaPurpose: `Assist me in writing social media posts.`,
@@ -61,7 +67,6 @@ export const TextArea: FC<{ name: string; placeHolder: string }> = (props) => {
     </>
   );
 };
-
 export const PlugPop: FC<{
   plug: PlugsInterface;
   settings: PlugSettings;
@@ -78,12 +83,10 @@ export const PlugPop: FC<{
   const { closeAll } = useModals();
   const fetch = useFetch();
   const toaster = useToaster();
-
   const values = useMemo(() => {
     if (!data?.data) {
       return {};
     }
-
     return JSON.parse(data.data).reduce((acc: any, current: any) => {
       return {
         ...acc,
@@ -91,7 +94,6 @@ export const PlugPop: FC<{
       };
     }, {} as any);
   }, []);
-
   const yupSchema = useMemo(() => {
     return object(
       plug.fields.reduce((acc, field) => {
@@ -106,13 +108,11 @@ export const PlugPop: FC<{
       }, {})
     );
   }, []);
-
   const form = useForm({
     resolver: yupResolver(yupSchema),
     values,
     mode: 'all',
   });
-
   const submit: SubmitHandler<any> = useCallback(async (data) => {
     await fetch(`/integrations/${settings.providerId}/plugs`, {
       method: 'POST',
@@ -124,10 +124,11 @@ export const PlugPop: FC<{
         })),
       }),
     });
-
     toaster.show('Plug updated', 'success');
     closeAll();
   }, []);
+
+  const t = useT();
 
   return (
     <FormProvider {...form}>
@@ -181,7 +182,7 @@ export const PlugPop: FC<{
               ))}
             </div>
             <div className="mt-[20px]">
-              <Button type="submit">Activate</Button>
+              <Button type="submit">{t('activate', 'Activate')}</Button>
             </div>
           </div>
         </div>
@@ -189,7 +190,6 @@ export const PlugPop: FC<{
     </FormProvider>
   );
 };
-
 export const PlugItem: FC<{
   plug: PlugsInterface;
   addPlug: (data: any) => void;
@@ -208,7 +208,6 @@ export const PlugItem: FC<{
     setActivated(!!data?.activated);
   }, [data?.activated]);
   const fetch = useFetch();
-
   const changeActivated = useCallback(
     async (status: 'on' | 'off') => {
       await fetch(`/integrations/plugs/${data?.id}/activate`, {
@@ -220,12 +219,10 @@ export const PlugItem: FC<{
           'Content-Type': 'application/json',
         },
       });
-
       setActivated(status === 'on');
     },
     [activated]
   );
-
   return (
     <div
       onClick={() => addPlug(data)}
@@ -251,7 +248,6 @@ export const PlugItem: FC<{
     </div>
   );
 };
-
 export const Plug = () => {
   const plug = usePlugs();
   const modals = useModals();
@@ -259,9 +255,7 @@ export const Plug = () => {
   const load = useCallback(async () => {
     return (await fetch(`/integrations/${plug.providerId}/plugs`)).json();
   }, [plug.providerId]);
-
   const { data, isLoading, mutate } = useSWR(`plugs-${plug.providerId}`, load);
-
   const addEditPlug = useCallback(
     (p: PlugsInterface) =>
       (data?: {
@@ -296,11 +290,9 @@ export const Plug = () => {
       },
     [data]
   );
-
   if (isLoading) {
     return null;
   }
-
   return (
     <div className="grid grid-cols-3 gap-[30px]">
       {plug.plugs.map((p) => (

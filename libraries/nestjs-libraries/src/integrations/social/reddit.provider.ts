@@ -301,27 +301,28 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
     ).json();
 
     // eslint-disable-next-line no-async-promise-executor
-    const newData = await new Promise<{id: string, name: string}[]>(async (res) => {
-      try {
-        const flair = await (
-          await this.fetch(
-            `https://oauth.reddit.com/${data.subreddit}/api/link_flair_v2`,
-            {
-              method: 'GET',
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-                'Content-Type': 'application/x-www-form-urlencoded',
-              },
-            }
-          )
-        ).json();
+    const newData = await new Promise<{ id: string; name: string }[]>(
+      async (res) => {
+        try {
+          const flair = await (
+            await this.fetch(
+              `https://oauth.reddit.com/${data.subreddit}/api/link_flair_v2`,
+              {
+                method: 'GET',
+                headers: {
+                  Authorization: `Bearer ${accessToken}`,
+                  'Content-Type': 'application/x-www-form-urlencoded',
+                },
+              }
+            )
+          ).json();
 
-        res(flair);
+          res(flair);
+        } catch (err) {
+          return res([]);
+        }
       }
-      catch (err) {
-        return res([]);
-      }
-    });
+    );
 
     return {
       subreddit: data.subreddit,

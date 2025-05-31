@@ -9,7 +9,6 @@ import {
 import interClass from '../helpers/inter.font';
 import { clsx } from 'clsx';
 import { useFormContext } from 'react-hook-form';
-
 export const CustomSelect: FC<{
   error?: any;
   disableForm?: boolean;
@@ -19,13 +18,24 @@ export const CustomSelect: FC<{
   removeError?: boolean;
   onChange?: () => void;
   className?: string;
-  options: Array<{ value: string; label: string; icon?: ReactNode }>;
+  options: Array<{
+    value: string;
+    label: string;
+    icon?: ReactNode;
+  }>;
 }> = (props) => {
-  const { options, onChange, placeholder, className, removeError, label, ...rest } = props;
+  const {
+    options,
+    onChange,
+    placeholder,
+    className,
+    removeError,
+    label,
+    ...rest
+  } = props;
   const form = useFormContext();
   const value = form.watch(props.name);
   const [isOpen, setIsOpen] = useState(false);
-
   const err = useMemo(() => {
     const split = (props.name + '.value').split('.');
     let errIn = form?.formState?.errors;
@@ -35,7 +45,6 @@ export const CustomSelect: FC<{
     }
     return errIn?.message;
   }, [props.name, form]);
-
   const option = useMemo(() => {
     if (value?.value && options.length) {
       return (
@@ -45,14 +54,13 @@ export const CustomSelect: FC<{
         }
       );
     }
-
-    return { label: placeholder };
+    return {
+      label: placeholder,
+    };
   }, [value, options]);
-
   const changeOpen = useCallback(() => {
     setIsOpen(!isOpen);
   }, [isOpen]);
-
   const setOption = useCallback(
     (newOption: any) => (e: any) => {
       form.setValue(props.name, newOption);
@@ -61,16 +69,14 @@ export const CustomSelect: FC<{
     },
     []
   );
-
   useEffect(() => {
     if (onChange) {
       onChange();
     }
   }, [value]);
-
   return (
-    <div className={clsx("flex flex-col gap-[6px] relative", className)}>
-      {!!label && (<div className={`${interClass} text-[14px]`}>{label}</div>)}
+    <div className={clsx('flex flex-col gap-[6px] relative', className)}>
+      {!!label && <div className={`${interClass} text-[14px]`}>{label}</div>}
       <div
         className={clsx(
           'bg-input h-[44px] border-fifth border rounded-[4px] text-inputText placeholder-inputText items-center justify-center flex'
@@ -120,7 +126,12 @@ export const CustomSelect: FC<{
         </div>
       </div>
       {isOpen && (
-        <div className={clsx(label && !removeError && '-mt-[23px]', "z-[100] absolute w-full top-[100%] left-0 flex items-center rounded-bl-[4px] rounded-br-[4px] flex-col bg-fifth gap-[1px] border-l border-r border-b border-fifth overflow-hidden")}>
+        <div
+          className={clsx(
+            label && !removeError && '-mt-[23px]',
+            'z-[100] absolute w-full top-[100%] left-0 flex items-center rounded-bl-[4px] rounded-br-[4px] flex-col bg-fifth gap-[1px] border-l border-r border-b border-fifth overflow-hidden'
+          )}
+        >
           {options.map((option) => (
             <div
               onClick={setOption(option)}

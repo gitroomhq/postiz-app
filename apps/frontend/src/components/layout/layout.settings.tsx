@@ -33,29 +33,30 @@ import { NewSubscription } from '@gitroom/frontend/components/layout/new.subscri
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 const ModeComponent = dynamic(
   () => import('@gitroom/frontend/components/layout/mode.component'),
-  { ssr: false }
+  {
+    ssr: false,
+  }
 );
-
 import { extend } from 'dayjs';
 import { useSearchParams } from 'next/navigation';
 import { CheckPayment } from '@gitroom/frontend/components/layout/check.payment';
 import { ChromeExtensionComponent } from '@gitroom/frontend/components/layout/chrome.extension.component';
 import { LanguageComponent } from '@gitroom/frontend/components/layout/language.component';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 extend(utc);
 extend(weekOfYear);
 extend(isoWeek);
 extend(isBetween);
-
 export const LayoutSettings = ({ children }: { children: ReactNode }) => {
   const fetch = useFetch();
+  const t = useT();
+
   const { isGeneral } = useVariables();
   const { backendUrl, billingEnabled } = useVariables();
   const searchParams = useSearchParams();
   const load = useCallback(async (path: string) => {
     return await (await fetch(path)).json();
   }, []);
-
   const { data: user, mutate } = useSWR('/user/self', load, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
@@ -63,9 +64,7 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
     refreshWhenOffline: false,
     refreshWhenHidden: false,
   });
-
   if (!user) return null;
-
   return (
     <ContextWrapper user={user}>
       <CopilotKit
@@ -157,9 +156,15 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
                   <>
                     <div className="text-center mb-[20px] text-xl [@media(max-width:1024px)]:text-xl">
                       <h1 className="text-3xl [@media(max-width:1024px)]:text-xl">
-                        Join 1000+ Entrepreneurs Who Use Postiz
+                        {t(
+                          'join_1000_entrepreneurs_who_use_postiz',
+                          'Join 1000+ Entrepreneurs Who Use Postiz'
+                        )}
                         <br />
-                        To Manage All Your Social Media Channels
+                        {t(
+                          'to_manage_all_your_social_media_channels',
+                          'To Manage All Your Social Media Channels'
+                        )}
                       </h1>
                       <br />
                       {user?.allowTrial && (
@@ -179,7 +184,9 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
                                 />
                               </svg>
                             </div>
-                            <div>100% no-risk trial</div>
+                            <div>
+                              {t('100_no_risk_trial', '100% no-risk trial')}
+                            </div>
                           </div>
                           <div className="flex gap-[5px] items-center">
                             <div>
@@ -196,7 +203,12 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
                                 />
                               </svg>
                             </div>
-                            <div>Pay nothing for the first 7 days</div>
+                            <div>
+                              {t(
+                                'pay_nothing_for_the_first_7_days',
+                                'Pay nothing for the first 7 days'
+                              )}
+                            </div>
                           </div>
                           <div className="flex gap-[5px] items-center">
                             <div>
@@ -213,7 +225,12 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
                                 />
                               </svg>
                             </div>
-                            <div>Cancel anytime, hassle-free</div>
+                            <div>
+                              {t(
+                                'cancel_anytime_hassle_free',
+                                'Cancel anytime, hassle-free'
+                              )}
+                            </div>
                           </div>
                         </div>
                       )}

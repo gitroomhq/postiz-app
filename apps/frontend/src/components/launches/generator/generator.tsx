@@ -18,17 +18,17 @@ import {
 import { AddEditModal } from '@gitroom/frontend/components/launches/add.edit.model';
 import dayjs from 'dayjs';
 import { Select } from '@gitroom/react/form/select';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 const FirstStep: FC = (props) => {
   const { integrations, reloadCalendarView } = useCalendar();
   const modal = useModals();
   const fetch = useFetch();
   const [loading, setLoading] = useState(false);
   const [showStep, setShowStep] = useState('');
+  const t = useT();
   const resolver = useMemo(() => {
     return classValidatorResolver(GeneratorDto);
   }, []);
-
   const form = useForm({
     mode: 'all',
     resolver,
@@ -39,13 +39,10 @@ const FirstStep: FC = (props) => {
       tone: 'personal',
     },
   });
-
   const [research] = form.watch(['research']);
-
   const generateStep = useCallback(
     async (reader: ReadableStreamDefaultReader) => {
       const decoder = new TextDecoder('utf-8');
-
       let lastResponse = {} as any;
       // eslint-disable-next-line no-constant-condition
       while (true) {
@@ -53,7 +50,9 @@ const FirstStep: FC = (props) => {
         if (done) return lastResponse.data.output;
 
         // Convert chunked binary data to string
-        const chunkStr = decoder.decode(value, { stream: true });
+        const chunkStr = decoder.decode(value, {
+          stream: true,
+        });
         for (const chunk of chunkStr
           .split('\n')
           .filter((f) => f && f.indexOf('{') > -1)) {
@@ -100,7 +99,6 @@ const FirstStep: FC = (props) => {
     },
     []
   );
-
   const onSubmit: SubmitHandler<{
     research: string;
   }> = useCallback(
@@ -110,30 +108,32 @@ const FirstStep: FC = (props) => {
         method: 'POST',
         body: JSON.stringify(value),
       });
-
       if (!response.body) {
         return;
       }
-
       const reader = response.body.getReader();
       const load = await generateStep(reader);
-
       const messages = load.content.map((p: any, index: number) => {
         if (index === 0) {
           return {
             content: load.hook + '\n' + p.content,
-            ...(p?.image?.path ? { image: [p.image] } : {}),
+            ...(p?.image?.path
+              ? {
+                  image: [p.image],
+                }
+              : {}),
           };
         }
-
         return {
           content: p.content,
-          ...(p?.image?.path ? { image: [p.image] } : {}),
+          ...(p?.image?.path
+            ? {
+                image: [p.image],
+              }
+            : {}),
         };
       });
-
       setShowStep('');
-
       modal.openModal({
         closeOnClickOutside: false,
         closeOnEscape: false,
@@ -143,8 +143,12 @@ const FirstStep: FC = (props) => {
         },
         children: (
           <AddEditModal
-            allIntegrations={integrations.map((p) => ({ ...p }))}
-            integrations={integrations.slice(0).map((p) => ({ ...p }))}
+            allIntegrations={integrations.map((p) => ({
+              ...p,
+            }))}
+            integrations={integrations.slice(0).map((p) => ({
+              ...p,
+            }))}
             mutate={reloadCalendarView}
             date={dayjs.utc(load.date).local()}
             reopenModal={() => ({})}
@@ -153,12 +157,10 @@ const FirstStep: FC = (props) => {
         ),
         size: '80%',
       });
-
       setLoading(false);
     },
     [integrations, reloadCalendarView]
   );
-
   return (
     <form
       onSubmit={form.handleSubmit(onSubmit)}
@@ -186,19 +188,34 @@ const FirstStep: FC = (props) => {
                   {...form.register('research')}
                 />
                 <Select label="Output format" {...form.register('format')}>
-                  <option value="one_short">Short post</option>
-                  <option value="one_long">Long post</option>
-                  <option value="thread_short">
-                    A thread with short posts
+                  <option value="one_short">
+                    {t('short_post', 'Short post')}
                   </option>
-                  <option value="thread_long">A thread with long posts</option>
+                  <option value="one_long">
+                    {t('long_post', 'Long post')}
+                  </option>
+                  <option value="thread_short">
+                    {t(
+                      'a_thread_with_short_posts',
+                      'A thread with short posts'
+                    )}
+                  </option>
+                  <option value="thread_long">
+                    {t('a_thread_with_long_posts', 'A thread with long posts')}
+                  </option>
                 </Select>
                 <Select label="Output format" {...form.register('tone')}>
                   <option value="personal">
-                    Personal voice ({'"'}I am happy to announce{'"'})
+                    {t(
+                      'personal_voice_i_am_happy_to_announce',
+                      'Personal voice ("I am happy to announce")'
+                    )}
                   </option>
                   <option value="company">
-                    Company voice ({'"'}We are happy to announce{'"'})
+                    {t(
+                      'company_voice_we_are_happy_to_announce',
+                      'Company voice ("We are happy to announce")'
+                    )}
                   </option>
                 </Select>
                 <div
@@ -220,7 +237,7 @@ const FirstStep: FC = (props) => {
             disabled={research.length < 10}
             loading={loading}
           >
-            Generate
+            {t('generate', 'Generate')}
           </Button>
         </div>
       </FormProvider>
@@ -228,12 +245,12 @@ const FirstStep: FC = (props) => {
   );
 };
 export const GeneratorPopup = () => {
-  const modals = useModals();
+  const t = useT();
 
+  const modals = useModals();
   const closeAll = useCallback(() => {
     modals.closeAll();
   }, []);
-
   return (
     <div className="bg-sixth p-[32px] w-full max-w-[920px] mx-auto flex flex-col rounded-[4px] border border-customColor6 relative">
       <button
@@ -256,17 +273,17 @@ export const GeneratorPopup = () => {
           ></path>
         </svg>
       </button>
-      <h1 className="text-[24px]">Generate Posts</h1>
+      <h1 className="text-[24px]">{t('generate_posts', 'Generate Posts')}</h1>
       <FirstStep />
     </div>
   );
 };
 export const GeneratorComponent = () => {
+  const t = useT();
   const user = useUser();
   const router = useRouter();
   const modal = useModals();
   const all = useCalendar();
-
   const generate = useCallback(async () => {
     if (!user?.tier?.ai) {
       if (
@@ -280,7 +297,6 @@ export const GeneratorComponent = () => {
       }
       return;
     }
-
     modal.openModal({
       title: '',
       withCloseButton: false,
@@ -295,7 +311,6 @@ export const GeneratorComponent = () => {
       ),
     });
   }, [user, all]);
-
   return (
     <button
       className="p-[8px] rounded-md bg-red-700 flex justify-center items-center gap-[5px] outline-none text-white"
@@ -320,7 +335,9 @@ export const GeneratorComponent = () => {
           fill="currentColor"
         />
       </svg>
-      <div className="flex-1 text-left">Generate Posts</div>
+      <div className="flex-1 text-left">
+        {t('generate_posts', 'Generate Posts')}
+      </div>
     </button>
   );
 };

@@ -4,27 +4,34 @@ import { ReactTags } from 'react-tag-autocomplete';
 import interClass from '@gitroom/react/helpers/inter.font';
 import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import clsx from 'clsx';
-
 export const InstagramCollaboratorsTags: FC<{
   name: string;
   label: string;
-  onChange: (event: { target: { value: any[]; name: string } }) => void;
+  onChange: (event: {
+    target: {
+      value: any[];
+      name: string;
+    };
+  }) => void;
 }> = (props) => {
   const { onChange, name, label } = props;
   const { getValues } = useSettings();
   const { integration } = useIntegration();
   const [tagValue, setTagValue] = useState<any[]>([]);
   const [suggestions, setSuggestions] = useState<string>('');
-
   const onDelete = useCallback(
     (tagIndex: number) => {
       const modify = tagValue.filter((_, i) => i !== tagIndex);
       setTagValue(modify);
-      onChange({ target: { value: modify, name } });
+      onChange({
+        target: {
+          value: modify,
+          name,
+        },
+      });
     },
     [tagValue]
   );
-
   const onAddition = useCallback(
     (newTag: any) => {
       if (tagValue.length >= 3) {
@@ -32,30 +39,37 @@ export const InstagramCollaboratorsTags: FC<{
       }
       const modify = [...tagValue, newTag];
       setTagValue(modify);
-      onChange({ target: { value: modify, name } });
+      onChange({
+        target: {
+          value: modify,
+          name,
+        },
+      });
     },
     [tagValue]
   );
-
   useEffect(() => {
     const settings = getValues()[props.name];
     if (settings) {
       setTagValue(settings);
     }
   }, []);
-
   const suggestionsArray = useMemo(() => {
-    return [...tagValue, { label: suggestions, value: suggestions }].filter(
-      (f) => f.label
-    );
+    return [
+      ...tagValue,
+      {
+        label: suggestions,
+        value: suggestions,
+      },
+    ].filter((f) => f.label);
   }, [suggestions, tagValue]);
-
   return (
     <div
       {...(integration?.identifier === 'instagram-standalone'
         ? {
             'data-tooltip-id': 'tooltip',
-            'data-tooltip-content': 'Instagram Standalone does not support collaborators',
+            'data-tooltip-content':
+              'Instagram Standalone does not support collaborators',
           }
         : {})}
     >

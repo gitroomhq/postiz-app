@@ -1,5 +1,4 @@
 import { FC, ReactNode } from 'react';
-
 export const TopTitle: FC<{
   title: string;
   shouldExpend?: boolean;
@@ -10,7 +9,6 @@ export const TopTitle: FC<{
 }> = (props) => {
   const { title, removeTitle, children, shouldExpend, expend, collapse } =
     props;
-
   return (
     <div className="h-[57px] border-b flex items-center border-customColor6 px-[16px] -mx-[16px]">
       {!removeTitle && <div className="flex-1">{title}</div>}

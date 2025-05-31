@@ -1,19 +1,16 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
 
+import { useCallback, useEffect, useState } from 'react';
 const ModeComponent = () => {
   const [mode, setMode] = useState(localStorage.getItem('mode') || 'dark');
-
   const changeMode = useCallback(() => {
     setMode(mode === 'dark' ? 'light' : 'dark');
     localStorage.setItem('mode', mode === 'dark' ? 'light' : 'dark');
   }, [mode]);
-
   useEffect(() => {
     document.body.classList.remove('dark', 'light');
     document.body.classList.add(mode);
   }, [mode]);
-
   return (
     <div onClick={changeMode} className="select-none cursor-pointer">
       {mode === 'dark' ? (
@@ -46,5 +43,4 @@ const ModeComponent = () => {
     </div>
   );
 };
-
 export default ModeComponent;

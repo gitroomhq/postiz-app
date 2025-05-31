@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import {CronModule} from "./cron.module";
+import { CronModule } from './cron.module';
 
 async function bootstrap() {
   // some comment again

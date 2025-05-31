@@ -16,12 +16,10 @@ import countries from 'i18n-iso-countries';
 // Register required locales
 import countriesEn from 'i18n-iso-countries/langs/en.json';
 countries.registerLocale(countriesEn);
-
 export const ChangeLanguageComponent = () => {
   const currentLanguage = i18next.resolvedLanguage || fallbackLng;
   const availableLanguages = languages;
   const [_, setCookie] = useCookie(cookieName, currentLanguage || fallbackLng);
-
   const handleLanguageChange = (language: string) => {
     setCookie(language);
     window.location.reload();
@@ -31,7 +29,9 @@ export const ChangeLanguageComponent = () => {
   const getLanguageName = useCallback((code: string) => {
     try {
       // Use browser's Intl API to get language name in native script
-      const displayNames = new Intl.DisplayNames([code], { type: 'language' });
+      const displayNames = new Intl.DisplayNames([code], {
+        type: 'language',
+      });
       return displayNames.of(code);
     } catch (error) {
       // Fallback to language code if the API isn't supported or language is not found
@@ -46,6 +46,7 @@ export const ChangeLanguageComponent = () => {
     if (languageCode === 'es') return 'ES';
     if (languageCode === 'ar') return 'SA';
     if (languageCode === 'zh') return 'CN';
+    if (languageCode === 'he') return 'IL';
 
     // Check if language code itself is a valid country code
     try {
@@ -75,7 +76,6 @@ export const ChangeLanguageComponent = () => {
     // Examples: fr->FR, it->IT, de->DE, etc.
     return languageCode.toUpperCase();
   }, []);
-
   return (
     <List spacing="md">
       {availableLanguages.map((language) => (
@@ -120,7 +120,6 @@ export const ChangeLanguageComponent = () => {
     </List>
   );
 };
-
 export const LanguageComponent = () => {
   const modal = useModals();
   const openModal = () => {
@@ -131,7 +130,6 @@ export const LanguageComponent = () => {
       centered: true,
     });
   };
-
   return (
     <svg
       width="30"

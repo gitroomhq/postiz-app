@@ -1,5 +1,4 @@
 import { withProvider } from '@gitroom/frontend/components/launches/providers/high.order.provider';
-
 export default withProvider(
   null,
   undefined,
@@ -7,5 +6,5 @@ export default withProvider(
   async () => {
     return true;
   },
-  undefined,
+  undefined
 );

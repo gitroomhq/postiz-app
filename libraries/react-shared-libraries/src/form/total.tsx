@@ -2,14 +2,14 @@ import { FC, useCallback, useEffect } from 'react';
 import interClass from '../helpers/inter.font';
 import { clsx } from 'clsx';
 import { useFormContext } from 'react-hook-form';
-
-export const Total: FC<{ name: string; customOnChange?: () => void }> = (
-  props
-) => {
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
+export const Total: FC<{
+  name: string;
+  customOnChange?: () => void;
+}> = (props) => {
   const { name, customOnChange } = props;
   const form = useFormContext();
   const value = form.watch(props.name);
-
   const changeNumber = useCallback(
     (value: number) => () => {
       if (value === 0) {
@@ -19,16 +19,17 @@ export const Total: FC<{ name: string; customOnChange?: () => void }> = (
     },
     [value]
   );
-
   useEffect(() => {
     if (customOnChange) {
       customOnChange();
     }
   }, [value, customOnChange]);
 
+  const t = useT();
+
   return (
     <div className="flex flex-col gap-[6px] relative w-[158px]">
-      <div className={`${interClass} text-[14px]`}>Total</div>
+      <div className={`${interClass} text-[14px]`}>{t('total', 'Total')}</div>
       <div
         className={clsx(
           'bg-input h-[44px] border-fifth border rounded-[4px] text-inputText placeholder-inputText items-center justify-center flex'

@@ -25,80 +25,73 @@ import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.titl
 import { Tabs } from '@mantine/core';
 import { SignaturesComponent } from '@gitroom/frontend/components/settings/signatures.component';
 import { Autopost } from '@gitroom/frontend/components/autopost/autopost';
-
-export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
+export const SettingsPopup: FC<{
+  getRef?: Ref<any>;
+}> = (props) => {
   const { isGeneral } = useVariables();
   const { getRef } = props;
   const fetch = useFetch();
   const toast = useToaster();
   const swr = useSWRConfig();
   const user = useUser();
-
   const resolver = useMemo(() => {
     return classValidatorResolver(UserDetailDto);
   }, []);
-  const form = useForm({ resolver });
+  const form = useForm({
+    resolver,
+  });
   const picture = form.watch('picture');
   const modal = useModals();
   const close = useCallback(() => {
     return modal.closeAll();
   }, []);
-
   const url = useSearchParams();
   const showLogout = !url.get('onboarding') || user?.tier?.current === 'FREE';
-
   const loadProfile = useCallback(async () => {
     const personal = await (await fetch('/user/personal')).json();
     form.setValue('fullname', personal.name || '');
     form.setValue('bio', personal.bio || '');
     form.setValue('picture', personal.picture);
   }, []);
-
   const openMedia = useCallback(() => {
     showMediaBox((values) => {
       form.setValue('picture', values);
     });
   }, []);
-
   const remove = useCallback(() => {
     form.setValue('picture', null);
   }, []);
-
   const submit = useCallback(async (val: any) => {
     await fetch('/user/personal', {
       method: 'POST',
       body: JSON.stringify(val),
     });
-
     if (getRef) {
       return;
     }
-
     toast.show('Profile updated');
     swr.mutate('/marketplace/account');
     close();
   }, []);
-
   const defaultValueForTabs = useMemo(() => {
     if (user?.tier?.team_members && isGeneral) {
       return 'teams';
     }
-
     if (user?.tier?.webhooks) {
       return 'webhooks';
     }
-
     if (user?.tier?.public_api && isGeneral) {
       return 'api';
     }
-
     return 'teams';
   }, []);
+
+  const t = useT();
 
   useEffect(() => {
     loadProfile();
   }, []);
-
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(submit)}>
@@ -123,17 +116,23 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
             <Tabs.List>
               {/* <Tabs.Tab value="profile">Profile</Tabs.Tab> */}
               {!!user?.tier?.team_members && isGeneral && (
-                <Tabs.Tab value="teams">Teams</Tabs.Tab>
+                <Tabs.Tab value="teams">{t('teams', 'Teams')}</Tabs.Tab>
               )}
               {!!user?.tier?.webhooks && (
-                <Tabs.Tab value="webhooks">Webhooks</Tabs.Tab>
+                <Tabs.Tab value="webhooks">
+                  {t('webhooks_1', 'Webhooks')}
+                </Tabs.Tab>
               )}
               {!!user?.tier?.autoPost && (
-                <Tabs.Tab value="autopost">Auto Post</Tabs.Tab>
+                <Tabs.Tab value="autopost">
+                  {t('auto_post', 'Auto Post')}
+                </Tabs.Tab>
               )}
-              <Tabs.Tab value="signatures">Signatures</Tabs.Tab>
+              <Tabs.Tab value="signatures">
+                {t('signatures', 'Signatures')}
+              </Tabs.Tab>
               {!!user?.tier?.public_api && isGeneral && showLogout && (
-                <Tabs.Tab value="api">Public API</Tabs.Tab>
+                <Tabs.Tab value="api">{t('public_api', 'Public API')}</Tabs.Tab>
               )}
             </Tabs.List>
 
@@ -217,7 +216,7 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
                   <Textarea label="Bio" name="bio" className="resize-none" />
                 </div>
               </div>
-            </Tabs.Panel> */}
+             </Tabs.Panel> */}
 
             {!!user?.tier?.team_members && isGeneral && (
               <Tabs.Panel value="teams" pt="md">
@@ -258,16 +257,13 @@ export const SettingsPopup: FC<{ getRef?: Ref<any> }> = (props) => {
     </FormProvider>
   );
 };
-
 export const SettingsComponent = () => {
   const settings = useModals();
   const user = useUser();
-
   const openModal = useCallback(() => {
     if (user?.tier.current !== 'FREE') {
       return;
     }
-
     settings.openModal({
       children: (
         <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-customColor6 bg-sixth p-[16px] w-[500px] mx-auto">
@@ -281,7 +277,6 @@ export const SettingsComponent = () => {
       size: '100%',
     });
   }, [user]);
-
   return (
     <Link href="/settings" onClick={openModal}>
       <svg

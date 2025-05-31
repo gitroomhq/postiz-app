@@ -1,12 +1,16 @@
 'use client';
 
 import {
-  DetailedHTMLProps, FC, InputHTMLAttributes, ReactNode, useEffect, useMemo
+  DetailedHTMLProps,
+  FC,
+  InputHTMLAttributes,
+  ReactNode,
+  useEffect,
+  useMemo,
 } from 'react';
 import { clsx } from 'clsx';
 import { useFormContext, useWatch } from 'react-hook-form';
 import interClass from '../helpers/inter.font';
-
 export const Input: FC<
   DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement> & {
     removeError?: boolean;
@@ -34,17 +38,15 @@ export const Input: FC<
     if (!form || !form.formState.errors[props?.name!]) return;
     return form?.formState?.errors?.[props?.name!]?.message! as string;
   }, [form?.formState?.errors?.[props?.name!]?.message, error]);
-
   const watch = customUpdate ? form?.watch(props.name) : null;
   useEffect(() => {
     if (customUpdate) {
       customUpdate();
     }
   }, [watch]);
-
   return (
     <div className="flex flex-col gap-[6px]">
-      {!!label && (<div className={`${interClass} text-[14px]`}>{label}</div>)}
+      {!!label && <div className={`${interClass} text-[14px]`}>{label}</div>}
       <div
         className={clsx(
           'bg-input h-[44px] border-fifth border rounded-[4px] text-inputText placeholder-inputText flex items-center justify-center',

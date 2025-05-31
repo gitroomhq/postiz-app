@@ -24,17 +24,17 @@ import { GeneratorComponent } from './generator/generator';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { NewPost } from '@gitroom/frontend/components/launches/new.post';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-
 interface MenuComponentInterface {
   refreshChannel: (
-    integration: Integration & { identifier: string }
+    integration: Integration & {
+      identifier: string;
+    }
   ) => () => void;
   continueIntegration: (integration: Integration) => () => void;
   totalNonDisabledChannels: number;
   mutate: (shouldReload?: boolean) => void;
   update: (shouldReload: boolean) => void;
 }
-
 export const OpenClose: FC<{
   isOpen: boolean;
 }> = (props) => {
@@ -58,7 +58,6 @@ export const OpenClose: FC<{
     </svg>
   );
 };
-
 export const MenuGroupComponent: FC<
   MenuComponentInterface & {
     changeItemGroup: (id: string, group: string) => void;
@@ -84,11 +83,9 @@ export const MenuGroupComponent: FC<
     refreshChannel,
     changeItemGroup,
   } = props;
-
   const [isOpen, setIsOpen] = useState(
     !!+(localStorage.getItem(group.name + '_isOpen') || '1')
   );
-
   const changeOpenClose = useCallback(
     (e: any) => {
       setIsOpen(!isOpen);
@@ -97,17 +94,20 @@ export const MenuGroupComponent: FC<
     },
     [isOpen]
   );
-
   const [collectedProps, drop] = useDrop(() => ({
     accept: 'menu',
-    drop: (item: { id: string }, monitor) => {
+    drop: (
+      item: {
+        id: string;
+      },
+      monitor
+    ) => {
       changeItemGroup(item.id, group.id);
     },
     collect: (monitor) => ({
       isOver: !!monitor.isOver(),
     }),
   }));
-
   return (
     <div
       className="gap-[16px] flex flex-col relative"
@@ -171,13 +171,13 @@ export const MenuComponent: FC<
     update,
     integration,
   } = props;
-
   const user = useUser();
   const [collected, drag, dragPreview] = useDrag(() => ({
     type: 'menu',
-    item: { id: integration.id },
+    item: {
+      id: integration.id,
+    },
   }));
-
   return (
     <div
       // @ts-ignore
@@ -282,12 +282,10 @@ export const LaunchesComponent = () => {
   const toast = useToaster();
   const fireEvents = useFireEvents();
   const t = useT();
-
   const [reload, setReload] = useState(false);
   const load = useCallback(async (path: string) => {
     return (await (await fetch(path)).json()).integrations;
   }, []);
-
   const {
     isLoading,
     data: integrations,
@@ -295,36 +293,38 @@ export const LaunchesComponent = () => {
   } = useSWR('/integrations/list', load, {
     fallbackData: [],
   });
-
   const totalNonDisabledChannels = useMemo(() => {
     return (
       integrations?.filter((integration: any) => !integration.disabled)
         ?.length || 0
     );
   }, [integrations]);
-
   const changeItemGroup = useCallback(
     async (id: string, group: string) => {
       mutate(
         integrations.map((integration: any) => {
           if (integration.id === id) {
-            return { ...integration, customer: { id: group } };
+            return {
+              ...integration,
+              customer: {
+                id: group,
+              },
+            };
           }
           return integration;
         }),
         false
       );
-
       await fetch(`/integrations/${id}/group`, {
         method: 'PUT',
-        body: JSON.stringify({ group }),
+        body: JSON.stringify({
+          group,
+        }),
       });
-
       mutate();
     },
     [integrations]
   );
-
   const sortedIntegrations = useMemo(() => {
     return orderBy(
       integrations,
@@ -332,7 +332,6 @@ export const LaunchesComponent = () => {
       ['desc', 'asc', 'asc']
     );
   }, [integrations]);
-
   const menuIntegrations = useMemo(() => {
     return orderBy(
       Object.values(
@@ -351,18 +350,15 @@ export const LaunchesComponent = () => {
       ['desc', 'asc']
     );
   }, [sortedIntegrations]);
-
   const update = useCallback(async (shouldReload: boolean) => {
     if (shouldReload) {
       setReload(true);
     }
     await mutate();
-
     if (shouldReload) {
       setReload(false);
     }
   }, []);
-
   const continueIntegration = useCallback(
     (integration: any) => async () => {
       router.push(
@@ -371,23 +367,25 @@ export const LaunchesComponent = () => {
     },
     []
   );
-
   const refreshChannel = useCallback(
-    (integration: Integration & { identifier: string }) => async () => {
-      const { url } = await (
-        await fetch(
-          `/integrations/social/${integration.identifier}?refresh=${integration.internalId}`,
-          {
-            method: 'GET',
-          }
-        )
-      ).json();
-
-      window.location.href = url;
-    },
+    (
+        integration: Integration & {
+          identifier: string;
+        }
+      ) =>
+      async () => {
+        const { url } = await (
+          await fetch(
+            `/integrations/social/${integration.identifier}?refresh=${integration.internalId}`,
+            {
+              method: 'GET',
+            }
+          )
+        ).json();
+        window.location.href = url;
+      },
     []
   );
-
   useEffect(() => {
     if (typeof window === 'undefined') {
       return;
@@ -395,19 +393,27 @@ export const LaunchesComponent = () => {
     if (search.get('msg')) {
       toast.show(search.get('msg')!, 'warning');
       window?.opener?.postMessage(
-        { msg: search.get('msg')!, success: false },
+        {
+          msg: search.get('msg')!,
+          success: false,
+        },
         '*'
       );
     }
     if (search.get('added')) {
       fireEvents('channel_added');
-      window?.opener?.postMessage({ msg: 'Channel added', success: true }, '*');
+      window?.opener?.postMessage(
+        {
+          msg: 'Channel added',
+          success: true,
+        },
+        '*'
+      );
     }
     if (window.opener) {
       window.close();
     }
   }, []);
-
   if (isLoading || reload) {
     return <LoadingComponent />;
   }
@@ -423,7 +429,9 @@ export const LaunchesComponent = () => {
                 <h2 className="text-[20px]">{t('channels')}</h2>
                 <div className="gap-[16px] flex flex-col select-none">
                   {sortedIntegrations.length === 0 && (
-                    <div className="text-[12px]">No channels</div>
+                    <div className="text-[12px]">
+                      {t('no_channels', 'No channels')}
+                    </div>
                   )}
                   {menuIntegrations.map((menu) => (
                     <MenuGroupComponent

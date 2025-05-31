@@ -2,8 +2,10 @@
 
 import { FC, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-
-export const Redirect: FC<{url: string, delay: number}> = (props) => {
+export const Redirect: FC<{
+  url: string;
+  delay: number;
+}> = (props) => {
   const { url, delay } = props;
   const router = useRouter();
   useEffect(() => {
@@ -12,4 +14,4 @@ export const Redirect: FC<{url: string, delay: number}> = (props) => {
     }, delay);
   }, []);
   return null;
-}
+};

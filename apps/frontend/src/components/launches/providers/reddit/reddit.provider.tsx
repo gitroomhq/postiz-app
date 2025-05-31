@@ -16,23 +16,28 @@ import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import MDEditor from '@uiw/react-md-editor';
 import interClass from '@gitroom/react/helpers/inter.font';
 import Image from 'next/image';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 const RenderRedditComponent: FC<{
   type: string;
-  images?: Array<{ id: string; path: string }>;
+  images?: Array<{
+    id: string;
+    path: string;
+  }>;
 }> = (props) => {
   const { value: topValue } = useIntegration();
   const showMedia = useMediaDirectory();
+  const t = useT();
 
   const { type, images } = props;
-
   const [firstPost] = topValue;
-
   switch (type) {
     case 'self':
       return (
         <MDEditor.Markdown
-          style={{ whiteSpace: 'pre-wrap', fontSize: '14px' }}
+          style={{
+            whiteSpace: 'pre-wrap',
+            fontSize: '14px',
+          }}
           skipHtml={true}
           disallowedElements={['img']}
           source={firstPost?.content}
@@ -41,7 +46,7 @@ const RenderRedditComponent: FC<{
     case 'link':
       return (
         <div className="h-[375px] bg-primary rounded-[16px] flex justify-center items-center">
-          Link
+          {t('link', 'Link')}
         </div>
       );
     case 'media':
@@ -64,16 +69,13 @@ const RenderRedditComponent: FC<{
         </div>
       );
   }
-
   return <></>;
 };
-
 const RedditPreview: FC = (props) => {
   const { value: topValue, integration } = useIntegration();
   const settings = useWatch({
     name: 'subreddit',
   }) as Array<RedditSettingsValueDto>;
-
   const [, ...restOfPosts] = useFormatting(topValue, {
     removeMarkdown: true,
     saveBreaklines: true,
@@ -81,11 +83,9 @@ const RedditPreview: FC = (props) => {
       return text.slice(0, 280);
     },
   });
-
   if (!settings || !settings.length) {
     return <>Please add at least one Subreddit from the settings</>;
   }
-
   return (
     <div className="flex flex-col gap-[40px] w-full">
       {settings
@@ -139,7 +139,9 @@ const RedditPreview: FC = (props) => {
                         {integration?.name}
                       </div>
                       <MDEditor.Markdown
-                        style={{ whiteSpace: 'pre-wrap' }}
+                        style={{
+                          whiteSpace: 'pre-wrap',
+                        }}
                         skipHtml={true}
                         source={p.text}
                         disallowedElements={['img']}
@@ -154,18 +156,18 @@ const RedditPreview: FC = (props) => {
     </div>
   );
 };
-
 const RedditSettings: FC = () => {
   const { register, control } = useSettings();
   const { fields, append, remove } = useFieldArray({
-    control, // control props comes from useForm (optional: if you are using FormContext)
+    control,
+    // control props comes from useForm (optional: if you are using FormContext)
     name: 'subreddit', // unique name for your Field Array
   });
+  const t = useT();
 
   const addField = useCallback(() => {
     append({});
   }, [fields, append]);
-
   const deleteField = useCallback(
     (index: number) => async () => {
       if (
@@ -176,7 +178,6 @@ const RedditSettings: FC = () => {
     },
     [fields, remove]
   );
-
   return (
     <>
       <div className="flex flex-col gap-[20px] mb-[20px]">
@@ -192,14 +193,22 @@ const RedditSettings: FC = () => {
           </div>
         ))}
       </div>
-      <Button onClick={addField}>Add Subreddit</Button>
+      <Button onClick={addField}>{t('add_subreddit', 'Add Subreddit')}</Button>
       {fields.length === 0 && (
         <div className="text-red-500 text-[12px] mt-[10px]">
-          Please add at least one Subreddit
+          {t(
+            'please_add_at_least_one_subreddit',
+            'Please add at least one Subreddit'
+          )}
         </div>
       )}
     </>
   );
 };
-
-export default withProvider(RedditSettings, RedditPreview, RedditSettingsDto, undefined, 10000);
+export default withProvider(
+  RedditSettings,
+  RedditPreview,
+  RedditSettingsDto,
+  undefined,
+  10000
+);

@@ -1,6 +1,5 @@
 import { FC, useEffect, useState } from 'react';
 import Image from 'next/image';
-
 interface ImageSrc {
   src: string;
   fallbackSrc: string;
@@ -8,7 +7,6 @@ interface ImageSrc {
   height: number;
   [key: string]: any;
 }
-
 const ImageWithFallback: FC<ImageSrc> = (props) => {
   const { src, fallbackSrc, ...rest } = props;
   const [imgSrc, setImgSrc] = useState(src);
@@ -17,7 +15,6 @@ const ImageWithFallback: FC<ImageSrc> = (props) => {
       setImgSrc(src);
     }
   }, [src]);
-
   return (
     <Image
       alt=""
@@ -29,5 +26,4 @@ const ImageWithFallback: FC<ImageSrc> = (props) => {
     />
   );
 };
-
 export default ImageWithFallback;

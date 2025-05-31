@@ -15,9 +15,8 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import { object, string } from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { web3List } from '@gitroom/frontend/components/launches/web3/web3.list';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 const resolver = classValidatorResolver(ApiKeyDto);
-
 export const useAddProvider = (update?: () => void) => {
   const modal = useModals();
   const fetch = useFetch();
@@ -34,10 +33,13 @@ export const useAddProvider = (update?: () => void) => {
     });
   }, []);
 };
-
-export const AddProviderButton: FC<{ update?: () => void }> = (props) => {
+export const AddProviderButton: FC<{
+  update?: () => void;
+}> = (props) => {
   const { update } = props;
   const add = useAddProvider(update);
+  const t = useT();
+
   return (
     <button
       className="text-white p-[8px] rounded-md bg-forth flex gap-[5px]"
@@ -57,11 +59,10 @@ export const AddProviderButton: FC<{ update?: () => void }> = (props) => {
           />
         </svg>
       </div>
-      <div className="flex-1 text-left">Add Channel</div>
+      <div className="flex-1 text-left">{t('add_channel', 'Add Channel')}</div>
     </button>
   );
 };
-
 export const ApiModal: FC<{
   identifier: string;
   name: string;
@@ -76,23 +77,22 @@ export const ApiModal: FC<{
     mode: 'onChange',
     resolver,
   });
-
   const close = useCallback(() => {
     if (closePopup) {
       return closePopup();
     }
     modal.closeAll();
   }, []);
-
   const submit = useCallback(async (data: FieldValues) => {
     const add = await fetch(
       `/integrations/article/${props.identifier}/connect`,
       {
         method: 'POST',
-        body: JSON.stringify({ api: data.api }),
+        body: JSON.stringify({
+          api: data.api,
+        }),
       }
     );
-
     if (add.ok) {
       if (closePopup) {
         closePopup();
@@ -103,11 +103,12 @@ export const ApiModal: FC<{
       if (update) update();
       return;
     }
-
     methods.setError('api', {
       message: 'Invalid API key',
     });
   }, []);
+
+  const t = useT();
 
   return (
     <div className="rounded-[4px] border border-customColor6 bg-sixth px-[16px] pb-[16px] relative">
@@ -141,14 +142,13 @@ export const ApiModal: FC<{
             <Input label="API Key" name="api" />
           </div>
           <div>
-            <Button type="submit">Add platform</Button>
+            <Button type="submit">{t('add_platform', 'Add platform')}</Button>
           </div>
         </form>
       </FormProvider>
     </div>
   );
 };
-
 export const UrlModal: FC<{
   gotoUrl(url: string): void;
 }> = (props) => {
@@ -157,10 +157,11 @@ export const UrlModal: FC<{
     mode: 'onChange',
   });
 
+  const t = useT();
+
   const submit = useCallback(async (data: FieldValues) => {
     gotoUrl(data.url);
   }, []);
-
   return (
     <div className="rounded-[4px] border border-customColor6 bg-sixth px-[16px] pb-[16px] relative">
       <TopTitle title={`Instance URL`} />
@@ -193,14 +194,13 @@ export const UrlModal: FC<{
             <Input label="URL" name="url" />
           </div>
           <div>
-            <Button type="submit">Connect</Button>
+            <Button type="submit">{t('connect', 'Connect')}</Button>
           </div>
         </form>
       </FormProvider>
     </div>
   );
 };
-
 export const CustomVariables: FC<{
   variables: Array<{
     key: string;
@@ -232,19 +232,21 @@ export const CustomVariables: FC<{
       }, {}),
     });
   }, [variables]);
-
   const methods = useForm({
     mode: 'onChange',
     resolver: yupResolver(schema),
     values: variables.reduce(
       (acc, item) => ({
         ...acc,
-        ...(item.defaultValue ? { [item.key]: item.defaultValue } : {}),
+        ...(item.defaultValue
+          ? {
+              [item.key]: item.defaultValue,
+            }
+          : {}),
       }),
       {}
     ),
   });
-
   const submit = useCallback(
     async (data: FieldValues) => {
       gotoUrl(
@@ -255,6 +257,8 @@ export const CustomVariables: FC<{
     },
     [variables]
   );
+
+  const t = useT();
 
   return (
     <div className="rounded-[4px] border border-customColor6 bg-sixth px-[16px] pb-[16px] relative">
@@ -294,14 +298,13 @@ export const CustomVariables: FC<{
             </div>
           ))}
           <div>
-            <Button type="submit">Connect</Button>
+            <Button type="submit">{t('connect', 'Connect')}</Button>
           </div>
         </form>
       </FormProvider>
     </div>
   );
 };
-
 export const AddProviderComponent: FC<{
   social: Array<{
     identifier: string;
@@ -316,7 +319,10 @@ export const AddProviderComponent: FC<{
       type: 'text' | 'password';
     }>;
   }>;
-  article: Array<{ identifier: string; name: string }>;
+  article: Array<{
+    identifier: string;
+    name: string;
+  }>;
   update?: () => void;
 }> = (props) => {
   const { update, social, article } = props;
@@ -343,11 +349,9 @@ export const AddProviderComponent: FC<{
           const { component: Web3Providers } = web3List.find(
             (item) => item.identifier === identifier
           )!;
-
           const { url } = await (
             await fetch(`/integrations/social/${identifier}`)
           ).json();
-
           modal.openModal({
             title: '',
             withCloseButton: false,
@@ -373,22 +377,18 @@ export const AddProviderComponent: FC<{
               }`
             )
           ).json();
-
           if (err) {
             toaster.show('Could not connect to the platform', 'warning');
             return;
           }
           window.location.href = url;
         };
-
         if (isWeb3) {
           openWeb3();
           return;
         }
-
         if (isExternal) {
           modal.closeAll();
-
           modal.openModal({
             title: '',
             withCloseButton: false,
@@ -397,13 +397,10 @@ export const AddProviderComponent: FC<{
             },
             children: <UrlModal gotoUrl={gotoIntegration} />,
           });
-
           return;
         }
-
         if (customFields) {
           modal.closeAll();
-
           modal.openModal({
             title: '',
             withCloseButton: false,
@@ -420,16 +417,13 @@ export const AddProviderComponent: FC<{
           });
           return;
         }
-
         await gotoIntegration();
       },
     []
   );
-
   const close = useCallback(() => {
     modal.closeAll();
   }, []);
-
   const showApiButton = useCallback(
     (identifier: string, name: string) => async () => {
       modal.openModal({
@@ -445,6 +439,9 @@ export const AddProviderComponent: FC<{
     },
     []
   );
+
+  const t = useT();
+
   return (
     <div className="w-full flex flex-col gap-[20px] rounded-[4px] border border-customColor6 bg-sixth px-[16px] pb-[16px] relative">
       <div className="flex flex-col">
@@ -469,7 +466,7 @@ export const AddProviderComponent: FC<{
             ></path>
           </svg>
         </button>
-        <h2 className="pt-[16px] pb-[10px]">Social</h2>
+        <h2 className="pt-[16px] pb-[10px]">{t('social', 'Social')}</h2>
         <div className="grid grid-cols-3 gap-[10px] justify-items-center justify-center">
           {social.map((item) => (
             <div
@@ -524,7 +521,7 @@ export const AddProviderComponent: FC<{
       </div>
       {!isGeneral && (
         <div className="flex flex-col">
-          <h2 className="pb-[10px]">Articles</h2>
+          <h2 className="pb-[10px]">{t('articles', 'Articles')}</h2>
           <div className="grid grid-cols-3 gap-[10px]">
             {article.map((item) => (
               <div

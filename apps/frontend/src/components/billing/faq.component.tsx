@@ -5,7 +5,7 @@ import clsx from 'clsx';
 import interClass from '@gitroom/react/helpers/inter.font';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 const useFaqList = () => {
   const { isGeneral } = useVariables();
   const user = useUser();
@@ -45,17 +45,15 @@ For example, you can schedule your posts on X, Facebook, Instagram, TikTok, YouT
     },
   ];
 };
-
-export const FAQSection: FC<{ title: string; description: string }> = (
-  props
-) => {
+export const FAQSection: FC<{
+  title: string;
+  description: string;
+}> = (props) => {
   const { title, description } = props;
   const [show, setShow] = useState(false);
-
   const changeShow = useCallback(() => {
     setShow(!show);
   }, [show]);
-
   return (
     <div
       className="bg-sixth p-[24px] border border-tableBorder rounded-[4px] flex flex-col"
@@ -110,19 +108,21 @@ export const FAQSection: FC<{ title: string; description: string }> = (
             e.stopPropagation();
           }}
           className={`mt-[16px] w-full text-wrap ${interClass} font-[400] text-[16px] text-customColor17 select-text`}
-          dangerouslySetInnerHTML={{ __html: description }}
+          dangerouslySetInnerHTML={{
+            __html: description,
+          }}
         />
       </div>
     </div>
   );
 };
-
 export const FAQComponent: FC = () => {
+  const t = useT();
   const list = useFaqList();
   return (
     <div>
       <h3 className="text-[24px] text-center mt-[81px] mb-[40px]">
-        Frequently Asked Questions
+        {t('frequently_asked_questions', 'Frequently Asked Questions')}
       </h3>
       <div className="gap-[24px] flex-col flex select-none">
         {list.map((item, index) => (

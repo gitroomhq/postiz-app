@@ -12,7 +12,7 @@ import { Select } from '@gitroom/react/form/select';
 import { Button } from '@gitroom/react/form/button';
 import { useRouter } from 'next/navigation';
 import { useToaster } from '@gitroom/react/toaster/toaster';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 const allowedIntegrations = [
   'facebook',
   'instagram',
@@ -24,9 +24,9 @@ const allowedIntegrations = [
   'threads',
   'x',
 ];
-
 export const PlatformAnalytics = () => {
   const fetch = useFetch();
+  const t = useT();
   const router = useRouter();
   const [current, setCurrent] = useState(0);
   const [key, setKey] = useState(7);
@@ -36,11 +36,9 @@ export const PlatformAnalytics = () => {
     const int = (await (await fetch('/integrations/list')).json()).integrations;
     return int.filter((f: any) => allowedIntegrations.includes(f.identifier));
   }, []);
-
   const { data, isLoading } = useSWR('analytics-list', load, {
     fallbackData: [],
   });
-
   const sortedIntegrations = useMemo(() => {
     return orderBy(
       data,
@@ -48,11 +46,9 @@ export const PlatformAnalytics = () => {
       ['desc', 'asc', 'asc']
     );
   }, [data]);
-
   const currentIntegration = useMemo(() => {
     return sortedIntegrations[current];
   }, [current, sortedIntegrations]);
-
   const options = useMemo(() => {
     if (!currentIntegration) {
       return [];
@@ -75,7 +71,6 @@ export const PlatformAnalytics = () => {
         value: '7 Days',
       });
     }
-
     if (
       [
         'facebook',
@@ -93,7 +88,6 @@ export const PlatformAnalytics = () => {
         value: '30 Days',
       });
     }
-
     if (
       ['facebook', 'linkedin-page', 'pinterest', 'youtube', 'x'].indexOf(
         currentIntegration.identifier
@@ -104,10 +98,8 @@ export const PlatformAnalytics = () => {
         value: '90 Days',
       });
     }
-
     return arr;
   }, [currentIntegration]);
-
   const keys = useMemo(() => {
     if (!currentIntegration) {
       return 7;
@@ -115,14 +107,11 @@ export const PlatformAnalytics = () => {
     if (options.find((p) => p.key === key)) {
       return key;
     }
-
     return options[0]?.key;
   }, [key, currentIntegration]);
-
   if (isLoading) {
     return null;
   }
-
   if (!sortedIntegrations.length && !isLoading) {
     return (
       <div className="flex flex-col items-center mt-[100px] gap-[27px] text-center">
@@ -130,32 +119,43 @@ export const PlatformAnalytics = () => {
           <img src="/peoplemarketplace.svg" />
         </div>
         <div className="text-[48px]">
-          Can{"'"}t show analytics yet
+          {t('can_t_show_analytics_yet', "Can't show analytics yet")}
           <br />
-          You have to add Social Media channels
+          {t(
+            'you_have_to_add_social_media_channels',
+            'You have to add Social Media channels'
+          )}
         </div>
         <div className="text-[20px]">
-          Supported: {allowedIntegrations.map((p) => capitalize(p)).join(', ')}
+          {t('supported', 'Supported:')}
+          {allowedIntegrations.map((p) => capitalize(p)).join(', ')}
         </div>
         <Button onClick={() => router.push('/launches')}>
-          Go to the calendar to add channels
+          {t(
+            'go_to_the_calendar_to_add_channels',
+            'Go to the calendar to add channels'
+          )}
         </Button>
       </div>
     );
   }
-
   return (
     <div className="flex gap-[30px] flex-1">
       <div className="p-[16px] bg-customColor48 overflow-hidden flex w-[220px]">
         <div className="flex gap-[16px] flex-col overflow-hidden">
-          <div className="text-[20px] mb-[8px]">Channels</div>
+          <div className="text-[20px] mb-[8px]">
+            {t('channels', 'Channels')}
+          </div>
           {sortedIntegrations.map((integration, index) => (
             <div
               key={integration.id}
               onClick={() => {
                 if (integration.refreshNeeded) {
-                  toaster.show('Please refresh the integration from the calendar', 'warning');
-                  return ;
+                  toaster.show(
+                    'Please refresh the integration from the calendar',
+                    'warning'
+                  );
+                  return;
                 }
                 setRefresh(true);
                 setTimeout(() => {

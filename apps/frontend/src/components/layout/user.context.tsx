@@ -6,7 +6,6 @@ import {
   pricing,
   PricingInnerInterface,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
-
 export const UserContext = createContext<
   | undefined
   | (User & {
@@ -20,7 +19,6 @@ export const UserContext = createContext<
       allowTrial: boolean;
     })
 >(undefined);
-
 export const ContextWrapper: FC<{
   user: User & {
     orgId: string;
@@ -31,8 +29,12 @@ export const ContextWrapper: FC<{
   };
   children: ReactNode;
 }> = ({ user, children }) => {
-  const values = user ? { ...user, tier: pricing[user.tier] } : ({} as any);
+  const values = user
+    ? {
+        ...user,
+        tier: pricing[user.tier],
+      }
+    : ({} as any);
   return <UserContext.Provider value={values}>{children}</UserContext.Provider>;
 };
-
 export const useUser = () => useContext(UserContext);

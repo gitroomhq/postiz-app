@@ -15,7 +15,10 @@ export class Empty implements ShortLinking {
     return '';
   }
 
-  getAllLinksStatistics(id: string, page: number): Promise<{ short: string; original: string; clicks: string }[]> {
+  getAllLinksStatistics(
+    id: string,
+    page: number
+  ): Promise<{ short: string; original: string; clicks: string }[]> {
     return Promise.resolve([]);
   }
 }

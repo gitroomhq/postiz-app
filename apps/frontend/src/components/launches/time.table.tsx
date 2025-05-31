@@ -13,22 +13,20 @@ import useKeypress from 'react-use-keypress';
 import { useModals } from '@mantine/modals';
 import { sortBy } from 'lodash';
 import { usePreventWindowUnload } from '@gitroom/react/helpers/use.prevent.window.unload';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 dayjs.extend(utc);
 dayjs.extend(timezone);
-
 const hours = [...Array(24).keys()].map((i, index) => ({
   value: index,
 }));
-
 const minutes = [...Array(60).keys()].map((i, index) => ({
   value: index,
 }));
-
 export const TimeTable: FC<{
   integration: Integrations;
   mutate: () => void;
 }> = (props) => {
+  const t = useT();
   const {
     integration: { time },
     mutate,
@@ -39,7 +37,6 @@ export const TimeTable: FC<{
   const fetch = useFetch();
   const modal = useModals();
   usePreventWindowUnload(true);
-
   const askClose = useCallback(async () => {
     if (
       !(await deleteDialog(
@@ -49,12 +46,9 @@ export const TimeTable: FC<{
     ) {
       return;
     }
-
     modal.closeAll();
   }, []);
-
   useKeypress('Escape', askClose);
-
   const removeSlot = useCallback(
     (index: number) => async () => {
       if (!(await deleteDialog('Are you sure you want to delete this slot?'))) {
@@ -64,7 +58,6 @@ export const TimeTable: FC<{
     },
     []
   );
-
   const addHour = useCallback(() => {
     const calculateMinutes =
       dayjs()
@@ -73,9 +66,13 @@ export const TimeTable: FC<{
         .add(hour, 'hours')
         .add(minute, 'minutes')
         .diff(dayjs().utc().startOf('day'), 'minutes') - dayjs.tz().utcOffset();
-    setCurrentTimes((prev) => [...prev, { time: calculateMinutes }]);
+    setCurrentTimes((prev) => [
+      ...prev,
+      {
+        time: calculateMinutes,
+      },
+    ]);
   }, [hour, minute]);
-
   const times = useMemo(() => {
     return sortBy(
       currentTimes.map(({ time }) => ({
@@ -90,16 +87,16 @@ export const TimeTable: FC<{
       (p) => p.value
     );
   }, [currentTimes]);
-
   const save = useCallback(async () => {
     await fetch(`/integrations/${props.integration.id}/time`, {
       method: 'POST',
-      body: JSON.stringify({ time: currentTimes }),
+      body: JSON.stringify({
+        time: currentTimes,
+      }),
     });
     mutate();
     modal.closeAll();
   }, [currentTimes]);
-
   return (
     <div className="rounded-[4px] border border-customColor6 bg-sixth px-[16px] pb-[16px] relative w-full">
       <TopTitle title={`Time Table Slots`} />
@@ -125,7 +122,9 @@ export const TimeTable: FC<{
       </button>
 
       <div>
-        <div className="text-[16px] font-bold mt-[16px]">Add Time Slot</div>
+        <div className="text-[16px] font-bold mt-[16px]">
+          {t('add_time_slot', 'Add Time Slot')}
+        </div>
         <div className="flex flex-col">
           <div className="mt-[16px] flex justify-center gap-[16px]">
             <div className="w-[100px]">
@@ -165,7 +164,7 @@ export const TimeTable: FC<{
           </div>
           <div className="flex w-[215px] mx-auto justify-center mb-[50px]">
             <Button type="button" className="w-full" onClick={addHour}>
-              Add Slot
+              {t('add_slot', 'Add Slot')}
             </Button>
           </div>
         </div>
@@ -185,7 +184,7 @@ export const TimeTable: FC<{
       </div>
       <div className="flex w-[215px] mx-auto justify-center mb-[50px]">
         <Button type="button" className="w-full" onClick={save}>
-          Save
+          {t('save', 'Save')}
         </Button>
       </div>
     </div>

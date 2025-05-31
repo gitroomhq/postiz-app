@@ -1,4 +1,4 @@
-import { EmailInterface } from "./email.interface";
+import { EmailInterface } from './email.interface';
 
 export class EmptyProvider implements EmailInterface {
   name = 'no provider';

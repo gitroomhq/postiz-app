@@ -3,7 +3,7 @@ import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.req
 import { Organization, User } from '@prisma/client';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
-import {ApiTags} from "@nestjs/swagger";
+import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Notifications')
 @Controller('/notifications')

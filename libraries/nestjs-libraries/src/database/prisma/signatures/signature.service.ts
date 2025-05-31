@@ -15,6 +15,10 @@ export class SignatureService {
   }
 
   createOrUpdateSignature(orgId: string, signature: SignatureDto, id?: string) {
-    return this._signatureRepository.createOrUpdateSignature(orgId, signature, id);
+    return this._signatureRepository.createOrUpdateSignature(
+      orgId,
+      signature,
+      id
+    );
   }
 }

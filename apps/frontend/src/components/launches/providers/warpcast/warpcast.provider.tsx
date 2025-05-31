@@ -5,18 +5,19 @@ import { useFieldArray } from 'react-hook-form';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { Button } from '@gitroom/react/form/button';
 import { Subreddit } from './subreddit';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 const WrapcastProvider: FC = () => {
   const { register, control } = useSettings();
   const { fields, append, remove } = useFieldArray({
-    control, // control props comes from useForm (optional: if you are using FormContext)
+    control,
+    // control props comes from useForm (optional: if you are using FormContext)
     name: 'subreddit', // unique name for your Field Array
   });
+  const t = useT();
 
   const addField = useCallback(() => {
     append({});
   }, [fields, append]);
-
   const deleteField = useCallback(
     (index: number) => async () => {
       if (
@@ -27,7 +28,6 @@ const WrapcastProvider: FC = () => {
     },
     [fields, remove]
   );
-
   return (
     <>
       <div className="flex flex-col gap-[20px] mb-[20px]">
@@ -43,11 +43,10 @@ const WrapcastProvider: FC = () => {
           </div>
         ))}
       </div>
-      <Button onClick={addField}>Add Channel</Button>
+      <Button onClick={addField}>{t('add_channel', 'Add Channel')}</Button>
     </>
   );
 };
-
 export default withProvider(
   WrapcastProvider,
   undefined,
@@ -58,7 +57,6 @@ export default withProvider(
     ) {
       return 'Warpcast can only accept images';
     }
-
     return true;
   },
   3000

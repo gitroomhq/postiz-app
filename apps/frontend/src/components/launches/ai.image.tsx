@@ -3,7 +3,7 @@ import { FC, useCallback, useState } from 'react';
 import clsx from 'clsx';
 import Loading from 'react-loading';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 const list = [
   'Realistic',
   'Cartoon',
@@ -20,15 +20,14 @@ const list = [
   'Pop Art',
   'Fantasy Realism',
 ];
-
 export const AiImage: FC<{
   value: string;
   onChange: (params: { id: string; path: string }) => void;
 }> = (props) => {
+  const t = useT();
   const { value, onChange } = props;
   const [loading, setLoading] = useState(false);
   const fetch = useFetch();
-
   const generateImage = useCallback(
     (type: string) => async () => {
       setLoading(true);
@@ -54,7 +53,6 @@ ${type}
     },
     [value, onChange]
   );
-
   return (
     <div className="relative group">
       <Button
@@ -95,7 +93,9 @@ ${type}
               />
             </svg>
           </div>
-          <div className="text-[12px] font-[500] !text-current">AI</div>
+          <div className="text-[12px] font-[500] !text-current">
+            {t('ai', 'AI')}
+          </div>
         </div>
       </Button>
       {value.length >= 30 && !loading && (

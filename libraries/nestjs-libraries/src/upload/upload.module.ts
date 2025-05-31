@@ -7,7 +7,4 @@ import { CustomFileValidationPipe } from '@gitroom/nestjs-libraries/upload/custo
   providers: [UploadFactory, CustomFileValidationPipe],
   exports: [UploadFactory, CustomFileValidationPipe],
 })
-
 export class UploadModule {}
-
-

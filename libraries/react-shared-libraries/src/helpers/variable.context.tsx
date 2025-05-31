@@ -1,7 +1,6 @@
 'use client';
 
 import { createContext, FC, ReactNode, useContext, useEffect } from 'react';
-
 interface VariableContextInterface {
   billingEnabled: boolean;
   isGeneral: boolean;
@@ -42,9 +41,10 @@ const VariableContext = createContext({
   language: '',
   tolt: '',
 } as VariableContextInterface);
-
 export const VariableContextComponent: FC<
-  VariableContextInterface & { children: ReactNode }
+  VariableContextInterface & {
+    children: ReactNode;
+  }
 > = (props) => {
   const { children, ...otherProps } = props;
   useEffect(() => {
@@ -59,11 +59,9 @@ export const VariableContextComponent: FC<
     </VariableContext.Provider>
   );
 };
-
 export const useVariables = () => {
   return useContext(VariableContext);
 };
-
 export const loadVars = () => {
   // @ts-ignore
   return window.vars as VariableContextInterface;

@@ -8,8 +8,8 @@ import {
   Sections,
 } from '@gitroom/backend/services/auth/permissions/permissions.service';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
-import {AddTeamMemberDto} from "@gitroom/nestjs-libraries/dtos/settings/add.team.member.dto";
-import {ApiTags} from "@nestjs/swagger";
+import { AddTeamMemberDto } from '@gitroom/nestjs-libraries/dtos/settings/add.team.member.dto';
+import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Settings')
 @Controller('/settings')
@@ -105,25 +105,34 @@ export class SettingsController {
   }
 
   @Get('/team')
-  @CheckPolicies([AuthorizationActions.Create, Sections.TEAM_MEMBERS], [AuthorizationActions.Create, Sections.ADMIN])
+  @CheckPolicies(
+    [AuthorizationActions.Create, Sections.TEAM_MEMBERS],
+    [AuthorizationActions.Create, Sections.ADMIN]
+  )
   async getTeam(@GetOrgFromRequest() org: Organization) {
     return this._organizationService.getTeam(org.id);
   }
 
   @Post('/team')
-  @CheckPolicies([AuthorizationActions.Create, Sections.TEAM_MEMBERS], [AuthorizationActions.Create, Sections.ADMIN])
+  @CheckPolicies(
+    [AuthorizationActions.Create, Sections.TEAM_MEMBERS],
+    [AuthorizationActions.Create, Sections.ADMIN]
+  )
   async inviteTeamMember(
-      @GetOrgFromRequest() org: Organization,
-      @Body() body: AddTeamMemberDto,
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: AddTeamMemberDto
   ) {
     return this._organizationService.inviteTeamMember(org.id, body);
   }
 
   @Delete('/team/:id')
-  @CheckPolicies([AuthorizationActions.Create, Sections.TEAM_MEMBERS], [AuthorizationActions.Create, Sections.ADMIN])
+  @CheckPolicies(
+    [AuthorizationActions.Create, Sections.TEAM_MEMBERS],
+    [AuthorizationActions.Create, Sections.ADMIN]
+  )
   deleteTeamMember(
-      @GetOrgFromRequest() org: Organization,
-      @Param('id') id: string
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string
   ) {
     return this._organizationService.deleteTeamMember(org, id);
   }

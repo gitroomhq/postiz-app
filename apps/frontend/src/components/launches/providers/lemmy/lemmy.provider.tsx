@@ -6,18 +6,19 @@ import { Button } from '@gitroom/react/form/button';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { Subreddit } from './subreddit';
 import { LemmySettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/lemmy.dto';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 const LemmySettings: FC = () => {
   const { register, control } = useSettings();
   const { fields, append, remove } = useFieldArray({
-    control, // control props comes from useForm (optional: if you are using FormContext)
+    control,
+    // control props comes from useForm (optional: if you are using FormContext)
     name: 'subreddit', // unique name for your Field Array
   });
+  const t = useT();
 
   const addField = useCallback(() => {
     append({});
   }, [fields, append]);
-
   const deleteField = useCallback(
     (index: number) => async () => {
       if (
@@ -28,7 +29,6 @@ const LemmySettings: FC = () => {
     },
     [fields, remove]
   );
-
   return (
     <>
       <div className="flex flex-col gap-[20px] mb-[20px]">
@@ -44,23 +44,24 @@ const LemmySettings: FC = () => {
           </div>
         ))}
       </div>
-      <Button onClick={addField}>Add Community</Button>
+      <Button onClick={addField}>{t('add_community', 'Add Community')}</Button>
       {fields.length === 0 && (
         <div className="text-red-500 text-[12px] mt-[10px]">
-          Please add at least one Subreddit
+          {t(
+            'please_add_at_least_one_subreddit',
+            'Please add at least one Subreddit'
+          )}
         </div>
       )}
     </>
   );
 };
-
 export default withProvider(
   LemmySettings,
   undefined,
   LemmySettingsDto,
   async (items) => {
     const [firstItems] = items;
-
     if (
       firstItems.length &&
       firstItems[0].path.indexOf('png') === -1 &&
@@ -70,7 +71,6 @@ export default withProvider(
     ) {
       return 'You can set only one picture for a cover';
     }
-
     return true;
   },
   10000

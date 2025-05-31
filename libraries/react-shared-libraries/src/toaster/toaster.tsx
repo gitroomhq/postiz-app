@@ -1,8 +1,8 @@
 'use client';
+
 import { useCallback, useEffect, useState } from 'react';
 import EventEmitter from 'events';
 import clsx from 'clsx';
-
 const toaster = new EventEmitter();
 export const Toaster = () => {
   const [showToaster, setShowToaster] = useState(false);
@@ -27,11 +27,9 @@ export const Toaster = () => {
       toaster.removeAllListeners();
     };
   }, []);
-
   if (!showToaster) {
     return <></>;
   }
-
   return (
     <div
       className={clsx(
@@ -113,11 +111,13 @@ export const Toaster = () => {
     </div>
   );
 };
-
 export const useToaster = () => {
   return {
     show: useCallback((text: string, type?: 'success' | 'warning') => {
-      toaster.emit('show', { text, type });
+      toaster.emit('show', {
+        text,
+        type,
+      });
     }, []),
   };
 };

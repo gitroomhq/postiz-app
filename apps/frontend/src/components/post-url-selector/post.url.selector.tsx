@@ -15,9 +15,8 @@ import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import removeMd from 'remove-markdown';
 import clsx from 'clsx';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 const postUrlEmitter = new EventEmitter();
-
 export const ShowPostSelector = () => {
   const [showPostSelector, setShowPostSelector] = useState(false);
   const [callback, setCallback] = useState<{
@@ -28,7 +27,6 @@ export const ShowPostSelector = () => {
     },
   } as any);
   const [date, setDate] = useState(dayjs());
-
   useEffect(() => {
     postUrlEmitter.on(
       'show',
@@ -41,7 +39,6 @@ export const ShowPostSelector = () => {
         setShowPostSelector(true);
       }
     );
-
     return () => {
       setShowPostSelector(false);
       setCallback(null);
@@ -49,22 +46,18 @@ export const ShowPostSelector = () => {
       postUrlEmitter.removeAllListeners();
     };
   }, []);
-
   const close = useCallback(() => {
     setShowPostSelector(false);
     setCallback(null);
     setDate(dayjs());
   }, []);
-
   if (!showPostSelector) {
     return <></>;
   }
-
   return (
     <PostSelector onClose={close} onSelect={callback?.callback!} date={date} />
   );
 };
-
 export const showPostSelector = (date: dayjs.Dayjs) => {
   return new Promise<string>((resolve) => {
     postUrlEmitter.emit('show', {
@@ -75,13 +68,11 @@ export const showPostSelector = (date: dayjs.Dayjs) => {
     });
   });
 };
-
 export const useShowPostSelector = (day: dayjs.Dayjs) => {
   return useCallback(() => {
     return showPostSelector(day);
   }, [day]);
 };
-
 export const PostSelector: FC<{
   onClose: () => void;
   onSelect: (tag: string | undefined) => void;
@@ -102,14 +93,11 @@ export const PostSelector: FC<{
       }
     ).then((res) => res.json());
   }, [date]);
-
   const onCloseWithEmptyString = useCallback(() => {
     onSelect('');
     onClose();
   }, []);
-
   const [current, setCurrent] = useState<string | undefined>(undefined);
-
   const select = useCallback(
     (id: string) => () => {
       setCurrent(current === id ? undefined : id);
@@ -118,15 +106,15 @@ export const PostSelector: FC<{
     },
     [current]
   );
-
   const { data: loadData } = useSWR('old-posts', fetchOldPosts);
-
   const data = useMemo(() => {
     if (!only) {
       return loadData;
     }
     return loadData?.filter((p: any) => p.integration.type === only);
   }, [loadData, only]);
+
+  const t = useT();
 
   return (
     <>
@@ -208,7 +196,10 @@ export const PostSelector: FC<{
                           <div>{p.integration.name}</div>
                         </div>
                         <div className="flex-1">{removeMd(p.content)}</div>
-                        <div>Status: {p.state}</div>
+                        <div>
+                          {t('status', 'Status:')}
+                          {p.state}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -220,7 +211,6 @@ export const PostSelector: FC<{
     </>
   );
 };
-
 export const postSelector = (date: dayjs.Dayjs): ICommand => ({
   name: 'postselector',
   keyCommand: 'postselector',
@@ -252,7 +242,6 @@ export const postSelector = (date: dayjs.Dayjs): ICommand => ({
       prefix: state.command.prefix!,
       suffix: state.command.suffix,
     });
-
     const state1 = api.setSelectionRange(newSelectionRange);
     const media = await showPostSelector(date);
     executeCommand({

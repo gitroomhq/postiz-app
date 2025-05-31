@@ -15,7 +15,7 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "noEmit": true,
-    "jsx": "react-jsx",
+    "jsx": "react-jsx"
   },
   "include": [
     "src",
@@ -23,5 +23,5 @@
     "vite.config.base.ts",
     "vite.config.chrome.ts",
     "vite.config.firefox.ts"
-  ],
+  ]
 }

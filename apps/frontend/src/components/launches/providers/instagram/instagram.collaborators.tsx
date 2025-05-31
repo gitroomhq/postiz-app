@@ -4,7 +4,7 @@ import { Select } from '@gitroom/react/form/select';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { InstagramDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/instagram.dto';
 import { InstagramCollaboratorsTags } from '@gitroom/frontend/components/launches/providers/instagram/instagram.tags';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 const postType = [
   {
     value: 'post',
@@ -15,7 +15,10 @@ const postType = [
     label: 'Story',
   },
 ];
-const InstagramCollaborators: FC<{ values?: any }> = (props) => {
+const InstagramCollaborators: FC<{
+  values?: any;
+}> = (props) => {
+  const t = useT();
   const { watch, register, formState, control } = useSettings();
   const postCurrentType = watch('post_type');
   return (
@@ -26,7 +29,7 @@ const InstagramCollaborators: FC<{ values?: any }> = (props) => {
           value: 'post',
         })}
       >
-        <option value="">Select Post Type...</option>
+        <option value="">{t('select_post_type', 'Select Post Type...')}</option>
         {postType.map((item) => (
           <option key={item.value} value={item.value}>
             {item.label}
@@ -38,14 +41,13 @@ const InstagramCollaborators: FC<{ values?: any }> = (props) => {
         <InstagramCollaboratorsTags
           label="Collaborators (max 3) - accounts can't be private"
           {...register('collaborators', {
-            value: []
+            value: [],
           })}
         />
       )}
     </>
   );
 };
-
 export default withProvider<InstagramDto>(
   InstagramCollaborators,
   undefined,
@@ -54,11 +56,9 @@ export default withProvider<InstagramDto>(
     if (!firstPost.length) {
       return 'Instagram should have at least one media';
     }
-
     if (firstPost.length > 1 && settings.post_type === 'story') {
       return 'Instagram stories can only have one media';
     }
-
     const checkVideosLength = await Promise.all(
       firstPost
         .filter((f) => f.path.indexOf('mp4') > -1)
@@ -74,17 +74,14 @@ export default withProvider<InstagramDto>(
           });
         })
     );
-
     for (const video of checkVideosLength) {
       if (video > 60 && settings.post_type === 'story') {
         return 'Instagram stories should be maximum 60 seconds';
       }
-
       if (video > 180 && settings.post_type === 'post') {
         return 'Instagram reel should be maximum 180 seconds';
       }
     }
-
     return true;
   },
   2200

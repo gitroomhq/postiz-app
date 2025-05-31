@@ -9,54 +9,58 @@ import useSWR from 'swr';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import { useRouter } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const SettingsComponent = () => {
-  const {isGeneral} = useVariables();
+  const { isGeneral } = useVariables();
   const user = useUser();
   const router = useRouter();
-
   const fetch = useFetch();
-
   const load = useCallback(async (path: string) => {
     const { github } = await (await fetch('/settings/github')).json();
     if (!github) {
       return false;
     }
-
     const emptyOnes = github.find((p: { login: string }) => !p.login);
     const { organizations } = emptyOnes
       ? await (await fetch(`/settings/organizations/${emptyOnes.id}`)).json()
-      : { organizations: [] };
-
-    return { github, organizations };
+      : {
+          organizations: [],
+        };
+    return {
+      github,
+      organizations,
+    };
   }, []);
-
   const { isLoading: isLoadingSettings, data: loadAll } = useSWR(
     'load-all',
     load
   );
-
   useEffect(() => {
     if (!isLoadingSettings && !loadAll) {
       router.push('/');
     }
   }, [loadAll, isLoadingSettings]);
 
+  const t = useT();
+
   if (isLoadingSettings) {
     return <LoadingComponent />;
   }
-
   if (!loadAll) {
     return null;
   }
-
   return (
     <div className="flex flex-col gap-[68px]">
       {!isGeneral && (
         <div className="flex flex-col">
-          <h3 className="text-[20px]">Your Git Repository</h3>
+          <h3 className="text-[20px]">
+            {t('your_git_repository', 'Your Git Repository')}
+          </h3>
           <div className="text-customColor18 mt-[4px]">
-            Connect your GitHub repository to receive updates and analytics
+            {t(
+              'connect_your_github_repository_to_receive_updates_and_analytics',
+              'Connect your GitHub repository to receive updates and analytics'
+            )}
           </div>
           <GithubComponent
             github={loadAll.github}

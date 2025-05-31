@@ -5,7 +5,7 @@ export class XProvider implements ProviderInterface {
   baseUrl = 'https://x.com';
   element = `[data-testid="primaryColumn"]:has([data-testid="toolBar"]) [data-testid="tweetTextarea_0_label"], [data-testid="SideNav_NewTweet_Button"]`;
   attachTo = `#react-root`;
-  style = "dark" as "dark";
+  style = 'dark' as 'dark';
   findIdentifier = (element: HTMLElement) => {
     return (
       Array.from(

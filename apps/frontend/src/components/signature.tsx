@@ -2,18 +2,17 @@ import { FC, useCallback, useState } from 'react';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { SignaturesComponent } from '@gitroom/frontend/components/settings/signatures.component';
 import { Transforms } from 'slate';
-
-export const SignatureBox: FC<{ editor: any }> = ({ editor }) => {
+export const SignatureBox: FC<{
+  editor: any;
+}> = ({ editor }) => {
   const [showModal, setShowModal] = useState<any>(false);
   const addSignature = useCallback(() => {
     setShowModal(true);
   }, [showModal]);
-
   const appendValue = (val: string) => {
-    Transforms.insertText(editor, "\n" + val);
+    Transforms.insertText(editor, '\n' + val);
     setShowModal(false);
   };
-
   return (
     <>
       {showModal && (
@@ -41,7 +40,6 @@ export const SignatureBox: FC<{ editor: any }> = ({ editor }) => {
     </>
   );
 };
-
 export const SignatureModal: FC<{
   close: () => void;
   appendSignature: (sign: string) => void;

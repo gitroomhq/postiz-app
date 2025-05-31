@@ -5,7 +5,7 @@ import clsx from 'clsx';
 import { Button } from '@gitroom/react/form/button';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const InstagramContinue: FC<{
   closeModal: () => void;
   existingId: string[];
@@ -18,7 +18,6 @@ export const InstagramContinue: FC<{
     pageId: string;
   }>(null);
   const fetch = useFetch();
-
   const loadPages = useCallback(async () => {
     try {
       const pages = await call.get('pages');
@@ -27,6 +26,7 @@ export const InstagramContinue: FC<{
       closeModal();
     }
   }, []);
+  const t = useT();
 
   const setPage = useCallback(
     (param: { id: string; pageId: string }) => () => {
@@ -34,7 +34,6 @@ export const InstagramContinue: FC<{
     },
     []
   );
-
   const { data, isLoading } = useSWR('load-pages', loadPages, {
     refreshWhenHidden: false,
     refreshWhenOffline: false,
@@ -44,38 +43,41 @@ export const InstagramContinue: FC<{
     revalidateOnReconnect: false,
     refreshInterval: 0,
   });
-
   const saveInstagram = useCallback(async () => {
     await fetch(`/integrations/instagram/${integration?.id}`, {
       method: 'POST',
       body: JSON.stringify(page),
     });
-
     closeModal();
   }, [integration, page]);
-
   const filteredData = useMemo(() => {
     return (
       data?.filter((p: { id: string }) => !existingId.includes(p.id)) || []
     );
   }, [data]);
-
   if (!isLoading && !data?.length) {
     return (
       <div className="text-center flex justify-center items-center text-[18px] leading-[50px] h-[300px]">
-        We couldn{"'"}t find any business connected to the selected pages.
+        {t(
+          'we_couldn_t_find_any_business_connected_to_the_selected_pages',
+          "We couldn't find any business connected to the selected pages."
+        )}
         <br />
-        We recommend you to connect all the pages and all the businesses.
+        {t(
+          'we_recommend_you_to_connect_all_the_pages_and_all_the_businesses',
+          'We recommend you to connect all the pages and all the businesses.'
+        )}
         <br />
-        Please close this dialog, delete your integration and add a new channel
-        again.
+        {t(
+          'please_close_this_dialog_delete_your_integration_and_add_a_new_channel_again',
+          'Please close this dialog, delete your integration and add a new channel\n        again.'
+        )}
       </div>
     );
   }
-
   return (
     <div className="flex flex-col gap-[20px]">
-      <div>Select Instagram Account:</div>
+      <div>{t('select_instagram_account', 'Select Instagram Account:')}</div>
       <div className="grid grid-cols-3 justify-items-center select-none cursor-pointer">
         {filteredData?.map(
           (p: {
@@ -83,7 +85,11 @@ export const InstagramContinue: FC<{
             pageId: string;
             username: string;
             name: string;
-            picture: { data: { url: string } };
+            picture: {
+              data: {
+                url: string;
+              };
+            };
           }) => (
             <div
               key={p.id}
@@ -107,7 +113,7 @@ export const InstagramContinue: FC<{
       </div>
       <div>
         <Button disabled={!page} onClick={saveInstagram}>
-          Save
+          {t('save', 'Save')}
         </Button>
       </div>
     </div>

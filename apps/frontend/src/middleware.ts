@@ -18,22 +18,21 @@ export async function middleware(request: NextRequest) {
     request.cookies.get('auth') ||
     request.headers.get('auth') ||
     nextUrl.searchParams.get('loggedAuth');
-
   const lng =
     (request.cookies.has(cookieName)
       ? acceptLanguage.get(request.cookies.get(cookieName).value)
       : acceptLanguage.get(request.headers.get('Accept-Language'))) ||
     fallbackLng;
-
   const headers = new Headers(request.headers);
   headers.set(headerName, lng);
-
   if (
     nextUrl.pathname.startsWith('/uploads/') ||
     nextUrl.pathname.startsWith('/p/') ||
     nextUrl.pathname.startsWith('/icons/')
   ) {
-    return NextResponse.next({ headers });
+    return NextResponse.next({
+      headers,
+    });
   }
   // If the URL is logout, delete the cookie and redirect to login
   if (nextUrl.href.indexOf('/auth/logout') > -1) {
@@ -54,10 +53,8 @@ export async function middleware(request: NextRequest) {
     });
     return response;
   }
-
   const org = nextUrl.searchParams.get('org');
   const url = new URL(nextUrl).search;
-
   if (nextUrl.href.indexOf('/auth') === -1 && !authCookie) {
     const providers = ['google', 'settings'];
     const findIndex = providers.find((p) => nextUrl.href.indexOf(p) > -1);
@@ -79,7 +76,6 @@ export async function middleware(request: NextRequest) {
   if (nextUrl.href.indexOf('/auth') > -1 && authCookie) {
     return NextResponse.redirect(new URL(`/${url}`, nextUrl.href));
   }
-
   if (nextUrl.href.indexOf('/auth') > -1 && !authCookie) {
     if (org) {
       const redirect = NextResponse.redirect(new URL(`/`, nextUrl.href));
@@ -97,9 +93,10 @@ export async function middleware(request: NextRequest) {
       });
       return redirect;
     }
-    return NextResponse.next({ headers });
+    return NextResponse.next({
+      headers,
+    });
   }
-
   try {
     if (org) {
       const { id } = await (
@@ -110,7 +107,6 @@ export async function middleware(request: NextRequest) {
           method: 'POST',
         })
       ).json();
-
       const redirect = NextResponse.redirect(
         new URL(`/?added=true`, nextUrl.href)
       );
@@ -128,10 +124,8 @@ export async function middleware(request: NextRequest) {
           expires: new Date(Date.now() + 15 * 60 * 1000),
         });
       }
-
       return redirect;
     }
-
     if (nextUrl.pathname === '/') {
       return NextResponse.redirect(
         new URL(
@@ -140,15 +134,14 @@ export async function middleware(request: NextRequest) {
         )
       );
     }
-
-    const next = NextResponse.next({ headers });
-
+    const next = NextResponse.next({
+      headers,
+    });
     if (
       nextUrl.pathname === '/marketplace/seller' ||
       nextUrl.pathname === '/marketplace/buyer'
     ) {
       const type = nextUrl.pathname.split('/marketplace/')[1].split('/')[0];
-
       next.cookies.set('marketplace', type === 'seller' ? 'seller' : 'buyer', {
         path: '/',
         ...(!process.env.NOT_SECURED
@@ -162,7 +155,6 @@ export async function middleware(request: NextRequest) {
         domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
       });
     }
-
     return next;
   } catch (err) {
     console.log('err', err);

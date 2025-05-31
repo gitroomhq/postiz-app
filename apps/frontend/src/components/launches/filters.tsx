@@ -1,13 +1,15 @@
 'use client';
+
 import { useCalendar } from '@gitroom/frontend/components/launches/calendar.context';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
 import { useCallback } from 'react';
 import { isUSCitizen } from './helpers/isuscitizen.utils';
 import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const Filters = () => {
   const week = useCalendar();
+  const t = useT();
   const betweenDates =
     week.display === 'day'
       ? dayjs()
@@ -38,7 +40,6 @@ export const Filters = () => {
           .month(week.currentMonth)
           .endOf('month')
           .format(isUSCitizen() ? 'MM/DD/YYYY' : 'DD/MM/YYYY');
-
   const setDay = useCallback(() => {
     week.setFilters({
       currentDay: +dayjs().day() as 0 | 1 | 2 | 3 | 4 | 5 | 6,
@@ -49,7 +50,6 @@ export const Filters = () => {
       customer: week.customer,
     });
   }, [week]);
-
   const setWeek = useCallback(() => {
     week.setFilters({
       currentDay: +dayjs().day() as 0 | 1 | 2 | 3 | 4 | 5 | 6,
@@ -60,7 +60,6 @@ export const Filters = () => {
       customer: week.customer,
     });
   }, [week]);
-
   const setMonth = useCallback(() => {
     week.setFilters({
       currentDay: +dayjs().day() as 0 | 1 | 2 | 3 | 4 | 5 | 6,
@@ -71,7 +70,6 @@ export const Filters = () => {
       customer: week.customer,
     });
   }, [week]);
-
   const setCustomer = useCallback(
     (customer: string) => {
       week.setFilters({
@@ -85,7 +83,6 @@ export const Filters = () => {
     },
     [week]
   );
-
   const next = useCallback(() => {
     const increaseDay = week.display === 'day';
     const increaseWeek =
@@ -93,7 +90,6 @@ export const Filters = () => {
       (week.display === 'day' && week.currentDay === 6);
     const increaseMonth =
       week.display === 'month' || (increaseWeek && week.currentWeek === 52);
-
     week.setFilters({
       customer: week.customer,
       currentDay: (!increaseDay
@@ -125,7 +121,6 @@ export const Filters = () => {
     week.currentYear,
     week.currentDay,
   ]);
-
   const previous = useCallback(() => {
     const decreaseDay = week.display === 'day';
     const decreaseWeek =
@@ -133,7 +128,6 @@ export const Filters = () => {
       (week.display === 'day' && week.currentDay === 0);
     const decreaseMonth =
       week.display === 'month' || (decreaseWeek && week.currentWeek === 1);
-
     week.setFilters({
       customer: week.customer,
       currentDay: (!decreaseDay
@@ -222,7 +216,7 @@ export const Filters = () => {
           )}
           onClick={setDay}
         >
-          Day
+          {t('day', 'Day')}
         </div>
         <div
           className={clsx(
@@ -231,7 +225,7 @@ export const Filters = () => {
           )}
           onClick={setWeek}
         >
-          Week
+          {t('week', 'Week')}
         </div>
         <div
           className={clsx(
@@ -240,7 +234,7 @@ export const Filters = () => {
           )}
           onClick={setMonth}
         >
-          Month
+          {t('month', 'Month')}
         </div>
       </div>
     </div>
