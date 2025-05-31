@@ -23,6 +23,7 @@ import { DNDProvider } from '@gitroom/frontend/components/launches/helpers/dnd.p
 import { GeneratorComponent } from './generator/generator';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { NewPost } from '@gitroom/frontend/components/launches/new.post';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 interface MenuComponentInterface {
   refreshChannel: (
@@ -280,6 +281,7 @@ export const LaunchesComponent = () => {
   const search = useSearchParams();
   const toast = useToaster();
   const fireEvents = useFireEvents();
+  const t = useT();
 
   const [reload, setReload] = useState(false);
   const load = useCallback(async (path: string) => {
@@ -418,7 +420,7 @@ export const LaunchesComponent = () => {
           <div className="flex flex-1 relative">
             <div className="outline-none w-full h-full grid grid-cols[1fr] md:grid-cols-[220px_minmax(0,1fr)] gap-[30px] scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary">
               <div className="bg-third p-[16px] flex flex-col gap-[24px] min-h-[100%]">
-                <h2 className="text-[20px]">Channels</h2>
+                <h2 className="text-[20px]">{t('channels')}</h2>
                 <div className="gap-[16px] flex flex-col select-none">
                   {sortedIntegrations.length === 0 && (
                     <div className="text-[12px]">No channels</div>

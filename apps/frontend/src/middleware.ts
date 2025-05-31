@@ -2,18 +2,38 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
 import { internalFetch } from '@gitroom/helpers/utils/internal.fetch';
+import acceptLanguage from 'accept-language';
+import {
+  cookieName,
+  fallbackLng,
+  headerName,
+  languages,
+} from '@gitroom/react/translation/i18n.config';
+acceptLanguage.languages(languages);
 
 // This function can be marked `async` if using `await` inside
 export async function middleware(request: NextRequest) {
   const nextUrl = request.nextUrl;
-  const authCookie = request.cookies.get('auth') || request.headers.get('auth') || nextUrl.searchParams.get('loggedAuth');
+  const authCookie =
+    request.cookies.get('auth') ||
+    request.headers.get('auth') ||
+    nextUrl.searchParams.get('loggedAuth');
+
+  const lng =
+    (request.cookies.has(cookieName)
+      ? acceptLanguage.get(request.cookies.get(cookieName).value)
+      : acceptLanguage.get(request.headers.get('Accept-Language'))) ||
+    fallbackLng;
+
+  const headers = new Headers(request.headers);
+  headers.set(headerName, lng);
 
   if (
     nextUrl.pathname.startsWith('/uploads/') ||
     nextUrl.pathname.startsWith('/p/') ||
     nextUrl.pathname.startsWith('/icons/')
   ) {
-    return NextResponse.next();
+    return NextResponse.next({ headers });
   }
   // If the URL is logout, delete the cookie and redirect to login
   if (nextUrl.href.indexOf('/auth/logout') > -1) {
@@ -77,7 +97,7 @@ export async function middleware(request: NextRequest) {
       });
       return redirect;
     }
-    return NextResponse.next();
+    return NextResponse.next({ headers });
   }
 
   try {
@@ -121,7 +141,7 @@ export async function middleware(request: NextRequest) {
       );
     }
 
-    const next = NextResponse.next();
+    const next = NextResponse.next({ headers });
 
     if (
       nextUrl.pathname === '/marketplace/seller' ||

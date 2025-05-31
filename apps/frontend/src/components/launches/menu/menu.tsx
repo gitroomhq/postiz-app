@@ -1,3 +1,5 @@
+'use client';
+
 import React, {
   FC,
   MouseEventHandler,
@@ -19,6 +21,7 @@ import { Integration } from '@prisma/client';
 import { SettingsModal } from '@gitroom/frontend/components/launches/settings.modal';
 import { CustomVariables } from '@gitroom/frontend/components/launches/add.provider.component';
 import { useRouter } from 'next/navigation';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 export const Menu: FC<{
   canEnable: boolean;

@@ -15,10 +15,13 @@ import { PHProvider } from '@gitroom/react/helpers/posthog';
 import UtmSaver from '@gitroom/helpers/utils/utm.saver';
 import { ToltScript } from '@gitroom/frontend/components/layout/tolt.script';
 import { FacebookComponent } from '@gitroom/frontend/components/layout/facebook.component';
+import { headers } from 'next/headers';
+import { headerName } from '@gitroom/react/translation/i18n.config';
 
 const chakra = Chakra_Petch({ weight: '400', subsets: ['latin'] });
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
+  const allHeaders = headers();
   const Plausible = !!process.env.STRIPE_PUBLISHABLE_KEY
     ? PlausibleProvider
     : Fragment;
@@ -49,6 +52,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           neynarClientId={process.env.NEYNAR_CLIENT_ID!}
           isSecured={!process.env.NOT_SECURED}
           disableImageCompression={!!process.env.DISABLE_IMAGE_COMPRESSION}
+          language={allHeaders.get(headerName)}
         >
           <ToltScript />
           <FacebookComponent />

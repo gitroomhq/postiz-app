@@ -19,6 +19,7 @@ interface VariableContextInterface {
   neynarClientId: string;
   isSecured: boolean;
   disableImageCompression: boolean;
+  language: string;
   tolt: string;
 }
 const VariableContext = createContext({
@@ -38,6 +39,7 @@ const VariableContext = createContext({
   facebookPixel: '',
   neynarClientId: '',
   disableImageCompression: false,
+  language: '',
   tolt: '',
 } as VariableContextInterface);
 
