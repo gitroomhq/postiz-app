@@ -18,8 +18,8 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: egelhaus
-          password: ${{ secrets.TOKEN_DOCKER }}
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
 
       - name: Set image tag
         id: vars
