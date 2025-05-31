@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         NODE_VERSION = '20.17.0'
-        PR_NUMBER = "${env.CHANGE_ID}" // PR number comes from webhook payload
+        PR_NUMBER = "${env.CHANGE_ID}" // PR number from webhook
         IMAGE_TAG = "xtremeverveacr.azurecr.io/postiz-app-pr:${env.CHANGE_ID}"
     }
 
@@ -37,12 +37,15 @@ pipeline {
 
         stage('Build and Push Docker Image to ACR') {
             when {
-                expression { return env.CHANGE_ID != null }  // Only run if it's a PR
+                expression { return env.CHANGE_ID != null }  // Only for pull requests
             }
             steps {
                 withCredentials([
-                    string(credentialsId: 'acr-username', variable: 'ACR_USERNAME'),
-                    string(credentialsId: 'acr-password', variable: 'ACR_PASSWORD')
+                    usernamePassword(
+                        credentialsId: 'acr-creds',
+                        usernameVariable: 'ACR_USERNAME',
+                        passwordVariable: 'ACR_PASSWORD'
+                    )
                 ]) {
                     sh '''
                         echo "$ACR_PASSWORD" | docker login xtremeverveacr.azurecr.io -u "$ACR_USERNAME" --password-stdin
@@ -56,10 +59,10 @@ pipeline {
 
     post {
         success {
-            echo 'Build completed successfully!'
+            echo '✅ Build and push succeeded!'
         }
         failure {
-            echo 'Build failed!'
+            echo '❌ Build or push failed.'
         }
     }
 }
