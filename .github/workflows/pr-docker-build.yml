@@ -1,7 +1,7 @@
 name: Build and Publish PR Docker Image
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, synchronize]
 
 permissions: write-all
