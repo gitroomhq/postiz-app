@@ -10,6 +10,9 @@ import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
 export class FacebookProvider extends SocialAbstract implements SocialProvider {
+  available = !!(
+    process.env.FACEBOOK_APP_ID && process.env.FACEBOOK_APP_SECRET
+  );
   identifier = 'facebook';
   name = 'Facebook Page';
   isBetweenSteps = true;
@@ -297,7 +300,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     accessToken: string,
     date: number
   ): Promise<AnalyticsData[]> {
-    const until = dayjs().endOf('day').unix()
+    const until = dayjs().endOf('day').unix();
     const since = dayjs().subtract(date, 'day').unix();
 
     const { data } = await (

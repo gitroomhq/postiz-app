@@ -18,6 +18,7 @@ const frontendURL = process.env.FRONTEND_URL || 'http://localhost:5000';
 const mediaStorage = process.env.STORAGE_PROVIDER || 'local';
 
 export class TelegramProvider extends SocialAbstract implements SocialProvider {
+  available = !!process.env.TELEGRAM_TOKEN;
   identifier = 'telegram';
   name = 'Telegram';
   isBetweenSteps = false;

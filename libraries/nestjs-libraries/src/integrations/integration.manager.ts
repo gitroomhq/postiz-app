@@ -64,14 +64,16 @@ export class IntegrationManager {
   async getAllIntegrations() {
     return {
       social: await Promise.all(
-        socialIntegrationList.map(async (p) => ({
-          name: p.name,
-          identifier: p.identifier,
-          toolTip: p.toolTip,
-          isExternal: !!p.externalUrl,
-          isWeb3: !!p.isWeb3,
-          ...(p.customFields ? { customFields: await p.customFields() } : {}),
-        }))
+        socialIntegrationList
+          .filter((p) => p.available !== false)
+          .map(async (p) => ({
+            name: p.name,
+            identifier: p.identifier,
+            toolTip: p.toolTip,
+            isExternal: !!p.externalUrl,
+            isWeb3: !!p.isWeb3,
+            ...(p.customFields ? { customFields: await p.customFields() } : {}),
+          }))
       ),
       article: articleIntegrationList.map((p) => ({
         name: p.name,
@@ -82,6 +84,7 @@ export class IntegrationManager {
 
   getAllPlugs() {
     return socialIntegrationList
+      .filter((p) => p.available !== false)
       .map((p) => {
         return {
           name: p.name,

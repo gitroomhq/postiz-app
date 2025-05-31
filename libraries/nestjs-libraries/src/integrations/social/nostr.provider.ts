@@ -24,6 +24,7 @@ const list = [
 ];
 
 export class NostrProvider extends SocialAbstract implements SocialProvider {
+  available = true;
   identifier = 'nostr';
   name = 'Nostr';
   isBetweenSteps = false;

@@ -17,6 +17,9 @@ export class InstagramStandaloneProvider
   extends SocialAbstract
   implements SocialProvider
 {
+  available = !!(
+    process.env.INSTAGRAM_APP_ID && process.env.INSTAGRAM_APP_SECRET
+  );
   identifier = 'instagram-standalone';
   name = 'Instagram\n(Standalone)';
   isBetweenSteps = false;

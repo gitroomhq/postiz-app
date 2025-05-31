@@ -52,6 +52,7 @@ async function reduceImageBySize(url: string, maxSizeKB = 976) {
 }
 
 export class BlueskyProvider extends SocialAbstract implements SocialProvider {
+  available = true;
   identifier = 'bluesky';
   name = 'Bluesky';
   isBetweenSteps = false;

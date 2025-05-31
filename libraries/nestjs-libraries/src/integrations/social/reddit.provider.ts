@@ -11,6 +11,9 @@ import { groupBy } from 'lodash';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
 export class RedditProvider extends SocialAbstract implements SocialProvider {
+  available = !!(
+    process.env.REDDIT_CLIENT_ID && process.env.REDDIT_CLIENT_SECRET
+  );
   identifier = 'reddit';
   name = 'Reddit';
   isBetweenSteps = false;

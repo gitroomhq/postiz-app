@@ -13,6 +13,7 @@ import FormDataNew from 'form-data';
 import mime from 'mime-types';
 
 export class VkProvider extends SocialAbstract implements SocialProvider {
+  available = !!process.env.VK_ID;
   identifier = 'vk';
   name = 'VK';
   isBetweenSteps = false;

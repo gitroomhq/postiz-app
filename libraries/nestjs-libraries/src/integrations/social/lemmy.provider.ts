@@ -13,6 +13,7 @@ import { LemmySettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/lemmy.dto
 import { groupBy } from 'lodash';
 
 export class LemmyProvider extends SocialAbstract implements SocialProvider {
+  available = true;
   identifier = 'lemmy';
   name = 'Lemmy';
   isBetweenSteps = false;

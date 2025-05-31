@@ -13,6 +13,12 @@ import { DribbbleDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-sett
 import mime from 'mime-types';
 
 export class DribbbleProvider extends SocialAbstract implements SocialProvider {
+  available = !!(
+    process.env.PINTEREST_CLIENT_ID &&
+    process.env.PINTEREST_CLIENT_SECRET &&
+    process.env.DRIBBBLE_CLIENT_ID &&
+    process.env.DRIBBBLE_CLIENT_SECRET
+  );
   identifier = 'dribbble';
   name = 'Dribbble';
   isBetweenSteps = false;
