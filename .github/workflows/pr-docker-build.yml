@@ -19,7 +19,7 @@ jobs:
         with:
           registry: ghcr.io
           username: egelhaus
-          password: ${{ github.token }}
+          password: ${{ secrets.TOKEN_DOCKER }}
 
       - name: Set image tag
         id: vars
