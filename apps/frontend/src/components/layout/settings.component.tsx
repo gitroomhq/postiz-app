@@ -131,9 +131,11 @@ export const SettingsPopup: FC<{
                   {t('auto_post', 'Auto Post')}
                 </Tabs.Tab>
               )}
-              <Tabs.Tab value="signatures">
-                {t('signatures', 'Signatures')}
-              </Tabs.Tab>
+              {user?.tier.current !== 'FREE' && (
+                <Tabs.Tab value="signatures">
+                  {t('signatures', 'Signatures')}
+                </Tabs.Tab>
+              )}
               {!!user?.tier?.public_api && isGeneral && showLogout && (
                 <Tabs.Tab value="api">{t('public_api', 'Public API')}</Tabs.Tab>
               )}
@@ -239,10 +241,11 @@ export const SettingsPopup: FC<{
               </Tabs.Panel>
             )}
 
-            <Tabs.Panel value="signatures" pt="md">
-              <SignaturesComponent />
-            </Tabs.Panel>
-
+            {user?.tier.current !== 'FREE' && (
+              <Tabs.Panel value="signatures" pt="md">
+                <SignaturesComponent />
+              </Tabs.Panel>
+            )}
             {!!user?.tier?.public_api && isGeneral && showLogout && (
               <Tabs.Panel value="api" pt="md">
                 <PublicComponent />

@@ -110,7 +110,7 @@ export function Login() {
             </Button>
           </div>
           <p className="mt-4 text-sm">
-            {t('don_t_have_an_account', "Don't Have An Account?")}
+            {t('don_t_have_an_account', "Don't Have An Account?")}&nbsp;
             <Link href="/auth" className="underline cursor-pointer">
               {t('sign_up', 'Sign Up')}
             </Link>

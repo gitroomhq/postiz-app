@@ -23,6 +23,8 @@ export async function middleware(request: NextRequest) {
       ? acceptLanguage.get(request.cookies.get(cookieName).value)
       : acceptLanguage.get(request.headers.get('Accept-Language'))) ||
     fallbackLng;
+
+  console.log(request.cookies.has(cookieName));
   const headers = new Headers(request.headers);
   headers.set(headerName, lng);
   if (

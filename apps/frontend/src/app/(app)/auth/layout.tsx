@@ -15,7 +15,7 @@ export default async function AuthLayout({
   const t = await getT();
 
   return (
-    <div className="dark !bg-black">
+    <div className="dark !bg-black lbox">
       <ReturnUrlComponent />
       <div className="absolute start-0 top-0 z-[0] h-[100vh] w-[100vw] overflow-hidden bg-loginBg bg-contain bg-no-repeat bg-left-top" />
       <div className="relative z-[1] px-3 lg:pr-[100px] xs:mt-[70px] flex justify-center lg:justify-end items-center h-[100vh] w-[100vw] overflow-hidden">
@@ -64,7 +64,7 @@ export default async function AuthLayout({
               </div>
             </div>
           </div>
-          <div className="p-[32px] w-full h-[660px] text-textColor">
+          <div className="p-[32px] w-full h-[660px] text-textColor rbox">
             {children}
           </div>
           <div className="flex flex-1 flex-col">

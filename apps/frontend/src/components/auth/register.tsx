@@ -205,20 +205,20 @@ export function RegisterAfter({
           {t(
             'by_registering_you_agree_to_our',
             'By registering you agree to our'
-          )}
+          )}&nbsp;
           <a
             href={`https://postiz.com/terms`}
             className="underline hover:font-bold"
           >
             {t('terms_of_service', 'Terms of Service')}
-          </a>
-          {t('and', 'and')}
+          </a>&nbsp;
+          {t('and', 'and')}&nbsp;
           <a
             href={`https://postiz.com/privacy`}
             className="underline hover:font-bold"
           >
             {t('privacy_policy', 'Privacy Policy')}
-          </a>
+          </a>&nbsp;
         </div>
         <div className="text-center mt-6">
           <div className="w-full flex">
@@ -231,7 +231,7 @@ export function RegisterAfter({
             </Button>
           </div>
           <p className="mt-4 text-sm">
-            {t('already_have_an_account', 'Already Have An Account?')}
+            {t('already_have_an_account', 'Already Have An Account?')}&nbsp;
             <Link href="/auth/login" className="underline  cursor-pointer">
               {t('sign_in', 'Sign In')}
             </Link>
