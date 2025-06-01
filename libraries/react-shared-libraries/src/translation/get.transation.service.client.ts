@@ -10,25 +10,32 @@ import {
   fallbackLng,
 } from '@gitroom/react/translation/i18n.config';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
-const runsOnServerSide = typeof window === 'undefined';
+
 export function useT(ns?: string, options?: UseTranslationOptions<any>) {
   const { language } = useVariables();
   const [lng] = useCookie(cookieName, language || fallbackLng);
   if (typeof lng !== 'string') {
     throw new Error('useT is only available inside /app/[lng]');
   }
-  const [activeLng, setActiveLng] = useState(i18next.resolvedLanguage);
   const { t } = useTranslation(ns, options);
-  useEffect(() => {
-    if (activeLng === i18next.resolvedLanguage) return;
-    setActiveLng(i18next.resolvedLanguage);
-  }, [activeLng]);
-  useEffect(() => {
-    if (!lng || i18next.resolvedLanguage === lng) return;
-    i18next.changeLanguage(lng);
-  }, [lng]);
-  if (runsOnServerSide && i18next.resolvedLanguage !== lng) {
-    i18next.changeLanguage(lng);
-  }
   return t;
+}
+
+export function useTranslationSettings() {
+  const { language } = useVariables();
+  const [lng] = useCookie(cookieName, language || fallbackLng);
+  const [savedI18next, setSavedI18next] = useState(i18next);
+
+  if (typeof lng !== 'string') {
+    throw new Error('useT is only available inside /app/[lng]');
+  }
+  useEffect(() => {
+    if (lng !== i18next.resolvedLanguage) {
+      i18next.changeLanguage(lng).then(() => {
+        setSavedI18next(i18next);
+      });
+    }
+  }, [lng]);
+
+  return savedI18next;
 }
