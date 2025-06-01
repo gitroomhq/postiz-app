@@ -12,7 +12,7 @@ import { Select } from '@gitroom/react/form/select';
 import { Button } from '@gitroom/react/form/button';
 import { useRouter } from 'next/navigation';
 import { useToaster } from '@gitroom/react/toaster/toaster';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 const allowedIntegrations = [
   'facebook',
   'instagram',
@@ -24,9 +24,9 @@ const allowedIntegrations = [
   'threads',
   'x',
 ];
-
 export const PlatformAnalytics = () => {
   const fetch = useFetch();
+  const t = useT();
   const router = useRouter();
   const [current, setCurrent] = useState(0);
   const [key, setKey] = useState(7);
@@ -36,11 +36,9 @@ export const PlatformAnalytics = () => {
     const int = (await (await fetch('/integrations/list')).json()).integrations;
     return int.filter((f: any) => allowedIntegrations.includes(f.identifier));
   }, []);
-
   const { data, isLoading } = useSWR('analytics-list', load, {
     fallbackData: [],
   });
-
   const sortedIntegrations = useMemo(() => {
     return orderBy(
       data,
@@ -48,11 +46,9 @@ export const PlatformAnalytics = () => {
       ['desc', 'asc', 'asc']
     );
   }, [data]);
-
   const currentIntegration = useMemo(() => {
     return sortedIntegrations[current];
   }, [current, sortedIntegrations]);
-
   const options = useMemo(() => {
     if (!currentIntegration) {
       return [];
@@ -72,10 +68,9 @@ export const PlatformAnalytics = () => {
     ) {
       arr.push({
         key: 7,
-        value: '7 Days',
+        value: t('7_days', '7 Days'),
       });
     }
-
     if (
       [
         'facebook',
@@ -90,10 +85,9 @@ export const PlatformAnalytics = () => {
     ) {
       arr.push({
         key: 30,
-        value: '30 Days',
+        value: t('30_days', '30 Days'),
       });
     }
-
     if (
       ['facebook', 'linkedin-page', 'pinterest', 'youtube', 'x'].indexOf(
         currentIntegration.identifier
@@ -101,13 +95,11 @@ export const PlatformAnalytics = () => {
     ) {
       arr.push({
         key: 90,
-        value: '90 Days',
+        value: t('90_days', '90 Days'),
       });
     }
-
     return arr;
   }, [currentIntegration]);
-
   const keys = useMemo(() => {
     if (!currentIntegration) {
       return 7;
@@ -115,14 +107,11 @@ export const PlatformAnalytics = () => {
     if (options.find((p) => p.key === key)) {
       return key;
     }
-
     return options[0]?.key;
   }, [key, currentIntegration]);
-
   if (isLoading) {
     return null;
   }
-
   if (!sortedIntegrations.length && !isLoading) {
     return (
       <div className="flex flex-col items-center mt-[100px] gap-[27px] text-center">
@@ -130,32 +119,43 @@ export const PlatformAnalytics = () => {
           <img src="/peoplemarketplace.svg" />
         </div>
         <div className="text-[48px]">
-          Can{"'"}t show analytics yet
+          {t('can_t_show_analytics_yet', "Can't show analytics yet")}
           <br />
-          You have to add Social Media channels
+          {t(
+            'you_have_to_add_social_media_channels',
+            'You have to add Social Media channels'
+          )}
         </div>
         <div className="text-[20px]">
-          Supported: {allowedIntegrations.map((p) => capitalize(p)).join(', ')}
+          {t('supported', 'Supported:')}
+          {allowedIntegrations.map((p) => capitalize(p)).join(', ')}
         </div>
         <Button onClick={() => router.push('/launches')}>
-          Go to the calendar to add channels
+          {t(
+            'go_to_the_calendar_to_add_channels',
+            'Go to the calendar to add channels'
+          )}
         </Button>
       </div>
     );
   }
-
   return (
     <div className="flex gap-[30px] flex-1">
       <div className="p-[16px] bg-customColor48 overflow-hidden flex w-[220px]">
         <div className="flex gap-[16px] flex-col overflow-hidden">
-          <div className="text-[20px] mb-[8px]">Channels</div>
+          <div className="text-[20px] mb-[8px]">
+            {t('channels', 'Channels')}
+          </div>
           {sortedIntegrations.map((integration, index) => (
             <div
               key={integration.id}
               onClick={() => {
                 if (integration.refreshNeeded) {
-                  toaster.show('Please refresh the integration from the calendar', 'warning');
-                  return ;
+                  toaster.show(
+                    'Please refresh the integration from the calendar',
+                    'warning'
+                  );
+                  return;
                 }
                 setRefresh(true);
                 setTimeout(() => {
@@ -176,11 +176,11 @@ export const PlatformAnalytics = () => {
                 )}
               >
                 {(integration.inBetweenSteps || integration.refreshNeeded) && (
-                  <div className="absolute left-0 top-0 w-[39px] h-[46px] cursor-pointer">
-                    <div className="bg-red-500 w-[15px] h-[15px] rounded-full left-0 -top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
+                  <div className="absolute start-0 top-0 w-[39px] h-[46px] cursor-pointer">
+                    <div className="bg-red-500 w-[15px] h-[15px] rounded-full start-0 -top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
                       !
                     </div>
-                    <div className="bg-primary/60 w-[39px] h-[46px] left-0 top-0 absolute rounded-full z-[199]" />
+                    <div className="bg-primary/60 w-[39px] h-[46px] start-0 top-0 absolute rounded-full z-[199]" />
                   </div>
                 )}
                 <ImageWithFallback
@@ -193,7 +193,7 @@ export const PlatformAnalytics = () => {
                 />
                 <Image
                   src={`/icons/platforms/${integration.identifier}.png`}
-                  className="rounded-full absolute z-10 -bottom-[5px] -right-[5px] border border-fifth"
+                  className="rounded-full absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
                   alt={integration.identifier}
                   width={20}
                   height={20}

@@ -27,7 +27,7 @@ import { useTolt } from '@gitroom/frontend/components/layout/tolt.script';
 import { useTrack } from '@gitroom/react/helpers/use.track';
 import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
 import { PurchaseCrypto } from '@gitroom/frontend/components/billing/purchase.crypto';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export interface Tiers {
   month: Array<{
     name: 'Pro' | 'Standard';
@@ -40,16 +40,15 @@ export interface Tiers {
     price: number;
   }>;
 }
-
 export const Prorate: FC<{
   period: 'MONTHLY' | 'YEARLY';
   pack: 'STANDARD' | 'PRO';
 }> = (props) => {
   const { period, pack } = props;
+  const t = useT();
   const fetch = useFetch();
   const [price, setPrice] = useState<number | false>(0);
   const [loading, setLoading] = useState(false);
-
   const calculatePrice = useDebouncedCallback(async () => {
     setLoading(true);
     setPrice(
@@ -67,12 +66,10 @@ export const Prorate: FC<{
     );
     setLoading(false);
   }, 500);
-
   useEffect(() => {
     setPrice(false);
     calculatePrice();
   }, [period, pack]);
-
   if (loading) {
     return (
       <div className="pt-[12px]">
@@ -80,18 +77,15 @@ export const Prorate: FC<{
       </div>
     );
   }
-
   if (price === false) {
     return null;
   }
-
   return (
     <div className="text-[12px] flex pt-[12px]">
-      (Pay Today ${(price < 0 ? 0 : price)?.toFixed(1)})
+      ({t('pay_today', 'Pay Today')} ${(price < 0 ? 0 : price)?.toFixed(1)})
     </div>
   );
 };
-
 export const Features: FC<{
   pack: 'FREE' | 'STANDARD' | 'PRO';
 }> = (props) => {
@@ -111,26 +105,20 @@ export const Features: FC<{
     if (currentPricing.team_members) {
       list.push(`Unlimited team members`);
     }
-
     if (currentPricing?.ai) {
       list.push(`AI auto-complete`);
       list.push(`AI copilots`);
       list.push(`AI Autocomplete`);
     }
-
     list.push(`Advanced Picture Editor`);
-
     if (currentPricing?.image_generator) {
       list.push(
         `${currentPricing?.image_generation_count} AI Images per month`
       );
     }
-
     list.push(`Marketplace full access`);
-
     return list;
   }, [pack]);
-
   return (
     <div className="flex flex-col gap-[10px] justify-center text-[16px] text-customColor18">
       {features.map((feature) => (
@@ -155,23 +143,25 @@ export const Features: FC<{
     </div>
   );
 };
-
-const Info: FC<{ proceed: (feedback: string) => void }> = (props) => {
+const Info: FC<{
+  proceed: (feedback: string) => void;
+}> = (props) => {
   const [feedback, setFeedback] = useState('');
   const modal = useModals();
   const events = useFireEvents();
-
   const cancel = useCallback(() => {
     props.proceed(feedback);
     events('cancel_subscription');
     modal.closeAll();
   }, [modal, feedback]);
 
+  const t = useT();
+
   return (
     <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-customColor6 bg-sixth p-[16px] pt-0 w-[500px]">
       <TopTitle title="Oh no" />
       <button
-        className="outline-none absolute right-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+        className="outline-none absolute end-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
         type="button"
       >
         <svg
@@ -191,9 +181,12 @@ const Info: FC<{ proceed: (feedback: string) => void }> = (props) => {
       </button>
 
       <div>
-        We are sorry to see you go :(
+        {t('we_are_sorry_to_see_you_go', 'We are sorry to see you go :(')}
         <br />
-        Would you mind shortly tell us what we could have done better?
+        {t(
+          'would_you_mind_shortly_tell_us_what_we_could_have_done_better',
+          'Would you mind shortly tell us what we could have done better?'
+        )}
       </div>
       <div>
         <Textarea
@@ -206,13 +199,12 @@ const Info: FC<{ proceed: (feedback: string) => void }> = (props) => {
       </div>
       <div>
         <Button disabled={feedback.length < 20} onClick={cancel}>
-          Cancel Subscription
+          {t('cancel_subscription', 'Cancel Subscription')}
         </Button>
       </div>
     </div>
   );
 };
-
 export const MainBillingComponent: FC<{
   sub?: Subscription;
 }> = (props) => {
@@ -227,11 +219,11 @@ export const MainBillingComponent: FC<{
   const utm = useUtmUrl();
   const tolt = useTolt();
   const track = useTrack();
+  const t = useT();
 
   const [subscription, setSubscription] = useState<Subscription | undefined>(
     sub
   );
-
   const [loading, setLoading] = useState<boolean>(false);
   const [period, setPeriod] = useState<'MONTHLY' | 'YEARLY'>(
     subscription?.period || 'MONTHLY'
@@ -239,51 +231,40 @@ export const MainBillingComponent: FC<{
   const [monthlyOrYearly, setMonthlyOrYearly] = useState<'on' | 'off'>(
     period === 'MONTHLY' ? 'off' : 'on'
   );
-
   const [initialChannels, setInitialChannels] = useState(
     sub?.totalChannels || 1
   );
-
   useEffect(() => {
     if (initialChannels !== sub?.totalChannels) {
       setInitialChannels(sub?.totalChannels || 1);
     }
-
     if (period !== sub?.period) {
       setPeriod(sub?.period || 'MONTHLY');
       setMonthlyOrYearly(
         (sub?.period || 'MONTHLY') === 'MONTHLY' ? 'off' : 'on'
       );
     }
-
     setSubscription(sub);
   }, [sub]);
-
   const updatePayment = useCallback(async () => {
     const { portal } = await (await fetch('/billing/portal')).json();
     window.location.href = portal;
   }, []);
-
   const currentPackage = useMemo(() => {
     if (!subscription) {
       return 'FREE';
     }
-
     if (period === 'YEARLY' && monthlyOrYearly === 'off') {
       return '';
     }
-
     if (period === 'MONTHLY' && monthlyOrYearly === 'on') {
       return '';
     }
-
     return subscription?.subscriptionTier;
   }, [subscription, initialChannels, monthlyOrYearly, period]);
-
   const moveToCheckout = useCallback(
     (billing: 'STANDARD' | 'PRO' | 'FREE') => async () => {
       const messages = [];
-
       if (
         !pricing[billing].team_members &&
         pricing[subscription?.subscriptionTier!]?.team_members
@@ -292,7 +273,6 @@ export const MainBillingComponent: FC<{
           `Your team members will be removed from your organization`
         );
       }
-
       if (billing === 'FREE') {
         if (
           subscription?.cancelAt ||
@@ -315,7 +295,6 @@ export const MainBillingComponent: FC<{
               size: 'auto',
             });
           });
-
           setLoading(true);
           const { cancel_at } = await (
             await fetch('/billing/cancel', {
@@ -328,24 +307,23 @@ export const MainBillingComponent: FC<{
               },
             })
           ).json();
-
-          setSubscription((subs) => ({ ...subs!, cancelAt: cancel_at }));
+          setSubscription((subs) => ({
+            ...subs!,
+            cancelAt: cancel_at,
+          }));
           if (cancel_at)
             toast.show('Subscription set to canceled successfully');
           if (!cancel_at) toast.show('Subscription reactivated successfully');
-
           setLoading(false);
         }
         return;
       }
-
       if (
         messages.length &&
         !(await deleteDialog(messages.join(', '), 'Yes, continue'))
       ) {
         return;
       }
-
       setLoading(true);
       const { url, portal } = await (
         await fetch('/billing/subscribe', {
@@ -358,7 +336,6 @@ export const MainBillingComponent: FC<{
           }),
         })
       ).json();
-
       if (url) {
         await track(TrackEnum.InitiateCheckout, {
           value:
@@ -369,7 +346,6 @@ export const MainBillingComponent: FC<{
         window.location.href = url;
         return;
       }
-
       if (portal) {
         if (
           await deleteDialog(
@@ -399,27 +375,24 @@ export const MainBillingComponent: FC<{
         );
         toast.show('Subscription updated successfully');
       }
-
       setLoading(false);
     },
     [monthlyOrYearly, subscription, user, utm]
   );
-
   if (user?.isLifetime) {
     router.replace('/billing/lifetime');
     return null;
   }
-
   return (
     <div className="flex flex-col gap-[16px]">
       <div className="flex flex-row">
-        <div className="flex-1 text-[20px]">Plans</div>
+        <div className="flex-1 text-[20px]">{t('plans', 'Plans')}</div>
         <div className="flex items-center gap-[16px]">
-          <div>MONTHLY</div>
+          <div>{t('monthly', 'MONTHLY')}</div>
           <div>
             <Slider value={monthlyOrYearly} onChange={setMonthlyOrYearly} />
           </div>
-          <div>YEARLY</div>
+          <div>{t('yearly', 'YEARLY')}</div>
         </div>
       </div>
       <div className="flex gap-[16px] [@media(max-width:1024px)]:flex-col [@media(max-width:1024px)]:text-center">
@@ -451,7 +424,10 @@ export const MainBillingComponent: FC<{
                         onClick={moveToCheckout('FREE')}
                         loading={loading}
                       >
-                        Reactivate subscription
+                        {t(
+                          'reactivate_subscription',
+                          'Reactivate subscription'
+                        )}
                       </Button>
                     </div>
                   </div>
@@ -482,8 +458,10 @@ export const MainBillingComponent: FC<{
                             .format('D MMM, YYYY')}`
                         : 'Cancel subscription'
                       : // @ts-ignore
-                        (user?.tier === 'FREE' || user?.tier?.current === 'FREE') && user.allowTrial
-                      ? 'Start 7 days free trial'
+                      (user?.tier === 'FREE' ||
+                          user?.tier?.current === 'FREE') &&
+                        user.allowTrial
+                      ? t('start_7_days_free_trial', 'Start 7 days free trial')
                       : 'Purchase'}
                   </Button>
                 )}
@@ -503,27 +481,38 @@ export const MainBillingComponent: FC<{
             </div>
           ))}
       </div>
-      {!subscription?.id && (<PurchaseCrypto />)}
+      {!subscription?.id && <PurchaseCrypto />}
       {!!subscription?.id && (
         <div className="flex justify-center mt-[20px] gap-[10px]">
-          <Button onClick={updatePayment}>Update Payment Method / Invoices History</Button>
+          <Button onClick={updatePayment}>
+            {t(
+              'update_payment_method_invoices_history',
+              'Update Payment Method / Invoices History'
+            )}
+          </Button>
           {isGeneral && !subscription?.cancelAt && (
             <Button
               className="bg-red-500"
               loading={loading}
               onClick={moveToCheckout('FREE')}
             >
-              Cancel subscription
+              {t('cancel_subscription_1', 'Cancel subscription')}
             </Button>
           )}
         </div>
       )}
       {subscription?.cancelAt && isGeneral && (
         <div className="text-center">
-          Your subscription will be canceled at{' '}
+          {t(
+            'your_subscription_will_be_canceled_at',
+            'Your subscription will be canceled at'
+          )}
           {dayjs(subscription.cancelAt).local().format('D MMM, YYYY')}
           <br />
-          You will never be charged again
+          {t(
+            'you_will_never_be_charged_again',
+            'You will never be charged again'
+          )}
         </div>
       )}
       <FAQComponent />

@@ -37,11 +37,9 @@ export class IntegrationService {
   ) {}
 
   async changeActiveCron(orgId: string) {
-    const data = await this._autopostsRepository.getAutoposts(
-      orgId,
-    );
+    const data = await this._autopostsRepository.getAutoposts(orgId);
 
-    for (const item of data.filter(f => f.active)) {
+    for (const item of data.filter((f) => f.active)) {
       await this._workerServiceProducer.deleteScheduler('cron', item.id);
     }
 

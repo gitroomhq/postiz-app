@@ -10,21 +10,23 @@ export class ConfigurationTask {
   })
   create() {
     const checker = new ConfigurationChecker();
-    checker.readEnvFromProcess()
-    checker.check()
+    checker.readEnvFromProcess();
+    checker.check();
 
     if (checker.hasIssues()) {
       for (const issue of checker.getIssues()) {
-        console.warn("Configuration issue:", issue)
+        console.warn('Configuration issue:', issue);
       }
 
-      console.error("Configuration check complete, issues: ", checker.getIssuesCount())
+      console.error(
+        'Configuration check complete, issues: ',
+        checker.getIssuesCount()
+      );
     } else {
-      console.log("Configuration check complete, no issues found.")
+      console.log('Configuration check complete, no issues found.');
     }
 
-    console.log("Press Ctrl+C to exit.");
-    return true
+    console.log('Press Ctrl+C to exit.');
+    return true;
   }
 }
-

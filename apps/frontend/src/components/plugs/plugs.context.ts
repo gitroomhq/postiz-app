@@ -1,17 +1,14 @@
 'use client';
 
 import { createContext, useContext } from 'react';
-
 export interface PlugSettings {
   providerId: string;
   name: string;
   identifier: string;
 }
-
 export interface PlugInterface extends PlugSettings {
   plugs: PlugsInterface[];
 }
-
 export interface FieldsInterface {
   name: string;
   type: string;
@@ -19,7 +16,6 @@ export interface FieldsInterface {
   placeholder: string;
   description: string;
 }
-
 export interface PlugsInterface {
   title: string;
   description: string;
@@ -27,7 +23,6 @@ export interface PlugsInterface {
   methodName: string;
   fields: FieldsInterface[];
 }
-
 export const PlugsContext = createContext<PlugInterface>({
   providerId: '',
   name: '',
@@ -38,9 +33,16 @@ export const PlugsContext = createContext<PlugInterface>({
       description: '',
       runEveryMilliseconds: 0,
       methodName: '',
-      fields: [{ name: '', type: '', placeholder: '', description: '', validation: '' }],
+      fields: [
+        {
+          name: '',
+          type: '',
+          placeholder: '',
+          description: '',
+          validation: '',
+        },
+      ],
     },
   ],
 });
-
 export const usePlugs = () => useContext(PlugsContext);

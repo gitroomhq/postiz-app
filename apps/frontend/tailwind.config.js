@@ -1,10 +1,6 @@
 const { join } = require('path');
-
 module.exports = {
-  content: [
-    './src/**/*.{ts,tsx,html}',
-    '../../libraries/**/*.{ts,tsx,html}',
-  ],
+  content: ['./src/**/*.{ts,tsx,html}', '../../libraries/**/*.{ts,tsx,html}'],
   theme: {
     extend: {
       colors: {
@@ -103,41 +99,94 @@ module.exports = {
       // that is actual animation
       keyframes: (theme) => ({
         fadeOut: {
-          '0%': { opacity: 0, transform: 'translateY(30px)' },
-          '100%': { opacity: 1, transform: 'translateY(0)' },
+          '0%': {
+            opacity: 0,
+            transform: 'translateY(30px)',
+          },
+          '100%': {
+            opacity: 1,
+            transform: 'translateY(0)',
+          },
         },
         normalFadeOut: {
-          '0%': { opacity: 1 },
-          '100%': { opacity: 0 },
+          '0%': {
+            opacity: 1,
+          },
+          '100%': {
+            opacity: 0,
+          },
         },
         normalFadeIn: {
-          '0%': { opacity: 0 },
-          '100%': { opacity: 1 },
+          '0%': {
+            opacity: 0,
+          },
+          '100%': {
+            opacity: 1,
+          },
         },
         overFlow: {
-          '0%': { overflow: 'hidden' },
-          '99%': { overflow: 'hidden' },
-          '100%': { overflow: 'visible' },
+          '0%': {
+            overflow: 'hidden',
+          },
+          '99%': {
+            overflow: 'hidden',
+          },
+          '100%': {
+            overflow: 'visible',
+          },
         },
         overFlowReverse: {
-          '0%': { overflow: 'visible' },
-          '99%': { overflow: 'visible' },
-          '100%': { overflow: 'hidden' },
+          '0%': {
+            overflow: 'visible',
+          },
+          '99%': {
+            overflow: 'visible',
+          },
+          '100%': {
+            overflow: 'hidden',
+          },
         },
         fadeDown: {
-          '0%': { opacity: 0, marginTop: -30 },
-          '10%': { opacity: 1, marginTop: 0 },
-          '85%': { opacity: 1, marginTop: 0 },
-          '90%': { opacity: 1, marginTop: 10 },
-          '100%': { opacity: 0, marginTop: -30 },
+          '0%': {
+            opacity: 0,
+            marginTop: -30,
+          },
+          '10%': {
+            opacity: 1,
+            marginTop: 0,
+          },
+          '85%': {
+            opacity: 1,
+            marginTop: 0,
+          },
+          '90%': {
+            opacity: 1,
+            marginTop: 10,
+          },
+          '100%': {
+            opacity: 0,
+            marginTop: -30,
+          },
         },
         normalFadeDown: {
-          '0%': { opacity: 0, transform: 'translateY(-30px)' },
-          '100%': { opacity: 1, transform: 'translateY(0)' },
+          '0%': {
+            opacity: 0,
+            transform: 'translateY(-30px)',
+          },
+          '100%': {
+            opacity: 1,
+            transform: 'translateY(0)',
+          },
         },
         newMessages: {
-          '0%': { backgroundColor: 'var(--color-seventh)', fontWeight: 'bold' },
-          '99%': { backgroundColor: 'var(--color-third)', fontWeight: 'bold' },
+          '0%': {
+            backgroundColor: 'var(--color-seventh)',
+            fontWeight: 'bold',
+          },
+          '99%': {
+            backgroundColor: 'var(--color-third)',
+            fontWeight: 'bold',
+          },
           '100%': {
             backgroundColor: 'var(--color-third)',
             fontWeight: 'normal',
@@ -145,13 +194,18 @@ module.exports = {
         },
       }),
       screens: {
-        custom: { raw: '(max-height: 800px)' },
-        xs: { max: '401px' },
+        custom: {
+          raw: '(max-height: 800px)',
+        },
+        xs: {
+          max: '401px',
+        },
       },
     },
   },
   plugins: [
     require('tailwind-scrollbar'),
+    require('tailwindcss-rtl'),
     function ({ addVariant }) {
       addVariant('child', '& > *');
       addVariant('child-hover', '& > *:hover');

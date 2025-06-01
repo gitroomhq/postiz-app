@@ -9,13 +9,15 @@ import { SettingsPopup } from '@gitroom/frontend/components/layout/settings.comp
 import { Button } from '@gitroom/react/form/button';
 import { ConnectChannels } from '@gitroom/frontend/components/onboarding/connect.channels';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const Step: FC<{
   step: number;
   title: string;
   currentStep: number;
   lastStep: number;
 }> = (props) => {
+  const t = useT();
+
   const { step, title, currentStep, lastStep } = props;
   return (
     <div className="flex flex-col">
@@ -66,7 +68,8 @@ export const Step: FC<{
         </div>
       </div>
       <div className="mb-[4px] text-[10px] text-customColor18 tracking-[1.2px]">
-        STEP {step}
+        {t('step', 'STEP')}
+        {step}
       </div>
       <div
         className={clsx('text-[12px]', step > currentStep && 'text-inputText')}
@@ -76,7 +79,6 @@ export const Step: FC<{
     </div>
   );
 };
-
 export const StepSpace: FC = () => {
   return (
     <div className="flex-1 justify-center items-center flex px-[20px]">
@@ -84,13 +86,13 @@ export const StepSpace: FC = () => {
     </div>
   );
 };
-
 const SkipOnboarding: FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const t = useT();
+
   const onSkip = useCallback(() => {
     const keys = Array.from(searchParams.keys());
-
     const buildNewQuery = keys
       .reduce((all, current) => {
         if (current === 'onboarding') {
@@ -109,17 +111,18 @@ const SkipOnboarding: FC = () => {
       className="border-[2px] border-customColor21"
       onClick={onSkip}
     >
-      Skip onboarding
+      {t('skip_onboarding', 'Skip onboarding')}
     </Button>
   );
 };
 const Welcome: FC = () => {
   const [seller, setSeller] = useState(false);
-  const {isGeneral} = useVariables();
+  const { isGeneral } = useVariables();
   const [lastStep, setLastStep] = useState(isGeneral ? 3 : 4);
   const [step, setStep] = useState(1);
   const ref = useRef();
   const router = useRouter();
+  const t = useT();
 
   const nextStep = useCallback(
     (stepIt?: number) => () => {
@@ -127,40 +130,38 @@ const Welcome: FC = () => {
     },
     [step]
   );
-
   const firstNext = useCallback(() => {
     // @ts-ignore
     ref?.current?.click();
     nextStep(2)();
   }, [nextStep]);
-
   const goToAnalytics = useCallback(() => {
     router.push('/analytics');
   }, []);
-
   const goToLaunches = useCallback(() => {
     router.push('/launches');
   }, []);
-
   const buyPosts = useCallback(() => {
     router.push('/marketplace/buyer');
   }, []);
-
   const sellPosts = useCallback(() => {
     nextStep()();
     setLastStep(isGeneral ? 4 : 5);
     setSeller(true);
   }, [step]);
-
   const connectBankAccount = useCallback(() => {
     router.push('/marketplace/seller');
   }, []);
-
   return (
     <div className="bg-sixth p-[32px] w-full max-w-[920px] mx-auto flex flex-col gap-[24px] rounded-[4px] border border-customColor6 relative">
-      <h1 className="text-[24px]">Onboarding</h1>
+      <h1 className="text-[24px]">{t('onboarding', 'Onboarding')}</h1>
       <div className="flex">
-        <Step title="Connect Channels" step={1} currentStep={step} lastStep={lastStep} />
+        <Step
+          title="Connect Channels"
+          step={1}
+          currentStep={step}
+          lastStep={lastStep}
+        />
         <StepSpace />
         {!isGeneral && (
           <>
@@ -186,7 +187,7 @@ const Welcome: FC = () => {
             <StepSpace />
             <Step
               title="Sell Posts"
-              step={5- (isGeneral ? 1 : 0)}
+              step={5 - (isGeneral ? 1 : 0)}
               currentStep={step}
               lastStep={lastStep}
             />
@@ -198,7 +199,7 @@ const Welcome: FC = () => {
           <GithubOnboarding />
           <div className="flex justify-end gap-[8px]">
             {/*<SkipOnboarding />*/}
-            <Button onClick={nextStep()}>Next</Button>
+            <Button onClick={nextStep()}>{t('next', 'Next')}</Button>
           </div>
         </div>
       )}
@@ -207,7 +208,7 @@ const Welcome: FC = () => {
           <ConnectChannels />
           <div className="flex justify-end gap-[8px]">
             {/*<SkipOnboarding />*/}
-            <Button onClick={nextStep()}>Next</Button>
+            <Button onClick={nextStep()}>{t('next', 'Next')}</Button>
           </div>
         </div>
       )}
@@ -217,14 +218,25 @@ const Welcome: FC = () => {
             <img src="/success.svg" alt="success" />
           </div>
           <div className="text-[18px] text-center">
-            You are done, from here you can:
+            {t(
+              'you_are_done_from_here_you_can',
+              'You are done, from here you can:'
+            )}
           </div>
           <div className="flex flex-col gap-[8px]">
-            <div className={clsx(isGeneral ? "grid" : "grid grid-cols-2 gap-[8px]")}>
-              {!isGeneral && (
-                <Button onClick={goToAnalytics}>View Analytics</Button>
+            <div
+              className={clsx(
+                isGeneral ? 'grid' : 'grid grid-cols-2 gap-[8px]'
               )}
-              <Button onClick={goToLaunches}>Schedule a new post</Button>
+            >
+              {!isGeneral && (
+                <Button onClick={goToAnalytics}>
+                  {t('view_analytics', 'View Analytics')}
+                </Button>
+              )}
+              <Button onClick={goToLaunches}>
+                {t('schedule_a_new_post', 'Schedule a new post')}
+              </Button>
             </div>
 
             {/*<div className="grid grid-cols-2 gap-[8px]">*/}
@@ -236,22 +248,40 @@ const Welcome: FC = () => {
       )}
       {step === 4 - (isGeneral ? 1 : 0) && (
         <div>
-          <div className="text-[24px] mb-[24px]">To sell posts you would have to:</div>
+          <div className="text-[24px] mb-[24px]">
+            {t(
+              'to_sell_posts_you_would_have_to',
+              'To sell posts you would have to:'
+            )}
+          </div>
           <ul>
-            <li>1. Connect at least one channel</li>
-            <li>2. Connect you bank account</li>
+            <li>
+              {t(
+                '1_connect_at_least_one_channel',
+                '1. Connect at least one channel'
+              )}
+            </li>
+            <li>
+              {t('2_connect_you_bank_account', '2. Connect you bank account')}
+            </li>
           </ul>
 
           <div className="grid grid-cols-2 gap-[8px] mt-[24px]">
-            <Button onClick={() => setStep(isGeneral ? 2 : 3)}>Go back to connect channels</Button>
-            <Button onClick={connectBankAccount}>Move to the seller page to connect you bank</Button>
+            <Button onClick={() => setStep(isGeneral ? 2 : 3)}>
+              {t('go_back_to_connect_channels', 'Go back to connect channels')}
+            </Button>
+            <Button onClick={connectBankAccount}>
+              {t(
+                'move_to_the_seller_page_to_connect_you_bank',
+                'Move to the seller page to connect you bank'
+              )}
+            </Button>
           </div>
         </div>
       )}
     </div>
   );
 };
-
 export const Onboarding: FC = () => {
   const query = useSearchParams();
   const modal = useModals();
@@ -263,7 +293,6 @@ export const Onboarding: FC = () => {
       modal.closeAll();
       return;
     }
-
     modalOpen.current = true;
     modal.openModal({
       title: '',

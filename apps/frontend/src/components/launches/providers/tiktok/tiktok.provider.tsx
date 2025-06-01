@@ -13,71 +13,31 @@ import { Select } from '@gitroom/react/form/select';
 import { useCustomProviderFunction } from '@gitroom/frontend/components/launches/helpers/use.custom.provider.function';
 import { Checkbox } from '@gitroom/react/form/checkbox';
 import clsx from 'clsx';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
-const privacyLevel = [
-  {
-    value: 'PUBLIC_TO_EVERYONE',
-    label: 'Public to everyone',
-  },
-  {
-    value: 'MUTUAL_FOLLOW_FRIENDS',
-    label: 'Mutual follow friends',
-  },
-  {
-    value: 'FOLLOWER_OF_CREATOR',
-    label: 'Follower of creator',
-  },
-  {
-    value: 'SELF_ONLY',
-    label: 'Self only',
-  },
-];
-
-const contentPostingMethod = [
-  {
-    value: 'DIRECT_POST',
-    label: 'Post content directly to TikTok',
-  },
-  {
-    value: 'UPLOAD',
-    label: 'Upload content to TikTok without posting it',
-  },
-];
-
-const yesNo = [
-  {
-    value: 'yes',
-    label: 'Yes',
-  },
-  {
-    value: 'no',
-    label: 'No',
-  },
-];
-
-const CheckTikTokValidity: FC<{ picture: string }> = (props) => {
+const CheckTikTokValidity: FC<{
+  picture: string;
+}> = (props) => {
   const { register } = useSettings();
+  const t = useT();
+
   const func = useCustomProviderFunction();
   const [maxVideoLength, setMaxVideoLength] = useState(0);
   const [isValidVideo, setIsValidVideo] = useState<undefined | boolean>(
     undefined
   );
-
   const registerVideo = register('isValidVideo');
   const video = useMemo(() => {
     return props.picture;
   }, [props.picture]);
-
   useEffect(() => {
     loadStats();
   }, []);
-
   const loadStats = useCallback(async () => {
     const { maxDurationSeconds } = await func.get('maxVideoLength');
     // setMaxVideoLength(5);
     setMaxVideoLength(maxDurationSeconds);
   }, []);
-
   const loadVideo: ReactEventHandler<HTMLVideoElement> = useCallback(
     (e) => {
       // @ts-ignore
@@ -92,16 +52,19 @@ const CheckTikTokValidity: FC<{ picture: string }> = (props) => {
     },
     [maxVideoLength, registerVideo]
   );
-
   if (!maxVideoLength || !video || video.indexOf('mp4') === -1) {
     return null;
   }
-
   return (
     <>
       {isValidVideo === false && (
         <div className="text-red-600 my-[20px]">
-          Video length is invalid, must be up to {maxVideoLength} seconds
+          {t(
+            'video_length_is_invalid_must_be_up_to',
+            'Video length is invalid, must be up to'
+          )}
+          {maxVideoLength}
+          {t('seconds', 'seconds')}
         </div>
       )}
       <video
@@ -114,28 +77,75 @@ const CheckTikTokValidity: FC<{ picture: string }> = (props) => {
     </>
   );
 };
-
-const TikTokSettings: FC<{ values?: any }> = (props) => {
+const TikTokSettings: FC<{
+  values?: any;
+}> = (props) => {
   const { watch, register, formState, control } = useSettings();
+  const t = useT();
+
   const disclose = watch('disclose');
   const brand_organic_toggle = watch('brand_organic_toggle');
   const brand_content_toggle = watch('brand_content_toggle');
   const content_posting_method = watch('content_posting_method');
-
   const isUploadMode = content_posting_method === 'UPLOAD';
+
+  const privacyLevel = [
+    {
+      value: 'PUBLIC_TO_EVERYONE',
+      label: t('public_to_everyone', 'Public to everyone'),
+    },
+    {
+      value: 'MUTUAL_FOLLOW_FRIENDS',
+      label: t('mutual_follow_friends', 'Mutual follow friends'),
+    },
+    {
+      value: 'FOLLOWER_OF_CREATOR',
+      label: t('follower_of_creator', 'Follower of creator'),
+    },
+    {
+      value: 'SELF_ONLY',
+      label: t('self_only', 'Self only'),
+    },
+  ];
+  const contentPostingMethod = [
+    {
+      value: 'DIRECT_POST',
+      label: t(
+        'post_content_directly_to_tiktok',
+        'Post content directly to TikTok'
+      ),
+    },
+    {
+      value: 'UPLOAD',
+      label: t(
+        'upload_content_to_tiktok_without_posting',
+        'Upload content to TikTok without posting it'
+      ),
+    },
+  ];
+  const yesNo = [
+    {
+      value: 'yes',
+      label: t('yes', 'Yes'),
+    },
+    {
+      value: 'no',
+      label: t('no', 'No'),
+    },
+  ];
 
   return (
     <div className="flex flex-col">
       <CheckTikTokValidity picture={props?.values?.[0]?.image?.[0]?.path} />
       <Select
-        label="Who can see this video?"
+        label={t('label_who_can_see_this_video', 'Who can see this video?')}
         hideErrors={true}
         disabled={isUploadMode}
         {...register('privacy_level', {
           value: 'PUBLIC_TO_EVERYONE',
         })}
       >
-        <option value="">Select</option>
+        <option value="">{t('select', 'Select')}</option>
         {privacyLevel.map((item) => (
           <option key={item.value} value={item.value}>
             {item.label}
@@ -143,17 +153,20 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
         ))}
       </Select>
       <div className="text-[14px] mt-[10px] mb-[18px] text-balance">
-        {`Choose upload without posting if you want to review and edit your content within TikTok's app before publishing.
-        This gives you access to TikTok's built-in editing tools and lets you make final adjustments before posting.`}
+        {t(
+          'choose_upload_without_posting_description',
+          `Choose upload without posting if you want to review and edit your content within TikTok's app before publishing.
+        This gives you access to TikTok's built-in editing tools and lets you make final adjustments before posting.`
+        )}
       </div>
       <Select
-        label="Content posting method"
+        label={t('label_content_posting_method', 'Content posting method')}
         disabled={isUploadMode}
         {...register('content_posting_method', {
           value: 'DIRECT_POST',
         })}
       >
-        <option value="">Select</option>
+        <option value="">{t('select', 'Select')}</option>
         {contentPostingMethod.map((item) => (
           <option key={item.value} value={item.value}>
             {item.label}
@@ -162,12 +175,12 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
       </Select>
       <Select
         hideErrors={true}
-        label="Auto add music"
+        label={t('label_auto_add_music', 'Auto add music')}
         {...register('autoAddMusic', {
           value: 'no',
         })}
       >
-        <option value="">Select</option>
+        <option value="">{t('select', 'Select')}</option>
         {yesNo.map((item) => (
           <option key={item.value} value={item.value}>
             {item.label}
@@ -175,22 +188,26 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
         ))}
       </Select>
       <div className="text-[14px] mt-[10px] mb-[24px] text-balance">
-        This feature available only for photos, it will add a default music that
-        you can change later.
+        {t(
+          'this_feature_available_only_for_photos',
+          'This feature available only for photos, it will add a default music that\n        you can change later.'
+        )}
       </div>
       <hr className="mb-[15px] border-tableBorder" />
-      <div className="text-[14px] mb-[10px]">Allow User To:</div>
+      <div className="text-[14px] mb-[10px]">
+        {t('allow_user_to', 'Allow User To:')}
+      </div>
       <div className="flex gap-[40px]">
         <Checkbox
           variant="hollow"
-          label="Duet"
+          label={t('label_duet', 'Duet')}
           disabled={isUploadMode}
           {...register('duet', {
             value: false,
           })}
         />
         <Checkbox
-          label="Stitch"
+          label={t('label_stitch', 'Stitch')}
           variant="hollow"
           disabled={isUploadMode}
           {...register('stitch', {
@@ -198,7 +215,7 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
           })}
         />
         <Checkbox
-          label="Comments"
+          label={t('label_comments', 'Comments')}
           variant="hollow"
           disabled={isUploadMode}
           {...register('comment', {
@@ -210,7 +227,7 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
       <div className="flex flex-col">
         <Checkbox
           variant="hollow"
-          label="Disclose Video Content"
+          label={t('label_disclose_video_content', 'Disclose Video Content')}
           disabled={isUploadMode}
           {...register('disclose', {
             value: false,
@@ -233,47 +250,70 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
               </svg>
             </div>
             <div>
-              Your video will be labeled {'"'}Promotional Content{'"'}.<br />
-              This cannot be changed once your video is posted.
+              {t(
+                'your_video_will_be_labeled_promotional',
+                'Your video will be labeled "Promotional Content".'
+              )}
+              <br />
+              {t(
+                'this_cannot_be_changed_once_posted',
+                'This cannot be changed once your video is posted.'
+              )}
             </div>
           </div>
         )}
         <div className="text-[14px] my-[10px] text-balance">
-          Turn on to disclose that this video promotes goods or services in
-          exchange for something of value. You video could promote yourself, a
-          third party, or both.
+          {t(
+            'turn_on_to_disclose_video_promotes',
+            'Turn on to disclose that this video promotes goods or services in\n          exchange for something of value. You video could promote yourself, a\n          third party, or both.'
+          )}
         </div>
       </div>
       <div className={clsx(!disclose && 'invisible', 'mt-[20px]')}>
         <Checkbox
           variant="hollow"
-          label="Your brand"
+          label={t('label_your_brand', 'Your brand')}
           disabled={isUploadMode}
           {...register('brand_organic_toggle', {
             value: false,
           })}
         />
         <div className="text-balance my-[10px] text-[14px]">
-          You are promoting yourself or your own brand.
+          {t(
+            'you_are_promoting_yourself',
+            'You are promoting yourself or your own brand.'
+          )}
           <br />
-          This video will be classified as Brand Organic.
+          {t(
+            'this_video_will_be_classified_brand_organic',
+            'This video will be classified as Brand Organic.'
+          )}
         </div>
         <Checkbox
           variant="hollow"
-          label="Branded content"
+          label={t('label_branded_content', 'Branded content')}
           disabled={isUploadMode}
           {...register('brand_content_toggle', {
             value: false,
           })}
         />
         <div className="text-balance my-[10px] text-[14px]">
-          You are promoting another brand or a third party.
+          {t(
+            'you_are_promoting_another_brand',
+            'You are promoting another brand or a third party.'
+          )}
           <br />
-          This video will be classified as Branded Content.
+          {t(
+            'this_video_will_be_classified_branded_content',
+            'This video will be classified as Branded Content.'
+          )}
         </div>
         {(brand_organic_toggle || brand_content_toggle) && (
           <div className="my-[10px] text-[14px] text-balance">
-            By posting, you agree to TikTok{"'"}s{' '}
+            {t(
+              'by_posting_you_agree_to_tiktoks',
+              "By posting, you agree to TikTok's"
+            )}
             {[
               brand_organic_toggle || brand_content_toggle ? (
                 <a
@@ -281,17 +321,17 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
                   className="text-[#B69DEC] hover:underline"
                   href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en"
                 >
-                  Music Usage Confirmation
+                  {t('music_usage_confirmation', 'Music Usage Confirmation')}
                 </a>
               ) : undefined,
-              brand_content_toggle ? <> and </> : undefined,
+              brand_content_toggle ? <> {t('and', 'and')} </> : undefined,
               brand_content_toggle ? (
                 <a
                   target="_blank"
                   className="text-[#B69DEC] hover:underline"
                   href="https://www.tiktok.com/legal/page/global/bc-policy/en"
                 >
-                  Branded Content Policy
+                  {t('branded_content_policy', 'Branded Content Policy')}
                 </a>
               ) : undefined,
             ].filter((f) => f)}
@@ -301,7 +341,6 @@ const TikTokSettings: FC<{ values?: any }> = (props) => {
     </div>
   );
 };
-
 export default withProvider(
   TikTokSettings,
   undefined,
@@ -311,11 +350,9 @@ export default withProvider(
     if (items.length !== 1) {
       return 'Tiktok items should be one';
     }
-
     if (firstItems.length === 0) {
       return 'No video / images selected';
     }
-
     if (
       firstItems.length > 1 &&
       firstItems?.some((p) => p?.path?.indexOf('mp4') > -1)
@@ -327,7 +364,6 @@ export default withProvider(
     ) {
       return 'You need one media';
     }
-
     return true;
   },
   90

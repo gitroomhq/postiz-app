@@ -191,7 +191,6 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
               ).data,
             },
           });
-
         } catch (err: any) {
           if (
             err.response?.data?.error?.errors?.[0]?.domain ===
@@ -199,7 +198,6 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
           ) {
             throw 'Your account is not verified, we have uploaded your video but we could not set the thumbnail. Please verify your account and try again.';
           }
-
         }
       }
 

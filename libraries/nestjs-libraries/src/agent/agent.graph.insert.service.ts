@@ -9,7 +9,7 @@ import { agentTopics } from '@gitroom/nestjs-libraries/agent/agent.topics';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 
 const model = new ChatOpenAI({
-  apiKey: process.env.OPENAI_API_KEY  || 'sk-proj-',
+  apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
   model: 'gpt-4o-2024-08-06',
   temperature: 0,
 });
@@ -36,10 +36,7 @@ const hook = z.object({
 
 @Injectable()
 export class AgentGraphInsertService {
-  constructor(
-    private _postsService: PostsService,
-  ) {
-  }
+  constructor(private _postsService: PostsService) {}
   static state = () =>
     new StateGraph<WorkflowChannelsState>({
       channels: {
@@ -111,7 +108,7 @@ You are an assistant that get a social media post and extract the hook, the hook
       category: state.category,
       topic: state.topic!,
       hook: state.hook!,
-      content: state.messages[0].content! as string
+      content: state.messages[0].content! as string,
     });
 
     return {};

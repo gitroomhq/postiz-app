@@ -11,16 +11,10 @@ import { CodesService } from '@gitroom/nestjs-libraries/services/codes.service';
 import { PublicIntegrationsController } from '@gitroom/backend/public-api/routes/v1/public.integrations.controller';
 import { PublicAuthMiddleware } from '@gitroom/backend/services/auth/public.auth.middleware';
 
-const authenticatedController = [
-  PublicIntegrationsController
-];
+const authenticatedController = [PublicIntegrationsController];
 @Module({
-  imports: [
-    UploadModule,
-  ],
-  controllers: [
-    ...authenticatedController,
-  ],
+  imports: [UploadModule],
+  controllers: [...authenticatedController],
   providers: [
     AuthService,
     StripeService,

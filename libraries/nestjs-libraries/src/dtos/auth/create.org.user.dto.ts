@@ -1,5 +1,12 @@
-import {IsDefined, IsEmail, IsString, MaxLength, MinLength, ValidateIf} from "class-validator";
-import {Provider} from '@prisma/client';
+import {
+  IsDefined,
+  IsEmail,
+  IsString,
+  MaxLength,
+  MinLength,
+  ValidateIf,
+} from 'class-validator';
+import { Provider } from '@prisma/client';
 
 export class CreateOrgUserDto {
   @IsString()

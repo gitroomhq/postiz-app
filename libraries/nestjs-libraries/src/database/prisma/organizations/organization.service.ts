@@ -13,7 +13,7 @@ import { AutopostService } from '@gitroom/nestjs-libraries/database/prisma/autop
 export class OrganizationService {
   constructor(
     private _organizationRepository: OrganizationRepository,
-    private _notificationsService: NotificationService,
+    private _notificationsService: NotificationService
   ) {}
   async createOrgAndUser(
     body: Omit<CreateOrgUserDto, 'providerToken'> & { providerId?: string },

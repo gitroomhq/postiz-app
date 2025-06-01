@@ -1,4 +1,11 @@
-import { Body, Controller, HttpException, Param, Post, Sse } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpException,
+  Param,
+  Post,
+  Sse,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { McpService } from '@gitroom/nestjs-libraries/mcp/mcp.service';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';

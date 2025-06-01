@@ -1,4 +1,5 @@
 'use client';
+
 import '@neynar/react/dist/style.css';
 import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { Web3ProviderInterface } from '@gitroom/frontend/components/launches/web3/web3.provider.interface';
@@ -13,17 +14,16 @@ import { Button } from '@gitroom/react/form/button';
 import copy from 'copy-to-clipboard';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const TelegramProvider: FC<Web3ProviderInterface> = (props) => {
   const { onComplete, nonce } = props;
-  const {telegramBotName} = useVariables();
+  const { telegramBotName } = useVariables();
   const modal = useModals();
   const fetch = useFetch();
   const word = useRef(makeId(4));
   const stop = useRef(false);
   const [step, setStep] = useState(false);
   const toaster = useToaster();
-
   async function* load() {
     let id = '';
     while (true) {
@@ -34,14 +34,13 @@ export const TelegramProvider: FC<Web3ProviderInterface> = (props) => {
           }`
         )
       ).json();
-
       if (data.lastChatId) {
         id = data.lastChatId;
       }
-
       yield data;
     }
   }
+  const t = useT();
 
   const loadAll = async () => {
     stop.current = false;
@@ -58,23 +57,20 @@ export const TelegramProvider: FC<Web3ProviderInterface> = (props) => {
       await timer(2000);
     }
   };
-
   const copyText = useCallback(() => {
     copy(`/connect ${word.current}`);
     toaster.show('Copied to clipboard', 'success');
   }, []);
-
   useEffect(() => {
     return () => {
       stop.current = true;
     };
   }, []);
-
   return (
     <div className="rounded-[4px] border border-customColor6 bg-sixth px-[16px] pb-[16px] relative w-[700px]">
       <TopTitle title={`Add Telegram`} />
       <button
-        className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+        className="outline-none absolute end-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
         type="button"
         onClick={() => modal.closeAll()}
       >
@@ -95,8 +91,12 @@ export const TelegramProvider: FC<Web3ProviderInterface> = (props) => {
       </button>
       <div className="justify-center items-center flex flex-col pt-[16px]">
         <div>
-          Please add&nbsp;<strong>@{telegramBotName}</strong>&nbsp;to your
-          telegram group / channel and click here:
+          {t('please_add', 'Please add')}
+          <strong>@{telegramBotName}</strong>
+          {t(
+            'to_your_telegram_group_channel_and_click_here',
+            'to your\n          telegram group / channel and click here:'
+          )}
         </div>
         {!step ? (
           <div className="w-full mt-[16px]" onClick={loadAll}>
@@ -123,12 +123,15 @@ export const TelegramProvider: FC<Web3ProviderInterface> = (props) => {
                   fill="#CFD8DC"
                 />
               </svg>
-              <div>Connect Telegram</div>
+              <div>{t('connect_telegram', 'Connect Telegram')}</div>
             </div>
           </div>
         ) : (
           <div className="w-full text-center" onClick={copyText}>
-            Please add the following command in your chat:
+            {t(
+              'please_add_the_following_command_in_your_chat',
+              'Please add the following command in your chat:'
+            )}
             <div className="mt-[16px] flex">
               <div className="flex-1">
                 <Input
@@ -138,7 +141,7 @@ export const TelegramProvider: FC<Web3ProviderInterface> = (props) => {
                   disableForm={true}
                 />
               </div>
-              <Button>Copy</Button>
+              <Button>{t('copy', 'Copy')}</Button>
             </div>
           </div>
         )}

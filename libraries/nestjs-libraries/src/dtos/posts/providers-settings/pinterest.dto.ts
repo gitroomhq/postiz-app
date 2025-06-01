@@ -1,4 +1,10 @@
-import { IsDefined, IsOptional, IsString, IsUrl, MinLength } from 'class-validator';
+import {
+  IsDefined,
+  IsOptional,
+  IsString,
+  IsUrl,
+  MinLength,
+} from 'class-validator';
 
 export class PinterestSettingsDto {
   @IsString()
@@ -15,13 +21,13 @@ export class PinterestSettingsDto {
   dominant_color: string;
 
   @IsDefined({
-    message: 'Board is required'
+    message: 'Board is required',
   })
   @IsString({
-    message: 'Board is required'
+    message: 'Board is required',
   })
   @MinLength(1, {
-    message: 'Board is required'
+    message: 'Board is required',
   })
   board: string;
 }

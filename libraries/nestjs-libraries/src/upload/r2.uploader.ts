@@ -1,5 +1,11 @@
 import {
-  UploadPartCommand, S3Client, ListPartsCommand, CreateMultipartUploadCommand, CompleteMultipartUploadCommand, AbortMultipartUploadCommand, PutObjectCommand
+  UploadPartCommand,
+  S3Client,
+  ListPartsCommand,
+  CreateMultipartUploadCommand,
+  CompleteMultipartUploadCommand,
+  AbortMultipartUploadCommand,
+  PutObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Request, Response } from 'express';
@@ -7,8 +13,13 @@ import crypto from 'crypto';
 import path from 'path';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 
-const { CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_ACCESS_KEY, CLOUDFLARE_SECRET_ACCESS_KEY, CLOUDFLARE_BUCKETNAME, CLOUDFLARE_BUCKET_URL } =
-  process.env;
+const {
+  CLOUDFLARE_ACCOUNT_ID,
+  CLOUDFLARE_ACCESS_KEY,
+  CLOUDFLARE_SECRET_ACCESS_KEY,
+  CLOUDFLARE_BUCKETNAME,
+  CLOUDFLARE_BUCKET_URL,
+} = process.env;
 
 const R2 = new S3Client({
   region: 'auto',
@@ -46,7 +57,11 @@ export default async function handleR2Upload(
   return res.status(404).end();
 }
 
-export async function simpleUpload(data: Buffer, originalFilename: string, contentType: string) {
+export async function simpleUpload(
+  data: Buffer,
+  originalFilename: string,
+  contentType: string
+) {
   const fileExtension = path.extname(originalFilename); // Extract extension
   const randomFilename = generateRandomString() + fileExtension; // Append extension
 
@@ -63,10 +78,7 @@ export async function simpleUpload(data: Buffer, originalFilename: string, conte
   return CLOUDFLARE_BUCKET_URL + '/' + randomFilename;
 }
 
-export async function createMultipartUpload(
-  req: Request,
-  res: Response
-) {
+export async function createMultipartUpload(req: Request, res: Response) {
   const { file, fileHash, contentType } = req.body;
   const fileExtension = path.extname(file.name); // Extract extension
   const randomFilename = generateRandomString() + fileExtension; // Append extension
@@ -93,10 +105,7 @@ export async function createMultipartUpload(
   }
 }
 
-export async function prepareUploadParts(
-  req: Request,
-  res: Response
-) {
+export async function prepareUploadParts(req: Request, res: Response) {
   const { partData } = req.body;
 
   const parts = partData.parts;
@@ -146,10 +155,7 @@ export async function listParts(req: Request, res: Response) {
   }
 }
 
-export async function completeMultipartUpload(
-  req: Request,
-  res: Response
-) {
+export async function completeMultipartUpload(req: Request, res: Response) {
   const { key, uploadId, parts } = req.body;
 
   try {
@@ -167,7 +173,10 @@ export async function completeMultipartUpload(
       MultipartUpload: { Parts: parts },
     });
     const response = await R2.send(command);
-    response.Location = process.env.CLOUDFLARE_BUCKET_URL + '/' + response?.Location?.split('/').at(-1);
+    response.Location =
+      process.env.CLOUDFLARE_BUCKET_URL +
+      '/' +
+      response?.Location?.split('/').at(-1);
     return response;
   } catch (err) {
     console.log('Error', err);
@@ -175,10 +184,7 @@ export async function completeMultipartUpload(
   }
 }
 
-export async function abortMultipartUpload(
-  req: Request,
-  res: Response
-) {
+export async function abortMultipartUpload(req: Request, res: Response) {
   const { key, uploadId } = req.body;
 
   try {
@@ -206,7 +212,7 @@ export async function signPart(req: Request, res: Response) {
     Key: key,
     PartNumber: partNumber,
     UploadId: uploadId,
-    Expires: 3600
+    Expires: 3600,
   };
 
   const command = new UploadPartCommand({ ...params });

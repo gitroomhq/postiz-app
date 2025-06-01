@@ -157,7 +157,12 @@ export const MainContentInner: FC = (props) => {
           actionType={actionEl.actionType}
           provider={provider}
           wrap={true}
-          selector={stringToABC(provider.element.split(',').map(z => z.trim()).find(p => actionEl.element.matches(p)) || '')}
+          selector={stringToABC(
+            provider.element
+              .split(',')
+              .map((z) => z.trim())
+              .find((p) => actionEl.element.matches(p)) || ''
+          )}
         />,
         actionEl.element
       )}

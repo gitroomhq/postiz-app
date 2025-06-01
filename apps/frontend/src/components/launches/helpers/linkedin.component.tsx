@@ -14,17 +14,17 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Input } from '@gitroom/react/form/input';
 import { Button } from '@gitroom/react/form/button';
 import { useToaster } from '@gitroom/react/toaster/toaster';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 const postUrlEmitter = new EventEmitter();
-
 export const ShowLinkedinCompany = () => {
   const [showPostSelector, setShowPostSelector] = useState(false);
   const [id, setId] = useState('');
   const [callback, setCallback] = useState<{
     callback: (tag: string) => void;
     // eslint-disable-next-line @typescript-eslint/no-empty-function
-  } | null>({ callback: (tag: string) => {} } as any);
-
+  } | null>({
+    callback: (tag: string) => {},
+  } as any);
   useEffect(() => {
     postUrlEmitter.on(
       'show',
@@ -34,7 +34,6 @@ export const ShowLinkedinCompany = () => {
         setShowPostSelector(true);
       }
     );
-
     return () => {
       setShowPostSelector(false);
       setCallback(null);
@@ -42,22 +41,18 @@ export const ShowLinkedinCompany = () => {
       postUrlEmitter.removeAllListeners();
     };
   }, []);
-
   const close = useCallback(() => {
     setShowPostSelector(false);
     setCallback(null);
     setId('');
   }, []);
-
   if (!showPostSelector) {
     return <></>;
   }
-
   return (
     <LinkedinCompany id={id} onClose={close} onSelect={callback?.callback!} />
   );
 };
-
 export const showPostSelector = (id: string) => {
   return new Promise<string>((resolve) => {
     postUrlEmitter.emit('show', {
@@ -68,7 +63,6 @@ export const showPostSelector = (id: string) => {
     });
   });
 };
-
 export const LinkedinCompany: FC<{
   onClose: () => void;
   onSelect: (tag: string) => void;
@@ -78,12 +72,11 @@ export const LinkedinCompany: FC<{
   const fetch = useFetch();
   const [company, setCompany] = useState<any>(null);
   const toast = useToaster();
-
+  const t = useT();
   const getCompany = async () => {
     if (!company) {
       return;
     }
-
     try {
       const { options } = await (
         await fetch('/integrations/function', {
@@ -97,23 +90,21 @@ export const LinkedinCompany: FC<{
           }),
         })
       ).json();
-
       onSelect(options.value);
       onClose();
     } catch (e) {
       toast.show('Failed to load profile', 'warning');
     }
   };
-
   return (
-    <div className="text-textColor fixed left-0 top-0 bg-primary/80 z-[300] w-full h-full p-[60px] animate-fade justify-center flex">
+    <div className="text-textColor fixed start-0 top-0 bg-primary/80 z-[300] w-full h-full p-[60px] animate-fade justify-center flex">
       <div className="flex flex-col w-[500px] h-[250px] bg-sixth border-tableBorder border-2 rounded-xl pb-[20px] px-[20px] relative">
         <div className="flex">
           <div className="flex-1">
             <TopTitle title={'Select Company'} />
           </div>
           <button
-            className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root bg-primary hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+            className="outline-none absolute end-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root bg-primary hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
             type="button"
           >
             <svg
@@ -141,18 +132,16 @@ export const LinkedinCompany: FC<{
             onChange={(e) => setCompany(e.target.value)}
             placeholder="https://www.linkedin.com/company/gitroom"
           />
-          <Button onClick={getCompany}>Add</Button>
+          <Button onClick={getCompany}>{t('add', 'Add')}</Button>
         </div>
       </div>
     </div>
   );
 };
-
 export const linkedinCompany = (identifier: string, id: string): ICommand[] => {
   if (identifier !== 'linkedin' && identifier !== 'linkedin-page') {
     return [];
   }
-
   return [
     {
       name: 'linkedinCompany',
@@ -185,10 +174,8 @@ export const linkedinCompany = (identifier: string, id: string): ICommand[] => {
           prefix: state.command.prefix!,
           suffix: state.command.suffix,
         });
-
         const state1 = api.setSelectionRange(newSelectionRange);
         const media = await showPostSelector(id);
-
         executeCommand({
           api,
           selectedText: state1.selectedText,

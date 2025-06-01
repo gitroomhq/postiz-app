@@ -13,7 +13,6 @@
   </a>
 </p>
 
-
 <p align="center">
 <a href="https://opensource.org/licenses/Apache-2.0">
   <img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License">
@@ -27,7 +26,6 @@
   </strong>
   Postiz offers everything you need to manage your social media posts,<br />build an audience, capture leads, and grow your business.
 </div>
-
 
 <div class="flex" align="center">
   <br />
@@ -77,7 +75,7 @@
 ## ✨ Features
 
 | ![Image 1](https://github.com/user-attachments/assets/a27ee220-beb7-4c7e-8c1b-2c44301f82ef) | ![Image 2](https://github.com/user-attachments/assets/eb5f5f15-ed90-47fc-811c-03ccba6fa8a2) |
-|--------------------------------|--------------------------------|
+| ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | ![Image 3](https://github.com/user-attachments/assets/d51786ee-ddd8-4ef8-8138-5192e9cfe7c3) | ![Image 4](https://github.com/user-attachments/assets/91f83c89-22f6-43d6-b7aa-d2d3378289fb) |
 
 # Intro
@@ -98,9 +96,11 @@
 - Resend (email notifications)
 
 ## Quick Start
+
 To have the project up and running, please follow the [Quick Start Guide](https://docs.postiz.com/quickstart)
 
 ## Invest in the Postiz Coin :)
+
 DMsTbeCfX1crgAse5tver98KAMarPWeP3d6U3Gmmpump
 
 # License
@@ -112,5 +112,3 @@ This repository's source code is available under the [AGPL-3.0 license](LICENSE)
 <p align="center">
   <a href="https://www.g2.com/products/postiz/take_survey" target="blank"><img alt="g2" src="https://github.com/user-attachments/assets/892cb74c-0b49-4589-b2f5-fbdbf7a98f66" /></a>
 </p>
-
-

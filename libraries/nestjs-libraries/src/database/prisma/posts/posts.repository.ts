@@ -315,7 +315,7 @@ export class PostsRepository {
     date: string,
     body: PostBody,
     tags: { value: string; label: string }[],
-    inter?: number,
+    inter?: number
   ) {
     const posts: Post[] = [];
     const uuid = uuidv4();

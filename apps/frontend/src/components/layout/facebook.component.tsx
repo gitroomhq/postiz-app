@@ -1,12 +1,10 @@
 'use client';
 
-import Script from "next/script";
-
+import Script from 'next/script';
 export const FacebookComponent = () => {
   if (!process.env.NEXT_PUBLIC_FACEBOOK_PIXEL) {
     return null;
   }
-
   return (
     <Script strategy="afterInteractive" id="fb-pixel">
       {`!function(f,b,e,v,n,t,s)

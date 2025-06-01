@@ -27,28 +27,32 @@ import { AiImage } from '@gitroom/frontend/components/launches/ai.image';
 import Image from 'next/image';
 import { DropFiles } from '@gitroom/frontend/components/layout/drop.files';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 const Polonto = dynamic(
   () => import('@gitroom/frontend/components/launches/polonto')
 );
 const showModalEmitter = new EventEmitter();
-
 export const Pagination: FC<{
   current: number;
   totalPages: number;
   setPage: (num: number) => void;
 }> = (props) => {
+  const t = useT();
+
   const { current, totalPages, setPage } = props;
-
   const totalPagesList = useMemo(() => {
-    return Array.from({ length: totalPages }, (_, i) => i);
+    return Array.from(
+      {
+        length: totalPages,
+      },
+      (_, i) => i
+    );
   }, [totalPages]);
-
   return (
     <ul className="flex flex-row items-center gap-1 justify-center mt-[15px]">
       <li className={clsx(current === 0 && 'opacity-20 pointer-events-none')}>
         <div
-          className="cursor-pointer inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-10 px-4 py-2 gap-1 pl-2.5 text-gray-400 hover:text-white border-[#1F1F1F] hover:bg-forth"
+          className="cursor-pointer inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-10 px-4 py-2 gap-1 ps-2.5 text-gray-400 hover:text-white border-[#1F1F1F] hover:bg-forth"
           aria-label="Go to previous page"
           onClick={() => setPage(current - 1)}
         >
@@ -66,7 +70,7 @@ export const Pagination: FC<{
           >
             <path d="m15 18-6-6 6-6" />
           </svg>
-          <span>Previous</span>
+          <span>{t('previous', 'Previous')}</span>
         </div>
       </li>
       {totalPagesList.map((page) => (
@@ -76,7 +80,9 @@ export const Pagination: FC<{
             onClick={() => setPage(page)}
             className={clsx(
               'cursor-pointer inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border hover:bg-forth h-10 w-10 hover:text-white border-[#1F1F1F]',
-              current === page ? 'bg-forth !text-white' : 'text-textColor hover:text-white'
+              current === page
+                ? 'bg-forth !text-white'
+                : 'text-textColor hover:text-white'
             )}
           >
             {page + 1}
@@ -89,11 +95,11 @@ export const Pagination: FC<{
         )}
       >
         <a
-          className="text-textColor hover:text-white group cursor-pointer inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-10 px-4 py-2 gap-1 pr-2.5 text-gray-400 border-[#1F1F1F] hover:bg-forth"
+          className="text-textColor hover:text-white group cursor-pointer inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-10 px-4 py-2 gap-1 pe-2.5 text-gray-400 border-[#1F1F1F] hover:bg-forth"
           aria-label="Go to next page"
           onClick={() => setPage(current + 1)}
         >
-          <span>Next</span>
+          <span>{t('next', 'Next')}</span>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width={24}
@@ -117,12 +123,10 @@ export const ShowMediaBoxModal: FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [callBack, setCallBack] =
     useState<(params: { id: string; path: string }) => void | undefined>();
-
   const closeModal = useCallback(() => {
     setShowModal(false);
     setCallBack(undefined);
   }, []);
-
   useEffect(() => {
     showModalEmitter.on('show-modal', (cCallback) => {
       setShowModal(true);
@@ -133,22 +137,18 @@ export const ShowMediaBoxModal: FC = () => {
     };
   }, []);
   if (!showModal) return null;
-
   return (
     <div className="text-textColor">
       <MediaBox setMedia={callBack!} closeModal={closeModal} />
     </div>
   );
 };
-
 export const showMediaBox = (
   callback: (params: { id: string; path: string }) => void
 ) => {
   showModalEmitter.emit('show-modal', callback);
 };
-
 const CHUNK_SIZE = 1024 * 1024;
-
 export const MediaBox: FC<{
   setMedia: (params: { id: string; path: string }) => void;
   type?: 'image' | 'video';
@@ -160,26 +160,29 @@ export const MediaBox: FC<{
   const mediaDirectory = useMediaDirectory();
   const [page, setPage] = useState(0);
   const [pages, setPages] = useState(0);
-
   const [selectedMedia, setSelectedMedia] = useState<Media[]>([]);
   const ref = useRef<any>(null);
-
   const loadMedia = useCallback(async () => {
     return (await fetch(`/media?page=${page + 1}`)).json();
   }, [page]);
-
   const setNewMedia = useCallback(
     (media: Media) => () => {
       setSelectedMedia(
         selectedMedia.find((p) => p.id === media.id)
           ? selectedMedia.filter((f) => f.id !== media.id)
-          : [...selectedMedia.map((p) => ({ ...p })), { ...media }]
+          : [
+              ...selectedMedia.map((p) => ({
+                ...p,
+              })),
+              {
+                ...media,
+              },
+            ]
       );
       // closeModal();
     },
     [selectedMedia]
   );
-
   const removeMedia = useCallback(
     (media: Media) => () => {
       setSelectedMedia(selectedMedia.filter((f) => f.id !== media.id));
@@ -187,7 +190,6 @@ export const MediaBox: FC<{
     },
     [selectedMedia]
   );
-
   const addNewMedia = useCallback(
     (media: Media[]) => () => {
       setSelectedMedia((currentMedia) => [...currentMedia, ...media]);
@@ -195,15 +197,12 @@ export const MediaBox: FC<{
     },
     [selectedMedia]
   );
-
   const addMedia = useCallback(async () => {
     // @ts-ignore
     setMedia(selectedMedia);
     closeModal();
   }, [selectedMedia]);
-
   const { data, mutate } = useSWR(`get-media-${page}`, loadMedia);
-
   const finishUpload = useCallback(async () => {
     const lastMedia = mediaList?.[0]?.id;
     const newData = await mutate();
@@ -214,10 +213,8 @@ export const MediaBox: FC<{
       0,
       untilLastMedia === -1 ? newData.results.length : untilLastMedia
     );
-
     addNewMedia(onlyNewMedia)();
   }, [mutate, addNewMedia, mediaList, selectedMedia]);
-
   const dragAndDrop = useCallback(
     async (event: ClipboardEvent<HTMLDivElement> | File[]) => {
       // @ts-ignore
@@ -225,11 +222,9 @@ export const MediaBox: FC<{
         kind: 'file',
         getAsFile: () => p,
       }));
-
       if (!clipboardItems) {
         return;
       }
-
       const files: File[] = [];
 
       // @ts-ignore
@@ -248,7 +243,6 @@ export const MediaBox: FC<{
       if (files.length === 0) {
         return;
       }
-
       ref.current.setOptions({
         autoProceed: false,
       });
@@ -260,28 +254,30 @@ export const MediaBox: FC<{
       ref.current.setOptions({
         autoProceed: true,
       });
-
       finishUpload();
     },
     [mutate, addNewMedia, mediaList, selectedMedia]
   );
-
   const removeItem = useCallback(
     (media: Media) => async (e: any) => {
       e.stopPropagation();
-      if (!(await deleteDialog('Are you sure you want to delete the image?'))) {
+      if (
+        !(await deleteDialog(
+          t(
+            'are_you_sure_you_want_to_delete_the_image',
+            'Are you sure you want to delete the image?'
+          )
+        ))
+      ) {
         return;
       }
-
       await fetch(`/media/${media.id}`, {
         method: 'DELETE',
       });
-
       mutate();
     },
     [mutate]
   );
-
   useEffect(() => {
     if (data?.pages) {
       setPages(data.pages);
@@ -291,8 +287,10 @@ export const MediaBox: FC<{
     }
   }, [data]);
 
+  const t = useT();
+
   return (
-    <div className="removeEditor fixed left-0 top-0 bg-primary/80 z-[300] w-full min-h-full p-4 md:p-[60px] animate-fade">
+    <div className="removeEditor fixed start-0 top-0 bg-primary/80 z-[300] w-full min-h-full p-4 md:p-[60px] animate-fade">
       <div className="max-w-[1000px] w-full h-full bg-sixth border-tableBorder border-2 rounded-xl relative mx-auto">
         <DropFiles onDrop={dragAndDrop}>
           <div className="pb-[20px] px-[20px] w-full h-full">
@@ -302,7 +300,7 @@ export const MediaBox: FC<{
               </div>
               <button
                 onClick={closeModal}
-                className="outline-none z-[300] absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root bg-primary hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+                className="outline-none z-[300] absolute end-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root bg-primary hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
                 type="button"
               >
                 <svg
@@ -321,16 +319,22 @@ export const MediaBox: FC<{
                 </svg>
               </button>
 
-              <div className="absolute flex justify-center mt-[55px] items-center pointer-events-none text-center h-[57px] w-full left-0 rounded-lg transition-all group text-sm font-semibold bg-transparent text-gray-800 hover:bg-gray-100 focus:text-primary-500">
-                Select or upload pictures (maximum 5 at a time)
+              <div className="absolute flex justify-center mt-[55px] items-center pointer-events-none text-center h-[57px] w-full start-0 rounded-lg transition-all group text-sm font-semibold bg-transparent text-gray-800 hover:bg-gray-100 focus:text-primary-500">
+                {t(
+                  'select_or_upload_pictures_maximum_5_at_a_time',
+                  'Select or upload pictures (maximum 5 at a time)'
+                )}
                 <br />
-                You can also drag & drop pictures
+                {t(
+                  'you_can_also_drag_drop_pictures',
+                  'You can also drag & drop pictures'
+                )}
               </div>
 
               {!!mediaList.length && (
                 <>
-                  <div className="flex absolute h-[57px] w-full left-0 top-0 rounded-lg transition-all group text-sm font-semibold bg-transparent text-gray-800 hover:bg-gray-100 focus:text-primary-500">
-                    <div className="relative flex flex-1 pr-[45px] gap-2 items-center justify-center">
+                  <div className="flex absolute h-[57px] w-full start-0 top-0 rounded-lg transition-all group text-sm font-semibold bg-transparent text-gray-800 hover:bg-gray-100 focus:text-primary-500">
+                    <div className="relative flex flex-1 pe-[45px] gap-2 items-center justify-center">
                       <div className="flex-1" />
                       <MultipartFileUploader
                         uppRef={ref}
@@ -357,8 +361,18 @@ export const MediaBox: FC<{
             >
               {!mediaList.length ? (
                 <div className="flex flex-col text-center items-center justify-center mx-auto">
-                  <div>You don{"'"}t have any assets yet.</div>
-                  <div>Click the button below to upload one</div>
+                  <div>
+                    {t(
+                      'you_don_t_have_any_assets_yet',
+                      "You don't have any assets yet."
+                    )}
+                  </div>
+                  <div>
+                    {t(
+                      'click_the_button_below_to_upload_one',
+                      'Click the button below to upload one'
+                    )}
+                  </div>
                   <div className="mt-[10px] justify-center items-center flex flex-col-reverse gap-[10px]">
                     <MultipartFileUploader
                       onUploadSuccess={finishUpload}
@@ -377,7 +391,9 @@ export const MediaBox: FC<{
                   {selectedMedia.length > 0 && (
                     <div className="flex justify-center absolute top-[7px] text-white">
                       <Button onClick={addMedia} className="!text-white">
-                        <span className="!text-white">Add selected media</span>
+                        <span className="!text-white">
+                          {t('add_selected_media', 'Add selected media')}
+                        </span>
                       </Button>
                     </div>
                   )}
@@ -405,7 +421,7 @@ export const MediaBox: FC<{
                   >
                     <div
                       onClick={removeItem(media)}
-                      className="border border-red-400 !text-white flex justify-center items-center absolute w-[20px] h-[20px] rounded-full bg-red-700 -top-[5px] -right-[5px]"
+                      className="border border-red-400 !text-white flex justify-center items-center absolute w-[20px] h-[20px] rounded-full bg-red-700 -top-[5px] -end-[5px]"
                     >
                       X
                     </div>
@@ -433,45 +449,63 @@ export const MediaBox: FC<{
     </div>
   );
 };
-
 export const MultiMediaComponent: FC<{
   label: string;
   description: string;
-  value?: Array<{ path: string; id: string }>;
+  value?: Array<{
+    path: string;
+    id: string;
+  }>;
   text: string;
   name: string;
   error?: any;
   onOpen?: () => void;
   onClose?: () => void;
   onChange: (event: {
-    target: { name: string; value?: Array<{ id: string; path: string }> };
+    target: {
+      name: string;
+      value?: Array<{
+        id: string;
+        path: string;
+      }>;
+    };
   }) => void;
 }> = (props) => {
   const { onOpen, onClose, name, error, text, onChange, value } = props;
   const user = useUser();
-
   useEffect(() => {
     if (value) {
       setCurrentMedia(value);
     }
   }, [value]);
-
   const [modal, setShowModal] = useState(false);
   const [mediaModal, setMediaModal] = useState(false);
-
   const [currentMedia, setCurrentMedia] = useState(value);
   const mediaDirectory = useMediaDirectory();
-
   const changeMedia = useCallback(
-    (m: { path: string; id: string } | { path: string; id: string }[]) => {
+    (
+      m:
+        | {
+            path: string;
+            id: string;
+          }
+        | {
+            path: string;
+            id: string;
+          }[]
+    ) => {
       const mediaArray = Array.isArray(m) ? m : [m];
       const newMedia = [...(currentMedia || []), ...mediaArray];
       setCurrentMedia(newMedia);
-      onChange({ target: { name, value: newMedia } });
+      onChange({
+        target: {
+          name,
+          value: newMedia,
+        },
+      });
     },
     [currentMedia]
   );
-
   const showModal = useCallback(() => {
     if (!modal) {
       onOpen?.();
@@ -480,25 +514,29 @@ export const MultiMediaComponent: FC<{
     }
     setShowModal(!modal);
   }, [modal, onOpen, onClose]);
-
   const closeDesignModal = useCallback(() => {
     onClose?.();
     setMediaModal(false);
   }, [modal]);
-
   const clearMedia = useCallback(
     (topIndex: number) => () => {
       const newMedia = currentMedia?.filter((f, index) => index !== topIndex);
       setCurrentMedia(newMedia);
-      onChange({ target: { name, value: newMedia } });
+      onChange({
+        target: {
+          name,
+          value: newMedia,
+        },
+      });
     },
     [currentMedia]
   );
-
   const designMedia = useCallback(() => {
     onOpen?.();
     setMediaModal(true);
   }, []);
+
+  const t = useT();
 
   return (
     <>
@@ -511,7 +549,7 @@ export const MultiMediaComponent: FC<{
           <div className="flex">
             <Button
               onClick={showModal}
-              className="ml-[10px] rounded-[4px] mb-[10px] gap-[8px] !text-primary justify-center items-center w-[127px] flex border border-dashed border-customColor21 bg-input"
+              className="ms-[10px] rounded-[4px] mb-[10px] gap-[8px] !text-primary justify-center items-center w-[127px] flex border border-dashed border-customColor21 bg-input"
             >
               <div className="flex gap-[5px] items-center">
                 <div>
@@ -530,14 +568,14 @@ export const MultiMediaComponent: FC<{
                   </svg>
                 </div>
                 <div className="text-[12px] font-[500] !text-current">
-                  Insert Media
+                  {t('insert_media', 'Insert Media')}
                 </div>
               </div>
             </Button>
 
             <Button
               onClick={designMedia}
-              className="ml-[10px] rounded-[4px] mb-[10px] gap-[8px] !text-primary justify-center items-center w-[127px] flex border border-dashed border-customColor21 bg-input"
+              className="ms-[10px] rounded-[4px] mb-[10px] gap-[8px] !text-primary justify-center items-center w-[127px] flex border border-dashed border-customColor21 bg-input"
             >
               <div className="flex gap-[5px] items-center">
                 <div>
@@ -555,7 +593,7 @@ export const MultiMediaComponent: FC<{
                   </svg>
                 </div>
                 <div className="text-[12px] font-[500] !text-current">
-                  Design Media
+                  {t('design_media', 'Design Media')}
                 </div>
               </div>
             </Button>
@@ -584,7 +622,7 @@ export const MultiMediaComponent: FC<{
                   </div>
                   <div
                     onClick={clearMedia(index)}
-                    className="rounded-full w-[15px] h-[15px] bg-red-800 text-textColor flex justify-center items-center absolute -right-[4px] -top-[4px]"
+                    className="rounded-full w-[15px] h-[15px] bg-red-800 text-textColor flex justify-center items-center absolute -end-[4px] -top-[4px]"
                   >
                     x
                   </div>
@@ -597,19 +635,29 @@ export const MultiMediaComponent: FC<{
     </>
   );
 };
-
 export const MediaComponent: FC<{
   label: string;
   description: string;
-  value?: { path: string; id: string };
+  value?: {
+    path: string;
+    id: string;
+  };
   name: string;
   onChange: (event: {
-    target: { name: string; value?: { id: string; path: string } };
+    target: {
+      name: string;
+      value?: {
+        id: string;
+        path: string;
+      };
+    };
   }) => void;
   type?: 'image' | 'video';
   width?: number;
   height?: number;
 }> = (props) => {
+  const t = useT();
+
   const { name, type, label, description, onChange, value, width, height } =
     props;
   const { getValues } = useSettings();
@@ -624,29 +672,33 @@ export const MediaComponent: FC<{
   const [mediaModal, setMediaModal] = useState(false);
   const [currentMedia, setCurrentMedia] = useState(value);
   const mediaDirectory = useMediaDirectory();
-
   const closeDesignModal = useCallback(() => {
     setMediaModal(false);
   }, [modal]);
-
   const showDesignModal = useCallback(() => {
     setMediaModal(true);
   }, [modal]);
-
   const changeMedia = useCallback((m: { path: string; id: string }) => {
     setCurrentMedia(m);
-    onChange({ target: { name, value: m } });
+    onChange({
+      target: {
+        name,
+        value: m,
+      },
+    });
   }, []);
-
   const showModal = useCallback(() => {
     setShowModal(!modal);
   }, [modal]);
-
   const clearMedia = useCallback(() => {
     setCurrentMedia(undefined);
-    onChange({ target: { name, value: undefined } });
+    onChange({
+      target: {
+        name,
+        value: undefined,
+      },
+    });
   }, [value]);
-
   return (
     <div className="flex flex-col gap-[8px]">
       {modal && (
@@ -672,12 +724,12 @@ export const MediaComponent: FC<{
         </div>
       )}
       <div className="flex gap-[5px]">
-        <Button onClick={showModal}>Select</Button>
+        <Button onClick={showModal}>{t('select', 'Select')}</Button>
         <Button onClick={showDesignModal} className="!bg-customColor45">
-          Editor
+          {t('editor', 'Editor')}
         </Button>
         <Button secondary={true} onClick={clearMedia}>
-          Clear
+          {t('clear', 'Clear')}
         </Button>
       </div>
     </div>

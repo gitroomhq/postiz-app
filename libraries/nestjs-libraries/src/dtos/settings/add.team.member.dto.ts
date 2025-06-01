@@ -1,4 +1,11 @@
-import {IsBoolean, IsDefined, IsEmail, IsIn, IsString, ValidateIf} from 'class-validator';
+import {
+  IsBoolean,
+  IsDefined,
+  IsEmail,
+  IsIn,
+  IsString,
+  ValidateIf,
+} from 'class-validator';
 
 export class AddTeamMemberDto {
   @IsDefined()

@@ -1,4 +1,10 @@
-import { IsDefined, IsOptional, IsString, IsUrl, MinLength } from 'class-validator';
+import {
+  IsDefined,
+  IsOptional,
+  IsString,
+  IsUrl,
+  MinLength,
+} from 'class-validator';
 
 export class DribbbleDto {
   @IsString()

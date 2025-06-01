@@ -1,9 +1,11 @@
 import { useMemo } from 'react';
-
 export const useFormatting = (
   text: Array<{
     content: string;
-    image?: Array<{ id: string; path: string }>;
+    image?: Array<{
+      id: string;
+      path: string;
+    }>;
     id?: string;
   }>,
   params: {
@@ -22,7 +24,7 @@ export const useFormatting = (
       if (params.saveBreaklines) {
         newText = newText.replace('\n', '𝔫𝔢𝔴𝔩𝔦𝔫𝔢');
       }
-      newText = newText.replace(/@\w{1,15}/g, function(match) {
+      newText = newText.replace(/@\w{1,15}/g, function (match) {
         return `<strong>${match}</strong>`;
       });
       if (params.saveBreaklines) {

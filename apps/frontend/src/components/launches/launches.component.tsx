@@ -23,17 +23,18 @@ import { DNDProvider } from '@gitroom/frontend/components/launches/helpers/dnd.p
 import { GeneratorComponent } from './generator/generator';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { NewPost } from '@gitroom/frontend/components/launches/new.post';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 interface MenuComponentInterface {
   refreshChannel: (
-    integration: Integration & { identifier: string }
+    integration: Integration & {
+      identifier: string;
+    }
   ) => () => void;
   continueIntegration: (integration: Integration) => () => void;
   totalNonDisabledChannels: number;
   mutate: (shouldReload?: boolean) => void;
   update: (shouldReload: boolean) => void;
 }
-
 export const OpenClose: FC<{
   isOpen: boolean;
 }> = (props) => {
@@ -57,7 +58,6 @@ export const OpenClose: FC<{
     </svg>
   );
 };
-
 export const MenuGroupComponent: FC<
   MenuComponentInterface & {
     changeItemGroup: (id: string, group: string) => void;
@@ -83,11 +83,9 @@ export const MenuGroupComponent: FC<
     refreshChannel,
     changeItemGroup,
   } = props;
-
   const [isOpen, setIsOpen] = useState(
     !!+(localStorage.getItem(group.name + '_isOpen') || '1')
   );
-
   const changeOpenClose = useCallback(
     (e: any) => {
       setIsOpen(!isOpen);
@@ -96,17 +94,20 @@ export const MenuGroupComponent: FC<
     },
     [isOpen]
   );
-
   const [collectedProps, drop] = useDrop(() => ({
     accept: 'menu',
-    drop: (item: { id: string }, monitor) => {
+    drop: (
+      item: {
+        id: string;
+      },
+      monitor
+    ) => {
       changeItemGroup(item.id, group.id);
     },
     collect: (monitor) => ({
       isOver: !!monitor.isOver(),
     }),
   }));
-
   return (
     <div
       className="gap-[16px] flex flex-col relative"
@@ -114,8 +115,8 @@ export const MenuGroupComponent: FC<
       ref={drop}
     >
       {collectedProps.isOver && (
-        <div className="absolute left-0 top-0 w-full h-full pointer-events-none">
-          <div className="w-full h-full left-0 top-0 relative">
+        <div className="absolute start-0 top-0 w-full h-full pointer-events-none">
+          <div className="w-full h-full start-0 top-0 relative">
             <div className="bg-white/30 w-full h-full p-[8px] box-content rounded-md" />
           </div>
         </div>
@@ -170,13 +171,13 @@ export const MenuComponent: FC<
     update,
     integration,
   } = props;
-
   const user = useUser();
   const [collected, drag, dragPreview] = useDrag(() => ({
     type: 'menu',
-    item: { id: integration.id },
+    item: {
+      id: integration.id,
+    },
   }));
-
   return (
     <div
       // @ts-ignore
@@ -200,17 +201,17 @@ export const MenuComponent: FC<
       >
         {(integration.inBetweenSteps || integration.refreshNeeded) && (
           <div
-            className="absolute left-0 top-0 w-[39px] h-[46px] cursor-pointer"
+            className="absolute start-0 top-0 w-[39px] h-[46px] cursor-pointer"
             onClick={
               integration.refreshNeeded
                 ? refreshChannel(integration)
                 : continueIntegration(integration)
             }
           >
-            <div className="bg-red-500 w-[15px] h-[15px] rounded-full -left-[5px] -top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
+            <div className="bg-red-500 w-[15px] h-[15px] rounded-full -start-[5px] -top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
               !
             </div>
-            <div className="bg-primary/60 w-[39px] h-[46px] left-0 top-0 absolute rounded-full z-[199]" />
+            <div className="bg-primary/60 w-[39px] h-[46px] start-0 top-0 absolute rounded-full z-[199]" />
           </div>
         )}
         <ImageWithFallback
@@ -224,13 +225,13 @@ export const MenuComponent: FC<
         {integration.identifier === 'youtube' ? (
           <img
             src="/icons/platforms/youtube.svg"
-            className="absolute z-10 -bottom-[5px] -right-[5px]"
+            className="absolute z-10 -bottom-[5px] -end-[5px]"
             width={20}
           />
         ) : (
           <Image
             src={`/icons/platforms/${integration.identifier}.png`}
-            className="rounded-full absolute z-10 -bottom-[5px] -right-[5px] border border-fifth"
+            className="rounded-full absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
             alt={integration.identifier}
             width={20}
             height={20}
@@ -280,12 +281,11 @@ export const LaunchesComponent = () => {
   const search = useSearchParams();
   const toast = useToaster();
   const fireEvents = useFireEvents();
-
+  const t = useT();
   const [reload, setReload] = useState(false);
   const load = useCallback(async (path: string) => {
     return (await (await fetch(path)).json()).integrations;
   }, []);
-
   const {
     isLoading,
     data: integrations,
@@ -293,36 +293,38 @@ export const LaunchesComponent = () => {
   } = useSWR('/integrations/list', load, {
     fallbackData: [],
   });
-
   const totalNonDisabledChannels = useMemo(() => {
     return (
       integrations?.filter((integration: any) => !integration.disabled)
         ?.length || 0
     );
   }, [integrations]);
-
   const changeItemGroup = useCallback(
     async (id: string, group: string) => {
       mutate(
         integrations.map((integration: any) => {
           if (integration.id === id) {
-            return { ...integration, customer: { id: group } };
+            return {
+              ...integration,
+              customer: {
+                id: group,
+              },
+            };
           }
           return integration;
         }),
         false
       );
-
       await fetch(`/integrations/${id}/group`, {
         method: 'PUT',
-        body: JSON.stringify({ group }),
+        body: JSON.stringify({
+          group,
+        }),
       });
-
       mutate();
     },
     [integrations]
   );
-
   const sortedIntegrations = useMemo(() => {
     return orderBy(
       integrations,
@@ -330,7 +332,6 @@ export const LaunchesComponent = () => {
       ['desc', 'asc', 'asc']
     );
   }, [integrations]);
-
   const menuIntegrations = useMemo(() => {
     return orderBy(
       Object.values(
@@ -349,18 +350,15 @@ export const LaunchesComponent = () => {
       ['desc', 'asc']
     );
   }, [sortedIntegrations]);
-
   const update = useCallback(async (shouldReload: boolean) => {
     if (shouldReload) {
       setReload(true);
     }
     await mutate();
-
     if (shouldReload) {
       setReload(false);
     }
   }, []);
-
   const continueIntegration = useCallback(
     (integration: any) => async () => {
       router.push(
@@ -369,23 +367,25 @@ export const LaunchesComponent = () => {
     },
     []
   );
-
   const refreshChannel = useCallback(
-    (integration: Integration & { identifier: string }) => async () => {
-      const { url } = await (
-        await fetch(
-          `/integrations/social/${integration.identifier}?refresh=${integration.internalId}`,
-          {
-            method: 'GET',
-          }
-        )
-      ).json();
-
-      window.location.href = url;
-    },
+    (
+        integration: Integration & {
+          identifier: string;
+        }
+      ) =>
+      async () => {
+        const { url } = await (
+          await fetch(
+            `/integrations/social/${integration.identifier}?refresh=${integration.internalId}`,
+            {
+              method: 'GET',
+            }
+          )
+        ).json();
+        window.location.href = url;
+      },
     []
   );
-
   useEffect(() => {
     if (typeof window === 'undefined') {
       return;
@@ -393,19 +393,27 @@ export const LaunchesComponent = () => {
     if (search.get('msg')) {
       toast.show(search.get('msg')!, 'warning');
       window?.opener?.postMessage(
-        { msg: search.get('msg')!, success: false },
+        {
+          msg: search.get('msg')!,
+          success: false,
+        },
         '*'
       );
     }
     if (search.get('added')) {
       fireEvents('channel_added');
-      window?.opener?.postMessage({ msg: 'Channel added', success: true }, '*');
+      window?.opener?.postMessage(
+        {
+          msg: 'Channel added',
+          success: true,
+        },
+        '*'
+      );
     }
     if (window.opener) {
       window.close();
     }
   }, []);
-
   if (isLoading || reload) {
     return <LoadingComponent />;
   }
@@ -418,10 +426,12 @@ export const LaunchesComponent = () => {
           <div className="flex flex-1 relative">
             <div className="outline-none w-full h-full grid grid-cols[1fr] md:grid-cols-[220px_minmax(0,1fr)] gap-[30px] scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary">
               <div className="bg-third p-[16px] flex flex-col gap-[24px] min-h-[100%]">
-                <h2 className="text-[20px]">Channels</h2>
+                <h2 className="text-[20px]">{t('channels')}</h2>
                 <div className="gap-[16px] flex flex-col select-none">
                   {sortedIntegrations.length === 0 && (
-                    <div className="text-[12px]">No channels</div>
+                    <div className="text-[12px]">
+                      {t('no_channels', 'No channels')}
+                    </div>
                   )}
                   {menuIntegrations.map((menu) => (
                     <MenuGroupComponent

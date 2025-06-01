@@ -199,24 +199,22 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
     return finalData;
   }
 
-  async changeNickname(
-    id: string,
-    accessToken: string,
-    name: string,
-  ) {
-    await (await fetch(`https://discord.com/api/guilds/${id}/members/@me`, {
-      method: 'PATCH',
-      headers: {
-        Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN_ID}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        nick: name,
+  async changeNickname(id: string, accessToken: string, name: string) {
+    await (
+      await fetch(`https://discord.com/api/guilds/${id}/members/@me`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN_ID}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          nick: name,
+        }),
       })
-    })).json();
+    ).json();
 
     return {
       name,
-    }
+    };
   }
 }

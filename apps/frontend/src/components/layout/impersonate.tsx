@@ -8,9 +8,11 @@ import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { setCookie } from '@gitroom/frontend/components/layout/layout.context';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const Subscription = () => {
   const fetch = useFetch();
+  const t = useT();
+
   const addSubscription: ChangeEventHandler<HTMLSelectElement> = useCallback(
     async (e) => {
       const value = e.target.value;
@@ -22,15 +24,15 @@ export const Subscription = () => {
       ) {
         await fetch('/billing/add-subscription', {
           method: 'POST',
-          body: JSON.stringify({ subscription: value }),
+          body: JSON.stringify({
+            subscription: value,
+          }),
         });
-
         window.location.reload();
       }
     },
     []
   );
-
   return (
     <Select
       onChange={addSubscription}
@@ -41,7 +43,9 @@ export const Subscription = () => {
       value=""
       className="text-black"
     >
-      <option>-- ADD FREE SUBSCRIPTION --</option>
+      <option>
+        {t('add_free_subscription', '-- ADD FREE SUBSCRIPTION --')}
+      </option>
       {Object.keys(pricing)
         .filter((f) => !f.includes('FREE'))
         .map((key) => (
@@ -57,41 +61,40 @@ export const Impersonate = () => {
   const [name, setName] = useState('');
   const { isSecured } = useVariables();
   const user = useUser();
-
   const load = useCallback(async () => {
     if (!name) {
       return [];
     }
-
     const value = await (await fetch(`/user/impersonate?name=${name}`)).json();
     return value;
   }, [name]);
-
   const stopImpersonating = useCallback(async () => {
     if (!isSecured) {
       setCookie('impersonate', '', -10);
     } else {
       await fetch(`/user/impersonate`, {
         method: 'POST',
-        body: JSON.stringify({ id: '' }),
+        body: JSON.stringify({
+          id: '',
+        }),
       });
     }
-
     window.location.reload();
   }, []);
+  const t = useT();
 
   const setUser = useCallback(
     (userId: string) => async () => {
       await fetch(`/user/impersonate`, {
         method: 'POST',
-        body: JSON.stringify({ id: userId }),
+        body: JSON.stringify({
+          id: userId,
+        }),
       });
-
       window.location.reload();
     },
     []
   );
-
   const { data } = useSWR(`/impersonate-${name}`, load, {
     refreshWhenHidden: false,
     revalidateOnMount: true,
@@ -101,7 +104,6 @@ export const Impersonate = () => {
     revalidateIfStale: false,
     refreshInterval: 0,
   });
-
   const mapData = useMemo(() => {
     return data?.map(
       (curr: any) => ({
@@ -112,7 +114,6 @@ export const Impersonate = () => {
       []
     );
   }, [data]);
-
   return (
     <div>
       <div className="bg-forth h-[52px] flex justify-center items-center border-input border rounded-[8px]">
@@ -120,7 +121,9 @@ export const Impersonate = () => {
           <div className="relative z-[999]">
             {user?.impersonate ? (
               <div className="text-center flex justify-center items-center gap-[20px]">
-                <div>Currently Impersonating</div>
+                <div>
+                  {t('currently_impersonating', 'Currently Impersonating')}
+                </div>
                 <div>
                   <div
                     className="px-[10px] rounded-[4px] bg-red-500 text-textColor cursor-pointer"
@@ -147,18 +150,18 @@ export const Impersonate = () => {
           {!!data?.length && (
             <>
               <div
-                className="bg-primary/80 fixed left-0 top-0 w-full h-full z-[998]"
+                className="bg-primary/80 fixed start-0 top-0 w-full h-full z-[998]"
                 onClick={() => setName('')}
               />
-              <div className="absolute top-[100%] w-full left-0 bg-sixth border border-customColor6 text-textColor z-[999]">
+              <div className="absolute top-[100%] w-full start-0 bg-sixth border border-customColor6 text-textColor z-[999]">
                 {mapData?.map((user: any) => (
                   <div
                     onClick={setUser(user.id)}
                     key={user.id}
                     className="p-[10px] border-b border-customColor6 hover:bg-tableBorder cursor-pointer"
                   >
-                    user: {user.id.split('-').at(-1)} - {user.name} -{' '}
-                    {user.email}
+                    {t('user_1', 'user:')}
+                    {user.id.split('-').at(-1)} - {user.name} - {user.email}
                   </div>
                 ))}
               </div>

@@ -1,4 +1,4 @@
-# Do **not** use this yml for production. It is not up-to-date. 
+# Do **not** use this yml for production. It is not up-to-date.
 # Use https://docs.postiz.com/installation/docker-compose
 
 services:
@@ -45,7 +45,7 @@ services:
     links:
       - postiz-redis
     ports:
-      - "5540:5540"
+      - '5540:5540'
     volumes:
       - redisinsight:/data
     networks:

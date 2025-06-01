@@ -1,13 +1,13 @@
-import { z, ZodTypeAny } from "zod";
+import { z, ZodTypeAny } from 'zod';
 
-export const LATEST_PROTOCOL_VERSION = "2024-11-05";
+export const LATEST_PROTOCOL_VERSION = '2024-11-05';
 export const SUPPORTED_PROTOCOL_VERSIONS = [
   LATEST_PROTOCOL_VERSION,
-  "2024-10-07",
+  '2024-10-07',
 ];
 
 /* JSON-RPC types */
-export const JSONRPC_VERSION = "2.0";
+export const JSONRPC_VERSION = '2.0';
 
 /**
  * A progress token, used to associate progress notifications with the original request.
@@ -29,7 +29,7 @@ const BaseRequestParamsSchema = z
            */
           progressToken: z.optional(ProgressTokenSchema),
         })
-        .passthrough(),
+        .passthrough()
     ),
   })
   .passthrough();
@@ -177,7 +177,7 @@ export const EmptyResultSchema = ResultSchema.strict();
  * A client MUST NOT attempt to cancel its `initialize` request.
  */
 export const CancelledNotificationSchema = NotificationSchema.extend({
-  method: z.literal("notifications/cancelled"),
+  method: z.literal('notifications/cancelled'),
   params: BaseNotificationParamsSchema.extend({
     /**
      * The ID of the request to cancel.
@@ -228,7 +228,7 @@ export const ClientCapabilitiesSchema = z
            */
           listChanged: z.optional(z.boolean()),
         })
-        .passthrough(),
+        .passthrough()
     ),
   })
   .passthrough();
@@ -237,7 +237,7 @@ export const ClientCapabilitiesSchema = z
  * This request is sent from the client to the server when it first connects, asking it to begin initialization.
  */
 export const InitializeRequestSchema = RequestSchema.extend({
-  method: z.literal("initialize"),
+  method: z.literal('initialize'),
   params: BaseRequestParamsSchema.extend({
     /**
      * The latest version of the Model Context Protocol that the client supports. The client MAY decide to support older versions as well.
@@ -276,7 +276,7 @@ export const ServerCapabilitiesSchema = z
            */
           listChanged: z.optional(z.boolean()),
         })
-        .passthrough(),
+        .passthrough()
     ),
     /**
      * Present if the server offers any resources to read.
@@ -294,7 +294,7 @@ export const ServerCapabilitiesSchema = z
            */
           listChanged: z.optional(z.boolean()),
         })
-        .passthrough(),
+        .passthrough()
     ),
     /**
      * Present if the server offers any tools to call.
@@ -307,7 +307,7 @@ export const ServerCapabilitiesSchema = z
            */
           listChanged: z.optional(z.boolean()),
         })
-        .passthrough(),
+        .passthrough()
     ),
   })
   .passthrough();
@@ -334,7 +334,7 @@ export const InitializeResultSchema = ResultSchema.extend({
  * This notification is sent from the client to the server after initialization has finished.
  */
 export const InitializedNotificationSchema = NotificationSchema.extend({
-  method: z.literal("notifications/initialized"),
+  method: z.literal('notifications/initialized'),
 });
 
 /* Ping */
@@ -342,7 +342,7 @@ export const InitializedNotificationSchema = NotificationSchema.extend({
  * A ping, issued by either the server or the client, to check that the other party is still alive. The receiver must promptly respond, or else may be disconnected.
  */
 export const PingRequestSchema = RequestSchema.extend({
-  method: z.literal("ping"),
+  method: z.literal('ping'),
 });
 
 /* Progress notifications */
@@ -363,7 +363,7 @@ export const ProgressSchema = z
  * An out-of-band notification used to inform the receiver of a progress update for a long-running request.
  */
 export const ProgressNotificationSchema = NotificationSchema.extend({
-  method: z.literal("notifications/progress"),
+  method: z.literal('notifications/progress'),
   params: BaseNotificationParamsSchema.merge(ProgressSchema).extend({
     /**
      * The progress token which was given in the initial request, used to associate this notification with the request that is proceeding.
@@ -488,7 +488,7 @@ export const ResourceTemplateSchema = z
  * Sent from the client to request a list of resources the server has.
  */
 export const ListResourcesRequestSchema = PaginatedRequestSchema.extend({
-  method: z.literal("resources/list"),
+  method: z.literal('resources/list'),
 });
 
 /**
@@ -503,8 +503,8 @@ export const ListResourcesResultSchema = PaginatedResultSchema.extend({
  */
 export const ListResourceTemplatesRequestSchema = PaginatedRequestSchema.extend(
   {
-    method: z.literal("resources/templates/list"),
-  },
+    method: z.literal('resources/templates/list'),
+  }
 );
 
 /**
@@ -518,7 +518,7 @@ export const ListResourceTemplatesResultSchema = PaginatedResultSchema.extend({
  * Sent from the client to the server, to read a specific resource URI.
  */
 export const ReadResourceRequestSchema = RequestSchema.extend({
-  method: z.literal("resources/read"),
+  method: z.literal('resources/read'),
   params: BaseRequestParamsSchema.extend({
     /**
      * The URI of the resource to read. The URI can use any protocol; it is up to the server how to interpret it.
@@ -532,7 +532,7 @@ export const ReadResourceRequestSchema = RequestSchema.extend({
  */
 export const ReadResourceResultSchema = ResultSchema.extend({
   contents: z.array(
-    z.union([TextResourceContentsSchema, BlobResourceContentsSchema]),
+    z.union([TextResourceContentsSchema, BlobResourceContentsSchema])
   ),
 });
 
@@ -540,14 +540,14 @@ export const ReadResourceResultSchema = ResultSchema.extend({
  * An optional notification from the server to the client, informing it that the list of resources it can read from has changed. This may be issued by servers without any previous subscription from the client.
  */
 export const ResourceListChangedNotificationSchema = NotificationSchema.extend({
-  method: z.literal("notifications/resources/list_changed"),
+  method: z.literal('notifications/resources/list_changed'),
 });
 
 /**
  * Sent from the client to request resources/updated notifications from the server whenever a particular resource changes.
  */
 export const SubscribeRequestSchema = RequestSchema.extend({
-  method: z.literal("resources/subscribe"),
+  method: z.literal('resources/subscribe'),
   params: BaseRequestParamsSchema.extend({
     /**
      * The URI of the resource to subscribe to. The URI can use any protocol; it is up to the server how to interpret it.
@@ -560,7 +560,7 @@ export const SubscribeRequestSchema = RequestSchema.extend({
  * Sent from the client to request cancellation of resources/updated notifications from the server. This should follow a previous resources/subscribe request.
  */
 export const UnsubscribeRequestSchema = RequestSchema.extend({
-  method: z.literal("resources/unsubscribe"),
+  method: z.literal('resources/unsubscribe'),
   params: BaseRequestParamsSchema.extend({
     /**
      * The URI of the resource to unsubscribe from.
@@ -573,7 +573,7 @@ export const UnsubscribeRequestSchema = RequestSchema.extend({
  * A notification from the server to the client, informing it that a resource has changed and may need to be read again. This should only be sent if the client previously sent a resources/subscribe request.
  */
 export const ResourceUpdatedNotificationSchema = NotificationSchema.extend({
-  method: z.literal("notifications/resources/updated"),
+  method: z.literal('notifications/resources/updated'),
   params: BaseNotificationParamsSchema.extend({
     /**
      * The URI of the resource that has been updated. This might be a sub-resource of the one that the client actually subscribed to.
@@ -627,7 +627,7 @@ export const PromptSchema = z
  * Sent from the client to request a list of prompts and prompt templates the server has.
  */
 export const ListPromptsRequestSchema = PaginatedRequestSchema.extend({
-  method: z.literal("prompts/list"),
+  method: z.literal('prompts/list'),
 });
 
 /**
@@ -641,7 +641,7 @@ export const ListPromptsResultSchema = PaginatedResultSchema.extend({
  * Used by the client to get a prompt provided by the server.
  */
 export const GetPromptRequestSchema = RequestSchema.extend({
-  method: z.literal("prompts/get"),
+  method: z.literal('prompts/get'),
   params: BaseRequestParamsSchema.extend({
     /**
      * The name of the prompt or prompt template.
@@ -659,7 +659,7 @@ export const GetPromptRequestSchema = RequestSchema.extend({
  */
 export const TextContentSchema = z
   .object({
-    type: z.literal("text"),
+    type: z.literal('text'),
     /**
      * The text content of the message.
      */
@@ -672,7 +672,7 @@ export const TextContentSchema = z
  */
 export const ImageContentSchema = z
   .object({
-    type: z.literal("image"),
+    type: z.literal('image'),
     /**
      * The base64-encoded image data.
      */
@@ -689,7 +689,7 @@ export const ImageContentSchema = z
  */
 export const AudioContentSchema = z
   .object({
-    type: z.literal("audio"),
+    type: z.literal('audio'),
     /**
      * The base64-encoded audio data.
      */
@@ -706,7 +706,7 @@ export const AudioContentSchema = z
  */
 export const EmbeddedResourceSchema = z
   .object({
-    type: z.literal("resource"),
+    type: z.literal('resource'),
     resource: z.union([TextResourceContentsSchema, BlobResourceContentsSchema]),
   })
   .passthrough();
@@ -716,7 +716,7 @@ export const EmbeddedResourceSchema = z
  */
 export const PromptMessageSchema = z
   .object({
-    role: z.enum(["user", "assistant"]),
+    role: z.enum(['user', 'assistant']),
     content: z.union([
       TextContentSchema,
       ImageContentSchema,
@@ -741,7 +741,7 @@ export const GetPromptResultSchema = ResultSchema.extend({
  * An optional notification from the server to the client, informing it that the list of prompts it offers has changed. This may be issued by servers without any previous subscription from the client.
  */
 export const PromptListChangedNotificationSchema = NotificationSchema.extend({
-  method: z.literal("notifications/prompts/list_changed"),
+  method: z.literal('notifications/prompts/list_changed'),
 });
 
 /* Tools */
@@ -763,7 +763,7 @@ export const ToolSchema = z
      */
     inputSchema: z
       .object({
-        type: z.literal("object"),
+        type: z.literal('object'),
         properties: z.optional(z.object({}).passthrough()),
       })
       .passthrough(),
@@ -774,7 +774,7 @@ export const ToolSchema = z
  * Sent from the client to request a list of tools the server has.
  */
 export const ListToolsRequestSchema = PaginatedRequestSchema.extend({
-  method: z.literal("tools/list"),
+  method: z.literal('tools/list'),
 });
 
 /**
@@ -789,7 +789,12 @@ export const ListToolsResultSchema = PaginatedResultSchema.extend({
  */
 export const CallToolResultSchema = ResultSchema.extend({
   content: z.array(
-    z.union([TextContentSchema, ImageContentSchema, AudioContentSchema, EmbeddedResourceSchema]),
+    z.union([
+      TextContentSchema,
+      ImageContentSchema,
+      AudioContentSchema,
+      EmbeddedResourceSchema,
+    ])
   ),
   isError: z.boolean().default(false).optional(),
 });
@@ -800,14 +805,14 @@ export const CallToolResultSchema = ResultSchema.extend({
 export const CompatibilityCallToolResultSchema = CallToolResultSchema.or(
   ResultSchema.extend({
     toolResult: z.unknown(),
-  }),
+  })
 );
 
 /**
  * Used by the client to invoke a tool provided by the server.
  */
 export const CallToolRequestSchema = RequestSchema.extend({
-  method: z.literal("tools/call"),
+  method: z.literal('tools/call'),
   params: BaseRequestParamsSchema.extend({
     name: z.string(),
     arguments: z.optional(z.record(z.unknown())),
@@ -818,7 +823,7 @@ export const CallToolRequestSchema = RequestSchema.extend({
  * An optional notification from the server to the client, informing it that the list of tools it offers has changed. This may be issued by servers without any previous subscription from the client.
  */
 export const ToolListChangedNotificationSchema = NotificationSchema.extend({
-  method: z.literal("notifications/tools/list_changed"),
+  method: z.literal('notifications/tools/list_changed'),
 });
 
 /* Logging */
@@ -826,21 +831,21 @@ export const ToolListChangedNotificationSchema = NotificationSchema.extend({
  * The severity of a log message.
  */
 export const LoggingLevelSchema = z.enum([
-  "debug",
-  "info",
-  "notice",
-  "warning",
-  "error",
-  "critical",
-  "alert",
-  "emergency",
+  'debug',
+  'info',
+  'notice',
+  'warning',
+  'error',
+  'critical',
+  'alert',
+  'emergency',
 ]);
 
 /**
  * A request from the client to the server, to enable or adjust logging.
  */
 export const SetLevelRequestSchema = RequestSchema.extend({
-  method: z.literal("logging/setLevel"),
+  method: z.literal('logging/setLevel'),
   params: BaseRequestParamsSchema.extend({
     /**
      * The level of logging that the client wants to receive from the server. The server should send all logs at this level and higher (i.e., more severe) to the client as notifications/logging/message.
@@ -853,7 +858,7 @@ export const SetLevelRequestSchema = RequestSchema.extend({
  * Notification of a log message passed from server to client. If no logging/setLevel request has been sent from the client, the server MAY decide which messages to send automatically.
  */
 export const LoggingMessageNotificationSchema = NotificationSchema.extend({
-  method: z.literal("notifications/message"),
+  method: z.literal('notifications/message'),
   params: BaseNotificationParamsSchema.extend({
     /**
      * The severity of this log message.
@@ -912,8 +917,12 @@ export const ModelPreferencesSchema = z
  */
 export const SamplingMessageSchema = z
   .object({
-    role: z.enum(["user", "assistant"]),
-    content: z.union([TextContentSchema, ImageContentSchema, AudioContentSchema]),
+    role: z.enum(['user', 'assistant']),
+    content: z.union([
+      TextContentSchema,
+      ImageContentSchema,
+      AudioContentSchema,
+    ]),
   })
   .passthrough();
 
@@ -921,7 +930,7 @@ export const SamplingMessageSchema = z
  * A request from the server to sample an LLM via the client. The client has full discretion over which model to select. The client should also inform the user before beginning sampling, to allow them to inspect the request (human in the loop) and decide whether to approve it.
  */
 export const CreateMessageRequestSchema = RequestSchema.extend({
-  method: z.literal("sampling/createMessage"),
+  method: z.literal('sampling/createMessage'),
   params: BaseRequestParamsSchema.extend({
     messages: z.array(SamplingMessageSchema),
     /**
@@ -931,7 +940,7 @@ export const CreateMessageRequestSchema = RequestSchema.extend({
     /**
      * A request to include context from one or more MCP servers (including the caller), to be attached to the prompt. The client MAY ignore this request.
      */
-    includeContext: z.optional(z.enum(["none", "thisServer", "allServers"])),
+    includeContext: z.optional(z.enum(['none', 'thisServer', 'allServers'])),
     temperature: z.optional(z.number()),
     /**
      * The maximum number of tokens to sample, as requested by the server. The client MAY choose to sample fewer tokens than requested.
@@ -961,13 +970,13 @@ export const CreateMessageResultSchema = ResultSchema.extend({
    * The reason why sampling stopped.
    */
   stopReason: z.optional(
-    z.enum(["endTurn", "stopSequence", "maxTokens"]).or(z.string()),
+    z.enum(['endTurn', 'stopSequence', 'maxTokens']).or(z.string())
   ),
-  role: z.enum(["user", "assistant"]),
-  content: z.discriminatedUnion("type", [
+  role: z.enum(['user', 'assistant']),
+  content: z.discriminatedUnion('type', [
     TextContentSchema,
     ImageContentSchema,
-    AudioContentSchema
+    AudioContentSchema,
   ]),
 });
 
@@ -977,7 +986,7 @@ export const CreateMessageResultSchema = ResultSchema.extend({
  */
 export const ResourceReferenceSchema = z
   .object({
-    type: z.literal("ref/resource"),
+    type: z.literal('ref/resource'),
     /**
      * The URI or URI template of the resource.
      */
@@ -990,7 +999,7 @@ export const ResourceReferenceSchema = z
  */
 export const PromptReferenceSchema = z
   .object({
-    type: z.literal("ref/prompt"),
+    type: z.literal('ref/prompt'),
     /**
      * The name of the prompt or prompt template
      */
@@ -1002,7 +1011,7 @@ export const PromptReferenceSchema = z
  * A request from the client to the server, to ask for completion options.
  */
 export const CompleteRequestSchema = RequestSchema.extend({
-  method: z.literal("completion/complete"),
+  method: z.literal('completion/complete'),
   params: BaseRequestParamsSchema.extend({
     ref: z.union([PromptReferenceSchema, ResourceReferenceSchema]),
     /**
@@ -1054,7 +1063,7 @@ export const RootSchema = z
     /**
      * The URI identifying the root. This *must* start with file:// for now.
      */
-    uri: z.string().startsWith("file://"),
+    uri: z.string().startsWith('file://'),
     /**
      * An optional name for the root.
      */
@@ -1066,7 +1075,7 @@ export const RootSchema = z
  * Sent from the server to request a list of root URIs from the client.
  */
 export const ListRootsRequestSchema = RequestSchema.extend({
-  method: z.literal("roots/list"),
+  method: z.literal('roots/list'),
 });
 
 /**
@@ -1080,7 +1089,7 @@ export const ListRootsResultSchema = ResultSchema.extend({
  * A notification from the client to the server, informing it that the list of roots has changed.
  */
 export const RootsListChangedNotificationSchema = NotificationSchema.extend({
-  method: z.literal("notifications/roots/list_changed"),
+  method: z.literal('notifications/roots/list_changed'),
 });
 
 /* Client messages */
@@ -1147,10 +1156,10 @@ export class McpError extends Error {
   constructor(
     public readonly code: number,
     message: string,
-    public readonly data?: unknown,
+    public readonly data?: unknown
   ) {
     super(`MCP error ${code}: ${message}`);
-    this.name = "McpError";
+    this.name = 'McpError';
   }
 }
 
@@ -1194,7 +1203,9 @@ export type ClientCapabilities = Infer<typeof ClientCapabilitiesSchema>;
 export type InitializeRequest = Infer<typeof InitializeRequestSchema>;
 export type ServerCapabilities = Infer<typeof ServerCapabilitiesSchema>;
 export type InitializeResult = Infer<typeof InitializeResultSchema>;
-export type InitializedNotification = Infer<typeof InitializedNotificationSchema>;
+export type InitializedNotification = Infer<
+  typeof InitializedNotificationSchema
+>;
 
 /* Ping */
 export type PingRequest = Infer<typeof PingRequestSchema>;
@@ -1215,14 +1226,22 @@ export type Resource = Infer<typeof ResourceSchema>;
 export type ResourceTemplate = Infer<typeof ResourceTemplateSchema>;
 export type ListResourcesRequest = Infer<typeof ListResourcesRequestSchema>;
 export type ListResourcesResult = Infer<typeof ListResourcesResultSchema>;
-export type ListResourceTemplatesRequest = Infer<typeof ListResourceTemplatesRequestSchema>;
-export type ListResourceTemplatesResult = Infer<typeof ListResourceTemplatesResultSchema>;
+export type ListResourceTemplatesRequest = Infer<
+  typeof ListResourceTemplatesRequestSchema
+>;
+export type ListResourceTemplatesResult = Infer<
+  typeof ListResourceTemplatesResultSchema
+>;
 export type ReadResourceRequest = Infer<typeof ReadResourceRequestSchema>;
 export type ReadResourceResult = Infer<typeof ReadResourceResultSchema>;
-export type ResourceListChangedNotification = Infer<typeof ResourceListChangedNotificationSchema>;
+export type ResourceListChangedNotification = Infer<
+  typeof ResourceListChangedNotificationSchema
+>;
 export type SubscribeRequest = Infer<typeof SubscribeRequestSchema>;
 export type UnsubscribeRequest = Infer<typeof UnsubscribeRequestSchema>;
-export type ResourceUpdatedNotification = Infer<typeof ResourceUpdatedNotificationSchema>;
+export type ResourceUpdatedNotification = Infer<
+  typeof ResourceUpdatedNotificationSchema
+>;
 
 /* Prompts */
 export type PromptArgument = Infer<typeof PromptArgumentSchema>;
@@ -1236,21 +1255,29 @@ export type AudioContent = Infer<typeof AudioContentSchema>;
 export type EmbeddedResource = Infer<typeof EmbeddedResourceSchema>;
 export type PromptMessage = Infer<typeof PromptMessageSchema>;
 export type GetPromptResult = Infer<typeof GetPromptResultSchema>;
-export type PromptListChangedNotification = Infer<typeof PromptListChangedNotificationSchema>;
+export type PromptListChangedNotification = Infer<
+  typeof PromptListChangedNotificationSchema
+>;
 
 /* Tools */
 export type Tool = Infer<typeof ToolSchema>;
 export type ListToolsRequest = Infer<typeof ListToolsRequestSchema>;
 export type ListToolsResult = Infer<typeof ListToolsResultSchema>;
 export type CallToolResult = Infer<typeof CallToolResultSchema>;
-export type CompatibilityCallToolResult = Infer<typeof CompatibilityCallToolResultSchema>;
+export type CompatibilityCallToolResult = Infer<
+  typeof CompatibilityCallToolResultSchema
+>;
 export type CallToolRequest = Infer<typeof CallToolRequestSchema>;
-export type ToolListChangedNotification = Infer<typeof ToolListChangedNotificationSchema>;
+export type ToolListChangedNotification = Infer<
+  typeof ToolListChangedNotificationSchema
+>;
 
 /* Logging */
 export type LoggingLevel = Infer<typeof LoggingLevelSchema>;
 export type SetLevelRequest = Infer<typeof SetLevelRequestSchema>;
-export type LoggingMessageNotification = Infer<typeof LoggingMessageNotificationSchema>;
+export type LoggingMessageNotification = Infer<
+  typeof LoggingMessageNotificationSchema
+>;
 
 /* Sampling */
 export type SamplingMessage = Infer<typeof SamplingMessageSchema>;
@@ -1267,7 +1294,9 @@ export type CompleteResult = Infer<typeof CompleteResultSchema>;
 export type Root = Infer<typeof RootSchema>;
 export type ListRootsRequest = Infer<typeof ListRootsRequestSchema>;
 export type ListRootsResult = Infer<typeof ListRootsResultSchema>;
-export type RootsListChangedNotification = Infer<typeof RootsListChangedNotificationSchema>;
+export type RootsListChangedNotification = Infer<
+  typeof RootsListChangedNotificationSchema
+>;
 
 /* Client messages */
 export type ClientRequest = Infer<typeof ClientRequestSchema>;

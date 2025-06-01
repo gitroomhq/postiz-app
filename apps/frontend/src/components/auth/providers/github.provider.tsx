@@ -1,14 +1,14 @@
 import { useCallback } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import interClass from '@gitroom/react/helpers/inter.font';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const GithubProvider = () => {
   const fetch = useFetch();
+  const t = useT();
   const gotoLogin = useCallback(async () => {
     const link = await (await fetch('/auth/oauth/GITHUB')).text();
     window.location.href = link;
   }, []);
-
   return (
     <div
       onClick={gotoLogin}
@@ -28,7 +28,7 @@ export const GithubProvider = () => {
           />
         </svg>
       </div>
-      <div>Sign in with GitHub</div>
+      <div>{t('sign_in_with_github', 'Sign in with GitHub')}</div>
     </div>
   );
 };

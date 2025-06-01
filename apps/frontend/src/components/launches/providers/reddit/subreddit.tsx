@@ -10,7 +10,7 @@ import { Select } from '@gitroom/react/form/select';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { Canonical } from '@gitroom/react/form/canonical';
 import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const RenderOptions: FC<{
   options: Array<'self' | 'link' | 'media'>;
   onClick: (current: 'self' | 'link' | 'media') => void;
@@ -34,7 +34,6 @@ export const RenderOptions: FC<{
       onClick: () => onClick(p),
     }));
   }, [options]);
-
   return (
     <div className="flex">
       {mapValues.map((p) => (
@@ -49,31 +48,37 @@ export const RenderOptions: FC<{
 };
 export const Subreddit: FC<{
   onChange: (event: {
-    target: { name: string; value: { id: string; name: string } };
+    target: {
+      name: string;
+      value: {
+        id: string;
+        name: string;
+      };
+    };
   }) => void;
   name: string;
 }> = (props) => {
   const { onChange, name } = props;
-
   const state = useSettings();
+  const t = useT();
+
   const { date } = useIntegration();
   const split = name.split('.');
   const [loading, setLoading] = useState(false);
   // @ts-ignore
   const errors = state?.formState?.errors?.[split?.[0]]?.[split?.[1]]?.value;
-
   const [results, setResults] = useState([]);
   const func = useCustomProviderFunction();
-  const value = useWatch({ name });
+  const value = useWatch({
+    name,
+  });
   const [searchValue, setSearchValue] = useState('');
-
   const setResult = (result: { id: string; name: string }) => async () => {
     setLoading(true);
     setSearchValue('');
     const restrictions = await func.get('restrictions', {
       subreddit: result.name,
     });
-
     onChange({
       target: {
         name,
@@ -84,10 +89,8 @@ export const Subreddit: FC<{
         },
       },
     });
-
     setLoading(false);
   };
-
   const setTitle = useCallback(
     (e: any) => {
       onChange({
@@ -102,7 +105,6 @@ export const Subreddit: FC<{
     },
     [value]
   );
-
   const setType = useCallback(
     (e: string) => {
       onChange({
@@ -117,7 +119,6 @@ export const Subreddit: FC<{
     },
     [value]
   );
-
   const setMedia = useCallback(
     (e: any) => {
       onChange({
@@ -132,7 +133,6 @@ export const Subreddit: FC<{
     },
     [value]
   );
-
   const setURL = useCallback(
     (e: any) => {
       onChange({
@@ -147,7 +147,6 @@ export const Subreddit: FC<{
     },
     [value]
   );
-
   const setFlair = useCallback(
     (e: any) => {
       onChange({
@@ -162,7 +161,6 @@ export const Subreddit: FC<{
     },
     [value]
   );
-
   const search = useDebouncedCallback(
     useCallback(async (e: FormEvent<HTMLInputElement>) => {
       // @ts-ignore
@@ -178,7 +176,6 @@ export const Subreddit: FC<{
     }, []),
     500
   );
-
   return (
     <div className="bg-primary p-[20px]">
       {value?.subreddit ? (
@@ -214,7 +211,7 @@ export const Subreddit: FC<{
             label="Flair"
             name="flair"
           >
-            <option value="">--Select Flair--</option>
+            <option value="">{t('select_flair', '--Select Flair--')}</option>
             {value.flairs.map((f: any) => (
               <option key={f.name} value={f.id}>
                 {f.name}

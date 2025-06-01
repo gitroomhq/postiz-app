@@ -39,7 +39,7 @@ export class HashnodeProvider implements ArticleProvider {
         name,
         token,
         picture: profilePicture,
-        username
+        username,
       };
     } catch (err) {
       return {
@@ -47,7 +47,7 @@ export class HashnodeProvider implements ArticleProvider {
         name: '',
         token: '',
         picture: '',
-        username: ''
+        username: '',
       };
     }
   }

@@ -21,7 +21,7 @@ import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integ
 export class AnalyticsController {
   constructor(
     private _starsService: StarsService,
-    private _integrationService: IntegrationService,
+    private _integrationService: IntegrationService
   ) {}
   @Get('/')
   async getStars(@GetOrgFromRequest() org: Organization) {

@@ -1,6 +1,6 @@
-import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
-import { ProviderList } from "@gitroom/extension/providers/provider.list";
-import { fetchCookie } from "@gitroom/extension/utils/load.cookie";
+import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
+import { ProviderList } from '@gitroom/extension/providers/provider.list';
+import { fetchCookie } from '@gitroom/extension/utils/load.cookie';
 
 export const PopupContainerContainer: FC = () => {
   const [url, setUrl] = useState<string | null>(null);
@@ -11,7 +11,9 @@ export const PopupContainerContainer: FC = () => {
   }, []);
 
   if (!url) {
-    return <div className="text-4xl">This website is not supported by Postiz</div>;
+    return (
+      <div className="text-4xl">This website is not supported by Postiz</div>
+    );
   }
 
   return <PopupContainer url={url} />;
@@ -54,7 +56,9 @@ export const PopupContainer: FC<{ url: string }> = (props) => {
   }
 
   if (!provider) {
-    return <div className="text-4xl">This website is not supported by Postiz</div>;
+    return (
+      <div className="text-4xl">This website is not supported by Postiz</div>
+    );
   }
 
   if (!isLoggedIn) {

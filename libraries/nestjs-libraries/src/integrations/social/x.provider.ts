@@ -408,7 +408,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         tweets.map((p) => p.id),
         {
           'tweet.fields': ['public_metrics'],
-        },
+        }
       );
 
       const metrics = data.data.reduce(
