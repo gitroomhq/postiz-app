@@ -7,15 +7,19 @@ export const HtmlComponent: FC<{ className: string; children: ReactNode }> = (
 ) => {
   const { className } = props;
   const [dir, setDir] = useState(i18next.dir());
+
   useEffect(() => {
     i18next.on('languageChanged', (lng) => {
       setDir(i18next.dir());
     });
   }, []);
 
-  return (
-    <html className={className} dir={dir}>
-      {props.children}
-    </html>
-  );
+  useEffect(() => {
+    const htmlElement = document.querySelector('html');
+    if (htmlElement) {
+      htmlElement.setAttribute('dir', dir);
+    }
+  }, [dir]);
+
+  return <html className={className}>{props.children}</html>;
 };

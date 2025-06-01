@@ -17,6 +17,18 @@ import {
 import dayjs from 'dayjs';
 import 'dayjs/locale/en';
 import 'dayjs/locale/he';
+import 'dayjs/locale/ru';
+import 'dayjs/locale/zh';
+import 'dayjs/locale/fr';
+import 'dayjs/locale/es';
+import 'dayjs/locale/pt';
+import 'dayjs/locale/de';
+import 'dayjs/locale/it';
+import 'dayjs/locale/ja';
+import 'dayjs/locale/ko';
+import 'dayjs/locale/ar';
+import 'dayjs/locale/tr';
+import 'dayjs/locale/vi';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import { useModals } from '@mantine/modals';
 import { AddEditModal } from '@gitroom/frontend/components/launches/add.edit.model';

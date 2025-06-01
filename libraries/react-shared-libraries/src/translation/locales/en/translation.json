@@ -166,7 +166,6 @@
   "day": "Day",
   "week": "Week",
   "month": "Month",
-  "": "😀",
   "remove_from_customer": "Remove from customer",
   "show_more": "+ Show more",
   "show_less": "- Show less",
@@ -481,5 +480,6 @@
   "7_days": "7 Days",
   "30_days": "30 Days",
   "90_days": "90 Days",
-  "start_7_days_free_trial": "Start 7 days free trial"
+  "start_7_days_free_trial": "Start 7 days free trial",
+  "change_language": "Change Language"
 }
