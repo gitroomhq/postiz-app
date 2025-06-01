@@ -18,14 +18,19 @@ export async function middleware(request: NextRequest) {
     request.cookies.get('auth') ||
     request.headers.get('auth') ||
     nextUrl.searchParams.get('loggedAuth');
-  const lng =
-    (request.cookies.has(cookieName)
-      ? acceptLanguage.get(request.cookies.get(cookieName).value)
-      : acceptLanguage.get(request.headers.get('Accept-Language'))) ||
-    fallbackLng;
+  const lng = request.cookies.has(cookieName)
+    ? acceptLanguage.get(request.cookies.get(cookieName).value)
+    : acceptLanguage.get(
+        request.headers.get('Accept-Language') ||
+          request.headers.get('accept-language')
+      );
 
   const headers = new Headers(request.headers);
-  headers.set(headerName, lng);
+
+  if (lng) {
+    headers.set(headerName, lng);
+  }
+
   if (
     nextUrl.pathname.startsWith('/uploads/') ||
     nextUrl.pathname.startsWith('/p/') ||

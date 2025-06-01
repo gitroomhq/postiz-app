@@ -28,11 +28,12 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     ? PlausibleProvider
     : Fragment;
   return (
-    <HtmlComponent className={interClass}>
+    <html className={interClass}>
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
       <body className={clsx(chakra.className, 'dark text-primary !bg-primary')}>
+        <HtmlComponent />
         <VariableContextComponent
           storageProvider={
             process.env.STORAGE_PROVIDER! as 'local' | 'cloudflare'
@@ -72,6 +73,6 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           </Plausible>
         </VariableContextComponent>
       </body>
-    </HtmlComponent>
+    </html>
   );
 }

@@ -2,15 +2,11 @@
 import { FC, ReactNode, useEffect, useState } from 'react';
 import { useTranslationSettings } from '@gitroom/react/translation/get.transation.service.client';
 
-export const HtmlComponent: FC<{ className: string; children: ReactNode }> = (
-  props
-) => {
-  const { className } = props;
+export const HtmlComponent: FC = () => {
   const settings = useTranslationSettings();
   const [dir, setDir] = useState(settings.dir());
 
   useEffect(() => {
-    setDir(settings.dir());
     settings.on('languageChanged', (lng) => {
       setDir(settings.dir());
     });
@@ -23,5 +19,5 @@ export const HtmlComponent: FC<{ className: string; children: ReactNode }> = (
     }
   }, [dir]);
 
-  return <html className={className}>{props.children}</html>;
+  return null;
 };
