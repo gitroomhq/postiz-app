@@ -143,6 +143,7 @@
     "google-auth-library": "^9.11.0",
     "googleapis": "^137.1.0",
     "hot-reload-extension-vite": "^1.0.13",
+    "i18n-iso-countries": "7.14.0",
     "i18next": "25.2.1",
     "i18next-browser-languagedetector": "8.1.0",
     "i18next-resources-to-backend": "1.2.1",

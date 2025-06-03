@@ -306,6 +306,9 @@ importers:
       hot-reload-extension-vite:
         specifier: ^1.0.13
         version: 1.0.13(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      i18n-iso-countries:
+        specifier: 7.14.0
+        version: 7.14.0
       i18next:
         specifier: 25.2.1
         version: 25.2.1(typescript@5.5.4)
@@ -8250,6 +8253,9 @@ packages:
   devlop@1.1.0:
     resolution: {integrity: sha512-RWmIqhcFf1lRYBvNmr7qTNuyCt/7/ns2jbpp1+PalgE/rDQcBT0fioSMUpJ93irlUhC5hrg4cYqe6U+0ImW0rA==}
 
+  diacritics@1.3.0:
+    resolution: {integrity: sha512-wlwEkqcsaxvPJML+rDh/2iS824jbREk6DUMUKkEaSlxdYHeS43cClJtsWglvw2RfeXGm6ohKDqsXteJ5sP5enA==}
+
   didyoumean@1.2.2:
     resolution: {integrity: sha512-gxtyfqMg7GKyhQmb056K7M3xszy/myH8w+B4RT+QXBQsvAOdc3XymqDDPHx1BgPgsdAA5SIifona89YtRATDzw==}
 
@@ -9714,6 +9720,10 @@ packages:
   hyperdyperid@1.2.0:
     resolution: {integrity: sha512-Y93lCzHYgGWdrJ66yIktxiaGULYc6oGiABxhcO5AufBeOyoIdZF7bIfLaOrbM0iGIOXQQgxxRrFEnb+Y6w1n4A==}
     engines: {node: '>=10.18'}
+
+  i18n-iso-countries@7.14.0:
+    resolution: {integrity: sha512-nXHJZYtNrfsi1UQbyRqm3Gou431elgLjKl//CYlnBGt5aTWdRPH1PiS2T/p/n8Q8LnqYqzQJik3Q7mkwvLokeg==}
+    engines: {node: '>= 12'}
 
   i18next-browser-languagedetector@8.1.0:
     resolution: {integrity: sha512-mHZxNx1Lq09xt5kCauZ/4bsXOEA2pfpwSoU11/QTJB+pD94iONFwp+ohqi///PwiFvjFOxe1akYCdHyFo1ng5Q==}
@@ -25921,6 +25931,8 @@ snapshots:
     dependencies:
       dequal: 2.0.3
 
+  diacritics@1.3.0: {}
+
   didyoumean@1.2.2: {}
 
   diff-match-patch@1.0.5: {}
@@ -28005,6 +28017,10 @@ snapshots:
       ms: 2.1.3
 
   hyperdyperid@1.2.0: {}
+
+  i18n-iso-countries@7.14.0:
+    dependencies:
+      diacritics: 1.3.0
 
   i18next-browser-languagedetector@8.1.0:
     dependencies:
