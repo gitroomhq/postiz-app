@@ -719,7 +719,7 @@ Here are the things you can do:
 
                           {showError &&
                             (!p.content || p.content.length < 6) && (
-                              <div className="my-[5px] text-red-600 text-[12px] font-[500]">
+                              <div className="my-[5px] !bg-red-600 text-[12px] font-[500]">
                                 {t(
                                   'the_post_should_be_at_least_6_characters_long',
                                   'The post should be at least 6 characters long'
