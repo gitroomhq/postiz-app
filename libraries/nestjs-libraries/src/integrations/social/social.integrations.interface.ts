@@ -65,7 +65,7 @@ export type AuthTokenDetails = {
     title: string;
     description: string;
     type: 'checkbox' | 'text' | 'textarea';
-    value: any,
+    value: any;
     regex?: string;
   }[];
 };

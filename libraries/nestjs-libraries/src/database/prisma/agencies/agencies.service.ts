@@ -79,7 +79,7 @@ export class AgenciesService {
 </html>`
     );
 
-    return ;
+    return;
   }
 
   async createAgency(user: User, body: CreateAgencyDto) {

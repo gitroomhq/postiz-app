@@ -35,7 +35,7 @@ export class MediaRepository {
       },
       data: {
         deletedAt: new Date(),
-      }
+      },
     });
   }
 

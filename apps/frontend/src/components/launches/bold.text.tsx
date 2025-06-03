@@ -1,7 +1,6 @@
 import { FC, useCallback } from 'react';
 import { Editor, Transforms } from 'slate';
 import { ReactEditor } from 'slate-react';
-
 const originalMap = {
   a: '𝗮',
   b: '𝗯',
@@ -66,17 +65,15 @@ const originalMap = {
   '9': '𝟵',
   '0': '𝟬',
 };
-
 const reverseMap = Object.fromEntries(
   Object.entries(originalMap).map(([key, value]) => [value, key])
 );
-
-export const BoldText: FC<{ editor: any; currentValue: string }> = ({
-  editor,
-}) => {
+export const BoldText: FC<{
+  editor: any;
+  currentValue: string;
+}> = ({ editor }) => {
   const mark = () => {
     const selectedText = Editor.string(editor, editor.selection);
-
     const newText = Array.from(
       !selectedText ? prompt('What do you want to write?') || '' : selectedText
     )
@@ -85,11 +82,9 @@ export const BoldText: FC<{ editor: any; currentValue: string }> = ({
         return originalMap?.[char] || reverseMap?.[char] || char;
       })
       .join('');
-
     Transforms.insertText(editor, newText);
     ReactEditor.focus(editor);
   };
-
   return (
     <div
       onClick={mark}

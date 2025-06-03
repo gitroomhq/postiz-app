@@ -9,7 +9,7 @@ import { Select } from '@gitroom/react/form/select';
 import { Slider } from '@gitroom/react/form/slider';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import clsx from 'clsx';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 const delayOptions = [
   {
     name: 'Immediately',
@@ -60,7 +60,6 @@ export const InternalChannels: FC<{
   }[];
 }> = (props) => {
   const { plugs } = props;
-
   return (
     <div>
       {plugs.map((plug, index) => (
@@ -69,7 +68,6 @@ export const InternalChannels: FC<{
     </div>
   );
 };
-
 const Plug: FC<{
   plug: {
     identifier: string;
@@ -86,35 +84,34 @@ const Plug: FC<{
   };
 }> = ({ plug }) => {
   const { allIntegrations, integration } = useIntegration();
+  const t = useT();
+
   const { watch, setValue, control, register } = useSettings();
   const [load, setLoad] = useState(false);
   const val = watch(`plug--${plug.identifier}--integrations`);
   const active = watch(`plug--${plug.identifier}--active`);
-
   useEffect(() => {
     setTimeout(() => {
       setLoad(true);
     }, 20);
   }, []);
-
   const [localValue, setLocalValue] = useState<Integrations[]>(
-    (val || []).map((p: any) => ({ ...p }))
+    (val || []).map((p: any) => ({
+      ...p,
+    }))
   );
   useEffect(() => {
     setValue(`plug--${plug.identifier}--integrations`, [...localValue]);
   }, [localValue, plug, setValue]);
-
   const [allowedIntegrations] = useState(
     allIntegrations.filter(
       (i) =>
         plug.pickIntegration.includes(i.identifier) && integration?.id !== i.id
     )
   );
-
   if (!load) {
     return null;
   }
-
   return (
     <div
       key={plug.title}
@@ -154,7 +151,9 @@ const Plug: FC<{
                 </option>
               ))}
             </Select>
-            <div>Accounts that will engage:</div>
+            <div>
+              {t('accounts_that_will_engage', 'Accounts that will engage:')}
+            </div>
             <PickPlatforms
               hide={false}
               integrations={allowedIntegrations}

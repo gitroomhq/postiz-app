@@ -1,7 +1,6 @@
 import { FC, useCallback } from 'react';
 import { Editor, Transforms } from 'slate';
 import { ReactEditor } from 'slate-react';
-
 const underlineMap = {
   a: 'a̲',
   b: 'b̲',
@@ -66,31 +65,29 @@ const underlineMap = {
   '9': '9̲',
   '0': '0̲',
 };
-
 const reverseMap = Object.fromEntries(
   Object.entries(underlineMap).map(([key, value]) => [value, key])
 );
-
-export const UText: FC<{ editor: any; currentValue: string }> = ({
-  editor,
-}) => {
+export const UText: FC<{
+  editor: any;
+  currentValue: string;
+}> = ({ editor }) => {
   const mark = () => {
     const selectedText = Editor.string(editor, editor.selection);
-
     const setUnderline = selectedText.indexOf('̲') === -1;
     const newText = Array.from(
-      !selectedText ? prompt('What do you want to write?') || '' : selectedText.replace(/̲/g, '')
+      !selectedText
+        ? prompt('What do you want to write?') || ''
+        : selectedText.replace(/̲/g, '')
     )
       .map((char) => {
         // @ts-ignore
-        return (setUnderline ? underlineMap?.[char] : reverseMap?.[char]) || char;
+        return ((setUnderline ? underlineMap?.[char] : reverseMap?.[char]) || char);
       })
       .join('');
-
     Transforms.insertText(editor, newText);
     ReactEditor.focus(editor);
   };
-
   return (
     <div
       onClick={mark}

@@ -8,10 +8,9 @@ import { MediumSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/provider
 import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import clsx from 'clsx';
 import MDEditor from '@uiw/react-md-editor';
-import localFont from 'next/font/local'
-import {Canonical} from "@gitroom/react/form/canonical";
+import localFont from 'next/font/local';
+import { Canonical } from '@gitroom/react/form/canonical';
 import interClass from '@gitroom/react/helpers/inter.font';
-
 const charter = localFont({
   src: [
     {
@@ -36,15 +35,10 @@ const charter = localFont({
     },
   ],
 });
-
 const MediumPreview: FC = () => {
   const { value } = useIntegration();
   const settings = useSettings();
-  const [title, subtitle] = settings.watch([
-    'title',
-    'subtitle',
-  ]);
-
+  const [title, subtitle] = settings.watch(['title', 'subtitle']);
   return (
     <div
       className={clsx(
@@ -53,11 +47,16 @@ const MediumPreview: FC = () => {
     >
       <div className="px-[60px] pt-[20px]">
         <div className="text-[48px] leading-[60px] mb-[8px]">{title}</div>
-        <div className="text-[22px] font-[400] text-customColor36">{subtitle}</div>
+        <div className="text-[22px] font-[400] text-customColor36">
+          {subtitle}
+        </div>
       </div>
       <div className="px-[60px]">
         <MDEditor.Markdown
-          style={{ whiteSpace: 'pre-wrap', color: '#242424' }}
+          style={{
+            whiteSpace: 'pre-wrap',
+            color: '#242424',
+          }}
           className={charter.className}
           skipHtml={true}
           source={value.map((p) => p.content).join('\n')}
@@ -66,15 +65,18 @@ const MediumPreview: FC = () => {
     </div>
   );
 };
-
 const MediumSettings: FC = () => {
   const form = useSettings();
-  const {date} = useIntegration();
+  const { date } = useIntegration();
   return (
     <>
       <Input label="Title" {...form.register('title')} />
       <Input label="Subtitle" {...form.register('subtitle')} />
-      <Canonical date={date} label="Canonical Link" {...form.register('canonical')} />
+      <Canonical
+        date={date}
+        label="Canonical Link"
+        {...form.register('canonical')}
+      />
       <div>
         <MediumPublications {...form.register('publication')} />
       </div>
@@ -84,5 +86,4 @@ const MediumSettings: FC = () => {
     </>
   );
 };
-
 export default withProvider(MediumSettings, MediumPreview, MediumSettingsDto);

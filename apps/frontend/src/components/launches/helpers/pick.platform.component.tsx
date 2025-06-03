@@ -7,7 +7,6 @@ import Image from 'next/image';
 import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
 import { useStateCallback } from '@gitroom/react/helpers/use.state.callback';
 import { timer } from '@gitroom/helpers/utils/timer';
-
 export const PickPlatforms: FC<{
   integrations: Integrations[];
   selectedIntegrations: Integrations[];
@@ -19,14 +18,15 @@ export const PickPlatforms: FC<{
 }> = (props) => {
   const { hide, isMain, integrations, selectedIntegrations, onChange } = props;
   const ref = useRef<HTMLDivElement>(null);
-
   const [isLeft, setIsLeft] = useState(false);
   const [isRight, setIsRight] = useState(false);
-
   const [selectedAccounts, setSelectedAccounts] = useStateCallback<
     Integrations[]
-  >(selectedIntegrations.slice(0).map((p) => ({ ...p })));
-
+  >(
+    selectedIntegrations.slice(0).map((p) => ({
+      ...p,
+    }))
+  );
   useEffect(() => {
     if (
       props.singleSelect &&
@@ -36,18 +36,14 @@ export const PickPlatforms: FC<{
       addPlatform(integrations[0])();
     }
   }, [integrations, selectedAccounts]);
-
   const checkLeftRight = (test = true) => {
     const scrollWidth = ref.current?.scrollWidth;
     const offsetWidth = +(ref.current?.offsetWidth || 0);
     const scrollOffset = ref.current?.scrollLeft || 0;
-
     const totalScroll = scrollOffset + offsetWidth + 100;
-
     setIsLeft(!!scrollOffset);
     setIsRight(!!scrollWidth && !!offsetWidth && scrollWidth > totalScroll);
   };
-
   const changeOffset = useCallback(
     (offset: number) => () => {
       if (ref.current) {
@@ -57,23 +53,19 @@ export const PickPlatforms: FC<{
     },
     [selectedIntegrations, integrations, selectedAccounts]
   );
-
   useEffect(() => {
     checkLeftRight();
   }, [selectedIntegrations, integrations]);
-
   useMoveToIntegrationListener(
     [integrations],
     props.singleSelect,
     ({ identifier, toPreview }: { identifier: string; toPreview: boolean }) => {
       const findIntegration = integrations.find((p) => p.id === identifier);
-
       if (findIntegration) {
         addPlatform(findIntegration)();
       }
     }
   );
-
   const addPlatform = useCallback(
     (integration: Integrations) => async () => {
       const promises = [];
@@ -98,7 +90,6 @@ export const PickPlatforms: FC<{
         const changedIntegrations = selectedAccounts.filter(
           ({ id }) => id !== integration.id
         );
-
         if (
           !props.singleSelect &&
           !(await deleteDialog(
@@ -138,38 +129,31 @@ export const PickPlatforms: FC<{
           })
         );
       }
-
       await timer(500);
       await Promise.all(promises);
     },
     [onChange, props.singleSelect, selectedAccounts, setSelectedAccounts]
   );
-
   const handler = async ({ integrationsId }: { integrationsId: string[] }) => {
     const selected = selectedIntegrations.map((p) => p.id);
     const notToRemove = selected.filter((p) => integrationsId.includes(p));
     const toAdd = integrationsId.filter((p) => !selected.includes(p));
-
     const newIntegrations = [...notToRemove, ...toAdd]
       .map((id) => integrations.find((p) => p.id === id)!)
       .filter((p) => p);
-
     setSelectedAccounts(newIntegrations, () => {
       console.log('changed');
     });
-
     onChange(newIntegrations, () => {
       console.log('changed');
     });
   };
-
   useCopilotReadable({
     description: isMain
       ? 'All available platforms channels'
       : 'Possible platforms channels to edit',
     value: JSON.stringify(integrations),
   });
-
   useCopilotAction(
     {
       name: isMain ? `addOrRemovePlatform` : 'setSelectedIntegration',
@@ -195,11 +179,9 @@ export const PickPlatforms: FC<{
       setSelectedAccounts,
     ]
   );
-
   if (hide) {
     return null;
   }
-
   return (
     <div
       className={clsx('flex select-none', props.singleSelect && 'gap-[10px]')}
@@ -245,7 +227,7 @@ export const PickPlatforms: FC<{
                   !props.singleSelect ? (
                     <div
                       key={integration.id}
-                      className="flex gap-[8px] items-center mr-[10px]"
+                      className="flex gap-[8px] items-center me-[10px]"
                       {...(props.toolTip && {
                         'data-tooltip-id': 'tooltip',
                         'data-tooltip-content': integration.name,
@@ -272,13 +254,13 @@ export const PickPlatforms: FC<{
                         {integration.identifier === 'youtube' ? (
                           <img
                             src="/icons/platforms/youtube.svg"
-                            className="absolute z-10 -bottom-[5px] -right-[5px]"
+                            className="absolute z-10 -bottom-[5px] -end-[5px]"
                             width={20}
                           />
                         ) : (
                           <Image
                             src={`/icons/platforms/${integration.identifier}.png`}
-                            className="rounded-full absolute z-10 -bottom-[5px] -right-[5px] border border-fifth"
+                            className="rounded-full absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
                             alt={integration.identifier}
                             width={20}
                             height={20}
@@ -310,13 +292,16 @@ export const PickPlatforms: FC<{
                             />
                             <Image
                               src={`/icons/platforms/${integration.identifier}.png`}
-                              className="rounded-full absolute z-10 -bottom-[5px] -right-[5px] border border-fifth"
+                              className="rounded-full absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
                               alt={integration.identifier}
                               width={15}
                               height={15}
                             />
                           </div>
-                          <div>{integration.name.slice(0, 10)}{integration.name.length > 10 ? '...' : ''}</div>
+                          <div>
+                            {integration.name.slice(0, 10)}
+                            {integration.name.length > 10 ? '...' : ''}
+                          </div>
                         </div>
                       </div>
                     </div>

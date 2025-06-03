@@ -1,44 +1,52 @@
 'use client';
+
 import { useCalendar } from '@gitroom/frontend/components/launches/calendar.context';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
 import { useCallback } from 'react';
 import { isUSCitizen } from './helpers/isuscitizen.utils';
 import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import i18next from 'i18next';
 
 export const Filters = () => {
   const week = useCalendar();
+  const t = useT();
+
+  // Set dayjs locale based on current language
+  const currentLanguage = i18next.resolvedLanguage || 'en';
+  dayjs.locale(currentLanguage);
+
   const betweenDates =
     week.display === 'day'
       ? dayjs()
           .year(week.currentYear)
           .isoWeek(week.currentWeek)
           .day(week.currentDay)
-          .format(isUSCitizen() ? 'MM/DD/YYYY' : 'DD/MM/YYYY')
+          .format('L')
       : week.display === 'week'
       ? dayjs()
           .year(week.currentYear)
           .isoWeek(week.currentWeek)
           .startOf('isoWeek')
-          .format(isUSCitizen() ? 'MM/DD/YYYY' : 'DD/MM/YYYY') +
+          .format('L') +
         ' - ' +
         dayjs()
           .year(week.currentYear)
           .isoWeek(week.currentWeek)
           .endOf('isoWeek')
-          .format(isUSCitizen() ? 'MM/DD/YYYY' : 'DD/MM/YYYY')
+          .format('L')
       : dayjs()
           .year(week.currentYear)
           .month(week.currentMonth)
           .startOf('month')
-          .format(isUSCitizen() ? 'MM/DD/YYYY' : 'DD/MM/YYYY') +
+          .format('L') +
         ' - ' +
         dayjs()
           .year(week.currentYear)
           .month(week.currentMonth)
           .endOf('month')
-          .format(isUSCitizen() ? 'MM/DD/YYYY' : 'DD/MM/YYYY');
-
+          .format('L');
   const setDay = useCallback(() => {
     week.setFilters({
       currentDay: +dayjs().day() as 0 | 1 | 2 | 3 | 4 | 5 | 6,
@@ -49,7 +57,6 @@ export const Filters = () => {
       customer: week.customer,
     });
   }, [week]);
-
   const setWeek = useCallback(() => {
     week.setFilters({
       currentDay: +dayjs().day() as 0 | 1 | 2 | 3 | 4 | 5 | 6,
@@ -60,7 +67,6 @@ export const Filters = () => {
       customer: week.customer,
     });
   }, [week]);
-
   const setMonth = useCallback(() => {
     week.setFilters({
       currentDay: +dayjs().day() as 0 | 1 | 2 | 3 | 4 | 5 | 6,
@@ -71,7 +77,6 @@ export const Filters = () => {
       customer: week.customer,
     });
   }, [week]);
-
   const setCustomer = useCallback(
     (customer: string) => {
       week.setFilters({
@@ -85,7 +90,6 @@ export const Filters = () => {
     },
     [week]
   );
-
   const next = useCallback(() => {
     const increaseDay = week.display === 'day';
     const increaseWeek =
@@ -93,7 +97,6 @@ export const Filters = () => {
       (week.display === 'day' && week.currentDay === 6);
     const increaseMonth =
       week.display === 'month' || (increaseWeek && week.currentWeek === 52);
-
     week.setFilters({
       customer: week.customer,
       currentDay: (!increaseDay
@@ -125,7 +128,6 @@ export const Filters = () => {
     week.currentYear,
     week.currentDay,
   ]);
-
   const previous = useCallback(() => {
     const decreaseDay = week.display === 'day';
     const decreaseWeek =
@@ -133,7 +135,6 @@ export const Filters = () => {
       (week.display === 'day' && week.currentDay === 0);
     const decreaseMonth =
       week.display === 'month' || (decreaseWeek && week.currentWeek === 1);
-
     week.setFilters({
       customer: week.customer,
       currentDay: (!decreaseDay
@@ -168,7 +169,7 @@ export const Filters = () => {
   return (
     <div className="text-textColor flex flex-col md:flex-row gap-[8px] items-center select-none">
       <div className="flex flex-grow flex-row">
-        <div onClick={previous} className="cursor-pointer text-textColor">
+        <div onClick={previous} className="cursor-pointer text-textColor rtl:rotate-180">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="20"
@@ -190,10 +191,10 @@ export const Filters = () => {
                 .day(week.currentDay)
                 .format('dddd')}`
             : week.display === 'week'
-            ? `Week ${week.currentWeek}`
-            : `${dayjs().month(week.currentMonth).format('MMMM')}`}
+            ? t('week_number', 'Week {{number}}', { number: week.currentWeek })
+            : dayjs().month(week.currentMonth).format('MMMM')}
         </div>
-        <div onClick={next} className="cursor-pointer text-textColor">
+        <div onClick={next} className="cursor-pointer text-textColor rtl:rotate-180">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="20"
@@ -222,7 +223,7 @@ export const Filters = () => {
           )}
           onClick={setDay}
         >
-          Day
+          {t('day', 'Day')}
         </div>
         <div
           className={clsx(
@@ -231,7 +232,7 @@ export const Filters = () => {
           )}
           onClick={setWeek}
         >
-          Week
+          {t('week', 'Week')}
         </div>
         <div
           className={clsx(
@@ -240,7 +241,7 @@ export const Filters = () => {
           )}
           onClick={setMonth}
         >
-          Month
+          {t('month', 'Month')}
         </div>
       </div>
     </div>

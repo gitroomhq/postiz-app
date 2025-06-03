@@ -59,3 +59,4 @@ Thumbs.db
 libraries/plugins/src/plugins.ts
 
 node-compile-cache
+i18n.cache

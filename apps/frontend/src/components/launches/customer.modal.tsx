@@ -6,47 +6,52 @@ import { Autocomplete } from '@mantine/core';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Button } from '@gitroom/react/form/button';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const CustomerModal: FC<{
-  integration: Integration & { customer?: { id: string; name: string } };
+  integration: Integration & {
+    customer?: {
+      id: string;
+      name: string;
+    };
+  };
   onClose: () => void;
 }> = (props) => {
+  const t = useT();
+
   const fetch = useFetch();
   const { onClose, integration } = props;
   const [customer, setCustomer] = useState(
     integration.customer?.name || undefined
   );
   const modal = useModals();
-
   const loadCustomers = useCallback(async () => {
     return (await fetch('/integrations/customers')).json();
   }, []);
-
   const removeFromCustomer = useCallback(async () => {
     saveCustomer(true);
   }, []);
-
-  const saveCustomer = useCallback(async (removeCustomer?: boolean) => {
-    if (!customer) {
-      return;
-    }
-
-    await fetch(`/integrations/${integration.id}/customer-name`, {
-      method: 'PUT',
-      body: JSON.stringify({ name: removeCustomer ? '' : customer }),
-    });
-
-    modal.closeAll();
-    onClose();
-  }, [customer]);
-
+  const saveCustomer = useCallback(
+    async (removeCustomer?: boolean) => {
+      if (!customer) {
+        return;
+      }
+      await fetch(`/integrations/${integration.id}/customer-name`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          name: removeCustomer ? '' : customer,
+        }),
+      });
+      modal.closeAll();
+      onClose();
+    },
+    [customer]
+  );
   const { data } = useSWR('/customers', loadCustomers);
-
   return (
     <div className="rounded-[4px] border border-customColor6 bg-sixth px-[16px] pb-[16px] relative w-full">
       <TopTitle title={`Move / Add to customer`} />
       <button
-        className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+        className="outline-none absolute end-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
         type="button"
         onClick={() => modal.closeAll()}
       >
@@ -80,8 +85,12 @@ export const CustomerModal: FC<{
       </div>
 
       <div className="my-[16px] flex gap-[10px]">
-        <Button onClick={() => saveCustomer()}>Save</Button>
-        {!!integration?.customer?.name && <Button className="bg-red-700" onClick={removeFromCustomer}>Remove from customer</Button>}
+        <Button onClick={() => saveCustomer()}>{t('save', 'Save')}</Button>
+        {!!integration?.customer?.name && (
+          <Button className="bg-red-700" onClick={removeFromCustomer}>
+            {t('remove_from_customer', 'Remove from customer')}
+          </Button>
+        )}
       </div>
     </div>
   );

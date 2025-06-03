@@ -7,36 +7,45 @@ import { Input } from '@gitroom/react/form/input';
 import { ColorPicker } from '@gitroom/react/form/color.picker';
 import { Button } from '@gitroom/react/form/button';
 import { uniqBy } from 'lodash';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const TagsComponent: FC<{
   name: string;
   label: string;
   initial: any[];
-  onChange: (event: { target: { value: any[]; name: string } }) => void;
+  onChange: (event: {
+    target: {
+      value: any[];
+      name: string;
+    };
+  }) => void;
 }> = (props) => {
   const { onChange, name, initial } = props;
   const fetch = useFetch();
   const [tagValue, setTagValue] = useState<any[]>(initial?.slice(0) || []);
   const [suggestions, setSuggestions] = useState<string>('');
   const [showModal, setShowModal] = useState<any>(false);
-
   const loadTags = useCallback(async () => {
     return (await fetch('/posts/tags')).json();
   }, []);
-
   const { isLoading, data, mutate } = useSWR<{
-    tags: { name: string; color: string }[];
+    tags: {
+      name: string;
+      color: string;
+    }[];
   }>('tags', loadTags);
-
   const onDelete = useCallback(
     (tagIndex: number) => {
       const modify = tagValue.filter((_, i) => i !== tagIndex);
       setTagValue(modify);
-      onChange({ target: { value: modify, name } });
+      onChange({
+        target: {
+          value: modify,
+          name,
+        },
+      });
     },
     [tagValue]
   );
-
   const createNewTag = useCallback(
     async (newTag: any) => {
       const val = await new Promise((resolve) => {
@@ -46,15 +55,12 @@ export const TagsComponent: FC<{
           close: () => setShowModal(false),
         });
       });
-
       setShowModal(false);
       mutate();
-
       return val;
     },
     [mutate]
   );
-
   const edit = useCallback(
     (tag: any) => async (e: any) => {
       e.stopPropagation();
@@ -68,37 +74,49 @@ export const TagsComponent: FC<{
           close: () => setShowModal(false),
         });
       });
-
       setShowModal(false);
       mutate();
-
       const modify = tagValue.map((t) => {
         if (t.label === tag.name) {
-          return { value: val, label: val };
+          return {
+            value: val,
+            label: val,
+          };
         }
-
         return t;
       });
-
       setTagValue(modify);
-      onChange({ target: { value: modify, name } });
+      onChange({
+        target: {
+          value: modify,
+          name,
+        },
+      });
     },
     [tagValue, data]
   );
-
   const onAddition = useCallback(
     async (newTag: any) => {
       if (tagValue.length >= 3) {
         return;
       }
-
       const getTag = data?.tags?.find((f) => f.name === newTag.label)
         ? newTag.label
         : await createNewTag(newTag);
-
-      const modify = [...tagValue, { value: getTag, label: getTag }];
+      const modify = [
+        ...tagValue,
+        {
+          value: getTag,
+          label: getTag,
+        },
+      ];
       setTagValue(modify);
-      onChange({ target: { value: modify, name } });
+      onChange({
+        target: {
+          value: modify,
+          name,
+        },
+      });
     },
     [tagValue, data]
   );
@@ -111,29 +129,36 @@ export const TagsComponent: FC<{
   // }, []);
 
   const suggestionsArray = useMemo(() => {
-    return uniqBy<{ label: string; value: string }>(
+    return uniqBy<{
+      label: string;
+      value: string;
+    }>(
       [
         ...(data?.tags.map((p) => ({
           label: p.name,
           value: p.name,
         })) || []),
         ...tagValue,
-        { label: suggestions, value: suggestions },
+        {
+          label: suggestions,
+          value: suggestions,
+        },
       ].filter((f) => f.label),
       (o) => o.label
     );
   }, [suggestions, tagValue]);
 
+  const t = useT();
+
   if (isLoading) {
     return null;
   }
-
   return (
     <>
       {showModal && <ShowModal {...showModal} />}
       <div className="flex-1 flex tags-top">
         <ReactTags
-          placeholderText="Add a tag"
+          placeholderText={t('add_a_tag', 'Add a tag')}
           suggestions={suggestionsArray}
           selected={tagValue}
           onAdd={onAddition}
@@ -146,17 +171,19 @@ export const TagsComponent: FC<{
             );
             return (
               <div
-                className={`min-w-[50px] float-left ml-[4px] p-[3px] rounded-sm relative`}
-                style={{ backgroundColor: findTag?.color }}
+                className={`min-w-[50px] float-left ms-[4px] p-[3px] rounded-sm relative`}
+                style={{
+                  backgroundColor: findTag?.color,
+                }}
               >
                 <div
-                  className="absolute -top-[5px] left-[10px] text-[12px] text-red-600 bg-white px-[3px] rounded-full"
+                  className="absolute -top-[5px] start-[10px] text-[12px] text-red-600 bg-white px-[3px] rounded-full"
                   onClick={edit(findTag)}
                 >
-                  Edit
+                  {t('edit', 'Edit')}
                 </div>
                 <div
-                  className="absolute -top-[5px] -left-[5px] text-[12px] text-red-600 bg-white px-[3px] rounded-full"
+                  className="absolute -top-[5px] -start-[5px] text-[12px] text-red-600 bg-white px-[3px] rounded-full"
                   onClick={() => onDelete(findIndex)}
                 >
                   X
@@ -172,7 +199,6 @@ export const TagsComponent: FC<{
     </>
   );
 };
-
 const ShowModal: FC<{
   tag: string;
   color?: string;
@@ -180,6 +206,8 @@ const ShowModal: FC<{
   close: () => void;
   resolve: (value: string) => void;
 }> = (props) => {
+  const t = useT();
+
   const { close, tag, resolve, color: theColor, id } = props;
   const fetch = useFetch();
   const [color, setColor] = useState<string>(theColor || '#942828');
@@ -187,17 +215,19 @@ const ShowModal: FC<{
   const save = useCallback(async () => {
     await fetch(id ? `/posts/tags/${id}` : '/posts/tags', {
       method: id ? 'PUT' : 'POST',
-      body: JSON.stringify({ name: tagName, color }),
+      body: JSON.stringify({
+        name: tagName,
+        color,
+      }),
     });
-
     resolve(tagName);
   }, [tagName, color, id]);
   return (
-    <div className="bg-black/40 fixed left-0 top-0 w-full h-full z-[500]">
+    <div className="bg-black/40 fixed start-0 top-0 w-full h-full z-[500]">
       <div className="relative w-[500px] mx-auto flex gap-[20px] flex-col flex-1 rounded-[4px] border border-customColor6 bg-sixth p-[16px] pt-0">
         <TopTitle title={`Create a new tag`} />
         <button
-          className="outline-none absolute right-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+          className="outline-none absolute end-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
           type="button"
         >
           <svg
@@ -234,7 +264,7 @@ const ShowModal: FC<{
             canBeCancelled={false}
           />
           <Button onClick={save} className="mt-[16px]">
-            Save
+            {t('save', 'Save')}
           </Button>
         </div>
       </div>

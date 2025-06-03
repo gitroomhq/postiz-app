@@ -1,4 +1,4 @@
 export class AddCommentDto {
-    content: string;
-    date: string;
+  content: string;
+  date: string;
 }

@@ -5,29 +5,34 @@ import { useFieldArray } from 'react-hook-form';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { Button } from '@gitroom/react/form/button';
 import { Subreddit } from './subreddit';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 const WrapcastProvider: FC = () => {
   const { register, control } = useSettings();
   const { fields, append, remove } = useFieldArray({
-    control, // control props comes from useForm (optional: if you are using FormContext)
+    control,
+    // control props comes from useForm (optional: if you are using FormContext)
     name: 'subreddit', // unique name for your Field Array
   });
+  const t = useT();
 
   const addField = useCallback(() => {
     append({});
   }, [fields, append]);
-
   const deleteField = useCallback(
     (index: number) => async () => {
       if (
-        !(await deleteDialog('Are you sure you want to delete this Subreddit?'))
+        !(await deleteDialog(
+          t(
+            'are_you_sure_you_want_to_delete_this_subreddit',
+            'Are you sure you want to delete this Subreddit?'
+          )
+        ))
       )
         return;
       remove(index);
     },
     [fields, remove]
   );
-
   return (
     <>
       <div className="flex flex-col gap-[20px] mb-[20px]">
@@ -35,7 +40,7 @@ const WrapcastProvider: FC = () => {
           <div key={field.id} className="flex flex-col relative">
             <div
               onClick={deleteField(index)}
-              className="absolute -left-[10px] justify-center items-center flex -top-[10px] w-[20px] h-[20px] bg-red-600 rounded-full text-textColor"
+              className="absolute -start-[10px] justify-center items-center flex -top-[10px] w-[20px] h-[20px] bg-red-600 rounded-full text-textColor"
             >
               x
             </div>
@@ -43,11 +48,10 @@ const WrapcastProvider: FC = () => {
           </div>
         ))}
       </div>
-      <Button onClick={addField}>Add Channel</Button>
+      <Button onClick={addField}>{t('add_channel', 'Add Channel')}</Button>
     </>
   );
 };
-
 export default withProvider(
   WrapcastProvider,
   undefined,
@@ -58,7 +62,6 @@ export default withProvider(
     ) {
       return 'Warpcast can only accept images';
     }
-
     return true;
   },
   3000

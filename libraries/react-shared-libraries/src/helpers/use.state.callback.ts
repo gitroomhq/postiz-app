@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-
 export function useStateCallback<T>(
   initialState: T
 ): [T, (state: T, cb?: (state: T) => void) => void] {
@@ -19,6 +18,5 @@ export function useStateCallback<T>(
       cbRef.current = undefined; // reset callback after execution
     }
   }, [state]);
-
   return [state, setStateCallback];
 }

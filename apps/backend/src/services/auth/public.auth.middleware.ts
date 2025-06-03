@@ -17,16 +17,18 @@ export class PublicAuthMiddleware implements NestMiddleware {
       const org = await this._organizationService.getOrgByApiKey(auth);
       if (!org) {
         res.status(HttpStatus.UNAUTHORIZED).json({ msg: 'Invalid API key' });
-        return ;
+        return;
       }
 
       if (!!process.env.STRIPE_SECRET_KEY && !org.subscription) {
-        res.status(HttpStatus.UNAUTHORIZED).json({ msg: 'No subscription found' });
-        return ;
+        res
+          .status(HttpStatus.UNAUTHORIZED)
+          .json({ msg: 'No subscription found' });
+        return;
       }
 
       // @ts-ignore
-      req.org = {...org, users: [{users: {role: 'SUPERADMIN'}}]};
+      req.org = { ...org, users: [{ users: { role: 'SUPERADMIN' } }] };
     } catch (err) {
       throw new HttpForbiddenException();
     }

@@ -1,3 +1,5 @@
+'use client';
+
 import React, {
   FC,
   MouseEventHandler,
@@ -19,14 +21,16 @@ import { Integration } from '@prisma/client';
 import { SettingsModal } from '@gitroom/frontend/components/launches/settings.modal';
 import { CustomVariables } from '@gitroom/frontend/components/launches/add.provider.component';
 import { useRouter } from 'next/navigation';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const Menu: FC<{
   canEnable: boolean;
   canDisable: boolean;
   canChangeProfilePicture: boolean;
   canChangeNickName: boolean;
   refreshChannel: (
-    integration: Integration & { identifier: string }
+    integration: Integration & {
+      identifier: string;
+    }
   ) => () => void;
   id: string;
   mutate: () => void;
@@ -42,6 +46,8 @@ export const Menu: FC<{
     canChangeNickName,
     refreshChannel,
   } = props;
+  const t = useT();
+
   const fetch = useFetch();
   const router = useRouter();
   const { integrations } = useCalendar();
@@ -51,11 +57,9 @@ export const Menu: FC<{
   const ref = useClickOutside<HTMLDivElement>(() => {
     setShow(false);
   });
-
   const findIntegration: any = useMemo(() => {
     return integrations.find((integration) => integration.id === id);
   }, [integrations, id]);
-
   const changeShow: MouseEventHandler<HTMLDivElement> = useCallback(
     (e) => {
       e.stopPropagation();
@@ -63,7 +67,6 @@ export const Menu: FC<{
     },
     [show]
   );
-
   const disableChannel = useCallback(async () => {
     if (
       !(await deleteDialog(
@@ -75,14 +78,14 @@ export const Menu: FC<{
     }
     await fetch('/integrations/disable', {
       method: 'POST',
-      body: JSON.stringify({ id }),
+      body: JSON.stringify({
+        id,
+      }),
     });
-
     toast.show('Channel Disabled', 'success');
     setShow(false);
     onChange(false);
   }, []);
-
   const deleteChannel = useCallback(async () => {
     if (
       !(await deleteDialog(
@@ -94,9 +97,10 @@ export const Menu: FC<{
     }
     const deleteIntegration = await fetch('/integrations', {
       method: 'DELETE',
-      body: JSON.stringify({ id }),
+      body: JSON.stringify({
+        id,
+      }),
     });
-
     if (deleteIntegration.status === 406) {
       toast.show(
         'You have to delete all the posts associated with this channel before deleting it',
@@ -104,23 +108,21 @@ export const Menu: FC<{
       );
       return;
     }
-
     toast.show('Channel Deleted', 'success');
     setShow(false);
     onChange(true);
   }, []);
-
   const enableChannel = useCallback(async () => {
     await fetch('/integrations/enable', {
       method: 'POST',
-      body: JSON.stringify({ id }),
+      body: JSON.stringify({
+        id,
+      }),
     });
-
     toast.show('Channel Enabled', 'success');
     setShow(false);
     onChange(false);
   }, []);
-
   const editTimeTable = useCallback(() => {
     const findIntegration = integrations.find(
       (integration) => integration.id === id
@@ -137,7 +139,6 @@ export const Menu: FC<{
     });
     setShow(false);
   }, [integrations]);
-
   const changeBotPicture = useCallback(() => {
     const findIntegration = integrations.find(
       (integration) => integration.id === id
@@ -161,12 +162,10 @@ export const Menu: FC<{
     });
     setShow(false);
   }, [integrations]);
-
   const additionalSettings = useCallback(() => {
     const findIntegration = integrations.find(
       (integration) => integration.id === id
     );
-
     modal.openModal({
       classNames: {
         modal: 'w-[100%] max-w-[600px] bg-transparent text-textColor',
@@ -186,15 +185,12 @@ export const Menu: FC<{
         />
       ),
     });
-
     setShow(false);
   }, [integrations]);
-
   const addToCustomer = useCallback(() => {
     const findIntegration = integrations.find(
       (integration) => integration.id === id
     );
-
     modal.openModal({
       classNames: {
         modal: 'w-[100%] max-w-[600px] bg-transparent text-textColor',
@@ -214,10 +210,8 @@ export const Menu: FC<{
         />
       ),
     });
-
     setShow(false);
   }, [integrations]);
-
   const updateCredentials = useCallback(() => {
     modal.openModal({
       title: '',
@@ -234,7 +228,6 @@ export const Menu: FC<{
       ),
     });
   }, []);
-
   return (
     <div
       className="cursor-pointer relative select-none"
@@ -256,7 +249,7 @@ export const Menu: FC<{
       {show && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className={`absolute top-[100%] left-0 p-[8px] px-[20px] bg-fifth flex flex-col gap-[16px] z-[100] rounded-[8px] border border-tableBorder ${interClass} text-nowrap`}
+          className={`absolute top-[100%] start-0 p-[8px] px-[20px] bg-fifth flex flex-col gap-[16px] z-[100] rounded-[8px] border border-tableBorder ${interClass} text-nowrap`}
         >
           {canDisable &&
             findIntegration?.refreshNeeded &&
@@ -279,7 +272,9 @@ export const Menu: FC<{
                     />
                   </svg>
                 </div>
-                <div className="text-[12px]">Reconnect channel</div>
+                <div className="text-[12px]">
+                  {t('reconnect_channel', 'Reconnect channel')}
+                </div>
               </div>
             )}
           {!!findIntegration?.isCustomFields && (
@@ -301,7 +296,9 @@ export const Menu: FC<{
                   />
                 </svg>
               </div>
-              <div className="text-[12px]">Update Credentials</div>
+              <div className="text-[12px]">
+                {t('update_credentials', 'Update Credentials')}
+              </div>
             </div>
           )}
           {findIntegration?.additionalSettings !== '[]' && (
@@ -323,7 +320,9 @@ export const Menu: FC<{
                   />
                 </svg>
               </div>
-              <div className="text-[12px]">Additional Settings</div>
+              <div className="text-[12px]">
+                {t('additional_settings', 'Additional Settings')}
+              </div>
             </div>
           )}
           {(canChangeProfilePicture || canChangeNickName) && (
@@ -346,7 +345,7 @@ export const Menu: FC<{
                 </svg>
               </div>
               <div className="text-[12px]">
-                Change Bot{' '}
+                {t('change_bot', 'Change Bot')}
                 {[
                   canChangeProfilePicture && 'Picture',
                   canChangeNickName && 'Nickname',
@@ -371,7 +370,9 @@ export const Menu: FC<{
                 />
               </svg>
             </div>
-            <div className="text-[12px]">Move / add to customer</div>
+            <div className="text-[12px]">
+              {t('move_add_to_customer', 'Move / add to customer')}
+            </div>
           </div>
           <div className="flex gap-[12px] items-center" onClick={editTimeTable}>
             <div>
@@ -388,7 +389,9 @@ export const Menu: FC<{
                 />
               </svg>
             </div>
-            <div className="text-[12px]">Edit Time Slots</div>
+            <div className="text-[12px]">
+              {t('edit_time_slots', 'Edit Time Slots')}
+            </div>
           </div>
           {canEnable && (
             <div
@@ -409,7 +412,9 @@ export const Menu: FC<{
                   />
                 </svg>
               </div>
-              <div className="text-[12px]">Enable Channel</div>
+              <div className="text-[12px]">
+                {t('enable_channel', 'Enable Channel')}
+              </div>
             </div>
           )}
 
@@ -432,7 +437,9 @@ export const Menu: FC<{
                   />
                 </svg>
               </div>
-              <div className="text-[12px]">Disable Channel</div>
+              <div className="text-[12px]">
+                {t('disable_channel', 'Disable Channel')}
+              </div>
             </div>
           )}
 
@@ -451,7 +458,7 @@ export const Menu: FC<{
                 />
               </svg>
             </div>
-            <div className="text-[12px]">Delete</div>
+            <div className="text-[12px]">{t('delete', 'Delete')}</div>
           </div>
         </div>
       )}

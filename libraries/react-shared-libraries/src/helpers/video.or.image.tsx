@@ -1,6 +1,5 @@
 import { FC } from 'react';
 import { clsx } from 'clsx';
-
 export const VideoOrImage: FC<{
   src: string;
   autoplay: boolean;
@@ -18,7 +17,6 @@ export const VideoOrImage: FC<{
       />
     );
   }
-
   return (
     <img
       className={clsx(
