@@ -1,6 +1,4 @@
-import {
-  IsBoolean, IsIn, IsString, MinLength
-} from 'class-validator';
+import { IsBoolean, IsIn, IsString, MinLength } from 'class-validator';
 
 export class GeneratorDto {
   @IsString()

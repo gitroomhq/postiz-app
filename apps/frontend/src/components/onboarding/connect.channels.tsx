@@ -19,7 +19,7 @@ import { Integration } from '@prisma/client';
 import { web3List } from '@gitroom/frontend/components/launches/web3/web3.list';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const ConnectChannels: FC = () => {
   const fetch = useFetch();
   const { isGeneral } = useVariables();
@@ -28,11 +28,9 @@ export const ConnectChannels: FC = () => {
   const [popup, setPopups] = useState<undefined | string[]>(undefined);
   const toaster = useToaster();
   const [showCustom, setShowCustom] = useState<any>(undefined);
-
   const getIntegrations = useCallback(async () => {
     return (await fetch('/integrations')).json();
   }, []);
-
   const [reload, setReload] = useState(false);
 
   // const getSocialLink = useCallback(
@@ -50,21 +48,23 @@ export const ConnectChannels: FC = () => {
     const { component: Web3Providers } = web3List.find(
       (item) => item.identifier === id
     )!;
-
     const { url } = await (await fetch(`/integrations/social/${id}`)).json();
-
     setShowCustom(
       <Web3Providers
         onComplete={async (code, newState) => {
-          if (await deleteDialog('Connection found, should we continue?', 'Continue')) {
+          if (
+            await deleteDialog(
+              'Connection found, should we continue?',
+              'Continue'
+            )
+          ) {
             window.open(
               `/integrations/social/${id}?code=${code}&state=${newState}`,
               'Social Connect',
               'width=700,height=700'
             );
-            return ;
+            return;
           }
-
           setShowCustom(undefined);
         }}
         nonce={url}
@@ -72,42 +72,46 @@ export const ConnectChannels: FC = () => {
     );
     return;
   };
-
   const refreshChannel = useCallback(
-    (integration: Integration & { identifier: string }) => async () => {
-      const { url } = await (
-        await fetch(
-          `/integrations/social/${integration.identifier}?refresh=${integration.internalId}`,
-          {
-            method: 'GET',
-          }
-        )
-      ).json();
-
-      window.location.href = url;
-    },
+    (
+        integration: Integration & {
+          identifier: string;
+        }
+      ) =>
+      async () => {
+        const { url } = await (
+          await fetch(
+            `/integrations/social/${integration.identifier}?refresh=${integration.internalId}`,
+            {
+              method: 'GET',
+            }
+          )
+        ).json();
+        window.location.href = url;
+      },
     []
   );
-
   const addMessage = useCallback(
-    (event: MessageEvent<{ msg: string; success: boolean }>) => {
+    (
+      event: MessageEvent<{
+        msg: string;
+        success: boolean;
+      }>
+    ) => {
       if (!event.data.msg) {
         return;
       }
-
       toaster.show(event.data.msg, event.data.success ? 'success' : 'warning');
       setShowCustom(undefined);
     },
     []
   );
-
   useEffect(() => {
     window.addEventListener('message', addMessage);
     return () => {
       window.removeEventListener('message', addMessage);
     };
   });
-
   const getSocialLink = useCallback(
     (
         identifier: string,
@@ -130,12 +134,10 @@ export const ConnectChannels: FC = () => {
               }`
             )
           ).json();
-
           if (err) {
             toaster.show('Could not connect to the platform', 'warning');
             return;
           }
-
           setShowCustom(undefined);
           window.open(url, 'Social Connect', 'width=700,height=700');
         };
@@ -159,7 +161,6 @@ export const ConnectChannels: FC = () => {
           openWeb3(identifier);
           return;
         }
-
         if (customFields) {
           setShowCustom(
             <CustomVariables
@@ -173,31 +174,25 @@ export const ConnectChannels: FC = () => {
           );
           return;
         }
-
         await gotoIntegration();
       },
     []
   );
-
   const load = useCallback(async (path: string) => {
     const list = (await (await fetch(path)).json()).integrations;
     setPopups(list.map((p: any) => p.id));
     return list;
   }, []);
-
   const { data: integrations, mutate } = useSWR('/integrations/list', load, {
     fallbackData: [],
   });
-
   const user = useUser();
-
   const totalNonDisabledChannels = useMemo(() => {
     return (
       integrations?.filter((integration: any) => !integration.disabled)
         ?.length || 0
     );
   }, [integrations]);
-
   const sortedIntegrations = useMemo(() => {
     return orderBy(
       integrations,
@@ -205,12 +200,10 @@ export const ConnectChannels: FC = () => {
       ['desc', 'asc', 'asc']
     );
   }, [integrations]);
-
   useEffect(() => {
     if (sortedIntegrations.length === 0 || !popup) {
       return;
     }
-
     const betweenSteps = sortedIntegrations.find((p) => p.inBetweenSteps);
     if (betweenSteps && popup.indexOf(betweenSteps.id) === -1) {
       const url = new URL(window.location.href);
@@ -220,17 +213,17 @@ export const ConnectChannels: FC = () => {
       setPopups([...popup, betweenSteps.id]);
     }
   }, [sortedIntegrations, popup]);
-
   const update = useCallback(async (shouldReload: boolean) => {
     if (shouldReload) {
       setReload(true);
     }
     await mutate();
-
     if (shouldReload) {
       setReload(false);
     }
   }, []);
+
+  const t = useT();
 
   const continueIntegration = useCallback(
     (integration: any) => async () => {
@@ -241,25 +234,22 @@ export const ConnectChannels: FC = () => {
     },
     []
   );
-
   const finishUpdate = useCallback(() => {
     setIdentifier(undefined);
     update(true);
   }, []);
-
   const { data } = useSWR('get-all-integrations', getIntegrations);
-
   return (
     <>
       {!!showCustom && (
-        <div className="absolute w-full h-full top-0 left-0 bg-black/40 z-[400]">
-          <div className="absolute w-full h-full bg-primary/80 left-0 top-0 z-[200] p-[50px] flex justify-center">
+        <div className="absolute w-full h-full top-0 start-0 bg-black/40 z-[400]">
+          <div className="absolute w-full h-full bg-primary/80 start-0 top-0 z-[200] p-[50px] flex justify-center">
             <div className="w-[400px]">{showCustom}</div>
           </div>
         </div>
       )}
       {!!identifier && (
-        <div className="absolute w-full h-full bg-primary/80 left-0 top-0 z-[200] p-[30px] flex items-center justify-center">
+        <div className="absolute w-full h-full bg-primary/80 start-0 top-0 z-[200] p-[30px] flex items-center justify-center">
           <div className="w-[400px]">
             <ApiModal
               close={() => setIdentifier(undefined)}
@@ -272,15 +262,19 @@ export const ConnectChannels: FC = () => {
       )}
       <div className="flex flex-col">
         <div className="flex gap-[4px] flex-col">
-          <div className="text-[20px]">Connect Channels</div>
+          <div className="text-[20px]">
+            {t('connect_channels', 'Connect Channels')}
+          </div>
           <div className="text-[14px] text-customColor18">
-            Connect your social media and publishing websites channels to
-            schedule posts later
+            {t(
+              'connect_your_social_media_and_publishing_websites_channels_to_schedule_posts_later',
+              'Connect your social media and publishing websites channels to\n            schedule posts later'
+            )}
           </div>
         </div>
         <div className="flex border border-customColor47 rounded-[4px] mt-[16px]">
           <div className="flex-1 flex flex-col p-[16px] gap-[10px]">
-            <div className="text-[18px]">Social</div>
+            <div className="text-[18px]">{t('social', 'Social')}</div>
             <div className="grid grid-cols-3 gap-[16px]">
               {data?.social.map((social: any) => (
                 <div
@@ -311,7 +305,9 @@ export const ConnectChannels: FC = () => {
           </div>
           {!isGeneral && (
             <div className="flex-1 flex flex-col p-[16px] gap-[10px]">
-              <div className="text-[18px]">Publishing Platforms</div>
+              <div className="text-[18px]">
+                {t('publishing_platforms', 'Publishing Platforms')}
+              </div>
               <div className="grid grid-cols-3 gap-[16px]">
                 {data?.article.map((article: any) => (
                   <div
@@ -337,7 +333,9 @@ export const ConnectChannels: FC = () => {
         <div className="my-[24px] border border-customColor47 rounded-[4px] p-[16px]">
           <div className="gap-[16px] flex flex-col">
             {sortedIntegrations.length === 0 && (
-              <div className="text-[12px]">No channels</div>
+              <div className="text-[12px]">
+                {t('no_channels', 'No channels')}
+              </div>
             )}
             {sortedIntegrations.map((integration) => (
               <div key={integration.id} className="flex gap-[8px] items-center">
@@ -349,13 +347,13 @@ export const ConnectChannels: FC = () => {
                 >
                   {integration.inBetweenSteps && (
                     <div
-                      className="absolute left-0 top-0 w-[39px] h-[46px] cursor-pointer"
+                      className="absolute start-0 top-0 w-[39px] h-[46px] cursor-pointer"
                       onClick={continueIntegration(integration)}
                     >
-                      <div className="bg-red-500 w-[15px] h-[15px] rounded-full -left-[5px] -top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
+                      <div className="bg-red-500 w-[15px] h-[15px] rounded-full -start-[5px] -top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
                         !
                       </div>
-                      <div className="bg-primary/60 w-[39px] h-[46px] left-0 top-0 absolute rounded-full z-[199]" />
+                      <div className="bg-primary/60 w-[39px] h-[46px] start-0 top-0 absolute rounded-full z-[199]" />
                     </div>
                   )}
                   <Image
@@ -367,7 +365,7 @@ export const ConnectChannels: FC = () => {
                   />
                   <Image
                     src={`/icons/platforms/${integration.identifier}.png`}
-                    className="rounded-full absolute z-10 -bottom-[5px] -right-[5px] border border-fifth"
+                    className="rounded-full absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
                     alt={integration.identifier}
                     width={20}
                     height={20}

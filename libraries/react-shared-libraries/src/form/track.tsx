@@ -1,7 +1,7 @@
 'use client';
+
 import { Slider } from '@mantine/core';
 import { FC } from 'react';
-
 export const Track: FC<{
   value: number;
   min: number;
@@ -17,7 +17,8 @@ export const Track: FC<{
       onChange={onChange}
       size="xl"
       classNames={{
-        track: 'before:bg-customColor3 before:border before:border-customColor6',
+        track:
+          'before:bg-customColor3 before:border before:border-customColor6',
         mark: 'border-customColor6',
         markFilled: 'border-customColor7',
       }}

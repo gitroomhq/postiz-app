@@ -2,18 +2,17 @@ import { FC, useCallback, useState } from 'react';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { SignaturesComponent } from '@gitroom/frontend/components/settings/signatures.component';
 import { Transforms } from 'slate';
-
-export const SignatureBox: FC<{ editor: any }> = ({ editor }) => {
+export const SignatureBox: FC<{
+  editor: any;
+}> = ({ editor }) => {
   const [showModal, setShowModal] = useState<any>(false);
   const addSignature = useCallback(() => {
     setShowModal(true);
   }, [showModal]);
-
   const appendValue = (val: string) => {
-    Transforms.insertText(editor, "\n" + val);
+    Transforms.insertText(editor, '\n' + val);
     setShowModal(false);
   };
-
   return (
     <>
       {showModal && (
@@ -41,18 +40,17 @@ export const SignatureBox: FC<{ editor: any }> = ({ editor }) => {
     </>
   );
 };
-
 export const SignatureModal: FC<{
   close: () => void;
   appendSignature: (sign: string) => void;
 }> = (props) => {
   const { close, appendSignature } = props;
   return (
-    <div className="bg-black/40 fixed left-0 top-0 w-full h-full z-[500]">
+    <div className="bg-black/40 fixed start-0 top-0 w-full h-full z-[500]">
       <div className="relative w-[900px] mx-auto flex gap-[20px] flex-col flex-1 rounded-[4px] border border-customColor6 bg-sixth p-[16px] pt-0">
         <TopTitle title={`Add signature`} />
         <button
-          className="outline-none absolute right-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+          className="outline-none absolute end-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
           type="button"
         >
           <svg

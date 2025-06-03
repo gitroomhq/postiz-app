@@ -1,9 +1,9 @@
-import {IsNumber, IsString} from "class-validator";
+import { IsNumber, IsString } from 'class-validator';
 
 export class DevToTagsSettingsDto {
-    @IsNumber()
-    value: number;
+  @IsNumber()
+  value: number;
 
-    @IsString()
-    label: string;
+  @IsString()
+  label: string;
 }

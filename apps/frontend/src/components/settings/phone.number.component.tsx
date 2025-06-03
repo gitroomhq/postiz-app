@@ -17,6 +17,7 @@ import { Tooltip } from 'react-tooltip';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { setCookie } from '@gitroom/frontend/components/layout/layout.context';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 
 export const AddPhoneNumber = ({ userId }: { userId?: string }) => {
@@ -25,6 +26,7 @@ export const AddPhoneNumber = ({ userId }: { userId?: string }) => {
   const user = useUser();
   const fetch = useFetch();
   const toast = useToaster();
+  const t = useT();
   const [codeStatus, setCodeStatus] = useState<'sent' | 'sending' | null>(null)
   const [verifying, setVerifying] = useState(false)
 
@@ -126,7 +128,7 @@ export const AddPhoneNumber = ({ userId }: { userId?: string }) => {
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(submit)}>
         <div className="relative flex gap-[10px] flex-col flex-1 rounded-[4px] border border-customColor6 bg-sixth p-[16px] pt-0">
-          <TopTitle title={userId ? "Change Phone number" : "Verify Phone number"} />
+          <TopTitle title={userId ? t('change_phone_number', 'Change Phone number') : t('verify_phone_number', 'Verify Phone number')} />
           <button
             onClick={closeModal}
             className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
@@ -151,17 +153,17 @@ export const AddPhoneNumber = ({ userId }: { userId?: string }) => {
           <PhoneInput
             className={clsx(phoneInputDisabled && 'pointer-events-none opacity-30')}
             required={!phoneInputDisabled}
-            label="Phone number"
-            placeholder="Phone number"
+            label={t('phone_number', 'Phone number')}
+            placeholder={t('phone_number', 'Phone number')}
             name="phoneNumber"
           />
 
           {codeStatus === 'sent' && (
-            <CodeInput name='code' label='Code' />
+            <CodeInput name='code' label={t('code', 'Code')} />
           )}
 
           <Button disabled={codeStatus === 'sending' || verifying} type="submit" className="mt-[18px]">
-            {codeStatus === 'sent' ? 'Verify Phone Number' : 'Send Verification Code'}
+            {codeStatus === 'sent' ? t('verify_phone_number', 'Verify Phone Number') : t('send_verification_code', 'Send Verification Code')}
           </Button>
         </div>
       </form>
@@ -172,6 +174,7 @@ export const AddPhoneNumber = ({ userId }: { userId?: string }) => {
 export const PhoneNumberComponent = () => {
   const user = useUser();
   const modals = useModals();
+  const t = useT();
 
   const addPhoneNumber = useCallback(() => {
     modals.openModal({
@@ -205,9 +208,9 @@ export const PhoneNumberComponent = () => {
 
   return (
     <div className="flex flex-col">
-      <h3 className="text-[20px]">WhatsApp AI Integration</h3>
+      <h3 className="text-[20px]">{t('whatsapp_integration_title', 'WhatsApp AI Integration')}</h3>
       <div className="text-customColor18 mt-[4px]">
-        Connect your WhatsApp number to interact directly with our AI-powered assistant. Automate tasks, get updates, and manage content from your phone.
+        {t('whatsapp_integration_description', 'Connect your WhatsApp number to interact directly with our AI-powered assistant. Automate tasks, get updates, and manage content from your phone.')}
       </div>
       <div className="my-[16px] mt-[16px] bg-sixth border-fifth border rounded-[4px] p-[24px] flex flex-col gap-[24px]">
         <div className="flex flex-col gap-[16px]">
@@ -231,7 +234,7 @@ export const PhoneNumberComponent = () => {
                 )}
               </div>
               <div className={clsx(p.phoneNumberVerified ? 'bg-green-500' : 'bg-red-500', 'px-4')}>
-                {p.phoneNumberVerified ? 'Verified' : 'Unverified'}
+                {p.phoneNumberVerified ? t('verified', 'Verified') : t('unverified', 'Unverified')}
               </div>
               <div className="flex-1 flex justify-end">
                 <Button
@@ -257,7 +260,7 @@ export const PhoneNumberComponent = () => {
                         />
                       </svg>
                     </div>
-                    <div>Change</div>
+                    <div>{t('change', 'Change')}</div>
                   </div>
                 </Button>
               </div>
@@ -267,7 +270,7 @@ export const PhoneNumberComponent = () => {
         <div>
           {!user?.phoneNumber && (
             <Button onClick={addPhoneNumber}>
-              Add Phone Number
+              {t('add_phone_number', 'Add Phone Number')}
             </Button>
           )}
         </div>

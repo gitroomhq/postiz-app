@@ -70,12 +70,15 @@ export class StripeService {
     });
 
     // find the last one created
-    const latestMethod = paymentMethods.data.reduce((prev, current) => {
-      if (prev.created < current.created) {
-        return current;
-      }
-      return prev;
-    }, {created: -100} as Stripe.PaymentMethod);
+    const latestMethod = paymentMethods.data.reduce(
+      (prev, current) => {
+        if (prev.created < current.created) {
+          return current;
+        }
+        return prev;
+      },
+      { created: -100 } as Stripe.PaymentMethod
+    );
 
     if (!latestMethod.id) {
       return false;

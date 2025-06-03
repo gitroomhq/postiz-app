@@ -1,5 +1,12 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsDefined, IsIn, IsString, ValidateNested, IsOptional } from 'class-validator';
+import {
+  IsArray,
+  IsDefined,
+  IsIn,
+  IsString,
+  ValidateNested,
+  IsOptional,
+} from 'class-validator';
 
 export class Collaborators {
   @IsDefined()

@@ -12,7 +12,7 @@ export class SubscriptionService {
   constructor(
     private readonly _subscriptionRepository: SubscriptionRepository,
     private readonly _integrationService: IntegrationService,
-    private readonly _organizationService: OrganizationService,
+    private readonly _organizationService: OrganizationService
   ) {}
 
   getSubscriptionByOrganizationId(organizationId: string) {
@@ -88,7 +88,10 @@ export class SubscriptionService {
         customerId
       ))!;
 
-    if (!getOrgByCustomerId || (getCurrentSubscription && getCurrentSubscription?.isLifetime)) {
+    if (
+      !getOrgByCustomerId ||
+      (getCurrentSubscription && getCurrentSubscription?.isLifetime)
+    ) {
       return false;
     }
 

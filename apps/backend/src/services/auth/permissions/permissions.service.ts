@@ -34,7 +34,7 @@ export class PermissionsService {
     private _subscriptionService: SubscriptionService,
     private _postsService: PostsService,
     private _integrationService: IntegrationService,
-    private _webhooksService: WebhooksService,
+    private _webhooksService: WebhooksService
   ) {}
   async getPackageOptions(orgId: string) {
     const subscription =
@@ -85,7 +85,7 @@ export class PermissionsService {
       if (section === Sections.CHANNEL) {
         const totalChannels = (
           await this._integrationService.getIntegrationsList(orgId)
-        ).filter(f => !f.refreshNeeded).length;
+        ).filter((f) => !f.refreshNeeded).length;
 
         if (
           (options.channel && options.channel > totalChannels) ||

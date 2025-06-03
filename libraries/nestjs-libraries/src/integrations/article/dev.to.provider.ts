@@ -18,7 +18,7 @@ export class DevToProvider implements ArticleProvider {
       name,
       token,
       picture: profile_image,
-      username
+      username,
     };
   }
 

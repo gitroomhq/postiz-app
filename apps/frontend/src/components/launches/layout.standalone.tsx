@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 dayjs.extend(utc);
-
 export const AppLayout = ({ children }: { children: ReactNode }) => {
   const params = usePathname();
   const style = useMemo(() => {
@@ -14,9 +13,10 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
     all.pop();
     return all.pop();
   }, [params]);
-
   return (
-    <div className={`hideCopilot ${style} h-[100vh] !padding-[50px] w-full text-textColor flex flex-col !bg-none`}>
+    <div
+      className={`hideCopilot ${style} h-[100vh] !padding-[50px] w-full text-textColor flex flex-col !bg-none`}
+    >
       <style>
         {`
           #add-edit-modal, .hideCopilot {
@@ -30,4 +30,4 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
       <PreviewWrapper>{children}</PreviewWrapper>
     </div>
   );
-}
+};

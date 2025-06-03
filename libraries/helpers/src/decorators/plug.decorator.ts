@@ -14,7 +14,11 @@ export function Plug(params: {
     validation?: RegExp;
   }[];
 }) {
-  return function (target: Object, propertyKey: string | symbol, descriptor: any) {
+  return function (
+    target: Object,
+    propertyKey: string | symbol,
+    descriptor: any
+  ) {
     // Retrieve existing metadata or initialize an empty array
     const existingMetadata = Reflect.getMetadata('custom:plug', target) || [];
 

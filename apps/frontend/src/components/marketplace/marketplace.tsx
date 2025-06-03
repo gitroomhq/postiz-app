@@ -1,3 +1,3 @@
 export const Marketplace = () => {
-  return <div />
-}
+  return <div />;
+};

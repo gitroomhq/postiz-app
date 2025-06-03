@@ -24,18 +24,30 @@ export class InstagramStandaloneProvider
     'instagram_business_basic',
     'instagram_business_content_publish',
     'instagram_business_manage_comments',
+    'instagram_business_manage_insights',
   ];
-  toolTip = 'Standalone does not support insights or tagging';
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
+    const { access_token } = await (
+      await this.fetch(
+        `https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${refresh_token}`
+      )
+    ).json();
+
+    const { user_id, name, username, profile_picture_url } = await (
+      await this.fetch(
+        `https://graph.instagram.com/v21.0/me?fields=user_id,username,name,profile_picture_url&access_token=${access_token}`
+      )
+    ).json();
+
     return {
-      refreshToken: '',
-      expiresIn: 0,
-      accessToken: '',
-      id: '',
-      name: '',
-      picture: '',
-      username: '',
+      id: user_id,
+      name,
+      accessToken: access_token,
+      refreshToken: access_token,
+      expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
+      picture: profile_picture_url,
+      username,
     };
   }
 
@@ -97,12 +109,7 @@ export class InstagramStandaloneProvider
 
     this.checkScopes(this.scopes, getAccessToken.permissions);
 
-    const {
-      user_id,
-      name,
-      username,
-      profile_picture_url,
-    } = await (
+    const { user_id, name, username, profile_picture_url } = await (
       await this.fetch(
         `https://graph.instagram.com/v21.0/me?fields=user_id,username,name,profile_picture_url&access_token=${access_token}`
       )
@@ -125,6 +132,21 @@ export class InstagramStandaloneProvider
     postDetails: PostDetails<InstagramDto>[],
     integration: Integration
   ): Promise<PostResponse[]> {
-    return instagramProvider.post(id, accessToken, postDetails, integration, 'graph.instagram.com');
+    return instagramProvider.post(
+      id,
+      accessToken,
+      postDetails,
+      integration,
+      'graph.instagram.com'
+    );
+  }
+
+  async analytics(id: string, accessToken: string, date: number) {
+    return instagramProvider.analytics(
+      id,
+      accessToken,
+      date,
+      'graph.instagram.com'
+    );
   }
 }

@@ -26,7 +26,12 @@ export class MessagesController {
     @Param('groupId') groupId: string,
     @Param('page') page: string
   ) {
-    return this._messagesService.getMessages(user.id, organization.id, groupId, +page);
+    return this._messagesService.getMessages(
+      user.id,
+      organization.id,
+      groupId,
+      +page
+    );
   }
   @Post('/:groupId')
   createMessage(
@@ -35,6 +40,11 @@ export class MessagesController {
     @Param('groupId') groupId: string,
     @Body() message: AddMessageDto
   ) {
-    return this._messagesService.createMessage(user.id, organization.id, groupId, message);
+    return this._messagesService.createMessage(
+      user.id,
+      organization.id,
+      groupId,
+      message
+    );
   }
 }

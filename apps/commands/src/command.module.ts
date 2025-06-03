@@ -9,12 +9,7 @@ import { AgentRun } from './tasks/agent.run';
 import { AgentModule } from '@gitroom/nestjs-libraries/agent/agent.module';
 
 @Module({
-  imports: [
-    ExternalCommandModule,
-    DatabaseModule,
-    BullMqModule,
-    AgentModule,
-  ],
+  imports: [ExternalCommandModule, DatabaseModule, BullMqModule, AgentModule],
   controllers: [],
   providers: [CheckStars, RefreshTokens, ConfigurationTask, AgentRun],
   get exports() {

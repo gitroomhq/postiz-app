@@ -4,9 +4,7 @@ import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/cl
 
 @Injectable()
 export class SyncTrending {
-  constructor(
-    private _workerServiceProducer: BullMqClient
-  ) {}
+  constructor(private _workerServiceProducer: BullMqClient) {}
   @Cron('0 * * * *')
   async syncTrending() {
     this._workerServiceProducer.emit('sync_trending', {}).subscribe();

@@ -442,7 +442,7 @@ export class StarsService {
       firstDate.format('YYYY-MM-DDT12:00:00'),
       ...[...new Array(max)].map((p, index) => {
         return firstDate.add(index, 'day').format('YYYY-MM-DDT12:00:00');
-      })
+      }),
     ];
   }
 

@@ -4,11 +4,12 @@ import { useModals } from '@mantine/modals';
 import dayjs from 'dayjs';
 import { useCalendar } from '@gitroom/frontend/components/launches/calendar.context';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const NewPost = () => {
   const fetch = useFetch();
   const modal = useModals();
   const { integrations, reloadCalendarView } = useCalendar();
+  const t = useT();
 
   const createAPost = useCallback(async () => {
     const date = (await (await fetch('/posts/find-slot')).json()).date;
@@ -21,7 +22,9 @@ export const NewPost = () => {
       },
       children: (
         <AddEditModal
-          allIntegrations={integrations.map((p) => ({ ...p }))}
+          allIntegrations={integrations.map((p) => ({
+            ...p,
+          }))}
           reopenModal={createAPost}
           mutate={reloadCalendarView}
           integrations={integrations}
@@ -32,7 +35,6 @@ export const NewPost = () => {
       title: ``,
     });
   }, [integrations]);
-
   return (
     <button
       onClick={createAPost}
@@ -50,7 +52,9 @@ export const NewPost = () => {
           fill="white"
         />
       </svg>
-      <div className="flex-1 text-left">Create New Post</div>
+      <div className="flex-1 text-start">
+        {t('create_new_post', 'Create New Post')}
+      </div>
     </button>
   );
 };

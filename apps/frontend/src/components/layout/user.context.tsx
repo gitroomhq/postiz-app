@@ -44,10 +44,9 @@ export const ContextWrapper: FC<{
       updateUser: (newUser: Partial<UserWithExtras>) => {
         setUserState(prev => prev ? { ...prev, ...newUser } : undefined);
       }
-    } : undefined
+    } : {} as any
   );
 
   return <UserContext.Provider value={userState}>{children}</UserContext.Provider>;
 };
-
 export const useUser = () => useContext(UserContext);

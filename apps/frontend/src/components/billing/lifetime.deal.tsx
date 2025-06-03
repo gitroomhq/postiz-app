@@ -10,8 +10,9 @@ import { useSWRConfig } from 'swr';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useRouter } from 'next/navigation';
 import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const LifetimeDeal = () => {
+  const t = useT();
   const fetch = useFetch();
   const user = useUser();
   const [code, setCode] = useState('');
@@ -19,18 +20,18 @@ export const LifetimeDeal = () => {
   const { mutate } = useSWRConfig();
   const router = useRouter();
   const fireEvents = useFireEvents();
-
   const claim = useCallback(async () => {
     const { success } = await (
       await fetch('/billing/lifetime', {
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({
+          code,
+        }),
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
       })
     ).json();
-
     if (success) {
       mutate('/user/self');
       toast.show('Successfully claimed the code');
@@ -38,18 +39,14 @@ export const LifetimeDeal = () => {
     } else {
       toast.show('Code already claimed or invalid code', 'warning');
     }
-
     setCode('');
   }, [code]);
-
   const nextPackage = useMemo(() => {
     if (user?.tier?.current === 'STANDARD') {
       return 'PRO';
     }
-
     return 'STANDARD';
   }, [user?.tier]);
-
   const features = useMemo(() => {
     if (!user?.tier) {
       return [];
@@ -57,7 +54,11 @@ export const LifetimeDeal = () => {
     const currentPricing = user?.tier;
     const channelsOr = currentPricing.channel;
     const list = [];
-    list.push(`${user.totalChannels} ${user.totalChannels === 1 ? 'channel' : 'channels'}`);
+    list.push(
+      `${user.totalChannels} ${
+        user.totalChannels === 1 ? 'channel' : 'channels'
+      }`
+    );
     list.push(
       `${
         currentPricing.posts_per_month > 10000
@@ -68,14 +69,11 @@ export const LifetimeDeal = () => {
     if (currentPricing.team_members) {
       list.push(`Unlimited team members`);
     }
-
     if (currentPricing?.ai) {
       list.push(`AI auto-complete`);
     }
-
     return list;
   }, [user]);
-
   const nextFeature = useMemo(() => {
     if (!user?.tier) {
       return [];
@@ -94,28 +92,24 @@ export const LifetimeDeal = () => {
     if (currentPricing.team_members) {
       list.push(`Unlimited team members`);
     }
-
     if (currentPricing?.ai) {
       list.push(`AI auto-complete`);
     }
-
     return list;
   }, [user, nextPackage]);
-
   if (!user?.tier) {
     return null;
   }
-
   if (user?.id && user?.tier?.current !== 'FREE' && !user?.isLifetime) {
     router.replace('/billing');
     return null;
   }
-
   return (
     <div className="flex gap-[30px]">
       <div className="border border-customColor6 bg-sixth p-[24px] flex flex-col gap-[20px] flex-1 rounded-[4px]">
         <div className="text-[30px]">
-          Current Package: {user?.totalChannels > 8 ? 'EXTRA' : user?.tier?.current}
+          {t('current_package', 'Current Package:')}
+          {user?.totalChannels > 8 ? 'EXTRA' : user?.tier?.current}
         </div>
 
         <div className="flex flex-col gap-[10px] justify-center text-[16px] text-customColor18">
@@ -143,8 +137,14 @@ export const LifetimeDeal = () => {
 
       <div className="border border-customColor6 bg-sixth p-[24px] flex flex-col gap-[20px] flex-1 rounded-[4px]">
         <div className="text-[30px]">
-          Next Package:{' '}
-          {user?.tier?.current === 'PRO' ? 'EXTRA' : !user?.tier?.current ? 'FREE' : user?.tier?.current === 'STANDARD' ? 'PRO' : 'STANDARD'}
+          {t('next_package', 'Next Package:')}
+          {user?.tier?.current === 'PRO'
+            ? 'EXTRA'
+            : !user?.tier?.current
+            ? 'FREE'
+            : user?.tier?.current === 'STANDARD'
+            ? 'PRO'
+            : 'STANDARD'}
         </div>
 
         <div className="flex flex-col gap-[10px] justify-center text-[16px] text-customColor18">
@@ -175,6 +175,7 @@ export const LifetimeDeal = () => {
             <div className="flex-1">
               <Input
                 label="Code"
+                translationKey="label_code"
                 placeholder="Enter your code"
                 disableForm={true}
                 name="code"
@@ -184,7 +185,7 @@ export const LifetimeDeal = () => {
             </div>
             <div>
               <Button disabled={code.length < 4} onClick={claim}>
-                Claim
+                {t('claim', 'Claim')}
               </Button>
             </div>
           </div>

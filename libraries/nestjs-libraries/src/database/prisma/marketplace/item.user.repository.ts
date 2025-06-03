@@ -3,9 +3,7 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class ItemUserRepository {
-  constructor(
-    private _itemUser: PrismaRepository<'itemUser'>,
-  ) {}
+  constructor(private _itemUser: PrismaRepository<'itemUser'>) {}
 
   addOrRemoveItem(add: boolean, userId: string, item: string) {
     if (!add) {

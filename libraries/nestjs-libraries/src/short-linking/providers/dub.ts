@@ -17,7 +17,12 @@ export class Dub implements ShortLinking {
     return Promise.all(
       links.map(async (link) => {
         const response = await (
-          await fetch(`${DUB_API_ENDPOINT}/links/info?domain=${this.shortLinkDomain}&key=${link.split('/').pop()}`, getOptions())
+          await fetch(
+            `${DUB_API_ENDPOINT}/links/info?domain=${
+              this.shortLinkDomain
+            }&key=${link.split('/').pop()}`,
+            getOptions()
+          )
         ).json();
 
         return {

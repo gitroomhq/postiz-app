@@ -3,7 +3,7 @@ import { allTagsOptions } from '@gitroom/nestjs-libraries/database/prisma/market
 
 export class AddRemoveItemDto {
   @IsString()
-  @IsIn(allTagsOptions.map(p => p.key))
+  @IsIn(allTagsOptions.map((p) => p.key))
   key: string;
 
   @IsBoolean()

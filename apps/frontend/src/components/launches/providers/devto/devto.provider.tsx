@@ -12,7 +12,6 @@ import localFont from 'next/font/local';
 import MDEditor from '@uiw/react-md-editor';
 import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { Canonical } from '@gitroom/react/form/canonical';
-
 const font = localFont({
   src: [
     {
@@ -20,7 +19,6 @@ const font = localFont({
     },
   ],
 });
-
 const DevtoPreview: FC = () => {
   const { value } = useIntegration();
   const settings = useSettings();
@@ -30,7 +28,6 @@ const DevtoPreview: FC = () => {
     'title',
     'tags',
   ]);
-
   return (
     <div
       className={clsx(
@@ -57,7 +54,9 @@ const DevtoPreview: FC = () => {
       </div>
       <div className="px-[60px]">
         <MDEditor.Markdown
-          style={{ whiteSpace: 'pre-wrap' }}
+          style={{
+            whiteSpace: 'pre-wrap',
+          }}
           className={font.className}
           skipHtml={true}
           source={value.map((p) => p.content).join('\n')}
@@ -66,7 +65,6 @@ const DevtoPreview: FC = () => {
     </div>
   );
 };
-
 const DevtoSettings: FC = () => {
   const form = useSettings();
   const { date } = useIntegration();
@@ -92,5 +90,4 @@ const DevtoSettings: FC = () => {
     </>
   );
 };
-
 export default withProvider(DevtoSettings, DevtoPreview, DevToSettingsDto);

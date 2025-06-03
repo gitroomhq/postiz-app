@@ -1,8 +1,8 @@
 'use client';
+
 import { FC, forwardRef, useCallback, useState } from 'react';
 import clsx from 'clsx';
 import { useFormContext, useWatch } from 'react-hook-form';
-
 export const Checkbox = forwardRef<
   null,
   {
@@ -11,32 +11,42 @@ export const Checkbox = forwardRef<
     name?: string;
     className?: string;
     label?: string;
-    onChange?: (event: { target: { name?: string; value: boolean } }) => void;
+    onChange?: (event: {
+      target: {
+        name?: string;
+        value: boolean;
+      };
+    }) => void;
     variant?: 'default' | 'hollow';
   }
 >((props, ref: any) => {
   const { checked, className, label, disableForm, variant } = props;
   const form = useFormContext();
   const register = disableForm ? {} : form.register(props.name!);
-
   const watch = disableForm
     ? undefined
     : useWatch({
         name: props.name!,
       });
-
   const [currentStatus, setCurrentStatus] = useState(watch || checked);
   const changeStatus = useCallback(() => {
     setCurrentStatus(!currentStatus);
-    props?.onChange?.({ target: { name: props.name!, value: !currentStatus } });
+    props?.onChange?.({
+      target: {
+        name: props.name!,
+        value: !currentStatus,
+      },
+    });
     if (!disableForm) {
       // @ts-ignore
       register?.onChange?.({
-        target: { name: props.name!, value: !currentStatus },
+        target: {
+          name: props.name!,
+          value: !currentStatus,
+        },
       });
     }
   }, [currentStatus]);
-
   return (
     <div className="flex gap-[10px]">
       <div

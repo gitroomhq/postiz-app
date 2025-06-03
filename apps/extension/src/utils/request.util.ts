@@ -1,12 +1,12 @@
-const isDev = process.env.NODE_ENV === "development";
+const isDev = process.env.NODE_ENV === 'development';
 export const sendRequest = (
   auth: string,
   url: string,
-  method: "GET" | "POST",
-  body?: string,
+  method: 'GET' | 'POST',
+  body?: string
 ) => {
   return chrome.runtime.sendMessage({
-    action: "makeHttpRequest",
+    action: 'makeHttpRequest',
     url,
     method,
     body,
@@ -17,16 +17,17 @@ export const sendRequest = (
 export const fetchRequestUtil = async (request: any) => {
   return (
     await fetch(
-      (import.meta.env?.FRONTEND_URL || process?.env?.FRONTEND_URL) + request.url,
+      (import.meta.env?.FRONTEND_URL || process?.env?.FRONTEND_URL) +
+        request.url,
       {
-        method: request.method || "GET",
+        method: request.method || 'GET',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: request.auth,
           // Add any auth headers here if needed
         },
         ...(request.body ? { body: request.body } : {}),
-      },
+      }
     )
   ).json();
 };

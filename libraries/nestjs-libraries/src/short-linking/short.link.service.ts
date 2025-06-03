@@ -9,7 +9,7 @@ const getProvider = (): ShortLinking => {
     return new Dub();
   }
 
-  if ( process.env.SHORT_IO_SECRET_KEY ) {
+  if (process.env.SHORT_IO_SECRET_KEY) {
     return new ShortIo();
   }
 
@@ -33,7 +33,9 @@ export class ShortLinkService {
       return false;
     }
 
-    return urls.some((url) => url.indexOf(ShortLinkService.provider.shortLinkDomain) === -1);
+    return urls.some(
+      (url) => url.indexOf(ShortLinkService.provider.shortLinkDomain) === -1
+    );
   }
 
   async convertTextToShortLinks(id: string, messages: string[]) {

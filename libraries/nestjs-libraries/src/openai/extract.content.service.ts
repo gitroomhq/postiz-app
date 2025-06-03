@@ -58,7 +58,9 @@ export class ExtractContentService {
       { total: 0, depth: 0, element: null as Element | null }
     );
 
-    return findTheOneWithMostTitles?.element?.textContent?.replace(/\n/g, ' ').replace(/ {2,}/g, ' ');
+    return findTheOneWithMostTitles?.element?.textContent
+      ?.replace(/\n/g, ' ')
+      .replace(/ {2,}/g, ' ');
     //
     // const allElements = Array.from(
     //   dom.window.document.querySelectorAll('*')

@@ -4,15 +4,14 @@ import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { ChartSocial } from '@gitroom/frontend/components/analytics/chart-social';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
-
-export const RenderAnalytics: FC<{ integration: Integration; date: number }> = (
-  props
-) => {
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
+export const RenderAnalytics: FC<{
+  integration: Integration;
+  date: number;
+}> = (props) => {
   const { integration, date } = props;
   const [loading, setLoading] = useState(true);
-
   const fetch = useFetch();
-
   const load = useCallback(async () => {
     setLoading(true);
     const load = (
@@ -21,7 +20,6 @@ export const RenderAnalytics: FC<{ integration: Integration; date: number }> = (
     setLoading(false);
     return load;
   }, [integration, date]);
-
   const { data } = useSWR(`/analytics-${integration?.id}-${date}`, load, {
     refreshInterval: 0,
     refreshWhenHidden: false,
@@ -31,37 +29,39 @@ export const RenderAnalytics: FC<{ integration: Integration; date: number }> = (
     refreshWhenOffline: false,
     revalidateOnMount: true,
   });
-
   const refreshChannel = useCallback(
-    (integration: Integration & { identifier: string }) => async () => {
-      const { url } = await (
-        await fetch(
-          `/integrations/social/${integration.identifier}?refresh=${integration.internalId}`,
-          {
-            method: 'GET',
-          }
-        )
-      ).json();
-
-      window.location.href = url;
-    },
+    (
+        integration: Integration & {
+          identifier: string;
+        }
+      ) =>
+      async () => {
+        const { url } = await (
+          await fetch(
+            `/integrations/social/${integration.identifier}?refresh=${integration.internalId}`,
+            {
+              method: 'GET',
+            }
+          )
+        ).json();
+        window.location.href = url;
+      },
     []
   );
+
+  const t = useT();
 
   const total = useMemo(() => {
     return data?.map((p: any) => {
       const value =
         (p?.data.reduce((acc: number, curr: any) => acc + curr.total, 0) || 0) /
         (p.average ? p.data.length : 1);
-
       if (p.average) {
         return value.toFixed(2) + '%';
       }
-
       return value;
     });
   }, [data]);
-
   if (loading) {
     return (
       <>
@@ -69,13 +69,20 @@ export const RenderAnalytics: FC<{ integration: Integration; date: number }> = (
       </>
     );
   }
-
   return (
     <div className="grid grid-cols-3 gap-[20px]">
       {data?.length === 0 && (
         <div>
-          This channel needs to be refreshed,{' '}
-          <div className="underline hover:font-bold cursor-pointer" onClick={refreshChannel(integration as any)}>click here to refresh</div>
+          {t(
+            'this_channel_needs_to_be_refreshed',
+            'This channel needs to be refreshed,'
+          )}
+          <div
+            className="underline hover:font-bold cursor-pointer"
+            onClick={refreshChannel(integration as any)}
+          >
+            {t('click_here_to_refresh', 'click here to refresh')}
+          </div>
         </div>
       )}
       {data?.map((p: any, index: number) => (

@@ -11,7 +11,7 @@ export class MastodonCustomProvider extends MastodonProvider {
   override name = 'M. Instance';
   async externalUrl(url: string) {
     const form = new FormData();
-    form.append('client_name', 'Postiz');
+    form.append('client_name', 'Publica');
     form.append(
       'redirect_uris',
       `${process.env.FRONTEND_URL}/integrations/social/mastodon`
@@ -74,7 +74,7 @@ export class MastodonCustomProvider extends MastodonProvider {
     return this.dynamicPost(
       id,
       accessToken,
-      'https://mastodon.social',
+      process.env.MASTODON_URL || 'https://mastodon.social',
       postDetails
     );
   }

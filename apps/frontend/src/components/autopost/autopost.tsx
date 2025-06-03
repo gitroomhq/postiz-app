@@ -16,18 +16,16 @@ import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { CopilotTextarea } from '@copilotkit/react-textarea';
 import interClass from '@gitroom/react/helpers/inter.font';
 import { Slider } from '@gitroom/react/form/slider';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const Autopost: FC = () => {
   const fetch = useFetch();
+  const t = useT();
   const modal = useModals();
   const toaster = useToaster();
-
   const list = useCallback(async () => {
     return (await fetch('/autopost')).json();
   }, []);
-
   const { data, mutate } = useSWR('autopost', list);
-
   const addWebhook = useCallback(
     (data?: any) => () => {
       modal.openModal({
@@ -41,57 +39,72 @@ export const Autopost: FC = () => {
     },
     []
   );
-
   const deleteHook = useCallback(
     (data: any) => async () => {
-      if (await deleteDialog(`Are you sure you want to delete ${data.name}?`)) {
-        await fetch(`/autopost/${data.id}`, { method: 'DELETE' });
+      if (
+        await deleteDialog(
+          t(
+            'are_you_sure_you_want_to_delete',
+            `Are you sure you want to delete ${data.name}?`,
+            { name: data.name }
+          )
+        )
+      ) {
+        await fetch(`/autopost/${data.id}`, {
+          method: 'DELETE',
+        });
         mutate();
         toaster.show('Webhook deleted successfully', 'success');
       }
     },
     []
   );
-
   const changeActive = useCallback(
     (data: any) => async (ac: 'on' | 'off') => {
       await fetch(`/autopost/${data.id}/active`, {
-        body: JSON.stringify({ active: ac === 'on' }),
+        body: JSON.stringify({
+          active: ac === 'on',
+        }),
         method: 'POST',
       });
-
       mutate();
     },
     [mutate]
   );
-
   return (
     <div className="flex flex-col">
-      <h3 className="text-[20px]">Autopost</h3>
+      <h3 className="text-[20px]">{t('autopost', 'Autopost')}</h3>
       <div className="text-customColor18 mt-[4px]">
-        Autopost can automatically posts your RSS new items to social media
+        {t(
+          'autopost_can_automatically_posts_your_rss_new_items_to_social_media',
+          'Autopost can automatically posts your RSS new items to social media'
+        )}
       </div>
       <div className="my-[16px] mt-[16px] bg-sixth border-fifth items-center border rounded-[4px] p-[24px] flex gap-[24px]">
         <div className="flex flex-col w-full">
           {!!data?.length && (
             <div className="grid grid-cols-[1fr,1fr,1fr,1fr,1fr] w-full gap-y-[10px]">
-              <div>Title</div>
-              <div>URL</div>
-              <div>Edit</div>
-              <div>Delete</div>
-              <div>Active</div>
+              <div>{t('title', 'Title')}</div>
+              <div>{t('url', 'URL')}</div>
+              <div>{t('edit', 'Edit')}</div>
+              <div>{t('delete', 'Delete')}</div>
+              <div>{t('active', 'Active')}</div>
               {data?.map((p: any) => (
                 <Fragment key={p.id}>
                   <div className="flex flex-col justify-center">{p.title}</div>
                   <div className="flex flex-col justify-center">{p.url}</div>
                   <div className="flex flex-col justify-center">
                     <div>
-                      <Button onClick={addWebhook(p)}>Edit</Button>
+                      <Button onClick={addWebhook(p)}>
+                        {t('edit', 'Edit')}
+                      </Button>
                     </div>
                   </div>
                   <div className="flex flex-col justify-center">
                     <div>
-                      <Button onClick={deleteHook(p)}>Delete</Button>
+                      <Button onClick={deleteHook(p)}>
+                        {t('delete', 'Delete')}
+                      </Button>
                     </div>
                   </div>
                   <div>
@@ -110,7 +123,7 @@ export const Autopost: FC = () => {
               onClick={addWebhook()}
               className={clsx((data?.length || 0) > 0 && 'my-[16px]')}
             >
-              Add an autopost
+              {t('add_an_autopost', 'Add an autopost')}
             </Button>
           </div>
         </div>
@@ -118,7 +131,6 @@ export const Autopost: FC = () => {
     </div>
   );
 };
-
 const details = object().shape({
   title: string().required(),
   content: string(),
@@ -134,25 +146,40 @@ const details = object().shape({
     })
   ),
 });
-
 const options = [
-  { label: 'All integrations', value: 'all' },
-  { label: 'Specific integrations', value: 'specific' },
+  {
+    label: 'All integrations',
+    value: 'all',
+  },
+  {
+    label: 'Specific integrations',
+    value: 'specific',
+  },
 ];
-
 const optionsChoose = [
-  { label: 'Yes', value: true },
-  { label: 'No', value: false },
+  {
+    label: 'Yes',
+    value: true,
+  },
+  {
+    label: 'No',
+    value: false,
+  },
 ];
-
 const postImmediately = [
-  { label: 'Post on the next available slot', value: true },
-  { label: 'Post Immediately', value: false },
+  {
+    label: 'Post on the next available slot',
+    value: true,
+  },
+  {
+    label: 'Post Immediately',
+    value: false,
+  },
 ];
-
-export const AddOrEditWebhook: FC<{ data?: any; reload: () => void }> = (
-  props
-) => {
+export const AddOrEditWebhook: FC<{
+  data?: any;
+  reload: () => void;
+}> = (props) => {
   const { data, reload } = props;
   const fetch = useFetch();
   const [allIntegrations, setAllIntegrations] = useState(
@@ -164,7 +191,6 @@ export const AddOrEditWebhook: FC<{ data?: any; reload: () => void }> = (
   const toast = useToaster();
   const [valid, setValid] = useState(data?.url || '');
   const [lastUrl, setLastUrl] = useState(data?.lastUrl || '');
-
   const form = useForm({
     resolver: yupResolver(details),
     values: {
@@ -183,17 +209,14 @@ export const AddOrEditWebhook: FC<{ data?: any; reload: () => void }> = (
       integrations: JSON.parse(data?.integrations || '[]') || [],
     },
   });
-
   const generateContent = form.watch('generateContent');
   const content = form.watch('content');
   const url = form.watch('url');
   const syncLast = form.watch('syncLast');
-
   const integrations = form.watch('integrations');
   const integration = useCallback(async () => {
     return (await fetch('/integrations/list')).json();
   }, []);
-
   const changeIntegration = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       const findValue = options.find(
@@ -206,33 +229,38 @@ export const AddOrEditWebhook: FC<{ data?: any; reload: () => void }> = (
     },
     []
   );
-
   const { data: dataList, isLoading } = useSWR('integrations', integration);
-
   const callBack = useCallback(
     async (values: any) => {
       await fetch(data?.id ? `/autopost/${data?.id}` : '/autopost', {
         method: data?.id ? 'PUT' : 'POST',
         body: JSON.stringify({
-          ...(data?.id ? { id: data.id } : {}),
+          ...(data?.id
+            ? {
+                id: data.id,
+              }
+            : {}),
           ...values,
-          ...(!syncLast ? { lastUrl } : { lastUrl: '' }),
+          ...(!syncLast
+            ? {
+                lastUrl,
+              }
+            : {
+                lastUrl: '',
+              }),
         }),
       });
-
       toast.show(
         data?.id
           ? 'Webhook updated successfully'
           : 'Webhook added successfully',
         'success'
       );
-
       modal.closeAll();
       reload();
     },
     [data, integrations, lastUrl, syncLast]
   );
-
   const sendTest = useCallback(async () => {
     const url = form.getValues('url');
     try {
@@ -244,13 +272,11 @@ export const AddOrEditWebhook: FC<{ data?: any; reload: () => void }> = (
           },
         })
       ).json();
-
       if (!success) {
         setValid('');
         toast.show('Could not use this RSS feed', 'warning');
         return;
       }
-
       toast.show('RSS valid!', 'success');
       setValid(url);
       setLastUrl(newUrl);
@@ -259,13 +285,15 @@ export const AddOrEditWebhook: FC<{ data?: any; reload: () => void }> = (
     }
   }, []);
 
+  const t = useT();
+
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(callBack)}>
         <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-customColor6 bg-sixth p-[16px] pt-0 w-[500px]">
           <TopTitle title={data ? 'Edit autopost' : 'Add autopost'} />
           <button
-            className="outline-none absolute right-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+            className="outline-none absolute end-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
             type="button"
             onClick={modal.closeAll}
           >
@@ -286,10 +314,19 @@ export const AddOrEditWebhook: FC<{ data?: any; reload: () => void }> = (
           </button>
 
           <div>
-            <Input label="Title" {...form.register('title')} />
-            <Input label="URL" {...form.register('url')} />
+            <Input
+              label="Title"
+              translationKey="label_title"
+              {...form.register('title')}
+            />
+            <Input
+              label="URL"
+              translationKey="label_url"
+              {...form.register('url')}
+            />
             <Select
               label="Should we sync the current last post?"
+              translationKey="label_should_sync_last_post"
               {...form.register('syncLast', {
                 setValueAs: (value) => {
                   return value === 'true' || value === true;
@@ -304,6 +341,7 @@ export const AddOrEditWebhook: FC<{ data?: any; reload: () => void }> = (
             </Select>
             <Select
               label="When should we post it?"
+              translationKey="label_when_post"
               {...form.register('onSlot', {
                 setValueAs: (value) => value === 'true' || value === true,
               })}
@@ -316,6 +354,7 @@ export const AddOrEditWebhook: FC<{ data?: any; reload: () => void }> = (
             </Select>
             <Select
               label="Autogenerate content"
+              translationKey="label_autogenerate_content"
               {...form.register('generateContent', {
                 setValueAs: (value) => value === 'true' || value === true,
               })}
@@ -329,7 +368,7 @@ export const AddOrEditWebhook: FC<{ data?: any; reload: () => void }> = (
             {!generateContent && (
               <>
                 <div className={`${interClass} text-[14px] mb-[6px]`}>
-                  Post content
+                  {t('post_content', 'Post content')}
                 </div>
                 <CopilotTextarea
                   disableBranding={true}
@@ -350,6 +389,7 @@ export const AddOrEditWebhook: FC<{ data?: any; reload: () => void }> = (
             )}
             <Select
               label="Generate Picture?"
+              translationKey="label_generate_picture"
               {...form.register('addPicture', {
                 setValueAs: (value) => value === 'true' || value === true,
               })}
@@ -364,6 +404,7 @@ export const AddOrEditWebhook: FC<{ data?: any; reload: () => void }> = (
               value={allIntegrations.value}
               name="integrations"
               label="Integrations"
+              translationKey="label_integrations"
               disableForm={true}
               onChange={changeIntegration}
             >
@@ -395,7 +436,7 @@ export const AddOrEditWebhook: FC<{ data?: any; reload: () => void }> = (
                       !integrations?.length)
                   }
                 >
-                  Save
+                  {t('save', 'Save')}
                 </Button>
               )}
               <Button
@@ -408,7 +449,7 @@ export const AddOrEditWebhook: FC<{ data?: any; reload: () => void }> = (
                     !integrations?.length)
                 }
               >
-                Send Test
+                {t('send_test', 'Send Test')}
               </Button>
             </div>
           </div>

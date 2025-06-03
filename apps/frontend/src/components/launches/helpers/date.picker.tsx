@@ -4,23 +4,21 @@ import { Calendar, TimeInput } from '@mantine/dates';
 import { useClickOutside } from '@mantine/hooks';
 import { Button } from '@gitroom/react/form/button';
 import { isUSCitizen } from './isuscitizen.utils';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const DatePicker: FC<{
   date: dayjs.Dayjs;
   onChange: (day: dayjs.Dayjs) => void;
 }> = (props) => {
   const { date, onChange } = props;
   const [open, setOpen] = useState(false);
+  const t = useT();
 
   const changeShow = useCallback(() => {
     setOpen((prev) => !prev);
   }, []);
-
   const ref = useClickOutside<HTMLDivElement>(() => {
     setOpen(false);
   });
-
-
   const changeDate = useCallback(
     (type: 'date' | 'time') => (day: Date) => {
       onChange(
@@ -33,14 +31,15 @@ export const DatePicker: FC<{
     },
     [date]
   );
-
   return (
     <div
       className="flex gap-[8px] items-center relative px-[16px] select-none"
       onClick={changeShow}
       ref={ref}
     >
-      <div className="cursor-pointer">{date.format(isUSCitizen() ? 'MM/DD/YYYY hh:mm A' : 'DD/MM/YYYY HH:mm')}</div>
+      <div className="cursor-pointer">
+        {date.format(isUSCitizen() ? 'MM/DD/YYYY hh:mm A' : 'DD/MM/YYYY HH:mm')}
+      </div>
       <div className="cursor-pointer">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -58,7 +57,7 @@ export const DatePicker: FC<{
       {open && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className="animate-normalFadeDown absolute top-[100%] mt-[16px] right-0 bg-sixth border border-tableBorder text-textColor rounded-[16px] z-[300] p-[16px] flex flex-col"
+          className="animate-normalFadeDown absolute top-[100%] mt-[16px] end-0 bg-sixth border border-tableBorder text-textColor rounded-[16px] z-[300] p-[16px] flex flex-col"
         >
           <Calendar
             onChange={changeDate('date')}
@@ -67,15 +66,12 @@ export const DatePicker: FC<{
               if (modifiers.weekend) {
                 return '!text-customColor28';
               }
-
               if (modifiers.outside) {
                 return '!text-gray';
               }
-
               if (modifiers.selected) {
                 return '!text-white !bg-seventh !outline-none';
               }
-
               return '!text-textColor';
             }}
             classNames={{
@@ -95,7 +91,7 @@ export const DatePicker: FC<{
             defaultValue={date.toDate()}
           />
           <Button className="mt-[12px]" onClick={changeShow}>
-            Save
+            {t('save', 'Save')}
           </Button>
         </div>
       )}

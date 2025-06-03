@@ -3,7 +3,7 @@ import { allTagsOptions } from '@gitroom/nestjs-libraries/database/prisma/market
 
 export class ItemsDto {
   @IsArray()
-  @IsIn(allTagsOptions.map(p => p.key), {each: true})
+  @IsIn(allTagsOptions.map((p) => p.key), { each: true })
   items: string[];
 
   @IsNumber()

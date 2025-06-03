@@ -64,7 +64,7 @@ export class AutopostService {
   ) {}
 
   async stopAll(org: string) {
-    const getAll = (await this.getAutoposts(org)).filter(f => f.active);
+    const getAll = (await this.getAutoposts(org)).filter((f) => f.active);
     for (const autopost of getAll) {
       await this.changeActive(org, autopost.id, false);
     }
@@ -121,7 +121,7 @@ export class AutopostService {
 
   async loadXML(url: string) {
     try {
-      const {items} = await parser.parseURL(url);
+      const { items } = await parser.parseURL(url);
       const findLast = items.reduce(
         (all: any, current: any) => {
           if (dayjs(current.pubDate).isAfter(all.pubDate)) {
@@ -137,7 +137,10 @@ export class AutopostService {
         date: findLast.pubDate,
         url: findLast.link,
         description: striptags(
-          findLast?.['content:encoded'] || findLast?.content || findLast?.description || ''
+          findLast?.['content:encoded'] ||
+            findLast?.content ||
+            findLast?.description ||
+            ''
         )
           .replace(/\n/g, ' ')
           .trim(),
@@ -269,7 +272,10 @@ export class AutopostService {
         value: [
           {
             id: makeId(10),
-            content: state.description.replace(/\n/g, '\n\n') + '\n\n' + state.load.url,
+            content:
+              state.description.replace(/\n/g, '\n\n') +
+              '\n\n' +
+              state.load.url,
             image: !state.image
               ? []
               : [

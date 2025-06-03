@@ -7,45 +7,47 @@ import { Button } from '@gitroom/react/form/button';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { showMediaBox } from '@gitroom/frontend/components/media/media.component';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const BotPicture: FC<{
   integration: Integrations;
   canChangeProfilePicture: boolean;
   canChangeNickName: boolean;
   mutate: () => void;
 }> = (props) => {
+  const t = useT();
   const modal = useModals();
   const toast = useToaster();
   const [nick, setNickname] = useState(props.integration.name);
-  const [picture, setPicture] = useState(props.integration.picture || '/no-picture.jpg');
-
+  const [picture, setPicture] = useState(
+    props.integration.picture || '/no-picture.jpg'
+  );
   const fetch = useFetch();
   const submitForm: FormEventHandler<HTMLFormElement> = useCallback(
     async (e) => {
       e.preventDefault();
       await fetch(`/integrations/${props.integration.id}/nickname`, {
         method: 'POST',
-        body: JSON.stringify({ name: nick, picture }),
+        body: JSON.stringify({
+          name: nick,
+          picture,
+        }),
       });
-
       props.mutate();
       toast.show('Updated', 'success');
       modal.closeAll();
     },
     [nick, picture, props.mutate]
   );
-
   const openMedia = useCallback(() => {
     showMediaBox((values) => {
       setPicture(values.path);
     });
   }, []);
-
   return (
     <div className="rounded-[4px] border border-customColor6 bg-sixth px-[16px] pb-[16px] relative w-full">
       <TopTitle title={`Change Bot Picture`} />
       <button
-        className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+        className="outline-none absolute end-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
         type="button"
         onClick={() => modal.closeAll()}
       >
@@ -74,7 +76,9 @@ export const BotPicture: FC<{
                 alt="Bot Picture"
                 className="w-[100px] h-[100px] rounded-full"
               />
-              <Button type="button" onClick={openMedia}>Upload</Button>
+              <Button type="button" onClick={openMedia}>
+                {t('upload', 'Upload')}
+              </Button>
             </div>
           )}
           {props.canChangeNickName && (
@@ -89,7 +93,7 @@ export const BotPicture: FC<{
           )}
 
           <div className="mt-[50px]">
-            <Button type="submit">Save</Button>
+            <Button type="submit">{t('save', 'Save')}</Button>
           </div>
         </form>
       </div>

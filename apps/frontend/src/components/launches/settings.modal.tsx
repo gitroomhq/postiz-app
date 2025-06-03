@@ -5,13 +5,13 @@ import { Integration } from '@prisma/client';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Button } from '@gitroom/react/form/button';
 import { Slider } from '@gitroom/react/form/slider';
-
-export const Element: FC<{ setting: any; onChange: (value: any) => void }> = (
-  props
-) => {
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
+export const Element: FC<{
+  setting: any;
+  onChange: (value: any) => void;
+}> = (props) => {
   const { setting, onChange } = props;
   const [value, setValue] = useState(setting.value);
-
   return (
     <div className="flex flex-col gap-[10px]">
       <div>{setting.title}</div>
@@ -27,18 +27,22 @@ export const Element: FC<{ setting: any; onChange: (value: any) => void }> = (
     </div>
   );
 };
-
 export const SettingsModal: FC<{
-  integration: Integration & { customer?: { id: string; name: string } };
+  integration: Integration & {
+    customer?: {
+      id: string;
+      name: string;
+    };
+  };
   onClose: () => void;
 }> = (props) => {
   const fetch = useFetch();
+  const t = useT();
   const { onClose, integration } = props;
   const modal = useModals();
   const [values, setValues] = useState(
     JSON.parse(integration?.additionalSettings || '[]')
   );
-
   const changeValue = useCallback(
     (index: number) => (value: any) => {
       const newValues = [...values];
@@ -47,22 +51,21 @@ export const SettingsModal: FC<{
     },
     [values]
   );
-
   const save = useCallback(async () => {
     await fetch(`/integrations/${integration.id}/settings`, {
       method: 'POST',
-      body: JSON.stringify({ additionalSettings: JSON.stringify(values) }),
+      body: JSON.stringify({
+        additionalSettings: JSON.stringify(values),
+      }),
     });
-
     modal.closeAll();
     onClose();
   }, [values, integration]);
-
   return (
     <div className="rounded-[4px] border border-customColor6 bg-sixth px-[16px] pb-[16px] relative w-full">
       <TopTitle title={`Additional Settings`} />
       <button
-        className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+        className="outline-none absolute end-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
         type="button"
         onClick={() => modal.closeAll()}
       >
@@ -84,12 +87,16 @@ export const SettingsModal: FC<{
 
       <div className="mt-[16px]">
         {values.map((setting: any, index: number) => (
-          <Element key={setting.title} setting={setting} onChange={changeValue(index)} />
+          <Element
+            key={setting.title}
+            setting={setting}
+            onChange={changeValue(index)}
+          />
         ))}
       </div>
 
       <div className="my-[16px] flex gap-[10px]">
-        <Button onClick={save}>Save</Button>
+        <Button onClick={save}>{t('save', 'Save')}</Button>
       </div>
     </div>
   );

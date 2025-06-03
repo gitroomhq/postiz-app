@@ -1,4 +1,4 @@
-import {Global, Module} from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import module from './plugins';
 
 @Global()
@@ -8,6 +8,6 @@ import module from './plugins';
   providers: [],
   get exports() {
     return [...this.imports];
-  }
+  },
 })
 export class PluginModule {}
