@@ -6,7 +6,7 @@ export const ChromeExtensionComponent = () => {
   }
   return (
     <a
-      href="https://chromewebstore.google.com/detail/publica/lhlblepklbocgjfieccckodibofpmphpF"
+      href="https://chromewebstore.google.com/detail/publica/lhlblepklbocgjfieccckodibofpmphp"
       target="_blank"
     >
       <svg
