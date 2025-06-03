@@ -140,6 +140,10 @@ export const SettingsPopup: FC<{
               {!!user?.tier?.public_api && isGeneral && showLogout && (
                 <Tabs.Tab value="api">{t('public_api', 'Public API')}</Tabs.Tab>
               )}
+
+              {user?.tier.current !== 'FREE' && (
+                <Tabs.Tab value="whatsapp">{t('whatsapp', 'Whatsapp')}</Tabs.Tab>
+              )}
             </Tabs.List>
 
             {/* <Tabs.Panel value="profile" pt="md">
@@ -253,7 +257,7 @@ export const SettingsPopup: FC<{
               </Tabs.Panel>
             )}
 
-            {!!user?.tier?.team_members && isGeneral && (
+            {user?.tier.current !== 'FREE' && (
               <Tabs.Panel value="whatsapp" pt="md">
                 <PhoneNumberComponent />
               </Tabs.Panel>

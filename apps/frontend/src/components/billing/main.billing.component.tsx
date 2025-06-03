@@ -461,7 +461,7 @@ export const MainBillingComponent: FC<{
                       (user?.tier === 'FREE' ||
                           user?.tier?.current === 'FREE') &&
                         user.allowTrial
-                      ? t('start_7_days_free_trial', 'Start 7 days free trial')
+                      ? t('start_7_days_free_trial', 'Start 14 days free trial')
                       : 'Purchase'}
                   </Button>
                 )}

@@ -83,7 +83,6 @@ const authenticatedController = [
     McpService,
     McpLocalService,
     WhatsappService,
-    McpService,
   ],
   get exports() {
     return [...this.imports, ...this.providers];

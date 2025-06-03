@@ -423,9 +423,6 @@ importers:
       react-otp-input:
         specifier: ^3.1.1
         version: 3.1.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      react-phone-input-2:
-        specifier: ^2.15.1
-        version: 2.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-phone-number-input:
         specifier: ^3.4.12
         version: 3.4.12(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -11063,12 +11060,6 @@ packages:
   lodash.once@4.1.1:
     resolution: {integrity: sha512-Sb487aTOCr9drQVL8pIxOzVhafOjZN9UU54hiN8PU3uAiSV7lx1yYNpbNmex2PK6dSJoNTSJUUswT651yww3Mg==}
 
-  lodash.reduce@4.6.0:
-    resolution: {integrity: sha512-6raRe2vxCYBhpBu+B+TtNGUzah+hQjVdu3E17wfusjyrXBka2nBS8OH/gjVZ5PvHOhWmIZTYri09Z6n/QfnNMw==}
-
-  lodash.startswith@4.2.1:
-    resolution: {integrity: sha512-XClYR1h4/fJ7H+mmCKppbiBmljN/nGs73iq2SjCT9SF4CBPoUHzLvWmH1GtZMhMBZSiRkHXfeA2RY1eIlJ75ww==}
-
   lodash.throttle@4.1.1:
     resolution: {integrity: sha512-wIkUCfVKpVsWo3JSZlc+8MB5it+2AN5W8J7YVMST30UrvcQNZ1Okbj+rbVniijTWE6FGYy4XJq/rHkas8qJMLQ==}
 
@@ -13156,12 +13147,6 @@ packages:
     peerDependencies:
       react: '>=16.8.6 || ^17.0.0 || ^18.0.0'
       react-dom: '>=16.8.6 || ^17.0.0 || ^18.0.0'
-
-  react-phone-input-2@2.15.1:
-    resolution: {integrity: sha512-W03abwhXcwUoq+vUFvC6ch2+LJYMN8qSOiO889UH6S7SyMCQvox/LF3QWt+cZagZrRdi5z2ON3omnjoCUmlaYw==}
-    peerDependencies:
-      react: ^16.12.0 || ^17.0.0 || ^18.0.0 || ^19.0.0 || ^20.0.0 || ^21.0.0
-      react-dom: ^16.12.0 || ^17.0.0 || ^18.0.0 || ^19.0.0 || ^20.0.0 || ^21.0.0
 
   react-phone-number-input@3.4.12:
     resolution: {integrity: sha512-Raob77KdtLGm49iC6nuOX9qy6Mg16idkgC7Y1mHmvG2WBYoauHpzxYNlfmFskQKeiztrJIwPhPzBhjFwjenNCA==}
@@ -19600,6 +19585,21 @@ snapshots:
       - typescript
       - verdaccio
 
+  '@nrwl/js@19.7.2(@babel/traverse@7.27.1)(@swc-node/register@1.9.2(@swc/core@1.5.7(@swc/helpers@0.5.13))(@swc/types@0.1.7)(typescript@5.5.4))(@swc/core@1.5.7(@swc/helpers@0.5.13))(@types/node@18.16.9)(nx@19.7.2(@swc-node/register@1.9.2(@swc/core@1.5.7(@swc/helpers@0.5.13))(@swc/types@0.1.7)(typescript@5.5.4))(@swc/core@1.5.7(@swc/helpers@0.5.13)))(typescript@5.5.4)':
+    dependencies:
+      '@nx/js': 19.7.2(@babel/traverse@7.27.1)(@swc-node/register@1.9.2(@swc/core@1.5.7(@swc/helpers@0.5.13))(@swc/types@0.1.7)(typescript@5.5.4))(@swc/core@1.5.7(@swc/helpers@0.5.13))(@types/node@18.16.9)(nx@19.7.2(@swc-node/register@1.9.2(@swc/core@1.5.7(@swc/helpers@0.5.13))(@swc/types@0.1.7)(typescript@5.5.4))(@swc/core@1.5.7(@swc/helpers@0.5.13)))(typescript@5.5.4)
+    transitivePeerDependencies:
+      - '@babel/traverse'
+      - '@swc-node/register'
+      - '@swc/core'
+      - '@swc/wasm'
+      - '@types/node'
+      - debug
+      - nx
+      - supports-color
+      - typescript
+      - verdaccio
+
   '@nrwl/nest@19.7.2(@babel/traverse@7.27.1)(@swc-node/register@1.9.2(@swc/core@1.5.7(@swc/helpers@0.5.13))(@swc/types@0.1.7)(typescript@5.5.4))(@swc/core@1.5.7(@swc/helpers@0.5.13))(@types/node@18.16.9)(@zkochan/js-yaml@0.0.7)(babel-plugin-macros@3.1.0)(chokidar@3.5.3)(eslint@8.57.0)(nx@19.7.2(@swc-node/register@1.9.2(@swc/core@1.5.7(@swc/helpers@0.5.13))(@swc/types@0.1.7)(typescript@5.5.4))(@swc/core@1.5.7(@swc/helpers@0.5.13)))(ts-node@10.9.2(@swc/core@1.5.7(@swc/helpers@0.5.13))(@types/node@18.16.9)(typescript@5.5.4))(typescript@5.5.4)':
     dependencies:
       '@nx/nest': 19.7.2(@babel/traverse@7.27.1)(@swc-node/register@1.9.2(@swc/core@1.5.7(@swc/helpers@0.5.13))(@swc/types@0.1.7)(typescript@5.5.4))(@swc/core@1.5.7(@swc/helpers@0.5.13))(@types/node@18.16.9)(@zkochan/js-yaml@0.0.7)(babel-plugin-macros@3.1.0)(chokidar@3.5.3)(eslint@8.57.0)(nx@19.7.2(@swc-node/register@1.9.2(@swc/core@1.5.7(@swc/helpers@0.5.13))(@swc/types@0.1.7)(typescript@5.5.4))(@swc/core@1.5.7(@swc/helpers@0.5.13)))(ts-node@10.9.2(@swc/core@1.5.7(@swc/helpers@0.5.13))(@types/node@18.16.9)(typescript@5.5.4))(typescript@5.5.4)
@@ -19946,7 +19946,7 @@ snapshots:
       '@babel/preset-env': 7.27.1(@babel/core@7.27.1)
       '@babel/preset-typescript': 7.27.1(@babel/core@7.27.1)
       '@babel/runtime': 7.27.1
-      '@nrwl/js': 19.7.2(@babel/traverse@7.27.1)(@swc-node/register@1.9.2(@swc/core@1.5.7(@swc/helpers@0.5.13))(@swc/types@0.1.7)(typescript@5.5.4))(@swc/core@1.5.7(@swc/helpers@0.5.13))(@types/node@18.16.9)(nx@19.7.2(@swc-node/register@1.9.2(@swc/core@1.5.7(@swc/helpers@0.5.13))(@swc/types@0.1.7)(typescript@5.5.4))(@swc/core@1.5.7(@swc/helpers@0.5.13)))(typescript@5.4.5)
+      '@nrwl/js': 19.7.2(@babel/traverse@7.27.1)(@swc-node/register@1.9.2(@swc/core@1.5.7(@swc/helpers@0.5.13))(@swc/types@0.1.7)(typescript@5.5.4))(@swc/core@1.5.7(@swc/helpers@0.5.13))(@types/node@18.16.9)(nx@19.7.2(@swc-node/register@1.9.2(@swc/core@1.5.7(@swc/helpers@0.5.13))(@swc/types@0.1.7)(typescript@5.5.4))(@swc/core@1.5.7(@swc/helpers@0.5.13)))(typescript@5.5.4)
       '@nx/devkit': 19.7.2(nx@19.7.2(@swc-node/register@1.9.2(@swc/core@1.5.7(@swc/helpers@0.5.13))(@swc/types@0.1.7)(typescript@5.5.4))(@swc/core@1.5.7(@swc/helpers@0.5.13)))
       '@nx/workspace': 19.7.2(@swc-node/register@1.9.2(@swc/core@1.5.7(@swc/helpers@0.5.13))(@swc/types@0.1.7)(typescript@5.5.4))(@swc/core@1.5.7(@swc/helpers@0.5.13))
       babel-plugin-const-enum: 1.2.0(@babel/core@7.27.1)
@@ -29665,10 +29665,6 @@ snapshots:
 
   lodash.once@4.1.1: {}
 
-  lodash.reduce@4.6.0: {}
-
-  lodash.startswith@4.2.1: {}
-
   lodash.throttle@4.1.1: {}
 
   lodash.uniq@4.5.0: {}
@@ -32447,17 +32443,6 @@ snapshots:
 
   react-otp-input@3.1.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-
-  react-phone-input-2@2.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
-    dependencies:
-      classnames: 2.5.1
-      lodash.debounce: 4.0.8
-      lodash.memoize: 4.1.2
-      lodash.reduce: 4.6.0
-      lodash.startswith: 4.2.1
-      prop-types: 15.8.1
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 

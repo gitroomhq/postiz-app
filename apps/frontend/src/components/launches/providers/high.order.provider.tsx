@@ -460,8 +460,8 @@ export const withProvider = function <T extends object>(
                   >
                     {editInPlace
                       ? 'Edit globally'
-                      : `Edit only ${integration?.name.slice(0, 10)}${
-                          (integration?.name?.length || 0) > 10 ? '...' : ''
+                      : `Edit only ${integration?.name.slice(0, 2)}${
+                          (integration?.name?.length || 0) > 2 ? '...' : ''
                         } (${capitalize(
                           integration?.identifier.replace('-', ' ')
                         )})`}
