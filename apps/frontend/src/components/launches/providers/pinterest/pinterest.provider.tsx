@@ -10,6 +10,7 @@ const PinterestSettings: FC = () => {
   return (
     <div className="flex flex-col">
       <Input label={'Title'} {...register('title')} />
+      <Input label={'Link'} {...register('link')} />
       <PinterestBoard {...register('board')} />
       <ColorPicker
         label="Select Pin Color"
