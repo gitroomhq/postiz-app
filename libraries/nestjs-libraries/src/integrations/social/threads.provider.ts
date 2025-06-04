@@ -411,9 +411,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
             id: makeId(10),
             media: [],
             message:
-              postDetails?.[0]?.settings?.thread_finisher! +
-              '\n' +
-              responses[0].releaseURL,
+              postDetails?.[0]?.settings?.thread_finisher,
             settings: {},
           },
           lastReplyId,
