@@ -1,9 +1,9 @@
 'use client';
+
 import { FC, useEffect, useMemo, useRef } from 'react';
 import DrawChart from 'chart.js/auto';
 import { TotalList } from '@gitroom/frontend/components/analytics/stars.and.forks.interface';
 import { chunk } from 'lodash';
-
 function mergeDataPoints(data: TotalList[], numPoints: number): TotalList[] {
   const res = chunk(data, Math.ceil(data.length / numPoints));
   return res.map((row) => {
@@ -13,13 +13,13 @@ function mergeDataPoints(data: TotalList[], numPoints: number): TotalList[] {
     };
   });
 }
-
-export const ChartSocial: FC<{ data: TotalList[] }> = (props) => {
+export const ChartSocial: FC<{
+  data: TotalList[];
+}> = (props) => {
   const { data } = props;
   const list = useMemo(() => {
     return mergeDataPoints(data, 7);
   }, [data]);
-
   const ref = useRef<any>(null);
   const chart = useRef<null | DrawChart>(null);
   useEffect(() => {

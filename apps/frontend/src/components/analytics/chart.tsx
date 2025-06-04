@@ -1,4 +1,5 @@
 'use client';
+
 import { FC, useEffect, useRef } from 'react';
 import DrawChart from 'chart.js/auto';
 import {
@@ -6,8 +7,9 @@ import {
   StarsList,
 } from '@gitroom/frontend/components/analytics/stars.and.forks.interface';
 import dayjs from 'dayjs';
-
-export const Chart: FC<{ list: StarsList[] | ForksList[] }> = (props) => {
+export const Chart: FC<{
+  list: StarsList[] | ForksList[];
+}> = (props) => {
   const { list } = props;
   const ref = useRef<any>(null);
   const chart = useRef<null | DrawChart>(null);

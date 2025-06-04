@@ -3,7 +3,6 @@ export const dynamic = 'force-dynamic';
 import '../global.scss';
 import 'react-tooltip/dist/react-tooltip.css';
 import '@copilotkit/react-ui/styles.css';
-
 import LayoutContext from '@gitroom/frontend/components/layout/layout.context';
 import { ReactNode } from 'react';
 import { Chakra_Petch } from 'next/font/google';
@@ -15,20 +14,26 @@ import { PHProvider } from '@gitroom/react/helpers/posthog';
 import UtmSaver from '@gitroom/helpers/utils/utm.saver';
 import { ToltScript } from '@gitroom/frontend/components/layout/tolt.script';
 import { FacebookComponent } from '@gitroom/frontend/components/layout/facebook.component';
+import { headers } from 'next/headers';
+import { headerName } from '@gitroom/react/translation/i18n.config';
+import { HtmlComponent } from '@gitroom/frontend/components/layout/html.component';
 
-const chakra = Chakra_Petch({ weight: '400', subsets: ['latin'] });
-
+const chakra = Chakra_Petch({
+  weight: '400',
+  subsets: ['latin'],
+});
 export default async function AppLayout({ children }: { children: ReactNode }) {
+  const allHeaders = headers();
   const Plausible = !!process.env.STRIPE_PUBLISHABLE_KEY
     ? PlausibleProvider
     : Fragment;
-
   return (
     <html className={interClass}>
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
       <body className={clsx(chakra.className, 'dark text-primary !bg-primary')}>
+        <HtmlComponent />
         <VariableContextComponent
           storageProvider={
             process.env.STORAGE_PROVIDER! as 'local' | 'cloudflare'
@@ -49,6 +54,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           neynarClientId={process.env.NEYNAR_CLIENT_ID!}
           isSecured={!process.env.NOT_SECURED}
           disableImageCompression={!!process.env.DISABLE_IMAGE_COMPRESSION}
+          language={allHeaders.get(headerName)}
         >
           <ToltScript />
           <FacebookComponent />

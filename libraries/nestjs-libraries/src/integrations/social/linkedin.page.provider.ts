@@ -89,7 +89,13 @@ export class LinkedinPageProvider
     postId: string,
     information: any
   ) {
-    return super.repostPostUsers(integration, originalIntegration, postId, information, false);
+    return super.repostPostUsers(
+      integration,
+      originalIntegration,
+      postId,
+      information,
+      false
+    );
   }
 
   override async generateAuthUrl() {
@@ -505,7 +511,7 @@ export class LinkedinPageProvider
             actor: `urn:li:organization:${integration.internalId}`,
             object: id,
             message: {
-              text: this.fixText(fields.post)
+              text: this.fixText(fields.post),
             },
           }),
         }

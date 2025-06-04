@@ -1,7 +1,5 @@
 import { internalFetch } from '@gitroom/helpers/utils/internal.fetch';
-
 export const dynamic = 'force-dynamic';
-
 import { Metadata } from 'next';
 import { isGeneralServerSide } from '@gitroom/helpers/utils/is.general.server.side';
 import Image from 'next/image';
@@ -11,30 +9,32 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
 import { CopyClient } from '@gitroom/frontend/components/preview/copy.client';
-
+import { getT } from '@gitroom/react/translation/get.translation.service.backend';
 dayjs.extend(utc);
 export const metadata: Metadata = {
   title: `${isGeneralServerSide() ? 'Postiz' : 'Gitroom'} Preview`,
   description: '',
 };
-
 export default async function Auth({
   params: { id },
   searchParams,
 }: {
-  params: { id: string };
-  searchParams?: { share?: string };
+  params: {
+    id: string;
+  };
+  searchParams?: {
+    share?: string;
+  };
 }) {
   const post = await (await internalFetch(`/public/posts/${id}`)).json();
-
+  const t = await getT();
   if (!post.length) {
     return (
-      <div className="text-white fixed left-0 top-0 w-full h-full flex justify-center items-center text-[20px]">
-        Post not found
+      <div className="text-white fixed start-0 top-0 w-full h-full flex justify-center items-center text-[20px]">
+        {t('post_not_found', 'Post not found')}
       </div>
     );
   }
-
   return (
     <div>
       <div className="mx-auto w-full max-w-[1346px] py-3 text-white">
@@ -91,7 +91,7 @@ export default async function Auth({
               </div>
             )}
             <div className="flex-1">
-              Publication Date:{' '}
+              {t('publication_date', 'Publication Date:')}
               {dayjs
                 .utc(post[0].createdAt)
                 .local()
@@ -119,7 +119,7 @@ export default async function Auth({
                           src={post[0].integration.picture}
                         />
                       </div>
-                      <div className="absolute -right-[5px] -bottom-[5px] w-[30px] h-[30px] z-[20]">
+                      <div className="absolute -end-[5px] -bottom-[5px] w-[30px] h-[30px] z-[20]">
                         <img
                           className="w-full h-full bg-black aspect-square rounded-full border-tableBorder"
                           alt={post[0].integration.providerIdentifier}
@@ -140,7 +140,9 @@ export default async function Auth({
                     <div className="flex flex-col gap-[20px]">
                       <div
                         className="text-sm whitespace-pre-wrap"
-                        dangerouslySetInnerHTML={{ __html: p.content }}
+                        dangerouslySetInnerHTML={{
+                          __html: p.content,
+                        }}
                       />
                       <div className="flex w-full gap-[10px]">
                         {JSON.parse(p?.image || '[]').map((p: any) => (
@@ -148,7 +150,11 @@ export default async function Auth({
                             key={p.name}
                             className="flex-1 rounded-[10px] max-h-[500px] overflow-hidden"
                           >
-                            <VideoOrImage isContain={true} src={p.path} autoplay={true} />
+                            <VideoOrImage
+                              isContain={true}
+                              src={p.path}
+                              autoplay={true}
+                            />
                           </div>
                         ))}
                       </div>

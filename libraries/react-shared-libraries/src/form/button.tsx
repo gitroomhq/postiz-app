@@ -10,20 +10,21 @@ import {
 } from 'react';
 import { clsx } from 'clsx';
 import ReactLoading from 'react-loading';
-
 export const Button: FC<
   DetailedHTMLProps<
     ButtonHTMLAttributes<HTMLButtonElement>,
     HTMLButtonElement
-  > & { secondary?: boolean; loading?: boolean; innerClassName?: string }
+  > & {
+    secondary?: boolean;
+    loading?: boolean;
+    innerClassName?: string;
+  }
 > = ({ children, loading, innerClassName, ...props }) => {
   const ref = useRef<HTMLButtonElement | null>(null);
   const [height, setHeight] = useState<number | null>(null);
-
   useEffect(() => {
     setHeight(ref.current?.offsetHeight || 40);
   }, []);
-
   return (
     <button
       {...props}

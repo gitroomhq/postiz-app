@@ -28,12 +28,11 @@ import { FormProvider, SubmitHandler, useForm } from 'react-hook-form';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { NewConversationDto } from '@gitroom/nestjs-libraries/dtos/marketplace/new.conversation.dto';
 import { OrderList } from '@gitroom/frontend/components/marketplace/order.list';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export interface Root {
   list: List[];
   count: number;
 }
-
 export interface List {
   id: string;
   name: any;
@@ -46,23 +45,18 @@ export interface List {
   organizations: Organization[];
   items: Item[];
 }
-
 export interface Organization {
   organization: Organization2;
 }
-
 export interface Organization2 {
   Integration: Integration[];
 }
-
 export interface Integration {
   providerIdentifier: string;
 }
-
 export interface Item {
   key: string;
 }
-
 export const LabelCheckbox: FC<{
   label: string;
   name: string;
@@ -73,12 +67,10 @@ export const LabelCheckbox: FC<{
   const { label, name, value, checked, onChange } = props;
   const ref = useRef<any>(null);
   const [innerCheck, setInnerCheck] = useState(checked);
-
   const change = useCallback(() => {
     setInnerCheck(!innerCheck);
     onChange(value, !innerCheck);
   }, [innerCheck]);
-
   return (
     <div className="flex items-center gap-[10px] select-none">
       <Checkbox
@@ -99,18 +91,24 @@ export const LabelCheckbox: FC<{
     </div>
   );
 };
-
-const Pagination: FC<{ results: number }> = (props) => {
+const Pagination: FC<{
+  results: number;
+}> = (props) => {
   const { results } = props;
   const router = useRouter();
   const search = useSearchParams();
   const page = +(parseInt(search.get('page')!) || 1) - 1;
+  const t = useT();
   const from = page * 8;
   const to = (page + 1) * 8;
   const pagesArray = useMemo(() => {
-    return Array.from({ length: Math.ceil(results / 8) }, (_, i) => i + 1);
+    return Array.from(
+      {
+        length: Math.ceil(results / 8),
+      },
+      (_, i) => i + 1
+    );
   }, [results]);
-
   const changePage = useCallback(
     (newPage: number) => () => {
       const params = new URLSearchParams(window.location.search);
@@ -121,15 +119,19 @@ const Pagination: FC<{ results: number }> = (props) => {
     },
     [page]
   );
-
   if (results < 8) {
     return null;
   }
   return (
     <div className="flex items-center relative">
-      <div className="absolute left-0">
-        Showing {from + 1} to {to > results ? results : to} from {results}{' '}
-        Results
+      <div className="absolute start-0">
+        {t('showing', 'Showing')}
+        {from + 1}
+        {t('to', 'to')}
+        {to > results ? results : to}
+        {t('from', 'from')}
+        {results}
+        {t('results', 'Results')}
       </div>
       <div className="flex mx-auto">
         {page > 0 && (
@@ -193,10 +195,12 @@ const Pagination: FC<{ results: number }> = (props) => {
     </div>
   );
 };
-
 export const Options: FC<{
   title: string;
-  options: Array<{ key: string; value: string }>;
+  options: Array<{
+    key: string;
+    value: string;
+  }>;
   onChange?: (key: string, value: boolean) => void;
   preSelected?: string[];
   rows?: number;
@@ -221,7 +225,6 @@ export const Options: FC<{
       : optionsGroupList;
   const router = useRouter();
   const searchParams = (useSearchParams().get(query) || '')?.split(',') || [];
-
   const change = (value: string, state: boolean) => {
     if (onChange) {
       onChange(value, state);
@@ -229,27 +232,22 @@ export const Options: FC<{
     if (!search) {
       return;
     }
-
     const getAll = new URLSearchParams(window.location.search).get(query);
     const splitAll = (getAll?.split(',') || []).filter((f) => f);
-
     if (state) {
       splitAll?.push(value);
     } else {
       splitAll?.splice(splitAll.indexOf(value), 1);
     }
-
     const params = new URLSearchParams(window.location.search);
     if (!splitAll?.length) {
       params.delete(query);
     } else {
       params.set(query, splitAll?.join(',') || '');
     }
-
     router.replace('?' + params.toString());
     return params.toString();
   };
-
   return (
     <>
       <div className="h-[56px] text-[20px] font-[600] flex items-center px-[24px] bg-customColor8">
@@ -281,8 +279,10 @@ export const Options: FC<{
     </>
   );
 };
-
-export const RequestService: FC<{ toId: string; name: string }> = (props) => {
+export const RequestService: FC<{
+  toId: string;
+  name: string;
+}> = (props) => {
   const { toId, name } = props;
   const router = useRouter();
   const fetch = useFetch();
@@ -290,11 +290,18 @@ export const RequestService: FC<{ toId: string; name: string }> = (props) => {
   const resolver = useMemo(() => {
     return classValidatorResolver(NewConversationDto);
   }, []);
-
-  const form = useForm({ resolver, values: { to: toId, message: '' } });
+  const form = useForm({
+    resolver,
+    values: {
+      to: toId,
+      message: '',
+    },
+  });
   const close = useCallback(() => {
     return modal.closeAll();
   }, []);
+
+  const t = useT();
 
   const createConversation: SubmitHandler<NewConversationDto> = useCallback(
     async (data) => {
@@ -309,14 +316,13 @@ export const RequestService: FC<{ toId: string; name: string }> = (props) => {
     },
     []
   );
-
   return (
     <form onSubmit={form.handleSubmit(createConversation)}>
       <FormProvider {...form}>
         <div className="w-full max-w-[920px] mx-auto bg-sixth px-[16px] rounded-[4px] border border-customColor6 gap-[24px] flex flex-col relative">
           <button
             onClick={close}
-            className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+            className="outline-none absolute end-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
             type="button"
           >
             <svg
@@ -348,7 +354,7 @@ export const RequestService: FC<{ toId: string; name: string }> = (props) => {
                 type="submit"
                 className="w-[144px] mb-[16px] rounded-[4px] text-[14px]"
               >
-                Send Message
+                {t('send_message', 'Send Message')}
               </Button>
             </div>
           </div>
@@ -357,13 +363,11 @@ export const RequestService: FC<{ toId: string; name: string }> = (props) => {
     </form>
   );
 };
-
 export const Card: FC<{
   data: List;
 }> = (props) => {
   const { data } = props;
   const modal = useModals();
-
   const tags = useMemo(() => {
     return data.items
       .filter((f) => !['content-writer', 'influencers'].includes(f.key))
@@ -371,7 +375,6 @@ export const Card: FC<{
         return allTagsOptions?.find((t) => t.key === p.key)?.value;
       });
   }, [data]);
-
   const requestService = useCallback(() => {
     modal.openModal({
       children: <RequestService toId={data.id} name={data.name || 'Noname'} />,
@@ -382,6 +385,7 @@ export const Card: FC<{
       size: '100%',
     });
   }, []);
+  const t = useT();
 
   const identifier = useMemo(() => {
     return [
@@ -392,7 +396,6 @@ export const Card: FC<{
       ),
     ];
   }, []);
-
   return (
     <div className="min-h-[155px] bg-sixth p-[24px] flex">
       <div className="flex gap-[16px] flex-1">
@@ -404,7 +407,7 @@ export const Card: FC<{
                 className="rounded-full w-full h-full"
               />
             )}
-            <div className="w-[80px] h-[28px] bg-customColor4 absolute bottom-0 left-[50%] -translate-x-[50%] rounded-[30px] flex gap-[4px] justify-center items-center">
+            <div className="w-[80px] h-[28px] bg-customColor4 absolute bottom-0 start-[50%] -translate-x-[50%] rounded-[30px] flex gap-[4px] justify-center items-center">
               <div>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -434,7 +437,7 @@ export const Card: FC<{
                     interClass
                   )}
                 >
-                  Content Writer
+                  {t('content_writer', 'Content Writer')}
                 </div>
               )}
               {data.items.some((i) => i.key === 'influencers') && (
@@ -444,7 +447,7 @@ export const Card: FC<{
                     interClass
                   )}
                 >
-                  Influencer
+                  {t('influencer', 'Influencer')}
                 </div>
               )}
             </div>
@@ -480,21 +483,20 @@ export const Card: FC<{
           </div>
         </div>
       </div>
-      <div className="ml-[100px] items-center flex">
-        <Button onClick={requestService}>Request Service</Button>
+      <div className="ms-[100px] items-center flex">
+        <Button onClick={requestService}>
+          {t('request_service', 'Request Service')}
+        </Button>
       </div>
     </div>
   );
 };
-
 export const Buyer = () => {
   const search = useSearchParams();
   const services = search.get('services');
   const page = +(search.get('page') || 1);
   const router = useRouter();
-
   const fetch = useFetch();
-
   const marketplace = useCallback(async () => {
     return await (
       await fetch('/marketplace', {
@@ -507,6 +509,8 @@ export const Buyer = () => {
     ).json();
   }, [services, page]);
 
+  const t = useT();
+
   useEffect(() => {
     if (!services) {
       return;
@@ -515,22 +519,22 @@ export const Buyer = () => {
     params.set('page', '1');
     router.replace('?' + params.toString());
   }, [services]);
-
   const { data: list } = useSWR<Root>('search' + services + page, marketplace);
-
   return (
     <div className="flex flex-col items-center mt-[100px] gap-[27px] text-center">
       <div>
         <img src="/peoplemarketplace.svg" />
       </div>
       <div className="text-[48px]">
-        The marketplace is not opened yet
+        {t(
+          'the_marketplace_is_not_opened_yet',
+          'The marketplace is not opened yet'
+        )}
         <br />
-        Check again soon!
+        {t('check_again_soon', 'Check again soon!')}
       </div>
     </div>
   );
-
   return (
     <>
       <div>
@@ -539,7 +543,7 @@ export const Buyer = () => {
       <div className="flex mt-[29px] w-full gap-[43px]">
         <div className="w-[330px]">
           <div className="flex flex-col gap-[16px]">
-            <h2 className="text-[20px]">Filter</h2>
+            <h2 className="text-[20px]">{t('filter', 'Filter')}</h2>
             <div className="flex flex-col">
               {tagsList.map((tag) => (
                 <Options
@@ -554,7 +558,8 @@ export const Buyer = () => {
         </div>
         <div className="flex-1 gap-[16px] flex-col flex">
           <div className="text-[20px] text-right">
-            {list?.count || 0} Result
+            {list?.count || 0}
+            {t('result', 'Result')}
           </div>
           {list?.list?.map((item, index) => (
             <Card key={String(index)} data={item} />

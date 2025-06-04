@@ -8,7 +8,6 @@ import {
 } from '@uiw/react-md-editor';
 import { showMediaBox } from '@gitroom/frontend/components/media/media.component';
 import { loadVars } from '@gitroom/react/helpers/variable.context';
-
 export const newImage: ICommand = {
   name: 'image',
   keyCommand: 'image',
@@ -28,16 +27,14 @@ export const newImage: ICommand = {
     </svg>
   ),
   execute: (state: ExecuteState, api: TextAreaTextApi) => {
-    const {uploadDirectory, backendUrl} = loadVars();
+    const { uploadDirectory, backendUrl } = loadVars();
     let newSelectionRange = selectWord({
       text: state.text,
       selection: state.selection,
       prefix: state.command.prefix!,
       suffix: state.command.suffix,
     });
-
     let state1 = api.setSelectionRange(newSelectionRange);
-
     if (
       state1.selectedText.includes('http') ||
       state1.selectedText.includes('www') ||
@@ -50,10 +47,8 @@ export const newImage: ICommand = {
         prefix: state.command.prefix!,
         suffix: state.command.suffix,
       });
-
       return;
     }
-
     newSelectionRange = selectWord({
       text: state.text,
       selection: state.selection,
@@ -61,7 +56,6 @@ export const newImage: ICommand = {
       suffix: ']()',
     });
     state1 = api.setSelectionRange(newSelectionRange);
-
     showMediaBox((media) => {
       if (media) {
         if (state1.selectedText.length > 0) {
@@ -76,10 +70,8 @@ export const newImage: ICommand = {
                 : ``
             }${media.path})`,
           });
-
           return;
         }
-
         executeCommand({
           api,
           selectedText: state1.selectedText,

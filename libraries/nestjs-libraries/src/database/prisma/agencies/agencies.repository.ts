@@ -22,7 +22,7 @@ export class AgenciesRepository {
       },
       orderBy: {
         createdAt: 'desc',
-      }
+      },
     });
   }
 

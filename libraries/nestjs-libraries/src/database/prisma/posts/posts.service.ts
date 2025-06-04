@@ -199,7 +199,7 @@ export class PostsService {
           image: await this.updateMedia(
             post.id,
             JSON.parse(post.image || '[]'),
-            convertToJPEG,
+            convertToJPEG
           ),
         }))
       ),

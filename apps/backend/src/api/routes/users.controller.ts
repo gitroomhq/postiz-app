@@ -62,8 +62,7 @@ export class UsersController {
       // @ts-ignore
       totalChannels: !process.env.STRIPE_PUBLISHABLE_KEY ? 10000 : organization?.subscription?.totalChannels || pricing.FREE.channel,
       // @ts-ignore
-      tier: organization?.subscription?.subscriptionTier ||
-        (!process.env.STRIPE_PUBLISHABLE_KEY ? 'ULTIMATE' : 'FREE'),
+      tier: organization?.subscription?.subscriptionTier || (!process.env.STRIPE_PUBLISHABLE_KEY ? 'ULTIMATE' : 'FREE'),
       // @ts-ignore
       role: organization?.users[0]?.role,
       // @ts-ignore
@@ -72,7 +71,7 @@ export class UsersController {
       impersonate: !!impersonate,
       allowTrial: organization?.allowTrial,
       // @ts-ignore
-      publicApi: organization?.users[0]?.role === 'SUPERADMIN' || organization?.users[0]?.role === 'ADMIN' ? organization?.apiKey  : '',
+      publicApi: organization?.users[0]?.role === 'SUPERADMIN' || organization?.users[0]?.role === 'ADMIN' ? organization?.apiKey : '',
     };
   }
 

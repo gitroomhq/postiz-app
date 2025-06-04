@@ -9,10 +9,7 @@ import { MainMcp } from '@gitroom/backend/mcp/main.mcp';
 @Injectable()
 export class McpService {
   static event = new EventEmitter();
-  constructor(
-    private _mainMcp: MainMcp
-  ) {
-  }
+  constructor(private _mainMcp: MainMcp) {}
 
   async runServer(apiKey: string, organization: string) {
     const server = McpSettings.load(organization, this._mainMcp).server();
@@ -24,7 +21,8 @@ export class McpService {
     ).pipe(
       startWith({
         type: 'endpoint',
-        data: process.env.NEXT_PUBLIC_BACKEND_URL + '/mcp/' + apiKey + '/messages',
+        data:
+          process.env.NEXT_PUBLIC_BACKEND_URL + '/mcp/' + apiKey + '/messages',
       }),
       finalize(() => {
         transport.close();

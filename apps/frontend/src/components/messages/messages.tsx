@@ -1,7 +1,6 @@
 'use client';
 
 import dayjs from 'dayjs';
-
 export interface Root {
   id: string;
   buyerId: string;
@@ -10,18 +9,15 @@ export interface Root {
   updatedAt: string;
   messages: Message[];
 }
-
 export interface SellerBuyer {
   id: string;
   name?: string;
   picture: Picture;
 }
-
 export interface Picture {
   id: string;
   path: string;
 }
-
 export interface Message {
   id: string;
   from: string;
@@ -32,7 +28,6 @@ export interface Message {
   updatedAt: string;
   deletedAt: any;
 }
-
 import { Textarea } from '@gitroom/react/form/textarea';
 import interClass from '@gitroom/react/helpers/inter.font';
 import clsx from 'clsx';
@@ -59,7 +54,7 @@ import { OrderTopActions } from '@gitroom/frontend/components/marketplace/order.
 import { MarketplaceProvider } from '@gitroom/frontend/components/marketplace/marketplace.provider';
 import { SpecialMessage } from '@gitroom/frontend/components/marketplace/special.message';
 import { usePageVisibility } from '@gitroom/react/helpers/use.is.visible';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const Message: FC<{
   message: Message;
   seller: SellerBuyer;
@@ -68,40 +63,32 @@ export const Message: FC<{
 }> = (props) => {
   const { message, seller, buyer, scrollDown } = props;
   const user = useUser();
-
   const amITheBuyerOrSeller = useMemo(() => {
     return user?.id === buyer?.id ? 'BUYER' : 'SELLER';
   }, [buyer, user]);
-
   useEffect(() => {
     scrollDown();
   }, []);
-
   const person = useMemo(() => {
     if (message.from === 'BUYER') {
       return buyer;
     }
-
     if (message.from === 'SELLER') {
       return seller;
     }
   }, [amITheBuyerOrSeller, buyer, seller, message]);
-
   const data = useMemo(() => {
     if (!message.special) {
       return false;
     }
-
     return JSON.parse(message.special);
   }, [message]);
-
   const isMe = useMemo(() => {
     return (
       (amITheBuyerOrSeller === 'BUYER' && message.from === 'BUYER') ||
       (amITheBuyerOrSeller === 'SELLER' && message.from === 'SELLER')
     );
   }, [amITheBuyerOrSeller, message]);
-
   const time = useMemo(() => {
     return dayjs(message.createdAt).format('h:mm A');
   }, [message]);
@@ -137,17 +124,18 @@ export const Message: FC<{
     </div>
   );
 };
-
-const Page: FC<{ page: number; group: string; refChange: any }> = (props) => {
+const Page: FC<{
+  page: number;
+  group: string;
+  refChange: any;
+}> = (props) => {
   const { page, group, refChange } = props;
   const fetch = useFetch();
   const { message } = useContext(MarketplaceProvider);
   const visible = usePageVisibility(page);
-
   const loadMessages = useCallback(async () => {
     return await (await fetch(`/messages/${group}/${page}`)).json();
   }, []);
-
   const { data, mutate } = useSWR<Root>(`load-${page}-${group}`, loadMessages, {
     ...(page === 1
       ? {
@@ -159,7 +147,6 @@ const Page: FC<{ page: number; group: string; refChange: any }> = (props) => {
         }
       : {}),
   });
-
   const scrollDown = useCallback(() => {
     if (page > 1) {
       return;
@@ -167,11 +154,9 @@ const Page: FC<{ page: number; group: string; refChange: any }> = (props) => {
     // @ts-ignore
     refChange.current?.scrollTo(0, refChange.current.scrollHeight);
   }, [refChange]);
-
   const messages = useMemo(() => {
     return reverse([...(data?.messages || [])]);
   }, [data]);
-
   return (
     <>
       {messages.map((m) => (
@@ -186,37 +171,37 @@ const Page: FC<{ page: number; group: string; refChange: any }> = (props) => {
     </>
   );
 };
-
 export const Messages = () => {
   const [pages, setPages] = useState([makeId(3)]);
   const user = useUser();
   const params = useParams();
   const fetch = useFetch();
+  const t = useT();
+
   const ref = useRef(null);
   const { message } = useContext(MarketplaceProvider);
-
   const showFrom = useMemo(() => {
     return user?.id === message?.buyerId ? message?.seller : message?.buyer;
   }, [message, user]);
-
   const resolver = useMemo(() => {
     return classValidatorResolver(AddMessageDto);
   }, []);
-
-  const form = useForm({ resolver, values: { message: '' } });
+  const form = useForm({
+    resolver,
+    values: {
+      message: '',
+    },
+  });
   useEffect(() => {
     setPages([makeId(3)]);
   }, [params.id]);
-
   const loadMessages = useCallback(async () => {
     return await (await fetch(`/messages/${params.id}/1`)).json();
   }, []);
-
   const { data, mutate, isLoading } = useSWR<Root>(
     `load-1-${params.id}`,
     loadMessages
   );
-
   const submit: SubmitHandler<AddMessageDto> = useCallback(async (values) => {
     await fetch(`/messages/${params.id}`, {
       method: 'POST',
@@ -225,7 +210,6 @@ export const Messages = () => {
     mutate();
     form.reset();
   }, []);
-
   const changeScroll: UIEventHandler<HTMLDivElement> = useCallback(
     (e) => {
       // @ts-ignore
@@ -237,7 +221,6 @@ export const Messages = () => {
     },
     [pages, setPages]
   );
-
   return (
     <form onSubmit={form.handleSubmit(submit)}>
       <FormProvider {...form}>
@@ -261,7 +244,7 @@ export const Messages = () => {
           </div>
           <div className="flex-1 min-h-[658px] max-h-[658px] relative">
             <div
-              className="pt-[18px] pb-[18px] absolute top-0 left-0 w-full h-full px-[24px] flex flex-col gap-[24px] overflow-x-hidden overflow-y-auto"
+              className="pt-[18px] pb-[18px] absolute top-0 start-0 w-full h-full px-[24px] flex flex-col gap-[24px] overflow-x-hidden overflow-y-auto"
               onScroll={changeScroll}
               ref={ref}
             >
@@ -292,7 +275,7 @@ export const Messages = () => {
                 )}
                 disabled={!form.formState.isValid}
               >
-                Send Message
+                {t('send_message', 'Send Message')}
               </button>
             </div>
           </div>

@@ -3,9 +3,7 @@ import { ItemUserRepository } from '@gitroom/nestjs-libraries/database/prisma/ma
 
 @Injectable()
 export class ItemUserService {
-  constructor(
-    private _itemUserRepository: ItemUserRepository,
-  ) {}
+  constructor(private _itemUserRepository: ItemUserRepository) {}
 
   addOrRemoveItem(add: boolean, userId: string, item: string) {
     return this._itemUserRepository.addOrRemoveItem(add, userId, item);

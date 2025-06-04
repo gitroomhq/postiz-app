@@ -4,7 +4,6 @@ import { Input } from '@gitroom/react/form/input';
 import { useDebouncedCallback } from 'use-debounce';
 import { useWatch } from 'react-hook-form';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
-
 export const Subreddit: FC<{
   onChange: (event: {
     target: {
@@ -23,22 +22,20 @@ export const Subreddit: FC<{
   name: string;
 }> = (props) => {
   const { onChange, name } = props;
-
   const state = useSettings();
   const split = name.split('.');
   const [loading, setLoading] = useState(false);
   // @ts-ignore
   const errors = state?.formState?.errors?.[split?.[0]]?.[split?.[1]]?.value;
-
   const [results, setResults] = useState([]);
   const func = useCustomProviderFunction();
-  const value = useWatch({ name });
+  const value = useWatch({
+    name,
+  });
   const [searchValue, setSearchValue] = useState('');
-
   const setResult = (result: { id: string; name: string }) => async () => {
     setLoading(true);
     setSearchValue('');
-
     onChange({
       target: {
         name,
@@ -53,10 +50,8 @@ export const Subreddit: FC<{
         },
       },
     });
-
     setLoading(false);
   };
-
   const setTitle = useCallback(
     (e: any) => {
       onChange({
@@ -71,7 +66,6 @@ export const Subreddit: FC<{
     },
     [value]
   );
-
   const setURL = useCallback(
     (e: any) => {
       onChange({
@@ -86,7 +80,6 @@ export const Subreddit: FC<{
     },
     [value]
   );
-
   const search = useDebouncedCallback(
     useCallback(async (e: FormEvent<HTMLInputElement>) => {
       // @ts-ignore
@@ -102,7 +95,6 @@ export const Subreddit: FC<{
     }, []),
     500
   );
-
   return (
     <div className="bg-primary p-[20px]">
       {value?.subreddit ? (

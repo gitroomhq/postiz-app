@@ -5,57 +5,76 @@ import clsx from 'clsx';
 import interClass from '@gitroom/react/helpers/inter.font';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 const useFaqList = () => {
   const { isGeneral } = useVariables();
   const user = useUser();
+  const t = useT();
   return [
     ...(user?.allowTrial
       ? [
           {
-            title: 'Am I going to be charged by Postiz?',
-            description:
-              'To confirm credit card information Postiz will hold $2 and release it immediately',
+            title: t(
+              'faq_am_i_going_to_be_charged_by_postiz',
+              'Am I going to be charged by Postiz?'
+            ),
+            description: t(
+              'faq_to_confirm_credit_card_information_postiz_will_hold',
+              'To confirm credit card information Postiz will hold $2 and release it immediately'
+            ),
           },
         ]
       : []),
     {
-      title: `Can I trust ${isGeneral ? 'Postiz' : 'Gitroom'}?`,
-      description: `${
-        isGeneral ? 'Postiz' : 'Gitroom'
-      } is proudly open-source! We believe in an ethical and transparent culture, meaning that ${
-        isGeneral ? 'Postiz' : 'Gitroom'
-      } will live forever. You can check out the entire code or use it for personal projects. To view the open-source repository, <a href="https://github.com/gitroomhq/postiz-app" target="_blank" style="text-decoration: underline;">click here</a>.`,
+      title: t(
+        'faq_can_i_trust_postiz_gitroom',
+        `Can I trust ${isGeneral ? 'Postiz' : 'Gitroom'}?`
+      ),
+      description: t(
+        'faq_postiz_gitroom_is_proudly_open_source',
+        `${
+          isGeneral ? 'Postiz' : 'Gitroom'
+        } is proudly open-source! We believe in an ethical and transparent culture, meaning that ${
+          isGeneral ? 'Postiz' : 'Gitroom'
+        } will live forever. You can check out the entire code or use it for personal projects. To view the open-source repository, <a href="https://github.com/gitroomhq/postiz-app" target="_blank" style="text-decoration: underline;">click here</a>.`
+      ),
     },
     {
-      title: 'What are channels?',
-      description: `${
-        isGeneral ? 'Postiz' : 'Gitroom'
-      } allows you to schedule your posts between different channels.
+      title: t('faq_what_are_channels', 'What are channels?'),
+      description: t(
+        'faq_postiz_gitroom_allows_you_to_schedule_posts',
+        `${
+          isGeneral ? 'Postiz' : 'Gitroom'
+        } allows you to schedule your posts between different channels.
 A channel is a publishing platform where you can schedule your posts.
-For example, you can schedule your posts on X, Facebook, Instagram, TikTok, YouTube, Reddit, Linkedin, Dribbble, Threads and Pinterest.`,
+For example, you can schedule your posts on X, Facebook, Instagram, TikTok, YouTube, Reddit, Linkedin, Dribbble, Threads and Pinterest.`
+      ),
     },
     {
-      title: 'What are team members?',
-      description: `If you have a team with multiple members, you can invite them to your workspace to collaborate on your posts and add their personal channels`,
+      title: t('faq_what_are_team_members', 'What are team members?'),
+      description: t(
+        'faq_if_you_have_a_team_with_multiple_members',
+        'If you have a team with multiple members, you can invite them to your workspace to collaborate on your posts and add their personal channels'
+      ),
     },
     {
-      title: 'What is AI auto-complete?',
-      description: `We automate ChatGPT to help you write your social posts and articles`,
+      title: t('faq_what_is_ai_auto_complete', 'What is AI auto-complete?'),
+      description: t(
+        'faq_we_automate_chatgpt_to_help_you_write',
+        'We automate ChatGPT to help you write your social posts and articles'
+      ),
     },
   ];
 };
-
-export const FAQSection: FC<{ title: string; description: string }> = (
-  props
-) => {
+export const FAQSection: FC<{
+  title: string;
+  description: string;
+}> = (props) => {
   const { title, description } = props;
   const [show, setShow] = useState(false);
-
   const changeShow = useCallback(() => {
     setShow(!show);
   }, [show]);
-
   return (
     <div
       className="bg-sixth p-[24px] border border-tableBorder rounded-[4px] flex flex-col"
@@ -110,19 +129,21 @@ export const FAQSection: FC<{ title: string; description: string }> = (
             e.stopPropagation();
           }}
           className={`mt-[16px] w-full text-wrap ${interClass} font-[400] text-[16px] text-customColor17 select-text`}
-          dangerouslySetInnerHTML={{ __html: description }}
+          dangerouslySetInnerHTML={{
+            __html: description,
+          }}
         />
       </div>
     </div>
   );
 };
-
 export const FAQComponent: FC = () => {
+  const t = useT();
   const list = useFaqList();
   return (
     <div>
       <h3 className="text-[24px] text-center mt-[81px] mb-[40px]">
-        Frequently Asked Questions
+        {t('frequently_asked_questions', 'Frequently Asked Questions')}
       </h3>
       <div className="gap-[24px] flex-col flex select-none">
         {list.map((item, index) => (

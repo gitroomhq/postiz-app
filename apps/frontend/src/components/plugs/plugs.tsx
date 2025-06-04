@@ -13,7 +13,7 @@ import { useRouter } from 'next/navigation';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { PlugsContext } from '@gitroom/frontend/components/plugs/plugs.context';
 import { Plug } from '@gitroom/frontend/components/plugs/plug';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const Plugs = () => {
   const fetch = useFetch();
   const router = useRouter();
@@ -23,11 +23,9 @@ export const Plugs = () => {
   const load = useCallback(async () => {
     return (await (await fetch('/integrations/list')).json()).integrations;
   }, []);
-
   const load2 = useCallback(async (path: string) => {
     return await (await fetch(path)).json();
   }, []);
-
   const { data: plugList, isLoading: plugLoading } = useSWR(
     '/integrations/plug/list',
     load2,
@@ -35,10 +33,11 @@ export const Plugs = () => {
       fallbackData: [],
     }
   );
-
   const { data, isLoading } = useSWR('analytics-list', load, {
     fallbackData: [],
   });
+
+  const t = useT();
 
   const sortedIntegrations = useMemo(() => {
     return orderBy(
@@ -52,16 +51,13 @@ export const Plugs = () => {
       ['desc', 'asc', 'asc']
     );
   }, [data, plugList]);
-
   const currentIntegration = useMemo(() => {
     return sortedIntegrations[current];
   }, [current, sortedIntegrations]);
-
   const currentIntegrationPlug = useMemo(() => {
     const plug = plugList?.plugs?.find(
       (f: any) => f?.identifier === currentIntegration?.identifier
     );
-
     if (!plug) {
       return null;
     }
@@ -70,11 +66,9 @@ export const Plugs = () => {
       ...plug,
     };
   }, [currentIntegration, plugList]);
-
   if (isLoading || plugLoading) {
     return null;
   }
-
   if (!sortedIntegrations.length && !isLoading) {
     return (
       <div className="flex flex-col items-center mt-[100px] gap-[27px] text-center">
@@ -82,22 +76,32 @@ export const Plugs = () => {
           <img src="/peoplemarketplace.svg" />
         </div>
         <div className="text-[48px]">
-          There are not plugs matching your channels
+          {t(
+            'there_are_not_plugs_matching_your_channels',
+            'There are not plugs matching your channels'
+          )}
           <br />
-          You have to add: X or LinkedIn or Threads
+          {t(
+            'you_have_to_add_x_or_linkedin_or_threads',
+            'You have to add: X or LinkedIn or Threads'
+          )}
         </div>
         <Button onClick={() => router.push('/launches')}>
-          Go to the calendar to add channels
+          {t(
+            'go_to_the_calendar_to_add_channels',
+            'Go to the calendar to add channels'
+          )}
         </Button>
       </div>
     );
   }
-
   return (
     <div className="flex gap-[30px] flex-1">
       <div className="p-[16px] bg-customColor48 overflow-hidden flex w-[220px]">
         <div className="flex gap-[16px] flex-col overflow-hidden">
-          <div className="text-[20px] mb-[8px]">Channels</div>
+          <div className="text-[20px] mb-[8px]">
+            {t('channels', 'Channels')}
+          </div>
           {sortedIntegrations.map((integration, index) => (
             <div
               key={integration.id}
@@ -128,11 +132,11 @@ export const Plugs = () => {
                 )}
               >
                 {(integration.inBetweenSteps || integration.refreshNeeded) && (
-                  <div className="absolute left-0 top-0 w-[39px] h-[46px] cursor-pointer">
-                    <div className="bg-red-500 w-[15px] h-[15px] rounded-full left-0 -top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
+                  <div className="absolute start-0 top-0 w-[39px] h-[46px] cursor-pointer">
+                    <div className="bg-red-500 w-[15px] h-[15px] rounded-full start-0 -top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
                       !
                     </div>
-                    <div className="bg-primary/60 w-[39px] h-[46px] left-0 top-0 absolute rounded-full z-[199]" />
+                    <div className="bg-primary/60 w-[39px] h-[46px] start-0 top-0 absolute rounded-full z-[199]" />
                   </div>
                 )}
                 <ImageWithFallback
@@ -145,7 +149,7 @@ export const Plugs = () => {
                 />
                 <Image
                   src={`/icons/platforms/${integration.identifier}.png`}
-                  className="rounded-full absolute z-10 -bottom-[5px] -right-[5px] border border-fifth"
+                  className="rounded-full absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
                   alt={integration.identifier}
                   width={20}
                   height={20}

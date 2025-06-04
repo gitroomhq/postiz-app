@@ -16,7 +16,7 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import copy from 'copy-to-clipboard';
 import interClass from '@gitroom/react/helpers/inter.font';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 const roles = [
   {
     name: 'User',
@@ -27,16 +27,13 @@ const roles = [
     value: 'ADMIN',
   },
 ];
-
 export const AddMember = () => {
   const modals = useModals();
   const fetch = useFetch();
   const toast = useToaster();
-
   const resolver = useMemo(() => {
     return classValidatorResolver(AddTeamMemberDto);
   }, []);
-
   const form = useForm({
     values: {
       email: '',
@@ -46,12 +43,10 @@ export const AddMember = () => {
     resolver,
     mode: 'onChange',
   });
-
   const sendEmail = useWatch({
     control: form.control,
     name: 'sendEmail',
   });
-
   const submit = useCallback(
     async (values: { email: string; role: string; sendEmail: boolean }) => {
       const { url } = await (
@@ -60,23 +55,22 @@ export const AddMember = () => {
           body: JSON.stringify(values),
         })
       ).json();
-
       if (values.sendEmail) {
         modals.closeAll();
         toast.show('Invitation link sent');
         return;
       }
-
       copy(url);
       modals.closeAll();
       toast.show('Link copied to clipboard');
     },
     []
   );
-
   const closeModal = useCallback(() => {
     return modals.closeAll();
   }, []);
+
+  const t = useT();
 
   return (
     <FormProvider {...form}>
@@ -85,7 +79,7 @@ export const AddMember = () => {
           <TopTitle title="Add Member" />
           <button
             onClick={closeModal}
-            className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+            className="outline-none absolute end-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
             type="button"
           >
             <svg
@@ -105,10 +99,14 @@ export const AddMember = () => {
           </button>
 
           {sendEmail && (
-            <Input label="Email" placeholder="Enter email" name="email" />
+            <Input
+              label="Email"
+              placeholder={t('enter_email', 'Enter email')}
+              name="email"
+            />
           )}
           <Select label="Role" name="role">
-            <option value="">Select Role</option>
+            <option value="">{t('select_role', 'Select Role')}</option>
             {roles.map((role) => (
               <option key={role.value} value={role.value}>
                 {role.name}
@@ -119,7 +117,9 @@ export const AddMember = () => {
             <div>
               <Checkbox name="sendEmail" />
             </div>
-            <div>Send invitation via email?</div>
+            <div>
+              {t('send_invitation_via_email', 'Send invitation via email?')}
+            </div>
           </div>
           <Button type="submit" className="mt-[18px]">
             {sendEmail ? 'Send Invitation Link' : 'Copy Link'}
@@ -129,12 +129,10 @@ export const AddMember = () => {
     </FormProvider>
   );
 };
-
 export const TeamsComponent = () => {
   const fetch = useFetch();
   const user = useUser();
   const modals = useModals();
-
   const myLevel = user?.role === 'USER' ? 0 : user?.role === 'ADMIN' ? 1 : 2;
   const getLevel = useCallback(
     (role: 'USER' | 'ADMIN' | 'SUPERADMIN') =>
@@ -145,10 +143,12 @@ export const TeamsComponent = () => {
     return (await (await fetch('/settings/team')).json()).users as Array<{
       id: string;
       role: 'SUPERADMIN' | 'ADMIN' | 'USER';
-      user: { email: string; id: string };
+      user: {
+        email: string;
+        id: string;
+      };
     }>;
   }, []);
-
   const addMember = useCallback(() => {
     modals.openModal({
       classNames: {
@@ -158,37 +158,43 @@ export const TeamsComponent = () => {
       children: <AddMember />,
     });
   }, []);
-
   const { data, mutate } = useSWR('/api/teams', loadTeam, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
     revalidateIfStale: false,
   });
-
   const remove = useCallback(
-    (toRemove: { user: { id: string } }) => async () => {
-      if (
-        !(await deleteDialog(
-          'Are you sure you want to remove this team member?'
-        ))
-      ) {
-        return;
-      }
-
-      await fetch(`/settings/team/${toRemove.user.id}`, {
-        method: 'DELETE',
-      });
-
-      await mutate();
-    },
+    (toRemove: {
+        user: {
+          id: string;
+        };
+      }) =>
+      async () => {
+        if (
+          !(await deleteDialog(
+            'Are you sure you want to remove this team member?'
+          ))
+        ) {
+          return;
+        }
+        await fetch(`/settings/team/${toRemove.user.id}`, {
+          method: 'DELETE',
+        });
+        await mutate();
+      },
     []
   );
 
+  const t = useT();
+
   return (
     <div className="flex flex-col">
-      <h3 className="text-[20px]">Team Members</h3>
+      <h3 className="text-[20px]">{t('team_members', 'Team Members')}</h3>
       <div className="text-customColor18 mt-[4px]">
-        Invite your assistant or team member to manage your account
+        {t(
+          'invite_your_assistant_or_team_member_to_manage_your_account',
+          'Invite your assistant or team member to manage your account'
+        )}
       </div>
       <div className="my-[16px] mt-[16px] bg-sixth border-fifth border rounded-[4px] p-[24px] flex flex-col gap-[24px]">
         <div className="flex flex-col gap-[16px]">
@@ -226,7 +232,7 @@ export const TeamsComponent = () => {
                           />
                         </svg>
                       </div>
-                      <div>Remove</div>
+                      <div>{t('remove', 'Remove')}</div>
                     </div>
                   </Button>
                 </div>
@@ -238,7 +244,7 @@ export const TeamsComponent = () => {
         </div>
         <div>
           <Button onClick={addMember}>
-            Add another member
+            {t('add_another_member', 'Add another member')}
           </Button>
         </div>
       </div>

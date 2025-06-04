@@ -74,7 +74,7 @@ const authenticatedController = [
     TrackService,
     ShortLinkService,
     Nowpayments,
-    McpService
+    McpService,
   ],
   get exports() {
     return [...this.imports, ...this.providers];

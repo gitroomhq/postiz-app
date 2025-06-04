@@ -1,5 +1,13 @@
 import {
-  ArrayMinSize, IsArray, IsDefined, IsOptional, IsString, Matches, MinLength, ValidateIf, ValidateNested,
+  ArrayMinSize,
+  IsArray,
+  IsDefined,
+  IsOptional,
+  IsString,
+  Matches,
+  MinLength,
+  ValidateIf,
+  ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { MediaDto } from '@gitroom/nestjs-libraries/dtos/media/media.dto';

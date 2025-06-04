@@ -16,23 +16,22 @@ import clsx from 'clsx';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import ReactLoading from 'react-loading';
 import interClass from '@gitroom/react/helpers/inter.font';
-
-export const UpDown: FC<{ name: string; param: string }> = (props) => {
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
+export const UpDown: FC<{
+  name: string;
+  param: string;
+}> = (props) => {
   const { name, param } = props;
   const router = useRouter();
   const searchParams = useSearchParams();
-
   const state = useMemo(() => {
     const newName = searchParams.get('key');
     const newState = searchParams.get('state');
-
     if (newName != param) {
       return 'none';
     }
-
     return newState as 'asc' | 'desc';
   }, [searchParams, name, param]);
-
   const changeStateUrl = useCallback(
     (newState: string) => {
       const query =
@@ -41,13 +40,11 @@ export const UpDown: FC<{ name: string; param: string }> = (props) => {
     },
     [state, param]
   );
-
   const changeState = useCallback(() => {
     changeStateUrl(
       state === 'none' ? 'desc' : state === 'desc' ? 'asc' : 'none'
     );
   }, [state, param]);
-
   return (
     <div
       className="flex gap-[5px] items-center select-none"
@@ -88,8 +85,8 @@ export const UpDown: FC<{ name: string; param: string }> = (props) => {
     </div>
   );
 };
-
 export const StarsTableComponent = () => {
+  const t = useT();
   const fetch = useFetch();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -98,7 +95,6 @@ export const StarsTableComponent = () => {
   const state = searchParams.get('state');
   const [loading, setLoading] = useState(false);
   const [, startTransition] = useTransition();
-
   const starsCallback = useCallback(
     async (path: string) => {
       startTransition(() => {
@@ -108,21 +104,23 @@ export const StarsTableComponent = () => {
         await fetch(path, {
           body: JSON.stringify({
             page,
-            ...(key && state ? { key, state } : {}),
+            ...(key && state
+              ? {
+                  key,
+                  state,
+                }
+              : {}),
           }),
           method: 'POST',
         })
       ).json();
-
       startTransition(() => {
         setLoading(false);
       });
-
       return data;
     },
     [page, key, state]
   );
-
   const {
     isLoading: isLoadingStars,
     data: stars,
@@ -134,18 +132,15 @@ export const StarsTableComponent = () => {
     refreshWhenHidden: false,
     revalidateIfStale: false,
   });
-
   useEffect(() => {
     mutate();
   }, [searchParams]);
-
   const renderMediaLink = useCallback((date: string) => {
     const local = dayjs.utc(date).local();
     const weekNumber = local.isoWeek();
     const year = local.year();
     return `/launches?week=${weekNumber}&year=${year}`;
   }, []);
-
   const changePage = useCallback(
     (type: 'increase' | 'decrease') => () => {
       const newPage = type === 'increase' ? page + 1 : page - 1;
@@ -154,7 +149,6 @@ export const StarsTableComponent = () => {
     },
     [page, key, state]
   );
-
   return (
     <div className="flex flex-1 flex-col gap-[15px] min-h-[426px]">
       <div className="text-textColor flex gap-[8px] items-center select-none">
@@ -177,7 +171,7 @@ export const StarsTableComponent = () => {
             />
           </svg>
         </div>
-        <h2 className="text-[24px]">Stars per day</h2>
+        <h2 className="text-[24px]">{t('stars_per_day', 'Stars per day')}</h2>
         <div
           onClick={changePage('increase')}
           className={clsx(
@@ -228,7 +222,7 @@ export const StarsTableComponent = () => {
                 <th>
                   <UpDown name="Forks" param="forks" />
                 </th>
-                <th>Media</th>
+                <th>{t('media', 'Media')}</th>
               </tr>
             </thead>
             <tbody>
@@ -245,7 +239,7 @@ export const StarsTableComponent = () => {
                   <td>{p.forks}</td>
                   <td>
                     <Link href={renderMediaLink(p.date)}>
-                      <Button>Check Launch</Button>
+                      <Button>{t('check_launch', 'Check Launch')}</Button>
                     </Link>
                   </td>
                 </tr>
@@ -254,7 +248,10 @@ export const StarsTableComponent = () => {
           </table>
         ) : (
           <div className="py-[24px] px-[16px]">
-            Load your GitHub repository from settings to see analytics
+            {t(
+              'load_your_github_repository_from_settings_to_see_analytics',
+              'Load your GitHub repository from settings to see analytics'
+            )}
           </div>
         )}
       </div>

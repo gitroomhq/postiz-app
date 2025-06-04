@@ -1,4 +1,5 @@
 'use client';
+
 import '@neynar/react/dist/style.css';
 import React, { FC, useMemo, useState, useCallback, useEffect } from 'react';
 import { Web3ProviderInterface } from '@gitroom/frontend/components/launches/web3/web3.provider.interface';
@@ -14,22 +15,22 @@ import {
 } from '@neynar/react';
 import { INeynarAuthenticatedUser } from '@neynar/react/dist/types/common';
 import { ButtonCaster } from '@gitroom/frontend/components/auth/providers/farcaster.provider';
-
 export const WrapcasterProvider: FC<Web3ProviderInterface> = (props) => {
   const [_, state] = props.nonce.split('||');
   const modal = useModals();
   const [hide, setHide] = useState(false);
-
-  const auth = useCallback((code: string) => {
-    setHide(true);
-    return props.onComplete(code, state);
-  }, [state]);
-
+  const auth = useCallback(
+    (code: string) => {
+      setHide(true);
+      return props.onComplete(code, state);
+    },
+    [state]
+  );
   return (
     <div className="rounded-[4px] border border-customColor6 bg-sixth px-[16px] pb-[16px] relative w-full">
       <TopTitle title={`Add Wrapcast`} />
       <button
-        className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+        className="outline-none absolute end-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
         type="button"
         onClick={() => modal.closeAll()}
       >

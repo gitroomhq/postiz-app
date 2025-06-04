@@ -1,6 +1,12 @@
 import { Type } from 'class-transformer';
 import {
-  IsDefined, IsIn, IsNumber, IsOptional, IsString, Max, Min
+  IsDefined,
+  IsIn,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
 } from 'class-validator';
 import dayjs from 'dayjs';
 

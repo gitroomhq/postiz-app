@@ -1,13 +1,18 @@
 import { withProvider } from '@gitroom/frontend/components/launches/providers/high.order.provider';
+import { ThreadFinisher } from '@gitroom/frontend/components/launches/finisher/thread.finisher';
+
+const SettingsComponent = () => {
+  return <ThreadFinisher />;
+};
+
 export default withProvider(
-  null,
+  SettingsComponent,
   undefined,
   undefined,
   async (posts) => {
     if (posts.some((p) => p.length > 4)) {
       return 'There can be maximum 4 pictures in a post.';
     }
-
     if (
       posts.some(
         (p) => p.some((m) => m.path.indexOf('mp4') > -1) && p.length > 1
@@ -15,7 +20,6 @@ export default withProvider(
     ) {
       return 'There can be maximum 1 video in a post.';
     }
-
     for (const load of posts.flatMap((p) => p.flatMap((a) => a.path))) {
       if (load.indexOf('mp4') > -1) {
         const isValid = await checkVideoDuration(load);
@@ -33,13 +37,11 @@ export default withProvider(
     return 280;
   }
 );
-
 const checkVideoDuration = async (url: string): Promise<boolean> => {
   return new Promise((resolve, reject) => {
     const video = document.createElement('video');
     video.src = url;
     video.preload = 'metadata';
-
     video.onloadedmetadata = () => {
       // Check if the duration is less than or equal to 140 seconds
       const duration = video.duration;
@@ -49,7 +51,6 @@ const checkVideoDuration = async (url: string): Promise<boolean> => {
         resolve(false); // Video duration exceeds 140 seconds
       }
     };
-
     video.onerror = () => {
       reject(new Error('Failed to load video metadata.'));
     };

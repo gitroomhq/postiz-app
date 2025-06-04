@@ -1,7 +1,11 @@
 import { withProvider } from '@gitroom/frontend/components/launches/providers/high.order.provider';
+import { ThreadFinisher } from '@gitroom/frontend/components/launches/finisher/thread.finisher';
+const SettingsComponent = () => {
+  return <ThreadFinisher />;
+};
 
 export default withProvider(
-  null,
+  SettingsComponent,
   undefined,
   undefined,
   async () => {

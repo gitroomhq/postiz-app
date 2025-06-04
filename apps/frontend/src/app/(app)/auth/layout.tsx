@@ -1,25 +1,27 @@
-export const dynamic = 'force-dynamic';
+import { getT } from '@gitroom/react/translation/get.translation.service.backend';
 
+export const dynamic = 'force-dynamic';
 import { ReactNode } from 'react';
 import Image from 'next/image';
 import clsx from 'clsx';
 import loadDynamic from 'next/dynamic';
 import { isGeneralServerSide } from '@gitroom/helpers/utils/is.general.server.side';
 const ReturnUrlComponent = loadDynamic(() => import('./return.url.component'));
-
 export default async function AuthLayout({
   children,
 }: {
   children: ReactNode;
 }) {
+  const t = await getT();
+
   return (
-    <div className="dark !bg-black">
+    <div className="dark !bg-black lbox">
       <ReturnUrlComponent />
-      <div className="absolute left-0 top-0 z-[0] h-[100vh] w-[100vw] overflow-hidden bg-loginBg bg-contain bg-no-repeat bg-left-top" />
+      <div className="absolute start-0 top-0 z-[0] h-[100vh] w-[100vw] overflow-hidden bg-loginBg bg-contain bg-no-repeat bg-left-top" />
       <div className="relative z-[1] px-3 lg:pr-[100px] xs:mt-[70px] flex justify-center lg:justify-end items-center h-[100vh] w-[100vw] overflow-hidden">
         <div className="w-full max-w-lg h-[614px] flex flex-col bg-loginBox bg-no-repeat bg-contain">
           <div className="w-full relative">
-            <div className="custom:fixed custom:text-left custom:left-[20px] custom:justify-start custom:top-[20px] absolute -top-[100px] text-textColor justify-center items-center w-full flex gap-[10px]">
+            <div className="custom:fixed custom:text-start custom:left-[20px] custom:justify-start custom:top-[20px] absolute -top-[100px] text-textColor justify-center items-center w-full flex gap-[10px]">
               <Image
                 src={isGeneralServerSide() ? '/postiz.svg' : '/logo.svg'}
                 width={55}
@@ -27,7 +29,9 @@ export default async function AuthLayout({
                 alt="Logo"
               />
               <div
-                className={clsx(!isGeneralServerSide() ? 'mt-[12px]' : 'min-w-[80px]')}
+                className={clsx(
+                  !isGeneralServerSide() ? 'mt-[12px]' : 'min-w-[80px]'
+                )}
               >
                 {isGeneralServerSide() ? (
                   <svg
@@ -55,12 +59,12 @@ export default async function AuthLayout({
                     />
                   </svg>
                 ) : (
-                  <div className="text-[40px]">Gitroom</div>
+                  <div className="text-[40px]">{t('gitroom', 'Gitroom')}</div>
                 )}
               </div>
             </div>
           </div>
-          <div className="p-[32px] w-full h-[660px] text-textColor">
+          <div className="p-[32px] w-full h-[660px] text-textColor rbox">
             {children}
           </div>
           <div className="flex flex-1 flex-col">
@@ -68,11 +72,11 @@ export default async function AuthLayout({
               <div className="absolute top-0 bg-gradient-to-t from-customColor9 w-[1px] translate-x-[22px] h-full" />
             </div>
             <div>
-              <div className="absolute right-0 bg-gradient-to-l from-customColor9 h-[1px] translate-y-[60px] w-full" />
+              <div className="absolute end-0 bg-gradient-to-l from-customColor9 h-[1px] translate-y-[60px] w-full" />
             </div>
           </div>
           <div className="absolute top-0 bg-gradient-to-t from-customColor9 w-[1px] -translate-x-[22px] h-full" />
-          <div className="absolute right-0 bg-gradient-to-l from-customColor9 h-[1px] -translate-y-[22px] w-full" />
+          <div className="absolute end-0 bg-gradient-to-l from-customColor9 h-[1px] -translate-y-[22px] w-full" />
         </div>
       </div>
     </div>

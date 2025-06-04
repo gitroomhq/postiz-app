@@ -14,12 +14,12 @@ import { Post as PrismaPost } from '@prisma/client';
 import dynamic from 'next/dynamic';
 import { IntegrationContext } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import dayjs from 'dayjs';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 const PreviewPopupDynamic = dynamic(() =>
   import('@gitroom/frontend/components/marketplace/preview.popup.dynamic').then(
     (mod) => mod.PreviewPopupDynamic
   )
 );
-
 interface SpecialMessageInterface {
   type: string;
   data: {
@@ -27,32 +27,34 @@ interface SpecialMessageInterface {
     [key: string]: any;
   };
 }
-
 export const OrderCompleted: FC = () => {
+  const t = useT();
+
   return (
     <div className="border border-customColor44 flex flex-col rounded-[6px] overflow-hidden">
       <div className="flex items-center bg-customColor8 px-[24px] py-[16px] text-[20px]">
-        <div className="flex-1">Order completed</div>
+        <div className="flex-1">{t('order_completed', 'Order completed')}</div>
       </div>
       <div className="py-[16px] px-[24px] flex flex-col gap-[20px] text-[18px]">
-        The order has been completed
+        {t('the_order_has_been_completed', 'The order has been completed')}
       </div>
     </div>
   );
 };
-
 export const Published: FC<{
   isCurrentOrder: boolean;
   isSellerOrBuyer: 'BUYER' | 'SELLER';
   orderStatus: string;
   data: SpecialMessageInterface;
 }> = (props) => {
+  const t = useT();
   const { data, isSellerOrBuyer } = props;
   return (
     <div className="border border-customColor44 flex flex-col rounded-[6px] overflow-hidden">
       <div className="flex items-center bg-customColor8 px-[24px] py-[16px] text-[20px]">
         <div className="flex-1">
-          {isSellerOrBuyer === 'BUYER' ? 'Your' : 'The'} post has been published
+          {isSellerOrBuyer === 'BUYER' ? 'Your' : 'The'}
+          {t('post_has_been_published', 'post has been published')}
         </div>
       </div>
 
@@ -65,7 +67,7 @@ export const Published: FC<{
               className="w-[24px] h-[24px] rounded-full"
             />
             <img
-              className="absolute left-[15px] top-[15px] w-[15px] h-[15px] rounded-full"
+              className="absolute start-[15px] top-[15px] w-[15px] h-[15px] rounded-full"
               src={`/icons/platforms/${data.data.integration}.png`}
               alt={data.data.name}
             />
@@ -74,7 +76,7 @@ export const Published: FC<{
           <div className="flex-1 text-[18px]">{data.data.name}</div>
         </div>
         <div className="text-[14px]">
-          URL:{' '}
+          {t('url_1', 'URL:')}
           <a className="underline hover:font-bold" href={data.data.url}>
             {data.data.url}
           </a>
@@ -83,7 +85,6 @@ export const Published: FC<{
     </div>
   );
 };
-
 export const PreviewPopup: FC<{
   postId: string;
   providerId: string;
@@ -102,7 +103,7 @@ export const PreviewPopup: FC<{
     <div className="bg-primary p-[20px] w-full relative">
       <button
         onClick={close}
-        className="outline-none absolute right-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+        className="outline-none absolute end-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
         type="button"
       >
         <svg
@@ -124,7 +125,6 @@ export const PreviewPopup: FC<{
     </div>
   );
 };
-
 export const Offer: FC<{
   isCurrentOrder: boolean;
   isSellerOrBuyer: 'BUYER' | 'SELLER';
@@ -133,30 +133,32 @@ export const Offer: FC<{
 }> = (props) => {
   const { data, isSellerOrBuyer, isCurrentOrder, orderStatus } = props;
   const fetch = useFetch();
-
   const acceptOrder = useCallback(async () => {
     const { url } = await (
       await fetch(`/marketplace/orders/${data.data.id}/payment`, {
         method: 'POST',
       })
     ).json();
-
     window.location.href = url;
   }, [data.data.id]);
-
   const totalPrice = useMemo(() => {
     return data?.data?.ordersItems?.reduce((all: any, current: any) => {
       return all + current.price * current.quantity;
     }, 0);
   }, [data?.data?.ordersItems]);
+
+  const t = useT();
+
   return (
     <div className="border border-customColor44 flex flex-col rounded-[6px] overflow-hidden">
       <div className="flex items-center bg-customColor8 px-[24px] py-[16px] text-[20px]">
-        <div className="flex-1">New Offer</div>
+        <div className="flex-1">{t('new_offer', 'New Offer')}</div>
         <div className="text-customColor42">${totalPrice}</div>
       </div>
       <div className="py-[16px] px-[24px] flex flex-col gap-[20px]">
-        <div className="text-inputText text-[12px]">Platform</div>
+        <div className="text-inputText text-[12px]">
+          {t('platform', 'Platform')}
+        </div>
         {data.data.ordersItems.map((item: any) => (
           <div
             key={item.integration.id}
@@ -169,13 +171,16 @@ export const Offer: FC<{
                 className="w-[24px] h-[24px] rounded-full"
               />
               <img
-                className="absolute left-[15px] top-[15px] w-[15px] h-[15px] rounded-full"
+                className="absolute start-[15px] top-[15px] w-[15px] h-[15px] rounded-full"
                 src={`/icons/platforms/${item.integration.providerIdentifier}.png`}
                 alt={item.integration.name}
               />
             </div>
             <div className="flex-1 text-[18px]">{item.integration.name}</div>
-            <div className="text-[18px]">{item.quantity} Posts</div>
+            <div className="text-[18px]">
+              {item.quantity}
+              {t('posts', 'Posts')}
+            </div>
           </div>
         ))}
         {orderStatus === 'PENDING' &&
@@ -186,14 +191,14 @@ export const Offer: FC<{
                 className="rounded-[4px] text-[14px]"
                 onClick={acceptOrder}
               >
-                Pay & Accept Offer
+                {t('pay_accept_offer', 'Pay & Accept Offer')}
               </Button>
             </div>
           )}
         {orderStatus === 'ACCEPTED' && (
           <div className="flex justify-end">
             <Button className="rounded-[4px] text-[14px] border border-tableBorder !bg-sixth text-tableBorder">
-              Accepted
+              {t('accepted', 'Accepted')}
             </Button>
           </div>
         )}
@@ -201,7 +206,6 @@ export const Offer: FC<{
     </div>
   );
 };
-
 export const Post: FC<{
   isCurrentOrder: boolean;
   isSellerOrBuyer: 'BUYER' | 'SELLER';
@@ -212,7 +216,6 @@ export const Post: FC<{
   const { data, isSellerOrBuyer, message, isCurrentOrder, orderStatus } = props;
   const fetch = useFetch();
   const modal = useModals();
-
   const getIntegration = useCallback(async () => {
     return (
       await fetch(
@@ -223,7 +226,6 @@ export const Post: FC<{
       )
     ).json();
   }, []);
-
   const requestRevision = useCallback(async () => {
     if (
       !(await deleteDialog(
@@ -233,7 +235,6 @@ export const Post: FC<{
     ) {
       return;
     }
-
     await fetch(`/marketplace/posts/${data.data.postId}/revision`, {
       method: 'POST',
       body: JSON.stringify({
@@ -244,7 +245,6 @@ export const Post: FC<{
       },
     });
   }, [data]);
-
   const requestApproved = useCallback(async () => {
     if (
       !(await deleteDialog(
@@ -254,7 +254,6 @@ export const Post: FC<{
     ) {
       return;
     }
-
     await fetch(`/marketplace/posts/${data.data.postId}/approve`, {
       method: 'POST',
       body: JSON.stringify({
@@ -265,14 +264,11 @@ export const Post: FC<{
       },
     });
   }, [data]);
-
   const preview = useCallback(async () => {
     const post = await (
       await fetch(`/marketplace/posts/${data.data.postId}`)
     ).json();
-
     const integration = await getIntegration();
-
     modal.openModal({
       classNames: {
         modal: 'bg-transparent text-textColor',
@@ -297,7 +293,6 @@ export const Post: FC<{
       ),
     });
   }, [data?.data]);
-
   const { data: integrationData } = useSWR<{
     id: string;
     name: string;
@@ -305,11 +300,14 @@ export const Post: FC<{
     providerIdentifier: string;
   }>(`/integrations/${data.data.integration}`, getIntegration);
 
+  const t = useT();
+
   return (
     <div className="border border-customColor44 flex flex-col rounded-[6px] overflow-hidden">
       <div className="flex items-center bg-customColor8 px-[24px] py-[16px] text-[20px]">
         <div className="flex-1">
-          Post Draft {capitalize(integrationData?.providerIdentifier || '')}
+          {t('post_draft', 'Post Draft')}
+          {capitalize(integrationData?.providerIdentifier || '')}
         </div>
       </div>
       <div className="py-[16px] px-[24px] flex gap-[20px]">
@@ -321,7 +319,7 @@ export const Post: FC<{
               className="w-[24px] h-[24px] rounded-full"
             />
             <img
-              className="absolute left-[15px] top-[15px] w-[15px] h-[15px] rounded-full"
+              className="absolute start-[15px] top-[15px] w-[15px] h-[15px] rounded-full"
               src={`/icons/platforms/${integrationData?.providerIdentifier}.png`}
               alt={integrationData?.name}
             />
@@ -339,16 +337,16 @@ export const Post: FC<{
                   onClick={requestRevision}
                   className="rounded-[4px] text-[14px] border-[2px] border-customColor21 !bg-sixth"
                 >
-                  Revision Needed
+                  {t('revision_needed', 'Revision Needed')}
                 </Button>
                 <Button
                   onClick={requestApproved}
                   className="rounded-[4px] text-[14px] border-[2px] border-customColor21 !bg-sixth"
                 >
-                  Approve
+                  {t('approve', 'Approve')}
                 </Button>
                 <Button className="rounded-[4px]" onClick={preview}>
-                  Preview
+                  {t('preview', 'Preview')}
                 </Button>
               </div>
             )}
@@ -356,14 +354,14 @@ export const Post: FC<{
           {data.data.status === 'REVISION' && (
             <div className="flex justify-end">
               <Button className="rounded-[4px] text-[14px] border border-tableBorder !bg-sixth text-tableBorder">
-                Revision Requested
+                {t('revision_requested', 'Revision Requested')}
               </Button>
             </div>
           )}
           {data.data.status === 'APPROVED' && (
             <div className="flex justify-end gap-[10px]">
               <Button className="rounded-[4px] text-[14px] border border-tableBorder !bg-sixth text-tableBorder">
-                ACCEPTED
+                {t('accepted_1', 'ACCEPTED')}
               </Button>
             </div>
           )}
@@ -371,7 +369,7 @@ export const Post: FC<{
           {data.data.status === 'CANCELED' && (
             <div className="flex justify-end gap-[10px]">
               <Button className="rounded-[4px] text-[14px] border border-tableBorder !bg-sixth text-tableBorder">
-                Cancelled by the seller
+                {t('cancelled_by_the_seller', 'Cancelled by the seller')}
               </Button>
             </div>
           )}
@@ -380,7 +378,6 @@ export const Post: FC<{
     </div>
   );
 };
-
 export const SpecialMessage: FC<{
   data: SpecialMessageInterface;
   id: string;
@@ -388,15 +385,12 @@ export const SpecialMessage: FC<{
   const { data, id } = props;
   const { message } = useContext(MarketplaceProvider);
   const user = useUser();
-
   const isCurrentOrder = useMemo(() => {
     return message?.orders?.[0]?.id === data?.data?.id;
   }, [message, data]);
-
   const isSellerOrBuyer = useMemo(() => {
     return user?.id === message?.buyerId ? 'BUYER' : 'SELLER';
   }, [user, message]);
-
   if (data.type === 'offer') {
     return (
       <Offer
@@ -407,7 +401,6 @@ export const SpecialMessage: FC<{
       />
     );
   }
-
   if (data.type === 'post') {
     return (
       <Post
@@ -419,7 +412,6 @@ export const SpecialMessage: FC<{
       />
     );
   }
-
   if (data.type === 'published') {
     return (
       <Published
@@ -430,10 +422,8 @@ export const SpecialMessage: FC<{
       />
     );
   }
-
   if (data.type === 'order-completed') {
     return <OrderCompleted />;
   }
-
   return null;
 };

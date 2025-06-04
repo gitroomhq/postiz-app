@@ -102,7 +102,7 @@ export const ActionComponent: FC<{
 
   return (
     <div className="g-wrapper" style={{ position: 'relative' }}>
-      <div className="absolute left-0 top-0 z-[9999] w-full h-full" />
+      <div className="absolute start-0 top-0 z-[9999] w-full h-full" />
       {modal && (
         <Comp
           platform={provider.identifier}

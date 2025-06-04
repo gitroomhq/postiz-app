@@ -1,7 +1,7 @@
 name: Build and Publish PR Docker Image
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, synchronize]
 
 permissions: write-all
@@ -18,7 +18,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: egelhaus
+          username: ${{ github.actor }}
           password: ${{ github.token }}
 
       - name: Set image tag

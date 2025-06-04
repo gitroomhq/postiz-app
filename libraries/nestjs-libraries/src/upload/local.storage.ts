@@ -10,7 +10,9 @@ export class LocalStorage implements IUploadProvider {
 
   async uploadSimple(path: string) {
     const loadImage = await axios.get(path, { responseType: 'arraybuffer' });
-    const contentType = loadImage?.headers?.['content-type'] || loadImage?.headers?.['Content-Type'];
+    const contentType =
+      loadImage?.headers?.['content-type'] ||
+      loadImage?.headers?.['Content-Type'];
     const findExtension = mime.getExtension(contentType)!;
 
     const now = new Date();

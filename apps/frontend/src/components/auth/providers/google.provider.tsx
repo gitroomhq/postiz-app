@@ -1,14 +1,14 @@
 import { useCallback } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import interClass from '@gitroom/react/helpers/inter.font';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const GoogleProvider = () => {
   const fetch = useFetch();
+  const t = useT();
   const gotoLogin = useCallback(async () => {
     const link = await (await fetch('/auth/oauth/GOOGLE')).text();
     window.location.href = link;
   }, []);
-
   return (
     <div
       onClick={gotoLogin}
@@ -39,7 +39,7 @@ export const GoogleProvider = () => {
           />
         </svg>
       </div>
-      <div>Continue with Google</div>
+      <div>{t('continue_with_google', 'Continue with Google')}</div>
     </div>
   );
 };

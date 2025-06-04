@@ -13,7 +13,7 @@ export class StarsController {
   ) {}
   @EventPattern('check_stars', Transport.REDIS)
   async checkStars(data: { login: string }) {
-    // no to be effected by the limit, we scrape the HTML instead of using the API
+    // not to be affected by the limit, we scrape the HTML instead of using the API
     const loadedHtml = await (
       await fetch(`https://github.com/${data.login}`)
     ).text();
@@ -30,18 +30,18 @@ export class StarsController {
       ?.getAttribute('title')
       ?.replace(/,/g, '');
 
-    const lastValue = await this._starsService.getLastStarsByLogin(
-      data.login
-    );
+    const lastValue = await this._starsService.getLastStarsByLogin(data.login);
 
-    if (dayjs(lastValue.date).format('YYYY-MM-DD') === dayjs().format('YYYY-MM-DD')) {
+    if (
+      dayjs(lastValue.date).format('YYYY-MM-DD') ===
+      dayjs().format('YYYY-MM-DD')
+    ) {
       console.log('stars already synced for today');
-      return ;
+      return;
     }
 
     const totalNewsStars = totalStars - (lastValue?.totalStars || 0);
     const totalNewsForks = totalForks - (lastValue?.totalForks || 0);
-
 
     // if there is no stars in the database, we need to sync the stars
     if (!lastValue?.totalStars) {
@@ -62,7 +62,10 @@ export class StarsController {
   @EventPattern('sync_all_stars', Transport.REDIS, { concurrency: 1 })
   async syncAllStars(data: { login: string }) {
     // if there is a sync in progress, it's better not to touch it
-    if (data?.login && (await this._starsService.getStarsByLogin(data?.login)).length) {
+    if (
+      data?.login &&
+      (await this._starsService.getStarsByLogin(data?.login)).length
+    ) {
       return;
     }
 

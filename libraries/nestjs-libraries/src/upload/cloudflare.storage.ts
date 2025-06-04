@@ -25,7 +25,7 @@ class CloudflareStorage implements IUploadProvider {
         accessKeyId: accessKey,
         secretAccessKey: secretKey,
       },
-      requestChecksumCalculation: "WHEN_REQUIRED",
+      requestChecksumCalculation: 'WHEN_REQUIRED',
     });
 
     this._client.middlewareStack.add(
@@ -70,7 +70,7 @@ class CloudflareStorage implements IUploadProvider {
       Key: `${id}.${extension}`,
       Body: loadImage.data,
       ContentType: contentType,
-      ChecksumMode: 'DISABLED'
+      ChecksumMode: 'DISABLED',
     };
 
     const command = new PutObjectCommand({ ...params });

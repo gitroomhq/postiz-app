@@ -7,7 +7,7 @@ export class StarsRepository {
   constructor(
     private _github: PrismaRepository<'gitHub'>,
     private _stars: PrismaRepository<'star'>,
-    private _trending: PrismaRepository<'trending'>,
+    private _trending: PrismaRepository<'trending'>
   ) {}
   getGitHubRepositoriesByOrgId(org: string) {
     return this._github.model.gitHub.findMany({

@@ -1,22 +1,23 @@
+'use client';
+
 import { FC, useCallback } from 'react';
 import interClass from '@gitroom/react/helpers/inter.font';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { NeynarContextProvider, Theme, useNeynarContext } from '@neynar/react';
 import { NeynarAuthButton } from '@gitroom/frontend/components/auth/nayner.auth.button';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const FarcasterProvider = () => {
   const gotoLogin = useCallback(async (code: string) => {
     window.location.href = `/auth?provider=FARCASTER&code=${code}`;
   }, []);
-
-  return (
-    <ButtonCaster login={gotoLogin} />
-  );
+  return <ButtonCaster login={gotoLogin} />;
 };
-
-export const ButtonCaster: FC<{ login: (code: string) => void }> = (props) => {
+export const ButtonCaster: FC<{
+  login: (code: string) => void;
+}> = (props) => {
   const { login } = props;
   const { neynarClientId } = useVariables();
+  const t = useT();
   return (
     <NeynarContextProvider
       settings={{
@@ -48,7 +49,7 @@ export const ButtonCaster: FC<{ login: (code: string) => void }> = (props) => {
               fill="white"
             />
           </svg>
-          <div>Continue with Farcaster</div>
+          <div>{t('continue_with_farcaster', 'Continue with Farcaster')}</div>
         </div>
       </NeynarAuthButton>
     </NeynarContextProvider>

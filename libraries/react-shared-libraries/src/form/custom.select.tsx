@@ -9,6 +9,7 @@ import {
 import interClass from '../helpers/inter.font';
 import { clsx } from 'clsx';
 import { useFormContext } from 'react-hook-form';
+import { TranslatedLabel } from '../translation/translated-label';
 
 export const CustomSelect: FC<{
   error?: any;
@@ -19,13 +20,28 @@ export const CustomSelect: FC<{
   removeError?: boolean;
   onChange?: () => void;
   className?: string;
-  options: Array<{ value: string; label: string; icon?: ReactNode }>;
+  translationKey?: string;
+  translationParams?: Record<string, string | number>;
+  options: Array<{
+    value: string;
+    label: string;
+    icon?: ReactNode;
+  }>;
 }> = (props) => {
-  const { options, onChange, placeholder, className, removeError, label, ...rest } = props;
+  const {
+    options,
+    onChange,
+    placeholder,
+    className,
+    removeError,
+    label,
+    translationKey,
+    translationParams,
+    ...rest
+  } = props;
   const form = useFormContext();
   const value = form.watch(props.name);
   const [isOpen, setIsOpen] = useState(false);
-
   const err = useMemo(() => {
     const split = (props.name + '.value').split('.');
     let errIn = form?.formState?.errors;
@@ -35,7 +51,6 @@ export const CustomSelect: FC<{
     }
     return errIn?.message;
   }, [props.name, form]);
-
   const option = useMemo(() => {
     if (value?.value && options.length) {
       return (
@@ -45,14 +60,13 @@ export const CustomSelect: FC<{
         }
       );
     }
-
-    return { label: placeholder };
+    return {
+      label: placeholder,
+    };
   }, [value, options]);
-
   const changeOpen = useCallback(() => {
     setIsOpen(!isOpen);
   }, [isOpen]);
-
   const setOption = useCallback(
     (newOption: any) => (e: any) => {
       form.setValue(props.name, newOption);
@@ -61,23 +75,29 @@ export const CustomSelect: FC<{
     },
     []
   );
-
   useEffect(() => {
     if (onChange) {
       onChange();
     }
   }, [value]);
-
   return (
-    <div className={clsx("flex flex-col gap-[6px] relative", className)}>
-      {!!label && (<div className={`${interClass} text-[14px]`}>{label}</div>)}
+    <div className={clsx('flex flex-col gap-[6px] relative', className)}>
+      {!!label && (
+        <div className={`${interClass} text-[14px]`}>
+          <TranslatedLabel
+            label={label}
+            translationKey={translationKey}
+            translationParams={translationParams}
+          />
+        </div>
+      )}
       <div
         className={clsx(
           'bg-input h-[44px] border-fifth border rounded-[4px] text-inputText placeholder-inputText items-center justify-center flex'
         )}
         onClick={changeOpen}
       >
-        <div className="flex-1 pl-[16px] text-[14px] select-none flex gap-[8px]">
+        <div className="flex-1 ps-[16px] text-[14px] select-none flex gap-[8px]">
           {!!option.icon && (
             <div className="flex justify-center items-center">
               {option.icon}
@@ -86,7 +106,7 @@ export const CustomSelect: FC<{
 
           {option.label}
         </div>
-        <div className="pr-[16px] flex gap-[8px]">
+        <div className="pe-[16px] flex gap-[8px]">
           <div>
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -120,9 +140,15 @@ export const CustomSelect: FC<{
         </div>
       </div>
       {isOpen && (
-        <div className={clsx(label && !removeError && '-mt-[23px]', "z-[100] absolute w-full top-[100%] left-0 flex items-center rounded-bl-[4px] rounded-br-[4px] flex-col bg-fifth gap-[1px] border-l border-r border-b border-fifth overflow-hidden")}>
+        <div
+          className={clsx(
+            label && !removeError && '-mt-[23px]',
+            'z-[100] absolute w-full top-[100%] start-0 flex items-center rounded-bl-[4px] rounded-br-[4px] flex-col bg-fifth gap-[1px] border-l border-r border-b border-fifth overflow-hidden'
+          )}
+        >
           {options.map((option) => (
             <div
+              key={option.value}
               onClick={setOption(option)}
               className="px-[16px] py-[8px] bg-input w-full flex gap-[8px] hover:bg-customColor3 select-none cursor-pointer"
             >

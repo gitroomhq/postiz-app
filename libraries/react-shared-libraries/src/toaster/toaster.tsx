@@ -1,8 +1,8 @@
 'use client';
+
 import { useCallback, useEffect, useState } from 'react';
 import EventEmitter from 'events';
 import clsx from 'clsx';
-
 const toaster = new EventEmitter();
 export const Toaster = () => {
   const [showToaster, setShowToaster] = useState(false);
@@ -27,15 +27,13 @@ export const Toaster = () => {
       toaster.removeAllListeners();
     };
   }, []);
-
   if (!showToaster) {
     return <></>;
   }
-
   return (
     <div
       className={clsx(
-        'animate-fadeDown rounded-[8px] gap-[18px] flex items-center overflow-hidden bg-customColor8 p-[16px] min-w-[319px] fixed left-[50%] text-white z-[300] top-[32px] -translate-x-[50%] h-[56px]',
+        'animate-fadeDown rounded-[8px] gap-[18px] flex items-center overflow-hidden bg-customColor8 p-[16px] min-w-[319px] fixed start-[50%] text-white z-[300] top-[32px] -translate-x-[50%] h-[56px]',
         toasterType === 'success' ? 'shadow-greenToast' : 'shadow-yellowToast'
       )}
     >
@@ -75,7 +73,7 @@ export const Toaster = () => {
         height="56"
         viewBox="0 0 60 56"
         fill="none"
-        className="absolute top-0 left-0"
+        className="absolute top-0 start-0"
       >
         <g filter="url(#filter0_f_376_2968)">
           <ellipse
@@ -113,11 +111,13 @@ export const Toaster = () => {
     </div>
   );
 };
-
 export const useToaster = () => {
   return {
     show: useCallback((text: string, type?: 'success' | 'warning') => {
-      toaster.emit('show', { text, type });
+      toaster.emit('show', {
+        text,
+        type,
+      });
     }, []),
   };
 };

@@ -12,18 +12,20 @@ import { Theme } from 'emoji-picker-react';
 import { BoldText } from '@gitroom/frontend/components/launches/bold.text';
 import { UText } from '@gitroom/frontend/components/launches/u.text';
 import { SignatureBox } from '@gitroom/frontend/components/signature';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const Editor = forwardRef<
   RefMDEditor,
   MDEditorProps & {
     order: number;
     totalPosts: number;
+    disabledCopilot?: boolean;
   }
 >(
   (
     props: MDEditorProps & {
       order: number;
       totalPosts: number;
+      disabledCopilot?: boolean;
     },
     ref: React.ForwardedRef<RefMDEditor>
   ) => {
@@ -31,8 +33,10 @@ export const Editor = forwardRef<
     const [id] = useState(makeId(10));
     const newRef = useRef<any>(null);
     const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
+    const t = useT();
 
     useCopilotReadable({
+      ...(props.disabledCopilot ? { available: 'disabled' } : {}),
       description: 'Content of the post number ' + (props.order + 1),
       value: JSON.stringify({
         content: props.value,
@@ -40,8 +44,8 @@ export const Editor = forwardRef<
         allowAddContent: props?.value?.length === 0,
       }),
     });
-
     useCopilotAction({
+      ...(props.disabledCopilot ? { available: 'disabled' } : {}),
       name: 'editPost_' + props.order,
       description: `Edit the content of post number ${props.order}`,
       parameters: [
@@ -54,7 +58,6 @@ export const Editor = forwardRef<
         props?.onChange?.(content);
       },
     });
-
     const addText = useCallback(
       (emoji: string) => {
         setTimeout(() => {
@@ -64,7 +67,6 @@ export const Editor = forwardRef<
       },
       [props.value, id]
     );
-
     return (
       <>
         <div className="flex gap-[5px] justify-end -mt-[30px]">
@@ -81,10 +83,10 @@ export const Editor = forwardRef<
             className="select-none cursor-pointer bg-customColor2 w-[40px] p-[5px] text-center rounded-tl-lg rounded-tr-lg"
             onClick={() => setEmojiPickerOpen(!emojiPickerOpen)}
           >
-            😀
+            {t('', '\uD83D\uDE00')}
           </div>
         </div>
-        <div className="absolute z-[200] right-0">
+        <div className="absolute z-[200] end-0">
           <EmojiPicker
             theme={(localStorage.getItem('mode') as Theme) || Theme.DARK}
             onEmojiClick={(e) => {
@@ -107,7 +109,7 @@ export const Editor = forwardRef<
               props?.onChange?.(e.target.value);
             }}
             onPaste={props.onPaste}
-            placeholder="Write your reply..."
+            placeholder={t('write_your_reply', 'Write your reply...')}
             autosuggestionsConfig={{
               textareaPurpose: `Assist me in writing social media posts.`,
               chatApiConfigs: {},

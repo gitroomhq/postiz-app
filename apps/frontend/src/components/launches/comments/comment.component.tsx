@@ -10,7 +10,6 @@ import { Input } from '@gitroom/react/form/input';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import interClass from '@gitroom/react/helpers/inter.font';
-
 export const CommentBox: FC<{
   value?: string;
   type: 'textarea' | 'input';
@@ -19,19 +18,20 @@ export const CommentBox: FC<{
   const { value, onChange, type } = props;
   const Component = type === 'textarea' ? Textarea : Input;
   const [newComment, setNewComment] = useState(value || '');
-
   const newCommentFunc = useCallback(
-    (event: { target: { value: string } }) => {
+    (event: {
+      target: {
+        value: string;
+      };
+    }) => {
       setNewComment(event.target.value);
     },
     [newComment]
   );
-
   const changeIt = useCallback(() => {
     onChange(newComment);
     setNewComment('');
   }, [newComment]);
-
   return (
     <div
       className={clsx(
@@ -59,14 +59,15 @@ export const CommentBox: FC<{
     </div>
   );
 };
-
 interface Comments {
   id: string;
   content: string;
-  user: { email: string; id: string };
+  user: {
+    email: string;
+    id: string;
+  };
   childrenComment: Comments[];
 }
-
 export const EditableCommentComponent: FC<{
   comment: Comments;
   onEdit: (content: string) => void;
@@ -76,7 +77,6 @@ export const EditableCommentComponent: FC<{
   const [commentContent, setCommentContent] = useState(comment.content);
   const [editMode, setEditMode] = useState(false);
   const user = useUser();
-
   const updateComment = useCallback((commentValue: string) => {
     if (commentValue !== comment.content) {
       setCommentContent(commentValue);
@@ -84,7 +84,6 @@ export const EditableCommentComponent: FC<{
     }
     setEditMode(false);
   }, []);
-
   const deleteCommentFunction = useCallback(async () => {
     if (
       await deleteDialog(
@@ -95,7 +94,6 @@ export const EditableCommentComponent: FC<{
       onDelete();
     }
   }, []);
-
   if (editMode) {
     return (
       <CommentBox
@@ -105,7 +103,6 @@ export const EditableCommentComponent: FC<{
       />
     );
   }
-
   return (
     <div className="flex gap-[5px]">
       <pre className="text-wrap">{commentContent}</pre>
@@ -143,26 +140,23 @@ export const EditableCommentComponent: FC<{
     </div>
   );
 };
-
-export const CommentComponent: FC<{ date: dayjs.Dayjs }> = (props) => {
+export const CommentComponent: FC<{
+  date: dayjs.Dayjs;
+}> = (props) => {
   const { date } = props;
   const { closeAll } = useModals();
   const [commentsList, setCommentsList] = useState<Comments[]>([]);
   const user = useUser();
   const fetch = useFetch();
-
   const load = useCallback(async () => {
     const data = await (
       await fetch(`/comments/${date.utc().format('YYYY-MM-DDTHH:mm:00')}`)
     ).json();
-
     setCommentsList(data);
   }, []);
-
   useEffect(() => {
     load();
   }, []);
-
   const editComment = useCallback(
     (comment: Comments) => async (content: string) => {
       fetch(`/comments/${comment.id}`, {
@@ -175,7 +169,6 @@ export const CommentComponent: FC<{ date: dayjs.Dayjs }> = (props) => {
     },
     []
   );
-
   const addComment = useCallback(
     async (content: string) => {
       const { id } = await (
@@ -187,11 +180,13 @@ export const CommentComponent: FC<{ date: dayjs.Dayjs }> = (props) => {
           }),
         })
       ).json();
-
       setCommentsList((list) => [
         {
           id,
-          user: { email: user?.email!, id: user?.id! },
+          user: {
+            email: user?.email!,
+            id: user?.id!,
+          },
           content,
           childrenComment: [],
         },
@@ -200,7 +195,6 @@ export const CommentComponent: FC<{ date: dayjs.Dayjs }> = (props) => {
     },
     [commentsList, setCommentsList]
   );
-
   const deleteComment = useCallback(
     (comment: Comments) => async () => {
       await fetch(`/comments/${comment.id}`, {
@@ -210,13 +204,11 @@ export const CommentComponent: FC<{ date: dayjs.Dayjs }> = (props) => {
     },
     [commentsList, setCommentsList]
   );
-
   const deleteChildrenComment = useCallback(
     (parent: Comments, children: Comments) => async () => {
       await fetch(`/comments/${children.id}`, {
         method: 'DELETE',
       });
-
       setCommentsList((list) =>
         list.map((item) => {
           if (item.id === parent.id) {
@@ -233,7 +225,6 @@ export const CommentComponent: FC<{ date: dayjs.Dayjs }> = (props) => {
     },
     [commentsList, setCommentsList]
   );
-
   const addChildrenComment = useCallback(
     (comment: Comments) => async (content: string) => {
       const { id } = await (
@@ -245,7 +236,6 @@ export const CommentComponent: FC<{ date: dayjs.Dayjs }> = (props) => {
           }),
         })
       ).json();
-
       setCommentsList((list) =>
         list.map((item) => {
           if (item.id === comment.id) {
@@ -255,7 +245,10 @@ export const CommentComponent: FC<{ date: dayjs.Dayjs }> = (props) => {
                 ...item.childrenComment,
                 {
                   id,
-                  user: { email: user?.email!, id: user?.id! },
+                  user: {
+                    email: user?.email!,
+                    id: user?.id!,
+                  },
                   content,
                   childrenComment: [],
                 },
@@ -268,19 +261,17 @@ export const CommentComponent: FC<{ date: dayjs.Dayjs }> = (props) => {
     },
     [commentsList]
   );
-
   const extractNameFromEmailAndCapitalize = useCallback((email: string) => {
     return (
       email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1)
     );
   }, []);
-
   return (
     <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-customColor6 bg-sixth p-[16px] pt-0">
       <TopTitle title={`Comments for ${date.format('DD/MM/YYYY HH:mm')}`} />
       <button
         onClick={closeAll}
-        className="outline-none absolute right-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+        className="outline-none absolute end-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
         type="button"
       >
         <svg
@@ -311,7 +302,9 @@ export const CommentComponent: FC<{ date: dayjs.Dayjs }> = (props) => {
             >
               <div className="flex gap-[8px]">
                 <div className="w-[40px] flex flex-col items-center">
-                  <div className={`rounded-full relative z-[2] text-blue-500 font-bold ${interClass} flex justify-center items-center w-[40px] h-[40px] bg-white border-tableBorder border`}>
+                  <div
+                    className={`rounded-full relative z-[2] text-blue-500 font-bold ${interClass} flex justify-center items-center w-[40px] h-[40px] bg-white border-tableBorder border`}
+                  >
                     {comment.user.email[0].toUpperCase()}
                   </div>
                   <div className="flex-1 w-[2px] h-[calc(100%-10px)] bg-customColor25 absolute top-[10px] z-[1]" />
@@ -337,7 +330,9 @@ export const CommentComponent: FC<{ date: dayjs.Dayjs }> = (props) => {
                     className={clsx(`flex gap-[8px] relative`)}
                   >
                     <div className="w-[40px] flex flex-col items-center">
-                      <div className={`rounded-full relative z-[2] text-blue-500 font-bold ${interClass} flex justify-center items-center w-[40px] h-[40px] bg-white border-tableBorder border`}>
+                      <div
+                        className={`rounded-full relative z-[2] text-blue-500 font-bold ${interClass} flex justify-center items-center w-[40px] h-[40px] bg-white border-tableBorder border`}
+                      >
                         {childComment.user.email[0].toUpperCase()}
                       </div>
                     </div>
@@ -362,7 +357,7 @@ export const CommentComponent: FC<{ date: dayjs.Dayjs }> = (props) => {
             <div className="flex">
               <div className="relative w-[40px] flex flex-col items-center">
                 <div className="h-[30px] w-[2px] bg-customColor25 absolute top-0 z-[1]" />
-                <div className="h-[2px] w-[21px] bg-customColor25 absolute top-[30px] right-0 z-[1]" />
+                <div className="h-[2px] w-[21px] bg-customColor25 absolute top-[30px] end-0 z-[1]" />
               </div>
               <div className="flex-1">
                 <CommentBox

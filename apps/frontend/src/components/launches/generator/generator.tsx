@@ -18,17 +18,17 @@ import {
 import { AddEditModal } from '@gitroom/frontend/components/launches/add.edit.model';
 import dayjs from 'dayjs';
 import { Select } from '@gitroom/react/form/select';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 const FirstStep: FC = (props) => {
   const { integrations, reloadCalendarView } = useCalendar();
   const modal = useModals();
   const fetch = useFetch();
   const [loading, setLoading] = useState(false);
   const [showStep, setShowStep] = useState('');
+  const t = useT();
   const resolver = useMemo(() => {
     return classValidatorResolver(GeneratorDto);
   }, []);
-
   const form = useForm({
     mode: 'all',
     resolver,
@@ -39,13 +39,10 @@ const FirstStep: FC = (props) => {
       tone: 'personal',
     },
   });
-
   const [research] = form.watch(['research']);
-
   const generateStep = useCallback(
     async (reader: ReadableStreamDefaultReader) => {
       const decoder = new TextDecoder('utf-8');
-
       let lastResponse = {} as any;
       // eslint-disable-next-line no-constant-condition
       while (true) {
@@ -53,7 +50,9 @@ const FirstStep: FC = (props) => {
         if (done) return lastResponse.data.output;
 
         // Convert chunked binary data to string
-        const chunkStr = decoder.decode(value, { stream: true });
+        const chunkStr = decoder.decode(value, {
+          stream: true,
+        });
         for (const chunk of chunkStr
           .split('\n')
           .filter((f) => f && f.indexOf('{') > -1)) {
@@ -61,34 +60,48 @@ const FirstStep: FC = (props) => {
             const data = JSON.parse(chunk);
             switch (data.name) {
               case 'agent':
-                setShowStep('Agent starting');
+                setShowStep(t('agent_starting', 'Agent starting'));
                 break;
               case 'research':
-                setShowStep('Researching your content...');
+                setShowStep(
+                  t('researching_your_content', 'Researching your content...')
+                );
                 break;
               case 'find-category':
-                setShowStep('Understanding the category...');
+                setShowStep(
+                  t(
+                    'understanding_the_category',
+                    'Understanding the category...'
+                  )
+                );
                 break;
               case 'find-topic':
-                setShowStep('Finding the topic...');
+                setShowStep(t('finding_the_topic', 'Finding the topic...'));
                 break;
               case 'find-popular-posts':
-                setShowStep('Finding popular posts to match with...');
+                setShowStep(
+                  t(
+                    'finding_popular_posts_to_match_with',
+                    'Finding popular posts to match with...'
+                  )
+                );
                 break;
               case 'generate-hook':
-                setShowStep('Generating hook...');
+                setShowStep(t('generating_hook', 'Generating hook...'));
                 break;
               case 'generate-content':
-                setShowStep('Generating content...');
+                setShowStep(t('generating_content', 'Generating content...'));
                 break;
               case 'generate-picture':
-                setShowStep('Generating pictures...');
+                setShowStep(t('generating_pictures', 'Generating pictures...'));
                 break;
               case 'upload-pictures':
-                setShowStep('Uploading pictures...');
+                setShowStep(t('uploading_pictures', 'Uploading pictures...'));
                 break;
               case 'post-time':
-                setShowStep('Finding time to post...');
+                setShowStep(
+                  t('finding_time_to_post', 'Finding time to post...')
+                );
                 break;
             }
             lastResponse = data;
@@ -98,9 +111,8 @@ const FirstStep: FC = (props) => {
         }
       }
     },
-    []
+    [t]
   );
-
   const onSubmit: SubmitHandler<{
     research: string;
   }> = useCallback(
@@ -110,30 +122,32 @@ const FirstStep: FC = (props) => {
         method: 'POST',
         body: JSON.stringify(value),
       });
-
       if (!response.body) {
         return;
       }
-
       const reader = response.body.getReader();
       const load = await generateStep(reader);
-
       const messages = load.content.map((p: any, index: number) => {
         if (index === 0) {
           return {
             content: load.hook + '\n' + p.content,
-            ...(p?.image?.path ? { image: [p.image] } : {}),
+            ...(p?.image?.path
+              ? {
+                  image: [p.image],
+                }
+              : {}),
           };
         }
-
         return {
           content: p.content,
-          ...(p?.image?.path ? { image: [p.image] } : {}),
+          ...(p?.image?.path
+            ? {
+                image: [p.image],
+              }
+            : {}),
         };
       });
-
       setShowStep('');
-
       modal.openModal({
         closeOnClickOutside: false,
         closeOnEscape: false,
@@ -143,8 +157,12 @@ const FirstStep: FC = (props) => {
         },
         children: (
           <AddEditModal
-            allIntegrations={integrations.map((p) => ({ ...p }))}
-            integrations={integrations.slice(0).map((p) => ({ ...p }))}
+            allIntegrations={integrations.map((p) => ({
+              ...p,
+            }))}
+            integrations={integrations.slice(0).map((p) => ({
+              ...p,
+            }))}
             mutate={reloadCalendarView}
             date={dayjs.utc(load.date).local()}
             reopenModal={() => ({})}
@@ -153,12 +171,10 @@ const FirstStep: FC = (props) => {
         ),
         size: '80%',
       });
-
       setLoading(false);
     },
     [integrations, reloadCalendarView]
   );
-
   return (
     <form
       onSubmit={form.handleSubmit(onSubmit)}
@@ -180,25 +196,49 @@ const FirstStep: FC = (props) => {
                   </div>
                 )}
                 <Textarea
-                  label="Write anything"
+                  label={t('write_anything', 'Write anything')}
                   disabled={loading}
-                  placeholder="You can write anything you want, and also add links, we will do the research for you..."
+                  placeholder={t(
+                    'you_can_write_anything_you_want_and_also_add_links_we_will_do_the_research_for_you',
+                    'You can write anything you want, and also add links, we will do the research for you...'
+                  )}
                   {...form.register('research')}
                 />
-                <Select label="Output format" {...form.register('format')}>
-                  <option value="one_short">Short post</option>
-                  <option value="one_long">Long post</option>
-                  <option value="thread_short">
-                    A thread with short posts
+                <Select
+                  label={t('output_format', 'Output format')}
+                  {...form.register('format')}
+                >
+                  <option value="one_short">
+                    {t('short_post', 'Short post')}
                   </option>
-                  <option value="thread_long">A thread with long posts</option>
+                  <option value="one_long">
+                    {t('long_post', 'Long post')}
+                  </option>
+                  <option value="thread_short">
+                    {t(
+                      'a_thread_with_short_posts',
+                      'A thread with short posts'
+                    )}
+                  </option>
+                  <option value="thread_long">
+                    {t('a_thread_with_long_posts', 'A thread with long posts')}
+                  </option>
                 </Select>
-                <Select label="Output format" {...form.register('tone')}>
+                <Select
+                  label={t('output_format', 'Output format')}
+                  {...form.register('tone')}
+                >
                   <option value="personal">
-                    Personal voice ({'"'}I am happy to announce{'"'})
+                    {t(
+                      'personal_voice_i_am_happy_to_announce',
+                      'Personal voice ("I am happy to announce")'
+                    )}
                   </option>
                   <option value="company">
-                    Company voice ({'"'}We are happy to announce{'"'})
+                    {t(
+                      'company_voice_we_are_happy_to_announce',
+                      'Company voice ("We are happy to announce")'
+                    )}
                   </option>
                 </Select>
                 <div
@@ -207,7 +247,7 @@ const FirstStep: FC = (props) => {
                   <Checkbox
                     disabled={loading}
                     {...form.register('isPicture')}
-                    label="Add pictures?"
+                    label={t('add_pictures', 'Add pictures?')}
                   />
                 </div>
               </div>
@@ -220,7 +260,7 @@ const FirstStep: FC = (props) => {
             disabled={research.length < 10}
             loading={loading}
           >
-            Generate
+            {t('generate', 'Generate')}
           </Button>
         </div>
       </FormProvider>
@@ -228,17 +268,17 @@ const FirstStep: FC = (props) => {
   );
 };
 export const GeneratorPopup = () => {
-  const modals = useModals();
+  const t = useT();
 
+  const modals = useModals();
   const closeAll = useCallback(() => {
     modals.closeAll();
   }, []);
-
   return (
     <div className="bg-sixth p-[32px] w-full max-w-[920px] mx-auto flex flex-col rounded-[4px] border border-customColor6 relative">
       <button
         onClick={closeAll}
-        className="outline-none absolute right-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+        className="outline-none absolute end-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
         type="button"
       >
         <svg
@@ -256,17 +296,17 @@ export const GeneratorPopup = () => {
           ></path>
         </svg>
       </button>
-      <h1 className="text-[24px]">Generate Posts</h1>
+      <h1 className="text-[24px]">{t('generate_posts', 'Generate Posts')}</h1>
       <FirstStep />
     </div>
   );
 };
 export const GeneratorComponent = () => {
+  const t = useT();
   const user = useUser();
   const router = useRouter();
   const modal = useModals();
   const all = useCalendar();
-
   const generate = useCallback(async () => {
     if (!user?.tier?.ai) {
       if (
@@ -280,7 +320,6 @@ export const GeneratorComponent = () => {
       }
       return;
     }
-
     modal.openModal({
       title: '',
       withCloseButton: false,
@@ -295,7 +334,6 @@ export const GeneratorComponent = () => {
       ),
     });
   }, [user, all]);
-
   return (
     <button
       className="p-[8px] rounded-md bg-red-700 flex justify-center items-center gap-[5px] outline-none text-white"
@@ -320,7 +358,9 @@ export const GeneratorComponent = () => {
           fill="currentColor"
         />
       </svg>
-      <div className="flex-1 text-left">Generate Posts</div>
+      <div className="flex-1 text-start">
+        {t('generate_posts', 'Generate Posts')}
+      </div>
     </button>
   );
 };

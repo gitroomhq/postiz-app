@@ -16,7 +16,9 @@ import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/me
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { GeneratorDto } from '@gitroom/nestjs-libraries/dtos/generator/generator.dto';
 
-const tools = !process.env.TAVILY_API_KEY ? [] : [new TavilySearchResults({ maxResults: 3 })];
+const tools = !process.env.TAVILY_API_KEY
+  ? []
+  : [new TavilySearchResults({ maxResults: 3 })];
 const toolNode = new ToolNode(tools);
 
 const model = new ChatOpenAI({

@@ -10,6 +10,6 @@ export class IntegrationTimeDto {
   @Type(() => IntegrationValidateTimeDto)
   @IsArray()
   @IsDefined()
-  @ValidateNested({each: true})
+  @ValidateNested({ each: true })
   time: IntegrationValidateTimeDto[];
 }

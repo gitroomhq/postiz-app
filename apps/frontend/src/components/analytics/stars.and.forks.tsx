@@ -1,11 +1,14 @@
+'use client';
+
 import { FC } from 'react';
 import { StarsAndForksInterface } from '@gitroom/frontend/components/analytics/stars.and.forks.interface';
 import { Chart } from '@gitroom/frontend/components/analytics/chart';
 import { UtcToLocalDateRender } from '@gitroom/react/helpers/utc.date.render';
 import clsx from 'clsx';
-
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const StarsAndForks: FC<StarsAndForksInterface> = (props) => {
   const { list } = props;
+  const t = useT();
   return (
     <>
       {list.map((item) => (
@@ -33,17 +36,17 @@ export const StarsAndForks: FC<StarsAndForksInterface> = (props) => {
                   .map((char, index) =>
                     index === 0 ? char.toUpperCase() : char
                   )
-                  .join('')}{' '}
-                Stars
+                  .join('')}
+                {t('stars', 'Stars')}
               </div>
             </div>
             <div className="flex-1 relative">
-              <div className="absolute w-full h-full left-0 top-0">
+              <div className="absolute w-full h-full start-0 top-0">
                 {item.stars.length ? (
                   <Chart list={item.stars} />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-3xl">
-                    Processing stars...
+                    {t('processing_stars', 'Processing stars...')}
                   </div>
                 )}
               </div>
@@ -76,17 +79,17 @@ export const StarsAndForks: FC<StarsAndForksInterface> = (props) => {
                   .map((char, index) =>
                     index === 0 ? char.toUpperCase() : char
                   )
-                  .join('')}{' '}
-                Forks
+                  .join('')}
+                {t('forks', 'Forks')}
               </div>
             </div>
             <div className="flex-1 relative">
-              <div className="absolute w-full h-full left-0 top-0">
+              <div className="absolute w-full h-full start-0 top-0">
                 {item.forks.length ? (
                   <Chart list={item.forks} />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-3xl">
-                    Processing stars...
+                    {t('processing_stars', 'Processing stars...')}
                   </div>
                 )}
               </div>
@@ -140,7 +143,7 @@ export const StarsAndForks: FC<StarsAndForksInterface> = (props) => {
               </div>
             </div>
             <div className="flex items-center">
-              <div className="w-[2px] h-[30px] bg-customColor11 mr-[16px]"></div>
+              <div className="w-[2px] h-[30px] bg-customColor11 me-[16px]"></div>
               <div className="text-[24px] flex-1">
                 <UtcToLocalDateRender
                   date={

@@ -9,13 +9,11 @@ import {
 import { lookup } from 'mime-types';
 import sharp from 'sharp';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
-import removeMd from 'remove-markdown';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
 import { Integration } from '@prisma/client';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
-import { number, string } from 'yup';
 import dayjs from 'dayjs';
 import { uniqBy } from 'lodash';
 
@@ -240,7 +238,10 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   async post(
     id: string,
     accessToken: string,
-    postDetails: PostDetails[]
+    postDetails: PostDetails<{
+      active_thread_finisher: boolean;
+      thread_finisher: string;
+    }>[]
   ): Promise<PostResponse[]> {
     const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
     const client = new TwitterApi({
@@ -310,6 +311,18 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         id: post.id,
         releaseURL: `https://twitter.com/${username}/status/${data.id}`,
       });
+    }
+
+    if (postDetails?.[0]?.settings?.active_thread_finisher) {
+      try {
+        await client.v2.tweet({
+          text:
+            postDetails?.[0]?.settings?.thread_finisher! +
+            '\n' +
+            ids[0].releaseURL,
+          reply: { in_reply_to_tweet_id: ids[ids.length - 1].postId },
+        });
+      } catch (err) {}
     }
 
     return ids.map((p) => ({
@@ -408,7 +421,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         tweets.map((p) => p.id),
         {
           'tweet.fields': ['public_metrics'],
-        },
+        }
       );
 
       const metrics = data.data.reduce(

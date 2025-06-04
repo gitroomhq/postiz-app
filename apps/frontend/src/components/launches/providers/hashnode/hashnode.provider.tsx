@@ -11,12 +11,10 @@ import clsx from 'clsx';
 import MDEditor from '@uiw/react-md-editor';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import { MediaComponent } from '@gitroom/frontend/components/media/media.component';
-import {Canonical} from "@gitroom/react/form/canonical";
-
+import { Canonical } from '@gitroom/react/form/canonical';
 const font = Plus_Jakarta_Sans({
   subsets: ['latin'],
 });
-
 const HashnodePreview: FC = () => {
   const { value } = useIntegration();
   const settings = useSettings();
@@ -26,7 +24,6 @@ const HashnodePreview: FC = () => {
     'title',
     'subtitle',
   ]);
-
   return (
     <div
       className={clsx(
@@ -44,12 +41,19 @@ const HashnodePreview: FC = () => {
         </div>
       )}
       <div className="px-[60px]">
-        <div className="font-[800] text-[48px] leading-[60px] mb-[8px]">{title}</div>
-        <div className="font-[400] text-[30px] leading-[60px] mb-[8px] text-customColor34">{subtitle}</div>
+        <div className="font-[800] text-[48px] leading-[60px] mb-[8px]">
+          {title}
+        </div>
+        <div className="font-[400] text-[30px] leading-[60px] mb-[8px] text-customColor34">
+          {subtitle}
+        </div>
       </div>
-      <div className="px-[60px] text-left">
+      <div className="px-[60px] text-start">
         <MDEditor.Markdown
-          style={{ whiteSpace: 'pre-wrap', color: 'black' }}
+          style={{
+            whiteSpace: 'pre-wrap',
+            color: 'black',
+          }}
           className={font.className}
           skipHtml={true}
           source={value.map((p) => p.content).join('\n')}
@@ -58,15 +62,18 @@ const HashnodePreview: FC = () => {
     </div>
   );
 };
-
 const HashnodeSettings: FC = () => {
   const form = useSettings();
-  const {date} = useIntegration();
+  const { date } = useIntegration();
   return (
     <>
       <Input label="Title" {...form.register('title')} />
       <Input label="Subtitle" {...form.register('subtitle')} />
-      <Canonical date={date} label="Canonical Link" {...form.register('canonical')} />
+      <Canonical
+        date={date}
+        label="Canonical Link"
+        {...form.register('canonical')}
+      />
       <MediaComponent
         label="Cover picture"
         description="Add a cover picture"
@@ -81,7 +88,6 @@ const HashnodeSettings: FC = () => {
     </>
   );
 };
-
 export default withProvider(
   HashnodeSettings,
   HashnodePreview,

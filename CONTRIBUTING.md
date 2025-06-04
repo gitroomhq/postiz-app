@@ -21,6 +21,7 @@ As a general rule;
 ## Types of Contributions
 
 Contributions can include:
+
 - **Code improvements:** Fixing bugs or adding new features.
 - **Documentation updates:** Enhancing clarity or adding missing information.
 - **Feature requests:** Suggesting new capabilities or integrations.
@@ -39,17 +40,15 @@ This project follows a Fork/Feature Branch/Pull Request model. If you're not fam
    ```bash
    git checkout -b feature/your-feature-name
    ```
-6. **Make your changes**: Implement the changes you wish to contribute.
-7. **Push your changes**: Upload your changes to your fork.
+4. **Make your changes**: Implement the changes you wish to contribute.
+5. **Push your changes**: Upload your changes to your fork.
    ```bash
    git push -u origin feature/your-feature-name
    ```
-9. **Create a pull request**: Propose your changes **to the main branch**.
-
+6. **Create a pull request**: Propose your changes **to the main branch**.
 
 # Need Help?
 
 Again, do check the [developer guide](https://docs.postiz.com/developer-guide). Much of what you probably need to know is in there.
 
 If you encounter any issues, please visit our [support page](https://docs.postiz.com/support) or check the community forums. Your contributions help make Postiz better!
-
