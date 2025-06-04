@@ -4,21 +4,22 @@ import { useState } from 'react';
 import { Editor } from '@gitroom/frontend/components/launches/editor';
 import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 export const ThreadFinisher = () => {
   const integration = useIntegration();
   const { register, watch, setValue } = useSettings();
+  const t = useT();
+
   register('active_thread_finisher', {
     value: false,
   });
 
   register('thread_finisher', {
-    value: `That's a wrap!
-
-If you enjoyed this thread:
-
-1. Follow me @${integration.integration?.display || integration.integration?.name} for more of these
-2. RT the tweet below to share this thread with your audience`,
+    value: t('that_a_wrap', {
+      username:
+        integration.integration?.display || integration.integration?.name,
+    }),
   });
 
   const slider = watch('active_thread_finisher');
