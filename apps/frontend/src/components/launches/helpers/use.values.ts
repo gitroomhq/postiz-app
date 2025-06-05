@@ -1,8 +1,12 @@
 import { useEffect, useMemo } from 'react';
 import { useForm, useFormContext } from 'react-hook-form';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
+import { IsOptional } from 'class-validator';
 
-class Empty {}
+class Empty {
+  @IsOptional()
+  empty: string;
+}
 
 const finalInformation = {} as {
   [key: string]: {
@@ -53,6 +57,7 @@ export const useValues = (
     criteriaMode: 'all',
   });
 
+  console.log(form.formState.errors);
   const getValues = useMemo(() => {
     return () => ({
       ...form.getValues(),
