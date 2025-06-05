@@ -13,7 +13,7 @@ export class StarsController {
   ) {}
   @EventPattern('check_stars', Transport.REDIS)
   async checkStars(data: { login: string }) {
-    // no to be effected by the limit, we scrape the HTML instead of using the API
+    // not to be affected by the limit, we scrape the HTML instead of using the API
     const loadedHtml = await (
       await fetch(`https://github.com/${data.login}`)
     ).text();
