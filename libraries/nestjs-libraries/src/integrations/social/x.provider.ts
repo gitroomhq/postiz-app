@@ -18,6 +18,7 @@ import dayjs from 'dayjs';
 import { uniqBy } from 'lodash';
 
 export class XProvider extends SocialAbstract implements SocialProvider {
+  available = !!(process.env.X_API_KEY && process.env.X_API_SECRET);
   identifier = 'x';
   name = 'X';
   isBetweenSteps = false;
