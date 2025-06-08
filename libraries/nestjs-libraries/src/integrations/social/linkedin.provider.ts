@@ -11,6 +11,7 @@ import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { Integration } from '@prisma/client';
 import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
+import { LinkedinDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/linkedin.dto';
 
 export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   identifier = 'linkedin';
@@ -314,7 +315,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     return connectAll.join('');
   }
 
-  async post(
+  async post<LinkedinDto>(
     id: string,
     accessToken: string,
     postDetails: PostDetails[],

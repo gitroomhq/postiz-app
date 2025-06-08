@@ -149,6 +149,7 @@
     "i18next": "^25.2.1",
     "i18next-browser-languagedetector": "^8.1.0",
     "i18next-resources-to-backend": "^1.2.1",
+    "image-to-pdf": "^3.0.2",
     "ioredis": "^5.3.2",
     "json-to-graphql-query": "^2.2.5",
     "jsonwebtoken": "^9.0.2",
