@@ -20,6 +20,7 @@ import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.man
 import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 import { RealIP } from 'nestjs-real-ip';
 import { UserAgent } from '@gitroom/nestjs-libraries/user/user.agent';
+import { Provider } from '@prisma/client';
 
 @ApiTags('Auth')
 @Controller('/auth')
@@ -31,7 +32,9 @@ export class AuthController {
 
   @Get('/can-register')
   async canRegister() {
-    return { register: await this._authService.canRegister() };
+    return {
+      register: await this._authService.canRegister(Provider.LOCAL as string),
+    };
   }
 
   @Post('/register')
