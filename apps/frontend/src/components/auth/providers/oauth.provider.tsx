@@ -1,3 +1,5 @@
+'use client';
+
 import { useCallback } from 'react';
 import Image from 'next/image';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
