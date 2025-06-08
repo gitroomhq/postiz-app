@@ -482,5 +482,6 @@
   "90_days": "90天",
   "start_7_days_free_trial": "开始7天免费试用",
   "change_language": "切换语言",
-  "that_a_wrap": "本帖到此结束！\n\n如果你喜欢这个话题：\n\n1. 关注我 @{{username}}，获取更多类似内容\n2. 转发下方推文，与更多人分享本帖\n"
+  "that_a_wrap": "本帖到此结束！\n\n如果你喜欢这个话题：\n\n1. 关注我 @{{username}}，获取更多类似内容\n2. 转发下方推文，与更多人分享本帖\n",
+  "post_as_images_carousel": "以图片轮播的形式发布"
 }

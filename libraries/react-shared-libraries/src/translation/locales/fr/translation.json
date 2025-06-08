@@ -482,5 +482,6 @@
   "90_days": "90 jours",
   "start_7_days_free_trial": "Commencez l’essai gratuit de 7 jours",
   "change_language": "Changer de langue",
-  "that_a_wrap": "C'est terminé !\n\nSi vous avez aimé ce fil :\n\n1. Suivez-moi @{{username}} pour en voir d'autres\n2. Retweetez le tweet ci-dessous pour partager ce fil avec votre audience\n"
+  "that_a_wrap": "C'est terminé !\n\nSi vous avez aimé ce fil :\n\n1. Suivez-moi @{{username}} pour en voir d'autres\n2. Retweetez le tweet ci-dessous pour partager ce fil avec votre audience\n",
+  "post_as_images_carousel": "Publier en carrousel d’images"
 }
