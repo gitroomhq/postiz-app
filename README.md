@@ -22,7 +22,7 @@
 <div align="center">
   <strong>
   <h2>Your ultimate AI social media scheduling tool</h2><br />
-  <a href="https://postiz.com">Postiz</a>: An alternative to: Buffer.com, Hypefury, Twitter Hunter, Etc...<br /><br />
+  <a href="https://postiz.com">Postiz</a>: An alternative to: Buffer.com, Hypefury, Twitter Hunter, etc...<br /><br />
   </strong>
   Postiz offers everything you need to manage your social media posts,<br />build an audience, capture leads, and grow your business.
 </div>
