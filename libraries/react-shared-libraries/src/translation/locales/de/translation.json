@@ -482,5 +482,6 @@
   "90_days": "90 Tage",
   "start_7_days_free_trial": "7-tägige kostenlose Testversion starten",
   "change_language": "Sprache ändern",
-  "that_a_wrap": "Das war's!\n\nWenn dir dieser Thread gefallen hat:\n\n1. Folge mir @{{username}} für mehr davon\n2. Retweete den untenstehenden Tweet, um diesen Thread mit deinem Publikum zu teilen\n"
+  "that_a_wrap": "Das war's!\n\nWenn dir dieser Thread gefallen hat:\n\n1. Folge mir @{{username}} für mehr davon\n2. Retweete den untenstehenden Tweet, um diesen Thread mit deinem Publikum zu teilen\n",
+  "post_as_images_carousel": "Als Bilderkarussell posten"
 }

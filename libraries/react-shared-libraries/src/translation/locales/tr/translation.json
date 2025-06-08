@@ -482,5 +482,6 @@
   "90_days": "90 Gün",
   "start_7_days_free_trial": "7 gün ücretsiz denemeyi başlat",
   "change_language": "Dili Değiştir",
-  "that_a_wrap": "Bu iş burada bitti!\n\nEğer bu diziyi beğendiyseniz:\n\n1. Daha fazlası için beni @{{username}} hesabından takip edin\n2. Aşağıdaki tweet'i RT'leyerek bu diziyi kendi kitlenizle paylaşın\n"
+  "that_a_wrap": "Bu iş burada bitti!\n\nEğer bu diziyi beğendiyseniz:\n\n1. Daha fazlası için beni @{{username}} hesabından takip edin\n2. Aşağıdaki tweet'i RT'leyerek bu diziyi kendi kitlenizle paylaşın\n",
+  "post_as_images_carousel": "Görselleri kaydırmalı gönder olarak paylaş"
 }
