@@ -144,7 +144,7 @@ export class AuthService {
       return user;
     }
 
-    if (!(await this.canRegister())) {
+    if (!(await this.canRegister()) && provider !== Provider.GENERIC) {
       throw new Error('Registration is disabled');
     }
 
