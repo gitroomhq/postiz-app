@@ -12,6 +12,8 @@ import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.ab
 import { Integration } from '@prisma/client';
 import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
 import { LinkedinDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/linkedin.dto';
+import imageToPDF from 'image-to-pdf';
+import { Readable } from 'stream';
 
 export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   identifier = 'linkedin';
@@ -200,13 +202,24 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     picture: any,
     type = 'personal' as 'company' | 'personal'
   ) {
+    // Determine the appropriate endpoint based on file type
+    const isVideo = fileName.indexOf('mp4') > -1;
+    const isPdf = fileName.toLowerCase().indexOf('pdf') > -1;
+
+    let endpoint: string;
+    if (isVideo) {
+      endpoint = 'videos';
+    } else if (isPdf) {
+      endpoint = 'documents';
+    } else {
+      endpoint = 'images';
+    }
+
     const {
-      value: { uploadUrl, image, video, uploadInstructions, ...all },
+      value: { uploadUrl, image, video, document, uploadInstructions, ...all },
     } = await (
       await this.fetch(
-        `https://api.linkedin.com/v2/${
-          fileName.indexOf('mp4') > -1 ? 'videos' : 'images'
-        }?action=initializeUpload`,
+        `https://api.linkedin.com/rest/${endpoint}?action=initializeUpload`,
         {
           method: 'POST',
           headers: {
@@ -221,7 +234,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
                 type === 'personal'
                   ? `urn:li:person:${personId}`
                   : `urn:li:organization:${personId}`,
-              ...(fileName.indexOf('mp4') > -1
+              ...(isVideo
                 ? {
                     fileSizeBytes: picture.length,
                     uploadCaptions: false,
@@ -235,7 +248,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     ).json();
 
     const sendUrlRequest = uploadInstructions?.[0]?.uploadUrl || uploadUrl;
-    const finalOutput = video || image;
+    const finalOutput = video || image || document;
 
     const etags = [];
     for (let i = 0; i < picture.length; i += 1024 * 1024 * 2) {
@@ -245,8 +258,10 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           'X-Restli-Protocol-Version': '2.0.0',
           'LinkedIn-Version': '202501',
           Authorization: `Bearer ${accessToken}`,
-          ...(fileName.indexOf('mp4') > -1
+          ...(isVideo
             ? { 'Content-Type': 'application/octet-stream' }
+            : isPdf
+            ? { 'Content-Type': 'application/pdf' }
             : {}),
         },
         body: picture.slice(i, i + 1024 * 1024 * 2),
@@ -255,9 +270,9 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       etags.push(upload.headers.get('etag'));
     }
 
-    if (fileName.indexOf('mp4') > -1) {
+    if (isVideo) {
       const a = await this.fetch(
-        'https://api.linkedin.com/v2/videos?action=finalizeUpload',
+        'https://api.linkedin.com/rest/videos?action=finalizeUpload',
         {
           method: 'POST',
           body: JSON.stringify({
@@ -315,147 +330,343 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     return connectAll.join('');
   }
 
-  async post<LinkedinDto>(
-    id: string,
+  private async convertImagesToPdfCarousel(
+    postDetails: PostDetails<LinkedinDto>[],
+    firstPost: PostDetails<LinkedinDto>
+  ): Promise<PostDetails<LinkedinDto>[]> {
+    // Collect all images from all posts
+    const allImages = postDetails.flatMap(
+      (post) =>
+        post.media?.filter(
+          (media) =>
+            media.url.toLowerCase().includes('.jpg') ||
+            media.url.toLowerCase().includes('.jpeg') ||
+            media.url.toLowerCase().includes('.png')
+        ) || []
+    );
+
+    if (allImages.length === 0) {
+      return postDetails;
+    }
+
+    // Convert images to buffers and get dimensions
+    const imageData = await Promise.all(
+      allImages.map(async (media) => {
+        const buffer = await readOrFetch(media.url);
+        const image = sharp(buffer, {
+          animated: lookup(media.url) === 'image/gif',
+        });
+        const metadata = await image.metadata();
+
+        return {
+          buffer,
+          width: metadata.width || 0,
+          height: metadata.height || 0,
+        };
+      })
+    );
+
+    // Use the dimensions of the first image for the PDF page size
+    // You could also use the largest dimensions if you prefer
+    const firstImageDimensions = imageData[0];
+    const pageSize = [firstImageDimensions.width, firstImageDimensions.height];
+
+    // Convert images to PDF with exact image dimensions
+    const pdfStream = imageToPDF(
+      imageData.map((data) => data.buffer),
+      pageSize
+    );
+
+    // Convert stream to buffer
+    const pdfBuffer = await this.streamToBuffer(pdfStream);
+
+    // Create a temporary file-like object for the PDF
+    const pdfMedia = {
+      url: 'carousel.pdf',
+      buffer: pdfBuffer,
+    };
+
+    // Return modified post details with PDF instead of images
+    const modifiedFirstPost = {
+      ...firstPost,
+      media: [pdfMedia] as any[],
+    };
+
+    // Remove media from other posts since we're combining everything into one PDF
+    const modifiedRestPosts = postDetails.slice(1).map((post) => ({
+      ...post,
+      media: [] as any[],
+    }));
+
+    return [modifiedFirstPost, ...modifiedRestPosts];
+  }
+
+  private async streamToBuffer(stream: Readable): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      const chunks: Buffer[] = [];
+      stream.on('data', (chunk) => chunks.push(chunk));
+      stream.on('end', () => resolve(Buffer.concat(chunks)));
+      stream.on('error', reject);
+    });
+  }
+
+  private async processMediaForPosts(
+    postDetails: PostDetails<LinkedinDto>[],
     accessToken: string,
-    postDetails: PostDetails[],
-    integration: Integration,
-    type = 'personal' as 'company' | 'personal'
-  ): Promise<PostResponse[]> {
-    const [firstPost, ...restPosts] = postDetails;
+    personId: string,
+    type: 'company' | 'personal'
+  ): Promise<Record<string, string[]>> {
+    const mediaUploads = await Promise.all(
+      postDetails.flatMap(
+        (post) =>
+          post.media?.map(async (media) => {
+            let mediaBuffer: Buffer;
 
-    const uploadAll = (
-      await Promise.all(
-        postDetails.flatMap((p) =>
-          p?.media?.flatMap(async (m) => {
+            // Check if media has a buffer (from PDF conversion)
+            if ('buffer' in media && Buffer.isBuffer((media as any).buffer)) {
+              mediaBuffer = (media as any).buffer;
+            } else {
+              mediaBuffer = await this.prepareMediaBuffer(media.url);
+            }
+
+            const uploadedMediaId = await this.uploadPicture(
+              media.url,
+              accessToken,
+              personId,
+              mediaBuffer,
+              type
+            );
+
             return {
-              id: await this.uploadPicture(
-                m.url,
-                accessToken,
-                id,
-                m.url.indexOf('mp4') > -1
-                  ? Buffer.from(await readOrFetch(m.url))
-                  : await sharp(await readOrFetch(m.url), {
-                      animated: lookup(m.url) === 'image/gif',
-                    })
-                      .toFormat('jpeg')
-                      .resize({
-                        width: 1000,
-                      })
-                      .toBuffer(),
-                type
-              ),
-              postId: p.id,
+              id: uploadedMediaId,
+              postId: post.id,
             };
-          })
-        )
+          }) || []
       )
-    ).reduce((acc, val) => {
-      if (!val?.id) {
-        return acc;
-      }
-      acc[val.postId] = acc[val.postId] || [];
-      acc[val.postId].push(val.id);
+    );
 
+    return mediaUploads.reduce((acc, upload) => {
+      if (!upload?.id) return acc;
+
+      acc[upload.postId] = acc[upload.postId] || [];
+      acc[upload.postId].push(upload.id);
       return acc;
     }, {} as Record<string, string[]>);
+  }
 
-    const media_ids = (uploadAll[firstPost.id] || []).filter((f) => f);
+  private async prepareMediaBuffer(mediaUrl: string): Promise<Buffer> {
+    const isVideo = mediaUrl.indexOf('mp4') > -1;
 
-    const data = await this.fetch('https://api.linkedin.com/v2/posts', {
+    if (isVideo) {
+      return Buffer.from(await readOrFetch(mediaUrl));
+    }
+
+    return await sharp(await readOrFetch(mediaUrl), {
+      animated: lookup(mediaUrl) === 'image/gif',
+    })
+      .toFormat('jpeg')
+      .resize({ width: 1000 })
+      .toBuffer();
+  }
+
+  private buildPostContent(isPdf: boolean, mediaIds: string[]) {
+    if (mediaIds.length === 0) {
+      return {};
+    }
+
+    if (mediaIds.length === 1) {
+      return {
+        content: {
+          media: {
+            ...(isPdf ? { title: 'slides.pdf' } : {}),
+            id: mediaIds[0],
+          },
+        },
+      };
+    }
+
+    return {
+      content: {
+        multiImage: {
+          images: mediaIds.map((id) => ({ id })),
+        },
+      },
+    };
+  }
+
+  private createLinkedInPostPayload(
+    id: string,
+    type: 'company' | 'personal',
+    message: string,
+    mediaIds: string[],
+    isPdf: boolean
+  ) {
+    const author =
+      type === 'personal' ? `urn:li:person:${id}` : `urn:li:organization:${id}`;
+
+    return {
+      author,
+      commentary: this.fixText(message),
+      visibility: 'PUBLIC',
+      distribution: {
+        feedDistribution: 'MAIN_FEED',
+        targetEntities: [] as string[],
+        thirdPartyDistributionChannels: [] as string[],
+      },
+      ...this.buildPostContent(isPdf, mediaIds),
+      lifecycleState: 'PUBLISHED',
+      isReshareDisabledByAuthor: false,
+    };
+  }
+
+  private async createMainPost(
+    id: string,
+    accessToken: string,
+    firstPost: PostDetails,
+    mediaIds: string[],
+    type: 'company' | 'personal',
+    idPdf: boolean
+  ): Promise<string> {
+    const postPayload = this.createLinkedInPostPayload(
+      id,
+      type,
+      firstPost.message,
+      mediaIds,
+      idPdf,
+    );
+
+    const response = await this.fetch('https://api.linkedin.com/rest/posts', {
       method: 'POST',
       headers: {
+        'LinkedIn-Version': '202501',
         'X-Restli-Protocol-Version': '2.0.0',
         'Content-Type': 'application/json',
         Authorization: `Bearer ${accessToken}`,
       },
-      body: JSON.stringify({
-        author:
-          type === 'personal'
-            ? `urn:li:person:${id}`
-            : `urn:li:organization:${id}`,
-        commentary: this.fixText(firstPost.message),
-        visibility: 'PUBLIC',
-        distribution: {
-          feedDistribution: 'MAIN_FEED',
-          targetEntities: [],
-          thirdPartyDistributionChannels: [],
-        },
-        ...(media_ids.length > 0
-          ? {
-              content: {
-                ...(media_ids.length === 0
-                  ? {}
-                  : media_ids.length === 1
-                  ? {
-                      media: {
-                        id: media_ids[0],
-                      },
-                    }
-                  : {
-                      multiImage: {
-                        images: media_ids.map((id) => ({
-                          id,
-                        })),
-                      },
-                    }),
-              },
-            }
-          : {}),
-        lifecycleState: 'PUBLISHED',
-        isReshareDisabledByAuthor: false,
-      }),
+      body: JSON.stringify(postPayload),
     });
 
-    if (data.status !== 201 && data.status !== 200) {
+    console.log('LinkedIn post response:', response);
+    if (response.status !== 201 && response.status !== 200) {
       throw new Error('Error posting to LinkedIn');
     }
 
-    const topPostId = data.headers.get('x-restli-id')!;
+    return response.headers.get('x-restli-id')!;
+  }
 
-    const ids = [
+  private async createCommentPost(
+    id: string,
+    accessToken: string,
+    post: PostDetails,
+    parentPostId: string,
+    type: 'company' | 'personal'
+  ): Promise<string> {
+    const actor =
+      type === 'personal' ? `urn:li:person:${id}` : `urn:li:organization:${id}`;
+
+    const response = await this.fetch(
+      `https://api.linkedin.com/v2/socialActions/${decodeURIComponent(
+        parentPostId
+      )}/comments`,
       {
-        status: 'posted',
-        postId: topPostId,
-        id: firstPost.id,
-        releaseURL: `https://www.linkedin.com/feed/update/${topPostId}`,
-      },
-    ];
-    for (const post of restPosts) {
-      const { object } = await (
-        await this.fetch(
-          `https://api.linkedin.com/v2/socialActions/${decodeURIComponent(
-            topPostId
-          )}/comments`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${accessToken}`,
-            },
-            body: JSON.stringify({
-              actor:
-                type === 'personal'
-                  ? `urn:li:person:${id}`
-                  : `urn:li:organization:${id}`,
-              object: topPostId,
-              message: {
-                text: this.fixText(post.message),
-              },
-            }),
-          }
-        )
-      ).json();
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          actor,
+          object: parentPostId,
+          message: {
+            text: this.fixText(post.message),
+          },
+        }),
+      }
+    );
 
-      ids.push({
-        status: 'posted',
-        postId: object,
-        id: post.id,
-        releaseURL: `https://www.linkedin.com/embed/feed/update/${object}`,
-      });
+    const { object } = await response.json();
+    return object;
+  }
+
+  private createPostResponse(
+    postId: string,
+    originalPostId: string,
+    isMainPost: boolean = false
+  ): PostResponse {
+    const baseUrl = isMainPost
+      ? 'https://www.linkedin.com/feed/update/'
+      : 'https://www.linkedin.com/embed/feed/update/';
+
+    return {
+      status: 'posted',
+      postId,
+      id: originalPostId,
+      releaseURL: `${baseUrl}${postId}`,
+    };
+  }
+
+  async post(
+    id: string,
+    accessToken: string,
+    postDetails: PostDetails<LinkedinDto>[],
+    integration: Integration,
+    type = 'personal' as 'company' | 'personal'
+  ): Promise<PostResponse[]> {
+    let processedPostDetails = postDetails;
+    const [firstPost] = postDetails;
+
+    // Check if we should convert images to PDF carousel
+    if (firstPost.settings?.post_as_images_carousel) {
+      processedPostDetails = await this.convertImagesToPdfCarousel(
+        postDetails,
+        firstPost
+      );
     }
 
-    return ids;
+    const [processedFirstPost, ...restPosts] = processedPostDetails;
+
+    // Process and upload media for all posts
+    const uploadedMedia = await this.processMediaForPosts(
+      processedPostDetails,
+      accessToken,
+      id,
+      type
+    );
+
+    // Get media IDs for the main post
+    const mainPostMediaIds = (
+      uploadedMedia[processedFirstPost.id] || []
+    ).filter(Boolean);
+
+    // Create the main LinkedIn post
+    const mainPostId = await this.createMainPost(
+      id,
+      accessToken,
+      processedFirstPost,
+      mainPostMediaIds,
+      type,
+      !!firstPost.settings?.post_as_images_carousel
+    );
+
+    // Build response array starting with main post
+    const responses: PostResponse[] = [
+      this.createPostResponse(mainPostId, processedFirstPost.id, true),
+    ];
+
+    // Create comment posts for remaining posts
+    for (const post of restPosts) {
+      const commentPostId = await this.createCommentPost(
+        id,
+        accessToken,
+        post,
+        mainPostId,
+        type
+      );
+
+      responses.push(this.createPostResponse(commentPostId, post.id, false));
+    }
+
+    return responses;
   }
 
   @PostPlug({
