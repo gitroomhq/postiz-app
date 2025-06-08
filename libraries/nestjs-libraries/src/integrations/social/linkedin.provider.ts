@@ -423,7 +423,12 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
             let mediaBuffer: Buffer;
 
             // Check if media has a buffer (from PDF conversion)
-            if ('buffer' in media && Buffer.isBuffer((media as any).buffer)) {
+            if (
+              media &&
+              typeof media === 'object' &&
+              'buffer' in media &&
+              Buffer.isBuffer(media.buffer)
+            ) {
               mediaBuffer = (media as any).buffer;
             } else {
               mediaBuffer = await this.prepareMediaBuffer(media.url);
@@ -525,14 +530,14 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     firstPost: PostDetails,
     mediaIds: string[],
     type: 'company' | 'personal',
-    idPdf: boolean
+    isPdf: boolean
   ): Promise<string> {
     const postPayload = this.createLinkedInPostPayload(
       id,
       type,
       firstPost.message,
       mediaIds,
-      idPdf,
+      isPdf
     );
 
     const response = await this.fetch('https://api.linkedin.com/rest/posts', {
@@ -546,7 +551,6 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       body: JSON.stringify(postPayload),
     });
 
-    console.log('LinkedIn post response:', response);
     if (response.status !== 201 && response.status !== 200) {
       throw new Error('Error posting to LinkedIn');
     }
