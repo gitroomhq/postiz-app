@@ -177,7 +177,7 @@ export const withProvider = function <T extends object>(
     // this is a smart function, it updates the global value without updating the states (too heavy) and set the settings validation
     const form = useValues(
       set?.set
-        ? set.set.posts.find((p) => p.integration.id === props.id).settings
+        ? set?.set?.posts?.find((p) => p?.integration?.id === props?.id)?.settings
         : existingData.settings,
       props.id,
       props.identifier,

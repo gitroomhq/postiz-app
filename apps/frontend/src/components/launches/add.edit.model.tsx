@@ -111,14 +111,8 @@ export const AddEditModal: FC<{
   // selected integrations to allow edit
   const [selectedIntegrations, setSelectedIntegrations] = useStateCallback<
     Integrations[]
-  >(
-    set
-      ? ints.filter(
-          (f) =>
-            uniq(set.posts.flatMap((p) => p.integration.id)).indexOf(f.id) > -1
-        )
-      : []
-  );
+  >([]);
+
   const integrations = useMemo(() => {
     if (!customer) {
       return ints;
@@ -134,6 +128,28 @@ export const AddEditModal: FC<{
   // hook to open a new modal
   const modal = useModals();
 
+  const selectIntegrationsDefault = useMemo(() => {
+    if (!set) {
+      return [];
+    }
+
+    const keepReference: Integrations[] = [];
+    const neededIntegrations = uniq(set.posts.flatMap((p) => p.integration.id));
+    for (const i of ints) {
+      if (neededIntegrations.indexOf(i.id) > -1) {
+        keepReference.push(i);
+      }
+    }
+
+    return keepReference;
+  }, [set]);
+
+  useEffect(() => {
+    if (set?.posts) {
+      setSelectedIntegrations(selectIntegrationsDefault);
+    }
+  }, [selectIntegrationsDefault]);
+
   // value of each editor
   const [value, setValue] = useState<
     Array<{
@@ -148,7 +164,7 @@ export const AddEditModal: FC<{
     onlyValues
       ? onlyValues
       : set
-      ? set?.posts?.[0].value || [
+      ? set?.posts?.[0]?.value || [
           {
             content: '',
           },
@@ -683,7 +699,7 @@ Here are the things you can do:
                 <PickPlatforms
                   toolTip={true}
                   integrations={integrations.filter((f) => !f.disabled)}
-                  selectedIntegrations={set ? selectedIntegrations : []}
+                  selectedIntegrations={selectIntegrationsDefault}
                   singleSelect={false}
                   onChange={setSelectedIntegrations}
                   isMain={true}
