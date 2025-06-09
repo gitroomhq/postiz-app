@@ -493,5 +493,7 @@
   "verified": "Doğrulandı",
   "unverified": "Doğrulanmamış",
   "add_phone_number": "Telefon Numarası Ekle",
-  "change": "Değiştir"
+  "change": "Değiştir",
+  "that_a_wrap": "Bu iş burada bitti!\n\nEğer bu diziyi beğendiyseniz:\n\n1. Daha fazlası için beni @{{username}} hesabından takip edin\n2. Aşağıdaki tweet'i RT'leyerek bu diziyi kendi kitlenizle paylaşın\n",
+  "post_as_images_carousel": "Görselleri kaydırmalı gönder olarak paylaş"
 }

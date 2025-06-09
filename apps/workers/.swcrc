@@ -1,0 +1,38 @@
+{
+  "jsc": {
+    "parser": {
+      "syntax": "typescript",
+      "tsx": false,
+      "decorators": true,
+      "dynamicImport": true
+    },
+    "target": "es2020",
+    "baseUrl": "/Users/nevodavid/Projects/gitroom",
+    "paths": {
+      "@gitroom/backend/*": ["apps/backend/src/*"],
+      "@gitroom/cron/*": ["apps/cron/src/*"],
+      "@gitroom/frontend/*": ["apps/frontend/src/*"],
+      "@gitroom/helpers/*": ["libraries/helpers/src/*"],
+      "@gitroom/nestjs-libraries/*": ["libraries/nestjs-libraries/src/*"],
+      "@gitroom/react/*": ["libraries/react-shared-libraries/src/*"],
+      "@gitroom/plugins/*": ["libraries/plugins/src/*"],
+      "@gitroom/workers/*": ["apps/workers/src/*"],
+      "@gitroom/extension/*": ["apps/extension/src/*"]
+    },
+    "keepClassNames": true,
+    "transform": {
+      "legacyDecorator": true,
+      "decoratorMetadata": true
+    },
+    "loose": true
+  },
+  "module": {
+    "type": "commonjs",
+    "strict": false,
+    "strictMode": true,
+    "lazy": false,
+    "noInterop": false
+  },
+  "sourceMaps": true,
+  "minify": false
+} 

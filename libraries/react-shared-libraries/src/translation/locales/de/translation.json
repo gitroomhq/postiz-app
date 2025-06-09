@@ -493,5 +493,7 @@
   "verified": "Verifiziert",
   "unverified": "Nicht verifiziert",
   "change": "Ändern",
-  "add_phone_number": "Telefonnummer hinzufügen"
+  "add_phone_number": "Telefonnummer hinzufügen",
+  "that_a_wrap": "Das war's!\n\nWenn dir dieser Thread gefallen hat:\n\n1. Folge mir @{{username}} für mehr davon\n2. Retweete den untenstehenden Tweet, um diesen Thread mit deinem Publikum zu teilen\n",
+  "post_as_images_carousel": "Als Bilderkarussell posten"
 }

@@ -492,5 +492,7 @@
   "verified": "인증됨",
   "unverified": "미인증",
   "change": "변경",
-  "add_phone_number": "전화번호 추가"
+  "add_phone_number": "전화번호 추가",
+  "that_a_wrap": "여기까지입니다!\n\n이 스레드가 유익하셨다면:\n\n1. 더 많은 정보를 원하시면 @{{username}}를 팔로우하세요\n2. 아래 트윗을 리트윗해서 이 스레드를 여러분의 팔로워들과 공유하세요\n",
+  "post_as_images_carousel": "이미지 캐러셀로 게시"
 }

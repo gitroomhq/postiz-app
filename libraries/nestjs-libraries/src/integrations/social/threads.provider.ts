@@ -34,6 +34,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     const {
       id,
       name,
+      username,
       picture: {
         data: { url },
       },
@@ -104,6 +105,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     const {
       id,
       name,
+      username,
       picture: {
         data: { url },
       },
@@ -116,7 +118,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       refreshToken: access_token,
       expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
       picture: url,
-      username: '',
+      username: username,
     };
   }
 
@@ -178,8 +180,6 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       text: message,
       access_token: accessToken,
     });
-
-    console.log(mediaParams);
 
     const { id: mediaId } = await (
       await this.fetch(
@@ -243,7 +243,8 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     userId: string,
     accessToken: string,
     message: string,
-    replyToId?: string
+    replyToId?: string,
+    quoteId?: string
   ): Promise<string> {
     const form = new FormData();
     form.append('media_type', 'TEXT');
@@ -252,6 +253,10 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
 
     if (replyToId) {
       form.append('reply_to_id', replyToId);
+    }
+
+    if (quoteId) {
+      form.append('quote_post_id', quoteId);
     }
 
     const { id: contentId } = await (
@@ -293,7 +298,8 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     userId: string,
     accessToken: string,
     postDetails: PostDetails,
-    replyToId?: string
+    replyToId?: string,
+    quoteId?: string
   ): Promise<string> {
     // Handle content creation based on media type
     if (!postDetails.media || postDetails.media.length === 0) {
@@ -302,7 +308,8 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
         userId,
         accessToken,
         postDetails.message,
-        replyToId
+        replyToId,
+        quoteId
       );
     } else if (postDetails.media.length === 1) {
       // Single media content
@@ -329,7 +336,10 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
   async post(
     userId: string,
     accessToken: string,
-    postDetails: PostDetails[]
+    postDetails: PostDetails<{
+      active_thread_finisher: boolean;
+      thread_finisher: string;
+    }>[]
   ): Promise<PostResponse[]> {
     if (!postDetails.length) {
       return [];
@@ -390,6 +400,28 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
         status: 'success',
         releaseURL: permalink, // Main thread URL
       });
+    }
+
+    if (postDetails?.[0]?.settings?.active_thread_finisher) {
+      try {
+        const replyContentId = await this.createThreadContent(
+          userId,
+          accessToken,
+          {
+            id: makeId(10),
+            media: [],
+            message:
+              postDetails?.[0]?.settings?.thread_finisher,
+            settings: {},
+          },
+          lastReplyId,
+          threadId
+        );
+
+        await this.publishThread(userId, accessToken, replyContentId);
+      } catch (err) {
+        console.log(err);
+      }
     }
 
     return responses;

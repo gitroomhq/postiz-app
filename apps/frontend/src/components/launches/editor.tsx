@@ -18,12 +18,14 @@ export const Editor = forwardRef<
   MDEditorProps & {
     order: number;
     totalPosts: number;
+    disabledCopilot?: boolean;
   }
 >(
   (
     props: MDEditorProps & {
       order: number;
       totalPosts: number;
+      disabledCopilot?: boolean;
     },
     ref: React.ForwardedRef<RefMDEditor>
   ) => {
@@ -34,6 +36,7 @@ export const Editor = forwardRef<
     const t = useT();
 
     useCopilotReadable({
+      ...(props.disabledCopilot ? { available: 'disabled' } : {}),
       description: 'Content of the post number ' + (props.order + 1),
       value: JSON.stringify({
         content: props.value,
@@ -42,6 +45,7 @@ export const Editor = forwardRef<
       }),
     });
     useCopilotAction({
+      ...(props.disabledCopilot ? { available: 'disabled' } : {}),
       name: 'editPost_' + props.order,
       description: `Edit the content of post number ${props.order}`,
       parameters: [

@@ -20,8 +20,8 @@ export class AuthService {
     private _notificationService: NotificationService,
     private _emailService: EmailService
   ) {}
-  async canRegister() {
-    if (!process.env.DISABLE_REGISTRATION) {
+  async canRegister(provider: string) {
+    if (!process.env.DISABLE_REGISTRATION || provider === Provider.GENERIC) {
       return true;
     }
 
@@ -42,7 +42,7 @@ export class AuthService {
           throw new Error('User already exists');
         }
 
-        if (!(await this.canRegister())) {
+        if (!(await this.canRegister(provider))) {
           throw new Error('Registration is disabled');
         }
 
@@ -144,7 +144,7 @@ export class AuthService {
       return user;
     }
 
-    if (!(await this.canRegister())) {
+    if (!(await this.canRegister(provider))) {
       throw new Error('Registration is disabled');
     }
 
