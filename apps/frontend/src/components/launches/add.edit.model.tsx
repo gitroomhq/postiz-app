@@ -61,17 +61,21 @@ import { TagsComponent } from './tags.component';
 import { RepeatComponent } from '@gitroom/frontend/components/launches/repeat.component';
 import { MergePost } from '@gitroom/frontend/components/launches/merge.post';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
+import { uniq } from 'lodash';
+import { SetContext } from '@gitroom/frontend/components/launches/set.context';
 function countCharacters(text: string, type: string): number {
   if (type !== 'x') {
     return text.length;
   }
   return weightedLength(text);
 }
+
 export const AddEditModal: FC<{
   date: dayjs.Dayjs;
   integrations: Integrations[];
   allIntegrations?: Integrations[];
-  setId?: string;
+  set?: CreatePostDto;
   addEditSets?: (data: any) => void;
   reopenModal: () => void;
   mutate: () => void;
@@ -95,7 +99,9 @@ export const AddEditModal: FC<{
     padding,
     customClose,
     addEditSets,
+    set,
   } = props;
+
   const [customer, setCustomer] = useState('');
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -105,17 +111,24 @@ export const AddEditModal: FC<{
   // selected integrations to allow edit
   const [selectedIntegrations, setSelectedIntegrations] = useStateCallback<
     Integrations[]
-  >([]);
+  >(
+    set
+      ? ints.filter(
+          (f) =>
+            uniq(set.posts.flatMap((p) => p.integration.id)).indexOf(f.id) > -1
+        )
+      : []
+  );
   const integrations = useMemo(() => {
     if (!customer) {
       return ints;
     }
     const list = ints.filter((f) => f?.customer?.id === customer);
-    if (list.length === 1) {
+    if (list.length === 1 && !set) {
       setSelectedIntegrations([list[0]]);
     }
     return list;
-  }, [customer, ints]);
+  }, [customer, ints, set]);
   const [dateState, setDateState] = useState(date);
 
   // hook to open a new modal
@@ -134,6 +147,12 @@ export const AddEditModal: FC<{
   >(
     onlyValues
       ? onlyValues
+      : set
+      ? set?.posts?.[0].value || [
+          {
+            content: '',
+          },
+        ]
       : [
           {
             content: '',
@@ -467,18 +486,24 @@ export const AddEditModal: FC<{
             body: JSON.stringify(data),
           });
       existingData.group = makeId(10);
-      mutate();
-      toaster.show(
-        !existingData.integration
-          ? 'Added successfully'
-          : 'Updated successfully'
-      );
+
+      if (!addEditSets) {
+        mutate();
+        toaster.show(
+          !existingData.integration
+            ? 'Added successfully'
+            : 'Updated successfully'
+        );
+      }
       if (customClose) {
         setTimeout(() => {
           customClose();
         }, 2000);
       }
-      modal.closeAll();
+
+      if (!addEditSets) {
+        modal.closeAll();
+      }
     },
     [
       inter,
@@ -578,7 +603,7 @@ export const AddEditModal: FC<{
   }, [data, postFor, selectedIntegrations]);
   useClickOutside(askClose);
   return (
-    <>
+    <SetContext.Provider value={{ set }}>
       {user?.tier?.ai && (
         <CopilotPopup
           hitEscapeToClose={false}
@@ -658,7 +683,7 @@ Here are the things you can do:
                 <PickPlatforms
                   toolTip={true}
                   integrations={integrations.filter((f) => !f.disabled)}
-                  selectedIntegrations={[]}
+                  selectedIntegrations={set ? selectedIntegrations : []}
                   singleSelect={false}
                   onChange={setSelectedIntegrations}
                   isMain={true}
@@ -938,6 +963,7 @@ Here are the things you can do:
           {!!selectedIntegrations.length && (
             <div className="flex-1 flex flex-col p-[16px] pt-0">
               <ProvidersOptions
+                hideEditOnlyThis={!!set}
                 allIntegrations={props.allIntegrations || []}
                 integrations={selectedIntegrations}
                 editorValue={value}
@@ -947,6 +973,6 @@ Here are the things you can do:
           )}
         </div>
       </div>
-    </>
+    </SetContext.Provider>
   );
 });

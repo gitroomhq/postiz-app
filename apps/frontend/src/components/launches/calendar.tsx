@@ -336,6 +336,7 @@ export const CalendarColumn: FC<{
     changeDate,
     display,
     reloadCalendarView,
+    sets,
   } = useCalendar();
   const toaster = useToaster();
   const modal = useModals();
@@ -547,8 +548,13 @@ export const CalendarColumn: FC<{
       },
     [integrations]
   );
+
   const addModal = useCallback(async () => {
     const signature = await (await fetch('/signatures/default')).json();
+    const set = !sets.length ? undefined : await new Promise(() => {
+
+    });
+
     modal.openModal({
       closeOnClickOutside: false,
       closeOnEscape: false,
@@ -583,7 +589,7 @@ export const CalendarColumn: FC<{
       size: '80%',
       // title: `Adding posts for ${getDate.format('DD/MM/YYYY HH:mm')}`,
     });
-  }, [integrations, getDate]);
+  }, [integrations, getDate, sets]);
   const openStatistics = useCallback(
     (id: string) => () => {
       modal.openModal({

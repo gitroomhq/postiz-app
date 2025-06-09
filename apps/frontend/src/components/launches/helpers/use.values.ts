@@ -57,7 +57,6 @@ export const useValues = (
     criteriaMode: 'all',
   });
 
-  console.log(form.formState.errors);
   const getValues = useMemo(() => {
     return () => ({
       ...form.getValues(),

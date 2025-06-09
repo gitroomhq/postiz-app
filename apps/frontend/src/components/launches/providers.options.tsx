@@ -6,6 +6,7 @@ import { ShowAllProviders } from '@gitroom/frontend/components/launches/provider
 import dayjs from 'dayjs';
 import { useStateCallback } from '@gitroom/react/helpers/use.state.callback';
 export const ProvidersOptions: FC<{
+  hideEditOnlyThis: boolean;
   integrations: Integrations[];
   allIntegrations: Integrations[];
   editorValue: Array<{
@@ -14,7 +15,7 @@ export const ProvidersOptions: FC<{
   }>;
   date: dayjs.Dayjs;
 }> = (props) => {
-  const { integrations, editorValue, date } = props;
+  const { integrations, editorValue, date, hideEditOnlyThis } = props;
   const [selectedIntegrations, setSelectedIntegrations] = useStateCallback([
     integrations[0],
   ]);
@@ -42,6 +43,7 @@ export const ProvidersOptions: FC<{
         }}
       >
         <ShowAllProviders
+          hideEditOnlyThis={hideEditOnlyThis}
           value={editorValue}
           integrations={integrations}
           selectedProvider={selectedIntegrations?.[0]}

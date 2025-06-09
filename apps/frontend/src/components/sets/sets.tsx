@@ -7,18 +7,55 @@ import useSWR from 'swr';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { Button } from '@gitroom/react/form/button';
 import { useModals } from '@mantine/modals';
-import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { Input } from '@gitroom/react/form/input';
-import { FormProvider, useForm } from 'react-hook-form';
-import { object, string } from 'yup';
-import { yupResolver } from '@hookform/resolvers/yup';
-import { Textarea } from '@gitroom/react/form/textarea';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import clsx from 'clsx';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { AddEditModal } from '@gitroom/frontend/components/launches/add.edit.model';
 import dayjs from 'dayjs';
+
+const SaveSetModal: FC<{
+  postData: any;
+  initialValue?: string;
+  onSave: (name: string) => void;
+  onCancel: () => void;
+}> = ({ postData, onSave, onCancel, initialValue }) => {
+  const [name, setName] = useState(initialValue);
+  const t = useT();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (name.trim()) {
+      onSave(name.trim());
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <div>
+        <Input
+          label="Set Name"
+          translationKey="label_set_name"
+          name="setName"
+          value={name}
+          disableForm={true}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Enter a name for this set"
+          autoFocus
+        />
+      </div>
+      <div className="flex gap-2 justify-end">
+        <Button type="button" secondary onClick={onCancel}>
+          {t('cancel', 'Cancel')}
+        </Button>
+        <Button type="submit" disabled={!name.trim()}>
+          {t('save', 'Save')}
+        </Button>
+      </div>
+    </form>
+  );
+};
 
 export const Sets: FC = () => {
   const fetch = useFetch();
@@ -41,7 +78,7 @@ export const Sets: FC = () => {
   const { data, mutate } = useSWR('sets', list);
 
   const addSet = useCallback(
-    (data?: any) => () => {
+    (params?: { id?: string; name?: string; content?: string }) => () => {
       modal.openModal({
         closeOnClickOutside: false,
         closeOnEscape: false,
@@ -54,8 +91,40 @@ export const Sets: FC = () => {
             allIntegrations={integrations.map((p: any) => ({
               ...p,
             }))}
+            {...(params?.id ? { set: JSON.parse(params.content) } : {})}
             addEditSets={(data) => {
-              console.log('save', data);
+              modal.openModal({
+                title: 'Save as Set',
+                classNames: {
+                  modal: 'bg-sixth text-textColor',
+                  title: 'text-textColor',
+                },
+                children: (
+                  <SaveSetModal
+                    initialValue={params?.name || ''}
+                    postData={data}
+                    onSave={async (name: string) => {
+                      try {
+                        await fetch('/sets', {
+                          method: 'POST',
+                          body: JSON.stringify({
+                            ...(params?.id ? { id: params.id } : {}),
+                            name,
+                            content: JSON.stringify(data),
+                          }),
+                        });
+                        modal.closeAll();
+                        mutate();
+                        toaster.show('Set saved successfully', 'success');
+                      } catch (error) {
+                        toaster.show('Failed to save set', 'warning');
+                      }
+                    }}
+                    onCancel={() => modal.closeAll()}
+                  />
+                ),
+                size: 'md',
+              });
             }}
             reopenModal={() => {}}
             mutate={() => {}}
@@ -128,92 +197,5 @@ export const Sets: FC = () => {
         </div>
       </div>
     </div>
-  );
-};
-
-const details = object().shape({
-  name: string().required(),
-  content: string().required(),
-});
-
-export const AddOrEditSet: FC<{
-  data?: any;
-  reload: () => void;
-}> = (props) => {
-  const { data, reload } = props;
-  const fetch = useFetch();
-  const modal = useModals();
-  const toast = useToaster();
-
-  const form = useForm({
-    resolver: yupResolver(details),
-    values: {
-      name: data?.name || '',
-      content: data?.content || '',
-    },
-  });
-
-  const callBack = useCallback(
-    async (values: any) => {
-      // TODO: Implement save functionality
-      console.log('Save set functionality to be implemented', values);
-      modal.closeAll();
-      reload();
-    },
-    [data]
-  );
-
-  const t = useT();
-
-  return (
-    <FormProvider {...form}>
-      <form onSubmit={form.handleSubmit(callBack)}>
-        <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-customColor6 bg-sixth p-[16px] pt-0 w-[500px]">
-          <TopTitle title={data ? 'Edit set' : 'Add set'} />
-          <button
-            className="outline-none absolute end-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
-            type="button"
-            onClick={modal.closeAll}
-          >
-            <svg
-              viewBox="0 0 15 15"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-            >
-              <path
-                d="M11.7816 4.03157C12.0062 3.80702 12.0062 3.44295 11.7816 3.2184C11.5571 2.99385 11.193 2.99385 10.9685 3.2184L7.50005 6.68682L4.03164 3.2184C3.80708 2.99385 3.44301 2.99385 3.21846 3.2184C2.99391 3.44295 2.99391 3.80702 3.21846 4.03157L6.68688 7.49999L3.21846 10.9684C2.99391 11.193 2.99391 11.557 3.21846 11.7816C3.44301 12.0061 3.80708 12.0061 4.03164 11.7816L7.50005 8.31316L10.9685 11.7816C11.193 12.0061 11.5571 12.0061 11.7816 11.7816C12.0062 11.557 12.0062 11.193 11.7816 10.9684L8.31322 7.49999L11.7816 4.03157Z"
-                fill="currentColor"
-                fillRule="evenodd"
-                clipRule="evenodd"
-              ></path>
-            </svg>
-          </button>
-
-          <div>
-            <Input
-              label="Name"
-              translationKey="label_name"
-              {...form.register('name')}
-            />
-            <Textarea
-              label="Content"
-              translationKey="label_content"
-              {...form.register('content')}
-            />
-            <div className="flex gap-[10px]">
-              <Button
-                type="submit"
-                className="mt-[24px]"
-                disabled={!form.formState.isValid}
-              >
-                {t('save', 'Save')}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </form>
-    </FormProvider>
   );
 };
