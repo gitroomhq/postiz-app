@@ -25,6 +25,7 @@ async function bootstrap() {
         process.env.FRONTEND_URL,
         'https://www.publica.do',
         'https://publica.do',
+        'https://room.publica.do',
         ...(process.env.MAIN_URL ? [process.env.MAIN_URL] : []),
       ],
     },
