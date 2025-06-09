@@ -71,6 +71,8 @@ export const AddEditModal: FC<{
   date: dayjs.Dayjs;
   integrations: Integrations[];
   allIntegrations?: Integrations[];
+  setId?: string;
+  addEditSets?: (data: any) => void;
   reopenModal: () => void;
   mutate: () => void;
   padding?: string;
@@ -92,6 +94,7 @@ export const AddEditModal: FC<{
     onlyValues,
     padding,
     customClose,
+    addEditSets,
   } = props;
   const [customer, setCustomer] = useState('');
   const [loading, setLoading] = useState(false);
@@ -436,28 +439,33 @@ export const AddEditModal: FC<{
             'Yes, shortlink it!'
           );
       setLoading(true);
-      await fetch('/posts', {
-        method: 'POST',
-        body: JSON.stringify({
-          ...(postFor
-            ? {
-                order: postFor.id,
-              }
-            : {}),
-          type,
-          inter,
-          tags,
-          shortLink,
-          date: dateState.utc().format('YYYY-MM-DDTHH:mm:ss'),
-          posts: allKeys.map((p) => ({
-            ...p,
-            value: p.value.map((a) => ({
-              ...a,
-              content: a.content.slice(0, p.maximumCharacters || 1000000),
-            })),
+
+      const data = {
+        ...(postFor
+          ? {
+              order: postFor.id,
+            }
+          : {}),
+        type,
+        inter,
+        tags,
+        shortLink,
+        date: dateState.utc().format('YYYY-MM-DDTHH:mm:ss'),
+        posts: allKeys.map((p) => ({
+          ...p,
+          value: p.value.map((a) => ({
+            ...a,
+            content: a.content.slice(0, p.maximumCharacters || 1000000),
           })),
-        }),
-      });
+        })),
+      };
+
+      addEditSets
+        ? addEditSets(data)
+        : await fetch('/posts', {
+            method: 'POST',
+            body: JSON.stringify(data),
+          });
       existingData.group = makeId(10);
       mutate();
       toaster.show(
@@ -481,6 +489,7 @@ export const AddEditModal: FC<{
       existingData,
       selectedIntegrations,
       tags,
+      addEditSets,
     ]
   );
   const uppy = useUppyUploader({
@@ -811,70 +820,84 @@ Here are the things you can do:
                       {t('delete_post', 'Delete Post')}
                     </Button>
                   )}
-                  <Button
-                    onClick={schedule('draft')}
-                    className="rounded-[4px] border-2 border-customColor21"
-                    secondary={true}
-                    disabled={selectedIntegrations.length === 0}
-                  >
-                    {t('save_as_draft', 'Save as draft')}
-                  </Button>
 
-                  <Button
-                    onClick={schedule('schedule')}
-                    className="rounded-[4px] relative group"
-                    disabled={
-                      selectedIntegrations.length === 0 ||
-                      loading ||
-                      !canSendForPublication
-                    }
-                  >
-                    <div className="flex justify-center items-center gap-[5px] h-full">
-                      <div className="h-full flex items-center text-white">
-                        {!canSendForPublication
-                          ? t('not_matching_order', 'Not matching order')
-                          : postFor
-                          ? t('submit_for_order', 'Submit for order')
-                          : !existingData.integration
-                          ? selectedIntegrations.length === 0
-                            ? t(
-                                'select_channels_from_circles',
-                                'Select channels from the circles above'
-                              )
-                            : t('add_to_calendar', 'Add to calendar')
-                          : // @ts-ignore
-                          existingData?.posts?.[0]?.state === 'DRAFT'
-                          ? t('schedule', 'Schedule')
-                          : t('update', 'Update')}
-                      </div>
-                      {!postFor && (
-                        <div className="h-full flex items-center">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="18"
-                            height="18"
-                            viewBox="0 0 18 18"
-                            fill="none"
-                          >
-                            <path
-                              d="M15.0233 7.14804L9.39828 12.773C9.34604 12.8253 9.284 12.8668 9.21572 12.8951C9.14743 12.9234 9.07423 12.938 9.00031 12.938C8.92639 12.938 8.8532 12.9234 8.78491 12.8951C8.71662 12.8668 8.65458 12.8253 8.60234 12.773L2.97734 7.14804C2.8718 7.04249 2.8125 6.89934 2.8125 6.75007C2.8125 6.6008 2.8718 6.45765 2.97734 6.3521C3.08289 6.24655 3.22605 6.18726 3.37531 6.18726C3.52458 6.18726 3.66773 6.24655 3.77328 6.3521L9.00031 11.5798L14.2273 6.3521C14.2796 6.29984 14.3417 6.25838 14.4099 6.2301C14.4782 6.20181 14.5514 6.18726 14.6253 6.18726C14.6992 6.18726 14.7724 6.20181 14.8407 6.2301C14.909 6.25838 14.971 6.29984 15.0233 6.3521C15.0755 6.40436 15.117 6.46641 15.1453 6.53469C15.1736 6.60297 15.1881 6.67616 15.1881 6.75007C15.1881 6.82398 15.1736 6.89716 15.1453 6.96545C15.117 7.03373 15.0755 7.09578 15.0233 7.14804Z"
-                              fill="white"
-                            />
-                          </svg>
-                          <div
-                            onClick={postNow}
-                            className={clsx(
-                              'hidden group-hover:flex hover:flex flex-col justify-center absolute start-0 top-[100%] w-full h-[40px] bg-customColor22 border border-tableBorder',
-                              loading &&
-                                'cursor-not-allowed pointer-events-none opacity-50'
-                            )}
-                          >
-                            {t('post_now', 'Post now')}
-                          </div>
+                  {addEditSets && (
+                    <Button
+                      onClick={schedule('draft')}
+                      className="rounded-[4px] relative group"
+                    >
+                      {t('save_set', 'Save Set')}
+                    </Button>
+                  )}
+
+                  {!addEditSets && (
+                    <Button
+                      onClick={schedule('draft')}
+                      className="rounded-[4px] border-2 border-customColor21"
+                      secondary={true}
+                      disabled={selectedIntegrations.length === 0}
+                    >
+                      {t('save_as_draft', 'Save as draft')}
+                    </Button>
+                  )}
+
+                  {!addEditSets && (
+                    <Button
+                      onClick={schedule('schedule')}
+                      className="rounded-[4px] relative group"
+                      disabled={
+                        selectedIntegrations.length === 0 ||
+                        loading ||
+                        !canSendForPublication
+                      }
+                    >
+                      <div className="flex justify-center items-center gap-[5px] h-full">
+                        <div className="h-full flex items-center text-white">
+                          {!canSendForPublication
+                            ? t('not_matching_order', 'Not matching order')
+                            : postFor
+                            ? t('submit_for_order', 'Submit for order')
+                            : !existingData.integration
+                            ? selectedIntegrations.length === 0
+                              ? t(
+                                  'select_channels_from_circles',
+                                  'Select channels from the circles above'
+                                )
+                              : t('add_to_calendar', 'Add to calendar')
+                            : // @ts-ignore
+                            existingData?.posts?.[0]?.state === 'DRAFT'
+                            ? t('schedule', 'Schedule')
+                            : t('update', 'Update')}
                         </div>
-                      )}
-                    </div>
-                  </Button>
+                        {!postFor && (
+                          <div className="h-full flex items-center">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="18"
+                              height="18"
+                              viewBox="0 0 18 18"
+                              fill="none"
+                            >
+                              <path
+                                d="M15.0233 7.14804L9.39828 12.773C9.34604 12.8253 9.284 12.8668 9.21572 12.8951C9.14743 12.9234 9.07423 12.938 9.00031 12.938C8.92639 12.938 8.8532 12.9234 8.78491 12.8951C8.71662 12.8668 8.65458 12.8253 8.60234 12.773L2.97734 7.14804C2.8718 7.04249 2.8125 6.89934 2.8125 6.75007C2.8125 6.6008 2.8718 6.45765 2.97734 6.3521C3.08289 6.24655 3.22605 6.18726 3.37531 6.18726C3.52458 6.18726 3.66773 6.24655 3.77328 6.3521L9.00031 11.5798L14.2273 6.3521C14.2796 6.29984 14.3417 6.25838 14.4099 6.2301C14.4782 6.20181 14.5514 6.18726 14.6253 6.18726C14.6992 6.18726 14.7724 6.20181 14.8407 6.2301C14.909 6.25838 14.971 6.29984 15.0233 6.3521C15.0755 6.40436 15.117 6.46641 15.1453 6.53469C15.1736 6.60297 15.1881 6.67616 15.1881 6.75007C15.1881 6.82398 15.1736 6.89716 15.1453 6.96545C15.117 7.03373 15.0755 7.09578 15.0233 7.14804Z"
+                                fill="white"
+                              />
+                            </svg>
+                            <div
+                              onClick={postNow}
+                              className={clsx(
+                                'hidden group-hover:flex hover:flex flex-col justify-center absolute start-0 top-[100%] w-full h-[40px] bg-customColor22 border border-tableBorder',
+                                loading &&
+                                  'cursor-not-allowed pointer-events-none opacity-50'
+                              )}
+                            >
+                              {t('post_now', 'Post now')}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </Button>
+                  )}
                 </Submitted>
               </div>
             </div>
