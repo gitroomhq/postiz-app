@@ -61,7 +61,7 @@ import { TagsComponent } from './tags.component';
 import { RepeatComponent } from '@gitroom/frontend/components/launches/repeat.component';
 import { MergePost } from '@gitroom/frontend/components/launches/merge.post';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-import { CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
+import { type CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
 import { uniq } from 'lodash';
 import { SetContext } from '@gitroom/frontend/components/launches/set.context';
 function countCharacters(text: string, type: string): number {
