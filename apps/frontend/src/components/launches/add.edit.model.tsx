@@ -979,7 +979,7 @@ Here are the things you can do:
           {!!selectedIntegrations.length && (
             <div className="flex-1 flex flex-col p-[16px] pt-0">
               <ProvidersOptions
-                hideEditOnlyThis={!!set}
+                hideEditOnlyThis={!!addEditSets}
                 allIntegrations={props.allIntegrations || []}
                 integrations={selectedIntegrations}
                 editorValue={value}
