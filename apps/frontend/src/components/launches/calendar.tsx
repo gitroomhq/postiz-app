@@ -337,6 +337,7 @@ export const CalendarColumn: FC<{
     display,
     reloadCalendarView,
     sets,
+    signature,
   } = useCalendar();
   const toaster = useToaster();
   const modal = useModals();
@@ -550,7 +551,6 @@ export const CalendarColumn: FC<{
   );
 
   const addModal = useCallback(async () => {
-    const signature = await (await fetch('/signatures/default')).json();
     const set: any = !sets.length
       ? undefined
       : await new Promise((resolve) => {
@@ -597,7 +597,7 @@ export const CalendarColumn: FC<{
             ...p,
           }))}
           mutate={reloadCalendarView}
-          {...(signature?.id
+          {...(signature?.id && !set
             ? {
                 onlyValues: [
                   {
@@ -609,14 +609,13 @@ export const CalendarColumn: FC<{
           date={
             randomHour ? getDate.hour(Math.floor(Math.random() * 24)) : getDate
           }
-          {...set?.content ? {set: JSON.parse(set.content)} : {}}
+          {...(set?.content ? { set: JSON.parse(set.content) } : {})}
           reopenModal={() => ({})}
         />
       ),
       size: '80%',
-      // title: `Adding posts for ${getDate.format('DD/MM/YYYY HH:mm')}`,
     });
-  }, [integrations, getDate, sets]);
+  }, [integrations, getDate, sets, signature]);
   const openStatistics = useCallback(
     (id: string) => () => {
       modal.openModal({
@@ -967,7 +966,7 @@ export const Statistics = () => {
   );
 };
 
-const SetSelectionModal: FC<{
+export const SetSelectionModal: FC<{
   sets: any[];
   onSelect: (set: any) => void;
   onContinueWithoutSet: () => void;

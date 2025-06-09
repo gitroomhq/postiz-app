@@ -28,6 +28,7 @@ export const CalendarContext = createContext({
   currentMonth: dayjs().month(),
   customer: null as string | null,
   sets: [] as { name: string; id: string; content: string[] }[],
+  signature: undefined as any,
   comments: [] as Array<{
     date: string;
     total: number;
@@ -144,11 +145,16 @@ export const CalendarWeekProvider: FC<{
     revalidateOnFocus: false,
   });
 
+  const defaultSign = useCallback(async () => {
+    return await (await fetch('/signatures/default')).json();
+  }, []);
+
   const setList = useCallback(async () => {
     return (await fetch('/sets')).json();
   }, []);
 
   const { data: sets, mutate } = useSWR('sets', setList);
+  const { data: sign} = useSWR('default-sign', defaultSign);
 
   const setFiltersWrapper = useCallback(
     (filters: {
@@ -211,6 +217,7 @@ export const CalendarWeekProvider: FC<{
         changeDate,
         comments,
         sets: sets || [],
+        signature: sign,
       }}
     >
       {children}
