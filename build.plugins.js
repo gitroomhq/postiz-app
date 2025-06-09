@@ -1,4 +1,4 @@
-const { readdirSync, statSync, writeFileSync } = require('fs');
+const { readdirSync, statSync, writeFileSync, existsSync } = require('fs');
 const { join } = require('path');
 
 function isNonEmptyFolder(folderPath) {
@@ -18,6 +18,10 @@ function isNonEmptyFolder(folderPath) {
 // Function to get all non-empty folders
 function getNonEmptyFolders(rootFolder) {
   const result = [];
+  if (!existsSync(rootFolder)) {
+    return result;
+  }
+
   const items = readdirSync(rootFolder);
 
   items.forEach((item) => {

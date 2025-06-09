@@ -135,6 +135,7 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
         username: profile.data.handle!,
       };
     } catch (e) {
+      console.log(e);
       return 'Invalid credentials';
     }
   }
@@ -219,6 +220,41 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
       loadUri = loadUri || uri;
 
       cidUrl.push({ cid, url: uri, rev: commit.rev });
+    }
+
+    if (postDetails?.[0]?.settings?.active_thread_finisher) {
+      const rt = new RichText({
+        text: postDetails?.[0]?.settings?.thread_finisher,
+      });
+
+      await rt.detectFacets(agent);
+
+      await agent.post({
+        text: postDetails?.[0]?.settings?.thread_finisher,
+        facets: rt.facets,
+        createdAt: new Date().toISOString(),
+        embed: {
+          $type: 'app.bsky.embed.record',
+          record: {
+            uri: cidUrl[0].url,
+            cid: cidUrl[0].cid,
+          },
+        },
+        ...(loadCid
+          ? {
+              reply: {
+                root: {
+                  uri: loadUri,
+                  cid: loadCid,
+                },
+                parent: {
+                  uri: loadUri,
+                  cid: loadCid,
+                },
+              },
+            }
+          : {}),
+      });
     }
 
     return postDetails.map((p, index) => ({

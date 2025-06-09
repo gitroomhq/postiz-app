@@ -1,6 +1,13 @@
 import { useEffect, useMemo } from 'react';
 import { useForm, useFormContext } from 'react-hook-form';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
+import { IsOptional } from 'class-validator';
+
+class Empty {
+  @IsOptional()
+  empty: string;
+}
+
 const finalInformation = {} as {
   [key: string]: {
     posts: Array<{
@@ -42,15 +49,14 @@ export const useValues = (
   ) => Promise<string | true>,
   maximumCharacters?: number
 ) => {
-  const resolver = useMemo(() => {
-    return dto ? classValidatorResolver(dto) : undefined;
-  }, [integration]);
+
   const form = useForm({
-    ...(resolver ? resolver : {}),
+    resolver: classValidatorResolver(dto || Empty),
     values: initialValues,
     mode: 'onChange',
     criteriaMode: 'all',
   });
+
   const getValues = useMemo(() => {
     return () => ({
       ...form.getValues(),

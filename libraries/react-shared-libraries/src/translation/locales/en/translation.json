@@ -492,5 +492,8 @@
   "verified": "Verified",
   "unverified": "Unverified",
   "change": "Change",
-  "add_phone_number": "Add Phone Number"
+  "add_phone_number": "Add Phone Number",
+  "that_a_wrap": "That's a wrap!\n\nIf you enjoyed this thread:\n\n1. Follow me @{{username}} for more of these\n2. RT the tweet below to share this thread with your audience\n",
+  "post_as_images_carousel": "Post as images carousel",
+  "save_set": "Save Set"
 }

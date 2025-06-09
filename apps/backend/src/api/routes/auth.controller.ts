@@ -22,6 +22,8 @@ import { RealIP } from 'nestjs-real-ip';
 import { UserAgent } from '@gitroom/nestjs-libraries/user/user.agent';
 import { NewsletterDto } from '@gitroom/nestjs-libraries/dtos/auth/newsletter.dto';
 import { NewsletterService } from '@gitroom/nestjs-libraries/services/newsletter.service';
+import { Provider } from '@prisma/client';
+
 @ApiTags('Auth')
 @Controller('/auth')
 export class AuthController {
@@ -32,7 +34,9 @@ export class AuthController {
 
   @Get('/can-register')
   async canRegister() {
-    return { register: await this._authService.canRegister() };
+    return {
+      register: await this._authService.canRegister(Provider.LOCAL as string),
+    };
   }
 
   @Post('/register')

@@ -1,3 +1,5 @@
+'use client';
+
 import { useCallback } from 'react';
 import Image from 'next/image';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
@@ -33,10 +35,11 @@ export const OauthProvider = () => {
           alt="genericOauth"
           width={40}
           height={40}
+          className="-mt-[7px]"
         />
       </div>
       <div>
-        {t('sign_in_with', 'Sign in with')}
+        {t('sign_in_with', 'Sign in with')}&nbsp;
         {oauthDisplayName || 'OAuth'}
       </div>
     </div>

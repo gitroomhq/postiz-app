@@ -122,13 +122,14 @@ export const Providers = [
 ];
 export const ShowAllProviders: FC<{
   integrations: Integrations[];
+  hideEditOnlyThis: boolean;
   value: Array<{
     content: string;
     id?: string;
   }>;
   selectedProvider?: Integrations;
 }> = (props) => {
-  const { integrations, value, selectedProvider } = props;
+  const { integrations, value, selectedProvider, hideEditOnlyThis } = props;
   return (
     <>
       {integrations.map((integration) => {
@@ -145,6 +146,7 @@ export const ShowAllProviders: FC<{
         }
         return (
           <ProviderComponent
+            hideEditOnlyThis={hideEditOnlyThis}
             key={integration.id}
             {...integration}
             value={value}

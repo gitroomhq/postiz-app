@@ -1,5 +1,6 @@
 # Do **not** use this yml for production. It is not up-to-date.
 # Use https://docs.postiz.com/installation/docker-compose
+# This is only for the dev enviroment
 
 services:
   postiz-postgres:

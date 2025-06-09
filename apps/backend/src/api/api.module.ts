@@ -37,6 +37,7 @@ import { McpLocalService } from '@gitroom/nestjs-libraries/mcp/local/mcp.local.s
 import { WhatsappService } from '@gitroom/nestjs-libraries/whatsapp/whatsapp.service';
 import { PublicaController } from '@gitroom/backend/api/routes/publica.controller';
 import { PhoneNumberController } from '@gitroom/backend/api/routes/phone.number.controller';
+import { SetsController } from '@gitroom/backend/api/routes/sets.controller';
 
 const authenticatedController = [
   UsersController,
@@ -55,6 +56,7 @@ const authenticatedController = [
   SignatureController,
   AutopostController,
   PhoneNumberController,
+  SetsController,
 ];
 @Module({
   imports: [UploadModule],

@@ -493,5 +493,7 @@
   "verified": "確認済み",
   "unverified": "未確認",
   "change": "変更",
-  "add_phone_number": "電話番号を追加"
+  "add_phone_number": "電話番号を追加",
+  "that_a_wrap": "以上で終了です！\n\nこのスレッドを楽しんでいただけたなら：\n\n1. @{{username}} をフォローして、さらに多くの投稿をご覧ください\n2. 下のツイートをリツイートして、このスレッドをあなたのフォロワーと共有してください\n",
+  "post_as_images_carousel": "画像カルーセルとして投稿"
 }

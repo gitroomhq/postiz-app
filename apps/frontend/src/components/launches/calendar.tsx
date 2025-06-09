@@ -336,6 +336,8 @@ export const CalendarColumn: FC<{
     changeDate,
     display,
     reloadCalendarView,
+    sets,
+    signature,
   } = useCalendar();
   const toaster = useToaster();
   const modal = useModals();
@@ -547,8 +549,38 @@ export const CalendarColumn: FC<{
       },
     [integrations]
   );
+
   const addModal = useCallback(async () => {
-    const signature = await (await fetch('/signatures/default')).json();
+    const set: any = !sets.length
+      ? undefined
+      : await new Promise((resolve) => {
+          modal.openModal({
+            title: t('select_set', 'Select a Set'),
+            closeOnClickOutside: true,
+            closeOnEscape: true,
+            withCloseButton: true,
+            onClose: () => resolve('exit'),
+            classNames: {
+              modal: 'bg-secondary text-textColor',
+            },
+            children: (
+              <SetSelectionModal
+                sets={sets}
+                onSelect={(selectedSet) => {
+                  resolve(selectedSet);
+                  modal.closeAll();
+                }}
+                onContinueWithoutSet={() => {
+                  resolve(undefined);
+                  modal.closeAll();
+                }}
+              />
+            ),
+          });
+        });
+
+    if (set === 'exit') return;
+
     modal.openModal({
       closeOnClickOutside: false,
       closeOnEscape: false,
@@ -565,7 +597,7 @@ export const CalendarColumn: FC<{
             ...p,
           }))}
           mutate={reloadCalendarView}
-          {...(signature?.id
+          {...(signature?.id && !set
             ? {
                 onlyValues: [
                   {
@@ -577,13 +609,13 @@ export const CalendarColumn: FC<{
           date={
             randomHour ? getDate.hour(Math.floor(Math.random() * 24)) : getDate
           }
+          {...(set?.content ? { set: JSON.parse(set.content) } : {})}
           reopenModal={() => ({})}
         />
       ),
       size: '80%',
-      // title: `Adding posts for ${getDate.format('DD/MM/YYYY HH:mm')}`,
     });
-  }, [integrations, getDate]);
+  }, [integrations, getDate, sets, signature]);
   const openStatistics = useCallback(
     (id: string) => () => {
       modal.openModal({
@@ -931,5 +963,47 @@ export const Statistics = () => {
         fill="currentColor"
       />
     </svg>
+  );
+};
+
+export const SetSelectionModal: FC<{
+  sets: any[];
+  onSelect: (set: any) => void;
+  onContinueWithoutSet: () => void;
+}> = ({ sets, onSelect, onContinueWithoutSet }) => {
+  const t = useT();
+
+  return (
+    <div className="flex flex-col gap-4 p-4">
+      <div className="text-lg font-medium">
+        {t('choose_set_or_continue', 'Choose a set or continue without one')}
+      </div>
+
+      <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
+        {sets.map((set) => (
+          <div
+            key={set.id}
+            onClick={() => onSelect(set)}
+            className="p-3 border border-tableBorder rounded-lg cursor-pointer hover:bg-customColor31 transition-colors"
+          >
+            <div className="font-medium">{set.name}</div>
+            {set.description && (
+              <div className="text-sm text-gray-400 mt-1">
+                {set.description}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className="flex gap-2 pt-2 border-t border-tableBorder">
+        <button
+          onClick={onContinueWithoutSet}
+          className="flex-1 px-4 py-2 bg-customColor31 text-textColor rounded-lg hover:bg-customColor23 transition-colors"
+        >
+          {t('continue_without_set', 'Continue without set')}
+        </button>
+      </div>
+    </div>
   );
 };

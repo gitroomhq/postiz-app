@@ -7,13 +7,6 @@ import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { useModals } from '@mantine/modals';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
-import {
-  NeynarAuthButton,
-  NeynarContextProvider,
-  Theme,
-  useNeynarContext,
-} from '@neynar/react';
-import { INeynarAuthenticatedUser } from '@neynar/react/dist/types/common';
 import { ButtonCaster } from '@gitroom/frontend/components/auth/providers/farcaster.provider';
 export const WrapcasterProvider: FC<Web3ProviderInterface> = (props) => {
   const [_, state] = props.nonce.split('||');
