@@ -23,8 +23,8 @@ model Organization {
   github            GitHub[]
   subscription      Subscription?
   Integration       Integration[]
-  post              Post[] @relation("organization")
-  submittedPost     Post[] @relation("submittedForOrg")
+  post              Post[]             @relation("organization")
+  submittedPost     Post[]             @relation("submittedForOrg")
   allowTrial        Boolean            @default(false)
   Comments          Comments[]
   notifications     Notifications[]
@@ -37,18 +37,19 @@ model Organization {
   tags              Tags[]
   signatures        Signatures[]
   autoPost          AutoPost[]
+  sets              Sets[]
 }
 
 model Tags {
-  id        String   @id @default(uuid())
-  name      String
-  color     String
-  orgId     String
+  id           String       @id @default(uuid())
+  name         String
+  color        String
+  orgId        String
   organization Organization @relation(fields: [orgId], references: [id])
-  posts     TagsPosts[]
-  deletedAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  posts        TagsPosts[]
+  deletedAt    DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 
   @@index([orgId])
   @@index([deletedAt])
@@ -56,9 +57,9 @@ model Tags {
 
 model TagsPosts {
   postId    String
-  post      Post   @relation(fields: [postId], references: [id])
+  post      Post     @relation(fields: [postId], references: [id])
   tagId     String
-  tag       Tags   @relation(fields: [tagId], references: [id])
+  tag       Tags     @relation(fields: [tagId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -67,39 +68,39 @@ model TagsPosts {
 }
 
 model User {
-  id            String             @id @default(uuid())
-  email         String
-  password      String?
-  providerName  Provider
-  name          String?
-  lastName      String?
-  isSuperAdmin  Boolean            @default(false)
-  bio           String?
-  audience      Int                @default(0)
-  pictureId     String?
-  picture       Media?             @relation(fields: [pictureId], references: [id])
-  providerId    String?
-  organizations UserOrganization[]
-  timezone      Int
-  comments      Comments[]
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  lastReadNotifications DateTime   @default(now())
-  inviteId      String?
-  activated     Boolean            @default(true)
-  items         ItemUser[]
-  marketplace   Boolean            @default(true)
-  account       String?
-  connectedAccount  Boolean         @default(false)
-  groupBuyer   MessagesGroup[]  @relation("groupBuyer")
-  groupSeller  MessagesGroup[]  @relation("groupSeller")
-  orderBuyer   Orders[]        @relation("orderBuyer")
-  orderSeller  Orders[]        @relation("orderSeller")
-  payoutProblems    PayoutProblems[]
-  lastOnline   DateTime          @default(now())
-  agencies     SocialMediaAgency[]
-  ip           String?
-  agent        String?
+  id                    String              @id @default(uuid())
+  email                 String
+  password              String?
+  providerName          Provider
+  name                  String?
+  lastName              String?
+  isSuperAdmin          Boolean             @default(false)
+  bio                   String?
+  audience              Int                 @default(0)
+  pictureId             String?
+  picture               Media?              @relation(fields: [pictureId], references: [id])
+  providerId            String?
+  organizations         UserOrganization[]
+  timezone              Int
+  comments              Comments[]
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  lastReadNotifications DateTime            @default(now())
+  inviteId              String?
+  activated             Boolean             @default(true)
+  items                 ItemUser[]
+  marketplace           Boolean             @default(true)
+  account               String?
+  connectedAccount      Boolean             @default(false)
+  groupBuyer            MessagesGroup[]     @relation("groupBuyer")
+  groupSeller           MessagesGroup[]     @relation("groupSeller")
+  orderBuyer            Orders[]            @relation("orderBuyer")
+  orderSeller           Orders[]            @relation("orderSeller")
+  payoutProblems        PayoutProblems[]
+  lastOnline            DateTime            @default(now())
+  agencies              SocialMediaAgency[]
+  ip                    String?
+  agent                 String?
 
   @@unique([email, providerName])
   @@index([lastReadNotifications])
@@ -110,12 +111,12 @@ model User {
 }
 
 model UsedCodes {
-  id        String   @id @default(uuid())
-  code      String
-  orgId     String
+  id           String       @id @default(uuid())
+  code         String
+  orgId        String
   organization Organization @relation(fields: [orgId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 
   @@index([code])
 }
@@ -164,16 +165,16 @@ model Trending {
 }
 
 model TrendingLog {
-  id           String   @id @default(uuid())
-  language     String?
-  date         DateTime
+  id       String   @id @default(uuid())
+  language String?
+  date     DateTime
 }
 
 model ItemUser {
-  id           String   @id @default(uuid())
-  user         User     @relation(fields: [userId], references: [id])
-  userId       String
-  key          String
+  id     String @id @default(uuid())
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+  key    String
 
   @@index([userId])
   @@index([key])
@@ -195,13 +196,13 @@ model Star {
 }
 
 model Media {
-  id             String       @id @default(uuid())
+  id             String              @id @default(uuid())
   name           String
   path           String
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  organization   Organization        @relation(fields: [organizationId], references: [id])
   organizationId String
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
   userPicture    User[]
   agencies       SocialMediaAgency[]
   deletedAt      DateTime?
@@ -210,31 +211,31 @@ model Media {
 }
 
 model SocialMediaAgency {
-  id                  String   @id @default(uuid())
-  user                User @relation(fields: [userId], references: [id])
-  userId              String @unique()
-  name                String
-  logoId              String?
-  logo                Media? @relation(fields: [logoId], references: [id])
-  website             String?
-  slug                String?
+  id      String  @id @default(uuid())
+  user    User    @relation(fields: [userId], references: [id])
+  userId  String  @unique()
+  name    String
+  logoId  String?
+  logo    Media?  @relation(fields: [logoId], references: [id])
+  website String?
+  slug    String?
 
-  facebook            String?
-  instagram           String?
-  twitter             String?
-  linkedIn            String?
-  youtube             String?
-  tiktok              String?
-  otherSocialMedia    String?
+  facebook         String?
+  instagram        String?
+  twitter          String?
+  linkedIn         String?
+  youtube          String?
+  tiktok           String?
+  otherSocialMedia String?
 
-  shortDescription    String
-  description         String
-  niches              SocialMediaAgencyNiche[]
-  approved            Boolean @default(false)
+  shortDescription String
+  description      String
+  niches           SocialMediaAgencyNiche[]
+  approved         Boolean                  @default(false)
 
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-  deletedAt           DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@index([userId])
   @@index([deletedAt])
@@ -242,85 +243,85 @@ model SocialMediaAgency {
 }
 
 model SocialMediaAgencyNiche {
-  agencyId            String
-  agency              SocialMediaAgency @relation(fields: [agencyId], references: [id])
-  niche               String
+  agencyId String
+  agency   SocialMediaAgency @relation(fields: [agencyId], references: [id])
+  niche    String
 
   @@id([agencyId, niche])
 }
 
 model Credits {
-  id             String   @id @default(uuid())
+  id             String       @id @default(uuid())
   organization   Organization @relation(fields: [organizationId], references: [id])
   organizationId String
   credits        Int
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   @@index([organizationId])
   @@index([createdAt])
 }
 
 model Subscription {
-  id                String            @id @default(cuid())
-  organizationId    String            @unique
-  organization      Organization      @relation(fields: [organizationId], references: [id])
-  subscriptionTier  SubscriptionTier
-  identifier        String?
-  cancelAt          DateTime?
-  period            Period
-  totalChannels     Int
-  isLifetime        Boolean           @default(false)
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-  deletedAt         DateTime?
+  id               String           @id @default(cuid())
+  organizationId   String           @unique
+  organization     Organization     @relation(fields: [organizationId], references: [id])
+  subscriptionTier SubscriptionTier
+  identifier       String?
+  cancelAt         DateTime?
+  period           Period
+  totalChannels    Int
+  isLifetime       Boolean          @default(false)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  deletedAt        DateTime?
 
   @@index([organizationId])
   @@index([deletedAt])
 }
 
 model Customer {
-  id        String   @id @default(uuid())
-  name      String
-  orgId     String
-  organization Organization @relation(fields: [orgId], references: [id])
+  id           String        @id @default(uuid())
+  name         String
+  orgId        String
+  organization Organization  @relation(fields: [orgId], references: [id])
   integrations Integration[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  deletedAt DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  deletedAt    DateTime?
 
   @@unique([orgId, name, deletedAt])
 }
 
 model Integration {
-  id                    String          @id @default(cuid())
+  id                    String                 @id @default(cuid())
   internalId            String
   organizationId        String
   name                  String
-  organization          Organization    @relation(fields: [organizationId], references: [id])
+  organization          Organization           @relation(fields: [organizationId], references: [id])
   picture               String?
   providerIdentifier    String
   type                  String
   token                 String
-  disabled              Boolean         @default(false)
+  disabled              Boolean                @default(false)
   tokenExpiration       DateTime?
   refreshToken          String?
   posts                 Post[]
   profile               String?
   deletedAt             DateTime?
-  createdAt             DateTime       @default(now())
-  updatedAt             DateTime?      @updatedAt
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime?              @updatedAt
   orderItems            OrderItems[]
-  inBetweenSteps        Boolean         @default(false)
-  refreshNeeded         Boolean         @default(false)
-  postingTimes          String          @default("[{\"time\":120}, {\"time\":400}, {\"time\":700}]")
+  inBetweenSteps        Boolean                @default(false)
+  refreshNeeded         Boolean                @default(false)
+  postingTimes          String                 @default("[{\"time\":120}, {\"time\":400}, {\"time\":700}]")
   customInstanceDetails String?
   customerId            String?
-  customer              Customer?       @relation(fields: [customerId], references: [id])
+  customer              Customer?              @relation(fields: [customerId], references: [id])
   plugs                 Plugs[]
   exisingPlugData       ExisingPlugData[]
   rootInternalId        String?
-  additionalSettings    String?        @default("[]")
+  additionalSettings    String?                @default("[]")
   webhooks              IntegrationsWebhooks[]
 
   @@index([rootInternalId])
@@ -331,14 +332,14 @@ model Integration {
 }
 
 model Signatures {
-  id                String   @id @default(uuid())
-  organizationId    String
-  organization      Organization @relation(fields: [organizationId], references: [id])
-  content           String
-  autoAdd           Boolean
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  deletedAt         DateTime?
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  content        String
+  autoAdd        Boolean
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
 
   @@index([createdAt])
   @@index([organizationId])
@@ -346,17 +347,17 @@ model Signatures {
 }
 
 model Comments {
-  id                String     @id @default(uuid())
-  content           String
-  organizationId    String
-  organization      Organization @relation(fields: [organizationId], references: [id])
-  postId            String
-  post              Post       @relation(fields: [postId], references: [id])
-  userId            String
-  user              User       @relation(fields: [userId], references: [id])
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
-  deletedAt         DateTime?
+  id             String       @id @default(uuid())
+  content        String
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  postId         String
+  post           Post         @relation(fields: [postId], references: [id])
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
 
   @@index([createdAt])
   @@index([organizationId])
@@ -366,39 +367,39 @@ model Comments {
 }
 
 model Post {
-  id                  String       @id @default(cuid())
-  state               State        @default(QUEUE)
-  publishDate         DateTime
-  organizationId      String
-  integrationId       String
-  content             String
-  group               String
-  organization        Organization @relation("organization", fields: [organizationId], references: [id])
-  integration         Integration  @relation(fields: [integrationId], references: [id])
-  title               String?
-  description         String?
-  parentPostId        String?
-  releaseId           String?
-  releaseURL          String?
-  settings            String?
-  parentPost          Post?       @relation("parentPostId", fields: [parentPostId], references: [id])
-  childrenPost        Post[]      @relation("parentPostId")
-  image               String?
-  submittedForOrderId String?
-  submittedForOrder   Orders? @relation(fields: [submittedForOrderId], references: [id])
+  id                         String                    @id @default(cuid())
+  state                      State                     @default(QUEUE)
+  publishDate                DateTime
+  organizationId             String
+  integrationId              String
+  content                    String
+  group                      String
+  organization               Organization              @relation("organization", fields: [organizationId], references: [id])
+  integration                Integration               @relation(fields: [integrationId], references: [id])
+  title                      String?
+  description                String?
+  parentPostId               String?
+  releaseId                  String?
+  releaseURL                 String?
+  settings                   String?
+  parentPost                 Post?                     @relation("parentPostId", fields: [parentPostId], references: [id])
+  childrenPost               Post[]                    @relation("parentPostId")
+  image                      String?
+  submittedForOrderId        String?
+  submittedForOrder          Orders?                   @relation(fields: [submittedForOrderId], references: [id])
   submittedForOrganizationId String?
-  submittedForOrganization   Organization? @relation("submittedForOrg", fields: [submittedForOrganizationId], references: [id])
-  approvedSubmitForOrder APPROVED_SUBMIT_FOR_ORDER @default(NO)
-  lastMessageId       String?
-  lastMessage         Messages? @relation(fields: [lastMessageId], references: [id])
-  intervalInDays      Int?
-  payoutProblems      PayoutProblems[]
-  comments            Comments[]
-  tags                TagsPosts[]
-  error               String?
-  createdAt           DateTime     @default(now())
-  updatedAt           DateTime     @updatedAt
-  deletedAt           DateTime?
+  submittedForOrganization   Organization?             @relation("submittedForOrg", fields: [submittedForOrganizationId], references: [id])
+  approvedSubmitForOrder     APPROVED_SUBMIT_FOR_ORDER @default(NO)
+  lastMessageId              String?
+  lastMessage                Messages?                 @relation(fields: [lastMessageId], references: [id])
+  intervalInDays             Int?
+  payoutProblems             PayoutProblems[]
+  comments                   Comments[]
+  tags                       TagsPosts[]
+  error                      String?
+  createdAt                  DateTime                  @default(now())
+  updatedAt                  DateTime                  @updatedAt
+  deletedAt                  DateTime?
 
   @@index([group])
   @@index([deletedAt])
@@ -417,14 +418,14 @@ model Post {
 }
 
 model Notifications {
-  id                String   @id @default(uuid())
-  organizationId    String
-  organization      Organization @relation(fields: [organizationId], references: [id])
-  content           String
-  link              String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  deletedAt         DateTime?
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  content        String
+  link           String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
 
   @@index([createdAt])
   @@index([organizationId])
@@ -432,17 +433,17 @@ model Notifications {
 }
 
 model MessagesGroup {
-  id                  String   @id @default(uuid())
+  id                  String       @id @default(uuid())
   buyerOrganizationId String
   buyerOrganization   Organization @relation(fields: [buyerOrganizationId], references: [id])
   buyerId             String
-  buyer               User     @relation("groupBuyer", fields: [buyerId], references: [id])
+  buyer               User         @relation("groupBuyer", fields: [buyerId], references: [id])
   sellerId            String
-  seller              User     @relation("groupSeller", fields: [sellerId], references: [id])
+  seller              User         @relation("groupSeller", fields: [sellerId], references: [id])
   messages            Messages[]
   orders              Orders[]
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
 
   @@unique([buyerId, sellerId])
   @@index([createdAt])
@@ -451,34 +452,34 @@ model MessagesGroup {
 }
 
 model PayoutProblems {
-  id                String   @id @default(uuid())
-  status            String
-  orderId           String
-  order             Orders   @relation(fields: [orderId], references: [id])
-  userId            String
-  user              User     @relation(fields: [userId], references: [id])
-  postId            String?
-  post              Post?     @relation(fields: [postId], references: [id])
-  amount            Int
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id        String   @id @default(uuid())
+  status    String
+  orderId   String
+  order     Orders   @relation(fields: [orderId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  postId    String?
+  post      Post?    @relation(fields: [postId], references: [id])
+  amount    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Orders {
-  id                String   @id @default(uuid())
-  buyerId           String
-  sellerId          String
-  posts             Post[]
-  buyer             User     @relation("orderBuyer", fields: [buyerId], references: [id])
-  seller            User     @relation("orderSeller", fields: [sellerId], references: [id])
-  status            OrderStatus
-  ordersItems       OrderItems[]
-  messageGroupId    String
-  messageGroup      MessagesGroup @relation(fields: [messageGroupId], references: [id])
-  captureId         String?
-  payoutProblems    PayoutProblems[]
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id             String           @id @default(uuid())
+  buyerId        String
+  sellerId       String
+  posts          Post[]
+  buyer          User             @relation("orderBuyer", fields: [buyerId], references: [id])
+  seller         User             @relation("orderSeller", fields: [sellerId], references: [id])
+  status         OrderStatus
+  ordersItems    OrderItems[]
+  messageGroupId String
+  messageGroup   MessagesGroup    @relation(fields: [messageGroupId], references: [id])
+  captureId      String?
+  payoutProblems PayoutProblems[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 
   @@index([buyerId])
   @@index([sellerId])
@@ -488,29 +489,29 @@ model Orders {
 }
 
 model OrderItems {
-  id                String   @id @default(uuid())
-  orderId           String
-  order             Orders   @relation(fields: [orderId], references: [id])
-  integrationId     String
-  integration       Integration @relation(fields: [integrationId], references: [id])
-  quantity          Int
-  price             Int
+  id            String      @id @default(uuid())
+  orderId       String
+  order         Orders      @relation(fields: [orderId], references: [id])
+  integrationId String
+  integration   Integration @relation(fields: [integrationId], references: [id])
+  quantity      Int
+  price         Int
 
   @@index([orderId])
   @@index([integrationId])
 }
 
 model Messages {
-  id                String   @id @default(uuid())
-  from              From
-  content           String?
-  groupId           String
-  group             MessagesGroup @relation(fields: [groupId], references: [id])
-  special           String?
-  posts             Post[]
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  deletedAt         DateTime?
+  id        String        @id @default(uuid())
+  from      From
+  content   String?
+  groupId   String
+  group     MessagesGroup @relation(fields: [groupId], references: [id])
+  special   String?
+  posts     Post[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  deletedAt DateTime?
 
   @@index([groupId])
   @@index([createdAt])
@@ -518,44 +519,44 @@ model Messages {
 }
 
 model Plugs {
-  id                String   @id @default(uuid())
-  organizationId    String
-  organization      Organization @relation(fields: [organizationId], references: [id])
-  plugFunction      String
-  data              String
-  integrationId     String
-  integration       Integration @relation(fields: [integrationId], references: [id])
-  activated         Boolean @default(true)
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  plugFunction   String
+  data           String
+  integrationId  String
+  integration    Integration  @relation(fields: [integrationId], references: [id])
+  activated      Boolean      @default(true)
 
   @@unique([plugFunction, integrationId])
   @@index([organizationId])
 }
 
 model ExisingPlugData {
-  id                String   @id @default(uuid())
-  integrationId     String
-  integration       Integration @relation(fields: [integrationId], references: [id])
-  methodName        String
-  value             String
+  id            String      @id @default(uuid())
+  integrationId String
+  integration   Integration @relation(fields: [integrationId], references: [id])
+  methodName    String
+  value         String
 
   @@unique([integrationId, methodName, value])
 }
 
 model PopularPosts {
-  id         String   @id @default(uuid())
-  category   String
-  topic      String
-  content    String
-  hook       String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(uuid())
+  category  String
+  topic     String
+  content   String
+  hook      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model IntegrationsWebhooks {
   integrationId String
   integration   Integration @relation(fields: [integrationId], references: [id])
   webhookId     String
-  webhook       Webhooks   @relation(fields: [webhookId], references: [id])
+  webhook       Webhooks    @relation(fields: [webhookId], references: [id])
 
   @@unique([integrationId, webhookId])
   @@id([integrationId, webhookId])
@@ -564,22 +565,22 @@ model IntegrationsWebhooks {
 }
 
 model Webhooks {
-  id         String   @id @default(uuid())
-  name       String
+  id             String                 @id @default(uuid())
+  name           String
   organizationId String
-  organization Organization @relation(fields: [organizationId], references: [id])
-  integrations IntegrationsWebhooks[]
-  url        String
-  deletedAt  DateTime?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  organization   Organization           @relation(fields: [organizationId], references: [id])
+  integrations   IntegrationsWebhooks[]
+  url            String
+  deletedAt      DateTime?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
 
   @@index([organizationId])
   @@index([deletedAt])
 }
 
 model AutoPost {
-  id              String   @id @default(uuid())
+  id              String       @id @default(uuid())
   organizationId  String
   organization    Organization @relation(fields: [organizationId], references: [id])
   title           String
@@ -593,10 +594,22 @@ model AutoPost {
   generateContent Boolean
   integrations    String
   deletedAt       DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
   @@index([deletedAt])
+}
+
+model Sets {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  content        String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
 }
 
 enum OrderStatus {

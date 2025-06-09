@@ -86,7 +86,7 @@ export const PickPlatforms: FC<{
         );
         return;
       }
-      if (selectedAccounts.includes(integration)) {
+      if (selectedAccounts.some((account) => account.id === integration.id)) {
         const changedIntegrations = selectedAccounts.filter(
           ({ id }) => id !== integration.id
         );

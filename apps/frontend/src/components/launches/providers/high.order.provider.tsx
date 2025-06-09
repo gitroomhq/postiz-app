@@ -45,6 +45,7 @@ import useSWR from 'swr';
 import { InternalChannels } from '@gitroom/frontend/components/launches/internal.channels';
 import { MergePost } from '@gitroom/frontend/components/launches/merge.post';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useSet } from '@gitroom/frontend/components/launches/set.context';
 
 // Simple component to change back to settings on after changing tab
 export const SetTab: FC<{
@@ -110,6 +111,7 @@ export const withProvider = function <T extends object>(
     }>;
     hideMenu?: boolean;
     show: boolean;
+    hideEditOnlyThis?: boolean;
   }) => {
     const existingData = useExistingData();
     const t = useT();
@@ -170,9 +172,13 @@ export const withProvider = function <T extends object>(
       }
     );
 
+    const set = useSet();
+
     // this is a smart function, it updates the global value without updating the states (too heavy) and set the settings validation
     const form = useValues(
-      existingData.settings,
+      set?.set
+        ? set?.set?.posts?.find((p) => p?.integration?.id === props?.id)?.settings
+        : existingData.settings,
       props.id,
       props.identifier,
       editInPlace ? InPlaceValue : props.value,
@@ -451,7 +457,7 @@ export const withProvider = function <T extends object>(
                   </Button>
                 </div>
               )}
-              {!existingData.integration && (
+              {!existingData.integration && !props.hideEditOnlyThis && (
                 <div className="flex-1 flex">
                   <Button
                     className="text-white rounded-[4px] flex-1 !bg-red-700 overflow-hidden whitespace-nowrap"

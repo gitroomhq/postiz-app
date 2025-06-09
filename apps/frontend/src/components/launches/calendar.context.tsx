@@ -27,6 +27,7 @@ export const CalendarContext = createContext({
   currentYear: dayjs().year(),
   currentMonth: dayjs().month(),
   customer: null as string | null,
+  sets: [] as { name: string; id: string; content: string[] }[],
   comments: [] as Array<{
     date: string;
     total: number;
@@ -142,6 +143,13 @@ export const CalendarWeekProvider: FC<{
     refreshWhenHidden: false,
     revalidateOnFocus: false,
   });
+
+  const setList = useCallback(async () => {
+    return (await fetch('/sets')).json();
+  }, []);
+
+  const { data: sets, mutate } = useSWR('sets', setList);
+
   const setFiltersWrapper = useCallback(
     (filters: {
       currentDay: 0 | 1 | 2 | 3 | 4 | 5 | 6;
@@ -202,6 +210,7 @@ export const CalendarWeekProvider: FC<{
         setFilters: setFiltersWrapper,
         changeDate,
         comments,
+        sets: sets || [],
       }}
     >
       {children}
