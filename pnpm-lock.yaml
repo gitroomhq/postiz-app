@@ -661,6 +661,9 @@ importers:
       react-refresh:
         specifier: ^0.10.0
         version: 0.10.0
+      rimraf:
+        specifier: ^6.0.1
+        version: 6.0.1
       sass:
         specifier: 1.62.1
         version: 1.62.1
