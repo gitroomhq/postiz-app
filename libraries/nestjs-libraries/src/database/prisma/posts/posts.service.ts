@@ -28,6 +28,7 @@ import axios from 'axios';
 import sharp from 'sharp';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { Readable } from 'stream';
+import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 dayjs.extend(utc);
 
 type PostWithConditionals = Post & {
@@ -48,7 +49,8 @@ export class PostsService {
     private _integrationService: IntegrationService,
     private _mediaService: MediaService,
     private _shortLinkService: ShortLinkService,
-    private _webhookService: WebhooksService
+    private _webhookService: WebhooksService,
+    private openaiService: OpenaiService,
   ) {}
 
   async getStatistics(orgId: string, id: string) {
@@ -570,7 +572,7 @@ export class PostsService {
     }
   }
 
-  private async postArticle(integration: Integration, posts: Post[]) {
+  private async postArticle(integration: Integration, posts: Post[]): Promise<any> {
     const getIntegration = this._integrationManager.getArticlesIntegration(
       integration.providerIdentifier
     );
@@ -652,7 +654,7 @@ export class PostsService {
     return messageModel;
   }
 
-  async createPost(orgId: string, body: CreatePostDto) {
+  async createPost(orgId: string, body: CreatePostDto): Promise<any[]> {
     const postList = [];
     for (const post of body.posts) {
       const messages = post.value.map((p) => p.content);
@@ -725,6 +727,10 @@ export class PostsService {
     }
 
     return postList;
+  }
+
+  async separatePosts(content: string, len: number) {
+    return this.openaiService.separatePosts(content, len);
   }
 
   async changeDate(orgId: string, id: string, date: string) {

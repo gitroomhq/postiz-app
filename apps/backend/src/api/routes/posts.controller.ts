@@ -179,4 +179,12 @@ export class PostsController {
   ) {
     return this._postsService.changeDate(org.id, id, date);
   }
+
+  @Post('/separate-posts')
+  async separatePosts(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: { content: string, len: number }
+  ) {
+    return this._postsService.separatePosts(body.content, body.len);
+  }
 }
