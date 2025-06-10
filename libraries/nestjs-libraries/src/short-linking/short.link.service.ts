@@ -3,6 +3,7 @@ import { Empty } from '@gitroom/nestjs-libraries/short-linking/providers/empty';
 import { ShortLinking } from '@gitroom/nestjs-libraries/short-linking/short-linking.interface';
 import { Injectable } from '@nestjs/common';
 import { ShortIo } from './providers/short.io';
+import { Kutt } from './providers/kutt';
 
 const getProvider = (): ShortLinking => {
   if (process.env.DUB_TOKEN) {
@@ -11,6 +12,10 @@ const getProvider = (): ShortLinking => {
 
   if (process.env.SHORT_IO_SECRET_KEY) {
     return new ShortIo();
+  }
+
+  if (process.env.KUTT_API_KEY) {
+    return new Kutt();
   }
 
   return new Empty();
