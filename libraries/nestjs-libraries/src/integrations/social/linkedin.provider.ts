@@ -687,35 +687,31 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     information: any,
     isPersonal = true
   ) {
-    try {
-      await this.fetch(`https://api.linkedin.com/rest/posts`, {
-        body: JSON.stringify({
-          author:
-            (isPersonal ? 'urn:li:person:' : `urn:li:organization:`) +
-            `${integration.internalId}`,
-          commentary: '',
-          visibility: 'PUBLIC',
-          distribution: {
-            feedDistribution: 'MAIN_FEED',
-            targetEntities: [],
-            thirdPartyDistributionChannels: [],
-          },
-          lifecycleState: 'PUBLISHED',
-          isReshareDisabledByAuthor: false,
-          reshareContext: {
-            parent: postId,
-          },
-        }),
-        method: 'POST',
-        headers: {
-          'X-Restli-Protocol-Version': '2.0.0',
-          'Content-Type': 'application/json',
-          'LinkedIn-Version': '202504',
-          Authorization: `Bearer ${integration.token}`,
+    await this.fetch(`https://api.linkedin.com/rest/posts`, {
+      body: JSON.stringify({
+        author:
+          (isPersonal ? 'urn:li:person:' : `urn:li:organization:`) +
+          `${integration.internalId}`,
+        commentary: '',
+        visibility: 'PUBLIC',
+        distribution: {
+          feedDistribution: 'MAIN_FEED',
+          targetEntities: [],
+          thirdPartyDistributionChannels: [],
         },
-      });
-    } catch (err) {
-      return;
-    }
+        lifecycleState: 'PUBLISHED',
+        isReshareDisabledByAuthor: false,
+        reshareContext: {
+          parent: postId,
+        },
+      }),
+      method: 'POST',
+      headers: {
+        'X-Restli-Protocol-Version': '2.0.0',
+        'Content-Type': 'application/json',
+        'LinkedIn-Version': '202504',
+        Authorization: `Bearer ${integration.token}`,
+      },
+    });
   }
 }

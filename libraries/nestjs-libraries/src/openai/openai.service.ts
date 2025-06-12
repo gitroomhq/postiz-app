@@ -125,4 +125,76 @@ export class OpenaiService {
 
     return this.generatePosts(articleContent!);
   }
+
+  async separatePosts(content: string, len: number) {
+    const SeparatePostsPrompt = z.object({
+      posts: z.array(z.string()),
+    });
+
+    const SeparatePostPrompt = z.object({
+      post: z.string().max(len),
+    });
+
+    const posts =
+      (
+        await openai.beta.chat.completions.parse({
+          model: 'gpt-4.1',
+          messages: [
+            {
+              role: 'system',
+              content: `You are an assistant that take a social media post and break it to a thread, each post must be minimum ${len - 10} and maximum ${len} characters, keeping the exact wording and break lines, however make sure you split posts based on context`,
+            },
+            {
+              role: 'user',
+              content: content,
+            },
+          ],
+          response_format: zodResponseFormat(
+            SeparatePostsPrompt,
+            'separatePosts'
+          ),
+        })
+      ).choices[0].message.parsed?.posts || [];
+
+    return {
+      posts: await Promise.all(
+        posts.map(async (post) => {
+          if (post.length <= len) {
+            return post;
+          }
+
+          let retries = 4;
+          while (retries) {
+            try {
+              return (
+                (
+                  await openai.beta.chat.completions.parse({
+                    model: 'gpt-4.1',
+                    messages: [
+                      {
+                        role: 'system',
+                        content: `You are an assistant that take a social media post and shrink it to be maximum ${len} characters, keeping the exact wording and break lines`,
+                      },
+                      {
+                        role: 'user',
+                        content: post,
+                      },
+                    ],
+                    response_format: zodResponseFormat(
+                      SeparatePostPrompt,
+                      'separatePost'
+                    ),
+                  })
+                ).choices[0].message.parsed?.post || ''
+              );
+            } catch (e) {
+              retries--;
+            }
+          }
+
+          return post;
+        })
+      ),
+    };
+  }
 }
