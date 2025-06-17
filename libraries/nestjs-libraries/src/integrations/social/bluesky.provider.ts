@@ -9,7 +9,14 @@ import {
   RefreshToken,
   SocialAbstract,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
-import { BskyAgent, RichText } from '@atproto/api';
+import { 
+  BskyAgent, 
+  RichText, 
+  AppBskyEmbedVideo,
+  AppBskyVideoDefs,
+  AtpAgent,
+  BlobRef 
+} from '@atproto/api';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
@@ -49,6 +56,73 @@ async function reduceImageBySize(url: string, maxSizeKB = 976) {
     console.error('Error processing image:', error);
     throw error;
   }
+}
+
+async function uploadVideo(agent: AtpAgent, videoPath: string): Promise<AppBskyEmbedVideo.Main> {
+  const { data: serviceAuth } = await agent.com.atproto.server.getServiceAuth(
+    {
+      aud: `did:web:${agent.dispatchUrl.host}`,
+      lxm: "com.atproto.repo.uploadBlob",
+      exp: Date.now() / 1000 + 60 * 30, // 30 minutes
+    },
+  );
+
+  async function downloadVideo(url: string): Promise<{ video: Buffer, size: number }> {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch video: ${response.statusText}`);
+    }
+    const arrayBuffer = await response.arrayBuffer();
+    const video = Buffer.from(arrayBuffer);
+    const size = video.length;
+    return { video, size };
+  }
+
+  const video = await downloadVideo(videoPath);
+
+  console.log("Downloaded video", videoPath, video.size);
+  
+  const uploadUrl = new URL("https://video.bsky.app/xrpc/app.bsky.video.uploadVideo");
+  uploadUrl.searchParams.append("did", agent.session!.did);
+  uploadUrl.searchParams.append("name", videoPath.split("/").pop()!);
+  
+  const uploadResponse = await fetch(uploadUrl, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${serviceAuth.token}`,
+      "Content-Type": "video/mp4",
+      "Content-Length": video.size.toString(),
+    },
+    body: video.video
+  });
+  
+  const jobStatus = (await uploadResponse.json()) as AppBskyVideoDefs.JobStatus;
+  console.log("JobId:", jobStatus.jobId);
+  let blob: BlobRef | undefined = jobStatus.blob;
+  const videoAgent = new AtpAgent({ service: "https://video.bsky.app" });
+  
+  while (!blob) {
+    const { data: status } = await videoAgent.app.bsky.video.getJobStatus(
+      { jobId: jobStatus.jobId },
+    );
+    console.log(
+      "Status:",
+      status.jobStatus.state,
+      status.jobStatus.progress || "",
+    );
+    if (status.jobStatus.blob) {
+      blob = status.jobStatus.blob;
+    }
+    // wait a second
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+  
+  console.log("posting video...");
+
+  return {
+    $type: "app.bsky.embed.video",
+    video: blob,
+  } satisfies AppBskyEmbedVideo.Main;
 }
 
 export class BlueskyProvider extends SocialAbstract implements SocialProvider {
@@ -166,15 +240,24 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
     let loadUri = '';
     const cidUrl = [] as { cid: string; url: string; rev: string }[];
     for (const post of postDetails) {
+      // Separate images and videos
+      const imageMedia = post.media?.filter((p) => p.url.indexOf('mp4') === -1) || [];
+      const videoMedia = post.media?.filter((p) => p.url.indexOf('mp4') !== -1) || [];
+
+      // Upload images
       const images = await Promise.all(
-        post.media
-          ?.filter((p) => p.url.indexOf('mp4') === -1)
-          .map(async (p) => {
-            return await agent.uploadBlob(
-              new Blob([await reduceImageBySize(p.url)])
-            );
-          }) || []
+        imageMedia.map(async (p) => {
+          return await agent.uploadBlob(
+            new Blob([await reduceImageBySize(p.url)])
+          );
+        })
       );
+
+      // Upload videos (only one video per post is supported by Bluesky)
+      let videoEmbed: AppBskyEmbedVideo.Main | null = null;
+      if (videoMedia.length > 0) {
+        videoEmbed = await uploadVideo(agent, videoMedia[0].url);
+      }
 
       const rt = new RichText({
         text: post.message,
@@ -182,24 +265,28 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
 
       await rt.detectFacets(agent);
 
+      // Determine embed based on media types
+      let embed: any = {};
+      if (videoEmbed) {
+        // If there's a video, use video embed (Bluesky supports only one video per post)
+        embed = videoEmbed;
+      } else if (images.length > 0) {
+        // If there are images but no video, use image embed
+        embed = {
+          $type: 'app.bsky.embed.images',
+          images: images.map((p) => ({
+            alt: 'picture',
+            image: p.data.blob,
+          })),
+        };
+      }
+
       // @ts-ignore
       const { cid, uri, commit } = await agent.post({
         text: rt.text,
         facets: rt.facets,
         createdAt: new Date().toISOString(),
-        ...(images.length
-          ? {
-              embed: {
-                $type: 'app.bsky.embed.images',
-                images: images.map((p) => ({
-                  alt: 'picture',
-                  // can be an array up to 4 values
-                  // alt: 'image', // the alt text - commented this out for now until there is a way to set this from within Postiz
-                  image: p.data.blob,
-                })),
-              },
-            }
-          : {}),
+        ...(Object.keys(embed).length > 0 ? { embed } : {}),
         ...(loadCid
           ? {
               reply: {
