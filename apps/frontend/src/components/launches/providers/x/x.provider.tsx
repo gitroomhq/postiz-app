@@ -1,8 +1,56 @@
 import { withProvider } from '@gitroom/frontend/components/launches/providers/high.order.provider';
 import { ThreadFinisher } from '@gitroom/frontend/components/launches/finisher/thread.finisher';
+import { Select } from '@gitroom/react/form/select';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
+
+const whoCanReply = [
+  {
+    label: 'Everyone',
+    value: 'everyone',
+  },
+  {
+    label: 'Accounts you follow',
+    value: 'following',
+  },
+  {
+    label: 'Mentioned accounts',
+    value: 'mentionedUsers',
+  },
+  {
+    label: 'Subscribers',
+    value: 'subscribers',
+  },
+  {
+    label: 'verified accounts',
+    value: 'verified',
+  }
+]
 
 const SettingsComponent = () => {
-  return <ThreadFinisher />;
+  const t = useT();
+  const { register, watch, setValue } = useSettings();
+
+  return (
+    <>
+      <Select
+        label={t('label_who_can_reply_to_this_post', 'Who can reply to this post?')}
+        className="mb-5"
+        hideErrors={true}
+        {...register('who_can_reply_post', {
+          value: 'everyone',
+        })}
+      >
+        {whoCanReply.map((item) => (
+          <option key={item.value} value={item.value}>
+            {item.label}
+          </option>
+        ))}
+      </Select>
+
+      <ThreadFinisher />
+    </>
+  );
 };
 
 export default withProvider(

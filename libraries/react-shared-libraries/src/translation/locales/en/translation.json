@@ -485,5 +485,6 @@
   "that_a_wrap": "That's a wrap!\n\nIf you enjoyed this thread:\n\n1. Follow me @{{username}} for more of these\n2. RT the tweet below to share this thread with your audience\n",
   "post_as_images_carousel": "Post as images carousel",
   "save_set": "Save Set",
-  "separate_post": "Separate post to multiple posts"
+  "separate_post": "Separate post to multiple posts",
+  "label_who_can_reply_to_this_post": "Who can reply to this post?"
 }
