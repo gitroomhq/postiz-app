@@ -22,7 +22,7 @@ const whoCanReply = [
     value: 'subscribers',
   },
   {
-    label: 'verified accounts',
+    label: 'Verified accounts',
     value: 'verified',
   }
 ]
