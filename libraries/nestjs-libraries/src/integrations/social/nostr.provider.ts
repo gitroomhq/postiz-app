@@ -14,7 +14,7 @@ import { AuthService } from '@gitroom/helpers/auth/auth.service';
 // @ts-ignore
 global.WebSocket = WebSocket;
 
-const list = [
+const defaultRelays = [
   'wss://relay.primal.net',
   'wss://relay.damus.io',
   'wss://relay.snort.social',
@@ -22,6 +22,9 @@ const list = [
   'wss://nos.lol',
   'wss://relay.primal.net',
 ];
+
+const extraRelaysFromEnv = process.env.POSTIZ_NOSTR_EXTRA_RELAYS?.split(',').map((url: string) => url.trim()).filter((url: string) => url) || [];
+const list = [...new Set([...defaultRelays, ...extraRelaysFromEnv])];
 
 export class NostrProvider extends SocialAbstract implements SocialProvider {
   identifier = 'nostr';
