@@ -525,6 +525,20 @@ model SocialMediaPlatformConfigItem {
   @@unique([key, configId])
 }
 
+model InstagramInsight {
+  id              String   @id @default(uuid())
+  businessId      String
+  organizationId  String
+  month           String
+  followers       Int
+  following       Int
+  totalContent    Int
+  impressions     Int
+  avgReachPerDay  Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
 enum SocialMediaPlatform {
   X
   LINKEDIN

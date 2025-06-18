@@ -30,6 +30,8 @@ import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.
 import { Nowpayments } from '@gitroom/nestjs-libraries/crypto/nowpayments';
 import { SocialMediaPlatformConfigController } from './routes/social-media-platform.controller';
 import { CustomersController } from './routes/customers.controller';
+import { ReportController } from './routes/report.controller';
+import { ReportService } from '../services/report/report.service';
 
 const authenticatedController = [
   UsersController,
@@ -46,6 +48,7 @@ const authenticatedController = [
   AgenciesController,
   SocialMediaPlatformConfigController,
   CustomersController,
+  ReportController
 ];
 @Module({
   imports: [
@@ -71,6 +74,7 @@ const authenticatedController = [
     TrackService,
     ShortLinkService,
     Nowpayments,
+    ReportService
   ],
   get exports() {
     return [...this.imports, ...this.providers];
