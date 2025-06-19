@@ -6,6 +6,7 @@ import { z } from 'zod';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
+  baseURL: process.env.OPENAI_API_BASE_URL
 });
 
 const PicturePrompt = z.object({
@@ -30,7 +31,7 @@ export class OpenaiService {
     return (
       (
         await openai.beta.chat.completions.parse({
-          model: 'gpt-4.1',
+          model: process.env.OPENAI_TEXT_MODEL || 'gpt-4.1',
           messages: [
             {
               role: 'system',
@@ -64,7 +65,7 @@ export class OpenaiService {
           ],
           n: 5,
           temperature: 1,
-          model: 'gpt-4.1',
+          model: process.env.OPENAI_TEXT_MODEL || 'gpt-4.1',
         }),
         openai.chat.completions.create({
           messages: [
@@ -80,7 +81,7 @@ export class OpenaiService {
           ],
           n: 5,
           temperature: 1,
-          model: 'gpt-4.1',
+          model: process.env.OPENAI_TEXT_MODEL || 'gpt-4.1',
         }),
       ])
     ).flatMap((p) => p.choices);
@@ -118,7 +119,7 @@ export class OpenaiService {
           content,
         },
       ],
-      model: 'gpt-4.1',
+      model: process.env.OPENAI_TEXT_MODEL || 'gpt-4.1',
     });
 
     const { content: articleContent } = websiteContent.choices[0].message;
@@ -138,7 +139,7 @@ export class OpenaiService {
     const posts =
       (
         await openai.beta.chat.completions.parse({
-          model: 'gpt-4.1',
+          model: process.env.OPENAI_TEXT_MODEL || 'gpt-4.1',
           messages: [
             {
               role: 'system',
@@ -169,7 +170,7 @@ export class OpenaiService {
               return (
                 (
                   await openai.beta.chat.completions.parse({
-                    model: 'gpt-4.1',
+                    model: process.env.OPENAI_TEXT_MODEL || 'gpt-4.1',
                     messages: [
                       {
                         role: 'system',

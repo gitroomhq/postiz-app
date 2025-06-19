@@ -29,8 +29,8 @@ export class CopilotController {
           // @ts-ignore
           req?.body?.variables?.data?.metadata?.requestType ===
           'TextareaCompletion'
-            ? 'gpt-4o-mini'
-            : 'gpt-4.1',
+            ? (process.env.OPENAI_TEXT_MODEL_MINI || 'gpt-4o-mini')
+            : (process.env.OPENAI_TEXT_MODEL || 'gpt-4.1'),
       }),
     });
 
