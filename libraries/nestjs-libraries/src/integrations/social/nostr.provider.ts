@@ -14,17 +14,22 @@ import { AuthService } from '@gitroom/helpers/auth/auth.service';
 // @ts-ignore
 global.WebSocket = WebSocket;
 
-const defaultRelays = [
+const defaultRelays: string[] = [
   'wss://relay.primal.net',
   'wss://relay.damus.io',
   'wss://relay.snort.social',
   'wss://nostr.wine',
   'wss://nos.lol',
-  'wss://relay.primal.net',
 ];
 
-const extraRelaysFromEnv = process.env.POSTIZ_NOSTR_EXTRA_RELAYS?.split(',').map((url: string) => url.trim()).filter((url: string) => url) || [];
-const list = [...new Set([...defaultRelays, ...extraRelaysFromEnv])];
+const relaysOverrideEnv = process.env.NOSTR_RELAYS_OVERRIDE;
+let list: string[];
+
+if (relaysOverrideEnv) {
+  list = Array.from(new Set(relaysOverrideEnv.split(',').map((url: string) => url.trim()).filter((url: string) => url)));
+} else {
+  list = Array.from(new Set<string>(defaultRelays)); // Ensure default list is also unique
+}
 
 export class NostrProvider extends SocialAbstract implements SocialProvider {
   identifier = 'nostr';
