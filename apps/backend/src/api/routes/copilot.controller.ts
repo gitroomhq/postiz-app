@@ -14,8 +14,7 @@ export class CopilotController {
   @Post('/chat')
   chat(@Req() req: Request, @Res() res: Response) {
     if (
-      process.env.OPENAI_API_KEY === undefined ||
-      process.env.OPENAI_API_KEY === ''
+      !process.env.OPENAI_API_KEY && !process.env.OPENAI_BASE_URL // if using offical OpenAI API, abort if no key
     ) {
       Logger.warn('OpenAI API key not set, chat functionality will not work');
       return;
