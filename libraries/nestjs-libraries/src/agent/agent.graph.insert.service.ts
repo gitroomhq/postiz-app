@@ -9,10 +9,6 @@ import { agentTopics } from '@gitroom/nestjs-libraries/agent/agent.topics';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 
 const model = new ChatOpenAI({
-  apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
-  configuration: {
-    baseURL: process.env.OPENAI_API_BASE_URL,
-  },
   model: process.env.OPENAI_TEXT_MODEL || 'gpt-4o-2024-08-06',
   temperature: 0,
 });
