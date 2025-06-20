@@ -14,9 +14,119 @@ import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
 import { LinkedinDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/linkedin.dto';
 import imageToPDF from 'image-to-pdf';
 import { Readable } from 'stream';
+import axios from 'axios';
+import { JSDOM } from 'jsdom';
 
-export class LinkedinProvider extends SocialAbstract implements SocialProvider {
-  identifier = 'linkedin';
+interface OpenGraphData {
+  title?: string;
+  description?: string;
+  image?: string;
+}
+
+async function fetchOpenGraphData(url: string): Promise<OpenGraphData> {
+  try {
+    const response = await axios.get(url, { 
+      timeout: 10000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; PostizBot/1.0; +https://postiz.com/)'
+      }
+    });
+    const html = response.data;
+    const dom = new JSDOM(html);
+    const document = dom.window.document;
+
+    const getMetaContent = (property: string) => {
+      const element = document.querySelector(`meta[property="${property}"]`) || 
+                    document.querySelector(`meta[name="${property}"]`);
+      return element?.getAttribute('content') || '';
+    };
+
+    const ogImage = getMetaContent('og:image');
+    let imageUrl = ogImage;
+    
+    // Handle relative URLs for images
+    if (ogImage && !ogImage.startsWith('http')) {
+      try {
+        imageUrl = new URL(ogImage, url).href;
+      } catch {
+        imageUrl = ogImage; // Fallback to original if URL parsing fails
+      }
+    }
+
+    return {
+      title: getMetaContent('og:title') || getMetaContent('title') || 
+             document.querySelector('title')?.textContent || '',
+      description: getMetaContent('og:description') || getMetaContent('description') || '',
+      image: imageUrl || ''
+    };
+  } catch (error) {
+    console.error('Error fetching OpenGraph data:', error);
+    return {};
+  }
+}
+
+function extractUrls(text: string): string[] {
+  const urlRegex = /https?:\/\/[^\s/$.?#].[^\s]*/g;
+  return text.match(urlRegex) || [];
+}
+
+async function createLinkedInContentEntities(url: string, accessToken: string, personId: string, type: 'personal' | 'company', uploadPictureMethod: any): Promise<any> {
+  try {
+    const ogData = await fetchOpenGraphData(url);
+    
+    // Use LinkedIn's "article" format
+    if (ogData.title || ogData.description) {
+      const article: any = {
+        source: url,
+        title: ogData.title || 'Link',
+        description: ogData.description || ''
+      };
+
+      // Try to upload thumbnail if image is available
+      if (ogData.image) {
+        try {
+          console.log('Attempting to upload thumbnail for LinkedIn article:', ogData.image);
+          
+          // Download the image
+          const imageResponse = await axios.get(ogData.image, { 
+            responseType: 'arraybuffer',
+            timeout: 10000,
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (compatible; PostizBot/1.0; +https://postiz.com/)'
+            }
+          });
+          const imageBuffer = Buffer.from(imageResponse.data);
+          
+          // Upload via LinkedIn's Image API
+          const uploadedImageUrn = await uploadPictureMethod(
+            ogData.image, // filename
+            accessToken,
+            personId,
+            imageBuffer,
+            type
+          );
+          
+          if (uploadedImageUrn) {
+            article.thumbnail = uploadedImageUrn;
+            console.log('Successfully uploaded LinkedIn article thumbnail:', uploadedImageUrn);
+          }
+        } catch (imageError) {
+          console.error('Error uploading LinkedIn article thumbnail:', imageError);
+          // Continue without thumbnail - better to have the link card than fail completely
+        }
+      }
+
+      return { article };
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error creating LinkedIn content entities:', error);
+    return null;
+  }
+}
+
+export class LinkedinProvider extends SocialAbstract implements SocialProvider {  identifier = 'linkedin';
   name = 'LinkedIn';
   oneTimeToken = true;
 
@@ -504,12 +614,13 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     type: 'company' | 'personal',
     message: string,
     mediaIds: string[],
-    isPdf: boolean
+    isPdf: boolean,
+    linkContent?: any
   ) {
     const author =
       type === 'personal' ? `urn:li:person:${id}` : `urn:li:organization:${id}`;
 
-    return {
+    const payload: any = {
       author,
       commentary: this.fixText(message),
       visibility: 'PUBLIC',
@@ -518,10 +629,20 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
         targetEntities: [] as string[],
         thirdPartyDistributionChannels: [] as string[],
       },
-      ...this.buildPostContent(isPdf, mediaIds),
       lifecycleState: 'PUBLISHED',
       isReshareDisabledByAuthor: false,
     };
+
+    // Add media content if available
+    if (mediaIds.length > 0) {
+      payload.content = this.buildPostContent(isPdf, mediaIds).content;
+    } 
+    // Add link content if no media but link detected
+    else if (linkContent) {
+      payload.content = linkContent;
+    }
+
+    return payload;
   }
 
   private async createMainPost(
@@ -532,12 +653,28 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     type: 'company' | 'personal',
     isPdf: boolean
   ): Promise<string> {
+    // Check for URLs in the post message if no media
+    let linkContent = null;
+    if (mediaIds.length === 0) {
+      const urls = extractUrls(firstPost.message);
+      if (urls.length > 0) {
+        linkContent = await createLinkedInContentEntities(
+          urls[0], 
+          accessToken, 
+          id, 
+          type, 
+          this.uploadPicture.bind(this)
+        );
+      }
+    }
+
     const postPayload = this.createLinkedInPostPayload(
       id,
       type,
       firstPost.message,
       mediaIds,
-      isPdf
+      isPdf,
+      linkContent
     );
 
     const response = await this.fetch('https://api.linkedin.com/rest/posts', {
@@ -608,7 +745,6 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       releaseURL: `${baseUrl}${postId}`,
     };
   }
-
   async post(
     id: string,
     accessToken: string,
