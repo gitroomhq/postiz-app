@@ -4,10 +4,7 @@ import { shuffle } from 'lodash';
 import { zodResponseFormat } from 'openai/helpers/zod';
 import { z } from 'zod';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
-  baseURL: process.env.OPENAI_API_BASE_URL
-});
+const openai = new OpenAI({});
 
 const PicturePrompt = z.object({
   prompt: z.string(),
@@ -20,7 +17,7 @@ export class OpenaiService {
       await openai.images.generate({
         prompt,
         response_format: isUrl ? 'url' : 'b64_json',
-        model: 'dall-e-3',
+        model: process.env.OPENAI_IMAGE_MODEL || 'dall-e-3',
       })
     ).data[0];
 
