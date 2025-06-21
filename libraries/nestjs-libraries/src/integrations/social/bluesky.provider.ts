@@ -13,6 +13,7 @@ import {
   BskyAgent, 
   RichText, 
   AppBskyEmbedVideo,
+  AppBskyEmbedExternal,
   AppBskyVideoDefs,
   AtpAgent,
   BlobRef 
@@ -24,6 +25,7 @@ import sharp from 'sharp';
 import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
 import { timer } from '@gitroom/helpers/utils/timer';
 import axios from 'axios';
+import { JSDOM } from 'jsdom';
 
 async function reduceImageBySize(url: string, maxSizeKB = 976) {
   try {
@@ -123,6 +125,102 @@ async function uploadVideo(agent: AtpAgent, videoPath: string): Promise<AppBskyE
     $type: "app.bsky.embed.video",
     video: blob,
   } satisfies AppBskyEmbedVideo.Main;
+}
+
+interface OpenGraphData {
+  title?: string;
+  description?: string;
+  image?: string;
+}
+
+async function fetchOpenGraphData(url: string): Promise<OpenGraphData> {
+  try {
+    const response = await axios.get(url, { 
+      timeout: 10000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; PostizBot/1.0; +https://postiz.com/)'
+      }
+    });
+    const html = response.data;
+    const dom = new JSDOM(html);
+    const document = dom.window.document;
+
+    const getMetaContent = (property: string) => {
+      const element = document.querySelector(`meta[property="${property}"]`) || 
+                    document.querySelector(`meta[name="${property}"]`);
+      return element?.getAttribute('content') || '';
+    };
+
+    const ogImage = getMetaContent('og:image');
+    let imageUrl = ogImage;
+    
+    // Handle relative URLs for images
+    if (ogImage && !ogImage.startsWith('http')) {
+      try {
+        imageUrl = new URL(ogImage, url).href;
+      } catch {
+        imageUrl = ogImage; // Fallback to original if URL parsing fails
+      }
+    }
+
+    return {
+      title: getMetaContent('og:title') || getMetaContent('title') || 
+             document.querySelector('title')?.textContent || '',
+      description: getMetaContent('og:description') || getMetaContent('description') || '',
+      image: imageUrl || ''
+    };
+  } catch (error) {
+    console.error('Error fetching OpenGraph data:', error);
+    return {};
+  }
+}
+
+async function createExternalEmbed(agent: BskyAgent, url: string): Promise<AppBskyEmbedExternal.Main | null> {
+  try {
+    const ogData = await fetchOpenGraphData(url);
+    
+    const external: AppBskyEmbedExternal.External = {
+      uri: url,
+      title: ogData.title || 'Link',
+      description: ogData.description || ''
+    };
+
+    // If there's an image, upload it as thumbnail
+    if (ogData.image) {
+      try {
+        const imageResponse = await axios.get(ogData.image, { 
+          responseType: 'arraybuffer',
+          timeout: 10000,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (compatible; PostizBot/1.0; +https://postiz.com/)'
+          }
+        });
+        const imageBuffer = Buffer.from(imageResponse.data);
+        
+        // Reduce image size if needed (Bluesky has limits)
+        const processedImage = await reduceImageBySize(ogData.image, 976);
+        
+        const blob = await agent.uploadBlob(new Blob([processedImage]));
+        external.thumb = blob.data.blob;
+      } catch (imageError) {
+        console.error('Error uploading thumbnail:', imageError);
+        // Continue without thumbnail
+      }
+    }
+
+    return {
+      $type: 'app.bsky.embed.external',
+      external
+    } satisfies AppBskyEmbedExternal.Main;
+  } catch (error) {
+    console.error('Error creating external embed:', error);
+    return null;
+  }
+}
+
+function extractUrls(text: string): string[] {
+  const urlRegex = /https?:\/\/[^\s/$.?#].[^\s]*/g;
+  return text.match(urlRegex) || [];
 }
 
 export class BlueskyProvider extends SocialAbstract implements SocialProvider {
@@ -265,7 +363,7 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
 
       await rt.detectFacets(agent);
 
-      // Determine embed based on media types
+      // Determine embed based on media types and URLs
       let embed: any = {};
       if (videoEmbed) {
         // If there's a video, use video embed (Bluesky supports only one video per post)
@@ -279,6 +377,16 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
             image: p.data.blob,
           })),
         };
+      } else {
+        // If no media, check for URLs to create external embeds
+        const urls = extractUrls(post.message);
+        if (urls.length > 0) {
+          // Use the first URL found for the external embed
+          const externalEmbed = await createExternalEmbed(agent, urls[0]);
+          if (externalEmbed) {
+            embed = externalEmbed;
+          }
+        }
       }
 
       // @ts-ignore
