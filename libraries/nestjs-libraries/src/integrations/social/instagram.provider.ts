@@ -16,6 +16,9 @@ export class InstagramProvider
   extends SocialAbstract
   implements SocialProvider
 {
+  available = !!(
+    process.env.FACEBOOK_APP_ID && process.env.FACEBOOK_APP_SECRET
+  );
   identifier = 'instagram';
   name = 'Instagram\n(Facebook Business)';
   isBetweenSteps = true;
