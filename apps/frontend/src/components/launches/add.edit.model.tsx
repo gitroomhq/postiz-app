@@ -558,7 +558,6 @@ export const AddEditModal: FC<{
 
         // @ts-ignore
         for (const item of clipboardItems) {
-          console.log(item);
           if (item.kind === 'file') {
             const file = item.getAsFile();
             if (file) {
@@ -779,6 +778,7 @@ Here are the things you can do:
                           <div className="flex">
                             <div className="flex-1">
                               <MultiMediaComponent
+                                allData={value}
                                 text={p.content}
                                 label={t('attachments', 'Attachments')}
                                 description=""
