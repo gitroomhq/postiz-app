@@ -276,6 +276,9 @@ importers:
       concat-stream:
         specifier: ^2.0.0
         version: 2.0.0
+      concurrently:
+        specifier: ^9.1.2
+        version: 9.1.2
       cookie-parser:
         specifier: ^1.4.7
         version: 1.4.7
@@ -387,6 +390,9 @@ importers:
       posthog-js:
         specifier: ^1.178.0
         version: 1.239.1
+      prisma:
+        specifier: ^6.5.0
+        version: 6.7.0(typescript@5.5.4)
       react:
         specifier: 18.3.1
         version: 18.3.1
@@ -655,9 +661,6 @@ importers:
       prettier:
         specifier: ^2.6.2
         version: 2.8.8
-      prisma:
-        specifier: ^6.5.0
-        version: 6.7.0(typescript@5.5.4)
       react-refresh:
         specifier: ^0.10.0
         version: 0.10.0
@@ -7773,6 +7776,11 @@ packages:
   concurrently@6.5.1:
     resolution: {integrity: sha512-FlSwNpGjWQfRwPLXvJ/OgysbBxPkWpiVjy1042b0U7on7S7qwwMIILRj7WTN1mTgqa582bG6NFuScOoh6Zgdag==}
     engines: {node: '>=10.0.0'}
+    hasBin: true
+
+  concurrently@9.1.2:
+    resolution: {integrity: sha512-H9MWcoPsYddwbOGM6difjVwVZHl63nwMEwDJG/L7VGtuaJhb12h2caPG2tVPWs7emuYix252iGfqOyrz1GczTQ==}
+    engines: {node: '>=18'}
     hasBin: true
 
   config-chain@1.1.13:
@@ -25552,6 +25560,16 @@ snapshots:
       supports-color: 8.1.1
       tree-kill: 1.2.2
       yargs: 16.2.0
+
+  concurrently@9.1.2:
+    dependencies:
+      chalk: 4.1.2
+      lodash: 4.17.21
+      rxjs: 7.8.2
+      shell-quote: 1.8.2
+      supports-color: 8.1.1
+      tree-kill: 1.2.2
+      yargs: 17.7.2
 
   config-chain@1.1.13:
     dependencies:
