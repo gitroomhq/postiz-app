@@ -26,6 +26,7 @@ import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settin
 import { DiscordDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/discord.dto';
 import { SlackDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/slack.dto';
 import { LemmySettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/lemmy.dto';
+import { XDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/x.dto';
 
 export class EmptySettings {}
 export class Integration {
@@ -85,6 +86,7 @@ export class Post {
         { value: TikTokDto, name: 'tiktok' },
         { value: DiscordDto, name: 'discord' },
         { value: SlackDto, name: 'slack' },
+        { value: XDto, name: 'x' },
       ],
     },
   })

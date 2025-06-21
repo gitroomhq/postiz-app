@@ -3,6 +3,8 @@ import { ThreadFinisher } from '@gitroom/frontend/components/launches/finisher/t
 import { Select } from '@gitroom/react/form/select';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
+import { XDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/x.dto';
+import { Input } from '@gitroom/react/form/input';
 
 const whoCanReply = [
   {
@@ -48,6 +50,8 @@ const SettingsComponent = () => {
         ))}
       </Select>
 
+      <Input label={'Post to a community, URL (Ex: https://x.com/i/communities/1493446837214187523)'} {...register('community')} />
+
       <ThreadFinisher />
     </>
   );
@@ -56,7 +60,7 @@ const SettingsComponent = () => {
 export default withProvider(
   SettingsComponent,
   undefined,
-  undefined,
+  XDto,
   async (posts) => {
     if (posts.some((p) => p.length > 4)) {
       return 'There can be maximum 4 pictures in a post.';
