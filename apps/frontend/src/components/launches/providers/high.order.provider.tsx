@@ -392,7 +392,6 @@ export const withProvider = function <T extends object>(
 
           // @ts-ignore
           for (const item of clipboardItems) {
-            console.log(item);
             if (item.kind === 'file') {
               const file = item.getAsFile();
               if (file) {
@@ -567,6 +566,7 @@ export const withProvider = function <T extends object>(
                             <div className="flex">
                               <div className="flex-1">
                                 <MultiMediaComponent
+                                  allData={InPlaceValue}
                                   text={val.content}
                                   label="Attachments"
                                   description=""

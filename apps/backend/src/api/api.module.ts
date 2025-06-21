@@ -34,6 +34,7 @@ import { AutopostController } from '@gitroom/backend/api/routes/autopost.control
 import { McpService } from '@gitroom/nestjs-libraries/mcp/mcp.service';
 import { McpController } from '@gitroom/backend/api/routes/mcp.controller';
 import { SetsController } from '@gitroom/backend/api/routes/sets.controller';
+import { ThirdPartyController } from '@gitroom/backend/api/routes/third-party.controller';
 
 const authenticatedController = [
   UsersController,
@@ -52,6 +53,7 @@ const authenticatedController = [
   SignatureController,
   AutopostController,
   SetsController,
+  ThirdPartyController,
 ];
 @Module({
   imports: [UploadModule],
