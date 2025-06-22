@@ -28,6 +28,7 @@ import Image from 'next/image';
 import { DropFiles } from '@gitroom/frontend/components/layout/drop.files';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { ThirdPartyMedia } from '@gitroom/frontend/components/third-parties/third-party.media';
 const Polonto = dynamic(
   () => import('@gitroom/frontend/components/launches/polonto')
 );
@@ -452,6 +453,14 @@ export const MediaBox: FC<{
 export const MultiMediaComponent: FC<{
   label: string;
   description: string;
+  allData: {
+    content: string;
+    id?: string;
+    image?: Array<{
+      id: string;
+      path: string;
+    }>;
+  }[];
   value?: Array<{
     path: string;
     id: string;
@@ -471,7 +480,7 @@ export const MultiMediaComponent: FC<{
     };
   }) => void;
 }> = (props) => {
-  const { onOpen, onClose, name, error, text, onChange, value } = props;
+  const { onOpen, onClose, name, error, text, onChange, value, allData } = props;
   const user = useUser();
   useEffect(() => {
     if (value) {
@@ -597,6 +606,8 @@ export const MultiMediaComponent: FC<{
                 </div>
               </div>
             </Button>
+
+            <ThirdPartyMedia allData={allData} onChange={changeMedia} />
 
             {!!user?.tier?.ai && (
               <AiImage value={text} onChange={changeMedia} />

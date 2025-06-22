@@ -38,6 +38,7 @@ model Organization {
   signatures        Signatures[]
   autoPost          AutoPost[]
   sets              Sets[]
+  thirdParty        ThirdParty[]
 }
 
 model Tags {
@@ -610,6 +611,23 @@ model Sets {
   updatedAt      DateTime     @updatedAt
 
   @@index([organizationId])
+}
+
+model ThirdParty {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  identifier     String
+  name           String
+  internalId     String
+  apiKey         String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
+
+  @@index([organizationId])
+  @@index([deletedAt])
+  @@unique([organizationId, internalId])
 }
 
 enum OrderStatus {

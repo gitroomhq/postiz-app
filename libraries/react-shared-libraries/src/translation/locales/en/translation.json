@@ -186,6 +186,8 @@
   "please_add_the_following_command_in_your_chat": "Please add the following command in your chat:",
   "copy": "Copy",
   "settings": "Settings",
+  "integrations": "Integrations",
+  "add_integration": "Add Integration",
   "you_are_now_editing_only": "You are now editing only",
   "tag_a_company": "Tag a company",
   "video_length_is_invalid_must_be_up_to": "Video length is invalid, must be up to",
@@ -485,5 +487,7 @@
   "that_a_wrap": "That's a wrap!\n\nIf you enjoyed this thread:\n\n1. Follow me @{{username}} for more of these\n2. RT the tweet below to share this thread with your audience\n",
   "post_as_images_carousel": "Post as images carousel",
   "save_set": "Save Set",
-  "separate_post": "Separate post to multiple posts"
+  "separate_post": "Separate post to multiple posts",
+  "label_who_can_reply_to_this_post": "Who can reply to this post?",
+  "delete_integration": "Delete Integration"
 }

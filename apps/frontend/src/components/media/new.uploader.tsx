@@ -12,6 +12,7 @@ import '@uppy/dashboard/dist/style.min.css';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import Compressor from '@uppy/compressor';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useToaster } from '@gitroom/react/toaster/toaster';
 
 export function MultipartFileUploader({
   onUploadSuccess,
@@ -58,6 +59,7 @@ export function useUppyUploader(props: {
   onUploadSuccess: (result: UploadResult) => void;
   allowedFileTypes: string;
 }) {
+  const toast = useToaster();
   const { storageProvider, backendUrl, disableImageCompression } =
     useVariables();
   const { onUploadSuccess, allowedFileTypes } = props;
@@ -68,9 +70,55 @@ export function useUppyUploader(props: {
       restrictions: {
         maxNumberOfFiles: 5,
         allowedFileTypes: allowedFileTypes.split(','),
-        maxFileSize: 1000000000,
+        maxFileSize: 1000000000, // Default 1GB, but we'll override with custom validation
       },
     });
+
+    // Custom file size validation based on file type
+    uppy2.addPreProcessor((fileIDs) => {
+      return new Promise<void>((resolve, reject) => {
+        const files = uppy2.getFiles();
+
+        for (const file of files) {
+          if (fileIDs.includes(file.id)) {
+            const isImage = file.type?.startsWith('image/');
+            const isVideo = file.type?.startsWith('video/');
+
+            const maxImageSize = 30 * 1024 * 1024; // 30MB
+            const maxVideoSize = 30 * 1024 * 1024; // 1000 * 1024 * 1024; // 1GB
+
+            if (isImage && file.size > maxImageSize) {
+              const error = new Error(
+                `Image file "${file.name}" is too large. Maximum size allowed is 30MB.`
+              );
+              uppy2.log(error.message, 'error');
+              uppy2.info(error.message, 'error', 5000);
+              toast.show(
+                `Image file is too large. Maximum size allowed is 30MB.`
+              );
+              uppy2.removeFile(file.id); // Remove file from queue
+              return reject(error);
+            }
+
+            if (isVideo && file.size > maxVideoSize) {
+              const error = new Error(
+                `Video file "${file.name}" is too large. Maximum size allowed is 1GB.`
+              );
+              uppy2.log(error.message, 'error');
+              uppy2.info(error.message, 'error', 5000);
+              toast.show(
+                `Video file is too large. Maximum size allowed is 1GB.`
+              );
+              uppy2.removeFile(file.id); // Remove file from queue
+              return reject(error);
+            }
+          }
+        }
+
+        resolve();
+      });
+    });
+
     const { plugin, options } = getUppyUploadPlugin(
       storageProvider,
       fetch,
