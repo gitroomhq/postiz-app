@@ -140,7 +140,7 @@ export class IntegrationManager {
         const config = await this._socialMediaPlatformConfigService.getPlatformConfig(
           socialIntegration.identifier,
           orgId,
-          customerId
+          customerId ?? undefined
         );
 
         // Transform the `config` array into a key-value object
@@ -159,7 +159,7 @@ export class IntegrationManager {
           throw new Error(`${socialIntegration.identifier} Configuration not found`);
         }
       } catch (error) {
-        throw new Error(`Error fetching platform config`);
+        throw new Error(`Error fetching platform config for ${socialIntegration.identifier}`);
       }
     }
   }
