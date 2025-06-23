@@ -225,6 +225,21 @@ const initializeDefaultConfig = (customerId: string): SocialMediaConfig[] => [
       }
     ],
   },
+  {
+    customerId: customerId,
+    platform: "Gbp",
+    platformKey: "gbp",
+    config: [
+      {
+        key: "GOOGLE_CLIENT_ID",
+        value: "",
+      },
+      {
+        key: "GOOGLE_CLIENT_SECRET",
+        value: ""
+      }
+    ],
+  }
 
 ];
 

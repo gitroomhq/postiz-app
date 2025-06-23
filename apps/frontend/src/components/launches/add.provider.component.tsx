@@ -477,6 +477,8 @@ export const AddProviderComponent: FC<{
 
     try {
       const apiUrl = `/social-media-platform-config?customerId=${customerId}`; // Construct the full URL
+      console.log("HERE");
+      
       const response = await fetch(apiUrl, { method: 'GET' });
       if (response.ok) {
         const result: SocialMediaConfig[] = await response.json();

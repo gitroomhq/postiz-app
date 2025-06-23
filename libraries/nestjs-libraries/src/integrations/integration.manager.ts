@@ -140,7 +140,7 @@ export class IntegrationManager {
         const config = await this._socialMediaPlatformConfigService.getPlatformConfig(
           socialIntegration.identifier,
           orgId,
-          customerId
+          customerId ?? undefined
         );
 
         // Transform the `config` array into a key-value object
