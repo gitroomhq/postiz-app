@@ -96,7 +96,8 @@ export const withProvider = function <T extends object>(
         path: string;
       }>
     >,
-    settings: T
+    settings: T,
+    additionalSettings: any,
   ) => Promise<string | true>,
   maximumCharacters?: number | ((settings: any) => number)
 ) {
