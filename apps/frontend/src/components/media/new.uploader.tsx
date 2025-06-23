@@ -85,7 +85,7 @@ export function useUppyUploader(props: {
             const isVideo = file.type?.startsWith('video/');
 
             const maxImageSize = 30 * 1024 * 1024; // 30MB
-            const maxVideoSize = 30 * 1024 * 1024; // 1000 * 1024 * 1024; // 1GB
+            const maxVideoSize = 1000 * 1024 * 1024; // 1GB
 
             if (isImage && file.size > maxImageSize) {
               const error = new Error(
