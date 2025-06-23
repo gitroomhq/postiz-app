@@ -159,7 +159,7 @@ export class IntegrationManager {
           throw new Error(`${socialIntegration.identifier} Configuration not found`);
         }
       } catch (error) {
-        throw new Error(`Error fetching platform config`);
+        throw new Error(`Error fetching platform config for ${socialIntegration.identifier}`);
       }
     }
   }
