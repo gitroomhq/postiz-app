@@ -20,7 +20,32 @@ export class ReportController {
   ) {
     return this.reportService.getInstagramOverviewReport(businessId, days);
   }
+
+  @Get('x/community')
+  getXCommunityReport(
+    @Query('businessId') businessId: string,
+    @Query('days') days: string | '7' | '30' | '90' = '7'
+  ) {
+    return this.reportService.getXCommunityReport(businessId, days);
+  }
+
+  @Get('x/overview')
+  getXOverviewReport(
+    @Query('businessId') businessId: string,
+    @Query('days') days: string | '7' | '30' | '90' = '7'
+  ) {
+    return this.reportService.getXOverviewReport(businessId, days);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
+
+  @Get('x/list')
+  xList(
+        @Query('businessId') businessId: string,
+  ) {
+    return this.reportService.instagramInsightList(businessId);
+  }
+
 
   @Get('instagramInsight/list')
   instagramInsightList(

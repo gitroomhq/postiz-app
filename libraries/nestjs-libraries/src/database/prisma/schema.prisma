@@ -539,6 +539,21 @@ model InstagramInsight {
   updatedAt       DateTime @updatedAt
 }
 
+model XInsight {
+  id              String   @id @default(uuid())
+  businessId      String  
+  organizationId  String
+  month           String
+  followers       Int
+  following       Int
+  totalContent    Int
+  impressions     Int
+  interactions    Int
+  engagement      Float
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
 enum SocialMediaPlatform {
   X
   LINKEDIN
