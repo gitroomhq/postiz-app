@@ -254,7 +254,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     }
 
     const postsArray = [];
-    for (const comment of comments) {
+    for (const comment of comments.reverse()) {
       const data = await (
         await this.fetch(
           `https://graph.facebook.com/v20.0/${finalId}/comments?access_token=${accessToken}&fields=id,permalink_url`,
