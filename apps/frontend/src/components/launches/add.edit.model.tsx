@@ -379,8 +379,8 @@ export const AddEditModal: FC<{
   // function to send to the server and save
   const schedule = useCallback(
     (type: 'draft' | 'now' | 'schedule' | 'delete') => async () => {
+      setLoading(true);
       if (type === 'delete') {
-        setLoading(true);
         if (
           !(await deleteDialog(
             'Are you sure you want to delete this post?',
@@ -418,6 +418,7 @@ export const AddEditModal: FC<{
             );
             if (typeof check === 'string') {
               toaster.show(check, 'warning');
+              setLoading(false);
               return;
             }
           }
@@ -440,11 +441,13 @@ export const AddEditModal: FC<{
                 identifier: key?.integration?.id!,
                 toPreview: true,
               });
+              setLoading(false);
               return;
             }
           }
           if (key.value.some((p) => !p.content || p.content.length < 6)) {
             setShowError(true);
+            setLoading(false);
             return;
           }
           if (!key.valid) {
@@ -452,6 +455,7 @@ export const AddEditModal: FC<{
             moveToIntegration({
               identifier: key?.integration?.id!,
             });
+            setLoading(false);
             return;
           }
         }
@@ -468,12 +472,15 @@ export const AddEditModal: FC<{
           }),
         })
       ).json();
+
+      setLoading(false);
       const shortLink = !shortLinkUrl.ask
         ? false
         : await deleteDialog(
             'Do you want to shortlink the URLs? it will let you get statistics over clicks',
             'Yes, shortlink it!'
           );
+
       setLoading(true);
 
       const data = {
