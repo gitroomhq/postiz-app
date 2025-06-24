@@ -44,7 +44,7 @@
     "test": "jest --coverage --detectOpenHandles --reporters=default --reporters=jest-junit"
   },
   "dependencies": {
-    "@atproto/api": "^0.14.21",
+    "@atproto/api": "^0.15.15",
     "@aws-sdk/client-s3": "^3.787.0",
     "@aws-sdk/s3-request-presigner": "^3.787.0",
     "@casl/ability": "^6.5.0",

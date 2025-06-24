@@ -379,8 +379,8 @@ export const AddEditModal: FC<{
   // function to send to the server and save
   const schedule = useCallback(
     (type: 'draft' | 'now' | 'schedule' | 'delete') => async () => {
+      setLoading(true);
       if (type === 'delete') {
-        setLoading(true);
         if (
           !(await deleteDialog(
             'Are you sure you want to delete this post?',
@@ -413,10 +413,12 @@ export const AddEditModal: FC<{
           if (key.checkValidity) {
             const check = await key.checkValidity(
               key?.value.map((p: any) => p.image || []),
-              key.settings
+              key.settings,
+              JSON.parse(key?.integration?.additionalSettings || '[]')
             );
             if (typeof check === 'string') {
               toaster.show(check, 'warning');
+              setLoading(false);
               return;
             }
           }
@@ -439,11 +441,13 @@ export const AddEditModal: FC<{
                 identifier: key?.integration?.id!,
                 toPreview: true,
               });
+              setLoading(false);
               return;
             }
           }
           if (key.value.some((p) => !p.content || p.content.length < 6)) {
             setShowError(true);
+            setLoading(false);
             return;
           }
           if (!key.valid) {
@@ -451,6 +455,7 @@ export const AddEditModal: FC<{
             moveToIntegration({
               identifier: key?.integration?.id!,
             });
+            setLoading(false);
             return;
           }
         }
@@ -467,12 +472,15 @@ export const AddEditModal: FC<{
           }),
         })
       ).json();
+
+      setLoading(false);
       const shortLink = !shortLinkUrl.ask
         ? false
         : await deleteDialog(
             'Do you want to shortlink the URLs? it will let you get statistics over clicks',
             'Yes, shortlink it!'
           );
+
       setLoading(true);
 
       const data = {
@@ -558,7 +566,6 @@ export const AddEditModal: FC<{
 
         // @ts-ignore
         for (const item of clipboardItems) {
-          console.log(item);
           if (item.kind === 'file') {
             const file = item.getAsFile();
             if (file) {
@@ -779,6 +786,7 @@ Here are the things you can do:
                           <div className="flex">
                             <div className="flex-1">
                               <MultiMediaComponent
+                                allData={value}
                                 text={p.content}
                                 label={t('attachments', 'Attachments')}
                                 description=""
