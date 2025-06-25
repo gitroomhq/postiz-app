@@ -525,6 +525,91 @@ model SocialMediaPlatformConfigItem {
   @@unique([key, configId])
 }
 
+model InstagramInsight {
+  id             String   @id @default(uuid())
+  businessId     String
+  organizationId String
+  month          String
+  followers      Int
+  following      Int
+  totalContent   Int
+  impressions    Int
+  avgReachPerDay Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// Add to schema.prisma
+model ThreadsInsight {
+  id             String   @id @default(uuid())
+  accountId      String // Threads account ID
+  organizationId String
+  month          String
+  followers      Int
+  posts          Int
+  engagement     Float // Engagement rate percentage
+  interactions   Int // Total likes/replies/reposts
+  impressions    Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model LinkedInInsight {
+  id             String   @id @default(uuid())
+  businessId     String // Changed from pageId to accountId
+  organizationId String
+  month          String
+  followers      Int
+  paidFollowers  Int
+  impressions    Int
+  postsCount     Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model YouTubeInsight {
+  id             String   @id @default(uuid())
+  businessId     String // Renamed from channelId
+  organizationId String
+  month          String
+  subscribers    Int
+  totalViews     Int
+  totalVideos    Int
+  totalLikes     Int
+  totalComments  Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model FacebookInsight {
+  id             String   @id @default(uuid())
+  businessId     String
+  organizationId String
+  month          String
+  likes          Int
+  followers      Int
+  impressions    Int
+  pageViews      Int
+  totalContent   Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model XInsight {
+  id             String   @id @default(uuid())
+  businessId     String
+  organizationId String
+  month          String
+  followers      Int
+  following      Int
+  totalContent   Int
+  impressions    Int
+  interactions   Int
+  engagement     Float
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
 enum SocialMediaPlatform {
   X
   LINKEDIN
