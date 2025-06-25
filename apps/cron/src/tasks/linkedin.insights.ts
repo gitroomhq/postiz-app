@@ -40,6 +40,7 @@ export class LinkedInInsightsTask {
 				if (!accessToken || !internalId) {
 					console.log(`⚠️ Missing token or internalId for integration ${integration.id}`);
 					continue;
+
 				}
 
 				console.log('internalId', internalId)
