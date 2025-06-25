@@ -14,6 +14,6 @@ import { XInsightsTask } from './tasks/x-insights.task';
 @Module({
   imports: [DatabaseModule, ScheduleModule.forRoot(), BullMqModule],
   controllers: [],
-  providers: [...(!process.env.IS_GENERAL ? [XInsightsTask, CheckStars, SyncTrending, InstagramInsightsTask, YoutubeInsightsTask, FacebookInsightsTask, ThreadsInsightsTask] : [LinkedInInsightsTask,])],
+  providers: [...(!process.env.IS_GENERAL ? [CheckStars, SyncTrending, LinkedInInsightsTask, InstagramInsightsTask, YoutubeInsightsTask, FacebookInsightsTask, ThreadsInsightsTask, XInsightsTask] : [])],
 })
 export class CronModule { }

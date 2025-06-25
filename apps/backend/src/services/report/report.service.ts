@@ -6,11 +6,11 @@ import { subDays, format } from 'date-fns';
 export class ReportService {
   constructor(
     private _instagramInsightsRepository: PrismaRepository<'instagramInsight'>,
+    private _xInsightsRepository: PrismaRepository<'xInsight'>,
     private _youtubeInsightsRepository: PrismaRepository<'youTubeInsight'>,
     private _facebookInsightsRepository: PrismaRepository<'facebookInsight'>,
     private _threadsInsightsRepository: PrismaRepository<'threadsInsight'>,
     private _linkedInInsightsRepository: PrismaRepository<'linkedInInsight'>,
-    private _xInsightsRepository: PrismaRepository<'xInsight'>,
   ) { }
 
   async getInstagramCommunityReport(businessId: string, days: string) {
