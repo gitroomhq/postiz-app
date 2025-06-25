@@ -32,6 +32,7 @@ import { SocialMediaPlatformConfigController } from './routes/social-media-platf
 import { CustomersController } from './routes/customers.controller';
 import { ReportController } from './routes/report.controller';
 import { ReportService } from '../services/report/report.service';
+import { ReportDownloadController } from './routes/report-download.controller';
 
 const authenticatedController = [
   UsersController,
@@ -48,7 +49,8 @@ const authenticatedController = [
   AgenciesController,
   SocialMediaPlatformConfigController,
   CustomersController,
-  ReportController
+  ReportController,
+  ReportDownloadController
 ];
 @Module({
   imports: [

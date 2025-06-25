@@ -1,4 +1,3 @@
-// youtube.insights.ts
 import { Injectable } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import axios from 'axios';
@@ -10,8 +9,10 @@ export class YoutubeInsightsTask {
 		private _youtubeInsightsRepository: PrismaRepository<'youTubeInsight'>,
 	) { }
 
-	//@Cron('* * * * *') // Run every minute
-	@Cron('0 0 * * *') // Run daily at midnight
+	//@Cron('* * * * *') // for every minute
+
+	// Run every day at midnight
+	@Cron('0 0 * * *')
 	async handleYoutubeInsights() {
 		console.log('⏰ YouTube insights cron job triggered');
 
@@ -19,8 +20,8 @@ export class YoutubeInsightsTask {
 			const integrationsRes = await axios.get(`${process.env.BACKEND_INTERNAL_URL}/integrations/list`, {
 				headers: {
 					'cookie': process.env.INTERNEL_TOKEN,
-					'Content-Type': 'application/json'
-				}
+					'Content-Type': 'application/json',
+				},
 			});
 
 			const integrations = integrationsRes.data?.integrations || [];
@@ -34,12 +35,13 @@ export class YoutubeInsightsTask {
 			}
 
 			for (const account of youtubeAccounts) {
-				//const accessToken = account.accessToken; // Must be stored from OAuth flow
-				const accessToken = process.env.YOUTUBE_ACCESS_TOKEN
+				//	const accessToken = account.accessToken;
+				const accessToken = "ya29.a0AS3H6NzINhcG_XLZTSWF57vFrc7-tEh_dOAV9MYeSDVhr3Ul0LPjcXQ73JLMnumsFlUkNiJPWsKShbmcz16USadxqbEpOeoEONye1vTwUx1xLA18O7xRaHkjP97N-sikwaPiBuXjHGUWgIPuCdcx9B-P1AdoxyhkqLQnYl3-aCgYKAcoSARcSFQHGX2MiTJ1mJzuVgC-F6qkRohNHwQ0175"
+				const internalId = account.internalId; // Your platform’s internal account ID
 				const organizationId = account.customer?.orgId;
 
 				try {
-					// Fetch channel ID dynamically using access token
+					// 1. Fetch channel ID using access token
 					const channelRes = await axios.get(
 						`https://www.googleapis.com/youtube/v3/channels?part=id&mine=true`,
 						{
@@ -49,44 +51,48 @@ export class YoutubeInsightsTask {
 						}
 					);
 
-					const channelId = channelRes.data?.items?.[0]?.id;
+					const businessId = channelRes.data?.items?.[0]?.id;
 
-					if (!channelId) {
-						console.log(`❌ Channel ID not found for account ${account.name}`);
+					if (!businessId) {
+						console.log(`❌ Channel ID not found for internalId: ${internalId}`);
 						continue;
 					}
 
-					console.log("✅ Fetched channelId:", channelId);
-
-					// Fetch channel statistics
+					// 2. Fetch channel statistics
 					const statsRes = await axios.get(
-						`https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${channelId}&access_token=${accessToken}`
+						`https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${businessId}`,
+						{
+							headers: {
+								Authorization: `Bearer ${accessToken}`,
+							},
+						}
 					);
 
 					const stats = statsRes.data?.items?.[0]?.statistics;
 					if (!stats) {
-						console.log(`❌ No statistics found for channel ${channelId}`);
+						console.log(`❌ No statistics found for channel ${businessId}`);
 						continue;
 					}
 
 					const month = new Date().toISOString().slice(0, 7);
 
+					// 3. Store data in DB
 					await this._youtubeInsightsRepository.model.youTubeInsight.create({
 						data: {
-							channelId,
+							businessId,
 							organizationId,
 							month,
 							subscribers: parseInt(stats.subscriberCount || '0'),
 							totalViews: parseInt(stats.viewCount || '0'),
 							totalVideos: parseInt(stats.videoCount || '0'),
-							totalLikes: 0, // You can update this with per-video fetch
+							totalLikes: 0, // To be updated via per-video fetch if needed
 							totalComments: parseInt(stats.commentCount || '0'),
 						},
 					});
 
-					console.log(`✅ Inserted YouTube insight for ${channelId}`);
+					console.log(`✅ Inserted YouTube insight for ${businessId} (internalId: ${internalId})`);
 				} catch (innerError) {
-					console.error(`⚠️ Failed to process account ${account.name}: ${innerError.message}`);
+					console.error(`⚠️ Failed to process internalId ${internalId}: ${innerError.message}`);
 				}
 			}
 		} catch (error) {

@@ -8,7 +8,7 @@ import { subDays, startOfDay, endOfDay } from 'date-fns';
 export class InstagramInsightsTask {
   constructor(
     private _instagramInsightsRepository: PrismaRepository<'instagramInsight'>,
-  ) {}
+  ) { }
 
   // @Cron('* * * * *') // for every minute
   @Cron('0 0 * * *') // for midnight
@@ -17,18 +17,18 @@ export class InstagramInsightsTask {
 
     try {
       const integrationsRes = await axios.get(`${process.env.BACKEND_INTERNAL_URL}/integrations/list`, {
-      headers: {
-        'cookie': process.env.INTERNEL_TOKEN,
-        'Content-Type': 'application/json'
-      }
-    });
-      
+        headers: {
+          'cookie': process.env.INTERNEL_TOKEN,
+          'Content-Type': 'application/json'
+        }
+      });
+
       const integrations = integrationsRes.data?.integrations || [];
 
       const instagramAccounts = integrations.filter(
         (i) => i.identifier === 'instagram' && i.internalId
       );
-      
+
       if (!instagramAccounts.length) {
         console.log('❌ No Instagram accounts found.');
         return;
@@ -49,27 +49,27 @@ export class InstagramInsightsTask {
 
           // 2. Reach for last 30 days
 
-const yesterday = subDays(new Date(), 1);
-const dayStart = Math.floor(startOfDay(yesterday).getTime() / 1000);
-const dayEnd = Math.floor(endOfDay(yesterday).getTime() / 1000);
+          const yesterday = subDays(new Date(), 1);
+          const dayStart = Math.floor(startOfDay(yesterday).getTime() / 1000);
+          const dayEnd = Math.floor(endOfDay(yesterday).getTime() / 1000);
 
           const reachRes = await axios.get(
-  `https://graph.facebook.com/v19.0/${businessId}/insights?metric=reach&period=day&since=${dayStart}&until=${dayEnd}&access_token=${accessToken}`
+            `https://graph.facebook.com/v19.0/${businessId}/insights?metric=reach&period=day&since=${dayStart}&until=${dayEnd}&access_token=${accessToken}`
           );
 
-        const daily = reachRes.data?.data?.[0]?.values || [];
-        // const impressions = daily.reduce((sum, day) => sum + day.value, 0);
-        // const avgReachPerDay = impressions;
-        const yesterdayReach = daily.find(day => {
+          const daily = reachRes.data?.data?.[0]?.values || [];
+          // const impressions = daily.reduce((sum, day) => sum + day.value, 0);
+          // const avgReachPerDay = impressions;
+          const yesterdayReach = daily.find(day => {
             const endTime = new Date(day.end_time).getTime();
             return endTime >= dayStart * 1000 && endTime <= dayEnd * 1000;
-        })?.value || 0;
+          })?.value || 0;
 
-        const impressions = yesterdayReach;
-        const avgReachPerDay = yesterdayReach;
+          const impressions = yesterdayReach;
+          const avgReachPerDay = yesterdayReach;
 
 
-          const month = new Date().toISOString().slice(0, 7); 
+          const month = new Date().toISOString().slice(0, 7);
 
           console.log(`📤 Inserting for businessId ${businessId}, org ${organizationId}`);
 

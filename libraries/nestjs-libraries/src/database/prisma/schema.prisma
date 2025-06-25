@@ -556,7 +556,7 @@ model ThreadsInsight {
 
 model LinkedInInsight {
   id             String   @id @default(uuid())
-  pageId         String
+  businessId     String // Changed from pageId to accountId
   organizationId String
   month          String
   followers      Int
@@ -567,10 +567,9 @@ model LinkedInInsight {
   updatedAt      DateTime @updatedAt
 }
 
-// Add to schema.prisma
 model YouTubeInsight {
   id             String   @id @default(uuid())
-  channelId      String
+  businessId     String // Renamed from channelId
   organizationId String
   month          String
   subscribers    Int
@@ -584,7 +583,7 @@ model YouTubeInsight {
 
 model FacebookInsight {
   id             String   @id @default(uuid())
-  pageId         String
+  businessId     String
   organizationId String
   month          String
   likes          Int
@@ -592,6 +591,21 @@ model FacebookInsight {
   impressions    Int
   pageViews      Int
   totalContent   Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model XInsight {
+  id             String   @id @default(uuid())
+  businessId     String
+  organizationId String
+  month          String
+  followers      Int
+  following      Int
+  totalContent   Int
+  impressions    Int
+  interactions   Int
+  engagement     Float
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }

@@ -25,6 +25,32 @@ export class ReportController {
   }
   ////////////////////////////////////////////////////////////////////////////////
 
+  @Get('x/community')
+  getXCommunityReport(
+    @Query('businessId') businessId: string,
+    @Query('days') days: string | '7' | '30' | '90' = '7'
+  ) {
+    return this.reportService.getXCommunityReport(businessId, days);
+  }
+
+  @Get('x/overview')
+  getXOverviewReport(
+    @Query('businessId') businessId: string,
+    @Query('days') days: string | '7' | '30' | '90' = '7'
+  ) {
+    return this.reportService.getXOverviewReport(businessId, days);
+  }
+
+  ////////////////////////////////////////////////////////////////////////////////
+
+  @Get('x/list')
+  xList(
+    @Query('businessId') businessId: string,
+  ) {
+    return this.reportService.instagramInsightList(businessId);
+  }
+
+
   @Get('instagramInsight/list')
   instagramInsightList(
     @Query('businessId') businessId: string,
@@ -44,15 +70,15 @@ export class ReportController {
 
   @Get('youtube/overview')
   getYoutubeOverviewReport(
-    @Query('channelId') channelId: string,
+    @Query('businessId') businessId: string,
     @Query('days') days: string | '7' | '30' | '90' = '7'
   ) {
-    return this.reportService.getYoutubeOverviewReport(channelId, days);
+    return this.reportService.getYoutubeOverviewReport(businessId, days);
   }
 
   @Get('youtube/insights/list')
-  youtubeInsightList(@Query('channelId') channelId: string) {
-    return this.reportService.youtubeInsightList(channelId);
+  youtubeInsightList(@Query('businessId') businessId: string) {
+    return this.reportService.youtubeInsightList(businessId);
   }
 
   @Delete('youtube/insights/:id')
@@ -63,25 +89,25 @@ export class ReportController {
 
   @Get('facebook/overview')
   getFacebookOverviewReport(
-    @Query('pageId') pageId: string,
+    @Query('businessId') businessId: string,
     @Query('days') days: string | '7' | '30' | '90' = '7'
   ) {
-    return this.reportService.getFacebookOverviewReport(pageId, days);
+    return this.reportService.getFacebookOverviewReport(businessId, days);
   }
 
   @Get('facebook/community')
   getFacebookCommunityReport(
-    @Query('pageId') pageId: string,
+    @Query('businessId') businessId: string,
     @Query('days') days: string | '7' | '30' | '90' = '7'
   ) {
-    return this.reportService.getFacebookCommunityReport(pageId, days);
+    return this.reportService.getFacebookCommunityReport(businessId, days);
   }
 
   @Get('facebookInsight/list')
   facebookInsightList(
-    @Query('pageId') pageId: string,
+    @Query('businessId') businessId: string,
   ) {
-    return this.reportService.facebookInsightList(pageId);
+    return this.reportService.facebookInsightList(businessId);
   }
 
   @Delete('facebookInsight/:id')
@@ -108,35 +134,28 @@ export class ReportController {
     return this.reportService.getThreadsPerformanceReport(accountId, months);
   }
   /////////////////////////////////////////////////////////////////////////////////////
-  // Add to your controller file
+  // Update controller methods to use accountId
   @Get('linkedin/overview')
   getLinkedInOverviewReport(
-    @Query('pageId') pageId: string,
+    @Query('businessId') businessId: string,
     @Query('days') days: string | '7' | '30' | '90' = '7'
   ) {
-    return this.reportService.getLinkedInOverviewReport(pageId, days);
+    return this.reportService.getLinkedInOverviewReport(businessId, days);
   }
 
   @Get('linkedin/community')
   getLinkedInCommunityReport(
-    @Query('pageId') pageId: string,
+    @Query('businessId') businessId: string,
     @Query('days') days: string | '7' | '30' | '90' = '7'
   ) {
-    return this.reportService.getLinkedInCommunityReport(pageId, days);
+    return this.reportService.getLinkedInCommunityReport(businessId, days);
   }
 
   @Get('linkedinInsight/list')
   linkedInInsightList(
-    @Query('pageId') pageId: string,
+    @Query('businessId') businessId: string,
   ) {
-    return this.reportService.linkedInInsightList(pageId);
-  }
-
-  @Delete('linkedinInsight/:id')
-  async deleteLinkedInInsight(
-    @Param('id') id: string,
-  ) {
-    return this.reportService.deleteLinkedInInsight(id);
+    return this.reportService.linkedInInsightList(businessId);
   }
 
 }
