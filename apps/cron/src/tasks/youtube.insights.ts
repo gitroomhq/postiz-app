@@ -34,8 +34,7 @@ export class YoutubeInsightsTask {
 			}
 			//console.log(youtubeAccounts)
 			for (const account of youtubeAccounts) {
-				//const accessToken = account.accessToken; // or use a fixed token for testing
-				const accessToken = 'ya29.a0AS3H6NxiHH0e-gm7lSt6OvmFsKPQ9ojEbYH9hdlcn9Uwct3XC_Cyji_1Q1sQQmcVWrWmhgs-exwWeIyIh9ikCWT5Tk1Dz8g72oAxS3zWCe88hxCTr6Me4OYQ8MRdvSB_SScFi5Y1yltCEaez6GfS8LgfaBQsmyaOeBnl9_VYaCgYKAYISARcSFQHGX2Mi2IYzQkZUXlcJjh3BBzd0BA0175'
+				const accessToken = account.accessToken; // or use a fixed token for testing
 				const businessId = account.internalId; // using internalId like Instagram
 				const organizationId = account.customer?.orgId;
 
