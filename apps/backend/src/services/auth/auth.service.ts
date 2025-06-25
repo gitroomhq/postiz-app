@@ -19,11 +19,12 @@ export class AuthService {
     private _organizationService: OrganizationService,
     private _notificationService: NotificationService,
     private _emailService: EmailService
-  ) {}
+  ) { }
   async canRegister() {
     if (!process.env.DISABLE_REGISTRATION) {
       return true;
     }
+
 
     return (await this._organizationService.getCount()) === 0;
   }
@@ -55,11 +56,11 @@ export class AuthService {
         const addedOrg =
           addToOrg && typeof addToOrg !== 'boolean'
             ? await this._organizationService.addUserToOrg(
-                create.users[0].user.id,
-                addToOrg.id,
-                addToOrg.orgId,
-                addToOrg.role
-              )
+              create.users[0].user.id,
+              addToOrg.id,
+              addToOrg.orgId,
+              addToOrg.role
+            )
             : false;
 
         const obj = { addedOrg, jwt: await this.jwt(create.users[0].user) };
@@ -92,11 +93,11 @@ export class AuthService {
     const addedOrg =
       addToOrg && typeof addToOrg !== 'boolean'
         ? await this._organizationService.addUserToOrg(
-            user.id,
-            addToOrg.id,
-            addToOrg.orgId,
-            addToOrg.role
-          )
+          user.id,
+          addToOrg.id,
+          addToOrg.orgId,
+          addToOrg.role
+        )
         : false;
     return { addedOrg, jwt: await this.jwt(user) };
   }
