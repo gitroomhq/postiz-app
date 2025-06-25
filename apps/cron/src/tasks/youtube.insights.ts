@@ -36,7 +36,7 @@ export class YoutubeInsightsTask {
 
 			for (const account of youtubeAccounts) {
 				//	const accessToken = account.accessToken;
-				const accessToken = "ya29.a0AS3H6NzINhcG_XLZTSWF57vFrc7-tEh_dOAV9MYeSDVhr3Ul0LPjcXQ73JLMnumsFlUkNiJPWsKShbmcz16USadxqbEpOeoEONye1vTwUx1xLA18O7xRaHkjP97N-sikwaPiBuXjHGUWgIPuCdcx9B-P1AdoxyhkqLQnYl3-aCgYKAcoSARcSFQHGX2MiTJ1mJzuVgC-F6qkRohNHwQ0175"
+				const accessToken = process.env.YOUTUBE_ACCESS_TOKEN
 				const internalId = account.internalId; // Your platform’s internal account ID
 				const organizationId = account.customer?.orgId;
 
