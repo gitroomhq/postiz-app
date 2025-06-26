@@ -12,6 +12,14 @@ import clsx from 'clsx';
 import Image from 'next/image';
 import { useShallow } from 'zustand/react/shallow';
 
+/**
+ * Determines if the referenced HTML element has horizontal overflow.
+ *
+ * Observes the element for size changes and DOM mutations to update the scroll state in real time.
+ *
+ * @param ref - Reference to the HTML element to observe for horizontal scrolling
+ * @returns `true` if the element's content overflows horizontally; otherwise, `false`
+ */
 export function useHasScroll(ref: RefObject<HTMLElement>): boolean {
   const [hasHorizontalScroll, setHasHorizontalScroll] = useState(false);
 

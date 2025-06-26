@@ -29,6 +29,15 @@ import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.titl
 import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
 import { CopilotPopup } from '@copilotkit/react-ui';
 
+/**
+ * Calculates the character count of a text string, using weighted length for type 'x'.
+ *
+ * For type 'x', the count is determined by a weighted length algorithm; otherwise, it returns the standard string length.
+ *
+ * @param text - The input string to count characters from
+ * @param type - The type of character counting to use; if 'x', uses weighted length
+ * @returns The calculated character count
+ */
 function countCharacters(text: string, type: string): number {
   if (type !== 'x') {
     return text.length;
