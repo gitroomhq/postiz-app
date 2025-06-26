@@ -438,7 +438,7 @@ div div .set-font-family {
 .tags-top .react-tags__combobox {
   height: 44px;
   display: flex;
-  background-color: #141c2c;
+  background-color: var(--color-input);
   padding-left: 10px;
   padding-right: 10px;
   min-width: 150px;

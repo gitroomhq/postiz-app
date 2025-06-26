@@ -369,7 +369,7 @@ export const Editor: FC<{
   return (
     <>
       <div className="relative bg-customColor2" id={id}>
-        <div className="flex gap-[5px] bg-[#1b263b] border-b border-t border-customColor3 justify-center items-center p-[5px]">
+        <div className="flex gap-[5px] bg-customColor55 border-b border-t border-customColor3 justify-center items-center p-[5px]">
           <SignatureBox editor={newRef?.current?.editor!} />
           <UText
             editor={newRef?.current?.editor!}
@@ -426,7 +426,7 @@ export const Editor: FC<{
           }}
         />
         {validateChars && props.value.length < 6 && (
-          <div className="px-3 text-sm bg-red-600 text-red-300 mb-[4px]">
+          <div className="px-3 text-sm bg-red-600 !text-white mb-[4px]">
             {t(
               'the_post_should_be_at_least_6_characters_long',
               'The post should be at least 6 characters long'

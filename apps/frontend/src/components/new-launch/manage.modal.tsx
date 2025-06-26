@@ -272,7 +272,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
     <>
       <div
         className={clsx(
-          'flex flex-col md:flex-row p-[10px] rounded-[4px] bg-primary gap-[20px]'
+          'flex flex-col md:flex-row p-[10px] rounded-[4px] bg-modalCustom gap-[20px]'
         )}
       >
         <div

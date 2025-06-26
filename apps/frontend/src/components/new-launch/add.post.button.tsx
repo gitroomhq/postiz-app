@@ -29,7 +29,7 @@ export const AddPostButton: FC<{
           />
         </svg>
       </div>
-      <div className="text-white">{t('add_comment', 'Add comment')}</div>
+      <div className="!text-white">{t('add_comment', 'Add comment')}</div>
     </Button>
   );
 };
