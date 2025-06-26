@@ -161,6 +161,7 @@
   "repeat_post_every": "Repetir postagem a cada...",
   "use_this_media": "Usar esta mídia",
   "create_new_post": "Criar nova postagem",
+  "update_post": "Atualizar postagem existente",
   "merge_comments_into_one_post": "Mesclar comentários em uma postagem",
   "accounts_that_will_engage": "Contas que irão interagir:",
   "day": "Dia",
@@ -186,6 +187,8 @@
   "please_add_the_following_command_in_your_chat": "Por favor, adicione o seguinte comando no seu chat:",
   "copy": "Copiar",
   "settings": "Configurações",
+  "integrations": "Integrações",
+  "add_integration": "Adicionar integração",
   "you_are_now_editing_only": "Agora você está editando apenas",
   "tag_a_company": "Marcar uma empresa",
   "video_length_is_invalid_must_be_up_to": "A duração do vídeo é inválida, deve ser de até",
@@ -421,7 +424,7 @@
   "enable_color_picker": "Ativar seletor de cores",
   "cancel_the_color_picker": "Cancelar o seletor de cores",
   "no_content_yet": "Ainda não há conteúdo",
-  "write_your_reply": "Escreva sua resposta...",
+  "write_your_reply": "Escreva sua postagem...",
   "add_a_tag": "Adicionar uma tag",
   "add_to_calendar": "Adicionar ao calendário",
   "select_channels_from_circles": "Selecione os canais dos círculos acima",
@@ -483,5 +486,10 @@
   "start_7_days_free_trial": "Comece o teste gratuito de 7 dias",
   "change_language": "Mudar idioma",
   "that_a_wrap": "É isso aí!\n\nSe você gostou deste fio:\n\n1. Siga-me @{{username}} para ver mais conteúdos como este\n2. Dê RT no tweet abaixo para compartilhar este fio com seu público\n",
-  "post_as_images_carousel": "Publicar como carrossel de imagens"
+  "post_as_images_carousel": "Publicar como carrossel de imagens",
+  "save_set": "Salvar conjunto",
+  "separate_post": "Separar postagem em várias postagens",
+  "label_who_can_reply_to_this_post": "Quem pode responder a esta postagem?",
+  "delete_integration": "Excluir integração",
+  "start_writing_your_post": "Comece a escrever sua postagem para visualizar"
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { FC, FormEvent, useCallback, useMemo, useState } from 'react';
-import { useCustomProviderFunction } from '@gitroom/frontend/components/new-launch/helpers/use.custom.provider.function';
+import { useCustomProviderFunction } from '@gitroom/frontend/components/launches/helpers/use.custom.provider.function';
 import { Input } from '@gitroom/react/form/input';
 import { useDebouncedCallback } from 'use-debounce';
 import { Button } from '@gitroom/react/form/button';
@@ -9,9 +9,9 @@ import clsx from 'clsx';
 import { MultiMediaComponent } from '@gitroom/frontend/components/media/media.component';
 import { useWatch } from 'react-hook-form';
 import { Select } from '@gitroom/react/form/select';
-import { useSettings } from '@gitroom/frontend/components/new-launch/helpers/use.values';
+import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { Canonical } from '@gitroom/react/form/canonical';
-import { useIntegration } from '@gitroom/frontend/components/new-launch/helpers/use.integration';
+import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const RenderOptions: FC<{
   options: Array<'self' | 'link' | 'media'>;

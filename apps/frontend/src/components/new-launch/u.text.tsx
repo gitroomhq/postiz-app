@@ -93,7 +93,7 @@ export const UText: FC<{
   return (
     <div
       onClick={mark}
-      className="select-none cursor-pointer bg-customColor2 w-[40px] p-[5px] text-center"
+      className="select-none cursor-pointer w-[40px] p-[5px] text-center"
     >
       <svg
         width="25"

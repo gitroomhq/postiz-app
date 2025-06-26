@@ -1,10 +1,10 @@
 'use client';
 
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
-import { useSettings } from '@gitroom/frontend/components/new-launch/helpers/use.values';
+import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { ReactTags } from 'react-tag-autocomplete';
 import interClass from '@gitroom/react/helpers/inter.font';
-import { useIntegration } from '@gitroom/frontend/components/new-launch/helpers/use.integration';
+import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import clsx from 'clsx';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 

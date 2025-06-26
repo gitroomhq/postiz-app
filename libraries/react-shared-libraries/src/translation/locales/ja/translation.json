@@ -161,6 +161,7 @@
   "repeat_post_every": "投稿を繰り返す間隔...",
   "use_this_media": "このメディアを使用",
   "create_new_post": "新しい投稿を作成",
+  "update_post": "既存の投稿を更新",
   "merge_comments_into_one_post": "コメントを1つの投稿にまとめる",
   "accounts_that_will_engage": "エンゲージするアカウント：",
   "day": "日",
@@ -186,6 +187,8 @@
   "please_add_the_following_command_in_your_chat": "チャットに次のコマンドを追加してください：",
   "copy": "コピー",
   "settings": "設定",
+  "integrations": "連携",
+  "add_integration": "連携を追加",
   "you_are_now_editing_only": "現在、次のみを編集しています",
   "tag_a_company": "会社をタグ付け",
   "video_length_is_invalid_must_be_up_to": "動画の長さが無効です。最大",
@@ -421,7 +424,7 @@
   "enable_color_picker": "カラーピッカーを有効にする",
   "cancel_the_color_picker": "カラーピッカーをキャンセル",
   "no_content_yet": "まだコンテンツがありません",
-  "write_your_reply": "返信を書いてください...",
+  "write_your_reply": "投稿内容を入力してください...",
   "add_a_tag": "タグを追加",
   "add_to_calendar": "カレンダーに追加",
   "select_channels_from_circles": "上のサークルからチャンネルを選択してください",
@@ -483,5 +486,10 @@
   "start_7_days_free_trial": "7日間の無料トライアルを開始",
   "change_language": "言語を変更",
   "that_a_wrap": "以上で終了です！\n\nこのスレッドを楽しんでいただけたなら：\n\n1. @{{username}} をフォローして、さらに多くの投稿をご覧ください\n2. 下のツイートをリツイートして、このスレッドをあなたのフォロワーと共有してください\n",
-  "post_as_images_carousel": "画像カルーセルとして投稿"
+  "post_as_images_carousel": "画像カルーセルとして投稿",
+  "save_set": "セットを保存",
+  "separate_post": "投稿を複数に分割",
+  "label_who_can_reply_to_this_post": "この投稿に返信できる人",
+  "delete_integration": "連携を削除",
+  "start_writing_your_post": "プレビュー用に投稿を書き始めてください"
 }

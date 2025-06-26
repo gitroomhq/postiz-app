@@ -1,13 +1,13 @@
 'use client';
 
 import { FC, useCallback, useMemo, useState } from 'react';
-import { useCustomProviderFunction } from '@gitroom/frontend/components/new-launch/helpers/use.custom.provider.function';
 import useSWR from 'swr';
 import clsx from 'clsx';
 import { Button } from '@gitroom/react/form/button';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import { useIntegration } from '@gitroom/frontend/components/new-launch/helpers/use.integration';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useCustomProviderFunction } from '@gitroom/frontend/components/launches/helpers/use.custom.provider.function';
+import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 export const InstagramContinue: FC<{
   closeModal: () => void;
   existingId: string[];

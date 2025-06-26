@@ -4,7 +4,7 @@ import { withProvider } from '@gitroom/frontend/components/new-launch/providers/
 import { ThreadFinisher } from '@gitroom/frontend/components/new-launch/finisher/thread.finisher';
 import { Select } from '@gitroom/react/form/select';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-import { useSettings } from '@gitroom/frontend/components/new-launch/helpers/use.values';
+import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { XDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/x.dto';
 import { Input } from '@gitroom/react/form/input';
 

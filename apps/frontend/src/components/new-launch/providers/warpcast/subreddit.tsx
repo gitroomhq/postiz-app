@@ -1,11 +1,11 @@
 'use client';
 
 import { FC, FormEvent, useCallback, useState } from 'react';
-import { useCustomProviderFunction } from '@gitroom/frontend/components/new-launch/helpers/use.custom.provider.function';
+import { useCustomProviderFunction } from '@gitroom/frontend/components/launches/helpers/use.custom.provider.function';
 import { Input } from '@gitroom/react/form/input';
 import { useDebouncedCallback } from 'use-debounce';
 import { useWatch } from 'react-hook-form';
-import { useSettings } from '@gitroom/frontend/components/new-launch/helpers/use.values';
+import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 export const Subreddit: FC<{
   onChange: (event: {
     target: {

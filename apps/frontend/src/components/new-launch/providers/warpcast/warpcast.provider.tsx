@@ -2,7 +2,7 @@
 
 import { withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 import { FC, useCallback } from 'react';
-import { useSettings } from '@gitroom/frontend/components/new-launch/helpers/use.values';
+import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { useFieldArray } from 'react-hook-form';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { Button } from '@gitroom/react/form/button';

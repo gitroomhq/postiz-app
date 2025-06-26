@@ -2,10 +2,8 @@
 
 import { withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 import { ThreadFinisher } from '@gitroom/frontend/components/new-launch/finisher/thread.finisher';
-import { useFormContext } from 'react-hook-form';
 
 const SettingsComponent = () => {
-  const form = useFormContext();
   return <ThreadFinisher />;
 };
 

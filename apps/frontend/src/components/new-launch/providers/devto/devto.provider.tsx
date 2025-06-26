@@ -3,7 +3,6 @@
 import { FC } from 'react';
 import { withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 import { DevToSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dev.to.settings.dto';
-import { useSettings } from '@gitroom/frontend/components/new-launch/helpers/use.values';
 import { Input } from '@gitroom/react/form/input';
 import { MediaComponent } from '@gitroom/frontend/components/media/media.component';
 import { SelectOrganization } from '@gitroom/frontend/components/new-launch/providers/devto/select.organization';
@@ -12,8 +11,10 @@ import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
 import clsx from 'clsx';
 import localFont from 'next/font/local';
 import MDEditor from '@uiw/react-md-editor';
-import { useIntegration } from '@gitroom/frontend/components/new-launch/helpers/use.integration';
 import { Canonical } from '@gitroom/react/form/canonical';
+import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
+import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
+
 const font = localFont({
   src: [
     {

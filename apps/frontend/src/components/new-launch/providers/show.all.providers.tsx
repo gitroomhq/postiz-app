@@ -24,7 +24,12 @@ import NostrProvider from '@gitroom/frontend/components/new-launch/providers/nos
 import VkProvider from '@gitroom/frontend/components/new-launch/providers/vk/vk.provider';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useShallow } from 'zustand/react/shallow';
-import { createRef, FC, forwardRef, useImperativeHandle } from 'react';
+import React, { createRef, FC, forwardRef, useImperativeHandle } from 'react';
+import { GeneralPreviewComponent } from '@gitroom/frontend/components/launches/general.preview.component';
+import { IntegrationContext } from '@gitroom/frontend/components/launches/helpers/use.integration';
+import { Button } from '@gitroom/react/form/button';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
+
 export const Providers = [
   {
     identifier: 'devto',
@@ -124,12 +129,18 @@ export const Providers = [
   },
 ];
 export const ShowAllProviders = forwardRef((props, ref) => {
-  const { current, selectedIntegrations } = useLaunchStore(
-    useShallow((state) => ({
-      selectedIntegrations: state.selectedIntegrations,
-      current: state.current,
-    }))
-  );
+  const { date, current, global, selectedIntegrations, allIntegrations } =
+    useLaunchStore(
+      useShallow((state) => ({
+        date: state.date,
+        selectedIntegrations: state.selectedIntegrations,
+        allIntegrations: state.integrations,
+        current: state.current,
+        global: state.global,
+      }))
+    );
+
+  const t = useT();
 
   useImperativeHandle(ref, () => ({
     checkAllValid: async () => {
@@ -137,10 +148,48 @@ export const ShowAllProviders = forwardRef((props, ref) => {
         selectedIntegrations.map(async (p) => await p.ref?.current.isValid())
       );
     },
+    getAllValues: async () => {
+      return Promise.all(
+        selectedIntegrations.map(async (p) => await p.ref?.current.getValues())
+      );
+    },
+    triggerAll: () => {
+      return selectedIntegrations.map(async (p) => await p.ref?.current.trigger());
+    }
   }));
 
   return (
-    <>
+    <div className="w-full flex flex-col flex-1">
+      {current === 'global' && (
+        <IntegrationContext.Provider
+          value={{
+            date,
+            integration:
+              selectedIntegrations?.[0]?.integration || allIntegrations?.[0],
+            allIntegrations: selectedIntegrations.map((p) => p.integration),
+            value: global.map((p) => ({
+              id: p.id,
+              content: p.content,
+              image: p.media,
+            })),
+          }}
+        >
+          <div className="flex gap-[4px] mb-[20px]">
+            <div className="flex-1 flex">
+              <Button
+                className="rounded-[4px] flex-1 overflow-hidden whitespace-nowrap"
+              >
+                {t('preview', 'Preview')}
+              </Button>
+            </div>
+          </div>
+          {global?.[0]?.content?.length === 0 ? (
+            <div>{t('start_writing_your_post', 'Start writing your post for a preview')}</div>
+          ) : (
+            <GeneralPreviewComponent maximumCharacters={100000000} />
+          )}
+        </IntegrationContext.Provider>
+      )}
       {selectedIntegrations.map((integration) => {
         const { component: ProviderComponent } = Providers.find(
           (provider) =>
@@ -157,7 +206,7 @@ export const ShowAllProviders = forwardRef((props, ref) => {
           />
         );
       })}
-    </>
+    </div>
   );
 });
 

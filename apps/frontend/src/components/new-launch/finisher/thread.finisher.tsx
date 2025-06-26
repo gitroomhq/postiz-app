@@ -3,9 +3,9 @@
 import { Slider } from '@gitroom/react/form/slider';
 import clsx from 'clsx';
 import { Editor } from '@gitroom/frontend/components/new-launch/editor';
-import { useIntegration } from '@gitroom/frontend/components/new-launch/helpers/use.integration';
-import { useSettings } from '@gitroom/frontend/components/new-launch/helpers/use.values';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
+import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 
 export const ThreadFinisher = () => {
   const integration = useIntegration();
@@ -50,10 +50,7 @@ export const ThreadFinisher = () => {
                 <Editor
                   onChange={(val) => setValue('thread_finisher', val)}
                   value={value}
-                  height={150}
                   totalPosts={1}
-                  order={1}
-                  preview="edit"
                 />
               </div>
             </div>

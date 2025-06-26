@@ -5,38 +5,46 @@ import clsx from 'clsx';
 import Image from 'next/image';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useShallow } from 'zustand/react/shallow';
+import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 
 export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
   toolTip,
 }) => {
-  const { addOrRemoveSelectedIntegration, integrations, selectedIntegrations } =
+  const exising = useExistingData();
+
+  const { locked, addOrRemoveSelectedIntegration, integrations, selectedIntegrations } =
     useLaunchStore(
       useShallow((state) => ({
         integrations: state.integrations,
         selectedIntegrations: state.selectedIntegrations,
         addOrRemoveSelectedIntegration: state.addOrRemoveSelectedIntegration,
+        locked: state.locked,
       }))
     );
+
   return (
-    <div className={clsx('flex')}>
+    <div className={clsx('flex', locked && 'opacity-50 pointer-events-none')}>
       <div className="flex">
         <div className="innerComponent">
-          <div className="flex">
+          <div className="grid grid-cols-13 gap-[10px]">
             {integrations
               .filter((f) => !f.inBetweenSteps)
               .map((integration) => (
                 <div
                   key={integration.id}
-                  className="flex gap-[8px] items-center me-[10px]"
+                  className="flex gap-[8px] items-center"
                   {...(toolTip && {
                     'data-tooltip-id': 'tooltip',
                     'data-tooltip-content': integration.name,
                   })}
                 >
                   <div
-                    onClick={() =>
-                      addOrRemoveSelectedIntegration(integration, {})
-                    }
+                    onClick={() => {
+                      if (exising.integration) {
+                        return;
+                      }
+                      addOrRemoveSelectedIntegration(integration, {});
+                    }}
                     className={clsx(
                       'cursor-pointer relative w-[34px] h-[34px] rounded-full flex justify-center items-center bg-fifth filter transition-all duration-500',
                       selectedIntegrations.findIndex(

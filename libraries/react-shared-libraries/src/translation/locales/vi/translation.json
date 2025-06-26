@@ -161,6 +161,7 @@
   "repeat_post_every": "Lặp lại bài đăng mỗi...",
   "use_this_media": "Sử dụng phương tiện này",
   "create_new_post": "Tạo bài đăng mới",
+  "update_post": "Cập nhật bài viết hiện có",
   "merge_comments_into_one_post": "Gộp bình luận vào một bài đăng",
   "accounts_that_will_engage": "Các tài khoản sẽ tương tác:",
   "day": "Ngày",
@@ -186,6 +187,8 @@
   "please_add_the_following_command_in_your_chat": "Vui lòng thêm lệnh sau vào cuộc trò chuyện của bạn:",
   "copy": "Sao chép",
   "settings": "Cài đặt",
+  "integrations": "Tích hợp",
+  "add_integration": "Thêm tích hợp",
   "you_are_now_editing_only": "Bạn hiện chỉ đang chỉnh sửa",
   "tag_a_company": "Gắn thẻ công ty",
   "video_length_is_invalid_must_be_up_to": "Độ dài video không hợp lệ, phải tối đa",
@@ -421,7 +424,7 @@
   "enable_color_picker": "Bật bộ chọn màu",
   "cancel_the_color_picker": "Hủy bộ chọn màu",
   "no_content_yet": "Chưa có nội dung",
-  "write_your_reply": "Viết phản hồi của bạn...",
+  "write_your_reply": "Viết bài của bạn...",
   "add_a_tag": "Thêm thẻ",
   "add_to_calendar": "Thêm vào lịch",
   "select_channels_from_circles": "Chọn kênh từ các vòng tròn phía trên",
@@ -483,5 +486,10 @@
   "start_7_days_free_trial": "Bắt đầu dùng thử miễn phí 7 ngày",
   "change_language": "Thay đổi ngôn ngữ",
   "that_a_wrap": "Kết thúc rồi!\n\nNếu bạn thích chuỗi bài này:\n\n1. Hãy theo dõi tôi @{{username}} để xem thêm nhiều nội dung như vậy\n2. Retweet bài bên dưới để chia sẻ chuỗi này với mọi người\n",
-  "post_as_images_carousel": "Đăng dưới dạng băng chuyền hình ảnh"
+  "post_as_images_carousel": "Đăng dưới dạng băng chuyền hình ảnh",
+  "save_set": "Lưu bộ",
+  "separate_post": "Tách bài viết thành nhiều bài",
+  "label_who_can_reply_to_this_post": "Ai có thể trả lời bài viết này?",
+  "delete_integration": "Xóa tích hợp",
+  "start_writing_your_post": "Bắt đầu viết bài của bạn để xem trước"
 }

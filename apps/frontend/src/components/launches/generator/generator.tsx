@@ -15,10 +15,10 @@ import {
   CalendarWeekProvider,
   useCalendar,
 } from '@gitroom/frontend/components/launches/calendar.context';
-import { AddEditModal } from '@gitroom/frontend/components/launches/add.edit.model';
 import dayjs from 'dayjs';
 import { Select } from '@gitroom/react/form/select';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
 const FirstStep: FC = (props) => {
   const { integrations, reloadCalendarView } = useCalendar();
   const modal = useModals();

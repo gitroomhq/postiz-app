@@ -2,12 +2,12 @@
 
 import { FC } from 'react';
 import { withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
-import { useSettings } from '@gitroom/frontend/components/new-launch/helpers/use.values';
+import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { Input } from '@gitroom/react/form/input';
 import { HashnodePublications } from '@gitroom/frontend/components/new-launch/providers/hashnode/hashnode.publications';
 import { HashnodeTags } from '@gitroom/frontend/components/new-launch/providers/hashnode/hashnode.tags';
 import { HashnodeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/hashnode.settings.dto';
-import { useIntegration } from '@gitroom/frontend/components/new-launch/helpers/use.integration';
+import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
 import clsx from 'clsx';
 import MDEditor from '@uiw/react-md-editor';

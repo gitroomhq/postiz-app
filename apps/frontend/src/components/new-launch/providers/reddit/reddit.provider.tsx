@@ -2,10 +2,9 @@
 
 import { FC, useCallback } from 'react';
 import { withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
-import { useIntegration } from '@gitroom/frontend/components/new-launch/helpers/use.integration';
-import { useFormatting } from '@gitroom/frontend/components/new-launch/helpers/use.formatting';
+import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { Subreddit } from '@gitroom/frontend/components/new-launch/providers/reddit/subreddit';
-import { useSettings } from '@gitroom/frontend/components/new-launch/helpers/use.values';
+import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { useFieldArray, useWatch } from 'react-hook-form';
 import { Button } from '@gitroom/react/form/button';
 import {
@@ -19,6 +18,7 @@ import MDEditor from '@uiw/react-md-editor';
 import interClass from '@gitroom/react/helpers/inter.font';
 import Image from 'next/image';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useFormatting } from '@gitroom/frontend/components/launches/helpers/use.formatting';
 const RenderRedditComponent: FC<{
   type: string;
   images?: Array<{

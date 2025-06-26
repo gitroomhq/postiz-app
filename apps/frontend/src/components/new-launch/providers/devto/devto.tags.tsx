@@ -1,10 +1,10 @@
 'use client';
 
 import { FC, useCallback, useEffect, useState } from 'react';
-import { useCustomProviderFunction } from '@gitroom/frontend/components/new-launch/helpers/use.custom.provider.function';
-import { useSettings } from '@gitroom/frontend/components/new-launch/helpers/use.values';
 import { ReactTags } from 'react-tag-autocomplete';
 import interClass from '@gitroom/react/helpers/inter.font';
+import { useCustomProviderFunction } from '@gitroom/frontend/components/launches/helpers/use.custom.provider.function';
+import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 export const DevtoTags: FC<{
   name: string;
   label: string;
