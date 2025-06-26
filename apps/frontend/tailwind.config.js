@@ -70,6 +70,8 @@ module.exports = {
         customColor52: 'var(--color-custom52)',
         customColor53: 'var(--color-custom53)',
         customColor54: 'var(--color-custom54)',
+        customColor55: 'var(--color-custom55)',
+        modalCustom: 'var(--color-modalCustom)',
       },
       gridTemplateColumns: {
         13: 'repeat(13, minmax(0, 1fr));',

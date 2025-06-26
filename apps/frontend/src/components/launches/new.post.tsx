@@ -1,12 +1,12 @@
 import React, { useCallback } from 'react';
-import { AddEditModal } from '@gitroom/frontend/components/launches/add.edit.model';
 import { useModals } from '@mantine/modals';
 import dayjs from 'dayjs';
 import { useCalendar } from '@gitroom/frontend/components/launches/calendar.context';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { SetSelectionModal } from '@gitroom/frontend/components/launches/calendar';
-import { useSet } from '@gitroom/frontend/components/launches/set.context';
+import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
+
 export const NewPost = () => {
   const fetch = useFetch();
   const modal = useModals();

@@ -178,7 +178,7 @@
     "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "18.3.1",
     "react-dropzone": "^14.3.5",
-    "react-hook-form": "^7.50.1",
+    "react-hook-form": "^7.58.1",
     "react-i18next": "^15.5.2",
     "react-loading": "^2.0.3",
     "react-otp-input": "^3.1.1",
@@ -218,7 +218,8 @@
     "yargs": "^17.7.2",
     "yup": "^1.4.0",
     "zod": "^3.24.1",
-    "zod-to-json-schema": "^3.24.5"
+    "zod-to-json-schema": "^3.24.5",
+    "zustand": "^5.0.5"
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.0.0-beta.32",

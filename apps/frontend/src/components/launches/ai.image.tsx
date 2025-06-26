@@ -4,6 +4,7 @@ import clsx from 'clsx';
 import Loading from 'react-loading';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 const list = [
   'Realistic',
   'Cartoon',
@@ -27,10 +28,12 @@ export const AiImage: FC<{
   const t = useT();
   const { value, onChange } = props;
   const [loading, setLoading] = useState(false);
+  const setLocked = useLaunchStore(p => p.setLocked);
   const fetch = useFetch();
   const generateImage = useCallback(
     (type: string) => async () => {
       setLoading(true);
+      setLocked(true);
       const image = await (
         await fetch('/media/generate-image-with-prompt', {
           method: 'POST',
@@ -49,6 +52,7 @@ ${type}
         })
       ).json();
       setLoading(false);
+      setLocked(false);
       onChange(image);
     },
     [value, onChange]
