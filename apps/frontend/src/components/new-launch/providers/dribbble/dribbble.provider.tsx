@@ -45,5 +45,6 @@ export default withProvider(
       return true;
     }
     return 'Invalid image size. Dribbble requires 400x300 or 800x600 px images.';
-  }
+  },
+  40000
 );

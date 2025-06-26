@@ -8,5 +8,5 @@ export default withProvider(
   async () => {
     return true;
   },
-  undefined
+  100000
 );
