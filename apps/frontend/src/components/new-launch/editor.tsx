@@ -55,11 +55,11 @@ export const EditorWrapper: FC<{
     setGlobalValue,
     setInternalValue,
     internalFromAll,
-    totalChars
+    totalChars,
   } = useLaunchStore(
     useShallow((state) => ({
       internal: state.internal.find((p) => p.integration.id === state.current),
-      internalFromAll: state.integrations.find(p => p.id === state.current),
+      internalFromAll: state.integrations.find((p) => p.id === state.current),
       global: state.global,
       current: state.current,
       addRemoveInternal: state.addRemoveInternal,
@@ -451,9 +451,16 @@ export const Editor: FC<{
           />
         )}
       </div>
-      <div className={clsx("text-end text-sm mt-1", props.value.length > props.totalChars && "!text-red-500")}>
-        {props.value.length}/{props.totalChars}
-      </div>
+      {props.totalChars > 0 && (
+        <div
+          className={clsx(
+            'text-end text-sm mt-1',
+            props.value.length > props.totalChars && '!text-red-500'
+          )}
+        >
+          {props.value.length}/{props.totalChars}
+        </div>
+      )}
     </>
   );
 };
