@@ -75,6 +75,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   );
 
   const deletePost = useCallback(async () => {
+    setLoading(true);
     if (
       !(await deleteDialog(
         'Are you sure you want to delete this post?',
@@ -129,6 +130,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
   const schedule = useCallback(
     (type: 'draft' | 'now' | 'schedule') => async () => {
+      setLoading(true);
       const checkAllValid = await ref.current.checkAllValid();
       if (type !== 'draft') {
         const notEnoughChars = checkAllValid.filter((p: any) => {
@@ -146,6 +148,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               ' post is too short, it must be at least 6 characters',
             'warning'
           );
+          setLoading(false);
           item.preview();
           return;
         }
@@ -154,6 +157,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           if (item.valid === false) {
             toaster.show('Some fields are not valid', 'warning');
             item.fix();
+            setLoading(false);
             return;
           }
 
@@ -165,6 +169,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               'warning'
             );
             item.preview();
+            setLoading(false);
             return;
           }
         }
@@ -186,6 +191,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             ))
           ) {
             item.preview();
+            setLoading(false);
             return;
           }
         }
@@ -304,6 +310,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                       onClick={deletePost}
                       className="rounded-[4px] border-2 border-red-400 text-red-400"
                       secondary={true}
+                      disabled={loading}
                     >
                       {t('delete_post', 'Delete Post')}
                     </Button>
@@ -314,7 +321,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                       onClick={schedule('draft')}
                       className="rounded-[4px] border-2 border-customColor21"
                       secondary={true}
-                      disabled={selectedIntegrations.length === 0}
+                      disabled={selectedIntegrations.length === 0 || loading}
                     >
                       {t('save_as_draft', 'Save as draft')}
                     </Button>
@@ -333,6 +340,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                     <Button
                       className="rounded-[4px] relative group"
                       disabled={selectedIntegrations.length === 0 || loading}
+                      loading={loading}
                       onClick={schedule('schedule')}
                     >
                       <div className="flex justify-center items-center gap-[5px] h-full">
