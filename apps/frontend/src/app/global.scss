@@ -99,6 +99,7 @@ html {
   cursor: text;
   display: flex;
   align-items: center;
+  margin-right: 0 !important;
 }
 
 .react-tags.is-active {
@@ -191,6 +192,7 @@ html {
 .react-tags__combobox-input {
   /* prevent autoresize overflowing the container */
   max-width: 100%;
+  width: 100% !important;
   /* remove styles and layout from this element */
   margin: 0;
   padding: 0;
@@ -198,7 +200,7 @@ html {
   outline: none;
   background: none;
   /* match the font styles */
-  font-size: inherit;
+  font-size: 16px;
   line-height: inherit;
 }
 
@@ -434,7 +436,7 @@ div div .set-font-family {
 }
 
 .tags-top .react-tags__combobox {
-  height: 35px;
+  height: 44px;
   display: flex;
   background-color: #141c2c;
   padding-left: 10px;

@@ -161,6 +161,7 @@
   "repeat_post_every": "Gönderiyi Her ... Tekrarla",
   "use_this_media": "Bu medyayı kullan",
   "create_new_post": "Yeni Gönderi Oluştur",
+  "update_post": "Mevcut Gönderiyi Güncelle",
   "merge_comments_into_one_post": "Yorumları tek gönderide birleştir",
   "accounts_that_will_engage": "Etkileşime Geçecek Hesaplar:",
   "day": "Gün",
@@ -186,6 +187,8 @@
   "please_add_the_following_command_in_your_chat": "Lütfen sohbetinize aşağıdaki komutu ekleyin:",
   "copy": "Kopyala",
   "settings": "Ayarlar",
+  "integrations": "Entegrasyonlar",
+  "add_integration": "Entegrasyon Ekle",
   "you_are_now_editing_only": "Şu anda yalnızca düzenliyorsunuz",
   "tag_a_company": "Bir şirket etiketle",
   "video_length_is_invalid_must_be_up_to": "Video uzunluğu geçersiz, en fazla",
@@ -421,7 +424,7 @@
   "enable_color_picker": "Renk seçiciyi etkinleştir",
   "cancel_the_color_picker": "Renk seçiciyi iptal et",
   "no_content_yet": "Henüz İçerik Yok",
-  "write_your_reply": "Yanıtınızı yazın...",
+  "write_your_reply": "Gönderinizi yazın...",
   "add_a_tag": "Etiket ekle",
   "add_to_calendar": "Takvime Ekle",
   "select_channels_from_circles": "Yukarıdaki dairelerden kanalları seçin",
@@ -483,5 +486,10 @@
   "start_7_days_free_trial": "7 gün ücretsiz denemeyi başlat",
   "change_language": "Dili Değiştir",
   "that_a_wrap": "Bu iş burada bitti!\n\nEğer bu diziyi beğendiyseniz:\n\n1. Daha fazlası için beni @{{username}} hesabından takip edin\n2. Aşağıdaki tweet'i RT'leyerek bu diziyi kendi kitlenizle paylaşın\n",
-  "post_as_images_carousel": "Görselleri kaydırmalı gönder olarak paylaş"
+  "post_as_images_carousel": "Görselleri kaydırmalı gönder olarak paylaş",
+  "save_set": "Seti Kaydet",
+  "separate_post": "Gönderiyi birden fazla gönderiye ayır",
+  "label_who_can_reply_to_this_post": "Bu gönderiye kim yanıt verebilir?",
+  "delete_integration": "Entegrasyonu Sil",
+  "start_writing_your_post": "Önizleme için gönderinizi yazmaya başlayın"
 }

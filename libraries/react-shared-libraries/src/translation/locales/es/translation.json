@@ -161,6 +161,7 @@
   "repeat_post_every": "Repetir publicación cada...",
   "use_this_media": "Usar este medio",
   "create_new_post": "Crear nueva publicación",
+  "update_post": "Actualizar publicación existente",
   "merge_comments_into_one_post": "Unir comentarios en una sola publicación",
   "accounts_that_will_engage": "Cuentas que interactuarán:",
   "day": "Día",
@@ -186,6 +187,8 @@
   "please_add_the_following_command_in_your_chat": "Por favor agrega el siguiente comando en tu chat:",
   "copy": "Copiar",
   "settings": "Configuración",
+  "integrations": "Integraciones",
+  "add_integration": "Agregar integración",
   "you_are_now_editing_only": "Ahora solo estás editando",
   "tag_a_company": "Etiquetar una empresa",
   "video_length_is_invalid_must_be_up_to": "La duración del video no es válida, debe ser de hasta",
@@ -421,7 +424,7 @@
   "enable_color_picker": "Habilitar selector de color",
   "cancel_the_color_picker": "Cancelar el selector de color",
   "no_content_yet": "Aún no hay contenido",
-  "write_your_reply": "Escribe tu respuesta...",
+  "write_your_reply": "Escribe tu publicación...",
   "add_a_tag": "Agregar una etiqueta",
   "add_to_calendar": "Agregar al calendario",
   "select_channels_from_circles": "Selecciona canales de los círculos de arriba",
@@ -483,5 +486,10 @@
   "start_7_days_free_trial": "Comienza la prueba gratuita de 7 días",
   "change_language": "Cambiar idioma",
   "that_a_wrap": "¡Eso es todo!\n\nSi te gustó este hilo:\n\n1. Sígueme en @{{username}} para más contenido como este\n2. Haz RT al tuit de abajo para compartir este hilo con tu audiencia\n",
-  "post_as_images_carousel": "Publicar como carrusel de imágenes"
+  "post_as_images_carousel": "Publicar como carrusel de imágenes",
+  "save_set": "Guardar conjunto",
+  "separate_post": "Separar publicación en varias publicaciones",
+  "label_who_can_reply_to_this_post": "¿Quién puede responder a esta publicación?",
+  "delete_integration": "Eliminar integración",
+  "start_writing_your_post": "Comienza a escribir tu publicación para obtener una vista previa"
 }

@@ -161,6 +161,7 @@
   "repeat_post_every": "Répéter la publication tous les...",
   "use_this_media": "Utiliser ce média",
   "create_new_post": "Créer une nouvelle publication",
+  "update_post": "Mettre à jour le post existant",
   "merge_comments_into_one_post": "Fusionner les commentaires en une seule publication",
   "accounts_that_will_engage": "Comptes qui vont interagir :",
   "day": "Jour",
@@ -186,6 +187,8 @@
   "please_add_the_following_command_in_your_chat": "Veuillez ajouter la commande suivante dans votre chat :",
   "copy": "Copier",
   "settings": "Paramètres",
+  "integrations": "Intégrations",
+  "add_integration": "Ajouter une intégration",
   "you_are_now_editing_only": "Vous modifiez maintenant uniquement",
   "tag_a_company": "Taguer une entreprise",
   "video_length_is_invalid_must_be_up_to": "La durée de la vidéo est invalide, elle doit être au maximum de",
@@ -421,7 +424,7 @@
   "enable_color_picker": "Activer le sélecteur de couleurs",
   "cancel_the_color_picker": "Annuler le sélecteur de couleurs",
   "no_content_yet": "Pas encore de contenu",
-  "write_your_reply": "Écrivez votre réponse...",
+  "write_your_reply": "Écrivez votre post...",
   "add_a_tag": "Ajouter une étiquette",
   "add_to_calendar": "Ajouter au calendrier",
   "select_channels_from_circles": "Sélectionnez des canaux à partir des cercles ci-dessus",
@@ -483,5 +486,10 @@
   "start_7_days_free_trial": "Commencez l’essai gratuit de 7 jours",
   "change_language": "Changer de langue",
   "that_a_wrap": "C'est terminé !\n\nSi vous avez aimé ce fil :\n\n1. Suivez-moi @{{username}} pour en voir d'autres\n2. Retweetez le tweet ci-dessous pour partager ce fil avec votre audience\n",
-  "post_as_images_carousel": "Publier en carrousel d’images"
+  "post_as_images_carousel": "Publier en carrousel d’images",
+  "save_set": "Enregistrer l'ensemble",
+  "separate_post": "Séparer le post en plusieurs publications",
+  "label_who_can_reply_to_this_post": "Qui peut répondre à ce post ?",
+  "delete_integration": "Supprimer l'intégration",
+  "start_writing_your_post": "Commencez à écrire votre post pour un aperçu"
 }

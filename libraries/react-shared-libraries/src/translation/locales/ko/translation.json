@@ -161,6 +161,7 @@
   "repeat_post_every": "게시 반복 주기...",
   "use_this_media": "이 미디어 사용",
   "create_new_post": "새 게시물 만들기",
+  "update_post": "기존 게시물 업데이트",
   "merge_comments_into_one_post": "댓글을 하나의 게시물로 합치기",
   "accounts_that_will_engage": "참여할 계정:",
   "day": "일",
@@ -186,6 +187,8 @@
   "please_add_the_following_command_in_your_chat": "채팅에 다음 명령어를 추가해 주세요:",
   "copy": "복사",
   "settings": "설정",
+  "integrations": "통합",
+  "add_integration": "통합 추가",
   "you_are_now_editing_only": "현재 이 항목만 편집 중입니다",
   "tag_a_company": "회사 태그하기",
   "video_length_is_invalid_must_be_up_to": "영상 길이가 잘못되었습니다. 최대",
@@ -421,7 +424,7 @@
   "enable_color_picker": "색상 선택기 활성화",
   "cancel_the_color_picker": "색상 선택기 취소",
   "no_content_yet": "아직 콘텐츠가 없습니다",
-  "write_your_reply": "답글을 작성하세요...",
+  "write_your_reply": "게시글을 작성하세요...",
   "add_a_tag": "태그 추가",
   "add_to_calendar": "캘린더에 추가",
   "select_channels_from_circles": "위의 원에서 채널을 선택하세요",
@@ -483,5 +486,10 @@
   "start_7_days_free_trial": "7일 무료 체험 시작하기",
   "change_language": "언어 변경",
   "that_a_wrap": "여기까지입니다!\n\n이 스레드가 유익하셨다면:\n\n1. 더 많은 정보를 원하시면 @{{username}}를 팔로우하세요\n2. 아래 트윗을 리트윗해서 이 스레드를 여러분의 팔로워들과 공유하세요\n",
-  "post_as_images_carousel": "이미지 캐러셀로 게시"
+  "post_as_images_carousel": "이미지 캐러셀로 게시",
+  "save_set": "세트 저장",
+  "separate_post": "게시물을 여러 개로 분리",
+  "label_who_can_reply_to_this_post": "이 게시물에 누가 답글을 달 수 있나요?",
+  "delete_integration": "통합 삭제",
+  "start_writing_your_post": "미리보기를 위해 게시글 작성을 시작하세요"
 }

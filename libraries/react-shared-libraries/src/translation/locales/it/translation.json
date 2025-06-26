@@ -161,6 +161,7 @@
   "repeat_post_every": "Ripeti post ogni...",
   "use_this_media": "Usa questo media",
   "create_new_post": "Crea nuovo post",
+  "update_post": "Aggiorna post esistente",
   "merge_comments_into_one_post": "Unisci i commenti in un unico post",
   "accounts_that_will_engage": "Account che interagiranno:",
   "day": "Giorno",
@@ -186,6 +187,8 @@
   "please_add_the_following_command_in_your_chat": "Per favore aggiungi il seguente comando nella tua chat:",
   "copy": "Copia",
   "settings": "Impostazioni",
+  "integrations": "Integrazioni",
+  "add_integration": "Aggiungi integrazione",
   "you_are_now_editing_only": "Ora stai modificando solo",
   "tag_a_company": "Tagga un'azienda",
   "video_length_is_invalid_must_be_up_to": "La durata del video non è valida, deve essere fino a",
@@ -421,7 +424,7 @@
   "enable_color_picker": "Abilita selettore colore",
   "cancel_the_color_picker": "Annulla il selettore colore",
   "no_content_yet": "Nessun contenuto ancora",
-  "write_your_reply": "Scrivi la tua risposta...",
+  "write_your_reply": "Scrivi il tuo post...",
   "add_a_tag": "Aggiungi un'etichetta",
   "add_to_calendar": "Aggiungi al calendario",
   "select_channels_from_circles": "Seleziona i canali dai cerchi sopra",
@@ -483,5 +486,10 @@
   "start_7_days_free_trial": "Inizia la prova gratuita di 7 giorni",
   "change_language": "Cambia lingua",
   "that_a_wrap": "È tutto!\n\nSe ti è piaciuto questo thread:\n\n1. Seguimi su @{{username}} per altri contenuti come questo\n2. Ritwitta il tweet qui sotto per condividere questo thread con il tuo pubblico\n",
-  "post_as_images_carousel": "Pubblica come carosello di immagini"
+  "post_as_images_carousel": "Pubblica come carosello di immagini",
+  "save_set": "Salva set",
+  "separate_post": "Separa il post in più post",
+  "label_who_can_reply_to_this_post": "Chi può rispondere a questo post?",
+  "delete_integration": "Elimina integrazione",
+  "start_writing_your_post": "Inizia a scrivere il tuo post per un'anteprima"
 }
