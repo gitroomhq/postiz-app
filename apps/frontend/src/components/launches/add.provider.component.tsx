@@ -602,6 +602,10 @@ export const AddProviderComponent: FC<{
                       <div>
                         {item.identifier === 'youtube' ? (
                           <img src={`/icons/platforms/youtube.svg`} />
+                        ) : item.identifier === 'gbp' ? (
+                          <img 
+                          className="w-[32px] h-[32px] rounded-full"
+                          src={`/icons/platforms/gbp.png`} />
                         ) : (
                           <img
                             className="w-[32px] h-[32px] rounded-full"
@@ -609,7 +613,7 @@ export const AddProviderComponent: FC<{
                           />
                         )}
                       </div>
-                      <div className="whitespace-pre-wrap text-center">
+                     <div className="whitespace-pre-wrap text-center">
                         {item.name}
                         {!!item.toolTip && (
                           <svg
