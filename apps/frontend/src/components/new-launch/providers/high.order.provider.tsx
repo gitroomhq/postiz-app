@@ -4,6 +4,7 @@ import React, {
   FC,
   forwardRef,
   useCallback,
+  useEffect,
   useImperativeHandle,
   useMemo,
 } from 'react';
@@ -59,6 +60,8 @@ export const withProvider = function <T extends object>(
       isGlobal,
       tab,
       setTab,
+      setTotalChars,
+      justCurrent,
     } = useLaunchStore(
       useShallow((state) => ({
         date: state.date,
@@ -67,14 +70,38 @@ export const withProvider = function <T extends object>(
         global: state.global,
         internal: state.internal.find((p) => p.integration.id === props.id),
         integrations: state.selectedIntegrations,
+        justCurrent: state.current,
         current: state.current === props.id,
         isGlobal: state.current === 'global',
         setCurrent: state.setCurrent,
+        setTotalChars: state.setTotalChars,
         selectedIntegration: state.selectedIntegrations.find(
           (p) => p.integration.id === props.id
         ),
       }))
     );
+
+    useEffect(() => {
+      if (!setTotalChars) {
+        return;
+      }
+
+      if (isGlobal) {
+        setTotalChars(0);
+      }
+
+      if (current) {
+        setTotalChars(
+          typeof maximumCharacters === 'number'
+            ? maximumCharacters
+            : maximumCharacters(
+                JSON.parse(
+                  selectedIntegration.integration.additionalSettings || '[]'
+                )
+              )
+        );
+      }
+    }, [justCurrent, current, isGlobal, setTotalChars]);
 
     const getInternalPlugs = useCallback(async () => {
       return (
@@ -207,7 +234,12 @@ export const withProvider = function <T extends object>(
 
             {(tab === 0 || !SettingsComponent) &&
               !value?.[0]?.content?.length && (
-                <div>{t('start_writing_your_post', 'Start writing your post for a preview')}</div>
+                <div>
+                  {t(
+                    'start_writing_your_post',
+                    'Start writing your post for a preview'
+                  )}
+                </div>
               )}
             {(tab === 0 || !SettingsComponent) &&
               !!value?.[0]?.content?.length &&

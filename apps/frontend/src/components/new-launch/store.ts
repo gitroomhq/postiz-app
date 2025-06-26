@@ -27,6 +27,7 @@ interface StoreState {
   date: dayjs.Dayjs;
   repeater?: number;
   isCreateSet: boolean;
+  totalChars: number;
   tags: { label: string; value: string }[];
   tab: 0 | 1;
   current: string;
@@ -100,11 +101,13 @@ interface StoreState {
   setRepeater: (repeater: number) => void;
   setTags: (tags: { label: string; value: string }[]) => void;
   setIsCreateSet: (isCreateSet: boolean) => void;
+  setTotalChars?: (totalChars: number) => void;
 }
 
 const initialState = {
   date: dayjs(),
   tags: [] as { label: string; value: string }[],
+  totalChars: 0,
   tab: 0 as 0,
   isCreateSet: false,
   current: 'global',
@@ -444,5 +447,9 @@ export const useLaunchStore = create<StoreState>()((set) => ({
           ? { ...item, integrationValue: value }
           : item
       ),
+    })),
+  setTotalChars: (totalChars: number) =>
+    set((state) => ({
+      totalChars,
     })),
 }));

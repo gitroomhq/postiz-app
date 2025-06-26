@@ -55,6 +55,7 @@ export const EditorWrapper: FC<{
     setGlobalValue,
     setInternalValue,
     internalFromAll,
+    totalChars
   } = useLaunchStore(
     useShallow((state) => ({
       internal: state.internal.find((p) => p.integration.id === state.current),
@@ -75,6 +76,7 @@ export const EditorWrapper: FC<{
       deleteInternalValue: state.deleteInternalValue,
       setGlobalValue: state.setGlobalValue,
       setInternalValue: state.setInternalValue,
+      totalChars: state.totalChars,
     }))
   );
 
@@ -271,6 +273,7 @@ export const EditorWrapper: FC<{
             autoComplete={canEdit}
             validateChars={true}
             identifier={internalFromAll?.identifier || 'global'}
+            totalChars={totalChars}
           />
         </div>
         <div className="flex flex-col items-center gap-[10px]">
@@ -337,6 +340,7 @@ export const Editor: FC<{
   autoComplete?: boolean;
   validateChars?: boolean;
   identifier?: string;
+  totalChars?: number;
 }> = (props) => {
   const {
     allValues,
@@ -446,6 +450,9 @@ export const Editor: FC<{
             onClose={() => {}}
           />
         )}
+      </div>
+      <div className={clsx("text-end text-sm mt-1", props.value.length > props.totalChars && "!text-red-500")}>
+        {props.value.length}/{props.totalChars}
       </div>
     </>
   );

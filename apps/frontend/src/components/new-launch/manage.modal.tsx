@@ -176,10 +176,16 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
         const sliceNeeded = checkAllValid.filter((p: any) => {
           return p.values.some((a: any) => {
-            return (
-              countCharacters(a.content, p?.integration?.identifier || '') >
-              (p.maximumCharacters || 1000000)
+            const weightedLength = countCharacters(
+              a.content,
+              p?.integration?.identifier || ''
             );
+            const totalCharacters =
+              weightedLength > a.content.length
+                ? weightedLength
+                : a.content.length;
+
+            return totalCharacters > (p.maximumCharacters || 1000000);
           });
         });
 
