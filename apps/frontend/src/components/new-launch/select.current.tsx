@@ -61,7 +61,6 @@ export const SelectCurrent: FC = () => {
 
   const contentRef = useRef<HTMLDivElement>(null);
   const hasScroll = useHasScroll(contentRef);
-  console.log(hasScroll);
 
   useEffect(() => {
     if (!hide) {

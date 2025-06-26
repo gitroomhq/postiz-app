@@ -140,7 +140,6 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         });
 
         for (const item of notEnoughChars) {
-          console.log('no enough');
           toaster.show(
             '' +
               item.integration.name +
