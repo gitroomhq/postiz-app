@@ -24,7 +24,7 @@ export class FarcasterProvider
   name = 'Warpcast';
   isBetweenSteps = false;
   isWeb3 = true;
-  scopes = [];
+  scopes = [] as string[];
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     return {

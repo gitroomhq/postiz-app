@@ -38,6 +38,7 @@ import { WhatsappService } from '@gitroom/nestjs-libraries/whatsapp/whatsapp.ser
 import { PublicaController } from '@gitroom/backend/api/routes/publica.controller';
 import { PhoneNumberController } from '@gitroom/backend/api/routes/phone.number.controller';
 import { SetsController } from '@gitroom/backend/api/routes/sets.controller';
+import { ThirdPartyController } from '@gitroom/backend/api/routes/third-party.controller';
 
 const authenticatedController = [
   UsersController,
@@ -57,6 +58,7 @@ const authenticatedController = [
   AutopostController,
   PhoneNumberController,
   SetsController,
+  ThirdPartyController,
 ];
 @Module({
   imports: [UploadModule],

@@ -31,9 +31,20 @@ export const getUppyUploadPlugin = (
           shouldUseMultipart: (file: any) => true,
           endpoint: '',
           createMultipartUpload: async (file: any) => {
-            const arrayBuffer = await new Response(file.data).arrayBuffer();
-            const fileHash = sha256(Buffer.from(arrayBuffer));
+            let fileHash = '';
             const contentType = file.type;
+            
+            // Skip hash calculation for files larger than 100MB to avoid "Invalid array length" error
+            if (file.size <= 100 * 1024 * 1024) {
+              try {
+                const arrayBuffer = await new Response(file.data).arrayBuffer();
+                fileHash = sha256(Buffer.from(arrayBuffer));
+              } catch (error) {
+                console.warn('Failed to calculate file hash, proceeding without hash:', error);
+                fileHash = '';
+              }
+            }
+            
             return fetchUploadApiEndpoint(fetch, 'create-multipart-upload', {
               file,
               fileHash,

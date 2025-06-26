@@ -452,6 +452,9 @@ export const LaunchesComponent = () => {
                   {sortedIntegrations?.length > 0 &&
                     user?.tier?.ai &&
                     billingEnabled && <GeneratorComponent />}
+                  <div className="mt-[5px]">
+                    {process.env.VERSION ? `v${process.env.VERSION}` : ''}
+                  </div>
                 </div>
               </div>
               <div className="flex-1 flex flex-col gap-[14px]">

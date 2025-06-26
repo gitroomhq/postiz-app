@@ -10,8 +10,8 @@ importers:
   .:
     dependencies:
       '@atproto/api':
-        specifier: ^0.14.21
-        version: 0.14.22
+        specifier: ^0.15.15
+        version: 0.15.15
       '@aws-sdk/client-s3':
         specifier: ^3.787.0
         version: 3.823.0
@@ -35,7 +35,7 @@ importers:
         version: 1.8.13(@ag-ui/client@0.0.28)(@ag-ui/core@0.0.28)(@ag-ui/encoder@0.0.28)(@ag-ui/proto@0.0.28)(@aws-crypto/sha256-js@5.2.0)(@aws-sdk/client-s3@3.823.0)(@aws-sdk/credential-provider-node@3.823.0)(@browserbasehq/sdk@2.6.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.52.0)(bufferutil@4.0.9)(deepmerge@4.3.1)(dotenv@16.5.0)(openai@4.104.0(ws@8.18.2(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.25.49))(utf-8-validate@5.0.10)(zod@3.25.49))(@ibm-cloud/watsonx-ai@1.6.7)(@smithy/util-utf8@2.3.0)(axios@1.9.0)(cheerio@1.0.0)(crypto-js@4.2.0)(fast-xml-parser@4.5.3)(google-auth-library@9.15.1)(googleapis@137.1.0)(html-to-text@9.0.5)(ibm-cloud-sdk-core@5.4.0)(ignore@5.3.2)(ioredis@5.6.1)(jsdom@22.1.0(bufferutil@4.0.9)(canvas@2.11.2)(utf-8-validate@5.0.10))(jsonwebtoken@9.0.2)(lodash@4.17.21)(playwright@1.52.0)(react@18.3.1)(redis@4.7.1)(weaviate-client@3.6.0)(ws@8.18.2(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       '@hookform/resolvers':
         specifier: ^3.3.4
-        version: 3.10.0(react-hook-form@7.57.0(react@18.3.1))
+        version: 3.10.0(react-hook-form@7.58.1(react@18.3.1))
       '@langchain/community':
         specifier: ^0.3.40
         version: 0.3.45(@aws-crypto/sha256-js@5.2.0)(@aws-sdk/client-s3@3.823.0)(@aws-sdk/credential-provider-node@3.823.0)(@browserbasehq/sdk@2.6.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.52.0)(bufferutil@4.0.9)(deepmerge@4.3.1)(dotenv@16.5.0)(openai@4.104.0(ws@8.18.2(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.25.49))(utf-8-validate@5.0.10)(zod@3.25.49))(@ibm-cloud/watsonx-ai@1.6.7)(@langchain/core@0.3.57(openai@4.104.0(ws@8.18.2(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.25.49)))(@smithy/util-utf8@2.3.0)(axios@1.9.0)(cheerio@1.0.0)(crypto-js@4.2.0)(fast-xml-parser@4.5.3)(google-auth-library@9.15.1)(googleapis@137.1.0)(html-to-text@9.0.5)(ibm-cloud-sdk-core@5.4.0)(ignore@5.3.2)(ioredis@5.6.1)(jsdom@22.1.0(bufferutil@4.0.9)(canvas@2.11.2)(utf-8-validate@5.0.10))(jsonwebtoken@9.0.2)(lodash@4.17.21)(openai@4.104.0(ws@8.18.2(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.25.49))(playwright@1.52.0)(redis@4.7.1)(weaviate-client@3.6.0)(ws@8.18.2(bufferutil@4.0.9)(utf-8-validate@5.0.10))
@@ -412,8 +412,8 @@ importers:
         specifier: ^14.3.5
         version: 14.3.8(react@18.3.1)
       react-hook-form:
-        specifier: ^7.50.1
-        version: 7.57.0(react@18.3.1)
+        specifier: ^7.58.1
+        version: 7.58.1(react@18.3.1)
       react-i18next:
         specifier: ^15.5.2
         version: 15.5.2(i18next@25.2.1(typescript@5.5.4))(react-dom@18.3.1(react@18.3.1))(react-native@0.79.2(@babel/core@7.27.4)(@types/react@18.3.1)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@5.0.10))(react@18.3.1)(typescript@5.5.4)
@@ -530,10 +530,10 @@ importers:
         version: 1.6.1
       zod:
         specifier: ^3.24.1
-        version: 3.25.49
-      zod-to-json-schema:
-        specifier: ^3.24.5
-        version: 3.24.5(zod@3.25.49)
+        version: 3.24.4
+      zustand:
+        specifier: ^5.0.5
+        version: 5.0.5(@types/react@18.3.1)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.5.0(react@18.3.1))
     devDependencies:
       '@crxjs/vite-plugin':
         specifier: ^2.0.0-beta.32
@@ -871,8 +871,8 @@ packages:
   '@anthropic-ai/sdk@0.27.3':
     resolution: {integrity: sha512-IjLt0gd3L4jlOfilxVXTifn42FnVffMgDC04RJK1KDZpmkBWLv0XC92MVVmkxrFZNS/7l3xWgP/I3nqtX1sQHw==}
 
-  '@atproto/api@0.14.22':
-    resolution: {integrity: sha512-ziXPau+sUdFovObSnsoN7JbOmUw1C5e5L28/yXf3P8vbEnSS3HVVGD1jYcscBYY34xQqi4bVDpwMYx/4yRsTuQ==}
+  '@atproto/api@0.15.15':
+    resolution: {integrity: sha512-Wn8jv76pCvffnkNj68w0CGZ3PT4DJGM8DUZnYq9kEW2im6jbRBYI0yYrHNhSiE92A5Ox0HjL2jMhalsI2p9VlQ==}
 
   '@atproto/common-web@0.4.2':
     resolution: {integrity: sha512-vrXwGNoFGogodjQvJDxAeP3QbGtawgZute2ed1XdRO0wMixLk3qewtikZm06H259QDJVu6voKC5mubml+WgQUw==}
@@ -883,8 +883,8 @@ packages:
   '@atproto/syntax@0.4.0':
     resolution: {integrity: sha512-b9y5ceHS8YKOfP3mdKmwAx5yVj9294UN7FG2XzP6V5aKUdFazEYRnR9m5n5ZQFKa3GNvz7de9guZCJ/sUTcOAA==}
 
-  '@atproto/xrpc@0.6.12':
-    resolution: {integrity: sha512-Ut3iISNLujlmY9Gu8sNU+SPDJDvqlVzWddU8qUr0Yae5oD4SguaUFjjhireMGhQ3M5E0KljQgDbTmnBo1kIZ3w==}
+  '@atproto/xrpc@0.7.0':
+    resolution: {integrity: sha512-SfhP9dGx2qclaScFDb58Jnrmim5nk4geZXCqg6sB0I/KZhZEkr9iIx1hLCp+sxkIfEsmEJjeWO4B0rjUIJW5cw==}
 
   '@aws-crypto/crc32@5.2.0':
     resolution: {integrity: sha512-nLbCWqQNgUiwwtFsen1AdzAtvuLRsQS8rYgMuxCrdKf9kOssamGLuPwyTY9wyYblNr9+1XM8v6zoDTPPSIeANg==}
@@ -12996,8 +12996,8 @@ packages:
   react-fast-compare@3.2.2:
     resolution: {integrity: sha512-nsO+KSNgo1SbJqJEYRE9ERzo7YtYbou/OqjSQKxV7jcKox7+usiUVZOAC+XnDOABXggQTno0Y1CpVnuWEc1boQ==}
 
-  react-hook-form@7.57.0:
-    resolution: {integrity: sha512-RbEks3+cbvTP84l/VXGUZ+JMrKOS8ykQCRYdm5aYsxnDquL0vspsyNhGRO7pcH6hsZqWlPOjLye7rJqdtdAmlg==}
+  react-hook-form@7.58.1:
+    resolution: {integrity: sha512-Lml/KZYEEFfPhUVgE0RdCVpnC4yhW+PndRhbiTtdvSlQTL8IfVR+iQkBjLIvmmc6+GGoVeM11z37ktKFPAb0FA==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       react: ^16.8.0 || ^17 || ^18 || ^19
@@ -15659,8 +15659,26 @@ packages:
   zod@3.22.4:
     resolution: {integrity: sha512-iC+8Io04lddc+mVqQ9AZ7OQ2MrUKGN+oIQyq1vemgt46jwCwLfhq7/pwnBnNXXXZb8VTVLKwp9EDkx+ryxIWmg==}
 
-  zod@3.25.49:
-    resolution: {integrity: sha512-JMMPMy9ZBk3XFEdbM3iL1brx4NUSejd6xr3ELrrGEfGb355gjhiAWtG3K5o+AViV/3ZfkIrCzXsZn6SbLwTR8Q==}
+  zod@3.24.4:
+    resolution: {integrity: sha512-OdqJE9UDRPwWsrHjLN2F8bPxvwJBK22EHLWtanu0LSYr5YqzsaaW3RMgmjwr8Rypg5k+meEJdSPXJZXE/yqOMg==}
+
+  zustand@5.0.5:
+    resolution: {integrity: sha512-mILtRfKW9xM47hqxGIxCv12gXusoY/xTSHBYApXozR0HmQv299whhBeeAcRy+KrPPybzosvJBCOmVjq6x12fCg==}
+    engines: {node: '>=12.20.0'}
+    peerDependencies:
+      '@types/react': '>=18.0.0'
+      immer: '>=9.0.6'
+      react: '>=18.0.0'
+      use-sync-external-store: '>=1.2.0'
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      immer:
+        optional: true
+      react:
+        optional: true
+      use-sync-external-store:
+        optional: true
 
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
@@ -15898,12 +15916,12 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  '@atproto/api@0.14.22':
+  '@atproto/api@0.15.15':
     dependencies:
       '@atproto/common-web': 0.4.2
       '@atproto/lexicon': 0.4.11
       '@atproto/syntax': 0.4.0
-      '@atproto/xrpc': 0.6.12
+      '@atproto/xrpc': 0.7.0
       await-lock: 2.2.2
       multiformats: 9.9.0
       tlds: 1.259.0
@@ -15926,10 +15944,10 @@ snapshots:
 
   '@atproto/syntax@0.4.0': {}
 
-  '@atproto/xrpc@0.6.12':
+  '@atproto/xrpc@0.7.0':
     dependencies:
       '@atproto/lexicon': 0.4.11
-      zod: 3.25.49
+      zod: 3.24.4
 
   '@aws-crypto/crc32@5.2.0':
     dependencies:
@@ -17994,9 +18012,9 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
       use-sync-external-store: 1.5.0(react@18.3.1)
 
-  '@hookform/resolvers@3.10.0(react-hook-form@7.57.0(react@18.3.1))':
+  '@hookform/resolvers@3.10.0(react-hook-form@7.58.1(react@18.3.1))':
     dependencies:
-      react-hook-form: 7.57.0(react@18.3.1)
+      react-hook-form: 7.58.1(react@18.3.1)
 
   '@humanwhocodes/config-array@0.11.14':
     dependencies:
@@ -32189,7 +32207,7 @@ snapshots:
 
   react-fast-compare@3.2.2: {}
 
-  react-hook-form@7.57.0(react@18.3.1):
+  react-hook-form@7.58.1(react@18.3.1):
     dependencies:
       react: 18.3.1
 
@@ -35284,6 +35302,13 @@ snapshots:
 
   zod@3.22.4: {}
 
-  zod@3.25.49: {}
+  zod@3.24.4: {}
+
+  zustand@5.0.5(@types/react@18.3.1)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.5.0(react@18.3.1)):
+    optionalDependencies:
+      '@types/react': 18.3.1
+      immer: 9.0.21
+      react: 18.3.1
+      use-sync-external-store: 1.5.0(react@18.3.1)
 
   zwitch@2.0.4: {}
