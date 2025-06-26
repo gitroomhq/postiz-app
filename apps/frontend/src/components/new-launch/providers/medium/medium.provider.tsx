@@ -10,33 +10,9 @@ import { MediumSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/provider
 import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import clsx from 'clsx';
 import MDEditor from '@uiw/react-md-editor';
-import localFont from 'next/font/local';
 import { Canonical } from '@gitroom/react/form/canonical';
 import interClass from '@gitroom/react/helpers/inter.font';
-const charter = localFont({
-  src: [
-    {
-      path: './fonts/Charter Regular.ttf',
-      weight: 'normal',
-      style: 'normal',
-    },
-    {
-      path: './fonts/Charter Italic.ttf',
-      weight: 'normal',
-      style: 'italic',
-    },
-    {
-      path: './fonts/Charter Bold.ttf',
-      weight: '700',
-      style: 'normal',
-    },
-    {
-      path: './fonts/Charter Bold Italic.ttf',
-      weight: '700',
-      style: 'italic',
-    },
-  ],
-});
+
 const MediumPreview: FC = () => {
   const { value } = useIntegration();
   const settings = useSettings();
@@ -59,7 +35,6 @@ const MediumPreview: FC = () => {
             whiteSpace: 'pre-wrap',
             color: '#242424',
           }}
-          className={charter.className}
           skipHtml={true}
           source={value.map((p) => p.content).join('\n')}
         />

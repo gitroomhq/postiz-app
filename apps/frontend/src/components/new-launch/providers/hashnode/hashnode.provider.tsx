@@ -11,12 +11,9 @@ import { useIntegration } from '@gitroom/frontend/components/launches/helpers/us
 import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
 import clsx from 'clsx';
 import MDEditor from '@uiw/react-md-editor';
-import { Plus_Jakarta_Sans } from 'next/font/google';
 import { MediaComponent } from '@gitroom/frontend/components/media/media.component';
 import { Canonical } from '@gitroom/react/form/canonical';
-const font = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-});
+
 const HashnodePreview: FC = () => {
   const { value } = useIntegration();
   const settings = useSettings();
@@ -29,7 +26,6 @@ const HashnodePreview: FC = () => {
   return (
     <div
       className={clsx(
-        font.className,
         'text-center text-black flex h-[1000px] w-[699.8px] rounded-[10px] bg-white overflow-hidden overflow-y-auto flex-col gap-[32px]'
       )}
     >
@@ -56,7 +52,6 @@ const HashnodePreview: FC = () => {
             whiteSpace: 'pre-wrap',
             color: 'black',
           }}
-          className={font.className}
           skipHtml={true}
           source={value.map((p) => p.content).join('\n')}
         />

@@ -9,19 +9,11 @@ import { SelectOrganization } from '@gitroom/frontend/components/new-launch/prov
 import { DevtoTags } from '@gitroom/frontend/components/new-launch/providers/devto/devto.tags';
 import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
 import clsx from 'clsx';
-import localFont from 'next/font/local';
 import MDEditor from '@uiw/react-md-editor';
 import { Canonical } from '@gitroom/react/form/canonical';
 import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 
-const font = localFont({
-  src: [
-    {
-      path: './fonts/SFNS.woff2',
-    },
-  ],
-});
 const DevtoPreview: FC = () => {
   const { value } = useIntegration();
   const settings = useSettings();
@@ -34,7 +26,6 @@ const DevtoPreview: FC = () => {
   return (
     <div
       className={clsx(
-        font.className,
         'font-[800] flex h-[1000px] w-[699.8px] rounded-[10px] bg-customColor32 overflow-hidden overflow-y-auto flex-col gap-[32px]'
       )}
     >
@@ -60,7 +51,6 @@ const DevtoPreview: FC = () => {
           style={{
             whiteSpace: 'pre-wrap',
           }}
-          className={font.className}
           skipHtml={true}
           source={value.map((p) => p.content).join('\n')}
         />
