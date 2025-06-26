@@ -9,9 +9,9 @@ export class FacebookInsightsTask {
 	constructor(
 		private _facebookInsightsRepository: PrismaRepository<'facebookInsight'>,
 	) { }
+	@Cron('* * * * *') // for every minute
 
-	@Cron('0 0 * * *') // Runs at midnight
-	//@Cron('* * * * *') // Runs every minute (for testing)
+	//@Cron('0 0 * * *') // Runs every day at midnight
 	async handleFacebookInsights() {
 		console.log('⏰ Facebook Insights Cron job triggered');
 
@@ -20,27 +20,25 @@ export class FacebookInsightsTask {
 			const pagesResponse = await axios.get(
 				`https://graph.facebook.com/v19.0/me/accounts?access_token=${process.env.FACEBOOK_ACCESS_TOKEN}`
 			);
-
-			const pages = pagesResponse.data.data;
+			const pages = pagesResponse.data?.data || [];
 
 			if (!pages.length) {
 				console.log('❌ No Facebook pages found.');
 				return;
 			}
 
-			// Step 2: Get our stored integrations to match with Facebook pages
+			// Step 2: Get integrations to map internalId
 			const integrationsRes = await axios.get(`${process.env.BACKEND_INTERNAL_URL}/integrations/list`, {
 				headers: {
 					'cookie': process.env.INTERNEL_TOKEN,
 					'Content-Type': 'application/json'
 				}
 			});
-
 			const integrations = integrationsRes.data?.integrations || [];
 
 			for (const page of pages) {
 				try {
-					// Find matching integration
+					// Step 3: Match page.id with internalId
 					const integration = integrations.find(
 						(i) => i.identifier === 'facebook' && i.internalId === page.id
 					);
@@ -51,20 +49,20 @@ export class FacebookInsightsTask {
 					}
 
 					const organizationId = integration.customer?.orgId;
-					const pageAccessToken = page.access_token; // Use the page-specific token
+					const internalId = integration.internalId;
+					const pageAccessToken = page.access_token;
 
-					// Get yesterday's date range
 					const yesterday = subDays(new Date(), 1);
 					const dayStart = Math.floor(startOfDay(yesterday).getTime() / 1000);
 					const dayEnd = Math.floor(endOfDay(yesterday).getTime() / 1000);
 
-					// 1. Get basic page info (likes and followers)
+					// 1. Page likes and followers
 					const pageInfoRes = await axios.get(
 						`https://graph.facebook.com/v19.0/${page.id}?fields=fan_count,followers_count&access_token=${pageAccessToken}`
 					);
 					const { fan_count: likes = 0, followers_count: followers = 0 } = pageInfoRes.data;
 
-					// 2. Get impressions
+					// 2. Impressions
 					let impressions = 0;
 					try {
 						const impressionsRes = await axios.get(
@@ -72,10 +70,10 @@ export class FacebookInsightsTask {
 						);
 						impressions = impressionsRes.data?.data?.[0]?.values?.reduce((sum, day) => sum + (day.value || 0), 0) || 0;
 					} catch (e) {
-						console.error(`⚠️ Failed to get impressions for ${page.name}: ${e.message}`);
+						console.error(`⚠️ Impressions fetch failed for ${page.name}: ${e.message}`);
 					}
 
-					// 3. Get page views
+					// 3. Page views
 					let pageViews = 0;
 					try {
 						const pageViewsRes = await axios.get(
@@ -83,10 +81,10 @@ export class FacebookInsightsTask {
 						);
 						pageViews = pageViewsRes.data?.data?.[0]?.values?.reduce((sum, day) => sum + (day.value || 0), 0) || 0;
 					} catch (e) {
-						console.error(`⚠️ Failed to get page views for ${page.name}: ${e.message}`);
+						console.error(`⚠️ Page views fetch failed for ${page.name}: ${e.message}`);
 					}
 
-					// 4. Get published posts count
+					// 4. Published posts count
 					let totalContent = 0;
 					try {
 						const postsRes = await axios.get(
@@ -94,27 +92,27 @@ export class FacebookInsightsTask {
 						);
 						totalContent = postsRes.data?.data?.length || 0;
 					} catch (e) {
-						console.error(`⚠️ Failed to get posts for ${page.name}: ${e.message}`);
+						console.error(`⚠️ Posts fetch failed for ${page.name}: ${e.message}`);
 					}
 
 					const month = new Date().toISOString().slice(0, 7);
 
-					console.log(`📤 Inserting Facebook insights for page ${page.id}, org ${organizationId}`);
-
+					// ✅ Step 5: Store insight with internalId
 					await this._facebookInsightsRepository.model.facebookInsight.create({
 						data: {
-							pageId: page.id,
+							businessId: page.id,
+							//internalId, // ✅ Add internalId to your DB
 							organizationId,
 							month,
 							likes,
 							followers,
 							impressions,
 							pageViews,
-							totalContent
+							totalContent,
 						},
 					});
 
-					console.log(`✅ Inserted Facebook insight for ${page.name} at ${new Date().toISOString()}`);
+					console.log(`✅ Inserted Facebook insight for ${page.name} (internalId: ${internalId})`);
 				} catch (innerError) {
 					const error = innerError as AxiosError;
 					console.error(`⚠️ Failed to process ${page.name}: ${error.message}`);
@@ -127,7 +125,7 @@ export class FacebookInsightsTask {
 				}
 			}
 		} catch (error) {
-			console.error(`❌ Failed to fetch Facebook pages or process insights: ${error.message}`);
+			console.error(`❌ Facebook cron job failed: ${error.message}`);
 		}
 	}
 }

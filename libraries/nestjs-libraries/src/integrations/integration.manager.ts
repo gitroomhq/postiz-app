@@ -136,7 +136,7 @@ export class IntegrationManager {
 
   async setSocialIntegrationConfig(socialIntegration: SocialProvider, orgId: string | null | undefined, customerId: string | null | undefined): Promise<void> {
 
-    if (socialIntegration && orgId) {
+    if (socialIntegration && orgId ) {
       try {
         // Fetch the platform configuration using `await`
         const config = await this._socialMediaPlatformConfigService.getPlatformConfig(
