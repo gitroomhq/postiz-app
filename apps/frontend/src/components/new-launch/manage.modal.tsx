@@ -340,7 +340,6 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                     <Button
                       className="rounded-[4px] relative group"
                       disabled={selectedIntegrations.length === 0 || loading}
-                      loading={loading}
                       onClick={schedule('schedule')}
                     >
                       <div className="flex justify-center items-center gap-[5px] h-full">
