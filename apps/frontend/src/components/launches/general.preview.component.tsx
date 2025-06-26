@@ -6,10 +6,13 @@ import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
 import { FC } from 'react';
 import { textSlicer } from '@gitroom/helpers/utils/count.length';
 import interClass from '@gitroom/react/helpers/inter.font';
+import Image from 'next/image';
+import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 export const GeneralPreviewComponent: FC<{
   maximumCharacters?: number;
 }> = (props) => {
   const { value: topValue, integration } = useIntegration();
+  const current = useLaunchStore((state) => state.current);
   const mediaDir = useMediaDirectory();
   const newValues = useFormatting(topValue, {
     removeMarkdown: true,
@@ -41,11 +44,23 @@ export const GeneralPreviewComponent: FC<{
             )}
           >
             <div className="w-[40px] flex flex-col items-center">
-              <img
-                src={integration?.picture || '/no-picture.jpg'}
-                alt="x"
-                className="rounded-full relative z-[2]"
-              />
+              <div className="relative">
+                <img
+                  src={current === 'global' ? '/no-picture.jpg' : (integration?.picture || '/no-picture.jpg')}
+                  alt="x"
+                  className="rounded-full relative z-[2]"
+                />
+
+                {current !== 'global' && (
+                  <Image
+                    src={`/icons/platforms/${integration?.identifier}.png`}
+                    className="rounded-full absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
+                    alt={integration.identifier}
+                    width={20}
+                    height={20}
+                  />
+                )}
+              </div>
               {index !== topValue.length - 1 && (
                 <div className="flex-1 w-[2px] h-[calc(100%-10px)] bg-customColor25 absolute top-[10px] z-[1]" />
               )}
@@ -53,7 +68,7 @@ export const GeneralPreviewComponent: FC<{
             <div className="flex-1 flex flex-col gap-[4px]">
               <div className="flex">
                 <div className="h-[22px] text-[15px] font-[700]">
-                  {integration?.name}
+                  {current === 'global' ? 'Global Edit' : integration?.name}
                 </div>
                 <div className="text-[15px] text-customColor26 mt-[1px] ms-[2px]">
                   <svg
@@ -69,7 +84,7 @@ export const GeneralPreviewComponent: FC<{
                   </svg>
                 </div>
                 <div className="text-[15px] font-[400] text-customColor27 ms-[4px]">
-                  {integration?.display || '@username'}
+                  {current === 'global' ? '' : integration?.display || '@username'}
                 </div>
               </div>
               <pre

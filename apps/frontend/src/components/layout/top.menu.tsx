@@ -51,6 +51,11 @@ export const useMenuItems = () => {
       path: '/plugs',
     },
     {
+      name: t('integrations', 'Integrations'),
+      icon: 'integrations',
+      path: '/third-party',
+    },
+    {
       name: t('billing', 'Billing'),
       icon: 'billing',
       path: '/billing',
@@ -80,7 +85,7 @@ export const TopMenu: FC = () => {
   const menuItems = useMenuItems();
   return (
     <div className="flex flex-col h-full animate-normalFadeDown order-3 md:order-2 col-span-2 md:col-span-1">
-      <ul className="gap-0 md:gap-5 flex flex-1 items-center text-[18px]">
+      <ul className="gap-0 md:gap-1 flex flex-1 items-center text-[18px]">
         {menuItems
           .filter((f) => {
             if (f.hide) {

@@ -38,7 +38,7 @@ export class PostsController {
     private _starsService: StarsService,
     private _messagesService: MessagesService,
     private _agentGraphService: AgentGraphService,
-    private _shortLinkService: ShortLinkService
+    private _shortLinkService: ShortLinkService,
   ) {}
 
   @Get('/:id/statistics')

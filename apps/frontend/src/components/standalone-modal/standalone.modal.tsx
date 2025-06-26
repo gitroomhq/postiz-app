@@ -4,9 +4,9 @@ import 'reflect-metadata';
 import { FC, useCallback } from 'react';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import { AddEditModal } from '@gitroom/frontend/components/launches/add.edit.model';
 import dayjs from 'dayjs';
 import { usePathname } from 'next/navigation';
+import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
 export const StandaloneModal: FC = () => {
   const fetch = useFetch();
   const params = usePathname();
