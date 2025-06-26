@@ -185,7 +185,7 @@ export const EditorWrapper: FC<{
       setLoaded(false);
       addRemoveInternal(current);
     }
-  }, []);
+  }, [addRemoveInternal, current]);
 
   const addValue = useCallback(
     (index: number) => () => {
