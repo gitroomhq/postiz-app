@@ -1,10 +1,10 @@
 import { Command, Positional } from 'nestjs-command';
 import { Injectable } from '@nestjs/common';
-import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/client';
+import { BullMqClient } from '@chaolaolo/nestjs-libraries/bull-mq-transport-new/client';
 
 @Injectable()
 export class CheckStars {
-  constructor(private _workerServiceProducer: BullMqClient) {}
+  constructor(private _workerServiceProducer: BullMqClient) { }
   @Command({
     command: 'sync:stars <login>',
     describe: 'Sync stars for a login',

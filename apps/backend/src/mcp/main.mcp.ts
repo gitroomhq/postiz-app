@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { McpTool } from '@gitroom/nestjs-libraries/mcp/mcp.tool';
-import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
+import { McpTool } from '@chaolaolo/nestjs-libraries/mcp/mcp.tool';
+import { IntegrationService } from '@chaolaolo/nestjs-libraries/database/prisma/integrations/integration.service';
 import { string, array, enum as eenum, object, boolean } from 'zod';
-import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { PostsService } from '@chaolaolo/nestjs-libraries/database/prisma/posts/posts.service';
+import { makeId } from '@chaolaolo/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
-import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
+import { OpenaiService } from '@chaolaolo/nestjs-libraries/openai/openai.service';
 
 @Injectable()
 export class MainMcp {
@@ -13,7 +13,7 @@ export class MainMcp {
     private _integrationService: IntegrationService,
     private _postsService: PostsService,
     private _openAiService: OpenaiService
-  ) {}
+  ) { }
 
   @McpTool({ toolName: 'POSTIZ_GET_CONFIG_ID' })
   async preRun() {
@@ -38,9 +38,9 @@ export class MainMcp {
       profile: org.profile,
       customer: org.customer
         ? {
-            id: org.customer.id,
-            name: org.customer.name,
-          }
+          id: org.customer.id,
+          name: org.customer.name,
+        }
         : undefined,
     }));
 
@@ -82,14 +82,14 @@ export class MainMcp {
               image: !obj.generatePictures
                 ? []
                 : [
-                    {
-                      id: makeId(10),
-                      path: await this._openAiService.generateImage(
-                        post.text,
-                        true
-                      ),
-                    },
-                  ],
+                  {
+                    id: makeId(10),
+                    path: await this._openAiService.generateImage(
+                      post.text,
+                      true
+                    ),
+                  },
+                ],
             }))
           ),
           // @ts-ignore

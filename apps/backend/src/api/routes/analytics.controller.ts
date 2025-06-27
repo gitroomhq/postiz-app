@@ -8,13 +8,13 @@ import {
   Query,
 } from '@nestjs/common';
 import { Organization } from '@prisma/client';
-import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
-import { StarsService } from '@gitroom/nestjs-libraries/database/prisma/stars/stars.service';
+import { GetOrgFromRequest } from '@chaolaolo/nestjs-libraries/user/org.from.request';
+import { StarsService } from '@chaolaolo/nestjs-libraries/database/prisma/stars/stars.service';
 import dayjs from 'dayjs';
-import { StarsListDto } from '@gitroom/nestjs-libraries/dtos/analytics/stars.list.dto';
+import { StarsListDto } from '@chaolaolo/nestjs-libraries/dtos/analytics/stars.list.dto';
 import { ApiTags } from '@nestjs/swagger';
-import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
-import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
+import { IntegrationService } from '@chaolaolo/nestjs-libraries/database/prisma/integrations/integration.service';
+import { IntegrationManager } from '@chaolaolo/nestjs-libraries/integrations/integration.manager';
 
 @ApiTags('Analytics')
 @Controller('/analytics')
@@ -22,7 +22,7 @@ export class AnalyticsController {
   constructor(
     private _starsService: StarsService,
     private _integrationService: IntegrationService
-  ) {}
+  ) { }
   @Get('/')
   async getStars(@GetOrgFromRequest() org: Organization) {
     return this._starsService.getStars(org.id);

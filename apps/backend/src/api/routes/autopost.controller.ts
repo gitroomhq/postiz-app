@@ -8,23 +8,23 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
-import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
+import { GetOrgFromRequest } from '@chaolaolo/nestjs-libraries/user/org.from.request';
 import { Organization } from '@prisma/client';
 import { ApiTags } from '@nestjs/swagger';
-import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
+import { CheckPolicies } from '@chaolaolo/backend/services/auth/permissions/permissions.ability';
 import {
   AuthorizationActions,
   Sections,
-} from '@gitroom/backend/services/auth/permissions/permissions.service';
-import { AutopostService } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.service';
-import { AutopostDto } from '@gitroom/nestjs-libraries/dtos/autopost/autopost.dto';
+} from '@chaolaolo/backend/services/auth/permissions/permissions.service';
+import { AutopostService } from '@chaolaolo/nestjs-libraries/database/prisma/autopost/autopost.service';
+import { AutopostDto } from '@chaolaolo/nestjs-libraries/dtos/autopost/autopost.dto';
 import { XMLParser, XMLBuilder, XMLValidator } from 'fast-xml-parser';
 import dayjs from 'dayjs';
 
 @ApiTags('Autopost')
 @Controller('/autopost')
 export class AutopostController {
-  constructor(private _autopostsService: AutopostService) {}
+  constructor(private _autopostsService: AutopostService) { }
 
   @Get('/')
   async getAutoposts(@GetOrgFromRequest() org: Organization) {

@@ -1,9 +1,9 @@
-import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
+import { PrismaRepository } from '@chaolaolo/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class MediaRepository {
-  constructor(private _media: PrismaRepository<'media'>) {}
+  constructor(private _media: PrismaRepository<'media'>) { }
 
   saveFile(org: string, fileName: string, filePath: string) {
     return this._media.model.media.create({

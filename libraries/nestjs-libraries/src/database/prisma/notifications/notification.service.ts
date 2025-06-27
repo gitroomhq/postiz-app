@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { NotificationsRepository } from '@gitroom/nestjs-libraries/database/prisma/notifications/notifications.repository';
-import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
-import { OrganizationRepository } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.repository';
-import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/client';
-import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
+import { NotificationsRepository } from '@chaolaolo/nestjs-libraries/database/prisma/notifications/notifications.repository';
+import { EmailService } from '@chaolaolo/nestjs-libraries/services/email.service';
+import { OrganizationRepository } from '@chaolaolo/nestjs-libraries/database/prisma/organizations/organization.repository';
+import { BullMqClient } from '@chaolaolo/nestjs-libraries/bull-mq-transport-new/client';
+import { ioRedis } from '@chaolaolo/nestjs-libraries/redis/redis.service';
 import dayjs from 'dayjs';
 
 @Injectable()
@@ -13,7 +13,7 @@ export class NotificationService {
     private _emailService: EmailService,
     private _organizationRepository: OrganizationRepository,
     private _workerServiceProducer: BullMqClient
-  ) {}
+  ) { }
 
   getMainPageCount(organizationId: string, userId: string) {
     return this._notificationRepository.getMainPageCount(

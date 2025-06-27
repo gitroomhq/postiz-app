@@ -1,4 +1,4 @@
-import { ShortLinking } from '@gitroom/nestjs-libraries/short-linking/short-linking.interface';
+import { ShortLinking } from '@chaolaolo/nestjs-libraries/short-linking/short-linking.interface';
 
 const DUB_API_ENDPOINT = process.env.DUB_API_ENDPOINT || 'https://api.dub.co';
 const DUB_SHORT_LINK_DOMAIN = process.env.DUB_SHORT_LINK_DOMAIN || 'dub.sh';
@@ -18,8 +18,7 @@ export class Dub implements ShortLinking {
       links.map(async (link) => {
         const response = await (
           await fetch(
-            `${DUB_API_ENDPOINT}/links/info?domain=${
-              this.shortLinkDomain
+            `${DUB_API_ENDPOINT}/links/info?domain=${this.shortLinkDomain
             }&key=${link.split('/').pop()}`,
             getOptions()
           )

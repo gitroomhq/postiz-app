@@ -4,18 +4,17 @@ import {
   PostDetails,
   PostResponse,
   SocialProvider,
-} from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { LinkedinProvider } from '@gitroom/nestjs-libraries/integrations/social/linkedin.provider';
+} from '@chaolaolo/nestjs-libraries/integrations/social/social.integrations.interface';
+import { makeId } from '@chaolaolo/nestjs-libraries/services/make.is';
+import { LinkedinProvider } from '@chaolaolo/nestjs-libraries/integrations/social/linkedin.provider';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
-import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
-import { timer } from '@gitroom/helpers/utils/timer';
+import { Plug } from '@chaolaolo/helpers/decorators/plug.decorator';
+import { timer } from '@chaolaolo/helpers/utils/timer';
 
 export class LinkedinPageProvider
   extends LinkedinProvider
-  implements SocialProvider
-{
+  implements SocialProvider {
   override identifier = 'linkedin-page';
   override name = 'LinkedIn Page';
   override isBetweenSteps = true;
@@ -101,11 +100,10 @@ export class LinkedinPageProvider
   override async generateAuthUrl() {
     const state = makeId(6);
     const codeVerifier = makeId(30);
-    const url = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&prompt=none&client_id=${
-      process.env.LINKEDIN_CLIENT_ID
-    }&redirect_uri=${encodeURIComponent(
-      `${process.env.FRONTEND_URL}/integrations/social/linkedin-page`
-    )}&state=${state}&scope=${encodeURIComponent(this.scopes.join(' '))}`;
+    const url = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&prompt=none&client_id=${process.env.LINKEDIN_CLIENT_ID
+      }&redirect_uri=${encodeURIComponent(
+        `${process.env.FRONTEND_URL}/integrations/social/linkedin-page`
+      )}&state=${state}&scope=${encodeURIComponent(this.scopes.join(' '))}`;
     return {
       url,
       codeVerifier,

@@ -3,26 +3,26 @@ import {
   PostDetails,
   PostResponse,
   SocialProvider,
-} from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+} from '@chaolaolo/nestjs-libraries/integrations/social/social.integrations.interface';
+import { makeId } from '@chaolaolo/nestjs-libraries/services/make.is';
 import {
   RefreshToken,
   SocialAbstract,
-} from '@gitroom/nestjs-libraries/integrations/social.abstract';
-import { 
-  BskyAgent, 
-  RichText, 
+} from '@chaolaolo/nestjs-libraries/integrations/social.abstract';
+import {
+  BskyAgent,
+  RichText,
   AppBskyEmbedVideo,
   AppBskyVideoDefs,
   AtpAgent,
-  BlobRef 
+  BlobRef
 } from '@atproto/api';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
-import { AuthService } from '@gitroom/helpers/auth/auth.service';
+import { AuthService } from '@chaolaolo/helpers/auth/auth.service';
 import sharp from 'sharp';
-import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
-import { timer } from '@gitroom/helpers/utils/timer';
+import { Plug } from '@chaolaolo/helpers/decorators/plug.decorator';
+import { timer } from '@chaolaolo/helpers/utils/timer';
 import axios from 'axios';
 
 async function reduceImageBySize(url: string, maxSizeKB = 976) {
@@ -81,11 +81,11 @@ async function uploadVideo(agent: AtpAgent, videoPath: string): Promise<AppBskyE
   const video = await downloadVideo(videoPath);
 
   console.log("Downloaded video", videoPath, video.size);
-  
+
   const uploadUrl = new URL("https://video.bsky.app/xrpc/app.bsky.video.uploadVideo");
   uploadUrl.searchParams.append("did", agent.session!.did);
   uploadUrl.searchParams.append("name", videoPath.split("/").pop()!);
-  
+
   const uploadResponse = await fetch(uploadUrl, {
     method: "POST",
     headers: {
@@ -95,12 +95,12 @@ async function uploadVideo(agent: AtpAgent, videoPath: string): Promise<AppBskyE
     },
     body: video.video
   });
-  
+
   const jobStatus = (await uploadResponse.json()) as AppBskyVideoDefs.JobStatus;
   console.log("JobId:", jobStatus.jobId);
   let blob: BlobRef | undefined = jobStatus.blob;
   const videoAgent = new AtpAgent({ service: "https://video.bsky.app" });
-  
+
   while (!blob) {
     const { data: status } = await videoAgent.app.bsky.video.getJobStatus(
       { jobId: jobStatus.jobId },
@@ -116,7 +116,7 @@ async function uploadVideo(agent: AtpAgent, videoPath: string): Promise<AppBskyE
     // wait a second
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }
-  
+
   console.log("posting video...");
 
   return {
@@ -289,17 +289,17 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
         ...(Object.keys(embed).length > 0 ? { embed } : {}),
         ...(loadCid
           ? {
-              reply: {
-                root: {
-                  uri: loadUri,
-                  cid: loadCid,
-                },
-                parent: {
-                  uri: loadUri,
-                  cid: loadCid,
-                },
+            reply: {
+              root: {
+                uri: loadUri,
+                cid: loadCid,
               },
-            }
+              parent: {
+                uri: loadUri,
+                cid: loadCid,
+              },
+            },
+          }
           : {}),
       });
 
@@ -329,17 +329,17 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
         },
         ...(loadCid
           ? {
-              reply: {
-                root: {
-                  uri: loadUri,
-                  cid: loadCid,
-                },
-                parent: {
-                  uri: loadUri,
-                  cid: loadCid,
-                },
+            reply: {
+              root: {
+                uri: loadUri,
+                cid: loadCid,
               },
-            }
+              parent: {
+                uri: loadUri,
+                cid: loadCid,
+              },
+            },
+          }
           : {}),
       });
     }

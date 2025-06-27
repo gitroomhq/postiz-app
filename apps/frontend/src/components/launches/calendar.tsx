@@ -13,7 +13,7 @@ import {
   CalendarContext,
   Integrations,
   useCalendar,
-} from '@gitroom/frontend/components/launches/calendar.context';
+} from '@chaolaolo/frontend/components/launches/calendar.context';
 import dayjs from 'dayjs';
 import 'dayjs/locale/en';
 import 'dayjs/locale/he';
@@ -32,15 +32,15 @@ import 'dayjs/locale/vi';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import { useModals } from '@mantine/modals';
 import clsx from 'clsx';
-import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import { ExistingDataContextProvider } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
+import { useFetch } from '@chaolaolo/helpers/utils/custom.fetch';
+import { ExistingDataContextProvider } from '@chaolaolo/frontend/components/launches/helpers/use.existing.data';
 import { useDrag, useDrop } from 'react-dnd';
 import { Integration, Post, State, Tags, TagsPosts } from '@prisma/client';
-import { useAddProvider } from '@gitroom/frontend/components/launches/add.provider.component';
-import { useToaster } from '@gitroom/react/toaster/toaster';
-import { useUser } from '@gitroom/frontend/components/layout/user.context';
-import { IntegrationContext } from '@gitroom/frontend/components/launches/helpers/use.integration';
-import { PreviewPopup } from '@gitroom/frontend/components/marketplace/special.message';
+import { useAddProvider } from '@chaolaolo/frontend/components/launches/add.provider.component';
+import { useToaster } from '@chaolaolo/react/toaster/toaster';
+import { useUser } from '@chaolaolo/frontend/components/layout/user.context';
+import { IntegrationContext } from '@chaolaolo/frontend/components/launches/helpers/use.integration';
+import { PreviewPopup } from '@chaolaolo/frontend/components/marketplace/special.message';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import { groupBy, random, sortBy } from 'lodash';
@@ -49,10 +49,10 @@ import { extend } from 'dayjs';
 import { isUSCitizen } from './helpers/isuscitizen.utils';
 import removeMd from 'remove-markdown';
 import { useInterval } from '@mantine/hooks';
-import { StatisticsModal } from '@gitroom/frontend/components/launches/statistics';
-import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { StatisticsModal } from '@chaolaolo/frontend/components/launches/statistics';
+import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
 import i18next from 'i18next';
-import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
+import { AddEditModal } from '@chaolaolo/frontend/components/new-launch/add.edit.modal';
 
 // Extend dayjs with necessary plugins
 extend(isSameOrAfter);
@@ -348,11 +348,11 @@ export const CalendarColumn: FC<{
       const check =
         display === 'day'
           ? pList.format('YYYY-MM-DD HH:mm') ===
-            getDate.format('YYYY-MM-DD HH:mm')
+          getDate.format('YYYY-MM-DD HH:mm')
           : display === 'week'
-          ? pList.isSameOrAfter(getDate.startOf('hour')) &&
+            ? pList.isSameOrAfter(getDate.startOf('hour')) &&
             pList.isBefore(getDate.endOf('hour'))
-          : pList.format('DD/MM/YYYY') === getDate.format('DD/MM/YYYY');
+            : pList.format('DD/MM/YYYY') === getDate.format('DD/MM/YYYY');
       return check;
     });
   }, [posts, display, getDate]);
@@ -476,11 +476,11 @@ export const CalendarColumn: FC<{
   );
   const editPost = useCallback(
     (
-        loadPost: Post & {
-          integration: Integration;
-        },
-        isDuplicate?: boolean
-      ) =>
+      loadPost: Post & {
+        integration: Integration;
+      },
+      isDuplicate?: boolean
+    ) =>
       async () => {
         const post = {
           ...loadPost,
@@ -512,16 +512,16 @@ export const CalendarColumn: FC<{
               <AddEditModal
                 {...(isDuplicate
                   ? {
-                      onlyValues: data.posts.map(
-                        ({ image, settings, content }: any) => {
-                          return {
-                            image,
-                            settings,
-                            content,
-                          };
-                        }
-                      ),
-                    }
+                    onlyValues: data.posts.map(
+                      ({ image, settings, content }: any) => {
+                        return {
+                          image,
+                          settings,
+                          content,
+                        };
+                      }
+                    ),
+                  }
                   : {})}
                 allIntegrations={integrations.map((p) => ({
                   ...p,
@@ -532,12 +532,12 @@ export const CalendarColumn: FC<{
                   isDuplicate
                     ? integrations
                     : integrations
-                        .slice(0)
-                        .filter((f) => f.id === data.integration)
-                        .map((p) => ({
-                          ...p,
-                          picture: data.integrationPicture,
-                        }))
+                      .slice(0)
+                      .filter((f) => f.id === data.integration)
+                      .map((p) => ({
+                        ...p,
+                        picture: data.integrationPicture,
+                      }))
                 }
                 date={publishDate}
               />
@@ -554,30 +554,30 @@ export const CalendarColumn: FC<{
     const set: any = !sets.length
       ? undefined
       : await new Promise((resolve) => {
-          modal.openModal({
-            title: t('select_set', 'Select a Set'),
-            closeOnClickOutside: true,
-            closeOnEscape: true,
-            withCloseButton: true,
-            onClose: () => resolve('exit'),
-            classNames: {
-              modal: 'bg-secondary text-textColor',
-            },
-            children: (
-              <SetSelectionModal
-                sets={sets}
-                onSelect={(selectedSet) => {
-                  resolve(selectedSet);
-                  modal.closeAll();
-                }}
-                onContinueWithoutSet={() => {
-                  resolve(undefined);
-                  modal.closeAll();
-                }}
-              />
-            ),
-          });
+        modal.openModal({
+          title: t('select_set', 'Select a Set'),
+          closeOnClickOutside: true,
+          closeOnEscape: true,
+          withCloseButton: true,
+          onClose: () => resolve('exit'),
+          classNames: {
+            modal: 'bg-secondary text-textColor',
+          },
+          children: (
+            <SetSelectionModal
+              sets={sets}
+              onSelect={(selectedSet) => {
+                resolve(selectedSet);
+                modal.closeAll();
+              }}
+              onContinueWithoutSet={() => {
+                resolve(undefined);
+                modal.closeAll();
+              }}
+            />
+          ),
         });
+      });
 
     if (set === 'exit') return;
 
@@ -599,12 +599,12 @@ export const CalendarColumn: FC<{
           mutate={reloadCalendarView}
           {...(signature?.id && !set
             ? {
-                onlyValues: [
-                  {
-                    content: '\n' + signature.content,
-                  },
-                ],
-              }
+              onlyValues: [
+                {
+                  content: '\n' + signature.content,
+                },
+              ],
+            }
             : {})}
           date={
             randomHour ? getDate.hour(Math.floor(Math.random() * 24)) : getDate
@@ -650,12 +650,12 @@ export const CalendarColumn: FC<{
         <div
           {...(canBeTrending
             ? {
-                'data-tooltip-id': 'tooltip',
-                'data-tooltip-content': t(
-                  'predicted_github_trending_change',
-                  'Predicted GitHub Trending Change'
-                ),
-              }
+              'data-tooltip-id': 'tooltip',
+              'data-tooltip-content': t(
+                'predicted_github_trending_change',
+                'Predicted GitHub Trending Change'
+              ),
+            }
             : {})}
           className={clsx(
             'flex-col text-[12px] pointer w-full flex scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary',
@@ -706,73 +706,73 @@ export const CalendarColumn: FC<{
         {(display === 'day'
           ? !isBeforeNow && postList.length === 0
           : !isBeforeNow) && (
-          <div
-            className="pb-[2.5px] px-[5px] flex-1 flex"
-            onClick={integrations.length ? addModal : addProvider}
-          >
             <div
-              className={clsx(
-                display === ('month' as any)
-                  ? 'flex-1 min-h-[40px] w-full'
-                  : !postList.length
-                  ? 'h-full w-full absolute start-0 top-0 p-[5px]'
-                  : 'min-h-[40px] w-full',
-                'flex items-center justify-center cursor-pointer pb-[2.5px]'
-              )}
+              className="pb-[2.5px] px-[5px] flex-1 flex"
+              onClick={integrations.length ? addModal : addProvider}
             >
-              {display !== 'day' && (
-                <div
-                  className={clsx(
-                    'hover:before:content-["+"] w-full h-full text-seventh rounded-[10px] hover:border hover:border-seventh flex justify-center items-center'
-                  )}
-                />
-              )}
-              {display === 'day' && (
-                <div
-                  className={`w-full h-full rounded-[10px] hover:border hover:border-seventh flex justify-center items-center gap-[20px] opacity-30 grayscale hover:grayscale-0 hover:opacity-100`}
-                >
-                  {integrations.map((selectedIntegrations) => (
-                    <div
-                      className="relative"
-                      key={selectedIntegrations.identifier}
-                    >
+              <div
+                className={clsx(
+                  display === ('month' as any)
+                    ? 'flex-1 min-h-[40px] w-full'
+                    : !postList.length
+                      ? 'h-full w-full absolute start-0 top-0 p-[5px]'
+                      : 'min-h-[40px] w-full',
+                  'flex items-center justify-center cursor-pointer pb-[2.5px]'
+                )}
+              >
+                {display !== 'day' && (
+                  <div
+                    className={clsx(
+                      'hover:before:content-["+"] w-full h-full text-seventh rounded-[10px] hover:border hover:border-seventh flex justify-center items-center'
+                    )}
+                  />
+                )}
+                {display === 'day' && (
+                  <div
+                    className={`w-full h-full rounded-[10px] hover:border hover:border-seventh flex justify-center items-center gap-[20px] opacity-30 grayscale hover:grayscale-0 hover:opacity-100`}
+                  >
+                    {integrations.map((selectedIntegrations) => (
                       <div
-                        className={clsx(
-                          'relative w-[34px] h-[34px] rounded-full flex justify-center items-center bg-fifth filter transition-all duration-500'
-                        )}
+                        className="relative"
+                        key={selectedIntegrations.identifier}
                       >
-                        <Image
-                          src={
-                            selectedIntegrations.picture || '/no-picture.jpg'
-                          }
-                          className="rounded-full"
-                          alt={selectedIntegrations.identifier}
-                          width={32}
-                          height={32}
-                        />
-                        {selectedIntegrations.identifier === 'youtube' ? (
-                          <img
-                            src="/icons/platforms/youtube.svg"
-                            className="absolute z-10 -bottom-[5px] -end-[5px]"
-                            width={20}
-                          />
-                        ) : (
+                        <div
+                          className={clsx(
+                            'relative w-[34px] h-[34px] rounded-full flex justify-center items-center bg-fifth filter transition-all duration-500'
+                          )}
+                        >
                           <Image
-                            src={`/icons/platforms/${selectedIntegrations.identifier}.png`}
-                            className="rounded-full absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
+                            src={
+                              selectedIntegrations.picture || '/no-picture.jpg'
+                            }
+                            className="rounded-full"
                             alt={selectedIntegrations.identifier}
-                            width={20}
-                            height={20}
+                            width={32}
+                            height={32}
                           />
-                        )}
+                          {selectedIntegrations.identifier === 'youtube' ? (
+                            <img
+                              src="/icons/platforms/youtube.svg"
+                              className="absolute z-10 -bottom-[5px] -end-[5px]"
+                              width={20}
+                            />
+                          ) : (
+                            <Image
+                              src={`/icons/platforms/${selectedIntegrations.identifier}.png`}
+                              className="rounded-full absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
+                              alt={selectedIntegrations.identifier}
+                              width={20}
+                              height={20}
+                            />
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
       </div>
     </div>
   );

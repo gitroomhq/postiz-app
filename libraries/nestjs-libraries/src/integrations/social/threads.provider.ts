@@ -4,13 +4,13 @@ import {
   PostDetails,
   PostResponse,
   SocialProvider,
-} from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { timer } from '@gitroom/helpers/utils/timer';
+} from '@chaolaolo/nestjs-libraries/integrations/social/social.integrations.interface';
+import { makeId } from '@chaolaolo/nestjs-libraries/services/make.is';
+import { timer } from '@chaolaolo/helpers/utils/timer';
 import dayjs from 'dayjs';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { SocialAbstract } from '@chaolaolo/nestjs-libraries/integrations/social.abstract';
 import { capitalize, chunk } from 'lodash';
-import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
+import { Plug } from '@chaolaolo/helpers/decorators/plug.decorator';
 import { Integration } from '@prisma/client';
 
 export class ThreadsProvider extends SocialAbstract implements SocialProvider {
@@ -58,10 +58,9 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
         'https://threads.net/oauth/authorize' +
         `?client_id=${process.env.THREADS_APP_ID}` +
         `&redirect_uri=${encodeURIComponent(
-          `${
-            process?.env.FRONTEND_URL?.indexOf('https') == -1
-              ? `https://redirectmeto.com/${process?.env.FRONTEND_URL}`
-              : `${process?.env.FRONTEND_URL}`
+          `${process?.env.FRONTEND_URL?.indexOf('https') == -1
+            ? `https://redirectmeto.com/${process?.env.FRONTEND_URL}`
+            : `${process?.env.FRONTEND_URL}`
           }/integrations/social/threads`
         )}` +
         `&state=${state}` +
@@ -79,26 +78,25 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     const getAccessToken = await (
       await this.fetch(
         'https://graph.threads.net/oauth/access_token' +
-          `?client_id=${process.env.THREADS_APP_ID}` +
-          `&redirect_uri=${encodeURIComponent(
-            `${
-              process?.env.FRONTEND_URL?.indexOf('https') == -1
-                ? `https://redirectmeto.com/${process?.env.FRONTEND_URL}`
-                : `${process?.env.FRONTEND_URL}`
-            }/integrations/social/threads`
-          )}` +
-          `&grant_type=authorization_code` +
-          `&client_secret=${process.env.THREADS_APP_SECRET}` +
-          `&code=${params.code}`
+        `?client_id=${process.env.THREADS_APP_ID}` +
+        `&redirect_uri=${encodeURIComponent(
+          `${process?.env.FRONTEND_URL?.indexOf('https') == -1
+            ? `https://redirectmeto.com/${process?.env.FRONTEND_URL}`
+            : `${process?.env.FRONTEND_URL}`
+          }/integrations/social/threads`
+        )}` +
+        `&grant_type=authorization_code` +
+        `&client_secret=${process.env.THREADS_APP_SECRET}` +
+        `&code=${params.code}`
       )
     ).json();
 
     const { access_token } = await (
       await this.fetch(
         'https://graph.threads.net/access_token' +
-          '?grant_type=th_exchange_token' +
-          `&client_secret=${process.env.THREADS_APP_SECRET}` +
-          `&access_token=${getAccessToken.access_token}&fields=access_token,expires_in`
+        '?grant_type=th_exchange_token' +
+        `&client_secret=${process.env.THREADS_APP_SECRET}` +
+        `&access_token=${getAccessToken.access_token}&fields=access_token,expires_in`
       )
     ).json();
 
@@ -448,9 +446,9 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
         data: d.total_value
           ? [{ total: d.total_value.value, date: dayjs().format('YYYY-MM-DD') }]
           : d.values.map((v: any) => ({
-              total: v.value,
-              date: dayjs(v.end_time).format('YYYY-MM-DD'),
-            })),
+            total: v.value,
+            date: dayjs(v.end_time).format('YYYY-MM-DD'),
+          })),
       })) || []
     );
   }

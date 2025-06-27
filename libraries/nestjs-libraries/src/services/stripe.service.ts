@@ -1,17 +1,17 @@
 import Stripe from 'stripe';
 import { Injectable } from '@nestjs/common';
 import { Organization, User } from '@prisma/client';
-import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
-import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.subscribe.dto';
+import { SubscriptionService } from '@chaolaolo/nestjs-libraries/database/prisma/subscriptions/subscription.service';
+import { OrganizationService } from '@chaolaolo/nestjs-libraries/database/prisma/organizations/organization.service';
+import { makeId } from '@chaolaolo/nestjs-libraries/services/make.is';
+import { BillingSubscribeDto } from '@chaolaolo/nestjs-libraries/dtos/billing/billing.subscribe.dto';
 import { capitalize, groupBy } from 'lodash';
-import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
-import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
-import { AuthService } from '@gitroom/helpers/auth/auth.service';
-import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
-import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
-import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
+import { MessagesService } from '@chaolaolo/nestjs-libraries/database/prisma/marketplace/messages.service';
+import { pricing } from '@chaolaolo/nestjs-libraries/database/prisma/subscriptions/pricing';
+import { AuthService } from '@chaolaolo/helpers/auth/auth.service';
+import { TrackService } from '@chaolaolo/nestjs-libraries/track/track.service';
+import { UsersService } from '@chaolaolo/nestjs-libraries/database/prisma/users/users.service';
+import { TrackEnum } from '@chaolaolo/nestjs-libraries/user/track.enum';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-04-10',
@@ -25,7 +25,7 @@ export class StripeService {
     private _userService: UsersService,
     private _messagesService: MessagesService,
     private _trackService: TrackService
-  ) {}
+  ) { }
   validateRequest(rawBody: Buffer, signature: string, endpointSecret: string) {
     return stripe.webhooks.constructEvent(rawBody, signature, endpointSecret);
   }
@@ -250,13 +250,13 @@ export class StripeService {
       pricesList.data.find(
         (p) =>
           p?.recurring?.interval?.toLowerCase() ===
-            (body.period === 'MONTHLY' ? 'month' : 'year') &&
+          (body.period === 'MONTHLY' ? 'month' : 'year') &&
           p?.nickname === body.billing + ' ' + body.period &&
           p?.unit_amount ===
-            (body.period === 'MONTHLY'
-              ? priceData.month_price
-              : priceData.year_price) *
-              100
+          (body.period === 'MONTHLY'
+            ? priceData.month_price
+            : priceData.year_price) *
+          100
       ) ||
       (await stripe.prices.create({
         active: true,
@@ -388,10 +388,10 @@ export class StripeService {
       },
       ...(body.tolt
         ? {
-            metadata: {
-              tolt_referral: body.tolt,
-            },
-          }
+          metadata: {
+            tolt_referral: body.tolt,
+          },
+        }
         : {}),
       allow_promotion_codes: true,
       line_items: [
@@ -580,12 +580,12 @@ export class StripeService {
       pricesList.data.find(
         (p) =>
           p?.recurring?.interval?.toLowerCase() ===
-            (body.period === 'MONTHLY' ? 'month' : 'year') &&
+          (body.period === 'MONTHLY' ? 'month' : 'year') &&
           p?.unit_amount ===
-            (body.period === 'MONTHLY'
-              ? priceData.month_price
-              : priceData.year_price) *
-              100
+          (body.period === 'MONTHLY'
+            ? priceData.month_price
+            : priceData.year_price) *
+          100
       ) ||
       (await stripe.prices.create({
         active: true,

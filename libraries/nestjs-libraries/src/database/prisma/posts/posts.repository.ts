@@ -1,15 +1,15 @@
-import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
+import { PrismaRepository } from '@chaolaolo/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
-import { Post as PostBody } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
+import { Post as PostBody } from '@chaolaolo/nestjs-libraries/dtos/posts/create.post.dto';
 import { APPROVED_SUBMIT_FOR_ORDER, Post, State } from '@prisma/client';
-import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
+import { GetPostsDto } from '@chaolaolo/nestjs-libraries/dtos/posts/get.posts.dto';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import utc from 'dayjs/plugin/utc';
 import { v4 as uuidv4 } from 'uuid';
-import { CreateTagDto } from '@gitroom/nestjs-libraries/dtos/posts/create.tag.dto';
+import { CreateTagDto } from '@chaolaolo/nestjs-libraries/dtos/posts/create.tag.dto';
 
 dayjs.extend(isoWeek);
 dayjs.extend(weekOfYear);
@@ -24,7 +24,7 @@ export class PostsRepository {
     private _comments: PrismaRepository<'comments'>,
     private _tags: PrismaRepository<'tags'>,
     private _tagsPosts: PrismaRepository<'tagsPosts'>
-  ) {}
+  ) { }
 
   getOldPosts(orgId: string, date: string) {
     return this._post.model.post.findMany({
@@ -90,15 +90,15 @@ export class PostsRepository {
       query.display === 'day'
         ? dateYear.isoWeek(query.week).day(query.day)
         : query.display === 'week'
-        ? dateYear.isoWeek(query.week)
-        : dateYear.month(query.month - 1);
+          ? dateYear.isoWeek(query.week)
+          : dateYear.month(query.month - 1);
 
     const startDate = (
       query.display === 'day'
         ? date.startOf('day')
         : query.display === 'week'
-        ? date.startOf('isoWeek')
-        : date.startOf('month')
+          ? date.startOf('isoWeek')
+          : date.startOf('month')
     )
       .subtract(2, 'hours')
       .toDate();
@@ -106,8 +106,8 @@ export class PostsRepository {
       query.display === 'day'
         ? date.endOf('day')
         : query.display === 'week'
-        ? date.endOf('isoWeek')
-        : date.endOf('month')
+          ? date.endOf('isoWeek')
+          : date.endOf('month')
     )
       .add(2, 'hours')
       .toDate();
@@ -145,10 +145,10 @@ export class PostsRepository {
         parentPostId: null,
         ...(query.customer
           ? {
-              integration: {
-                customerId: query.customer,
-              },
-            }
+            integration: {
+              customerId: query.customer,
+            },
+          }
           : {}),
       },
       select: {
@@ -237,13 +237,13 @@ export class PostsRepository {
       include: {
         ...(includeIntegration
           ? {
-              integration: true,
-              tags: {
-                select: {
-                  tag: true,
-                },
+            integration: true,
+            tags: {
+              select: {
+                tag: true,
               },
-            }
+            },
+          }
           : {}),
         childrenPost: true,
       },
@@ -331,19 +331,19 @@ export class PostsRepository {
         },
         ...(posts?.[posts.length - 1]?.id
           ? {
-              parentPost: {
-                connect: {
-                  id: posts[posts.length - 1]?.id,
-                },
+            parentPost: {
+              connect: {
+                id: posts[posts.length - 1]?.id,
               },
-            }
+            },
+          }
           : type === 'update'
-          ? {
+            ? {
               parentPost: {
                 disconnect: true,
               },
             }
-          : {}),
+            : {}),
         content: value.content,
         group: uuid,
         intervalInDays: inter ? +inter : null,
@@ -417,17 +417,17 @@ export class PostsRepository {
 
     const previousPost = body.group
       ? (
-          await this._post.model.post.findFirst({
-            where: {
-              group: body.group,
-              deletedAt: null,
-              parentPostId: null,
-            },
-            select: {
-              id: true,
-            },
-          })
-        )?.id!
+        await this._post.model.post.findFirst({
+          where: {
+            group: body.group,
+            deletedAt: null,
+            parentPostId: null,
+          },
+          select: {
+            id: true,
+          },
+        })
+      )?.id!
       : undefined;
 
     if (body.group) {

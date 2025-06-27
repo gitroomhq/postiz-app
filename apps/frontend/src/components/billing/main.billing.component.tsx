@@ -1,33 +1,33 @@
 'use client';
 
-import { Slider } from '@gitroom/react/form/slider';
+import { Slider } from '@chaolaolo/react/form/slider';
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
-import { Button } from '@gitroom/react/form/button';
-import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { Button } from '@chaolaolo/react/form/button';
+import { useFetch } from '@chaolaolo/helpers/utils/custom.fetch';
 import { Subscription } from '@prisma/client';
 import { useDebouncedCallback } from 'use-debounce';
 import ReactLoading from 'react-loading';
-import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
-import { useToaster } from '@gitroom/react/toaster/toaster';
+import { deleteDialog } from '@chaolaolo/react/helpers/delete.dialog';
+import { useToaster } from '@chaolaolo/react/toaster/toaster';
 import dayjs from 'dayjs';
 import clsx from 'clsx';
-import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
-import { FAQComponent } from '@gitroom/frontend/components/billing/faq.component';
+import { pricing } from '@chaolaolo/nestjs-libraries/database/prisma/subscriptions/pricing';
+import { FAQComponent } from '@chaolaolo/frontend/components/billing/faq.component';
 import { useSWRConfig } from 'swr';
-import { useUser } from '@gitroom/frontend/components/layout/user.context';
-import interClass from '@gitroom/react/helpers/inter.font';
+import { useUser } from '@chaolaolo/frontend/components/layout/user.context';
+import interClass from '@chaolaolo/react/helpers/inter.font';
 import { useRouter } from 'next/navigation';
-import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { useVariables } from '@chaolaolo/react/helpers/variable.context';
 import { useModals } from '@mantine/modals';
-import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
-import { Textarea } from '@gitroom/react/form/textarea';
-import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
-import { useUtmUrl } from '@gitroom/helpers/utils/utm.saver';
-import { useTolt } from '@gitroom/frontend/components/layout/tolt.script';
-import { useTrack } from '@gitroom/react/helpers/use.track';
-import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
-import { PurchaseCrypto } from '@gitroom/frontend/components/billing/purchase.crypto';
-import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { TopTitle } from '@chaolaolo/frontend/components/launches/helpers/top.title.component';
+import { Textarea } from '@chaolaolo/react/form/textarea';
+import { useFireEvents } from '@chaolaolo/helpers/utils/use.fire.events';
+import { useUtmUrl } from '@chaolaolo/helpers/utils/utm.saver';
+import { useTolt } from '@chaolaolo/frontend/components/layout/tolt.script';
+import { useTrack } from '@chaolaolo/react/helpers/use.track';
+import { TrackEnum } from '@chaolaolo/nestjs-libraries/user/track.enum';
+import { PurchaseCrypto } from '@chaolaolo/frontend/components/billing/purchase.crypto';
+import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
 export interface Tiers {
   month: Array<{
     name: 'Pro' | 'Standard';
@@ -96,10 +96,9 @@ export const Features: FC<{
     const list = [];
     list.push(`${channelsOr} ${channelsOr === 1 ? 'channel' : 'channels'}`);
     list.push(
-      `${
-        currentPricing.posts_per_month > 10000
-          ? 'Unlimited'
-          : currentPricing.posts_per_month
+      `${currentPricing.posts_per_month > 10000
+        ? 'Unlimited'
+        : currentPricing.posts_per_month
       } posts per month`
     );
     if (currentPricing.team_members) {
@@ -340,7 +339,7 @@ export const MainBillingComponent: FC<{
         await track(TrackEnum.InitiateCheckout, {
           value:
             pricing[billing][
-              monthlyOrYearly === 'on' ? 'year_price' : 'month_price'
+            monthlyOrYearly === 'on' ? 'year_price' : 'month_price'
             ],
         });
         window.location.href = url;
@@ -417,7 +416,7 @@ export const MainBillingComponent: FC<{
               </div>
               <div className="text-[14px] flex gap-[10px]">
                 {currentPackage === name.toUpperCase() &&
-                subscription?.cancelAt ? (
+                  subscription?.cancelAt ? (
                   <div className="gap-[3px] flex flex-col">
                     <div>
                       <Button
@@ -441,8 +440,8 @@ export const MainBillingComponent: FC<{
                     }
                     className={clsx(
                       subscription &&
-                        name.toUpperCase() === 'FREE' &&
-                        '!bg-red-500'
+                      name.toUpperCase() === 'FREE' &&
+                      '!bg-red-500'
                     )}
                     onClick={moveToCheckout(
                       name.toUpperCase() as 'STANDARD' | 'PRO'
@@ -451,18 +450,18 @@ export const MainBillingComponent: FC<{
                     {currentPackage === name.toUpperCase()
                       ? 'Current Plan'
                       : name.toUpperCase() === 'FREE'
-                      ? subscription?.cancelAt
-                        ? `Downgrade on ${dayjs
+                        ? subscription?.cancelAt
+                          ? `Downgrade on ${dayjs
                             .utc(subscription?.cancelAt)
                             .local()
                             .format('D MMM, YYYY')}`
-                        : 'Cancel subscription'
-                      : // @ts-ignore
-                      (user?.tier === 'FREE' ||
+                          : 'Cancel subscription'
+                        : // @ts-ignore
+                        (user?.tier === 'FREE' ||
                           user?.tier?.current === 'FREE') &&
-                        user.allowTrial
-                      ? t('start_7_days_free_trial', 'Start 7 days free trial')
-                      : 'Purchase'}
+                          user.allowTrial
+                          ? t('start_7_days_free_trial', 'Start 7 days free trial')
+                          : 'Purchase'}
                   </Button>
                 )}
                 {subscription &&

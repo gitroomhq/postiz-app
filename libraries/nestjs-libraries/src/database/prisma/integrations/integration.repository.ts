@@ -1,11 +1,11 @@
-import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
+import { PrismaRepository } from '@chaolaolo/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { IntegrationTimeDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.time.dto';
-import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
-import { PlugDto } from '@gitroom/nestjs-libraries/dtos/plugs/plug.dto';
+import { makeId } from '@chaolaolo/nestjs-libraries/services/make.is';
+import { IntegrationTimeDto } from '@chaolaolo/nestjs-libraries/dtos/integrations/integration.time.dto';
+import { UploadFactory } from '@chaolaolo/nestjs-libraries/upload/upload.factory';
+import { PlugDto } from '@chaolaolo/nestjs-libraries/dtos/plugs/plug.dto';
 
 @Injectable()
 export class IntegrationRepository {
@@ -16,7 +16,7 @@ export class IntegrationRepository {
     private _plugs: PrismaRepository<'plugs'>,
     private _exisingPlugData: PrismaRepository<'exisingPlugData'>,
     private _customers: PrismaRepository<'customer'>
-  ) {}
+  ) { }
 
   updateProviderSettings(org: string, id: string, settings: string) {
     return this._integration.model.integration.update({
@@ -108,12 +108,12 @@ export class IntegrationRepository {
   async createOrUpdateIntegration(
     additionalSettings:
       | {
-          title: string;
-          description: string;
-          type: 'checkbox' | 'text' | 'textarea';
-          value: any;
-          regex?: string;
-        }[]
+        title: string;
+        description: string;
+        type: 'checkbox' | 'text' | 'textarea';
+        value: any;
+        regex?: string;
+      }[]
       | undefined,
     oneTimeToken: boolean,
     org: string,
@@ -133,12 +133,12 @@ export class IntegrationRepository {
   ) {
     const postTimes = timezone
       ? {
-          postingTimes: JSON.stringify([
-            { time: 560 - timezone },
-            { time: 850 - timezone },
-            { time: 1140 - timezone },
-          ]),
-        }
+        postingTimes: JSON.stringify([
+          { time: 560 - timezone },
+          { time: 850 - timezone },
+          { time: 1140 - timezone },
+        ]),
+      }
       : {};
     const upsert = await this._integration.model.integration.upsert({
       where: {
@@ -177,8 +177,8 @@ export class IntegrationRepository {
         type: type as any,
         ...(!refresh
           ? {
-              inBetweenSteps: isBetweenSteps,
-            }
+            inBetweenSteps: isBetweenSteps,
+          }
           : {}),
         ...(picture ? { picture } : {}),
         profile: username,
@@ -314,17 +314,17 @@ export class IntegrationRepository {
     const customer = !name
       ? undefined
       : (await this._customers.model.customer.findFirst({
-          where: {
-            orgId: org,
-            name,
-          },
-        })) ||
-        (await this._customers.model.customer.create({
-          data: {
-            name,
-            orgId: org,
-          },
-        }));
+        where: {
+          orgId: org,
+          name,
+        },
+      })) ||
+      (await this._customers.model.customer.create({
+        data: {
+          name,
+          orgId: org,
+        },
+      }));
 
     return this._integration.model.integration.update({
       where: {
@@ -335,10 +335,10 @@ export class IntegrationRepository {
         customer: !customer
           ? { disconnect: true }
           : {
-              connect: {
-                id: customer.id,
-              },
+            connect: {
+              id: customer.id,
             },
+          },
       },
     });
   }
@@ -351,17 +351,17 @@ export class IntegrationRepository {
       },
       data: !group
         ? {
-            customer: {
-              disconnect: true,
-            },
-          }
+          customer: {
+            disconnect: true,
+          },
+        }
         : {
-            customer: {
-              connect: {
-                id: group,
-              },
+          customer: {
+            connect: {
+              id: group,
             },
           },
+        },
     });
   }
 

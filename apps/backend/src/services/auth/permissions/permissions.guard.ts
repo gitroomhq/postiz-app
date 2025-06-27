@@ -3,13 +3,13 @@ import { Reflector } from '@nestjs/core';
 import {
   AppAbility,
   PermissionsService,
-} from '@gitroom/backend/services/auth/permissions/permissions.service';
+} from '@chaolaolo/backend/services/auth/permissions/permissions.service';
 import {
   AbilityPolicy,
   CHECK_POLICIES_KEY,
-} from '@gitroom/backend/services/auth/permissions/permissions.ability';
+} from '@chaolaolo/backend/services/auth/permissions/permissions.ability';
 import { Organization } from '@prisma/client';
-import { SubscriptionException } from '@gitroom/backend/services/auth/permissions/subscription.exception';
+import { SubscriptionException } from '@chaolaolo/backend/services/auth/permissions/subscription.exception';
 import { Request } from 'express';
 
 @Injectable()
@@ -17,7 +17,7 @@ export class PoliciesGuard implements CanActivate {
   constructor(
     private _reflector: Reflector,
     private _authorizationService: PermissionsService
-  ) {}
+  ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request: Request = context.switchToHttp().getRequest();

@@ -4,13 +4,13 @@ import {
   OpenAIAdapter,
   copilotRuntimeNestEndpoint,
 } from '@copilotkit/runtime';
-import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
+import { GetOrgFromRequest } from '@chaolaolo/nestjs-libraries/user/org.from.request';
 import { Organization } from '@prisma/client';
-import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
+import { SubscriptionService } from '@chaolaolo/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 
 @Controller('/copilot')
 export class CopilotController {
-  constructor(private _subscriptionService: SubscriptionService) {}
+  constructor(private _subscriptionService: SubscriptionService) { }
   @Post('/chat')
   chat(@Req() req: Request, @Res() res: Response) {
     if (
@@ -28,7 +28,7 @@ export class CopilotController {
         model:
           // @ts-ignore
           req?.body?.variables?.data?.metadata?.requestType ===
-          'TextareaCompletion'
+            'TextareaCompletion'
             ? 'gpt-4o-mini'
             : 'gpt-4.1',
       }),

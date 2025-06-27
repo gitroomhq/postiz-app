@@ -14,7 +14,10 @@
     "importHelpers": true,
     "target": "es2015",
     "module": "esnext",
-    "lib": ["es2020", "dom"],
+    "lib": [
+      "es2020",
+      "dom"
+    ],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
@@ -25,16 +28,37 @@
     "noFallthroughCasesInSwitch": true,
     "strict": true,
     "paths": {
-      "@gitroom/backend/*": ["apps/backend/src/*"],
-      "@gitroom/cron/*": ["apps/cron/src/*"],
-      "@gitroom/frontend/*": ["apps/frontend/src/*"],
-      "@gitroom/helpers/*": ["libraries/helpers/src/*"],
-      "@gitroom/nestjs-libraries/*": ["libraries/nestjs-libraries/src/*"],
-      "@gitroom/react/*": ["libraries/react-shared-libraries/src/*"],
-      "@gitroom/plugins/*": ["libraries/plugins/src/*"],
-      "@gitroom/workers/*": ["apps/workers/src/*"],
-      "@gitroom/extension/*": ["apps/extension/src/*"]
+      "@chaolaolo/backend/*": [
+        "apps/backend/src/*"
+      ],
+      "@chaolaolo/cron/*": [
+        "apps/cron/src/*"
+      ],
+      "@chaolaolo/frontend/*": [
+        "apps/frontend/src/*"
+      ],
+      "@chaolaolo/helpers/*": [
+        "libraries/helpers/src/*"
+      ],
+      "@chaolaolo/nestjs-libraries/*": [
+        "libraries/nestjs-libraries/src/*"
+      ],
+      "@chaolaolo/react/*": [
+        "libraries/react-shared-libraries/src/*"
+      ],
+      "@chaolaolo/plugins/*": [
+        "libraries/plugins/src/*"
+      ],
+      "@chaolaolo/workers/*": [
+        "apps/workers/src/*"
+      ],
+      "@chaolaolo/extension/*": [
+        "apps/extension/src/*"
+      ]
     }
   },
-  "exclude": ["node_modules", "tmp"]
+  "exclude": [
+    "node_modules",
+    "tmp"
+  ]
 }

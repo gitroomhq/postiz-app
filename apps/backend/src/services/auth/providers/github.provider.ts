@@ -1,12 +1,11 @@
-import { ProvidersInterface } from '@gitroom/backend/services/auth/providers.interface';
+import { ProvidersInterface } from '@chaolaolo/backend/services/auth/providers.interface';
 
 export class GithubProvider implements ProvidersInterface {
   generateLink(): string {
-    return `https://github.com/login/oauth/authorize?client_id=${
-      process.env.GITHUB_CLIENT_ID
-    }&scope=user:email&redirect_uri=${encodeURIComponent(
-      `${process.env.FRONTEND_URL}/settings`
-    )}`;
+    return `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_CLIENT_ID
+      }&scope=user:email&redirect_uri=${encodeURIComponent(
+        `${process.env.FRONTEND_URL}/settings`
+      )}`;
   }
 
   async getToken(code: string): Promise<string> {

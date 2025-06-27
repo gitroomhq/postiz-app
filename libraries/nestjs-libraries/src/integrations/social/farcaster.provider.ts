@@ -3,13 +3,13 @@ import {
   PostDetails,
   PostResponse,
   SocialProvider,
-} from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+} from '@chaolaolo/nestjs-libraries/integrations/social/social.integrations.interface';
+import { makeId } from '@chaolaolo/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { SocialAbstract } from '@chaolaolo/nestjs-libraries/integrations/social.abstract';
 import { NeynarAPIClient } from '@neynar/nodejs-sdk';
 import { Integration } from '@prisma/client';
-import { AuthService } from '@gitroom/helpers/auth/auth.service';
+import { AuthService } from '@chaolaolo/helpers/auth/auth.service';
 import { groupBy } from 'lodash';
 
 const client = new NeynarAPIClient({
@@ -18,8 +18,7 @@ const client = new NeynarAPIClient({
 
 export class FarcasterProvider
   extends SocialAbstract
-  implements SocialProvider
-{
+  implements SocialProvider {
   identifier = 'wrapcast';
   name = 'Warpcast';
   isBetweenSteps = false;
@@ -72,7 +71,7 @@ export class FarcasterProvider
     const ids = [];
     const subreddit =
       !postDetails?.[0]?.settings?.subreddit ||
-      postDetails?.[0]?.settings?.subreddit.length === 0
+        postDetails?.[0]?.settings?.subreddit.length === 0
         ? [undefined]
         : postDetails?.[0]?.settings?.subreddit;
 

@@ -4,27 +4,27 @@ import {
   PlugSettings,
   PlugsInterface,
   usePlugs,
-} from '@gitroom/frontend/components/plugs/plugs.context';
-import { Button } from '@gitroom/react/form/button';
+} from '@chaolaolo/frontend/components/plugs/plugs.context';
+import { Button } from '@chaolaolo/react/form/button';
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
-import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { useFetch } from '@chaolaolo/helpers/utils/custom.fetch';
 import useSWR, { mutate } from 'swr';
 import { useModals } from '@mantine/modals';
-import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
+import { TopTitle } from '@chaolaolo/frontend/components/launches/helpers/top.title.component';
 import {
   FormProvider,
   SubmitHandler,
   useForm,
   useFormContext,
 } from 'react-hook-form';
-import { Input } from '@gitroom/react/form/input';
+import { Input } from '@chaolaolo/react/form/input';
 import { CopilotTextarea } from '@copilotkit/react-textarea';
 import clsx from 'clsx';
 import { string, object } from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { Slider } from '@gitroom/react/form/slider';
-import { useToaster } from '@gitroom/react/toaster/toaster';
-import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { Slider } from '@chaolaolo/react/form/slider';
+import { useToaster } from '@chaolaolo/react/toaster/toaster';
+import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
 export function convertBackRegex(s: string) {
   const matches = s.match(/\/(.*)\/([a-z]*)/);
   const pattern = matches?.[1] || '';
@@ -101,8 +101,8 @@ export const PlugPop: FC<{
           ...acc,
           [field.name]: field.validation
             ? string().matches(convertBackRegex(field.validation), {
-                message: 'Invalid value',
-              })
+              message: 'Invalid value',
+            })
             : null,
         };
       }, {})

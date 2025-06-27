@@ -1,10 +1,10 @@
 import { Command } from 'nestjs-command';
 import { Injectable } from '@nestjs/common';
-import { AgentGraphService } from '@gitroom/nestjs-libraries/agent/agent.graph.service';
+import { AgentGraphService } from '@chaolaolo/nestjs-libraries/agent/agent.graph.service';
 
 @Injectable()
 export class AgentRun {
-  constructor(private _agentGraphService: AgentGraphService) {}
+  constructor(private _agentGraphService: AgentGraphService) { }
   @Command({
     command: 'run:agent',
     describe: 'Run the agent',

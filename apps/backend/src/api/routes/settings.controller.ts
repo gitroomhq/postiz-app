@@ -1,14 +1,14 @@
 import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
-import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
+import { GetOrgFromRequest } from '@chaolaolo/nestjs-libraries/user/org.from.request';
 import { Organization } from '@prisma/client';
-import { StarsService } from '@gitroom/nestjs-libraries/database/prisma/stars/stars.service';
-import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
+import { StarsService } from '@chaolaolo/nestjs-libraries/database/prisma/stars/stars.service';
+import { CheckPolicies } from '@chaolaolo/backend/services/auth/permissions/permissions.ability';
 import {
   AuthorizationActions,
   Sections,
-} from '@gitroom/backend/services/auth/permissions/permissions.service';
-import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
-import { AddTeamMemberDto } from '@gitroom/nestjs-libraries/dtos/settings/add.team.member.dto';
+} from '@chaolaolo/backend/services/auth/permissions/permissions.service';
+import { OrganizationService } from '@chaolaolo/nestjs-libraries/database/prisma/organizations/organization.service';
+import { AddTeamMemberDto } from '@chaolaolo/nestjs-libraries/dtos/settings/add.team.member.dto';
 import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Settings')
@@ -17,7 +17,7 @@ export class SettingsController {
   constructor(
     private _starsService: StarsService,
     private _organizationService: OrganizationService
-  ) {}
+  ) { }
 
   @Get('/github')
   @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
@@ -48,13 +48,12 @@ export class SettingsController {
   @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
   authUrl() {
     return {
-      url: `https://github.com/login/oauth/authorize?client_id=${
-        process.env.GITHUB_CLIENT_ID
-      }&scope=${encodeURIComponent(
-        'user:email'
-      )}&redirect_uri=${encodeURIComponent(
-        `${process.env.FRONTEND_URL}/settings`
-      )}`,
+      url: `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_CLIENT_ID
+        }&scope=${encodeURIComponent(
+          'user:email'
+        )}&redirect_uri=${encodeURIComponent(
+          `${process.env.FRONTEND_URL}/settings`
+        )}`,
     };
   }
 

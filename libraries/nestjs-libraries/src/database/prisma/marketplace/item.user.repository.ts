@@ -1,9 +1,9 @@
-import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
+import { PrismaRepository } from '@chaolaolo/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class ItemUserRepository {
-  constructor(private _itemUser: PrismaRepository<'itemUser'>) {}
+  constructor(private _itemUser: PrismaRepository<'itemUser'>) { }
 
   addOrRemoveItem(add: boolean, userId: string, item: string) {
     if (!add) {

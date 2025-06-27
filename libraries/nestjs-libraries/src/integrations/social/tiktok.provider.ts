@@ -3,14 +3,14 @@ import {
   PostDetails,
   PostResponse,
   SocialProvider,
-} from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+} from '@chaolaolo/nestjs-libraries/integrations/social/social.integrations.interface';
 import dayjs from 'dayjs';
 import {
   BadBody,
   SocialAbstract,
-} from '@gitroom/nestjs-libraries/integrations/social.abstract';
-import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
-import { timer } from '@gitroom/helpers/utils/timer';
+} from '@chaolaolo/nestjs-libraries/integrations/social.abstract';
+import { TikTokDto } from '@chaolaolo/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
+import { timer } from '@chaolaolo/helpers/utils/timer';
 import { Integration } from '@prisma/client';
 
 export class TiktokProvider extends SocialAbstract implements SocialProvider {
@@ -78,10 +78,9 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
         'https://www.tiktok.com/v2/auth/authorize/' +
         `?client_key=${process.env.TIKTOK_CLIENT_ID}` +
         `&redirect_uri=${encodeURIComponent(
-          `${
-            process?.env?.FRONTEND_URL?.indexOf('https') === -1
-              ? 'https://redirectmeto.com/'
-              : ''
+          `${process?.env?.FRONTEND_URL?.indexOf('https') === -1
+            ? 'https://redirectmeto.com/'
+            : ''
           }${process?.env?.FRONTEND_URL}/integrations/social/tiktok`
         )}` +
         `&state=${state}` +
@@ -103,11 +102,10 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       code: params.code,
       grant_type: 'authorization_code',
       code_verifier: params.codeVerifier,
-      redirect_uri: `${
-        process?.env?.FRONTEND_URL?.indexOf('https') === -1
+      redirect_uri: `${process?.env?.FRONTEND_URL?.indexOf('https') === -1
           ? 'https://redirectmeto.com/'
           : ''
-      }${process?.env?.FRONTEND_URL}/integrations/social/tiktok`,
+        }${process?.env?.FRONTEND_URL}/integrations/social/tiktok`,
     };
 
     const { access_token, refresh_token, scope } = await (
@@ -201,7 +199,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
           url: !publicaly_available_post_id
             ? `https://www.tiktok.com/@${id}`
             : `https://www.tiktok.com/@${id}/video/` +
-              publicaly_available_post_id,
+            publicaly_available_post_id,
           id: !publicaly_available_post_id
             ? publishId
             : publicaly_available_post_id?.[0],
@@ -258,42 +256,42 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
           body: JSON.stringify({
             ...(firstPost.settings.content_posting_method === 'DIRECT_POST'
               ? {
-                  post_info: {
-                    title: firstPost.message,
-                    privacy_level: firstPost.settings.privacy_level,
-                    disable_duet: !firstPost.settings.duet,
-                    disable_comment: !firstPost.settings.comment,
-                    disable_stitch: !firstPost.settings.stitch,
-                    brand_content_toggle:
-                      firstPost.settings.brand_content_toggle,
-                    brand_organic_toggle:
-                      firstPost.settings.brand_organic_toggle,
-                    ...((firstPost?.media?.[0]?.url?.indexOf('mp4') || -1) ===
+                post_info: {
+                  title: firstPost.message,
+                  privacy_level: firstPost.settings.privacy_level,
+                  disable_duet: !firstPost.settings.duet,
+                  disable_comment: !firstPost.settings.comment,
+                  disable_stitch: !firstPost.settings.stitch,
+                  brand_content_toggle:
+                    firstPost.settings.brand_content_toggle,
+                  brand_organic_toggle:
+                    firstPost.settings.brand_organic_toggle,
+                  ...((firstPost?.media?.[0]?.url?.indexOf('mp4') || -1) ===
                     -1
-                      ? {
-                          auto_add_music:
-                            firstPost.settings.autoAddMusic === 'yes',
-                        }
-                      : {}),
-                  },
-                }
+                    ? {
+                      auto_add_music:
+                        firstPost.settings.autoAddMusic === 'yes',
+                    }
+                    : {}),
+                },
+              }
               : {}),
             ...((firstPost?.media?.[0]?.url?.indexOf('mp4') || -1) > -1
               ? {
-                  source_info: {
-                    source: 'PULL_FROM_URL',
-                    video_url: firstPost?.media?.[0]?.url!,
-                  },
-                }
+                source_info: {
+                  source: 'PULL_FROM_URL',
+                  video_url: firstPost?.media?.[0]?.url!,
+                },
+              }
               : {
-                  source_info: {
-                    source: 'PULL_FROM_URL',
-                    photo_cover_index: 0,
-                    photo_images: firstPost.media?.map((p) => p.url),
-                  },
-                  post_mode: 'DIRECT_POST',
-                  media_type: 'PHOTO',
-                }),
+                source_info: {
+                  source: 'PULL_FROM_URL',
+                  photo_cover_index: 0,
+                  photo_images: firstPost.media?.map((p) => p.url),
+                },
+                post_mode: 'DIRECT_POST',
+                media_type: 'PHOTO',
+              }),
           }),
         }
       )

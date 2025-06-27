@@ -4,10 +4,10 @@ import {
   PostDetails,
   PostResponse,
   SocialProvider,
-} from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+} from '@chaolaolo/nestjs-libraries/integrations/social/social.integrations.interface';
+import { makeId } from '@chaolaolo/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { SocialAbstract } from '@chaolaolo/nestjs-libraries/integrations/social.abstract';
 
 export class FacebookProvider extends SocialAbstract implements SocialProvider {
   identifier = 'facebook';
@@ -78,24 +78,23 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     const getAccessToken = await (
       await this.fetch(
         'https://graph.facebook.com/v20.0/oauth/access_token' +
-          `?client_id=${process.env.FACEBOOK_APP_ID}` +
-          `&redirect_uri=${encodeURIComponent(
-            `${process.env.FRONTEND_URL}/integrations/social/facebook${
-              params.refresh ? `?refresh=${params.refresh}` : ''
-            }`
-          )}` +
-          `&client_secret=${process.env.FACEBOOK_APP_SECRET}` +
-          `&code=${params.code}`
+        `?client_id=${process.env.FACEBOOK_APP_ID}` +
+        `&redirect_uri=${encodeURIComponent(
+          `${process.env.FRONTEND_URL}/integrations/social/facebook${params.refresh ? `?refresh=${params.refresh}` : ''
+          }`
+        )}` +
+        `&client_secret=${process.env.FACEBOOK_APP_SECRET}` +
+        `&code=${params.code}`
       )
     ).json();
 
     const { access_token } = await (
       await this.fetch(
         'https://graph.facebook.com/v20.0/oauth/access_token' +
-          '?grant_type=fb_exchange_token' +
-          `&client_id=${process.env.FACEBOOK_APP_ID}` +
-          `&client_secret=${process.env.FACEBOOK_APP_SECRET}` +
-          `&fb_exchange_token=${getAccessToken.access_token}&fields=access_token,expires_in`
+        '?grant_type=fb_exchange_token' +
+        `&client_id=${process.env.FACEBOOK_APP_ID}` +
+        `&client_secret=${process.env.FACEBOOK_APP_SECRET}` +
+        `&fb_exchange_token=${getAccessToken.access_token}&fields=access_token,expires_in`
       )
     ).json();
 
@@ -205,27 +204,27 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       const uploadPhotos = !firstPost?.media?.length
         ? []
         : await Promise.all(
-            firstPost.media.map(async (media) => {
-              const { id: photoId } = await (
-                await this.fetch(
-                  `https://graph.facebook.com/v20.0/${id}/photos?access_token=${accessToken}`,
-                  {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                      url: media.url,
-                      published: false,
-                    }),
+          firstPost.media.map(async (media) => {
+            const { id: photoId } = await (
+              await this.fetch(
+                `https://graph.facebook.com/v20.0/${id}/photos?access_token=${accessToken}`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
                   },
-                  'upload images slides'
-                )
-              ).json();
+                  body: JSON.stringify({
+                    url: media.url,
+                    published: false,
+                  }),
+                },
+                'upload images slides'
+              )
+            ).json();
 
-              return { media_fbid: photoId };
-            })
-          );
+            return { media_fbid: photoId };
+          })
+        );
 
       const {
         id: postId,
@@ -314,12 +313,12 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
           d.name === 'page_impressions_unique'
             ? 'Page Impressions'
             : d.name === 'page_post_engagements'
-            ? 'Posts Engagement'
-            : d.name === 'page_daily_follows'
-            ? 'Page followers'
-            : d.name === 'page_video_views'
-            ? 'Videos views'
-            : 'Posts Impressions',
+              ? 'Posts Engagement'
+              : d.name === 'page_daily_follows'
+                ? 'Page followers'
+                : d.name === 'page_video_views'
+                  ? 'Videos views'
+                  : 'Posts Impressions',
         percentageChange: 5,
         data: d?.values?.map((v: any) => ({
           total: v.value,

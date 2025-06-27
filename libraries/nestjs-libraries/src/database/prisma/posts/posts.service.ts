@@ -1,34 +1,34 @@
 import { Injectable } from '@nestjs/common';
-import { PostsRepository } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.repository';
-import { CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
+import { PostsRepository } from '@chaolaolo/nestjs-libraries/database/prisma/posts/posts.repository';
+import { CreatePostDto } from '@chaolaolo/nestjs-libraries/dtos/posts/create.post.dto';
 import dayjs from 'dayjs';
-import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
+import { IntegrationManager } from '@chaolaolo/nestjs-libraries/integrations/integration.manager';
 import { Integration, Post, Media, From } from '@prisma/client';
-import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
-import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
+import { GetPostsDto } from '@chaolaolo/nestjs-libraries/dtos/posts/get.posts.dto';
+import { NotificationService } from '@chaolaolo/nestjs-libraries/database/prisma/notifications/notification.service';
 import { capitalize, shuffle, uniq } from 'lodash';
-import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
-import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
-import { CreateGeneratedPostsDto } from '@gitroom/nestjs-libraries/dtos/generator/create.generated.posts.dto';
-import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { MessagesService } from '@chaolaolo/nestjs-libraries/database/prisma/marketplace/messages.service';
+import { StripeService } from '@chaolaolo/nestjs-libraries/services/stripe.service';
+import { CreateGeneratedPostsDto } from '@chaolaolo/nestjs-libraries/dtos/generator/create.generated.posts.dto';
+import { IntegrationService } from '@chaolaolo/nestjs-libraries/database/prisma/integrations/integration.service';
+import { makeId } from '@chaolaolo/nestjs-libraries/services/make.is';
 import {
   BadBody,
   RefreshToken,
-} from '@gitroom/nestjs-libraries/integrations/social.abstract';
-import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/client';
-import { timer } from '@gitroom/helpers/utils/timer';
-import { AuthTokenDetails } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+} from '@chaolaolo/nestjs-libraries/integrations/social.abstract';
+import { BullMqClient } from '@chaolaolo/nestjs-libraries/bull-mq-transport-new/client';
+import { timer } from '@chaolaolo/helpers/utils/timer';
+import { AuthTokenDetails } from '@chaolaolo/nestjs-libraries/integrations/social/social.integrations.interface';
 import utc from 'dayjs/plugin/utc';
-import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
-import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.link.service';
-import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
-import { CreateTagDto } from '@gitroom/nestjs-libraries/dtos/posts/create.tag.dto';
+import { MediaService } from '@chaolaolo/nestjs-libraries/database/prisma/media/media.service';
+import { ShortLinkService } from '@chaolaolo/nestjs-libraries/short-linking/short.link.service';
+import { WebhooksService } from '@chaolaolo/nestjs-libraries/database/prisma/webhooks/webhooks.service';
+import { CreateTagDto } from '@chaolaolo/nestjs-libraries/dtos/posts/create.tag.dto';
 import axios from 'axios';
 import sharp from 'sharp';
-import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
+import { UploadFactory } from '@chaolaolo/nestjs-libraries/upload/upload.factory';
 import { Readable } from 'stream';
-import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
+import { OpenaiService } from '@chaolaolo/nestjs-libraries/openai/openai.service';
 dayjs.extend(utc);
 
 type PostWithConditionals = Post & {
@@ -51,7 +51,7 @@ export class PostsService {
     private _shortLinkService: ShortLinkService,
     private _webhookService: WebhooksService,
     private openaiService: OpenaiService,
-  ) {}
+  ) { }
 
   async getStatistics(orgId: string, id: string) {
     const getPost = await this.getPostsRecursively(id, true, orgId, true);
@@ -86,11 +86,11 @@ export class PostsService {
       post!,
       ...(post?.childrenPost?.length
         ? await this.getPostsRecursively(
-            post?.childrenPost?.[0]?.id,
-            false,
-            orgId,
-            false
-          )
+          post?.childrenPost?.[0]?.id,
+          false,
+          orgId,
+          false
+        )
         : []),
     ];
   }
@@ -120,9 +120,9 @@ export class PostsService {
             url:
               m.path.indexOf('http') === -1
                 ? process.env.FRONTEND_URL +
-                  '/' +
-                  process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
-                  m.path
+                '/' +
+                process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
+                m.path
                 : m.path,
             type: 'image',
             path:
@@ -168,9 +168,9 @@ export class PostsService {
               url:
                 path.indexOf('http') === -1
                   ? process.env.FRONTEND_URL +
-                    '/' +
-                    process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
-                    path
+                  '/' +
+                  process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
+                  path
                   : path,
               type: 'image',
               path:
@@ -247,13 +247,13 @@ export class PostsService {
       const finalPost =
         firstPost.integration?.type === 'article'
           ? await this.postArticle(firstPost.integration!, [
-              firstPost,
-              ...morePosts,
-            ])
+            firstPost,
+            ...morePosts,
+          ])
           : await this.postSocial(firstPost.integration!, [
-              firstPost,
-              ...morePosts,
-            ]);
+            firstPost,
+            ...morePosts,
+          ]);
 
       if (firstPost?.intervalInDays) {
         this._workerServiceProducer.emit('post', {
@@ -292,12 +292,10 @@ export class PostsService {
       await this._notificationService.inAppNotification(
         firstPost.organizationId,
         `Error posting on ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
-        `An error occurred while posting on ${
-          firstPost.integration?.providerIdentifier
-        } ${
-          !process.env.NODE_ENV || process.env.NODE_ENV === 'development'
-            ? err
-            : ''
+        `An error occurred while posting on ${firstPost.integration?.providerIdentifier
+        } ${!process.env.NODE_ENV || process.env.NODE_ENV === 'development'
+          ? err
+          : ''
         }`,
         true
       );
@@ -903,9 +901,8 @@ export class PostsService {
                 })),
                 {
                   id: '',
-                  content: `Check out the full story here:\n${
-                    body.postId || body.url
-                  }`,
+                  content: `Check out the full story here:\n${body.postId || body.url
+                    }`,
                   image: [],
                 },
               ],

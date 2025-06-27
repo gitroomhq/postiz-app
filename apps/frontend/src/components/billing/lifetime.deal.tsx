@@ -1,16 +1,16 @@
 'use client';
 
-import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { useFetch } from '@chaolaolo/helpers/utils/custom.fetch';
+import { useUser } from '@chaolaolo/frontend/components/layout/user.context';
 import { useCallback, useMemo, useState } from 'react';
-import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
-import { Input } from '@gitroom/react/form/input';
-import { Button } from '@gitroom/react/form/button';
+import { pricing } from '@chaolaolo/nestjs-libraries/database/prisma/subscriptions/pricing';
+import { Input } from '@chaolaolo/react/form/input';
+import { Button } from '@chaolaolo/react/form/button';
 import { useSWRConfig } from 'swr';
-import { useToaster } from '@gitroom/react/toaster/toaster';
+import { useToaster } from '@chaolaolo/react/toaster/toaster';
 import { useRouter } from 'next/navigation';
-import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
-import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useFireEvents } from '@chaolaolo/helpers/utils/use.fire.events';
+import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
 export const LifetimeDeal = () => {
   const t = useT();
   const fetch = useFetch();
@@ -55,15 +55,13 @@ export const LifetimeDeal = () => {
     const channelsOr = currentPricing.channel;
     const list = [];
     list.push(
-      `${user.totalChannels} ${
-        user.totalChannels === 1 ? 'channel' : 'channels'
+      `${user.totalChannels} ${user.totalChannels === 1 ? 'channel' : 'channels'
       }`
     );
     list.push(
-      `${
-        currentPricing.posts_per_month > 10000
-          ? 'Unlimited'
-          : currentPricing.posts_per_month
+      `${currentPricing.posts_per_month > 10000
+        ? 'Unlimited'
+        : currentPricing.posts_per_month
       } posts per month`
     );
     if (currentPricing.team_members) {
@@ -83,10 +81,9 @@ export const LifetimeDeal = () => {
     const list = [];
     list.push(`${channelsOr} ${channelsOr === 1 ? 'channel' : 'channels'}`);
     list.push(
-      `${
-        currentPricing.posts_per_month > 10000
-          ? 'Unlimited'
-          : currentPricing.posts_per_month
+      `${currentPricing.posts_per_month > 10000
+        ? 'Unlimited'
+        : currentPricing.posts_per_month
       } posts per month`
     );
     if (currentPricing.team_members) {
@@ -141,10 +138,10 @@ export const LifetimeDeal = () => {
           {user?.tier?.current === 'PRO'
             ? 'EXTRA'
             : !user?.tier?.current
-            ? 'FREE'
-            : user?.tier?.current === 'STANDARD'
-            ? 'PRO'
-            : 'STANDARD'}
+              ? 'FREE'
+              : user?.tier?.current === 'STANDARD'
+                ? 'PRO'
+                : 'STANDARD'}
         </div>
 
         <div className="flex flex-col gap-[10px] justify-center text-[16px] text-customColor18">

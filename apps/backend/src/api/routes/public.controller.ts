@@ -1,16 +1,16 @@
 import { Body, Controller, Get, Param, Post, Req, Res } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { AgenciesService } from '@gitroom/nestjs-libraries/database/prisma/agencies/agencies.service';
-import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
-import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
+import { AgenciesService } from '@chaolaolo/nestjs-libraries/database/prisma/agencies/agencies.service';
+import { PostsService } from '@chaolaolo/nestjs-libraries/database/prisma/posts/posts.service';
+import { TrackService } from '@chaolaolo/nestjs-libraries/track/track.service';
 import { RealIP } from 'nestjs-real-ip';
-import { UserAgent } from '@gitroom/nestjs-libraries/user/user.agent';
-import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
+import { UserAgent } from '@chaolaolo/nestjs-libraries/user/user.agent';
+import { TrackEnum } from '@chaolaolo/nestjs-libraries/user/track.enum';
 import { Request, Response } from 'express';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
-import { AgentGraphInsertService } from '@gitroom/nestjs-libraries/agent/agent.graph.insert.service';
-import { Nowpayments } from '@gitroom/nestjs-libraries/crypto/nowpayments';
+import { makeId } from '@chaolaolo/nestjs-libraries/services/make.is';
+import { getCookieUrlFromDomain } from '@chaolaolo/helpers/subdomain/subdomain.management';
+import { AgentGraphInsertService } from '@chaolaolo/nestjs-libraries/agent/agent.graph.insert.service';
+import { Nowpayments } from '@chaolaolo/nestjs-libraries/crypto/nowpayments';
 
 @ApiTags('Public')
 @Controller('/public')
@@ -21,7 +21,7 @@ export class PublicController {
     private _agentGraphInsertService: AgentGraphInsertService,
     private _postsService: PostsService,
     private _nowpayments: Nowpayments
-  ) {}
+  ) { }
   @Post('/agent')
   async createAgent(@Body() body: { text: string; apiKey: string }) {
     if (
@@ -61,14 +61,14 @@ export class PublicController {
         ...p,
         ...(p.integration
           ? {
-              integration: {
-                id: p.integration.id,
-                name: p.integration.name,
-                picture: p.integration.picture,
-                providerIdentifier: p.integration.providerIdentifier,
-                profile: p.integration.profile,
-              },
-            }
+            integration: {
+              id: p.integration.id,
+              name: p.integration.name,
+              picture: p.integration.picture,
+              providerIdentifier: p.integration.providerIdentifier,
+              profile: p.integration.profile,
+            },
+          }
           : {}),
       })
     );
@@ -103,9 +103,9 @@ export class PublicController {
         domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
         ...(!process.env.NOT_SECURED
           ? {
-              secure: true,
-              httpOnly: true,
-            }
+            secure: true,
+            httpOnly: true,
+          }
           : {}),
         sameSite: 'none',
         expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
@@ -117,9 +117,9 @@ export class PublicController {
         domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
         ...(!process.env.NOT_SECURED
           ? {
-              secure: true,
-              httpOnly: true,
-            }
+            secure: true,
+            httpOnly: true,
+          }
           : {}),
         sameSite: 'none',
         expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),

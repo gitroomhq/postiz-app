@@ -1,14 +1,14 @@
-import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
+import { PrismaRepository } from '@chaolaolo/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
 import { User } from '@prisma/client';
-import { CreateAgencyDto } from '@gitroom/nestjs-libraries/dtos/agencies/create.agency.dto';
+import { CreateAgencyDto } from '@chaolaolo/nestjs-libraries/dtos/agencies/create.agency.dto';
 
 @Injectable()
 export class AgenciesRepository {
   constructor(
     private _socialMediaAgencies: PrismaRepository<'socialMediaAgency'>,
     private _socialMediaAgenciesNiche: PrismaRepository<'socialMediaAgencyNiche'>
-  ) {}
+  ) { }
 
   getAllAgencies() {
     return this._socialMediaAgencies.model.socialMediaAgency.findMany({

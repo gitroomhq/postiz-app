@@ -67,15 +67,15 @@ const fileContent = `${list
   .map((p, index) => {
     return `import Module${abc[
       index
-    ].toUpperCase()} from '@gitroom/plugins/list/${p}/backend/module';`;
+    ].toUpperCase()} from '@chaolaolo/plugins/list/${p}/backend/module';`;
   })
   .join('\n')}
 
 export default [${list
-  .map((p, index) => {
-    return `Module${abc[index].toUpperCase()}`;
-  })
-  .join(', ')}];
+    .map((p, index) => {
+      return `Module${abc[index].toUpperCase()}`;
+    })
+    .join(', ')}];
 `;
 
 writeFileSync('./libraries/plugins/src/plugins.ts', fileContent);

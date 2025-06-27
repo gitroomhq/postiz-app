@@ -10,11 +10,11 @@ import { TavilySearchResults } from '@langchain/community/tools/tavily_search';
 import { ToolNode } from '@langchain/langgraph/prebuilt';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import dayjs from 'dayjs';
-import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
+import { PostsService } from '@chaolaolo/nestjs-libraries/database/prisma/posts/posts.service';
 import { z } from 'zod';
-import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
-import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
-import { GeneratorDto } from '@gitroom/nestjs-libraries/dtos/generator/generator.dto';
+import { MediaService } from '@chaolaolo/nestjs-libraries/database/prisma/media/media.service';
+import { UploadFactory } from '@chaolaolo/nestjs-libraries/upload/upload.factory';
+import { GeneratorDto } from '@chaolaolo/nestjs-libraries/dtos/generator/generator.dto';
 
 const tools = !process.env.TAVILY_API_KEY
   ? []
@@ -84,12 +84,12 @@ const contentZod = (
       ),
     ...(isPicture
       ? {
-          prompt: z
-            .string()
-            .describe(
-              "Prompt to generate a picture for this post later, make sure it doesn't contain brand names and make it very descriptive in terms of style"
-            ),
-        }
+        prompt: z
+          .string()
+          .describe(
+            "Prompt to generate a picture for this post later, make sure it doesn't contain brand names and make it very descriptive in terms of style"
+          ),
+      }
       : {}),
   });
 
@@ -107,7 +107,7 @@ export class AgentGraphService {
   constructor(
     private _postsService: PostsService,
     private _mediaService: MediaService
-  ) {}
+  ) { }
   static state = () =>
     new StateGraph<WorkflowChannelsState>({
       channels: {
@@ -262,16 +262,14 @@ export class AgentGraphService {
         - Don't add any hashtags
         - Make sure it sounds ${state.tone}
         - Use ${state.tone === 'personal' ? '1st' : '3rd'} person mode
-        - ${
-          state.format === 'one_short' || state.format === 'thread_short'
-            ? 'Post should be maximum 200 chars to fit twitter'
-            : 'Post should be long'
-        }
-        - ${
-          state.format === 'one_short' || state.format === 'one_long'
-            ? 'Post should have only 1 item'
-            : 'Post should have minimum 2 items'
-        }
+        - ${state.format === 'one_short' || state.format === 'thread_short'
+        ? 'Post should be maximum 200 chars to fit twitter'
+        : 'Post should be long'
+      }
+        - ${state.format === 'one_short' || state.format === 'one_long'
+        ? 'Post should have only 1 item'
+        : 'Post should have minimum 2 items'
+      }
         - Use the hook as inspiration
         - Make sure it's engaging
         - Don't be cringy

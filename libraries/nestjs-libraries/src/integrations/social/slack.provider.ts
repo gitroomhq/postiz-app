@@ -3,9 +3,9 @@ import {
   PostDetails,
   PostResponse,
   SocialProvider,
-} from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+} from '@chaolaolo/nestjs-libraries/integrations/social/social.integrations.interface';
+import { makeId } from '@chaolaolo/nestjs-libraries/services/make.is';
+import { SocialAbstract } from '@chaolaolo/nestjs-libraries/integrations/social.abstract';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 
@@ -36,15 +36,13 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
     const state = makeId(6);
 
     return {
-      url: `https://slack.com/oauth/v2/authorize?client_id=${
-        process.env.SLACK_ID
-      }&redirect_uri=${encodeURIComponent(
-        `${
-          process?.env?.FRONTEND_URL?.indexOf('https') === -1
+      url: `https://slack.com/oauth/v2/authorize?client_id=${process.env.SLACK_ID
+        }&redirect_uri=${encodeURIComponent(
+          `${process?.env?.FRONTEND_URL?.indexOf('https') === -1
             ? 'https://redirectmeto.com/'
             : ''
-        }${process?.env?.FRONTEND_URL}/integrations/social/slack`
-      )}&scope=channels:read,chat:write,users:read,groups:read,channels:join,chat:write.customize&state=${state}`,
+          }${process?.env?.FRONTEND_URL}/integrations/social/slack`
+        )}&scope=channels:read,chat:write,users:read,groups:read,channels:join,chat:write.customize&state=${state}`,
       codeVerifier: makeId(10),
       state,
     };
@@ -65,13 +63,11 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
           client_id: process.env.SLACK_ID!,
           client_secret: process.env.SLACK_SECRET!,
           code: params.code,
-          redirect_uri: `${
-            process?.env?.FRONTEND_URL?.indexOf('https') === -1
+          redirect_uri: `${process?.env?.FRONTEND_URL?.indexOf('https') === -1
               ? 'https://redirectmeto.com/'
               : ''
-          }${process?.env?.FRONTEND_URL}/integrations/social/slack${
-            params.refresh ? `?refresh=${params.refresh}` : ''
-          }`,
+            }${process?.env?.FRONTEND_URL}/integrations/social/slack${params.refresh ? `?refresh=${params.refresh}` : ''
+            }`,
         }),
       })
     ).json();
@@ -158,10 +154,10 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
               },
               ...(post.media?.length
                 ? post.media.map((m) => ({
-                    type: 'image',
-                    image_url: m.url,
-                    alt_text: '',
-                  }))
+                  type: 'image',
+                  image_url: m.url,
+                  alt_text: '',
+                }))
                 : []),
             ],
           }),

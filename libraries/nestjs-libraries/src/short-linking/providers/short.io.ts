@@ -1,4 +1,4 @@
-import { ShortLinking } from '@gitroom/nestjs-libraries/short-linking/short-linking.interface';
+import { ShortLinking } from '@chaolaolo/nestjs-libraries/short-linking/short-linking.interface';
 
 const options = {
   headers: {
@@ -13,9 +13,8 @@ export class ShortIo implements ShortLinking {
   async linksStatistics(links: string[]) {
     return Promise.all(
       links.map(async (link) => {
-        const url = `https://api.short.io/links/expand?domain=${
-          this.shortLinkDomain
-        }&path=${link.split('/').pop()}`;
+        const url = `https://api.short.io/links/expand?domain=${this.shortLinkDomain
+          }&path=${link.split('/').pop()}`;
         const response = await fetch(url, options).then((res) => res.json());
 
         const linkStatisticsUrl = `https://statistics.short.io/statistics/link/${response.id}?period=last30&tz=UTC`;
@@ -52,8 +51,7 @@ export class ShortIo implements ShortLinking {
     return await (
       await (
         await fetch(
-          `https://api.short.io/links/expand?domain=${
-            this.shortLinkDomain
+          `https://api.short.io/links/expand?domain=${this.shortLinkDomain
           }&path=${shortLink.split('/').pop()}`,
           options
         )

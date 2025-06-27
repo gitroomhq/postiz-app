@@ -1,11 +1,11 @@
 import { HttpStatus, Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
-import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
-import { HttpForbiddenException } from '@gitroom/nestjs-libraries/services/exception.filter';
+import { OrganizationService } from '@chaolaolo/nestjs-libraries/database/prisma/organizations/organization.service';
+import { HttpForbiddenException } from '@chaolaolo/nestjs-libraries/services/exception.filter';
 
 @Injectable()
 export class PublicAuthMiddleware implements NestMiddleware {
-  constructor(private _organizationService: OrganizationService) {}
+  constructor(private _organizationService: OrganizationService) { }
   async use(req: Request, res: Response, next: NextFunction) {
     const auth = (req.headers.authorization ||
       req.headers.Authorization) as string;

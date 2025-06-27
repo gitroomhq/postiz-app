@@ -1,14 +1,14 @@
-import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
+import { PrismaRepository } from '@chaolaolo/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
 import { Provider } from '@prisma/client';
-import { AuthService } from '@gitroom/helpers/auth/auth.service';
-import { ItemsDto } from '@gitroom/nestjs-libraries/dtos/marketplace/items.dto';
-import { allTagsOptions } from '@gitroom/nestjs-libraries/database/prisma/marketplace/tags.list';
-import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
+import { AuthService } from '@chaolaolo/helpers/auth/auth.service';
+import { ItemsDto } from '@chaolaolo/nestjs-libraries/dtos/marketplace/items.dto';
+import { allTagsOptions } from '@chaolaolo/nestjs-libraries/database/prisma/marketplace/tags.list';
+import { UserDetailDto } from '@chaolaolo/nestjs-libraries/dtos/users/user.details.dto';
 
 @Injectable()
 export class UsersRepository {
-  constructor(private _user: PrismaRepository<'user'>) {}
+  constructor(private _user: PrismaRepository<'user'>) { }
 
   getImpersonateUser(name: string) {
     return this._user.model.user.findMany({
@@ -150,13 +150,13 @@ export class UsersRepository {
         bio: body.bio,
         picture: body.picture
           ? {
-              connect: {
-                id: body.picture.id,
-              },
-            }
-          : {
-              disconnect: true,
+            connect: {
+              id: body.picture.id,
             },
+          }
+          : {
+            disconnect: true,
+          },
       },
     });
   }
@@ -174,15 +174,15 @@ export class UsersRepository {
       items: {
         ...(items.items.length
           ? {
-              some: {
-                OR: items.items.map((key) => ({ key })),
-              },
-            }
+            some: {
+              OR: items.items.map((key) => ({ key })),
+            },
+          }
           : {
-              some: {
-                OR: allTagsOptions.map((p) => ({ key: p.key })),
-              },
-            }),
+            some: {
+              OR: allTagsOptions.map((p) => ({ key: p.key })),
+            },
+          }),
       },
     };
 

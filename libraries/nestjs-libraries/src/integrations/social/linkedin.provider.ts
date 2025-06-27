@@ -3,15 +3,15 @@ import {
   PostDetails,
   PostResponse,
   SocialProvider,
-} from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+} from '@chaolaolo/nestjs-libraries/integrations/social/social.integrations.interface';
+import { makeId } from '@chaolaolo/nestjs-libraries/services/make.is';
 import sharp from 'sharp';
 import { lookup } from 'mime-types';
-import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { readOrFetch } from '@chaolaolo/helpers/utils/read.or.fetch';
+import { SocialAbstract } from '@chaolaolo/nestjs-libraries/integrations/social.abstract';
 import { Integration } from '@prisma/client';
-import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
-import { LinkedinDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/linkedin.dto';
+import { PostPlug } from '@chaolaolo/helpers/decorators/post.plug';
+import { LinkedinDto } from '@chaolaolo/nestjs-libraries/dtos/posts/providers-settings/linkedin.dto';
 import imageToPDF from 'image-to-pdf';
 import { Readable } from 'stream';
 
@@ -86,11 +86,10 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   async generateAuthUrl() {
     const state = makeId(6);
     const codeVerifier = makeId(30);
-    const url = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${
-      process.env.LINKEDIN_CLIENT_ID
-    }&prompt=none&redirect_uri=${encodeURIComponent(
-      `${process.env.FRONTEND_URL}/integrations/social/linkedin`
-    )}&state=${state}&scope=${encodeURIComponent(this.scopes.join(' '))}`;
+    const url = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${process.env.LINKEDIN_CLIENT_ID
+      }&prompt=none&redirect_uri=${encodeURIComponent(
+        `${process.env.FRONTEND_URL}/integrations/social/linkedin`
+      )}&state=${state}&scope=${encodeURIComponent(this.scopes.join(' '))}`;
     return {
       url,
       codeVerifier,
@@ -108,8 +107,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     body.append('code', params.code);
     body.append(
       'redirect_uri',
-      `${process.env.FRONTEND_URL}/integrations/social/linkedin${
-        params.refresh ? `?refresh=${params.refresh}` : ''
+      `${process.env.FRONTEND_URL}/integrations/social/linkedin${params.refresh ? `?refresh=${params.refresh}` : ''
       }`
     );
     body.append('client_id', process.env.LINKEDIN_CLIENT_ID!);
@@ -236,10 +234,10 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
                   : `urn:li:organization:${personId}`,
               ...(isVideo
                 ? {
-                    fileSizeBytes: picture.length,
-                    uploadCaptions: false,
-                    uploadThumbnail: false,
-                  }
+                  fileSizeBytes: picture.length,
+                  uploadCaptions: false,
+                  uploadThumbnail: false,
+                }
                 : {}),
             },
           }),
@@ -261,8 +259,8 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           ...(isVideo
             ? { 'Content-Type': 'application/octet-stream' }
             : isPdf
-            ? { 'Content-Type': 'application/pdf' }
-            : {}),
+              ? { 'Content-Type': 'application/pdf' }
+              : {}),
         },
         body: picture.slice(i, i + 1024 * 1024 * 2),
       });

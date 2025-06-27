@@ -1,7 +1,7 @@
 import React, { FC, useCallback, useMemo } from 'react';
-import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { useFetch } from '@chaolaolo/helpers/utils/custom.fetch';
 import useSWR from 'swr';
-import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
 export const OrderList: FC<{
   type: 'seller' | 'buyer';
 }> = (props) => {
@@ -44,8 +44,8 @@ export const OrderList: FC<{
                   key={details.id}
                   {...(index === order.details.length - 1
                     ? {
-                        colSpan: biggerRow - order.details.length + 1,
-                      }
+                      colSpan: biggerRow - order.details.length + 1,
+                    }
                     : {})}
                 >
                   <div className="flex gap-[20px] items-center">

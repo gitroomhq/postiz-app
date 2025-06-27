@@ -2,7 +2,7 @@
 
 import { create } from 'zustand';
 import dayjs from 'dayjs';
-import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
+import { Integrations } from '@chaolaolo/frontend/components/launches/calendar.context';
 import { createRef, RefObject } from 'react';
 import { arrayMoveImmutable } from 'array-move';
 
@@ -309,11 +309,11 @@ export const useLaunchStore = create<StoreState>()((set) => ({
       internal: state.internal.map((item) =>
         item.integration.id === integrationId
           ? {
-              ...item,
-              integrationValue: item.integrationValue.map((v, i) =>
-                i === index ? { ...v, media } : v
-              ),
-            }
+            ...item,
+            integrationValue: item.integrationValue.map((v, i) =>
+              i === index ? { ...v, media } : v
+            ),
+          }
           : item
       ),
     }));
@@ -335,9 +335,9 @@ export const useLaunchStore = create<StoreState>()((set) => ({
       global: state.global.map((item, i) =>
         i === index
           ? {
-              ...item,
-              media: item.media.filter((_, idx) => idx !== mediaIndex),
-            }
+            ...item,
+            media: item.media.filter((_, idx) => idx !== mediaIndex),
+          }
           : item
       ),
     })),
@@ -350,11 +350,11 @@ export const useLaunchStore = create<StoreState>()((set) => ({
       internal: state.internal.map((item) =>
         item.integration.id === integrationId
           ? {
-              ...item,
-              integrationValue: item.integrationValue.map((v, i) =>
-                i === index ? { ...v, content } : v
-              ),
-            }
+            ...item,
+            integrationValue: item.integrationValue.map((v, i) =>
+              i === index ? { ...v, content } : v
+            ),
+          }
           : item
       ),
     }));
@@ -368,11 +368,11 @@ export const useLaunchStore = create<StoreState>()((set) => ({
       internal: state.internal.map((item) =>
         item.integration.id === integrationId
           ? {
-              ...item,
-              integrationValue: item.integrationValue.map((v, i) =>
-                i === index ? { ...v, media: [...v.media, ...media] } : v
-              ),
-            }
+            ...item,
+            integrationValue: item.integrationValue.map((v, i) =>
+              i === index ? { ...v, media: [...v.media, ...media] } : v
+            ),
+          }
           : item
       ),
     })),
@@ -385,16 +385,16 @@ export const useLaunchStore = create<StoreState>()((set) => ({
       internal: state.internal.map((item) =>
         item.integration.id === integrationId
           ? {
-              ...item,
-              integrationValue: item.integrationValue.map((v, i) =>
-                i === index
-                  ? {
-                      ...v,
-                      media: v.media.filter((_, idx) => idx !== mediaIndex),
-                    }
-                  : v
-              ),
-            }
+            ...item,
+            integrationValue: item.integrationValue.map((v, i) =>
+              i === index
+                ? {
+                  ...v,
+                  media: v.media.filter((_, idx) => idx !== mediaIndex),
+                }
+                : v
+            ),
+          }
           : item
       ),
     })),
@@ -470,11 +470,11 @@ export const useLaunchStore = create<StoreState>()((set) => ({
       internal: state.internal.map((item) =>
         item.integration.id === integrationId
           ? {
-              ...item,
-              integrationValue: item.integrationValue.map((v, i) =>
-                i === index ? { ...v, media: [...v.media, ...media] } : v
-              ),
-            }
+            ...item,
+            integrationValue: item.integrationValue.map((v, i) =>
+              i === index ? { ...v, media: [...v.media, ...media] } : v
+            ),
+          }
           : item
       ),
     })),
