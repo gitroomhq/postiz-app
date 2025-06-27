@@ -102,6 +102,15 @@ interface StoreState {
   setTags: (tags: { label: string; value: string }[]) => void;
   setIsCreateSet: (isCreateSet: boolean) => void;
   setTotalChars?: (totalChars: number) => void;
+  appendInternalValueMedia: (
+    integrationId: string,
+    index: number,
+    media: { id: string; path: string }[]
+  ) => void;
+  appendGlobalValueMedia: (
+    index: number,
+    media: { id: string; path: string }[]
+  ) => void;
 }
 
 const initialState = {
@@ -451,5 +460,31 @@ export const useLaunchStore = create<StoreState>()((set) => ({
   setTotalChars: (totalChars: number) =>
     set((state) => ({
       totalChars,
+    })),
+  appendInternalValueMedia: (
+    integrationId: string,
+    index: number,
+    media: { id: string; path: string }[]
+  ) =>
+    set((state) => ({
+      internal: state.internal.map((item) =>
+        item.integration.id === integrationId
+          ? {
+              ...item,
+              integrationValue: item.integrationValue.map((v, i) =>
+                i === index ? { ...v, media: [...v.media, ...media] } : v
+              ),
+            }
+          : item
+      ),
+    })),
+  appendGlobalValueMedia: (
+    index: number,
+    media: { id: string; path: string }[]
+  ) =>
+    set((state) => ({
+      global: state.global.map((item, i) =>
+        i === index ? { ...item, media: [...item.media, ...media] } : item
+      ),
     })),
 }));

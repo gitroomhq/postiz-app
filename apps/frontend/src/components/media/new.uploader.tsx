@@ -13,6 +13,7 @@ import { useVariables } from '@gitroom/react/helpers/variable.context';
 import Compressor from '@uppy/compressor';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useToaster } from '@gitroom/react/toaster/toaster';
+import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 
 export function MultipartFileUploader({
   onUploadSuccess,
@@ -59,6 +60,7 @@ export function useUppyUploader(props: {
   onUploadSuccess: (result: UploadResult) => void;
   allowedFileTypes: string;
 }) {
+  const setLocked = useLaunchStore(state => state.setLocked);
   const toast = useToaster();
   const { storageProvider, backendUrl, disableImageCompression } =
     useVariables();
@@ -135,12 +137,17 @@ export function useUppyUploader(props: {
     }
     // Set additional metadata when a file is added
     uppy2.on('file-added', (file) => {
+      setLocked(true);
       uppy2.setFileMeta(file.id, {
         useCloudflare: storageProvider === 'cloudflare' ? 'true' : 'false', // Example of adding a custom field
         // Add more fields as needed
       });
     });
+    uppy2.on('error', (result) => {
+      setLocked(false);
+    })
     uppy2.on('complete', (result) => {
+      setLocked(false);
       onUploadSuccess(result);
     });
     uppy2.on('upload-success', (file, response) => {

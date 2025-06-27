@@ -7,6 +7,7 @@ import React, {
   useMemo,
   useRef,
   useState,
+  ClipboardEvent,
 } from 'react';
 import { CopilotTextarea } from '@copilotkit/react-textarea';
 import clsx from 'clsx';
@@ -32,6 +33,10 @@ import {
   LinkedinCompanyPop,
   ShowLinkedinCompany,
 } from '@gitroom/frontend/components/launches/helpers/linkedin.component';
+import { DropEvent, FileRejection, useDropzone } from 'react-dropzone';
+import { useUppyUploader } from '@gitroom/frontend/components/media/new.uploader';
+import { UploadResult } from '@uppy/core';
+import { ProgressBar } from '@uppy/react';
 export const EditorWrapper: FC<{
   totalPosts: number;
   value: string;
@@ -46,6 +51,8 @@ export const EditorWrapper: FC<{
     addInternalValue,
     addGlobalValue,
     setInternalValueMedia,
+    appendInternalValueMedia,
+    appendGlobalValueMedia,
     setGlobalValueMedia,
     changeOrderGlobal,
     changeOrderInternal,
@@ -77,6 +84,8 @@ export const EditorWrapper: FC<{
       setGlobalValue: state.setGlobalValue,
       setInternalValue: state.setInternalValue,
       totalChars: state.totalChars,
+      appendInternalValueMedia: state.appendInternalValueMedia,
+      appendGlobalValueMedia: state.appendGlobalValueMedia,
     }))
   );
 
@@ -101,7 +110,7 @@ export const EditorWrapper: FC<{
     }
 
     return global;
-  }, [current, internal, global]);
+  }, [internal, global]);
 
   const setValue = useCallback(
     (value: string[]) => {
@@ -161,6 +170,17 @@ export const EditorWrapper: FC<{
       }
 
       return setGlobalValueMedia(index, value);
+    },
+    [current, global, internal]
+  );
+
+  const appendImages = useCallback(
+    (index: number) => (value: any[]) => {
+      if (internal) {
+        return appendInternalValueMedia(current, index, value);
+      }
+
+      return appendGlobalValueMedia(index, value);
     },
     [current, global, internal]
   );
@@ -274,6 +294,7 @@ export const EditorWrapper: FC<{
             validateChars={true}
             identifier={internalFromAll?.identifier || 'global'}
             totalChars={totalChars}
+            appendImages={appendImages(index)}
           />
         </div>
         <div className="flex flex-col items-center gap-[10px]">
@@ -337,6 +358,7 @@ export const Editor: FC<{
   allValues?: any[];
   onChange: (value: string) => void;
   setImages?: (value: any[]) => void;
+  appendImages?: (value: any[]) => void;
   autoComplete?: boolean;
   validateChars?: boolean;
   identifier?: string;
@@ -350,12 +372,59 @@ export const Editor: FC<{
     autoComplete,
     validateChars,
     identifier,
+    appendImages,
   } = props;
   const user = useUser();
   const [id] = useState(makeId(10));
   const newRef = useRef<any>(null);
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const t = useT();
+
+  const uppy = useUppyUploader({
+    onUploadSuccess: (result: UploadResult<any, any>) => {
+      appendImages([
+        ...result.successful.map((p) => ({
+          id: p.response.body.saved.id,
+          path: p.response.body.saved.path,
+        })),
+      ]);
+      uppy.clear();
+    },
+    allowedFileTypes: 'image/*,video/mp4',
+  });
+
+  const onDrop = useCallback(
+    (acceptedFiles: File[]) => {
+      for (const file of acceptedFiles) {
+        uppy.addFile(file);
+      }
+    },
+    [uppy]
+  );
+
+  const paste = useCallback(
+    async (event: ClipboardEvent<HTMLDivElement> | File[]) => {
+      // @ts-ignore
+      const clipboardItems = event.clipboardData?.items;
+      if (!clipboardItems) {
+        return;
+      }
+
+      // @ts-ignore
+      for (const item of clipboardItems) {
+        if (item.kind === 'file') {
+          const file = item.getAsFile();
+          if (file) {
+            uppy.addFile(file);
+          }
+        }
+      }
+    },
+    [uppy]
+  );
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
   const addText = useCallback(
     (emoji: string) => {
@@ -367,8 +436,16 @@ export const Editor: FC<{
     [props.value, id]
   );
   return (
-    <>
+    <div {...getRootProps()}>
       <div className="relative bg-customColor2" id={id}>
+        <div
+          className={clsx(
+            'absolute left-0 top-0 w-full h-full bg-black/70 z-[300] transition-all items-center justify-center flex text-white text-sm',
+            !isDragActive ? 'pointer-events-none opacity-0' : 'opacity-100'
+          )}
+        >
+          Drop your files here to upload
+        </div>
         <div className="flex gap-[5px] bg-customColor55 border-b border-t border-customColor3 justify-center items-center p-[5px]">
           <SignatureBox editor={newRef?.current?.editor!} />
           <UText
@@ -401,30 +478,35 @@ export const Editor: FC<{
             </div>
           </div>
         </div>
-        <CopilotTextarea
-          disableBranding={true}
-          ref={newRef}
-          className={clsx(
-            '!min-h-40 p-2 overflow-x-hidden scrollbar scrollbar-thumb-[#612AD5] bg-customColor2 outline-none',
-            props.totalPosts > 1 && '!max-h-80'
-          )}
-          value={props.value}
-          onChange={(e) => {
-            props?.onChange?.(e.target.value);
-          }}
-          // onPaste={props.onPaste}
-          placeholder={t('write_your_reply', 'Write your post...')}
-          autosuggestionsConfig={{
-            textareaPurpose: `Assist me in writing social media posts.`,
-            chatApiConfigs: {
-              suggestionsApiConfig: {
-                maxTokens: 20,
-                stop: ['.', '?', '!'],
+        <div className="relative">
+          <div className="pointer-events-none absolute end-0 bottom-0 z-[200]">
+            <ProgressBar id={`prog-${num}`} uppy={uppy} />
+          </div>
+          <CopilotTextarea
+            disableBranding={true}
+            ref={newRef}
+            className={clsx(
+              '!min-h-40 p-2 overflow-x-hidden scrollbar scrollbar-thumb-[#612AD5] bg-customColor2 outline-none',
+              props.totalPosts > 1 && '!max-h-80'
+            )}
+            value={props.value}
+            onChange={(e) => {
+              props?.onChange?.(e.target.value);
+            }}
+            onPaste={paste}
+            placeholder={t('write_your_reply', 'Write your post...')}
+            autosuggestionsConfig={{
+              textareaPurpose: `Assist me in writing social media posts.`,
+              chatApiConfigs: {
+                suggestionsApiConfig: {
+                  maxTokens: 20,
+                  stop: ['.', '?', '!'],
+                },
               },
-            },
-            disabled: user?.tier?.ai ? !autoComplete : true,
-          }}
-        />
+              disabled: user?.tier?.ai ? !autoComplete : true,
+            }}
+          />
+        </div>
         {validateChars && props.value.length < 6 && (
           <div className="px-3 text-sm bg-red-600 !text-white mb-[4px]">
             {t(
@@ -461,6 +543,6 @@ export const Editor: FC<{
           {props?.value?.length}/{props.totalChars}
         </div>
       )}
-    </>
+    </div>
   );
 };
