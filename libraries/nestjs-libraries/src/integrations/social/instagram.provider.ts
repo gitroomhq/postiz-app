@@ -29,6 +29,7 @@ export class InstagramProvider
     'instagram_manage_comments',
     'instagram_manage_insights',
   ];
+  requiredEnvVars = ['FACEBOOK_APP_ID', 'FACEBOOK_APP_SECRET'];
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     return {

@@ -61,10 +61,18 @@ const articleIntegrationList = [
 
 @Injectable()
 export class IntegrationManager {
+  private filterConfigured(providers: SocialProvider[]) {
+    return providers.filter(
+      (p) =>
+        !p.requiredEnvVars ||
+        p.requiredEnvVars.every((v) => process.env[v])
+    );
+  }
   async getAllIntegrations() {
+    const activeSocial = this.filterConfigured(socialIntegrationList);
     return {
       social: await Promise.all(
-        socialIntegrationList.map(async (p) => ({
+        activeSocial.map(async (p) => ({
           name: p.name,
           identifier: p.identifier,
           toolTip: p.toolTip,
@@ -81,7 +89,8 @@ export class IntegrationManager {
   }
 
   getAllPlugs() {
-    return socialIntegrationList
+    const activeSocial = this.filterConfigured(socialIntegrationList);
+    return activeSocial
       .map((p) => {
         return {
           name: p.name,
@@ -101,7 +110,9 @@ export class IntegrationManager {
   }
 
   getInternalPlugs(providerName: string) {
-    const p = socialIntegrationList.find((p) => p.identifier === providerName)!;
+    const p = this.filterConfigured(socialIntegrationList).find(
+      (p) => p.identifier === providerName
+    )!;
     return {
       internalPlugs:
         Reflect.getMetadata('custom:internal_plug', p.constructor.prototype) ||
@@ -110,10 +121,12 @@ export class IntegrationManager {
   }
 
   getAllowedSocialsIntegrations() {
-    return socialIntegrationList.map((p) => p.identifier);
+    return this.filterConfigured(socialIntegrationList).map((p) => p.identifier);
   }
   getSocialIntegration(integration: string): SocialProvider {
-    return socialIntegrationList.find((i) => i.identifier === integration)!;
+    return this.filterConfigured(socialIntegrationList).find(
+      (i) => i.identifier === integration
+    )!;
   }
   getAllowedArticlesIntegrations() {
     return articleIntegrationList.map((p) => p.identifier);

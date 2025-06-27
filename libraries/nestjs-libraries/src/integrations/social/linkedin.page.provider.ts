@@ -29,6 +29,7 @@ export class LinkedinPageProvider
     'w_organization_social',
     'r_organization_social',
   ];
+  requiredEnvVars = ['LINKEDIN_CLIENT_ID', 'LINKEDIN_CLIENT_SECRET'];
 
   override async refreshToken(
     refresh_token: string

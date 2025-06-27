@@ -58,6 +58,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     'https://www.googleapis.com/auth/youtubepartner',
     'https://www.googleapis.com/auth/yt-analytics.readonly',
   ];
+  requiredEnvVars = ['YOUTUBE_CLIENT_ID', 'YOUTUBE_CLIENT_SECRET'];
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     const { client, oauth2 } = clientAndYoutube();

@@ -23,6 +23,7 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
   isBetweenSteps = false;
   isWeb3 = true;
   scopes = [];
+  requiredEnvVars = ['TELEGRAM_TOKEN'];
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     return {

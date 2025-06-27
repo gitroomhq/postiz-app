@@ -27,6 +27,7 @@ export class PinterestProvider
     'pins:write',
     'user_accounts:read',
   ];
+  requiredEnvVars = ['PINTEREST_CLIENT_ID', 'PINTEREST_CLIENT_SECRET'];
 
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const { access_token, expires_in } = await (

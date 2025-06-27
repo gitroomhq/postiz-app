@@ -25,6 +25,7 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
     'photos',
     'video',
   ];
+  requiredEnvVars = ['VK_ID'];
 
   async refreshToken(refresh: string): Promise<AuthTokenDetails> {
     const [oldRefreshToken, device_id] = refresh.split('&&&&');

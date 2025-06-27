@@ -30,6 +30,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     'w_organization_social',
     'r_organization_social',
   ];
+  requiredEnvVars = ['LINKEDIN_CLIENT_ID', 'LINKEDIN_CLIENT_SECRET'];
   refreshWait = true;
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {

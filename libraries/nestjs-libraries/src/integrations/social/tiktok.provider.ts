@@ -24,6 +24,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     'video.upload',
     'user.info.profile',
   ];
+  requiredEnvVars = ['TIKTOK_CLIENT_ID', 'TIKTOK_CLIENT_SECRET'];
 
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const value = {

@@ -26,6 +26,7 @@ export class InstagramStandaloneProvider
     'instagram_business_manage_comments',
     'instagram_business_manage_insights',
   ];
+  requiredEnvVars = ['INSTAGRAM_APP_ID', 'INSTAGRAM_APP_SECRET'];
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     const { access_token } = await (

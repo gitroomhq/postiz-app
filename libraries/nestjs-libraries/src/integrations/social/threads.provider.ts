@@ -23,6 +23,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     'threads_manage_replies',
     'threads_manage_insights',
   ];
+  requiredEnvVars = ['THREADS_APP_ID', 'THREADS_APP_SECRET'];
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     const { access_token } = await (
