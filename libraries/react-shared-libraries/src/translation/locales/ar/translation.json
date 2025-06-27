@@ -161,6 +161,7 @@
   "repeat_post_every": "تكرار النشر كل...",
   "use_this_media": "استخدم هذه الوسائط",
   "create_new_post": "إنشاء منشور جديد",
+  "update_post": "تحديث المنشور الحالي",
   "merge_comments_into_one_post": "دمج التعليقات في منشور واحد",
   "accounts_that_will_engage": "الحسابات التي ستتفاعل:",
   "day": "يوم",
@@ -186,6 +187,8 @@
   "please_add_the_following_command_in_your_chat": "يرجى إضافة الأمر التالي في الدردشة الخاصة بك:",
   "copy": "نسخ",
   "settings": "الإعدادات",
+  "integrations": "التكاملات",
+  "add_integration": "إضافة تكامل",
   "you_are_now_editing_only": "أنت الآن تقوم بالتحرير فقط",
   "tag_a_company": "الإشارة إلى شركة",
   "video_length_is_invalid_must_be_up_to": "مدة الفيديو غير صالحة، يجب أن تكون حتى",
@@ -421,7 +424,7 @@
   "enable_color_picker": "تفعيل منتقي الألوان",
   "cancel_the_color_picker": "إلغاء منتقي الألوان",
   "no_content_yet": "لا يوجد محتوى بعد",
-  "write_your_reply": "اكتب ردك...",
+  "write_your_reply": "اكتب منشورك...",
   "add_a_tag": "أضف وسمًا",
   "add_to_calendar": "أضف إلى التقويم",
   "select_channels_from_circles": "اختر القنوات من الدوائر أعلاه",
@@ -483,5 +486,10 @@
   "start_7_days_free_trial": "ابدأ تجربة مجانية لمدة 7 أيام",
   "change_language": "تغيير اللغة",
   "that_a_wrap": "انتهينا!\n\nإذا أعجبك هذا التسلسل:\n\n1. تابعني على @{{username}} للمزيد من هذه المواضيع\n2. أعد تغريد التغريدة أدناه لمشاركة هذا التسلسل مع جمهورك\n",
-  "post_as_images_carousel": "انشر كعرض شرائح للصور"
+  "post_as_images_carousel": "انشر كعرض شرائح للصور",
+  "save_set": "حفظ المجموعة",
+  "separate_post": "فصل المنشور إلى عدة منشورات",
+  "label_who_can_reply_to_this_post": "من يمكنه الرد على هذا المنشور؟",
+  "delete_integration": "حذف التكامل",
+  "start_writing_your_post": "ابدأ بكتابة منشورك لمعاينة"
 }

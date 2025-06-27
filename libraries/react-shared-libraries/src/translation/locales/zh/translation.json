@@ -161,6 +161,7 @@
   "repeat_post_every": "每隔...重复发布",
   "use_this_media": "使用此媒体",
   "create_new_post": "创建新帖子",
+  "update_post": "更新已有帖子",
   "merge_comments_into_one_post": "将评论合并为一条帖子",
   "accounts_that_will_engage": "将参与的账号：",
   "day": "天",
@@ -186,6 +187,8 @@
   "please_add_the_following_command_in_your_chat": "请在您的聊天中添加以下命令：",
   "copy": "复制",
   "settings": "设置",
+  "integrations": "集成",
+  "add_integration": "添加集成",
   "you_are_now_editing_only": "您现在仅在编辑",
   "tag_a_company": "标记公司",
   "video_length_is_invalid_must_be_up_to": "视频时长无效，最长不得超过",
@@ -421,7 +424,7 @@
   "enable_color_picker": "启用取色器",
   "cancel_the_color_picker": "取消取色器",
   "no_content_yet": "暂无内容",
-  "write_your_reply": "写下你的回复...",
+  "write_your_reply": "写下你的帖子...",
   "add_a_tag": "添加标签",
   "add_to_calendar": "添加到日历",
   "select_channels_from_circles": "从上方的圈子中选择频道",
@@ -483,5 +486,10 @@
   "start_7_days_free_trial": "开始7天免费试用",
   "change_language": "切换语言",
   "that_a_wrap": "本帖到此结束！\n\n如果你喜欢这个话题：\n\n1. 关注我 @{{username}}，获取更多类似内容\n2. 转发下方推文，与更多人分享本帖\n",
-  "post_as_images_carousel": "以图片轮播的形式发布"
+  "post_as_images_carousel": "以图片轮播的形式发布",
+  "save_set": "保存设置",
+  "separate_post": "将帖子拆分为多个帖子",
+  "label_who_can_reply_to_this_post": "谁可以回复此帖子？",
+  "delete_integration": "删除集成",
+  "start_writing_your_post": "开始写你的帖子以预览"
 }

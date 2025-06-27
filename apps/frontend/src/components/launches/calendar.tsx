@@ -31,7 +31,6 @@ import 'dayjs/locale/tr';
 import 'dayjs/locale/vi';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import { useModals } from '@mantine/modals';
-import { AddEditModal } from '@gitroom/frontend/components/launches/add.edit.model';
 import clsx from 'clsx';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { ExistingDataContextProvider } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
@@ -53,6 +52,7 @@ import { useInterval } from '@mantine/hooks';
 import { StatisticsModal } from '@gitroom/frontend/components/launches/statistics';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import i18next from 'i18next';
+import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
 
 // Extend dayjs with necessary plugins
 extend(isSameOrAfter);

@@ -1,4 +1,6 @@
 FROM node:20-alpine3.19
+ARG VERSION
+ENV VERSION=$VERSION
 RUN apk add --no-cache g++ make py3-pip supervisor bash caddy
 RUN npm --no-update-notifier --no-fund --global install pnpm@10.6.1 pm2
 

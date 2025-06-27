@@ -161,6 +161,7 @@
   "repeat_post_every": "Beitrag wiederholen alle...",
   "use_this_media": "Dieses Medium verwenden",
   "create_new_post": "Neuen Beitrag erstellen",
+  "update_post": "Vorhandenen Beitrag aktualisieren",
   "merge_comments_into_one_post": "Kommentare zu einem Beitrag zusammenfassen",
   "accounts_that_will_engage": "Konten, die interagieren werden:",
   "day": "Tag",
@@ -186,6 +187,8 @@
   "please_add_the_following_command_in_your_chat": "Bitte fügen Sie den folgenden Befehl in Ihrem Chat hinzu:",
   "copy": "Kopieren",
   "settings": "Einstellungen",
+  "integrations": "Integrationen",
+  "add_integration": "Integration hinzufügen",
   "you_are_now_editing_only": "Sie bearbeiten jetzt nur",
   "tag_a_company": "Unternehmen markieren",
   "video_length_is_invalid_must_be_up_to": "Videolänge ist ungültig, sie darf maximal",
@@ -421,7 +424,7 @@
   "enable_color_picker": "Farbwähler aktivieren",
   "cancel_the_color_picker": "Farbwähler abbrechen",
   "no_content_yet": "Noch kein Inhalt",
-  "write_your_reply": "Schreibe deine Antwort...",
+  "write_your_reply": "Schreibe deinen Beitrag...",
   "add_a_tag": "Tag hinzufügen",
   "add_to_calendar": "Zum Kalender hinzufügen",
   "select_channels_from_circles": "Wähle Kanäle aus den obigen Kreisen aus",
@@ -483,5 +486,10 @@
   "start_7_days_free_trial": "7-tägige kostenlose Testversion starten",
   "change_language": "Sprache ändern",
   "that_a_wrap": "Das war's!\n\nWenn dir dieser Thread gefallen hat:\n\n1. Folge mir @{{username}} für mehr davon\n2. Retweete den untenstehenden Tweet, um diesen Thread mit deinem Publikum zu teilen\n",
-  "post_as_images_carousel": "Als Bilderkarussell posten"
+  "post_as_images_carousel": "Als Bilderkarussell posten",
+  "save_set": "Set speichern",
+  "separate_post": "Beitrag in mehrere Beiträge aufteilen",
+  "label_who_can_reply_to_this_post": "Wer kann auf diesen Beitrag antworten?",
+  "delete_integration": "Integration löschen",
+  "start_writing_your_post": "Beginne, deinen Beitrag für eine Vorschau zu schreiben"
 }

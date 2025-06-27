@@ -255,10 +255,11 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     }
 
     const postsArray = [];
+    let commentId = finalId;
     for (const comment of comments) {
       const data = await (
         await this.fetch(
-          `https://graph.facebook.com/v20.0/${finalId}/comments?access_token=${accessToken}&fields=id,permalink_url`,
+          `https://graph.facebook.com/v20.0/${commentId}/comments?access_token=${accessToken}&fields=id,permalink_url`,
           {
             method: 'POST',
             headers: {
@@ -275,6 +276,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
         )
       ).json();
 
+      commentId = data.id;
       postsArray.push({
         id: comment.id,
         postId: data.id,

@@ -161,6 +161,7 @@
   "repeat_post_every": "প্রতি পোস্ট পুনরাবৃত্তি করুন...",
   "use_this_media": "এই মিডিয়া ব্যবহার করুন",
   "create_new_post": "নতুন পোস্ট তৈরি করুন",
+  "update_post": "বিদ্যমান পোস্ট আপডেট করুন",
   "merge_comments_into_one_post": "মন্তব্যগুলি একটি পোস্টে একত্রিত করুন",
   "accounts_that_will_engage": "যে অ্যাকাউন্টগুলি এনগেজ করবে:",
   "day": "দিন",
@@ -186,6 +187,8 @@
   "please_add_the_following_command_in_your_chat": "অনুগ্রহ করে আপনার চ্যাটে নিম্নলিখিত কমান্ড যোগ করুন:",
   "copy": "কপি করুন",
   "settings": "সেটিংস",
+  "integrations": "ইন্টিগ্রেশনসমূহ",
+  "add_integration": "ইন্টিগ্রেশন যোগ করুন",
   "you_are_now_editing_only": "আপনি এখন শুধুমাত্র সম্পাদনা করছেন",
   "tag_a_company": "একটি কোম্পানি ট্যাগ করুন",
   "video_length_is_invalid_must_be_up_to": "ভিডিওর দৈর্ঘ্য অবৈধ, সর্বোচ্চ হতে হবে",
@@ -421,7 +424,7 @@
   "enable_color_picker": "কলর পিকার সক্রিয় করা",
   "cancel_the_color_picker": "কলর পিকার বাতিল করা",
   "no_content_yet": "কন্টেন্ট নেই",
-  "write_your_reply": "আপনার উত্তর লিখুন",
+  "write_your_reply": "আপনার পোস্ট লিখুন...",
   "add_a_tag": "ট্যাগ যোগ করুন",
   "add_to_calendar": "ক্যালেন্ডারে যোগ করুন",
   "select_channels_from_circles": "বলার মাধ্যমে চ্যানেল নির্বাচন করুন",
@@ -483,5 +486,10 @@
   "start_7_days_free_trial": "৭ দিনের বিনামূল্যে ট্রায়াল শুরু করুন",
   "change_language": "ভাষা পরিবর্তন করুন",
   "that_a_wrap": "এটাই শেষ!\n\nযদি আপনি এই থ্রেডটি উপভোগ করে থাকেন:\n\n১. আরও এমন পোস্টের জন্য আমাকে @{{username}} ফলো করুন\n২. আপনার অডিয়েন্সের সাথে এই থ্রেডটি শেয়ার করতে নিচের টুইটটি রিটুইট করুন\n",
-  "post_as_images_carousel": "ছবির ক্যারোসেল হিসেবে পোস্ট করুন"
+  "post_as_images_carousel": "ছবির ক্যারোসেল হিসেবে পোস্ট করুন",
+  "save_set": "সেট সংরক্ষণ করুন",
+  "separate_post": "একটি পোস্টকে একাধিক পোস্টে ভাগ করুন",
+  "label_who_can_reply_to_this_post": "এই পোস্টে কে উত্তর দিতে পারবে?",
+  "delete_integration": "ইন্টিগ্রেশন মুছে ফেলুন",
+  "start_writing_your_post": "প্রিভিউর জন্য আপনার পোস্ট লেখা শুরু করুন"
 }

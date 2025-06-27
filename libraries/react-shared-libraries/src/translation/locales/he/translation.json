@@ -161,6 +161,7 @@
   "repeat_post_every": "חזור על הפוסט כל...",
   "use_this_media": "השתמש במדיה זו",
   "create_new_post": "צור פוסט חדש",
+  "update_post": "עדכן פוסט קיים",
   "merge_comments_into_one_post": "מזג תגובות לפוסט אחד",
   "accounts_that_will_engage": "חשבונות שיתקשרו:",
   "day": "יום",
@@ -186,6 +187,8 @@
   "please_add_the_following_command_in_your_chat": "אנא הוסף את הפקודה הבאה בצ'אט שלך:",
   "copy": "העתק",
   "settings": "הגדרות",
+  "integrations": "אינטגרציות",
+  "add_integration": "הוסף אינטגרציה",
   "you_are_now_editing_only": "אתה עורך כעת רק",
   "tag_a_company": "תייג חברה",
   "video_length_is_invalid_must_be_up_to": "אורך הווידאו לא תקין, חייב להיות עד",
@@ -421,7 +424,7 @@
   "enable_color_picker": "הפעל בורר צבעים",
   "cancel_the_color_picker": "בטל את בורר הצבעים",
   "no_content_yet": "אין תוכן עדיין",
-  "write_your_reply": "כתוב את התשובה שלך...",
+  "write_your_reply": "כתוב את הפוסט שלך...",
   "add_a_tag": "הוסף תגית",
   "add_to_calendar": "הוסף ליומן",
   "select_channels_from_circles": "בחר ערוצים מהעיגולים למעלה",
@@ -483,5 +486,10 @@
   "start_7_days_free_trial": "התחל תקופת ניסיון חינם ל-7 ימים",
   "change_language": "שנה שפה",
   "that_a_wrap": "זה הסוף!\n\nאם נהנית מהשרשור הזה:\n\n1. עקוב אחרי @{{username}} לעוד תכנים כאלה\n2. רטווט את הציוץ למטה כדי לשתף את השרשור עם הקהל שלך\n",
-  "post_as_images_carousel": "פרסם כתמונות בגלריה"
+  "post_as_images_carousel": "פרסם כתמונות בגלריה",
+  "save_set": "שמור סט",
+  "separate_post": "פצל פוסט למספר פוסטים",
+  "label_who_can_reply_to_this_post": "מי יכול להגיב לפוסט הזה?",
+  "delete_integration": "מחק אינטגרציה",
+  "start_writing_your_post": "התחל לכתוב את הפוסט שלך לתצוגה מקדימה"
 }

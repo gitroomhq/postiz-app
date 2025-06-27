@@ -1,11 +1,11 @@
 import React, { FC, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
-import { continueProviderList } from '@gitroom/frontend/components/launches/providers/continue-provider/list';
 import { IntegrationContext } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import dayjs from 'dayjs';
 import useSWR, { useSWRConfig } from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { continueProviderList } from '@gitroom/frontend/components/new-launch/providers/continue-provider/list';
 export const Null: FC<{
   closeModal: () => void;
   existingId: string[];
