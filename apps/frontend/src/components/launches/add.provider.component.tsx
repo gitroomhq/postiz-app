@@ -16,6 +16,8 @@ import { object, string } from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { web3List } from '@gitroom/frontend/components/launches/web3/web3.list';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import Image from 'next/image'
+
 const resolver = classValidatorResolver(ApiKeyDto);
 export const useAddProvider = (update?: () => void) => {
   const modal = useModals();
@@ -489,9 +491,10 @@ export const AddProviderComponent: FC<{
             >
               <div>
                 {item.identifier === 'youtube' ? (
-                  <img src={`/icons/platforms/youtube.svg`} />
+                  <Image alt="youtube logo" src={`/icons/platforms/youtube.svg`} />
                 ) : (
-                  <img
+                  <Image
+                    alt={item.identifier}
                     className="w-[32px] h-[32px] rounded-full"
                     src={`/icons/platforms/${item.identifier}.png`}
                   />
@@ -519,28 +522,6 @@ export const AddProviderComponent: FC<{
           ))}
         </div>
       </div>
-      {!isGeneral && (
-        <div className="flex flex-col">
-          <h2 className="pb-[10px]">{t('articles', 'Articles')}</h2>
-          <div className="grid grid-cols-3 gap-[10px]">
-            {article.map((item) => (
-              <div
-                key={item.identifier}
-                onClick={showApiButton(item.identifier, item.name)}
-                className="w-[120px] h-[100px] bg-input text-textColor justify-center items-center flex flex-col gap-[10px] cursor-pointer"
-              >
-                <div>
-                  <img
-                    className="w-[32px] h-[32px] rounded-full"
-                    src={`/icons/platforms/${item.identifier}.png`}
-                  />
-                </div>
-                <div>{item.name}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

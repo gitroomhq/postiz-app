@@ -44,13 +44,10 @@ export const socialIntegrationList: SocialProvider[] = [
   new DiscordProvider(),
   new SlackProvider(),
   new MastodonProvider(),
-  new BlueskyProvider(),
-  new LemmyProvider(),
+  // new BlueskyProvider(),
   new FarcasterProvider(),
   new TelegramProvider(),
-  new NostrProvider(),
   new VkProvider(),
-  // new MastodonCustomProvider(),
 ];
 
 const articleIntegrationList = [

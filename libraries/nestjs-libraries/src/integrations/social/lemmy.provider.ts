@@ -16,7 +16,7 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
   identifier = 'lemmy';
   name = 'Lemmy';
   isBetweenSteps = false;
-  scopes = [];
+  scopes : string[] = [];
 
   async customFields() {
     return [
