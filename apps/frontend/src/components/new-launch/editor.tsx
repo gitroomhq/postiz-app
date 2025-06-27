@@ -451,7 +451,7 @@ export const Editor: FC<{
           />
         )}
       </div>
-      {props.totalChars > 0 && (
+      {(props?.totalChars || 0) > 0 && (
         <div
           className={clsx(
             'text-end text-sm mt-1',
