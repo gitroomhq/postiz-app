@@ -4,19 +4,18 @@ import {
   PostDetails,
   PostResponse,
   SocialProvider,
-} from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { PinterestSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/pinterest.dto';
+} from '@chaolaolo/nestjs-libraries/integrations/social/social.integrations.interface';
+import { makeId } from '@chaolaolo/nestjs-libraries/services/make.is';
+import { PinterestSettingsDto } from '@chaolaolo/nestjs-libraries/dtos/posts/providers-settings/pinterest.dto';
 import axios from 'axios';
 import FormData from 'form-data';
-import { timer } from '@gitroom/helpers/utils/timer';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { timer } from '@chaolaolo/helpers/utils/timer';
+import { SocialAbstract } from '@chaolaolo/nestjs-libraries/integrations/social.abstract';
 import dayjs from 'dayjs';
 
 export class PinterestProvider
   extends SocialAbstract
-  implements SocialProvider
-{
+  implements SocialProvider {
   identifier = 'pinterest';
   name = 'Pinterest';
   isBetweenSteps = false;
@@ -70,13 +69,12 @@ export class PinterestProvider
   async generateAuthUrl() {
     const state = makeId(6);
     return {
-      url: `https://www.pinterest.com/oauth/?client_id=${
-        process.env.PINTEREST_CLIENT_ID
-      }&redirect_uri=${encodeURIComponent(
-        `${process.env.FRONTEND_URL}/integrations/social/pinterest`
-      )}&response_type=code&scope=${encodeURIComponent(
-        'boards:read,boards:write,pins:read,pins:write,user_accounts:read'
-      )}&state=${state}`,
+      url: `https://www.pinterest.com/oauth/?client_id=${process.env.PINTEREST_CLIENT_ID
+        }&redirect_uri=${encodeURIComponent(
+          `${process.env.FRONTEND_URL}/integrations/social/pinterest`
+        )}&response_type=code&scope=${encodeURIComponent(
+          'boards:read,boards:write,pins:read,pins:write,user_accounts:read'
+        )}&state=${state}`,
       codeVerifier: makeId(10),
       state,
     };
@@ -232,16 +230,16 @@ export class PinterestProvider
             board_id: postDetails?.[0]?.settings.board,
             media_source: mediaId
               ? {
-                  source_type: 'video_id',
-                  media_id: mediaId,
-                  cover_image_url: picture?.url,
-                }
+                source_type: 'video_id',
+                media_id: mediaId,
+                cover_image_url: picture?.url,
+              }
               : mapImages?.length === 1
-              ? {
+                ? {
                   source_type: 'image_url',
                   url: mapImages?.[0]?.url,
                 }
-              : {
+                : {
                   source_type: 'multiple_image_urls',
                   items: mapImages,
                 },

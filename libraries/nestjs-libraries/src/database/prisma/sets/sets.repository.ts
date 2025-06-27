@@ -1,11 +1,11 @@
-import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
+import { PrismaRepository } from '@chaolaolo/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
-import { SetsDto } from '@gitroom/nestjs-libraries/dtos/sets/sets.dto';
+import { SetsDto } from '@chaolaolo/nestjs-libraries/dtos/sets/sets.dto';
 import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class SetsRepository {
-  constructor(private _sets: PrismaRepository<'sets'>) {}
+  constructor(private _sets: PrismaRepository<'sets'>) { }
 
   getTotal(orgId: string) {
     return this._sets.model.sets.count({

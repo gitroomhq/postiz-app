@@ -1,10 +1,10 @@
 import { FC, useCallback, useMemo, useState } from 'react';
 import { Integration } from '@prisma/client';
 import useSWR from 'swr';
-import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import { ChartSocial } from '@gitroom/frontend/components/analytics/chart-social';
-import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
-import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useFetch } from '@chaolaolo/helpers/utils/custom.fetch';
+import { ChartSocial } from '@chaolaolo/frontend/components/analytics/chart-social';
+import { LoadingComponent } from '@chaolaolo/frontend/components/layout/loading';
+import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
 export const RenderAnalytics: FC<{
   integration: Integration;
   date: number;
@@ -31,10 +31,10 @@ export const RenderAnalytics: FC<{
   });
   const refreshChannel = useCallback(
     (
-        integration: Integration & {
-          identifier: string;
-        }
-      ) =>
+      integration: Integration & {
+        identifier: string;
+      }
+    ) =>
       async () => {
         const { url } = await (
           await fetch(

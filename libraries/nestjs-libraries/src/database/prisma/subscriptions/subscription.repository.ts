@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
+import { PrismaRepository } from '@chaolaolo/nestjs-libraries/database/prisma/prisma.service';
 import dayjs from 'dayjs';
 import { Organization } from '@prisma/client';
 
@@ -11,7 +11,7 @@ export class SubscriptionRepository {
     private readonly _user: PrismaRepository<'user'>,
     private readonly _credits: PrismaRepository<'credits'>,
     private _usedCodes: PrismaRepository<'usedCodes'>
-  ) {}
+  ) { }
 
   getUserAccount(userId: string) {
     return this._user.model.user.findFirst({
@@ -146,10 +146,10 @@ export class SubscriptionRepository {
         organizationId: findOrg.id,
         ...(!code
           ? {
-              organization: {
-                paymentId: customerId,
-              },
-            }
+            organization: {
+              paymentId: customerId,
+            },
+          }
           : {}),
       },
       update: {

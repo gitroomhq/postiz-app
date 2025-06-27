@@ -1,8 +1,8 @@
 import { Controller } from '@nestjs/common';
 import { EventPattern, Transport } from '@nestjs/microservices';
-import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
-import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
-import { AutopostService } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.service';
+import { PostsService } from '@chaolaolo/nestjs-libraries/database/prisma/posts/posts.service';
+import { WebhooksService } from '@chaolaolo/nestjs-libraries/database/prisma/webhooks/webhooks.service';
+import { AutopostService } from '@chaolaolo/nestjs-libraries/database/prisma/autopost/autopost.service';
 
 @Controller()
 export class PostsController {
@@ -10,7 +10,7 @@ export class PostsController {
     private _postsService: PostsService,
     private _webhooksService: WebhooksService,
     private _autopostsService: AutopostService
-  ) {}
+  ) { }
 
   @EventPattern('post', Transport.REDIS)
   async post(data: { id: string }) {

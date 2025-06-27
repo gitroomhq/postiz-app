@@ -5,15 +5,15 @@ import {
   PostDetails,
   PostResponse,
   SocialProvider,
-} from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+} from '@chaolaolo/nestjs-libraries/integrations/social/social.integrations.interface';
 import { lookup } from 'mime-types';
 import sharp from 'sharp';
-import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
-import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
+import { readOrFetch } from '@chaolaolo/helpers/utils/read.or.fetch';
+import { SocialAbstract } from '@chaolaolo/nestjs-libraries/integrations/social.abstract';
+import { Plug } from '@chaolaolo/helpers/decorators/plug.decorator';
 import { Integration } from '@prisma/client';
-import { timer } from '@gitroom/helpers/utils/timer';
-import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
+import { timer } from '@chaolaolo/helpers/utils/timer';
+import { PostPlug } from '@chaolaolo/helpers/decorators/post.plug';
 import dayjs from 'dayjs';
 import { uniqBy } from 'lodash';
 
@@ -243,11 +243,11 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       thread_finisher: string;
       community?: string;
       who_can_reply_post:
-        | 'everyone'
-        | 'following'
-        | 'mentionedUsers'
-        | 'subscribers'
-        | 'verified';
+      | 'everyone'
+      | 'following'
+      | 'mentionedUsers'
+      | 'subscribers'
+      | 'verified';
     }>[]
   ): Promise<PostResponse[]> {
     const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
@@ -273,13 +273,13 @@ export class XProvider extends SocialAbstract implements SocialProvider {
                 m.url.indexOf('mp4') > -1
                   ? Buffer.from(await readOrFetch(m.url))
                   : await sharp(await readOrFetch(m.url), {
-                      animated: lookup(m.url) === 'image/gif',
+                    animated: lookup(m.url) === 'image/gif',
+                  })
+                    .resize({
+                      width: 1000,
                     })
-                      .resize({
-                        width: 1000,
-                      })
-                      .gif()
-                      .toBuffer(),
+                    .gif()
+                    .toBuffer(),
                 {
                   mimeType: lookup(m.url) || '',
                 }
@@ -307,16 +307,16 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       // @ts-ignore
       const { data }: { data: { id: string } } = await client.v2.tweet({
         ...(!postDetails?.[0]?.settings?.who_can_reply_post ||
-        postDetails?.[0]?.settings?.who_can_reply_post === 'everyone'
+          postDetails?.[0]?.settings?.who_can_reply_post === 'everyone'
           ? {}
           : {
-              reply_settings: postDetails?.[0]?.settings?.who_can_reply_post,
-            }),
+            reply_settings: postDetails?.[0]?.settings?.who_can_reply_post,
+          }),
         ...(postDetails?.[0]?.settings?.community
           ? {
-              community_id:
-                postDetails?.[0]?.settings?.community?.split('/').pop() || '',
-            }
+            community_id:
+              postDetails?.[0]?.settings?.community?.split('/').pop() || '',
+          }
           : {}),
         text: post.message,
         ...(media_ids.length ? { media: { media_ids } } : {}),
@@ -341,7 +341,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
             ids[0].releaseURL,
           reply: { in_reply_to_tweet_id: ids[ids.length - 1].postId },
         });
-      } catch (err) {}
+      } catch (err) { }
     }
 
     return ids.map((p) => ({
@@ -394,12 +394,12 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       ...tweets.data.data,
       ...(tweets.data.data.length === 100
         ? await this.loadAllTweets(
-            client,
-            id,
-            until,
-            since,
-            tweets.meta.next_token
-          )
+          client,
+          id,
+          until,
+          since,
+          tweets.meta.next_token
+        )
         : []),
     ];
   };

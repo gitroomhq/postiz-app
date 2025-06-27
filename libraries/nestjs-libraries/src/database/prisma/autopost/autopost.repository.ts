@@ -1,11 +1,11 @@
-import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
+import { PrismaRepository } from '@chaolaolo/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
-import { AutopostDto } from '@gitroom/nestjs-libraries/dtos/autopost/autopost.dto';
+import { AutopostDto } from '@chaolaolo/nestjs-libraries/dtos/autopost/autopost.dto';
 
 @Injectable()
 export class AutopostRepository {
-  constructor(private _autoPost: PrismaRepository<'autoPost'>) {}
+  constructor(private _autoPost: PrismaRepository<'autoPost'>) { }
 
   getTotal(orgId: string) {
     return this._autoPost.model.autoPost.count({

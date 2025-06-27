@@ -1,9 +1,9 @@
-import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
+import { PrismaRepository } from '@chaolaolo/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
-import { NewConversationDto } from '@gitroom/nestjs-libraries/dtos/marketplace/new.conversation.dto';
+import { NewConversationDto } from '@chaolaolo/nestjs-libraries/dtos/marketplace/new.conversation.dto';
 import { From, OrderStatus } from '@prisma/client';
-import { AddMessageDto } from '@gitroom/nestjs-libraries/dtos/messages/add.message';
-import { CreateOfferDto } from '@gitroom/nestjs-libraries/dtos/marketplace/create.offer.dto';
+import { AddMessageDto } from '@chaolaolo/nestjs-libraries/dtos/messages/add.message';
+import { CreateOfferDto } from '@chaolaolo/nestjs-libraries/dtos/marketplace/create.offer.dto';
 
 @Injectable()
 export class MessagesRepository {
@@ -15,7 +15,7 @@ export class MessagesRepository {
     private _post: PrismaRepository<'post'>,
     private _payoutProblems: PrismaRepository<'payoutProblems'>,
     private _users: PrismaRepository<'user'>
-  ) {}
+  ) { }
 
   async createConversation(
     userId: string,
@@ -517,7 +517,7 @@ export class MessagesRepository {
         (order.posts.find((p) => p.id === id)
           ? 0
           : order.posts.filter((f) => f.approvedSubmitForOrder !== 'NO')
-              .length) <
+            .length) <
         order.ordersItems.reduce((acc, item) => acc + item.quantity, 0)
     );
 
@@ -798,13 +798,13 @@ export class MessagesRepository {
         },
         ...(type === 'seller'
           ? {
-              sellerId: userId,
-            }
+            sellerId: userId,
+          }
           : {
-              messageGroup: {
-                buyerOrganizationId: orgId,
-              },
-            }),
+            messageGroup: {
+              buyerOrganizationId: orgId,
+            },
+          }),
       },
       orderBy: {
         updatedAt: 'desc',
@@ -814,19 +814,19 @@ export class MessagesRepository {
         status: true,
         ...(type === 'seller'
           ? {
-              buyer: {
-                select: {
-                  name: true,
-                },
+            buyer: {
+              select: {
+                name: true,
               },
-            }
+            },
+          }
           : {
-              seller: {
-                select: {
-                  name: true,
-                },
+            seller: {
+              select: {
+                name: true,
               },
-            }),
+            },
+          }),
         ordersItems: {
           select: {
             id: true,

@@ -1,32 +1,32 @@
 'use client';
 
 import React, { FC, useCallback, useRef, useState } from 'react';
-import { AddEditModalProps } from '@gitroom/frontend/components/new-launch/add.edit.modal';
+import { AddEditModalProps } from '@chaolaolo/frontend/components/new-launch/add.edit.modal';
 import clsx from 'clsx';
-import { useT } from '@gitroom/react/translation/get.transation.service.client';
-import { PicksSocialsComponent } from '@gitroom/frontend/components/new-launch/picks.socials.component';
-import { EditorWrapper } from '@gitroom/frontend/components/new-launch/editor';
-import { SelectCurrent } from '@gitroom/frontend/components/new-launch/select.current';
-import { ShowAllProviders } from '@gitroom/frontend/components/new-launch/providers/show.all.providers';
-import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
-import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
-import { DatePicker } from '@gitroom/frontend/components/launches/helpers/date.picker';
+import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { PicksSocialsComponent } from '@chaolaolo/frontend/components/new-launch/picks.socials.component';
+import { EditorWrapper } from '@chaolaolo/frontend/components/new-launch/editor';
+import { SelectCurrent } from '@chaolaolo/frontend/components/new-launch/select.current';
+import { ShowAllProviders } from '@chaolaolo/frontend/components/new-launch/providers/show.all.providers';
+import { useExistingData } from '@chaolaolo/frontend/components/launches/helpers/use.existing.data';
+import { useLaunchStore } from '@chaolaolo/frontend/components/new-launch/store';
+import { DatePicker } from '@chaolaolo/frontend/components/launches/helpers/date.picker';
 import { useShallow } from 'zustand/react/shallow';
-import { RepeatComponent } from '@gitroom/frontend/components/launches/repeat.component';
-import { TagsComponent } from '@gitroom/frontend/components/launches/tags.component';
-import { Button } from '@gitroom/react/form/button';
-import { useToaster } from '@gitroom/react/toaster/toaster';
-import { weightedLength } from '@gitroom/helpers/utils/count.length';
-import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
-import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { RepeatComponent } from '@chaolaolo/frontend/components/launches/repeat.component';
+import { TagsComponent } from '@chaolaolo/frontend/components/launches/tags.component';
+import { Button } from '@chaolaolo/react/form/button';
+import { useToaster } from '@chaolaolo/react/toaster/toaster';
+import { weightedLength } from '@chaolaolo/helpers/utils/count.length';
+import { deleteDialog } from '@chaolaolo/react/helpers/delete.dialog';
+import { useFetch } from '@chaolaolo/helpers/utils/custom.fetch';
+import { makeId } from '@chaolaolo/nestjs-libraries/services/make.is';
 import { useModals } from '@mantine/modals';
 import { capitalize } from 'lodash';
-import { usePreventWindowUnload } from '@gitroom/react/helpers/use.prevent.window.unload';
+import { usePreventWindowUnload } from '@chaolaolo/react/helpers/use.prevent.window.unload';
 // @ts-ignore
 import useKeypress from 'react-use-keypress';
-import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
-import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
+import { TopTitle } from '@chaolaolo/frontend/components/launches/helpers/top.title.component';
+import { SelectCustomer } from '@chaolaolo/frontend/components/launches/select.customer';
 import { CopilotPopup } from '@copilotkit/react-ui';
 
 function countCharacters(text: string, type: string): number {
@@ -144,8 +144,8 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         for (const item of notEnoughChars) {
           toaster.show(
             '' +
-              item.integration.name +
-              ' post is too short, it must be at least 6 characters',
+            item.integration.name +
+            ' post is too short, it must be at least 6 characters',
             'warning'
           );
           setLoading(false);
@@ -163,8 +163,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
           if (item.errors !== true) {
             toaster.show(
-              `${capitalize(item.integration.identifier.split('-')[0])} (${
-                item.integration.name
+              `${capitalize(item.integration.identifier.split('-')[0])} (${item.integration.name
               }): ${item.errors}`,
               'warning'
             );
@@ -217,9 +216,9 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       const shortLink = !shortLinkUrl.ask
         ? false
         : await deleteDialog(
-            'Do you want to shortlink the URLs? it will let you get statistics over clicks',
-            'Yes, shortlink it!'
-          );
+          'Do you want to shortlink the URLs? it will let you get statistics over clicks',
+          'Yes, shortlink it!'
+        );
 
       const group = existingData.group || makeId(10);
       const data = {
@@ -243,9 +242,9 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       addEditSets
         ? addEditSets(data)
         : await fetch('/posts', {
-            method: 'POST',
-            body: JSON.stringify(data),
-          });
+          method: 'POST',
+          body: JSON.stringify(data),
+        });
 
       if (!addEditSets) {
         mutate();
@@ -352,12 +351,12 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                         <div className="h-full flex items-center text-white">
                           {selectedIntegrations.length === 0
                             ? t(
-                                'select_channels_from_circles',
-                                'Select channels from the circles above'
-                              )
+                              'select_channels_from_circles',
+                              'Select channels from the circles above'
+                            )
                             : !existingData?.integration
-                            ? t('add_to_calendar', 'Add to calendar')
-                            : t('update', 'Update')}
+                              ? t('add_to_calendar', 'Add to calendar')
+                              : t('update', 'Update')}
                         </div>
                         <div className="h-full flex items-center">
                           <svg
@@ -377,7 +376,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                             className={clsx(
                               'hidden group-hover:flex hover:flex flex-col justify-center absolute start-0 top-[100%] w-full h-[40px] bg-customColor22 border border-tableBorder',
                               loading &&
-                                'cursor-not-allowed pointer-events-none opacity-50'
+                              'cursor-not-allowed pointer-events-none opacity-50'
                             )}
                           >
                             {t('post_now', 'Post now')}

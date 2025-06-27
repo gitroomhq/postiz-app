@@ -1,0 +1,937 @@
+.
+├── apps
+│   ├── backend
+│   │   ├── nest-cli.json
+│   │   ├── package.json
+│   │   ├── src
+│   │   │   ├── api
+│   │   │   │   ├── api.module.ts
+│   │   │   │   └── routes
+│   │   │   │       ├── agencies.controller.ts
+│   │   │   │       ├── analytics.controller.ts
+│   │   │   │       ├── auth.controller.ts
+│   │   │   │       ├── autopost.controller.ts
+│   │   │   │       ├── billing.controller.ts
+│   │   │   │       ├── copilot.controller.ts
+│   │   │   │       ├── integrations.controller.ts
+│   │   │   │       ├── marketplace.controller.ts
+│   │   │   │       ├── mcp.controller.ts
+│   │   │   │       ├── media.controller.ts
+│   │   │   │       ├── messages.controller.ts
+│   │   │   │       ├── notifications.controller.ts
+│   │   │   │       ├── posts.controller.ts
+│   │   │   │       ├── public.controller.ts
+│   │   │   │       ├── root.controller.ts
+│   │   │   │       ├── sets.controller.ts
+│   │   │   │       ├── settings.controller.ts
+│   │   │   │       ├── signature.controller.ts
+│   │   │   │       ├── stripe.controller.ts
+│   │   │   │       ├── third-party.controller.ts
+│   │   │   │       ├── users.controller.ts
+│   │   │   │       └── webhooks.controller.ts
+│   │   │   ├── app.module.ts
+│   │   │   ├── assets
+│   │   │   ├── main.ts
+│   │   │   ├── mcp
+│   │   │   │   ├── main.mcp.ts
+│   │   │   │   └── mcp.module.ts
+│   │   │   ├── public-api
+│   │   │   │   ├── public.api.module.ts
+│   │   │   │   └── routes
+│   │   │   │       └── v1
+│   │   │   │           └── public.integrations.controller.ts
+│   │   │   └── services
+│   │   │       └── auth
+│   │   │           ├── auth.middleware.ts
+│   │   │           ├── auth.service.ts
+│   │   │           ├── permissions
+│   │   │           │   ├── permissions.ability.ts
+│   │   │           │   ├── permissions.guard.ts
+│   │   │           │   ├── permissions.service.test.ts
+│   │   │           │   ├── permissions.service.ts
+│   │   │           │   └── subscription.exception.ts
+│   │   │           ├── providers
+│   │   │           │   ├── farcaster.provider.ts
+│   │   │           │   ├── github.provider.ts
+│   │   │           │   ├── google.provider.ts
+│   │   │           │   ├── oauth.provider.ts
+│   │   │           │   ├── providers.factory.ts
+│   │   │           │   └── wallet.provider.ts
+│   │   │           ├── providers.interface.ts
+│   │   │           └── public.auth.middleware.ts
+│   │   ├── tsconfig.build.json
+│   │   └── tsconfig.json
+│   ├── commands
+│   │   ├── nest-cli.json
+│   │   ├── package.json
+│   │   ├── src
+│   │   │   ├── command.module.ts
+│   │   │   ├── main.ts
+│   │   │   └── tasks
+│   │   │       ├── agent.run.ts
+│   │   │       ├── check.stars.ts
+│   │   │       ├── configuration.ts
+│   │   │       └── refresh.tokens.ts
+│   │   ├── tsconfig.build.json
+│   │   └── tsconfig.json
+│   ├── cron
+│   │   ├── nest-cli.json
+│   │   ├── package.json
+│   │   ├── src
+│   │   │   ├── cron.module.ts
+│   │   │   ├── main.ts
+│   │   │   └── tasks
+│   │   │       ├── check.stars.ts
+│   │   │       └── sync.trending.ts
+│   │   ├── tsconfig.build.json
+│   │   └── tsconfig.json
+│   ├── extension
+│   │   ├── custom-vite-plugins.ts
+│   │   ├── manifest.dev.json
+│   │   ├── manifest.json
+│   │   ├── nodemon.chrome.json
+│   │   ├── nodemon.firefox.json
+│   │   ├── package.json
+│   │   ├── public
+│   │   │   ├── contentStyle.css
+│   │   │   ├── dev-icon-128.png
+│   │   │   ├── dev-icon-32.png
+│   │   │   ├── icon-128.png
+│   │   │   └── icon-32.png
+│   │   ├── src
+│   │   │   ├── assets
+│   │   │   │   ├── img
+│   │   │   │   │   └── logo.svg
+│   │   │   │   └── styles
+│   │   │   │       └── tailwind.css
+│   │   │   ├── global.d.ts
+│   │   │   ├── locales
+│   │   │   │   └── en
+│   │   │   │       └── messages.json
+│   │   │   ├── pages
+│   │   │   │   ├── background
+│   │   │   │   │   └── index.ts
+│   │   │   │   ├── content
+│   │   │   │   │   ├── elements
+│   │   │   │   │   │   └── action.component.tsx
+│   │   │   │   │   ├── index.tsx
+│   │   │   │   │   ├── main.content.tsx
+│   │   │   │   │   └── style.css
+│   │   │   │   ├── options
+│   │   │   │   │   ├── index.css
+│   │   │   │   │   ├── index.html
+│   │   │   │   │   ├── index.tsx
+│   │   │   │   │   ├── Options.css
+│   │   │   │   │   └── Options.tsx
+│   │   │   │   ├── panel
+│   │   │   │   │   ├── index.css
+│   │   │   │   │   ├── index.html
+│   │   │   │   │   ├── index.tsx
+│   │   │   │   │   ├── Panel.css
+│   │   │   │   │   └── Panel.tsx
+│   │   │   │   └── popup
+│   │   │   │       ├── index.css
+│   │   │   │       ├── index.html
+│   │   │   │       ├── index.tsx
+│   │   │   │       └── Popup.tsx
+│   │   │   ├── providers
+│   │   │   │   ├── list
+│   │   │   │   │   ├── linkedin.provider.ts
+│   │   │   │   │   └── x.provider.ts
+│   │   │   │   ├── provider.interface.ts
+│   │   │   │   └── provider.list.ts
+│   │   │   ├── utils
+│   │   │   │   ├── load.cookie.ts
+│   │   │   │   ├── load.storage.ts
+│   │   │   │   ├── request.util.ts
+│   │   │   │   └── save.storage.ts
+│   │   │   └── vite-env.d.ts
+│   │   ├── tsconfig.json
+│   │   ├── vite.config.base.ts
+│   │   ├── vite.config.chrome.ts
+│   │   └── vite.config.firefox.ts
+│   ├── frontend
+│   │   ├── next.config.js
+│   │   ├── package.json
+│   │   ├── postcss.config.mjs
+│   │   ├── public
+│   │   │   ├── auth
+│   │   │   │   ├── bg-login.png
+│   │   │   │   └── login-box.png
+│   │   │   ├── f.js
+│   │   │   ├── favicon.ico
+│   │   │   ├── favicon.png
+│   │   │   ├── form
+│   │   │   │   └── checked.svg
+│   │   │   ├── icons
+│   │   │   │   ├── generic-oauth.svg
+│   │   │   │   ├── github.svg
+│   │   │   │   ├── platforms
+│   │   │   │   │   ├── bluesky.png
+│   │   │   │   │   ├── devto.png
+│   │   │   │   │   ├── discord.png
+│   │   │   │   │   ├── dribbble.png
+│   │   │   │   │   ├── facebook.png
+│   │   │   │   │   ├── hashnode.png
+│   │   │   │   │   ├── instagram-standalone.png
+│   │   │   │   │   ├── instagram.png
+│   │   │   │   │   ├── lemmy.png
+│   │   │   │   │   ├── linkedin-page.png
+│   │   │   │   │   ├── linkedin.png
+│   │   │   │   │   ├── mastodon-custom.png
+│   │   │   │   │   ├── mastodon.png
+│   │   │   │   │   ├── medium.png
+│   │   │   │   │   ├── nostr.png
+│   │   │   │   │   ├── pinterest.png
+│   │   │   │   │   ├── reddit.png
+│   │   │   │   │   ├── slack.png
+│   │   │   │   │   ├── telegram.png
+│   │   │   │   │   ├── threads.png
+│   │   │   │   │   ├── tiktok.png
+│   │   │   │   │   ├── vk.png
+│   │   │   │   │   ├── wrapcast.png
+│   │   │   │   │   ├── x.png
+│   │   │   │   │   ├── youtube.png
+│   │   │   │   │   └── youtube.svg
+│   │   │   │   ├── star-circle.svg
+│   │   │   │   ├── third-party
+│   │   │   │   │   └── heygen.png
+│   │   │   │   └── trending.svg
+│   │   │   ├── logo.svg
+│   │   │   ├── magic.svg
+│   │   │   ├── no-picture.jpg
+│   │   │   ├── peoplemarketplace.svg
+│   │   │   ├── postiz-fav.png
+│   │   │   ├── postiz-text.svg
+│   │   │   ├── postiz.svg
+│   │   │   └── success.svg
+│   │   ├── README.md
+│   │   ├── src
+│   │   │   ├── app
+│   │   │   │   ├── (app)
+│   │   │   │   │   ├── (preview)
+│   │   │   │   │   │   └── p
+│   │   │   │   │   │       └── [id]
+│   │   │   │   │   │           ├── layout.tsx
+│   │   │   │   │   │           └── page.tsx
+│   │   │   │   │   ├── (site)
+│   │   │   │   │   │   ├── analytics
+│   │   │   │   │   │   │   └── page.tsx
+│   │   │   │   │   │   ├── billing
+│   │   │   │   │   │   │   ├── lifetime
+│   │   │   │   │   │   │   │   └── page.tsx
+│   │   │   │   │   │   │   └── page.tsx
+│   │   │   │   │   │   ├── err
+│   │   │   │   │   │   │   └── page.tsx
+│   │   │   │   │   │   ├── integrations
+│   │   │   │   │   │   │   └── social
+│   │   │   │   │   │   │       ├── [provider]
+│   │   │   │   │   │   │       │   ├── continue
+│   │   │   │   │   │   │       │   │   └── page.tsx
+│   │   │   │   │   │   │       │   └── page.tsx
+│   │   │   │   │   │   │       └── layout.tsx
+│   │   │   │   │   │   ├── launches
+│   │   │   │   │   │   │   └── page.tsx
+│   │   │   │   │   │   ├── layout.tsx
+│   │   │   │   │   │   ├── marketplace
+│   │   │   │   │   │   │   ├── buyer
+│   │   │   │   │   │   │   │   └── page.tsx
+│   │   │   │   │   │   │   ├── layout.tsx
+│   │   │   │   │   │   │   ├── page.tsx
+│   │   │   │   │   │   │   └── seller
+│   │   │   │   │   │   │       └── page.tsx
+│   │   │   │   │   │   ├── messages
+│   │   │   │   │   │   │   ├── [id]
+│   │   │   │   │   │   │   │   └── page.tsx
+│   │   │   │   │   │   │   ├── layout.tsx
+│   │   │   │   │   │   │   └── page.tsx
+│   │   │   │   │   │   ├── plugs
+│   │   │   │   │   │   │   └── page.tsx
+│   │   │   │   │   │   ├── settings
+│   │   │   │   │   │   │   └── page.tsx
+│   │   │   │   │   │   └── third-party
+│   │   │   │   │   │       └── page.tsx
+│   │   │   │   │   ├── api
+│   │   │   │   │   │   └── uploads
+│   │   │   │   │   │       └── [[...path]]
+│   │   │   │   │   │           └── route.ts
+│   │   │   │   │   ├── auth
+│   │   │   │   │   │   ├── activate
+│   │   │   │   │   │   │   ├── [code]
+│   │   │   │   │   │   │   │   └── page.tsx
+│   │   │   │   │   │   │   └── page.tsx
+│   │   │   │   │   │   ├── forgot
+│   │   │   │   │   │   │   ├── [token]
+│   │   │   │   │   │   │   │   └── page.tsx
+│   │   │   │   │   │   │   └── page.tsx
+│   │   │   │   │   │   ├── layout.tsx
+│   │   │   │   │   │   ├── login
+│   │   │   │   │   │   │   └── page.tsx
+│   │   │   │   │   │   ├── page.tsx
+│   │   │   │   │   │   └── return.url.component.tsx
+│   │   │   │   │   └── layout.tsx
+│   │   │   │   ├── (extension)
+│   │   │   │   │   ├── layout.tsx
+│   │   │   │   │   └── modal
+│   │   │   │   │       ├── [style]
+│   │   │   │   │       │   └── [platform]
+│   │   │   │   │       │       └── page.tsx
+│   │   │   │   │       └── layout.tsx
+│   │   │   │   ├── colors.scss
+│   │   │   │   ├── global.scss
+│   │   │   │   └── polonto.css
+│   │   │   ├── components
+│   │   │   │   ├── analytics
+│   │   │   │   │   ├── analytics.component.tsx
+│   │   │   │   │   ├── chart-social.tsx
+│   │   │   │   │   ├── chart.tsx
+│   │   │   │   │   ├── stars.and.forks.interface.ts
+│   │   │   │   │   ├── stars.and.forks.tsx
+│   │   │   │   │   └── stars.table.component.tsx
+│   │   │   │   ├── auth
+│   │   │   │   │   ├── activate.tsx
+│   │   │   │   │   ├── after.activate.tsx
+│   │   │   │   │   ├── forgot-return.tsx
+│   │   │   │   │   ├── forgot.tsx
+│   │   │   │   │   ├── login.tsx
+│   │   │   │   │   ├── login.with.oidc.tsx
+│   │   │   │   │   ├── nayner.auth.button.tsx
+│   │   │   │   │   ├── providers
+│   │   │   │   │   │   ├── farcaster.provider.tsx
+│   │   │   │   │   │   ├── github.provider.tsx
+│   │   │   │   │   │   ├── google.provider.tsx
+│   │   │   │   │   │   ├── oauth.provider.tsx
+│   │   │   │   │   │   ├── placeholder
+│   │   │   │   │   │   │   └── wallet.ui.provider.tsx
+│   │   │   │   │   │   └── wallet.provider.tsx
+│   │   │   │   │   └── register.tsx
+│   │   │   │   ├── autopost
+│   │   │   │   │   └── autopost.tsx
+│   │   │   │   ├── billing
+│   │   │   │   │   ├── billing.component.tsx
+│   │   │   │   │   ├── faq.component.tsx
+│   │   │   │   │   ├── lifetime.deal.tsx
+│   │   │   │   │   ├── main.billing.component.tsx
+│   │   │   │   │   └── purchase.crypto.tsx
+│   │   │   │   ├── launches
+│   │   │   │   │   ├── add.provider.component.tsx
+│   │   │   │   │   ├── ai.image.tsx
+│   │   │   │   │   ├── bot.picture.tsx
+│   │   │   │   │   ├── calendar.context.tsx
+│   │   │   │   │   ├── calendar.tsx
+│   │   │   │   │   ├── comments
+│   │   │   │   │   │   └── comment.component.tsx
+│   │   │   │   │   ├── customer.modal.tsx
+│   │   │   │   │   ├── filters.tsx
+│   │   │   │   │   ├── general.preview.component.tsx
+│   │   │   │   │   ├── generator
+│   │   │   │   │   │   └── generator.tsx
+│   │   │   │   │   ├── helpers
+│   │   │   │   │   │   ├── date.picker.tsx
+│   │   │   │   │   │   ├── dnd.provider.tsx
+│   │   │   │   │   │   ├── isuscitizen.utils.tsx
+│   │   │   │   │   │   ├── linkedin.component.tsx
+│   │   │   │   │   │   ├── new.image.component.tsx
+│   │   │   │   │   │   ├── pick.platform.component.tsx
+│   │   │   │   │   │   ├── top.title.component.tsx
+│   │   │   │   │   │   ├── use.custom.provider.function.ts
+│   │   │   │   │   │   ├── use.existing.data.tsx
+│   │   │   │   │   │   ├── use.expend.tsx
+│   │   │   │   │   │   ├── use.formatting.ts
+│   │   │   │   │   │   ├── use.hide.top.editor.tsx
+│   │   │   │   │   │   ├── use.integration.ts
+│   │   │   │   │   │   ├── use.move.to.integration.tsx
+│   │   │   │   │   │   └── use.values.ts
+│   │   │   │   │   ├── integration.redirect.component.tsx
+│   │   │   │   │   ├── internal.channels.tsx
+│   │   │   │   │   ├── launches.component.tsx
+│   │   │   │   │   ├── layout.standalone.tsx
+│   │   │   │   │   ├── menu
+│   │   │   │   │   │   └── menu.tsx
+│   │   │   │   │   ├── merge.post.tsx
+│   │   │   │   │   ├── new.post.tsx
+│   │   │   │   │   ├── polonto
+│   │   │   │   │   │   └── polonto.picture.generation.tsx
+│   │   │   │   │   ├── polonto.tsx
+│   │   │   │   │   ├── repeat.component.tsx
+│   │   │   │   │   ├── select.customer.tsx
+│   │   │   │   │   ├── separate.post.tsx
+│   │   │   │   │   ├── set.context.tsx
+│   │   │   │   │   ├── settings.modal.tsx
+│   │   │   │   │   ├── statistics.tsx
+│   │   │   │   │   ├── tags.component.tsx
+│   │   │   │   │   ├── time.table.tsx
+│   │   │   │   │   ├── up.down.arrow.tsx
+│   │   │   │   │   └── web3
+│   │   │   │   │       ├── providers
+│   │   │   │   │       │   ├── nostr.provider.tsx
+│   │   │   │   │       │   ├── telegram.provider.tsx
+│   │   │   │   │       │   └── wrapcaster.provider.tsx
+│   │   │   │   │       ├── web3.list.tsx
+│   │   │   │   │       └── web3.provider.interface.ts
+│   │   │   │   ├── layout
+│   │   │   │   │   ├── check.payment.tsx
+│   │   │   │   │   ├── chrome.extension.component.tsx
+│   │   │   │   │   ├── click.outside.tsx
+│   │   │   │   │   ├── continue.provider.tsx
+│   │   │   │   │   ├── drop.files.tsx
+│   │   │   │   │   ├── facebook.component.tsx
+│   │   │   │   │   ├── html.component.tsx
+│   │   │   │   │   ├── impersonate.tsx
+│   │   │   │   │   ├── language.component.tsx
+│   │   │   │   │   ├── layout.context.tsx
+│   │   │   │   │   ├── layout.settings.tsx
+│   │   │   │   │   ├── loading.tsx
+│   │   │   │   │   ├── logout.component.tsx
+│   │   │   │   │   ├── mode.component.tsx
+│   │   │   │   │   ├── new.subscription.tsx
+│   │   │   │   │   ├── organization.selector.tsx
+│   │   │   │   │   ├── redirect.tsx
+│   │   │   │   │   ├── settings.component.tsx
+│   │   │   │   │   ├── support.tsx
+│   │   │   │   │   ├── title.tsx
+│   │   │   │   │   ├── tolt.script.tsx
+│   │   │   │   │   ├── top.menu.tsx
+│   │   │   │   │   ├── top.tip.tsx
+│   │   │   │   │   └── user.context.tsx
+│   │   │   │   ├── marketplace
+│   │   │   │   │   ├── buyer.seller.tsx
+│   │   │   │   │   ├── buyer.tsx
+│   │   │   │   │   ├── marketplace.provider.tsx
+│   │   │   │   │   ├── marketplace.tsx
+│   │   │   │   │   ├── order.list.tsx
+│   │   │   │   │   ├── order.top.actions.tsx
+│   │   │   │   │   ├── preview.popup.dynamic.tsx
+│   │   │   │   │   ├── seller.tsx
+│   │   │   │   │   └── special.message.tsx
+│   │   │   │   ├── media
+│   │   │   │   │   ├── media.component.tsx
+│   │   │   │   │   └── new.uploader.tsx
+│   │   │   │   ├── messages
+│   │   │   │   │   ├── layout.tsx
+│   │   │   │   │   └── messages.tsx
+│   │   │   │   ├── new-launch
+│   │   │   │   │   ├── add.edit.modal.tsx
+│   │   │   │   │   ├── add.post.button.tsx
+│   │   │   │   │   ├── bold.text.tsx
+│   │   │   │   │   ├── editor.tsx
+│   │   │   │   │   ├── finisher
+│   │   │   │   │   │   └── thread.finisher.tsx
+│   │   │   │   │   ├── manage.modal.tsx
+│   │   │   │   │   ├── picks.socials.component.tsx
+│   │   │   │   │   ├── providers
+│   │   │   │   │   │   ├── bluesky
+│   │   │   │   │   │   │   └── bluesky.provider.tsx
+│   │   │   │   │   │   ├── continue-provider
+│   │   │   │   │   │   │   ├── facebook
+│   │   │   │   │   │   │   │   └── facebook.continue.tsx
+│   │   │   │   │   │   │   ├── instagram
+│   │   │   │   │   │   │   │   └── instagram.continue.tsx
+│   │   │   │   │   │   │   ├── linkedin
+│   │   │   │   │   │   │   │   └── linkedin.continue.tsx
+│   │   │   │   │   │   │   └── list.tsx
+│   │   │   │   │   │   ├── devto
+│   │   │   │   │   │   │   ├── devto.provider.tsx
+│   │   │   │   │   │   │   ├── devto.tags.tsx
+│   │   │   │   │   │   │   ├── fonts
+│   │   │   │   │   │   │   │   └── SFNS.woff2
+│   │   │   │   │   │   │   └── select.organization.tsx
+│   │   │   │   │   │   ├── discord
+│   │   │   │   │   │   │   ├── discord.channel.select.tsx
+│   │   │   │   │   │   │   └── discord.provider.tsx
+│   │   │   │   │   │   ├── dribbble
+│   │   │   │   │   │   │   ├── dribbble.provider.tsx
+│   │   │   │   │   │   │   └── dribbble.teams.tsx
+│   │   │   │   │   │   ├── facebook
+│   │   │   │   │   │   │   └── facebook.provider.tsx
+│   │   │   │   │   │   ├── hashnode
+│   │   │   │   │   │   │   ├── hashnode.provider.tsx
+│   │   │   │   │   │   │   ├── hashnode.publications.tsx
+│   │   │   │   │   │   │   └── hashnode.tags.tsx
+│   │   │   │   │   │   ├── high.order.provider.tsx
+│   │   │   │   │   │   ├── instagram
+│   │   │   │   │   │   │   ├── instagram.collaborators.tsx
+│   │   │   │   │   │   │   └── instagram.tags.tsx
+│   │   │   │   │   │   ├── lemmy
+│   │   │   │   │   │   │   ├── lemmy.provider.tsx
+│   │   │   │   │   │   │   └── subreddit.tsx
+│   │   │   │   │   │   ├── linkedin
+│   │   │   │   │   │   │   └── linkedin.provider.tsx
+│   │   │   │   │   │   ├── mastodon
+│   │   │   │   │   │   │   └── mastodon.provider.tsx
+│   │   │   │   │   │   ├── medium
+│   │   │   │   │   │   │   ├── fonts
+│   │   │   │   │   │   │   │   ├── Charter Bold Italic.ttf
+│   │   │   │   │   │   │   │   ├── Charter Bold.ttf
+│   │   │   │   │   │   │   │   ├── Charter Italic.ttf
+│   │   │   │   │   │   │   │   ├── Charter Regular.ttf
+│   │   │   │   │   │   │   │   └── stylesheet.css
+│   │   │   │   │   │   │   ├── medium.provider.tsx
+│   │   │   │   │   │   │   ├── medium.publications.tsx
+│   │   │   │   │   │   │   └── medium.tags.tsx
+│   │   │   │   │   │   ├── nostr
+│   │   │   │   │   │   │   └── nostr.provider.tsx
+│   │   │   │   │   │   ├── pinterest
+│   │   │   │   │   │   │   ├── pinterest.board.tsx
+│   │   │   │   │   │   │   └── pinterest.provider.tsx
+│   │   │   │   │   │   ├── reddit
+│   │   │   │   │   │   │   ├── reddit.provider.tsx
+│   │   │   │   │   │   │   └── subreddit.tsx
+│   │   │   │   │   │   ├── show.all.providers.tsx
+│   │   │   │   │   │   ├── slack
+│   │   │   │   │   │   │   ├── slack.channel.select.tsx
+│   │   │   │   │   │   │   └── slack.provider.tsx
+│   │   │   │   │   │   ├── telegram
+│   │   │   │   │   │   │   └── telegram.provider.tsx
+│   │   │   │   │   │   ├── threads
+│   │   │   │   │   │   │   └── threads.provider.tsx
+│   │   │   │   │   │   ├── tiktok
+│   │   │   │   │   │   │   └── tiktok.provider.tsx
+│   │   │   │   │   │   ├── vk
+│   │   │   │   │   │   │   └── vk.provider.tsx
+│   │   │   │   │   │   ├── warpcast
+│   │   │   │   │   │   │   ├── subreddit.tsx
+│   │   │   │   │   │   │   └── warpcast.provider.tsx
+│   │   │   │   │   │   ├── x
+│   │   │   │   │   │   │   ├── fonts
+│   │   │   │   │   │   │   │   ├── Chirp-Bold.woff2
+│   │   │   │   │   │   │   │   └── Chirp-Regular.woff2
+│   │   │   │   │   │   │   └── x.provider.tsx
+│   │   │   │   │   │   └── youtube
+│   │   │   │   │   │       └── youtube.provider.tsx
+│   │   │   │   │   ├── select.current.tsx
+│   │   │   │   │   ├── store.ts
+│   │   │   │   │   └── u.text.tsx
+│   │   │   │   ├── notifications
+│   │   │   │   │   └── notification.component.tsx
+│   │   │   │   ├── onboarding
+│   │   │   │   │   ├── connect.channels.tsx
+│   │   │   │   │   ├── github.onboarding.tsx
+│   │   │   │   │   └── onboarding.tsx
+│   │   │   │   ├── platform-analytics
+│   │   │   │   │   ├── platform.analytics.tsx
+│   │   │   │   │   └── render.analytics.tsx
+│   │   │   │   ├── plugs
+│   │   │   │   │   ├── plug.tsx
+│   │   │   │   │   ├── plugs.context.ts
+│   │   │   │   │   └── plugs.tsx
+│   │   │   │   ├── post-url-selector
+│   │   │   │   │   └── post.url.selector.tsx
+│   │   │   │   ├── preview
+│   │   │   │   │   ├── comments.components.tsx
+│   │   │   │   │   ├── copy.client.tsx
+│   │   │   │   │   └── preview.wrapper.tsx
+│   │   │   │   ├── public-api
+│   │   │   │   │   └── public.component.tsx
+│   │   │   │   ├── sets
+│   │   │   │   │   └── sets.tsx
+│   │   │   │   ├── settings
+│   │   │   │   │   ├── github.component.tsx
+│   │   │   │   │   ├── settings.component.tsx
+│   │   │   │   │   ├── signatures.component.tsx
+│   │   │   │   │   └── teams.component.tsx
+│   │   │   │   ├── signature.tsx
+│   │   │   │   ├── standalone-modal
+│   │   │   │   │   └── standalone.modal.tsx
+│   │   │   │   ├── third-parties
+│   │   │   │   │   ├── providers
+│   │   │   │   │   │   └── heygen.provider.tsx
+│   │   │   │   │   ├── third-party.component.tsx
+│   │   │   │   │   ├── third-party.function.tsx
+│   │   │   │   │   ├── third-party.list.component.tsx
+│   │   │   │   │   ├── third-party.media.tsx
+│   │   │   │   │   └── third-party.wrapper.tsx
+│   │   │   │   ├── ui
+│   │   │   │   │   └── translated-label.tsx
+│   │   │   │   └── webhooks
+│   │   │   │       └── webhooks.tsx
+│   │   │   └── middleware.ts
+│   │   ├── tailwind.config.js
+│   │   └── tsconfig.json
+│   └── workers
+│       ├── nest-cli.json
+│       ├── package.json
+│       ├── src
+│       │   ├── app
+│       │   │   ├── app.module.ts
+│       │   │   ├── plugs.controller.ts
+│       │   │   ├── posts.controller.ts
+│       │   │   └── stars.controller.ts
+│       │   └── main.ts
+│       ├── tsconfig.build.json
+│       └── tsconfig.json
+├── build.plugins.js
+├── CODE_OF_CONDUCT.md
+├── CONTRIBUTING.md
+├── docker-compose.dev.yaml
+├── Dockerfile.dev
+├── eslint.config.mjs
+├── i18n.json
+├── i18n.lock
+├── Jenkinsfile
+├── jest.config.ts
+├── jest.preset.js
+├── libraries
+│   ├── helpers
+│   │   └── src
+│   │       ├── auth
+│   │       │   └── auth.service.ts
+│   │       ├── configuration
+│   │       │   └── configuration.checker.ts
+│   │       ├── decorators
+│   │       │   ├── plug.decorator.ts
+│   │       │   └── post.plug.ts
+│   │       ├── subdomain
+│   │       │   ├── all.two.level.subdomain.ts
+│   │       │   └── subdomain.management.ts
+│   │       ├── swagger
+│   │       │   └── load.swagger.ts
+│   │       └── utils
+│   │           ├── count.length.ts
+│   │           ├── custom.fetch.func.ts
+│   │           ├── custom.fetch.tsx
+│   │           ├── internal.fetch.ts
+│   │           ├── is.dev.ts
+│   │           ├── is.general.server.side.ts
+│   │           ├── linkedin.company.prevent.remove.ts
+│   │           ├── read.or.fetch.ts
+│   │           ├── remove.markdown.ts
+│   │           ├── timer.ts
+│   │           ├── use.fire.events.ts
+│   │           └── utm.saver.tsx
+│   ├── nestjs-libraries
+│   │   ├── README.md
+│   │   ├── src
+│   │   │   ├── 3rdparties
+│   │   │   │   ├── heygen
+│   │   │   │   │   └── heygen.provider.ts
+│   │   │   │   ├── thirdparty.interface.ts
+│   │   │   │   ├── thirdparty.manager.ts
+│   │   │   │   └── thirdparty.module.ts
+│   │   │   ├── agent
+│   │   │   │   ├── agent.categories.ts
+│   │   │   │   ├── agent.graph.insert.service.ts
+│   │   │   │   ├── agent.graph.service.ts
+│   │   │   │   ├── agent.module.ts
+│   │   │   │   └── agent.topics.ts
+│   │   │   ├── bull-mq-transport-new
+│   │   │   │   ├── bull.mq.module.ts
+│   │   │   │   ├── client.ts
+│   │   │   │   └── strategy.ts
+│   │   │   ├── crypto
+│   │   │   │   └── nowpayments.ts
+│   │   │   ├── database
+│   │   │   │   └── prisma
+│   │   │   │       ├── agencies
+│   │   │   │       │   ├── agencies.repository.ts
+│   │   │   │       │   └── agencies.service.ts
+│   │   │   │       ├── autopost
+│   │   │   │       │   ├── autopost.repository.ts
+│   │   │   │       │   └── autopost.service.ts
+│   │   │   │       ├── database.module.ts
+│   │   │   │       ├── integrations
+│   │   │   │       │   ├── integration.repository.ts
+│   │   │   │       │   └── integration.service.ts
+│   │   │   │       ├── marketplace
+│   │   │   │       │   ├── item.user.repository.ts
+│   │   │   │       │   ├── item.user.service.ts
+│   │   │   │       │   ├── messages.repository.ts
+│   │   │   │       │   ├── messages.service.ts
+│   │   │   │       │   └── tags.list.ts
+│   │   │   │       ├── media
+│   │   │   │       │   ├── media.repository.ts
+│   │   │   │       │   └── media.service.ts
+│   │   │   │       ├── notifications
+│   │   │   │       │   ├── notification.service.ts
+│   │   │   │       │   └── notifications.repository.ts
+│   │   │   │       ├── organizations
+│   │   │   │       │   ├── organization.repository.ts
+│   │   │   │       │   └── organization.service.ts
+│   │   │   │       ├── posts
+│   │   │   │       │   ├── posts.repository.ts
+│   │   │   │       │   └── posts.service.ts
+│   │   │   │       ├── prisma.service.ts
+│   │   │   │       ├── schema.prisma
+│   │   │   │       ├── sets
+│   │   │   │       │   ├── sets.repository.ts
+│   │   │   │       │   └── sets.service.ts
+│   │   │   │       ├── signatures
+│   │   │   │       │   ├── signature.repository.ts
+│   │   │   │       │   └── signature.service.ts
+│   │   │   │       ├── stars
+│   │   │   │       │   ├── stars.repository.ts
+│   │   │   │       │   └── stars.service.ts
+│   │   │   │       ├── subscriptions
+│   │   │   │       │   ├── pricing.ts
+│   │   │   │       │   ├── subscription.repository.ts
+│   │   │   │       │   └── subscription.service.ts
+│   │   │   │       ├── third-party
+│   │   │   │       │   ├── third-party.repository.ts
+│   │   │   │       │   └── third-party.service.ts
+│   │   │   │       ├── users
+│   │   │   │       │   ├── users.repository.ts
+│   │   │   │       │   └── users.service.ts
+│   │   │   │       └── webhooks
+│   │   │   │           ├── webhooks.repository.ts
+│   │   │   │           └── webhooks.service.ts
+│   │   │   ├── dtos
+│   │   │   │   ├── agencies
+│   │   │   │   │   └── create.agency.dto.ts
+│   │   │   │   ├── analytics
+│   │   │   │   │   └── stars.list.dto.ts
+│   │   │   │   ├── auth
+│   │   │   │   │   ├── create.org.user.dto.ts
+│   │   │   │   │   ├── forgot-return.password.dto.ts
+│   │   │   │   │   ├── forgot.password.dto.ts
+│   │   │   │   │   └── login.user.dto.ts
+│   │   │   │   ├── autopost
+│   │   │   │   │   └── autopost.dto.ts
+│   │   │   │   ├── billing
+│   │   │   │   │   └── billing.subscribe.dto.ts
+│   │   │   │   ├── comments
+│   │   │   │   │   └── add.comment.dto.ts
+│   │   │   │   ├── generator
+│   │   │   │   │   ├── create.generated.posts.dto.ts
+│   │   │   │   │   └── generator.dto.ts
+│   │   │   │   ├── integrations
+│   │   │   │   │   ├── api.key.dto.ts
+│   │   │   │   │   ├── connect.integration.dto.ts
+│   │   │   │   │   ├── integration.function.dto.ts
+│   │   │   │   │   └── integration.time.dto.ts
+│   │   │   │   ├── marketplace
+│   │   │   │   │   ├── add.remove.item.dto.ts
+│   │   │   │   │   ├── audience.dto.ts
+│   │   │   │   │   ├── change.active.dto.ts
+│   │   │   │   │   ├── create.offer.dto.ts
+│   │   │   │   │   ├── items.dto.ts
+│   │   │   │   │   └── new.conversation.dto.ts
+│   │   │   │   ├── media
+│   │   │   │   │   └── media.dto.ts
+│   │   │   │   ├── messages
+│   │   │   │   │   └── add.message.ts
+│   │   │   │   ├── plugs
+│   │   │   │   │   └── plug.dto.ts
+│   │   │   │   ├── posts
+│   │   │   │   │   ├── create.post.dto.ts
+│   │   │   │   │   ├── create.tag.dto.ts
+│   │   │   │   │   ├── get.posts.dto.ts
+│   │   │   │   │   ├── lemmy.dto.ts
+│   │   │   │   │   └── providers-settings
+│   │   │   │   │       ├── all.providers.settings.ts
+│   │   │   │   │       ├── dev.to.settings.dto.ts
+│   │   │   │   │       ├── dev.to.tags.settings.dto.ts
+│   │   │   │   │       ├── discord.dto.ts
+│   │   │   │   │       ├── dribbble.dto.ts
+│   │   │   │   │       ├── hashnode.settings.dto.ts
+│   │   │   │   │       ├── instagram.dto.ts
+│   │   │   │   │       ├── linkedin.dto.ts
+│   │   │   │   │       ├── medium.settings.dto.ts
+│   │   │   │   │       ├── pinterest.dto.ts
+│   │   │   │   │       ├── reddit.dto.ts
+│   │   │   │   │       ├── slack.dto.ts
+│   │   │   │   │       ├── tiktok.dto.ts
+│   │   │   │   │       ├── x.dto.ts
+│   │   │   │   │       └── youtube.settings.dto.ts
+│   │   │   │   ├── sets
+│   │   │   │   │   └── sets.dto.ts
+│   │   │   │   ├── settings
+│   │   │   │   │   └── add.team.member.dto.ts
+│   │   │   │   ├── signature
+│   │   │   │   │   └── signature.dto.ts
+│   │   │   │   ├── users
+│   │   │   │   │   └── user.details.dto.ts
+│   │   │   │   └── webhooks
+│   │   │   │       └── webhooks.dto.ts
+│   │   │   ├── emails
+│   │   │   │   ├── email.interface.ts
+│   │   │   │   ├── empty.provider.ts
+│   │   │   │   ├── node.mailer.provider.ts
+│   │   │   │   └── resend.provider.ts
+│   │   │   ├── integrations
+│   │   │   │   ├── article
+│   │   │   │   │   ├── article.integrations.interface.ts
+│   │   │   │   │   ├── dev.to.provider.ts
+│   │   │   │   │   ├── hashnode.provider.ts
+│   │   │   │   │   ├── hashnode.tags.ts
+│   │   │   │   │   └── medium.provider.ts
+│   │   │   │   ├── integration.manager.ts
+│   │   │   │   ├── integration.missing.scopes.ts
+│   │   │   │   ├── social
+│   │   │   │   │   ├── bluesky.provider.ts
+│   │   │   │   │   ├── discord.provider.ts
+│   │   │   │   │   ├── dribbble.provider.ts
+│   │   │   │   │   ├── facebook.provider.ts
+│   │   │   │   │   ├── farcaster.provider.ts
+│   │   │   │   │   ├── instagram.provider.ts
+│   │   │   │   │   ├── instagram.standalone.provider.ts
+│   │   │   │   │   ├── lemmy.provider.ts
+│   │   │   │   │   ├── linkedin.page.provider.ts
+│   │   │   │   │   ├── linkedin.provider.ts
+│   │   │   │   │   ├── mastodon.custom.provider.ts
+│   │   │   │   │   ├── mastodon.provider.ts
+│   │   │   │   │   ├── nostr.provider.ts
+│   │   │   │   │   ├── pinterest.provider.ts
+│   │   │   │   │   ├── reddit.provider.ts
+│   │   │   │   │   ├── slack.provider.ts
+│   │   │   │   │   ├── social.integrations.interface.ts
+│   │   │   │   │   ├── telegram.provider.ts
+│   │   │   │   │   ├── threads.provider.ts
+│   │   │   │   │   ├── tiktok.provider.ts
+│   │   │   │   │   ├── vk.provider.ts
+│   │   │   │   │   ├── x.provider.ts
+│   │   │   │   │   └── youtube.provider.ts
+│   │   │   │   └── social.abstract.ts
+│   │   │   ├── mcp
+│   │   │   │   ├── mcp.service.ts
+│   │   │   │   ├── mcp.settings.ts
+│   │   │   │   ├── mcp.tool.ts
+│   │   │   │   ├── mcp.transport.ts
+│   │   │   │   └── mcp.types.ts
+│   │   │   ├── openai
+│   │   │   │   ├── extract.content.service.ts
+│   │   │   │   └── openai.service.ts
+│   │   │   ├── redis
+│   │   │   │   └── redis.service.ts
+│   │   │   ├── services
+│   │   │   │   ├── codes.service.ts
+│   │   │   │   ├── email.service.ts
+│   │   │   │   ├── exception.filter.ts
+│   │   │   │   ├── make.is.ts
+│   │   │   │   ├── newsletter.service.ts
+│   │   │   │   ├── stripe.country.list.ts
+│   │   │   │   ├── stripe.service.ts
+│   │   │   │   ├── trending.service.ts
+│   │   │   │   └── trending.ts
+│   │   │   ├── short-linking
+│   │   │   │   ├── providers
+│   │   │   │   │   ├── dub.ts
+│   │   │   │   │   ├── empty.ts
+│   │   │   │   │   ├── kutt.ts
+│   │   │   │   │   └── short.io.ts
+│   │   │   │   ├── short-linking.interface.ts
+│   │   │   │   └── short.link.service.ts
+│   │   │   ├── throttler
+│   │   │   │   └── throttler.provider.ts
+│   │   │   ├── track
+│   │   │   │   └── track.service.ts
+│   │   │   ├── upload
+│   │   │   │   ├── cloudflare.storage.ts
+│   │   │   │   ├── custom.upload.validation.ts
+│   │   │   │   ├── local.storage.ts
+│   │   │   │   ├── r2.uploader.ts
+│   │   │   │   ├── upload.factory.ts
+│   │   │   │   ├── upload.interface.ts
+│   │   │   │   └── upload.module.ts
+│   │   │   └── user
+│   │   │       ├── org.from.request.ts
+│   │   │       ├── track.enum.ts
+│   │   │       ├── user.agent.ts
+│   │   │       └── user.from.request.ts
+│   │   ├── tsconfig.json
+│   │   └── tsconfig.lib.json
+│   ├── plugins
+│   │   ├── README.md
+│   │   ├── src
+│   │   │   ├── list
+│   │   │   │   └── public-api
+│   │   │   └── plugin.module.ts
+│   │   ├── tsconfig.json
+│   │   └── tsconfig.lib.json
+│   └── react-shared-libraries
+│       ├── README.md
+│       ├── src
+│       │   ├── form
+│       │   │   ├── button.tsx
+│       │   │   ├── canonical.tsx
+│       │   │   ├── checkbox.tsx
+│       │   │   ├── color.picker.tsx
+│       │   │   ├── custom.select.tsx
+│       │   │   ├── input.tsx
+│       │   │   ├── select.tsx
+│       │   │   ├── slider.tsx
+│       │   │   ├── textarea.tsx
+│       │   │   ├── total.tsx
+│       │   │   └── track.tsx
+│       │   ├── helpers
+│       │   │   ├── delete.dialog.tsx
+│       │   │   ├── image.with.fallback.tsx
+│       │   │   ├── inter.font.ts
+│       │   │   ├── is.general.tsx
+│       │   │   ├── mantine.wrapper.tsx
+│       │   │   ├── posthog.tsx
+│       │   │   ├── uppy.upload.ts
+│       │   │   ├── use.is.visible.tsx
+│       │   │   ├── use.media.directory.ts
+│       │   │   ├── use.prevent.window.unload.tsx
+│       │   │   ├── use.state.callback.ts
+│       │   │   ├── use.track.tsx
+│       │   │   ├── utc.date.render.tsx
+│       │   │   ├── variable.context.tsx
+│       │   │   ├── video.frame.tsx
+│       │   │   └── video.or.image.tsx
+│       │   ├── toaster
+│       │   │   └── toaster.tsx
+│       │   └── translation
+│       │       ├── get.transation.service.client.ts
+│       │       ├── get.translation.service.backend.ts
+│       │       ├── i18n.config.ts
+│       │       ├── i18next.ts
+│       │       ├── locales
+│       │       │   ├── ar
+│       │       │   │   └── translation.json
+│       │       │   ├── bn
+│       │       │   │   └── translation.json
+│       │       │   ├── de
+│       │       │   │   └── translation.json
+│       │       │   ├── en
+│       │       │   │   └── translation.json
+│       │       │   ├── es
+│       │       │   │   └── translation.json
+│       │       │   ├── fr
+│       │       │   │   └── translation.json
+│       │       │   ├── he
+│       │       │   │   └── translation.json
+│       │       │   ├── it
+│       │       │   │   └── translation.json
+│       │       │   ├── ja
+│       │       │   │   └── translation.json
+│       │       │   ├── ko
+│       │       │   │   └── translation.json
+│       │       │   ├── pt
+│       │       │   │   └── translation.json
+│       │       │   ├── ru
+│       │       │   │   └── translation.json
+│       │       │   ├── tr
+│       │       │   │   └── translation.json
+│       │       │   ├── vi
+│       │       │   │   └── translation.json
+│       │       │   └── zh
+│       │       │       └── translation.json
+│       │       └── translated-label.tsx
+│       ├── tsconfig.json
+│       └── tsconfig.lib.json
+├── LICENSE
+├── package.json
+├── pnpm-lock.yaml
+├── pnpm-workspace.yaml
+├── railway.toml
+├── README.md
+├── reports
+│   └── junit.xml
+├── runcommand.txt
+├── SECURITY.md
+├── structure.txt
+├── tsconfig.base.json
+├── tsconfig.json
+├── var
+│   └── docker
+│       ├── Caddyfile
+│       ├── docker-build.sh
+│       ├── docker-create.sh
+│       ├── entrypoint.sh
+│       ├── supervisord
+│       │   └── caddy.conf
+│       └── supervisord.conf
+└── version.txt
+
+248 directories, 687 files

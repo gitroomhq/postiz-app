@@ -1,10 +1,10 @@
-import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
+import { PrismaRepository } from '@chaolaolo/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
-import { AuthService } from '@gitroom/helpers/auth/auth.service';
+import { AuthService } from '@chaolaolo/helpers/auth/auth.service';
 
 @Injectable()
 export class ThirdPartyRepository {
-  constructor(private _thirdParty: PrismaRepository<'thirdParty'>) {}
+  constructor(private _thirdParty: PrismaRepository<'thirdParty'>) { }
 
   getAllThirdPartiesByOrganization(org: string) {
     return this._thirdParty.model.thirdParty.findMany({

@@ -1,18 +1,18 @@
 import { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
-import { McpService } from '@gitroom/nestjs-libraries/mcp/mcp.service';
+import { McpService } from '@chaolaolo/nestjs-libraries/mcp/mcp.service';
 import {
   JSONRPCMessage,
   JSONRPCMessageSchema,
-} from '@gitroom/nestjs-libraries/mcp/mcp.types';
+} from '@chaolaolo/nestjs-libraries/mcp/mcp.types';
 
 export class McpTransport implements Transport {
-  constructor(private _organization: string) {}
+  constructor(private _organization: string) { }
 
   onclose?: () => void;
   onerror?: (error: Error) => void;
   onmessage?: (message: JSONRPCMessage) => void;
 
-  async start() {}
+  async start() { }
 
   async send(message: JSONRPCMessage): Promise<void> {
     McpService.event.emit(`organization-${this._organization}`, {

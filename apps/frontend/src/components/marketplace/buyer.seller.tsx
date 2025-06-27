@@ -4,7 +4,7 @@ import { FC } from 'react';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import Link from 'next/link';
-import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
 export const BuyerSeller: FC = () => {
   const path = usePathname();
   const t = useT();
@@ -18,7 +18,7 @@ export const BuyerSeller: FC = () => {
             className={clsx(
               'flex justify-center items-center flex-1',
               pathComputed.indexOf('/marketplace/seller') > -1 &&
-                'bg-forth text-white'
+              'bg-forth text-white'
             )}
           >
             {t('seller', 'Seller')}
@@ -28,7 +28,7 @@ export const BuyerSeller: FC = () => {
             className={clsx(
               'flex justify-center items-center flex-1',
               pathComputed.indexOf('/marketplace/buyer') > -1 &&
-                'bg-forth text-white'
+              'bg-forth text-white'
             )}
           >
             {t('buyer', 'Buyer')}

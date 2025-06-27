@@ -3,9 +3,9 @@ import {
   PostDetails,
   PostResponse,
   SocialProvider,
-} from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+} from '@chaolaolo/nestjs-libraries/integrations/social/social.integrations.interface';
+import { makeId } from '@chaolaolo/nestjs-libraries/services/make.is';
+import { SocialAbstract } from '@chaolaolo/nestjs-libraries/integrations/social.abstract';
 
 export class DiscordProvider extends SocialAbstract implements SocialProvider {
   identifier = 'discord';
@@ -24,8 +24,8 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
           'Content-Type': 'application/x-www-form-urlencoded',
           Authorization: `Basic ${Buffer.from(
             process.env.DISCORD_CLIENT_ID +
-              ':' +
-              process.env.DISCORD_CLIENT_SECRET
+            ':' +
+            process.env.DISCORD_CLIENT_SECRET
           ).toString('base64')}`,
         },
       })
@@ -52,11 +52,10 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
   async generateAuthUrl() {
     const state = makeId(6);
     return {
-      url: `https://discord.com/oauth2/authorize?client_id=${
-        process.env.DISCORD_CLIENT_ID
-      }&permissions=377957124096&response_type=code&redirect_uri=${encodeURIComponent(
-        `${process.env.FRONTEND_URL}/integrations/social/discord`
-      )}&integration_type=0&scope=bot+identify+guilds&state=${state}`,
+      url: `https://discord.com/oauth2/authorize?client_id=${process.env.DISCORD_CLIENT_ID
+        }&permissions=377957124096&response_type=code&redirect_uri=${encodeURIComponent(
+          `${process.env.FRONTEND_URL}/integrations/social/discord`
+        )}&integration_type=0&scope=bot+identify+guilds&state=${state}`,
       codeVerifier: makeId(10),
       state,
     };
@@ -79,8 +78,8 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
           'Content-Type': 'application/x-www-form-urlencoded',
           Authorization: `Basic ${Buffer.from(
             process.env.DISCORD_CLIENT_ID +
-              ':' +
-              process.env.DISCORD_CLIENT_SECRET
+            ':' +
+            process.env.DISCORD_CLIENT_SECRET
           ).toString('base64')}`,
         },
       })

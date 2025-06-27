@@ -1,15 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import { AgenciesRepository } from '@gitroom/nestjs-libraries/database/prisma/agencies/agencies.repository';
+import { AgenciesRepository } from '@chaolaolo/nestjs-libraries/database/prisma/agencies/agencies.repository';
 import { User } from '@prisma/client';
-import { CreateAgencyDto } from '@gitroom/nestjs-libraries/dtos/agencies/create.agency.dto';
-import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
+import { CreateAgencyDto } from '@chaolaolo/nestjs-libraries/dtos/agencies/create.agency.dto';
+import { NotificationService } from '@chaolaolo/nestjs-libraries/database/prisma/notifications/notification.service';
 
 @Injectable()
 export class AgenciesService {
   constructor(
     private _agenciesRepository: AgenciesRepository,
     private _notificationService: NotificationService
-  ) {}
+  ) { }
   getAgencyByUser(user: User) {
     return this._agenciesRepository.getAgencyByUser(user);
   }
@@ -101,10 +101,8 @@ export class AgenciesService {
         <tr>
             <td style="padding: 0 20px 20px 20px; text-align: center;">
                 <!-- Website -->
-                <a href="${
-                  body.website
-                }" style="text-decoration: none; color: #007bff;">${
-        body.website
+                <a href="${body.website
+      }" style="text-decoration: none; color: #007bff;">${body.website
       }</a>
             </td>
         </tr>
@@ -113,35 +111,23 @@ export class AgenciesService {
                 <!-- Social Media Links -->
                 <p style="margin: 10px 0; font-size: 16px;">
                     Social Medias:
-                    <a href="${
-                      body.facebook
-                    }" style="margin: 0 10px; text-decoration: none; color: #007bff;">${
-        body.facebook
+                    <a href="${body.facebook
+      }" style="margin: 0 10px; text-decoration: none; color: #007bff;">${body.facebook
       }</a><br />
-                    <a href="${
-                      body.instagram
-                    }" style="margin: 0 10px; text-decoration: none; color: #007bff;">${
-        body.instagram
+                    <a href="${body.instagram
+      }" style="margin: 0 10px; text-decoration: none; color: #007bff;">${body.instagram
       }</a><br />
-                    <a href="${
-                      body.twitter
-                    }" style="margin: 0 10px; text-decoration: none; color: #007bff;">${
-        body.twitter
+                    <a href="${body.twitter
+      }" style="margin: 0 10px; text-decoration: none; color: #007bff;">${body.twitter
       }</a><br />
-                    <a href="${
-                      body.linkedIn
-                    }" style="margin: 0 10px; text-decoration: none; color: #007bff;">${
-        body.linkedIn
+                    <a href="${body.linkedIn
+      }" style="margin: 0 10px; text-decoration: none; color: #007bff;">${body.linkedIn
       }</a><br />
-                    <a href="${
-                      body.youtube
-                    }" style="margin: 0 10px; text-decoration: none; color: #007bff;">${
-        body.youtube
+                    <a href="${body.youtube
+      }" style="margin: 0 10px; text-decoration: none; color: #007bff;">${body.youtube
       }</a><br />
-                    <a href="${
-                      body.tiktok
-                    }" style="margin: 0 10px; text-decoration: none; color: #007bff;">${
-        body.tiktok
+                    <a href="${body.tiktok
+      }" style="margin: 0 10px; text-decoration: none; color: #007bff;">${body.tiktok
       }</a>
                 </p>
             </td>
@@ -159,27 +145,24 @@ export class AgenciesService {
             <td style="padding: 20px;">
                 <!-- Short Description -->
                 <h2 style="text-align: center; color: #333;">Name</h2>
-                <p style="text-align: center; color: #555; font-size: 16px;">${
-                  body.name
-                }</p>
+                <p style="text-align: center; color: #555; font-size: 16px;">${body.name
+      }</p>
             </td>
         </tr>
         <tr>
             <td style="padding: 20px;">
                 <!-- Short Description -->
                 <h2 style="text-align: center; color: #333;">Short Description</h2>
-                <p style="text-align: center; color: #555; font-size: 16px;">${
-                  body.shortDescription
-                }</p>
+                <p style="text-align: center; color: #555; font-size: 16px;">${body.shortDescription
+      }</p>
             </td>
         </tr>
         <tr>
             <td style="padding: 20px;">
                 <!-- Description -->
                 <h2 style="text-align: center; color: #333;">Description</h2>
-                <p style="text-align: center; color: #555; font-size: 16px;">${
-                  body.description
-                }</p>
+                <p style="text-align: center; color: #555; font-size: 16px;">${body.description
+      }</p>
             </td>
         </tr>
         <tr>
@@ -187,18 +170,16 @@ export class AgenciesService {
                 <!-- Niches -->
                 <h2 style="text-align: center; color: #333;">Niches</h2>
                 <p style="text-align: center; color: #555; font-size: 16px;">${body.niches.join(
-                  ','
-                )}</p>
+        ','
+      )}</p>
             </td>
         </tr>
         <tr>
             <td style="padding: 20px; text-align: center; background-color: #000;">
-                <a href="https://postiz.com/agencies/action/approve/${
-                  agency.id
-                }" style="margin: 0 10px; text-decoration: none; color: #007bff;">To approve click here</a><br /><br /><br />
-                <a href="https://postiz.com/agencies/action/decline/${
-                  agency.id
-                }" style="margin: 0 10px; text-decoration: none; color: #007bff;">To decline click here</a><br /><br /><br />
+                <a href="https://postiz.com/agencies/action/approve/${agency.id
+      }" style="margin: 0 10px; text-decoration: none; color: #007bff;">To approve click here</a><br /><br /><br />
+                <a href="https://postiz.com/agencies/action/decline/${agency.id
+      }" style="margin: 0 10px; text-decoration: none; color: #007bff;">To decline click here</a><br /><br /><br />
             </td>
         </tr>
         <tr>

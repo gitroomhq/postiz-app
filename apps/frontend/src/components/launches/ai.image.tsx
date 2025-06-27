@@ -1,10 +1,10 @@
-import { Button } from '@gitroom/react/form/button';
+import { Button } from '@chaolaolo/react/form/button';
 import { FC, useCallback, useState } from 'react';
 import clsx from 'clsx';
 import Loading from 'react-loading';
-import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import { useT } from '@gitroom/react/translation/get.transation.service.client';
-import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
+import { useFetch } from '@chaolaolo/helpers/utils/custom.fetch';
+import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { useLaunchStore } from '@chaolaolo/frontend/components/new-launch/store';
 const list = [
   'Realistic',
   'Cartoon',
@@ -62,10 +62,10 @@ ${type}
       <Button
         {...(value.length < 30
           ? {
-              'data-tooltip-id': 'tooltip',
-              'data-tooltip-content':
-                'Please add at least 30 characters to generate AI image',
-            }
+            'data-tooltip-id': 'tooltip',
+            'data-tooltip-content':
+              'Please add at least 30 characters to generate AI image',
+          }
           : {})}
         className={clsx(
           'relative ms-[10px] rounded-[4px] mb-[10px] gap-[8px] !text-primary justify-center items-center flex border border-dashed border-customColor21 bg-input',

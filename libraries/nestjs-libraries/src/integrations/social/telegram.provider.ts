@@ -3,10 +3,10 @@ import {
   PostDetails,
   PostResponse,
   SocialProvider,
-} from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+} from '@chaolaolo/nestjs-libraries/integrations/social/social.integrations.interface';
+import { makeId } from '@chaolaolo/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { SocialAbstract } from '@chaolaolo/nestjs-libraries/integrations/social.abstract';
 //@ts-ignore
 import mime from 'mime';
 import TelegramBot from 'node-telegram-bot-api';
@@ -126,12 +126,12 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
     return chatId
       ? { chatId }
       : res.length > 0
-      ? {
+        ? {
           lastChatId:
             res?.[res.length - 1]?.message?.chat?.id ||
             res?.[res.length - 1]?.channel_post?.chat?.id,
         }
-      : {};
+        : {};
   }
 
   async post(
@@ -184,19 +184,19 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
         const response =
           media.type === 'video'
             ? await telegramBot.sendVideo(
-                accessToken,
-                media.media,
-                { caption: text },
-                media.fileOptions
-              )
+              accessToken,
+              media.media,
+              { caption: text },
+              media.fileOptions
+            )
             : media.type === 'photo'
-            ? await telegramBot.sendPhoto(
+              ? await telegramBot.sendPhoto(
                 accessToken,
                 media.media,
                 { caption: text },
                 media.fileOptions
               )
-            : await telegramBot.sendDocument(
+              : await telegramBot.sendDocument(
                 accessToken,
                 media.media,
                 { caption: text },
@@ -229,9 +229,8 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
         ids.push({
           id: message.id,
           postId: String(messageId),
-          releaseURL: `https://t.me/${
-            id !== 'undefined' ? id : `c/${accessToken.replace('-100', '')}`
-          }/${messageId}`,
+          releaseURL: `https://t.me/${id !== 'undefined' ? id : `c/${accessToken.replace('-100', '')}`
+            }/${messageId}`,
           status: 'completed',
         });
       }

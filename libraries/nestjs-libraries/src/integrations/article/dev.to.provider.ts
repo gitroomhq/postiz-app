@@ -1,5 +1,5 @@
-import { ArticleProvider } from '@gitroom/nestjs-libraries/integrations/article/article.integrations.interface';
-import { DevToSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dev.to.settings.dto';
+import { ArticleProvider } from '@chaolaolo/nestjs-libraries/integrations/article/article.integrations.interface';
+import { DevToSettingsDto } from '@chaolaolo/nestjs-libraries/dtos/posts/providers-settings/dev.to.settings.dto';
 
 export class DevToProvider implements ArticleProvider {
   identifier = 'devto';
@@ -79,11 +79,10 @@ export class DevToProvider implements ArticleProvider {
             body_markdown: content,
             published: true,
             main_image: settings?.main_image?.path
-              ? `${
-                  settings?.main_image?.path.indexOf('http') === -1
-                    ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/${process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY}`
-                    : ``
-                }${settings?.main_image?.path}`
+              ? `${settings?.main_image?.path.indexOf('http') === -1
+                ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/${process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY}`
+                : ``
+              }${settings?.main_image?.path}`
               : undefined,
             tags: settings?.tags?.map((t) => t.label),
             organization_id: settings.organization,

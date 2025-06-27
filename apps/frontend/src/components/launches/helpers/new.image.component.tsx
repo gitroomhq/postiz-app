@@ -6,8 +6,8 @@ import {
   selectWord,
   TextAreaTextApi,
 } from '@uiw/react-md-editor';
-import { showMediaBox } from '@gitroom/frontend/components/media/media.component';
-import { loadVars } from '@gitroom/react/helpers/variable.context';
+import { showMediaBox } from '@chaolaolo/frontend/components/media/media.component';
+import { loadVars } from '@chaolaolo/react/helpers/variable.context';
 export const newImage: ICommand = {
   name: 'image',
   keyCommand: 'image',
@@ -64,11 +64,10 @@ export const newImage: ICommand = {
             selectedText: state1.selectedText,
             selection: state.selection,
             prefix: '![',
-            suffix: `](${
-              media.path.indexOf('http') === -1
+            suffix: `](${media.path.indexOf('http') === -1
                 ? `${backendUrl}/${uploadDirectory}`
                 : ``
-            }${media.path})`,
+              }${media.path})`,
           });
           return;
         }
@@ -77,11 +76,10 @@ export const newImage: ICommand = {
           selectedText: state1.selectedText,
           selection: state.selection,
           prefix: '![image',
-          suffix: `](${
-            media.path.indexOf('http') === -1
+          suffix: `](${media.path.indexOf('http') === -1
               ? `${backendUrl}/${uploadDirectory}`
               : ``
-          }${media.path})`,
+            }${media.path})`,
         });
       }
     });

@@ -3,10 +3,10 @@ import {
   PostDetails,
   PostResponse,
   SocialProvider,
-} from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+} from '@chaolaolo/nestjs-libraries/integrations/social/social.integrations.interface';
+import { makeId } from '@chaolaolo/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { SocialAbstract } from '@chaolaolo/nestjs-libraries/integrations/social.abstract';
 import { createHash, randomBytes } from 'crypto';
 import axios from 'axios';
 import FormDataNew from 'form-data';
@@ -86,10 +86,9 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
         `&code_challenge_method=S256` +
         `&code_challenge=${challenge}` +
         `&redirect_uri=${encodeURIComponent(
-          `${
-            process?.env.FRONTEND_URL?.indexOf('https') == -1
-              ? `https://redirectmeto.com/${process?.env.FRONTEND_URL}`
-              : `${process?.env.FRONTEND_URL}`
+          `${process?.env.FRONTEND_URL?.indexOf('https') == -1
+            ? `https://redirectmeto.com/${process?.env.FRONTEND_URL}`
+            : `${process?.env.FRONTEND_URL}`
           }/integrations/social/vk`
         )}` +
         `&state=${state}` +
@@ -114,10 +113,9 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
     formData.append('code', code);
     formData.append(
       'redirect_uri',
-      `${
-        process?.env.FRONTEND_URL?.indexOf('https') == -1
-          ? `https://redirectmeto.com/${process?.env.FRONTEND_URL}`
-          : `${process?.env.FRONTEND_URL}`
+      `${process?.env.FRONTEND_URL?.indexOf('https') == -1
+        ? `https://redirectmeto.com/${process?.env.FRONTEND_URL}`
+        : `${process?.env.FRONTEND_URL}`
       }/integrations/social/vk`
     );
 
@@ -243,8 +241,7 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
 
       const { response, ...all } = await (
         await this.fetch(
-          `https://api.vk.com/method/${
-            replyTo ? 'wall.createComment' : 'wall.post'
+          `https://api.vk.com/method/${replyTo ? 'wall.createComment' : 'wall.post'
           }?v=5.251&access_token=${accessToken}&client_id=${process.env.VK_ID}`,
           {
             method: 'POST',
@@ -256,9 +253,8 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
       values.push({
         id: post.id,
         postId: String(response?.post_id || response?.comment_id),
-        releaseURL: `https://vk.com/feed?w=wall${userId}_${
-          response?.post_id || replyTo
-        }`,
+        releaseURL: `https://vk.com/feed?w=wall${userId}_${response?.post_id || replyTo
+          }`,
         status: 'completed',
       });
 

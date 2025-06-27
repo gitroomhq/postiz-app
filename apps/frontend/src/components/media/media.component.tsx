@@ -9,28 +9,28 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Button } from '@gitroom/react/form/button';
+import { Button } from '@chaolaolo/react/form/button';
 import useSWR from 'swr';
-import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { useFetch } from '@chaolaolo/helpers/utils/custom.fetch';
 import { Media } from '@prisma/client';
-import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
-import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
+import { useMediaDirectory } from '@chaolaolo/react/helpers/use.media.directory';
+import { useSettings } from '@chaolaolo/frontend/components/launches/helpers/use.values';
 import EventEmitter from 'events';
-import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
+import { TopTitle } from '@chaolaolo/frontend/components/launches/helpers/top.title.component';
 import clsx from 'clsx';
-import { VideoFrame } from '@gitroom/react/helpers/video.frame';
-import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
-import { MultipartFileUploader } from '@gitroom/frontend/components/media/new.uploader';
+import { VideoFrame } from '@chaolaolo/react/helpers/video.frame';
+import { LoadingComponent } from '@chaolaolo/frontend/components/layout/loading';
+import { MultipartFileUploader } from '@chaolaolo/frontend/components/media/new.uploader';
 import dynamic from 'next/dynamic';
-import { useUser } from '@gitroom/frontend/components/layout/user.context';
-import { AiImage } from '@gitroom/frontend/components/launches/ai.image';
+import { useUser } from '@chaolaolo/frontend/components/layout/user.context';
+import { AiImage } from '@chaolaolo/frontend/components/launches/ai.image';
 import Image from 'next/image';
-import { DropFiles } from '@gitroom/frontend/components/layout/drop.files';
-import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
-import { useT } from '@gitroom/react/translation/get.transation.service.client';
-import { ThirdPartyMedia } from '@gitroom/frontend/components/third-parties/third-party.media';
+import { DropFiles } from '@chaolaolo/frontend/components/layout/drop.files';
+import { deleteDialog } from '@chaolaolo/react/helpers/delete.dialog';
+import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { ThirdPartyMedia } from '@chaolaolo/frontend/components/third-parties/third-party.media';
 const Polonto = dynamic(
-  () => import('@gitroom/frontend/components/launches/polonto')
+  () => import('@chaolaolo/frontend/components/launches/polonto')
 );
 const showModalEmitter = new EventEmitter();
 export const Pagination: FC<{
@@ -172,13 +172,13 @@ export const MediaBox: FC<{
         selectedMedia.find((p) => p.id === media.id)
           ? selectedMedia.filter((f) => f.id !== media.id)
           : [
-              ...selectedMedia.map((p) => ({
-                ...p,
-              })),
-              {
-                ...media,
-              },
-            ]
+            ...selectedMedia.map((p) => ({
+              ...p,
+            })),
+            {
+              ...media,
+            },
+          ]
       );
       // closeModal();
     },
@@ -344,8 +344,8 @@ export const MediaBox: FC<{
                           type === 'video'
                             ? 'video/mp4'
                             : type === 'image'
-                            ? 'image/*'
-                            : 'image/*,video/mp4'
+                              ? 'image/*'
+                              : 'image/*,video/mp4'
                         }
                       />
                     </div>
@@ -357,7 +357,7 @@ export const MediaBox: FC<{
               className={clsx(
                 'flex flex-wrap gap-[10px] mt-[35px] pt-[20px]',
                 !!mediaList.length &&
-                  'justify-center items-center text-textColor'
+                'justify-center items-center text-textColor'
               )}
             >
               {!mediaList.length ? (
@@ -381,8 +381,8 @@ export const MediaBox: FC<{
                         type === 'video'
                           ? 'video/mp4'
                           : type === 'image'
-                          ? 'image/*'
-                          : 'image/*,video/mp4'
+                            ? 'image/*'
+                            : 'image/*,video/mp4'
                       }
                     />
                   </div>
@@ -495,13 +495,13 @@ export const MultiMediaComponent: FC<{
     (
       m:
         | {
-            path: string;
-            id: string;
-          }
+          path: string;
+          id: string;
+        }
         | {
-            path: string;
-            id: string;
-          }[]
+          path: string;
+          id: string;
+        }[]
     ) => {
       const mediaArray = Array.isArray(m) ? m : [m];
       const newMedia = [...(currentMedia || []), ...mediaArray];

@@ -1,25 +1,25 @@
 'use client';
 
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
-import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { useFetch } from '@chaolaolo/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { orderBy } from 'lodash';
-import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { useUser } from '@chaolaolo/frontend/components/layout/user.context';
 import clsx from 'clsx';
 import Image from 'next/image';
-import { Menu } from '@gitroom/frontend/components/launches/menu/menu';
+import { Menu } from '@chaolaolo/frontend/components/launches/menu/menu';
 import {
   ApiModal,
   CustomVariables,
-} from '@gitroom/frontend/components/launches/add.provider.component';
+} from '@chaolaolo/frontend/components/launches/add.provider.component';
 import { useRouter } from 'next/navigation';
-import { useVariables } from '@gitroom/react/helpers/variable.context';
-import { useToaster } from '@gitroom/react/toaster/toaster';
+import { useVariables } from '@chaolaolo/react/helpers/variable.context';
+import { useToaster } from '@chaolaolo/react/toaster/toaster';
 import { Integration } from '@prisma/client';
-import { web3List } from '@gitroom/frontend/components/launches/web3/web3.list';
-import { timer } from '@gitroom/helpers/utils/timer';
-import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
-import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { web3List } from '@chaolaolo/frontend/components/launches/web3/web3.list';
+import { timer } from '@chaolaolo/helpers/utils/timer';
+import { deleteDialog } from '@chaolaolo/react/helpers/delete.dialog';
+import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
 export const ConnectChannels: FC = () => {
   const fetch = useFetch();
   const { isGeneral } = useVariables();
@@ -74,10 +74,10 @@ export const ConnectChannels: FC = () => {
   };
   const refreshChannel = useCallback(
     (
-        integration: Integration & {
-          identifier: string;
-        }
-      ) =>
+      integration: Integration & {
+        identifier: string;
+      }
+    ) =>
       async () => {
         const { url } = await (
           await fetch(
@@ -114,23 +114,22 @@ export const ConnectChannels: FC = () => {
   });
   const getSocialLink = useCallback(
     (
-        identifier: string,
-        isExternal: boolean,
-        isWeb3: boolean,
-        customFields?: Array<{
-          key: string;
-          label: string;
-          validation: string;
-          defaultValue?: string;
-          type: 'text' | 'password';
-        }>
-      ) =>
+      identifier: string,
+      isExternal: boolean,
+      isWeb3: boolean,
+      customFields?: Array<{
+        key: string;
+        label: string;
+        validation: string;
+        defaultValue?: string;
+        type: 'text' | 'password';
+      }>
+    ) =>
       async () => {
         const gotoIntegration = async (externalUrl?: string) => {
           const { url, err } = await (
             await fetch(
-              `/integrations/social/${identifier}${
-                externalUrl ? `?externalUrl=${externalUrl}` : ``
+              `/integrations/social/${identifier}${externalUrl ? `?externalUrl=${externalUrl}` : ``
               }`
             )
           ).json();
@@ -373,12 +372,12 @@ export const ConnectChannels: FC = () => {
                 </div>
                 <div
                   {...(integration.disabled &&
-                  totalNonDisabledChannels === user?.totalChannels
+                    totalNonDisabledChannels === user?.totalChannels
                     ? {
-                        'data-tooltip-id': 'tooltip',
-                        'data-tooltip-content':
-                          'This channel is disabled, please upgrade your plan to enable it.',
-                      }
+                      'data-tooltip-id': 'tooltip',
+                      'data-tooltip-content':
+                        'This channel is disabled, please upgrade your plan to enable it.',
+                    }
                     : {})}
                   className={clsx(
                     'flex-1',

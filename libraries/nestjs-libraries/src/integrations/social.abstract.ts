@@ -1,22 +1,22 @@
-import { timer } from '@gitroom/helpers/utils/timer';
+import { timer } from '@chaolaolo/helpers/utils/timer';
 
 export class RefreshToken {
   constructor(
     public identifier: string,
     public json: string,
     public body: BodyInit
-  ) {}
+  ) { }
 }
 export class BadBody {
   constructor(
     public identifier: string,
     public json: string,
     public body: BodyInit
-  ) {}
+  ) { }
 }
 
 export class NotEnoughScopes {
-  constructor(public message = 'Not enough scopes') {}
+  constructor(public message = 'Not enough scopes') { }
 }
 
 export abstract class SocialAbstract {
@@ -27,7 +27,7 @@ export abstract class SocialAbstract {
     totalRetries = 0
   ): Promise<Response> {
     const request = await fetch(url, options);
-``
+    ``
     if (request.status === 200 || request.status === 201) {
       return request;
     }

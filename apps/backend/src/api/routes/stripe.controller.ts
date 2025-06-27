@@ -8,9 +8,9 @@ import {
   RawBodyRequest,
   Req,
 } from '@nestjs/common';
-import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
+import { StripeService } from '@chaolaolo/nestjs-libraries/services/stripe.service';
 import { ApiTags } from '@nestjs/swagger';
-import { CodesService } from '@gitroom/nestjs-libraries/services/codes.service';
+import { CodesService } from '@chaolaolo/nestjs-libraries/services/codes.service';
 
 @ApiTags('Stripe')
 @Controller('/stripe')
@@ -18,7 +18,7 @@ export class StripeController {
   constructor(
     private readonly _stripeService: StripeService,
     private readonly _codesService: CodesService
-  ) {}
+  ) { }
   @Post('/connect')
   stripeConnect(@Req() req: RawBodyRequest<Request>) {
     const event = this._stripeService.validateRequest(

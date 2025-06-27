@@ -1,9 +1,9 @@
 import {
   ThirdParty,
   ThirdPartyAbstract,
-} from '@gitroom/nestjs-libraries/3rdparties/thirdparty.interface';
-import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
-import { timer } from '@gitroom/helpers/utils/timer';
+} from '@chaolaolo/nestjs-libraries/3rdparties/thirdparty.interface';
+import { OpenaiService } from '@chaolaolo/nestjs-libraries/openai/openai.service';
+import { timer } from '@chaolaolo/helpers/utils/timer';
 
 @ThirdParty({
   identifier: 'heygen',
@@ -118,7 +118,7 @@ export class HeygenProvider extends ThirdPartyAbstract<{
       selectedVoice: string;
     }
   ): Promise<string> {
-    const {data: {video_id}} = await (
+    const { data: { video_id } } = await (
       await fetch(`https://api.heygen.com/v2/video/generate`, {
         method: 'POST',
         body: JSON.stringify({
@@ -139,13 +139,13 @@ export class HeygenProvider extends ThirdPartyAbstract<{
           dimension:
             data.aspect_ratio === 'story'
               ? {
-                  width: 720,
-                  height: 1280,
-                }
+                width: 720,
+                height: 1280,
+              }
               : {
-                  width: 1280,
-                  height: 720,
-                },
+                width: 1280,
+                height: 720,
+              },
         }),
         headers: {
           accept: 'application/json',
@@ -156,7 +156,7 @@ export class HeygenProvider extends ThirdPartyAbstract<{
     ).json();
 
     while (true) {
-      const {data: {status, video_url}} = await (await fetch(`https://api.heygen.com/v1/video_status.get?video_id=${video_id}`, {
+      const { data: { status, video_url } } = await (await fetch(`https://api.heygen.com/v1/video_status.get?video_id=${video_id}`, {
         headers: {
           accept: 'application/json',
           'content-type': 'application/json',

@@ -1,11 +1,11 @@
 import { HttpException, Injectable } from '@nestjs/common';
-import { StarsRepository } from '@gitroom/nestjs-libraries/database/prisma/stars/stars.repository';
+import { StarsRepository } from '@chaolaolo/nestjs-libraries/database/prisma/stars/stars.repository';
 import { chunk, groupBy } from 'lodash';
 import dayjs from 'dayjs';
-import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
-import { StarsListDto } from '@gitroom/nestjs-libraries/dtos/analytics/stars.list.dto';
+import { NotificationService } from '@chaolaolo/nestjs-libraries/database/prisma/notifications/notification.service';
+import { StarsListDto } from '@chaolaolo/nestjs-libraries/dtos/analytics/stars.list.dto';
 import { mean } from 'simple-statistics';
-import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/client';
+import { BullMqClient } from '@chaolaolo/nestjs-libraries/bull-mq-transport-new/client';
 enum Inform {
   Removed,
   New,
@@ -17,7 +17,7 @@ export class StarsService {
     private _starsRepository: StarsRepository,
     private _notificationsService: NotificationService,
     private _workerServiceProducer: BullMqClient
-  ) {}
+  ) { }
 
   getGitHubRepositoriesByOrgId(org: string) {
     return this._starsRepository.getGitHubRepositoriesByOrgId(org);
@@ -294,8 +294,7 @@ export class StarsService {
             return this._notificationsService.inAppNotification(
               org.organizationId,
               `${person.name} is trending on GitHub`,
-              `${person.name} is trending in ${
-                language || 'On the main feed'
+              `${person.name} is trending in ${language || 'On the main feed'
               } position #${person.position}`,
               true
             );
@@ -303,8 +302,7 @@ export class StarsService {
             return this._notificationsService.inAppNotification(
               org.organizationId,
               `${person.name} changed trending position on GitHub`,
-              `${person.name} changed position in ${
-                language || 'on the main feed to position'
+              `${person.name} changed position in ${language || 'on the main feed to position'
               } position #${person.position}`,
               true
             );
@@ -462,10 +460,10 @@ export class StarsService {
     const nextTrendingDate = !nextInterval
       ? false
       : dayjs(
-          new Date(
-            lastTrendingDate.getTime() + nextInterval * 24 * 60 * 60 * 1000
-          )
-        ).toDate();
+        new Date(
+          lastTrendingDate.getTime() + nextInterval * 24 * 60 * 60 * 1000
+        )
+      ).toDate();
 
     if (!nextTrendingDate) {
       return [];
@@ -475,10 +473,10 @@ export class StarsService {
       nextTrendingDate,
       ...(current < max
         ? await this.predictTrendingLoop(
-            [...trendings, { date: nextTrendingDate }],
-            current + 1,
-            max
-          )
+          [...trendings, { date: nextTrendingDate }],
+          current + 1,
+          max
+        )
         : []),
     ];
   }

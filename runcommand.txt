@@ -1,0 +1,250 @@
+--- trước khi chạy set node về ver 20
+nvm use 20
+
+# Hướng dẫn sửa lỗi kết nối Database
+
+### 1. Đầu tiên, cập nhật file .env:
+
+````properties
+# === Required Settings
+DATABASE_URL="postgresql://postiz-local:postiz-local-pwd@localhost:5432/postiz-db-local"
+REDIS_URL="redis://localhost:6379"
+// ...existing code...
+
+- file docker-compose.dev.yaml:
+networks:
+  postiz-network:
+    external: true
+````
+
+
+
+### 2. Kiểm tra Node version:
+```bash
+# Kiểm tra version hiện tại
+node -v
+
+# Nếu không phải v20, chạy:
+nvm install 20
+nvm use 20
+```
+
+### 3. Restart toàn bộ hệ thống:
+
+```bash
+# 1. Dừng tất cả containers
+docker compose -f docker-compose.dev.yaml down -v
+
+# 2. Xóa tất cả images liên quan
+docker rmi localhost/postiz
+
+# 3. Xóa node_modules và reinstall
+rm -rf node_modules
+rm -rf pnpm-lock.yaml
+pnpm install
+
+# 4. Khởi động lại containers
+docker compose -f docker-compose.dev.yaml up -d
+
+# 5. Đợi containers khởi động
+sleep 30
+
+# 6. Kiểm tra container status
+docker ps
+```
+
+### 4. Kiểm tra kết nối database:
+
+```bash
+# Thử kết nối PostgreSQL
+psql -h localhost -p 5432 -U postiz-local -d postiz-db-local
+# Password: postiz-local-pwd
+
+# Kiểm tra Redis
+redis-cli ping
+```
+
+### 5. Nếu kết nối OK, chạy migration:
+
+```bash
+pnpm run prisma-db-push
+```
+
+### 6. Chạy ứng dụng ở chế độ development:
+
+```bash
+# Terminal 1
+pnpm run dev:backend
+
+# Terminal 2 
+pnpm run dev:frontend
+```
+
+# Terminal chạy cả 2 
+pnpm run dev
+```
+
+
+
+### 7. Kiểm tra logs nếu có lỗi:
+
+```bash
+# Terminal 3
+docker logs -f postiz-postgres
+docker logs -f postiz-redis
+```
+
+Nếu vẫn gặp lỗi, vui lòng chia sẻ nội dung lỗi cụ thể để được hỗ trợ thêm.
+
+
+
+# 8. Những lần chạy sau:
+```bash
+# Chỉ cần chạy lệnh này để khởi động lại ứng dụng
+pnpm run dev
+
+# Khởi động lại containers nếu cần
+docker compose -f docker-compose.dev.yaml up -d
+
+```
+
+
+
+
+# 9. Xóa network cũ và tạo mới (nếu cần):
+```bash
+# Xóa network cũ
+docker network rm postiz-app_postiz-network
+# Tạo network mới
+docker network create postiz-app_postiz-network
+# Hoặc nếu cần tạo với driver bridge
+docker network create --driver bridge postiz-network
+```
+
+
+
+
+
+******************************************************************
+******************************************************************
+******************************************************************
+***********Hướng dẫn khác ***********
+loclfpl: tôi vừa mới clone project này từ github bây giờ hãy hướng dẫn tôi chạy project này bằng docker!!!
+
+Workspace: Collecting workspace informationĐể chạy project này bằng Docker sau khi vừa clone từ GitHub, bạn hãy làm theo các bước sau (dựa trên hướng dẫn trong runcommand.txt):
+
+---
+
+### 1. Cài đặt Node.js 20 (nếu chưa có)
+
+```sh
+nvm install 20
+nvm use 20
+```
+
+---
+
+### 2. Cập nhật file .env
+
+- Copy file .env.example thành .env và chỉnh sửa nếu cần.
+- Đảm bảo các biến như `DATABASE_URL` và `REDIS_URL` đúng như sau:
+
+```properties
+DATABASE_URL="postgresql://postiz-local:postiz-local-pwd@localhost:5432/postiz-db-local"
+REDIS_URL="redis://localhost:6379"
+```
+
+---
+
+### 3. Cài đặt dependencies
+
+```sh
+pnpm install
+```
+
+---
+
+### 4. Khởi động Docker containers
+
+```sh
+docker compose -f docker-compose.dev.yaml up -d
+```
+
+---
+
+### 5. Đợi containers khởi động (có thể chờ ~30s)
+
+```sh
+sleep 30
+```
+
+---
+
+### 6. Kiểm tra trạng thái containers
+
+```sh
+docker ps
+```
+
+---
+
+### 7. Kiểm tra kết nối database (tùy chọn)
+
+```sh
+psql -h localhost -p 5432 -U postiz-local -d postiz-db-local
+# Password: postiz-local-pwd
+
+redis-cli ping
+```
+
+---
+
+### 8. Chạy migration database
+
+```sh
+pnpm run prisma-db-push
+```
+
+---
+
+### 9. Chạy ứng dụng
+
+Chạy cả frontend và backend cùng lúc:
+```sh
+pnpm run dev
+```
+
+Hoặc chạy từng phần:
+```sh
+pnpm run dev:backend
+pnpm run dev:frontend
+```
+
+---
+
+### 10. Kiểm tra logs nếu có lỗi
+
+```sh
+docker logs -f postiz-postgres
+docker logs -f postiz-redis
+```
+
+---
+
+**Lưu ý:** Nếu gặp lỗi về network, bạn có thể tạo lại Docker network:
+
+```sh
+docker network rm postiz-app_postiz-network
+docker network create postiz-app_postiz-network
+```
+
+---
+
+**Tóm tắt:**  
+- Copy .env.example thành .env  
+- `pnpm install`  
+- `docker compose -f docker-compose.dev.yaml up -d`  
+- `pnpm run prisma-db-push`  
+- `pnpm run dev`  
+
+Nếu có lỗi, hãy kiểm tra logs và chia sẻ nội dung lỗi để được hỗ trợ thêm.

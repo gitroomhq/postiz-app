@@ -3,20 +3,19 @@ import {
   PostDetails,
   PostResponse,
   SocialProvider,
-} from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+} from '@chaolaolo/nestjs-libraries/integrations/social/social.integrations.interface';
+import { makeId } from '@chaolaolo/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
-import { InstagramDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/instagram.dto';
-import { InstagramProvider } from '@gitroom/nestjs-libraries/integrations/social/instagram.provider';
+import { SocialAbstract } from '@chaolaolo/nestjs-libraries/integrations/social.abstract';
+import { InstagramDto } from '@chaolaolo/nestjs-libraries/dtos/posts/providers-settings/instagram.dto';
+import { InstagramProvider } from '@chaolaolo/nestjs-libraries/integrations/social/instagram.provider';
 import { Integration } from '@prisma/client';
 
 const instagramProvider = new InstagramProvider();
 
 export class InstagramStandaloneProvider
   extends SocialAbstract
-  implements SocialProvider
-{
+  implements SocialProvider {
   identifier = 'instagram-standalone';
   name = 'Instagram\n(Standalone)';
   isBetweenSteps = false;
@@ -55,13 +54,11 @@ export class InstagramStandaloneProvider
     const state = makeId(6);
     return {
       url:
-        `https://www.instagram.com/oauth/authorize?enable_fb_login=0&client_id=${
-          process.env.INSTAGRAM_APP_ID
+        `https://www.instagram.com/oauth/authorize?enable_fb_login=0&client_id=${process.env.INSTAGRAM_APP_ID
         }&redirect_uri=${encodeURIComponent(
-          `${
-            process?.env.FRONTEND_URL?.indexOf('https') == -1
-              ? `https://redirectmeto.com/${process?.env.FRONTEND_URL}`
-              : `${process?.env.FRONTEND_URL}`
+          `${process?.env.FRONTEND_URL?.indexOf('https') == -1
+            ? `https://redirectmeto.com/${process?.env.FRONTEND_URL}`
+            : `${process?.env.FRONTEND_URL}`
           }/integrations/social/instagram-standalone`
         )}&response_type=code&scope=${encodeURIComponent(
           this.scopes.join(',')
@@ -82,10 +79,9 @@ export class InstagramStandaloneProvider
     formData.append('grant_type', 'authorization_code');
     formData.append(
       'redirect_uri',
-      `${
-        process?.env.FRONTEND_URL?.indexOf('https') == -1
-          ? `https://redirectmeto.com/${process?.env.FRONTEND_URL}`
-          : `${process?.env.FRONTEND_URL}`
+      `${process?.env.FRONTEND_URL?.indexOf('https') == -1
+        ? `https://redirectmeto.com/${process?.env.FRONTEND_URL}`
+        : `${process?.env.FRONTEND_URL}`
       }/integrations/social/instagram-standalone`
     );
     formData.append('code', params.code);
@@ -100,10 +96,10 @@ export class InstagramStandaloneProvider
     const { access_token, expires_in, ...all } = await (
       await this.fetch(
         'https://graph.instagram.com/access_token' +
-          '?grant_type=ig_exchange_token' +
-          `&client_id=${process.env.INSTAGRAM_APP_ID}` +
-          `&client_secret=${process.env.INSTAGRAM_APP_SECRET}` +
-          `&access_token=${getAccessToken.access_token}`
+        '?grant_type=ig_exchange_token' +
+        `&client_id=${process.env.INSTAGRAM_APP_ID}` +
+        `&client_secret=${process.env.INSTAGRAM_APP_SECRET}` +
+        `&access_token=${getAccessToken.access_token}`
       )
     ).json();
 

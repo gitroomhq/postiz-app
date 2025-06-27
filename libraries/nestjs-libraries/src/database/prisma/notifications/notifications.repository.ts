@@ -1,4 +1,4 @@
-import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
+import { PrismaRepository } from '@chaolaolo/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
@@ -6,7 +6,7 @@ export class NotificationsRepository {
   constructor(
     private _notifications: PrismaRepository<'notifications'>,
     private _user: PrismaRepository<'user'>
-  ) {}
+  ) { }
 
   getLastReadNotification(userId: string) {
     return this._user.model.user.findFirst({

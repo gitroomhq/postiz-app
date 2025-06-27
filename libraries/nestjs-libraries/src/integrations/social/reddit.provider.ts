@@ -3,12 +3,12 @@ import {
   PostDetails,
   PostResponse,
   SocialProvider,
-} from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { RedditSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/reddit.dto';
-import { timer } from '@gitroom/helpers/utils/timer';
+} from '@chaolaolo/nestjs-libraries/integrations/social/social.integrations.interface';
+import { makeId } from '@chaolaolo/nestjs-libraries/services/make.is';
+import { RedditSettingsDto } from '@chaolaolo/nestjs-libraries/dtos/posts/providers-settings/reddit.dto';
+import { timer } from '@chaolaolo/helpers/utils/timer';
 import { groupBy } from 'lodash';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { SocialAbstract } from '@chaolaolo/nestjs-libraries/integrations/social.abstract';
 
 export class RedditProvider extends SocialAbstract implements SocialProvider {
   identifier = 'reddit';
@@ -59,11 +59,10 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
   async generateAuthUrl() {
     const state = makeId(6);
     const codeVerifier = makeId(30);
-    const url = `https://www.reddit.com/api/v1/authorize?client_id=${
-      process.env.REDDIT_CLIENT_ID
-    }&response_type=code&state=${state}&redirect_uri=${encodeURIComponent(
-      `${process.env.FRONTEND_URL}/integrations/social/reddit`
-    )}&duration=permanent&scope=${encodeURIComponent(this.scopes.join(' '))}`;
+    const url = `https://www.reddit.com/api/v1/authorize?client_id=${process.env.REDDIT_CLIENT_ID
+      }&response_type=code&state=${state}&redirect_uri=${encodeURIComponent(
+        `${process.env.FRONTEND_URL}/integrations/social/reddit`
+      )}&duration=permanent&scope=${encodeURIComponent(this.scopes.join(' '))}`;
     return {
       url,
       codeVerifier,
@@ -136,17 +135,16 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
           : {}),
         ...(firstPostSettings.value.type === 'link'
           ? {
-              url: firstPostSettings.value.url,
-            }
+            url: firstPostSettings.value.url,
+          }
           : {}),
         ...(firstPostSettings.value.type === 'media'
           ? {
-              url: `${
-                firstPostSettings.value.media[0].path.indexOf('http') === -1
-                  ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/uploads`
-                  : ``
+            url: `${firstPostSettings.value.media[0].path.indexOf('http') === -1
+                ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/uploads`
+                : ``
               }${firstPostSettings.value.media[0].path}`,
-            }
+          }
           : {}),
         text: post.message,
         sr: firstPostSettings.value.subreddit,
@@ -287,8 +285,7 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
 
     const { is_flair_required } = await (
       await this.fetch(
-        `https://oauth.reddit.com/api/v1/${
-          data.subreddit.split('/r/')[1]
+        `https://oauth.reddit.com/api/v1/${data.subreddit.split('/r/')[1]
         }/post_requirements`,
         {
           method: 'GET',
