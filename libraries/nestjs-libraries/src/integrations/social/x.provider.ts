@@ -24,6 +24,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   scopes = [] as string[];
   toolTip =
     'You will be logged in into your current account, if you would like a different account, change it first on X';
+  requiredEnvVars = ['X_API_KEY', 'X_API_SECRET'];
 
   @Plug({
     identifier: 'x-autoRepostPost',

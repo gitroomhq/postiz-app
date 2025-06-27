@@ -25,6 +25,7 @@ export class FarcasterProvider
   isBetweenSteps = false;
   isWeb3 = true;
   scopes = [] as string[];
+  requiredEnvVars = ['NEYNAR_CLIENT_ID', 'NEYNAR_SECRET_KEY'];
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     return {

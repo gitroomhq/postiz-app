@@ -21,6 +21,7 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
     'channels:join',
     'chat:write.customize',
   ];
+  requiredEnvVars = ['SLACK_ID', 'SLACK_SECRET'];
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     return {
       refreshToken: '',

@@ -129,4 +129,5 @@ export interface SocialProvider
   externalUrl?: (
     url: string
   ) => Promise<{ client_id: string; client_secret: string }>;
+  requiredEnvVars?: string[];
 }

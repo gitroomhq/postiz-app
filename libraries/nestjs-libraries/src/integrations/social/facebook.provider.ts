@@ -21,6 +21,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     'pages_read_engagement',
     'read_insights',
   ];
+  requiredEnvVars = ['FACEBOOK_APP_ID', 'FACEBOOK_APP_SECRET'];
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     return {
       refreshToken: '',

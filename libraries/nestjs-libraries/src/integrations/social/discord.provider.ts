@@ -12,6 +12,7 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
   name = 'Discord';
   isBetweenSteps = false;
   scopes = ['identify', 'guilds'];
+  requiredEnvVars = ['DISCORD_CLIENT_ID', 'DISCORD_CLIENT_SECRET'];
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const { access_token, expires_in, refresh_token } = await (
       await this.fetch('https://discord.com/api/oauth2/token', {
