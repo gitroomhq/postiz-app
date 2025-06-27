@@ -10,6 +10,9 @@ import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
 export class FacebookProvider extends SocialAbstract implements SocialProvider {
+  available = !!(
+    process.env.FACEBOOK_APP_ID && process.env.FACEBOOK_APP_SECRET
+  );
   identifier = 'facebook';
   name = 'Facebook Page';
   isBetweenSteps = true;

@@ -126,6 +126,7 @@ async function uploadVideo(agent: AtpAgent, videoPath: string): Promise<AppBskyE
 }
 
 export class BlueskyProvider extends SocialAbstract implements SocialProvider {
+  available = true;
   identifier = 'bluesky';
   name = 'Bluesky';
   isBetweenSteps = false;

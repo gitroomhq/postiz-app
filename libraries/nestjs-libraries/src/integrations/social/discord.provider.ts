@@ -8,6 +8,9 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
 export class DiscordProvider extends SocialAbstract implements SocialProvider {
+  available = !!(
+    process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET
+  );
   identifier = 'discord';
   name = 'Discord';
   isBetweenSteps = false;

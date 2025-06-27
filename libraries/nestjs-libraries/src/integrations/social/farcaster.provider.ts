@@ -20,6 +20,7 @@ export class FarcasterProvider
   extends SocialAbstract
   implements SocialProvider
 {
+  available = !!(process.env.NEYNAR_CLIENT_ID && process.env.NEYNAR_SECRET_KEY);
   identifier = 'wrapcast';
   name = 'Warpcast';
   isBetweenSteps = false;
