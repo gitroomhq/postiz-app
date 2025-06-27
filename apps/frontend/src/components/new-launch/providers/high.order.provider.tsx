@@ -62,6 +62,7 @@ export const withProvider = function <T extends object>(
       setTab,
       setTotalChars,
       justCurrent,
+      allIntegrations,
     } = useLaunchStore(
       useShallow((state) => ({
         date: state.date,
@@ -70,6 +71,7 @@ export const withProvider = function <T extends object>(
         global: state.global,
         internal: state.internal.find((p) => p.integration.id === props.id),
         integrations: state.selectedIntegrations,
+        allIntegrations: state.integrations,
         justCurrent: state.current,
         current: state.current === props.id,
         isGlobal: state.current === 'global',
@@ -195,7 +197,7 @@ export const withProvider = function <T extends object>(
         value={{
           date,
           integration: selectedIntegration.integration,
-          allIntegrations: integrations.map((p) => p.integration),
+          allIntegrations,
           value: value.map((p) => ({
             id: p.id,
             content: p.content,

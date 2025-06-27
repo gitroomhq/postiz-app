@@ -455,10 +455,10 @@ export const Editor: FC<{
         <div
           className={clsx(
             'text-end text-sm mt-1',
-            props.value.length > props.totalChars && '!text-red-500'
+            props?.value?.length > props.totalChars && '!text-red-500'
           )}
         >
-          {props.value.length}/{props.totalChars}
+          {props?.value?.length}/{props.totalChars}
         </div>
       )}
     </>

@@ -28,7 +28,7 @@ export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
         <div className="innerComponent">
           <div className="grid grid-cols-13 gap-[10px]">
             {integrations
-              .filter((f) => !f.inBetweenSteps)
+              .filter((f) => !f.inBetweenSteps && !f.disabled)
               .map((integration) => (
                 <div
                   key={integration.id}
