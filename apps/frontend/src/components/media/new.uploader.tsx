@@ -4,16 +4,15 @@ import Uppy, { UploadResult } from '@uppy/core';
 // @ts-ignore
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { getUppyUploadPlugin } from '@gitroom/react/helpers/uppy.upload';
-import { FileInput, ProgressBar } from '@uppy/react';
+import { Dashboard, FileInput, ProgressBar } from '@uppy/react';
 
 // Uppy styles
-import '@uppy/core/dist/style.min.css';
-import '@uppy/dashboard/dist/style.min.css';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import Compressor from '@uppy/compressor';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
+import { uniq } from 'lodash';
 
 export function MultipartFileUploader({
   onUploadSuccess,
@@ -60,7 +59,7 @@ export function useUppyUploader(props: {
   onUploadSuccess: (result: UploadResult) => void;
   allowedFileTypes: string;
 }) {
-  const setLocked = useLaunchStore(state => state.setLocked);
+  const setLocked = useLaunchStore((state) => state.setLocked);
   const toast = useToaster();
   const { storageProvider, backendUrl, disableImageCompression, transloadit } =
     useVariables();
@@ -147,10 +146,43 @@ export function useUppyUploader(props: {
     });
     uppy2.on('error', (result) => {
       setLocked(false);
-    })
-    uppy2.on('complete', (result) => {
+    });
+    uppy2.on('complete', async (result) => {
+      if (storageProvider === 'local') {
+        setLocked(false);
+        onUploadSuccess(result.successful.map((p) => p.response.body));
+        return;
+      }
+
+      if (transloadit.length > 0) {
+        // @ts-ignore
+        const allRes = result.transloadit[0].results;
+        const toSave = uniq<string>(
+          allRes[Object.keys(allRes)[0]].flatMap((item: any) =>
+            item.url.split('/').pop()
+          )
+        );
+
+        const loadAllMedia = await Promise.all(
+          toSave.map(async (name) => {
+            return (
+              await fetch('/media/save-media', {
+                method: 'POST',
+                body: JSON.stringify({
+                  name,
+                }),
+              })
+            ).json();
+          })
+        );
+
+        setLocked(false);
+        onUploadSuccess(loadAllMedia);
+        return;
+      }
+
       setLocked(false);
-      onUploadSuccess(result);
+      onUploadSuccess(result.successful.map((p) => p.response.body.saved));
     });
     uppy2.on('upload-success', (file, response) => {
       // @ts-ignore
@@ -188,8 +220,20 @@ export function MultipartFileUploaderAfter({
   return (
     <>
       {/* <Dashboard uppy={uppy} /> */}
-      <div className="pointer-events-none">
-        <ProgressBar uppy={uppyInstance} />
+      <div className="pointer-events-none bigWrap">
+        <Dashboard
+          height={23}
+          width={200}
+          className=""
+          uppy={uppyInstance}
+          id={`media-uploader`}
+          showProgressDetails={true}
+          hideUploadButton={true}
+          hideRetryButton={true}
+          hidePauseResumeButton={true}
+          hideCancelButton={true}
+          hideProgressAfterFinish={true}
+        />
       </div>
       <FileInput
         uppy={uppyInstance}

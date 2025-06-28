@@ -30,6 +30,8 @@ export const getUppyUploadPlugin = (
       return {
         plugin: Transloadit,
         options: {
+          waitForEncoding: true,
+          alwaysRunAssembly: true,
           assemblyOptions: {
             params: {
               auth: { key: transloadit[0] },

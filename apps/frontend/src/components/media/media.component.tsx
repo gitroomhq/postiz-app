@@ -180,7 +180,6 @@ export const MediaBox: FC<{
               },
             ]
       );
-      // closeModal();
     },
     [selectedMedia]
   );
@@ -204,7 +203,8 @@ export const MediaBox: FC<{
     closeModal();
   }, [selectedMedia]);
   const { data, mutate } = useSWR(`get-media-${page}`, loadMedia);
-  const finishUpload = useCallback(async () => {
+
+  const finishUpload = useCallback(async (res: any) => {
     const lastMedia = mediaList?.[0]?.id;
     const newData = await mutate();
     const untilLastMedia = newData.results.findIndex(
@@ -216,6 +216,7 @@ export const MediaBox: FC<{
     );
     addNewMedia(onlyNewMedia)();
   }, [mutate, addNewMedia, mediaList, selectedMedia]);
+
   const dragAndDrop = useCallback(
     async (event: ClipboardEvent<HTMLDivElement> | File[]) => {
       // @ts-ignore
@@ -255,7 +256,6 @@ export const MediaBox: FC<{
       ref.current.setOptions({
         autoProceed: true,
       });
-      finishUpload();
     },
     [mutate, addNewMedia, mediaList, selectedMedia]
   );
@@ -301,7 +301,7 @@ export const MediaBox: FC<{
               </div>
               <button
                 onClick={closeModal}
-                className="outline-none z-[300] absolute end-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root bg-primary hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+                className="outline-none z-[300] absolute end-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root bg-primary hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
                 type="button"
               >
                 <svg
@@ -335,7 +335,7 @@ export const MediaBox: FC<{
               {!!mediaList.length && (
                 <>
                   <div className="flex absolute h-[57px] w-full start-0 top-0 rounded-lg transition-all group text-sm font-semibold bg-transparent text-gray-800 hover:bg-gray-100 focus:text-primary-500">
-                    <div className="relative flex flex-1 pe-[45px] gap-2 items-center justify-center">
+                    <div className="relative flex flex-1 pe-[55px] gap-2 items-center justify-center">
                       <div className="flex-1" />
                       <MultipartFileUploader
                         uppRef={ref}

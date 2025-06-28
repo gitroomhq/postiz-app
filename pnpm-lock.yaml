@@ -203,37 +203,37 @@ importers:
         version: 4.0.6(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@uppy/aws-s3':
         specifier: ^4.1.0
-        version: 4.2.3(@uppy/core@4.4.4)
+        version: 4.2.3(@uppy/core@4.4.6)
       '@uppy/compressor':
         specifier: ^2.1.1
-        version: 2.2.1(@uppy/core@4.4.4)
+        version: 2.2.1(@uppy/core@4.4.6)
       '@uppy/core':
-        specifier: ^4.2.0
-        version: 4.4.4
+        specifier: ^4.4.6
+        version: 4.4.6
       '@uppy/dashboard':
-        specifier: ^4.1.0
-        version: 4.3.3(@uppy/core@4.4.4)
+        specifier: ^4.3.4
+        version: 4.3.4(@uppy/core@4.4.6)
       '@uppy/drag-drop':
-        specifier: ^4.0.2
-        version: 4.1.2(@uppy/core@4.4.4)
+        specifier: ^4.1.3
+        version: 4.1.3(@uppy/core@4.4.6)
       '@uppy/file-input':
-        specifier: ^4.0.1
-        version: 4.1.2(@uppy/core@4.4.4)
+        specifier: ^4.1.3
+        version: 4.1.3(@uppy/core@4.4.6)
       '@uppy/progress-bar':
-        specifier: ^4.0.0
-        version: 4.2.1(@uppy/core@4.4.4)
+        specifier: ^4.2.1
+        version: 4.2.1(@uppy/core@4.4.6)
       '@uppy/react':
-        specifier: ^4.0.2
-        version: 4.2.3(@uppy/core@4.4.4)(@uppy/dashboard@4.3.3(@uppy/core@4.4.4))(@uppy/drag-drop@4.1.2(@uppy/core@4.4.4))(@uppy/file-input@4.1.2(@uppy/core@4.4.4))(@uppy/progress-bar@4.2.1(@uppy/core@4.4.4))(@uppy/status-bar@4.1.3(@uppy/core@4.4.4))(react@18.3.1)
+        specifier: ^4.3.0
+        version: 4.3.0(@uppy/core@4.4.6)(@uppy/dashboard@4.3.4(@uppy/core@4.4.6))(@uppy/drag-drop@4.1.3(@uppy/core@4.4.6))(@uppy/file-input@4.1.3(@uppy/core@4.4.6))(@uppy/progress-bar@4.2.1(@uppy/core@4.4.6))(@uppy/status-bar@4.1.3(@uppy/core@4.4.6))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@uppy/status-bar':
-        specifier: ^4.0.3
-        version: 4.1.3(@uppy/core@4.4.4)
+        specifier: ^4.1.3
+        version: 4.1.3(@uppy/core@4.4.6)
       '@uppy/transloadit':
         specifier: ^4.2.2
-        version: 4.2.2(@uppy/core@4.4.4)
+        version: 4.2.2(@uppy/core@4.4.6)
       '@uppy/xhr-upload':
-        specifier: ^4.1.0
-        version: 4.3.3(@uppy/core@4.4.4)
+        specifier: ^4.3.3
+        version: 4.3.3(@uppy/core@4.4.6)
       accept-language:
         specifier: ^3.0.20
         version: 3.0.20
@@ -4034,6 +4034,88 @@ packages:
     resolution: {integrity: sha512-3giAOQvZiH5F9bMlMiv8+GSPMeqg0dbaeo58/0SlA9sxSqZhnUtxzX9/2FzyhS9sWQf5S0GJE0AKBrFqjpeYcg==}
     engines: {node: '>=8.0.0'}
 
+  '@parcel/watcher-android-arm64@2.5.1':
+    resolution: {integrity: sha512-KF8+j9nNbUN8vzOFDpRMsaKBHZ/mcjEjMToVMJOhTozkDonQFFrRcfdLWn6yWKCmJKmdVxSgHiYvTCef4/qcBA==}
+    engines: {node: '>= 10.0.0'}
+    cpu: [arm64]
+    os: [android]
+
+  '@parcel/watcher-darwin-arm64@2.5.1':
+    resolution: {integrity: sha512-eAzPv5osDmZyBhou8PoF4i6RQXAfeKL9tjb3QzYuccXFMQU0ruIc/POh30ePnaOyD1UXdlKguHBmsTs53tVoPw==}
+    engines: {node: '>= 10.0.0'}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@parcel/watcher-darwin-x64@2.5.1':
+    resolution: {integrity: sha512-1ZXDthrnNmwv10A0/3AJNZ9JGlzrF82i3gNQcWOzd7nJ8aj+ILyW1MTxVk35Db0u91oD5Nlk9MBiujMlwmeXZg==}
+    engines: {node: '>= 10.0.0'}
+    cpu: [x64]
+    os: [darwin]
+
+  '@parcel/watcher-freebsd-x64@2.5.1':
+    resolution: {integrity: sha512-SI4eljM7Flp9yPuKi8W0ird8TI/JK6CSxju3NojVI6BjHsTyK7zxA9urjVjEKJ5MBYC+bLmMcbAWlZ+rFkLpJQ==}
+    engines: {node: '>= 10.0.0'}
+    cpu: [x64]
+    os: [freebsd]
+
+  '@parcel/watcher-linux-arm-glibc@2.5.1':
+    resolution: {integrity: sha512-RCdZlEyTs8geyBkkcnPWvtXLY44BCeZKmGYRtSgtwwnHR4dxfHRG3gR99XdMEdQ7KeiDdasJwwvNSF5jKtDwdA==}
+    engines: {node: '>= 10.0.0'}
+    cpu: [arm]
+    os: [linux]
+
+  '@parcel/watcher-linux-arm-musl@2.5.1':
+    resolution: {integrity: sha512-6E+m/Mm1t1yhB8X412stiKFG3XykmgdIOqhjWj+VL8oHkKABfu/gjFj8DvLrYVHSBNC+/u5PeNrujiSQ1zwd1Q==}
+    engines: {node: '>= 10.0.0'}
+    cpu: [arm]
+    os: [linux]
+
+  '@parcel/watcher-linux-arm64-glibc@2.5.1':
+    resolution: {integrity: sha512-LrGp+f02yU3BN9A+DGuY3v3bmnFUggAITBGriZHUREfNEzZh/GO06FF5u2kx8x+GBEUYfyTGamol4j3m9ANe8w==}
+    engines: {node: '>= 10.0.0'}
+    cpu: [arm64]
+    os: [linux]
+
+  '@parcel/watcher-linux-arm64-musl@2.5.1':
+    resolution: {integrity: sha512-cFOjABi92pMYRXS7AcQv9/M1YuKRw8SZniCDw0ssQb/noPkRzA+HBDkwmyOJYp5wXcsTrhxO0zq1U11cK9jsFg==}
+    engines: {node: '>= 10.0.0'}
+    cpu: [arm64]
+    os: [linux]
+
+  '@parcel/watcher-linux-x64-glibc@2.5.1':
+    resolution: {integrity: sha512-GcESn8NZySmfwlTsIur+49yDqSny2IhPeZfXunQi48DMugKeZ7uy1FX83pO0X22sHntJ4Ub+9k34XQCX+oHt2A==}
+    engines: {node: '>= 10.0.0'}
+    cpu: [x64]
+    os: [linux]
+
+  '@parcel/watcher-linux-x64-musl@2.5.1':
+    resolution: {integrity: sha512-n0E2EQbatQ3bXhcH2D1XIAANAcTZkQICBPVaxMeaCVBtOpBZpWJuf7LwyWPSBDITb7In8mqQgJ7gH8CILCURXg==}
+    engines: {node: '>= 10.0.0'}
+    cpu: [x64]
+    os: [linux]
+
+  '@parcel/watcher-win32-arm64@2.5.1':
+    resolution: {integrity: sha512-RFzklRvmc3PkjKjry3hLF9wD7ppR4AKcWNzH7kXR7GUe0Igb3Nz8fyPwtZCSquGrhU5HhUNDr/mKBqj7tqA2Vw==}
+    engines: {node: '>= 10.0.0'}
+    cpu: [arm64]
+    os: [win32]
+
+  '@parcel/watcher-win32-ia32@2.5.1':
+    resolution: {integrity: sha512-c2KkcVN+NJmuA7CGlaGD1qJh1cLfDnQsHjE89E60vUEMlqduHGCdCLJCID5geFVM0dOtA3ZiIO8BoEQmzQVfpQ==}
+    engines: {node: '>= 10.0.0'}
+    cpu: [ia32]
+    os: [win32]
+
+  '@parcel/watcher-win32-x64@2.5.1':
+    resolution: {integrity: sha512-9lHBdJITeNR++EvSQVUcaZoWupyHfXe1jZvGZ06O/5MflPcuPLtEphScIBL+AiCWBO46tDSHzWyD0uDmmZqsgA==}
+    engines: {node: '>= 10.0.0'}
+    cpu: [x64]
+    os: [win32]
+
+  '@parcel/watcher@2.5.1':
+    resolution: {integrity: sha512-dfUnCxiN9H4ap84DvD2ubjw+3vUNpstxa0TneY/Paat8a3R4uQZDLSvWjmznAY/DoahqTHl9V46HF/Zs3F29pg==}
+    engines: {node: '>= 10.0.0'}
+
   '@particle-network/analytics@1.0.2':
     resolution: {integrity: sha512-E4EpTRYcfNOkxj+bgNdQydBrvdLGo4HfVStZCuOr3967dYek30r6L7Nkaa9zJXRE2eGT4lPvcAXDV2WxDZl/Xg==}
 
@@ -5581,11 +5663,24 @@ packages:
     resolution: {integrity: sha512-4BAffykYOgO+5nzBWYwE3W90sBgLJoUPRWWcL8wlyiM8IB8ipJz3UMJ9KXQd1RKQXpKp8Tutn80HZtWsu2u76w==}
     engines: {node: '>=10'}
 
+  '@tailwindcss/cli@4.1.11':
+    resolution: {integrity: sha512-7RAFOrVaXCFz5ooEG36Kbh+sMJiI2j4+Ozp71smgjnLfBRu7DTfoq8DsTvzse2/6nDeo2M3vS/FGaxfDgr3rtQ==}
+    hasBin: true
+
+  '@tailwindcss/node@4.1.11':
+    resolution: {integrity: sha512-yzhzuGRmv5QyU9qLNg4GTlYI6STedBWRE7NjxP45CsFYYq9taI0zJXZBMqIC/c8fViNLhmrbpSFS57EoxUmD6Q==}
+
   '@tailwindcss/node@4.1.6':
     resolution: {integrity: sha512-ed6zQbgmKsjsVvodAS1q1Ld2BolEuxJOSyyNc+vhkjdmfNUDCmQnlXBfQkHrlzNmslxHsQU/bFmzcEbv4xXsLg==}
 
   '@tailwindcss/node@4.1.7':
     resolution: {integrity: sha512-9rsOpdY9idRI2NH6CL4wORFY0+Q6fnx9XP9Ju+iq/0wJwGD5IByIgFmwVbyy4ymuyprj8Qh4ErxMKTUL4uNh3g==}
+
+  '@tailwindcss/oxide-android-arm64@4.1.11':
+    resolution: {integrity: sha512-3IfFuATVRUMZZprEIx9OGDjG3Ou3jG4xQzNTvjDoKmU9JdmoCohQJ83MYd0GPnQIu89YoJqvMM0G3uqLRFtetg==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [android]
 
   '@tailwindcss/oxide-android-arm64@4.1.6':
     resolution: {integrity: sha512-VHwwPiwXtdIvOvqT/0/FLH/pizTVu78FOnI9jQo64kSAikFSZT7K4pjyzoDpSMaveJTGyAKvDjuhxJxKfmvjiQ==}
@@ -5599,6 +5694,12 @@ packages:
     cpu: [arm64]
     os: [android]
 
+  '@tailwindcss/oxide-darwin-arm64@4.1.11':
+    resolution: {integrity: sha512-ESgStEOEsyg8J5YcMb1xl8WFOXfeBmrhAwGsFxxB2CxY9evy63+AtpbDLAyRkJnxLy2WsD1qF13E97uQyP1lfQ==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [darwin]
+
   '@tailwindcss/oxide-darwin-arm64@4.1.6':
     resolution: {integrity: sha512-weINOCcqv1HVBIGptNrk7c6lWgSFFiQMcCpKM4tnVi5x8OY2v1FrV76jwLukfT6pL1hyajc06tyVmZFYXoxvhQ==}
     engines: {node: '>= 10'}
@@ -5609,6 +5710,12 @@ packages:
     resolution: {integrity: sha512-81jUw9To7fimGGkuJ2W5h3/oGonTOZKZ8C2ghm/TTxbwvfSiFSDPd6/A/KE2N7Jp4mv3Ps9OFqg2fEKgZFfsvg==}
     engines: {node: '>= 10'}
     cpu: [arm64]
+    os: [darwin]
+
+  '@tailwindcss/oxide-darwin-x64@4.1.11':
+    resolution: {integrity: sha512-EgnK8kRchgmgzG6jE10UQNaH9Mwi2n+yw1jWmof9Vyg2lpKNX2ioe7CJdf9M5f8V9uaQxInenZkOxnTVL3fhAw==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
     os: [darwin]
 
   '@tailwindcss/oxide-darwin-x64@4.1.6':
@@ -5623,6 +5730,12 @@ packages:
     cpu: [x64]
     os: [darwin]
 
+  '@tailwindcss/oxide-freebsd-x64@4.1.11':
+    resolution: {integrity: sha512-xdqKtbpHs7pQhIKmqVpxStnY1skuNh4CtbcyOHeX1YBE0hArj2romsFGb6yUmzkq/6M24nkxDqU8GYrKrz+UcA==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [freebsd]
+
   '@tailwindcss/oxide-freebsd-x64@4.1.6':
     resolution: {integrity: sha512-4m5F5lpkBZhVQJq53oe5XgJ+aFYWdrgkMwViHjRsES3KEu2m1udR21B1I77RUqie0ZYNscFzY1v9aDssMBZ/1w==}
     engines: {node: '>= 10'}
@@ -5634,6 +5747,12 @@ packages:
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [freebsd]
+
+  '@tailwindcss/oxide-linux-arm-gnueabihf@4.1.11':
+    resolution: {integrity: sha512-ryHQK2eyDYYMwB5wZL46uoxz2zzDZsFBwfjssgB7pzytAeCCa6glsiJGjhTEddq/4OsIjsLNMAiMlHNYnkEEeg==}
+    engines: {node: '>= 10'}
+    cpu: [arm]
+    os: [linux]
 
   '@tailwindcss/oxide-linux-arm-gnueabihf@4.1.6':
     resolution: {integrity: sha512-qU0rHnA9P/ZoaDKouU1oGPxPWzDKtIfX7eOGi5jOWJKdxieUJdVV+CxWZOpDWlYTd4N3sFQvcnVLJWJ1cLP5TA==}
@@ -5647,6 +5766,12 @@ packages:
     cpu: [arm]
     os: [linux]
 
+  '@tailwindcss/oxide-linux-arm64-gnu@4.1.11':
+    resolution: {integrity: sha512-mYwqheq4BXF83j/w75ewkPJmPZIqqP1nhoghS9D57CLjsh3Nfq0m4ftTotRYtGnZd3eCztgbSPJ9QhfC91gDZQ==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [linux]
+
   '@tailwindcss/oxide-linux-arm64-gnu@4.1.6':
     resolution: {integrity: sha512-jXy3TSTrbfgyd3UxPQeXC3wm8DAgmigzar99Km9Sf6L2OFfn/k+u3VqmpgHQw5QNfCpPe43em6Q7V76Wx7ogIQ==}
     engines: {node: '>= 10'}
@@ -5655,6 +5780,12 @@ packages:
 
   '@tailwindcss/oxide-linux-arm64-gnu@4.1.7':
     resolution: {integrity: sha512-voMvBTnJSfKecJxGkoeAyW/2XRToLZ227LxswLAwKY7YslG/Xkw9/tJNH+3IVh5bdYzYE7DfiaPbRkSHFxY1xA==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [linux]
+
+  '@tailwindcss/oxide-linux-arm64-musl@4.1.11':
+    resolution: {integrity: sha512-m/NVRFNGlEHJrNVk3O6I9ggVuNjXHIPoD6bqay/pubtYC9QIdAMpS+cswZQPBLvVvEF6GtSNONbDkZrjWZXYNQ==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
@@ -5671,6 +5802,12 @@ packages:
     cpu: [arm64]
     os: [linux]
 
+  '@tailwindcss/oxide-linux-x64-gnu@4.1.11':
+    resolution: {integrity: sha512-YW6sblI7xukSD2TdbbaeQVDysIm/UPJtObHJHKxDEcW2exAtY47j52f8jZXkqE1krdnkhCMGqP3dbniu1Te2Fg==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [linux]
+
   '@tailwindcss/oxide-linux-x64-gnu@4.1.6':
     resolution: {integrity: sha512-A4spQhwnWVpjWDLXnOW9PSinO2PTKJQNRmL/aIl2U/O+RARls8doDfs6R41+DAXK0ccacvRyDpR46aVQJJCoCg==}
     engines: {node: '>= 10'}
@@ -5679,6 +5816,12 @@ packages:
 
   '@tailwindcss/oxide-linux-x64-gnu@4.1.7':
     resolution: {integrity: sha512-HMs+Va+ZR3gC3mLZE00gXxtBo3JoSQxtu9lobbZd+DmfkIxR54NO7Z+UQNPsa0P/ITn1TevtFxXTpsRU7qEvWg==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [linux]
+
+  '@tailwindcss/oxide-linux-x64-musl@4.1.11':
+    resolution: {integrity: sha512-e3C/RRhGunWYNC3aSF7exsQkdXzQ/M+aYuZHKnw4U7KQwTJotnWsGOIVih0s2qQzmEzOFIJ3+xt7iq67K/p56Q==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
@@ -5694,6 +5837,18 @@ packages:
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
+
+  '@tailwindcss/oxide-wasm32-wasi@4.1.11':
+    resolution: {integrity: sha512-Xo1+/GU0JEN/C/dvcammKHzeM6NqKovG+6921MR6oadee5XPBaKOumrJCXvopJ/Qb5TH7LX/UAywbqrP4lax0g==}
+    engines: {node: '>=14.0.0'}
+    cpu: [wasm32]
+    bundledDependencies:
+      - '@napi-rs/wasm-runtime'
+      - '@emnapi/core'
+      - '@emnapi/runtime'
+      - '@tybys/wasm-util'
+      - '@emnapi/wasi-threads'
+      - tslib
 
   '@tailwindcss/oxide-wasm32-wasi@4.1.6':
     resolution: {integrity: sha512-qAp4ooTYrBQ5pk5jgg54/U1rCJ/9FLYOkkQ/nTE+bVMseMfB6O7J8zb19YTpWuu4UdfRf5zzOrNKfl6T64MNrQ==}
@@ -5719,6 +5874,12 @@ packages:
       - '@emnapi/wasi-threads'
       - tslib
 
+  '@tailwindcss/oxide-win32-arm64-msvc@4.1.11':
+    resolution: {integrity: sha512-UgKYx5PwEKrac3GPNPf6HVMNhUIGuUh4wlDFR2jYYdkX6pL/rn73zTq/4pzUm8fOjAn5L8zDeHp9iXmUGOXZ+w==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [win32]
+
   '@tailwindcss/oxide-win32-arm64-msvc@4.1.6':
     resolution: {integrity: sha512-nqpDWk0Xr8ELO/nfRUDjk1pc9wDJ3ObeDdNMHLaymc4PJBWj11gdPCWZFKSK2AVKjJQC7J2EfmSmf47GN7OuLg==}
     engines: {node: '>= 10'}
@@ -5729,6 +5890,12 @@ packages:
     resolution: {integrity: sha512-HUiSiXQ9gLJBAPCMVRk2RT1ZrBjto7WvqsPBwUrNK2BcdSxMnk19h4pjZjI7zgPhDxlAbJSumTC4ljeA9y0tEw==}
     engines: {node: '>= 10'}
     cpu: [arm64]
+    os: [win32]
+
+  '@tailwindcss/oxide-win32-x64-msvc@4.1.11':
+    resolution: {integrity: sha512-YfHoggn1j0LK7wR82TOucWc5LDCguHnoS879idHekmmiR7g9HUtMw9MI0NHatS28u/Xlkfi9w5RJWgz2Dl+5Qg==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
     os: [win32]
 
   '@tailwindcss/oxide-win32-x64-msvc@4.1.6':
@@ -5742,6 +5909,10 @@ packages:
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [win32]
+
+  '@tailwindcss/oxide@4.1.11':
+    resolution: {integrity: sha512-Q69XzrtAhuyfHo+5/HMgr1lAiPP/G40OMFAnws7xcFEYqcypZmdW8eGXaOUIeOl1dzPJBPENXgbjsOyhg2nkrg==}
+    engines: {node: '>= 10'}
 
   '@tailwindcss/oxide@4.1.6':
     resolution: {integrity: sha512-0bpEBQiGx+227fW4G0fLQ8vuvyy5rsB1YIYNapTq3aRsJ9taF3f5cCaovDjN5pUGKKzcpMrZst/mhNaKAPOHOA==}
@@ -6393,28 +6564,49 @@ packages:
     peerDependencies:
       '@uppy/core': ^4.4.1
 
+  '@uppy/components@0.1.0':
+    resolution: {integrity: sha512-pKWDb036mMlARgRbBUKIXNDgxA9au30MYs+95/FD97wuiA4tEiGewSmYX7vUa6yf4NTDi6ouIU+CImGtEZlgww==}
+    peerDependencies:
+      '@uppy/audio': ^2.1.3
+      '@uppy/core': ^4.4.6
+      '@uppy/google-drive-picker': '*'
+      '@uppy/image-editor': ^3.3.3
+      '@uppy/screen-capture': ^4.3.0
+      '@uppy/webcam': ^4.2.0
+    peerDependenciesMeta:
+      '@uppy/audio':
+        optional: true
+      '@uppy/google-drive-picker':
+        optional: true
+      '@uppy/image-editor':
+        optional: true
+      '@uppy/screen-capture':
+        optional: true
+      '@uppy/webcam':
+        optional: true
+
   '@uppy/compressor@2.2.1':
     resolution: {integrity: sha512-2xWEHfmy/9HxOYZ1m11do69Gfa9Detz/zdfATlDZXlxUBhb9SKidea2FdZrea7gxFJjcBH9hO9tPK9k4ev+YJA==}
     peerDependencies:
       '@uppy/core': ^4.4.1
 
-  '@uppy/core@4.4.4':
-    resolution: {integrity: sha512-etaG6uSrShnS8x/CGI9ME/XP23jw8FTkujzKbaag4lDTtdlvcs6PxcObtH3I5MxxJXUEWwcfVGTdAUvd/tGCaA==}
+  '@uppy/core@4.4.6':
+    resolution: {integrity: sha512-EH5C5TSwY3tXp/gl4SPTpcxzEjBz8Ntt1o1s/v03bw8AUTl7X0lGUWRepbCh/XIUJyBTMJ1O+4Uv4/164WQSLg==}
 
-  '@uppy/dashboard@4.3.3':
-    resolution: {integrity: sha512-bZzzyzWzyoCsXxLUKsjT+X6AWNlFjRU1Ui+28Hp0C7A43zm8y0pb8BbwECl8a3NJH10tKNOHwT8IiVwbiGwXPQ==}
+  '@uppy/dashboard@4.3.4':
+    resolution: {integrity: sha512-SMPa5K3jZ2qNf110Hf8adN/cEAQLdpvXGjgl+R9c8AnUdpKE5f4XxaWSukdW6N7YYWmoBrLGesFvwRSPKZzCOw==}
     peerDependencies:
-      '@uppy/core': ^4.4.4
+      '@uppy/core': ^4.4.5
 
-  '@uppy/drag-drop@4.1.2':
-    resolution: {integrity: sha512-vD/T2NmS+2zHcdYSVzv4zmCBOm3Bcr2efPDu5A5U8351t84MFT6v5Lk2Il6EBzgDZ9OHpVGSrn2aMno2PhzaGQ==}
+  '@uppy/drag-drop@4.1.3':
+    resolution: {integrity: sha512-oxWTIfIM6v28Krl1fv3wrixHshkNMrp0vGiDO8W2qOgP2zSJCVx9KTagj3BY2tn9iyy4A7yuQZXKPmmzgfPyaQ==}
     peerDependencies:
-      '@uppy/core': ^4.4.4
+      '@uppy/core': ^4.4.5
 
-  '@uppy/file-input@4.1.2':
-    resolution: {integrity: sha512-tpxT41/00wI3WzqzbRaBPf9bphWYT8XMPxDhPhUqG7Y+k29PLhCu0rL57m/pvOfOWundug4E1CAejo9V01FNRg==}
+  '@uppy/file-input@4.1.3':
+    resolution: {integrity: sha512-wiZeS46c49s8NdnbTYfamfMn4WTsvMtPRTDfBD5M7CocBWRmIfKQ/nisv/1Nhy8J1a/P0eIj9Tmf518SaepN5A==}
     peerDependencies:
-      '@uppy/core': ^4.4.4
+      '@uppy/core': ^4.4.5
 
   '@uppy/informer@4.2.1':
     resolution: {integrity: sha512-0en8Py47pl6RMDrgUfqFoF807W5kK5AKVJNT1SkTsLiGg5anmTIMuvmNG3k6LN4cn9P/rKyEHSdGcoBBUj9u7Q==}
@@ -6431,16 +6623,19 @@ packages:
     peerDependencies:
       '@uppy/core': ^4.4.4
 
-  '@uppy/react@4.2.3':
-    resolution: {integrity: sha512-zIG2LzjB+gsiduHsgzfi+wSywTE+DSFPg+FAIlyWP24XF0HEv0ekai0fngewxjBUItZ6HGddWFkvMiRMD6+63g==}
+  '@uppy/react@4.3.0':
+    resolution: {integrity: sha512-KobhqnOWIg3GAEGWpRfgmSCZDq7+GmsqHbjmHmxdTDHCFIxp91M2XuxmcEVLmUFSU6XTUdGZS6Lf2Zmt/QgMKw==}
     peerDependencies:
-      '@uppy/core': ^4.4.4
-      '@uppy/dashboard': ^4.3.3
-      '@uppy/drag-drop': ^4.1.2
-      '@uppy/file-input': ^4.1.2
+      '@uppy/core': ^4.4.6
+      '@uppy/dashboard': ^4.3.4
+      '@uppy/drag-drop': ^4.1.3
+      '@uppy/file-input': ^4.1.3
       '@uppy/progress-bar': ^4.2.1
+      '@uppy/screen-capture': ^4.3.0
       '@uppy/status-bar': ^4.1.3
+      '@uppy/webcam': ^4.2.0
       react: ^18.0.0 || ^19.0.0
+      react-dom: ^18.0.0 || ^19.0.0
     peerDependenciesMeta:
       '@uppy/dashboard':
         optional: true
@@ -6450,7 +6645,11 @@ packages:
         optional: true
       '@uppy/progress-bar':
         optional: true
+      '@uppy/screen-capture':
+        optional: true
       '@uppy/status-bar':
+        optional: true
+      '@uppy/webcam':
         optional: true
 
   '@uppy/status-bar@4.1.3':
@@ -6478,6 +6677,9 @@ packages:
 
   '@uppy/utils@6.1.3':
     resolution: {integrity: sha512-7WuTtMf0k1g962sE76mKy8aDV/kLeDrF8Wv1oTxaXQzUpmHBAoKd3FXLrQXu7TgM0XNHHRZXAckBttbVOWkKCw==}
+
+  '@uppy/utils@6.1.5':
+    resolution: {integrity: sha512-R+3l4ir01I6MzZ80t5CSBoOGvV9mCqLZC9FoNYVTp/lsanQ3yMAZFGLN/x7JVGO7oi/m/ykmNR1jAH+JTtXdFg==}
 
   '@uppy/xhr-upload@4.3.3':
     resolution: {integrity: sha512-I7RVppwTvLRlVfoW5piMxcZKzWF42E6CwYFQ42d2LzizrkG4tVLQkQrTZlw85za3nhcSrX3o/d1eNx3pzLmsdw==}
@@ -8338,6 +8540,11 @@ packages:
 
   detect-browser@5.3.0:
     resolution: {integrity: sha512-53rsFbGdwMwlF7qvCt0ypLM5V5/Mbl0szB7GPN8y9NCcbknYOeVVXdrXEq+90IwAfrrzt6Hd+u2E2ntakICU8w==}
+
+  detect-libc@1.0.3:
+    resolution: {integrity: sha512-pGjwhsmsp4kL2RTz08wcOlGN83otlqHeD/Z5T8GXZB+/YcpQ/dgo+lbU8ZsGxV0HIvqqxo9l7mqYwyYMD9bKDg==}
+    engines: {node: '>=0.10'}
+    hasBin: true
 
   detect-libc@2.0.4:
     resolution: {integrity: sha512-3UDv+G9CsCKO1WKMGw9fwq/SWJYbI0c5Y7LU1AXYoDdbhE2AHQ6N6Nb34sG8Fj7T5APy8qXDCKuuIHd1BR0tVA==}
@@ -11956,6 +12163,9 @@ packages:
   node-addon-api@5.1.0:
     resolution: {integrity: sha512-eh0GgfEkpnoWDq+VY8OyvYhFEzBk6jIYbRKdIlyTiAXIVJ8PyBaKb0rp7oDtoddbdoHWhq8wwr+XZ81F1rpNdA==}
 
+  node-addon-api@7.1.1:
+    resolution: {integrity: sha512-5m3bsyrjFWE1xf7nz7YXdN4udnVtXK6/Yfgn5qnahL6bCkf2yKt4k3nuTKAtT4r3IG8JNR2ncsIMdZuAzJjHQQ==}
+
   node-domexception@1.0.0:
     resolution: {integrity: sha512-/jKZoMpw0F8GRwl4/eLROPA3cfcXtLApP0QzLmUT/HuPCZWyB7IY9ZrMeKw2O/nFIqPQB3PVM9aYm0F312AXDQ==}
     engines: {node: '>=10.5.0'}
@@ -12853,6 +13063,10 @@ packages:
     resolution: {integrity: sha512-tdN8qQGvNjw4CHbY+XXk0JgCXn9QiF21a55rBe5LJAU+kDyC4WQn4+awm2Xfk2lQMk5fKup9XgzTZtGkjBdP9Q==}
     engines: {node: '>=10.13.0'}
     hasBin: true
+
+  pretty-bytes@6.1.1:
+    resolution: {integrity: sha512-mQUvGU6aUFQ+rNvTIAcZuWGRT9a6f6Yrg9bHs4ImKF+HZCEK+plBvnAZYSIQztknZF2qnzNtr6F8s0+IuptdlQ==}
+    engines: {node: ^14.13.1 || >=16.0.0}
 
   pretty-format@27.5.1:
     resolution: {integrity: sha512-Qb1gy5OrP5+zDf2Bvnzdl3jsTf1qXVMazbvCoKhtKqVs4/YK4ozX4gKQJJVyNe+cajNPn0KoC0MC3FUmaHWEmQ==}
@@ -14422,6 +14636,9 @@ packages:
     resolution: {integrity: sha512-w33E2aCvSDP0tW9RZuNXadXlkHXqFzSkQew/aIa2i/Sj8fThxwovwlXHSPXTbAHwEIhBFXAedUhP2tueAKP8Og==}
     engines: {node: '>=14.0.0'}
     hasBin: true
+
+  tailwindcss@4.1.11:
+    resolution: {integrity: sha512-2E9TBm6MDD/xKYe+dvJZAmg3yxIEDNRc0jwlNyDg/4Fil2QcSLjFKGVff0lAf1jjeaArlG/M75Ey/EYr/OJtBA==}
 
   tailwindcss@4.1.6:
     resolution: {integrity: sha512-j0cGLTreM6u4OWzBeLBpycK0WIh8w7kSwcUsQZoGLHZ7xDTdM69lN64AgoIEEwFi0tnhs4wSykUa5YWxAzgFYg==}
@@ -20433,6 +20650,66 @@ snapshots:
 
   '@opentelemetry/api@1.9.0': {}
 
+  '@parcel/watcher-android-arm64@2.5.1':
+    optional: true
+
+  '@parcel/watcher-darwin-arm64@2.5.1':
+    optional: true
+
+  '@parcel/watcher-darwin-x64@2.5.1':
+    optional: true
+
+  '@parcel/watcher-freebsd-x64@2.5.1':
+    optional: true
+
+  '@parcel/watcher-linux-arm-glibc@2.5.1':
+    optional: true
+
+  '@parcel/watcher-linux-arm-musl@2.5.1':
+    optional: true
+
+  '@parcel/watcher-linux-arm64-glibc@2.5.1':
+    optional: true
+
+  '@parcel/watcher-linux-arm64-musl@2.5.1':
+    optional: true
+
+  '@parcel/watcher-linux-x64-glibc@2.5.1':
+    optional: true
+
+  '@parcel/watcher-linux-x64-musl@2.5.1':
+    optional: true
+
+  '@parcel/watcher-win32-arm64@2.5.1':
+    optional: true
+
+  '@parcel/watcher-win32-ia32@2.5.1':
+    optional: true
+
+  '@parcel/watcher-win32-x64@2.5.1':
+    optional: true
+
+  '@parcel/watcher@2.5.1':
+    dependencies:
+      detect-libc: 1.0.3
+      is-glob: 4.0.3
+      micromatch: 4.0.8
+      node-addon-api: 7.1.1
+    optionalDependencies:
+      '@parcel/watcher-android-arm64': 2.5.1
+      '@parcel/watcher-darwin-arm64': 2.5.1
+      '@parcel/watcher-darwin-x64': 2.5.1
+      '@parcel/watcher-freebsd-x64': 2.5.1
+      '@parcel/watcher-linux-arm-glibc': 2.5.1
+      '@parcel/watcher-linux-arm-musl': 2.5.1
+      '@parcel/watcher-linux-arm64-glibc': 2.5.1
+      '@parcel/watcher-linux-arm64-musl': 2.5.1
+      '@parcel/watcher-linux-x64-glibc': 2.5.1
+      '@parcel/watcher-linux-x64-musl': 2.5.1
+      '@parcel/watcher-win32-arm64': 2.5.1
+      '@parcel/watcher-win32-ia32': 2.5.1
+      '@parcel/watcher-win32-x64': 2.5.1
+
   '@particle-network/analytics@1.0.2':
     dependencies:
       hash.js: 1.1.7
@@ -22629,6 +22906,26 @@ snapshots:
     dependencies:
       defer-to-connect: 2.0.1
 
+  '@tailwindcss/cli@4.1.11':
+    dependencies:
+      '@parcel/watcher': 2.5.1
+      '@tailwindcss/node': 4.1.11
+      '@tailwindcss/oxide': 4.1.11
+      enhanced-resolve: 5.18.1
+      mri: 1.2.0
+      picocolors: 1.1.1
+      tailwindcss: 4.1.11
+
+  '@tailwindcss/node@4.1.11':
+    dependencies:
+      '@ampproject/remapping': 2.3.0
+      enhanced-resolve: 5.18.1
+      jiti: 2.4.2
+      lightningcss: 1.30.1
+      magic-string: 0.30.17
+      source-map-js: 1.2.1
+      tailwindcss: 4.1.11
+
   '@tailwindcss/node@4.1.6':
     dependencies:
       '@ampproject/remapping': 2.3.0
@@ -22649,10 +22946,16 @@ snapshots:
       source-map-js: 1.2.1
       tailwindcss: 4.1.7
 
+  '@tailwindcss/oxide-android-arm64@4.1.11':
+    optional: true
+
   '@tailwindcss/oxide-android-arm64@4.1.6':
     optional: true
 
   '@tailwindcss/oxide-android-arm64@4.1.7':
+    optional: true
+
+  '@tailwindcss/oxide-darwin-arm64@4.1.11':
     optional: true
 
   '@tailwindcss/oxide-darwin-arm64@4.1.6':
@@ -22661,10 +22964,16 @@ snapshots:
   '@tailwindcss/oxide-darwin-arm64@4.1.7':
     optional: true
 
+  '@tailwindcss/oxide-darwin-x64@4.1.11':
+    optional: true
+
   '@tailwindcss/oxide-darwin-x64@4.1.6':
     optional: true
 
   '@tailwindcss/oxide-darwin-x64@4.1.7':
+    optional: true
+
+  '@tailwindcss/oxide-freebsd-x64@4.1.11':
     optional: true
 
   '@tailwindcss/oxide-freebsd-x64@4.1.6':
@@ -22673,10 +22982,16 @@ snapshots:
   '@tailwindcss/oxide-freebsd-x64@4.1.7':
     optional: true
 
+  '@tailwindcss/oxide-linux-arm-gnueabihf@4.1.11':
+    optional: true
+
   '@tailwindcss/oxide-linux-arm-gnueabihf@4.1.6':
     optional: true
 
   '@tailwindcss/oxide-linux-arm-gnueabihf@4.1.7':
+    optional: true
+
+  '@tailwindcss/oxide-linux-arm64-gnu@4.1.11':
     optional: true
 
   '@tailwindcss/oxide-linux-arm64-gnu@4.1.6':
@@ -22685,10 +23000,16 @@ snapshots:
   '@tailwindcss/oxide-linux-arm64-gnu@4.1.7':
     optional: true
 
+  '@tailwindcss/oxide-linux-arm64-musl@4.1.11':
+    optional: true
+
   '@tailwindcss/oxide-linux-arm64-musl@4.1.6':
     optional: true
 
   '@tailwindcss/oxide-linux-arm64-musl@4.1.7':
+    optional: true
+
+  '@tailwindcss/oxide-linux-x64-gnu@4.1.11':
     optional: true
 
   '@tailwindcss/oxide-linux-x64-gnu@4.1.6':
@@ -22697,10 +23018,16 @@ snapshots:
   '@tailwindcss/oxide-linux-x64-gnu@4.1.7':
     optional: true
 
+  '@tailwindcss/oxide-linux-x64-musl@4.1.11':
+    optional: true
+
   '@tailwindcss/oxide-linux-x64-musl@4.1.6':
     optional: true
 
   '@tailwindcss/oxide-linux-x64-musl@4.1.7':
+    optional: true
+
+  '@tailwindcss/oxide-wasm32-wasi@4.1.11':
     optional: true
 
   '@tailwindcss/oxide-wasm32-wasi@4.1.6':
@@ -22709,10 +23036,16 @@ snapshots:
   '@tailwindcss/oxide-wasm32-wasi@4.1.7':
     optional: true
 
+  '@tailwindcss/oxide-win32-arm64-msvc@4.1.11':
+    optional: true
+
   '@tailwindcss/oxide-win32-arm64-msvc@4.1.6':
     optional: true
 
   '@tailwindcss/oxide-win32-arm64-msvc@4.1.7':
+    optional: true
+
+  '@tailwindcss/oxide-win32-x64-msvc@4.1.11':
     optional: true
 
   '@tailwindcss/oxide-win32-x64-msvc@4.1.6':
@@ -22720,6 +23053,24 @@ snapshots:
 
   '@tailwindcss/oxide-win32-x64-msvc@4.1.7':
     optional: true
+
+  '@tailwindcss/oxide@4.1.11':
+    dependencies:
+      detect-libc: 2.0.4
+      tar: 7.4.3
+    optionalDependencies:
+      '@tailwindcss/oxide-android-arm64': 4.1.11
+      '@tailwindcss/oxide-darwin-arm64': 4.1.11
+      '@tailwindcss/oxide-darwin-x64': 4.1.11
+      '@tailwindcss/oxide-freebsd-x64': 4.1.11
+      '@tailwindcss/oxide-linux-arm-gnueabihf': 4.1.11
+      '@tailwindcss/oxide-linux-arm64-gnu': 4.1.11
+      '@tailwindcss/oxide-linux-arm64-musl': 4.1.11
+      '@tailwindcss/oxide-linux-x64-gnu': 4.1.11
+      '@tailwindcss/oxide-linux-x64-musl': 4.1.11
+      '@tailwindcss/oxide-wasm32-wasi': 4.1.11
+      '@tailwindcss/oxide-win32-arm64-msvc': 4.1.11
+      '@tailwindcss/oxide-win32-x64-msvc': 4.1.11
 
   '@tailwindcss/oxide@4.1.6':
     dependencies:
@@ -23494,48 +23845,57 @@ snapshots:
   '@unrs/resolver-binding-win32-x64-msvc@1.7.2':
     optional: true
 
-  '@uppy/aws-s3@4.2.3(@uppy/core@4.4.4)':
+  '@uppy/aws-s3@4.2.3(@uppy/core@4.4.6)':
     dependencies:
-      '@uppy/companion-client': 4.4.1(@uppy/core@4.4.4)
-      '@uppy/core': 4.4.4
+      '@uppy/companion-client': 4.4.1(@uppy/core@4.4.6)
+      '@uppy/core': 4.4.6
       '@uppy/utils': 6.1.3
 
-  '@uppy/companion-client@4.4.1(@uppy/core@4.4.4)':
+  '@uppy/companion-client@4.4.1(@uppy/core@4.4.6)':
     dependencies:
-      '@uppy/core': 4.4.4
-      '@uppy/utils': 6.1.3
+      '@uppy/core': 4.4.6
+      '@uppy/utils': 6.1.5
       namespace-emitter: 2.0.1
       p-retry: 6.2.1
 
-  '@uppy/compressor@2.2.1(@uppy/core@4.4.4)':
+  '@uppy/components@0.1.0(@uppy/core@4.4.6)':
+    dependencies:
+      '@tailwindcss/cli': 4.1.11
+      '@uppy/core': 4.4.6
+      clsx: 2.1.1
+      preact: 10.26.5
+      pretty-bytes: 6.1.1
+      tailwindcss: 4.1.11
+
+  '@uppy/compressor@2.2.1(@uppy/core@4.4.6)':
     dependencies:
       '@transloadit/prettier-bytes': 0.3.5
-      '@uppy/core': 4.4.4
+      '@uppy/core': 4.4.6
       '@uppy/utils': 6.1.3
       compressorjs: 1.2.1
       preact: 10.26.5
       promise-queue: 2.2.5
 
-  '@uppy/core@4.4.4':
+  '@uppy/core@4.4.6':
     dependencies:
       '@transloadit/prettier-bytes': 0.3.5
       '@uppy/store-default': 4.2.0
-      '@uppy/utils': 6.1.3
+      '@uppy/utils': 6.1.5
       lodash: 4.17.21
       mime-match: 1.0.2
       namespace-emitter: 2.0.1
       nanoid: 5.1.5
       preact: 10.26.5
 
-  '@uppy/dashboard@4.3.3(@uppy/core@4.4.4)':
+  '@uppy/dashboard@4.3.4(@uppy/core@4.4.6)':
     dependencies:
       '@transloadit/prettier-bytes': 0.3.5
-      '@uppy/core': 4.4.4
-      '@uppy/informer': 4.2.1(@uppy/core@4.4.4)
-      '@uppy/provider-views': 4.4.3(@uppy/core@4.4.4)
-      '@uppy/status-bar': 4.1.3(@uppy/core@4.4.4)
-      '@uppy/thumbnail-generator': 4.1.1(@uppy/core@4.4.4)
-      '@uppy/utils': 6.1.3
+      '@uppy/core': 4.4.6
+      '@uppy/informer': 4.2.1(@uppy/core@4.4.6)
+      '@uppy/provider-views': 4.4.3(@uppy/core@4.4.6)
+      '@uppy/status-bar': 4.1.3(@uppy/core@4.4.6)
+      '@uppy/thumbnail-generator': 4.1.1(@uppy/core@4.4.6)
+      '@uppy/utils': 6.1.5
       classnames: 2.5.1
       lodash: 4.17.21
       memoize-one: 6.0.0
@@ -23543,82 +23903,89 @@ snapshots:
       preact: 10.26.5
       shallow-equal: 3.1.0
 
-  '@uppy/drag-drop@4.1.2(@uppy/core@4.4.4)':
+  '@uppy/drag-drop@4.1.3(@uppy/core@4.4.6)':
     dependencies:
-      '@uppy/core': 4.4.4
-      '@uppy/utils': 6.1.3
+      '@uppy/core': 4.4.6
+      '@uppy/utils': 6.1.5
       preact: 10.26.5
 
-  '@uppy/file-input@4.1.2(@uppy/core@4.4.4)':
+  '@uppy/file-input@4.1.3(@uppy/core@4.4.6)':
     dependencies:
-      '@uppy/core': 4.4.4
-      '@uppy/utils': 6.1.3
+      '@uppy/core': 4.4.6
+      '@uppy/utils': 6.1.5
       preact: 10.26.5
 
-  '@uppy/informer@4.2.1(@uppy/core@4.4.4)':
+  '@uppy/informer@4.2.1(@uppy/core@4.4.6)':
     dependencies:
-      '@uppy/core': 4.4.4
-      '@uppy/utils': 6.1.3
+      '@uppy/core': 4.4.6
+      '@uppy/utils': 6.1.5
       preact: 10.26.5
 
-  '@uppy/progress-bar@4.2.1(@uppy/core@4.4.4)':
+  '@uppy/progress-bar@4.2.1(@uppy/core@4.4.6)':
     dependencies:
-      '@uppy/core': 4.4.4
-      '@uppy/utils': 6.1.3
+      '@uppy/core': 4.4.6
+      '@uppy/utils': 6.1.5
       preact: 10.26.5
 
-  '@uppy/provider-views@4.4.3(@uppy/core@4.4.4)':
+  '@uppy/provider-views@4.4.3(@uppy/core@4.4.6)':
     dependencies:
-      '@uppy/core': 4.4.4
-      '@uppy/utils': 6.1.3
+      '@uppy/core': 4.4.6
+      '@uppy/utils': 6.1.5
       classnames: 2.5.1
       nanoid: 5.1.5
       p-queue: 8.1.0
       preact: 10.26.5
 
-  '@uppy/react@4.2.3(@uppy/core@4.4.4)(@uppy/dashboard@4.3.3(@uppy/core@4.4.4))(@uppy/drag-drop@4.1.2(@uppy/core@4.4.4))(@uppy/file-input@4.1.2(@uppy/core@4.4.4))(@uppy/progress-bar@4.2.1(@uppy/core@4.4.4))(@uppy/status-bar@4.1.3(@uppy/core@4.4.4))(react@18.3.1)':
+  '@uppy/react@4.3.0(@uppy/core@4.4.6)(@uppy/dashboard@4.3.4(@uppy/core@4.4.6))(@uppy/drag-drop@4.1.3(@uppy/core@4.4.6))(@uppy/file-input@4.1.3(@uppy/core@4.4.6))(@uppy/progress-bar@4.2.1(@uppy/core@4.4.6))(@uppy/status-bar@4.1.3(@uppy/core@4.4.6))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@uppy/core': 4.4.4
-      '@uppy/utils': 6.1.3
+      '@uppy/components': 0.1.0(@uppy/core@4.4.6)
+      '@uppy/core': 4.4.6
+      '@uppy/utils': 6.1.5
+      preact: 10.26.5
       react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
       use-sync-external-store: 1.5.0(react@18.3.1)
     optionalDependencies:
-      '@uppy/dashboard': 4.3.3(@uppy/core@4.4.4)
-      '@uppy/drag-drop': 4.1.2(@uppy/core@4.4.4)
-      '@uppy/file-input': 4.1.2(@uppy/core@4.4.4)
-      '@uppy/progress-bar': 4.2.1(@uppy/core@4.4.4)
-      '@uppy/status-bar': 4.1.3(@uppy/core@4.4.4)
+      '@uppy/dashboard': 4.3.4(@uppy/core@4.4.6)
+      '@uppy/drag-drop': 4.1.3(@uppy/core@4.4.6)
+      '@uppy/file-input': 4.1.3(@uppy/core@4.4.6)
+      '@uppy/progress-bar': 4.2.1(@uppy/core@4.4.6)
+      '@uppy/status-bar': 4.1.3(@uppy/core@4.4.6)
+    transitivePeerDependencies:
+      - '@uppy/audio'
+      - '@uppy/google-drive-picker'
+      - '@uppy/image-editor'
 
-  '@uppy/status-bar@4.1.3(@uppy/core@4.4.4)':
+  '@uppy/status-bar@4.1.3(@uppy/core@4.4.6)':
     dependencies:
       '@transloadit/prettier-bytes': 0.3.5
-      '@uppy/core': 4.4.4
-      '@uppy/utils': 6.1.3
+      '@uppy/core': 4.4.6
+      '@uppy/utils': 6.1.5
       classnames: 2.5.1
       preact: 10.26.5
 
   '@uppy/store-default@4.2.0': {}
 
-  '@uppy/thumbnail-generator@4.1.1(@uppy/core@4.4.4)':
+  '@uppy/thumbnail-generator@4.1.1(@uppy/core@4.4.6)':
     dependencies:
-      '@uppy/core': 4.4.4
-      '@uppy/utils': 6.1.3
+      '@uppy/core': 4.4.6
+      '@uppy/utils': 6.1.5
       exifr: 7.1.3
 
-  '@uppy/transloadit@4.2.2(@uppy/core@4.4.4)':
+  '@uppy/transloadit@4.2.2(@uppy/core@4.4.6)':
     dependencies:
-      '@uppy/companion-client': 4.4.1(@uppy/core@4.4.4)
-      '@uppy/core': 4.4.4
-      '@uppy/provider-views': 4.4.3(@uppy/core@4.4.4)
-      '@uppy/tus': 4.2.2(@uppy/core@4.4.4)
-      '@uppy/utils': 6.1.3
+      '@uppy/companion-client': 4.4.1(@uppy/core@4.4.6)
+      '@uppy/core': 4.4.6
+      '@uppy/provider-views': 4.4.3(@uppy/core@4.4.6)
+      '@uppy/tus': 4.2.2(@uppy/core@4.4.6)
+      '@uppy/utils': 6.1.5
       component-emitter: 2.0.0
 
-  '@uppy/tus@4.2.2(@uppy/core@4.4.4)':
+  '@uppy/tus@4.2.2(@uppy/core@4.4.6)':
     dependencies:
-      '@uppy/companion-client': 4.4.1(@uppy/core@4.4.4)
-      '@uppy/core': 4.4.4
-      '@uppy/utils': 6.1.3
+      '@uppy/companion-client': 4.4.1(@uppy/core@4.4.6)
+      '@uppy/core': 4.4.6
+      '@uppy/utils': 6.1.5
       tus-js-client: 4.3.1
 
   '@uppy/utils@6.1.3':
@@ -23626,11 +23993,16 @@ snapshots:
       lodash: 4.17.21
       preact: 10.26.5
 
-  '@uppy/xhr-upload@4.3.3(@uppy/core@4.4.4)':
+  '@uppy/utils@6.1.5':
     dependencies:
-      '@uppy/companion-client': 4.4.1(@uppy/core@4.4.4)
-      '@uppy/core': 4.4.4
-      '@uppy/utils': 6.1.3
+      lodash: 4.17.21
+      preact: 10.26.5
+
+  '@uppy/xhr-upload@4.3.3(@uppy/core@4.4.6)':
+    dependencies:
+      '@uppy/companion-client': 4.4.1(@uppy/core@4.4.6)
+      '@uppy/core': 4.4.6
+      '@uppy/utils': 6.1.5
 
   '@urql/core@5.1.1(graphql@16.11.0)':
     dependencies:
@@ -26220,6 +26592,8 @@ snapshots:
   destroy@1.2.0: {}
 
   detect-browser@5.3.0: {}
+
+  detect-libc@1.0.3: {}
 
   detect-libc@2.0.4: {}
 
@@ -31184,6 +31558,8 @@ snapshots:
 
   node-addon-api@5.1.0: {}
 
+  node-addon-api@7.1.1: {}
+
   node-domexception@1.0.0: {}
 
   node-emoji@1.11.0:
@@ -32213,6 +32589,8 @@ snapshots:
   prelude-ls@1.2.1: {}
 
   prettier@2.8.8: {}
+
+  pretty-bytes@6.1.1: {}
 
   pretty-format@27.5.1:
     dependencies:
@@ -34155,6 +34533,8 @@ snapshots:
       sucrase: 3.35.0
     transitivePeerDependencies:
       - ts-node
+
+  tailwindcss@4.1.11: {}
 
   tailwindcss@4.1.6: {}
 
