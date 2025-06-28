@@ -346,10 +346,12 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                     <Button
                       className="rounded-[4px] relative group"
                       disabled={selectedIntegrations.length === 0 || loading}
-                      onClick={schedule('schedule')}
                     >
                       <div className="flex justify-center items-center gap-[5px] h-full">
-                        <div className="h-full flex items-center text-white">
+                        <div
+                          className="h-full flex items-center text-white"
+                          onClick={schedule('schedule')}
+                        >
                           {selectedIntegrations.length === 0
                             ? t(
                                 'select_channels_from_circles',
