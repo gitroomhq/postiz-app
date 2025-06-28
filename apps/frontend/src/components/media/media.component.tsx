@@ -29,6 +29,8 @@ import { DropFiles } from '@chaolaolo/frontend/components/layout/drop.files';
 import { deleteDialog } from '@chaolaolo/react/helpers/delete.dialog';
 import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
 import { ThirdPartyMedia } from '@chaolaolo/frontend/components/third-parties/third-party.media';
+import CanvaModal from '@chaolaolo/frontend/components/media/canva/CanvaModal';
+import { CanvaDesignConfigValues } from '@chaolaolo/frontend/components/media/canva/constants';
 const Polonto = dynamic(
   () => import('@chaolaolo/frontend/components/launches/polonto')
 );
@@ -489,6 +491,7 @@ export const MultiMediaComponent: FC<{
   }, [value]);
   const [modal, setShowModal] = useState(false);
   const [mediaModal, setMediaModal] = useState(false);
+  const [canvaModalOpen, setCanvaModalOpen] = useState(false);
   const [currentMedia, setCurrentMedia] = useState(value);
   const mediaDirectory = useMediaDirectory();
   const changeMedia = useCallback(
@@ -545,6 +548,17 @@ export const MultiMediaComponent: FC<{
     setMediaModal(true);
   }, []);
 
+  const handleCanvaPublish = useCallback(
+    (opts: { designId: string; exportUrl: string }) => {
+      // Thêm media mới vào danh sách
+      changeMedia({
+        id: opts.designId,
+        path: opts.exportUrl,
+      });
+    },
+    [changeMedia]
+  );
+
   const t = useT();
 
   return (
@@ -554,6 +568,12 @@ export const MultiMediaComponent: FC<{
         {mediaModal && !!user?.tier?.ai && (
           <Polonto setMedia={changeMedia} closeModal={closeDesignModal} />
         )}
+        <CanvaModal
+          open={canvaModalOpen}
+          onClose={() => setCanvaModalOpen(false)}
+          designConfig={CanvaDesignConfigValues[0]}
+          onDesignPublish={handleCanvaPublish}
+        />
         <div className="flex gap-[10px]">
           <div className="flex">
             <Button
@@ -606,6 +626,36 @@ export const MultiMediaComponent: FC<{
                 </div>
               </div>
             </Button>
+
+            <Button
+              onClick={() => setCanvaModalOpen(true)}
+              className="ms-[10px] rounded-[4px] mb-[10px] gap-[8px] !text-primary justify-center items-center w-[127px] flex border border-dashed border-customColor21 bg-input"
+            >
+              <div className="flex gap-[5px] items-center">
+                <div>
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 192 192"
+                    xmlns="http://www.w3.org/2000/svg"
+                    style={{ enableBackground: 'new 0 0 192 192' }}
+                  >
+                    <path
+                      d="M95.2 170c-11.6 0-22-3.1-30.9-9.1-8.8-6-15.4-14.6-19.7-25.6-2.5-6.4-4-13.4-4.7-21.4-.8-9.5-.2-19.2 1.9-28.7 3.3-15.3 10-28.5 19.8-39.5 9.7-10.8 21.2-18.1 34.3-21.5 5.6-1.5 11.2-2.2 16.5-2.2 6.4 0 12.7 1.1 18.7 3.3 8.9 3.3 15 9 17.9 17 1.4 3.7 1.8 7.6 1.4 12-.6 6.2-2.6 11.7-6 16.4-3.9 5.4-8.6 8.7-14.3 10.1-1 .3-2.1.4-3.3.4-.5 0-.9 0-1.4-.1-1.7-.2-3.2-.9-4.2-2.2-1-1.3-1.4-3-1.2-4.7.3-2 1.1-3.7 1.9-5.1l.3-.6c1.6-3.2 3.1-6.2 3.9-9.4 1.3-5.4 1.3-9.5-.1-13.3-1.5-4-4.3-6.5-8.5-7.5-1.6-.4-3.2-.6-4.8-.6-3.6 0-7.4.9-11.4 2.7C93.4 44 86.7 50 81 58.7c-3.9 6-6.9 12.7-9.1 20.5-1.6 5.6-2.6 11.5-3.2 17.6-.3 2.9-.5 6.3-.5 9.6.1 9.7 1.5 17.4 4.5 24.2 3.3 7.6 7.8 12.9 13.9 16.3 4.1 2.3 8.7 3.5 13.6 3.5.8 0 1.7 0 2.6-.1 10.4-.8 19.6-5.5 28-14.3 4.3-4.5 7.9-9.7 11-15.9.5-.9 1-1.9 1.8-2.7 1-1.1 2.3-1.7 3.7-1.7 1.7 0 3.2.9 4.2 2.5 1.2 2 1.1 4.2.9 5.6-.6 4.1-2.1 8.1-4.6 12.8-7.2 12.9-17.1 22.4-29.4 28.3-6.3 3-13.1 4.7-20.1 5-1.1.1-2.1.1-3.1.1z"
+                      fill="none"
+                      stroke="#000"
+                      strokeWidth={12}
+                      strokeLinejoin="round"
+                      strokeMiterlimit={10}
+                    />
+                  </svg>
+                </div>
+                <div className="text-[12px] font-[500] !text-current">
+                  {t('can_media', 'Canva Media')}
+                </div>
+              </div>
+            </Button>
+
 
             <ThirdPartyMedia allData={allData} onChange={changeMedia} />
 
