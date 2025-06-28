@@ -201,7 +201,8 @@ export const EditorWrapper: FC<{
   const goBackToGlobal = useCallback(async () => {
     if (
       await deleteDialog(
-        'This action is irreversible. Are you sure you want to go back to global mode?'
+        'This action is irreversible. Are you sure you want to go back to global mode?',
+        'Yes, go back to global mode',
       )
     ) {
       setLoaded(false);
