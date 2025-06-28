@@ -202,7 +202,7 @@ export const EditorWrapper: FC<{
     if (
       await deleteDialog(
         'This action is irreversible. Are you sure you want to go back to global mode?',
-        'Yes, go back to global mode',
+        'Yes, go back to global mode'
       )
     ) {
       setLoaded(false);
@@ -502,18 +502,20 @@ export const Editor: FC<{
               }}
             />
 
-            <Dashboard
-              height={46}
-              className=""
-              uppy={uppy}
-              id={`prog-${num}`}
-              showProgressDetails={true}
-              hideUploadButton={true}
-              hideRetryButton={true}
-              hidePauseResumeButton={true}
-              hideCancelButton={true}
-              hideProgressAfterFinish={true}
-            />
+            <div className="w-full h-[46px] overflow-hidden pointer-events-none absolute left-0">
+              <Dashboard
+                height={46}
+                uppy={uppy}
+                id={`prog-${num}`}
+                showProgressDetails={true}
+                hideUploadButton={true}
+                hideRetryButton={true}
+                hidePauseResumeButton={true}
+                hideCancelButton={true}
+                hideProgressAfterFinish={true}
+              />
+            </div>
+            <div className="w-full h-[46px] pointer-events-none" />
           </div>
         </div>
         {validateChars && props.value.length < 6 && (
