@@ -117,6 +117,7 @@
     "@uppy/progress-bar": "^4.0.0",
     "@uppy/react": "^4.0.2",
     "@uppy/status-bar": "^4.0.3",
+    "@uppy/transloadit": "^4.2.2",
     "@uppy/xhr-upload": "^4.1.0",
     "accept-language": "^3.0.20",
     "ai": "^4.0.22",

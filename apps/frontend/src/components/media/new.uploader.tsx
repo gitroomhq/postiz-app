@@ -122,11 +122,12 @@ export function useUppyUploader(props: {
     });
 
     const { plugin, options } = getUppyUploadPlugin(
-      storageProvider,
+      transloadit.length > 0 ? 'transloadit' : storageProvider,
       fetch,
       backendUrl,
       transloadit
     );
+
     uppy2.use(plugin, options);
     if (!disableImageCompression) {
       uppy2.use(Compressor, {
