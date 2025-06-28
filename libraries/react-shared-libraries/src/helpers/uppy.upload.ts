@@ -21,7 +21,9 @@ const fetchUploadApiEndpoint = async (
 export const getUppyUploadPlugin = (
   provider: string,
   fetch: any,
-  backendUrl: string
+  backendUrl: string,
+  transloadit: string[] = [],
+  isVideo: boolean = false,
 ) => {
   switch (provider) {
     case 'cloudflare':
