@@ -139,14 +139,17 @@ export const useLaunchStore = create<StoreState>()((set) => ({
     settings: any
   ) => {
     set((state) => {
-      const existingIndex = state.selectedIntegrations.findIndex(
+      const existing = state.selectedIntegrations.find(
         (i) => i.integration.id === integration.id
       );
 
-      if (existingIndex > -1) {
+      if (existing) {
         return {
+          ...(existing.integration.id === state.current
+            ? { current: 'global' }
+            : {}),
           selectedIntegrations: state.selectedIntegrations.filter(
-            (_, index) => index !== existingIndex
+            (s, index) => s.integration.id !== existing.integration.id
           ),
         };
       }
