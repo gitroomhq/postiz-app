@@ -59,6 +59,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
     setTags,
     integrations,
     setSelectedIntegrations,
+    locked,
   } = useLaunchStore(
     useShallow((state) => ({
       hide: state.hide,
@@ -71,6 +72,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       selectedIntegrations: state.selectedIntegrations,
       integrations: state.integrations,
       setSelectedIntegrations: state.setSelectedIntegrations,
+      locked: state.locked,
     }))
   );
 
@@ -316,7 +318,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                       onClick={deletePost}
                       className="rounded-[4px] border-2 border-red-400 text-red-400"
                       secondary={true}
-                      disabled={loading}
+                      disabled={loading || locked}
                     >
                       {t('delete_post', 'Delete Post')}
                     </Button>
@@ -327,7 +329,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                       onClick={schedule('draft')}
                       className="rounded-[4px] border-2 border-customColor21"
                       secondary={true}
-                      disabled={selectedIntegrations.length === 0 || loading}
+                      disabled={selectedIntegrations.length === 0 || loading || locked}
                     >
                       {t('save_as_draft', 'Save as draft')}
                     </Button>
@@ -336,7 +338,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                   {addEditSets && (
                     <Button
                       className="rounded-[4px] relative group"
-                      disabled={selectedIntegrations.length === 0 || loading}
+                      disabled={selectedIntegrations.length === 0 || loading || locked}
                       onClick={schedule('draft')}
                     >
                       Save Set
@@ -345,7 +347,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                   {!addEditSets && (
                     <Button
                       className="rounded-[4px] relative group"
-                      disabled={selectedIntegrations.length === 0 || loading}
+                      disabled={selectedIntegrations.length === 0 || loading || locked}
                     >
                       <div className="flex justify-center items-center gap-[5px] h-full">
                         <div
@@ -378,7 +380,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                             onClick={schedule('now')}
                             className={clsx(
                               'hidden group-hover:flex hover:flex flex-col justify-center absolute start-0 top-[100%] w-full h-[40px] bg-customColor22 border border-tableBorder',
-                              loading &&
+                              (locked || loading) &&
                                 'cursor-not-allowed pointer-events-none opacity-50'
                             )}
                           >

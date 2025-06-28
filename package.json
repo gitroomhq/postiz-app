@@ -181,6 +181,7 @@
     "react-hook-form": "^7.58.1",
     "react-i18next": "^15.5.2",
     "react-loading": "^2.0.3",
+    "react-sortablejs": "^6.1.4",
     "react-tag-autocomplete": "^7.2.0",
     "react-tooltip": "^5.26.2",
     "react-use-cookie": "^1.6.1",
