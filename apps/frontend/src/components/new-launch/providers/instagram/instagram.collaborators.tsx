@@ -1,6 +1,6 @@
 'use client';
 
-import { withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
+import { PostComment, withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 import { FC } from 'react';
 import { Select } from '@gitroom/react/form/select';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
@@ -51,6 +51,7 @@ const InstagramCollaborators: FC<{
   );
 };
 export default withProvider<InstagramDto>(
+  PostComment.COMMENT,
   InstagramCollaborators,
   undefined,
   InstagramDto,

@@ -1,7 +1,7 @@
 'use client';
 
 import { FC } from 'react';
-import { withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
+import { PostComment, withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { Input } from '@gitroom/react/form/input';
 import { DribbbleTeams } from '@gitroom/frontend/components/new-launch/providers/dribbble/dribbble.teams';
@@ -16,6 +16,7 @@ const DribbbleSettings: FC = () => {
   );
 };
 export default withProvider(
+  PostComment.COMMENT,
   DribbbleSettings,
   undefined,
   DribbbleDto,

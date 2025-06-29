@@ -63,6 +63,7 @@ export const EditorWrapper: FC<{
     setInternalValue,
     internalFromAll,
     totalChars,
+    postComment,
   } = useLaunchStore(
     useShallow((state) => ({
       internal: state.internal.find((p) => p.integration.id === state.current),
@@ -86,6 +87,7 @@ export const EditorWrapper: FC<{
       totalChars: state.totalChars,
       appendInternalValueMedia: state.appendInternalValueMedia,
       appendGlobalValueMedia: state.appendGlobalValueMedia,
+      postComment: state.postComment,
     }))
   );
 
@@ -346,7 +348,13 @@ export const EditorWrapper: FC<{
         </div>
       </div>
 
-      {canEdit && <AddPostButton num={index} onClick={addValue(index)} />}
+      {canEdit ? (
+        <AddPostButton
+          num={index}
+          onClick={addValue(index)}
+          postComment={postComment}
+        />
+      ) : <div className="h-[25px]" />}
     </div>
   ));
 };
@@ -467,7 +475,6 @@ export const Editor: FC<{
           </div>
         </div>
         <div className="relative">
-          {/*<ProgressBar id={`prog-${num}`} uppy={uppy} />*/}
           <div {...getRootProps()}>
             <div
               className={clsx(
@@ -544,16 +551,18 @@ export const Editor: FC<{
           />
         )}
       </div>
-      {(props?.totalChars || 0) > 0 && (
-        <div
-          className={clsx(
-            'text-end text-sm mt-1',
-            props?.value?.length > props.totalChars && '!text-red-500'
-          )}
-        >
-          {props?.value?.length}/{props.totalChars}
-        </div>
-      )}
+      <div className="absolute bottom-10px end-[25px]">
+        {(props?.totalChars || 0) > 0 && (
+          <div
+            className={clsx(
+              'text-end text-sm mt-1',
+              props?.value?.length > props.totalChars && '!text-red-500'
+            )}
+          >
+            {props?.value?.length}/{props.totalChars}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

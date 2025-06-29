@@ -1,7 +1,7 @@
 'use client';
 
 import { FC, useCallback } from 'react';
-import { withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
+import { PostComment, withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { Subreddit } from '@gitroom/frontend/components/new-launch/providers/reddit/subreddit';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
@@ -213,6 +213,7 @@ const RedditSettings: FC = () => {
   );
 };
 export default withProvider(
+  PostComment.POST,
   RedditSettings,
   RedditPreview,
   RedditSettingsDto,

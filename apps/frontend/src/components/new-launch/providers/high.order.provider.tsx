@@ -27,7 +27,14 @@ class Empty {
   empty: string;
 }
 
+export enum PostComment {
+  ALL,
+  POST,
+  COMMENT
+}
+
 export const withProvider = function <T extends object>(
+  postComment: PostComment,
   SettingsComponent: FC<{
     values?: any;
   }> | null,
@@ -63,6 +70,7 @@ export const withProvider = function <T extends object>(
       setTotalChars,
       justCurrent,
       allIntegrations,
+      setPostComment,
     } = useLaunchStore(
       useShallow((state) => ({
         date: state.date,
@@ -77,6 +85,7 @@ export const withProvider = function <T extends object>(
         isGlobal: state.current === 'global',
         setCurrent: state.setCurrent,
         setTotalChars: state.setTotalChars,
+        setPostComment: state.setPostComment,
         selectedIntegration: state.selectedIntegrations.find(
           (p) => p.integration.id === props.id
         ),
@@ -89,10 +98,12 @@ export const withProvider = function <T extends object>(
       }
 
       if (isGlobal) {
+        setPostComment(PostComment.ALL);
         setTotalChars(0);
       }
 
       if (current) {
+        setPostComment(postComment);
         setTotalChars(
           typeof maximumCharacters === 'number'
             ? maximumCharacters

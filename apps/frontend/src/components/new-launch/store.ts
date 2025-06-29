@@ -5,6 +5,7 @@ import dayjs from 'dayjs';
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
 import { createRef, RefObject } from 'react';
 import { arrayMoveImmutable } from 'array-move';
+import { PostComment } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 
 interface Values {
   id: string;
@@ -25,6 +26,7 @@ interface SelectedIntegrations {
 
 interface StoreState {
   date: dayjs.Dayjs;
+  postComment: PostComment;
   repeater?: number;
   isCreateSet: boolean;
   totalChars: number;
@@ -111,10 +113,12 @@ interface StoreState {
     index: number,
     media: { id: string; path: string }[]
   ) => void;
+  setPostComment: (postComment: PostComment) => void;
 }
 
 const initialState = {
   date: dayjs(),
+  postComment: PostComment.ALL,
   tags: [] as { label: string; value: string }[],
   totalChars: 0,
   tab: 0 as 0,
@@ -489,5 +493,9 @@ export const useLaunchStore = create<StoreState>()((set) => ({
       global: state.global.map((item, i) =>
         i === index ? { ...item, media: [...item.media, ...media] } : item
       ),
+    })),
+  setPostComment: (postComment: PostComment) =>
+    set((state) => ({
+      postComment,
     })),
 }));

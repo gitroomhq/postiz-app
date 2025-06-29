@@ -1,6 +1,6 @@
 'use client';
 
-import { withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
+import { PostComment, withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 import { ThreadFinisher } from '@gitroom/frontend/components/new-launch/finisher/thread.finisher';
 
 const SettingsComponent = () => {
@@ -8,6 +8,7 @@ const SettingsComponent = () => {
 };
 
 export default withProvider(
+  PostComment.POST,
   SettingsComponent,
   undefined,
   undefined,

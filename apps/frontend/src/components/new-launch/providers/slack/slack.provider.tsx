@@ -1,6 +1,6 @@
 'use client';
 
-import { withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
+import { PostComment, withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 import { FC } from 'react';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { SlackChannelSelect } from '@gitroom/frontend/components/new-launch/providers/slack/slack.channel.select';
@@ -14,6 +14,7 @@ const SlackComponent: FC = () => {
   );
 };
 export default withProvider(
+  PostComment.COMMENT,
   SlackComponent,
   undefined,
   SlackDto,

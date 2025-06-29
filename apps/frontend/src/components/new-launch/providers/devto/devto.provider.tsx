@@ -1,7 +1,7 @@
 'use client';
 
 import { FC } from 'react';
-import { withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
+import { PostComment, withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 import { DevToSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dev.to.settings.dto';
 import { Input } from '@gitroom/react/form/input';
 import { MediaComponent } from '@gitroom/frontend/components/media/media.component';
@@ -83,4 +83,4 @@ const DevtoSettings: FC = () => {
     </>
   );
 };
-export default withProvider(DevtoSettings, DevtoPreview, DevToSettingsDto);
+export default withProvider(PostComment.COMMENT, DevtoSettings, DevtoPreview, DevToSettingsDto);

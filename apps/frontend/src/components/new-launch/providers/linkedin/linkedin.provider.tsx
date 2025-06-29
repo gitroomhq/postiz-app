@@ -1,6 +1,6 @@
 'use client';
 
-import { withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
+import { PostComment, withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 import { Checkbox } from '@gitroom/react/form/checkbox';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
@@ -23,6 +23,7 @@ const LinkedInSettings = () => {
   );
 };
 export default withProvider<LinkedinDto>(
+  PostComment.COMMENT,
   LinkedInSettings,
   undefined,
   LinkedinDto,
