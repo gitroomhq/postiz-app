@@ -176,6 +176,8 @@
   "add_platform": "Добавить платформу",
   "articles": "Статьи",
   "add_comment": "Добавить комментарий",
+  "add_post": "Добавить сообщение в теме",
+  "add_comment_or_post": "Добавить комментарий / сообщение",
   "you_are_in_global_editing_mode": "Вы находитесь в режиме глобального редактирования",
   "the_post_should_be_at_least_6_characters_long": "Пост должен содержать не менее 6 символов",
   "delete_post": "Удалить пост",

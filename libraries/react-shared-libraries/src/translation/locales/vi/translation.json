@@ -176,6 +176,8 @@
   "add_platform": "Thêm nền tảng",
   "articles": "Bài viết",
   "add_comment": "Thêm bình luận",
+  "add_post": "Thêm bài viết vào một chuỗi",
+  "add_comment_or_post": "Thêm bình luận / bài viết",
   "you_are_in_global_editing_mode": "Bạn đang ở chế độ chỉnh sửa toàn cục",
   "the_post_should_be_at_least_6_characters_long": "Bài đăng phải có ít nhất 6 ký tự",
   "delete_post": "Xóa bài đăng",

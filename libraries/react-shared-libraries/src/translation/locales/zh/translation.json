@@ -176,6 +176,8 @@
   "add_platform": "添加平台",
   "articles": "文章",
   "add_comment": "添加评论",
+  "add_post": "在主题中添加帖子",
+  "add_comment_or_post": "添加评论/帖子",
   "you_are_in_global_editing_mode": "您当前处于全局编辑模式",
   "the_post_should_be_at_least_6_characters_long": "帖子内容至少需要6个字符",
   "delete_post": "删除帖子",
