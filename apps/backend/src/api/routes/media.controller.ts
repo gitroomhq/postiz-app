@@ -86,6 +86,18 @@ export class MediaController {
     );
   }
 
+  @Post('/save-media')
+  async saveMedia(
+    @GetOrgFromRequest() org: Organization,
+    @Req() req: Request,
+    @Body('name') name: string
+  ) {
+    if (!name) {
+      return false;
+    }
+    return this._mediaService.saveFile(org.id, name, process.env.CLOUDFLARE_BUCKET_URL + '/' + name);
+  }
+
   @Post('/upload-simple')
   @UseInterceptors(FileInterceptor('file'))
   async uploadSimple(

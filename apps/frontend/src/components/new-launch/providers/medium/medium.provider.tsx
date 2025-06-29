@@ -1,7 +1,10 @@
 'use client';
 
 import { FC } from 'react';
-import { withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
+import {
+  PostComment,
+  withProvider,
+} from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { Input } from '@gitroom/react/form/input';
 import { MediumPublications } from '@gitroom/frontend/components/new-launch/providers/medium/medium.publications';
@@ -63,4 +66,9 @@ const MediumSettings: FC = () => {
     </>
   );
 };
-export default withProvider(MediumSettings, MediumPreview, MediumSettingsDto);
+export default withProvider(
+  PostComment.COMMENT,
+  MediumSettings,
+  MediumPreview,
+  MediumSettingsDto
+);

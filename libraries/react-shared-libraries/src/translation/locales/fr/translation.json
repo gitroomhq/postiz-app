@@ -176,6 +176,8 @@
   "add_platform": "Ajouter une plateforme",
   "articles": "Articles",
   "add_comment": "Ajouter un commentaire",
+  "add_post": "Ajouter une publication dans un fil de discussion",
+  "add_comment_or_post": "Ajouter un commentaire / une publication",
   "you_are_in_global_editing_mode": "Vous êtes en mode d'édition global",
   "the_post_should_be_at_least_6_characters_long": "Le post doit contenir au moins 6 caractères",
   "delete_post": "Supprimer le post",

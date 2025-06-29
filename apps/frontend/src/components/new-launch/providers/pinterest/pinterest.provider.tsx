@@ -1,7 +1,7 @@
 'use client';
 
 import { FC } from 'react';
-import { withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
+import { PostComment, withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { PinterestBoard } from '@gitroom/frontend/components/new-launch/providers/pinterest/pinterest.board';
 import { PinterestSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/pinterest.dto';
@@ -24,6 +24,7 @@ const PinterestSettings: FC = () => {
   );
 };
 export default withProvider(
+  PostComment.COMMENT,
   PinterestSettings,
   undefined,
   PinterestSettingsDto,

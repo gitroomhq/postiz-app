@@ -3,6 +3,7 @@
 import {
   ClipboardEvent,
   FC,
+  Fragment,
   useCallback,
   useEffect,
   useMemo,
@@ -19,7 +20,6 @@ import EventEmitter from 'events';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import clsx from 'clsx';
 import { VideoFrame } from '@gitroom/react/helpers/video.frame';
-import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import { MultipartFileUploader } from '@gitroom/frontend/components/media/new.uploader';
 import dynamic from 'next/dynamic';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
@@ -29,6 +29,7 @@ import { DropFiles } from '@gitroom/frontend/components/layout/drop.files';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { ThirdPartyMedia } from '@gitroom/frontend/components/third-parties/third-party.media';
+import { ReactSortable } from 'react-sortablejs';
 const Polonto = dynamic(
   () => import('@gitroom/frontend/components/launches/polonto')
 );
@@ -180,7 +181,6 @@ export const MediaBox: FC<{
               },
             ]
       );
-      // closeModal();
     },
     [selectedMedia]
   );
@@ -204,18 +204,23 @@ export const MediaBox: FC<{
     closeModal();
   }, [selectedMedia]);
   const { data, mutate } = useSWR(`get-media-${page}`, loadMedia);
-  const finishUpload = useCallback(async () => {
-    const lastMedia = mediaList?.[0]?.id;
-    const newData = await mutate();
-    const untilLastMedia = newData.results.findIndex(
-      (f: any) => f.id === lastMedia
-    );
-    const onlyNewMedia = newData.results.slice(
-      0,
-      untilLastMedia === -1 ? newData.results.length : untilLastMedia
-    );
-    addNewMedia(onlyNewMedia)();
-  }, [mutate, addNewMedia, mediaList, selectedMedia]);
+
+  const finishUpload = useCallback(
+    async (res: any) => {
+      const lastMedia = mediaList?.[0]?.id;
+      const newData = await mutate();
+      const untilLastMedia = newData.results.findIndex(
+        (f: any) => f.id === lastMedia
+      );
+      const onlyNewMedia = newData.results.slice(
+        0,
+        untilLastMedia === -1 ? newData.results.length : untilLastMedia
+      );
+      addNewMedia(onlyNewMedia)();
+    },
+    [mutate, addNewMedia, mediaList, selectedMedia]
+  );
+
   const dragAndDrop = useCallback(
     async (event: ClipboardEvent<HTMLDivElement> | File[]) => {
       // @ts-ignore
@@ -255,7 +260,6 @@ export const MediaBox: FC<{
       ref.current.setOptions({
         autoProceed: true,
       });
-      finishUpload();
     },
     [mutate, addNewMedia, mediaList, selectedMedia]
   );
@@ -301,7 +305,7 @@ export const MediaBox: FC<{
               </div>
               <button
                 onClick={closeModal}
-                className="outline-none z-[300] absolute end-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root bg-primary hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+                className="outline-none z-[300] absolute end-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root bg-primary hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
                 type="button"
               >
                 <svg
@@ -335,7 +339,7 @@ export const MediaBox: FC<{
               {!!mediaList.length && (
                 <>
                   <div className="flex absolute h-[57px] w-full start-0 top-0 rounded-lg transition-all group text-sm font-semibold bg-transparent text-gray-800 hover:bg-gray-100 focus:text-primary-500">
-                    <div className="relative flex flex-1 pe-[45px] gap-2 items-center justify-center">
+                    <div className="relative flex flex-1 pe-[55px] gap-2 items-center justify-center">
                       <div className="flex-1" />
                       <MultipartFileUploader
                         uppRef={ref}
@@ -480,7 +484,8 @@ export const MultiMediaComponent: FC<{
     };
   }) => void;
 }> = (props) => {
-  const { onOpen, onClose, name, error, text, onChange, value, allData } = props;
+  const { onOpen, onClose, name, error, text, onChange, value, allData } =
+    props;
   const user = useUser();
   useEffect(() => {
     if (value) {
@@ -614,32 +619,50 @@ export const MultiMediaComponent: FC<{
             )}
           </div>
 
-          {!!currentMedia &&
-            currentMedia.map((media, index) => (
-              <>
-                <div className="cursor-pointer w-[40px] h-[40px] border-2 border-tableBorder relative flex">
-                  <div
-                    className="w-full h-full"
-                    onClick={() => window.open(mediaDirectory.set(media?.path))}
-                  >
-                    {media?.path?.indexOf('mp4') > -1 ? (
-                      <VideoFrame url={mediaDirectory.set(media?.path)} />
-                    ) : (
-                      <img
-                        className="w-full h-full object-cover"
-                        src={mediaDirectory.set(media?.path)}
-                      />
-                    )}
+          {!!currentMedia && (
+            <ReactSortable
+              list={currentMedia}
+              setList={(value) =>
+                onChange({ target: { name: 'upload', value } })
+              }
+              className="flex gap-[10px] sortable-container"
+              animation={200}
+              swap={true}
+              handle=".dragging"
+            >
+              {currentMedia.map((media, index) => (
+                <Fragment key={media.id}>
+                  <div className="cursor-pointer w-[40px] h-[40px] border-2 border-tableBorder relative flex transition-all">
+                    <div className="dragging text-sm absolute pe-[1px] z-[10] pb-[3px] -start-[4px] -top-[4px] bg-blue-700 cursor-move rounded-full w-[15px] h-[15px] text-white flex justify-center items-center">
+                      ::
+                    </div>
+
+                    <div
+                      className="w-full h-full"
+                      onClick={() =>
+                        window.open(mediaDirectory.set(media?.path))
+                      }
+                    >
+                      {media?.path?.indexOf('mp4') > -1 ? (
+                        <VideoFrame url={mediaDirectory.set(media?.path)} />
+                      ) : (
+                        <img
+                          className="w-full h-full object-cover"
+                          src={mediaDirectory.set(media?.path)}
+                        />
+                      )}
+                    </div>
+                    <div
+                      onClick={clearMedia(index)}
+                      className="rounded-full w-[15px] h-[15px] bg-red-800 text-white flex justify-center items-center absolute -end-[4px] -top-[4px]"
+                    >
+                      x
+                    </div>
                   </div>
-                  <div
-                    onClick={clearMedia(index)}
-                    className="rounded-full w-[15px] h-[15px] bg-red-800 text-textColor flex justify-center items-center absolute -end-[4px] -top-[4px]"
-                  >
-                    x
-                  </div>
-                </div>
-              </>
-            ))}
+                </Fragment>
+              ))}
+            </ReactSortable>
+          )}
         </div>
       </div>
       <div className="text-[12px] text-red-400">{error}</div>

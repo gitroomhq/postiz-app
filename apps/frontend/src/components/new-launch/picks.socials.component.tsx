@@ -12,15 +12,19 @@ export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
 }) => {
   const exising = useExistingData();
 
-  const { locked, addOrRemoveSelectedIntegration, integrations, selectedIntegrations } =
-    useLaunchStore(
-      useShallow((state) => ({
-        integrations: state.integrations,
-        selectedIntegrations: state.selectedIntegrations,
-        addOrRemoveSelectedIntegration: state.addOrRemoveSelectedIntegration,
-        locked: state.locked,
-      }))
-    );
+  const {
+    locked,
+    addOrRemoveSelectedIntegration,
+    integrations,
+    selectedIntegrations,
+  } = useLaunchStore(
+    useShallow((state) => ({
+      integrations: state.integrations,
+      selectedIntegrations: state.selectedIntegrations,
+      addOrRemoveSelectedIntegration: state.addOrRemoveSelectedIntegration,
+      locked: state.locked,
+    }))
+  );
 
   return (
     <div className={clsx('flex', locked && 'opacity-50 pointer-events-none')}>
@@ -28,7 +32,12 @@ export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
         <div className="innerComponent">
           <div className="grid grid-cols-13 gap-[10px]">
             {integrations
-              .filter((f) => !f.inBetweenSteps && !f.disabled)
+              .filter((f) => {
+                if (exising.integration) {
+                  return f.id === exising.integration;
+                }
+                return !f.inBetweenSteps && !f.disabled;
+              })
               .map((integration) => (
                 <div
                   key={integration.id}

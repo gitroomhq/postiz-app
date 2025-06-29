@@ -36,7 +36,7 @@ import {
 import { DropEvent, FileRejection, useDropzone } from 'react-dropzone';
 import { useUppyUploader } from '@gitroom/frontend/components/media/new.uploader';
 import { UploadResult } from '@uppy/core';
-import { ProgressBar } from '@uppy/react';
+import { Dashboard, ProgressBar } from '@uppy/react';
 export const EditorWrapper: FC<{
   totalPosts: number;
   value: string;
@@ -63,6 +63,7 @@ export const EditorWrapper: FC<{
     setInternalValue,
     internalFromAll,
     totalChars,
+    postComment,
   } = useLaunchStore(
     useShallow((state) => ({
       internal: state.internal.find((p) => p.integration.id === state.current),
@@ -86,6 +87,7 @@ export const EditorWrapper: FC<{
       totalChars: state.totalChars,
       appendInternalValueMedia: state.appendInternalValueMedia,
       appendGlobalValueMedia: state.appendGlobalValueMedia,
+      postComment: state.postComment,
     }))
   );
 
@@ -201,7 +203,8 @@ export const EditorWrapper: FC<{
   const goBackToGlobal = useCallback(async () => {
     if (
       await deleteDialog(
-        'This action is irreversible. Are you sure you want to go back to global mode?'
+        'This action is irreversible. Are you sure you want to go back to global mode?',
+        'Yes, go back to global mode'
       )
     ) {
       setLoaded(false);
@@ -345,7 +348,13 @@ export const EditorWrapper: FC<{
         </div>
       </div>
 
-      {canEdit && <AddPostButton num={index} onClick={addValue(index)} />}
+      {canEdit ? (
+        <AddPostButton
+          num={index}
+          onClick={addValue(index)}
+          postComment={postComment}
+        />
+      ) : <div className="h-[25px]" />}
     </div>
   ));
 };
@@ -382,13 +391,8 @@ export const Editor: FC<{
   const t = useT();
 
   const uppy = useUppyUploader({
-    onUploadSuccess: (result: UploadResult<any, any>) => {
-      appendImages([
-        ...result.successful.map((p) => ({
-          id: p.response.body.saved.id,
-          path: p.response.body.saved.path,
-        })),
-      ]);
+    onUploadSuccess: (result: any) => {
+      appendImages(result);
       uppy.clear();
     },
     allowedFileTypes: 'image/*,video/mp4',
@@ -436,16 +440,8 @@ export const Editor: FC<{
     [props.value, id]
   );
   return (
-    <div {...getRootProps()}>
+    <div>
       <div className="relative bg-customColor2" id={id}>
-        <div
-          className={clsx(
-            'absolute left-0 top-0 w-full h-full bg-black/70 z-[300] transition-all items-center justify-center flex text-white text-sm',
-            !isDragActive ? 'pointer-events-none opacity-0' : 'opacity-100'
-          )}
-        >
-          Drop your files here to upload
-        </div>
         <div className="flex gap-[5px] bg-customColor55 border-b border-t border-customColor3 justify-center items-center p-[5px]">
           <SignatureBox editor={newRef?.current?.editor!} />
           <UText
@@ -479,33 +475,55 @@ export const Editor: FC<{
           </div>
         </div>
         <div className="relative">
-          <div className="pointer-events-none absolute end-0 bottom-0 z-[200]">
-            <ProgressBar id={`prog-${num}`} uppy={uppy} />
-          </div>
-          <CopilotTextarea
-            disableBranding={true}
-            ref={newRef}
-            className={clsx(
-              '!min-h-40 p-2 overflow-x-hidden scrollbar scrollbar-thumb-[#612AD5] bg-customColor2 outline-none',
-              props.totalPosts > 1 && '!max-h-80'
-            )}
-            value={props.value}
-            onChange={(e) => {
-              props?.onChange?.(e.target.value);
-            }}
-            onPaste={paste}
-            placeholder={t('write_your_reply', 'Write your post...')}
-            autosuggestionsConfig={{
-              textareaPurpose: `Assist me in writing social media posts.`,
-              chatApiConfigs: {
-                suggestionsApiConfig: {
-                  maxTokens: 20,
-                  stop: ['.', '?', '!'],
+          <div {...getRootProps()}>
+            <div
+              className={clsx(
+                'absolute left-0 top-0 w-full h-full bg-black/70 z-[300] transition-all items-center justify-center flex text-white text-sm',
+                !isDragActive ? 'pointer-events-none opacity-0' : 'opacity-100'
+              )}
+            >
+              Drop your files here to upload
+            </div>
+            <CopilotTextarea
+              disableBranding={true}
+              ref={newRef}
+              className={clsx(
+                '!min-h-40 p-2 overflow-x-hidden scrollbar scrollbar-thumb-[#612AD5] bg-customColor2 outline-none',
+                props.totalPosts > 1 && '!max-h-80'
+              )}
+              value={props.value}
+              onChange={(e) => {
+                props?.onChange?.(e.target.value);
+              }}
+              onPaste={paste}
+              placeholder={t('write_your_reply', 'Write your post...')}
+              autosuggestionsConfig={{
+                textareaPurpose: `Assist me in writing social media posts.`,
+                chatApiConfigs: {
+                  suggestionsApiConfig: {
+                    maxTokens: 20,
+                    stop: ['.', '?', '!'],
+                  },
                 },
-              },
-              disabled: user?.tier?.ai ? !autoComplete : true,
-            }}
-          />
+                disabled: user?.tier?.ai ? !autoComplete : true,
+              }}
+            />
+
+            <div className="w-full h-[46px] overflow-hidden pointer-events-none absolute left-0">
+              <Dashboard
+                height={46}
+                uppy={uppy}
+                id={`prog-${num}`}
+                showProgressDetails={true}
+                hideUploadButton={true}
+                hideRetryButton={true}
+                hidePauseResumeButton={true}
+                hideCancelButton={true}
+                hideProgressAfterFinish={true}
+              />
+            </div>
+            <div className="w-full h-[46px] pointer-events-none" />
+          </div>
         </div>
         {validateChars && props.value.length < 6 && (
           <div className="px-3 text-sm bg-red-600 !text-white mb-[4px]">
@@ -533,16 +551,18 @@ export const Editor: FC<{
           />
         )}
       </div>
-      {(props?.totalChars || 0) > 0 && (
-        <div
-          className={clsx(
-            'text-end text-sm mt-1',
-            props?.value?.length > props.totalChars && '!text-red-500'
-          )}
-        >
-          {props?.value?.length}/{props.totalChars}
-        </div>
-      )}
+      <div className="absolute bottom-10px end-[25px]">
+        {(props?.totalChars || 0) > 0 && (
+          <div
+            className={clsx(
+              'text-end text-sm mt-1',
+              props?.value?.length > props.totalChars && '!text-red-500'
+            )}
+          >
+            {props?.value?.length}/{props.totalChars}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
