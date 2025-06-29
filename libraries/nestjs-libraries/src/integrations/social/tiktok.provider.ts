@@ -256,18 +256,18 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
             Authorization: `Bearer ${accessToken}`,
           },
           body: JSON.stringify({
-            ...(firstPost.settings.content_posting_method === 'DIRECT_POST'
+            ...((firstPost?.settings?.content_posting_method || 'DIRECT_POST') === 'DIRECT_POST'
               ? {
                   post_info: {
                     title: firstPost.message,
-                    privacy_level: firstPost.settings.privacy_level,
-                    disable_duet: !firstPost.settings.duet,
-                    disable_comment: !firstPost.settings.comment,
-                    disable_stitch: !firstPost.settings.stitch,
+                    privacy_level: firstPost.settings.privacy_level || 'PUBLIC_TO_EVERYONE',
+                    disable_duet: !firstPost.settings.duet || false,
+                    disable_comment: !firstPost.settings.comment || false,
+                    disable_stitch: !firstPost.settings.stitch || false,
                     brand_content_toggle:
-                      firstPost.settings.brand_content_toggle,
+                      firstPost.settings.brand_content_toggle || false,
                     brand_organic_toggle:
-                      firstPost.settings.brand_organic_toggle,
+                      firstPost.settings.brand_organic_toggle || false,
                     ...((firstPost?.media?.[0]?.url?.indexOf('mp4') || -1) ===
                     -1
                       ? {
