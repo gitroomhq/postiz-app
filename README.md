@@ -116,7 +116,6 @@ Link: https://opencollective.com/postiz
 - Postiz does not collect, store, or proxy API keys or access tokens from users.
 - Postiz never ask users to paste API keys into our hosted product.
 - Postiz Users always authenticate directly with the social platform (e.g., X, Discord, etc.), ensuring platform compliance and data privacy.
-- Postiz does not provide API access to others and is not a service bureau.
 
 # License
 
