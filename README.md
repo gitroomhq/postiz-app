@@ -108,6 +108,16 @@ We now give a few options to Sponsor Postiz:
 
 Link: https://opencollective.com/postiz
 
+# Postiz Compliance
+
+- Postiz is an open-source, self-hosted social media scheduling tool that supports platforms like X (formerly Twitter), Bluesky, Mastodon, Discord, and others.
+- Postiz hosted service uses official, platform-approved OAuth flows.
+- Postiz does not automate or scrape content from social media platforms.
+- Postiz does not collect, store, or proxy API keys or access tokens from users.
+- Postiz never ask users to paste API keys into our hosted product.
+- Postiz Users always authenticate directly with the social platform (e.g., X, Discord, etc.), ensuring platform compliance and data privacy.
+- Postiz does not provide API access to others and is not a service bureau.
+
 # License
 
 This repository's source code is available under the [AGPL-3.0 license](LICENSE).
