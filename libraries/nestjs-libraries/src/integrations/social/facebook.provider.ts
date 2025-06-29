@@ -8,9 +8,63 @@ import {
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import axios from 'axios';
+import { JSDOM } from 'jsdom';
 
-export class FacebookProvider extends SocialAbstract implements SocialProvider {
-  identifier = 'facebook';
+interface OpenGraphData {
+  title?: string;
+  description?: string;
+  image?: string;
+}
+
+async function fetchOpenGraphData(url: string): Promise<OpenGraphData> {
+  try {
+    const response = await axios.get(url, { 
+      timeout: 10000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; PostizBot/1.0; +https://postiz.com/)'
+      }
+    });
+    const html = response.data;
+    const dom = new JSDOM(html);
+    const document = dom.window.document;
+
+    const getMetaContent = (property: string) => {
+      const element = document.querySelector(`meta[property="${property}"]`) || 
+                    document.querySelector(`meta[name="${property}"]`);
+      return element?.getAttribute('content') || '';
+    };
+
+    const ogImage = getMetaContent('og:image');
+    let imageUrl = ogImage;
+    
+    // Handle relative URLs for images
+    if (ogImage && !ogImage.startsWith('http')) {
+      try {
+        imageUrl = new URL(ogImage, url).href;
+      } catch {
+        imageUrl = ogImage; // Fallback to original if URL parsing fails
+      }
+    }
+
+    return {
+      title: getMetaContent('og:title') || getMetaContent('title') || 
+             document.querySelector('title')?.textContent || '',
+      description: getMetaContent('og:description') || getMetaContent('description') || '',
+      image: imageUrl || ''
+    };
+  } catch (error) {
+    console.error('Error fetching OpenGraph data:', error);
+    return {};
+  }
+}
+
+function extractUrls(text: string): string[] {
+  const urlRegex = /https?:\/\/[^\s/$.?#].[^\s]*/g;
+  return text.match(urlRegex) || [];
+}
+
+export class FacebookProvider extends SocialAbstract implements SocialProvider {  identifier = 'facebook';
   name = 'Facebook Page';
   isBetweenSteps = true;
   scopes = [
@@ -176,7 +230,18 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
 
     let finalId = '';
     let finalUrl = '';
+    
+    // Enhanced URL detection for Facebook link previews
+    const urls = extractUrls(firstPost.message);
+    const hasUrls = urls.length > 0;
+    
+    // Log URL detection for debugging
+    if (hasUrls) {
+      console.log('Facebook: Detected URLs for potential link preview:', urls);
+    }
+    
     if ((firstPost?.media?.[0]?.url?.indexOf('mp4') || -2) > -1) {
+      // Handle video posts
       const {
         id: videoId,
         permalink_url,
@@ -202,6 +267,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       finalUrl = 'https://www.facebook.com/reel/' + videoId;
       finalId = videoId;
     } else {
+      // Handle image/text posts with potential link previews
       const uploadPhotos = !firstPost?.media?.length
         ? []
         : await Promise.all(
@@ -227,6 +293,36 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
             })
           );
 
+      // Enhanced post payload for better link preview handling
+      const postPayload: any = {
+        message: firstPost.message,
+        published: true,
+      };
+
+      // Add media if available
+      if (uploadPhotos?.length) {
+        postPayload.attached_media = uploadPhotos;
+      }
+      // CRITICAL: Use Facebook's 'link' parameter for URL previews
+      else if (hasUrls && !uploadPhotos?.length) {
+        console.log('Facebook: Detected URL for link preview:', urls[0]);
+        
+        // Remove URL from message text since we're putting it in the link field
+        const messageWithoutUrl = firstPost.message.replace(urls[0], '').trim();
+        
+        postPayload.message = messageWithoutUrl;
+        postPayload.link = urls[0]; // Facebook's link parameter for previews
+        
+        console.log('Facebook: Using link parameter for preview generation');
+        
+        // Optional: Pre-warm Facebook's scraper by hitting their debug API
+        try {
+          await this.prewarmFacebookScraper(urls[0], accessToken);
+        } catch (error) {
+          console.log('Facebook: Could not prewarm scraper, proceeding with normal post');
+        }
+      }
+
       const {
         id: postId,
         permalink_url,
@@ -239,11 +335,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-              ...(uploadPhotos?.length ? { attached_media: uploadPhotos } : {}),
-              message: firstPost.message,
-              published: true,
-            }),
+            body: JSON.stringify(postPayload),
           },
           'finalize upload'
         )
@@ -253,6 +345,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       finalId = postId;
     }
 
+    // Handle comment posts
     const postsArray = [];
     let commentId = finalId;
     for (const comment of comments) {
@@ -283,6 +376,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
         status: 'success',
       });
     }
+
     return [
       {
         id: firstPost.id,
@@ -292,6 +386,26 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       },
       ...postsArray,
     ];
+  }
+
+  // Optional: Pre-warm Facebook's link scraper for better preview generation
+  private async prewarmFacebookScraper(url: string, accessToken: string): Promise<void> {
+    try {
+      // Use Facebook's debug API to pre-scrape the URL
+      await this.fetch(
+        `https://graph.facebook.com/v20.0/?id=${encodeURIComponent(url)}&scrape=true&access_token=${accessToken}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      console.log('Facebook: Successfully prewarmed scraper for URL:', url);
+    } catch (error) {
+      console.log('Facebook: Prewarm scraper failed (this is optional):', error);
+      // Don't throw - this is just an optimization
+    }
   }
 
   async analytics(
