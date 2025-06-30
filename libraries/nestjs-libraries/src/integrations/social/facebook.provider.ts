@@ -177,7 +177,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
 
     let finalId = '';
     let finalUrl = '';
-    if ((firstPost?.media?.[0]?.url?.indexOf('mp4') || -2) > -1) {
+    if ((firstPost?.media?.[0]?.path?.indexOf('mp4') || -2) > -1) {
       const {
         id: videoId,
         permalink_url,
@@ -191,7 +191,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              file_url: firstPost?.media?.[0]?.url!,
+              file_url: firstPost?.media?.[0]?.path!,
               description: firstPost.message,
               published: true,
             }),
@@ -216,7 +216,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
                       'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                      url: media.url,
+                      url: media.path,
                       published: false,
                     }),
                   },
@@ -267,7 +267,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
             },
             body: JSON.stringify({
               ...(comment.media?.length
-                ? { attachment_url: comment.media[0].url }
+                ? { attachment_url: comment.media[0].path }
                 : {}),
               message: comment.message,
             }),

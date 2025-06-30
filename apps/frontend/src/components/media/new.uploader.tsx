@@ -54,6 +54,7 @@ export function MultipartFileUploader({
     />
   );
 }
+
 export function useUppyUploader(props: {
   // @ts-ignore
   onUploadSuccess: (result: UploadResult) => void;
@@ -69,7 +70,7 @@ export function useUppyUploader(props: {
     const uppy2 = new Uppy({
       autoProceed: true,
       restrictions: {
-        maxNumberOfFiles: 5,
+        // maxNumberOfFiles: 5,
         allowedFileTypes: allowedFileTypes.split(','),
         maxFileSize: 1000000000, // Default 1GB, but we'll override with custom validation
       },
@@ -154,6 +155,7 @@ export function useUppyUploader(props: {
         return;
       }
 
+      console.log(result);
       if (transloadit.length > 0) {
         // @ts-ignore
         const allRes = result.transloadit[0].results;

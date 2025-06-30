@@ -7,7 +7,7 @@ export const VideoFrame: FC<{
   const { url } = props;
   return (
     <video
-      className="w-full h-full object-cover"
+      className="w-full h-full object-cover rounded-[4px]"
       src={url + '#t=0.1'}
       preload="metadata"
       autoPlay={false}

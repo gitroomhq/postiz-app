@@ -1,6 +1,9 @@
 'use client';
 
-import { PostComment, withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
+import {
+  PostComment,
+  withProvider,
+} from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 import { FC } from 'react';
 import { Select } from '@gitroom/react/form/select';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
@@ -57,10 +60,10 @@ export default withProvider<InstagramDto>(
   InstagramDto,
   async ([firstPost, ...otherPosts], settings) => {
     if (!firstPost.length) {
-      return 'Instagram should have at least one media';
+      return 'Should have at least one media';
     }
     if (firstPost.length > 1 && settings.post_type === 'story') {
-      return 'Instagram stories can only have one media';
+      return 'Stories can only have one media';
     }
     const checkVideosLength = await Promise.all(
       firstPost
@@ -79,10 +82,10 @@ export default withProvider<InstagramDto>(
     );
     for (const video of checkVideosLength) {
       if (video > 60 && settings.post_type === 'story') {
-        return 'Instagram stories should be maximum 60 seconds';
+        return 'Stories should be maximum 60 seconds';
       }
       if (video > 180 && settings.post_type === 'post') {
-        return 'Instagram reel should be maximum 180 seconds';
+        return 'Reel should be maximum 180 seconds';
       }
     }
     return true;
