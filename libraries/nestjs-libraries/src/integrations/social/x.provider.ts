@@ -175,7 +175,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     });
     const { url, oauth_token, oauth_token_secret } =
       await client.generateAuthLink(
-        process.env.FRONTEND_URL + `/integrations/social/x`,
+        (process.env.X_URL || process.env.FRONTEND_URL) + `/integrations/social/x`,
         {
           authAccessType: 'write',
           linkMode: 'authenticate',
