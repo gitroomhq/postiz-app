@@ -4,6 +4,7 @@ import { ShortLinking } from '@gitroom/nestjs-libraries/short-linking/short-link
 import { Injectable } from '@nestjs/common';
 import { ShortIo } from './providers/short.io';
 import { Kutt } from './providers/kutt';
+import { LinkDrip } from './providers/linkdrip';
 
 const getProvider = (): ShortLinking => {
   if (process.env.DUB_TOKEN) {
@@ -16,6 +17,10 @@ const getProvider = (): ShortLinking => {
 
   if (process.env.KUTT_API_KEY) {
     return new Kutt();
+  }
+
+  if (process.env.LINK_DRIP_API_KEY) {
+    return new LinkDrip();
   }
 
   return new Empty();
