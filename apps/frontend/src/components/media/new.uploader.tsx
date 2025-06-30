@@ -54,6 +54,7 @@ export function MultipartFileUploader({
     />
   );
 }
+
 export function useUppyUploader(props: {
   // @ts-ignore
   onUploadSuccess: (result: UploadResult) => void;
@@ -117,67 +118,6 @@ export function useUppyUploader(props: {
         }
 
         resolve();
-      });
-    });
-
-    // required thumbnails
-    uppy2.addPreProcessor(async (fileIDs) => {
-      return new Promise<boolean>(async (resolve, reject) => {
-        const findVideos = uppy2
-          .getFiles()
-          .filter((f) => fileIDs.includes(f.id))
-          .filter((f) => f.type?.startsWith('video/'));
-
-        if (findVideos.length === 0) {
-          resolve(true);
-          return;
-        }
-
-        for (const currentVideo of findVideos) {
-          const resolvedVideo = await new Promise<Blob>((resolve, reject) => {
-            const video = document.createElement('video');
-            const url = URL.createObjectURL(currentVideo.data);
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-
-            video.addEventListener('loadedmetadata', () => {
-              const duration = video.duration;
-              const randomTime = Math.random() * duration;
-
-              video.currentTime = randomTime;
-
-              video.addEventListener('seeked', function capture() {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-                canvas.toBlob((blob) => {
-                  resolve(blob);
-                });
-                // Cleanup
-                video.removeEventListener('seeked', capture);
-                URL.revokeObjectURL(url);
-              });
-            });
-
-            video.src = url;
-          });
-
-          uppy2.addFile({
-            name: `thumbnail-${Date.now()}.jpg`,
-            type: 'image/jpeg',
-            data: resolvedVideo,
-            meta: {
-              thumbnail: true,
-              videoId: currentVideo.id,
-            },
-            isRemote: false,
-          });
-        }
-
-        // add the new thumbnail to uppy seperate from the file
-
-        resolve(true);
       });
     });
 

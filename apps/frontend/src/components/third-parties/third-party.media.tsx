@@ -203,7 +203,7 @@ export const ThirdPartyMedia: FC<{
       <div className="relative group">
         <Button
           className={clsx(
-            'relative ms-[10px] !px-[10px] rounded-[4px] mb-[10px] gap-[8px] !text-primary justify-center items-center flex border border-dashed border-customColor21 bg-input'
+            'relative ms-[10px] !px-[10px] rounded-[4px] gap-[8px] !text-primary justify-center items-center flex border border-dashed border-customColor21 bg-input'
           )}
           onClick={() => setPopup(true)}
         >

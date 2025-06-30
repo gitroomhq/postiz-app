@@ -6,6 +6,7 @@ export class MediaRepository {
   constructor(private _media: PrismaRepository<'media'>) {}
 
   saveFile(org: string, fileName: string, filePath: string) {
+    const file = fileName.split('.');
     return this._media.model.media.create({
       data: {
         organization: {
@@ -15,6 +16,15 @@ export class MediaRepository {
         },
         name: fileName,
         path: filePath,
+        ...(fileName.indexOf('mp4') > -1
+          ? { thumbnail: `${file[0]}.thumbnail.jpg` }
+          : {}),
+      },
+      select: {
+        id: true,
+        name: true,
+        path: true,
+        thumbnail: true,
       },
     });
   }
@@ -59,6 +69,12 @@ export class MediaRepository {
       },
       orderBy: {
         createdAt: 'desc',
+      },
+      select: {
+        id: true,
+        name: true,
+        path: true,
+        thumbnail: true,
       },
       skip: pageNum * 28,
       take: 28,
