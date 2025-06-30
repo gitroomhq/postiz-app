@@ -339,9 +339,9 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       (post) =>
         post.media?.filter(
           (media) =>
-            media.url.toLowerCase().includes('.jpg') ||
-            media.url.toLowerCase().includes('.jpeg') ||
-            media.url.toLowerCase().includes('.png')
+            media.path.toLowerCase().includes('.jpg') ||
+            media.path.toLowerCase().includes('.jpeg') ||
+            media.path.toLowerCase().includes('.png')
         ) || []
     );
 
@@ -352,9 +352,9 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     // Convert images to buffers and get dimensions
     const imageData = await Promise.all(
       allImages.map(async (media) => {
-        const buffer = await readOrFetch(media.url);
+        const buffer = await readOrFetch(media.path);
         const image = sharp(buffer, {
-          animated: lookup(media.url) === 'image/gif',
+          animated: lookup(media.path) === 'image/gif',
         });
         const metadata = await image.metadata();
 
@@ -431,11 +431,11 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
             ) {
               mediaBuffer = (media as any).buffer;
             } else {
-              mediaBuffer = await this.prepareMediaBuffer(media.url);
+              mediaBuffer = await this.prepareMediaBuffer(media.path);
             }
 
             const uploadedMediaId = await this.uploadPicture(
-              media.url,
+              media.path,
               accessToken,
               personId,
               mediaBuffer,

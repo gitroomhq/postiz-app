@@ -12,8 +12,8 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import clsx from 'clsx';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-import { AddEditModal } from '@gitroom/frontend/components/launches/add.edit.model';
 import dayjs from 'dayjs';
+import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
 
 const SaveSetModal: FC<{
   postData: any;

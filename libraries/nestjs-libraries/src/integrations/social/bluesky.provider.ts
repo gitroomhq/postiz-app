@@ -241,14 +241,14 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
     const cidUrl = [] as { cid: string; url: string; rev: string }[];
     for (const post of postDetails) {
       // Separate images and videos
-      const imageMedia = post.media?.filter((p) => p.url.indexOf('mp4') === -1) || [];
-      const videoMedia = post.media?.filter((p) => p.url.indexOf('mp4') !== -1) || [];
+      const imageMedia = post.media?.filter((p) => p.path.indexOf('mp4') === -1) || [];
+      const videoMedia = post.media?.filter((p) => p.path.indexOf('mp4') !== -1) || [];
 
       // Upload images
       const images = await Promise.all(
         imageMedia.map(async (p) => {
           return await agent.uploadBlob(
-            new Blob([await reduceImageBySize(p.url)])
+            new Blob([await reduceImageBySize(p.path)])
           );
         })
       );
@@ -256,7 +256,7 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
       // Upload videos (only one video per post is supported by Bluesky)
       let videoEmbed: AppBskyEmbedVideo.Main | null = null;
       if (videoMedia.length > 0) {
-        videoEmbed = await uploadVideo(agent, videoMedia[0].url);
+        videoEmbed = await uploadVideo(agent, videoMedia[0].path);
       }
 
       const rt = new RichText({

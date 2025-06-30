@@ -38,6 +38,7 @@ model Organization {
   signatures        Signatures[]
   autoPost          AutoPost[]
   sets              Sets[]
+  thirdParty        ThirdParty[]
 }
 
 model Tags {
@@ -201,6 +202,8 @@ model Media {
   path           String
   organization   Organization        @relation(fields: [organizationId], references: [id])
   organizationId String
+  fileSize       Int                 @default(0)
+  type           String              @default("image")
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
   userPicture    User[]
@@ -208,6 +211,7 @@ model Media {
   deletedAt      DateTime?
 
   @@index([organizationId])
+  @@index([type])
 }
 
 model SocialMediaAgency {
@@ -610,6 +614,23 @@ model Sets {
   updatedAt      DateTime     @updatedAt
 
   @@index([organizationId])
+}
+
+model ThirdParty {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  identifier     String
+  name           String
+  internalId     String
+  apiKey         String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
+
+  @@index([organizationId])
+  @@index([deletedAt])
+  @@unique([organizationId, internalId])
 }
 
 enum OrderStatus {

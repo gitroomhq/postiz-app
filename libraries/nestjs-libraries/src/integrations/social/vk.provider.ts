@@ -166,17 +166,17 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
           (post?.media || []).map(async (media) => {
             const all = await (
               await this.fetch(
-                media.url.indexOf('mp4') > -1
+                media.path.indexOf('mp4') > -1
                   ? `https://api.vk.com/method/video.save?access_token=${accessToken}&v=5.251`
                   : `https://api.vk.com/method/photos.getWallUploadServer?owner_id=${userId}&access_token=${accessToken}&v=5.251`
               )
             ).json();
 
-            const { data } = await axios.get(media.url!, {
+            const { data } = await axios.get(media.path!, {
               responseType: 'stream',
             });
 
-            const slash = media.url.split('/').at(-1);
+            const slash = media.path.split('/').at(-1);
 
             const formData = new FormDataNew();
             formData.append('photo', data, {
@@ -191,7 +191,7 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
               })
             ).data;
 
-            if (media.url.indexOf('mp4') > -1) {
+            if (media.path.indexOf('mp4') > -1) {
               return {
                 id: all.response.video_id,
                 type: 'video',

@@ -175,7 +175,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     });
     const { url, oauth_token, oauth_token_secret } =
       await client.generateAuthLink(
-        process.env.FRONTEND_URL + `/integrations/social/x`,
+        (process.env.X_URL || process.env.FRONTEND_URL) + `/integrations/social/x`,
         {
           authAccessType: 'write',
           linkMode: 'authenticate',
@@ -241,6 +241,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     postDetails: PostDetails<{
       active_thread_finisher: boolean;
       thread_finisher: string;
+      community?: string;
       who_can_reply_post:
         | 'everyone'
         | 'following'
@@ -269,10 +270,10 @@ export class XProvider extends SocialAbstract implements SocialProvider {
           p?.media?.flatMap(async (m) => {
             return {
               id: await client.v1.uploadMedia(
-                m.url.indexOf('mp4') > -1
-                  ? Buffer.from(await readOrFetch(m.url))
-                  : await sharp(await readOrFetch(m.url), {
-                      animated: lookup(m.url) === 'image/gif',
+                m.path.indexOf('mp4') > -1
+                  ? Buffer.from(await readOrFetch(m.path))
+                  : await sharp(await readOrFetch(m.path), {
+                      animated: lookup(m.path) === 'image/gif',
                     })
                       .resize({
                         width: 1000,
@@ -280,7 +281,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
                       .gif()
                       .toBuffer(),
                 {
-                  mimeType: lookup(m.url) || '',
+                  mimeType: lookup(m.path) || '',
                 }
               ),
               postId: p.id,
@@ -311,6 +312,12 @@ export class XProvider extends SocialAbstract implements SocialProvider {
           : {
               reply_settings: postDetails?.[0]?.settings?.who_can_reply_post,
             }),
+        ...(postDetails?.[0]?.settings?.community
+          ? {
+              community_id:
+                postDetails?.[0]?.settings?.community?.split('/').pop() || '',
+            }
+          : {}),
         text: post.message,
         ...(media_ids.length ? { media: { media_ids } } : {}),
         ...(ids.length

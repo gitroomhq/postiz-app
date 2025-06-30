@@ -176,7 +176,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
 
     let finalId = '';
     let finalUrl = '';
-    if ((firstPost?.media?.[0]?.url?.indexOf('mp4') || -2) > -1) {
+    if ((firstPost?.media?.[0]?.path?.indexOf('mp4') || -2) > -1) {
       const {
         id: videoId,
         permalink_url,
@@ -190,7 +190,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              file_url: firstPost?.media?.[0]?.url!,
+              file_url: firstPost?.media?.[0]?.path!,
               description: firstPost.message,
               published: true,
             }),
@@ -215,7 +215,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
                       'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                      url: media.url,
+                      url: media.path,
                       published: false,
                     }),
                   },
@@ -254,10 +254,11 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     }
 
     const postsArray = [];
+    let commentId = finalId;
     for (const comment of comments) {
       const data = await (
         await this.fetch(
-          `https://graph.facebook.com/v20.0/${finalId}/comments?access_token=${accessToken}&fields=id,permalink_url`,
+          `https://graph.facebook.com/v20.0/${commentId}/comments?access_token=${accessToken}&fields=id,permalink_url`,
           {
             method: 'POST',
             headers: {
@@ -265,7 +266,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
             },
             body: JSON.stringify({
               ...(comment.media?.length
-                ? { attachment_url: comment.media[0].url }
+                ? { attachment_url: comment.media[0].path }
                 : {}),
               message: comment.message,
             }),
@@ -274,6 +275,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
         )
       ).json();
 
+      commentId = data.id;
       postsArray.push({
         id: comment.id,
         postId: data.id,

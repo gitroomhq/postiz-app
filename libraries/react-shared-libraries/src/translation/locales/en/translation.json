@@ -161,6 +161,7 @@
   "repeat_post_every": "Repeat Post Every...",
   "use_this_media": "Use this media",
   "create_new_post": "Create New Post",
+  "update_post": "Update Existing Post",
   "merge_comments_into_one_post": "Merge comments into one post",
   "accounts_that_will_engage": "Accounts that will engage:",
   "day": "Day",
@@ -175,6 +176,8 @@
   "add_platform": "Add platform",
   "articles": "Articles",
   "add_comment": "Add comment",
+  "add_post": "Add post in a thread",
+  "add_comment_or_post": "Add comment / post",
   "you_are_in_global_editing_mode": "You are in global editing mode",
   "the_post_should_be_at_least_6_characters_long": "The post should be at least 6 characters long",
   "delete_post": "Delete Post",
@@ -186,6 +189,8 @@
   "please_add_the_following_command_in_your_chat": "Please add the following command in your chat:",
   "copy": "Copy",
   "settings": "Settings",
+  "integrations": "Integrations",
+  "add_integration": "Add Integration",
   "you_are_now_editing_only": "You are now editing only",
   "tag_a_company": "Tag a company",
   "video_length_is_invalid_must_be_up_to": "Video length is invalid, must be up to",
@@ -421,7 +426,7 @@
   "enable_color_picker": "Enable color picker",
   "cancel_the_color_picker": "Cancel the color picker",
   "no_content_yet": "No Content Yet",
-  "write_your_reply": "Write your reply...",
+  "write_your_reply": "Write your post...",
   "add_a_tag": "Add a tag",
   "add_to_calendar": "Add to Calendar",
   "select_channels_from_circles": "Select channels from the circles above",
@@ -486,5 +491,7 @@
   "post_as_images_carousel": "Post as images carousel",
   "save_set": "Save Set",
   "separate_post": "Separate post to multiple posts",
-  "label_who_can_reply_to_this_post": "Who can reply to this post?"
+  "label_who_can_reply_to_this_post": "Who can reply to this post?",
+  "delete_integration": "Delete Integration",
+  "start_writing_your_post": "Start writing your post for a preview"
 }

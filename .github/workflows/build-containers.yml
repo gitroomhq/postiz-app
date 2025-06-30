@@ -52,10 +52,12 @@ jobs:
       - name: Build and Push Image
         env:
           CONTAINERVER: ${{ needs.build-containers-common.outputs.containerver }}
+          VERSION: ${{ github.ref_name }}
         run: |
           docker buildx build --platform linux/${{ matrix.arch }} \
             -f Dockerfile.dev \
             -t ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }}-${{ matrix.arch }} \
+            --build-arg VERSION=${{ env.VERSION }} \
             --provenance=false --sbom=false \
             --output "type=registry,name=ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }}-${{ matrix.arch }}" .
 

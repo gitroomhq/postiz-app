@@ -222,17 +222,17 @@ export class InstagramProvider
         const isCarousel =
           (firstPost?.media?.length || 0) > 1 ? `&is_carousel_item=true` : ``;
         const mediaType =
-          m.url.indexOf('.mp4') > -1
+          m.path.indexOf('.mp4') > -1
             ? firstPost?.media?.length === 1
               ? isStory
-                ? `video_url=${m.url}&media_type=STORIES`
-                : `video_url=${m.url}&media_type=REELS`
+                ? `video_url=${m.path}&media_type=STORIES`
+                : `video_url=${m.path}&media_type=REELS`
               : isStory
-              ? `video_url=${m.url}&media_type=STORIES`
-              : `video_url=${m.url}&media_type=VIDEO`
+              ? `video_url=${m.path}&media_type=STORIES`
+              : `video_url=${m.path}&media_type=VIDEO`
             : isStory
-            ? `image_url=${m.url}&media_type=STORIES`
-            : `image_url=${m.url}`;
+            ? `image_url=${m.path}&media_type=STORIES`
+            : `image_url=${m.path}`;
         console.log('in progress1');
 
         const collaborators =

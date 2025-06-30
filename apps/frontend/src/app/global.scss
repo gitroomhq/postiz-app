@@ -3,6 +3,8 @@
 @tailwind utilities;
 @import './colors.scss';
 @import './polonto.css';
+@import '@uppy/core/dist/style.css';
+@import '@uppy/dashboard/dist/style.css';
 
 body,
 html {
@@ -99,6 +101,7 @@ html {
   cursor: text;
   display: flex;
   align-items: center;
+  margin-right: 0 !important;
 }
 
 .react-tags.is-active {
@@ -191,6 +194,7 @@ html {
 .react-tags__combobox-input {
   /* prevent autoresize overflowing the container */
   max-width: 100%;
+  width: 100% !important;
   /* remove styles and layout from this element */
   margin: 0;
   padding: 0;
@@ -198,7 +202,7 @@ html {
   outline: none;
   background: none;
   /* match the font styles */
-  font-size: inherit;
+  font-size: 16px;
   line-height: inherit;
 }
 
@@ -434,9 +438,9 @@ div div .set-font-family {
 }
 
 .tags-top .react-tags__combobox {
-  height: 35px;
+  height: 44px;
   display: flex;
-  background-color: #141c2c;
+  background-color: var(--color-input);
   padding-left: 10px;
   padding-right: 10px;
   min-width: 150px;
@@ -478,3 +482,52 @@ html[dir='rtl'] .lbox {
 html[dir='rtl'] [dir='ltr'] {
   direction: rtl !important;
 }
+//
+.uppy-Dashboard-AddFiles {
+  display: none !important;
+}
+
+.uppy-Dashboard-inner * {
+  @apply text-textColor;
+}
+
+.uppy-Dashboard-inner,
+.uppy-StatusBar {
+  background: transparent;
+  border-radius: 0 !important;
+  border: 0 !important;
+}
+
+.bigWrap .uppy-StatusBar-statusSecondary {
+  display: none !important;
+  opacity: 0 !important;
+}
+.bigWrap .uppy-StatusBar {
+  height: 32px !important;
+}
+.uppy-StatusBar {
+  //@apply bg-customColor55;
+}
+//
+//.uppy-Dashboard-inner {
+//  height: 70px !important;
+//}
+.uppy-Dashboard-files {
+  display: none;
+}
+//
+.uppy-DashboardContent-bar {
+  display: none !important;
+}
+
+.uppy-StatusBar-progress {
+  display: block;
+}
+
+.uppy-StatusBar-content {
+}
+//
+//.uppy-StatusBar-content {
+//  padding: 0 !important;
+//}
+//

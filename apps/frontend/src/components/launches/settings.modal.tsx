@@ -1,11 +1,12 @@
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
-import React, { FC, useCallback, useMemo, useState } from 'react';
+import React, { FC, useCallback, useState } from 'react';
 import { useModals } from '@mantine/modals';
 import { Integration } from '@prisma/client';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Button } from '@gitroom/react/form/button';
 import { Slider } from '@gitroom/react/form/slider';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+
 export const Element: FC<{
   setting: any;
   onChange: (value: any) => void;

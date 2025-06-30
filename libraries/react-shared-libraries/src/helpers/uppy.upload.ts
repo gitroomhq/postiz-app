@@ -1,6 +1,7 @@
 import XHRUpload from '@uppy/xhr-upload';
 import AwsS3Multipart from '@uppy/aws-s3';
 import sha256 from 'sha256';
+import Transloadit from '@uppy/transloadit';
 const fetchUploadApiEndpoint = async (
   fetch: any,
   endpoint: string,
@@ -21,9 +22,24 @@ const fetchUploadApiEndpoint = async (
 export const getUppyUploadPlugin = (
   provider: string,
   fetch: any,
-  backendUrl: string
+  backendUrl: string,
+  transloadit: string[] = []
 ) => {
   switch (provider) {
+    case 'transloadit':
+      return {
+        plugin: Transloadit,
+        options: {
+          waitForEncoding: true,
+          alwaysRunAssembly: true,
+          assemblyOptions: {
+            params: {
+              auth: { key: transloadit[0] },
+              template_id: transloadit[1],
+            },
+          },
+        },
+      };
     case 'cloudflare':
       return {
         plugin: AwsS3Multipart,
@@ -33,18 +49,21 @@ export const getUppyUploadPlugin = (
           createMultipartUpload: async (file: any) => {
             let fileHash = '';
             const contentType = file.type;
-            
+
             // Skip hash calculation for files larger than 100MB to avoid "Invalid array length" error
             if (file.size <= 100 * 1024 * 1024) {
               try {
                 const arrayBuffer = await new Response(file.data).arrayBuffer();
                 fileHash = sha256(Buffer.from(arrayBuffer));
               } catch (error) {
-                console.warn('Failed to calculate file hash, proceeding without hash:', error);
+                console.warn(
+                  'Failed to calculate file hash, proceeding without hash:',
+                  error
+                );
                 fileHash = '';
               }
             }
-            
+
             return fetchUploadApiEndpoint(fetch, 'create-multipart-upload', {
               file,
               fileHash,

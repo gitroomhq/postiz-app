@@ -22,7 +22,7 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
   name = 'Telegram';
   isBetweenSteps = false;
   isWeb3 = true;
-  scopes = [];
+  scopes = [] as string[];
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     return {
@@ -147,7 +147,7 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
       const text = message.message || '';
       // check if media is local to modify url
       const processedMedia = mediaFiles.map((media) => {
-        let mediaUrl = media.url;
+        let mediaUrl = media.path;
         if (mediaStorage === 'local' && mediaUrl.startsWith(frontendURL)) {
           mediaUrl = mediaUrl.replace(frontendURL, '');
         }
@@ -168,7 +168,7 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
           type: mediaType,
           media: mediaUrl,
           fileOptions: {
-            filename: media.url.split('/').pop(),
+            filename: media.path.split('/').pop(),
             contentType: mimeType || 'application/octet-stream',
           },
         };
@@ -216,7 +216,7 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
 
           const response = await telegramBot.sendMediaGroup(
             accessToken,
-            mediaGroup
+            mediaGroup as any[]
           );
           if (i === 0) {
             messageId = response[0].message_id;

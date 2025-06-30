@@ -161,19 +161,19 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
           attachments: post.media?.map((p, index) => ({
             id: index,
             description: `Picture ${index}`,
-            filename: p.url.split('/').pop(),
+            filename: p.path.split('/').pop(),
           })),
         })
       );
 
       let index = 0;
       for (const media of post.media || []) {
-        const loadMedia = await fetch(media.url);
+        const loadMedia = await fetch(media.path);
 
         form.append(
           `files[${index}]`,
           await loadMedia.blob(),
-          media.url.split('/').pop()
+          media.path.split('/').pop()
         );
         index++;
       }

@@ -37,6 +37,8 @@ import { AutopostRepository } from '@gitroom/nestjs-libraries/database/prisma/au
 import { AutopostService } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.service';
 import { SetsService } from '@gitroom/nestjs-libraries/database/prisma/sets/sets.service';
 import { SetsRepository } from '@gitroom/nestjs-libraries/database/prisma/sets/sets.repository';
+import { ThirdPartyRepository } from '@gitroom/nestjs-libraries/database/prisma/third-party/third-party.repository';
+import { ThirdPartyService } from '@gitroom/nestjs-libraries/database/prisma/third-party/third-party.service';
 
 @Global()
 @Module({
@@ -82,6 +84,8 @@ import { SetsRepository } from '@gitroom/nestjs-libraries/database/prisma/sets/s
     ShortLinkService,
     SetsService,
     SetsRepository,
+    ThirdPartyRepository,
+    ThirdPartyService,
   ],
   get exports() {
     return this.providers;
