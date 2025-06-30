@@ -101,6 +101,13 @@ export const LinkedinCompany: FC<{
   id: string;
 }> = (props) => {
   const { onClose, onSelect, id } = props;
+  const setActivateExitButton = useLaunchStore((e) => e.setActivateExitButton);
+  useEffect(() => {
+    setActivateExitButton(false);
+    return () => {
+      setActivateExitButton(true);
+    };
+  }, []);
   const fetch = useFetch();
   const [company, setCompany] = useState<any>(null);
   const toast = useToaster();
@@ -136,6 +143,7 @@ export const LinkedinCompany: FC<{
             <TopTitle title={'Select Company'} />
           </div>
           <button
+            onClick={onClose}
             className="outline-none absolute end-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root bg-primary hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
             type="button"
           >

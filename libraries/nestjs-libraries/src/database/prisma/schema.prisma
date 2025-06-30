@@ -202,6 +202,8 @@ model Media {
   path           String
   organization   Organization        @relation(fields: [organizationId], references: [id])
   organizationId String
+  thumbnail      String?
+  alt            String?
   fileSize       Int                 @default(0)
   type           String              @default("image")
   createdAt      DateTime            @default(now())
@@ -210,6 +212,7 @@ model Media {
   agencies       SocialMediaAgency[]
   deletedAt      DateTime?
 
+  @@index([name])
   @@index([organizationId])
   @@index([type])
 }
