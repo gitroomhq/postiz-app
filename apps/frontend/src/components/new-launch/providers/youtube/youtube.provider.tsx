@@ -1,7 +1,10 @@
 'use client';
 
 import { FC } from 'react';
-import { PostComment, withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
+import {
+  PostComment,
+  withProvider,
+} from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 import { YoutubeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/youtube.settings.dto';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { Input } from '@gitroom/react/form/input';
@@ -61,7 +64,7 @@ export default withProvider(
   async (items) => {
     const [firstItems] = items;
     if (items.length !== 1) {
-      return 'Youtube items should be one';
+      return 'Should have one item';
     }
     if (items[0].length !== 1) {
       return 'You need one media';

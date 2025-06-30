@@ -1,7 +1,10 @@
 'use client';
 
 import { FC } from 'react';
-import { PostComment, withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
+import {
+  PostComment,
+  withProvider,
+} from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { Input } from '@gitroom/react/form/input';
 import { DribbbleTeams } from '@gitroom/frontend/components/new-launch/providers/dribbble/dribbble.teams';
@@ -23,10 +26,10 @@ export default withProvider(
   async ([firstItem, ...otherItems]) => {
     const isMp4 = firstItem?.find((item) => item.path.indexOf('mp4') > -1);
     if (firstItem.length !== 1) {
-      return 'Dribbble requires one item';
+      return 'Requires one item';
     }
     if (isMp4) {
-      return 'Dribbble does not support mp4 files';
+      return 'Does not support mp4 files';
     }
     const details = await new Promise<{
       width: number;
@@ -45,7 +48,7 @@ export default withProvider(
     ) {
       return true;
     }
-    return 'Invalid image size. Dribbble requires 400x300 or 800x600 px images.';
+    return 'Invalid image size. Requires 400x300 or 800x600 px images.';
   },
   40000
 );
