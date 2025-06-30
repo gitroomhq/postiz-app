@@ -228,7 +228,7 @@ export const withProvider = function <T extends object>(
                   {t('preview', 'Preview')}
                 </Button>
               </div>
-              {!!SettingsComponent && (
+              {(!!SettingsComponent || !!data?.internalPlugs?.length) && (
                 <div className="flex-1 flex">
                   <Button
                     onClick={() => setTab(1)}
@@ -245,7 +245,7 @@ export const withProvider = function <T extends object>(
               )}
             </div>
 
-            {(tab === 0 || !SettingsComponent) &&
+            {(tab === 0 || (!SettingsComponent && !data?.internalPlugs?.length)) &&
               !value?.[0]?.content?.length && (
                 <div>
                   {t(
@@ -254,7 +254,7 @@ export const withProvider = function <T extends object>(
                   )}
                 </div>
               )}
-            {(tab === 0 || !SettingsComponent) &&
+            {(tab === 0 || (!SettingsComponent && !data?.internalPlugs?.length)) &&
               !!value?.[0]?.content?.length &&
               (CustomPreviewComponent ? (
                 <CustomPreviewComponent
@@ -283,7 +283,7 @@ export const withProvider = function <T extends object>(
                   }
                 />
               ))}
-            {SettingsComponent && (
+            {(SettingsComponent || !!data?.internalPlugs?.length) && (
               <div className={tab === 1 ? '' : 'hidden'}>
                 <SettingsComponent />
                 {!!data?.internalPlugs?.length && (
