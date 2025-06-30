@@ -1,6 +1,9 @@
 'use client';
 
-import { PostComment, withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
+import {
+  PostComment,
+  withProvider,
+} from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 import { FC, useCallback } from 'react';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { useFieldArray } from 'react-hook-form';
@@ -63,7 +66,7 @@ export default withProvider(
     if (
       list.some((item) => item.some((field) => field.path.indexOf('mp4') > -1))
     ) {
-      return 'Warpcast can only accept images';
+      return 'Can only accept images';
     }
     return true;
   },

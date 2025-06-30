@@ -1,7 +1,10 @@
 'use client';
 
 import { FC } from 'react';
-import { PostComment, withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
+import {
+  PostComment,
+  withProvider,
+} from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { PinterestBoard } from '@gitroom/frontend/components/new-launch/providers/pinterest/pinterest.board';
 import { PinterestSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/pinterest.dto';
@@ -34,16 +37,16 @@ export default withProvider(
       (item) => item.path.indexOf('mp4') === -1
     );
     if (firstItem.length === 0) {
-      return 'Pinterest requires at least one media';
+      return 'Requires at least one media';
     }
     if (isMp4 && firstItem.length !== 2 && !isPicture) {
-      return 'If posting a video to Pinterest you have to also include a cover image as second media';
+      return 'If posting a video you have to also include a cover image as second media';
     }
     if (isMp4 && firstItem.length > 2) {
-      return 'If posting a video to Pinterest you can only have two media items';
+      return 'If posting a video you can only have two media items';
     }
     if (otherItems.length) {
-      return 'Pinterest can only have one post';
+      return 'Can only have one post';
     }
     if (
       firstItem.length > 1 &&
@@ -68,7 +71,7 @@ export default withProvider(
         return p.width === arr[0].width && p.height === arr[0].height;
       });
       if (!checkAllTheSameWidthHeight) {
-        return 'Pinterest requires all images to have the same width and height';
+        return 'Requires all images to have the same width and height';
       }
     }
     return true;
