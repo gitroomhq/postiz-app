@@ -382,7 +382,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
 
     // Create a temporary file-like object for the PDF
     const pdfMedia = {
-      url: 'carousel.pdf',
+      path: 'carousel.pdf',
       buffer: pdfBuffer,
     };
 
