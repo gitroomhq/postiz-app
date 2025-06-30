@@ -108,7 +108,7 @@ export class PublicaController {
 
       const file = await upload.uploadFile(media)
 
-      await this._mediaService.saveFile(org.id, caption, file.path);
+      await this._mediaService.saveFile(org.id, `whatsapp-${user.id}-${rawMessageId}`, file.path);
 
       message.text = {
         body: caption ? `Media received: ${file.path} \nCaption: ${caption}` : `Media received: ${file.path}`,
