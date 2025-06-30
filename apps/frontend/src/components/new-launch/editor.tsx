@@ -532,25 +532,25 @@ export const Editor: FC<{
               />
             </div>
             <div className="w-full h-[46px] pointer-events-none" />
+            <div className="flex bg-customColor2">
+              {setImages && (
+                <MultiMediaComponent
+                  allData={allValues}
+                  text={props.value}
+                  label={t('attachments', 'Attachments')}
+                  description=""
+                  value={props.pictures}
+                  name="image"
+                  onChange={(value) => {
+                    setImages(value.target.value);
+                  }}
+                  onOpen={() => {}}
+                  onClose={() => {}}
+                />
+              )}
+            </div>
           </div>
         </div>
-      </div>
-      <div className="flex bg-customColor2">
-        {setImages && (
-          <MultiMediaComponent
-            allData={allValues}
-            text={props.value}
-            label={t('attachments', 'Attachments')}
-            description=""
-            value={props.pictures}
-            name="image"
-            onChange={(value) => {
-              setImages(value.target.value);
-            }}
-            onOpen={() => {}}
-            onClose={() => {}}
-          />
-        )}
       </div>
       <div className="absolute bottom-10px end-[25px]">
         {(props?.totalChars || 0) > 0 && (

@@ -3,6 +3,7 @@ import { MediaRepository } from '@gitroom/nestjs-libraries/database/prisma/media
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { Organization } from '@prisma/client';
+import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/save.media.information.dto';
 
 @Injectable()
 export class MediaService {
@@ -43,5 +44,9 @@ export class MediaService {
 
   getMedia(org: string, page: number) {
     return this._mediaRepository.getMedia(org, page);
+  }
+
+  saveMediaInformation(org: string, data: SaveMediaInformationDto) {
+    return this._mediaRepository.saveMediaInformation(org, data);
   }
 }

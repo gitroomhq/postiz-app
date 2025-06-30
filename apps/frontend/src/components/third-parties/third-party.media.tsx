@@ -7,6 +7,7 @@ import React, {
   createContext,
   FC,
   useCallback,
+  useEffect,
   useMemo,
   useState,
 } from 'react';
@@ -15,6 +16,7 @@ import useSWR from 'swr';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import './providers/heygen.provider';
 import { thirdPartyList } from '@gitroom/frontend/components/third-parties/third-party.wrapper';
+import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 
 const ThirdPartyContext = createContext({
   id: '',
@@ -56,6 +58,14 @@ export const ThirdPartyPopup: FC<{
 }> = (props) => {
   const { closeModal, thirdParties, allData, onChange } = props;
   const [thirdParty, setThirdParty] = useState<any>(null);
+
+  const setActivateExitButton = useLaunchStore((e) => e.setActivateExitButton);
+  useEffect(() => {
+    setActivateExitButton(false);
+    return () => {
+      setActivateExitButton(true);
+    };
+  }, []);
 
   const Component = useMemo(() => {
     if (!thirdParty) {

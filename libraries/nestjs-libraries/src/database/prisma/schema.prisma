@@ -203,6 +203,7 @@ model Media {
   organization   Organization        @relation(fields: [organizationId], references: [id])
   organizationId String
   thumbnail      String?
+  alt            String?
   fileSize       Int                 @default(0)
   type           String              @default("image")
   createdAt      DateTime            @default(now())

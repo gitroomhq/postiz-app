@@ -31,6 +31,7 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { ThirdPartyMedia } from '@gitroom/frontend/components/third-parties/third-party.media';
 import { ReactSortable } from 'react-sortablejs';
 import { useMediaSettings } from '@gitroom/frontend/components/launches/helpers/media.settings.component';
+import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 const Polonto = dynamic(
   () => import('@gitroom/frontend/components/launches/polonto')
 );
@@ -159,15 +160,25 @@ export const MediaBox: FC<{
 }> = (props) => {
   const { setMedia, type, closeModal } = props;
   const [mediaList, setListMedia] = useState<Media[]>([]);
+  const setActivateExitButton = useLaunchStore((e) => e.setActivateExitButton);
   const fetch = useFetch();
   const mediaDirectory = useMediaDirectory();
   const [page, setPage] = useState(0);
   const [pages, setPages] = useState(0);
   const [selectedMedia, setSelectedMedia] = useState<Media[]>([]);
   const ref = useRef<any>(null);
+
+  useEffect(() => {
+    setActivateExitButton(false);
+    return () => {
+      setActivateExitButton(true);
+    };
+  }, []);
+
   const loadMedia = useCallback(async () => {
     return (await fetch(`/media?page=${page + 1}`)).json();
   }, [page]);
+
   const setNewMedia = useCallback(
     (media: Media) => () => {
       setSelectedMedia(
@@ -185,13 +196,7 @@ export const MediaBox: FC<{
     },
     [selectedMedia]
   );
-  const removeMedia = useCallback(
-    (media: Media) => () => {
-      setSelectedMedia(selectedMedia.filter((f) => f.id !== media.id));
-      setListMedia(mediaList.filter((f) => f.id !== media.id));
-    },
-    [selectedMedia]
-  );
+
   const addNewMedia = useCallback(
     (media: Media[]) => () => {
       setSelectedMedia((currentMedia) => [...currentMedia, ...media]);
@@ -481,6 +486,8 @@ export const MultiMediaComponent: FC<{
       value?: Array<{
         id: string;
         path: string;
+        alt?: string;
+        thumbnail?: string;
       }>;
     };
   }) => void;
@@ -610,7 +617,20 @@ export const MultiMediaComponent: FC<{
 
                     <div className="w-full h-full relative group">
                       <div
-                        onClick={() => mediaSettings(media)}
+                        onClick={async () => {
+                          const data: any = await mediaSettings(media);
+                          console.log(
+                            value?.map((p) => (p.id === data.id ? data : p))
+                          );
+                          onChange({
+                            target: {
+                              name: 'upload',
+                              value: value?.map((p) =>
+                                p.id === data.id ? data : p
+                              ),
+                            },
+                          });
+                        }}
                         className="absolute top-[50%] left-[50%] -translate-x-[50%] -translate-y-[50%] bg-black/80 rounded-[10px] opacity-0 group-hover:opacity-100 transition-opacity z-[100]"
                       >
                         <svg

@@ -60,6 +60,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
     integrations,
     setSelectedIntegrations,
     locked,
+    activateExitButton,
   } = useLaunchStore(
     useShallow((state) => ({
       hide: state.hide,
@@ -73,6 +74,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       integrations: state.integrations,
       setSelectedIntegrations: state.setSelectedIntegrations,
       locked: state.locked,
+      activateExitButton: state.activateExitButton
     }))
   );
 
@@ -96,6 +98,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   }, [existingData, mutate, modal]);
 
   const askClose = useCallback(async () => {
+    if (!activateExitButton) {
+      return;
+    }
+
     if (
       await deleteDialog(
         t(
@@ -111,7 +117,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       }
       modal.closeAll();
     }
-  }, []);
+  }, [activateExitButton]);
 
   const changeCustomer = useCallback(
     (customer: string) => {

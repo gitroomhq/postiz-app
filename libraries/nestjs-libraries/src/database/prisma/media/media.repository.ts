@@ -1,12 +1,12 @@
 import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
+import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/save.media.information.dto';
 
 @Injectable()
 export class MediaRepository {
   constructor(private _media: PrismaRepository<'media'>) {}
 
   saveFile(org: string, fileName: string, filePath: string) {
-    const file = fileName.split('.');
     return this._media.model.media.create({
       data: {
         organization: {
@@ -16,15 +16,13 @@ export class MediaRepository {
         },
         name: fileName,
         path: filePath,
-        ...(fileName.indexOf('mp4') > -1
-          ? { thumbnail: `${file[0]}.thumbnail.jpg` }
-          : {}),
       },
       select: {
         id: true,
         name: true,
         path: true,
         thumbnail: true,
+        alt: true,
       },
     });
   }
@@ -45,6 +43,26 @@ export class MediaRepository {
       },
       data: {
         deletedAt: new Date(),
+      },
+    });
+  }
+
+  saveMediaInformation(org: string, data: SaveMediaInformationDto) {
+    return this._media.model.media.update({
+      where: {
+        id: data.id,
+        organizationId: org,
+      },
+      data: {
+        alt: data.alt,
+        thumbnail: data.thumbnail,
+      },
+      select: {
+        id: true,
+        name: true,
+        alt: true,
+        thumbnail: true,
+        path: true,
       },
     });
   }
@@ -75,6 +93,7 @@ export class MediaRepository {
         name: true,
         path: true,
         thumbnail: true,
+        alt: true,
       },
       skip: pageNum * 28,
       take: 28,
