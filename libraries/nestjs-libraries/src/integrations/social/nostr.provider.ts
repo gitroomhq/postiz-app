@@ -168,7 +168,7 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
         {
           kind: 1, // Text note
           content:
-            post.message + '\n\n' + post.media?.map((m) => m.url).join('\n\n'),
+            post.message + '\n\n' + post.media?.map((m) => m.path).join('\n\n'),
           tags: [
             ...(lastId
               ? [

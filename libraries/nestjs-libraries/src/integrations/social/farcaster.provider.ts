@@ -82,7 +82,7 @@ export class FarcasterProvider
         const data = await client.publishCast({
           embeds:
             post?.media?.map((media) => ({
-              url: media.url,
+              url: media.path,
             })) || [],
           signerUuid: accessToken,
           text: post.message,

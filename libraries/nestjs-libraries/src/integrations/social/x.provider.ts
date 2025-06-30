@@ -270,10 +270,10 @@ export class XProvider extends SocialAbstract implements SocialProvider {
           p?.media?.flatMap(async (m) => {
             return {
               id: await client.v1.uploadMedia(
-                m.url.indexOf('mp4') > -1
-                  ? Buffer.from(await readOrFetch(m.url))
-                  : await sharp(await readOrFetch(m.url), {
-                      animated: lookup(m.url) === 'image/gif',
+                m.path.indexOf('mp4') > -1
+                  ? Buffer.from(await readOrFetch(m.path))
+                  : await sharp(await readOrFetch(m.path), {
+                      animated: lookup(m.path) === 'image/gif',
                     })
                       .resize({
                         width: 1000,
@@ -281,7 +281,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
                       .gif()
                       .toBuffer(),
                 {
-                  mimeType: lookup(m.url) || '',
+                  mimeType: lookup(m.path) || '',
                 }
               ),
               postId: p.id,

@@ -130,13 +130,13 @@ export class DribbbleProvider extends SocialAbstract implements SocialProvider {
     postDetails: PostDetails<DribbbleDto>[]
   ): Promise<PostResponse[]> {
     const { data, status } = await axios.get(
-      postDetails?.[0]?.media?.[0]?.url!,
+      postDetails?.[0]?.media?.[0]?.path!,
       {
         responseType: 'stream',
       }
     );
 
-    const slash = postDetails?.[0]?.media?.[0]?.url.split('/').at(-1);
+    const slash = postDetails?.[0]?.media?.[0]?.path.split('/').at(-1);
 
     const formData = new FormData();
     formData.append('image', data, {

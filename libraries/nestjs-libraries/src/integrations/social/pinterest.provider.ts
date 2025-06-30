@@ -151,10 +151,10 @@ export class PinterestProvider
   ): Promise<PostResponse[]> {
     let mediaId = '';
     const findMp4 = postDetails?.[0]?.media?.find(
-      (p) => (p.url?.indexOf('mp4') || -1) > -1
+      (p) => (p.path?.indexOf('mp4') || -1) > -1
     );
     const picture = postDetails?.[0]?.media?.find(
-      (p) => (p.url?.indexOf('mp4') || -1) === -1
+      (p) => (p.path?.indexOf('mp4') || -1) === -1
     );
 
     if (findMp4) {
@@ -172,7 +172,7 @@ export class PinterestProvider
       ).json();
 
       const { data, status } = await axios.get(
-        postDetails?.[0]?.media?.[0]?.url!,
+        postDetails?.[0]?.media?.[0]?.path!,
         {
           responseType: 'stream',
         }
@@ -207,7 +207,7 @@ export class PinterestProvider
     }
 
     const mapImages = postDetails?.[0]?.media?.map((m) => ({
-      url: m.url,
+      path: m.path,
     }));
 
     try {
@@ -234,12 +234,12 @@ export class PinterestProvider
               ? {
                   source_type: 'video_id',
                   media_id: mediaId,
-                  cover_image_url: picture?.url,
+                  cover_image_url: picture?.path,
                 }
               : mapImages?.length === 1
               ? {
                   source_type: 'image_url',
-                  url: mapImages?.[0]?.url,
+                  url: mapImages?.[0]?.path,
                 }
               : {
                   source_type: 'multiple_image_urls',

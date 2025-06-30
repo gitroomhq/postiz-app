@@ -16,7 +16,7 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
   identifier = 'lemmy';
   name = 'Lemmy';
   isBetweenSteps = false;
-  scopes = [];
+  scopes = [] as string[];
 
   async customFields() {
     return [
@@ -150,7 +150,7 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
             body: firstPost.message,
             ...(lemmy.value.url ? { url: lemmy.value.url } : {}),
             ...(firstPost.media?.length
-              ? { custom_thumbnail: firstPost.media[0].url }
+              ? { custom_thumbnail: firstPost.media[0].path }
               : {}),
             nsfw: false,
           }),

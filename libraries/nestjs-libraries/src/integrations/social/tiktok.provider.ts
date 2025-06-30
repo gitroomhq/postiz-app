@@ -247,7 +247,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       await this.fetch(
         `https://open.tiktokapis.com/v2/post/publish${this.postingMethod(
           firstPost.settings.content_posting_method,
-          (firstPost?.media?.[0]?.url?.indexOf('mp4') || -1) === -1
+          (firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) === -1
         )}`,
         {
           method: 'POST',
@@ -268,7 +268,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
                       firstPost.settings.brand_content_toggle || false,
                     brand_organic_toggle:
                       firstPost.settings.brand_organic_toggle || false,
-                    ...((firstPost?.media?.[0]?.url?.indexOf('mp4') || -1) ===
+                    ...((firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) ===
                     -1
                       ? {
                           auto_add_music:
@@ -278,18 +278,18 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
                   },
                 }
               : {}),
-            ...((firstPost?.media?.[0]?.url?.indexOf('mp4') || -1) > -1
+            ...((firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) > -1
               ? {
                   source_info: {
                     source: 'PULL_FROM_URL',
-                    video_url: firstPost?.media?.[0]?.url!,
+                    video_url: firstPost?.media?.[0]?.path!,
                   },
                 }
               : {
                   source_info: {
                     source: 'PULL_FROM_URL',
                     photo_cover_index: 0,
-                    photo_images: firstPost.media?.map((p) => p.url),
+                    photo_images: firstPost.media?.map((p) => p.path),
                   },
                   post_mode: 'DIRECT_POST',
                   media_type: 'PHOTO',

@@ -159,7 +159,7 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
               ...(post.media?.length
                 ? post.media.map((m) => ({
                     type: 'image',
-                    image_url: m.url,
+                    image_url: m.path,
                     alt_text: '',
                   }))
                 : []),

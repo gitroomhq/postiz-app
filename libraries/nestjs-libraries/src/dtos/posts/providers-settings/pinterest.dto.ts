@@ -3,12 +3,14 @@ import {
   IsOptional,
   IsString,
   IsUrl,
+  MaxLength,
   MinLength,
 } from 'class-validator';
 
 export class PinterestSettingsDto {
   @IsString()
   @IsOptional()
+  @MaxLength(100)
   title: string;
 
   @IsString()

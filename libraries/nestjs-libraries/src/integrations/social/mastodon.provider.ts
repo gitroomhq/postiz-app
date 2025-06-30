@@ -133,7 +133,7 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
     for (const getPost of postDetails) {
       const uploadFiles = await Promise.all(
         getPost?.media?.map((media) =>
-          this.uploadFile(url, media.url, accessToken)
+          this.uploadFile(url, media.path, accessToken)
         ) || []
       );
 
