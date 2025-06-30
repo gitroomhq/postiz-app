@@ -180,6 +180,8 @@ checksums:
     add_platform: 43a00914a255eef7ccb528349f53d6fb
     articles: 52a36a5e786355d8e5fa6114f5f3968d
     add_comment: 29a9b6b564cfe6b98b3ee5030626b4af
+    add_post: 2dccebf8ff3a67ee833bc0a695c77267
+    add_comment_or_post: b3410d8a203c8d0fd766555e8935247d
     you_are_in_global_editing_mode: 20cdb003abac7601398de7548a4d1289
     the_post_should_be_at_least_6_characters_long: 123cb493f3169815511460be0e0047e8
     delete_post: bcf081392c76d2f2a8522944ddd36b78

@@ -22,6 +22,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { CustomFileValidationPipe } from '@gitroom/nestjs-libraries/upload/custom.upload.validation';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
+import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/save.media.information.dto';
 
 @ApiTags('Media')
 @Controller('/media')
@@ -86,13 +87,47 @@ export class MediaController {
     );
   }
 
+  @Post('/save-media')
+  async saveMedia(
+    @GetOrgFromRequest() org: Organization,
+    @Req() req: Request,
+    @Body('name') name: string
+  ) {
+    if (!name) {
+      return false;
+    }
+    return this._mediaService.saveFile(
+      org.id,
+      name,
+      process.env.CLOUDFLARE_BUCKET_URL + '/' + name
+    );
+  }
+
+  @Post('/information')
+  saveMediaInformation(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: SaveMediaInformationDto
+  ) {
+    return this._mediaService.saveMediaInformation(
+      org.id,
+      body
+    );
+  }
+
   @Post('/upload-simple')
   @UseInterceptors(FileInterceptor('file'))
   async uploadSimple(
     @GetOrgFromRequest() org: Organization,
-    @UploadedFile('file') file: Express.Multer.File
+    @UploadedFile('file') file: Express.Multer.File,
+    @Body('preventSave') preventSave: string = 'false'
   ) {
     const getFile = await this.storage.uploadFile(file);
+
+    if (preventSave === 'true') {
+      const { path } = getFile;
+      return { path };
+    }
+
     return this._mediaService.saveFile(
       org.id,
       getFile.originalname,

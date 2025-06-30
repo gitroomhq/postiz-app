@@ -101,8 +101,9 @@ export type PollDetails = {
 
 export type MediaContent = {
   type: 'image' | 'video'; // Type of the media content
-  url: string; // URL of the media file, if it's already hosted somewhere
   path: string;
+  alt?: string;
+  thumbnail?: string;
 };
 
 export interface SocialProvider

@@ -164,16 +164,16 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
   private async createSingleMediaContent(
     userId: string,
     accessToken: string,
-    media: { url: string },
+    media: { path: string },
     message: string,
     isCarouselItem = false,
     replyToId?: string
   ): Promise<string> {
     const mediaType =
-      media.url.indexOf('.mp4') > -1 ? 'video_url' : 'image_url';
+      media.path.indexOf('.mp4') > -1 ? 'video_url' : 'image_url';
     const mediaParams = new URLSearchParams({
-      ...(mediaType === 'video_url' ? { video_url: media.url } : {}),
-      ...(mediaType === 'image_url' ? { image_url: media.url } : {}),
+      ...(mediaType === 'video_url' ? { video_url: media.path } : {}),
+      ...(mediaType === 'image_url' ? { image_url: media.path } : {}),
       ...(isCarouselItem ? { is_carousel_item: 'true' } : {}),
       ...(replyToId ? { reply_to_id: replyToId } : {}),
       media_type: mediaType === 'video_url' ? 'VIDEO' : 'IMAGE',
@@ -196,7 +196,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
   private async createCarouselContent(
     userId: string,
     accessToken: string,
-    media: { url: string }[],
+    media: { path: string }[],
     message: string,
     replyToId?: string
   ): Promise<string> {

@@ -40,12 +40,9 @@ export const AddEditModal: FC<AddEditModalProps> = (props) => {
   );
 
   const integrations = useLaunchStore((state) => state.integrations);
-
   useEffect(() => {
     setDate(props.date || dayjs());
-    setAllIntegrations(
-      (props.integrations || []).filter((f) => !f.inBetweenSteps && !f.disabled)
-    );
+    setAllIntegrations(props.allIntegrations || []);
     setIsCreateSet(!!props.addEditSets);
   }, []);
 

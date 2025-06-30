@@ -176,6 +176,8 @@
   "add_platform": "Add platform",
   "articles": "Articles",
   "add_comment": "Add comment",
+  "add_post": "Add post in a thread",
+  "add_comment_or_post": "Add comment / post",
   "you_are_in_global_editing_mode": "You are in global editing mode",
   "the_post_should_be_at_least_6_characters_long": "The post should be at least 6 characters long",
   "delete_post": "Delete Post",

@@ -5,6 +5,7 @@ import dayjs from 'dayjs';
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
 import { createRef, RefObject } from 'react';
 import { arrayMoveImmutable } from 'array-move';
+import { PostComment } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 
 interface Values {
   id: string;
@@ -25,9 +26,11 @@ interface SelectedIntegrations {
 
 interface StoreState {
   date: dayjs.Dayjs;
+  postComment: PostComment;
   repeater?: number;
   isCreateSet: boolean;
   totalChars: number;
+  activateExitButton: boolean;
   tags: { label: string; value: string }[];
   tab: 0 | 1;
   current: string;
@@ -102,10 +105,23 @@ interface StoreState {
   setTags: (tags: { label: string; value: string }[]) => void;
   setIsCreateSet: (isCreateSet: boolean) => void;
   setTotalChars?: (totalChars: number) => void;
+  appendInternalValueMedia: (
+    integrationId: string,
+    index: number,
+    media: { id: string; path: string }[]
+  ) => void;
+  appendGlobalValueMedia: (
+    index: number,
+    media: { id: string; path: string }[]
+  ) => void;
+  setPostComment: (postComment: PostComment) => void;
+  setActivateExitButton?: (activateExitButton: boolean) => void;
 }
 
 const initialState = {
+  activateExitButton: true,
   date: dayjs(),
+  postComment: PostComment.ALL,
   tags: [] as { label: string; value: string }[],
   totalChars: 0,
   tab: 0 as 0,
@@ -130,14 +146,17 @@ export const useLaunchStore = create<StoreState>()((set) => ({
     settings: any
   ) => {
     set((state) => {
-      const existingIndex = state.selectedIntegrations.findIndex(
+      const existing = state.selectedIntegrations.find(
         (i) => i.integration.id === integration.id
       );
 
-      if (existingIndex > -1) {
+      if (existing) {
         return {
+          ...(existing.integration.id === state.current
+            ? { current: 'global' }
+            : {}),
           selectedIntegrations: state.selectedIntegrations.filter(
-            (_, index) => index !== existingIndex
+            (s, index) => s.integration.id !== existing.integration.id
           ),
         };
       }
@@ -451,5 +470,39 @@ export const useLaunchStore = create<StoreState>()((set) => ({
   setTotalChars: (totalChars: number) =>
     set((state) => ({
       totalChars,
+    })),
+  appendInternalValueMedia: (
+    integrationId: string,
+    index: number,
+    media: { id: string; path: string }[]
+  ) =>
+    set((state) => ({
+      internal: state.internal.map((item) =>
+        item.integration.id === integrationId
+          ? {
+              ...item,
+              integrationValue: item.integrationValue.map((v, i) =>
+                i === index ? { ...v, media: [...v.media, ...media] } : v
+              ),
+            }
+          : item
+      ),
+    })),
+  appendGlobalValueMedia: (
+    index: number,
+    media: { id: string; path: string }[]
+  ) =>
+    set((state) => ({
+      global: state.global.map((item, i) =>
+        i === index ? { ...item, media: [...item.media, ...media] } : item
+      ),
+    })),
+  setPostComment: (postComment: PostComment) =>
+    set((state) => ({
+      postComment,
+    })),
+  setActivateExitButton: (activateExitButton: boolean) =>
+    set((state) => ({
+      activateExitButton,
     })),
 }));

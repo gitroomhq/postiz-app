@@ -176,6 +176,8 @@
   "add_platform": "הוסף פלטפורמה",
   "articles": "מאמרים",
   "add_comment": "הוסף תגובה",
+  "add_post": "הוסף פוסט בדיון",
+  "add_comment_or_post": "הוסף תגובה / פוסט",
   "you_are_in_global_editing_mode": "אתה נמצא במצב עריכה גלובלי",
   "the_post_should_be_at_least_6_characters_long": "הפוסט צריך להיות באורך של לפחות 6 תווים",
   "delete_post": "מחק פוסט",

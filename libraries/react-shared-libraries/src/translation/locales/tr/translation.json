@@ -176,6 +176,8 @@
   "add_platform": "Platform ekle",
   "articles": "Makaleler",
   "add_comment": "Yorum ekle",
+  "add_post": "Bir başlıkta gönderi ekle",
+  "add_comment_or_post": "Yorum / gönderi ekle",
   "you_are_in_global_editing_mode": "Genel düzenleme modundasınız",
   "the_post_should_be_at_least_6_characters_long": "Gönderi en az 6 karakter uzunluğunda olmalıdır",
   "delete_post": "Gönderiyi sil",

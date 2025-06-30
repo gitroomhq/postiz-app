@@ -176,6 +176,8 @@
   "add_platform": "إضافة منصة",
   "articles": "مقالات",
   "add_comment": "أضف تعليقًا",
+  "add_post": "أضف منشورًا في سلسلة النقاش",
+  "add_comment_or_post": "أضف تعليقًا / منشورًا",
   "you_are_in_global_editing_mode": "أنت في وضع التحرير العام",
   "the_post_should_be_at_least_6_characters_long": "يجب أن يكون المنشور مكونًا من 6 أحرف على الأقل",
   "delete_post": "حذف المنشور",

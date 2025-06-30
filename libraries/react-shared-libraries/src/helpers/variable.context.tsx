@@ -20,6 +20,7 @@ interface VariableContextInterface {
   disableImageCompression: boolean;
   language: string;
   tolt: string;
+  transloadit: string[];
 }
 const VariableContext = createContext({
   billingEnabled: false,
@@ -40,6 +41,7 @@ const VariableContext = createContext({
   disableImageCompression: false,
   language: '',
   tolt: '',
+  transloadit: [],
 } as VariableContextInterface);
 export const VariableContextComponent: FC<
   VariableContextInterface & {

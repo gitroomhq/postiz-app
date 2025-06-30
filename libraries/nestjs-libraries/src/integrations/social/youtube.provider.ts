@@ -142,7 +142,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     const { settings }: { settings: YoutubeSettingsDto } = firstPost;
 
     const response = await axios({
-      url: firstPost?.media?.[0]?.url,
+      url: firstPost?.media?.[0]?.path,
       method: 'GET',
       responseType: 'stream',
     });

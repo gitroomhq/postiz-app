@@ -68,7 +68,7 @@ ${type}
             }
           : {})}
         className={clsx(
-          'relative ms-[10px] rounded-[4px] mb-[10px] gap-[8px] !text-primary justify-center items-center flex border border-dashed border-customColor21 bg-input',
+          'relative ms-[10px] rounded-[4px] gap-[8px] !text-primary justify-center items-center flex border border-dashed border-customColor21 bg-input',
           value.length < 30 && 'opacity-25'
         )}
       >
