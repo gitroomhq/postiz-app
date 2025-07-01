@@ -256,6 +256,7 @@ model Customer {
   orgId        String
   organization Organization  @relation(fields: [orgId], references: [id])
   integrations Integration[]
+  gbpInsights  GbpInsight[]
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   deletedAt    DateTime?
@@ -608,6 +609,26 @@ model XInsight {
   engagement     Float
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+}
+
+model GbpInsight {
+  id                String   @id @default(uuid()) @db.Uuid
+  businessId        String
+  organizationId    String
+  customerId        String?   
+  customer          Customer? @relation(fields: [customerId], references: [id])
+  month             String
+  impressionsMaps   Int
+  impressionsSearch Int
+  websiteClicks     Int
+  phoneClicks       Int
+  directionRequests Int
+  avgRating         Float
+  totalReviews      Int
+  createdAt         DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime  @updatedAt @db.Timestamptz(6)
+
+  @@index([customerId])
 }
 
 enum SocialMediaPlatform {

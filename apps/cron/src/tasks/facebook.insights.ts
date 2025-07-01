@@ -9,9 +9,8 @@ export class FacebookInsightsTask {
 	constructor(
 		private _facebookInsightsRepository: PrismaRepository<'facebookInsight'>,
 	) { }
-	@Cron('* * * * *') // for every minute
 
-	//@Cron('0 0 * * *') // Runs every day at midnight
+    @Cron('0 0 * * *') // for midnight
 	async handleFacebookInsights() {
 		console.log('⏰ Facebook Insights Cron job triggered');
 
