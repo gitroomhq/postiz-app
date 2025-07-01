@@ -56,12 +56,13 @@ const YoutubeSettings: FC = () => {
     </div>
   );
 };
-export default withProvider(
-  PostComment.COMMENT,
-  YoutubeSettings,
-  undefined,
-  YoutubeSettingsDto,
-  async (items) => {
+export default withProvider({
+  postComment: PostComment.COMMENT,
+  minimumCharacters: [],
+  SettingsComponent: YoutubeSettings,
+  CustomPreviewComponent: undefined,
+  dto: YoutubeSettingsDto,
+  checkValidity: async (items) => {
     const [firstItems] = items;
     if (items.length !== 1) {
       return 'Should have one item';
@@ -74,5 +75,5 @@ export default withProvider(
     }
     return true;
   },
-  5000
-);
+  maximumCharacters: 5000,
+});

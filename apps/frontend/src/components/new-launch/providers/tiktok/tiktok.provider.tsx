@@ -346,12 +346,13 @@ const TikTokSettings: FC<{
     </div>
   );
 };
-export default withProvider(
-  PostComment.COMMENT,
-  TikTokSettings,
-  undefined,
-  TikTokDto,
-  async (items) => {
+export default withProvider({
+  postComment: PostComment.COMMENT,
+  minimumCharacters: [],
+  SettingsComponent: TikTokSettings,
+  CustomPreviewComponent: undefined,
+  dto: TikTokDto,
+  checkValidity: async (items) => {
     const [firstItems] = items;
     if (items.length !== 1) {
       return 'Should have one item';
@@ -372,5 +373,5 @@ export default withProvider(
     }
     return true;
   },
-  2000
-);
+  maximumCharacters: 2000,
+});

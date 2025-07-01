@@ -57,12 +57,13 @@ const WrapcastProvider: FC = () => {
     </>
   );
 };
-export default withProvider(
-  PostComment.POST,
-  WrapcastProvider,
-  undefined,
-  undefined,
-  async (list) => {
+export default withProvider({
+  postComment: PostComment.POST,
+  minimumCharacters: [],
+  SettingsComponent: WrapcastProvider,
+  CustomPreviewComponent: undefined,
+  dto: undefined,
+  checkValidity: async (list) => {
     if (
       list.some((item) => item.some((field) => field.path.indexOf('mp4') > -1))
     ) {
@@ -70,5 +71,5 @@ export default withProvider(
     }
     return true;
   },
-  800
-);
+  maximumCharacters: 800,
+});

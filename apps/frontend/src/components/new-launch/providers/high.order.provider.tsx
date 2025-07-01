@@ -30,18 +30,25 @@ class Empty {
 export enum PostComment {
   ALL,
   POST,
-  COMMENT
+  COMMENT,
 }
 
-export const withProvider = function <T extends object>(
-  postComment: PostComment,
+interface CharacterCondition {
+  format: 'no-pictures' | 'with-pictures';
+  type: 'post' | 'comment';
+  maximumCharacters: number;
+}
+
+export const withProvider = function <T extends object>(params: {
+  postComment: PostComment;
+  minimumCharacters: CharacterCondition[];
   SettingsComponent: FC<{
     values?: any;
-  }> | null,
+  }> | null;
   CustomPreviewComponent?: FC<{
     maximumCharacters?: number;
-  }>,
-  dto?: any,
+  }>;
+  dto?: any;
   checkValidity?: (
     value: Array<
       Array<{
@@ -50,9 +57,18 @@ export const withProvider = function <T extends object>(
     >,
     settings: T,
     additionalSettings: any
-  ) => Promise<string | true>,
-  maximumCharacters?: number | ((settings: any) => number)
-) {
+  ) => Promise<string | true>;
+  maximumCharacters?: number | ((settings: any) => number);
+}) {
+  const {
+    postComment,
+    SettingsComponent,
+    CustomPreviewComponent,
+    dto,
+    checkValidity,
+    maximumCharacters,
+  } = params;
+
   return forwardRef((props: { id: string }, ref) => {
     const t = useT();
     const fetch = useFetch();
@@ -245,7 +261,8 @@ export const withProvider = function <T extends object>(
               )}
             </div>
 
-            {(tab === 0 || (!SettingsComponent && !data?.internalPlugs?.length)) &&
+            {(tab === 0 ||
+              (!SettingsComponent && !data?.internalPlugs?.length)) &&
               !value?.[0]?.content?.length && (
                 <div>
                   {t(
@@ -254,7 +271,8 @@ export const withProvider = function <T extends object>(
                   )}
                 </div>
               )}
-            {(tab === 0 || (!SettingsComponent && !data?.internalPlugs?.length)) &&
+            {(tab === 0 ||
+              (!SettingsComponent && !data?.internalPlugs?.length)) &&
               !!value?.[0]?.content?.length &&
               (CustomPreviewComponent ? (
                 <CustomPreviewComponent

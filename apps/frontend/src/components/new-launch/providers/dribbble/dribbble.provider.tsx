@@ -18,12 +18,13 @@ const DribbbleSettings: FC = () => {
     </div>
   );
 };
-export default withProvider(
-  PostComment.COMMENT,
-  DribbbleSettings,
-  undefined,
-  DribbbleDto,
-  async ([firstItem, ...otherItems]) => {
+export default withProvider({
+  postComment: PostComment.COMMENT,
+  minimumCharacters: [],
+  SettingsComponent: DribbbleSettings,
+  CustomPreviewComponent: undefined,
+  dto: DribbbleDto,
+  checkValidity: async ([firstItem, ...otherItems]) => {
     const isMp4 = firstItem?.find((item) => item.path.indexOf('mp4') > -1);
     if (firstItem.length !== 1) {
       return 'Requires one item';
@@ -50,5 +51,5 @@ export default withProvider(
     }
     return 'Invalid image size. Requires 400x300 or 800x600 px images.';
   },
-  40000
-);
+  maximumCharacters: 40000,
+});

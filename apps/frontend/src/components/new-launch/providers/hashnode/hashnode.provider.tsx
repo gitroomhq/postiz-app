@@ -1,7 +1,10 @@
 'use client';
 
 import { FC } from 'react';
-import { PostComment, withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
+import {
+  PostComment,
+  withProvider,
+} from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { Input } from '@gitroom/react/form/input';
 import { HashnodePublications } from '@gitroom/frontend/components/new-launch/providers/hashnode/hashnode.publications';
@@ -85,9 +88,12 @@ const HashnodeSettings: FC = () => {
     </>
   );
 };
-export default withProvider(
-  PostComment.COMMENT,
-  HashnodeSettings,
-  HashnodePreview,
-  HashnodeSettingsDto
-);
+export default withProvider({
+  postComment: PostComment.COMMENT,
+  minimumCharacters: [],
+  SettingsComponent: HashnodeSettings,
+  CustomPreviewComponent: HashnodePreview,
+  dto: HashnodeSettingsDto,
+  checkValidity: undefined,
+  maximumCharacters: undefined,
+});

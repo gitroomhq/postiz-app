@@ -10,12 +10,13 @@ const SettingsComponent = () => {
   return <ThreadFinisher />;
 };
 
-export default withProvider(
-  PostComment.POST,
-  SettingsComponent,
-  undefined,
-  undefined,
-  async (posts) => {
+export default withProvider({
+  postComment: PostComment.POST,
+  minimumCharacters: [],
+  SettingsComponent: SettingsComponent,
+  CustomPreviewComponent: undefined,
+  dto: undefined,
+  checkValidity: async (posts) => {
     if (
       posts.some(
         (p) => p.some((a) => a.path.indexOf('mp4') > -1) && p.length > 1
@@ -29,5 +30,5 @@ export default withProvider(
     }
     return true;
   },
-  300
-);
+  maximumCharacters: 300,
+});

@@ -1,7 +1,10 @@
 'use client';
 
 import { FC, useCallback } from 'react';
-import { PostComment, withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
+import {
+  PostComment,
+  withProvider,
+} from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { useFieldArray } from 'react-hook-form';
 import { Button } from '@gitroom/react/form/button';
@@ -63,12 +66,13 @@ const LemmySettings: FC = () => {
     </>
   );
 };
-export default withProvider(
-  PostComment.COMMENT,
-  LemmySettings,
-  undefined,
-  LemmySettingsDto,
-  async (items) => {
+export default withProvider({
+  postComment: PostComment.COMMENT,
+  minimumCharacters: [],
+  SettingsComponent: LemmySettings,
+  CustomPreviewComponent: undefined,
+  dto: LemmySettingsDto,
+  checkValidity: async (items) => {
     const [firstItems] = items;
     if (
       firstItems.length &&
@@ -81,5 +85,5 @@ export default withProvider(
     }
     return true;
   },
-  10000
-);
+  maximumCharacters: 10000,
+});
