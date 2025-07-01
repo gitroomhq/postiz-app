@@ -38,7 +38,6 @@ export class Integration {
 export class PostContent {
   @IsDefined()
   @IsString()
-  @MinLength(6)
   content: string;
 
   @IsOptional()

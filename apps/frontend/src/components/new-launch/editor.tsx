@@ -388,7 +388,6 @@ export const Editor: FC<{
   const [id] = useState(makeId(10));
   const newRef = useRef<any>(null);
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
   const t = useT();
 
   const uppy = useUppyUploader({
@@ -476,12 +475,9 @@ export const Editor: FC<{
           </div>
         </div>
         <div className="relative">
-          {validateChars && props.value.length < 6 && (
+          {validateChars && props.value.length === 0 && pictures?.length === 0 && (
             <div className="px-3 text-sm bg-red-600 !text-white mb-[4px]">
-              {t(
-                'the_post_should_be_at_least_6_characters_long',
-                'The post should be at least 6 characters long'
-              )}
+              Your post should have at least one character or one image.
             </div>
           )}
           <div {...getRootProps()}>

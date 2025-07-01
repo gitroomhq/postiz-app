@@ -144,7 +144,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         const notEnoughChars = checkAllValid.filter((p: any) => {
           return p.values.some((a: any) => {
             return (
-              countCharacters(a.content, p?.integration?.identifier || '') < 6
+              countCharacters(a.content, p?.integration?.identifier || '') === 0 && a.media?.length === 0
             );
           });
         });
@@ -153,7 +153,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           toaster.show(
             '' +
               item.integration.name +
-              ' post is too short, it must be at least 6 characters',
+              ' Your post should have at least one character or one image.',
             'warning'
           );
           setLoading(false);
