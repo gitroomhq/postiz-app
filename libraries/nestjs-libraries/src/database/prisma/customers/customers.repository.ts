@@ -38,6 +38,15 @@ export class CustomersRepository {
     });
   }
 
+  async getCustomerByPKId(
+    id: string
+  ) {
+    return this._customerRepository.model.customer.findFirst({
+      where: {
+        id: id
+      }
+    });
+  }
 
   async updateCustomer(
     id: string,
