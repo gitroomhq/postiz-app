@@ -2,19 +2,19 @@
 
 import '@neynar/react/dist/style.css';
 import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
-import { Web3ProviderInterface } from '@chaolaolo/frontend/components/launches/web3/web3.provider.interface';
-import { TopTitle } from '@chaolaolo/frontend/components/launches/helpers/top.title.component';
+import { Web3ProviderInterface } from '@gitroom/frontend/components/launches/web3/web3.provider.interface';
+import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { useModals } from '@mantine/modals';
-import { useFetch } from '@chaolaolo/helpers/utils/custom.fetch';
-import { timer } from '@chaolaolo/helpers/utils/timer';
-import { makeId } from '@chaolaolo/nestjs-libraries/services/make.is';
-import interClass from '@chaolaolo/react/helpers/inter.font';
-import { Input } from '@chaolaolo/react/form/input';
-import { Button } from '@chaolaolo/react/form/button';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { timer } from '@gitroom/helpers/utils/timer';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import interClass from '@gitroom/react/helpers/inter.font';
+import { Input } from '@gitroom/react/form/input';
+import { Button } from '@gitroom/react/form/button';
 import copy from 'copy-to-clipboard';
-import { useToaster } from '@chaolaolo/react/toaster/toaster';
-import { useVariables } from '@chaolaolo/react/helpers/variable.context';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { useToaster } from '@gitroom/react/toaster/toaster';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const TelegramProvider: FC<Web3ProviderInterface> = (props) => {
   const { onComplete, nonce } = props;
   const { telegramBotName } = useVariables();

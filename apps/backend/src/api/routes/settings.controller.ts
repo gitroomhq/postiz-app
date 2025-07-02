@@ -1,14 +1,14 @@
 import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
-import { GetOrgFromRequest } from '@chaolaolo/nestjs-libraries/user/org.from.request';
+import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization } from '@prisma/client';
-import { StarsService } from '@chaolaolo/nestjs-libraries/database/prisma/stars/stars.service';
-import { CheckPolicies } from '@chaolaolo/backend/services/auth/permissions/permissions.ability';
+import { StarsService } from '@gitroom/nestjs-libraries/database/prisma/stars/stars.service';
+import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import {
   AuthorizationActions,
   Sections,
-} from '@chaolaolo/backend/services/auth/permissions/permissions.service';
-import { OrganizationService } from '@chaolaolo/nestjs-libraries/database/prisma/organizations/organization.service';
-import { AddTeamMemberDto } from '@chaolaolo/nestjs-libraries/dtos/settings/add.team.member.dto';
+} from '@gitroom/backend/services/auth/permissions/permissions.service';
+import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
+import { AddTeamMemberDto } from '@gitroom/nestjs-libraries/dtos/settings/add.team.member.dto';
 import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Settings')

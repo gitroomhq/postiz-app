@@ -1,29 +1,29 @@
 'use client';
 
-import { AddProviderButton } from '@chaolaolo/frontend/components/launches/add.provider.component';
+import { AddProviderButton } from '@gitroom/frontend/components/launches/add.provider.component';
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { groupBy, orderBy } from 'lodash';
-import { CalendarWeekProvider } from '@chaolaolo/frontend/components/launches/calendar.context';
-import { Filters } from '@chaolaolo/frontend/components/launches/filters';
-import { useFetch } from '@chaolaolo/helpers/utils/custom.fetch';
+import { CalendarWeekProvider } from '@gitroom/frontend/components/launches/calendar.context';
+import { Filters } from '@gitroom/frontend/components/launches/filters';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
-import { LoadingComponent } from '@chaolaolo/frontend/components/layout/loading';
+import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import clsx from 'clsx';
 import { useUser } from '../layout/user.context';
-import { Menu } from '@chaolaolo/frontend/components/launches/menu/menu';
+import { Menu } from '@gitroom/frontend/components/launches/menu/menu';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Integration } from '@prisma/client';
-import ImageWithFallback from '@chaolaolo/react/helpers/image.with.fallback';
-import { useToaster } from '@chaolaolo/react/toaster/toaster';
-import { useFireEvents } from '@chaolaolo/helpers/utils/use.fire.events';
+import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
+import { useToaster } from '@gitroom/react/toaster/toaster';
+import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
 import { Calendar } from './calendar';
 import { useDrag, useDrop } from 'react-dnd';
-import { DNDProvider } from '@chaolaolo/frontend/components/launches/helpers/dnd.provider';
+import { DNDProvider } from '@gitroom/frontend/components/launches/helpers/dnd.provider';
 import { GeneratorComponent } from './generator/generator';
-import { useVariables } from '@chaolaolo/react/helpers/variable.context';
-import { NewPost } from '@chaolaolo/frontend/components/launches/new.post';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { NewPost } from '@gitroom/frontend/components/launches/new.post';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 interface MenuComponentInterface {
   refreshChannel: (
     integration: Integration & {

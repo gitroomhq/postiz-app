@@ -2,7 +2,7 @@ import { FC, useCallback, useEffect } from 'react';
 import interClass from '../helpers/inter.font';
 import { clsx } from 'clsx';
 import { useFormContext } from 'react-hook-form';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const Total: FC<{
   name: string;
   customOnChange?: () => void;

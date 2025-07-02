@@ -3,13 +3,13 @@ import { Reflector } from '@nestjs/core';
 import {
   AppAbility,
   PermissionsService,
-} from '@chaolaolo/backend/services/auth/permissions/permissions.service';
+} from '@gitroom/backend/services/auth/permissions/permissions.service';
 import {
   AbilityPolicy,
   CHECK_POLICIES_KEY,
-} from '@chaolaolo/backend/services/auth/permissions/permissions.ability';
+} from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import { Organization } from '@prisma/client';
-import { SubscriptionException } from '@chaolaolo/backend/services/auth/permissions/subscription.exception';
+import { SubscriptionException } from '@gitroom/backend/services/auth/permissions/subscription.exception';
 import { Request } from 'express';
 
 @Injectable()

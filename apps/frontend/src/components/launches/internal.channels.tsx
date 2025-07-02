@@ -2,14 +2,14 @@ import { FC, useEffect, useState } from 'react';
 import {
   Integrations,
   useCalendar,
-} from '@chaolaolo/frontend/components/launches/calendar.context';
-import { PickPlatforms } from '@chaolaolo/frontend/components/launches/helpers/pick.platform.component';
-import { useIntegration } from '@chaolaolo/frontend/components/launches/helpers/use.integration';
-import { Select } from '@chaolaolo/react/form/select';
-import { Slider } from '@chaolaolo/react/form/slider';
-import { useSettings } from '@chaolaolo/frontend/components/launches/helpers/use.values';
+} from '@gitroom/frontend/components/launches/calendar.context';
+import { PickPlatforms } from '@gitroom/frontend/components/launches/helpers/pick.platform.component';
+import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
+import { Select } from '@gitroom/react/form/select';
+import { Slider } from '@gitroom/react/form/slider';
+import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import clsx from 'clsx';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 const delayOptions = [
   {
     name: 'Immediately',

@@ -4,12 +4,12 @@ import { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useModals } from '@mantine/modals';
 import clsx from 'clsx';
-import { GithubOnboarding } from '@chaolaolo/frontend/components/onboarding/github.onboarding';
-import { SettingsPopup } from '@chaolaolo/frontend/components/layout/settings.component';
-import { Button } from '@chaolaolo/react/form/button';
-import { ConnectChannels } from '@chaolaolo/frontend/components/onboarding/connect.channels';
-import { useVariables } from '@chaolaolo/react/helpers/variable.context';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { GithubOnboarding } from '@gitroom/frontend/components/onboarding/github.onboarding';
+import { SettingsPopup } from '@gitroom/frontend/components/layout/settings.component';
+import { Button } from '@gitroom/react/form/button';
+import { ConnectChannels } from '@gitroom/frontend/components/onboarding/connect.channels';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const Step: FC<{
   step: number;
   title: string;

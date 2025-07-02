@@ -1,9 +1,9 @@
 'use client';
 
 import { useCallback, useMemo } from 'react';
-import { useFetch } from '@chaolaolo/helpers/utils/custom.fetch';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
-import { useUser } from '@chaolaolo/frontend/components/layout/user.context';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
 export const OrganizationSelector = () => {
   const fetch = useFetch();
   const user = useUser();

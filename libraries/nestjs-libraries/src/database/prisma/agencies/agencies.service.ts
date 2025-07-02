@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { AgenciesRepository } from '@chaolaolo/nestjs-libraries/database/prisma/agencies/agencies.repository';
+import { AgenciesRepository } from '@gitroom/nestjs-libraries/database/prisma/agencies/agencies.repository';
 import { User } from '@prisma/client';
-import { CreateAgencyDto } from '@chaolaolo/nestjs-libraries/dtos/agencies/create.agency.dto';
-import { NotificationService } from '@chaolaolo/nestjs-libraries/database/prisma/notifications/notification.service';
+import { CreateAgencyDto } from '@gitroom/nestjs-libraries/dtos/agencies/create.agency.dto';
+import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 
 @Injectable()
 export class AgenciesService {

@@ -13,20 +13,20 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { DevToSettingsDto } from '@chaolaolo/nestjs-libraries/dtos/posts/providers-settings/dev.to.settings.dto';
-import { MediaDto } from '@chaolaolo/nestjs-libraries/dtos/media/media.dto';
-import { type AllProvidersSettings } from '@chaolaolo/nestjs-libraries/dtos/posts/providers-settings/all.providers.settings';
-import { MediumSettingsDto } from '@chaolaolo/nestjs-libraries/dtos/posts/providers-settings/medium.settings.dto';
-import { HashnodeSettingsDto } from '@chaolaolo/nestjs-libraries/dtos/posts/providers-settings/hashnode.settings.dto';
-import { RedditSettingsDto } from '@chaolaolo/nestjs-libraries/dtos/posts/providers-settings/reddit.dto';
-import { YoutubeSettingsDto } from '@chaolaolo/nestjs-libraries/dtos/posts/providers-settings/youtube.settings.dto';
-import { PinterestSettingsDto } from '@chaolaolo/nestjs-libraries/dtos/posts/providers-settings/pinterest.dto';
-import { DribbbleDto } from '@chaolaolo/nestjs-libraries/dtos/posts/providers-settings/dribbble.dto';
-import { TikTokDto } from '@chaolaolo/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
-import { DiscordDto } from '@chaolaolo/nestjs-libraries/dtos/posts/providers-settings/discord.dto';
-import { SlackDto } from '@chaolaolo/nestjs-libraries/dtos/posts/providers-settings/slack.dto';
-import { LemmySettingsDto } from '@chaolaolo/nestjs-libraries/dtos/posts/lemmy.dto';
-import { XDto } from '@chaolaolo/nestjs-libraries/dtos/posts/providers-settings/x.dto';
+import { DevToSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dev.to.settings.dto';
+import { MediaDto } from '@gitroom/nestjs-libraries/dtos/media/media.dto';
+import { type AllProvidersSettings } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/all.providers.settings';
+import { MediumSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/medium.settings.dto';
+import { HashnodeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/hashnode.settings.dto';
+import { RedditSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/reddit.dto';
+import { YoutubeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/youtube.settings.dto';
+import { PinterestSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/pinterest.dto';
+import { DribbbleDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dribbble.dto';
+import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
+import { DiscordDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/discord.dto';
+import { SlackDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/slack.dto';
+import { LemmySettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/lemmy.dto';
+import { XDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/x.dto';
 
 export class EmptySettings { }
 export class Integration {

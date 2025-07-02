@@ -9,7 +9,7 @@ import {
   ValidateIf,
   ValidateNested,
 } from 'class-validator';
-import { MediaDto } from '@chaolaolo/nestjs-libraries/dtos/media/media.dto';
+import { MediaDto } from '@gitroom/nestjs-libraries/dtos/media/media.dto';
 import { Type } from 'class-transformer';
 
 export class RedditFlairDto {

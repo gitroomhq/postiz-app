@@ -1,4 +1,4 @@
-import { ProviderInterface } from '@chaolaolo/extension/providers/provider.interface';
+import { ProviderInterface } from '@gitroom/extension/providers/provider.interface';
 
 export class LinkedinProvider implements ProviderInterface {
   identifier = 'linkedin';

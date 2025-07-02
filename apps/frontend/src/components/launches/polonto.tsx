@@ -8,19 +8,19 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { TopTitle } from '@chaolaolo/frontend/components/launches/helpers/top.title.component';
+import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { createStore } from 'polotno/model/store';
 import Workspace from 'polotno/canvas/workspace';
 import { PolotnoContainer, SidePanelWrap, WorkspaceWrap } from 'polotno';
 import { SidePanel, DEFAULT_SECTIONS } from 'polotno/side-panel';
 import Toolbar from 'polotno/toolbar/toolbar';
 import ZoomButtons from 'polotno/toolbar/zoom-buttons';
-import { Button } from '@chaolaolo/react/form/button';
-import { useFetch } from '@chaolaolo/helpers/utils/custom.fetch';
-import { PictureGeneratorSection } from '@chaolaolo/frontend/components/launches/polonto/polonto.picture.generation';
-import { useUser } from '@chaolaolo/frontend/components/layout/user.context';
-import { loadVars } from '@chaolaolo/react/helpers/variable.context';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { Button } from '@gitroom/react/form/button';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { PictureGeneratorSection } from '@gitroom/frontend/components/launches/polonto/polonto.picture.generation';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { loadVars } from '@gitroom/react/helpers/variable.context';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 const store = createStore({
   get key() {
     return loadVars().plontoKey;

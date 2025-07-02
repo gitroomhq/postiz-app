@@ -2,7 +2,7 @@ import { SetMetadata } from '@nestjs/common';
 import {
   AuthorizationActions,
   Sections,
-} from '@chaolaolo/backend/services/auth/permissions/permissions.service';
+} from '@gitroom/backend/services/auth/permissions/permissions.service';
 
 export const CHECK_POLICIES_KEY = 'check_policy';
 export type AbilityPolicy = [AuthorizationActions, Sections];

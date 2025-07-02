@@ -1,6 +1,6 @@
 import { ClientProxy, ReadPacket, WritePacket } from '@nestjs/microservices';
 import { Queue, QueueEvents } from 'bullmq';
-import { ioRedis } from '@chaolaolo/nestjs-libraries/redis/redis.service';
+import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { v4 } from 'uuid';
 import { Injectable } from '@nestjs/common';
 

@@ -1,6 +1,6 @@
 import { useDropzone } from 'react-dropzone';
 import { FC, ReactNode } from 'react';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const DropFiles: FC<{
   children: ReactNode;
   onDrop: (files: File[]) => void;

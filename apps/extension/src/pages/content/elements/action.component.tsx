@@ -1,6 +1,6 @@
 import { FC, memo, useCallback, useEffect, useState } from 'react';
-import { ProviderInterface } from '@chaolaolo/extension/providers/provider.interface';
-import { fetchCookie } from '@chaolaolo/extension/utils/load.cookie';
+import { ProviderInterface } from '@gitroom/extension/providers/provider.interface';
+import { fetchCookie } from '@gitroom/extension/utils/load.cookie';
 
 const Comp: FC<{ removeModal: () => void; platform: string; style: string }> = (
   props

@@ -3,7 +3,7 @@ import { HexColorPicker } from 'react-colorful';
 import { useFormContext } from 'react-hook-form';
 import interClass from '../helpers/inter.font';
 import { Button } from './button';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { TranslatedLabel } from '../translation/translated-label';
 
 export const ColorPicker: FC<{

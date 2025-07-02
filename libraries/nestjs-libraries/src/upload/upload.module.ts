@@ -1,6 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import { UploadFactory } from './upload.factory';
-import { CustomFileValidationPipe } from '@chaolaolo/nestjs-libraries/upload/custom.upload.validation';
+import { CustomFileValidationPipe } from '@gitroom/nestjs-libraries/upload/custom.upload.validation';
 
 @Global()
 @Module({

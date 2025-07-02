@@ -9,26 +9,26 @@ import {
   Query,
   Res,
 } from '@nestjs/common';
-import { PostsService } from '@chaolaolo/nestjs-libraries/database/prisma/posts/posts.service';
-import { GetOrgFromRequest } from '@chaolaolo/nestjs-libraries/user/org.from.request';
+import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
+import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization, User } from '@prisma/client';
-import { CreatePostDto } from '@chaolaolo/nestjs-libraries/dtos/posts/create.post.dto';
-import { GetPostsDto } from '@chaolaolo/nestjs-libraries/dtos/posts/get.posts.dto';
-import { StarsService } from '@chaolaolo/nestjs-libraries/database/prisma/stars/stars.service';
-import { CheckPolicies } from '@chaolaolo/backend/services/auth/permissions/permissions.ability';
+import { CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
+import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
+import { StarsService } from '@gitroom/nestjs-libraries/database/prisma/stars/stars.service';
+import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import {
   AuthorizationActions,
   Sections,
-} from '@chaolaolo/backend/services/auth/permissions/permissions.service';
+} from '@gitroom/backend/services/auth/permissions/permissions.service';
 import { ApiTags } from '@nestjs/swagger';
-import { MessagesService } from '@chaolaolo/nestjs-libraries/database/prisma/marketplace/messages.service';
-import { GeneratorDto } from '@chaolaolo/nestjs-libraries/dtos/generator/generator.dto';
-import { CreateGeneratedPostsDto } from '@chaolaolo/nestjs-libraries/dtos/generator/create.generated.posts.dto';
-import { AgentGraphService } from '@chaolaolo/nestjs-libraries/agent/agent.graph.service';
+import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
+import { GeneratorDto } from '@gitroom/nestjs-libraries/dtos/generator/generator.dto';
+import { CreateGeneratedPostsDto } from '@gitroom/nestjs-libraries/dtos/generator/create.generated.posts.dto';
+import { AgentGraphService } from '@gitroom/nestjs-libraries/agent/agent.graph.service';
 import { Response } from 'express';
-import { GetUserFromRequest } from '@chaolaolo/nestjs-libraries/user/user.from.request';
-import { ShortLinkService } from '@chaolaolo/nestjs-libraries/short-linking/short.link.service';
-import { CreateTagDto } from '@chaolaolo/nestjs-libraries/dtos/posts/create.tag.dto';
+import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
+import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.link.service';
+import { CreateTagDto } from '@gitroom/nestjs-libraries/dtos/posts/create.tag.dto';
 
 @ApiTags('Posts')
 @Controller('/posts')

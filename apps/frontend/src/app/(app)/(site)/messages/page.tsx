@@ -1,8 +1,8 @@
-import { getT } from '@chaolaolo/react/translation/get.translation.service.backend';
+import { getT } from '@gitroom/react/translation/get.translation.service.backend';
 
 export const dynamic = 'force-dynamic';
 import { Metadata } from 'next';
-import { isGeneralServerSide } from '@chaolaolo/helpers/utils/is.general.server.side';
+import { isGeneralServerSide } from '@gitroom/helpers/utils/is.general.server.side';
 export const metadata: Metadata = {
   title: `${isGeneralServerSide() ? 'Postiz' : 'Gitroom'} Messages`,
   description: '',

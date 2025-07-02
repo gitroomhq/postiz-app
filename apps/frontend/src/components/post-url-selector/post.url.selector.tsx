@@ -2,7 +2,7 @@
 
 import { EventEmitter } from 'events';
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
-import { TopTitle } from '@chaolaolo/frontend/components/launches/helpers/top.title.component';
+import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import {
   executeCommand,
   ExecuteState,
@@ -12,10 +12,10 @@ import {
 } from '@uiw/react-md-editor';
 import dayjs from 'dayjs';
 import useSWR from 'swr';
-import { useFetch } from '@chaolaolo/helpers/utils/custom.fetch';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import removeMd from 'remove-markdown';
 import clsx from 'clsx';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 const postUrlEmitter = new EventEmitter();
 export const ShowPostSelector = () => {
   const [showPostSelector, setShowPostSelector] = useState(false);

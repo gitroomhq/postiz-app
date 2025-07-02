@@ -1,12 +1,12 @@
 'use client';
 
 import { FC } from 'react';
-import { withProvider } from '@chaolaolo/frontend/components/new-launch/providers/high.order.provider';
-import { useSettings } from '@chaolaolo/frontend/components/launches/helpers/use.values';
-import { PinterestBoard } from '@chaolaolo/frontend/components/new-launch/providers/pinterest/pinterest.board';
-import { PinterestSettingsDto } from '@chaolaolo/nestjs-libraries/dtos/posts/providers-settings/pinterest.dto';
-import { Input } from '@chaolaolo/react/form/input';
-import { ColorPicker } from '@chaolaolo/react/form/color.picker';
+import { withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
+import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
+import { PinterestBoard } from '@gitroom/frontend/components/new-launch/providers/pinterest/pinterest.board';
+import { PinterestSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/pinterest.dto';
+import { Input } from '@gitroom/react/form/input';
+import { ColorPicker } from '@gitroom/react/form/color.picker';
 const PinterestSettings: FC = () => {
   const { register, control } = useSettings();
   return (

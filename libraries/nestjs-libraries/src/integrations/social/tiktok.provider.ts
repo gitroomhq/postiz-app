@@ -3,14 +3,14 @@ import {
   PostDetails,
   PostResponse,
   SocialProvider,
-} from '@chaolaolo/nestjs-libraries/integrations/social/social.integrations.interface';
+} from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import dayjs from 'dayjs';
 import {
   BadBody,
   SocialAbstract,
-} from '@chaolaolo/nestjs-libraries/integrations/social.abstract';
-import { TikTokDto } from '@chaolaolo/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
-import { timer } from '@chaolaolo/helpers/utils/timer';
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
+import { timer } from '@gitroom/helpers/utils/timer';
 import { Integration } from '@prisma/client';
 
 export class TiktokProvider extends SocialAbstract implements SocialProvider {
@@ -103,8 +103,8 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       grant_type: 'authorization_code',
       code_verifier: params.codeVerifier,
       redirect_uri: `${process?.env?.FRONTEND_URL?.indexOf('https') === -1
-          ? 'https://redirectmeto.com/'
-          : ''
+        ? 'https://redirectmeto.com/'
+        : ''
         }${process?.env?.FRONTEND_URL}/integrations/social/tiktok`,
     };
 

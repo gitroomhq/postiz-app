@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { MediaRepository } from '@chaolaolo/nestjs-libraries/database/prisma/media/media.repository';
-import { OpenaiService } from '@chaolaolo/nestjs-libraries/openai/openai.service';
-import { SubscriptionService } from '@chaolaolo/nestjs-libraries/database/prisma/subscriptions/subscription.service';
+import { MediaRepository } from '@gitroom/nestjs-libraries/database/prisma/media/media.repository';
+import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
+import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { Organization } from '@prisma/client';
 
 @Injectable()

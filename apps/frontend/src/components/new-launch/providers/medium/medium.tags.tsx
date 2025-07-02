@@ -1,10 +1,10 @@
 'use client';
 
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
-import { useSettings } from '@chaolaolo/frontend/components/launches/helpers/use.values';
+import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { ReactTags } from 'react-tag-autocomplete';
-import interClass from '@chaolaolo/react/helpers/inter.font';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import interClass from '@gitroom/react/helpers/inter.font';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 export const MediumTags: FC<{
   name: string;

@@ -1,14 +1,14 @@
 'use client';
 import 'reflect-metadata';
-import { useLaunchStore } from '@chaolaolo/frontend/components/new-launch/store';
+import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import dayjs from 'dayjs';
-import type { CreatePostDto } from '@chaolaolo/nestjs-libraries/dtos/posts/create.post.dto';
+import type { CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
 import { FC, useEffect } from 'react';
-import { makeId } from '@chaolaolo/nestjs-libraries/services/make.is';
-import { ManageModal } from '@chaolaolo/frontend/components/new-launch/manage.modal';
-import { Integrations } from '@chaolaolo/frontend/components/launches/calendar.context';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { ManageModal } from '@gitroom/frontend/components/new-launch/manage.modal';
+import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
 import { useShallow } from 'zustand/react/shallow';
-import { useExistingData } from '@chaolaolo/frontend/components/launches/helpers/use.existing.data';
+import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 
 export interface AddEditModalProps {
   date: dayjs.Dayjs;

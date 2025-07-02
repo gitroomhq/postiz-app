@@ -1,7 +1,7 @@
-import { makeId } from '@chaolaolo/nestjs-libraries/services/make.is';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library/build/src/auth/oauth2client';
-import { ProvidersInterface } from '@chaolaolo/backend/services/auth/providers.interface';
+import { ProvidersInterface } from '@gitroom/backend/services/auth/providers.interface';
 
 const clientAndYoutube = () => {
   const client = new google.auth.OAuth2({

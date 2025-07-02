@@ -1,6 +1,6 @@
 import { FC } from 'react';
-import interClass from '@chaolaolo/react/helpers/inter.font';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import interClass from '@gitroom/react/helpers/inter.font';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 export const WalletUiProvider: FC = () => {
   const t = useT();

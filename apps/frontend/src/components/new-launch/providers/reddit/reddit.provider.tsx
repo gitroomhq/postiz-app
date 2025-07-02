@@ -1,24 +1,24 @@
 'use client';
 
 import { FC, useCallback } from 'react';
-import { withProvider } from '@chaolaolo/frontend/components/new-launch/providers/high.order.provider';
-import { useIntegration } from '@chaolaolo/frontend/components/launches/helpers/use.integration';
-import { Subreddit } from '@chaolaolo/frontend/components/new-launch/providers/reddit/subreddit';
-import { useSettings } from '@chaolaolo/frontend/components/launches/helpers/use.values';
+import { withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
+import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
+import { Subreddit } from '@gitroom/frontend/components/new-launch/providers/reddit/subreddit';
+import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { useFieldArray, useWatch } from 'react-hook-form';
-import { Button } from '@chaolaolo/react/form/button';
+import { Button } from '@gitroom/react/form/button';
 import {
   RedditSettingsDto,
   RedditSettingsValueDto,
-} from '@chaolaolo/nestjs-libraries/dtos/posts/providers-settings/reddit.dto';
+} from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/reddit.dto';
 import clsx from 'clsx';
-import { useMediaDirectory } from '@chaolaolo/react/helpers/use.media.directory';
-import { deleteDialog } from '@chaolaolo/react/helpers/delete.dialog';
+import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
+import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import MDEditor from '@uiw/react-md-editor';
-import interClass from '@chaolaolo/react/helpers/inter.font';
+import interClass from '@gitroom/react/helpers/inter.font';
 import Image from 'next/image';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
-import { useFormatting } from '@chaolaolo/frontend/components/launches/helpers/use.formatting';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useFormatting } from '@gitroom/frontend/components/launches/helpers/use.formatting';
 const RenderRedditComponent: FC<{
   type: string;
   images?: Array<{

@@ -1,6 +1,6 @@
 import { CustomTransportStrategy, Server } from '@nestjs/microservices';
 import { Queue, Worker } from 'bullmq';
-import { ioRedis } from '@chaolaolo/nestjs-libraries/redis/redis.service';
+import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 
 export class BullMqServer extends Server implements CustomTransportStrategy {
   queues: Map<string, Queue>;

@@ -1,8 +1,8 @@
 import { Controller } from '@nestjs/common';
 import { EventPattern, Transport } from '@nestjs/microservices';
 import { JSDOM } from 'jsdom';
-import { StarsService } from '@chaolaolo/nestjs-libraries/database/prisma/stars/stars.service';
-import { TrendingService } from '@chaolaolo/nestjs-libraries/services/trending.service';
+import { StarsService } from '@gitroom/nestjs-libraries/database/prisma/stars/stars.service';
+import { TrendingService } from '@gitroom/nestjs-libraries/services/trending.service';
 import dayjs from 'dayjs';
 
 @Controller()

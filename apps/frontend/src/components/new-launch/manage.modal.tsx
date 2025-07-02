@@ -1,32 +1,32 @@
 'use client';
 
 import React, { FC, useCallback, useRef, useState } from 'react';
-import { AddEditModalProps } from '@chaolaolo/frontend/components/new-launch/add.edit.modal';
+import { AddEditModalProps } from '@gitroom/frontend/components/new-launch/add.edit.modal';
 import clsx from 'clsx';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
-import { PicksSocialsComponent } from '@chaolaolo/frontend/components/new-launch/picks.socials.component';
-import { EditorWrapper } from '@chaolaolo/frontend/components/new-launch/editor';
-import { SelectCurrent } from '@chaolaolo/frontend/components/new-launch/select.current';
-import { ShowAllProviders } from '@chaolaolo/frontend/components/new-launch/providers/show.all.providers';
-import { useExistingData } from '@chaolaolo/frontend/components/launches/helpers/use.existing.data';
-import { useLaunchStore } from '@chaolaolo/frontend/components/new-launch/store';
-import { DatePicker } from '@chaolaolo/frontend/components/launches/helpers/date.picker';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { PicksSocialsComponent } from '@gitroom/frontend/components/new-launch/picks.socials.component';
+import { EditorWrapper } from '@gitroom/frontend/components/new-launch/editor';
+import { SelectCurrent } from '@gitroom/frontend/components/new-launch/select.current';
+import { ShowAllProviders } from '@gitroom/frontend/components/new-launch/providers/show.all.providers';
+import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
+import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
+import { DatePicker } from '@gitroom/frontend/components/launches/helpers/date.picker';
 import { useShallow } from 'zustand/react/shallow';
-import { RepeatComponent } from '@chaolaolo/frontend/components/launches/repeat.component';
-import { TagsComponent } from '@chaolaolo/frontend/components/launches/tags.component';
-import { Button } from '@chaolaolo/react/form/button';
-import { useToaster } from '@chaolaolo/react/toaster/toaster';
-import { weightedLength } from '@chaolaolo/helpers/utils/count.length';
-import { deleteDialog } from '@chaolaolo/react/helpers/delete.dialog';
-import { useFetch } from '@chaolaolo/helpers/utils/custom.fetch';
-import { makeId } from '@chaolaolo/nestjs-libraries/services/make.is';
+import { RepeatComponent } from '@gitroom/frontend/components/launches/repeat.component';
+import { TagsComponent } from '@gitroom/frontend/components/launches/tags.component';
+import { Button } from '@gitroom/react/form/button';
+import { useToaster } from '@gitroom/react/toaster/toaster';
+import { weightedLength } from '@gitroom/helpers/utils/count.length';
+import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { useModals } from '@mantine/modals';
 import { capitalize } from 'lodash';
-import { usePreventWindowUnload } from '@chaolaolo/react/helpers/use.prevent.window.unload';
+import { usePreventWindowUnload } from '@gitroom/react/helpers/use.prevent.window.unload';
 // @ts-ignore
 import useKeypress from 'react-use-keypress';
-import { TopTitle } from '@chaolaolo/frontend/components/launches/helpers/top.title.component';
-import { SelectCustomer } from '@chaolaolo/frontend/components/launches/select.customer';
+import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
+import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
 import { CopilotPopup } from '@copilotkit/react-ui';
 
 function countCharacters(text: string, type: string): number {

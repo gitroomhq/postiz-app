@@ -4,15 +4,15 @@ import useSWR from 'swr';
 import { useCallback, useMemo, useState } from 'react';
 import { capitalize, orderBy } from 'lodash';
 import clsx from 'clsx';
-import ImageWithFallback from '@chaolaolo/react/helpers/image.with.fallback';
+import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
 import Image from 'next/image';
-import { useFetch } from '@chaolaolo/helpers/utils/custom.fetch';
-import { RenderAnalytics } from '@chaolaolo/frontend/components/platform-analytics/render.analytics';
-import { Select } from '@chaolaolo/react/form/select';
-import { Button } from '@chaolaolo/react/form/button';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { RenderAnalytics } from '@gitroom/frontend/components/platform-analytics/render.analytics';
+import { Select } from '@gitroom/react/form/select';
+import { Button } from '@gitroom/react/form/button';
 import { useRouter } from 'next/navigation';
-import { useToaster } from '@chaolaolo/react/toaster/toaster';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { useToaster } from '@gitroom/react/toaster/toaster';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 const allowedIntegrations = [
   'facebook',
   'instagram',

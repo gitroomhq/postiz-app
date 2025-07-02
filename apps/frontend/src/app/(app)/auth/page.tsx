@@ -1,11 +1,11 @@
-import { internalFetch } from '@chaolaolo/helpers/utils/internal.fetch';
+import { internalFetch } from '@gitroom/helpers/utils/internal.fetch';
 export const dynamic = 'force-dynamic';
-import { Register } from '@chaolaolo/frontend/components/auth/register';
+import { Register } from '@gitroom/frontend/components/auth/register';
 import { Metadata } from 'next';
-import { isGeneralServerSide } from '@chaolaolo/helpers/utils/is.general.server.side';
+import { isGeneralServerSide } from '@gitroom/helpers/utils/is.general.server.side';
 import Link from 'next/link';
-import { getT } from '@chaolaolo/react/translation/get.translation.service.backend';
-import { LoginWithOidc } from '@chaolaolo/frontend/components/auth/login.with.oidc';
+import { getT } from '@gitroom/react/translation/get.translation.service.backend';
+import { LoginWithOidc } from '@gitroom/frontend/components/auth/login.with.oidc';
 export const metadata: Metadata = {
   title: `${isGeneralServerSide() ? 'Postiz' : 'Gitroom'} Register`,
   description: '',

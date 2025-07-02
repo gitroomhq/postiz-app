@@ -1,9 +1,9 @@
 import { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
-import { McpService } from '@chaolaolo/nestjs-libraries/mcp/mcp.service';
+import { McpService } from '@gitroom/nestjs-libraries/mcp/mcp.service';
 import {
   JSONRPCMessage,
   JSONRPCMessageSchema,
-} from '@chaolaolo/nestjs-libraries/mcp/mcp.types';
+} from '@gitroom/nestjs-libraries/mcp/mcp.types';
 
 export class McpTransport implements Transport {
   constructor(private _organization: string) { }

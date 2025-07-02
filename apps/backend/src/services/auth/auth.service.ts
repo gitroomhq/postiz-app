@@ -1,16 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { Provider, User } from '@prisma/client';
-import { CreateOrgUserDto } from '@chaolaolo/nestjs-libraries/dtos/auth/create.org.user.dto';
-import { LoginUserDto } from '@chaolaolo/nestjs-libraries/dtos/auth/login.user.dto';
-import { UsersService } from '@chaolaolo/nestjs-libraries/database/prisma/users/users.service';
-import { OrganizationService } from '@chaolaolo/nestjs-libraries/database/prisma/organizations/organization.service';
-import { AuthService as AuthChecker } from '@chaolaolo/helpers/auth/auth.service';
-import { ProvidersFactory } from '@chaolaolo/backend/services/auth/providers/providers.factory';
+import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
+import { LoginUserDto } from '@gitroom/nestjs-libraries/dtos/auth/login.user.dto';
+import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
+import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
+import { AuthService as AuthChecker } from '@gitroom/helpers/auth/auth.service';
+import { ProvidersFactory } from '@gitroom/backend/services/auth/providers/providers.factory';
 import dayjs from 'dayjs';
-import { NewsletterService } from '@chaolaolo/nestjs-libraries/services/newsletter.service';
-import { NotificationService } from '@chaolaolo/nestjs-libraries/database/prisma/notifications/notification.service';
-import { ForgotReturnPasswordDto } from '@chaolaolo/nestjs-libraries/dtos/auth/forgot-return.password.dto';
-import { EmailService } from '@chaolaolo/nestjs-libraries/services/email.service';
+import { NewsletterService } from '@gitroom/nestjs-libraries/services/newsletter.service';
+import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
+import { ForgotReturnPasswordDto } from '@gitroom/nestjs-libraries/dtos/auth/forgot-return.password.dto';
+import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 
 @Injectable()
 export class AuthService {

@@ -5,7 +5,7 @@ import {
   cookieName,
   fallbackLng,
   languages,
-} from '@chaolaolo/react/translation/i18n.config';
+} from '@gitroom/react/translation/i18n.config';
 import i18next from 'i18next';
 import useCookie from 'react-use-cookie';
 import ReactCountryFlag from 'react-country-flag';
@@ -15,8 +15,8 @@ import countries from 'i18n-iso-countries';
 
 // Register required locales
 import countriesEn from 'i18n-iso-countries/langs/en.json';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
-import { AddProviderComponent } from '@chaolaolo/frontend/components/launches/add.provider.component';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { AddProviderComponent } from '@gitroom/frontend/components/launches/add.provider.component';
 import clsx from 'clsx';
 countries.registerLocale(countriesEn);
 export const ChangeLanguageComponent = () => {

@@ -1,13 +1,13 @@
 'use client';
 
 import { FC } from 'react';
-import { withProvider } from '@chaolaolo/frontend/components/new-launch/providers/high.order.provider';
-import { YoutubeSettingsDto } from '@chaolaolo/nestjs-libraries/dtos/posts/providers-settings/youtube.settings.dto';
-import { useSettings } from '@chaolaolo/frontend/components/launches/helpers/use.values';
-import { Input } from '@chaolaolo/react/form/input';
-import { MediumTags } from '@chaolaolo/frontend/components/new-launch/providers/medium/medium.tags';
-import { MediaComponent } from '@chaolaolo/frontend/components/media/media.component';
-import { Select } from '@chaolaolo/react/form/select';
+import { withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
+import { YoutubeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/youtube.settings.dto';
+import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
+import { Input } from '@gitroom/react/form/input';
+import { MediumTags } from '@gitroom/frontend/components/new-launch/providers/medium/medium.tags';
+import { MediaComponent } from '@gitroom/frontend/components/media/media.component';
+import { Select } from '@gitroom/react/form/select';
 const type = [
   {
     label: 'Public',

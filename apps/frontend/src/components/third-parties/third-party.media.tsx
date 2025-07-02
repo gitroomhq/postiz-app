@@ -1,8 +1,8 @@
 'use client';
 
-import { Button } from '@chaolaolo/react/form/button';
+import { Button } from '@gitroom/react/form/button';
 import clsx from 'clsx';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import React, {
   createContext,
   FC,
@@ -10,11 +10,11 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import { useFetch } from '@chaolaolo/helpers/utils/custom.fetch';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
-import { TopTitle } from '@chaolaolo/frontend/components/launches/helpers/top.title.component';
+import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import './providers/heygen.provider';
-import { thirdPartyList } from '@chaolaolo/frontend/components/third-parties/third-party.wrapper';
+import { thirdPartyList } from '@gitroom/frontend/components/third-parties/third-party.wrapper';
 
 const ThirdPartyContext = createContext({
   id: '',

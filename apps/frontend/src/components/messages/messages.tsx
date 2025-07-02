@@ -28,8 +28,8 @@ export interface Message {
   updatedAt: string;
   deletedAt: any;
 }
-import { Textarea } from '@chaolaolo/react/form/textarea';
-import interClass from '@chaolaolo/react/helpers/inter.font';
+import { Textarea } from '@gitroom/react/form/textarea';
+import interClass from '@gitroom/react/helpers/inter.font';
 import clsx from 'clsx';
 import useSWR from 'swr';
 import {
@@ -43,18 +43,18 @@ import {
   useState,
 } from 'react';
 import { useParams } from 'next/navigation';
-import { useFetch } from '@chaolaolo/helpers/utils/custom.fetch';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { reverse } from 'lodash';
 import { FormProvider, SubmitHandler, useForm } from 'react-hook-form';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
-import { AddMessageDto } from '@chaolaolo/nestjs-libraries/dtos/messages/add.message';
-import { makeId } from '@chaolaolo/nestjs-libraries/services/make.is';
-import { useUser } from '@chaolaolo/frontend/components/layout/user.context';
-import { OrderTopActions } from '@chaolaolo/frontend/components/marketplace/order.top.actions';
-import { MarketplaceProvider } from '@chaolaolo/frontend/components/marketplace/marketplace.provider';
-import { SpecialMessage } from '@chaolaolo/frontend/components/marketplace/special.message';
-import { usePageVisibility } from '@chaolaolo/react/helpers/use.is.visible';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { AddMessageDto } from '@gitroom/nestjs-libraries/dtos/messages/add.message';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { OrderTopActions } from '@gitroom/frontend/components/marketplace/order.top.actions';
+import { MarketplaceProvider } from '@gitroom/frontend/components/marketplace/marketplace.provider';
+import { SpecialMessage } from '@gitroom/frontend/components/marketplace/special.message';
+import { usePageVisibility } from '@gitroom/react/helpers/use.is.visible';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const Message: FC<{
   message: Message;
   seller: SellerBuyer;

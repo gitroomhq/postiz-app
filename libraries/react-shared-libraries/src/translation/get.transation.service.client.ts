@@ -8,8 +8,8 @@ import useCookie from 'react-use-cookie';
 import {
   cookieName,
   fallbackLng,
-} from '@chaolaolo/react/translation/i18n.config';
-import { useVariables } from '@chaolaolo/react/helpers/variable.context';
+} from '@gitroom/react/translation/i18n.config';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 
 export function useT(ns?: string, options?: UseTranslationOptions<any>) {
   const { language } = useVariables();

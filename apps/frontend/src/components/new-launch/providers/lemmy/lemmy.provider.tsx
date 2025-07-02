@@ -1,14 +1,14 @@
 'use client';
 
 import { FC, useCallback } from 'react';
-import { withProvider } from '@chaolaolo/frontend/components/new-launch/providers/high.order.provider';
-import { useSettings } from '@chaolaolo/frontend/components/launches/helpers/use.values';
+import { withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
+import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { useFieldArray } from 'react-hook-form';
-import { Button } from '@chaolaolo/react/form/button';
-import { deleteDialog } from '@chaolaolo/react/helpers/delete.dialog';
+import { Button } from '@gitroom/react/form/button';
+import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { Subreddit } from './subreddit';
-import { LemmySettingsDto } from '@chaolaolo/nestjs-libraries/dtos/posts/lemmy.dto';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { LemmySettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/lemmy.dto';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 const LemmySettings: FC = () => {
   const { register, control } = useSettings();
   const { fields, append, remove } = useFieldArray({

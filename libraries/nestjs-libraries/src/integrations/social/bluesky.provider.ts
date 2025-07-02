@@ -3,12 +3,12 @@ import {
   PostDetails,
   PostResponse,
   SocialProvider,
-} from '@chaolaolo/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@chaolaolo/nestjs-libraries/services/make.is';
+} from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import {
   RefreshToken,
   SocialAbstract,
-} from '@chaolaolo/nestjs-libraries/integrations/social.abstract';
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import {
   BskyAgent,
   RichText,
@@ -19,10 +19,10 @@ import {
 } from '@atproto/api';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
-import { AuthService } from '@chaolaolo/helpers/auth/auth.service';
+import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import sharp from 'sharp';
-import { Plug } from '@chaolaolo/helpers/decorators/plug.decorator';
-import { timer } from '@chaolaolo/helpers/utils/timer';
+import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
+import { timer } from '@gitroom/helpers/utils/timer';
 import axios from 'axios';
 
 async function reduceImageBySize(url: string, maxSizeKB = 976) {

@@ -1,18 +1,18 @@
 'use client';
 
 import { FC } from 'react';
-import { withProvider } from '@chaolaolo/frontend/components/new-launch/providers/high.order.provider';
-import { DevToSettingsDto } from '@chaolaolo/nestjs-libraries/dtos/posts/providers-settings/dev.to.settings.dto';
-import { Input } from '@chaolaolo/react/form/input';
-import { MediaComponent } from '@chaolaolo/frontend/components/media/media.component';
-import { SelectOrganization } from '@chaolaolo/frontend/components/new-launch/providers/devto/select.organization';
-import { DevtoTags } from '@chaolaolo/frontend/components/new-launch/providers/devto/devto.tags';
-import { useMediaDirectory } from '@chaolaolo/react/helpers/use.media.directory';
+import { withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
+import { DevToSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dev.to.settings.dto';
+import { Input } from '@gitroom/react/form/input';
+import { MediaComponent } from '@gitroom/frontend/components/media/media.component';
+import { SelectOrganization } from '@gitroom/frontend/components/new-launch/providers/devto/select.organization';
+import { DevtoTags } from '@gitroom/frontend/components/new-launch/providers/devto/devto.tags';
+import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
 import clsx from 'clsx';
 import MDEditor from '@uiw/react-md-editor';
-import { Canonical } from '@chaolaolo/react/form/canonical';
-import { useIntegration } from '@chaolaolo/frontend/components/launches/helpers/use.integration';
-import { useSettings } from '@chaolaolo/frontend/components/launches/helpers/use.values';
+import { Canonical } from '@gitroom/react/form/canonical';
+import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
+import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 
 const DevtoPreview: FC = () => {
   const { value } = useIntegration();

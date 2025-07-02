@@ -1,4 +1,4 @@
-import { fetchRequestUtil } from '@chaolaolo/extension/utils/request.util';
+import { fetchRequestUtil } from '@gitroom/extension/utils/request.util';
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 

@@ -3,9 +3,9 @@ import {
   PostDetails,
   PostResponse,
   SocialProvider,
-} from '@chaolaolo/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@chaolaolo/nestjs-libraries/services/make.is';
-import { SocialAbstract } from '@chaolaolo/nestjs-libraries/integrations/social.abstract';
+} from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 
@@ -64,8 +64,8 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
           client_secret: process.env.SLACK_SECRET!,
           code: params.code,
           redirect_uri: `${process?.env?.FRONTEND_URL?.indexOf('https') === -1
-              ? 'https://redirectmeto.com/'
-              : ''
+            ? 'https://redirectmeto.com/'
+            : ''
             }${process?.env?.FRONTEND_URL}/integrations/social/slack${params.refresh ? `?refresh=${params.refresh}` : ''
             }`,
         }),

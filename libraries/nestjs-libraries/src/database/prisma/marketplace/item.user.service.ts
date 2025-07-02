@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ItemUserRepository } from '@chaolaolo/nestjs-libraries/database/prisma/marketplace/item.user.repository';
+import { ItemUserRepository } from '@gitroom/nestjs-libraries/database/prisma/marketplace/item.user.repository';
 
 @Injectable()
 export class ItemUserService {

@@ -1,9 +1,9 @@
 'use client';
 
-import { OauthProvider } from '@chaolaolo/frontend/components/auth/providers/oauth.provider';
-import interClass from '@chaolaolo/react/helpers/inter.font';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
-import { useVariables } from '@chaolaolo/react/helpers/variable.context';
+import { OauthProvider } from '@gitroom/frontend/components/auth/providers/oauth.provider';
+import interClass from '@gitroom/react/helpers/inter.font';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 
 export const LoginWithOidc = () => {
   const { isGeneral, genericOauth } = useVariables();

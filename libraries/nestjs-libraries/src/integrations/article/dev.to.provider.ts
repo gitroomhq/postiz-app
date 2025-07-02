@@ -1,5 +1,5 @@
-import { ArticleProvider } from '@chaolaolo/nestjs-libraries/integrations/article/article.integrations.interface';
-import { DevToSettingsDto } from '@chaolaolo/nestjs-libraries/dtos/posts/providers-settings/dev.to.settings.dto';
+import { ArticleProvider } from '@gitroom/nestjs-libraries/integrations/article/article.integrations.interface';
+import { DevToSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dev.to.settings.dto';
 
 export class DevToProvider implements ArticleProvider {
   identifier = 'devto';

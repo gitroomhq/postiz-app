@@ -3,13 +3,13 @@ import {
   PostDetails,
   PostResponse,
   SocialProvider,
-} from '@chaolaolo/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@chaolaolo/nestjs-libraries/services/make.is';
+} from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
-import { SocialAbstract } from '@chaolaolo/nestjs-libraries/integrations/social.abstract';
+import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { NeynarAPIClient } from '@neynar/nodejs-sdk';
 import { Integration } from '@prisma/client';
-import { AuthService } from '@chaolaolo/helpers/auth/auth.service';
+import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { groupBy } from 'lodash';
 
 const client = new NeynarAPIClient({

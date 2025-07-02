@@ -1,4 +1,4 @@
-import { ShortLinking } from '@chaolaolo/nestjs-libraries/short-linking/short-linking.interface';
+import { ShortLinking } from '@gitroom/nestjs-libraries/short-linking/short-linking.interface';
 
 const DUB_API_ENDPOINT = process.env.DUB_API_ENDPOINT || 'https://api.dub.co';
 const DUB_SHORT_LINK_DOMAIN = process.env.DUB_SHORT_LINK_DOMAIN || 'dub.sh';

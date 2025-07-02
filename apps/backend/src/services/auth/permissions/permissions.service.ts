@@ -1,11 +1,11 @@
 import { Ability, AbilityBuilder, AbilityClass } from '@casl/ability';
 import { Injectable } from '@nestjs/common';
-import { pricing } from '@chaolaolo/nestjs-libraries/database/prisma/subscriptions/pricing';
-import { SubscriptionService } from '@chaolaolo/nestjs-libraries/database/prisma/subscriptions/subscription.service';
-import { PostsService } from '@chaolaolo/nestjs-libraries/database/prisma/posts/posts.service';
-import { IntegrationService } from '@chaolaolo/nestjs-libraries/database/prisma/integrations/integration.service';
+import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
+import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
+import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
+import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import dayjs from 'dayjs';
-import { WebhooksService } from '@chaolaolo/nestjs-libraries/database/prisma/webhooks/webhooks.service';
+import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
 
 export enum Sections {
   CHANNEL = 'channel',

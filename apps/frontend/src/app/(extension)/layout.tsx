@@ -1,16 +1,16 @@
-import interClass from '@chaolaolo/react/helpers/inter.font';
+import interClass from '@gitroom/react/helpers/inter.font';
 export const dynamic = 'force-dynamic';
 import '../global.scss';
 import 'react-tooltip/dist/react-tooltip.css';
 import '@copilotkit/react-ui/styles.css';
-import LayoutContext from '@chaolaolo/frontend/components/layout/layout.context';
+import LayoutContext from '@gitroom/frontend/components/layout/layout.context';
 import { ReactNode } from 'react';
 import { Chakra_Petch } from 'next/font/google';
 import PlausibleProvider from 'next-plausible';
 import clsx from 'clsx';
-import { VariableContextComponent } from '@chaolaolo/react/helpers/variable.context';
+import { VariableContextComponent } from '@gitroom/react/helpers/variable.context';
 import { Fragment } from 'react';
-import UtmSaver from '@chaolaolo/helpers/utils/utm.saver';
+import UtmSaver from '@gitroom/helpers/utils/utm.saver';
 const chakra = Chakra_Petch({
   weight: '400',
   subsets: ['latin'],

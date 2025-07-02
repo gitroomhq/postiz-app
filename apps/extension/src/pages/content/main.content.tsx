@@ -7,9 +7,9 @@ import {
   useRef,
   useState,
 } from 'react';
-import { ProviderList } from '@chaolaolo/extension/providers/provider.list';
+import { ProviderList } from '@gitroom/extension/providers/provider.list';
 import { createPortal } from 'react-dom';
-import { ActionComponent } from '@chaolaolo/extension/pages/content/elements/action.component';
+import { ActionComponent } from '@gitroom/extension/pages/content/elements/action.component';
 
 // Define a type to track elements with their action types
 interface ActionElement {

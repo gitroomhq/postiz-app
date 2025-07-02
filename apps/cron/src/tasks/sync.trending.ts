@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import { BullMqClient } from '@chaolaolo/nestjs-libraries/bull-mq-transport-new/client';
+import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/client';
 
 @Injectable()
 export class SyncTrending {

@@ -1,6 +1,6 @@
-import { PrismaRepository } from '@chaolaolo/nestjs-libraries/database/prisma/prisma.service';
+import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
-import { StarsListDto } from '@chaolaolo/nestjs-libraries/dtos/analytics/stars.list.dto';
+import { StarsListDto } from '@gitroom/nestjs-libraries/dtos/analytics/stars.list.dto';
 
 @Injectable()
 export class StarsRepository {

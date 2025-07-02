@@ -1,7 +1,7 @@
-import { ArticleProvider } from '@chaolaolo/nestjs-libraries/integrations/article/article.integrations.interface';
-import { tags } from '@chaolaolo/nestjs-libraries/integrations/article/hashnode.tags';
+import { ArticleProvider } from '@gitroom/nestjs-libraries/integrations/article/article.integrations.interface';
+import { tags } from '@gitroom/nestjs-libraries/integrations/article/hashnode.tags';
 import { jsonToGraphQLQuery } from 'json-to-graphql-query';
-import { HashnodeSettingsDto } from '@chaolaolo/nestjs-libraries/dtos/posts/providers-settings/hashnode.settings.dto';
+import { HashnodeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/hashnode.settings.dto';
 
 export class HashnodeProvider implements ArticleProvider {
   identifier = 'hashnode';
@@ -116,8 +116,8 @@ export class HashnodeProvider implements ArticleProvider {
                   ? {
                     coverImageOptions: {
                       coverImageURL: `${settings?.main_image?.path?.indexOf('http') === -1
-                          ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/${process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY}`
-                          : ``
+                        ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/${process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY}`
+                        : ``
                         }${settings?.main_image?.path}`,
                     },
                   }

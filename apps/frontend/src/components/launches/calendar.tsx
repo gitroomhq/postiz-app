@@ -13,7 +13,7 @@ import {
   CalendarContext,
   Integrations,
   useCalendar,
-} from '@chaolaolo/frontend/components/launches/calendar.context';
+} from '@gitroom/frontend/components/launches/calendar.context';
 import dayjs from 'dayjs';
 import 'dayjs/locale/en';
 import 'dayjs/locale/he';
@@ -32,15 +32,15 @@ import 'dayjs/locale/vi';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import { useModals } from '@mantine/modals';
 import clsx from 'clsx';
-import { useFetch } from '@chaolaolo/helpers/utils/custom.fetch';
-import { ExistingDataContextProvider } from '@chaolaolo/frontend/components/launches/helpers/use.existing.data';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { ExistingDataContextProvider } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { useDrag, useDrop } from 'react-dnd';
 import { Integration, Post, State, Tags, TagsPosts } from '@prisma/client';
-import { useAddProvider } from '@chaolaolo/frontend/components/launches/add.provider.component';
-import { useToaster } from '@chaolaolo/react/toaster/toaster';
-import { useUser } from '@chaolaolo/frontend/components/layout/user.context';
-import { IntegrationContext } from '@chaolaolo/frontend/components/launches/helpers/use.integration';
-import { PreviewPopup } from '@chaolaolo/frontend/components/marketplace/special.message';
+import { useAddProvider } from '@gitroom/frontend/components/launches/add.provider.component';
+import { useToaster } from '@gitroom/react/toaster/toaster';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { IntegrationContext } from '@gitroom/frontend/components/launches/helpers/use.integration';
+import { PreviewPopup } from '@gitroom/frontend/components/marketplace/special.message';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import { groupBy, random, sortBy } from 'lodash';
@@ -49,10 +49,10 @@ import { extend } from 'dayjs';
 import { isUSCitizen } from './helpers/isuscitizen.utils';
 import removeMd from 'remove-markdown';
 import { useInterval } from '@mantine/hooks';
-import { StatisticsModal } from '@chaolaolo/frontend/components/launches/statistics';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { StatisticsModal } from '@gitroom/frontend/components/launches/statistics';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import i18next from 'i18next';
-import { AddEditModal } from '@chaolaolo/frontend/components/new-launch/add.edit.modal';
+import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
 
 // Extend dayjs with necessary plugins
 extend(isSameOrAfter);

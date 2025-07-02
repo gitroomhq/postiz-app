@@ -2,7 +2,7 @@
 
 import { create } from 'zustand';
 import dayjs from 'dayjs';
-import { Integrations } from '@chaolaolo/frontend/components/launches/calendar.context';
+import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
 import { createRef, RefObject } from 'react';
 import { arrayMoveImmutable } from 'array-move';
 

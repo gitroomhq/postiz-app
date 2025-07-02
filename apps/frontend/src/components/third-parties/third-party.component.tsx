@@ -1,15 +1,15 @@
 'use client';
 
 import clsx from 'clsx';
-import ImageWithFallback from '@chaolaolo/react/helpers/image.with.fallback';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
-import { ThirdPartyListComponent } from '@chaolaolo/frontend/components/third-parties/third-party.list.component';
+import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { ThirdPartyListComponent } from '@gitroom/frontend/components/third-parties/third-party.list.component';
 import React, { FC, useCallback, useState } from 'react';
 import useSWR from 'swr';
-import { useFetch } from '@chaolaolo/helpers/utils/custom.fetch';
-import interClass from '@chaolaolo/react/helpers/inter.font';
-import { useToaster } from '@chaolaolo/react/toaster/toaster';
-import { deleteDialog } from '@chaolaolo/react/helpers/delete.dialog';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import interClass from '@gitroom/react/helpers/inter.font';
+import { useToaster } from '@gitroom/react/toaster/toaster';
+import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 
 export const ThirdPartyMenuComponent: FC<{
   reload: () => void;

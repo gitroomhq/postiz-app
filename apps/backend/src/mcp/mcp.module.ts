@@ -1,5 +1,5 @@
 import { Global, Module } from '@nestjs/common';
-import { MainMcp } from '@chaolaolo/backend/mcp/main.mcp';
+import { MainMcp } from '@gitroom/backend/mcp/main.mcp';
 
 @Global()
 @Module({

@@ -1,20 +1,20 @@
-import { thirdPartyWrapper } from '@chaolaolo/frontend/components/third-parties/third-party.wrapper';
+import { thirdPartyWrapper } from '@gitroom/frontend/components/third-parties/third-party.wrapper';
 import {
   useThirdPartyFunction,
   useThirdPartyFunctionSWR,
   useThirdPartySubmit,
-} from '@chaolaolo/frontend/components/third-parties/third-party.function';
-import { useThirdParty } from '@chaolaolo/frontend/components/third-parties/third-party.media';
+} from '@gitroom/frontend/components/third-parties/third-party.function';
+import { useThirdParty } from '@gitroom/frontend/components/third-parties/third-party.media';
 import { useForm, FormProvider, SubmitHandler } from 'react-hook-form';
-import { Textarea } from '@chaolaolo/react/form/textarea';
-import { Button } from '@chaolaolo/react/form/button';
+import { Textarea } from '@gitroom/react/form/textarea';
+import { Button } from '@gitroom/react/form/button';
 import { FC, useCallback, useState } from 'react';
-import { deleteDialog } from '@chaolaolo/react/helpers/delete.dialog';
+import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import clsx from 'clsx';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { object, string } from 'zod';
-import { Select } from '@chaolaolo/react/form/select';
-import { LoadingComponent } from '@chaolaolo/frontend/components/layout/loading';
+import { Select } from '@gitroom/react/form/select';
+import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 
 const aspectRatio = [
   { key: 'portrait', value: 'Portrait' },

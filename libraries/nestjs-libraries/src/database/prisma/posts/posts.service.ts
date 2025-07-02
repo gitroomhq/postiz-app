@@ -1,34 +1,34 @@
 import { Injectable } from '@nestjs/common';
-import { PostsRepository } from '@chaolaolo/nestjs-libraries/database/prisma/posts/posts.repository';
-import { CreatePostDto } from '@chaolaolo/nestjs-libraries/dtos/posts/create.post.dto';
+import { PostsRepository } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.repository';
+import { CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
 import dayjs from 'dayjs';
-import { IntegrationManager } from '@chaolaolo/nestjs-libraries/integrations/integration.manager';
+import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { Integration, Post, Media, From } from '@prisma/client';
-import { GetPostsDto } from '@chaolaolo/nestjs-libraries/dtos/posts/get.posts.dto';
-import { NotificationService } from '@chaolaolo/nestjs-libraries/database/prisma/notifications/notification.service';
+import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
+import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { capitalize, shuffle, uniq } from 'lodash';
-import { MessagesService } from '@chaolaolo/nestjs-libraries/database/prisma/marketplace/messages.service';
-import { StripeService } from '@chaolaolo/nestjs-libraries/services/stripe.service';
-import { CreateGeneratedPostsDto } from '@chaolaolo/nestjs-libraries/dtos/generator/create.generated.posts.dto';
-import { IntegrationService } from '@chaolaolo/nestjs-libraries/database/prisma/integrations/integration.service';
-import { makeId } from '@chaolaolo/nestjs-libraries/services/make.is';
+import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
+import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
+import { CreateGeneratedPostsDto } from '@gitroom/nestjs-libraries/dtos/generator/create.generated.posts.dto';
+import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import {
   BadBody,
   RefreshToken,
-} from '@chaolaolo/nestjs-libraries/integrations/social.abstract';
-import { BullMqClient } from '@chaolaolo/nestjs-libraries/bull-mq-transport-new/client';
-import { timer } from '@chaolaolo/helpers/utils/timer';
-import { AuthTokenDetails } from '@chaolaolo/nestjs-libraries/integrations/social/social.integrations.interface';
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/client';
+import { timer } from '@gitroom/helpers/utils/timer';
+import { AuthTokenDetails } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import utc from 'dayjs/plugin/utc';
-import { MediaService } from '@chaolaolo/nestjs-libraries/database/prisma/media/media.service';
-import { ShortLinkService } from '@chaolaolo/nestjs-libraries/short-linking/short.link.service';
-import { WebhooksService } from '@chaolaolo/nestjs-libraries/database/prisma/webhooks/webhooks.service';
-import { CreateTagDto } from '@chaolaolo/nestjs-libraries/dtos/posts/create.tag.dto';
+import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
+import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.link.service';
+import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
+import { CreateTagDto } from '@gitroom/nestjs-libraries/dtos/posts/create.tag.dto';
 import axios from 'axios';
 import sharp from 'sharp';
-import { UploadFactory } from '@chaolaolo/nestjs-libraries/upload/upload.factory';
+import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { Readable } from 'stream';
-import { OpenaiService } from '@chaolaolo/nestjs-libraries/openai/openai.service';
+import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 dayjs.extend(utc);
 
 type PostWithConditionals = Post & {

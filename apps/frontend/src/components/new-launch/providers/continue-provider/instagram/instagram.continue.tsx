@@ -3,11 +3,11 @@
 import { FC, useCallback, useMemo, useState } from 'react';
 import useSWR from 'swr';
 import clsx from 'clsx';
-import { Button } from '@chaolaolo/react/form/button';
-import { useFetch } from '@chaolaolo/helpers/utils/custom.fetch';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
-import { useCustomProviderFunction } from '@chaolaolo/frontend/components/launches/helpers/use.custom.provider.function';
-import { useIntegration } from '@chaolaolo/frontend/components/launches/helpers/use.integration';
+import { Button } from '@gitroom/react/form/button';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useCustomProviderFunction } from '@gitroom/frontend/components/launches/helpers/use.custom.provider.function';
+import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 export const InstagramContinue: FC<{
   closeModal: () => void;
   existingId: string[];

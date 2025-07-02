@@ -1,4 +1,4 @@
-import { IntegrationRedirectComponent } from '@chaolaolo/frontend/components/launches/integration.redirect.component';
+import { IntegrationRedirectComponent } from '@gitroom/frontend/components/launches/integration.redirect.component';
 export const dynamic = 'force-dynamic';
 export default async function Page({
   params: { provider },

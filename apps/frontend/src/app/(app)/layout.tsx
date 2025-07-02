@@ -1,22 +1,22 @@
-import interClass from '@chaolaolo/react/helpers/inter.font';
+import interClass from '@gitroom/react/helpers/inter.font';
 export const dynamic = 'force-dynamic';
 import '../global.scss';
 import 'react-tooltip/dist/react-tooltip.css';
 import '@copilotkit/react-ui/styles.css';
-import LayoutContext from '@chaolaolo/frontend/components/layout/layout.context';
+import LayoutContext from '@gitroom/frontend/components/layout/layout.context';
 import { ReactNode } from 'react';
 import { Chakra_Petch } from 'next/font/google';
 import PlausibleProvider from 'next-plausible';
 import clsx from 'clsx';
-import { VariableContextComponent } from '@chaolaolo/react/helpers/variable.context';
+import { VariableContextComponent } from '@gitroom/react/helpers/variable.context';
 import { Fragment } from 'react';
-import { PHProvider } from '@chaolaolo/react/helpers/posthog';
-import UtmSaver from '@chaolaolo/helpers/utils/utm.saver';
-import { ToltScript } from '@chaolaolo/frontend/components/layout/tolt.script';
-import { FacebookComponent } from '@chaolaolo/frontend/components/layout/facebook.component';
+import { PHProvider } from '@gitroom/react/helpers/posthog';
+import UtmSaver from '@gitroom/helpers/utils/utm.saver';
+import { ToltScript } from '@gitroom/frontend/components/layout/tolt.script';
+import { FacebookComponent } from '@gitroom/frontend/components/layout/facebook.component';
 import { headers } from 'next/headers';
-import { headerName } from '@chaolaolo/react/translation/i18n.config';
-import { HtmlComponent } from '@chaolaolo/frontend/components/layout/html.component';
+import { headerName } from '@gitroom/react/translation/i18n.config';
+import { HtmlComponent } from '@gitroom/frontend/components/layout/html.component';
 
 const chakra = Chakra_Petch({
   weight: '400',

@@ -3,10 +3,10 @@
 import 'reflect-metadata';
 import { FC, useCallback } from 'react';
 import useSWR from 'swr';
-import { useFetch } from '@chaolaolo/helpers/utils/custom.fetch';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import dayjs from 'dayjs';
 import { usePathname } from 'next/navigation';
-import { AddEditModal } from '@chaolaolo/frontend/components/new-launch/add.edit.modal';
+import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
 export const StandaloneModal: FC = () => {
   const fetch = useFetch();
   const params = usePathname();

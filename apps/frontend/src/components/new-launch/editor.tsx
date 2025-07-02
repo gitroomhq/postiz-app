@@ -11,30 +11,30 @@ import React, {
 } from 'react';
 import { CopilotTextarea } from '@copilotkit/react-textarea';
 import clsx from 'clsx';
-import { useUser } from '@chaolaolo/frontend/components/layout/user.context';
-import { makeId } from '@chaolaolo/nestjs-libraries/services/make.is';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { Transforms } from 'slate';
 import EmojiPicker from 'emoji-picker-react';
 import { Theme } from 'emoji-picker-react';
-import { BoldText } from '@chaolaolo/frontend/components/new-launch/bold.text';
-import { UText } from '@chaolaolo/frontend/components/new-launch/u.text';
-import { SignatureBox } from '@chaolaolo/frontend/components/signature';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
-import { useLaunchStore } from '@chaolaolo/frontend/components/new-launch/store';
+import { BoldText } from '@gitroom/frontend/components/new-launch/bold.text';
+import { UText } from '@gitroom/frontend/components/new-launch/u.text';
+import { SignatureBox } from '@gitroom/frontend/components/signature';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useShallow } from 'zustand/react/shallow';
-import { AddPostButton } from '@chaolaolo/frontend/components/new-launch/add.post.button';
-import { MultiMediaComponent } from '@chaolaolo/frontend/components/media/media.component';
-import { UpDownArrow } from '@chaolaolo/frontend/components/launches/up.down.arrow';
-import { deleteDialog } from '@chaolaolo/react/helpers/delete.dialog';
-import { useExistingData } from '@chaolaolo/frontend/components/launches/helpers/use.existing.data';
+import { AddPostButton } from '@gitroom/frontend/components/new-launch/add.post.button';
+import { MultiMediaComponent } from '@gitroom/frontend/components/media/media.component';
+import { UpDownArrow } from '@gitroom/frontend/components/launches/up.down.arrow';
+import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
+import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
 import {
   LinkedinCompany,
   LinkedinCompanyPop,
   ShowLinkedinCompany,
-} from '@chaolaolo/frontend/components/launches/helpers/linkedin.component';
+} from '@gitroom/frontend/components/launches/helpers/linkedin.component';
 import { DropEvent, FileRejection, useDropzone } from 'react-dropzone';
-import { useUppyUploader } from '@chaolaolo/frontend/components/media/new.uploader';
+import { useUppyUploader } from '@gitroom/frontend/components/media/new.uploader';
 import { UploadResult } from '@uppy/core';
 import { ProgressBar } from '@uppy/react';
 export const EditorWrapper: FC<{

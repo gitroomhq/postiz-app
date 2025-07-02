@@ -1,4 +1,4 @@
-import { timer } from '@chaolaolo/helpers/utils/timer';
+import { timer } from '@gitroom/helpers/utils/timer';
 
 export class RefreshToken {
   constructor(

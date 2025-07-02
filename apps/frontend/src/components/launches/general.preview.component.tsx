@@ -1,13 +1,13 @@
-import { useIntegration } from '@chaolaolo/frontend/components/launches/helpers/use.integration';
-import { useMediaDirectory } from '@chaolaolo/react/helpers/use.media.directory';
-import { useFormatting } from '@chaolaolo/frontend/components/launches/helpers/use.formatting';
+import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
+import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
+import { useFormatting } from '@gitroom/frontend/components/launches/helpers/use.formatting';
 import clsx from 'clsx';
-import { VideoOrImage } from '@chaolaolo/react/helpers/video.or.image';
+import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
 import { FC } from 'react';
-import { textSlicer } from '@chaolaolo/helpers/utils/count.length';
-import interClass from '@chaolaolo/react/helpers/inter.font';
+import { textSlicer } from '@gitroom/helpers/utils/count.length';
+import interClass from '@gitroom/react/helpers/inter.font';
 import Image from 'next/image';
-import { useLaunchStore } from '@chaolaolo/frontend/components/new-launch/store';
+import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 export const GeneralPreviewComponent: FC<{
   maximumCharacters?: number;
 }> = (props) => {

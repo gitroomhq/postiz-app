@@ -1,7 +1,7 @@
 import { FC, useCallback, useState } from 'react';
-import { useFetch } from '@chaolaolo/helpers/utils/custom.fetch';
-import { Button } from '@chaolaolo/react/form/button';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { Button } from '@gitroom/react/form/button';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const PurchaseCrypto: FC = () => {
   const fetch = useFetch();
   const t = useT();

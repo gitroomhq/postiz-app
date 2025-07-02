@@ -1,5 +1,5 @@
 import { IsArray, IsIn, IsNumber, Min } from 'class-validator';
-import { allTagsOptions } from '@chaolaolo/nestjs-libraries/database/prisma/marketplace/tags.list';
+import { allTagsOptions } from '@gitroom/nestjs-libraries/database/prisma/marketplace/tags.list';
 
 export class ItemsDto {
   @IsArray()

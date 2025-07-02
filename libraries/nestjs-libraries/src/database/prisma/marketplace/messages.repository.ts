@@ -1,9 +1,9 @@
-import { PrismaRepository } from '@chaolaolo/nestjs-libraries/database/prisma/prisma.service';
+import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
-import { NewConversationDto } from '@chaolaolo/nestjs-libraries/dtos/marketplace/new.conversation.dto';
+import { NewConversationDto } from '@gitroom/nestjs-libraries/dtos/marketplace/new.conversation.dto';
 import { From, OrderStatus } from '@prisma/client';
-import { AddMessageDto } from '@chaolaolo/nestjs-libraries/dtos/messages/add.message';
-import { CreateOfferDto } from '@chaolaolo/nestjs-libraries/dtos/marketplace/create.offer.dto';
+import { AddMessageDto } from '@gitroom/nestjs-libraries/dtos/messages/add.message';
+import { CreateOfferDto } from '@gitroom/nestjs-libraries/dtos/marketplace/create.offer.dto';
 
 @Injectable()
 export class MessagesRepository {

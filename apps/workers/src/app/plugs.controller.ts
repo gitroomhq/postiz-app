@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { EventPattern, Transport } from '@nestjs/microservices';
-import { IntegrationService } from '@chaolaolo/nestjs-libraries/database/prisma/integrations/integration.service';
+import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 
 @Controller()
 export class PlugsController {

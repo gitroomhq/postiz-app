@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { useLaunchStore } from '@chaolaolo/frontend/components/new-launch/store';
+import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import clsx from 'clsx';
 import Image from 'next/image';
 import { useShallow } from 'zustand/react/shallow';

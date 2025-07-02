@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { MainMcp } from '@chaolaolo/backend/mcp/main.mcp';
-import { socialIntegrationList } from '@chaolaolo/nestjs-libraries/integrations/integration.manager';
+import { MainMcp } from '@gitroom/backend/mcp/main.mcp';
+import { socialIntegrationList } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 
 export class McpSettings {
   private _server: McpServer;

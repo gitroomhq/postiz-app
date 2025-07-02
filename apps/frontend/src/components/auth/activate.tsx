@@ -1,6 +1,6 @@
 'use client';
 
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 export function Activate() {
   const t = useT();

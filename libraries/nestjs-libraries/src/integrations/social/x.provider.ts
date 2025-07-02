@@ -5,15 +5,15 @@ import {
   PostDetails,
   PostResponse,
   SocialProvider,
-} from '@chaolaolo/nestjs-libraries/integrations/social/social.integrations.interface';
+} from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { lookup } from 'mime-types';
 import sharp from 'sharp';
-import { readOrFetch } from '@chaolaolo/helpers/utils/read.or.fetch';
-import { SocialAbstract } from '@chaolaolo/nestjs-libraries/integrations/social.abstract';
-import { Plug } from '@chaolaolo/helpers/decorators/plug.decorator';
+import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
+import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
 import { Integration } from '@prisma/client';
-import { timer } from '@chaolaolo/helpers/utils/timer';
-import { PostPlug } from '@chaolaolo/helpers/decorators/post.plug';
+import { timer } from '@gitroom/helpers/utils/timer';
+import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
 import dayjs from 'dayjs';
 import { uniqBy } from 'lodash';
 

@@ -8,14 +8,14 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { withProvider } from '@chaolaolo/frontend/components/new-launch/providers/high.order.provider';
-import { TikTokDto } from '@chaolaolo/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
-import { useSettings } from '@chaolaolo/frontend/components/launches/helpers/use.values';
-import { Select } from '@chaolaolo/react/form/select';
-import { useCustomProviderFunction } from '@chaolaolo/frontend/components/launches/helpers/use.custom.provider.function';
-import { Checkbox } from '@chaolaolo/react/form/checkbox';
+import { withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
+import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
+import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
+import { Select } from '@gitroom/react/form/select';
+import { useCustomProviderFunction } from '@gitroom/frontend/components/launches/helpers/use.custom.provider.function';
+import { Checkbox } from '@gitroom/react/form/checkbox';
 import clsx from 'clsx';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 const CheckTikTokValidity: FC<{
   picture: string;

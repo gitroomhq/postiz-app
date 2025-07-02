@@ -2,11 +2,11 @@
 
 import { useState, useCallback } from 'react';
 import { useUser } from '../layout/user.context';
-import { Button } from '@chaolaolo/react/form/button';
+import { Button } from '@gitroom/react/form/button';
 import copy from 'copy-to-clipboard';
-import { useToaster } from '@chaolaolo/react/toaster/toaster';
-import { useVariables } from '@chaolaolo/react/helpers/variable.context';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { useToaster } from '@gitroom/react/toaster/toaster';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const PublicComponent = () => {
   const user = useUser();
   const { backendUrl } = useVariables();

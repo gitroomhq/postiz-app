@@ -11,20 +11,20 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { GetOrgFromRequest } from '@chaolaolo/nestjs-libraries/user/org.from.request';
+import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization } from '@prisma/client';
-import { IntegrationService } from '@chaolaolo/nestjs-libraries/database/prisma/integrations/integration.service';
-import { CheckPolicies } from '@chaolaolo/backend/services/auth/permissions/permissions.ability';
+import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
+import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import {
   AuthorizationActions,
   Sections,
-} from '@chaolaolo/backend/services/auth/permissions/permissions.service';
-import { CreatePostDto } from '@chaolaolo/nestjs-libraries/dtos/posts/create.post.dto';
-import { PostsService } from '@chaolaolo/nestjs-libraries/database/prisma/posts/posts.service';
+} from '@gitroom/backend/services/auth/permissions/permissions.service';
+import { CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
+import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { UploadFactory } from '@chaolaolo/nestjs-libraries/upload/upload.factory';
-import { MediaService } from '@chaolaolo/nestjs-libraries/database/prisma/media/media.service';
-import { GetPostsDto } from '@chaolaolo/nestjs-libraries/dtos/posts/get.posts.dto';
+import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
+import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
+import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 
 @ApiTags('Public API')
 @Controller('/public/v1')

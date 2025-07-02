@@ -1,8 +1,8 @@
 'use client';
 
-import { Button } from '@chaolaolo/react/form/button';
+import { Button } from '@gitroom/react/form/button';
 import React, { FC } from 'react';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const AddPostButton: FC<{
   onClick: () => void;
   num: number;

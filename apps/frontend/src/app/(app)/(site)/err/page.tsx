@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { getT } from '@chaolaolo/react/translation/get.translation.service.backend';
+import { getT } from '@gitroom/react/translation/get.translation.service.backend';
 export const metadata: Metadata = {
   title: 'Error',
   description: '',

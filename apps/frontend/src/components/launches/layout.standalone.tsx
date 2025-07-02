@@ -1,7 +1,7 @@
 'use client';
 
 import { ReactNode, useMemo } from 'react';
-import { PreviewWrapper } from '@chaolaolo/frontend/components/preview/preview.wrapper';
+import { PreviewWrapper } from '@gitroom/frontend/components/preview/preview.wrapper';
 import { usePathname } from 'next/navigation';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';

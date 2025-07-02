@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import EventEmitter from 'events';
 import { finalize, fromEvent, startWith } from 'rxjs';
-import { McpTransport } from '@chaolaolo/nestjs-libraries/mcp/mcp.transport';
-import { JSONRPCMessageSchema } from '@chaolaolo/nestjs-libraries/mcp/mcp.types';
-import { McpSettings } from '@chaolaolo/nestjs-libraries/mcp/mcp.settings';
-import { MainMcp } from '@chaolaolo/backend/mcp/main.mcp';
+import { McpTransport } from '@gitroom/nestjs-libraries/mcp/mcp.transport';
+import { JSONRPCMessageSchema } from '@gitroom/nestjs-libraries/mcp/mcp.types';
+import { McpSettings } from '@gitroom/nestjs-libraries/mcp/mcp.settings';
+import { MainMcp } from '@gitroom/backend/mcp/main.mcp';
 
 @Injectable()
 export class McpService {

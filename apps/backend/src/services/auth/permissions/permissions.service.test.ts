@@ -1,8 +1,8 @@
 import { mock } from 'jest-mock-extended';
-import { IntegrationService } from '@chaolaolo/nestjs-libraries/database/prisma/integrations/integration.service';
-import { PostsService } from '@chaolaolo/nestjs-libraries/database/prisma/posts/posts.service';
-import { SubscriptionService } from '@chaolaolo/nestjs-libraries/database/prisma/subscriptions/subscription.service';
-import { WebhooksService } from '@chaolaolo/nestjs-libraries/database/prisma/webhooks/webhooks.service';
+import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
+import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
+import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
+import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
 import { PermissionsService } from './permissions.service';
 import { AuthorizationActions, Sections } from './permissions.service';
 import { Period, SubscriptionTier } from '@prisma/client';

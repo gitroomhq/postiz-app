@@ -9,34 +9,34 @@ import {
   Query,
   UseFilters,
 } from '@nestjs/common';
-import { ioRedis } from '@chaolaolo/nestjs-libraries/redis/redis.service';
-import { ConnectIntegrationDto } from '@chaolaolo/nestjs-libraries/dtos/integrations/connect.integration.dto';
-import { IntegrationManager } from '@chaolaolo/nestjs-libraries/integrations/integration.manager';
-import { IntegrationService } from '@chaolaolo/nestjs-libraries/database/prisma/integrations/integration.service';
-import { GetOrgFromRequest } from '@chaolaolo/nestjs-libraries/user/org.from.request';
+import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
+import { ConnectIntegrationDto } from '@gitroom/nestjs-libraries/dtos/integrations/connect.integration.dto';
+import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
+import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
+import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization, User } from '@prisma/client';
-import { ApiKeyDto } from '@chaolaolo/nestjs-libraries/dtos/integrations/api.key.dto';
-import { IntegrationFunctionDto } from '@chaolaolo/nestjs-libraries/dtos/integrations/integration.function.dto';
+import { ApiKeyDto } from '@gitroom/nestjs-libraries/dtos/integrations/api.key.dto';
+import { IntegrationFunctionDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.function.dto';
 import {
   AuthorizationActions,
   Sections,
-} from '@chaolaolo/backend/services/auth/permissions/permissions.service';
-import { CheckPolicies } from '@chaolaolo/backend/services/auth/permissions/permissions.ability';
-import { pricing } from '@chaolaolo/nestjs-libraries/database/prisma/subscriptions/pricing';
+} from '@gitroom/backend/services/auth/permissions/permissions.service';
+import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
+import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { ApiTags } from '@nestjs/swagger';
-import { GetUserFromRequest } from '@chaolaolo/nestjs-libraries/user/user.from.request';
-import { NotEnoughScopesFilter } from '@chaolaolo/nestjs-libraries/integrations/integration.missing.scopes';
-import { PostsService } from '@chaolaolo/nestjs-libraries/database/prisma/posts/posts.service';
-import { IntegrationTimeDto } from '@chaolaolo/nestjs-libraries/dtos/integrations/integration.time.dto';
-import { AuthService } from '@chaolaolo/helpers/auth/auth.service';
-import { AuthTokenDetails } from '@chaolaolo/nestjs-libraries/integrations/social/social.integrations.interface';
-import { PlugDto } from '@chaolaolo/nestjs-libraries/dtos/plugs/plug.dto';
+import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
+import { NotEnoughScopesFilter } from '@gitroom/nestjs-libraries/integrations/integration.missing.scopes';
+import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
+import { IntegrationTimeDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.time.dto';
+import { AuthService } from '@gitroom/helpers/auth/auth.service';
+import { AuthTokenDetails } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { PlugDto } from '@gitroom/nestjs-libraries/dtos/plugs/plug.dto';
 import {
   NotEnoughScopes,
   RefreshToken,
-} from '@chaolaolo/nestjs-libraries/integrations/social.abstract';
-import { timer } from '@chaolaolo/helpers/utils/timer';
-import { TelegramProvider } from '@chaolaolo/nestjs-libraries/integrations/social/telegram.provider';
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { timer } from '@gitroom/helpers/utils/timer';
+import { TelegramProvider } from '@gitroom/nestjs-libraries/integrations/social/telegram.provider';
 
 @ApiTags('Integrations')
 @Controller('/integrations')

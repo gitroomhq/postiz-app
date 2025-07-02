@@ -4,7 +4,7 @@ import { FC } from 'react';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import Link from 'next/link';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const BuyerSeller: FC = () => {
   const path = usePathname();
   const t = useT();

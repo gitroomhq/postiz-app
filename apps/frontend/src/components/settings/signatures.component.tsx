@@ -1,17 +1,17 @@
 import React, { FC, Fragment, useCallback } from 'react';
-import { useFetch } from '@chaolaolo/helpers/utils/custom.fetch';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
-import { Button } from '@chaolaolo/react/form/button';
+import { Button } from '@gitroom/react/form/button';
 import clsx from 'clsx';
 import { useModals } from '@mantine/modals';
-import { TopTitle } from '@chaolaolo/frontend/components/launches/helpers/top.title.component';
+import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { array, boolean, object, string } from 'yup';
 import { FormProvider, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { CopilotTextarea } from '@copilotkit/react-textarea';
-import { Select } from '@chaolaolo/react/form/select';
-import { useToaster } from '@chaolaolo/react/toaster/toaster';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { Select } from '@gitroom/react/form/select';
+import { useToaster } from '@gitroom/react/toaster/toaster';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const SignaturesComponent: FC<{
   appendSignature?: (value: string) => void;
 }> = (props) => {
@@ -52,8 +52,8 @@ export const SignaturesComponent: FC<{
           {!!data?.length && (
             <div
               className={`grid ${!!appendSignature
-                  ? 'grid-cols-[1fr,1fr,1fr,1fr,1fr]'
-                  : 'grid-cols-[1fr,1fr,1fr,1fr]'
+                ? 'grid-cols-[1fr,1fr,1fr,1fr,1fr]'
+                : 'grid-cols-[1fr,1fr,1fr,1fr]'
                 } w-full gap-y-[10px]`}
             >
               <div>{t('content', 'Content')}</div>

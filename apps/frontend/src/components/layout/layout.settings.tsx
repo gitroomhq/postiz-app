@@ -1,49 +1,49 @@
 'use client';
 
 import { ReactNode, useCallback, useEffect } from 'react';
-import { Title } from '@chaolaolo/frontend/components/layout/title';
-import { ContextWrapper } from '@chaolaolo/frontend/components/layout/user.context';
-import { TopMenu } from '@chaolaolo/frontend/components/layout/top.menu';
-import { MantineWrapper } from '@chaolaolo/react/helpers/mantine.wrapper';
-import { ToolTip } from '@chaolaolo/frontend/components/layout/top.tip';
-import { ShowMediaBoxModal } from '@chaolaolo/frontend/components/media/media.component';
+import { Title } from '@gitroom/frontend/components/layout/title';
+import { ContextWrapper } from '@gitroom/frontend/components/layout/user.context';
+import { TopMenu } from '@gitroom/frontend/components/layout/top.menu';
+import { MantineWrapper } from '@gitroom/react/helpers/mantine.wrapper';
+import { ToolTip } from '@gitroom/frontend/components/layout/top.tip';
+import { ShowMediaBoxModal } from '@gitroom/frontend/components/media/media.component';
 import Image from 'next/image';
-import { Toaster, useToaster } from '@chaolaolo/react/toaster/toaster';
-import { ShowPostSelector } from '@chaolaolo/frontend/components/post-url-selector/post.url.selector';
-import { OrganizationSelector } from '@chaolaolo/frontend/components/layout/organization.selector';
-import NotificationComponent from '@chaolaolo/frontend/components/notifications/notification.component';
+import { Toaster, useToaster } from '@gitroom/react/toaster/toaster';
+import { ShowPostSelector } from '@gitroom/frontend/components/post-url-selector/post.url.selector';
+import { OrganizationSelector } from '@gitroom/frontend/components/layout/organization.selector';
+import NotificationComponent from '@gitroom/frontend/components/notifications/notification.component';
 import Link from 'next/link';
 import useSWR from 'swr';
-import { useFetch } from '@chaolaolo/helpers/utils/custom.fetch';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import utc from 'dayjs/plugin/utc';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import isBetween from 'dayjs/plugin/isBetween';
-import { ShowLinkedinCompany } from '@chaolaolo/frontend/components/launches/helpers/linkedin.component';
-import { SettingsComponent } from '@chaolaolo/frontend/components/layout/settings.component';
-import { Onboarding } from '@chaolaolo/frontend/components/onboarding/onboarding';
-import { Support } from '@chaolaolo/frontend/components/layout/support';
-import { ContinueProvider } from '@chaolaolo/frontend/components/layout/continue.provider';
+import { ShowLinkedinCompany } from '@gitroom/frontend/components/launches/helpers/linkedin.component';
+import { SettingsComponent } from '@gitroom/frontend/components/layout/settings.component';
+import { Onboarding } from '@gitroom/frontend/components/onboarding/onboarding';
+import { Support } from '@gitroom/frontend/components/layout/support';
+import { ContinueProvider } from '@gitroom/frontend/components/layout/continue.provider';
 import { CopilotKit } from '@copilotkit/react-core';
-import { Impersonate } from '@chaolaolo/frontend/components/layout/impersonate';
+import { Impersonate } from '@gitroom/frontend/components/layout/impersonate';
 import clsx from 'clsx';
-import { BillingComponent } from '@chaolaolo/frontend/components/billing/billing.component';
+import { BillingComponent } from '@gitroom/frontend/components/billing/billing.component';
 import dynamic from 'next/dynamic';
-import { NewSubscription } from '@chaolaolo/frontend/components/layout/new.subscription';
-import { useVariables } from '@chaolaolo/react/helpers/variable.context';
+import { NewSubscription } from '@gitroom/frontend/components/layout/new.subscription';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 const ModeComponent = dynamic(
-  () => import('@chaolaolo/frontend/components/layout/mode.component'),
+  () => import('@gitroom/frontend/components/layout/mode.component'),
   {
     ssr: false,
   }
 );
 import { extend } from 'dayjs';
 import { useSearchParams } from 'next/navigation';
-import { CheckPayment } from '@chaolaolo/frontend/components/layout/check.payment';
-import { ChromeExtensionComponent } from '@chaolaolo/frontend/components/layout/chrome.extension.component';
-import { LanguageComponent } from '@chaolaolo/frontend/components/layout/language.component';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
-import i18next from '@chaolaolo/react/translation/i18next';
+import { CheckPayment } from '@gitroom/frontend/components/layout/check.payment';
+import { ChromeExtensionComponent } from '@gitroom/frontend/components/layout/chrome.extension.component';
+import { LanguageComponent } from '@gitroom/frontend/components/layout/language.component';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import i18next from '@gitroom/react/translation/i18next';
 extend(utc);
 extend(weekOfYear);
 extend(isoWeek);

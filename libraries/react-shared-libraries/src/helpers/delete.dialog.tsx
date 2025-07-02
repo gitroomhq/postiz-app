@@ -1,5 +1,5 @@
 import Swal from 'sweetalert2';
-import i18next from '@chaolaolo/react/translation/i18next';
+import i18next from '@gitroom/react/translation/i18next';
 
 export const deleteDialog = async (
   message: string,

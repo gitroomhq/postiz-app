@@ -67,7 +67,7 @@ const fileContent = `${list
   .map((p, index) => {
     return `import Module${abc[
       index
-    ].toUpperCase()} from '@chaolaolo/plugins/list/${p}/backend/module';`;
+    ].toUpperCase()} from '@gitroom/plugins/list/${p}/backend/module';`;
   })
   .join('\n')}
 

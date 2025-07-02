@@ -1,15 +1,15 @@
 'use client';
 
-import { GithubComponent } from '@chaolaolo/frontend/components/settings/github.component';
+import { GithubComponent } from '@gitroom/frontend/components/settings/github.component';
 import { useCallback, useEffect } from 'react';
-import { useUser } from '@chaolaolo/frontend/components/layout/user.context';
-import { TeamsComponent } from '@chaolaolo/frontend/components/settings/teams.component';
-import { useFetch } from '@chaolaolo/helpers/utils/custom.fetch';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { TeamsComponent } from '@gitroom/frontend/components/settings/teams.component';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
-import { LoadingComponent } from '@chaolaolo/frontend/components/layout/loading';
+import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import { useRouter } from 'next/navigation';
-import { useVariables } from '@chaolaolo/react/helpers/variable.context';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const SettingsComponent = () => {
   const { isGeneral } = useVariables();
   const user = useUser();

@@ -8,20 +8,20 @@ import React, {
   useState,
 } from 'react';
 import { useClickOutside } from '@mantine/hooks';
-import { useFetch } from '@chaolaolo/helpers/utils/custom.fetch';
-import { deleteDialog } from '@chaolaolo/react/helpers/delete.dialog';
-import { useToaster } from '@chaolaolo/react/toaster/toaster';
-import interClass from '@chaolaolo/react/helpers/inter.font';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
+import { useToaster } from '@gitroom/react/toaster/toaster';
+import interClass from '@gitroom/react/helpers/inter.font';
 import { useModals } from '@mantine/modals';
-import { TimeTable } from '@chaolaolo/frontend/components/launches/time.table';
-import { useCalendar } from '@chaolaolo/frontend/components/launches/calendar.context';
-import { BotPicture } from '@chaolaolo/frontend/components/launches/bot.picture';
-import { CustomerModal } from '@chaolaolo/frontend/components/launches/customer.modal';
+import { TimeTable } from '@gitroom/frontend/components/launches/time.table';
+import { useCalendar } from '@gitroom/frontend/components/launches/calendar.context';
+import { BotPicture } from '@gitroom/frontend/components/launches/bot.picture';
+import { CustomerModal } from '@gitroom/frontend/components/launches/customer.modal';
 import { Integration } from '@prisma/client';
-import { SettingsModal } from '@chaolaolo/frontend/components/launches/settings.modal';
-import { CustomVariables } from '@chaolaolo/frontend/components/launches/add.provider.component';
+import { SettingsModal } from '@gitroom/frontend/components/launches/settings.modal';
+import { CustomVariables } from '@gitroom/frontend/components/launches/add.provider.component';
 import { useRouter } from 'next/navigation';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const Menu: FC<{
   canEnable: boolean;
   canDisable: boolean;

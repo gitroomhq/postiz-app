@@ -1,18 +1,18 @@
 'use client';
 
 import { FC } from 'react';
-import { withProvider } from '@chaolaolo/frontend/components/new-launch/providers/high.order.provider';
-import { useSettings } from '@chaolaolo/frontend/components/launches/helpers/use.values';
-import { Input } from '@chaolaolo/react/form/input';
-import { HashnodePublications } from '@chaolaolo/frontend/components/new-launch/providers/hashnode/hashnode.publications';
-import { HashnodeTags } from '@chaolaolo/frontend/components/new-launch/providers/hashnode/hashnode.tags';
-import { HashnodeSettingsDto } from '@chaolaolo/nestjs-libraries/dtos/posts/providers-settings/hashnode.settings.dto';
-import { useIntegration } from '@chaolaolo/frontend/components/launches/helpers/use.integration';
-import { useMediaDirectory } from '@chaolaolo/react/helpers/use.media.directory';
+import { withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
+import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
+import { Input } from '@gitroom/react/form/input';
+import { HashnodePublications } from '@gitroom/frontend/components/new-launch/providers/hashnode/hashnode.publications';
+import { HashnodeTags } from '@gitroom/frontend/components/new-launch/providers/hashnode/hashnode.tags';
+import { HashnodeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/hashnode.settings.dto';
+import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
+import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
 import clsx from 'clsx';
 import MDEditor from '@uiw/react-md-editor';
-import { MediaComponent } from '@chaolaolo/frontend/components/media/media.component';
-import { Canonical } from '@chaolaolo/react/form/canonical';
+import { MediaComponent } from '@gitroom/frontend/components/media/media.component';
+import { Canonical } from '@gitroom/react/form/canonical';
 
 const HashnodePreview: FC = () => {
   const { value } = useIntegration();

@@ -1,6 +1,6 @@
 'use client';
 
-import { useVariables } from '@chaolaolo/react/helpers/variable.context';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 import Script from 'next/script';
 export const useTolt = () => {
   return () => {

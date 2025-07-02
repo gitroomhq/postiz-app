@@ -4,13 +4,13 @@ import {
   PostDetails,
   PostResponse,
   SocialProvider,
-} from '@chaolaolo/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@chaolaolo/nestjs-libraries/services/make.is';
-import { LinkedinProvider } from '@chaolaolo/nestjs-libraries/integrations/social/linkedin.provider';
+} from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { LinkedinProvider } from '@gitroom/nestjs-libraries/integrations/social/linkedin.provider';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
-import { Plug } from '@chaolaolo/helpers/decorators/plug.decorator';
-import { timer } from '@chaolaolo/helpers/utils/timer';
+import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
+import { timer } from '@gitroom/helpers/utils/timer';
 
 export class LinkedinPageProvider
   extends LinkedinProvider

@@ -1,11 +1,11 @@
 'use client';
 
 import { FC } from 'react';
-import { withProvider } from '@chaolaolo/frontend/components/new-launch/providers/high.order.provider';
-import { useSettings } from '@chaolaolo/frontend/components/launches/helpers/use.values';
-import { Input } from '@chaolaolo/react/form/input';
-import { DribbbleTeams } from '@chaolaolo/frontend/components/new-launch/providers/dribbble/dribbble.teams';
-import { DribbbleDto } from '@chaolaolo/nestjs-libraries/dtos/posts/providers-settings/dribbble.dto';
+import { withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
+import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
+import { Input } from '@gitroom/react/form/input';
+import { DribbbleTeams } from '@gitroom/frontend/components/new-launch/providers/dribbble/dribbble.teams';
+import { DribbbleDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dribbble.dto';
 const DribbbleSettings: FC = () => {
   const { register, control } = useSettings();
   return (

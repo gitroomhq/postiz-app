@@ -1,12 +1,12 @@
 'use client';
 
-import { withProvider } from '@chaolaolo/frontend/components/new-launch/providers/high.order.provider';
+import { withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 import { FC } from 'react';
-import { Select } from '@chaolaolo/react/form/select';
-import { useSettings } from '@chaolaolo/frontend/components/launches/helpers/use.values';
-import { InstagramDto } from '@chaolaolo/nestjs-libraries/dtos/posts/providers-settings/instagram.dto';
-import { InstagramCollaboratorsTags } from '@chaolaolo/frontend/components/new-launch/providers/instagram/instagram.tags';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { Select } from '@gitroom/react/form/select';
+import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
+import { InstagramDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/instagram.dto';
+import { InstagramCollaboratorsTags } from '@gitroom/frontend/components/new-launch/providers/instagram/instagram.tags';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 const postType = [
   {
     value: 'post',

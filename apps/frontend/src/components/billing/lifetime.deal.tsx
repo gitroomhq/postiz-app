@@ -1,16 +1,16 @@
 'use client';
 
-import { useFetch } from '@chaolaolo/helpers/utils/custom.fetch';
-import { useUser } from '@chaolaolo/frontend/components/layout/user.context';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useCallback, useMemo, useState } from 'react';
-import { pricing } from '@chaolaolo/nestjs-libraries/database/prisma/subscriptions/pricing';
-import { Input } from '@chaolaolo/react/form/input';
-import { Button } from '@chaolaolo/react/form/button';
+import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
+import { Input } from '@gitroom/react/form/input';
+import { Button } from '@gitroom/react/form/button';
 import { useSWRConfig } from 'swr';
-import { useToaster } from '@chaolaolo/react/toaster/toaster';
+import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useRouter } from 'next/navigation';
-import { useFireEvents } from '@chaolaolo/helpers/utils/use.fire.events';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const LifetimeDeal = () => {
   const t = useT();
   const fetch = useFetch();

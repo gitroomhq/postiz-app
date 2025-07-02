@@ -1,7 +1,7 @@
 'use client';
 
-import { withProvider } from '@chaolaolo/frontend/components/new-launch/providers/high.order.provider';
-import { ThreadFinisher } from '@chaolaolo/frontend/components/new-launch/finisher/thread.finisher';
+import { withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
+import { ThreadFinisher } from '@gitroom/frontend/components/new-launch/finisher/thread.finisher';
 
 const SettingsComponent = () => {
   return <ThreadFinisher />;

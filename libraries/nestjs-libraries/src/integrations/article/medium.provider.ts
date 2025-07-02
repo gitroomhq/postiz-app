@@ -1,5 +1,5 @@
-import { ArticleProvider } from '@chaolaolo/nestjs-libraries/integrations/article/article.integrations.interface';
-import { MediumSettingsDto } from '@chaolaolo/nestjs-libraries/dtos/posts/providers-settings/medium.settings.dto';
+import { ArticleProvider } from '@gitroom/nestjs-libraries/integrations/article/article.integrations.interface';
+import { MediumSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/medium.settings.dto';
 
 export class MediumProvider implements ArticleProvider {
   identifier = 'medium';

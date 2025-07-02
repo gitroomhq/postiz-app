@@ -116,7 +116,7 @@ docker compose -f docker-compose.dev.yaml up -d
 # Xóa network cũ
 docker network rm postiz-app_postiz-network
 # Tạo network mới
-docker network create postiz-app_postiz-network
+docker network create postiz-network
 # Hoặc nếu cần tạo với driver bridge
 docker network create --driver bridge postiz-network
 ```

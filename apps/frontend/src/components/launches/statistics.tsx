@@ -1,8 +1,8 @@
 import React, { FC, Fragment, useCallback } from 'react';
 import { useModals } from '@mantine/modals';
 import useSWR from 'swr';
-import { useFetch } from '@chaolaolo/helpers/utils/custom.fetch';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const StatisticsModal: FC<{
   postId: string;
 }> = (props) => {

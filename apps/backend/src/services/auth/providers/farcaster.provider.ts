@@ -1,4 +1,4 @@
-import { ProvidersInterface } from '@chaolaolo/backend/services/auth/providers.interface';
+import { ProvidersInterface } from '@gitroom/backend/services/auth/providers.interface';
 import { NeynarAPIClient } from '@neynar/nodejs-sdk';
 
 const client = new NeynarAPIClient({

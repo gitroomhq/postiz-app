@@ -1,7 +1,7 @@
-import { Seller } from '@chaolaolo/frontend/components/marketplace/seller';
+import { Seller } from '@gitroom/frontend/components/marketplace/seller';
 export const dynamic = 'force-dynamic';
 import { Metadata } from 'next';
-import { isGeneralServerSide } from '@chaolaolo/helpers/utils/is.general.server.side';
+import { isGeneralServerSide } from '@gitroom/helpers/utils/is.general.server.side';
 export const metadata: Metadata = {
   title: `${isGeneralServerSide() ? 'Postiz' : 'Gitroom'} Marketplace`,
   description: '',

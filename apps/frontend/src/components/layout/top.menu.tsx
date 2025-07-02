@@ -4,9 +4,9 @@ import { FC } from 'react';
 import Link from 'next/link';
 import clsx from 'clsx';
 import { usePathname } from 'next/navigation';
-import { useUser } from '@chaolaolo/frontend/components/layout/user.context';
-import { useVariables } from '@chaolaolo/react/helpers/variable.context';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const useMenuItems = () => {
   const { isGeneral } = useVariables();
   const t = useT();

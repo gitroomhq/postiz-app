@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { getT } from '@chaolaolo/react/translation/get.translation.service.backend';
+import { getT } from '@gitroom/react/translation/get.translation.service.backend';
 export default async function IntegrationLayout({
   children,
 }: {

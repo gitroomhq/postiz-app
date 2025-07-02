@@ -28,31 +28,31 @@
     "noFallthroughCasesInSwitch": true,
     "strict": true,
     "paths": {
-      "@chaolaolo/backend/*": [
+      "@gitroom/backend/*": [
         "apps/backend/src/*"
       ],
-      "@chaolaolo/cron/*": [
+      "@gitroom/cron/*": [
         "apps/cron/src/*"
       ],
-      "@chaolaolo/frontend/*": [
+      "@gitroom/frontend/*": [
         "apps/frontend/src/*"
       ],
-      "@chaolaolo/helpers/*": [
+      "@gitroom/helpers/*": [
         "libraries/helpers/src/*"
       ],
-      "@chaolaolo/nestjs-libraries/*": [
+      "@gitroom/nestjs-libraries/*": [
         "libraries/nestjs-libraries/src/*"
       ],
-      "@chaolaolo/react/*": [
+      "@gitroom/react/*": [
         "libraries/react-shared-libraries/src/*"
       ],
-      "@chaolaolo/plugins/*": [
+      "@gitroom/plugins/*": [
         "libraries/plugins/src/*"
       ],
-      "@chaolaolo/workers/*": [
+      "@gitroom/workers/*": [
         "apps/workers/src/*"
       ],
-      "@chaolaolo/extension/*": [
+      "@gitroom/extension/*": [
         "apps/extension/src/*"
       ]
     }

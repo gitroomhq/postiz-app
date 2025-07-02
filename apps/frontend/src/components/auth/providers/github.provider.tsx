@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
-import { useFetch } from '@chaolaolo/helpers/utils/custom.fetch';
-import interClass from '@chaolaolo/react/helpers/inter.font';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import interClass from '@gitroom/react/helpers/inter.font';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const GithubProvider = () => {
   const fetch = useFetch();
   const t = useT();

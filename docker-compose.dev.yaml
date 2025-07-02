@@ -60,4 +60,4 @@ volumes:
 
 networks:
   postiz-network:
-    external: false
+    external: true

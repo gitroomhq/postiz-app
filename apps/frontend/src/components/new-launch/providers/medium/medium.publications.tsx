@@ -1,10 +1,10 @@
 'use client';
 
 import { FC, useEffect, useState } from 'react';
-import { useCustomProviderFunction } from '@chaolaolo/frontend/components/launches/helpers/use.custom.provider.function';
-import { Select } from '@chaolaolo/react/form/select';
-import { useSettings } from '@chaolaolo/frontend/components/launches/helpers/use.values';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { useCustomProviderFunction } from '@gitroom/frontend/components/launches/helpers/use.custom.provider.function';
+import { Select } from '@gitroom/react/form/select';
+import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const MediumPublications: FC<{
   name: string;
   onChange: (event: {

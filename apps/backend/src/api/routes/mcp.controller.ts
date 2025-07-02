@@ -7,8 +7,8 @@ import {
   Sse,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { McpService } from '@chaolaolo/nestjs-libraries/mcp/mcp.service';
-import { OrganizationService } from '@chaolaolo/nestjs-libraries/database/prisma/organizations/organization.service';
+import { McpService } from '@gitroom/nestjs-libraries/mcp/mcp.service';
+import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 
 @ApiTags('Mcp')
 @Controller('/mcp')

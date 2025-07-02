@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import { StarsService } from '@chaolaolo/nestjs-libraries/database/prisma/stars/stars.service';
-import { BullMqClient } from '@chaolaolo/nestjs-libraries/bull-mq-transport-new/client';
+import { StarsService } from '@gitroom/nestjs-libraries/database/prisma/stars/stars.service';
+import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/client';
 
 @Injectable()
 export class CheckStars {

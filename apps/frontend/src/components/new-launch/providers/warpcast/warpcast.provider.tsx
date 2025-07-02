@@ -1,13 +1,13 @@
 'use client';
 
-import { withProvider } from '@chaolaolo/frontend/components/new-launch/providers/high.order.provider';
+import { withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 import { FC, useCallback } from 'react';
-import { useSettings } from '@chaolaolo/frontend/components/launches/helpers/use.values';
+import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { useFieldArray } from 'react-hook-form';
-import { deleteDialog } from '@chaolaolo/react/helpers/delete.dialog';
-import { Button } from '@chaolaolo/react/form/button';
+import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
+import { Button } from '@gitroom/react/form/button';
 import { Subreddit } from './subreddit';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 const WrapcastProvider: FC = () => {
   const { register, control } = useSettings();
   const { fields, append, remove } = useFieldArray({

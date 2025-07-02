@@ -1,11 +1,11 @@
 'use client';
 
 import { FC, useCallback } from 'react';
-import interClass from '@chaolaolo/react/helpers/inter.font';
-import { useVariables } from '@chaolaolo/react/helpers/variable.context';
+import interClass from '@gitroom/react/helpers/inter.font';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { NeynarContextProvider, Theme, useNeynarContext } from '@neynar/react';
-import { NeynarAuthButton } from '@chaolaolo/frontend/components/auth/nayner.auth.button';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { NeynarAuthButton } from '@gitroom/frontend/components/auth/nayner.auth.button';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const FarcasterProvider = () => {
   const gotoLogin = useCallback(async (code: string) => {
     window.location.href = `/auth?provider=FARCASTER&code=${code}`;

@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { EmailInterface } from '@chaolaolo/nestjs-libraries/emails/email.interface';
-import { ResendProvider } from '@chaolaolo/nestjs-libraries/emails/resend.provider';
-import { EmptyProvider } from '@chaolaolo/nestjs-libraries/emails/empty.provider';
-import { NodeMailerProvider } from '@chaolaolo/nestjs-libraries/emails/node.mailer.provider';
+import { EmailInterface } from '@gitroom/nestjs-libraries/emails/email.interface';
+import { ResendProvider } from '@gitroom/nestjs-libraries/emails/resend.provider';
+import { EmptyProvider } from '@gitroom/nestjs-libraries/emails/empty.provider';
+import { NodeMailerProvider } from '@gitroom/nestjs-libraries/emails/node.mailer.provider';
 
 @Injectable()
 export class EmailService {

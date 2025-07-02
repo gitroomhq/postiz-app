@@ -1,11 +1,11 @@
 'use client';
 
-import { Slider } from '@chaolaolo/react/form/slider';
+import { Slider } from '@gitroom/react/form/slider';
 import clsx from 'clsx';
-import { Editor } from '@chaolaolo/frontend/components/new-launch/editor';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
-import { useIntegration } from '@chaolaolo/frontend/components/launches/helpers/use.integration';
-import { useSettings } from '@chaolaolo/frontend/components/launches/helpers/use.values';
+import { Editor } from '@gitroom/frontend/components/new-launch/editor';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
+import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 
 export const ThreadFinisher = () => {
   const integration = useIntegration();

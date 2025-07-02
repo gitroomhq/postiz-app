@@ -13,15 +13,15 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { GetOrgFromRequest } from '@chaolaolo/nestjs-libraries/user/org.from.request';
+import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization } from '@prisma/client';
-import { MediaService } from '@chaolaolo/nestjs-libraries/database/prisma/media/media.service';
+import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 import { ApiTags } from '@nestjs/swagger';
-import handleR2Upload from '@chaolaolo/nestjs-libraries/upload/r2.uploader';
+import handleR2Upload from '@gitroom/nestjs-libraries/upload/r2.uploader';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { CustomFileValidationPipe } from '@chaolaolo/nestjs-libraries/upload/custom.upload.validation';
-import { SubscriptionService } from '@chaolaolo/nestjs-libraries/database/prisma/subscriptions/subscription.service';
-import { UploadFactory } from '@chaolaolo/nestjs-libraries/upload/upload.factory';
+import { CustomFileValidationPipe } from '@gitroom/nestjs-libraries/upload/custom.upload.validation';
+import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
+import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 
 @ApiTags('Media')
 @Controller('/media')

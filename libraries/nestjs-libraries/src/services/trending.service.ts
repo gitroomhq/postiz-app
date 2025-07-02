@@ -1,7 +1,7 @@
 import json from './trending';
 import { Injectable } from '@nestjs/common';
 import { JSDOM } from 'jsdom';
-import { StarsService } from '@chaolaolo/nestjs-libraries/database/prisma/stars/stars.service';
+import { StarsService } from '@gitroom/nestjs-libraries/database/prisma/stars/stars.service';
 import md5 from 'md5';
 
 @Injectable()

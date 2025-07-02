@@ -1,4 +1,4 @@
-import { Layout } from '@chaolaolo/frontend/components/messages/layout';
+import { Layout } from '@gitroom/frontend/components/messages/layout';
 export const dynamic = 'force-dynamic';
 import { ReactNode } from 'react';
 export default async function LayoutWrapper({

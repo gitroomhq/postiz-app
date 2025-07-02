@@ -3,13 +3,13 @@ import {
   PostDetails,
   PostResponse,
   SocialProvider,
-} from '@chaolaolo/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@chaolaolo/nestjs-libraries/services/make.is';
-import { SocialAbstract } from '@chaolaolo/nestjs-libraries/integrations/social.abstract';
+} from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
-import { AuthService } from '@chaolaolo/helpers/auth/auth.service';
-import { LemmySettingsDto } from '@chaolaolo/nestjs-libraries/dtos/posts/lemmy.dto';
+import { AuthService } from '@gitroom/helpers/auth/auth.service';
+import { LemmySettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/lemmy.dto';
 import { groupBy } from 'lodash';
 
 export class LemmyProvider extends SocialAbstract implements SocialProvider {

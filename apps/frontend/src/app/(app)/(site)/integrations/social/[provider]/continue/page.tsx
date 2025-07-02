@@ -1,9 +1,9 @@
 import { HttpStatusCode } from 'axios';
 export const dynamic = 'force-dynamic';
-import { internalFetch } from '@chaolaolo/helpers/utils/internal.fetch';
+import { internalFetch } from '@gitroom/helpers/utils/internal.fetch';
 import { redirect } from 'next/navigation';
-import { Redirect } from '@chaolaolo/frontend/components/layout/redirect';
-import { getT } from '@chaolaolo/react/translation/get.translation.service.backend';
+import { Redirect } from '@gitroom/frontend/components/layout/redirect';
+import { getT } from '@gitroom/react/translation/get.translation.service.backend';
 export default async function Page({
   params: { provider },
   searchParams,

@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
-import { CheckStars } from '@chaolaolo/cron/tasks/check.stars';
-import { DatabaseModule } from '@chaolaolo/nestjs-libraries/database/prisma/database.module';
-import { SyncTrending } from '@chaolaolo/cron/tasks/sync.trending';
-import { BullMqModule } from '@chaolaolo/nestjs-libraries/bull-mq-transport-new/bull.mq.module';
+import { CheckStars } from '@gitroom/cron/tasks/check.stars';
+import { DatabaseModule } from '@gitroom/nestjs-libraries/database/prisma/database.module';
+import { SyncTrending } from '@gitroom/cron/tasks/sync.trending';
+import { BullMqModule } from '@gitroom/nestjs-libraries/bull-mq-transport-new/bull.mq.module';
 
 @Module({
   imports: [DatabaseModule, ScheduleModule.forRoot(), BullMqModule],

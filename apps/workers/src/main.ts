@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 
 import { AppModule } from './app/app.module';
 import { MicroserviceOptions } from '@nestjs/microservices';
-import { BullMqServer } from '@chaolaolo/nestjs-libraries/bull-mq-transport-new/strategy';
+import { BullMqServer } from '@gitroom/nestjs-libraries/bull-mq-transport-new/strategy';
 
 async function bootstrap() {
   // some comment again

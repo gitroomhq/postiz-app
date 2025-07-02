@@ -7,19 +7,19 @@ import {
   Post,
   Put,
 } from '@nestjs/common';
-import { GetOrgFromRequest } from '@chaolaolo/nestjs-libraries/user/org.from.request';
+import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization } from '@prisma/client';
 import { ApiTags } from '@nestjs/swagger';
-import { SetsService } from '@chaolaolo/nestjs-libraries/database/prisma/sets/sets.service';
-import { CheckPolicies } from '@chaolaolo/backend/services/auth/permissions/permissions.ability';
+import { SetsService } from '@gitroom/nestjs-libraries/database/prisma/sets/sets.service';
+import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import {
   AuthorizationActions,
   Sections,
-} from '@chaolaolo/backend/services/auth/permissions/permissions.service';
+} from '@gitroom/backend/services/auth/permissions/permissions.service';
 import {
   UpdateSetsDto,
   SetsDto,
-} from '@chaolaolo/nestjs-libraries/dtos/sets/sets.dto';
+} from '@gitroom/nestjs-libraries/dtos/sets/sets.dto';
 
 @ApiTags('Sets')
 @Controller('/sets')

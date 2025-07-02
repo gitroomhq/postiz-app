@@ -1,6 +1,6 @@
 import { FC, useCallback, useState } from 'react';
-import { TopTitle } from '@chaolaolo/frontend/components/launches/helpers/top.title.component';
-import { SignaturesComponent } from '@chaolaolo/frontend/components/settings/signatures.component';
+import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
+import { SignaturesComponent } from '@gitroom/frontend/components/settings/signatures.component';
 import { Transforms } from 'slate';
 export const SignatureBox: FC<{
   editor: any;

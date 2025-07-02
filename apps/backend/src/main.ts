@@ -1,4 +1,4 @@
-import { loadSwagger } from '@chaolaolo/helpers/swagger/load.swagger';
+import { loadSwagger } from '@gitroom/helpers/swagger/load.swagger';
 
 process.env.TZ = 'UTC';
 
@@ -6,9 +6,9 @@ import cookieParser from 'cookie-parser';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { SubscriptionExceptionFilter } from '@chaolaolo/backend/services/auth/permissions/subscription.exception';
-import { HttpExceptionFilter } from '@chaolaolo/nestjs-libraries/services/exception.filter';
-import { ConfigurationChecker } from '@chaolaolo/helpers/configuration/configuration.checker';
+import { SubscriptionExceptionFilter } from '@gitroom/backend/services/auth/permissions/subscription.exception';
+import { HttpExceptionFilter } from '@gitroom/nestjs-libraries/services/exception.filter';
+import { ConfigurationChecker } from '@gitroom/helpers/configuration/configuration.checker';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {

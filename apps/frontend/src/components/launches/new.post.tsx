@@ -1,11 +1,11 @@
 import React, { useCallback } from 'react';
 import { useModals } from '@mantine/modals';
 import dayjs from 'dayjs';
-import { useCalendar } from '@chaolaolo/frontend/components/launches/calendar.context';
-import { useFetch } from '@chaolaolo/helpers/utils/custom.fetch';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
-import { SetSelectionModal } from '@chaolaolo/frontend/components/launches/calendar';
-import { AddEditModal } from '@chaolaolo/frontend/components/new-launch/add.edit.modal';
+import { useCalendar } from '@gitroom/frontend/components/launches/calendar.context';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { SetSelectionModal } from '@gitroom/frontend/components/launches/calendar';
+import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
 
 export const NewPost = () => {
   const fetch = useFetch();

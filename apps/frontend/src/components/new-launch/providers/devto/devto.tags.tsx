@@ -2,9 +2,9 @@
 
 import { FC, useCallback, useEffect, useState } from 'react';
 import { ReactTags } from 'react-tag-autocomplete';
-import interClass from '@chaolaolo/react/helpers/inter.font';
-import { useCustomProviderFunction } from '@chaolaolo/frontend/components/launches/helpers/use.custom.provider.function';
-import { useSettings } from '@chaolaolo/frontend/components/launches/helpers/use.values';
+import interClass from '@gitroom/react/helpers/inter.font';
+import { useCustomProviderFunction } from '@gitroom/frontend/components/launches/helpers/use.custom.provider.function';
+import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 export const DevtoTags: FC<{
   name: string;
   label: string;

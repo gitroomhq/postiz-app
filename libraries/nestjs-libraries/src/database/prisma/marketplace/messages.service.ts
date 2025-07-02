@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { MessagesRepository } from '@chaolaolo/nestjs-libraries/database/prisma/marketplace/messages.repository';
-import { NewConversationDto } from '@chaolaolo/nestjs-libraries/dtos/marketplace/new.conversation.dto';
-import { AddMessageDto } from '@chaolaolo/nestjs-libraries/dtos/messages/add.message';
-import { CreateOfferDto } from '@chaolaolo/nestjs-libraries/dtos/marketplace/create.offer.dto';
+import { MessagesRepository } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.repository';
+import { NewConversationDto } from '@gitroom/nestjs-libraries/dtos/marketplace/new.conversation.dto';
+import { AddMessageDto } from '@gitroom/nestjs-libraries/dtos/messages/add.message';
+import { CreateOfferDto } from '@gitroom/nestjs-libraries/dtos/marketplace/create.offer.dto';
 import { From, OrderStatus, User } from '@prisma/client';
-import { OrganizationRepository } from '@chaolaolo/nestjs-libraries/database/prisma/organizations/organization.repository';
-import { NotificationService } from '@chaolaolo/nestjs-libraries/database/prisma/notifications/notification.service';
+import { OrganizationRepository } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.repository';
+import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import dayjs from 'dayjs';
-import { BullMqClient } from '@chaolaolo/nestjs-libraries/bull-mq-transport-new/client';
+import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/client';
 
 @Injectable()
 export class MessagesService {

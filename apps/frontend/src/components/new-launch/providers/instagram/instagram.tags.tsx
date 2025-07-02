@@ -1,12 +1,12 @@
 'use client';
 
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
-import { useSettings } from '@chaolaolo/frontend/components/launches/helpers/use.values';
+import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { ReactTags } from 'react-tag-autocomplete';
-import interClass from '@chaolaolo/react/helpers/inter.font';
-import { useIntegration } from '@chaolaolo/frontend/components/launches/helpers/use.integration';
+import interClass from '@gitroom/react/helpers/inter.font';
+import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import clsx from 'clsx';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 export const InstagramCollaboratorsTags: FC<{
   name: string;

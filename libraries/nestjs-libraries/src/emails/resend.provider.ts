@@ -1,5 +1,5 @@
 import { Resend } from 'resend';
-import { EmailInterface } from '@chaolaolo/nestjs-libraries/emails/email.interface';
+import { EmailInterface } from '@gitroom/nestjs-libraries/emails/email.interface';
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_132');
 

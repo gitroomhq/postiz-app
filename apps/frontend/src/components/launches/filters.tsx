@@ -1,12 +1,12 @@
 'use client';
 
-import { useCalendar } from '@chaolaolo/frontend/components/launches/calendar.context';
+import { useCalendar } from '@gitroom/frontend/components/launches/calendar.context';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
 import { useCallback } from 'react';
 import { isUSCitizen } from './helpers/isuscitizen.utils';
-import { SelectCustomer } from '@chaolaolo/frontend/components/launches/select.customer';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import i18next from 'i18next';
 
 export const Filters = () => {

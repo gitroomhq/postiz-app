@@ -1,8 +1,8 @@
-import { Select } from '@chaolaolo/react/form/select';
+import { Select } from '@gitroom/react/form/select';
 import { uniqBy } from 'lodash';
 import React, { FC, useMemo, useState } from 'react';
-import { Integrations } from '@chaolaolo/frontend/components/launches/calendar.context';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
+import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const SelectCustomer: FC<{
   onChange: (value: string) => void;
   integrations: Integrations[];

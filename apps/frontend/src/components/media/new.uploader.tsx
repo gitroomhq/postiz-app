@@ -2,18 +2,18 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 // @ts-ignore
 import Uppy, { UploadResult } from '@uppy/core';
 // @ts-ignore
-import { useFetch } from '@chaolaolo/helpers/utils/custom.fetch';
-import { getUppyUploadPlugin } from '@chaolaolo/react/helpers/uppy.upload';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { getUppyUploadPlugin } from '@gitroom/react/helpers/uppy.upload';
 import { FileInput, ProgressBar } from '@uppy/react';
 
 // Uppy styles
 import '@uppy/core/dist/style.min.css';
 import '@uppy/dashboard/dist/style.min.css';
-import { useVariables } from '@chaolaolo/react/helpers/variable.context';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 import Compressor from '@uppy/compressor';
-import { useT } from '@chaolaolo/react/translation/get.transation.service.client';
-import { useToaster } from '@chaolaolo/react/toaster/toaster';
-import { useLaunchStore } from '@chaolaolo/frontend/components/new-launch/store';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useToaster } from '@gitroom/react/toaster/toaster';
+import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 
 export function MultipartFileUploader({
   onUploadSuccess,
