@@ -10,7 +10,6 @@ export class InstagramInsightsTask {
     private _instagramInsightsRepository: PrismaRepository<'instagramInsight'>,
   ) { }
 
-  // @Cron('* * * * *') // for every minute
   @Cron('0 0 * * *') // for midnight
   async handleInstagramInsights() {
     console.log('⏰ Cron job triggered');

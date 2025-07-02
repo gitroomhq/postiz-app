@@ -151,8 +151,8 @@ export class IntegrationRepository {
         organizationId_internalId: {
           internalId,
           organizationId: org,
-        },
-        customerId: customerId
+        }
+        // customerId: customerId //NEW 
       },
       create: {
         type: type as any,

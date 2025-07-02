@@ -11,6 +11,7 @@ export class ReportService {
     private _facebookInsightsRepository: PrismaRepository<'facebookInsight'>,
     private _threadsInsightsRepository: PrismaRepository<'threadsInsight'>,
     private _linkedInInsightsRepository: PrismaRepository<'linkedInInsight'>,
+    private _gbpInsightsRepository: PrismaRepository<'gbpInsight'>
   ) { }
 
   async getInstagramCommunityReport(businessId: string, days: string) {
@@ -1001,5 +1002,262 @@ export class ReportService {
     };
 
   }
+  
+  async getGBPPerformanceReport(businessId: string, days: string) {
+    return this.buildGBPPerformanceReport(businessId, days);
+  }
 
+  async getGBPEngagementReport(businessId: string, days: string) {
+    return this.buildGBPEngagementReport(businessId, days);
+  }
+
+  async getGBPReviewsReport(businessId: string, days: string) {
+    return this.buildGBPReviewsReport(businessId, days);
+  }
+
+  private async buildGBPPerformanceReport(businessId: string, days: string) {
+    const range = parseInt(days || '30', 10);
+    const today = new Date();
+    const startDate = subDays(today, range);
+
+    const insights = await this._gbpInsightsRepository.model.gbpInsight.findMany({
+      where: {
+        businessId,
+        createdAt: {
+          gte: startDate,
+          lte: today,
+        },
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
+
+    if (!insights.length) {
+      return {
+        Data: [],
+        'Google maps': [],
+        'Google search': [],
+        'Total': [],
+        dailyStats: [],
+      };
+    }
+
+    // Group by month
+    const monthGroups = new Map<string, { 
+      maps: number[]; 
+      search: number[]; 
+      total: number[] 
+    }>();
+
+    for (const record of insights) {
+      const month = format(record.createdAt, 'yyyy-MM');
+      if (!monthGroups.has(month)) {
+        monthGroups.set(month, { maps: [], search: [], total: [] });
+      }
+      const group = monthGroups.get(month);
+      group.maps.push(record.impressionsMaps);
+      group.search.push(record.impressionsSearch);
+      group.total.push(record.impressionsMaps + record.impressionsSearch);
+    }
+
+    const monthStats = [...monthGroups.entries()].map(([month, values]) => ({
+      month,
+      maps: values.maps.reduce((a, b) => a + b, 0),
+      search: values.search.reduce((a, b) => a + b, 0),
+      total: values.total.reduce((a, b) => a + b, 0),
+    }));
+
+    const lastMonth = monthStats[monthStats.length - 1];
+    const prevMonth = monthStats[monthStats.length - 2];
+
+    const changeMaps = this.getPercentageChange(prevMonth?.maps, lastMonth?.maps);
+    const changeSearch = this.getPercentageChange(prevMonth?.search, lastMonth?.search);
+    const changeTotal = this.getPercentageChange(prevMonth?.total, lastMonth?.total);
+
+    // Daily stats for chart
+    const dailyStats = insights.map(entry => ({
+      date: format(entry.createdAt, 'yyyy-MM-dd'),
+      maps: entry.impressionsMaps,
+      search: entry.impressionsSearch,
+      total: entry.impressionsMaps + entry.impressionsSearch,
+    }));
+
+    return {
+      table: {
+        Data: [...monthStats.map(m => format(new Date(`${m.month}-01`), 'MMMM')), 'Change %'],
+        'Google maps': [...monthStats.map(m => m.maps.toString()), `${changeMaps.toFixed(2)}%`],
+        'Google search': [...monthStats.map(m => m.search.toString()), `${changeSearch.toFixed(2)}%`],
+        'Total': [...monthStats.map(m => m.total.toString()), `${changeTotal.toFixed(2)}%`],
+      },
+      chart: dailyStats,
+    };
+  }
+
+  private async buildGBPEngagementReport(businessId: string, days: string) {
+    const range = parseInt(days || '30', 10);
+    const today = new Date();
+    const startDate = subDays(today, range);
+
+    const insights = await this._gbpInsightsRepository.model.gbpInsight.findMany({
+      where: {
+        businessId,
+        createdAt: {
+          gte: startDate,
+          lte: today,
+        },
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
+
+    if (!insights.length) {
+      return {
+        Data: [],
+        'Website': [],
+        'Phone': [],
+        'Direction': [],
+        'Total': [],
+        dailyStats: [],
+      };
+    }
+
+    // Group by month
+    const monthGroups = new Map<string, { 
+      website: number[]; 
+      phone: number[]; 
+      direction: number[]; 
+      total: number[] 
+    }>();
+
+    for (const record of insights) {
+      const month = format(record.createdAt, 'yyyy-MM');
+      if (!monthGroups.has(month)) {
+        monthGroups.set(month, { website: [], phone: [], direction: [], total: [] });
+      }
+      const group = monthGroups.get(month);
+      group.website.push(record.websiteClicks);
+      group.phone.push(record.phoneClicks);
+      group.direction.push(record.directionRequests);
+      group.total.push(record.websiteClicks + record.phoneClicks + record.directionRequests);
+    }
+
+    const monthStats = [...monthGroups.entries()].map(([month, values]) => ({
+      month,
+      website: values.website.reduce((a, b) => a + b, 0),
+      phone: values.phone.reduce((a, b) => a + b, 0),
+      direction: values.direction.reduce((a, b) => a + b, 0),
+      total: values.total.reduce((a, b) => a + b, 0),
+    }));
+
+    const lastMonth = monthStats[monthStats.length - 1];
+    const prevMonth = monthStats[monthStats.length - 2];
+
+    const changeWebsite = this.getPercentageChange(prevMonth?.website, lastMonth?.website);
+    const changePhone = this.getPercentageChange(prevMonth?.phone, lastMonth?.phone);
+    const changeDirection = this.getPercentageChange(prevMonth?.direction, lastMonth?.direction);
+    const changeTotal = this.getPercentageChange(prevMonth?.total, lastMonth?.total);
+
+    // Daily stats for chart
+    const dailyStats = insights.map(entry => ({
+      date: format(entry.createdAt, 'yyyy-MM-dd'),
+      website: entry.websiteClicks,
+      phone: entry.phoneClicks,
+      direction: entry.directionRequests,
+      total: entry.websiteClicks + entry.phoneClicks + entry.directionRequests,
+    }));
+
+    return {
+      table: {
+        Data: [...monthStats.map(m => format(new Date(`${m.month}-01`), 'MMMM')), 'Change %'],
+        'Website': [...monthStats.map(m => m.website.toString()), `${changeWebsite.toFixed(2)}%`],
+        'Phone': [...monthStats.map(m => m.phone.toString()), `${changePhone.toFixed(2)}%`],
+        'Direction': [...monthStats.map(m => m.direction.toString()), `${changeDirection.toFixed(2)}%`],
+        'Total': [...monthStats.map(m => m.total.toString()), `${changeTotal.toFixed(2)}%`],
+      },
+      chart: dailyStats,
+    };
+  }
+
+  private async buildGBPReviewsReport(businessId: string, days: string) {
+    const range = parseInt(days || '30', 10);
+    const today = new Date();
+    const startDate = subDays(today, range);
+
+    const insights = await this._gbpInsightsRepository.model.gbpInsight.findMany({
+      where: {
+        businessId,
+        createdAt: {
+          gte: startDate,
+          lte: today,
+        },
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
+
+    if (!insights.length) {
+      return {
+        Data: [],
+        'Star Rating': [],
+        'Total Review': [],
+        dailyStats: [],
+      };
+    }
+
+    // Group by month
+    const monthGroups = new Map<string, { 
+      rating: number[]; 
+      reviews: number[]; 
+      count: number 
+    }>();
+
+    for (const record of insights) {
+      const month = format(record.createdAt, 'yyyy-MM');
+      if (!monthGroups.has(month)) {
+        monthGroups.set(month, { rating: [], reviews: [], count: 0 });
+      }
+      const group = monthGroups.get(month);
+      group.rating.push(record.avgRating);
+      group.reviews.push(record.totalReviews);
+      group.count++;
+    }
+
+    const monthStats = [...monthGroups.entries()].map(([month, values]) => ({
+      month,
+      rating: values.rating.reduce((a, b) => a + b, 0) / values.rating.length,
+      reviews: values.reviews.reduce((a, b) => a + b, 0),
+    }));
+
+    const lastMonth = monthStats[monthStats.length - 1];
+    const prevMonth = monthStats[monthStats.length - 2];
+
+    const changeRating = this.getPercentageChange(prevMonth?.rating, lastMonth?.rating);
+    const changeReviews = this.getPercentageChange(prevMonth?.reviews, lastMonth?.reviews);
+
+    // Daily stats for chart
+    const dailyStats = insights.map(entry => ({
+      date: format(entry.createdAt, 'yyyy-MM-dd'),
+      rating: entry.avgRating,
+      reviews: entry.totalReviews,
+    }));
+
+    return {
+      table: {
+        Data: [...monthStats.map(m => format(new Date(`${m.month}-01`), 'MMMM')), 'Change %'],
+        'Star Rating': [...monthStats.map(m => m.rating.toFixed(2)), `${changeRating.toFixed(2)}%`],
+        'Total Review': [...monthStats.map(m => m.reviews.toString()), `${changeReviews.toFixed(2)}%`],
+      },
+      chart: dailyStats,
+    };
+  }
+
+
+  async gbpList(businessId: string) {    
+    return this._gbpInsightsRepository.model.gbpInsight.findMany({
+      where: { businessId },
+    });
+  }
 }

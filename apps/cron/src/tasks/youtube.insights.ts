@@ -9,9 +9,7 @@ export class YoutubeInsightsTask {
 		private _youtubeInsightsRepository: PrismaRepository<'youTubeInsight'>,
 	) { }
 
-	// Cron runs every day at midnight
-	@Cron('0 0 * * *')
-	//@Cron('* * * * *') // for every minute
+    @Cron('0 0 * * *') // for midnight
 	async handleYoutubeInsights() {
 		console.log('⏰ YouTube insights cron job triggered');
 
