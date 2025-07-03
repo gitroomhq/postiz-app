@@ -928,8 +928,8 @@ export class PostsService {
     return this._postRepository.findPopularPosts(category, topic);
   }
 
-  async findFreeDateTime(orgId: string) {
-    const findTimes = await this._integrationService.findFreeDateTime(orgId);
+  async findFreeDateTime(orgId: string, integrationId?: string) {
+    const findTimes = await this._integrationService.findFreeDateTime(orgId, integrationId);
     return this.findFreeDateTimeRecursive(
       orgId,
       findTimes,

@@ -14,7 +14,9 @@ export interface AddEditModalProps {
   date: dayjs.Dayjs;
   integrations: Integrations[];
   allIntegrations?: Integrations[];
+  selectedChannels?: string[];
   set?: CreatePostDto;
+  focusedChannel?: string;
   addEditSets?: (data: any) => void;
   reopenModal: () => void;
   mutate: () => void;
@@ -82,6 +84,15 @@ export const AddEditModalInner: FC<AddEditModalProps> = (props) => {
       );
       addOrRemoveSelectedIntegration(integration, existingData.settings);
     }
+
+    if (props?.selectedChannels?.length) {
+      for (const channel of props.selectedChannels) {
+        const integration = integrations.find((i) => i.id === channel);
+        if (integration) {
+          addOrRemoveSelectedIntegration(integration, {});
+        }
+      }
+    }
   }, []);
 
   if (existingData.integration && selectedIntegrations.length === 0) {
@@ -133,6 +144,10 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
         }))
       );
       setCurrent(existingData.integration);
+    }
+
+    if (props.focusedChannel) {
+      setCurrent(props.focusedChannel);
     }
 
     addGlobalValue(

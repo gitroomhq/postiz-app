@@ -38,7 +38,7 @@ export class PostsController {
     private _starsService: StarsService,
     private _messagesService: MessagesService,
     private _agentGraphService: AgentGraphService,
-    private _shortLinkService: ShortLinkService,
+    private _shortLinkService: ShortLinkService
   ) {}
 
   @Get('/:id/statistics')
@@ -109,6 +109,14 @@ export class PostsController {
   @Get('/find-slot')
   async findSlot(@GetOrgFromRequest() org: Organization) {
     return { date: await this._postsService.findFreeDateTime(org.id) };
+  }
+
+  @Get('/find-slot/:id')
+  async findSlotIntegration(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id?: string
+  ) {
+    return { date: await this._postsService.findFreeDateTime(org.id, id) };
   }
 
   @Get('/predict-trending')
@@ -183,7 +191,7 @@ export class PostsController {
   @Post('/separate-posts')
   async separatePosts(
     @GetOrgFromRequest() org: Organization,
-    @Body() body: { content: string, len: number }
+    @Body() body: { content: string; len: number }
   ) {
     return this._postsService.separatePosts(body.content, body.len);
   }

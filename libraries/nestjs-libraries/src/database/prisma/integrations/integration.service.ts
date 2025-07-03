@@ -33,7 +33,7 @@ export class IntegrationService {
     private _autopostsRepository: AutopostRepository,
     private _integrationManager: IntegrationManager,
     private _notificationService: NotificationService,
-    private _workerServiceProducer: BullMqClient,
+    private _workerServiceProducer: BullMqClient
   ) {}
 
   async changeActiveCron(orgId: string) {
@@ -673,8 +673,14 @@ export class IntegrationService {
     return difference(id, loadOnlyIds);
   }
 
-  async findFreeDateTime(orgId: string): Promise<number[]> {
-    const findTimes = await this._integrationRepository.getPostingTimes(orgId);
+  async findFreeDateTime(
+    orgId: string,
+    integrationsId?: string
+  ): Promise<number[]> {
+    const findTimes = await this._integrationRepository.getPostingTimes(
+      orgId,
+      integrationsId
+    );
     return uniq(
       findTimes.reduce((all: any, current: any) => {
         return [
