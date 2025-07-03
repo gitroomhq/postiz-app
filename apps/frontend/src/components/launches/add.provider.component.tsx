@@ -600,13 +600,23 @@ export const AddProviderComponent: FC<{
                       }
                     >
                       <div>
-                        {item.identifier === 'youtube' ? (
+                        {
+                        item.identifier === 'youtube' ? (
                           <img src={`/icons/platforms/youtube.svg`} />
-                        ) : item.identifier === 'gbp' ? (
+                        )
+                        : 
+                        item.identifier === 'gbp' ? (
                           <img 
                           className="w-[32px] h-[32px] rounded-full"
                           src={`/icons/platforms/gbp.png`} />
-                        ) : (
+                        )
+                        : 
+                        item.identifier === 'website' ? (
+                          <img 
+                          className="w-[32px] h-[32px] rounded-full"
+                          src={`/icons/platforms/website.png`} />
+                        )
+                        : (
                           <img
                             className="w-[32px] h-[32px] rounded-full"
                             src={`/icons/platforms/${item.identifier}.png`}

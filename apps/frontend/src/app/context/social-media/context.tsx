@@ -239,8 +239,26 @@ const initializeDefaultConfig = (customerId: string): SocialMediaConfig[] => [
         value: ""
       }
     ],
+  },
+  {
+    customerId: customerId,
+    platform: "Website",
+    platformKey: "website",
+    config: [
+      {
+        key: "GOOGLE_WEBSITE_CLIENT_ID",
+        value: "",
+      },
+      {
+        key: "GOOGLE_WEBSITE_CLIENT_SECRET",
+        value: "",
+      },
+      {
+        key: "GOOGLE_WEBSITE_PROPERTY_ID",
+        value: "",
+      },
+    ],
   }
-
 ];
 
 // Create the provider
