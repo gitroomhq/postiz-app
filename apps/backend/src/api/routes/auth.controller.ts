@@ -22,6 +22,7 @@ import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 import { RealIP } from 'nestjs-real-ip';
 import { UserAgent } from '@gitroom/nestjs-libraries/user/user.agent';
 import axios from 'axios';
+import qs from 'qs';
 
 @ApiTags('Auth')
 @Controller('/auth')
@@ -249,6 +250,48 @@ export class AuthController {
     } catch (err) {
       console.error('❌ Error in callback:', err.message);
       return res.status(500).send('Failed to fetch token');
+    }
+  }
+
+  @Get('website/callback')
+  async handleWebsiteCallback(
+    @Query('code') code: string,
+    @Res() res: Response
+  ) {
+    try {
+
+      const client_id = process.env.GOOGLE_WEBSITE_CLIENT_ID;
+      const client_secret = process.env.GOOGLE_WEBSITE_CLIENT_SECRET;
+      const redirect_uri = 'http://localhost:3000/auth/website/callback'; 
+
+      // ✅ STEP 1: Exchange code for tokens
+      const response = await axios.post(
+        'https://oauth2.googleapis.com/token',
+        qs.stringify({
+          code,
+          client_id,
+          client_secret,
+          redirect_uri,
+          grant_type: 'authorization_code',
+        }),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        }
+      );
+
+      const { access_token, refresh_token, expires_in } = response.data;
+
+      console.log('✅ ACCESS TOKEN:', access_token);
+      console.log('🔄 REFRESH TOKEN:', refresh_token);
+      console.log('⏳ EXPIRES IN:', expires_in);
+
+      return res.send('✅ Website account connected! Tokens stored. Check backend logs.');
+
+    } catch (err) {
+      console.error('❌ Error in website callback:', err.message, err.response?.data);
+      return res.status(500).send('Failed to fetch Google tokens.');
     }
   }
 }
