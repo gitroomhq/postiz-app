@@ -180,6 +180,8 @@
   "add_comment_or_post": "Add comment / post",
   "you_are_in_global_editing_mode": "You are in global editing mode",
   "the_post_should_be_at_least_6_characters_long": "The post should be at least 6 characters long",
+  "are_you_sure_you_want_to_delete_post": "Are you sure you want to delete this post?",
+  "post_deleted_successfully": "Post deleted successfully",
   "delete_post": "Delete Post",
   "save_as_draft": "Save as draft",
   "post_now": "Post now",

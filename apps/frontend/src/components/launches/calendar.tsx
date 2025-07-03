@@ -53,6 +53,7 @@ import { StatisticsModal } from '@gitroom/frontend/components/launches/statistic
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import i18next from 'i18next';
 import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
+import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 
 // Extend dayjs with necessary plugins
 extend(isSameOrAfter);
@@ -474,6 +475,7 @@ export const CalendarColumn: FC<{
     },
     []
   );
+
   const editPost = useCallback(
     (
         loadPost: Post & {
@@ -632,6 +634,34 @@ export const CalendarColumn: FC<{
     },
     []
   );
+
+  const deletePost = useCallback(
+    (post: Post) => async () => {
+      if (
+        !(await deleteDialog(
+          t(
+            'are_you_sure_you_want_to_delete_post',
+            'Are you sure you want to delete post?'
+          )
+        ))
+      ) {
+        return;
+      }
+
+      await fetch(`/posts/${post.group}`, {
+        method: 'DELETE',
+      });
+
+      toaster.show(
+        t('post_deleted_successfully', 'Post deleted successfully'),
+        'success'
+      );
+
+      reloadCalendarView();
+    },
+    [toaster, t]
+  );
+
   const addProvider = useAddProvider();
   return (
     <div className="flex flex-col w-full min-h-full" ref={drop as any}>
@@ -682,6 +712,7 @@ export const CalendarColumn: FC<{
                   duplicatePost={editPost(post, true)}
                   post={post}
                   integrations={integrations}
+                  deletePost={deletePost(post)}
                 />
               </div>
             </div>
@@ -782,6 +813,7 @@ const CalendarItem: FC<{
   isBeforeNow: boolean;
   editPost: () => void;
   duplicatePost: () => void;
+  deletePost: () => void;
   statistics: () => void;
   integrations: Integrations[];
   state: State;
@@ -803,6 +835,7 @@ const CalendarItem: FC<{
     isBeforeNow,
     state,
     display,
+    deletePost,
   } = props;
   const preview = useCallback(() => {
     window.open(`/p/` + post.id + '?share=true', '_blank');
@@ -871,6 +904,15 @@ const CalendarItem: FC<{
           onClick={statistics}
         >
           <Statistics />
+        </div>{' '}
+        <div
+          className={clsx(
+            'hidden group-hover:block hover:underline cursor-pointer',
+            post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
+          )}
+          onClick={deletePost}
+        >
+          <DeletePost />
         </div>
       </div>
       <div
@@ -960,6 +1002,26 @@ export const Statistics = () => {
     >
       <path
         d="M28 25H27V5C27 4.73478 26.8946 4.48043 26.7071 4.29289C26.5196 4.10536 26.2652 4 26 4H19C18.7348 4 18.4804 4.10536 18.2929 4.29289C18.1054 4.48043 18 4.73478 18 5V10H12C11.7348 10 11.4804 10.1054 11.2929 10.2929C11.1054 10.4804 11 10.7348 11 11V16H6C5.73478 16 5.48043 16.1054 5.29289 16.2929C5.10536 16.4804 5 16.7348 5 17V25H4C3.73478 25 3.48043 25.1054 3.29289 25.2929C3.10536 25.4804 3 25.7348 3 26C3 26.2652 3.10536 26.5196 3.29289 26.7071C3.48043 26.8946 3.73478 27 4 27H28C28.2652 27 28.5196 26.8946 28.7071 26.7071C28.8946 26.5196 29 26.2652 29 26C29 25.7348 28.8946 25.4804 28.7071 25.2929C28.5196 25.1054 28.2652 25 28 25ZM20 6H25V25H20V6ZM13 12H18V25H13V12ZM7 18H11V25H7V18Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+};
+
+export const DeletePost = () => {
+  const t = useT();
+  return (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      data-tooltip-id="tooltip"
+      data-tooltip-content={t('delete_post', 'Delete Post')}
+    >
+      <path
+        d="M15 10V18H9V10H15ZM14 4H9.9L8.9 5H6V7H18V5H15L14 4ZM17 8H7V18C7 19.1 7.9 20 9 20H15C16.1 20 17 19.1 17 18V8Z"
         fill="currentColor"
       />
     </svg>

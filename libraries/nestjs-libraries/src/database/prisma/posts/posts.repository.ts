@@ -160,6 +160,7 @@ export class PostsRepository {
         submittedForOrderId: true,
         state: true,
         intervalInDays: true,
+        group: true,
         tags: {
           select: {
             tag: true,
