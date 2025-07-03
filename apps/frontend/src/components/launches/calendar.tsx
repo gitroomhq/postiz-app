@@ -189,12 +189,16 @@ export const WeekView = () => {
     dayjs.locale(currentLanguage);
 
     const days = [];
-    // Starting from Monday (1) to Sunday (7)
+    const yearWeek = dayjs()
+      .year(currentYear)
+      .week(currentWeek)
+      .startOf('week');
     for (let i = 1; i <= 7; i++) {
-      days.push(dayjs().day(i).format('dddd'));
+      const yearWeekFormat = yearWeek.add(i, 'day').format('L');
+      days.push({ name: dayjs().day(i).format('dddd'), day: yearWeekFormat });
     }
     return days;
-  }, [i18next.resolvedLanguage]);
+  }, [i18next.resolvedLanguage, currentYear, currentWeek]);
 
   return (
     <div className="flex flex-col h-screen overflow-hidden text-textColor flex-1">
@@ -203,10 +207,11 @@ export const WeekView = () => {
           <div className="bg-customColor20 sticky top-0 z-10 bg-gray-900"></div>
           {localizedDays.map((day, index) => (
             <div
-              key={day}
+              key={day.name}
               className="sticky top-0 z-10 bg-customColor20 p-2 text-center"
             >
-              <div>{day}</div>
+              <div>{day.name}</div>
+              <div className="text-xs">{day.day}</div>
             </div>
           ))}
           {hours.map((hour) => (

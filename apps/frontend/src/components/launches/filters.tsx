@@ -166,10 +166,32 @@ export const Filters = () => {
     week.currentYear,
     week.currentDay,
   ]);
+
+  const setCurrent = useCallback(
+    (type: 'day' | 'week' | 'month') => () => {
+      if (type === 'day') {
+        setDay();
+      } else if (type === 'week') {
+        setWeek();
+      } else if (type === 'month') {
+        setMonth();
+      }
+    },
+    [
+      week.display,
+      week.currentMonth,
+      week.currentWeek,
+      week.currentYear,
+      week.currentDay,
+    ]
+  );
   return (
     <div className="text-textColor flex flex-col md:flex-row gap-[8px] items-center select-none">
-      <div className="flex flex-grow flex-row">
-        <div onClick={previous} className="cursor-pointer text-textColor rtl:rotate-180">
+      <div className="flex flex-grow flex-row items-center">
+        <div
+          onClick={previous}
+          className="cursor-pointer text-textColor rtl:rotate-180"
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="20"
@@ -184,17 +206,17 @@ export const Filters = () => {
           </svg>
         </div>
         <div className="w-[80px] text-center">
-          {week.display === 'day'
-            ? `${dayjs()
-                .month(week.currentMonth)
-                .week(week.currentWeek)
-                .day(week.currentDay)
-                .format('dddd')}`
-            : week.display === 'week'
-            ? t('week_number', 'Week {{number}}', { number: week.currentWeek })
-            : dayjs().month(week.currentMonth).format('MMMM')}
+          <div
+            onClick={setCurrent(week.display as 'day' | 'week' | 'month')}
+            className="bg-secondary py-[3px] rounded-[5px] hover:bg-tableBorder transition-all cursor-pointer"
+          >
+            Today
+          </div>
         </div>
-        <div onClick={next} className="cursor-pointer text-textColor rtl:rotate-180">
+        <div
+          onClick={next}
+          className="cursor-pointer text-textColor rtl:rotate-180"
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="20"
@@ -208,7 +230,17 @@ export const Filters = () => {
             />
           </svg>
         </div>
-        <div className="flex-1">{betweenDates}</div>
+        <div className="flex-1">
+          {week.display === 'day'
+            ? `${dayjs()
+                .month(week.currentMonth)
+                .week(week.currentWeek)
+                .day(week.currentDay)
+                .format('dddd (L)')}`
+            : week.display === 'week'
+            ? betweenDates
+            : dayjs().month(week.currentMonth).format('MMMM YYYY')}
+        </div>
       </div>
       <SelectCustomer
         customer={week.customer as string}
