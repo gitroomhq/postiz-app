@@ -73,7 +73,6 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   @PostPlug({
     identifier: 'x-repost-post-users',
     title: 'Add Re-posters',
-    disabled: !!process.env.DISABLE_X_ANALYTICS,
     description: 'Add accounts to repost your post',
     pickIntegration: ['x'],
     fields: [],
