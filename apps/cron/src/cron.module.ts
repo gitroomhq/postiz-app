@@ -10,10 +10,11 @@ import { FacebookInsightsTask } from './tasks/facebook.insights';
 import { ThreadsInsightsTask } from './tasks/threads.insights';
 import { LinkedInInsightsTask } from './tasks/linkedin.insights';
 import { XInsightsTask } from './tasks/x-insights.task';
+import { GBPInsightsTask } from './tasks/gbp.insights';
 
 @Module({
   imports: [DatabaseModule, ScheduleModule.forRoot(), BullMqModule],
   controllers: [],
-  providers: [...(!process.env.IS_GENERAL ? [CheckStars, SyncTrending, LinkedInInsightsTask, InstagramInsightsTask, YoutubeInsightsTask, FacebookInsightsTask, ThreadsInsightsTask, XInsightsTask] : [])],
+  providers: [...(!process.env.IS_GENERAL ? [CheckStars, SyncTrending, LinkedInInsightsTask, InstagramInsightsTask, YoutubeInsightsTask, FacebookInsightsTask, ThreadsInsightsTask, XInsightsTask,GBPInsightsTask ] : [])],
 })
 export class CronModule { }

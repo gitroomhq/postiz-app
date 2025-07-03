@@ -27,7 +27,17 @@ import { SocialMediaPlatformConfigService } from '../database/prisma/social-medi
 // import { MastodonCustomProvider } from '@gitroom/nestjs-libraries/integrations/social/mastodon.custom.provider';
 import { FarcasterProvider } from '@gitroom/nestjs-libraries/integrations/social/farcaster.provider';
 import { TelegramProvider } from '@gitroom/nestjs-libraries/integrations/social/telegram.provider';
+import { PrismaRepository, PrismaService } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
+import { CustomersRepository } from '@gitroom/nestjs-libraries/database/prisma/customers/customers.repository';
 import { GbpProvider } from '@gitroom/nestjs-libraries/integrations/social/gbp.provider';
+
+const prismaService = new PrismaService();
+
+const customerPrismaRepo = new PrismaRepository<'customer'>(prismaService);
+
+const customersRepo = new CustomersRepository(customerPrismaRepo);
+
+const gbpProvider = new GbpProvider(customersRepo);
 
 const socialIntegrationList: SocialProvider[] = [
   new XProvider(),
@@ -49,7 +59,7 @@ const socialIntegrationList: SocialProvider[] = [
   new LemmyProvider(),
   new FarcasterProvider(),
   new TelegramProvider(),
-  new GbpProvider()
+  gbpProvider
   // new MastodonCustomProvider(),
 ];
 

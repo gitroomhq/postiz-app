@@ -159,4 +159,37 @@ export class ReportController {
     return this.reportService.linkedInInsightList(businessId);
   }
 
+  /////////////////////////////////////////////////////////////////////////////////////
+
+    @Get('gbp/performance')
+    getGBPPerformanceReport(
+      @Query('businessId') businessId: string,
+      @Query('days') days: string | '7' | '30' | '90' = '30'
+    ) {
+      return this.reportService.getGBPPerformanceReport(businessId, days);
+    }
+
+    @Get('gbp/engagement')
+    getGBPEngagementReport(
+      @Query('businessId') businessId: string,
+      @Query('days') days: string | '7' | '30' | '90' = '30'
+    ) {
+      return this.reportService.getGBPEngagementReport(businessId, days);
+    }
+
+    @Get('gbp/reviews')
+    getGBPReviewsReport(
+      @Query('businessId') businessId: string,
+      @Query('days') days: string | '7' | '30' | '90' = '30'
+    ) {
+      return this.reportService.getGBPReviewsReport(businessId, days);
+    }
+
+    @Get('gbp/list')
+    gbpList(
+    @Query('businessId') businessId: string,
+    ) {
+    return this.reportService.gbpList(businessId);
+    }
+  /////////////////////////////////////////////////////////////////////////////////////
 }

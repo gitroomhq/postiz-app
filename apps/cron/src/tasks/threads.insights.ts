@@ -10,8 +10,7 @@ export class ThreadsInsightsTask {
 		private _threadsInsightsRepository: PrismaRepository<'threadsInsight'>,
 	) { }
 
-	//@Cron('0 0 * * *') // Runs at midnight
-	//@Cron('* * * * *') // Run every minute
+    @Cron('0 0 * * *') // for midnight
 	async handleThreadsInsights() {
 		console.log('⏰ Threads Insights Cron job triggered');
 

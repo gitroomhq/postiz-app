@@ -11,8 +11,7 @@ export class XInsightsTask {
     private _xInsightsRepository: PrismaRepository<'xInsight'>,
   ) { }
 
-  //@Cron('0 0 * * *') // Daily at midnight
-  @Cron('* * * * *') // Every minute
+  @Cron('0 0 * * *') // for midnight
   async handleXInsights() {
     console.log('⏰ Twitter/X cron triggered');
 

@@ -10,11 +10,7 @@ export class LinkedInInsightsTask {
 		private _linkedInInsightsRepository: PrismaRepository<'linkedInInsight'>,
 	) { }
 
-
-	// Cron runs every day at midnight
-	@Cron('0 0 * * *')
-
-	//@Cron('* * * * *') // for every minute
+	@Cron('0 0 * * *') // for midnight
 	async handleLinkedInInsights() {
 		console.log('⏰ LinkedIn Insights Cron job triggered');
 
