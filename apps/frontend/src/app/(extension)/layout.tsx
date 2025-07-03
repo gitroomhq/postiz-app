@@ -43,6 +43,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           neynarClientId={process.env.NEYNAR_CLIENT_ID!}
           isSecured={!process.env.NOT_SECURED}
           disableImageCompression={!!process.env.DISABLE_IMAGE_COMPRESSION}
+          disableXAnalytics={!!process.env.DISABLE_X_ANALYTICS}
           transloadit={
             process.env.TRANSLOADIT_AUTH && process.env.TRANSLOADIT_TEMPLATE
               ? [

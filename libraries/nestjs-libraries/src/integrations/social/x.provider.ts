@@ -354,26 +354,6 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     }));
   }
 
-  communities(accessToken: string, data: { search: string }) {
-    const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
-    const client = new TwitterApi({
-      appKey: process.env.X_API_KEY!,
-      appSecret: process.env.X_API_SECRET!,
-      accessToken: accessTokenSplit,
-      accessSecret: accessSecretSplit,
-    });
-
-    return client.v2.searchCommunities(data.search);
-
-    // })).data.map(p => {
-    //   return {
-    //     id: p.id,
-    //     name: p.name,
-    //     accessToken
-    //   }
-    // })
-  }
-
   private loadAllTweets = async (
     client: TwitterApi,
     id: string,
