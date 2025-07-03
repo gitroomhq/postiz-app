@@ -16,10 +16,6 @@ export default withProvider({
   CustomPreviewComponent: undefined,
   dto: undefined,
   checkValidity: async ([firstPost, ...otherPosts], settings) => {
-    if (!firstPost.length) {
-      return 'Should have at least one media';
-    }
-
     const checkVideosLength = await Promise.all(
       firstPost
         .filter((f) => f.path.indexOf('mp4') > -1)
