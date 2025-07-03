@@ -142,9 +142,12 @@ export class IntegrationRepository {
       }
       : {};
 
-    Logger.log(" ==> (*)customerId:: ", customerId)
-    Logger.log(" ==> (*)org:: ", org)
-    Logger.log(" ==> (*)internalId:: ", internalId)
+      console.log("customerId",customerId);
+      console.log("org",org);
+      console.log("internalId",internalId);
+      console.log("name",name);
+      console.log("username",username);
+      console.log("provider",provider);
 
     const upsert = await this._integration.model.integration.upsert({
       where: {
@@ -186,6 +189,7 @@ export class IntegrationRepository {
           : {}),
         ...(picture ? { picture } : {}),
         profile: username,
+        name : name,
         providerIdentifier: provider,
         token,
         refreshToken,
@@ -232,7 +236,7 @@ export class IntegrationRepository {
       });
     }
 
-    Logger.log(" ==> (*)INTEGRATION ADDED !!! ")
+    console.log("INTEGRATION ADDED");
 
     return upsert;
   }
