@@ -211,7 +211,7 @@ export const WeekView = () => {
               className="sticky top-0 z-10 bg-customColor20 p-2 text-center"
             >
               <div>{day.name}</div>
-              <div className="text-xs">{day.day}</div>
+              <div className={clsx("text-xs", day.day === dayjs().format('L') && 'text-yellow-300')}>{day.day}</div>
             </div>
           ))}
           {hours.map((hour) => (
