@@ -54,6 +54,7 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import i18next from 'i18next';
 import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 
 // Extend dayjs with necessary plugins
 extend(isSameOrAfter);
@@ -837,6 +838,7 @@ const CalendarItem: FC<{
     display,
     deletePost,
   } = props;
+  const { disableXAnalytics } = useVariables();
   const preview = useCallback(() => {
     window.open(`/p/` + post.id + '?share=true', '_blank');
   }, [post]);
@@ -896,15 +898,19 @@ const CalendarItem: FC<{
         >
           <Preview />
         </div>{' '}
-        <div
-          className={clsx(
-            'hidden group-hover:block hover:underline cursor-pointer',
-            post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
-          )}
-          onClick={statistics}
-        >
-          <Statistics />
-        </div>{' '}
+        {post.integration.providerIdentifier === 'x' && disableXAnalytics ? (
+          <></>
+        ) : (
+          <div
+            className={clsx(
+              'hidden group-hover:block hover:underline cursor-pointer',
+              post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
+            )}
+            onClick={statistics}
+          >
+            <Statistics />
+          </div>
+        )}{' '}
         <div
           className={clsx(
             'hidden group-hover:block hover:underline cursor-pointer',

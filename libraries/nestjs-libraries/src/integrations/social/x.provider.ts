@@ -28,6 +28,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   @Plug({
     identifier: 'x-autoRepostPost',
     title: 'Auto Repost Posts',
+    disabled: !!process.env.DISABLE_X_ANALYTICS,
     description:
       'When a post reached a certain number of likes, repost it to increase engagement (1 week old posts)',
     runEveryMilliseconds: 21600000,
@@ -72,6 +73,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   @PostPlug({
     identifier: 'x-repost-post-users',
     title: 'Add Re-posters',
+    disabled: !!process.env.DISABLE_X_ANALYTICS,
     description: 'Add accounts to repost your post',
     pickIntegration: ['x'],
     fields: [],
@@ -104,6 +106,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   @Plug({
     identifier: 'x-autoPlugPost',
     title: 'Auto plug post',
+    disabled: !!process.env.DISABLE_X_ANALYTICS,
     description:
       'When a post reached a certain number of likes, add another post to it so you followers get a notification about your promotion',
     runEveryMilliseconds: 21600000,
@@ -175,7 +178,8 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     });
     const { url, oauth_token, oauth_token_secret } =
       await client.generateAuthLink(
-        (process.env.X_URL || process.env.FRONTEND_URL) + `/integrations/social/x`,
+        (process.env.X_URL || process.env.FRONTEND_URL) +
+          `/integrations/social/x`,
         {
           authAccessType: 'write',
           linkMode: 'authenticate',
@@ -409,6 +413,10 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     accessToken: string,
     date: number
   ): Promise<AnalyticsData[]> {
+    if (process.env.DISABLE_X_ANALYTICS) {
+      return [];
+    }
+
     const until = dayjs().endOf('day');
     const since = dayjs().subtract(date, 'day');
 

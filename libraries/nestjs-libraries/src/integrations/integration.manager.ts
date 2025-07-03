@@ -88,13 +88,15 @@ export class IntegrationManager {
           identifier: p.identifier,
           plugs: (
             Reflect.getMetadata('custom:plug', p.constructor.prototype) || []
-          ).map((p: any) => ({
-            ...p,
-            fields: p.fields.map((c: any) => ({
-              ...c,
-              validation: c?.validation?.toString(),
+          )
+            .filter((f) => !f.disabled)
+            .map((p: any) => ({
+              ...p,
+              fields: p.fields.map((c: any) => ({
+                ...c,
+                validation: c?.validation?.toString(),
+              })),
             })),
-          })),
         };
       })
       .filter((f) => f.plugs.length);
@@ -104,8 +106,12 @@ export class IntegrationManager {
     const p = socialIntegrationList.find((p) => p.identifier === providerName)!;
     return {
       internalPlugs:
-        Reflect.getMetadata('custom:internal_plug', p.constructor.prototype) ||
-        [],
+        (
+          Reflect.getMetadata(
+            'custom:internal_plug',
+            p.constructor.prototype
+          ) || []
+        ).filter((f) => !f.disabled) || [],
     };
   }
 
