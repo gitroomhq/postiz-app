@@ -249,17 +249,22 @@ model Subscription {
 }
 
 model Customer {
-  id           String        @id @default(uuid())
-  name         String
-  email        String?
-  phone        String?
-  orgId        String
-  organization Organization  @relation(fields: [orgId], references: [id])
-  integrations Integration[]
-  gbpInsights  GbpInsight[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  deletedAt    DateTime?
+  id               String             @id @default(uuid())
+  name             String
+  email            String?
+  phone            String?
+  orgId            String
+  organization     Organization       @relation(fields: [orgId], references: [id])
+  integrations     Integration[]
+  gbpInsights      GbpInsight[]
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  deletedAt        DateTime?
+  InstagramInsight InstagramInsight[]
+  LinkedInInsight  LinkedInInsight[]
+  YouTubeInsight   YouTubeInsight[]
+  FacebookInsight  FacebookInsight[]
+  XInsight         XInsight[]
 
   @@unique([orgId, name, deletedAt])
 }
@@ -527,7 +532,7 @@ model SocialMediaPlatformConfigItem {
 }
 
 model InstagramInsight {
-  id             String   @id @default(uuid())
+  id             String    @id @default(uuid())
   businessId     String
   organizationId String
   month          String
@@ -536,8 +541,12 @@ model InstagramInsight {
   totalContent   Int
   impressions    Int
   avgReachPerDay Int
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  customerId     String?
+  customer       Customer? @relation(fields: [customerId], references: [id])
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([customerId])
 }
 
 // Add to schema.prisma
@@ -556,50 +565,64 @@ model ThreadsInsight {
 }
 
 model LinkedInInsight {
-  id             String   @id @default(uuid())
+  id             String    @id @default(uuid())
   businessId     String // Changed from pageId to accountId
   organizationId String
+  customerId     String?
+  customer       Customer? @relation(fields: [customerId], references: [id])
   month          String
   followers      Int
   paidFollowers  Int
   impressions    Int
   postsCount     Int
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([customerId])
 }
 
 model YouTubeInsight {
-  id             String   @id @default(uuid())
+  id             String    @id @default(uuid())
   businessId     String // Renamed from channelId
   organizationId String
+  customerId     String?
+  customer       Customer? @relation(fields: [customerId], references: [id])
   month          String
   subscribers    Int
   totalViews     Int
   totalVideos    Int
   totalLikes     Int
   totalComments  Int
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([customerId])
 }
 
 model FacebookInsight {
-  id             String   @id @default(uuid())
+  id             String    @id @default(uuid())
   businessId     String
   organizationId String
+  customerId     String?
+  customer       Customer? @relation(fields: [customerId], references: [id])
   month          String
   likes          Int
   followers      Int
   impressions    Int
   pageViews      Int
   totalContent   Int
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([customerId])
 }
 
 model XInsight {
-  id             String   @id @default(uuid())
+  id             String    @id @default(uuid())
   businessId     String
   organizationId String
+  customerId     String?
+  customer       Customer? @relation(fields: [customerId], references: [id])
   month          String
   followers      Int
   following      Int
@@ -607,15 +630,17 @@ model XInsight {
   impressions    Int
   interactions   Int
   engagement     Float
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([customerId])
 }
 
 model GbpInsight {
-  id                String   @id @default(uuid()) @db.Uuid
+  id                String    @id @default(uuid()) @db.Uuid
   businessId        String
   organizationId    String
-  customerId        String?   
+  customerId        String?
   customer          Customer? @relation(fields: [customerId], references: [id])
   month             String
   impressionsMaps   Int

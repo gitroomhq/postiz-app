@@ -6,10 +6,10 @@ import { subDays, startOfDay, endOfDay } from 'date-fns';
 
 @Injectable()
 export class XInsightsTask {
-    
+
   constructor(
     private _xInsightsRepository: PrismaRepository<'xInsight'>,
-  ) {}
+  ) { }
 
   @Cron('0 0 * * *') // for midnight
   async handleXInsights() {
@@ -18,13 +18,13 @@ export class XInsightsTask {
     try {
 
       console.log("STEP 1: Fetching X integrations...");
-      
-        const integrationsRes = await axios.get(`${process.env.BACKEND_INTERNAL_URL}/integrations/list`, {
-            headers: {
-            'cookie': process.env.INTERNEL_TOKEN,
-            'Content-Type': 'application/json',
-            },
-        });
+
+      const integrationsRes = await axios.get(`${process.env.BACKEND_INTERNAL_URL}/integrations/list`, {
+        headers: {
+          'cookie': process.env.INTERNEL_TOKEN,
+          'Content-Type': 'application/json',
+        },
+      });
 
       console.log("STEP 2: Fetching X integrations...");
 
@@ -47,9 +47,9 @@ export class XInsightsTask {
 
       for (const account of xAccounts) {
 
-              console.log("STEP 6: Fetching X integrations...");
+        console.log("STEP 6: Fetching X integrations...");
 
-
+        console.log('xAccounts', xAccounts)
         const businessId = account.internalId;
         const organizationId = account.customer?.orgId;
 
@@ -63,7 +63,7 @@ export class XInsightsTask {
               },
             }
           );
-          
+
           console.log("STEP 7: Fetching X integrations...");
 
           const metrics = basicRes.data?.data?.public_metrics;
@@ -108,7 +108,7 @@ export class XInsightsTask {
 
 
           if (tweetIds && tweetIds.length) {
-          console.log("STEP 14: Fetching X integrations...");
+            console.log("STEP 14: Fetching X integrations...");
 
             const metricsRes = await axios.get(
               `https://api.twitter.com/2/tweets?ids=${tweetIds.join(',')}&tweet.fields=public_metrics`,
@@ -126,18 +126,18 @@ export class XInsightsTask {
               return sum + (m.like_count || 0) + (m.reply_count || 0) + (m.retweet_count || 0) + (m.quote_count || 0);
             }, 0);
 
-          console.log("STEP 16: Fetching X integrations...");
+            console.log("STEP 16: Fetching X integrations...");
 
           }
 
-         console.log("STEP 17: Fetching X integrations...");
+          console.log("STEP 17: Fetching X integrations...");
 
           const estimatedImpressions = Math.round(totalInteractions * 4); // Estimate impressions
           const engagement = (tweetIds && tweetIds.length) ? (totalInteractions / tweetIds.length) : 0;
 
           console.log("STEP 18: Fetching X integrations...");
 
-          const month = new Date().toISOString().slice(0, 7); 
+          const month = new Date().toISOString().slice(0, 7);
 
           console.log("STEP 19: Fetching X integrations...");
 
@@ -145,16 +145,17 @@ export class XInsightsTask {
             data: {
               businessId: businessId,
               organizationId,
+              customerId: account.customer?.id,// Add this line
               month,
               followers: followers_count,
               following: following_count,
               totalContent: tweetIds.length,
-              impressions : estimatedImpressions,
+              impressions: estimatedImpressions,
               interactions: totalInteractions,
               engagement
             },
           });
-          
+
           console.log("STEP 20: Fetching X integrations...");
 
           console.log(`✅ Inserted X insights for ${businessId}`);

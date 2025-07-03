@@ -10,7 +10,7 @@ export class LinkedInInsightsTask {
 		private _linkedInInsightsRepository: PrismaRepository<'linkedInInsight'>,
 	) { }
 
-    @Cron('0 0 * * *') // for midnight
+	@Cron('0 0 * * *') // for midnight
 	async handleLinkedInInsights() {
 		console.log('⏰ LinkedIn Insights Cron job triggered');
 
@@ -42,7 +42,7 @@ export class LinkedInInsightsTask {
 					continue;
 
 				}
-
+				console.log('integration', integration)
 				console.log('internalId', internalId)
 				// Use internalId as the LinkedIn businessId (LinkedIn org ID)
 				const businessId = internalId;
@@ -128,6 +128,7 @@ export class LinkedInInsightsTask {
 								businessId,
 								//internalId,
 								organizationId,
+								//customerId: integration.customer?.id,// Add this line
 								month,
 								followers,
 								paidFollowers,
