@@ -30,6 +30,7 @@ import { TelegramProvider } from '@gitroom/nestjs-libraries/integrations/social/
 import { PrismaRepository, PrismaService } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { CustomersRepository } from '@gitroom/nestjs-libraries/database/prisma/customers/customers.repository';
 import { GbpProvider } from '@gitroom/nestjs-libraries/integrations/social/gbp.provider';
+import { WebsiteProvider } from '@gitroom/nestjs-libraries/integrations/social/website.provider';
 
 const prismaService = new PrismaService();
 
@@ -38,6 +39,9 @@ const customerPrismaRepo = new PrismaRepository<'customer'>(prismaService);
 const customersRepo = new CustomersRepository(customerPrismaRepo);
 
 const gbpProvider = new GbpProvider(customersRepo);
+
+const websiteProvider = new WebsiteProvider(customersRepo);
+
 
 const socialIntegrationList: SocialProvider[] = [
   new XProvider(),
@@ -59,7 +63,8 @@ const socialIntegrationList: SocialProvider[] = [
   new LemmyProvider(),
   new FarcasterProvider(),
   new TelegramProvider(),
-  gbpProvider
+  gbpProvider,
+  websiteProvider
   // new MastodonCustomProvider(),
 ];
 
