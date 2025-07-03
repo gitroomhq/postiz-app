@@ -62,6 +62,7 @@ export class YoutubeInsightsTask {
 						data: {
 							businessId,
 							organizationId,
+							customerId: account.customer?.id,// Add this line
 							month,
 							subscribers: parseInt(stats.subscriberCount || '0'),
 							totalViews: parseInt(stats.viewCount || '0'),

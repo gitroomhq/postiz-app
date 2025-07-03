@@ -77,6 +77,7 @@ export class InstagramInsightsTask {
             data: {
               businessId,
               organizationId,
+              customerId: account.customer?.id,// Add this line
               month,
               followers: followers_count,
               following: follows_count,

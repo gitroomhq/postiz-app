@@ -1,678 +1,2356 @@
+// import { BadRequestException, Controller, Get, Query, Res } from '@nestjs/common';
+// import { Response } from 'express';
+// import { MonthlyReportService } from '../../services/report/monthly-report.service';
+// import { format, startOfMonth, endOfMonth, isValid } from 'date-fns';
+// import * as fs from 'fs';
+// import * as path from 'path';
+// import * as pdf from 'html-pdf';
+// import { ChartJSNodeCanvas } from 'chartjs-node-canvas';
+// import { ChartConfiguration } from 'chart.js';
+
+// interface ChartData {
+//     title: string;
+//     image: string | null;
+// }
+
+// interface TableData {
+//     title: string;
+//     headers: string[];
+//     rows: string[][];
+//     growthText?: string;
+// }
+
+// interface PlatformReport {
+//     name: string;
+//     tables: TableData[];
+//     charts: ChartData[];
+// }
+
+// @Controller('report-download')
+// export class ReportDownloadController {
+//     private readonly chartJSNodeCanvas: ChartJSNodeCanvas;
+
+//     constructor(private readonly reportService: MonthlyReportService) {
+//         this.chartJSNodeCanvas = new ChartJSNodeCanvas({
+//             width: 800,
+//             height: 400,
+//             backgroundColour: 'white',
+//         });
+//     }
+
+//     @Get('combined')
+//     async downloadCombinedReport(
+//         @Query('customerId') customerId: string,
+//         @Query('month') month: string,
+//         @Query('year') year: string,
+//         @Query('instagram') instagram: string,
+//         @Query('youtube') youtube: string,
+//         @Query('facebook') facebook: string,
+//         @Query('linkedin') linkedin: string,
+//         @Query('x') x: string,
+//         @Res() res: Response
+//     ) {
+//         try {
+//             if (!customerId) throw new BadRequestException('customerId is required');
+//             if (!month || !year) throw new BadRequestException('Month and year are required');
+
+//             const monthNum = parseInt(month, 10);
+//             const yearNum = parseInt(year, 10);
+
+//             const reportDate = new Date(yearNum, monthNum - 1, 1);
+//             if (!isValid(reportDate)) {
+//                 throw new BadRequestException('Invalid month/year combination');
+//             }
+
+//             const currentMonthStart = startOfMonth(reportDate);
+//             const currentMonthEnd = endOfMonth(reportDate);
+
+//             const platforms = {
+//                 instagram: instagram === 'true',
+//                 youtube: youtube === 'true',
+//                 facebook: facebook === 'true',
+//                 linkedin: linkedin === 'true',
+//                 x: x === 'true'
+//             };
+
+//             const platformReports: PlatformReport[] = [];
+
+//             if (platforms.instagram) {
+//                 const instagramReport = await this.processPlatform(
+//                     'instagram',
+//                     customerId,
+//                     monthNum,
+//                     yearNum,
+//                     [
+//                         { type: 'community', serviceMethod: 'getInstagramCommunityReport' },
+//                         { type: 'overview', serviceMethod: 'getInstagramOverviewReport' }
+//                     ],
+//                     [
+//                         { type: 'community', generator: this.generateCommunityChartForMonth.bind(this) },
+//                         { type: 'followers', generator: this.generateFollowersChartForMonth.bind(this) },
+//                         { type: 'impressions', generator: this.generateImpressionsChartForMonth.bind(this) }
+//                     ]
+//                 );
+//                 if (instagramReport) platformReports.push(instagramReport);
+//             }
+
+//             // ... [keep other platform processing the same as in your original file]
+
+//             // Process YouTube
+//             if (platforms.youtube) {
+//                 const youtubeReport = await this.processPlatform(
+//                     'youtube',
+//                     customerId,
+//                     monthNum,
+//                     yearNum,
+//                     [
+//                         { type: 'overview', serviceMethod: 'getYoutubeOverviewReport' }
+//                     ],
+//                     [
+//                         { type: 'subscribers', generator: this.generateSubscribersChartForMonth.bind(this) },
+//                         { type: 'views', generator: this.generateViewsChartForMonth.bind(this) }
+//                     ]
+//                 );
+//                 if (youtubeReport) platformReports.push(youtubeReport);
+//             }
+
+//             // Process Facebook
+//             if (platforms.facebook) {
+//                 const facebookReport = await this.processPlatform(
+//                     'facebook',
+//                     customerId,
+//                     monthNum,
+//                     yearNum,
+//                     [
+//                         { type: 'community', serviceMethod: 'getFacebookCommunityReport' },
+//                         { type: 'overview', serviceMethod: 'getFacebookOverviewReport' }
+//                     ],
+//                     [
+//                         { type: 'likes', generator: this.generateFacebookLikesChartForMonth.bind(this) },
+//                         { type: 'impressions', generator: this.generateFacebookImpressionsChartForMonth.bind(this) }
+//                     ]
+//                 );
+//                 if (facebookReport) platformReports.push(facebookReport);
+//             }
+
+//             // Process LinkedIn
+//             if (platforms.linkedin) {
+//                 const linkedinReport = await this.processPlatform(
+//                     'linkedin',
+//                     customerId,
+//                     monthNum,
+//                     yearNum,
+//                     [
+//                         { type: 'community', serviceMethod: 'getLinkedInCommunityReport' },
+//                         { type: 'overview', serviceMethod: 'getLinkedInOverviewReport' }
+//                     ],
+//                     [
+//                         { type: 'followers', generator: this.generateLinkedInFollowersChartForMonth.bind(this) },
+//                         { type: 'impressions', generator: this.generateLinkedInImpressionsChartForMonth.bind(this) }
+//                     ]
+//                 );
+//                 if (linkedinReport) platformReports.push(linkedinReport);
+//             }
+
+//             // Process X (Twitter)
+//             if (platforms.x) {
+//                 const xReport = await this.processPlatform(
+//                     'x',
+//                     customerId,
+//                     monthNum,
+//                     yearNum,
+//                     [
+//                         { type: 'community', serviceMethod: 'getXCommunityReport' },
+//                         { type: 'overview', serviceMethod: 'getXOverviewReport' }
+//                     ],
+//                     [
+//                         { type: 'followers', generator: this.generateXFollowersChartForMonth.bind(this) },
+//                         { type: 'impressions', generator: this.generateXImpressionsChartForMonth.bind(this) }
+//                     ]
+//                 );
+//                 if (xReport) platformReports.push(xReport);
+//             }
+
+//             // Debug logging
+//             console.log('Generated platform reports:', {
+//                 customerId,
+//                 month: `${monthNum}/${yearNum}`,
+//                 platformsEnabled: platforms,
+//                 reportsFound: platformReports.map(r => ({
+//                     platform: r.name,
+//                     tables: r.tables.length,
+//                     charts: r.charts.length
+//                 }))
+//             });
+
+//             const logoPath = path.join(__dirname, 'assets', 'upstrapp-logo.png');
+//             const logoBase64 = fs.readFileSync(logoPath, 'base64');
+//             const logoDataUri = `data:image/png;base64,${logoBase64}`;
+
+//             const monthDisplay = format(currentMonthStart, 'MMMM yyyy');
+
+//             if (platformReports.length === 0) {
+//                 console.warn(`No data found for customer ${customerId} in ${monthDisplay}`);
+//             }
+
+//             const html = platformReports.length > 0
+//                 ? this.generateCombinedReportHtml({
+//                     platformReports,
+//                     logoDataUri,
+//                     month: monthDisplay
+//                 })
+//                 : this.generateNoDataHtml(logoDataUri, monthDisplay);
+
+//             this.generateAndSendPdf(res, html, 'monthly-report', customerId, `${month}-${year}`);
+
+//         } catch (error) {
+//             console.error('Error in downloadCombinedReport:', error);
+//             this.handleErrorResponse(error, res);
+//         }
+//     }
+
+//     private async processPlatform(
+//         platform: string,
+//         customerId: string,
+//         month: number,
+//         year: number,
+//         reports: { type: string; serviceMethod: string }[],
+//         charts: { type: string; generator: Function }[]
+//     ): Promise<PlatformReport | null> {
+//         try {
+//             console.log(`Fetching ${platform} data for ${customerId}, ${month}/${year}`);
+
+//             const tables: TableData[] = [];
+//             let rawData: any = null;
+
+//             for (const report of reports) {
+//                 try {
+//                     const data = await this.reportService[report.serviceMethod](customerId, month, year);
+//                     if (data) {
+//                         rawData = data;
+//                         const table = this.createTable(
+//                             `${report.type.charAt(0).toUpperCase() + report.type.slice(1)}`,
+//                             data.table
+//                         );
+//                         if (table) tables.push(table);
+//                     }
+//                 } catch (error) {
+//                     console.error(`Error processing ${platform} ${report.type} report:`, error);
+//                 }
+//             }
+
+//             let validCharts: ChartData[] = [];
+//             if (tables.length === 0 && rawData?.chart) {
+//                 console.log(`No tables but attempting charts from raw data for ${platform}`);
+//                 const chartResults = await Promise.all(
+//                     charts.map(chart => chart.generator(customerId, month, year, platform, rawData))
+//                 );
+//                 validCharts = chartResults.filter(chart => chart?.image) as ChartData[];
+//             } else if (tables.length > 0) {
+//                 const chartResults = await Promise.all(
+//                     charts.map(chart => chart.generator(customerId, month, year, platform))
+//                 );
+//                 validCharts = chartResults.filter(chart => chart?.image) as ChartData[];
+//             }
+
+//             if (tables.length > 0 || validCharts.length > 0) {
+//                 return {
+//                     name: this.getPlatformDisplayName(platform),
+//                     tables,
+//                     charts: validCharts
+//                 };
+//             }
+
+//             console.log(`No valid data found for ${platform}`);
+//             return null;
+//         } catch (error) {
+//             console.error(`Error processing ${platform} platform:`, error);
+//             return null;
+//         }
+//     }
+
+//     // ... [keep all other methods the same as in your original file]
+
+//     private getPlatformDisplayName(platform: string): string {
+//         const platformNames: Record<string, string> = {
+//             instagram: 'Instagram',
+//             youtube: 'YouTube',
+//             facebook: 'Facebook',
+//             linkedin: 'LinkedIn',
+//             x: 'X (Twitter)'
+//         };
+//         return platformNames[platform.toLowerCase()] || platform;
+//     }
+
+//     private createTable(title: string, tableData: any): TableData | null {
+//         if (!tableData || !tableData.Data || tableData.Data.length === 0) {
+//             return null;
+//         }
+
+//         const headers = ['Metric', ...tableData.Data];
+//         const rows = [];
+
+//         // Helper to safely add rows
+//         const addRowIfValid = (label: string, values: any[]) => {
+//             if (values && values.length > 0 && values.some(v => v && v !== '0')) {
+//                 rows.push([label, ...values.map(v => v || '0')]);
+//             }
+//         };
+
+//         addRowIfValid('Followers', tableData.Followers);
+//         addRowIfValid('Following', tableData.Following);
+//         addRowIfValid('Likes', tableData.Likes);
+//         addRowIfValid('Impressions', tableData.Impressions);
+//         addRowIfValid('Subscribers', tableData.Subscribers);
+//         addRowIfValid('Total Views', tableData.TotalViews);
+//         addRowIfValid('Total Content', tableData.TotalContent);
+//         addRowIfValid('Page Views', tableData.PageViews);
+//         addRowIfValid('Engagement', tableData.Engagement);
+//         addRowIfValid('Interactions', tableData.Interactions);
+//         addRowIfValid('Paid Followers', tableData['Paid Followers']);
+//         addRowIfValid('Posts', tableData.Posts);
+
+//         if (rows.length === 0) {
+//             return null;
+//         }
+
+//         return {
+//             title,
+//             headers,
+//             rows,
+//             growthText: tableData.Growth || ''
+//         };
+//     }
+
+//     private async generateCommunityChartForMonth(
+//         customerId: string,
+//         month: number,
+//         year: number,
+//         platform: string,
+//         preloadedData?: any // Allow passing preloaded data
+//     ): Promise<ChartData | null> {
+//         try {
+//             let report = preloadedData;
+//             if (!report) {
+//                 if (platform === 'instagram') {
+//                     report = await this.reportService.getInstagramCommunityReport(customerId, month, year);
+//                 } else if (platform === 'facebook') {
+//                     report = await this.reportService.getFacebookCommunityReport(customerId, month, year);
+//                 } else if (platform === 'x') {
+//                     report = await this.reportService.getXCommunityReport(customerId, month, year);
+//                 }
+
+//                 if (!report?.chart?.length) {
+//                     console.log(`No chart data for ${platform} community report`);
+//                     return null;
+//                 }
+
+
+//                 // Process chart data with fallbacks
+//                 const validChartData = report.chart.map(item => ({
+//                     date: item.date && isValid(new Date(item.date))
+//                         ? new Date(item.date)
+//                         : new Date(year, month - 1, 15), // Mid-month fallback
+//                     followers: item.followers || 0,
+//                     following: item.following || 0,
+//                     likes: item.likes || 0
+//                 }));
+
+
+//                 // Ensure we have at least 2 data points for meaningful charts
+//                 if (validChartData.length < 2) {
+//                     console.log(`Insufficient data points (${validChartData.length}) for ${platform} community chart`);
+//                     return null;
+//                 }
+
+//                 const configuration: ChartConfiguration<'bar'> = {
+//                     type: 'bar',
+//                     data: {
+//                         labels: validChartData.map(item => format(item.date, 'MMM d')),
+//                         datasets: [
+//                             {
+//                                 label: 'Followers',
+//                                 data: validChartData.map(item => item.followers),
+//                                 backgroundColor: 'rgba(54, 162, 235, 0.6)',
+//                                 borderColor: 'rgba(54, 162, 235, 1)',
+//                                 borderWidth: 1
+//                             },
+//                             {
+//                                 label: platform === 'facebook' ? 'Likes' : 'Following',
+//                                 data: validChartData.map(item => platform === 'facebook' ? item.likes : item.following),
+//                                 backgroundColor: 'rgba(255, 159, 64, 0.6)',
+//                                 borderColor: 'rgba(255, 159, 64, 1)',
+//                                 borderWidth: 1
+//                             }
+//                         ]
+//                     },
+//                     options: {
+//                         responsive: true,
+//                         plugins: {
+//                             legend: { position: 'top' },
+//                             title: {
+//                                 display: true,
+//                                 text: `${this.getPlatformDisplayName(platform)} Community`
+//                             }
+//                         }
+//                     }
+//                 };
+
+//                 const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+//                 return {
+//                     title: `${this.getPlatformDisplayName(platform)} Community`,
+//                     image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+//                 };
+//             }
+//         } catch (error) {
+//             console.error(`Error generating ${platform} community chart:`, error);
+//             return null;
+//         }
+//     }
+
+//     // Similar implementations for other chart generation methods:
+//     // - generateFollowersChartForMonth
+//     private async generateFollowersChartForMonth(customerId: string, month: number, year: number, platform: string): Promise<ChartData> {
+//         try {
+//             let report;
+//             if (platform === 'instagram') {
+//                 report = await this.reportService.getInstagramCommunityReport(customerId, month, year);
+//             } else if (platform === 'facebook') {
+//                 report = await this.reportService.getFacebookCommunityReport(customerId, month, year);
+//             } else if (platform === 'x') {
+//                 report = await this.reportService.getXCommunityReport(customerId, month, year);
+//             } else if (platform === 'linkedin') {
+//                 report = await this.reportService.getLinkedInCommunityReport(customerId, month, year);
+//             }
+
+//             if (!report?.chart?.length) return { title: `${platform} Followers`, image: null };
+
+//             const configuration: ChartConfiguration<'line'> = {
+//                 type: 'line',
+//                 data: {
+//                     labels: report.chart.map(item => format(new Date(item.date), 'MMM d')),
+//                     datasets: [{
+//                         label: platform === 'facebook' ? 'Likes' : 'Followers',
+//                         data: report.chart.map(item => platform === 'facebook' ? item.likes : item.followers),
+//                         backgroundColor: 'rgba(153, 102, 255, 0.2)',
+//                         borderColor: 'rgba(153, 102, 255, 1)',
+//                         borderWidth: 2,
+//                         tension: 0.1,
+//                         fill: false
+//                     }]
+//                 },
+//                 options: {
+//                     responsive: true,
+//                     plugins: {
+//                         legend: { display: false },
+//                         title: {
+//                             display: true,
+//                             text: `${platform.charAt(0).toUpperCase() + platform.slice(1)} Followers`
+//                         }
+//                     }
+//                 }
+//             };
+
+//             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+//             return {
+//                 title: `${platform.charAt(0).toUpperCase() + platform.slice(1)} Followers`,
+//                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+//             };
+//         } catch (error) {
+//             console.error(`Error generating ${platform} followers chart:`, error);
+//             return { title: `${platform} Followers`, image: null };
+//         }
+//     }
+//     // - generateImpressionsChartForMonth
+
+//     private async generateImpressionsChartForMonth(customerId: string, month: number, year: number, platform: string): Promise<ChartData> {
+//         try {
+//             let report;
+//             if (platform === 'instagram') {
+//                 report = await this.reportService.getInstagramOverviewReport(customerId, month, year);
+//             } else if (platform === 'facebook') {
+//                 report = await this.reportService.getFacebookOverviewReport(customerId, month, year);
+//             } else if (platform === 'x') {
+//                 report = await this.reportService.getXOverviewReport(customerId, month, year);
+//             } else if (platform === 'linkedin') {
+//                 report = await this.reportService.getLinkedInOverviewReport(customerId, month, year);
+//             }
+
+//             if (!report?.chart?.length) return { title: `${platform} Impressions`, image: null };
+
+//             const configuration: ChartConfiguration<'line'> = {
+//                 type: 'line',
+//                 data: {
+//                     labels: report.chart.map(item => format(new Date(item.date), 'MMM d')),
+//                     datasets: [{
+//                         label: 'Impressions',
+//                         data: report.chart.map(item => item.impressions),
+//                         backgroundColor: 'rgba(75, 192, 192, 0.2)',
+//                         borderColor: 'rgba(75, 192, 192, 1)',
+//                         borderWidth: 2,
+//                         tension: 0.1,
+//                         fill: false
+//                     }]
+//                 },
+//                 options: {
+//                     responsive: true,
+//                     plugins: {
+//                         legend: { display: false },
+//                         title: {
+//                             display: true,
+//                             text: `${platform.charAt(0).toUpperCase() + platform.slice(1)} Impressions`
+//                         }
+//                     }
+//                 }
+//             };
+
+//             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+//             return {
+//                 title: `${platform.charAt(0).toUpperCase() + platform.slice(1)} Impressions`,
+//                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+//             };
+//         } catch (error) {
+//             console.error(`Error generating ${platform} impressions chart:`, error);
+//             return { title: `${platform} Impressions`, image: null };
+//         }
+//     }
+
+//     // - generateSubscribersChartForMonth
+//     private async generateSubscribersChartForMonth(customerId: string, month: number, year: number): Promise<ChartData> {
+//         try {
+//             const report = await this.reportService.getYoutubeOverviewReport(customerId, month, year);
+//             if (!report?.chart?.length) return { title: 'YouTube Subscribers', image: null };
+
+//             const configuration: ChartConfiguration<'line'> = {
+//                 type: 'line',
+//                 data: {
+//                     labels: report.chart.map(item => format(new Date(item.date), 'MMM d')),
+//                     datasets: [{
+//                         label: 'Subscribers',
+//                         data: report.chart.map(item => item.subscribers),
+//                         backgroundColor: 'rgba(255, 99, 132, 0.2)',
+//                         borderColor: 'rgba(255, 99, 132, 1)',
+//                         borderWidth: 2,
+//                         tension: 0.1,
+//                         fill: false
+//                     }]
+//                 },
+//                 options: {
+//                     responsive: true,
+//                     plugins: {
+//                         legend: { display: false },
+//                         title: {
+//                             display: true,
+//                             text: 'YouTube Subscribers'
+//                         }
+//                     }
+//                 }
+//             };
+
+//             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+//             return {
+//                 title: 'YouTube Subscribers',
+//                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+//             };
+//         } catch (error) {
+//             console.error('Error generating YouTube subscribers chart:', error);
+//             return { title: 'YouTube Subscribers', image: null };
+//         }
+//     }
+
+//     private async generateViewsChartForMonth(customerId: string, month: number, year: number): Promise<ChartData> {
+//         try {
+//             const report = await this.reportService.getYoutubeOverviewReport(customerId, month, year);
+//             if (!report?.chart?.length) return { title: 'YouTube Views', image: null };
+
+//             const configuration: ChartConfiguration<'bar'> = {
+//                 type: 'bar',
+//                 data: {
+//                     labels: report.chart.map(item => format(new Date(item.date), 'MMM d')),
+//                     datasets: [{
+//                         label: 'Views',
+//                         data: report.chart.map(item => item.totalViews),
+//                         backgroundColor: 'rgba(54, 162, 235, 0.6)',
+//                         borderColor: 'rgba(54, 162, 235, 1)',
+//                         borderWidth: 1
+//                     }]
+//                 },
+//                 options: {
+//                     responsive: true,
+//                     plugins: {
+//                         legend: { display: false },
+//                         title: {
+//                             display: true,
+//                             text: 'YouTube Views'
+//                         }
+//                     }
+//                 }
+//             };
+
+//             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+//             return {
+//                 title: 'YouTube Views',
+//                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+//             };
+//         } catch (error) {
+//             console.error('Error generating YouTube views chart:', error);
+//             return { title: 'YouTube Views', image: null };
+//         }
+//     }
+
+//     private async generateFacebookLikesChartForMonth(customerId: string, month: number, year: number): Promise<ChartData> {
+//         try {
+//             const report = await this.reportService.getFacebookCommunityReport(customerId, month, year);
+//             if (!report?.chart?.length) return { title: 'Facebook Likes', image: null };
+
+//             const configuration: ChartConfiguration<'line'> = {
+//                 type: 'line',
+//                 data: {
+//                     labels: report.chart.map(item => format(new Date(item.date), 'MMM d')),
+//                     datasets: [{
+//                         label: 'Likes',
+//                         data: report.chart.map(item => item.likes),
+//                         backgroundColor: 'rgba(59, 89, 152, 0.2)',
+//                         borderColor: 'rgba(59, 89, 152, 1)',
+//                         borderWidth: 2,
+//                         tension: 0.1,
+//                         fill: false
+//                     }]
+//                 },
+//                 options: {
+//                     responsive: true,
+//                     plugins: {
+//                         legend: { display: false },
+//                         title: {
+//                             display: true,
+//                             text: 'Facebook Likes'
+//                         }
+//                     }
+//                 }
+//             };
+
+//             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+//             return {
+//                 title: 'Facebook Likes',
+//                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+//             };
+//         } catch (error) {
+//             console.error('Error generating Facebook likes chart:', error);
+//             return { title: 'Facebook Likes', image: null };
+//         }
+//     }
+
+//     private async generateFacebookImpressionsChartForMonth(customerId: string, month: number, year: number): Promise<ChartData> {
+//         try {
+//             const report = await this.reportService.getFacebookOverviewReport(customerId, month, year);
+//             if (!report?.chart?.length) return { title: 'Facebook Impressions', image: null };
+
+//             const configuration: ChartConfiguration<'line'> = {
+//                 type: 'line',
+//                 data: {
+//                     labels: report.chart.map(item => format(new Date(item.date), 'MMM d')),
+//                     datasets: [{
+//                         label: 'Impressions',
+//                         data: report.chart.map(item => item.impressions),
+//                         backgroundColor: 'rgba(59, 89, 152, 0.2)',
+//                         borderColor: 'rgba(59, 89, 152, 1)',
+//                         borderWidth: 2,
+//                         tension: 0.1,
+//                         fill: false
+//                     }]
+//                 },
+//                 options: {
+//                     responsive: true,
+//                     plugins: {
+//                         legend: { display: false },
+//                         title: {
+//                             display: true,
+//                             text: 'Facebook Impressions'
+//                         }
+//                     }
+//                 }
+//             };
+
+//             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+//             return {
+//                 title: 'Facebook Impressions',
+//                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+//             };
+//         } catch (error) {
+//             console.error('Error generating Facebook impressions chart:', error);
+//             return { title: 'Facebook Impressions', image: null };
+//         }
+//     }
+
+//     private async generateLinkedInFollowersChartForMonth(customerId: string, month: number, year: number): Promise<ChartData> {
+//         try {
+//             const report = await this.reportService.getLinkedInCommunityReport(customerId, month, year);
+//             if (!report?.chart?.length) return { title: 'LinkedIn Followers', image: null };
+
+//             const configuration: ChartConfiguration<'line'> = {
+//                 type: 'line',
+//                 data: {
+//                     labels: report.chart.map(item => format(new Date(item.date), 'MMM d')),
+//                     datasets: [{
+//                         label: 'Followers',
+//                         data: report.chart.map(item => item.followers),
+//                         backgroundColor: 'rgba(0, 119, 181, 0.2)',
+//                         borderColor: 'rgba(0, 119, 181, 1)',
+//                         borderWidth: 2,
+//                         tension: 0.1,
+//                         fill: false
+//                     }]
+//                 },
+//                 options: {
+//                     responsive: true,
+//                     plugins: {
+//                         legend: { display: false },
+//                         title: {
+//                             display: true,
+//                             text: 'LinkedIn Followers'
+//                         }
+//                     }
+//                 }
+//             };
+
+//             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+//             return {
+//                 title: 'LinkedIn Followers',
+//                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+//             };
+//         } catch (error) {
+//             console.error('Error generating LinkedIn followers chart:', error);
+//             return { title: 'LinkedIn Followers', image: null };
+//         }
+//     }
+
+//     private async generateXImpressionsChartForMonth(customerId: string, month: number, year: number): Promise<ChartData> {
+//         try {
+//             const report = await this.reportService.getXOverviewReport(customerId, month, year);
+//             if (!report?.chart?.length) return { title: 'X Impressions', image: null };
+
+//             const configuration: ChartConfiguration<'line'> = {
+//                 type: 'line',
+//                 data: {
+//                     labels: report.chart.map(item => format(new Date(item.date), 'MMM d')),
+//                     datasets: [{
+//                         label: 'Impressions',
+//                         data: report.chart.map(item => item.impressions),
+//                         backgroundColor: 'rgba(29, 161, 242, 0.2)',
+//                         borderColor: 'rgba(29, 161, 242, 1)',
+//                         borderWidth: 2,
+//                         tension: 0.1,
+//                         fill: false
+//                     }]
+//                 },
+//                 options: {
+//                     responsive: true,
+//                     plugins: {
+//                         legend: { display: false },
+//                         title: {
+//                             display: true,
+//                             text: 'X Impressions'
+//                         }
+//                     }
+//                 }
+//             };
+
+//             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+//             return {
+//                 title: 'X Impressions',
+//                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+//             };
+//         } catch (error) {
+//             console.error('Error generating X impressions chart:', error);
+//             return { title: 'X Impressions', image: null };
+//         }
+//     }
+
+//     private async generateXFollowersChartForMonth(customerId: string, month: number, year: number): Promise<ChartData> {
+//         try {
+//             const report = await this.reportService.getXCommunityReport(customerId, month, year);
+//             if (!report?.chart?.length) return { title: 'X Followers', image: null };
+
+//             const configuration: ChartConfiguration<'line'> = {
+//                 type: 'line',
+//                 data: {
+//                     labels: report.chart.map(item => format(new Date(item.date), 'MMM d')),
+//                     datasets: [{
+//                         label: 'Followers',
+//                         data: report.chart.map(item => item.followers),
+//                         backgroundColor: 'rgba(29, 161, 242, 0.2)',
+//                         borderColor: 'rgba(29, 161, 242, 1)',
+//                         borderWidth: 2,
+//                         tension: 0.1,
+//                         fill: false
+//                     }]
+//                 },
+//                 options: {
+//                     responsive: true,
+//                     plugins: {
+//                         legend: { display: false },
+//                         title: {
+//                             display: true,
+//                             text: 'X Followers'
+//                         }
+//                     }
+//                 }
+//             };
+
+//             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+//             return {
+//                 title: 'X Followers',
+//                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+//             };
+//         } catch (error) {
+//             console.error('Error generating X followers chart:', error);
+//             return { title: 'X Followers', image: null };
+//         }
+//     }
+
+//     private async generateLinkedInImpressionsChartForMonth(customerId: string, month: number, year: number): Promise<ChartData> {
+//         try {
+//             const report = await this.reportService.getLinkedInOverviewReport(customerId, month, year);
+//             if (!report?.chart?.length) return { title: 'LinkedIn Impressions', image: null };
+
+//             const configuration: ChartConfiguration<'line'> = {
+//                 type: 'line',
+//                 data: {
+//                     labels: report.chart.map(item => format(new Date(item.date), 'MMM d')),
+//                     datasets: [{
+//                         label: 'Impressions',
+//                         data: report.chart.map(item => item.impressions),
+//                         backgroundColor: 'rgba(0, 119, 181, 0.2)',
+//                         borderColor: 'rgba(0, 119, 181, 1)',
+//                         borderWidth: 2,
+//                         tension: 0.1,
+//                         fill: false
+//                     }]
+//                 },
+//                 options: {
+//                     responsive: true,
+//                     plugins: {
+//                         legend: { display: false },
+//                         title: {
+//                             display: true,
+//                             text: 'LinkedIn Impressions'
+//                         }
+//                     }
+//                 }
+//             };
+
+//             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+//             return {
+//                 title: 'LinkedIn Impressions',
+//                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+//             };
+//         } catch (error) {
+//             console.error('Error generating LinkedIn impressions chart:', error);
+//             return { title: 'LinkedIn Impressions', image: null };
+//         }
+//     }
+
+//     // - generateViewsChartForMonth
+//     // - generateFacebookLikesChartForMonth
+//     // - generateFacebookImpressionsChartForMonth
+//     // - generateLinkedInFollowersChartForMonth
+//     // - generateLinkedInImpressionsChartForMonth
+//     // - generateXFollowersChartForMonth
+//     // - generateXImpressionsChartForMonth
+
+//     private generateCombinedReportHtml(options: {
+//         platformReports: PlatformReport[];
+//         logoDataUri: string;
+//         month: string;
+//     }): string {
+//         const currentDate = format(new Date(), 'MMM d, yyyy');
+
+//         return `<!DOCTYPE html>
+// <html>
+// <head>
+//     <style>
+//         @page {
+//             margin: 0;
+//         }
+//         body {
+//             margin: 0;
+//             padding: 20px;
+//             font-family: Arial, sans-serif;
+//             color: #333;
+//         }
+//         .logo-container {
+//             margin: 0;
+//             padding: 0;
+//         }
+//         .logo {
+//             width: 100px;
+//             height: auto;
+//             display: block;
+//             margin-top: 0;
+//             margin-bottom: 10px;
+//         }
+//         .header {
+//             text-align: center;
+//             margin-bottom: 30px;
+//         }
+//         .header h1 {
+//             font-size: 24px;
+//             margin: 0;
+//         }
+//         .header p {
+//             margin: 5px 0 0;
+//             color: #666;
+//         }
+//         .platform-section {
+//             margin-bottom: 40px;
+//             page-break-after: always;
+//         }
+//         .platform-title {
+//             font-size: 20px;
+//             font-weight: bold;
+//             margin-bottom: 15px;
+//             color: #2c3e50;
+//             border-bottom: 2px solid #eee;
+//             padding-bottom: 5px;
+//         }
+//         .section {
+//             margin-bottom: 30px;
+//         }
+//         .section-title {
+//             font-size: 18px;
+//             font-weight: bold;
+//             margin-bottom: 15px;
+//             color: #34495e;
+//         }
+//         .chart-container {
+//             margin: 30px 0;
+//             height: 300px;
+//             page-break-inside: avoid;
+//         }
+//         .chart-title {
+//             text-align: center;
+//             font-size: 16px;
+//             margin-bottom: 10px;
+//             color: #34495e;
+//         }
+//         .chart-img {
+//             width: 100%;
+//             height: 100%;
+//             object-fit: contain;
+//         }
+//         table {
+//             width: 100%;
+//             border-collapse: collapse;
+//             margin-bottom: 20px;
+//             page-break-inside: avoid;
+//         }
+//         th, td {
+//             padding: 10px;
+//             text-align: left;
+//             border-bottom: 1px solid #ddd;
+//         }
+//         th {
+//             font-weight: bold;
+//             background-color: #f8f9fa;
+//         }
+//         tr:nth-child(even) {
+//             background-color: #f8f9fa;
+//         }
+//         .growth-text {
+//             font-style: italic;
+//             color: #7f8c8d;
+//             margin-top: -15px;
+//             margin-bottom: 20px;
+//         }
+//         .footer {
+//             text-align: center;
+//             margin-top: 30px;
+//             color: #95a5a6;
+//             font-size: 12px;
+//         }
+//     </style>
+// </head>
+// <body>
+//     <div class="logo-container">
+//         <img src="${options.logoDataUri}" class="logo" alt="Company Logo" />
+//     </div>
+
+//     <div class="header">
+//         <h1>Social Media Analytics Report</h1>
+//         <p>For ${options.month} | Generated on ${currentDate}</p>
+//     </div>
+
+//     ${options.platformReports.map(platform => `
+//         <div class="platform-section">
+//             <div class="platform-title">${platform.name}</div>
+
+//             ${platform.tables.map(table => `
+//                 <div class="section">
+//                     <div class="section-title">${table.title}</div>
+//                     <table>
+//                         <thead>
+//                             <tr>
+//                                 ${table.headers.map(header => `<th>${header}</th>`).join('')}
+//                             </tr>
+//                         </thead>
+//                         <tbody>
+//                             ${table.rows.map(row => `
+//                                 <tr>
+//                                     ${row.map(cell => `<td>${cell}</td>`).join('')}
+//                                 </tr>
+//                             `).join('')}
+//                         </tbody>
+//                     </table>
+//                     ${table.growthText ? `<div class="growth-text">${table.growthText}</div>` : ''}
+//                 </div>
+//             `).join('')}
+
+//             ${platform.charts.filter(chart => chart.image).map(chart => `
+//                 <div class="chart-container">
+//                     <div class="chart-title">${chart.title}</div>
+//                     <img src="${chart.image}" class="chart-img" />
+//                 </div>
+//             `).join('')}
+//         </div>
+//     `).join('')}
+
+//     <div class="footer">
+//         <p>© ${new Date().getFullYear()} Upstrapp. All rights reserved.</p>
+//     </div>
+// </body>
+// </html>`;
+//     }
+
+//     private generateNoDataHtml(logoDataUri: string, month: string): string {
+//         return `<!DOCTYPE html>
+// <html>
+// <head>
+//     <style>
+//         @page {
+//             margin: 0;
+//         }
+//         body {
+//             margin: 0;
+//             padding: 20px;
+//             font-family: Arial, sans-serif;
+//             color: #333;
+//         }
+//         .logo-container {
+//             margin: 0;
+//             padding: 0;
+//         }
+//         .logo {
+//             width: 100px;
+//             height: auto;
+//             display: block;
+//             margin-top: 0;
+//             margin-bottom: 10px;
+//         }
+//         .header {
+//             text-align: center;
+//             margin-bottom: 30px;
+//         }
+//         .header h1 {
+//             font-size: 24px;
+//             margin: 0;
+//         }
+//         .header p {
+//             margin: 5px 0 0;
+//             color: #666;
+//         }
+//         .no-data-message {
+//             text-align: center;
+//             margin: 50px 0;
+//             color: #7f8c8d;
+//         }
+//         .footer {
+//             text-align: center;
+//             margin-top: 30px;
+//             color: #95a5a6;
+//             font-size: 12px;
+//         }
+//     </style>
+// </head>
+// <body>
+//     <div class="logo-container">
+//         <img src="${logoDataUri}" class="logo" alt="Company Logo" />
+//     </div>
+
+//     <div class="header">
+//         <h1>Social Media Analytics Report</h1>
+//         <p>For ${month} | Generated on ${format(new Date(), 'MMM d, yyyy')}</p>
+//     </div>
+
+//     <div class="no-data-message">
+//         <h2>No Data Available</h2>
+//         <p>No social media data was found for the selected period.</p>
+//     </div>
+
+//     <div class="footer">
+//         <p>© ${new Date().getFullYear()} Upstrapp. All rights reserved.</p>
+//     </div>
+// </body>
+// </html>`;
+//     }
+
+//     private generateAndSendPdf(
+//         res: Response,
+//         html: string,
+//         platform: string,
+//         customerId: string,
+//         period: string
+//     ) {
+//         const options: pdf.CreateOptions = {
+//             format: 'A4',
+//             border: {
+//                 top: '0.5in',
+//                 right: '0.3in',
+//                 bottom: '0.5in',
+//                 left: '0.3in'
+//             }
+//         };
+
+//         pdf.create(html, options).toStream((err, stream) => {
+//             if (err) {
+//                 console.error('PDF generation error:', err);
+//                 return res.status(500).send('Error generating PDF');
+//             }
+
+//             res.setHeader('Content-Type', 'application/pdf');
+//             res.setHeader(
+//                 'Content-Disposition',
+//                 `attachment; filename=${platform}-${customerId}-${period}.pdf`
+//             );
+//             stream.pipe(res);
+//         });
+//     }
+
+//     private handleErrorResponse(error: any, res: Response) {
+//         if (error instanceof BadRequestException) {
+//             res.status(400).send(error.message);
+//         } else {
+//             console.error('PDF Generation Error:', error);
+//             res.status(500).send('Error generating report');
+//         }
+//     }
+
+//     @Get('debug-instagram')
+//     async debugInstagram(
+//         @Query('customerId') customerId: string,
+//         @Query('month') month: string,
+//         @Query('year') year: string,
+//         @Res() res: Response
+//     ) {
+//         try {
+//             const monthNum = parseInt(month, 10);
+//             const yearNum = parseInt(year, 10);
+
+//             // 1. Verify service is being called correctly
+//             console.log(`Debugging Instagram for ${customerId}, ${monthNum}/${yearNum}`);
+
+//             // 2. Directly call service methods
+//             const data = await this.reportService.getInstagramCommunityReport(customerId, monthNum, yearNum);
+
+//             // 3. Return raw data for inspection
+//             res.json({
+//                 success: !!data,
+//                 data,
+//                 query: {
+//                     customerId,
+//                     month: monthNum,
+//                     year: yearNum,
+//                     monthString: `${yearNum}-${monthNum.toString().padStart(2, '0')}`
+//                 }
+//             });
+//         } catch (error) {
+//             res.status(500).json({ error: error.message });
+//         }
+//     }
+
+// }
+
+
 import { BadRequestException, Controller, Get, Query, Res } from '@nestjs/common';
 import { Response } from 'express';
-import { ReportService } from '../../services/report/report.service';
-import { format, parse, isBefore, isValid, differenceInDays } from 'date-fns';
+import { MonthlyReportService } from '../../services/report/monthly-report.service';
+import { format, startOfMonth, endOfMonth, isValid } from 'date-fns';
+import * as fs from 'fs';
+import * as path from 'path';
 import * as pdf from 'html-pdf';
-import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { ChartJSNodeCanvas } from 'chartjs-node-canvas';
 import { ChartConfiguration } from 'chart.js';
 
-@ApiTags('Report Downloads')
+interface ChartData {
+    title: string;
+    image: string | null;
+}
+
+interface TableData {
+    title: string;
+    headers: string[];
+    rows: string[][];
+    growthText?: string;
+}
+
+interface PlatformReport {
+    name: string;
+    tables: TableData[];
+    charts: ChartData[];
+}
+
 @Controller('report-download')
 export class ReportDownloadController {
-	private readonly chartJSNodeCanvas: ChartJSNodeCanvas;
+    private readonly chartJSNodeCanvas: ChartJSNodeCanvas;
 
-	constructor(private readonly reportService: ReportService) {
-		this.chartJSNodeCanvas = new ChartJSNodeCanvas({
-			width: 800,
-			height: 400,
-			backgroundColour: 'white',
-		});
-	}
+    constructor(private readonly reportService: MonthlyReportService) {
+        this.chartJSNodeCanvas = new ChartJSNodeCanvas({
+            width: 800,
+            height: 400,
+            backgroundColour: 'white',
+        });
+    }
 
-	@Get('instagram')
-	@ApiOperation({ summary: 'Download Instagram report as PDF' })
-	async downloadInstagramReport(
-		@Query('businessId') businessId: string,
-		@Query('startDate') startDate: string,
-		@Query('endDate') endDate: string,
-		@Res() res: Response
-	) {
-		try {
-			// Validate and parse dates
-			const parsedStartDate = this.parseDate(startDate);
-			const parsedEndDate = this.parseDate(endDate);
+    @Get('combined')
+    async downloadCombinedReport(
+        @Query('customerId') customerId: string,
+        @Query('month') month: string,
+        @Query('year') year: string,
+        @Query('instagram') instagram: string,
+        @Query('youtube') youtube: string,
+        @Query('facebook') facebook: string,
+        @Query('linkedin') linkedin: string,
+        @Query('x') x: string,
+        @Res() res: Response
+    ) {
+        try {
+            if (!customerId) throw new BadRequestException('customerId is required');
+            if (!month || !year) throw new BadRequestException('Month and year are required');
 
-			if (isBefore(parsedEndDate, parsedStartDate)) {
-				throw new BadRequestException('End date must be after start date');
-			}
+            const monthNum = parseInt(month, 10);
+            const yearNum = parseInt(year, 10);
 
-			const days = differenceInDays(parsedEndDate, parsedStartDate) + 1;
+            const reportDate = new Date(yearNum, monthNum - 1, 1);
+            if (!isValid(reportDate)) {
+                throw new BadRequestException('Invalid month/year combination');
+            }
 
-			// Get data for the specified date range
-			const [communityReport, overviewReport] = await Promise.all([
-				this.reportService.getInstagramCommunityReport(businessId, days.toString()),
-				this.reportService.getInstagramOverviewReport(businessId, days.toString())
-			]);
+            const currentMonthStart = startOfMonth(reportDate);
+            const currentMonthEnd = endOfMonth(reportDate);
 
-			// Calculate dynamic label interval based on date range
-			const labelInterval = Math.max(1, Math.floor(days / 10));
+            const platforms = {
+                instagram: instagram === 'true',
+                youtube: youtube === 'true',
+                facebook: facebook === 'true',
+                linkedin: linkedin === 'true',
+                x: x === 'true'
+            };
 
-			// Generate all chart images with dynamic date spacing
-			const [profileChart, communityChart, followersChart, impressionsChart] = await Promise.all([
-				this.generateDynamicChart('line', overviewReport.chart, 'Impressions', '#4CAF50', 'rgba(76, 175, 80, 0.1)', parsedStartDate, parsedEndDate, labelInterval, 'Profile Performance'),
-				this.generateDynamicChart('bar', communityReport.chart, ['Followers', 'Following'], ['rgba(75, 192, 192, 0.8)', 'rgba(255, 159, 64, 0.8)'], undefined, parsedStartDate, parsedEndDate, labelInterval, 'Community Growth', true),
-				this.generateDynamicChart('bar', communityReport.chart, 'Followers Growth', 'rgba(75, 192, 192, 0.6)', undefined, parsedStartDate, parsedEndDate, labelInterval, 'Followers Growth'),
-				this.generateDynamicChart('bar', overviewReport.chart, 'Impressions', 'rgba(153, 102, 255, 0.6)', undefined, parsedStartDate, parsedEndDate, labelInterval, 'Impressions')
-			]);
+            const platformReports: PlatformReport[] = [];
 
-			// Generate HTML for PDF
-			const html = this.generateInstagramHtml(
-				communityReport,
-				overviewReport,
-				parsedStartDate,
-				parsedEndDate,
-				profileChart,
-				communityChart,
-				followersChart,
-				impressionsChart
-			);
+            if (platforms.instagram) {
+                const instagramReport = await this.processPlatform(
+                    'instagram',
+                    customerId,
+                    monthNum,
+                    yearNum,
+                    [
+                        { type: 'community', serviceMethod: 'getInstagramCommunityReport' },
+                        { type: 'overview', serviceMethod: 'getInstagramOverviewReport' }
+                    ],
+                    [
+                        { type: 'community', generator: this.generateCommunityChartForMonth.bind(this) },
+                        { type: 'followers', generator: this.generateFollowersChartForMonth.bind(this) },
+                        { type: 'impressions', generator: this.generateImpressionsChartForMonth.bind(this) }
+                    ]
+                );
+                if (instagramReport) platformReports.push(instagramReport);
+            }
 
-			// PDF options
-			const options: pdf.CreateOptions = {
-				format: 'A4',
-				border: {
-					top: '0.5in',
-					right: '0.5in',
-					bottom: '0.5in',
-					left: '0.5in'
-				}
-			};
+            if (platforms.youtube) {
+                const youtubeReport = await this.processPlatform(
+                    'youtube',
+                    customerId,
+                    monthNum,
+                    yearNum,
+                    [
+                        { type: 'overview', serviceMethod: 'getYoutubeOverviewReport' }
+                    ],
+                    [
+                        { type: 'subscribers', generator: this.generateSubscribersChartForMonth.bind(this) },
+                        { type: 'views', generator: this.generateViewsChartForMonth.bind(this) }
+                    ]
+                );
+                if (youtubeReport) platformReports.push(youtubeReport);
+            }
 
-			// Create and stream PDF
-			pdf.create(html, options).toStream((err, stream) => {
-				if (err) {
-					console.error('PDF generation error:', err);
-					return res.status(500).send('Error generating PDF');
-				}
-				res.setHeader('Content-Type', 'application/pdf');
-				res.setHeader('Content-Disposition', `attachment; filename=instagram-report-${businessId}-${format(parsedStartDate, 'yyyy-MM-dd')}-to-${format(parsedEndDate, 'yyyy-MM-dd')}.pdf`);
-				stream.pipe(res);
-			});
-		} catch (error) {
-			console.error('Report generation error:', error);
-			if (error instanceof BadRequestException) {
-				res.status(400).send(error.message);
-			} else {
-				res.status(500).send('Error generating report');
-			}
-		}
-	}
+            if (platforms.facebook) {
+                const facebookReport = await this.processPlatform(
+                    'facebook',
+                    customerId,
+                    monthNum,
+                    yearNum,
+                    [
+                        { type: 'community', serviceMethod: 'getFacebookCommunityReport' },
+                        { type: 'overview', serviceMethod: 'getFacebookOverviewReport' }
+                    ],
+                    [
+                        { type: 'likes', generator: this.generateFacebookLikesChartForMonth.bind(this) },
+                        { type: 'impressions', generator: this.generateFacebookImpressionsChartForMonth.bind(this) }
+                    ]
+                );
+                if (facebookReport) platformReports.push(facebookReport);
+            }
 
-	private async generateDynamicChart(
-		type: 'line' | 'bar',
-		chartData: any[],
-		label: string | string[],
-		backgroundColor: string | string[],
-		backgroundFill: string | undefined,
-		startDate: Date,
-		endDate: Date,
-		interval: number,
-		title: string,
-		showLegend: boolean = false
-	): Promise<string> {
-		// Filter data based on dynamic interval
-		const filteredData = chartData.filter((_, index) => index % interval === 0);
+            if (platforms.linkedin) {
+                const linkedinReport = await this.processPlatform(
+                    'linkedin',
+                    customerId,
+                    monthNum,
+                    yearNum,
+                    [
+                        { type: 'community', serviceMethod: 'getLinkedInCommunityReport' },
+                        { type: 'overview', serviceMethod: 'getLinkedInOverviewReport' }
+                    ],
+                    [
+                        { type: 'followers', generator: this.generateLinkedInFollowersChartForMonth.bind(this) },
+                        { type: 'impressions', generator: this.generateLinkedInImpressionsChartForMonth.bind(this) }
+                    ]
+                );
+                if (linkedinReport) platformReports.push(linkedinReport);
+            }
 
-		// Prepare datasets based on input parameters
-		const datasets = Array.isArray(label) ?
-			label.map((l, i) => ({
-				label: l,
-				data: filteredData.map(item => item[l.toLowerCase().replace(' ', '')]),
-				backgroundColor: Array.isArray(backgroundColor) ? backgroundColor[i] : backgroundColor,
-				borderColor: Array.isArray(backgroundColor) ? backgroundColor[i] : backgroundColor,
-				borderWidth: 1,
-				fill: !!backgroundFill
-			})) : [{
-				label,
-				data: filteredData.map(item => item[label.toLowerCase().replace(' ', '')]),
-				backgroundColor,
-				borderColor: backgroundColor,
-				borderWidth: 1,
-				fill: !!backgroundFill,
-				...(type === 'line' ? { tension: 0.3 } : {})
-			}];
+            if (platforms.x) {
+                const xReport = await this.processPlatform(
+                    'x',
+                    customerId,
+                    monthNum,
+                    yearNum,
+                    [
+                        { type: 'community', serviceMethod: 'getXCommunityReport' },
+                        { type: 'overview', serviceMethod: 'getXOverviewReport' }
+                    ],
+                    [
+                        { type: 'followers', generator: this.generateXFollowersChartForMonth.bind(this) },
+                        { type: 'impressions', generator: this.generateXImpressionsChartForMonth.bind(this) }
+                    ]
+                );
+                if (xReport) platformReports.push(xReport);
+            }
 
-		const configuration: ChartConfiguration<typeof type> = {
-			type,
-			data: {
-				labels: filteredData.map(item => format(new Date(item.date), 'MMM d')),
-				datasets: datasets as any
-			},
-			options: {
-				responsive: true,
-				plugins: {
-					legend: {
-						display: showLegend,
-						position: 'top',
-						labels: {
-							boxWidth: 12,
-							padding: 20,
-							usePointStyle: true,
-							pointStyle: 'circle'
-						}
-					},
-					title: {
-						display: true,
-						text: `${title} (${format(startDate, 'MMM d, yyyy')} - ${format(endDate, 'MMM d, yyyy')})`,
-						font: { size: 16 }
-					}
-				},
-				scales: {
-					y: { beginAtZero: false },
-					x: {
-						ticks: {
-							autoSkip: false,
-							maxRotation: 45,
-							minRotation: 45
-						}
-					}
-				}
-			}
-		};
+            console.log('Generated platform reports:', {
+                customerId,
+                month: `${monthNum}/${yearNum}`,
+                platformsEnabled: platforms,
+                reportsFound: platformReports.map(r => ({
+                    platform: r.name,
+                    tables: r.tables.length,
+                    charts: r.charts.length
+                }))
+            });
 
-		const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
-		return `data:image/png;base64,${imageBuffer.toString('base64')}`;
-	}
+            const logoPath = path.join(__dirname, 'assets', 'upstrapp-logo.png');
+            const logoBase64 = fs.readFileSync(logoPath, 'base64');
+            const logoDataUri = `data:image/png;base64,${logoBase64}`;
 
+            const monthDisplay = format(currentMonthStart, 'MMMM yyyy');
 
+            if (platformReports.length === 0) {
+                console.warn(`No data found for customer ${customerId} in ${monthDisplay}`);
+            }
 
-	// ... (rest of the methods remain the same)
+            const html = platformReports.length > 0
+                ? this.generateCombinedReportHtml({
+                    platformReports,
+                    logoDataUri,
+                    month: monthDisplay
+                })
+                : this.generateNoDataHtml(logoDataUri, monthDisplay);
 
-	// private async generateCommunityChart(chartData: any[], startDate: Date, endDate: Date, interval: number): Promise<string> {
-	// 	const filteredData = this.getFilteredChartData(chartData, interval);
+            this.generateAndSendPdf(res, html, 'monthly-report', customerId, `${month}-${year}`);
 
-	// 	const configuration: ChartConfiguration<'bar'> = {
-	// 		type: 'bar',
-	// 		data: {
-	// 			labels: filteredData.map(item => format(new Date(item.date), 'MMM d')),
-	// 			datasets: [
-	// 				{
-	// 					label: 'Followers',
-	// 					data: filteredData.map(item => item.followers),
-	// 					backgroundColor: 'rgba(75, 192, 192, 0.8)',
-	// 					borderColor: 'rgba(75, 192, 192, 1)',
-	// 					borderWidth: 1
-	// 				},
-	// 				{
-	// 					label: 'Following',
-	// 					data: filteredData.map(item => item.following),
-	// 					backgroundColor: 'rgba(255, 159, 64, 0.8)',
-	// 					borderColor: 'rgba(255, 159, 64, 1)',
-	// 					borderWidth: 1
-	// 				}
-	// 			]
-	// 		},
-	// 		options: {
-	// 			responsive: true,
-	// 			plugins: {
-	// 				legend: {
-	// 					position: 'top',
-	// 					labels: {
-	// 						boxWidth: 12,
-	// 						padding: 20,
-	// 						usePointStyle: true,
-	// 						pointStyle: 'circle'
-	// 					}
-	// 				},
-	// 				title: {
-	// 					display: true,
-	// 					text: `Community Growth (${format(startDate, 'MMM d, yyyy')} - ${format(endDate, 'MMM d, yyyy')})`,
-	// 					font: { size: 16 }
-	// 				}
-	// 			},
-	// 			scales: {
-	// 				y: { beginAtZero: false },
-	// 				x: {
-	// 					ticks: {
-	// 						autoSkip: false,
-	// 						maxRotation: 45,
-	// 						minRotation: 45
-	// 					}
-	// 				}
-	// 			}
-	// 		}
-	// 	};
+        } catch (error) {
+            console.error('Error in downloadCombinedReport:', error);
+            this.handleErrorResponse(error, res);
+        }
+    }
 
-	// 	const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
-	// 	return `data:image/png;base64,${imageBuffer.toString('base64')}`;
-	// }
+    private async processPlatform(
+        platform: string,
+        customerId: string,
+        month: number,
+        year: number,
+        reports: { type: string; serviceMethod: string }[],
+        charts: { type: string; generator: Function }[]
+    ): Promise<PlatformReport | null> {
+        try {
+            console.log(`Fetching ${platform} data for ${customerId}, ${month}/${year}`);
 
-	// private async generateCommunityChart(chartData: any[], startDate: Date, endDate: Date): Promise<string> {
-	// 	const configuration = {
-	// 		type: 'bar',
-	// 		data: {
-	// 			labels: chartData.map(item => format(new Date(item.date), 'MMM d')),
-	// 			datasets: [
-	// 				{
-	// 					label: 'Followers',
-	// 					data: chartData.map(item => item.followers),
-	// 					backgroundColor: 'rgba(75, 192, 192, 0.8)',
-	// 					borderColor: 'rgba(75, 192, 192, 1)',
-	// 					borderWidth: 1
-	// 				},
-	// 				{
-	// 					label: 'Following',
-	// 					data: chartData.map(item => item.following),
-	// 					backgroundColor: 'rgba(255, 159, 64, 0.8)',
-	// 					borderColor: 'rgba(255, 159, 64, 1)',
-	// 					borderWidth: 1
-	// 				}
-	// 			]
-	// 		},
-	// 		options: {
-	// 			responsive: true,
-	// 			plugins: {
-	// 				legend: {
-	// 					position: 'top',
-	// 					labels: {
-	// 						boxWidth: 12,
-	// 						padding: 20,
-	// 						usePointStyle: true,
-	// 						pointStyle: 'circle'
-	// 					}
-	// 				},
-	// 				title: {
-	// 					display: true,
-	// 					text: `Community Growth (${format(startDate, 'MMM d, yyyy')} - ${format(endDate, 'MMM d, yyyy')})`,
-	// 					font: { size: 16 }
-	// 				}
-	// 			},
-	// 			scales: { y: { beginAtZero: false } }
-	// 		}
-	// 	};
+            const tables: TableData[] = [];
+            let rawData: any = null;
 
-	// 	const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
-	// 	return `data:image/png;base64,${imageBuffer.toString('base64')}`;
-	// }
+            for (const report of reports) {
+                try {
+                    const data = await this.reportService[report.serviceMethod](customerId, month, year);
+                    if (data) {
+                        rawData = data;
+                        const table = this.createTable(
+                            `${report.type.charAt(0).toUpperCase() + report.type.slice(1)}`,
+                            data.table
+                        );
+                        if (table) tables.push(table);
+                    }
+                } catch (error) {
+                    console.error(`Error processing ${platform} ${report.type} report:`, error);
+                }
+            }
 
-	// private async generateFollowersChart(chartData: any[], startDate: Date, endDate: Date): Promise<string> {
-	// 	const configuration = {
-	// 		type: 'bar',
-	// 		data: {
-	// 			labels: chartData.map(item => format(new Date(item.date), 'MMM d')),
-	// 			datasets: [{
-	// 				label: 'Followers Growth',
-	// 				data: chartData.map(item => item.followers),
-	// 				backgroundColor: 'rgba(75, 192, 192, 0.6)',
-	// 				borderColor: 'rgba(75, 192, 192, 1)',
-	// 				borderWidth: 1
-	// 			}]
-	// 		},
-	// 		options: {
-	// 			responsive: true,
-	// 			plugins: {
-	// 				legend: { display: false },
-	// 				title: {
-	// 					display: true,
-	// 					text: `Followers Growth (${format(startDate, 'MMM d, yyyy')} - ${format(endDate, 'MMM d, yyyy')})`,
-	// 					font: { size: 16 }
-	// 				}
-	// 			},
-	// 			scales: { y: { beginAtZero: false } }
-	// 		}
-	// 	};
+            let validCharts: ChartData[] = [];
+            if (tables.length === 0 && rawData?.chart) {
+                console.log(`No tables but attempting charts from raw data for ${platform}`);
+                const chartResults = await Promise.all(
+                    charts.map(chart => chart.generator(customerId, month, year, platform, rawData))
+                );
+                validCharts = chartResults.filter(chart => chart?.image) as ChartData[];
+            } else if (tables.length > 0) {
+                const chartResults = await Promise.all(
+                    charts.map(chart => chart.generator(customerId, month, year, platform))
+                );
+                validCharts = chartResults.filter(chart => chart?.image) as ChartData[];
+            }
 
-	// 	const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
-	// 	return `data:image/png;base64,${imageBuffer.toString('base64')}`;
-	// }
+            if (tables.length > 0 || validCharts.length > 0) {
+                return {
+                    name: this.getPlatformDisplayName(platform),
+                    tables,
+                    charts: validCharts
+                };
+            }
 
-	// private async generateImpressionsChart(chartData: any[], startDate: Date, endDate: Date): Promise<string> {
-	// 	const configuration = {
-	// 		type: 'bar',
-	// 		data: {
-	// 			labels: chartData.map(item => format(new Date(item.date), 'MMM d')),
-	// 			datasets: [{
-	// 				label: 'Impressions',
-	// 				data: chartData.map(item => item.impressions),
-	// 				backgroundColor: 'rgba(153, 102, 255, 0.6)',
-	// 				borderColor: 'rgba(153, 102, 255, 1)',
-	// 				borderWidth: 1
-	// 			}]
-	// 		},
-	// 		options: {
-	// 			responsive: true,
-	// 			plugins: {
-	// 				legend: { display: false },
-	// 				title: {
-	// 					display: true,
-	// 					text: `Impressions (${format(startDate, 'MMM d, yyyy')} - ${format(endDate, 'MMM d, yyyy')})`,
-	// 					font: { size: 16 }
-	// 				}
-	// 			},
-	// 			scales: { y: { beginAtZero: false } }
-	// 		}
-	// 	};
+            console.log(`No valid data found for ${platform}`);
+            return null;
+        } catch (error) {
+            console.error(`Error processing ${platform} platform:`, error);
+            return null;
+        }
+    }
 
-	// 	const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
-	// 	return `data:image/png;base64,${imageBuffer.toString('base64')}`;
-	// }
+    private getPlatformDisplayName(platform: string): string {
+        const platformNames: Record<string, string> = {
+            instagram: 'Instagram',
+            youtube: 'YouTube',
+            facebook: 'Facebook',
+            linkedin: 'LinkedIn',
+            x: 'X (Twitter)'
+        };
+        return platformNames[platform.toLowerCase()] || platform;
+    }
 
-	private generateInstagramHtml(
-		communityReport: any,
-		overviewReport: any,
-		startDate: Date,
-		endDate: Date,
-		profileChart: string,
-		communityChart: string,
-		followersChart: string,
-		impressionsChart: string
-	): string {
-		const lastCommunityData = communityReport.chart[communityReport.chart.length - 1];
-		const lastOverviewData = overviewReport.chart[overviewReport.chart.length - 1];
+    private createTable(title: string, tableData: any): TableData | null {
+        if (!tableData || !tableData.Data || tableData.Data.length === 0) {
+            return null;
+        }
 
-		return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <style>
-          body {
-            font-family: 'Arial', sans-serif;
+        const headers = ['Data', ...tableData.Data];
+        const rows = [];
+
+        const addRowIfValid = (label: string, values: any[]) => {
+            if (values && values.length > 0 && values.some(v => v && v !== '0')) {
+                rows.push([label, ...values.map(v => v || '0')]);
+            }
+        };
+
+        addRowIfValid('Followers', tableData.Followers);
+        addRowIfValid('Following', tableData.Following);
+        addRowIfValid('Likes', tableData.Likes);
+        addRowIfValid('Impressions', tableData.Impressions);
+        addRowIfValid('Subscribers', tableData.Subscribers);
+        addRowIfValid('Total Views', tableData.TotalViews);
+        addRowIfValid('Total Content', tableData.TotalContent);
+        addRowIfValid('Page Views', tableData.PageViews);
+        addRowIfValid('Engagement', tableData.Engagement);
+        addRowIfValid('Interactions', tableData.Interactions);
+        addRowIfValid('Paid Followers', tableData['Paid Followers']);
+        addRowIfValid('Posts', tableData.Posts);
+
+        if (rows.length === 0) {
+            return null;
+        }
+
+        return {
+            title,
+            headers,
+            rows,
+            growthText: tableData.Growth || ''
+        };
+    }
+
+    private async generateCommunityChartForMonth(
+        customerId: string,
+        month: number,
+        year: number,
+        platform: string,
+        preloadedData?: any
+    ): Promise<ChartData | null> {
+        try {
+            let report = preloadedData;
+            if (!report) {
+                if (platform === 'instagram') {
+                    report = await this.reportService.getInstagramCommunityReport(customerId, month, year);
+                } else if (platform === 'facebook') {
+                    report = await this.reportService.getFacebookCommunityReport(customerId, month, year);
+                } else if (platform === 'x') {
+                    report = await this.reportService.getXCommunityReport(customerId, month, year);
+                }
+
+                if (!report?.chart?.length) {
+                    console.log(`No chart data for ${platform} community report`);
+                    return null;
+                }
+            }
+
+            const validChartData = report.chart.map(item => ({
+                date: item.date && isValid(new Date(item.date))
+                    ? new Date(item.date)
+                    : new Date(year, month - 1, 15),
+                followers: item.followers || 0,
+                following: item.following || 0,
+                likes: item.likes || 0
+            }));
+
+            if (validChartData.length < 2) {
+                console.log(`Insufficient data points (${validChartData.length}) for ${platform} community chart`);
+                return null;
+            }
+
+            const configuration: ChartConfiguration<'bar'> = {
+                type: 'bar',
+                data: {
+                    labels: validChartData.map(item => format(item.date, 'MMM d')),
+                    datasets: [
+                        {
+                            label: 'Followers',
+                            data: validChartData.map(item => item.followers),
+                            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: platform === 'facebook' ? 'Likes' : 'Following',
+                            data: validChartData.map(item => platform === 'facebook' ? item.likes : item.following),
+                            backgroundColor: 'rgba(255, 159, 64, 0.6)',
+                            borderColor: 'rgba(255, 159, 64, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'top' },
+                        title: {
+                            display: true,
+                            text: `${this.getPlatformDisplayName(platform)} Community`
+                        }
+                    }
+                }
+            };
+
+            const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+            return {
+                title: `${this.getPlatformDisplayName(platform)} Community`,
+                image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+            };
+        } catch (error) {
+            console.error(`Error generating ${platform} community chart:`, error);
+            return null;
+        }
+    }
+
+    private async generateFollowersChartForMonth(
+        customerId: string,
+        month: number,
+        year: number,
+        platform: string
+    ): Promise<ChartData> {
+        try {
+            let report;
+            if (platform === 'instagram') {
+                report = await this.reportService.getInstagramCommunityReport(customerId, month, year);
+            } else if (platform === 'facebook') {
+                report = await this.reportService.getFacebookCommunityReport(customerId, month, year);
+            } else if (platform === 'x') {
+                report = await this.reportService.getXCommunityReport(customerId, month, year);
+            } else if (platform === 'linkedin') {
+                report = await this.reportService.getLinkedInCommunityReport(customerId, month, year);
+            }
+
+            if (!report?.chart?.length) return { title: `${platform} Followers`, image: null };
+
+            const configuration: ChartConfiguration<'line'> = {
+                type: 'line',
+                data: {
+                    labels: report.chart.map(item => format(new Date(item.date), 'MMM d')),
+                    datasets: [{
+                        label: platform === 'facebook' ? 'Likes' : 'Followers',
+                        data: report.chart.map(item => platform === 'facebook' ? item.likes : item.followers),
+                        backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                        borderColor: 'rgba(153, 102, 255, 1)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: `${platform.charAt(0).toUpperCase() + platform.slice(1)} Followers`
+                        }
+                    }
+                }
+            };
+
+            const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+            return {
+                title: `${platform.charAt(0).toUpperCase() + platform.slice(1)} Followers`,
+                image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+            };
+        } catch (error) {
+            console.error(`Error generating ${platform} followers chart:`, error);
+            return { title: `${platform} Followers`, image: null };
+        }
+    }
+
+    private async generateImpressionsChartForMonth(
+        customerId: string,
+        month: number,
+        year: number,
+        platform: string
+    ): Promise<ChartData> {
+        try {
+            let report;
+            if (platform === 'instagram') {
+                report = await this.reportService.getInstagramOverviewReport(customerId, month, year);
+            } else if (platform === 'facebook') {
+                report = await this.reportService.getFacebookOverviewReport(customerId, month, year);
+            } else if (platform === 'x') {
+                report = await this.reportService.getXOverviewReport(customerId, month, year);
+            } else if (platform === 'linkedin') {
+                report = await this.reportService.getLinkedInOverviewReport(customerId, month, year);
+            }
+
+            if (!report?.chart?.length) return { title: `${platform} Impressions`, image: null };
+
+            const configuration: ChartConfiguration<'line'> = {
+                type: 'line',
+                data: {
+                    labels: report.chart.map(item => format(new Date(item.date), 'MMM d')),
+                    datasets: [{
+                        label: 'Impressions',
+                        data: report.chart.map(item => item.impressions),
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: `${platform.charAt(0).toUpperCase() + platform.slice(1)} Impressions`
+                        }
+                    }
+                }
+            };
+
+            const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+            return {
+                title: `${platform.charAt(0).toUpperCase() + platform.slice(1)} Impressions`,
+                image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+            };
+        } catch (error) {
+            console.error(`Error generating ${platform} impressions chart:`, error);
+            return { title: `${platform} Impressions`, image: null };
+        }
+    }
+
+    private async generateSubscribersChartForMonth(
+        customerId: string,
+        month: number,
+        year: number
+    ): Promise<ChartData> {
+        try {
+            const report = await this.reportService.getYoutubeOverviewReport(customerId, month, year);
+            if (!report?.chart?.length) return { title: 'YouTube Subscribers', image: null };
+
+            const configuration: ChartConfiguration<'line'> = {
+                type: 'line',
+                data: {
+                    labels: report.chart.map(item => format(new Date(item.date), 'MMM d')),
+                    datasets: [{
+                        label: 'Subscribers',
+                        data: report.chart.map(item => item.subscribers),
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: 'YouTube Subscribers'
+                        }
+                    }
+                }
+            };
+
+            const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+            return {
+                title: 'YouTube Subscribers',
+                image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+            };
+        } catch (error) {
+            console.error('Error generating YouTube subscribers chart:', error);
+            return { title: 'YouTube Subscribers', image: null };
+        }
+    }
+
+    private async generateViewsChartForMonth(
+        customerId: string,
+        month: number,
+        year: number
+    ): Promise<ChartData> {
+        try {
+            const report = await this.reportService.getYoutubeOverviewReport(customerId, month, year);
+            if (!report?.chart?.length) return { title: 'YouTube Views', image: null };
+
+            const configuration: ChartConfiguration<'bar'> = {
+                type: 'bar',
+                data: {
+                    labels: report.chart.map(item => format(new Date(item.date), 'MMM d')),
+                    datasets: [{
+                        label: 'Views',
+                        data: report.chart.map(item => item.totalViews),
+                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: 'YouTube Views'
+                        }
+                    }
+                }
+            };
+
+            const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+            return {
+                title: 'YouTube Views',
+                image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+            };
+        } catch (error) {
+            console.error('Error generating YouTube views chart:', error);
+            return { title: 'YouTube Views', image: null };
+        }
+    }
+
+    private async generateFacebookLikesChartForMonth(
+        customerId: string,
+        month: number,
+        year: number
+    ): Promise<ChartData> {
+        try {
+            const report = await this.reportService.getFacebookCommunityReport(customerId, month, year);
+            if (!report?.chart?.length) return { title: 'Facebook Likes', image: null };
+
+            const configuration: ChartConfiguration<'line'> = {
+                type: 'line',
+                data: {
+                    labels: report.chart.map(item => format(new Date(item.date), 'MMM d')),
+                    datasets: [{
+                        label: 'Likes',
+                        data: report.chart.map(item => item.likes),
+                        backgroundColor: 'rgba(59, 89, 152, 0.2)',
+                        borderColor: 'rgba(59, 89, 152, 1)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: 'Facebook Likes'
+                        }
+                    }
+                }
+            };
+
+            const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+            return {
+                title: 'Facebook Likes',
+                image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+            };
+        } catch (error) {
+            console.error('Error generating Facebook likes chart:', error);
+            return { title: 'Facebook Likes', image: null };
+        }
+    }
+
+    private async generateFacebookImpressionsChartForMonth(
+        customerId: string,
+        month: number,
+        year: number
+    ): Promise<ChartData> {
+        try {
+            const report = await this.reportService.getFacebookOverviewReport(customerId, month, year);
+            if (!report?.chart?.length) return { title: 'Facebook Impressions', image: null };
+
+            const configuration: ChartConfiguration<'line'> = {
+                type: 'line',
+                data: {
+                    labels: report.chart.map(item => format(new Date(item.date), 'MMM d')),
+                    datasets: [{
+                        label: 'Impressions',
+                        data: report.chart.map(item => item.impressions),
+                        backgroundColor: 'rgba(59, 89, 152, 0.2)',
+                        borderColor: 'rgba(59, 89, 152, 1)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: 'Facebook Impressions'
+                        }
+                    }
+                }
+            };
+
+            const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+            return {
+                title: 'Facebook Impressions',
+                image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+            };
+        } catch (error) {
+            console.error('Error generating Facebook impressions chart:', error);
+            return { title: 'Facebook Impressions', image: null };
+        }
+    }
+
+    private async generateLinkedInFollowersChartForMonth(
+        customerId: string,
+        month: number,
+        year: number
+    ): Promise<ChartData> {
+        try {
+            const report = await this.reportService.getLinkedInCommunityReport(customerId, month, year);
+            if (!report?.chart?.length) return { title: 'LinkedIn Followers', image: null };
+
+            const configuration: ChartConfiguration<'line'> = {
+                type: 'line',
+                data: {
+                    labels: report.chart.map(item => format(new Date(item.date), 'MMM d')),
+                    datasets: [{
+                        label: 'Followers',
+                        data: report.chart.map(item => item.followers),
+                        backgroundColor: 'rgba(0, 119, 181, 0.2)',
+                        borderColor: 'rgba(0, 119, 181, 1)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: 'LinkedIn Followers'
+                        }
+                    }
+                }
+            };
+
+            const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+            return {
+                title: 'LinkedIn Followers',
+                image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+            };
+        } catch (error) {
+            console.error('Error generating LinkedIn followers chart:', error);
+            return { title: 'LinkedIn Followers', image: null };
+        }
+    }
+
+    private async generateLinkedInImpressionsChartForMonth(
+        customerId: string,
+        month: number,
+        year: number
+    ): Promise<ChartData> {
+        try {
+            const report = await this.reportService.getLinkedInOverviewReport(customerId, month, year);
+            if (!report?.chart?.length) return { title: 'LinkedIn Impressions', image: null };
+
+            const configuration: ChartConfiguration<'line'> = {
+                type: 'line',
+                data: {
+                    labels: report.chart.map(item => format(new Date(item.date), 'MMM d')),
+                    datasets: [{
+                        label: 'Impressions',
+                        data: report.chart.map(item => item.impressions),
+                        backgroundColor: 'rgba(0, 119, 181, 0.2)',
+                        borderColor: 'rgba(0, 119, 181, 1)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: 'LinkedIn Impressions'
+                        }
+                    }
+                }
+            };
+
+            const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+            return {
+                title: 'LinkedIn Impressions',
+                image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+            };
+        } catch (error) {
+            console.error('Error generating LinkedIn impressions chart:', error);
+            return { title: 'LinkedIn Impressions', image: null };
+        }
+    }
+
+    private async generateXFollowersChartForMonth(
+        customerId: string,
+        month: number,
+        year: number
+    ): Promise<ChartData> {
+        try {
+            const report = await this.reportService.getXCommunityReport(customerId, month, year);
+            if (!report?.chart?.length) return { title: 'X Followers', image: null };
+
+            const configuration: ChartConfiguration<'line'> = {
+                type: 'line',
+                data: {
+                    labels: report.chart.map(item => format(new Date(item.date), 'MMM d')),
+                    datasets: [{
+                        label: 'Followers',
+                        data: report.chart.map(item => item.followers),
+                        backgroundColor: 'rgba(29, 161, 242, 0.2)',
+                        borderColor: 'rgba(29, 161, 242, 1)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: 'X Followers'
+                        }
+                    }
+                }
+            };
+
+            const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+            return {
+                title: 'X Followers',
+                image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+            };
+        } catch (error) {
+            console.error('Error generating X followers chart:', error);
+            return { title: 'X Followers', image: null };
+        }
+    }
+
+    private async generateXImpressionsChartForMonth(
+        customerId: string,
+        month: number,
+        year: number
+    ): Promise<ChartData> {
+        try {
+            const report = await this.reportService.getXOverviewReport(customerId, month, year);
+            if (!report?.chart?.length) return { title: 'X Impressions', image: null };
+
+            const configuration: ChartConfiguration<'line'> = {
+                type: 'line',
+                data: {
+                    labels: report.chart.map(item => format(new Date(item.date), 'MMM d')),
+                    datasets: [{
+                        label: 'Impressions',
+                        data: report.chart.map(item => item.impressions),
+                        backgroundColor: 'rgba(29, 161, 242, 0.2)',
+                        borderColor: 'rgba(29, 161, 242, 1)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: 'X Impressions'
+                        }
+                    }
+                }
+            };
+
+            const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+            return {
+                title: 'X Impressions',
+                image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+            };
+        } catch (error) {
+            console.error('Error generating X impressions chart:', error);
+            return { title: 'X Impressions', image: null };
+        }
+    }
+
+    private generateCombinedReportHtml(options: {
+        platformReports: PlatformReport[];
+        logoDataUri: string;
+        month: string;
+    }): string {
+        const currentDate = format(new Date(), 'MMM d, yyyy');
+
+        return `<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        @page {
+            margin: 0;
+        }
+        body {
             margin: 0;
             padding: 20px;
+            font-family: Arial, sans-serif;
             color: #333;
-          }
-          .header {
+        }
+        .logo-container {
+            margin: 0;
+            padding: 0;
+        }
+        .logo {
+            width: 100px;
+            height: auto;
+            display: block;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        .header {
             text-align: center;
             margin-bottom: 30px;
-          }
-          .header h1 {
+        }
+        .header h1 {
             font-size: 24px;
-            margin-bottom: 5px;
-          }
-          .date-range {
+            margin: 0;
+        }
+        .header p {
+            margin: 5px 0 0;
             color: #666;
-            font-size: 14px;
-          }
-          .section {
+        }
+        .platform-section {
             margin-bottom: 40px;
-            page-break-inside: avoid;
-          }
-          .section-title {
+            page-break-after: always;
+        }
+        .platform-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 5px;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .section-title {
             font-size: 18px;
             font-weight: bold;
             margin-bottom: 15px;
-            color: #333;
-          }
-          .chart-container {
-            margin: 20px 0;
+            color: #34495e;
+        }
+        .chart-container {
+            margin: 30px 0;
             height: 300px;
-          }
-          .stats-container {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
-          }
-          .stat-box {
-            border: 1px solid #e1e1e1;
-            padding: 15px;
-            border-radius: 8px;
-            width: 30%;
+            page-break-inside: avoid;
+        }
+        .chart-title {
             text-align: center;
-            background-color: #f9f9f9;
-          }
-          .stat-value {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 5px;
-          }
-          .stat-label {
-            color: #666;
-            font-size: 14px;
-          }
-          .up {
-            color: #4CAF50;
-            font-size: 18px;
-            vertical-align: middle;
-          }
-          .divider {
-            border-top: 1px solid #eee;
-            margin: 20px 0;
-          }
-          .chart-img {
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #34495e;
+        }
+        .chart-img {
             width: 100%;
             height: 100%;
             object-fit: contain;
-          }
-          table {
+        }
+        table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 20px;
-          }
-          th, td {
-            padding: 8px;
+            page-break-inside: avoid;
+        }
+        th, td {
+            padding: 10px;
             text-align: left;
             border-bottom: 1px solid #ddd;
-          }
-          th {
+        }
+        th {
             font-weight: bold;
-          }
-          .table-container {
-            background-color: #f9f9f9;
-            padding: 16px;
-            border-radius: 8px;
+            background-color: #f8f9fa;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        .growth-text {
+            font-style: italic;
+            color: #7f8c8d;
+            margin-top: -15px;
             margin-bottom: 20px;
-          }
-          .grid-container {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            margin-top: 16px;
-          }
-          .grid-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-          }
-          .growth-text {
-            margin-top: 12px;
-            font-size: 14px;
-          }
-          .chart-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>Instagram Analytics Report</h1>
-          <div class="date-range">${format(startDate, 'MMM d, yyyy')} - ${format(endDate, 'MMM d, yyyy')}</div>
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #95a5a6;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="logo-container">
+        <img src="${options.logoDataUri}" class="logo" alt="Company Logo" />
+    </div>
+
+    <div class="header">
+        <h1>Social Media Analytics Report</h1>
+        <p>For ${options.month} | Generated on ${currentDate}</p>
+    </div>
+
+    ${options.platformReports.map(platform => `
+        <div class="platform-section">
+            <div class="platform-title">${platform.name}</div>
+            
+            ${platform.tables.map(table => `
+                <div class="section">
+                    <div class="section-title">${table.title}</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                ${table.headers.map(header => `<th>${header}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${table.rows.map(row => `
+                                <tr>
+                                    ${row.map(cell => `<td>${cell}</td>`).join('')}
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    ${table.growthText ? `<div class="growth-text">${table.growthText}</div>` : ''}
+                </div>
+            `).join('')}
+
+            ${platform.charts.filter(chart => chart.image).map(chart => `
+                <div class="chart-container">
+                    <div class="chart-title">${chart.title}</div>
+                    <img src="${chart.image}" class="chart-img" />
+                </div>
+            `).join('')}
         </div>
+    `).join('')}
 
-        <!-- Profile Overview Section -->
-        <div class="section">
-          <div class="section-title">Profile Overview</div>
-          <div class="chart-container">
-            <img src="${profileChart}" class="chart-img" />
-          </div>
-          <div class="stats-container">
-            <div class="stat-box">
-              <div class="stat-value">${this.formatNumber(lastOverviewData?.impressions || 0)}</div>
-              <div class="stat-label">Impressions</div>
-            </div>
-            <div class="stat-box">
-              <div class="stat-value">${lastOverviewData?.avgReachPerDay || 0}</div>
-              <div class="stat-label">Avg. reach per day</div>
-            </div>
-            <div class="stat-box">
-              <div class="stat-value">${lastOverviewData?.totalContent || 0}</div>
-              <div class="stat-label">Total content</div>
-            </div>
-          </div>
-        </div>
+    <div class="footer">
+        <p>© ${new Date().getFullYear()} Upstrapp. All rights reserved.</p>
+    </div>
+</body>
+</html>`;
+    }
 
-        <div class="divider"></div>
+    private generateNoDataHtml(logoDataUri: string, month: string): string {
+        return `<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        @page {
+            margin: 0;
+        }
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            color: #333;
+        }
+        .logo-container {
+            margin: 0;
+            padding: 0;
+        }
+        .logo {
+            width: 100px;
+            height: auto;
+            display: block;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 24px;
+            margin: 0;
+        }
+        .header p {
+            margin: 5px 0 0;
+            color: #666;
+        }
+        .no-data-message {
+            text-align: center;
+            margin: 50px 0;
+            color: #7f8c8d;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #95a5a6;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="logo-container">
+        <img src="${logoDataUri}" class="logo" alt="Company Logo" />
+    </div>
 
-        <!-- Community Section -->
-        <div class="section">
-          <div class="section-title">Community</div>
-          ${this.generateCommunityTable(communityReport.table)}
-          
-          <div class="chart-grid">
-            <div>
-              <div class="section-title">Community Growth</div>
-              <div class="chart-container">
-                <img src="${communityChart}" class="chart-img" />
-              </div>
-            </div>
-            <div>
-              <div class="section-title">Followers Growth</div>
-              <div class="chart-container">
-                <img src="${followersChart}" class="chart-img" />
-              </div>
-            </div>
-          </div>
-          
-          <div class="grid-container">
-            <div class="grid-item">
-              <div class="stat-value">${this.formatNumber(lastCommunityData?.followers || 0)} <span class="up">↑</span></div>
-              <div class="stat-label">Followers</div>
-            </div>
-            <div class="grid-item">
-              <div class="stat-value">${lastCommunityData?.following || 0}</div>
-              <div class="stat-label">Following</div>
-            </div>
-            <div class="grid-item">
-              <div class="stat-value">${lastCommunityData?.totalContent || 0}</div>
-              <div class="stat-label">Total content</div>
-            </div>
-          </div>
-          ${communityReport.table.Growth ? `<div class="growth-text">Growth: ${communityReport.table.Growth}</div>` : ''}
-        </div>
+    <div class="header">
+        <h1>Social Media Analytics Report</h1>
+        <p>For ${month} | Generated on ${format(new Date(), 'MMM d, yyyy')}</p>
+    </div>
 
-        <div class="divider"></div>
+    <div class="no-data-message">
+        <h2>No Data Available</h2>
+        <p>No social media data was found for the selected period.</p>
+    </div>
 
-        <!-- Overview Section -->
-        <div class="section">
-          <div class="section-title">Overview</div>
-          ${this.generateOverviewTable(overviewReport.table)}
-          
-          <div class="section-title">Impressions</div>
-          <div class="chart-container">
-            <img src="${impressionsChart}" class="chart-img" />
-          </div>
-          <div class="grid-container">
-            <div class="grid-item">
-              <div class="stat-value">${this.formatNumber(lastOverviewData?.impressions || 0)}</div>
-              <div class="stat-label">Impressions</div>
-            </div>
-            <div class="grid-item">
-              <div class="stat-value">${lastOverviewData?.avgReachPerDay || 0}</div>
-              <div class="stat-label">Avg Reach</div>
-            </div>
-            <div class="grid-item">
-              <div class="stat-value">${lastOverviewData?.totalContent || 0}</div>
-              <div class="stat-label">Total Content</div>
-            </div>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
-	}
+    <div class="footer">
+        <p>© ${new Date().getFullYear()} Upstrapp. All rights reserved.</p>
+    </div>
+</body>
+</html>`;
+    }
 
-	private generateCommunityTable(tableData: any): string {
-		if (!tableData) return '';
+    private generateAndSendPdf(
+        res: Response,
+        html: string,
+        platform: string,
+        customerId: string,
+        period: string
+    ) {
+        const options: pdf.CreateOptions = {
+            format: 'A4',
+            border: {
+                top: '0.5in',
+                right: '0.3in',
+                bottom: '0.5in',
+                left: '0.3in'
+            }
+        };
 
-		return `
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Data</th>
-              ${tableData.Data.slice(0, -1).map((month: string) => `
-                <th>${month}</th>
-              `).join('')}
-              <th>${tableData.Data[tableData.Data.length - 1]}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Followers</td>
-              ${tableData.Followers.slice(0, -1).map((value: string) => `
-                <td>${value}</td>
-              `).join('')}
-              <td>${tableData.Followers[tableData.Followers.length - 1]}</td>
-            </tr>
-            <tr>
-              <td>Following</td>
-              ${tableData.Following.slice(0, -1).map((value: string) => `
-                <td>${value}</td>
-              `).join('')}
-              <td>${tableData.Following[tableData.Following.length - 1]}</td>
-            </tr>
-            <tr>
-              <td><strong>Total Content</strong></td>
-              ${tableData.TotalContent.slice(0, -1).map((value: string) => `
-                <td><strong>${value}</strong></td>
-              `).join('')}
-              <td><strong>${tableData.TotalContent[tableData.TotalContent.length - 1]}</strong></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    `;
-	}
+        pdf.create(html, options).toStream((err, stream) => {
+            if (err) {
+                console.error('PDF generation error:', err);
+                return res.status(500).send('Error generating PDF');
+            }
 
-	private generateOverviewTable(tableData: any): string {
-		if (!tableData) return '';
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader(
+                'Content-Disposition',
+                `attachment; filename=${platform}-${customerId}-${period}.pdf`
+            );
+            stream.pipe(res);
+        });
+    }
 
-		return `
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Data</th>
-              ${tableData.Data.slice(0, -1).map((month: string) => `
-                <th>${month}</th>
-              `).join('')}
-              <th>${tableData.Data[tableData.Data.length - 1]}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Impressions</td>
-              ${tableData.Impressions.slice(0, -1).map((value: string) => `
-                <td>${value}</td>
-              `).join('')}
-              <td>${tableData.Impressions[tableData.Impressions.length - 1]}</td>
-            </tr>
-            <tr>
-              <td>Avg Reach Per Day</td>
-              ${tableData.AvgReachPerDay.slice(0, -1).map((value: string) => `
-                <td>${value}</td>
-              `).join('')}
-              <td>${tableData.AvgReachPerDay[tableData.AvgReachPerDay.length - 1]}</td>
-            </tr>
-            <tr>
-              <td><strong>Total Content</strong></td>
-              ${tableData.TotalContent.slice(0, -1).map((value: string) => `
-                <td><strong>${value}</strong></td>
-              `).join('')}
-              <td><strong>${tableData.TotalContent[tableData.TotalContent.length - 1]}</strong></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    `;
-	}
+    private handleErrorResponse(error: any, res: Response) {
+        if (error instanceof BadRequestException) {
+            res.status(400).send(error.message);
+        } else {
+            console.error('PDF Generation Error:', error);
+            res.status(500).send('Error generating report');
+        }
+    }
 
-	private parseDate(dateString: string): Date {
-		const formats = ['yyyy-MM-dd', 'dd-MM-yyyy', 'MM-dd-yyyy'];
-		for (const fmt of formats) {
-			const parsedDate = parse(dateString, fmt, new Date());
-			if (isValid(parsedDate)) return parsedDate;
-		}
-		throw new BadRequestException(`Invalid date format: ${dateString}. Please use YYYY-MM-DD format`);
-	}
+    @Get('debug-instagram')
+    async debugInstagram(
+        @Query('customerId') customerId: string,
+        @Query('month') month: string,
+        @Query('year') year: string,
+        @Res() res: Response
+    ) {
+        try {
+            const monthNum = parseInt(month, 10);
+            const yearNum = parseInt(year, 10);
 
-	private formatNumber(num: number | string): string {
-		const number = typeof num === 'string' ? parseInt(num, 10) : num;
-		if (number >= 1000000) return (number / 1000000).toFixed(1) + 'M';
-		if (number >= 1000) return (number / 1000).toFixed(1) + 'K';
-		return number.toString();
-	}
+            console.log(`Debugging Instagram for ${customerId}, ${monthNum}/${yearNum}`);
+
+            const data = await this.reportService.getInstagramCommunityReport(customerId, monthNum, yearNum);
+
+            res.json({
+                success: !!data,
+                data,
+                query: {
+                    customerId,
+                    month: monthNum,
+                    year: yearNum,
+                    monthString: `${yearNum}-${monthNum.toString().padStart(2, '0')}`
+                }
+            });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
 }
+
+

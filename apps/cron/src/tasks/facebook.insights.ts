@@ -9,9 +9,9 @@ export class FacebookInsightsTask {
 	constructor(
 		private _facebookInsightsRepository: PrismaRepository<'facebookInsight'>,
 	) { }
-	@Cron('* * * * *') // for every minute
+	//@Cron('* * * * *') // for every minute
 
-	//@Cron('0 0 * * *') // Runs every day at midnight
+	@Cron('0 0 * * *') // Runs every day at midnight
 	async handleFacebookInsights() {
 		console.log('⏰ Facebook Insights Cron job triggered');
 
@@ -103,6 +103,7 @@ export class FacebookInsightsTask {
 							businessId: page.id,
 							//internalId, // ✅ Add internalId to your DB
 							organizationId,
+							customerId: integration.customer?.id,// Add this line
 							month,
 							likes,
 							followers,
