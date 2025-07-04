@@ -4,7 +4,7 @@
 	}
 
 	handle_path /uploads/* {
-		root * /uploads/
+		root * {$UPLOAD_DIRECTORY:/uploads/}
 		file_server
 	}
 
