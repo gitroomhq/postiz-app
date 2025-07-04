@@ -87,12 +87,14 @@ export const withProvider = function <T extends object>(params: {
       justCurrent,
       allIntegrations,
       setPostComment,
+      dummy,
     } = useLaunchStore(
       useShallow((state) => ({
         date: state.date,
         tab: state.tab,
         setTab: state.setTab,
         global: state.global,
+        dummy: state.dummy,
         internal: state.internal.find((p) => p.integration.id === props.id),
         integrations: state.selectedIntegrations,
         allIntegrations: state.integrations,
@@ -304,7 +306,7 @@ export const withProvider = function <T extends object>(params: {
             {(SettingsComponent || !!data?.internalPlugs?.length) && (
               <div className={tab === 1 ? '' : 'hidden'}>
                 <SettingsComponent />
-                {!!data?.internalPlugs?.length && (
+                {!!data?.internalPlugs?.length && !dummy && (
                   <InternalChannels plugs={data?.internalPlugs} />
                 )}
               </div>

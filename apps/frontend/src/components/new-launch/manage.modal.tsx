@@ -28,6 +28,7 @@ import useKeypress from 'react-use-keypress';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
 import { CopilotPopup } from '@copilotkit/react-ui';
+import { DummyCodeComponent } from '@gitroom/frontend/components/new-launch/dummy.code.component';
 
 function countCharacters(text: string, type: string): number {
   if (type !== 'x') {
@@ -46,7 +47,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   const modal = useModals();
   usePreventWindowUnload(true);
 
-  const { addEditSets, mutate, customClose } = props;
+  const { addEditSets, mutate, customClose, dummy } = props;
 
   const {
     selectedIntegrations,
@@ -98,7 +99,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   }, [existingData, mutate, modal]);
 
   const askClose = useCallback(async () => {
-    if (!activateExitButton) {
+    if (!activateExitButton || dummy) {
       return;
     }
 
@@ -117,7 +118,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       }
       modal.closeAll();
     }
-  }, [activateExitButton]);
+  }, [activateExitButton, dummy]);
 
   const changeCustomer = useCallback(
     (customer: string) => {
@@ -212,16 +213,18 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         }
       }
 
-      const shortLinkUrl = await (
-        await fetch('/posts/should-shortlink', {
-          method: 'POST',
-          body: JSON.stringify({
-            messages: checkAllValid.flatMap((p: any) =>
-              p.values.flatMap((a: any) => a.content)
-            ),
-          }),
-        })
-      ).json();
+      const shortLinkUrl = dummy
+        ? { ask: false }
+        : await (
+            await fetch('/posts/should-shortlink', {
+              method: 'POST',
+              body: JSON.stringify({
+                messages: checkAllValid.flatMap((p: any) =>
+                  p.values.flatMap((a: any) => a.content)
+                ),
+              }),
+            })
+          ).json();
 
       const shortLink = !shortLinkUrl.ask
         ? false
@@ -233,48 +236,68 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       const group = existingData.group || makeId(10);
       const data = {
         type,
-        inter: repeater || undefined,
+        ...(repeater ? { inter: repeater } : {}),
         tags,
         shortLink,
         date: date.utc().format('YYYY-MM-DDTHH:mm:ss'),
-        posts: checkAllValid.map((p: any) => ({
-          integration: p.integration,
+        posts: checkAllValid.map((post: any) => ({
+          integration: {
+            id: post.integration.id,
+          },
           group,
-          settings: { ...(p.settings || {}) },
-          value: p.values.map((a: any) => ({
-            ...a,
-            image: a.media || [],
-            content: a.content.slice(0, p.maximumCharacters || 1000000),
+          settings: { ...(post.settings || {}) },
+          value: post.values.map((value: any) => ({
+            ...(value.id ? { id: value.id } : {}),
+            content: value.content.slice(0, post.maximumCharacters || 1000000),
+            image: value.media.map(({ id, path }: any) => ({ id, path })) || [],
           })),
         })),
       };
 
-      addEditSets
-        ? addEditSets(data)
-        : await fetch('/posts', {
-            method: 'POST',
-            body: JSON.stringify(data),
-          });
+      if (dummy) {
+        modal.openModal({
+          title: '',
+          children: <DummyCodeComponent code={data} />,
+          classNames: {
+            modal: 'w-[100%] bg-transparent text-textColor',
+          },
+          size: '100%',
+          withCloseButton: false,
+          closeOnEscape: true,
+          closeOnClickOutside: true,
+        });
 
-      if (!addEditSets) {
-        mutate();
-        toaster.show(
-          !existingData.integration
-            ? 'Added successfully'
-            : 'Updated successfully'
-        );
-      }
-      if (customClose) {
-        setTimeout(() => {
-          customClose();
-        }, 2000);
+        setLoading(false);
       }
 
-      if (!addEditSets) {
-        modal.closeAll();
+      if (!dummy) {
+        addEditSets
+          ? addEditSets(data)
+          : await fetch('/posts', {
+              method: 'POST',
+              body: JSON.stringify(data),
+            });
+
+        if (!addEditSets) {
+          mutate();
+          toaster.show(
+            !existingData.integration
+              ? 'Added successfully'
+              : 'Updated successfully'
+          );
+        }
+        if (customClose) {
+          setTimeout(() => {
+            customClose();
+          }, 2000);
+        }
+
+        if (!addEditSets) {
+          modal.closeAll();
+        }
       }
     },
-    [ref, repeater, tags, date, addEditSets]
+    [ref, repeater, tags, date, addEditSets, dummy]
   );
 
   return (
@@ -292,13 +315,17 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-customColor6 bg-sixth p-[16px] pt-0">
             <TopTitle
               title={
-                existingData.integration
+                dummy
+                  ? 'Generate an API request'
+                  : existingData.integration
                   ? t('update_post', 'Update Existing Post')
                   : t('create_new_post', 'Create Post')
               }
             >
               <div className="flex items-center">
-                <RepeatComponent repeat={repeater} onChange={setRepeater} />
+                {!dummy && (
+                  <RepeatComponent repeat={repeater} onChange={setRepeater} />
+                )}
                 <DatePicker onChange={setDate} date={date} />
               </div>
             </TopTitle>
@@ -331,7 +358,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                     </Button>
                   )}
 
-                  {!addEditSets && (
+                  {!addEditSets && !dummy && (
                     <Button
                       onClick={schedule('draft')}
                       className="rounded-[4px] border-2 border-customColor21"
@@ -372,34 +399,38 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                                 'select_channels_from_circles',
                                 'Select channels from the circles above'
                               )
+                            : dummy
+                            ? 'Create output'
                             : !existingData?.integration
                             ? t('add_to_calendar', 'Add to calendar')
                             : t('update', 'Update')}
                         </div>
-                        <div className="h-full flex items-center">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="18"
-                            height="18"
-                            viewBox="0 0 18 18"
-                            fill="none"
-                          >
-                            <path
-                              d="M15.0233 7.14804L9.39828 12.773C9.34604 12.8253 9.284 12.8668 9.21572 12.8951C9.14743 12.9234 9.07423 12.938 9.00031 12.938C8.92639 12.938 8.8532 12.9234 8.78491 12.8951C8.71662 12.8668 8.65458 12.8253 8.60234 12.773L2.97734 7.14804C2.8718 7.04249 2.8125 6.89934 2.8125 6.75007C2.8125 6.6008 2.8718 6.45765 2.97734 6.3521C3.08289 6.24655 3.22605 6.18726 3.37531 6.18726C3.52458 6.18726 3.66773 6.24655 3.77328 6.3521L9.00031 11.5798L14.2273 6.3521C14.2796 6.29984 14.3417 6.25838 14.4099 6.2301C14.4782 6.20181 14.5514 6.18726 14.6253 6.18726C14.6992 6.18726 14.7724 6.20181 14.8407 6.2301C14.909 6.25838 14.971 6.29984 15.0233 6.3521C15.0755 6.40436 15.117 6.46641 15.1453 6.53469C15.1736 6.60297 15.1881 6.67616 15.1881 6.75007C15.1881 6.82398 15.1736 6.89716 15.1453 6.96545C15.117 7.03373 15.0755 7.09578 15.0233 7.14804Z"
-                              fill="white"
-                            />
-                          </svg>
-                          <div
-                            onClick={schedule('now')}
-                            className={clsx(
-                              'hidden group-hover:flex hover:flex flex-col justify-center absolute start-0 top-[100%] w-full h-[40px] bg-customColor22 border border-tableBorder',
-                              (locked || loading) &&
-                                'cursor-not-allowed pointer-events-none opacity-50'
-                            )}
-                          >
-                            {t('post_now', 'Post now')}
+                        {!dummy && (
+                          <div className="h-full flex items-center">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="18"
+                              height="18"
+                              viewBox="0 0 18 18"
+                              fill="none"
+                            >
+                              <path
+                                d="M15.0233 7.14804L9.39828 12.773C9.34604 12.8253 9.284 12.8668 9.21572 12.8951C9.14743 12.9234 9.07423 12.938 9.00031 12.938C8.92639 12.938 8.8532 12.9234 8.78491 12.8951C8.71662 12.8668 8.65458 12.8253 8.60234 12.773L2.97734 7.14804C2.8718 7.04249 2.8125 6.89934 2.8125 6.75007C2.8125 6.6008 2.8718 6.45765 2.97734 6.3521C3.08289 6.24655 3.22605 6.18726 3.37531 6.18726C3.52458 6.18726 3.66773 6.24655 3.77328 6.3521L9.00031 11.5798L14.2273 6.3521C14.2796 6.29984 14.3417 6.25838 14.4099 6.2301C14.4782 6.20181 14.5514 6.18726 14.6253 6.18726C14.6992 6.18726 14.7724 6.20181 14.8407 6.2301C14.909 6.25838 14.971 6.29984 15.0233 6.3521C15.0755 6.40436 15.117 6.46641 15.1453 6.53469C15.1736 6.60297 15.1881 6.67616 15.1881 6.75007C15.1881 6.82398 15.1736 6.89716 15.1453 6.96545C15.117 7.03373 15.0755 7.09578 15.0233 7.14804Z"
+                                fill="white"
+                              />
+                            </svg>
+                            <div
+                              onClick={schedule('now')}
+                              className={clsx(
+                                'hidden group-hover:flex hover:flex flex-col justify-center absolute start-0 top-[100%] w-full h-[40px] bg-customColor22 border border-tableBorder',
+                                (locked || loading) &&
+                                  'cursor-not-allowed pointer-events-none opacity-50'
+                              )}
+                            >
+                              {t('post_now', 'Post now')}
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
                     </Button>
                   )}
@@ -417,17 +448,21 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             <TopTitle title="" removeTitle={true}>
               <div className="flex flex-1 gap-[10px]">
                 <div>
-                  <TagsComponent
-                    name="tags"
-                    label={t('tags', 'Tags')}
-                    initial={tags}
-                    onChange={(e) => setTags(e.target.value)}
-                  />
+                  {!dummy && (
+                    <TagsComponent
+                      name="tags"
+                      label={t('tags', 'Tags')}
+                      initial={tags}
+                      onChange={(e) => setTags(e.target.value)}
+                    />
+                  )}
                 </div>
-                <SelectCustomer
-                  onChange={changeCustomer}
-                  integrations={integrations}
-                />
+                {!dummy && (
+                  <SelectCustomer
+                    onChange={changeCustomer}
+                    integrations={integrations}
+                  />
+                )}
               </div>
               <svg
                 onClick={askClose}

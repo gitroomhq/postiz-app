@@ -27,6 +27,7 @@ interface SelectedIntegrations {
 interface StoreState {
   date: dayjs.Dayjs;
   postComment: PostComment;
+  dummy: boolean;
   repeater?: number;
   isCreateSet: boolean;
   totalChars: number;
@@ -116,9 +117,11 @@ interface StoreState {
   ) => void;
   setPostComment: (postComment: PostComment) => void;
   setActivateExitButton?: (activateExitButton: boolean) => void;
+  setDummy: (dummy: boolean) => void;
 }
 
 const initialState = {
+  dummy: false,
   activateExitButton: true,
   date: dayjs(),
   postComment: PostComment.ALL,
@@ -504,5 +507,9 @@ export const useLaunchStore = create<StoreState>()((set) => ({
   setActivateExitButton: (activateExitButton: boolean) =>
     set((state) => ({
       activateExitButton,
+    })),
+  setDummy: (dummy: boolean) =>
+    set((state) => ({
+      dummy,
     })),
 }));

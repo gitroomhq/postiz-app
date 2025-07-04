@@ -11,6 +11,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 
 export interface AddEditModalProps {
+  dummy?: boolean;
   date: dayjs.Dayjs;
   integrations: Integrations[];
   allIntegrations?: Integrations[];
@@ -33,16 +34,18 @@ export interface AddEditModalProps {
 }
 
 export const AddEditModal: FC<AddEditModalProps> = (props) => {
-  const { setAllIntegrations, setDate, setIsCreateSet } = useLaunchStore(
+  const { setAllIntegrations, setDate, setIsCreateSet, setDummy } = useLaunchStore(
     useShallow((state) => ({
       setAllIntegrations: state.setAllIntegrations,
       setDate: state.setDate,
       setIsCreateSet: state.setIsCreateSet,
+      setDummy: state.setDummy,
     }))
   );
 
   const integrations = useLaunchStore((state) => state.integrations);
   useEffect(() => {
+    setDummy(!!props.dummy);
     setDate(props.date || dayjs());
     setAllIntegrations(props.allIntegrations || []);
     setIsCreateSet(!!props.addEditSets);

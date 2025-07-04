@@ -5,17 +5,23 @@ import { FC, useCallback } from 'react';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import dayjs from 'dayjs';
-import { usePathname } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
 export const StandaloneModal: FC = () => {
   const fetch = useFetch();
-  const params = usePathname();
+  const params = useParams<{ platform: string }>();
+
   const load = useCallback(async (path: string) => {
     return (await (await fetch(path)).json()).integrations;
   }, []);
+
   const loadDate = useCallback(async () => {
+    if (params.platform === 'all') {
+      return dayjs().utc().format('YYYY-MM-DDTHH:mm:ss');
+    }
     return (await (await fetch('/posts/find-slot')).json()).date;
   }, []);
+
   const {
     isLoading,
     data: integrations,
@@ -31,6 +37,7 @@ export const StandaloneModal: FC = () => {
   }
   return (
     <AddEditModal
+      dummy={params.platform === 'all'}
       customClose={() => {
         window.parent.postMessage(
           {

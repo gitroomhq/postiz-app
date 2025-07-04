@@ -59,6 +59,7 @@ export const EditorWrapper: FC<{
     internalFromAll,
     totalChars,
     postComment,
+    dummy,
   } = useLaunchStore(
     useShallow((state) => ({
       internal: state.internal.find((p) => p.integration.id === state.current),
@@ -66,6 +67,7 @@ export const EditorWrapper: FC<{
       global: state.global,
       current: state.current,
       addRemoveInternal: state.addRemoveInternal,
+      dummy: state.dummy,
       setInternalValueText: state.setInternalValueText,
       setGlobalValueText: state.setGlobalValueText,
       addInternalValue: state.addInternalValue,
@@ -295,6 +297,7 @@ export const EditorWrapper: FC<{
                 identifier={internalFromAll?.identifier || 'global'}
                 totalChars={totalChars}
                 appendImages={appendImages(index)}
+                dummy={dummy}
               />
             </div>
             <div className="flex flex-col items-center gap-[10px]">
@@ -373,6 +376,7 @@ export const Editor: FC<{
   validateChars?: boolean;
   identifier?: string;
   totalChars?: number;
+  dummy: boolean;
 }> = (props) => {
   const {
     allValues,
@@ -383,6 +387,7 @@ export const Editor: FC<{
     validateChars,
     identifier,
     appendImages,
+    dummy,
   } = props;
   const user = useUser();
   const [id] = useState(makeId(10));
@@ -536,6 +541,7 @@ export const Editor: FC<{
                   label={t('attachments', 'Attachments')}
                   description=""
                   value={props.pictures}
+                  dummy={dummy}
                   name="image"
                   onChange={(value) => {
                     setImages(value.target.value);
