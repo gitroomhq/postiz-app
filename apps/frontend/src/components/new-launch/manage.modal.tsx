@@ -74,7 +74,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       integrations: state.integrations,
       setSelectedIntegrations: state.setSelectedIntegrations,
       locked: state.locked,
-      activateExitButton: state.activateExitButton
+      activateExitButton: state.activateExitButton,
     }))
   );
 
@@ -144,7 +144,8 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         const notEnoughChars = checkAllValid.filter((p: any) => {
           return p.values.some((a: any) => {
             return (
-              countCharacters(a.content, p?.integration?.identifier || '') === 0 && a.media?.length === 0
+              countCharacters(a.content, p?.integration?.identifier || '') ===
+                0 && a.media?.length === 0
             );
           });
         });
@@ -239,7 +240,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         posts: checkAllValid.map((p: any) => ({
           integration: p.integration,
           group,
-          settings: p.settings,
+          settings: { ...(p.settings || {}), __type: p.integration.identifier },
           value: p.values.map((a: any) => ({
             ...a,
             image: a.media || [],
@@ -335,7 +336,9 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                       onClick={schedule('draft')}
                       className="rounded-[4px] border-2 border-customColor21"
                       secondary={true}
-                      disabled={selectedIntegrations.length === 0 || loading || locked}
+                      disabled={
+                        selectedIntegrations.length === 0 || loading || locked
+                      }
                     >
                       {t('save_as_draft', 'Save as draft')}
                     </Button>
@@ -344,7 +347,9 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                   {addEditSets && (
                     <Button
                       className="rounded-[4px] relative group"
-                      disabled={selectedIntegrations.length === 0 || loading || locked}
+                      disabled={
+                        selectedIntegrations.length === 0 || loading || locked
+                      }
                       onClick={schedule('draft')}
                     >
                       Save Set
@@ -353,7 +358,9 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                   {!addEditSets && (
                     <Button
                       className="rounded-[4px] relative group"
-                      disabled={selectedIntegrations.length === 0 || loading || locked}
+                      disabled={
+                        selectedIntegrations.length === 0 || loading || locked
+                      }
                     >
                       <div className="flex justify-center items-center gap-[5px] h-full">
                         <div

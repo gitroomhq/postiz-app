@@ -13,22 +13,9 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { DevToSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dev.to.settings.dto';
 import { MediaDto } from '@gitroom/nestjs-libraries/dtos/media/media.dto';
-import { type AllProvidersSettings } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/all.providers.settings';
-import { MediumSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/medium.settings.dto';
-import { HashnodeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/hashnode.settings.dto';
-import { RedditSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/reddit.dto';
-import { YoutubeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/youtube.settings.dto';
-import { PinterestSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/pinterest.dto';
-import { DribbbleDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dribbble.dto';
-import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
-import { DiscordDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/discord.dto';
-import { SlackDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/slack.dto';
-import { LemmySettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/lemmy.dto';
-import { XDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/x.dto';
+import { allProviders, type AllProvidersSettings, EmptySettings } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/all.providers.settings';
 
-export class EmptySettings {}
 export class Integration {
   @IsDefined()
   @IsString()
@@ -70,23 +57,10 @@ export class Post {
 
   @ValidateNested()
   @Type(() => EmptySettings, {
-    keepDiscriminatorProperty: false,
+    keepDiscriminatorProperty: true,
     discriminator: {
       property: '__type',
-      subTypes: [
-        { value: DevToSettingsDto, name: 'devto' },
-        { value: MediumSettingsDto, name: 'medium' },
-        { value: HashnodeSettingsDto, name: 'hashnode' },
-        { value: RedditSettingsDto, name: 'reddit' },
-        { value: LemmySettingsDto, name: 'lemmy' },
-        { value: YoutubeSettingsDto, name: 'youtube' },
-        { value: PinterestSettingsDto, name: 'pinterest' },
-        { value: DribbbleDto, name: 'dribbble' },
-        { value: TikTokDto, name: 'tiktok' },
-        { value: DiscordDto, name: 'discord' },
-        { value: SlackDto, name: 'slack' },
-        { value: XDto, name: 'x' },
-      ],
+      subTypes: allProviders(EmptySettings),
     },
   })
   settings: AllProvidersSettings;

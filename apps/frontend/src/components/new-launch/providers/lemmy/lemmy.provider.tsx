@@ -10,7 +10,7 @@ import { useFieldArray } from 'react-hook-form';
 import { Button } from '@gitroom/react/form/button';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { Subreddit } from './subreddit';
-import { LemmySettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/lemmy.dto';
+import { LemmySettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/lemmy.dto';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 const LemmySettings: FC = () => {
   const { register, control } = useSettings();
