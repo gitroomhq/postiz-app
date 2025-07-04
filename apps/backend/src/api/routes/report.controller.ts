@@ -209,4 +209,22 @@ export class ReportController {
     if (!businessId) throw new Error('businessId is required');
     return this.reportService.getWebsiteLocationsReport(businessId, days);
   }
+  /////////////////////////////////////////////////////////////////////////////////////
+
+  @Get('pinterest/community')
+  getPinterestCommunityReport(
+    @Query('businessId') businessId: string,
+    @Query('days') days: string | '7' | '30' | '90' = '30'
+  ) {
+    return this.reportService.getPinterestCommunityReport(businessId, days);
+  }
+
+  @Get('pinterest/overview')
+  getPinterestOverviewReport(
+    @Query('businessId') businessId: string,
+    @Query('days') days: string | '7' | '30' | '90' = '30'
+  ) {
+    return this.reportService.getPinterestOverviewReport(businessId, days);
+  }
+
 }

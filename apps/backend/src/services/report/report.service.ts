@@ -14,6 +14,7 @@ export class ReportService {
     private _gbpInsightsRepository: PrismaRepository<'gbpInsight'>,
     private _websitePerformanceRepo: PrismaRepository<'websitePerformance'>,
     private _websiteLocationRepo: PrismaRepository<'websiteLocation'>,
+    private _pinterestPostPerformanceRepo: PrismaRepository<'pinterestPostPerformance'>,
 
   ) { }
 
@@ -1471,6 +1472,130 @@ private calculateLocationChange(prev: number, curr: number) {
     return change.toFixed(2) + '%';
   }
 
+
+async getPinterestCommunityReport(businessId: string, days: string) {
+  const range = parseInt(days || '30', 10);
+  const today = new Date();
+  const startDate = subDays(today, range);
+
+  const insights = await this._pinterestPostPerformanceRepo.model.pinterestPostPerformance.findMany({
+    where: { businessId, createdAt: { gte: startDate, lte: today } },
+    orderBy: { createdAt: 'asc' }
+  });
+
+  if (!insights.length) {
+    return {
+      table: {
+        Data: [],
+        Followers: [],
+        Following: [],
+        Posts: []
+      },
+      chart: []
+    };
+  }
+
+  const monthGroups = new Map();
+  for (const record of insights) {
+    const month = format(record.createdAt, 'yyyy-MM');
+    if (!monthGroups.has(month)) {
+      monthGroups.set(month, record);
+    }
+  }
+
+  const stats = [...monthGroups.entries()].map(([month, data]) => ({
+    month,
+    followers: data.followers || 0,
+    following: data.following || 0,
+    posts: data.totalContent || 0
+  }));
+
+  const lastMonth = stats[stats.length - 1];
+  const prevMonth = stats[stats.length - 2];
+
+  const changeFollowers = this.getPercentageChange(prevMonth?.followers, lastMonth?.followers);
+  const changeFollowing = this.getPercentageChange(prevMonth?.following, lastMonth?.following);
+  const changePosts = this.getPercentageChange(prevMonth?.posts, lastMonth?.posts);
+
+  // ✅ Correct chart with all 3 fields
+  const chart = insights.map(i => ({
+    date: format(i.createdAt, 'yyyy-MM-dd'),
+    followers: i?.['followers'] || 0,
+    following: i?.['following'] || 0,
+    posts: i.totalContent || 0
+  }));
+
+  return {
+    table: {
+      Data: [...stats.map(s => format(new Date(`${s.month}-01`), 'MMMM')), 'Change %'],
+      Followers: [...stats.map(s => s.followers.toString()), `${changeFollowers.toFixed(2)}%`],
+      Following: [...stats.map(s => s.following.toString()), `${changeFollowing.toFixed(2)}%`],
+      Posts: [...stats.map(s => s.posts.toString()), `${changePosts.toFixed(2)}%`]
+    },
+    chart
+  };
+}
+
+  async getPinterestOverviewReport(businessId: string, days: string) {
+  const range = parseInt(days || '30', 10);
+  const today = new Date();
+  const startDate = subDays(today, range);
+
+  const insights = await this._pinterestPostPerformanceRepo.model.pinterestPostPerformance.findMany({
+    where: { businessId, createdAt: { gte: startDate, lte: today } },
+    orderBy: { createdAt: 'asc' }
+  });
+
+  if (!insights.length) {
+    return {
+      table: {
+        Data: [],
+        Impressions: [],
+        Posts: []
+      },
+      chart: []
+    };
+  }
+
+  // Group by month
+  const monthGroups = new Map();
+  for (const record of insights) {
+    const month = format(record.createdAt, 'yyyy-MM');
+    if (!monthGroups.has(month)) {
+      monthGroups.set(month, []);
+    }
+    monthGroups.get(month).push(record);
+  }
+
+  const stats = [...monthGroups.entries()].map(([month, data]) => ({
+    month,
+    impressions: data.reduce((sum, d) => sum + d.impressions, 0),
+    posts: Math.max(...data.map(d => d.totalContent))
+  }));
+
+  const lastMonth = stats[stats.length - 1];
+  const prevMonth = stats[stats.length - 2];
+
+  const changeImpressions = this.getPercentageChange(prevMonth?.impressions, lastMonth?.impressions);
+  const changePosts = this.getPercentageChange(prevMonth?.posts, lastMonth?.posts);
+
+  const chart = insights.map(i => ({
+    date: format(i.createdAt, 'yyyy-MM-dd'),
+    impressions: i.impressions,
+    posts: i.totalContent
+  }));
+
+  return {
+    table: {
+      Data: [...stats.map(s => format(new Date(`${s.month}-01`), 'MMMM')), 'Change %'],
+      Impressions: [...stats.map(s => s.impressions.toString()), `${changeImpressions.toFixed(2)}%`],
+      Posts: [...stats.map(s => s.posts.toString()), `${changePosts.toFixed(2)}%`]
+    },
+    chart
+  };
+
+
+}
 
 
 }
