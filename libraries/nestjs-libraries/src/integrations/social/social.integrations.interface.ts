@@ -111,6 +111,7 @@ export interface SocialProvider
     ISocialMediaIntegration {
   identifier: string;
   refreshWait?: boolean;
+  available: boolean;
   convertToJPEG?: boolean;
   isWeb3?: boolean;
   customFields?: () => Promise<

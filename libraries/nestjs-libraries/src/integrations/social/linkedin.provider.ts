@@ -16,6 +16,9 @@ import imageToPDF from 'image-to-pdf';
 import { Readable } from 'stream';
 
 export class LinkedinProvider extends SocialAbstract implements SocialProvider {
+  available = !!(
+    process.env.LINKEDIN_CLIENT_ID && process.env.LINKEDIN_CLIENT_SECRET
+  );
   identifier = 'linkedin';
   name = 'LinkedIn';
   oneTimeToken = true;

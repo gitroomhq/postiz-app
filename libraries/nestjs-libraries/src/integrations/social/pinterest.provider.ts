@@ -17,6 +17,9 @@ export class PinterestProvider
   extends SocialAbstract
   implements SocialProvider
 {
+  available = !!(
+    process.env.PINTEREST_CLIENT_ID && process.env.PINTEREST_CLIENT_SECRET
+  );
   identifier = 'pinterest';
   name = 'Pinterest';
   isBetweenSteps = false;

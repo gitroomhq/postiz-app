@@ -10,6 +10,7 @@ import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 
 export class SlackProvider extends SocialAbstract implements SocialProvider {
+  available = !!(process.env.SLACK_ID && process.env.SLACK_SECRET);
   identifier = 'slack';
   name = 'Slack';
   isBetweenSteps = false;

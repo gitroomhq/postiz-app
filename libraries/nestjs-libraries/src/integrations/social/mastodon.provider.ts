@@ -9,6 +9,9 @@ import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.ab
 import dayjs from 'dayjs';
 
 export class MastodonProvider extends SocialAbstract implements SocialProvider {
+  available = !!(
+    process.env.MASTODON_CLIENT_ID && process.env.MASTODON_CLIENT_SECRET
+  );
   identifier = 'mastodon';
   name = 'Mastodon';
   isBetweenSteps = false;
