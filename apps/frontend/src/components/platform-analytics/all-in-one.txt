@@ -2668,22 +2668,11 @@ export const RenderAnalytics: FC<{ integration: IntegrationWithIdentifier; date:
   }
 
   // ==================== YOUTUBE COMPONENT ====================
-if (integration.identifier === 'youtube') {
+  if (integration.identifier === 'youtube') {
     const [loading, setLoading] = useState(true);
     const [overviewLoading, setOverviewLoading] = useState(true);
     const [overviewData, setOverviewData] = useState<any>(null);
     const [insightsData, setInsightsData] = useState<any>(null);
-
-    // Add this date filtering helper function
-    const filterInsightsByDateRange = (data: any[], days: number) => {
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - days);
-      
-      return data.filter(item => {
-        const itemDate = new Date(item.month);
-        return itemDate >= cutoffDate;
-      });
-    };
 
     const loadOverview = useCallback(async () => {
       setOverviewLoading(true);
@@ -2860,12 +2849,9 @@ if (integration.identifier === 'youtube') {
         totalComments: 0
       }];
 
-      // Apply date filtering to insights data
-      const filteredData = filterInsightsByDateRange(insightsData, date);
-
       const monthlyData: Record<string, any> = {};
 
-      filteredData.forEach((item: any) => {
+      insightsData.forEach((item: any) => {
         const month = item.month;
         monthlyData[month] = {
           subscribers: item.subscribers || 0,
@@ -2876,25 +2862,13 @@ if (integration.identifier === 'youtube') {
         };
       });
 
-      // Fallback if no data in filtered range
-      if (Object.keys(monthlyData).length === 0) {
-        const currentMonth = new Date().toISOString().slice(0, 7);
-        monthlyData[currentMonth] = {
-          subscribers: 0,
-          totalViews: 0,
-          totalVideos: 0,
-          totalLikes: 0,
-          totalComments: 0
-        };
-      }
-
       return Object.entries(monthlyData)
         .map(([month, data]) => ({
           month,
           ...data,
         }))
         .sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime());
-    }, [insightsData, date]); // Add date to dependencies
+    }, [insightsData]);
 
     const insightsWithChanges = useMemo(() => {
       if (!monthlyInsights || monthlyInsights.length === 0) {
@@ -2962,11 +2936,11 @@ if (integration.identifier === 'youtube') {
 
     return (
       <div className="flex flex-col gap-[20px]">
-        {/* Overview Section */}
+                {/* Overview Section */}
         <div className="flex flex-col gap-[20px]">
           {/* Overview Table */}
           <div className="bg-secondary p-[16px]">
-            <h2 className="text-[20px] mb-[16px]">YouTube Channel Overview(Last {date} days)</h2>
+            <h2 className="text-[20px] mb-[16px]">YouTube Channel Overview</h2>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -3056,7 +3030,7 @@ if (integration.identifier === 'youtube') {
         <div className="flex flex-col gap-[20px]">
           {/* Insights Table */}
           <div className="bg-secondary p-[16px]">
-            <h2 className="text-[20px] mb-[16px]">YouTube Post Performance (Last {date} days)</h2>
+            <h2 className="text-[20px] mb-[16px]">YouTube Post Performance</h2>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -3064,7 +3038,7 @@ if (integration.identifier === 'youtube') {
                     <th className="pb-[8px]">Metric</th>
                     {insightsWithChanges.map((item: any) => (
                       <th key={`month-header-${item.month}`} className="pb-[8px]">
-                        {new Date(item.month).toLocaleString('default', { month: 'short' })}
+                        {new Date(item.month).toLocaleString('default', { month: 'long' })}
                       </th>
                     ))}
                     <th className="pb-[8px]">Change %</th>

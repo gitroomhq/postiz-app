@@ -1,0 +1,740 @@
+import { FC, useCallback, useMemo, useState } from 'react';
+import { Integration } from '@prisma/client';
+import useSWR from 'swr';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { ChartSocial } from '@gitroom/frontend/components/analytics/chart-social';
+import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
+import { Bar } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+
+// Register ChartJS components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
+export const RenderAnalytics: FC<{ integration: Integration; date: number }> = (
+  props
+) => {
+  const { integration, date } = props;
+  const [performanceLoading, setPerformanceLoading] = useState(true);
+  const [engagementLoading, setEngagementLoading] = useState(true);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [performanceData, setPerformanceData] = useState<any>(null);
+  const [engagementData, setEngagementData] = useState<any>(null);
+  const [reviewsData, setReviewsData] = useState<any>(null);
+
+  const fetch = useFetch();
+
+  const getDaysParam = useCallback((date: number) => {
+    if (date <= 7) return '7';
+    if (date <= 30) return '30';
+    return '90';
+  }, []);
+
+  // Load performance data
+  const loadPerformance = useCallback(async () => {
+    setPerformanceLoading(true);
+    try {
+      const response = await fetch(
+        `/report/gbp/performance?businessId=${integration.internalId}&days=${getDaysParam(date)}`
+      );
+      const data = await response.json();
+      setPerformanceData(data);
+    } catch (error) {
+      console.error('Error loading performance analytics:', error);
+      setPerformanceData(null);
+    } finally {
+      setPerformanceLoading(false);
+    }
+  }, [integration, date, getDaysParam]);
+
+  // Load engagement data
+  const loadEngagement = useCallback(async () => {
+    setEngagementLoading(true);
+    try {
+      const response = await fetch(
+        `/report/gbp/engagement?businessId=${integration.internalId}&days=${getDaysParam(date)}`
+      );
+      const data = await response.json();
+      setEngagementData(data);
+    } catch (error) {
+      console.error('Error loading engagement analytics:', error);
+      setEngagementData(null);
+    } finally {
+      setEngagementLoading(false);
+    }
+  }, [integration, date, getDaysParam]);
+
+  // Load reviews data
+  const loadReviews = useCallback(async () => {
+    setReviewsLoading(true);
+    try {
+      const response = await fetch(
+        `/report/gbp/reviews?businessId=${integration.internalId}&days=${getDaysParam(date)}`
+      );
+      const data = await response.json();
+      setReviewsData(data);
+    } catch (error) {
+      console.error('Error loading reviews analytics:', error);
+      setReviewsData(null);
+    } finally {
+      setReviewsLoading(false);
+    }
+  }, [integration, date, getDaysParam]);
+
+  // Load all data when component mounts
+  useSWR(`/gbp-performance-${integration?.id}-${date}`, loadPerformance, {
+    refreshInterval: 0,
+    refreshWhenHidden: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    refreshWhenOffline: false,
+    revalidateOnMount: true,
+  });
+
+  useSWR(`/gbp-engagement-${integration?.id}-${date}`, loadEngagement, {
+    refreshInterval: 0,
+    refreshWhenHidden: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    refreshWhenOffline: false,
+    revalidateOnMount: true,
+  });
+
+  useSWR(`/gbp-reviews-${integration?.id}-${date}`, loadReviews, {
+    refreshInterval: 0,
+    refreshWhenHidden: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    refreshWhenOffline: false,
+    revalidateOnMount: true,
+  });
+
+  const refreshChannel = useCallback(
+    (integration: Integration & { identifier: string }) => async () => {
+      const { url } = await (
+        await fetch(
+          `/integrations/social/${integration.identifier}?customerId=${integration.customerId}&refresh=${integration.internalId}`,
+          {
+            method: 'GET',
+          }
+        )
+      ).json();
+
+      window.location.href = url;
+    },
+    []
+  );
+
+  // Prepare performance chart data
+  const performanceChartData = useMemo(() => {
+    if (!performanceData?.chart) return [];
+
+    const latestData = performanceData.chart[performanceData.chart.length - 1];
+
+    return [
+      {
+        label: 'Google Maps',
+        data: performanceData.chart.map((item: any) => ({
+          date: item.date,
+          total: item.maps,
+        })),
+        average: false,
+        latestValue: latestData?.maps || 0,
+      },
+      {
+        label: 'Google Search',
+        data: performanceData.chart.map((item: any) => ({
+          date: item.date,
+          total: item.search,
+        })),
+        average: false,
+        latestValue: latestData?.search || 0,
+      },
+      {
+        label: 'Total',
+        data: performanceData.chart.map((item: any) => ({
+          date: item.date,
+          total: item.total,
+        })),
+        average: false,
+        latestValue: latestData?.total || 0,
+      },
+    ];
+  }, [performanceData]);
+
+  // Prepare engagement chart data
+  const engagementChartData = useMemo(() => {
+    if (!engagementData?.chart) return [];
+
+    const latestData = engagementData.chart[engagementData.chart.length - 1];
+
+    return [
+      {
+        label: 'Website Clicks',
+        data: engagementData.chart.map((item: any) => ({
+          date: item.date,
+          total: item.website,
+        })),
+        average: false,
+        latestValue: latestData?.website || 0,
+      },
+      {
+        label: 'Phone Clicks',
+        data: engagementData.chart.map((item: any) => ({
+          date: item.date,
+          total: item.phone,
+        })),
+        average: false,
+        latestValue: latestData?.phone || 0,
+      },
+      {
+        label: 'Direction Clicks',
+        data: engagementData.chart.map((item: any) => ({
+          date: item.date,
+          total: item.direction,
+        })),
+        average: false,
+        latestValue: latestData?.direction || 0,
+      },
+    ];
+  }, [engagementData]);
+
+  // Prepare reviews chart data
+  const reviewsChartData = useMemo(() => {
+    if (!reviewsData?.chart) return [];
+
+    const latestData = reviewsData.chart[reviewsData.chart.length - 1];
+
+    return [
+      {
+        label: 'Star Rating',
+        data: reviewsData.chart.map((item: any) => ({
+          date: item.date,
+          total: item.rating,
+        })),
+        average: false,
+        latestValue: latestData?.rating || 0,
+      },
+      {
+        label: 'Total Reviews',
+        data: reviewsData.chart.map((item: any) => ({
+          date: item.date,
+          total: item.reviews,
+        })),
+        average: false,
+        latestValue: latestData?.reviews || 0,
+      },
+    ];
+  }, [reviewsData]);
+
+  // Prepare performance table data
+  const performanceTableData = useMemo(() => {
+    if (!performanceData?.table) return null;
+
+    return {
+      months: performanceData.table.Data,
+      googleMaps: performanceData.table['Google maps'],
+      googleSearch: performanceData.table['Google search'],
+      total: performanceData.table.Total,
+    };
+  }, [performanceData]);
+
+  // Prepare engagement table data
+  const engagementTableData = useMemo(() => {
+    if (!engagementData?.table) return null;
+
+    return {
+      months: engagementData.table.Data,
+      website: engagementData.table.Website,
+      phone: engagementData.table.Phone,
+      direction: engagementData.table.Direction,
+      total: engagementData.table.Total,
+    };
+  }, [engagementData]);
+
+  // Prepare reviews table data
+  const reviewsTableData = useMemo(() => {
+    if (!reviewsData?.table) return null;
+
+    return {
+      months: reviewsData.table.Data,
+      starRating: reviewsData.table['Star Rating'],
+      totalReview: reviewsData.table['Total Review'],
+    };
+  }, [reviewsData]);
+
+  // Prepare performance bar chart data
+  const performanceBarChartData = useMemo(() => {
+    if (!performanceData?.chart) return null;
+
+    const chartData = performanceData.chart.slice(-14);
+
+    return {
+      labels: chartData.map((item: any) => {
+        const date = new Date(item.date);
+        return `${date.getMonth() + 1}/${date.getDate()}`;
+      }),
+      datasets: [
+        {
+          label: 'Google Maps',
+          data: chartData.map((item: any) => item.maps),
+          backgroundColor: 'rgba(75, 192, 192, 0.6)',
+          borderColor: 'rgba(75, 192, 192, 1)',
+          borderWidth: 1,
+        },
+        {
+          label: 'Google Search',
+          data: chartData.map((item: any) => item.search),
+          backgroundColor: 'rgba(255, 159, 64, 0.6)',
+          borderColor: 'rgba(255, 159, 64, 1)',
+          borderWidth: 1,
+        },
+      ],
+    };
+  }, [performanceData?.chart]);
+
+  // Prepare engagement bar chart data
+  const engagementBarChartData = useMemo(() => {
+    if (!engagementData?.chart) return null;
+
+    const chartData = engagementData.chart.slice(-14);
+
+    return {
+      labels: chartData.map((item: any) => {
+        const date = new Date(item.date);
+        return `${date.getMonth() + 1}/${date.getDate()}`;
+      }),
+      datasets: [
+        {
+          label: 'Website',
+          data: chartData.map((item: any) => item.website),
+          backgroundColor: 'rgba(54, 162, 235, 0.6)',
+          borderColor: 'rgba(54, 162, 235, 1)',
+          borderWidth: 1,
+        },
+        {
+          label: 'Phone',
+          data: chartData.map((item: any) => item.phone),
+          backgroundColor: 'rgba(255, 99, 132, 0.6)',
+          borderColor: 'rgba(255, 99, 132, 1)',
+          borderWidth: 1,
+        },
+        {
+          label: 'Direction',
+          data: chartData.map((item: any) => item.direction),
+          backgroundColor: 'rgba(153, 102, 255, 0.6)',
+          borderColor: 'rgba(153, 102, 255, 1)',
+          borderWidth: 1,
+        },
+      ],
+    };
+  }, [engagementData?.chart]);
+
+  // Prepare reviews bar chart data
+  const reviewsBarChartData = useMemo(() => {
+    if (!reviewsData?.chart) return null;
+
+    const chartData = reviewsData.chart.slice(-14);
+
+    return {
+      labels: chartData.map((item: any) => {
+        const date = new Date(item.date);
+        return `${date.getMonth() + 1}/${date.getDate()}`;
+      }),
+      datasets: [
+        {
+          label: 'Star Rating',
+          data: chartData.map((item: any) => item.rating),
+          backgroundColor: 'rgba(255, 206, 86, 0.6)',
+          borderColor: 'rgba(255, 206, 86, 1)',
+          borderWidth: 1,
+          yAxisID: 'y',
+        },
+        {
+          label: 'Total Reviews',
+          data: chartData.map((item: any) => item.reviews),
+          backgroundColor: 'rgba(75, 192, 192, 0.6)',
+          borderColor: 'rgba(75, 192, 192, 1)',
+          borderWidth: 1,
+          yAxisID: 'y1',
+        },
+      ],
+    };
+  }, [reviewsData?.chart]);
+
+  const barChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top' as const,
+        labels: {
+          boxWidth: 12,
+          padding: 20,
+          usePointStyle: true,
+          pointStyle: 'circle'
+        }
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: false,
+      },
+    },
+    maintainAspectRatio: false,
+  };
+
+  const reviewsBarChartOptions = {
+    ...barChartOptions,
+    scales: {
+      y: {
+        type: 'linear' as const,
+        display: true,
+        position: 'left' as const,
+        beginAtZero: false,
+      },
+      y1: {
+        type: 'linear' as const,
+        display: true,
+        position: 'right' as const,
+        beginAtZero: true,
+        grid: {
+          drawOnChartArea: false,
+        },
+      },
+    },
+  };
+
+  if (performanceLoading || engagementLoading || reviewsLoading) {
+    return <LoadingComponent />;
+  }
+
+  return (
+    <div className="flex flex-col gap-[20px]">
+      {/* Performance Section */}
+      <div className="grid grid-cols-3 gap-[20px]">
+        {performanceChartData.length === 0 && (
+          <div>
+            This channel needs to be refreshed,{' '}
+            <div
+              className="underline hover:font-bold cursor-pointer"
+              onClick={refreshChannel(integration as any)}
+            >
+              click here to refresh
+            </div>
+          </div>
+        )}
+        {performanceChartData.map((p: any, index: number) => (
+          <div key={`performance-${index}`} className="flex">
+            <div className="flex-1 bg-secondary py-[10px] px-[16px] gap-[10px] flex flex-col">
+              <div className="flex items-center gap-[14px]">
+                <div className="text-[20px]">{p.label}</div>
+              </div>
+              <div className="flex-1">
+                <div className="h-[156px] relative">
+                  <ChartSocial {...p} key={`p-${index}`} />
+                </div>
+              </div>
+              <div className="text-[50px] leading-[60px]">
+                {p.latestValue}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Performance Table */}
+      {performanceTableData && (
+        <div className="bg-secondary p-[16px]">
+          <h2 className="text-[20px] mb-[16px]">Performance</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="text-left border-b border-border">
+                  <th className="pb-[8px]">Data</th>
+                  {performanceTableData.months.map((month: string, index: number) => (
+                    <th key={`performance-month-${index}`} className="pb-[8px]">
+                      {month}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-border">
+                  <td className="py-[8px]">Google Maps</td>
+                  {performanceTableData.googleMaps.map((value: string, index: number) => (
+                    <td key={`maps-${index}`} className="py-[8px]">
+                      {value}
+                    </td>
+                  ))}
+                </tr>
+                <tr className="border-b border-border">
+                  <td className="py-[8px]">Google Search</td>
+                  {performanceTableData.googleSearch.map((value: string, index: number) => (
+                    <td key={`search-${index}`} className="py-[8px]">
+                      {value}
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <td className="py-[8px] font-bold">Total</td>
+                  {performanceTableData.total.map((value: string, index: number) => (
+                    <td
+                      key={`total-${index}`}
+                      className="py-[8px] font-bold"
+                    >
+                      {value}
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Performance Bar Chart */}
+      {performanceBarChartData && (
+        <div className="bg-secondary p-[16px]">
+          <h2 className="text-[20px] mb-[16px]">Performance Trends</h2>
+          <div className="h-[300px] relative">
+            <Bar data={performanceBarChartData} options={barChartOptions} />
+          </div>
+          <div className="mt-[16px] grid grid-cols-3 gap-[20px]">
+            <div className="flex flex-col items-center">
+              <div className="text-[24px] font-bold">
+                {performanceData?.chart?.[performanceData.chart.length - 1]?.maps || 0}
+              </div>
+              <div className="text-[14px] text-gray-400">Google Maps</div>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="text-[24px] font-bold">
+                {performanceData?.chart?.[performanceData.chart.length - 1]?.search || 0}
+              </div>
+              <div className="text-[14px] text-gray-400">Google Search</div>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="text-[24px] font-bold">
+                {performanceData?.chart?.[performanceData.chart.length - 1]?.total || 0}
+              </div>
+              <div className="text-[14px] text-gray-400">Total</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Engagement Section */}
+      <div className="grid grid-cols-3 gap-[20px]">
+        {engagementChartData.map((p: any, index: number) => (
+          <div key={`engagement-${index}`} className="flex">
+            <div className="flex-1 bg-secondary py-[10px] px-[16px] gap-[10px] flex flex-col">
+              <div className="flex items-center gap-[14px]">
+                <div className="text-[20px]">{p.label}</div>
+              </div>
+              <div className="flex-1">
+                <div className="h-[156px] relative">
+                  <ChartSocial {...p} key={`e-${index}`} />
+                </div>
+              </div>
+              <div className="text-[50px] leading-[60px]">
+                {p.latestValue}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Engagement Table */}
+      {engagementTableData && (
+        <div className="bg-secondary p-[16px]">
+          <h2 className="text-[20px] mb-[16px]">Engagement</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="text-left border-b border-border">
+                  <th className="pb-[8px]">Data</th>
+                  {engagementTableData.months.map((month: string, index: number) => (
+                    <th key={`engagement-month-${index}`} className="pb-[8px]">
+                      {month}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-border">
+                  <td className="py-[8px]">Website</td>
+                  {engagementTableData.website.map((value: string, index: number) => (
+                    <td key={`website-${index}`} className="py-[8px]">
+                      {value}
+                    </td>
+                  ))}
+                </tr>
+                <tr className="border-b border-border">
+                  <td className="py-[8px]">Phone</td>
+                  {engagementTableData.phone.map((value: string, index: number) => (
+                    <td key={`phone-${index}`} className="py-[8px]">
+                      {value}
+                    </td>
+                  ))}
+                </tr>
+                <tr className="border-b border-border">
+                  <td className="py-[8px]">Direction</td>
+                  {engagementTableData.direction.map((value: string, index: number) => (
+                    <td key={`direction-${index}`} className="py-[8px]">
+                      {value}
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <td className="py-[8px] font-bold">Total</td>
+                  {engagementTableData.total.map((value: string, index: number) => (
+                    <td
+                      key={`engagement-total-${index}`}
+                      className="py-[8px] font-bold"
+                    >
+                      {value}
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Engagement Bar Chart */}
+      {engagementBarChartData && (
+        <div className="bg-secondary p-[16px]">
+          <h2 className="text-[20px] mb-[16px]">Engagement Trends</h2>
+          <div className="h-[300px] relative">
+            <Bar data={engagementBarChartData} options={barChartOptions} />
+          </div>
+          <div className="mt-[16px] grid grid-cols-3 gap-[20px]">
+            <div className="flex flex-col items-center">
+              <div className="text-[24px] font-bold">
+                {engagementData?.chart?.[engagementData.chart.length - 1]?.website || 0}
+              </div>
+              <div className="text-[14px] text-gray-400">Website</div>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="text-[24px] font-bold">
+                {engagementData?.chart?.[engagementData.chart.length - 1]?.phone || 0}
+              </div>
+              <div className="text-[14px] text-gray-400">Phone</div>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="text-[24px] font-bold">
+                {engagementData?.chart?.[engagementData.chart.length - 1]?.direction || 0}
+              </div>
+              <div className="text-[14px] text-gray-400">Direction</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reviews Section */}
+      <div className="grid grid-cols-2 gap-[20px]">
+        {reviewsChartData.map((p: any, index: number) => (
+          <div key={`reviews-${index}`} className="flex">
+            <div className="flex-1 bg-secondary py-[10px] px-[16px] gap-[10px] flex flex-col">
+              <div className="flex items-center gap-[14px]">
+                <div className="text-[20px]">{p.label}</div>
+              </div>
+              <div className="flex-1">
+                <div className="h-[156px] relative">
+                  <ChartSocial {...p} key={`r-${index}`} />
+                </div>
+              </div>
+              <div className="text-[50px] leading-[60px]">
+                {p.latestValue}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Reviews Table */}
+      {reviewsTableData && (
+        <div className="bg-secondary p-[16px]">
+          <h2 className="text-[20px] mb-[16px]">Reviews</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="text-left border-b border-border">
+                  <th className="pb-[8px]">Data</th>
+                  {reviewsTableData.months.map((month: string, index: number) => (
+                    <th key={`reviews-month-${index}`} className="pb-[8px]">
+                      {month}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-border">
+                  <td className="py-[8px]">Star Rating</td>
+                  {reviewsTableData.starRating.map((value: string, index: number) => (
+                    <td key={`rating-${index}`} className="py-[8px]">
+                      {value}
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <td className="py-[8px] font-bold">Total Review</td>
+                  {reviewsTableData.totalReview.map((value: string, index: number) => (
+                    <td
+                      key={`total-review-${index}`}
+                      className="py-[8px] font-bold"
+                    >
+                      {value}
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Reviews Bar Chart */}
+      {reviewsBarChartData && (
+        <div className="bg-secondary p-[16px]">
+          <h2 className="text-[20px] mb-[16px]">Reviews Trends</h2>
+          <div className="h-[300px] relative">
+            <Bar data={reviewsBarChartData} options={reviewsBarChartOptions} />
+          </div>
+          <div className="mt-[16px] grid grid-cols-2 gap-[20px]">
+            <div className="flex flex-col items-center">
+              <div className="text-[24px] font-bold">
+                {reviewsData?.chart?.[reviewsData.chart.length - 1]?.rating || 0}
+              </div>
+              <div className="text-[14px] text-gray-400">Star Rating</div>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="text-[24px] font-bold">
+                {reviewsData?.chart?.[reviewsData.chart.length - 1]?.reviews || 0}
+              </div>
+              <div className="text-[14px] text-gray-400">Total Reviews</div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

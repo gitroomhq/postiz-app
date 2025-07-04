@@ -192,4 +192,21 @@ export class ReportController {
     return this.reportService.gbpList(businessId);
     }
   /////////////////////////////////////////////////////////////////////////////////////
+  @Get('website/performance')
+  getWebsitePerformanceReport(
+    @Query('businessId') businessId: string,
+    @Query('days') days: string | '7' | '30' | '90' = '30'
+  ) {
+    if (!businessId) throw new Error('businessId is required');
+    return this.reportService.getWebsitePerformanceReport(businessId, days);
+  }
+
+  @Get('website/locations')
+  getWebsiteLocationsReport(
+    @Query('businessId') businessId: string,
+    @Query('days') days: string | '7' | '30' | '90' = '30'
+  ) {
+    if (!businessId) throw new Error('businessId is required');
+    return this.reportService.getWebsiteLocationsReport(businessId, days);
+  }
 }
