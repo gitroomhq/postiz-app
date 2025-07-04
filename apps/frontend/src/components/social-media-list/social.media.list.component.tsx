@@ -156,6 +156,37 @@ const SocialMediaList: React.FC = () => {
     Website: false,
   });
   const [isDownloading, setIsDownloading] = useState(false);
+  
+  // Add state for month and year selection
+  const [selectedMonth, setSelectedMonth] = useState<string>(
+    String(new Date().getMonth() + 1).padStart(2, '0')
+  );
+  const [selectedYear, setSelectedYear] = useState<string>(
+    String(new Date().getFullYear())
+  );
+
+  // Generate month options (01-12)
+  const monthOptions = useMemo(() => {
+    return Array.from({ length: 12 }, (_, i) => {
+      const monthNum = i + 1;
+      return {
+        value: String(monthNum).padStart(2, '0'),
+        label: new Date(2000, i, 1).toLocaleString('default', { month: 'long' })
+      };
+    });
+  }, []);
+
+  // Generate year options (current year and previous 5 years)
+  const yearOptions = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    return Array.from({ length: 6 }, (_, i) => {
+      const year = currentYear - i;
+      return {
+        value: String(year),
+        label: String(year)
+      };
+    });
+  }, []);
 
   const updateSocialMediaConfigForm = useCallback(
     (config: SocialMediaConfig) => {
@@ -229,11 +260,6 @@ const SocialMediaList: React.FC = () => {
     setIsDownloading(true);
 
     try {
-      // Get current date for month and year
-      const currentDate = new Date();
-      const month = String(currentDate.getMonth() + 1).padStart(2, '0');
-      const year = currentDate.getFullYear();
-
       // Map frontend platform names to backend parameter names
       const platformMappings: Record<string, string> = {
         Instagram: 'instagram',
@@ -250,8 +276,8 @@ const SocialMediaList: React.FC = () => {
       // Build query parameters
       const params = new URLSearchParams();
       params.append('customerId', customer.id);
-      params.append('month', month);
-      params.append('year', String(year));
+      params.append('month', selectedMonth);
+      params.append('year', selectedYear);
 
       // Add platform parameters
       Object.entries(selectedPlatforms).forEach(([platform, isSelected]) => {
@@ -273,7 +299,7 @@ const SocialMediaList: React.FC = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `social-media-report-${customer.name}-${month}-${year}.pdf`;
+      a.download = `social-media-report-${customer.name}-${selectedMonth}-${selectedYear}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -286,7 +312,7 @@ const SocialMediaList: React.FC = () => {
     } finally {
       setIsDownloading(false);
     }
-  }, [customer, selectedPlatforms, fetch]);
+  }, [customer, selectedPlatforms, fetch, selectedMonth, selectedYear]);
 
   useEffect(() => {
     loadCustomerList();
@@ -347,6 +373,28 @@ const SocialMediaList: React.FC = () => {
               <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
+        </div>
+
+        {/* Add month and year selection */}
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Month</label>
+            <Select
+              value={selectedMonth}
+              onChange={(value) => setSelectedMonth(value || '01')}
+              data={monthOptions}
+              className="w-full"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
+            <Select
+              value={selectedYear}
+              onChange={(value) => setSelectedYear(value || String(new Date().getFullYear()))}
+              data={yearOptions}
+              className="w-full"
+            />
+          </div>
         </div>
         
         <div className="space-y-3 mb-6">
