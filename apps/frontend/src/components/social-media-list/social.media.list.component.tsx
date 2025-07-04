@@ -15,8 +15,6 @@ import { Select } from '@mantine/core';
 import { useSearchParams } from 'next/navigation';
 import { Customer } from '@gitroom/frontend/components/customers/types';
 
-
-
 // Define the type for each social media config item
 export const UpdateSocialMediaConfigForm = ({ config }: { config: SocialMediaConfig }) => {
   const modals = useModals();
@@ -50,7 +48,6 @@ export const UpdateSocialMediaConfigForm = ({ config }: { config: SocialMediaCon
   const closeModal = useCallback(() => {
     modals.closeAll();
   }, [modals]);
-
 
   // Submit handler
   const submit: SubmitHandler<any> = useCallback(
@@ -146,6 +143,19 @@ const SocialMediaList: React.FC = () => {
   const customerId = searchParams.get('customerId');
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [customerList, setCustomerList]: Customer[] | any = useState([]);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [selectedPlatforms, setSelectedPlatforms] = useState<Record<string, boolean>>({
+    Instagram: false,
+    Facebook: false,
+    Youtube: false,
+    Thread: false,
+    X: false,
+    Pinterest: false,
+    LinkedIn: false,
+    GBP: false,
+    Website: false,
+  });
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const updateSocialMediaConfigForm = useCallback(
     (config: SocialMediaConfig) => {
@@ -159,6 +169,124 @@ const SocialMediaList: React.FC = () => {
     },
     [modals]
   );
+
+  const togglePlatform = (platform: string) => {
+    setSelectedPlatforms(prev => ({
+      ...prev,
+      [platform]: !prev[platform]
+    }));
+  };
+
+  const getPlatformIcon = (platform: string) => {
+    const icons: Record<string, JSX.Element> = {
+      Instagram: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 16a4 4 0 100-8 4 4 0 000 8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <rect x="3" y="3" width="18" height="18" rx="4" stroke="currentColor" strokeWidth="2"/>
+        <circle cx="17.5" cy="6.5" r="1.5" fill="currentColor"/>
+      </svg>,
+      Facebook: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>,
+      Youtube: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22.54 6.42a2.78 2.78 0 00-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 00-1.94 2A29 29 0 001 11.75a29 29 0 00.46 5.33A2.78 2.78 0 003.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 001.94-2 29 29 0 00.46-5.25 29 29 0 00-.46-5.33z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M9.75 15.02l5.75-3.27-5.75-3.27v6.54z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>,
+      Thread: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M19 7.5V12a7 7 0 01-7 7v0a7 7 0 01-7-7V7.5M12 19v3M8 22h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" strokeWidth="2"/>
+      </svg>,
+      X: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>,
+      Pinterest: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 20a8 8 0 01-8-8 8 8 0 018-8 8 8 0 018 8 8 8 0 01-8 8z" stroke="currentColor" strokeWidth="2"/>
+        <path d="M12 20v-6a2 2 0 012-2v0a2 2 0 002-2v-1" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <circle cx="12" cy="8" r="1" fill="currentColor"/>
+      </svg>,
+      LinkedIn: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <circle cx="4" cy="4" r="2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>,
+      GBP: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>,
+      Website: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+        <path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    };
+    return icons[platform] || <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>;
+  };
+
+  const handleDownloadReport = useCallback(async () => {
+    if (!customer?.id) {
+      console.error('No customer selected');
+      return;
+    }
+
+    setIsDownloading(true);
+
+    try {
+      // Get current date for month and year
+      const currentDate = new Date();
+      const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+      const year = currentDate.getFullYear();
+
+      // Map frontend platform names to backend parameter names
+      const platformMappings: Record<string, string> = {
+        Instagram: 'instagram',
+        Facebook: 'facebook',
+        Youtube: 'youtube',
+        X: 'x',
+        LinkedIn: 'linkedin',
+        Thread: 'thread',
+        Pinterest: 'pinterest',
+        GBP: 'gbp',
+        Website: 'website'
+      };
+
+      // Build query parameters
+      const params = new URLSearchParams();
+      params.append('customerId', customer.id);
+      params.append('month', month);
+      params.append('year', String(year));
+
+      // Add platform parameters
+      Object.entries(selectedPlatforms).forEach(([platform, isSelected]) => {
+        const backendParam = platformMappings[platform];
+        if (backendParam) {
+          params.append(backendParam, String(isSelected));
+        }
+      });
+
+      // Make the API call
+      const response = await fetch(`/report-download/combined?${params.toString()}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to download report');
+      }
+
+      // Handle the PDF download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `social-media-report-${customer.name}-${month}-${year}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      setShowDownloadModal(false);
+    } catch (error) {
+      console.error('Error downloading report:', error);
+      // You can add toast notification here if needed
+    } finally {
+      setIsDownloading(false);
+    }
+  }, [customer, selectedPlatforms, fetch]);
 
   useEffect(() => {
     loadCustomerList();
@@ -206,6 +334,49 @@ const SocialMediaList: React.FC = () => {
     }
   };
 
+  const DownloadModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-sixth p-6 rounded-lg w-full max-w-md">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-bold">Select Platforms</h3>
+          <button 
+            onClick={() => setShowDownloadModal(false)}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        </div>
+        
+        <div className="space-y-3 mb-6">
+          {Object.entries(selectedPlatforms).map(([platform, checked]) => (
+            <label key={platform} className="flex items-center space-x-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={() => togglePlatform(platform)}
+                className="form-checkbox h-5 w-5 text-blue-600 rounded"
+              />
+              <div className="flex items-center">
+                {getPlatformIcon(platform)}
+                <span className="ml-2 text-sm">{platform}</span>
+              </div>
+            </label>
+          ))}
+        </div>
+        
+        <Button
+          onClick={handleDownloadReport}
+          className="w-full bg-blue-600 hover:bg-blue-700"
+          loading={isDownloading}
+          disabled={isDownloading}
+        >
+          {isDownloading ? 'Downloading...' : 'Confirm Download'}
+        </Button>
+      </div>
+    </div>
+  );
 
   return (
     <div>
@@ -228,47 +399,64 @@ const SocialMediaList: React.FC = () => {
               <p><strong>Selected Customer:</strong></p>
               <p>Name: {customer.name}</p>
               <p>Email: {customer.email}</p>
+              <div className="mt-[8px]">
+                <Button 
+                  onClick={() => setShowDownloadModal(true)}
+                  className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded flex items-center gap-2"
+                >
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    width="16" 
+                    height="16" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                  >
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                  Download Report
+                </Button>
+              </div>
             </div>
           )}
         </div>
-
       </div>
 
       <div>
-        {/* Container for social media items */}
-
         {customer ? (
           <div
             style={{
               display: "flex",
               flexWrap: "wrap",
-              gap: "20px", // Space between items
-              justifyContent: "space-between", // Distribute items evenly
+              gap: "20px",
+              justifyContent: "space-between",
             }}
           >
-            {/* Loop through the social media config array */}
             {socialMediaConfig.map((config) => (
               <div
                 key={config.platform}
                 style={{
-                  flex: "1 1 calc(33.33% - 20px)", // Flexible width for 3 items per row
-                  maxWidth: "calc(33.33% - 20px)", // Prevents items from exceeding 3 per row
-                  height: "200px", // Fixed height
+                  flex: "1 1 calc(33.33% - 20px)",
+                  maxWidth: "calc(33.33% - 20px)",
+                  height: "200px",
                   boxSizing: "border-box",
                   padding: "10px",
                   border: "1px solid #ccc",
                   borderRadius: "8px",
                   display: "flex",
                   flexDirection: "column",
-                  justifyContent: "space-between", // Ensures even spacing
+                  justifyContent: "space-between",
                 }}
               >
                 <h4>
                   <strong>Platform:</strong> {config.platform}
                 </h4>
                 <hr />
-
-                {/* Dynamically render all config key-value pairs */}
                 <div>
                   {config.config.map((item) => (
                     <div key={item.key}>
@@ -292,13 +480,9 @@ const SocialMediaList: React.FC = () => {
             <p>No customer selected.</p>
           </div>
         )}
-
-
       </div>
 
-
-
-
+      {showDownloadModal && <DownloadModal />}
     </div>
   );
 };
