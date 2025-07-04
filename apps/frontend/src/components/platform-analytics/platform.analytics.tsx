@@ -24,6 +24,7 @@ const allowedIntegrations = [
   'x',
   'linkedin',
   'gbp',
+  'website',
   
   
 ];
@@ -72,6 +73,7 @@ export const PlatformAnalytics = () => {
           'linkedin',
             'x',
             'gbp',
+            'website',
             
 
 
@@ -94,6 +96,7 @@ export const PlatformAnalytics = () => {
           'linkedin',
             'x',
             'gbp',
+            'website',
 
 
       ].indexOf(currentIntegration.identifier) !== -1
@@ -105,7 +108,7 @@ export const PlatformAnalytics = () => {
     }
 
     if (
-      ['facebook', 'linkedin-page', 'pinterest', 'youtube',   'linkedin',  'x','gbp',
+      ['facebook', 'linkedin-page', 'pinterest', 'youtube',   'linkedin',  'x','gbp', 'website'
 
 ].indexOf(
         currentIntegration.identifier
