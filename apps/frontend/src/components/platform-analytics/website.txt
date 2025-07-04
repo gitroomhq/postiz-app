@@ -1,0 +1,584 @@
+import { FC, useCallback, useMemo, useState } from 'react';
+import { Integration } from '@prisma/client';
+import useSWR from 'swr';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { ChartSocial } from '@gitroom/frontend/components/analytics/chart-social';
+import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
+import { Bar, Pie } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement
+} from 'chart.js';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement
+);
+
+export const RenderAnalytics: FC<{ integration: Integration; date: number }> = (
+  props
+) => {
+  const { integration, date } = props;
+  const [performanceLoading, setPerformanceLoading] = useState(true);
+  const [locationsLoading, setLocationsLoading] = useState(true);
+  const [performanceData, setPerformanceData] = useState<any>(null);
+  const [locationsData, setLocationsData] = useState<any>(null);
+
+  const fetch = useFetch();
+
+  const getDaysParam = useCallback((date: number) => {
+    if (date <= 7) return '7';
+    if (date <= 30) return '30';
+    return '90';
+  }, []);
+
+  const loadPerformance = useCallback(async () => {
+    setPerformanceLoading(true);
+    try {
+      const response = await fetch(
+        `/report/website/performance?businessId=${integration.internalId}&days=${getDaysParam(date)}`
+      );
+      const data = await response.json();
+
+      const defaultChartItem = {
+        date: new Date().toISOString(),
+        pageViews: 0,
+        visits: 0,
+        visitors: 0,
+        posts: 0,
+        comments: 0
+      };
+
+      const chartData = data?.chart || [defaultChartItem];
+      const latestData = chartData[chartData.length - 1] || defaultChartItem;
+
+      const transformedData = [
+        {
+          label: 'Page Views',
+          data: chartData.map((item: any) => ({
+            date: item.date,
+            total: item.pageViews || 0,
+          })),
+          average: false,
+          latestValue: latestData.pageViews || 0,
+        },
+        {
+          label: 'Visits',
+          data: chartData.map((item: any) => ({
+            date: item.date,
+            total: item.visits || 0,
+          })),
+          average: false,
+          latestValue: latestData.visits || 0,
+        },
+        {
+          label: 'Visitors',
+          data: chartData.map((item: any) => ({
+            date: item.date,
+            total: item.visitors || 0,
+          })),
+          average: false,
+          latestValue: latestData.visitors || 0,
+        },
+      ];
+
+      setPerformanceData({
+        chartData: transformedData,
+        rawData: chartData,
+        tableData: data?.table || {
+          Data: ['No data', 'No data', 'No data'],
+          'Page views': ['0', '0', '0%'],
+          Visits: ['0', '0', '0%'],
+          Visitors: ['0', '0', '0%'],
+          Posts: ['0', '0', '0%'],
+          Comments: ['0', '0', '0%']
+        }
+      });
+    } catch (error) {
+      console.error('Error loading performance analytics:', error);
+      setPerformanceData({
+        chartData: [],
+        rawData: [],
+        tableData: {
+          Data: ['No data', 'No data', 'No data'],
+          'Page views': ['0', '0', '0%'],
+          Visits: ['0', '0', '0%'],
+          Visitors: ['0', '0', '0%'],
+          Posts: ['0', '0', '0%'],
+          Comments: ['0', '0', '0%']
+        }
+      });
+    } finally {
+      setPerformanceLoading(false);
+    }
+  }, [integration, date, getDaysParam]);
+
+  const loadLocations = useCallback(async () => {
+    setLocationsLoading(true);
+    try {
+      const response = await fetch(
+        `/report/website/locations?businessId=${integration.internalId}&days=${getDaysParam(date)}`
+      );
+      const data = await response.json();
+      
+      setLocationsData({
+        chart: data?.chart || [],
+        table: data?.table || {
+          Data: ['Data', 'No data', 'No data', 'No data', 'No data'],
+          rows: [
+            ['No data', '0', '0', '0%', '0%']
+          ]
+        }
+      });
+    } catch (error) {
+      console.error('Error loading locations analytics:', error);
+      setLocationsData({
+        chart: [],
+        table: {
+          Data: ['Data', 'No data', 'No data', 'No data', 'No data'],
+          rows: [
+            ['No data', '0', '0', '0%', '0%']
+          ]
+        }
+      });
+    } finally {
+      setLocationsLoading(false);
+    }
+  }, [integration, date, getDaysParam]);
+
+  useSWR(`/website-performance-${integration?.id}-${date}`, loadPerformance, {
+    refreshInterval: 0,
+    refreshWhenHidden: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    refreshWhenOffline: false,
+    revalidateOnMount: true,
+  });
+
+  useSWR(`/website-locations-${integration?.id}-${date}`, loadLocations, {
+    refreshInterval: 0,
+    refreshWhenHidden: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    refreshWhenOffline: false,
+    revalidateOnMount: true,
+  });
+
+  const refreshChannel = useCallback(
+    (integration: Integration & { identifier: string }) => async () => {
+      const { url } = await (
+        await fetch(
+          `/integrations/social/${integration.identifier}?customerId=${integration.customerId}&refresh=${integration.internalId}`,
+          {
+            method: 'GET',
+          }
+        )
+      ).json();
+
+      window.location.href = url;
+    },
+    []
+  );
+
+  const total = useMemo(() => {
+    return performanceData?.chartData?.map((p: any) => p.latestValue) || [0, 0, 0];
+  }, [performanceData]);
+
+  const performanceTableData = useMemo(() => {
+    if (!performanceData?.tableData) return {
+      months: ['No data', 'No data', 'No data'],
+      pageViews: ['0', '0', '0%'],
+      visits: ['0', '0', '0%'],
+      visitors: ['0', '0', '0%'],
+      posts: ['0', '0', '0%'],
+      comments: ['0', '0', '0%']
+    };
+
+    return {
+      months: performanceData.tableData.Data || ['No data', 'No data', 'No data'],
+      pageViews: performanceData.tableData['Page views'] || ['0', '0', '0%'],
+      visits: performanceData.tableData.Visits || ['0', '0', '0%'],
+      visitors: performanceData.tableData.Visitors || ['0', '0', '0%'],
+      posts: performanceData.tableData.Posts || ['0', '0', '0%'],
+      comments: performanceData.tableData.Comments || ['0', '0', '0%']
+    };
+  }, [performanceData]);
+
+  const locationsTableData = useMemo(() => {
+    if (!locationsData?.table) return {
+      headers: ['Data', 'No data', 'No data', 'No data', 'No data'],
+      rows: [
+        ['No data', '0', '0', '0%', '0%']
+      ]
+    };
+
+    return {
+      headers: locationsData.table.Data || ['Data', 'No data', 'No data', 'No data', 'No data'],
+      rows: locationsData.table.rows || [
+        ['No data', '0', '0', '0%', '0%']
+      ]
+    };
+  }, [locationsData]);
+
+  const performanceBarChartData = useMemo(() => {
+    const rawData = performanceData?.rawData || [];
+    const chartData = rawData.slice(-14);
+
+    return {
+      labels: chartData.map((item: any) => {
+        const date = new Date(item.date);
+        return `${date.getMonth() + 1}/${date.getDate()}`;
+      }),
+      datasets: [
+        {
+          label: 'Page Views',
+          data: chartData.map((item: any) => item.pageViews || 0),
+          backgroundColor: 'rgba(75, 192, 192, 0.6)',
+          borderColor: 'rgba(75, 192, 192, 1)',
+          borderWidth: 1,
+        },
+        {
+          label: 'Visits',
+          data: chartData.map((item: any) => item.visits || 0),
+          backgroundColor: 'rgba(255, 159, 64, 0.6)',
+          borderColor: 'rgba(255, 159, 64, 1)',
+          borderWidth: 1,
+        },
+        {
+          label: 'Visitors',
+          data: chartData.map((item: any) => item.visitors || 0),
+          backgroundColor: 'rgba(54, 162, 235, 0.6)',
+          borderColor: 'rgba(54, 162, 235, 1)',
+          borderWidth: 1,
+        }
+      ],
+    };
+  }, [performanceData?.rawData]);
+
+  const locationsPieChartData = useMemo(() => {
+    const chartData = locationsData?.chart || [];
+    
+    const sortedData = [...chartData].sort((a, b) => b.visitors - a.visitors).slice(0, 5);
+    
+    const backgroundColors = [
+      'rgba(255, 99, 132, 0.6)',
+      'rgba(54, 162, 235, 0.6)',
+      'rgba(255, 206, 86, 0.6)',
+      'rgba(75, 192, 192, 0.6)',
+      'rgba(153, 102, 255, 0.6)',
+    ];
+
+    return {
+      labels: sortedData.map((item: any) => item.country),
+      datasets: [
+        {
+          data: sortedData.map((item: any) => item.visitors),
+          backgroundColor: backgroundColors.slice(0, sortedData.length),
+          borderColor: backgroundColors.map(color => color.replace('0.6', '1')).slice(0, sortedData.length),
+          borderWidth: 1,
+        },
+      ],
+    };
+  }, [locationsData?.chart]);
+
+  const barChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top' as const,
+        labels: {
+          boxWidth: 12,
+          padding: 20,
+          usePointStyle: true,
+          pointStyle: 'circle'
+        }
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: false,
+      },
+    },
+    maintainAspectRatio: false,
+  };
+
+  const pieChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'right' as const,
+        labels: {
+          boxWidth: 12,
+          padding: 20,
+          usePointStyle: true,
+          pointStyle: 'circle'
+        }
+      },
+    },
+    maintainAspectRatio: false,
+  };
+
+  if (performanceLoading || locationsLoading) {
+    return <LoadingComponent />;
+  }
+
+  return (
+    <div className="flex flex-col gap-[20px]">
+      {/* Main Metrics Cards */}
+      <div className="grid grid-cols-3 gap-[20px]">
+        {(!performanceData || performanceData.chartData?.length === 0) ? (
+          <div className="col-span-3">
+            This channel needs to be refreshed,{' '}
+            <div
+              className="underline hover:font-bold cursor-pointer"
+              onClick={refreshChannel(integration as any)}
+            >
+              click here to refresh
+            </div>
+          </div>
+        ) : (
+          performanceData?.chartData?.map((p: any, index: number) => (
+            <div key={`pl-${index}`} className="flex">
+              <div className="flex-1 bg-secondary py-[10px] px-[16px] gap-[10px] flex flex-col">
+                <div className="flex items-center gap-[14px]">
+                  <div className="text-[20px]">{p.label}</div>
+                </div>
+                <div className="flex-1">
+                  <div className="h-[156px] relative">
+                    {p.data.length > 0 ? (
+                      <ChartSocial {...p} key={`p-${index}`} />
+                    ) : (
+                      <div className="flex items-center justify-center h-full">
+                        No data available
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="text-[50px] leading-[60px]">
+                  {total[index]}
+                  {index < 2 && (
+                    <span className="text-green-500 text-[20px] ml-2">↑</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Performance Section */}
+      <div className="flex flex-col gap-[20px]">
+        {/* Performance Table */}
+        <div className="bg-secondary p-[16px]">
+          <h2 className="text-[20px] mb-[16px]">Performance</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="text-left border-b border-border">
+                  <th className="pb-[8px]">Data</th>
+                  {performanceTableData.months.map((month: string, index: number) => (
+                    <th key={`month-${index}`} className="pb-[8px]">
+                      {month}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-border">
+                  <td className="py-[8px]">Page Views</td>
+                  {performanceTableData.pageViews.map((value: string, index: number) => (
+                    <td key={`pageViews-${index}`} className="py-[8px]">
+                      {value}
+                    </td>
+                  ))}
+                </tr>
+                <tr className="border-b border-border">
+                  <td className="py-[8px]">Visits</td>
+                  {performanceTableData.visits.map((value: string, index: number) => (
+                    <td key={`visits-${index}`} className="py-[8px]">
+                      {value}
+                    </td>
+                  ))}
+                </tr>
+                <tr className="border-b border-border">
+                  <td className="py-[8px]">Visitors</td>
+                  {performanceTableData.visitors.map((value: string, index: number) => (
+                    <td key={`visitors-${index}`} className="py-[8px]">
+                      {value}
+                    </td>
+                  ))}
+                </tr>
+                <tr className="border-b border-border">
+                  <td className="py-[8px]">Posts</td>
+                  {performanceTableData.posts.map((value: string, index: number) => (
+                    <td key={`posts-${index}`} className="py-[8px]">
+                      {value}
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <td className="py-[8px]">Comments</td>
+                  {performanceTableData.comments.map((value: string, index: number) => (
+                    <td key={`comments-${index}`} className="py-[8px]">
+                      {value}
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Performance Growth Chart */}
+        <div className="bg-secondary p-[16px]">
+          <h2 className="text-[20px] mb-[16px]">Performance Trends</h2>
+          <div className="h-[200px] relative">
+            {performanceBarChartData?.labels?.length > 0 ? (
+              <Bar
+                data={performanceBarChartData}
+                options={barChartOptions}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                No data available
+              </div>
+            )}
+          </div>
+          <div className="mt-[16px] grid grid-cols-3 gap-[20px]">
+            <div className="flex flex-col items-center">
+              <div className="text-[24px] font-bold">
+                {performanceData?.rawData?.[performanceData.rawData?.length - 1]?.pageViews || 0}
+                {performanceData?.rawData?.[performanceData.rawData?.length - 1]?.pageViews > 
+                 performanceData?.rawData?.[performanceData.rawData?.length - 2]?.pageViews && (
+                  <span className="text-green-500 text-[14px] ml-2">↑</span>
+                )}
+              </div>
+              <div className="text-[14px] text-gray-400">Page Views</div>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="text-[24px] font-bold">
+                {performanceData?.rawData?.[performanceData.rawData?.length - 1]?.visits || 0}
+                {performanceData?.rawData?.[performanceData.rawData?.length - 1]?.visits > 
+                 performanceData?.rawData?.[performanceData.rawData?.length - 2]?.visits && (
+                  <span className="text-green-500 text-[14px] ml-2">↑</span>
+                )}
+              </div>
+              <div className="text-[14px] text-gray-400">Visits</div>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="text-[24px] font-bold">
+                {performanceData?.rawData?.[performanceData.rawData?.length - 1]?.visitors || 0}
+                {performanceData?.rawData?.[performanceData.rawData?.length - 1]?.visitors > 
+                 performanceData?.rawData?.[performanceData.rawData?.length - 2]?.visitors && (
+                  <span className="text-green-500 text-[14px] ml-2">↑</span>
+                )}
+              </div>
+              <div className="text-[14px] text-gray-400">Visitors</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Locations Section */}
+      <div className="flex flex-col gap-[20px]">
+        {/* Locations Table */}
+        <div className="bg-secondary p-[16px]">
+          <h2 className="text-[20px] mb-[16px]">Visitor Locations</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="text-left border-b border-border">
+                  {locationsTableData.headers?.map((header: string, index: number) => (
+                    <th key={`header-${index}`} className="pb-[8px]">
+                      {header}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {locationsTableData.rows?.map((row: any[], rowIndex: number) => (
+                  <tr 
+                    key={`row-${rowIndex}`} 
+                    className={rowIndex < locationsTableData.rows.length - 1 ? 'border-b border-border' : ''}
+                  >
+                    {row.map((cell: string, cellIndex: number) => (
+                      <td 
+                        key={`cell-${rowIndex}-${cellIndex}`} 
+                        className="py-[8px]"
+                      >
+                        {cellIndex === row.length - 1 ? (
+                          <span className={cell.startsWith('-') ? 'text-red-500' : 'text-green-500'}>
+                            {cell}
+                          </span>
+                        ) : (
+                          cell
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Locations Chart */}
+        <div className="bg-secondary p-[16px]">
+          <h2 className="text-[20px] mb-[16px]">Visitor Distribution</h2>
+          <div className="h-[300px] relative">
+            {locationsPieChartData?.labels?.length > 0 ? (
+              <Pie 
+                data={locationsPieChartData}
+                options={pieChartOptions}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                No data available
+              </div>
+            )}
+          </div>
+          <div className="mt-[16px] grid grid-cols-2 gap-[20px]">
+            {locationsData?.chart?.slice(0, 4).map((item: any, index: number) => (
+              <div key={`location-${index}`} className="flex flex-col">
+                <div className="text-[18px] font-bold">{item.country}</div>
+                <div className="flex justify-between">
+                  <span className="text-[14px] text-gray-400">Visitors:</span>
+                  <span className="text-[14px]">{item.visitors}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[14px] text-gray-400">Percentage:</span>
+                  <span className="text-[14px]">{item.percent}%</span>
+                </div>
+                {locationsTableData.rows?.[index]?.[4] && (
+                  <div className="flex justify-between">
+                    <span className="text-[14px] text-gray-400">Change:</span>
+                    <span className={`text-[14px] ${
+                      locationsTableData.rows[index][4].startsWith('-') ? 'text-red-500' : 'text-green-500'
+                    }`}>
+                      {locationsTableData.rows[index][4]}
+                    </span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};

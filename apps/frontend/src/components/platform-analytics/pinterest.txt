@@ -1,0 +1,527 @@
+import { FC, useCallback, useMemo, useState } from 'react';
+import { Integration } from '@prisma/client';
+import useSWR from 'swr';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { ChartSocial } from '@gitroom/frontend/components/analytics/chart-social';
+import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
+import { Bar } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
+export const RenderAnalytics: FC<{ integration: Integration; date: number }> = (
+  props
+) => {
+  const { integration, date } = props;
+  const [loading, setLoading] = useState(true);
+  const [overviewLoading, setOverviewLoading] = useState(true);
+  const [overviewData, setOverviewData] = useState<any>(null);
+
+  const fetch = useFetch();
+
+  const getDaysParam = useCallback((date: number) => {
+    if (date <= 7) return '7';
+    if (date <= 30) return '30';
+    return '90';
+  }, []);
+
+  const loadCommunity = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `/report/pinterest/community?businessId=${integration.internalId}&days=${getDaysParam(date)}`
+      );
+      const data = await response.json();
+
+      // Default empty data structure
+      const defaultChartItem = {
+        date: new Date().toISOString(),
+        followers: 0,
+        following: 0,
+        posts: 0
+      };
+
+      const chartData = data?.chart || [defaultChartItem];
+      const latestData = chartData[chartData.length - 1] || defaultChartItem;
+
+      const transformedData = [
+        {
+          label: 'Followers',
+          data: chartData.map((item: any) => ({
+            date: item.date,
+            total: item.followers || 0,
+          })),
+          average: false,
+          latestValue: latestData.followers || 0,
+        },
+        {
+          label: 'Following',
+          data: chartData.map((item: any) => ({
+            date: item.date,
+            total: item.following || 0,
+          })),
+          average: false,
+          latestValue: latestData.following || 0,
+        },
+        {
+          label: 'Posts',
+          data: chartData.map((item: any) => ({
+            date: item.date,
+            total: item.posts || 0,
+          })),
+          average: false,
+          latestValue: latestData.posts || 0,
+        },
+      ];
+
+      return {
+        chartData: transformedData,
+        rawData: chartData,
+        tableData: data?.table || {
+          Data: ['No data', 'No data'],
+          Followers: ['0', '0%'],
+          Following: ['0', '0%'],
+          Posts: ['0', '0%'],
+          Growth: "+0 New Followers"
+        },
+      };
+    } catch (error) {
+      console.error('Error loading community analytics:', error);
+      return { 
+        chartData: [], 
+        rawData: [], 
+        tableData: {
+          Data: ['No data', 'No data'],
+          Followers: ['0', '0%'],
+          Following: ['0', '0%'],
+          Posts: ['0', '0%'],
+          Growth: "+0 New Followers"
+        }
+      };
+    } finally {
+      setLoading(false);
+    }
+  }, [integration, date, getDaysParam]);
+
+  const loadOverview = useCallback(async () => {
+    setOverviewLoading(true);
+    try {
+      const response = await fetch(
+        `/report/pinterest/overview?businessId=${integration.internalId}&days=${getDaysParam(date)}`
+      );
+      const data = await response.json();
+      
+      // Default empty data structure
+      const defaultChartItem = {
+        date: new Date().toISOString(),
+        impressions: 0,
+        posts: 0
+      };
+
+      setOverviewData({
+        chart: data?.chart || [defaultChartItem],
+        table: data?.table || {
+          Data: ['No data', 'No data'],
+          Impressions: ['0', '0%'],
+          Posts: ['0', '0%']
+        }
+      });
+    } catch (error) {
+      console.error('Error loading overview analytics:', error);
+      setOverviewData({
+        chart: [{
+          date: new Date().toISOString(),
+          impressions: 0,
+          posts: 0
+        }],
+        table: {
+          Data: ['No data', 'No data'],
+          Impressions: ['0', '0%'],
+          Posts: ['0', '0%']
+        }
+      });
+    } finally {
+      setOverviewLoading(false);
+    }
+  }, [integration, date, getDaysParam]);
+
+  const { data } = useSWR(`/pinterest-analytics-${integration?.id}-${date}`, loadCommunity, {
+    refreshInterval: 0,
+    refreshWhenHidden: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    refreshWhenOffline: false,
+    revalidateOnMount: true,
+  });
+
+  useSWR(`/pinterest-overview-${integration?.id}-${date}`, loadOverview, {
+    refreshInterval: 0,
+    refreshWhenHidden: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    refreshWhenOffline: false,
+    revalidateOnMount: true,
+  });
+
+  const refreshChannel = useCallback(
+    (integration: Integration & { identifier: string }) => async () => {
+      const { url } = await (
+        await fetch(
+          `/integrations/social/${integration.identifier}?customerId=${integration.customerId}&refresh=${integration.internalId}`,
+          {
+            method: 'GET',
+          }
+        )
+      ).json();
+
+      window.location.href = url;
+    },
+    []
+  );
+
+  const total = useMemo(() => {
+    return data?.chartData?.map((p: any) => p.latestValue) || [0, 0, 0];
+  }, [data]);
+
+  const communityTableData = useMemo(() => {
+    if (!data?.tableData) return {
+      months: ['No data', 'No data'],
+      followers: ['0', '0%'],
+      following: ['0', '0%'],
+      posts: ['0', '0%'],
+      growth: "+0 New Followers"
+    };
+
+    return {
+      months: data.tableData.Data || ['No data', 'No data'],
+      followers: data.tableData.Followers || ['0', '0%'],
+      following: data.tableData.Following || ['0', '0%'],
+      posts: data.tableData.Posts || ['0', '0%'],
+      growth: data.tableData.Growth || "+0 New Followers"
+    };
+  }, [data]);
+
+  const overviewTableData = useMemo(() => {
+    if (!overviewData?.table) return {
+      months: ['No data', 'No data'],
+      impressions: ['0', '0%'],
+      posts: ['0', '0%']
+    };
+
+    return {
+      months: overviewData.table.Data || ['No data', 'No data'],
+      impressions: overviewData.table.Impressions || ['0', '0%'],
+      posts: overviewData.table.Posts || ['0', '0%']
+    };
+  }, [overviewData]);
+
+  const followersBarChartData = useMemo(() => {
+    const rawData = data?.rawData || [];
+    const chartData = rawData.slice(-14);
+
+    return {
+      labels: chartData.map((item: any) => {
+        const date = new Date(item.date);
+        return `${date.getMonth() + 1}/${date.getDate()}`;
+      }),
+      datasets: [
+        {
+          label: 'Followers',
+          data: chartData.map((item: any) => item.followers || 0),
+          backgroundColor: 'rgba(230, 0, 0, 0.6)',
+          borderColor: 'rgba(230, 0, 0, 1)',
+          borderWidth: 1,
+        },
+        {
+          label: 'Following',
+          data: chartData.map((item: any) => item.following || 0),
+          backgroundColor: 'rgba(255, 255, 255, 0.6)',
+          borderColor: 'rgba(255, 255, 255, 1)',
+          borderWidth: 1,
+        }
+      ],
+    };
+  }, [data?.rawData]);
+
+  const impressionsBarChartData = useMemo(() => {
+    const rawData = overviewData?.chart || [];
+    const chartData = rawData.slice(-14);
+
+    return {
+      labels: chartData.map((item: any) => {
+        const date = new Date(item.date);
+        return `${date.getMonth() + 1}/${date.getDate()}`;
+      }),
+      datasets: [
+        {
+          label: 'Impressions',
+          data: chartData.map((item: any) => item.impressions || 0),
+          backgroundColor: 'rgba(230, 0, 0, 0.6)',
+          borderColor: 'rgba(230, 0, 0, 1)',
+          borderWidth: 1,
+        },
+        {
+          label: 'Posts',
+          data: chartData.map((item: any) => item.posts || 0),
+          backgroundColor: 'rgba(255, 255, 255, 0.6)',
+          borderColor: 'rgba(255, 255, 255, 1)',
+          borderWidth: 1,
+        }
+      ],
+    };
+  }, [overviewData?.chart]);
+
+  const barChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top' as const,
+        labels: {
+          boxWidth: 12,
+          padding: 20,
+          usePointStyle: true,
+          pointStyle: 'circle'
+        }
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: false,
+      },
+    },
+    maintainAspectRatio: false,
+  };
+
+  if (loading || overviewLoading) {
+    return <LoadingComponent />;
+  }
+
+  return (
+    <div className="flex flex-col gap-[20px]">
+      {/* Main Metrics Cards */}
+      <div className="grid grid-cols-3 gap-[20px]">
+        {(!data || data.chartData?.length === 0) ? (
+          <div className="col-span-3">
+            This channel needs to be refreshed,{' '}
+            <div
+              className="underline hover:font-bold cursor-pointer"
+              onClick={refreshChannel(integration as any)}
+            >
+              click here to refresh
+            </div>
+          </div>
+        ) : (
+          data?.chartData?.map((p: any, index: number) => (
+            <div key={`pl-${index}`} className="flex">
+              <div className="flex-1 bg-secondary py-[10px] px-[16px] gap-[10px] flex flex-col">
+                <div className="flex items-center gap-[14px]">
+                  <div className="text-[20px]">{p.label}</div>
+                </div>
+                <div className="flex-1">
+                  <div className="h-[156px] relative">
+                    {p.data.length > 0 ? (
+                      <ChartSocial {...p} key={`p-${index}`} />
+                    ) : (
+                      <div className="flex items-center justify-center h-full">
+                        No data available
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="text-[50px] leading-[60px]">
+                  {total[index]}
+                  {index < 2 && ( // Show arrow only for Followers and Following
+                    <span className="text-green-500 text-[20px] ml-2">↑</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Community Section */}
+      <div className="flex flex-col gap-[20px]">
+        {/* Community Table */}
+        <div className="bg-secondary p-[16px]">
+          <h2 className="text-[20px] mb-[16px]">Community</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="text-left border-b border-border">
+                  <th className="pb-[8px]">Data</th>
+                  {communityTableData.months.map((month: string, index: number) => (
+                    <th key={`month-${index}`} className="pb-[8px]">
+                      {month}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-border">
+                  <td className="py-[8px]">Followers</td>
+                  {communityTableData.followers.map((value: string, index: number) => (
+                    <td key={`followers-${index}`} className="py-[8px]">
+                      {value}
+                    </td>
+                  ))}
+                </tr>
+                <tr className="border-b border-border">
+                  <td className="py-[8px]">Following</td>
+                  {communityTableData.following.map((value: string, index: number) => (
+                    <td key={`following-${index}`} className="py-[8px]">
+                      {value}
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <td className="py-[8px] font-bold">Posts</td>
+                  {communityTableData.posts.map((value: string, index: number) => (
+                    <td key={`content-${index}`} className="py-[8px] font-bold">
+                      {value}
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-[12px] text-sm">Growth: {communityTableData.growth}</div>
+        </div>
+
+        {/* Community Growth Chart */}
+        <div className="bg-secondary p-[16px]">
+          <h2 className="text-[20px] mb-[16px]">Community Growth</h2>
+          <div className="h-[200px] relative">
+            {followersBarChartData?.labels?.length > 0 ? (
+              <Bar
+                data={followersBarChartData}
+                options={barChartOptions}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                No data available
+              </div>
+            )}
+          </div>
+          <div className="mt-[16px] grid grid-cols-3 gap-[20px]">
+            <div className="flex flex-col items-center">
+              <div className="text-[24px] font-bold">
+                {data?.rawData?.[data.rawData?.length - 1]?.followers || 0}
+                {data?.rawData?.[data.rawData?.length - 1]?.followers > 
+                 data?.rawData?.[data.rawData?.length - 2]?.followers && (
+                  <span className="text-green-500 text-[14px] ml-2">↑</span>
+                )}
+              </div>
+              <div className="text-[14px] text-gray-400">Followers</div>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="text-[24px] font-bold">
+                {data?.rawData?.[data.rawData?.length - 1]?.following || 0}
+              </div>
+              <div className="text-[14px] text-gray-400">Following</div>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="text-[24px] font-bold">
+                {data?.rawData?.[data.rawData?.length - 1]?.posts || 0}
+              </div>
+              <div className="text-[14px] text-gray-400">Posts</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Overview Section */}
+      <div className="flex flex-col gap-[20px]">
+        {/* Overview Table */}
+        <div className="bg-secondary p-[16px]">
+          <h2 className="text-[20px] mb-[16px]">Overview</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="text-left border-b border-border">
+                  <th className="pb-[8px]">Data</th>
+                  {overviewTableData.months.map((month: string, index: number) => (
+                    <th key={`overview-month-${index}`} className="pb-[8px]">
+                      {month}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-border">
+                  <td className="py-[8px]">Impressions</td>
+                  {overviewTableData.impressions.map((value: string, index: number) => (
+                    <td key={`impressions-${index}`} className="py-[8px]">
+                      {value}
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <td className="py-[8px] font-bold">Posts</td>
+                  {overviewTableData.posts.map((value: string, index: number) => (
+                    <td key={`overview-content-${index}`} className="py-[8px] font-bold">
+                      {value}
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Impressions Chart */}
+        <div className="bg-secondary p-[16px]">
+          <h2 className="text-[20px] mb-[16px]">Impressions & Posts</h2>
+          <div className="h-[200px] relative">
+            {impressionsBarChartData?.labels?.length > 0 ? (
+              <Bar 
+                data={impressionsBarChartData}
+                options={barChartOptions}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                No data available
+              </div>
+            )}
+          </div>
+          <div className="mt-[16px] grid grid-cols-2 gap-[20px]">
+            <div className="flex flex-col items-center">
+              <div className="text-[24px] font-bold">
+                {overviewData?.chart?.[overviewData.chart?.length - 1]?.impressions || 0}
+                {overviewData?.chart?.[overviewData.chart?.length - 1]?.impressions > 
+                 overviewData?.chart?.[overviewData.chart?.length - 2]?.impressions && (
+                  <span className="text-green-500 text-[14px] ml-2">↑</span>
+                )}
+              </div>
+              <div className="text-[14px] text-gray-400">Impressions</div>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="text-[24px] font-bold">
+                {overviewData?.chart?.[overviewData.chart?.length - 1]?.posts || 0}
+              </div>
+              <div className="text-[14px] text-gray-400">Posts</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
