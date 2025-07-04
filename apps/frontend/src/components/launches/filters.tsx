@@ -48,6 +48,16 @@ export const Filters = () => {
           .endOf('month')
           .format('L');
   const setDay = useCallback(() => {
+    if (
+      week.display === 'day' &&
+      week.currentDay === +dayjs().day() &&
+      week.currentWeek === dayjs().isoWeek() &&
+      week.currentYear === dayjs().year() &&
+      week.currentMonth === dayjs().month()
+    ) {
+      return; // No need to set the same day
+    }
+
     week.setFilters({
       currentDay: +dayjs().day() as 0 | 1 | 2 | 3 | 4 | 5 | 6,
       currentWeek: dayjs().isoWeek(),
@@ -58,6 +68,14 @@ export const Filters = () => {
     });
   }, [week]);
   const setWeek = useCallback(() => {
+    if (
+      week.display === 'week' &&
+      week.currentWeek === dayjs().isoWeek() &&
+      week.currentYear === dayjs().year() &&
+      week.currentMonth === dayjs().month()
+    ) {
+      return; // No need to set the same week
+    }
     week.setFilters({
       currentDay: +dayjs().day() as 0 | 1 | 2 | 3 | 4 | 5 | 6,
       currentWeek: dayjs().isoWeek(),
@@ -68,6 +86,13 @@ export const Filters = () => {
     });
   }, [week]);
   const setMonth = useCallback(() => {
+    if (
+      week.display === 'month' &&
+      week.currentMonth === dayjs().month() &&
+      week.currentYear === dayjs().year()
+    ) {
+      return; // No need to set the same month
+    }
     week.setFilters({
       currentDay: +dayjs().day() as 0 | 1 | 2 | 3 | 4 | 5 | 6,
       currentMonth: dayjs().month(),
@@ -79,6 +104,9 @@ export const Filters = () => {
   }, [week]);
   const setCustomer = useCallback(
     (customer: string) => {
+      if (week.customer === customer) {
+        return; // No need to set the same customer
+      }
       week.setFilters({
         currentDay: week.currentDay,
         currentMonth: week.currentMonth,
