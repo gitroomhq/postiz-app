@@ -1,0 +1,584 @@
+import { FC, useCallback, useMemo, useState } from 'react';
+import { Integration } from '@prisma/client';
+import useSWR from 'swr';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
+import { Bar } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
+export const RenderAnalytics: FC<{ integration: Integration; date: number }> = (
+  props
+) => {
+  const { integration, date } = props;
+  const [loading, setLoading] = useState(true);
+  const [overviewLoading, setOverviewLoading] = useState(true);
+  const [overviewData, setOverviewData] = useState<any>(null);
+  const [insightsData, setInsightsData] = useState<any>(null);
+
+  const fetch = useFetch();
+
+  const getDaysParam = useCallback((date: number) => {
+    if (date <= 7) return '7';
+    if (date <= 30) return '30';
+    return '90';
+  }, []);
+
+  // Load overview data with zero-value handling
+  const loadOverview = useCallback(async () => {
+    setOverviewLoading(true);
+    try {
+      const response = await fetch(
+        `/report/youtube/overview?businessId=${integration.internalId}&days=${getDaysParam(date)}`
+      );
+      const data = await response.json();
+      
+      // Default empty data structure
+      const defaultChartItem = {
+        date: new Date().toISOString(),
+        subscribers: 0,
+        totalViews: 0,
+        totalVideos: 0
+      };
+
+      setOverviewData({
+        chart: data?.chart || [defaultChartItem],
+        table: data?.table || {
+          Data: ['No data', 'No data'],
+          Subscribers: ['0', '0%'],
+          TotalViews: ['0', '0%'],
+          TotalVideos: ['0', '0%']
+        }
+      });
+    } catch (error) {
+      console.error('Error loading YouTube overview analytics:', error);
+      setOverviewData({
+        chart: [{
+          date: new Date().toISOString(),
+          subscribers: 0,
+          totalViews: 0,
+          totalVideos: 0
+        }],
+        table: {
+          Data: ['No data', 'No data'],
+          Subscribers: ['0', '0%'],
+          TotalViews: ['0', '0%'],
+          TotalVideos: ['0', '0%']
+        }
+      });
+    } finally {
+      setOverviewLoading(false);
+    }
+  }, [integration, date, getDaysParam]);
+
+  // Load insights data with zero-value handling
+  const loadInsights = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `/report/youtube/insights/list?businessId=${integration.internalId}`
+      );
+      const data = await response.json();
+      
+      // Ensure we have at least one empty month if no data
+      if (!data || data.length === 0) {
+        const currentMonth = new Date().toISOString().slice(0, 7);
+        setInsightsData([{
+          month: currentMonth,
+          subscribers: 0,
+          totalViews: 0,
+          totalVideos: 0,
+          totalLikes: 0,
+          totalComments: 0
+        }]);
+      } else {
+        setInsightsData(data);
+      }
+    } catch (error) {
+      console.error('Error loading YouTube insights analytics:', error);
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      setInsightsData([{
+        month: currentMonth,
+        subscribers: 0,
+        totalViews: 0,
+        totalVideos: 0,
+        totalLikes: 0,
+        totalComments: 0
+      }]);
+    } finally {
+      setLoading(false);
+    }
+  }, [integration]);
+
+  useSWR(`/youtube-overview-${integration?.id}-${date}`, loadOverview, {
+    refreshInterval: 0,
+    refreshWhenHidden: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    refreshWhenOffline: false,
+    revalidateOnMount: true,
+  });
+
+  useSWR(`/youtube-insights-${integration?.id}`, loadInsights, {
+    refreshInterval: 0,
+    refreshWhenHidden: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    refreshWhenOffline: false,
+    revalidateOnMount: true,
+  });
+
+  const refreshChannel = useCallback(
+    (integration: Integration & { identifier: string }) => async () => {
+      const { url } = await (
+        await fetch(
+          `/integrations/social/${integration.identifier}?customerId=${integration.customerId}&refresh=${integration.internalId}`,
+          {
+            method: 'GET',
+          }
+        )
+      ).json();
+
+      window.location.href = url;
+    },
+    []
+  );
+
+  // Prepare chart data with fallbacks
+  const subscribersBarChartData = useMemo(() => {
+    const rawData = overviewData?.chart || [];
+    const chartData = rawData.slice(-14);
+
+    return {
+      labels: chartData.map((item: any) => {
+        const date = new Date(item.date);
+        return `${date.getMonth() + 1}/${date.getDate()}`;
+      }),
+      datasets: [
+        {
+          label: 'Subscribers',
+          data: chartData.map((item: any) => item.subscribers || 0),
+          backgroundColor: 'rgba(255, 99, 132, 0.6)',
+          borderColor: 'rgba(255, 99, 132, 1)',
+          borderWidth: 1,
+        },
+      ],
+    };
+  }, [overviewData?.chart]);
+
+  const viewsBarChartData = useMemo(() => {
+    const rawData = overviewData?.chart || [];
+    const chartData = rawData.slice(-14);
+
+    return {
+      labels: chartData.map((item: any) => {
+        const date = new Date(item.date);
+        return `${date.getMonth() + 1}/${date.getDate()}`;
+      }),
+      datasets: [
+        {
+          label: 'Views',
+          data: chartData.map((item: any) => item.totalViews || 0),
+          backgroundColor: 'rgba(54, 162, 235, 0.6)',
+          borderColor: 'rgba(54, 162, 235, 1)',
+          borderWidth: 1,
+        },
+      ],
+    };
+  }, [overviewData?.chart]);
+
+  const videosBarChartData = useMemo(() => {
+    const rawData = overviewData?.chart || [];
+    const chartData = rawData.slice(-14);
+
+    return {
+      labels: chartData.map((item: any) => {
+        const date = new Date(item.date);
+        return `${date.getMonth() + 1}/${date.getDate()}`;
+      }),
+      datasets: [
+        {
+          label: 'Videos',
+          data: chartData.map((item: any) => item.totalVideos || 0),
+          backgroundColor: 'rgba(255, 206, 86, 0.6)',
+          borderColor: 'rgba(255, 206, 86, 1)',
+          borderWidth: 1,
+        },
+      ],
+    };
+  }, [overviewData?.chart]);
+
+  const barChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        display: false,
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: false,
+      },
+    },
+    maintainAspectRatio: false,
+  };
+
+  // Filter insights data based on selected date range
+  const filterInsightsByDateRange = useCallback((data: any[], days: number) => {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+    
+    return data.filter(item => {
+      const itemDate = new Date(item.month);
+      return itemDate >= cutoffDate;
+    });
+  }, []);
+
+  // Transform insights data with fallbacks and apply date filtering
+  const monthlyInsights = useMemo(() => {
+    if (!insightsData) return [{
+      month: new Date().toISOString().slice(0, 7),
+      subscribers: 0,
+      totalViews: 0,
+      totalVideos: 0,
+      totalLikes: 0,
+      totalComments: 0
+    }];
+
+    // Filter data by date range
+    const filteredData = filterInsightsByDateRange(insightsData, date);
+
+    // Group by month with fallbacks
+    const monthlyData: Record<string, any> = {};
+
+    filteredData.forEach((item: any) => {
+      const month = item.month;
+      monthlyData[month] = {
+        subscribers: item.subscribers || 0,
+        totalViews: item.totalViews || 0,
+        totalVideos: item.totalVideos || 0,
+        totalLikes: item.totalLikes || 0,
+        totalComments: item.totalComments || 0,
+      };
+    });
+
+    // If no data in filtered range, show at least current month
+    if (Object.keys(monthlyData).length === 0) {
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      monthlyData[currentMonth] = {
+        subscribers: 0,
+        totalViews: 0,
+        totalVideos: 0,
+        totalLikes: 0,
+        totalComments: 0
+      };
+    }
+
+    // Convert to array and sort by month
+    return Object.entries(monthlyData)
+      .map(([month, data]) => ({
+        month,
+        ...data,
+      }))
+      .sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime());
+  }, [insightsData, date, filterInsightsByDateRange]);
+
+  // Calculate changes with fallbacks
+  const insightsWithChanges = useMemo(() => {
+    if (!monthlyInsights || monthlyInsights.length === 0) {
+      return [{
+        month: new Date().toISOString().slice(0, 7),
+        subscribers: 0,
+        totalViews: 0,
+        totalVideos: 0,
+        totalLikes: 0,
+        totalComments: 0,
+        changes: {
+          subscribers: '0%',
+          totalViews: '0%',
+          totalVideos: '0%',
+          totalLikes: '0%',
+          totalComments: '0%'
+        }
+      }];
+    }
+
+    if (monthlyInsights.length < 2) {
+      return [{
+        ...monthlyInsights[0],
+        changes: {
+          subscribers: '0%',
+          totalViews: '0%',
+          totalVideos: '0%',
+          totalLikes: '0%',
+          totalComments: '0%'
+        }
+      }];
+    }
+
+    return monthlyInsights.map((item: any, index: number) => {
+      if (index === 0) return { ...item, changes: {
+        subscribers: '0%',
+        totalViews: '0%',
+        totalVideos: '0%',
+        totalLikes: '0%',
+        totalComments: '0%'
+      }};
+
+      const prevItem = monthlyInsights[index - 1];
+      const changes = {
+        subscribers: calculateChange(prevItem.subscribers, item.subscribers),
+        totalViews: calculateChange(prevItem.totalViews, item.totalViews),
+        totalVideos: calculateChange(prevItem.totalVideos, item.totalVideos),
+        totalLikes: calculateChange(prevItem.totalLikes, item.totalLikes),
+        totalComments: calculateChange(prevItem.totalComments, item.totalComments),
+      };
+
+      return { ...item, changes };
+    });
+  }, [monthlyInsights]);
+
+  function calculateChange(prev: number, current: number): string {
+    if (prev === 0) return '0%';
+    const change = ((current - prev) / prev) * 100;
+    return `${change.toFixed(2)}%`;
+  }
+
+  if (loading || overviewLoading) {
+    return <LoadingComponent />;
+  }
+
+  return (
+    <div className="flex flex-col gap-[20px]">
+      {/* Overview Section */}
+      <div className="flex flex-col gap-[20px]">
+        {/* Overview Table */}
+        <div className="bg-secondary p-[16px]">
+          <h2 className="text-[20px] mb-[16px]">YouTube Channel Overview (Last {date} days)</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="text-left border-b border-border">
+                  <th className="pb-[8px]">Metric</th>
+                  {overviewData?.table?.Data?.map((month: string, index: number) => (
+                    <th key={`month-${index}`} className="pb-[8px]">
+                      {month}
+                    </th>
+                  )) || (
+                    <th className="pb-[8px]">No data</th>
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-border">
+                  <td className="py-[8px]">Subscribers</td>
+                  {overviewData?.table?.Subscribers?.map((value: string, index: number) => (
+                    <td key={`subscribers-${index}`} className="py-[8px]">
+                      {value || '0'}
+                    </td>
+                  )) || (
+                    <td className="py-[8px]">0</td>
+                  )}
+                </tr>
+                <tr className="border-b border-border">
+                  <td className="py-[8px]">Total Views</td>
+                  {overviewData?.table?.TotalViews?.map((value: string, index: number) => (
+                    <td key={`views-${index}`} className="py-[8px]">
+                      {value || '0'}
+                    </td>
+                  )) || (
+                    <td className="py-[8px]">0</td>
+                  )}
+                </tr>
+                <tr>
+                  <td className="py-[8px] font-bold">Total Videos</td>
+                  {overviewData?.table?.TotalVideos?.map((value: string, index: number) => (
+                    <td key={`videos-${index}`} className="py-[8px] font-bold">
+                      {value || '0'}
+                    </td>
+                  )) || (
+                    <td className="py-[8px] font-bold">0</td>
+                  )}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Subscribers Growth Bar Chart */}
+        <div className="bg-secondary p-[16px]">
+          <h2 className="text-[20px] mb-[16px]">Subscribers Growth</h2>
+          <div className="h-[200px] relative">
+            {subscribersBarChartData?.labels?.length > 0 ? (
+              <Bar data={subscribersBarChartData} options={barChartOptions} />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                No data available
+              </div>
+            )}
+          </div>
+          <div className="mt-[16px] grid grid-cols-3 gap-[20px]">
+            <div className="flex flex-col items-center">
+              <div className="text-[24px] font-bold">
+                {overviewData?.chart?.[overviewData.chart?.length - 1]?.subscribers || 0}
+              </div>
+              <div className="text-[14px] text-gray-400">Subscribers</div>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="text-[24px] font-bold">
+                {overviewData?.chart?.[overviewData.chart?.length - 1]?.totalViews || 0}
+              </div>
+              <div className="text-[14px] text-gray-400">Total Views</div>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="text-[24px] font-bold">
+                {overviewData?.chart?.[overviewData.chart?.length - 1]?.totalVideos || 0}
+              </div>
+              <div className="text-[14px] text-gray-400">Total Videos</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Insights Section */}
+      <div className="flex flex-col gap-[20px]">
+        {/* Insights Table */}
+        <div className="bg-secondary p-[16px]">
+          <h2 className="text-[20px] mb-[16px]">YouTube Post Performance (Last {date} days)</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="text-left border-b border-border">
+                  <th className="pb-[8px]">Metric</th>
+                  {insightsWithChanges.map((item: any) => (
+                    <th key={`month-header-${item.month}`} className="pb-[8px]">
+                      {new Date(item.month).toLocaleString('default', { month: 'short' })}
+                    </th>
+                  ))}
+                  <th className="pb-[8px]">Change %</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-border">
+                  <td className="py-[8px]">Subscribers</td>
+                  {insightsWithChanges.map((item: any) => (
+                    <td key={`subscribers-data-${item.month}`} className="py-[8px]">
+                      {item.subscribers || 0}
+                    </td>
+                  ))}
+                  <td className="py-[8px]">
+                    {insightsWithChanges[insightsWithChanges.length - 1]?.changes?.subscribers || '0%'}
+                  </td>
+                </tr>
+                <tr className="border-b border-border">
+                  <td className="py-[8px]">Video Views</td>
+                  {insightsWithChanges.map((item: any) => (
+                    <td key={`views-data-${item.month}`} className="py-[8px]">
+                      {item.totalViews || 0}
+                    </td>
+                  ))}
+                  <td className="py-[8px]">
+                    {insightsWithChanges[insightsWithChanges.length - 1]?.changes?.totalViews || '0%'}
+                  </td>
+                </tr>
+                <tr className="border-b border-border">
+                  <td className="py-[8px]">Likes</td>
+                  {insightsWithChanges.map((item: any) => (
+                    <td key={`likes-data-${item.month}`} className="py-[8px]">
+                      {item.totalLikes || 0}
+                    </td>
+                  ))}
+                  <td className="py-[8px]">
+                    {insightsWithChanges[insightsWithChanges.length - 1]?.changes?.totalLikes || '0%'}
+                  </td>
+                </tr>
+                <tr className="border-b border-border">
+                  <td className="py-[8px]">Comments</td>
+                  {insightsWithChanges.map((item: any) => (
+                    <td key={`comments-data-${item.month}`} className="py-[8px]">
+                      {item.totalComments || 0}
+                    </td>
+                  ))}
+                  <td className="py-[8px]">
+                    {insightsWithChanges[insightsWithChanges.length - 1]?.changes?.totalComments || '0%'}
+                  </td>
+                </tr>
+                <tr>
+                  <td className="py-[8px] font-bold">Videos</td>
+                  {insightsWithChanges.map((item: any) => (
+                    <td key={`videos-data-${item.month}`} className="py-[8px] font-bold">
+                      {item.totalVideos || 0}
+                    </td>
+                  ))}
+                  <td className="py-[8px] font-bold">
+                    {insightsWithChanges[insightsWithChanges.length - 1]?.changes?.totalVideos || '0%'}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Views and Videos Charts */}
+        <div className="grid grid-cols-2 gap-[20px]">
+          <div className="bg-secondary p-[16px]">
+            <h2 className="text-[20px] mb-[16px]">Video Views</h2>
+            <div className="h-[200px] relative">
+              {viewsBarChartData?.labels?.length > 0 ? (
+                <Bar data={viewsBarChartData} options={barChartOptions} />
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  No data available
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="bg-secondary p-[16px]">
+            <h2 className="text-[20px] mb-[16px]">Videos Published</h2>
+            <div className="h-[200px] relative">
+              {videosBarChartData?.labels?.length > 0 ? (
+                <Bar data={videosBarChartData} options={barChartOptions} />
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  No data available
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Error state if completely no data */}
+      {(!overviewData?.chart || overviewData.chart.length === 0) && 
+       (!insightsData || insightsData.length === 0) && (
+        <div>
+          This channel needs to be refreshed,{' '}
+          <div
+            className="underline hover:font-bold cursor-pointer"
+            onClick={refreshChannel(integration as any)}
+          >
+            click here to refresh
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
