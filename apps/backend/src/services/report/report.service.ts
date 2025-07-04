@@ -11,7 +11,10 @@ export class ReportService {
     private _facebookInsightsRepository: PrismaRepository<'facebookInsight'>,
     private _threadsInsightsRepository: PrismaRepository<'threadsInsight'>,
     private _linkedInInsightsRepository: PrismaRepository<'linkedInInsight'>,
-    private _gbpInsightsRepository: PrismaRepository<'gbpInsight'>
+    private _gbpInsightsRepository: PrismaRepository<'gbpInsight'>,
+    private _websitePerformanceRepo: PrismaRepository<'websitePerformance'>,
+    private _websiteLocationRepo: PrismaRepository<'websiteLocation'>,
+
   ) { }
 
   async getInstagramCommunityReport(businessId: string, days: string) {
@@ -1260,4 +1263,214 @@ export class ReportService {
       where: { businessId },
     });
   }
+
+
+  async getWebsitePerformanceReport(businessId: string, days: string) {
+    const range = parseInt(days || '30', 10);
+    const today = new Date();
+    const startDate = subDays(today, range);
+
+    const insights = await this._websitePerformanceRepo.model.websitePerformance.findMany({
+      where: {
+        businessId,
+        createdAt: { gte: startDate, lte: today }
+      },
+      orderBy: { createdAt: 'asc' }
+    });
+
+    if (!insights.length) {
+      return {
+        table: {
+          Data: [],
+          'Page views': [],
+          'Visits': [],
+          'Visitors': [],
+          'Posts': [],
+          'Comments': []
+        },
+        chart: []
+      };
+    }
+
+    // Group by month for table data
+    const monthGroups = insights.reduce((acc, record) => {
+      const month = format(record.createdAt, 'MMMM');
+      if (!acc[month]) {
+        acc[month] = { pageViews: 0, visits: 0, visitors: 0 };
+      }
+      acc[month].pageViews += record.pageViews;
+      acc[month].visits += record.visits;
+      acc[month].visitors += record.visitors;
+      return acc;
+    }, {});
+
+    const months = Object.keys(monthGroups).sort();
+    const [currentMonth, previousMonth] = months.slice(-2);
+
+    // Prepare daily data for chart
+    const chartData = insights.map(record => ({
+      date: format(record.createdAt, 'yyyy-MM-dd'),
+      pageViews: record.pageViews,
+      visits: record.visits,
+      visitors: record.visitors,
+      posts: 0, // Hardcoded as per requirements
+      comments: 0 // Hardcoded as per requirements
+    }));
+
+    return {
+  table: {
+    Data: [...months.map(m => m), 'Change %'],
+    'Page views': [
+      ...months.map(m => monthGroups[m].pageViews.toString()),
+      this.calculateChange(
+        monthGroups[previousMonth]?.pageViews,
+        monthGroups[currentMonth]?.pageViews
+      )
+    ],
+    'Visits': [
+      ...months.map(m => monthGroups[m].visits.toString()),
+      this.calculateChange(
+        monthGroups[previousMonth]?.visits,
+        monthGroups[currentMonth]?.visits
+      )
+    ],
+    'Visitors': [
+      ...months.map(m => monthGroups[m].visitors.toString()),
+      this.calculateChange(
+        monthGroups[previousMonth]?.visitors,
+        monthGroups[currentMonth]?.visitors
+      )
+    ],
+    'Posts': [
+      ...months.map(() => '0'),
+      '0%'
+    ],
+    'Comments': [
+      ...months.map(() => '0'),
+      '0%'
+    ]
+  },
+  chart: chartData
+};
+
+  }
+
+
+async getWebsiteLocationsReport(businessId: string, days: string) {
+  const range = parseInt(days || '30', 10);
+  const today = new Date();
+  const startDate = subDays(today, range);
+
+  const comparisonStartDate = subDays(startDate, range);
+  const comparisonEndDate = startDate;
+
+  // 🗃️ Fetch locations for both current & previous period in one query
+  const locations = await this._websiteLocationRepo.model.websiteLocation.findMany({
+    where: {
+      businessId,
+      createdAt: {
+        gte: comparisonStartDate,
+        lte: today
+      },
+      rank: { lte: 10 }
+    },
+    orderBy: [{ createdAt: 'asc' }, { visitors: 'desc' }]
+  });
+
+  if (!locations.length) {
+    return {
+      table: { Data: [], rows: [] },
+      chart: []
+    };
+  }
+
+  // ⏳ Split data into current & previous period
+  const currentPeriodData = locations.filter(r => r.createdAt >= startDate);
+  const previousPeriodData = locations.filter(
+    r => r.createdAt >= comparisonStartDate && r.createdAt < startDate
+  );
+
+  // 🗃️ Group current data
+  const current: Record<string, { visitors: number; percent: number }> = {};
+  currentPeriodData.forEach(r => {
+    if (!current[r.country]) current[r.country] = { visitors: 0, percent: 0 };
+    current[r.country].visitors += r.visitors;
+    current[r.country].percent = r.percent; // latest percent for the country
+  });
+
+  // 🗃️ Group previous data
+  const previous: Record<string, { visitors: number }> = {};
+  previousPeriodData.forEach(r => {
+    if (!previous[r.country]) previous[r.country] = { visitors: 0 };
+    previous[r.country].visitors += r.visitors;
+  });
+
+  // Combine unique countries
+  const allCountries = [
+    ...new Set([...Object.keys(current), ...Object.keys(previous)])
+  ];
+
+  // 📊 Build table rows per country
+  const rows = allCountries
+    .map(country => {
+      const currentVisitors = current[country]?.visitors || 0;
+      const currentPercent = current[country]?.percent || 0;
+      const previousVisitors = previous[country]?.visitors || 0;
+
+      return {
+        country,
+        previousVisitors: previousVisitors.toString(),
+        currentVisitors: currentVisitors.toString(),
+        percent: currentPercent.toFixed(2) + '%',
+        change: this.calculateLocationChange(previousVisitors, currentVisitors)
+      };
+    })
+    .sort((a, b) => parseInt(b.currentVisitors) - parseInt(a.currentVisitors));
+
+  // ✅ Format labels as months
+  const currentLabel = format(startDate, 'MMMM');
+  const previousLabel = format(comparisonStartDate, 'MMMM');
+
+  // ✅ Final table structure
+  const table = {
+    Data: ['Data', previousLabel, currentLabel, 'Percent', 'Change %'],
+    rows: rows.map(r => [
+      r.country,
+      r.previousVisitors,
+      r.currentVisitors,
+      r.percent,
+      r.change
+    ])
+  };
+
+  // ✅ Final chart for map view: top 10 countries by visitors
+  const chart = rows
+    .map(r => ({
+      country: r.country,
+      visitors: parseInt(r.currentVisitors),
+      percent: parseFloat(r.percent)
+    }))
+    .sort((a, b) => b.visitors - a.visitors)
+    .slice(0, 10);
+
+  return { table, chart };
+}
+
+private calculateLocationChange(prev: number, curr: number) {
+  if (!prev || prev === 0) return '0%';
+  const change = ((curr - prev) / prev) * 100;
+  const sign = change >= 0 ? '' : '';
+  return `${sign}${change.toFixed(2)}%`;
+}
+
+
+
+  private calculateChange(previous: number, current: number): string {
+    if (!previous || previous === 0) return '0%';
+    const change = ((current - previous) / previous) * 100;
+    return change.toFixed(2) + '%';
+  }
+
+
+
 }

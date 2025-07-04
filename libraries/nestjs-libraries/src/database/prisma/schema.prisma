@@ -257,6 +257,8 @@ model Customer {
   organization     Organization       @relation(fields: [orgId], references: [id])
   integrations     Integration[]
   gbpInsights      GbpInsight[]
+  websitePerformances  WebsitePerformance[]
+  websiteLocations  WebsiteLocation[]
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
   deletedAt        DateTime?
@@ -652,6 +654,40 @@ model GbpInsight {
   totalReviews      Int
   createdAt         DateTime  @default(now()) @db.Timestamptz(6)
   updatedAt         DateTime  @updatedAt @db.Timestamptz(6)
+
+  @@index([customerId])
+}
+
+model WebsitePerformance {
+  id             String   @id @default(uuid()) @db.Uuid
+  businessId     String
+  organizationId String
+  customerId     String?
+  customer       Customer? @relation(fields: [customerId], references: [id])
+  month          String
+  pageViews      Int
+  visits         Int
+  visitors       Int
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(6)
+
+  @@index([customerId])
+}
+
+
+model WebsiteLocation {
+  id             String   @id @default(uuid()) @db.Uuid
+  businessId     String
+  organizationId String
+  customerId     String?
+  customer       Customer? @relation(fields: [customerId], references: [id])
+  month          String
+  country        String
+  visitors       Int
+  percent        Float
+  rank           Int      
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(6)
 
   @@index([customerId])
 }

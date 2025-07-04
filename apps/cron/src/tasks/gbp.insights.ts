@@ -12,12 +12,11 @@ export class GBPInsightsTask {
     private _gbpInsightsRepository: PrismaRepository<'gbpInsight'>,
   ) {}
 
-    @Cron('0 0 * * *') // for midnight
+  @Cron('0 0 * * *') 
   async handleGBPInsights() {
     console.log('⏰ GBP Cron job triggered');
 
     try {
-      console.log("STEP 1");
       
       // 1️⃣ Get GBP integrations
       const integrationsRes = await axios.get(`${process.env.BACKEND_INTERNAL_URL}/integrations/list`, {
@@ -26,22 +25,18 @@ export class GBPInsightsTask {
           'Content-Type': 'application/json',
         },
       });
-      console.log("STEP 2");
 
       const integrations = integrationsRes.data?.integrations || [];
       const gbpAccounts = integrations.filter(i => i.identifier === 'gbp' && i.internalId);
 
-            console.log("STEP 3");
 
       if (!gbpAccounts.length) {
         console.log('❌ No GBP accounts found.');
         return;
       }
-                  console.log("STEP 4");
 
 
       for (const account of gbpAccounts) {
-                          console.log("STEP 5",account);
 
         const locationId = account?.internalId;
         const orgId = account.customer?.orgId;
@@ -58,7 +53,6 @@ export class GBPInsightsTask {
 
         const month = format(yesterday, 'yyyy-MM');
 
-                                  console.log("STEP 6");
 
 
         // 3️⃣ Check if data already exists
@@ -72,14 +66,12 @@ export class GBPInsightsTask {
           },
         });
 
-                                          console.log("STEP 7");
 
         if (exists) {
           console.log(`⚠️ GBP Insight already exists for ${locationId} (${format(yesterday, 'yyyy-MM-dd')})`);
           continue; 
         }
 
-                                                  console.log("STEP 8");
 
         // 4️⃣ Fetch Impressions - All devices & surfaces
         const impressionsRes = await axios.get(
@@ -107,7 +99,6 @@ export class GBPInsightsTask {
             }
           },
         );
-                                                  console.log("STEP 9");
 
         const impressionsData = impressionsRes.data?.timeSeries || [];
         let impressionsDesktopSearch = 0;
@@ -172,7 +163,6 @@ export class GBPInsightsTask {
             }
           },
         );
-                                                  console.log("STEP 10");
 
         const clicksData = clicksRes.data?.timeSeries || [];
         let websiteClicks = 0;
@@ -201,7 +191,6 @@ export class GBPInsightsTask {
           },
         );
 
-                                                          console.log("STEP 11");
 
         const reviews = reviewsRes.data?.reviews || [];
         const totalReviews = reviews.length;
@@ -209,27 +198,25 @@ export class GBPInsightsTask {
           ? reviews.reduce((sum, r) => sum + (Number(r.starRating) || 0), 0) / reviews.length
           : 0;
 
-                                                            console.log("STEP 12");
 
         // 7️⃣ Insert daily record
-        // await this._gbpInsightsRepository.model.gbpInsight.create({
-        //   data: {
-        //     businessId: locationId,
-        //     organizationId: orgId,
-        //     customerId,
-        //     month,
-        //     impressionsMaps,
-        //     impressionsSearch,
-        //     websiteClicks,
-        //     phoneClicks,
-        //     directionRequests,
-        //     avgRating,
-        //     totalReviews,
-        //     createdAt: yesterday
-        //   },
-        // });
+        await this._gbpInsightsRepository.model.gbpInsight.create({
+          data: {
+            businessId: locationId,
+            organizationId: orgId,
+            customerId,
+            month,
+            impressionsMaps,
+            impressionsSearch,
+            websiteClicks,
+            phoneClicks,
+            directionRequests,
+            avgRating,
+            totalReviews,
+            createdAt: yesterday
+          },
+        });
 
-                                                                    console.log("STEP 13");
 
         console.log(`✅ Inserted GBP Insight for ${locationId} (${format(yesterday, 'yyyy-MM-dd')})`);
       }
