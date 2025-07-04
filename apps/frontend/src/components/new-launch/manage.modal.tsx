@@ -249,7 +249,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           value: post.values.map((value: any) => ({
             ...(value.id ? { id: value.id } : {}),
             content: value.content.slice(0, post.maximumCharacters || 1000000),
-            image: value.media.map(({ id, path }: any) => ({ id, path })) || [],
+            image: value.media.map(({ id, path, alt, thumbnail, thumbnailTimestamp }: any) => ({ id, path, alt, thumbnail, thumbnailTimestamp })) || [],
           })),
         })),
       };

@@ -204,6 +204,14 @@ const TikTokSettings: FC<{
       </div>
       <div className="flex gap-[40px]">
         <Checkbox
+          label={t('label_comments', 'Comments')}
+          variant="hollow"
+          disabled={isUploadMode}
+          {...register('comment', {
+            value: true,
+          })}
+        />
+        <Checkbox
           variant="hollow"
           label={t('label_duet', 'Duet')}
           disabled={isUploadMode}
@@ -216,14 +224,6 @@ const TikTokSettings: FC<{
           variant="hollow"
           disabled={isUploadMode}
           {...register('stitch', {
-            value: false,
-          })}
-        />
-        <Checkbox
-          label={t('label_comments', 'Comments')}
-          variant="hollow"
-          disabled={isUploadMode}
-          {...register('comment', {
             value: false,
           })}
         />

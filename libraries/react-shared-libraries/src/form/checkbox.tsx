@@ -23,18 +23,14 @@ export const Checkbox = forwardRef<
   const { checked, className, label, disableForm, variant } = props;
   const form = useFormContext();
   const register = disableForm ? {} : form.register(props.name!);
-  const watch = disableForm
-    ? undefined
-    : useWatch({
-        name: props.name!,
-      });
-  const [currentStatus, setCurrentStatus] = useState(watch || checked);
+  const watch = disableForm ? false : form.watch(props.name!);
+  const val = watch || checked;
+
   const changeStatus = useCallback(() => {
-    setCurrentStatus(!currentStatus);
     props?.onChange?.({
       target: {
         name: props.name!,
-        value: !currentStatus,
+        value: !val,
       },
     });
     if (!disableForm) {
@@ -42,16 +38,16 @@ export const Checkbox = forwardRef<
       register?.onChange?.({
         target: {
           name: props.name!,
-          value: !currentStatus,
+          value: !val,
         },
       });
     }
-  }, [currentStatus]);
+  }, [val]);
   return (
     <div className="flex gap-[10px]">
       <div
         ref={ref}
-        {...register}
+        {...disableForm ? {} : form.register(props.name!)}
         onClick={changeStatus}
         className={clsx(
           'cursor-pointer rounded-[4px] select-none w-[24px] h-[24px] justify-center items-center flex',
@@ -61,7 +57,7 @@ export const Checkbox = forwardRef<
           className
         )}
       >
-        {currentStatus && (
+        {val && (
           <div>
             <svg
               xmlns="http://www.w3.org/2000/svg"

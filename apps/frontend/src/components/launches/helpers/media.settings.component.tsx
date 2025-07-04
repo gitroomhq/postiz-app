@@ -84,7 +84,7 @@ export const useMediaSettings = () => {
 };
 
 export const CreateThumbnail: FC<{
-  onSelect: (blob: Blob) => void;
+  onSelect: (blob: Blob, timestampMs: number) => void;
   media:
     | {
         id: string;
@@ -100,12 +100,10 @@ export const CreateThumbnail: FC<{
   const { onSelect, media, altText, onAltTextChange } = props;
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
-  const [mode, setMode] = useState<'frame' | 'upload'>('frame');
 
   const handleLoadedMetadata = useCallback(() => {
     if (videoRef.current) {
@@ -150,11 +148,14 @@ export const CreateThumbnail: FC<{
       // Draw current frame to canvas
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
+      // Get timestamp in milliseconds
+      const timestampMs = Math.round(currentTime * 1000);
+
       // Convert canvas to blob
       canvas.toBlob(
         (blob: Blob | null) => {
           if (blob) {
-            onSelect(blob);
+            onSelect(blob, timestampMs);
           }
           setIsCapturing(false);
         },
@@ -178,10 +179,13 @@ export const CreateThumbnail: FC<{
             tempCanvas.height = video.videoHeight;
             tempCtx.drawImage(video, 0, 0);
 
+            // Get timestamp in milliseconds
+            const timestampMs = Math.round(currentTime * 1000);
+
             tempCanvas.toBlob(
               (blob: Blob | null) => {
                 if (blob) {
-                  onSelect(blob);
+                  onSelect(blob, timestampMs);
                 }
                 setIsCapturing(false);
               },
@@ -198,7 +202,7 @@ export const CreateThumbnail: FC<{
         setIsCapturing(false);
       }
     }
-  }, [onSelect]);
+  }, [onSelect, currentTime]);
 
   const formatTime = useCallback((seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -206,156 +210,57 @@ export const CreateThumbnail: FC<{
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   }, []);
 
-  const handleFileUpload = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0];
-      if (file && file.type.startsWith('image/')) {
-        onSelect(file);
-      }
-    },
-    [onSelect]
-  );
-
-  const triggerFileUpload = useCallback(() => {
-    fileInputRef.current?.click();
-  }, []);
-
   if (!media) return null;
 
   return (
     <div className="flex flex-col space-y-4">
-      {/* Mode Toggle */}
-      <div className="flex rounded-lg bg-fifth p-1">
-        <button
-          onClick={() => setMode('frame')}
-          className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all ${
-            mode === 'frame'
-              ? 'bg-forth text-white'
-              : 'text-textColor hover:text-white'
-          }`}
-        >
-          Select Frame
-        </button>
-        <button
-          onClick={() => setMode('upload')}
-          className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all ${
-            mode === 'upload'
-              ? 'bg-forth text-white'
-              : 'text-textColor hover:text-white'
-          }`}
-        >
-          Upload Image
-        </button>
+      <div className="relative bg-black rounded-lg overflow-hidden">
+        <video
+          ref={videoRef}
+          src={media.path}
+          className="w-full h-[200px] object-contain"
+          onLoadedMetadata={handleLoadedMetadata}
+          onTimeUpdate={handleTimeUpdate}
+          muted
+          preload="metadata"
+          crossOrigin="anonymous"
+        />
+        <canvas ref={canvasRef} className="hidden" />
       </div>
 
-      {/* Hidden file input */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleFileUpload}
-        className="hidden"
-      />
-
-      {mode === 'frame' ? (
+      {isLoaded && (
         <>
-          <div className="relative bg-black rounded-lg overflow-hidden">
-            <video
-              ref={videoRef}
-              src={media.path}
-              className="w-full h-[200px] object-contain"
-              onLoadedMetadata={handleLoadedMetadata}
-              onTimeUpdate={handleTimeUpdate}
-              muted
-              preload="metadata"
-              crossOrigin="anonymous"
+          <div className="flex flex-col space-y-2">
+            <input
+              type="range"
+              min="0"
+              max={duration}
+              step="0.1"
+              value={currentTime}
+              onChange={handleSeek}
+              className="w-full h-2 bg-fifth rounded-lg appearance-none cursor-pointer slider"
+              style={{
+                background: `linear-gradient(to right, #4f46e5 0%, #4f46e5 ${
+                  (currentTime / duration) * 100
+                }%, #374151 ${(currentTime / duration) * 100}%, #374151 100%)`,
+              }}
             />
-            <canvas ref={canvasRef} className="hidden" />
-          </div>
-
-          {isLoaded && (
-            <>
-              <div className="flex flex-col space-y-2">
-                <input
-                  type="range"
-                  min="0"
-                  max={duration}
-                  step="0.1"
-                  value={currentTime}
-                  onChange={handleSeek}
-                  className="w-full h-2 bg-fifth rounded-lg appearance-none cursor-pointer slider"
-                  style={{
-                    background: `linear-gradient(to right, #4f46e5 0%, #4f46e5 ${
-                      (currentTime / duration) * 100
-                    }%, #374151 ${
-                      (currentTime / duration) * 100
-                    }%, #374151 100%)`,
-                  }}
-                />
-                <div className="flex justify-between text-sm text-textColor">
-                  <span>{formatTime(currentTime)}</span>
-                  <span>{formatTime(duration)}</span>
-                </div>
-              </div>
-
-              <div className="flex justify-center">
-                <button
-                  onClick={captureFrame}
-                  disabled={isCapturing}
-                  className="bg-forth text-white px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isCapturing ? 'Capturing...' : 'Select This Frame'}
-                </button>
-              </div>
-            </>
-          )}
-        </>
-      ) : (
-        <div className="flex flex-col items-center space-y-4 py-8">
-          <div className="text-center space-y-2">
-            <svg
-              className="mx-auto h-12 w-12 text-textColor"
-              stroke="currentColor"
-              fill="none"
-              viewBox="0 0 48 48"
-            >
-              <path
-                d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <div className="text-textColor">
-              <p className="text-sm">Upload a custom thumbnail image</p>
-              <p className="text-xs text-gray-400 mt-1">
-                PNG, JPG, JPEG up to 10MB
-              </p>
+            <div className="flex justify-between text-sm text-textColor">
+              <span>{formatTime(currentTime)}</span>
+              <span>{formatTime(duration)}</span>
             </div>
           </div>
 
-          <button
-            onClick={triggerFileUpload}
-            className="bg-forth text-white px-6 py-3 rounded-lg hover:bg-opacity-80 transition-all flex items-center space-x-2"
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
+          <div className="flex justify-center">
+            <button
+              onClick={captureFrame}
+              disabled={isCapturing}
+              className="bg-forth text-white px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <path
-                d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15M17 8L12 3M12 3L7 8M12 3V15"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <span>Choose Image</span>
-          </button>
-        </div>
+              {isCapturing ? 'Capturing...' : 'Select This Frame'}
+            </button>
+          </div>
+        </>
       )}
 
       <style jsx>{`
@@ -394,7 +299,7 @@ export const MediaComponentInner: FC<{
     alt: string;
   }) => void;
   media:
-    | { id: string; name: string; path: string; thumbnail: string; alt: string }
+    | { id: string; name: string; path: string; thumbnail: string; alt: string, thumbnailTimestamp?: number }
     | undefined;
 }> = (props) => {
   const { onClose, onSelect, media } = props;
@@ -404,7 +309,12 @@ export const MediaComponentInner: FC<{
   const [isEditingThumbnail, setIsEditingThumbnail] = useState(false);
   const [altText, setAltText] = useState<string>(media?.alt || '');
   const [loading, setLoading] = useState(false);
-  const [thumbnail, setThumbnail] = useState<string | null>(props.media?.thumbnail || null);
+  const [thumbnail, setThumbnail] = useState<string | null>(
+    props.media?.thumbnail || null
+  );
+  const [thumbnailTimestamp, setThumbnailTimestamp] = useState<number | null>(
+    props.media?.thumbnailTimestamp || null
+  );
 
   useEffect(() => {
     setActivateExitButton(false);
@@ -437,13 +347,14 @@ export const MediaComponentInner: FC<{
           id: props.media.id,
           alt: altText,
           thumbnail: path,
+          thumbnailTimestamp: thumbnailTimestamp,
         }),
       })
     ).json();
 
     onSelect(media);
     onClose();
-  }, [altText, newThumbnail, thumbnail]);
+  }, [altText, newThumbnail, thumbnail, thumbnailTimestamp]);
 
   return (
     <div className="text-textColor fixed start-0 top-0 bg-primary/80 z-[300] w-full h-full p-[60px] animate-fade justify-center flex bg-black/40">
@@ -561,13 +472,14 @@ export const MediaComponentInner: FC<{
 
                       {/* Thumbnail Editor */}
                       <CreateThumbnail
-                        onSelect={(blob: Blob) => {
+                        onSelect={(blob: Blob, timestampMs: number) => {
                           // Convert blob to base64 or handle as needed
                           const reader = new FileReader();
                           reader.onload = () => {
                             // You can handle the result here - for now just call onSelect with the blob URL
                             const url = URL.createObjectURL(blob);
                             setNewThumbnail(url);
+                            setThumbnailTimestamp(timestampMs);
                             setIsEditingThumbnail(false);
                           };
                           reader.readAsDataURL(blob);

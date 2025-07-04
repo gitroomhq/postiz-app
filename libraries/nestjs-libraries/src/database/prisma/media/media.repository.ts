@@ -56,6 +56,7 @@ export class MediaRepository {
       data: {
         alt: data.alt,
         thumbnail: data.thumbnail,
+        thumbnailTimestamp: data.thumbnailTimestamp,
       },
       select: {
         id: true,
@@ -63,6 +64,7 @@ export class MediaRepository {
         alt: true,
         thumbnail: true,
         path: true,
+        thumbnailTimestamp: true,
       },
     });
   }
@@ -94,6 +96,7 @@ export class MediaRepository {
         path: true,
         thumbnail: true,
         alt: true,
+        thumbnailTimestamp: true,
       },
       skip: pageNum * 28,
       take: 28,

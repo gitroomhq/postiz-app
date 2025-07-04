@@ -489,6 +489,7 @@ export const MultiMediaComponent: FC<{
         path: string;
         alt?: string;
         thumbnail?: string;
+        thumbnailTimestamp?: number;
       }>;
     };
   }) => void;

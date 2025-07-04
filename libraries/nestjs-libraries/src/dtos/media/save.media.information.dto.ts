@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsUrl, ValidateIf } from 'class-validator';
+import { IsNumber, IsOptional, IsString, IsUrl, ValidateIf } from 'class-validator';
 
 export class SaveMediaInformationDto {
   @IsString()
@@ -10,4 +10,8 @@ export class SaveMediaInformationDto {
   @IsUrl()
   @ValidateIf((o) => !!o.thumbnail)
   thumbnail: string;
+
+  @IsNumber()
+  @ValidateIf((o) => !!o.thumbnailTimestamp)
+  thumbnailTimestamp: number;
 }

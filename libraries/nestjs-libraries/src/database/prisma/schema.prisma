@@ -197,20 +197,21 @@ model Star {
 }
 
 model Media {
-  id             String              @id @default(uuid())
-  name           String
-  path           String
-  organization   Organization        @relation(fields: [organizationId], references: [id])
-  organizationId String
-  thumbnail      String?
-  alt            String?
-  fileSize       Int                 @default(0)
-  type           String              @default("image")
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
-  userPicture    User[]
-  agencies       SocialMediaAgency[]
-  deletedAt      DateTime?
+  id                 String              @id @default(uuid())
+  name               String
+  path               String
+  organization       Organization        @relation(fields: [organizationId], references: [id])
+  organizationId     String
+  thumbnail          String?
+  thumbnailTimestamp Int?
+  alt                String?
+  fileSize           Int                 @default(0)
+  type               String              @default("image")
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  userPicture        User[]
+  agencies           SocialMediaAgency[]
+  deletedAt          DateTime?
 
   @@index([name])
   @@index([organizationId])
