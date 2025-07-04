@@ -1370,17 +1370,17 @@ private calculateChanges(prev: number = 0, current: number = 0): string {
 
 // ---------
 
-
 async getWebsiteLocationsReport(businessId: string, days: string) {
   const range = parseInt(days || '30', 10);
   const today = new Date();
-  const startDate = subDays(today, range * 2); // fetch enough for comparison + current
+  const comparisonStartDate = subDays(today, range * 2);
+  const currentStartDate = subDays(today, range);
 
   const locations = await this._websiteLocationRepo.model.websiteLocation.findMany({
     where: {
       businessId,
       createdAt: {
-        gte: startDate,
+        gte: comparisonStartDate,
         lte: today
       },
       rank: { lte: 10 }
@@ -1395,40 +1395,34 @@ async getWebsiteLocationsReport(businessId: string, days: string) {
     };
   }
 
-  // 🗃️ Group data: { country -> month -> visitors }
+  // 🗃️ Group data: { country -> yyyy-MM -> visitors }
   const grouped: Record<string, Record<string, number>> = {};
+  const currentMonthsSet = new Set<string>();
 
   for (const loc of locations) {
-    const country = loc.country;
     const monthKey = format(loc.createdAt, 'yyyy-MM');
-
-    if (!grouped[country]) grouped[country] = {};
-    if (!grouped[country][monthKey]) grouped[country][monthKey] = 0;
-
-    grouped[country][monthKey] += loc.visitors;
+    if (loc.createdAt >= currentStartDate) {
+      currentMonthsSet.add(monthKey);
+    }
+    if (!grouped[loc.country]) grouped[loc.country] = {};
+    if (!grouped[loc.country][monthKey]) grouped[loc.country][monthKey] = 0;
+    grouped[loc.country][monthKey] += loc.visitors;
   }
 
-  // 🗓️ Get all unique months, sorted
-  const allMonthsSet = new Set<string>();
-  locations.forEach(loc => {
-    allMonthsSet.add(format(loc.createdAt, 'yyyy-MM'));
-  });
-const allMonths = Array.from(allMonthsSet)
-  .sort((a, b) => {
-    const dateA = parseISO(a + '-01');
-    const dateB = parseISO(b + '-01');
-    return compareAsc(dateA, dateB);
-  })
-  .map(m => {
-    const parsed = parseISO(m + '-01');
-    return format(parsed, 'MMMM');
-  });
+  // 🗓️ Sorted unique months (current only)
+  const allMonths = Array.from(currentMonthsSet)
+    .sort((a, b) => {
+      const dateA = parseISO(a + '-01');
+      const dateB = parseISO(b + '-01');
+      return compareAsc(dateA, dateB);
+    })
+    .map(m => format(parseISO(m + '-01'), 'MMMM'));
 
+  const lastMonthName = allMonths[allMonths.length - 1];
 
-  // 📊 Build rows
+  // 📊 Build rows: [country, m1, m2, ..., change%]
   const rows = Object.entries(grouped).map(([country, monthMap]) => {
     const monthValues = allMonths.map(monthName => {
-      // Find matching yyyy-MM for this month name
       const matchingKey = Object.keys(monthMap).find(k => {
         const parsed = parseISO(k + '-01');
         return format(parsed, 'MMMM') === monthName;
@@ -1441,28 +1435,51 @@ const allMonths = Array.from(allMonthsSet)
     const change = this.calculateLocationChange(first, last);
 
     return [country, ...monthValues, change];
-  }).sort((a, b) => {
-    const bTotal = b.slice(1, -1).reduce((sum, v) => sum + parseInt(v, 10), 0);
-    const aTotal = a.slice(1, -1).reduce((sum, v) => sum + parseInt(v, 10), 0);
-    return bTotal - aTotal;
   });
 
-  const table = {
-    Data: ['Data', ...allMonths, 'Change %'],
-    rows
-  };
+  // 👉 Sort rows by total visitors in current period
+  const topRows = rows
+    .map(r => ({
+      row: r,
+      total: r.slice(1, -1).reduce((sum, v) => sum + parseInt(v, 10), 0)
+    }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 5)
+    .map(x => x.row);
 
-  // Top 10 chart from last month
-  const chart = rows
+  // ✅ Prepare chart:
+  // get top 10 countries by last month value
+  const lastMonthIndex = allMonths.indexOf(lastMonthName) + 1; // +1 for country
+  const allCountriesForChart = rows
     .map(r => ({
       country: r[0],
-      visitors: parseInt(r[r.length - 2] || '0', 10), // last month value
-      percent: 0 // optional, or recalculate
+      visitors: parseInt(r[lastMonthIndex] || '0', 10)
     }))
+    .filter(r => r.visitors > 0)
     .sort((a, b) => b.visitors - a.visitors)
     .slice(0, 10);
 
-  return { table, chart };
+  // Total visitors in last month for percent calculation
+  const totalLastMonthVisitors = allCountriesForChart.reduce(
+    (sum, c) => sum + c.visitors,
+    0
+  );
+
+  const chart = allCountriesForChart.map(c => ({
+    country: c.country,
+    visitors: c.visitors,
+    percent: totalLastMonthVisitors
+      ? parseFloat(((c.visitors / totalLastMonthVisitors) * 100).toFixed(2))
+      : 0
+  }));
+
+  return {
+    table: {
+      Data: ['Data', ...allMonths, 'Change %'],
+      rows: topRows
+    },
+    chart
+  };
 }
 
 private calculateLocationChange(prev: number, curr: number) {
@@ -1473,11 +1490,6 @@ private calculateLocationChange(prev: number, curr: number) {
 
 
 
-  private calculateChange(previous: number, current: number): string {
-    if (!previous || previous === 0) return '0%';
-    const change = ((current - previous) / previous) * 100;
-    return change.toFixed(2) + '%';
-  }
 
 
 async getPinterestCommunityReport(businessId: string, days: string) {
