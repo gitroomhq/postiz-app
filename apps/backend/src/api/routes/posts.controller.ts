@@ -139,11 +139,12 @@ export class PostsController {
 
   @Post('/')
   @CheckPolicies([AuthorizationActions.Create, Sections.POSTS_PER_MONTH])
-  createPost(
+  async createPost(
     @GetOrgFromRequest() org: Organization,
-    @Body() body: CreatePostDto
+    @Body() rawBody: any
   ) {
-    console.log(JSON.stringify(body, null, 2));
+    console.log(JSON.stringify(rawBody, null, 2));
+    const body = await this._postsService.mapTypeToPost(rawBody, org.id);
     return this._postsService.createPost(org.id, body);
   }
 

@@ -240,7 +240,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         posts: checkAllValid.map((p: any) => ({
           integration: p.integration,
           group,
-          settings: { ...(p.settings || {}), __type: p.integration.identifier },
+          settings: { ...(p.settings || {}) },
           value: p.values.map((a: any) => ({
             ...a,
             image: a.media || [],

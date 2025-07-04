@@ -61,7 +61,6 @@ export class PublicIntegrationsController {
     @Query() query: GetPostsDto
   ) {
     const posts = await this._postsService.getPosts(org.id, query);
-
     return {
       posts,
       // comments,
@@ -70,10 +69,12 @@ export class PublicIntegrationsController {
 
   @Post('/posts')
   @CheckPolicies([AuthorizationActions.Create, Sections.POSTS_PER_MONTH])
-  createPost(
+  async createPost(
     @GetOrgFromRequest() org: Organization,
-    @Body() body: CreatePostDto
+    @Body() rawBody: any
   ) {
+    const body = await this._postsService.mapTypeToPost(rawBody, org.id);
+
     console.log(JSON.stringify(body, null, 2));
     return this._postsService.createPost(org.id, body);
   }

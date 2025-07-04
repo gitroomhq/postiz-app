@@ -1,4 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  ValidationPipe,
+} from '@nestjs/common';
 import { PostsRepository } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.repository';
 import { CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
 import dayjs from 'dayjs';
@@ -29,6 +34,8 @@ import sharp from 'sharp';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { Readable } from 'stream';
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 dayjs.extend(utc);
 
 type PostWithConditionals = Post & {
@@ -50,7 +57,7 @@ export class PostsService {
     private _mediaService: MediaService,
     private _shortLinkService: ShortLinkService,
     private _webhookService: WebhooksService,
-    private openaiService: OpenaiService,
+    private openaiService: OpenaiService
   ) {}
 
   async getStatistics(orgId: string, id: string) {
@@ -63,6 +70,54 @@ export class PostsService {
     return {
       clicks: shortLinksTracking,
     };
+  }
+
+  async mapTypeToPost(
+    body: CreatePostDto,
+    organization: string
+  ): Promise<CreatePostDto> {
+    if (!body?.posts?.every((p) => p?.integration?.id)) {
+      throw new BadRequestException('All posts must have an integration id');
+    }
+
+    const mappedValues = {
+      ...body,
+      posts: await Promise.all(
+        body.posts.map(async (post) => {
+          const integration = await this._integrationService.getIntegrationById(
+            organization,
+            post.integration.id
+          );
+
+          if (!integration) {
+            throw new BadRequestException(
+              `Integration with id ${post.integration.id} not found`
+            );
+          }
+
+          return {
+            ...post,
+            settings: {
+              ...(post.settings || ({} as any)),
+              __type: integration.providerIdentifier,
+            },
+          };
+        })
+      ),
+    };
+
+    const validationPipe = new ValidationPipe({
+      skipMissingProperties: false,
+      transform: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+    });
+
+    return await validationPipe.transform(mappedValues, {
+      type: 'body',
+      metatype: CreatePostDto,
+    });
   }
 
   async getPostsRecursively(
@@ -572,7 +627,10 @@ export class PostsService {
     }
   }
 
-  private async postArticle(integration: Integration, posts: Post[]): Promise<any> {
+  private async postArticle(
+    integration: Integration,
+    posts: Post[]
+  ): Promise<any> {
     const getIntegration = this._integrationManager.getArticlesIntegration(
       integration.providerIdentifier
     );
@@ -929,7 +987,10 @@ export class PostsService {
   }
 
   async findFreeDateTime(orgId: string, integrationId?: string) {
-    const findTimes = await this._integrationService.findFreeDateTime(orgId, integrationId);
+    const findTimes = await this._integrationService.findFreeDateTime(
+      orgId,
+      integrationId
+    );
     return this.findFreeDateTimeRecursive(
       orgId,
       findTimes,
