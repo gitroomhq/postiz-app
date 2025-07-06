@@ -9,15 +9,15 @@ import { chunk } from 'lodash';
 import Transloadit from 'transloadit';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { Readable } from 'stream';
-import { parseBuffer } from 'music-metadata';
 import { stringifySync } from 'subtitle';
+
+import pLimit from 'p-limit';
 import { FalService } from '@gitroom/nestjs-libraries/openai/fal.service';
+const limit = pLimit(2);
 
-let limit: any;
-
+let parseBuffer: any;
 (async () => {
-  const pLimit = await import('p-limit');
-  limit = pLimit.default(2);
+  parseBuffer = (await import('music-metadata')).parseBuffer;
 })();
 
 const transloadit = new Transloadit({
