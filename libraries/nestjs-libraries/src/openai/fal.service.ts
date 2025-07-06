@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 
-import pLimit from 'p-limit';
-const limit = pLimit(10);
+let limit: any;
+
+(async () => {
+  const pLimit = await import('p-limit');
+  limit = pLimit.default(10);
+})();
 
 @Injectable()
 export class FalService {

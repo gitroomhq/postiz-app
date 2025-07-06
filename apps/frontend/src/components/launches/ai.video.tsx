@@ -7,8 +7,6 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import useSWR from 'swr';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
-import { Input } from '@gitroom/react/form/input';
-import { timer } from '@gitroom/helpers/utils/timer';
 import { VideoWrapper } from '@gitroom/frontend/components/videos/video.render.component';
 import { FormProvider, useForm } from 'react-hook-form';
 
