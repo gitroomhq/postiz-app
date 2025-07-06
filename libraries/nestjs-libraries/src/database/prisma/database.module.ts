@@ -40,6 +40,7 @@ import { SetsRepository } from '@gitroom/nestjs-libraries/database/prisma/sets/s
 import { ThirdPartyRepository } from '@gitroom/nestjs-libraries/database/prisma/third-party/third-party.repository';
 import { ThirdPartyService } from '@gitroom/nestjs-libraries/database/prisma/third-party/third-party.service';
 import { VideoManager } from '@gitroom/nestjs-libraries/videos/video.manager';
+import { FalService } from '@gitroom/nestjs-libraries/openai/fal.service';
 
 @Global()
 @Module({
@@ -80,6 +81,7 @@ import { VideoManager } from '@gitroom/nestjs-libraries/videos/video.manager';
     IntegrationManager,
     ExtractContentService,
     OpenaiService,
+    FalService,
     EmailService,
     TrackService,
     ShortLinkService,

@@ -17,4 +17,6 @@ export class VideoDto {
 
   @IsIn(['vertical', 'horizontal'])
   output: 'vertical' | 'horizontal';
+
+  customParams: any;
 }

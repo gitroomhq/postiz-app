@@ -5,11 +5,14 @@ export interface Prompt {
   value: string;
 }
 
+export type URL = string;
+
 export abstract class VideoAbstract {
   abstract process(
     prompt: Prompt[],
-    output: 'vertical' | 'horizontal'
-  ): Promise<string>;
+    output: 'vertical' | 'horizontal',
+    customParams?: any
+  ): Promise<URL>;
 }
 
 export interface VideoParams {
@@ -17,6 +20,7 @@ export interface VideoParams {
   title: string;
   description: string;
   placement: 'text-to-image' | 'image-to-video' | 'video-to-video';
+  available: boolean;
 }
 
 export function Video(params: VideoParams) {

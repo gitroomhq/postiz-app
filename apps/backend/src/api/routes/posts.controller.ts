@@ -12,14 +12,9 @@ import {
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization, User } from '@prisma/client';
-import { CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { StarsService } from '@gitroom/nestjs-libraries/database/prisma/stars/stars.service';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
-import {
-  AuthorizationActions,
-  Sections,
-} from '@gitroom/backend/services/auth/permissions/permissions.service';
 import { ApiTags } from '@nestjs/swagger';
 import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
 import { GeneratorDto } from '@gitroom/nestjs-libraries/dtos/generator/generator.dto';
@@ -29,6 +24,7 @@ import { Response } from 'express';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.link.service';
 import { CreateTagDto } from '@gitroom/nestjs-libraries/dtos/posts/create.tag.dto';
+import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 
 @ApiTags('Posts')
 @Controller('/posts')

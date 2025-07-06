@@ -171,12 +171,21 @@ export class MediaController {
     return this._mediaService.getVideoOptions();
   }
 
+  @Post('/video/:identifier/:function')
+  videoFunction(
+    @Param('identifier') identifier: string,
+    @Param('function') functionName: string,
+    @Body('params') body: any
+  ) {
+    return this._mediaService.videoFunction(identifier, functionName, body);
+  }
+
   @Post('/generate-video/:type')
   generateVideo(
-     @GetOrgFromRequest() org: Organization,
-     @Body() body: VideoDto,
-     @Param('type') type: string,
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: VideoDto,
+    @Param('type') type: string
   ) {
-    return this._mediaService.generateVideo(org.id, body, type);
+    return this._mediaService.generateVideo(org, body, type);
   }
 }

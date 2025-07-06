@@ -1,6 +1,7 @@
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import {
   Prompt,
+  URL,
   Video,
   VideoAbstract,
 } from '@gitroom/nestjs-libraries/videos/video.interface';
@@ -10,6 +11,10 @@ import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { Readable } from 'stream';
 import { parseBuffer } from 'music-metadata';
 import { stringifySync } from 'subtitle';
+
+import pLimit from 'p-limit';
+import { FalService } from '@gitroom/nestjs-libraries/openai/fal.service';
+const limit = pLimit(2);
 
 const transloadit = new Transloadit({
   authKey: process.env.TRANSLOADIT_AUTH,
@@ -26,30 +31,40 @@ async function getAudioDuration(buffer: Buffer): Promise<number> {
   title: 'Image Text Slides',
   description: 'Generate videos slides from images and text',
   placement: 'text-to-image',
+  available:
+    !!process.env.ELEVENSLABS_API_KEY &&
+    !!process.env.TRANSLOADIT_AUTH &&
+    !!process.env.TRANSLOADIT_SECRET &&
+    !!process.env.OPENAI_API_KEY &&
+    !!process.env.FAL_KEY,
 })
 export class ImagesSlides extends VideoAbstract {
   private storage = UploadFactory.createStorage();
-  constructor(private _openaiService: OpenaiService) {
+  constructor(
+    private _openaiService: OpenaiService,
+    private _falService: FalService
+  ) {
     super();
   }
 
   async process(
     prompt: Prompt[],
-    output: 'vertical' | 'horizontal'
-  ): Promise<string> {
+    output: 'vertical' | 'horizontal',
+    customParams: { voice: string }
+  ): Promise<URL> {
     const list = await this._openaiService.generateSlidesFromText(
       prompt[0].value
     );
+
     const generated = await Promise.all(
       list.reduce((all, current) => {
         all.push(
           new Promise(async (res) => {
             res({
               len: 0,
-              url: await this._openaiService.generateImage(
-                current.imagePrompt +
-                  (output === 'vertical' ? ', vertical composition' : ''),
-                true,
+              url: await this._falService.generateImageFromText(
+                'ideogram/v2',
+                current.imagePrompt,
                 output === 'vertical'
               ),
             });
@@ -60,22 +75,21 @@ export class ImagesSlides extends VideoAbstract {
           new Promise(async (res) => {
             const buffer = Buffer.from(
               await (
-                await fetch(
-                  `https://api.elevenlabs.io/v1/text-to-speech/JBFqnCBsd6RMkjVDRZzb?output_format=mp3_44100_128`,
-                  {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'xi-api-key': process.env.ELEVENSLABS_API_KEY || '',
-                    },
-                    body: JSON.stringify({
-                      text: current.voiceText,
-                      voice_settings: {
-                        stability: 0.75,
-                        similarity_boost: 0.75,
+                await limit(() =>
+                  fetch(
+                    `https://api.elevenlabs.io/v1/text-to-speech/${customParams.voice}?output_format=mp3_44100_128`,
+                    {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'xi-api-key': process.env.ELEVENSLABS_API_KEY || '',
                       },
-                    }),
-                  }
+                      body: JSON.stringify({
+                        text: current.voiceText,
+                        model_id: 'eleven_multilingual_v2'
+                      }),
+                    }
+                  )
                 )
               ).arrayBuffer()
             );
@@ -131,12 +145,12 @@ export class ImagesSlides extends VideoAbstract {
         })),
       { format: 'SRT' }
     );
-    console.log(srt);
 
-    await transloadit.createAssembly({
+    const { results } = await transloadit.createAssembly({
       uploads: {
         'subtitles.srt': srt,
       },
+      waitForCompletion: true,
       params: {
         steps: {
           ...split.reduce((all, current, index) => {
@@ -194,7 +208,7 @@ export class ImagesSlides extends VideoAbstract {
                 },
               ],
             },
-            position: 'center',
+            position: 'top',
             font_size: 10,
             subtitles_type: 'burned',
           },
@@ -202,6 +216,29 @@ export class ImagesSlides extends VideoAbstract {
       },
     });
 
-    return '';
+    return results.subtitled[0].url;
+  }
+
+  async loadVoices(data: any) {
+    const { voices } = await (
+      await fetch(
+        'https://api.elevenlabs.io/v2/voices?page_size=40&category=premade',
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'xi-api-key': process.env.ELEVENSLABS_API_KEY || '',
+          },
+        }
+      )
+    ).json();
+
+    return {
+      voices: voices.map((voice: any) => ({
+        id: voice.voice_id,
+        name: voice.name,
+        preview_url: voice.preview_url,
+      })),
+    };
   }
 }

@@ -11,11 +11,6 @@ import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.reque
 import { Organization } from '@prisma/client';
 import { ApiTags } from '@nestjs/swagger';
 import { SetsService } from '@gitroom/nestjs-libraries/database/prisma/sets/sets.service';
-import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
-import {
-  AuthorizationActions,
-  Sections,
-} from '@gitroom/backend/services/auth/permissions/permissions.service';
 import {
   UpdateSetsDto,
   SetsDto,

@@ -7,6 +7,7 @@ import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/sa
 import { VideoManager } from '@gitroom/nestjs-libraries/videos/video.manager';
 import { VideoDto } from '@gitroom/nestjs-libraries/dtos/videos/video.dto';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
+import { AuthorizationActions, Sections, SubscriptionException } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 
 @Injectable()
 export class MediaService {
@@ -60,15 +61,49 @@ export class MediaService {
     return this._videoManager.getAllVideos();
   }
 
-  async generateVideo(org: string, body: VideoDto, type: string) {
+  async generateVideo(org: Organization, body: VideoDto, type: string) {
+    const totalCredits = await this._subscriptionService.checkCredits(
+      org,
+      'ai_videos'
+    );
+    if (totalCredits.credits <= 0) {
+      throw new SubscriptionException({
+        action: AuthorizationActions.Create,
+        section: Sections.VIDEOS_PER_MONTH,
+      });
+    }
+
     const video = this._videoManager.getVideoByName(type);
     if (!video) {
       throw new Error(`Video type ${type} not found`);
     }
 
-    const loadedData = await video.instance.process(body.prompt, body.output);
+    const loadedData = await video.instance.process(
+      body.prompt,
+      body.output,
+      body.customParams
+    );
 
-    // const file = await this.storage.uploadSimple(loadedData);
-    // return this.saveFile(org, file.split('/').pop(), file);
+    const file = await this.storage.uploadSimple(loadedData);
+    const save = await this.saveFile(org.id, file.split('/').pop(), file);
+
+    await this._subscriptionService.useCredit(org, 'ai_videos');
+
+    return save;
+  }
+
+  async videoFunction(identifier: string, functionName: string, body: any) {
+    const video = this._videoManager.getVideoByName(identifier);
+    if (!video) {
+      throw new Error(`Video with identifier ${identifier} not found`);
+    }
+
+    // @ts-ignore
+    const functionToCall = video.instance[functionName];
+    if (typeof functionToCall !== 'function') {
+      throw new Error(`Function ${functionName} not found on video instance`);
+    }
+
+    return functionToCall(body);
   }
 }

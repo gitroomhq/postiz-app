@@ -11,7 +11,7 @@ export class VideoManager {
   constructor(private _moduleRef: ModuleRef) {}
 
   getAllVideos(): any[] {
-    return (Reflect.getMetadata('video', VideoAbstract) || []).map(
+    return (Reflect.getMetadata('video', VideoAbstract) || []).filter((f: any) => f.available).map(
       (p: any) => ({
         identifier: p.identifier,
         title: p.title,
