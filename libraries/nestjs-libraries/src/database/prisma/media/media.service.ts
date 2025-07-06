@@ -4,13 +4,19 @@ import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { Organization } from '@prisma/client';
 import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/save.media.information.dto';
+import { VideoManager } from '@gitroom/nestjs-libraries/videos/video.manager';
+import { VideoDto } from '@gitroom/nestjs-libraries/dtos/videos/video.dto';
+import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 
 @Injectable()
 export class MediaService {
+  private storage = UploadFactory.createStorage();
+
   constructor(
     private _mediaRepository: MediaRepository,
     private _openAi: OpenaiService,
-    private _subscriptionService: SubscriptionService
+    private _subscriptionService: SubscriptionService,
+    private _videoManager: VideoManager
   ) {}
 
   async deleteMedia(org: string, id: string) {
@@ -48,5 +54,21 @@ export class MediaService {
 
   saveMediaInformation(org: string, data: SaveMediaInformationDto) {
     return this._mediaRepository.saveMediaInformation(org, data);
+  }
+
+  getVideoOptions() {
+    return this._videoManager.getAllVideos();
+  }
+
+  async generateVideo(org: string, body: VideoDto, type: string) {
+    const video = this._videoManager.getVideoByName(type);
+    if (!video) {
+      throw new Error(`Video type ${type} not found`);
+    }
+
+    const loadedData = await video.instance.process(body.prompt, body.output);
+
+    // const file = await this.storage.uploadSimple(loadedData);
+    // return this.saveFile(org, file.split('/').pop(), file);
   }
 }

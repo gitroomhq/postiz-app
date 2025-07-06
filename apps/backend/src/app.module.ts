@@ -12,6 +12,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { AgentModule } from '@gitroom/nestjs-libraries/agent/agent.module';
 import { McpModule } from '@gitroom/backend/mcp/mcp.module';
 import { ThirdPartyModule } from '@gitroom/nestjs-libraries/3rdparties/thirdparty.module';
+import { VideoModule } from '@gitroom/nestjs-libraries/videos/video.module';
 
 @Global()
 @Module({
@@ -24,6 +25,7 @@ import { ThirdPartyModule } from '@gitroom/nestjs-libraries/3rdparties/thirdpart
     AgentModule,
     McpModule,
     ThirdPartyModule,
+    VideoModule,
     ThrottlerModule.forRoot([
       {
         ttl: 3600000,
