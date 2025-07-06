@@ -355,8 +355,8 @@ importers:
         specifier: ^1.4.5-lts.1
         version: 1.4.5-lts.2
       music-metadata:
-        specifier: ^11.6.0
-        version: 11.6.0
+        specifier: ^7.14.0
+        version: 7.14.0
       nestjs-command:
         specifier: ^3.1.4
         version: 3.1.5(@nestjs/common@10.4.19(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@10.4.19)(yargs@17.7.2)
@@ -11837,9 +11837,9 @@ packages:
   multipipe@4.0.0:
     resolution: {integrity: sha512-jzcEAzFXoWwWwUbvHCNPwBlTz3WCWe/jPcXSmTfbo/VjRwRTfvLZ/bdvtiTdqCe8d4otCSsPCbhGYcX+eggpKQ==}
 
-  music-metadata@11.6.0:
-    resolution: {integrity: sha512-l7MbWpuGM5GK8gol22L9tou8d/IoFyS8dnsfLbO6cocjlyMwgyLaCIqdwhp4sN1Nzz/Ql/K9kRLvRJDCVKjO3g==}
-    engines: {node: '>=18'}
+  music-metadata@7.14.0:
+    resolution: {integrity: sha512-xrm3w7SV0Wk+OythZcSbaI8mcr/KHd0knJieu8bVpaPfMv/Agz5EooCAPz3OR5hbYMiUG6dgAPKZKnMzV+3amA==}
+    engines: {node: '>=10'}
 
   mustache@4.2.0:
     resolution: {integrity: sha512-71ippSywq5Yb7/tVYyGbkBggbU8H3u5Rz56fH60jGFgr8uHwxs+aSKeqmluIVzM0m0kB7xQjKS6qPfd0b2ZoqQ==}
@@ -31308,16 +31308,15 @@ snapshots:
       duplexer2: 0.1.4
       object-assign: 4.1.1
 
-  music-metadata@11.6.0:
+  music-metadata@7.14.0:
     dependencies:
       '@tokenizer/token': 0.3.0
       content-type: 1.0.5
       debug: 4.4.1(supports-color@5.5.0)
-      file-type: 21.0.0
+      file-type: 16.5.4
       media-typer: 1.1.0
-      strtok3: 10.3.1
-      token-types: 6.0.3
-      uint8array-extras: 1.4.0
+      strtok3: 6.3.0
+      token-types: 4.2.1
     transitivePeerDependencies:
       - supports-color
 
