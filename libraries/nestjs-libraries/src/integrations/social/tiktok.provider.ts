@@ -240,87 +240,108 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     integration: Integration
   ): Promise<PostResponse[]> {
     const [firstPost, ...comments] = postDetails;
+    const maxRetries = 3;
+    let lastError: Error | null = null;
 
-    console.log(firstPost);
-    const {
-      data: { publish_id },
-    } = await (
-      await this.fetch(
-        `https://open.tiktokapis.com/v2/post/publish${this.postingMethod(
-          firstPost.settings.content_posting_method,
-          (firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) === -1
-        )}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json; charset=UTF-8',
-            Authorization: `Bearer ${accessToken}`,
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`TikTok post attempt ${attempt}/${maxRetries}`, firstPost);
+        
+        const {
+          data: { publish_id },
+        } = await (
+          await this.fetch(
+            `https://open.tiktokapis.com/v2/post/publish${this.postingMethod(
+              firstPost.settings.content_posting_method,
+              (firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) === -1
+            )}`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json; charset=UTF-8',
+                Authorization: `Bearer ${accessToken}`,
+              },
+              body: JSON.stringify({
+                ...((firstPost?.settings?.content_posting_method ||
+                  'DIRECT_POST') === 'DIRECT_POST'
+                  ? {
+                      post_info: {
+                        title: firstPost.message,
+                        privacy_level:
+                          firstPost.settings.privacy_level || 'PUBLIC_TO_EVERYONE',
+                        disable_duet: !firstPost.settings.duet || false,
+                        disable_comment: !firstPost.settings.comment || false,
+                        disable_stitch: !firstPost.settings.stitch || false,
+                        brand_content_toggle:
+                          firstPost.settings.brand_content_toggle || false,
+                        brand_organic_toggle:
+                          firstPost.settings.brand_organic_toggle || false,
+                        ...((firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) ===
+                        -1
+                          ? {
+                              auto_add_music:
+                                firstPost.settings.autoAddMusic === 'yes',
+                            }
+                          : {}),
+                      },
+                    }
+                  : {}),
+                ...((firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) > -1
+                  ? {
+                      source_info: {
+                        source: 'PULL_FROM_URL',
+                        video_url: firstPost?.media?.[0]?.path!,
+                        ...(firstPost?.media?.[0]?.thumbnailTimestamp!
+                          ? {
+                              video_cover_timestamp_ms:
+                                firstPost?.media?.[0]?.thumbnailTimestamp!,
+                            }
+                          : {}),
+                      },
+                    }
+                  : {
+                      source_info: {
+                        source: 'PULL_FROM_URL',
+                        photo_cover_index: 0,
+                        photo_images: firstPost.media?.map((p) => p.path),
+                      },
+                      post_mode: 'DIRECT_POST',
+                      media_type: 'PHOTO',
+                    }),
+              }),
+            }
+          )
+        ).json();
+
+        const { url, id: videoId } = await this.uploadedVideoSuccess(
+          integration.profile!,
+          publish_id,
+          accessToken
+        );
+
+        return [
+          {
+            id: firstPost.id,
+            releaseURL: url,
+            postId: String(videoId),
+            status: 'success',
           },
-          body: JSON.stringify({
-            ...((firstPost?.settings?.content_posting_method ||
-              'DIRECT_POST') === 'DIRECT_POST'
-              ? {
-                  post_info: {
-                    title: firstPost.message,
-                    privacy_level:
-                      firstPost.settings.privacy_level || 'PUBLIC_TO_EVERYONE',
-                    disable_duet: !firstPost.settings.duet || false,
-                    disable_comment: !firstPost.settings.comment || false,
-                    disable_stitch: !firstPost.settings.stitch || false,
-                    brand_content_toggle:
-                      firstPost.settings.brand_content_toggle || false,
-                    brand_organic_toggle:
-                      firstPost.settings.brand_organic_toggle || false,
-                    ...((firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) ===
-                    -1
-                      ? {
-                          auto_add_music:
-                            firstPost.settings.autoAddMusic === 'yes',
-                        }
-                      : {}),
-                  },
-                }
-              : {}),
-            ...((firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) > -1
-              ? {
-                  source_info: {
-                    source: 'PULL_FROM_URL',
-                    video_url: firstPost?.media?.[0]?.path!,
-                    ...(firstPost?.media?.[0]?.thumbnailTimestamp!
-                      ? {
-                          video_cover_timestamp_ms:
-                            firstPost?.media?.[0]?.thumbnailTimestamp!,
-                        }
-                      : {}),
-                  },
-                }
-              : {
-                  source_info: {
-                    source: 'PULL_FROM_URL',
-                    photo_cover_index: 0,
-                    photo_images: firstPost.media?.map((p) => p.path),
-                  },
-                  post_mode: 'DIRECT_POST',
-                  media_type: 'PHOTO',
-                }),
-          }),
+        ];
+      } catch (error) {
+        lastError = error as Error;
+        console.log(`TikTok post attempt ${attempt} failed:`, error);
+        
+        // If it's the last attempt, throw the error
+        if (attempt === maxRetries) {
+          throw error;
         }
-      )
-    ).json();
+        
+        // Wait before retrying (exponential backoff)
+        await timer(attempt * 2000);
+      }
+    }
 
-    const { url, id: videoId } = await this.uploadedVideoSuccess(
-      integration.profile!,
-      publish_id,
-      accessToken
-    );
-
-    return [
-      {
-        id: firstPost.id,
-        releaseURL: url,
-        postId: String(videoId),
-        status: 'success',
-      },
-    ];
+    // This should never be reached, but just in case
+    throw lastError || new Error('TikTok post failed after all retries');
   }
 }
