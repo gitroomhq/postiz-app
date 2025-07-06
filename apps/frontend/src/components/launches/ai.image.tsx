@@ -98,7 +98,7 @@ ${type}
             </svg>
           </div>
           <div className="text-[12px] font-[500] !text-current">
-            {t('ai', 'AI')}
+            {t('ai', 'AI')} Image
           </div>
         </div>
       </Button>

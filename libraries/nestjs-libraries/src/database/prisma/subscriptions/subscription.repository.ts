@@ -201,11 +201,12 @@ export class SubscriptionRepository {
     });
   }
 
-  async getCreditsFrom(organizationId: string, from: dayjs.Dayjs) {
+  async getCreditsFrom(organizationId: string, from: dayjs.Dayjs, type = 'ai_images') {
     const load = await this._credits.model.credits.groupBy({
       by: ['organizationId'],
       where: {
         organizationId,
+        type,
         createdAt: {
           gte: from.toDate(),
         },
@@ -218,11 +219,12 @@ export class SubscriptionRepository {
     return load?.[0]?._sum?.credits || 0;
   }
 
-  useCredit(org: Organization) {
+  useCredit(org: Organization, type = 'ai_images') {
     return this._credits.model.credits.create({
       data: {
         organizationId: org.id,
         credits: 1,
+        type,
       },
     });
   }

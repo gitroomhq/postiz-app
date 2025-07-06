@@ -21,8 +21,8 @@ export class SubscriptionService {
     );
   }
 
-  useCredit(organization: Organization) {
-    return this._subscriptionRepository.useCredit(organization);
+  useCredit(organization: Organization, type = 'ai_images') {
+    return this._subscriptionRepository.useCredit(organization, type);
   }
 
   getCode(code: string) {
@@ -189,7 +189,7 @@ export class SubscriptionService {
     return this._subscriptionRepository.getSubscription(organizationId);
   }
 
-  async checkCredits(organization: Organization) {
+  async checkCredits(organization: Organization, checkType = 'ai_images') {
     // @ts-ignore
     const type = organization?.subscription?.subscriptionTier || 'FREE';
 
@@ -204,11 +204,12 @@ export class SubscriptionService {
     }
 
     const checkFromMonth = date.subtract(1, 'month');
-    const imageGenerationCount = pricing[type].image_generation_count;
+    const imageGenerationCount = checkType === 'ai_images' ? pricing[type].image_generation_count : pricing[type].generate_videos
 
     const totalUse = await this._subscriptionRepository.getCreditsFrom(
       organization.id,
-      checkFromMonth
+      checkFromMonth,
+      checkType
     );
 
     return {

@@ -32,6 +32,7 @@ import { ThirdPartyMedia } from '@gitroom/frontend/components/third-parties/thir
 import { ReactSortable } from 'react-sortablejs';
 import { useMediaSettings } from '@gitroom/frontend/components/launches/helpers/media.settings.component';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
+import { AiVideo } from '@gitroom/frontend/components/launches/ai.video';
 const Polonto = dynamic(
   () => import('@gitroom/frontend/components/launches/polonto')
 );
@@ -710,7 +711,10 @@ export const MultiMediaComponent: FC<{
               <ThirdPartyMedia allData={allData} onChange={changeMedia} />
 
               {!!user?.tier?.ai && (
-                <AiImage value={text} onChange={changeMedia} />
+                <>
+                  <AiImage value={text} onChange={changeMedia} />
+                  <AiVideo value={text} onChange={changeMedia} />
+                </>
               )}
             </div>
           </div>

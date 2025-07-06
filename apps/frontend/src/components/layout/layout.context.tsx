@@ -96,8 +96,9 @@ function LayoutContextInner(params: { children: ReactNode }) {
           )
         ) {
           window.open('/billing', '_blank');
+          return false;
         }
-        return false;
+        return true;
       }
       return true;
     },

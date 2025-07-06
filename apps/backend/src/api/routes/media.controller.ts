@@ -23,6 +23,7 @@ import { CustomFileValidationPipe } from '@gitroom/nestjs-libraries/upload/custo
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/save.media.information.dto';
+import { VideoDto } from '@gitroom/nestjs-libraries/dtos/videos/video.dto';
 
 @ApiTags('Media')
 @Controller('/media')
@@ -108,10 +109,7 @@ export class MediaController {
     @GetOrgFromRequest() org: Organization,
     @Body() body: SaveMediaInformationDto
   ) {
-    return this._mediaService.saveMediaInformation(
-      org.id,
-      body
-    );
+    return this._mediaService.saveMediaInformation(org.id, body);
   }
 
   @Post('/upload-simple')
@@ -166,5 +164,28 @@ export class MediaController {
     @Query('page') page: number
   ) {
     return this._mediaService.getMedia(org.id, page);
+  }
+
+  @Get('/video-options')
+  getVideos() {
+    return this._mediaService.getVideoOptions();
+  }
+
+  @Post('/video/:identifier/:function')
+  videoFunction(
+    @Param('identifier') identifier: string,
+    @Param('function') functionName: string,
+    @Body('params') body: any
+  ) {
+    return this._mediaService.videoFunction(identifier, functionName, body);
+  }
+
+  @Post('/generate-video/:type')
+  generateVideo(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: VideoDto,
+    @Param('type') type: string
+  ) {
+    return this._mediaService.generateVideo(org, body, type);
   }
 }
