@@ -1,5 +1,5 @@
 {
-  "name": "postiz",
+  "name": "@postiz/node",
   "version": "1.0.0",
   "description": "The Ultimate social media scheduling tool",
   "main": "dist/index.js",
