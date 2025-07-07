@@ -1,0 +1,19 @@
+{
+  "name": "postiz",
+  "version": "1.0.0",
+  "description": "The Ultimate social media scheduling tool",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "publish": "tsup && pnpm publish --access public"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "your",
+    "keywords"
+  ],
+  "author": "Your Name",
+  "license": "AGPL-3.0"
+}

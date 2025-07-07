@@ -5,5 +5,5 @@ export class XDto {
   @Matches(/^(https:\/\/x\.com\/i\/communities\/\d+)?$/, {
     message: 'Invalid X community URL. It should be in the format: https://x.com/i/communities/1493446837214187523',
   })
-  community: string;
+  community?: string;
 }
