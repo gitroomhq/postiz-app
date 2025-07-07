@@ -11,6 +11,9 @@ export class MonthlyReportService {
 		private _youtubeInsightsRepository: PrismaRepository<'youTubeInsight'>,
 		private _facebookInsightsRepository: PrismaRepository<'facebookInsight'>,
 		private _linkedInInsightsRepository: PrismaRepository<'linkedInInsight'>,
+		private _gbpInsightsRepository: PrismaRepository<'gbpInsight'>,
+		private _websitePerformanceRepo: PrismaRepository<'websitePerformance'>,
+		private _websiteLocationRepo: PrismaRepository<'websiteLocation'>,
 		private _prisma: PrismaRepository<'customer'>,
 	) { }
 
@@ -573,6 +576,347 @@ export class MonthlyReportService {
 
 		if (platform === 'Facebook') return `${changeText} New Likes`;
 		return `${changeText} New Followers`;
+	}
+
+	// Add these methods to the MonthlyReportService class in monthly-report.service.ts
+
+	// GBP Methods
+	async getGBPPerformanceReport(customerId: string, month: number, year: number) {
+		try {
+			// Monthly data for table
+			const monthlyData = await this.getDataForMonths(
+				this._gbpInsightsRepository.model.gbpInsight,
+				customerId,
+				month,
+				year,
+				['impressionsMaps', 'impressionsSearch', 'websiteClicks', 'phoneClicks', 'directionRequests']
+			);
+
+			// Daily data for chart
+			const dailyData = await this.getDailyDataForMonth(
+				this._gbpInsightsRepository.model.gbpInsight,
+				customerId,
+				month,
+				year,
+				['impressionsMaps', 'impressionsSearch', 'websiteClicks', 'phoneClicks', 'directionRequests']
+			);
+
+			if (!monthlyData.length) return null;
+
+			return {
+				table: this.buildGBPPerformanceTable(monthlyData),
+				chart: dailyData.map(item => ({
+					date: item.date,
+					maps: item.impressionsMaps || 0,
+					search: item.impressionsSearch || 0,
+					totalImpressions: (item.impressionsMaps || 0) + (item.impressionsSearch || 0)
+				}))
+			};
+		} catch (error) {
+			console.error('GBP Performance Error:', error);
+			return null;
+		}
+	}
+
+	async getGBPEngagementReport(customerId: string, month: number, year: number) {
+		try {
+			// Monthly data for table
+			const monthlyData = await this.getDataForMonths(
+				this._gbpInsightsRepository.model.gbpInsight,
+				customerId,
+				month,
+				year,
+				['websiteClicks', 'phoneClicks', 'directionRequests']
+			);
+
+			// Daily data for chart
+			const dailyData = await this.getDailyDataForMonth(
+				this._gbpInsightsRepository.model.gbpInsight,
+				customerId,
+				month,
+				year,
+				['websiteClicks', 'phoneClicks', 'directionRequests']
+			);
+
+			if (!monthlyData.length) return null;
+
+			return {
+				table: this.buildGBPEngagementTable(monthlyData),
+				chart: dailyData.map(item => ({
+					date: item.date,
+					website: item.websiteClicks || 0,
+					phone: item.phoneClicks || 0,
+					directions: item.directionRequests || 0,
+					totalEngagement: (item.websiteClicks || 0) + (item.phoneClicks || 0) + (item.directionRequests || 0)
+				}))
+			};
+		} catch (error) {
+			console.error('GBP Engagement Error:', error);
+			return null;
+		}
+	}
+
+	async getGBPReviewsReport(customerId: string, month: number, year: number) {
+		try {
+			// Monthly data for table
+			const monthlyData = await this.getDataForMonths(
+				this._gbpInsightsRepository.model.gbpInsight,
+				customerId,
+				month,
+				year,
+				['avgRating', 'totalReviews']
+			);
+
+			// Daily data for chart
+			const dailyData = await this.getDailyDataForMonth(
+				this._gbpInsightsRepository.model.gbpInsight,
+				customerId,
+				month,
+				year,
+				['avgRating', 'totalReviews']
+			);
+
+			if (!monthlyData.length) return null;
+
+			return {
+				table: this.buildGBPReviewsTable(monthlyData),
+				chart: dailyData.map(item => ({
+					date: item.date,
+					rating: item.avgRating || 0,
+					reviews: item.totalReviews || 0
+				}))
+			};
+		} catch (error) {
+			console.error('GBP Reviews Error:', error);
+			return null;
+		}
+	}
+
+	private buildGBPPerformanceTable(insights: any[]) {
+		const months = insights.map(i => format(new Date(i.createdAt), 'MMM').toUpperCase());
+
+		const calculateChange = (values: number[]) => {
+			if (values.length < 2) return 'N/A';
+			const first = values[0];
+			const last = values[values.length - 1];
+			if (first === 0) return last === 0 ? '0%' : 'N/A';
+			const change = ((last - first) / first) * 100;
+			return `${change.toFixed(2)}%`;
+		};
+
+		const headers = ['Data', ...months, 'Change %'];
+		const rows = [];
+
+		const mapsImpressions = insights.map(i => parseInt(i.impressionsMaps) || 0);
+		const searchImpressions = insights.map(i => parseInt(i.impressionsSearch) || 0);
+		const totalImpressions = insights.map((_, i) => mapsImpressions[i] + searchImpressions[i]);
+
+		rows.push(
+			['Maps Impressions', ...mapsImpressions.map(String), calculateChange(mapsImpressions)],
+			['Search Impressions', ...searchImpressions.map(String), calculateChange(searchImpressions)],
+			['Total Impressions', ...totalImpressions.map(String), calculateChange(totalImpressions)]
+		);
+
+		return {
+			Data: headers,
+			Rows: rows
+		};
+	}
+
+	private buildGBPEngagementTable(insights: any[]) {
+		const months = insights.map(i => format(new Date(i.createdAt), 'MMM').toUpperCase());
+
+		const calculateChange = (values: number[]) => {
+			if (values.length < 2) return 'N/A';
+			const first = values[0];
+			const last = values[values.length - 1];
+			if (first === 0) return last === 0 ? '0%' : 'N/A';
+			const change = ((last - first) / first) * 100;
+			return `${change.toFixed(2)}%`;
+		};
+
+		const headers = ['Data', ...months, 'Change %'];
+		const rows = [];
+
+		const websiteClicks = insights.map(i => parseInt(i.websiteClicks) || 0);
+		const phoneClicks = insights.map(i => parseInt(i.phoneClicks) || 0);
+		const directions = insights.map(i => parseInt(i.directionRequests) || 0);
+		const totalEngagement = insights.map((_, i) => websiteClicks[i] + phoneClicks[i] + directions[i]);
+
+		rows.push(
+			['Website Clicks', ...websiteClicks.map(String), calculateChange(websiteClicks)],
+			['Phone Calls', ...phoneClicks.map(String), calculateChange(phoneClicks)],
+			['Directions', ...directions.map(String), calculateChange(directions)],
+			['Total Engagement', ...totalEngagement.map(String), calculateChange(totalEngagement)]
+		);
+
+		return {
+			Data: headers,
+			Rows: rows
+		};
+	}
+
+	private buildGBPReviewsTable(insights: any[]) {
+		const months = insights.map(i => format(new Date(i.createdAt), 'MMM').toUpperCase());
+
+		const calculateChange = (values: number[]) => {
+			if (values.length < 2) return 'N/A';
+			const first = values[0];
+			const last = values[values.length - 1];
+			if (first === 0) return last === 0 ? '0%' : 'N/A';
+			const change = ((last - first) / first) * 100;
+			return `${change.toFixed(2)}%`;
+		};
+
+		const headers = ['Data', ...months, 'Change %'];
+		const rows = [];
+
+		const ratings = insights.map(i => parseFloat(i.avgRating) || 0);
+		const reviews = insights.map(i => parseInt(i.totalReviews) || 0);
+
+		rows.push(
+			['Average Rating', ...ratings.map(r => r.toFixed(2)), calculateChange(ratings)],
+			['Total Reviews', ...reviews.map(String), calculateChange(reviews)]
+		);
+
+		return {
+			Data: headers,
+			Rows: rows
+		};
+	}
+
+	// Website Methods
+	async getWebsitePerformanceReport(customerId: string, month: number, year: number) {
+		try {
+			// Monthly data for table
+			const monthlyData = await this.getDataForMonths(
+				this._websitePerformanceRepo.model.websitePerformance,
+				customerId,
+				month,
+				year,
+				['pageViews', 'visits', 'visitors']
+			);
+
+			// Daily data for chart
+			const dailyData = await this.getDailyDataForMonth(
+				this._websitePerformanceRepo.model.websitePerformance,
+				customerId,
+				month,
+				year,
+				['pageViews', 'visits', 'visitors']
+			);
+
+			if (!monthlyData.length) return null;
+
+			return {
+				table: this.buildWebsitePerformanceTable(monthlyData),
+				chart: dailyData.map(item => ({
+					date: item.date,
+					pageViews: item.pageViews || 0,
+					visits: item.visits || 0,
+					visitors: item.visitors || 0
+				}))
+			};
+		} catch (error) {
+			console.error('Website Performance Error:', error);
+			return null;
+		}
+	}
+
+	async getWebsiteLocationsReport(customerId: string, month: number, year: number) {
+		try {
+			const { startDate, endDate } = this.getMonthDateRange(month, year);
+
+			// Get location data for the month
+			const locations = await this._websiteLocationRepo.model.websiteLocation.findMany({
+				where: {
+					customerId,
+					createdAt: {
+						gte: startDate,
+						lte: endDate
+					},
+					rank: { lte: 10 } // Top 10 locations
+				},
+				orderBy: [
+					{ rank: 'asc' },
+					{ visitors: 'desc' }
+				]
+			});
+
+			if (!locations.length) return null;
+
+			// Group by country and sum visitors
+			const countryMap = new Map<string, number>();
+			locations.forEach(loc => {
+				const current = countryMap.get(loc.country) || 0;
+				countryMap.set(loc.country, current + (loc.visitors || 0));
+			});
+
+			// Sort by visitors descending
+			const sortedCountries = Array.from(countryMap.entries())
+				.sort((a, b) => b[1] - a[1])
+				.slice(0, 5); // Top 5 countries
+
+			// Calculate total visitors for percentage calculation
+			const totalVisitors = sortedCountries.reduce((sum, [, visitors]) => sum + visitors, 0);
+
+			// Prepare table data
+			const headers = ['Country', 'Visitors', 'Percentage'];
+			const rows = sortedCountries.map(([country, visitors]) => [
+				country,
+				visitors.toString(),
+				`${((visitors / totalVisitors) * 100).toFixed(2)}%`
+			]);
+
+			// Prepare chart data
+			const chartData = sortedCountries.map(([country, visitors]) => ({
+				country,
+				visitors,
+				percent: (visitors / totalVisitors) * 100
+			}));
+
+			return {
+				table: {
+					Data: headers,
+					Rows: rows
+				},
+				chart: chartData
+			};
+		} catch (error) {
+			console.error('Website Locations Error:', error);
+			return null;
+		}
+	}
+
+	private buildWebsitePerformanceTable(insights: any[]) {
+		const months = insights.map(i => format(new Date(i.createdAt), 'MMM').toUpperCase());
+
+		const calculateChange = (values: number[]) => {
+			if (values.length < 2) return 'N/A';
+			const first = values[0];
+			const last = values[values.length - 1];
+			if (first === 0) return last === 0 ? '0%' : 'N/A';
+			const change = ((last - first) / first) * 100;
+			return `${change.toFixed(2)}%`;
+		};
+
+		const headers = ['Data', ...months, 'Change %'];
+		const rows = [];
+
+		const pageViews = insights.map(i => parseInt(i.pageViews) || 0);
+		const visits = insights.map(i => parseInt(i.visits) || 0);
+		const visitors = insights.map(i => parseInt(i.visitors) || 0);
+
+		rows.push(
+			['Page Views', ...pageViews.map(String), calculateChange(pageViews)],
+			['Visits', ...visits.map(String), calculateChange(visits)],
+			['Visitors', ...visitors.map(String), calculateChange(visitors)]
+		);
+
+		return {
+			Data: headers,
+			Rows: rows
+		};
 	}
 
 	private kFormatter(num: number): string {
