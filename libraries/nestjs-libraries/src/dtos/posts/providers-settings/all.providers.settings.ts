@@ -14,16 +14,31 @@ import { InstagramDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-set
 import { LinkedinDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/linkedin.dto';
 import { IsIn, MinLength } from 'class-validator';
 
+export type ProviderExtension<T extends string, M> = { type: T } & M;
 export type AllProvidersSettings =
-  | DevToSettingsDto
-  | MediumSettingsDto
-  | HashnodeSettingsDto
-  | RedditSettingsDto
-  | YoutubeSettingsDto
-  | PinterestSettingsDto
-  | XDto
-  | TikTokDto
-  | InstagramDto;
+  | ProviderExtension<'reddit', RedditSettingsDto>
+  | ProviderExtension<'lemmy', LemmySettingsDto>
+  | ProviderExtension<'youtube', YoutubeSettingsDto>
+  | ProviderExtension<'pinterest', PinterestSettingsDto>
+  | ProviderExtension<'dribbble', DribbbleDto>
+  | ProviderExtension<'tiktok', TikTokDto>
+  | ProviderExtension<'discord', DiscordDto>
+  | ProviderExtension<'slack', SlackDto>
+  | ProviderExtension<'x', XDto>
+  | ProviderExtension<'linkedin', LinkedinDto>
+  | ProviderExtension<'linkedin-page', LinkedinDto>
+  | ProviderExtension<'instagram', InstagramDto>
+  | ProviderExtension<'instagram-standalone', InstagramDto>
+  | ProviderExtension<'facebook', None>
+  | ProviderExtension<'threads', None>
+  | ProviderExtension<'mastodon', None>
+  | ProviderExtension<'bluesky', None>
+  | ProviderExtension<'wrapcast', None>
+  | ProviderExtension<'telegram', None>
+  | ProviderExtension<'nostr', None>
+  | ProviderExtension<'vk', None>;
+
+type None = NonNullable<unknown>;
 
 export const allProviders = (setEmpty?: any) => {
   return [
