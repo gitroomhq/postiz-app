@@ -1,6 +1,3 @@
-import { DevToSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dev.to.settings.dto';
-import { MediumSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/medium.settings.dto';
-import { HashnodeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/hashnode.settings.dto';
 import { RedditSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/reddit.dto';
 import { PinterestSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/pinterest.dto';
 import { YoutubeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/youtube.settings.dto';
@@ -12,9 +9,9 @@ import { DiscordDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-setti
 import { SlackDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/slack.dto';
 import { InstagramDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/instagram.dto';
 import { LinkedinDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/linkedin.dto';
-import { IsIn, MinLength } from 'class-validator';
+import { IsIn } from 'class-validator';
 
-export type ProviderExtension<T extends string, M> = { type: T } & M;
+export type ProviderExtension<T extends string, M> = { __type: T } & M;
 export type AllProvidersSettings =
   | ProviderExtension<'reddit', RedditSettingsDto>
   | ProviderExtension<'lemmy', LemmySettingsDto>

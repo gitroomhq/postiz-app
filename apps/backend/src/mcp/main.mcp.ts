@@ -94,7 +94,7 @@ export class MainMcp {
             }))
           ),
           settings: {
-            type: 'any',
+            __type: 'any',
           },
           integration: {
             id: obj.providerId,
