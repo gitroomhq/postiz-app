@@ -390,6 +390,9 @@ importers:
       p-limit:
         specifier: ^3.1.0
         version: 3.1.0
+      p-throttle:
+        specifier: 4.1.1
+        version: 4.1.1
       polotno:
         specifier: ^2.10.5
         version: 2.25.1(@types/react@18.3.1)(@types/sortablejs@1.15.8)(react-dom@18.3.1(react@18.3.1))(react-native@0.80.1(@babel/core@7.28.0)(@types/react@18.3.1)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@5.0.10))(react@18.3.1)
@@ -12366,6 +12369,10 @@ packages:
   p-retry@6.2.1:
     resolution: {integrity: sha512-hEt02O4hUct5wtwg4H4KcWgDdm+l1bOaEy/hWzd8xtXB9BqxTWBBhb+2ImAtH4Cv4rPjV76xN3Zumqk3k3AhhQ==}
     engines: {node: '>=16.17'}
+
+  p-throttle@4.1.1:
+    resolution: {integrity: sha512-TuU8Ato+pRTPJoDzYD4s7ocJYcNSEZRvlxoq3hcPI2kZDZ49IQ1Wkj7/gDJc3X7XiEAAvRGtDzdXJI0tC3IL1g==}
+    engines: {node: '>=10'}
 
   p-timeout@3.2.0:
     resolution: {integrity: sha512-rhIwUycgwwKcP9yTOOFK/AKsAopjjCakVqLHePO3CC6Mir1Z99xT+R63jZxAT5lFZLa2inS5h+ZS2GvR99/FBg==}
@@ -31943,6 +31950,8 @@ snapshots:
       '@types/retry': 0.12.2
       is-network-error: 1.1.0
       retry: 0.13.1
+
+  p-throttle@4.1.1: {}
 
   p-timeout@3.2.0:
     dependencies:
