@@ -44,6 +44,9 @@ const clientAndYoutube = () => {
 };
 
 export class YoutubeProvider extends SocialAbstract implements SocialProvider {
+  available = !!(
+    process.env.YOUTUBE_CLIENT_ID && process.env.YOUTUBE_CLIENT_SECRET
+  );
   identifier = 'youtube';
   name = 'YouTube';
   isBetweenSteps = false;

@@ -14,6 +14,9 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import { Integration } from '@prisma/client';
 
 export class TiktokProvider extends SocialAbstract implements SocialProvider {
+  available = !!(
+    process.env.TIKTOK_CLIENT_ID && process.env.TIKTOK_CLIENT_SECRET
+  );
   identifier = 'tiktok';
   name = 'Tiktok';
   isBetweenSteps = false;
