@@ -17,8 +17,8 @@ import { FalService } from '@gitroom/nestjs-libraries/openai/fal.service';
 const limit = pLimit(2);
 
 const transloadit = new Transloadit({
-  authKey: process.env.TRANSLOADIT_AUTH,
-  authSecret: process.env.TRANSLOADIT_SECRET,
+  authKey: process.env.TRANSLOADIT_AUTH || 'just empty text',
+  authSecret: process.env.TRANSLOADIT_SECRET || 'just empty text',
 });
 
 async function getAudioDuration(buffer: Buffer): Promise<number> {
