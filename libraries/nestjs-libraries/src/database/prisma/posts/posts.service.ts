@@ -948,8 +948,7 @@ export class PostsService {
                 id: integration.id,
               },
               settings: {
-                __type: integration.providerIdentifier as 'any',
-                subtitle: '',
+                __type: integration.providerIdentifier as any,
                 title: '',
                 tags: [],
                 subreddit: [],

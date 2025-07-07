@@ -262,8 +262,7 @@ export class AutopostService {
       tags: [],
       posts: state.integrations.map((i) => ({
         settings: {
-          __type: i.providerIdentifier as 'any',
-          subtitle: '',
+          __type: i.providerIdentifier as any,
           title: '',
           tags: [],
           subreddit: [],
