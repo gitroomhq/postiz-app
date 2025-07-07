@@ -1,6 +1,6 @@
 # Postiz NodeJS SDK
 
-This is the NodeJS SDK for Postiz.
+This is the NodeJS SDK for [Postiz](https://postiz.com).
 
 You can start by installing the package:
 
