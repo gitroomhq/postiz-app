@@ -260,7 +260,7 @@ export class InstagramProvider
               `https://${type}/v20.0/${photoId}?access_token=${accessToken}&fields=status_code`
             )
           ).json();
-          await timer(3000);
+          await timer(10000);
           status = status_code;
         }
         console.log('in progress3');
@@ -320,7 +320,7 @@ export class InstagramProvider
             `https://${type}/v20.0/${containerId}?fields=status_code&access_token=${accessToken}`
           )
         ).json();
-        await timer(3000);
+        await timer(10000);
         status = status_code;
       }
 

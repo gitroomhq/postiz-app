@@ -1,4 +1,5 @@
 import { timer } from '@gitroom/helpers/utils/timer';
+import pThrottle from 'p-throttle';
 
 export class RefreshToken {
   constructor(
@@ -19,15 +20,24 @@ export class NotEnoughScopes {
   constructor(public message = 'Not enough scopes') {}
 }
 
+const pThrottleInstance = pThrottle({
+  limit: 1,
+  interval: 2000
+});
+
 export abstract class SocialAbstract {
+  private fetchInstance = pThrottleInstance(
+    (url: RequestInfo, options?: RequestInit) => fetch(url, options)
+  );
+
   async fetch(
     url: string,
     options: RequestInit = {},
     identifier = '',
     totalRetries = 0
   ): Promise<Response> {
-    const request = await fetch(url, options);
-``
+    const request = await this.fetchInstance(url, options);
+
     if (request.status === 200 || request.status === 201) {
       return request;
     }
