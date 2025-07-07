@@ -262,6 +262,7 @@ export class AutopostService {
       tags: [],
       posts: state.integrations.map((i) => ({
         settings: {
+          type: i.providerIdentifier as 'any',
           subtitle: '',
           title: '',
           tags: [],

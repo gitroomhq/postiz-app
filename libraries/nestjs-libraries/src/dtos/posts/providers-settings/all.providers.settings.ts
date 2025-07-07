@@ -36,7 +36,8 @@ export type AllProvidersSettings =
   | ProviderExtension<'wrapcast', None>
   | ProviderExtension<'telegram', None>
   | ProviderExtension<'nostr', None>
-  | ProviderExtension<'vk', None>;
+  | ProviderExtension<'vk', None>
+  | ProviderExtension<'any', any>;
 
 type None = NonNullable<unknown>;
 

@@ -83,7 +83,7 @@ export class CreatePostDto {
 
   @IsOptional()
   @IsString()
-  order: string;
+  order?: string;
 
   @IsDefined()
   @IsBoolean()

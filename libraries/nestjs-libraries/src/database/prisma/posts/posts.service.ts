@@ -948,6 +948,7 @@ export class PostsService {
                 id: integration.id,
               },
               settings: {
+                type: integration.providerIdentifier as 'any',
                 subtitle: '',
                 title: '',
                 tags: [],
