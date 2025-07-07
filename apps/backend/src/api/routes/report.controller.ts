@@ -117,23 +117,7 @@ export class ReportController {
   ) {
     return this.reportService.deleteFacebookInsight(id);
   }
-  ////////////////////////////////////////////////////////////////////////////
 
-  @Get('threads/growth')
-  getThreadsGrowthReport(
-    @Query('accountId') accountId: string,
-    @Query('months') months: number = 3
-  ) {
-    return this.reportService.getThreadsGrowthReport(accountId, months);
-  }
-
-  @Get('threads/performance')
-  getThreadsPerformanceReport(
-    @Query('accountId') accountId: string,
-    @Query('months') months: number = 3
-  ) {
-    return this.reportService.getThreadsPerformanceReport(accountId, months);
-  }
   /////////////////////////////////////////////////////////////////////////////////////
   // Update controller methods to use accountId
   @Get('linkedin/overview')
@@ -209,4 +193,40 @@ export class ReportController {
     if (!businessId) throw new Error('businessId is required');
     return this.reportService.getWebsiteLocationsReport(businessId, days);
   }
+  /////////////////////////////////////////////////////////////////////////////////////
+
+  @Get('pinterest/community')
+  getPinterestCommunityReport(
+    @Query('businessId') businessId: string,
+    @Query('days') days: string | '7' | '30' | '90' = '30'
+  ) {
+    return this.reportService.getPinterestCommunityReport(businessId, days);
+  }
+
+  @Get('pinterest/overview')
+  getPinterestOverviewReport(
+    @Query('businessId') businessId: string,
+    @Query('days') days: string | '7' | '30' | '90' = '30'
+  ) {
+    return this.reportService.getPinterestOverviewReport(businessId, days);
+  }
+
+  
+/////////////////////////////////////////////////////////////////////////////////////
+  @Get('threads/growth')
+  getThreadsGrowthReport(
+    @Query('businessId') businessId: string,
+    @Query('days') days: string | '7' | '30' | '90' = '30'
+  ) {
+    return this.reportService.getThreadsGrowthReport(businessId, days);
+  }
+
+  @Get('threads/overview')
+  getThreadsOverviewReport(
+    @Query('businessId') businessId: string,
+    @Query('days') days: string | '7' | '30' | '90' = '30'
+  ) {
+    return this.reportService.getThreadsOverviewReport(businessId, days);
+  }
+
 }

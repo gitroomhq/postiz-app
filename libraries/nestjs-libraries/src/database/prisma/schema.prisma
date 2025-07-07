@@ -259,6 +259,8 @@ model Customer {
   gbpInsights      GbpInsight[]
   websitePerformances  WebsitePerformance[]
   websiteLocations  WebsiteLocation[]
+  pinterestPostPerformances PinterestPostPerformance[]
+  threadsInsights ThreadsInsight[]
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
   deletedAt        DateTime?
@@ -553,17 +555,21 @@ model InstagramInsight {
 
 // Add to schema.prisma
 model ThreadsInsight {
-  id             String   @id @default(uuid())
-  accountId      String // Threads account ID
+  id             String    @id @default(uuid()) @db.Uuid
+  businessId     String
   organizationId String
+  customerId     String?   
+  customer       Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
   month          String
   followers      Int
-  posts          Int
-  engagement     Float // Engagement rate percentage
-  interactions   Int // Total likes/replies/reposts
+  totalContent   Int
+  engagement     Float
+  interactions   Int
   impressions    Int
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @db.Timestamptz(6)
+
+  @@index([customerId])
 }
 
 model LinkedInInsight {
@@ -688,6 +694,23 @@ model WebsiteLocation {
   rank           Int      
   createdAt      DateTime @default(now()) @db.Timestamptz(6)
   updatedAt      DateTime @updatedAt @db.Timestamptz(6)
+
+  @@index([customerId])
+}
+
+model PinterestPostPerformance {
+  id             String    @id @default(uuid()) @db.Uuid
+  businessId     String
+  organizationId String
+  customerId     String?   
+  customer       Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  month          String
+  followers      Int       
+  following      Int       
+  impressions    Int
+  totalContent   Int
+  createdAt      DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @db.Timestamptz(6)
 
   @@index([customerId])
 }

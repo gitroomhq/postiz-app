@@ -1,6 +1,8 @@
 import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
 import { subDays, format } from 'date-fns';
+import { parse, getMonth } from 'date-fns';
+import { parseISO, compareAsc } from 'date-fns';
 
 @Injectable()
 export class ReportService {
@@ -9,12 +11,12 @@ export class ReportService {
     private _xInsightsRepository: PrismaRepository<'xInsight'>,
     private _youtubeInsightsRepository: PrismaRepository<'youTubeInsight'>,
     private _facebookInsightsRepository: PrismaRepository<'facebookInsight'>,
-    private _threadsInsightsRepository: PrismaRepository<'threadsInsight'>,
     private _linkedInInsightsRepository: PrismaRepository<'linkedInInsight'>,
     private _gbpInsightsRepository: PrismaRepository<'gbpInsight'>,
     private _websitePerformanceRepo: PrismaRepository<'websitePerformance'>,
     private _websiteLocationRepo: PrismaRepository<'websiteLocation'>,
-
+    private _pinterestPostPerformanceRepo: PrismaRepository<'pinterestPostPerformance'>,
+    private _threadsInsightRepo: PrismaRepository<'threadsInsight'>,
   ) { }
 
   async getInstagramCommunityReport(businessId: string, days: string) {
@@ -589,130 +591,6 @@ export class ReportService {
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  async getThreadsGrowthReport(accountId: string, months: number) {
-    const date = new Date();
-    date.setMonth(date.getMonth() - months);
-
-    const insights = await this._threadsInsightsRepository.model.threadsInsight.findMany({
-      where: {
-        accountId,
-        createdAt: {
-          gte: date
-        }
-      },
-      orderBy: {
-        createdAt: 'asc'
-      }
-    });
-
-    // Group by month
-    const monthGroups = new Map<string, { followers: number; posts: number }>();
-
-    for (const record of insights) {
-      if (!monthGroups.has(record.month)) {
-        monthGroups.set(record.month, {
-          followers: record.followers,
-          posts: record.posts
-        });
-      }
-    }
-
-    const sortedMonths = [...monthGroups.entries()].sort();
-    const monthNames = sortedMonths.map(([month]) => format(new Date(`${month}-01`), 'MMMM'));
-
-    const followers = sortedMonths.map(([, data]) => data.followers.toString());
-    const posts = sortedMonths.map(([, data]) => data.posts.toString());
-
-    // Calculate changes
-    let followersChange = '0%';
-    let postsChange = '0%';
-
-    if (sortedMonths.length >= 2) {
-      const last = sortedMonths[sortedMonths.length - 1][1];
-      const prev = sortedMonths[sortedMonths.length - 2][1];
-
-      followersChange = this.getPercentageChange(prev.followers, last.followers).toFixed(2) + '%';
-      postsChange = this.getPercentageChange(prev.posts, last.posts).toFixed(2) + '%';
-    }
-
-    return {
-      table: {
-        Data: [...monthNames, 'Change %'],
-        Followers: [...followers, followersChange],
-        Posts: [...posts, postsChange]
-      }
-    };
-  }
-
-  async getThreadsPerformanceReport(accountId: string, months: number) {
-    const date = new Date();
-    date.setMonth(date.getMonth() - months);
-
-    const insights = await this._threadsInsightsRepository.model.threadsInsight.findMany({
-      where: {
-        accountId,
-        createdAt: {
-          gte: date
-        }
-      },
-      orderBy: {
-        createdAt: 'asc'
-      }
-    });
-
-    // Group by month
-    const monthGroups = new Map<string, {
-      engagement: number;
-      interactions: number;
-      impressions: number;
-      posts: number
-    }>();
-
-    for (const record of insights) {
-      if (!monthGroups.has(record.month)) {
-        monthGroups.set(record.month, {
-          engagement: record.engagement,
-          interactions: record.interactions,
-          impressions: record.impressions,
-          posts: record.posts
-        });
-      }
-    }
-
-    const sortedMonths = [...monthGroups.entries()].sort();
-    const monthNames = sortedMonths.map(([month]) => format(new Date(`${month}-01`), 'MMMM'));
-
-    const engagement = sortedMonths.map(([, data]) => data.engagement.toFixed(2));
-    const interactions = sortedMonths.map(([, data]) => data.interactions.toString());
-    const impressions = sortedMonths.map(([, data]) => data.impressions.toString());
-    const posts = sortedMonths.map(([, data]) => data.posts.toString());
-
-    // Calculate changes
-    let engagementChange = '0%';
-    let interactionsChange = '0%';
-    let impressionsChange = '0%';
-    let postsChange = '0%';
-
-    if (sortedMonths.length >= 2) {
-      const last = sortedMonths[sortedMonths.length - 1][1];
-      const prev = sortedMonths[sortedMonths.length - 2][1];
-
-      engagementChange = this.getPercentageChange(prev.engagement, last.engagement).toFixed(2) + '%';
-      interactionsChange = this.getPercentageChange(prev.interactions, last.interactions).toFixed(2) + '%';
-      impressionsChange = this.getPercentageChange(prev.impressions, last.impressions).toFixed(2) + '%';
-      postsChange = this.getPercentageChange(prev.posts, last.posts).toFixed(2) + '%';
-    }
-
-    return {
-      table: {
-        Data: [...monthNames, 'Change %'],
-        Engagement: [...engagement, engagementChange],
-        Interactions: [...interactions, interactionsChange],
-        Impressions: [...impressions, impressionsChange],
-        Posts: [...posts, postsChange]
-      }
-    };
-  }
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -867,6 +745,127 @@ export class ReportService {
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+async getThreadsGrowthReport(businessId: string, days: string) {
+  const range = parseInt(days || '30', 10);
+  const today = new Date();
+  const startDate = subDays(today, range);
+
+  const insights = await this._threadsInsightRepo.model.threadsInsight.findMany({
+    where: { businessId, createdAt: { gte: startDate, lte: today } },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  if (!insights.length) {
+    return {
+      table: { Data: [], Followers: [], Posts: [] },
+      chart: [],
+    };
+  }
+
+  const monthGroups = new Map();
+  for (const record of insights) {
+    const month = format(record.createdAt, 'yyyy-MM');
+    if (!monthGroups.has(month)) {
+      monthGroups.set(month, record);
+    }
+  }
+
+  const stats = [...monthGroups.entries()].map(([month, data]) => ({
+    month,
+    followers: data.followers || 0,
+    posts: data.totalContent || 0,
+  }));
+
+  const lastMonth = stats[stats.length - 1];
+  const prevMonth = stats[stats.length - 2];
+
+  const changeFollowers = this.getPercentageChange(prevMonth?.followers, lastMonth?.followers);
+  const changePosts = this.getPercentageChange(prevMonth?.posts, lastMonth?.posts);
+
+  const chart = insights.map((i) => ({
+    date: format(i.createdAt, 'yyyy-MM-dd'),
+    followers: i.followers,
+    posts: i.totalContent,
+  }));
+
+  return {
+    table: {
+      Data: [...stats.map(s => format(new Date(`${s.month}-01`), 'MMMM')), 'Change %'],
+      Followers: [...stats.map(s => s.followers.toString()), `${changeFollowers.toFixed(2)}%`],
+      Posts: [...stats.map(s => s.posts.toString()), `${changePosts.toFixed(2)}%`],
+    },
+    chart,
+  };
+}
+
+
+async getThreadsOverviewReport(businessId: string, days: string) {
+  const range = parseInt(days || '30', 10);
+  const today = new Date();
+  const startDate = subDays(today, range);
+
+  const insights = await this._threadsInsightRepo.model.threadsInsight.findMany({
+    where: { businessId, createdAt: { gte: startDate, lte: today } },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  if (!insights.length) {
+    return {
+      table: {
+        Data: [],
+        Engagement: [],
+        Interactions: [],
+        Impressions: [],
+        Posts: [],
+      },
+      chart: [],
+    };
+  }
+
+  const monthGroups = new Map();
+  for (const record of insights) {
+    const month = format(record.createdAt, 'yyyy-MM');
+    if (!monthGroups.has(month)) {
+      monthGroups.set(month, []);
+    }
+    monthGroups.get(month).push(record);
+  }
+
+  const stats = [...monthGroups.entries()].map(([month, data]) => ({
+    month,
+    engagement: +(data.reduce((sum, d) => sum + d.engagement, 0) / data.length).toFixed(2),
+    interactions: data.reduce((sum, d) => sum + d.interactions, 0),
+    impressions: data.reduce((sum, d) => sum + d.impressions, 0),
+    posts: Math.max(...data.map(d => d.totalContent)),
+  }));
+
+  const lastMonth = stats[stats.length - 1];
+  const prevMonth = stats[stats.length - 2];
+
+  const changeEngagement = this.getPercentageChange(prevMonth?.engagement, lastMonth?.engagement);
+  const changeInteractions = this.getPercentageChange(prevMonth?.interactions, lastMonth?.interactions);
+  const changeImpressions = this.getPercentageChange(prevMonth?.impressions, lastMonth?.impressions);
+  const changePosts = this.getPercentageChange(prevMonth?.posts, lastMonth?.posts);
+
+  const chart = insights.map((i) => ({
+    date: format(i.createdAt, 'yyyy-MM-dd'),
+    engagement: i.engagement,
+    interactions: i.interactions,
+    impressions: i.impressions,
+    posts: i.totalContent,
+  }));
+
+  return {
+    table: {
+      Data: [...stats.map(s => format(new Date(`${s.month}-01`), 'MMMM')), 'Change %'],
+      Engagement: [...stats.map(s => s.engagement.toString()), `${changeEngagement.toFixed(2)}%`],
+      Interactions: [...stats.map(s => s.interactions.toString()), `${changeInteractions.toFixed(2)}%`],
+      Impressions: [...stats.map(s => s.impressions.toString()), `${changeImpressions.toFixed(2)}%`],
+      Posts: [...stats.map(s => s.posts.toString()), `${changePosts.toFixed(2)}%`],
+    },
+    chart,
+  };
+}
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   // In reports.service.ts
@@ -1263,108 +1262,120 @@ export class ReportService {
       where: { businessId },
     });
   }
+// -------
 
-
-  async getWebsitePerformanceReport(businessId: string, days: string) {
-    const range = parseInt(days || '30', 10);
-    const today = new Date();
-    const startDate = subDays(today, range);
-
-    const insights = await this._websitePerformanceRepo.model.websitePerformance.findMany({
-      where: {
-        businessId,
-        createdAt: { gte: startDate, lte: today }
-      },
-      orderBy: { createdAt: 'asc' }
-    });
-
-    if (!insights.length) {
-      return {
-        table: {
-          Data: [],
-          'Page views': [],
-          'Visits': [],
-          'Visitors': [],
-          'Posts': [],
-          'Comments': []
-        },
-        chart: []
-      };
-    }
-
-    // Group by month for table data
-    const monthGroups = insights.reduce((acc, record) => {
-      const month = format(record.createdAt, 'MMMM');
-      if (!acc[month]) {
-        acc[month] = { pageViews: 0, visits: 0, visitors: 0 };
-      }
-      acc[month].pageViews += record.pageViews;
-      acc[month].visits += record.visits;
-      acc[month].visitors += record.visitors;
-      return acc;
-    }, {});
-
-    const months = Object.keys(monthGroups).sort();
-    const [currentMonth, previousMonth] = months.slice(-2);
-
-    // Prepare daily data for chart
-    const chartData = insights.map(record => ({
-      date: format(record.createdAt, 'yyyy-MM-dd'),
-      pageViews: record.pageViews,
-      visits: record.visits,
-      visitors: record.visitors,
-      posts: 0, // Hardcoded as per requirements
-      comments: 0 // Hardcoded as per requirements
-    }));
-
-    return {
-  table: {
-    Data: [...months.map(m => m), 'Change %'],
-    'Page views': [
-      ...months.map(m => monthGroups[m].pageViews.toString()),
-      this.calculateChange(
-        monthGroups[previousMonth]?.pageViews,
-        monthGroups[currentMonth]?.pageViews
-      )
-    ],
-    'Visits': [
-      ...months.map(m => monthGroups[m].visits.toString()),
-      this.calculateChange(
-        monthGroups[previousMonth]?.visits,
-        monthGroups[currentMonth]?.visits
-      )
-    ],
-    'Visitors': [
-      ...months.map(m => monthGroups[m].visitors.toString()),
-      this.calculateChange(
-        monthGroups[previousMonth]?.visitors,
-        monthGroups[currentMonth]?.visitors
-      )
-    ],
-    'Posts': [
-      ...months.map(() => '0'),
-      '0%'
-    ],
-    'Comments': [
-      ...months.map(() => '0'),
-      '0%'
-    ]
-  },
-  chart: chartData
-};
-
-  }
-
-
-async getWebsiteLocationsReport(businessId: string, days: string) {
+async getWebsitePerformanceReport(businessId: string, days: string) {
   const range = parseInt(days || '30', 10);
   const today = new Date();
   const startDate = subDays(today, range);
 
-  const comparisonStartDate = subDays(startDate, range);
-  const comparisonEndDate = startDate;
+  const insights = await this._websitePerformanceRepo.model.websitePerformance.findMany({
+    where: {
+      businessId,
+      createdAt: { gte: startDate, lte: today }
+    },
+    orderBy: { createdAt: 'asc' }
+  });
 
-  // 🗃️ Fetch locations for both current & previous period in one query
+  if (!insights.length) {
+    return {
+      table: {
+        Data: [],
+        'Page views': [],
+        'Visits': [],
+        'Visitors': [],
+        'Posts': [],
+        'Comments': []
+      },
+      chart: []
+    };
+  }
+
+  // ✅ Group by month for table data
+  const monthGroups = insights.reduce((acc, record) => {
+    const month = format(record.createdAt, 'MMMM'); // "April", "May", etc.
+    if (!acc[month]) {
+      acc[month] = { pageViews: 0, visits: 0, visitors: 0 };
+    }
+    acc[month].pageViews += record.pageViews;
+    acc[month].visits += record.visits;
+    acc[month].visitors += record.visitors;
+    return acc;
+  }, {});
+
+  // ✅ Sort months in chronological order (not alphabetical!)
+  const months = Object.keys(monthGroups).sort((a, b) => {
+    const dateA = parse(a, 'MMMM', new Date());
+    const dateB = parse(b, 'MMMM', new Date());
+    return getMonth(dateA) - getMonth(dateB);
+  });
+
+  const [currentMonth, previousMonth] = months.slice(-2);
+
+  // ✅ Prepare daily chart data
+  const chartData = insights.map(record => ({
+    date: format(record.createdAt, 'yyyy-MM-dd'),
+    pageViews: record.pageViews,
+    visits: record.visits,
+    visitors: record.visitors,
+    posts: 0,     // Hardcoded
+    comments: 0   // Hardcoded
+  }));
+
+  return {
+    table: {
+      Data: [...months.map(m => m), 'Change %'],
+      'Page views': [
+        ...months.map(m => monthGroups[m].pageViews.toString()),
+        this.calculateChanges(
+          monthGroups[previousMonth]?.pageViews,
+          monthGroups[currentMonth]?.pageViews
+        )
+      ],
+      'Visits': [
+        ...months.map(m => monthGroups[m].visits.toString()),
+        this.calculateChanges(
+          monthGroups[previousMonth]?.visits,
+          monthGroups[currentMonth]?.visits
+        )
+      ],
+      'Visitors': [
+        ...months.map(m => monthGroups[m].visitors.toString()),
+        this.calculateChanges(
+          monthGroups[previousMonth]?.visitors,
+          monthGroups[currentMonth]?.visitors
+        )
+      ],
+      'Posts': [
+        ...months.map(() => '0'),
+        '0%'
+      ],
+      'Comments': [
+        ...months.map(() => '0'),
+        '0%'
+      ]
+    },
+    chart: chartData
+  };
+}
+
+// ✅ Helper function for calculating percentage change
+private calculateChanges(prev: number = 0, current: number = 0): string {
+  if (!prev) return '0%';
+  const diff = current - prev;
+  const percent = (diff / prev) * 100;
+  return `${percent.toFixed(2)}%`;
+}
+
+
+// ---------
+
+async getWebsiteLocationsReport(businessId: string, days: string) {
+  const range = parseInt(days || '30', 10);
+  const today = new Date();
+  const comparisonStartDate = subDays(today, range * 2);
+  const currentStartDate = subDays(today, range);
+
   const locations = await this._websiteLocationRepo.model.websiteLocation.findMany({
     where: {
       businessId,
@@ -1384,93 +1395,226 @@ async getWebsiteLocationsReport(businessId: string, days: string) {
     };
   }
 
-  // ⏳ Split data into current & previous period
-  const currentPeriodData = locations.filter(r => r.createdAt >= startDate);
-  const previousPeriodData = locations.filter(
-    r => r.createdAt >= comparisonStartDate && r.createdAt < startDate
-  );
+  // 🗃️ Group data: { country -> yyyy-MM -> visitors }
+  const grouped: Record<string, Record<string, number>> = {};
+  const currentMonthsSet = new Set<string>();
 
-  // 🗃️ Group current data
-  const current: Record<string, { visitors: number; percent: number }> = {};
-  currentPeriodData.forEach(r => {
-    if (!current[r.country]) current[r.country] = { visitors: 0, percent: 0 };
-    current[r.country].visitors += r.visitors;
-    current[r.country].percent = r.percent; // latest percent for the country
-  });
+  for (const loc of locations) {
+    const monthKey = format(loc.createdAt, 'yyyy-MM');
+    if (loc.createdAt >= currentStartDate) {
+      currentMonthsSet.add(monthKey);
+    }
+    if (!grouped[loc.country]) grouped[loc.country] = {};
+    if (!grouped[loc.country][monthKey]) grouped[loc.country][monthKey] = 0;
+    grouped[loc.country][monthKey] += loc.visitors;
+  }
 
-  // 🗃️ Group previous data
-  const previous: Record<string, { visitors: number }> = {};
-  previousPeriodData.forEach(r => {
-    if (!previous[r.country]) previous[r.country] = { visitors: 0 };
-    previous[r.country].visitors += r.visitors;
-  });
-
-  // Combine unique countries
-  const allCountries = [
-    ...new Set([...Object.keys(current), ...Object.keys(previous)])
-  ];
-
-  // 📊 Build table rows per country
-  const rows = allCountries
-    .map(country => {
-      const currentVisitors = current[country]?.visitors || 0;
-      const currentPercent = current[country]?.percent || 0;
-      const previousVisitors = previous[country]?.visitors || 0;
-
-      return {
-        country,
-        previousVisitors: previousVisitors.toString(),
-        currentVisitors: currentVisitors.toString(),
-        percent: currentPercent.toFixed(2) + '%',
-        change: this.calculateLocationChange(previousVisitors, currentVisitors)
-      };
+  // 🗓️ Sorted unique months (current only)
+  const allMonths = Array.from(currentMonthsSet)
+    .sort((a, b) => {
+      const dateA = parseISO(a + '-01');
+      const dateB = parseISO(b + '-01');
+      return compareAsc(dateA, dateB);
     })
-    .sort((a, b) => parseInt(b.currentVisitors) - parseInt(a.currentVisitors));
+    .map(m => format(parseISO(m + '-01'), 'MMMM'));
 
-  // ✅ Format labels as months
-  const currentLabel = format(startDate, 'MMMM');
-  const previousLabel = format(comparisonStartDate, 'MMMM');
+  const lastMonthName = allMonths[allMonths.length - 1];
 
-  // ✅ Final table structure
-  const table = {
-    Data: ['Data', previousLabel, currentLabel, 'Percent', 'Change %'],
-    rows: rows.map(r => [
-      r.country,
-      r.previousVisitors,
-      r.currentVisitors,
-      r.percent,
-      r.change
-    ])
-  };
+  // 📊 Build rows: [country, m1, m2, ..., change%]
+  const rows = Object.entries(grouped).map(([country, monthMap]) => {
+    const monthValues = allMonths.map(monthName => {
+      const matchingKey = Object.keys(monthMap).find(k => {
+        const parsed = parseISO(k + '-01');
+        return format(parsed, 'MMMM') === monthName;
+      });
+      return matchingKey ? monthMap[matchingKey].toString() : '0';
+    });
 
-  // ✅ Final chart for map view: top 10 countries by visitors
-  const chart = rows
+    const first = parseInt(monthValues[0] || '0', 10);
+    const last = parseInt(monthValues[monthValues.length - 1] || '0', 10);
+    const change = this.calculateLocationChange(first, last);
+
+    return [country, ...monthValues, change];
+  });
+
+  // 👉 Sort rows by total visitors in current period
+  const topRows = rows
     .map(r => ({
-      country: r.country,
-      visitors: parseInt(r.currentVisitors),
-      percent: parseFloat(r.percent)
+      row: r,
+      total: r.slice(1, -1).reduce((sum, v) => sum + parseInt(v, 10), 0)
     }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 5)
+    .map(x => x.row);
+
+  // ✅ Prepare chart:
+  // get top 10 countries by last month value
+  const lastMonthIndex = allMonths.indexOf(lastMonthName) + 1; // +1 for country
+  const allCountriesForChart = rows
+    .map(r => ({
+      country: r[0],
+      visitors: parseInt(r[lastMonthIndex] || '0', 10)
+    }))
+    .filter(r => r.visitors > 0)
     .sort((a, b) => b.visitors - a.visitors)
     .slice(0, 10);
 
-  return { table, chart };
+  // Total visitors in last month for percent calculation
+  const totalLastMonthVisitors = allCountriesForChart.reduce(
+    (sum, c) => sum + c.visitors,
+    0
+  );
+
+  const chart = allCountriesForChart.map(c => ({
+    country: c.country,
+    visitors: c.visitors,
+    percent: totalLastMonthVisitors
+      ? parseFloat(((c.visitors / totalLastMonthVisitors) * 100).toFixed(2))
+      : 0
+  }));
+
+  return {
+    table: {
+      Data: ['Data', ...allMonths, 'Change %'],
+      rows: topRows
+    },
+    chart
+  };
 }
 
 private calculateLocationChange(prev: number, curr: number) {
-  if (!prev || prev === 0) return '0%';
-  const change = ((curr - prev) / prev) * 100;
-  const sign = change >= 0 ? '' : '';
-  return `${sign}${change.toFixed(2)}%`;
+  if (prev === 0) return curr === 0 ? '0%' : '100%';
+  return (((curr - prev) / prev) * 100).toFixed(2) + '%';
 }
 
 
 
-  private calculateChange(previous: number, current: number): string {
-    if (!previous || previous === 0) return '0%';
-    const change = ((current - previous) / previous) * 100;
-    return change.toFixed(2) + '%';
+
+
+
+async getPinterestCommunityReport(businessId: string, days: string) {
+  const range = parseInt(days || '30', 10);
+  const today = new Date();
+  const startDate = subDays(today, range);
+
+  const insights = await this._pinterestPostPerformanceRepo.model.pinterestPostPerformance.findMany({
+    where: { businessId, createdAt: { gte: startDate, lte: today } },
+    orderBy: { createdAt: 'asc' }
+  });
+
+  if (!insights.length) {
+    return {
+      table: {
+        Data: [],
+        Followers: [],
+        Following: [],
+        Posts: []
+      },
+      chart: []
+    };
   }
 
+  const monthGroups = new Map();
+  for (const record of insights) {
+    const month = format(record.createdAt, 'yyyy-MM');
+    if (!monthGroups.has(month)) {
+      monthGroups.set(month, record);
+    }
+  }
+
+  const stats = [...monthGroups.entries()].map(([month, data]) => ({
+    month,
+    followers: data.followers || 0,
+    following: data.following || 0,
+    posts: data.totalContent || 0
+  }));
+
+  const lastMonth = stats[stats.length - 1];
+  const prevMonth = stats[stats.length - 2];
+
+  const changeFollowers = this.getPercentageChange(prevMonth?.followers, lastMonth?.followers);
+  const changeFollowing = this.getPercentageChange(prevMonth?.following, lastMonth?.following);
+  const changePosts = this.getPercentageChange(prevMonth?.posts, lastMonth?.posts);
+
+  // ✅ Correct chart with all 3 fields
+  const chart = insights.map(i => ({
+    date: format(i.createdAt, 'yyyy-MM-dd'),
+    followers: i?.['followers'] || 0,
+    following: i?.['following'] || 0,
+    posts: i.totalContent || 0
+  }));
+
+  return {
+    table: {
+      Data: [...stats.map(s => format(new Date(`${s.month}-01`), 'MMMM')), 'Change %'],
+      Followers: [...stats.map(s => s.followers.toString()), `${changeFollowers.toFixed(2)}%`],
+      Following: [...stats.map(s => s.following.toString()), `${changeFollowing.toFixed(2)}%`],
+      Posts: [...stats.map(s => s.posts.toString()), `${changePosts.toFixed(2)}%`]
+    },
+    chart
+  };
+}
+
+  async getPinterestOverviewReport(businessId: string, days: string) {
+  const range = parseInt(days || '30', 10);
+  const today = new Date();
+  const startDate = subDays(today, range);
+
+  const insights = await this._pinterestPostPerformanceRepo.model.pinterestPostPerformance.findMany({
+    where: { businessId, createdAt: { gte: startDate, lte: today } },
+    orderBy: { createdAt: 'asc' }
+  });
+
+  if (!insights.length) {
+    return {
+      table: {
+        Data: [],
+        Impressions: [],
+        Posts: []
+      },
+      chart: []
+    };
+  }
+
+  // Group by month
+  const monthGroups = new Map();
+  for (const record of insights) {
+    const month = format(record.createdAt, 'yyyy-MM');
+    if (!monthGroups.has(month)) {
+      monthGroups.set(month, []);
+    }
+    monthGroups.get(month).push(record);
+  }
+
+  const stats = [...monthGroups.entries()].map(([month, data]) => ({
+    month,
+    impressions: data.reduce((sum, d) => sum + d.impressions, 0),
+    posts: Math.max(...data.map(d => d.totalContent))
+  }));
+
+  const lastMonth = stats[stats.length - 1];
+  const prevMonth = stats[stats.length - 2];
+
+  const changeImpressions = this.getPercentageChange(prevMonth?.impressions, lastMonth?.impressions);
+  const changePosts = this.getPercentageChange(prevMonth?.posts, lastMonth?.posts);
+
+  const chart = insights.map(i => ({
+    date: format(i.createdAt, 'yyyy-MM-dd'),
+    impressions: i.impressions,
+    posts: i.totalContent
+  }));
+
+  return {
+    table: {
+      Data: [...stats.map(s => format(new Date(`${s.month}-01`), 'MMMM')), 'Change %'],
+      Impressions: [...stats.map(s => s.impressions.toString()), `${changeImpressions.toFixed(2)}%`],
+      Posts: [...stats.map(s => s.posts.toString()), `${changePosts.toFixed(2)}%`]
+    },
+    chart
+  };
+
+
+}
 
 
 }
