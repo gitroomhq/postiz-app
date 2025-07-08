@@ -265,22 +265,22 @@ export class MonthlyReportService {
 	// Updated YouTube methods with daily charts
 	async getYoutubeOverviewReport(customerId: string, month: number, year: number) {
 		try {
-			// Monthly data for table
+			// Monthly data for table - add likes and comments
 			const monthlyData = await this.getDataForMonths(
 				this._youtubeInsightsRepository.model.youTubeInsight,
 				customerId,
 				month,
 				year,
-				['subscribers', 'totalViews', 'totalVideos', 'totalContent'],
+				['subscribers', 'totalViews', 'totalVideos', 'totalContent', 'likes', 'comments'],
 			);
 
-			// Daily data for chart
+			// Daily data for chart - add likes and comments
 			const dailyData = await this.getDailyDataForMonth(
 				this._youtubeInsightsRepository.model.youTubeInsight,
 				customerId,
 				month,
 				year,
-				['subscribers', 'totalViews'],
+				['subscribers', 'totalViews', 'likes', 'comments'],
 			);
 
 			if (!monthlyData.length) return null;
@@ -294,7 +294,6 @@ export class MonthlyReportService {
 			return null;
 		}
 	}
-
 	// Updated LinkedIn methods with daily charts
 	async getLinkedInCommunityReport(customerId: string, month: number, year: number) {
 		try {
@@ -410,7 +409,7 @@ export class MonthlyReportService {
 				customerId,
 				month,
 				year,
-				['impressions'],
+				['impressions', 'engagement', 'interaction'],
 			);
 
 			if (!monthlyData.length) return null;
@@ -552,9 +551,12 @@ export class MonthlyReportService {
 			case 'X':
 				const xImpressions = insights.map(i => parseInt(i.impressions) || 0);
 				const engagement = insights.map(i => parseFloat(i.engagement) || 0);
+				const interactions = insights.map(i => parseInt(i.interactions) || 0); // 👈 New line added
 				rows.push(
 					['Impressions', ...xImpressions.map(String), calculateChange(xImpressions)],
 					['Engagement', ...engagement.map(String), calculateChange(engagement)],
+					['Interactions', ...interactions.map(String), calculateChange(interactions)] // 👈 New row added
+
 				);
 				break;
 		}
@@ -712,9 +714,9 @@ export class MonthlyReportService {
 		const totalImpressions = insights.map((_, i) => mapsImpressions[i] + searchImpressions[i]);
 
 		rows.push(
-			['Maps Impressions', ...mapsImpressions.map(String), calculateChange(mapsImpressions)],
-			['Search Impressions', ...searchImpressions.map(String), calculateChange(searchImpressions)],
-			['Total Impressions', ...totalImpressions.map(String), calculateChange(totalImpressions)]
+			['Google maps', ...mapsImpressions.map(String), calculateChange(mapsImpressions)],
+			['Google search', ...searchImpressions.map(String), calculateChange(searchImpressions)],
+			['Total', ...totalImpressions.map(String), calculateChange(totalImpressions)]
 		);
 
 		return {
@@ -744,10 +746,10 @@ export class MonthlyReportService {
 		const totalEngagement = insights.map((_, i) => websiteClicks[i] + phoneClicks[i] + directions[i]);
 
 		rows.push(
-			['Website Clicks', ...websiteClicks.map(String), calculateChange(websiteClicks)],
-			['Phone Calls', ...phoneClicks.map(String), calculateChange(phoneClicks)],
+			['Website', ...websiteClicks.map(String), calculateChange(websiteClicks)],
+			['Phone', ...phoneClicks.map(String), calculateChange(phoneClicks)],
 			['Directions', ...directions.map(String), calculateChange(directions)],
-			['Total Engagement', ...totalEngagement.map(String), calculateChange(totalEngagement)]
+			['Total', ...totalEngagement.map(String), calculateChange(totalEngagement)]
 		);
 
 		return {
@@ -775,7 +777,7 @@ export class MonthlyReportService {
 		const reviews = insights.map(i => parseInt(i.totalReviews) || 0);
 
 		rows.push(
-			['Average Rating', ...ratings.map(r => r.toFixed(2)), calculateChange(ratings)],
+			['Star Rating', ...ratings.map(r => r.toFixed(2)), calculateChange(ratings)],
 			['Total Reviews', ...reviews.map(String), calculateChange(reviews)]
 		);
 
