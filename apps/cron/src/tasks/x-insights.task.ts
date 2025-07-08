@@ -9,6 +9,7 @@ export class XInsightsTask {
 
   constructor(
     private _xInsightsRepository: PrismaRepository<'xInsight'>,
+    private _socialTokenRepo: PrismaRepository<'socialToken'> 
   ) { }
 
   @Cron('0 0 * * *') // for midnight
@@ -53,13 +54,28 @@ export class XInsightsTask {
         const businessId = account.internalId;
         const organizationId = account.customer?.orgId;
 
+        const tokenEntry = await this._socialTokenRepo.model.socialToken.findFirst({
+          where: {
+              identifier  : 'x',
+              businessId  : businessId,
+              accessToken: { not: null }
+          }
+        });
+
+      if (!tokenEntry?.accessToken) {
+				console.log(`❌ No valid X access token found for ${businessId}`);
+				return;
+			}
+
+			const accessToken = tokenEntry.accessToken;      
+
         try {
           // 1. Get basic metrics
           const basicRes = await axios.get(
             `https://api.twitter.com/2/users/${businessId}?user.fields=public_metrics`,
             {
               headers: {
-                Authorization: `Bearer ${process.env.X_BEARER_TOKEN}`,
+                Authorization: `Bearer ${accessToken}`,
               },
             }
           );
@@ -90,7 +106,7 @@ export class XInsightsTask {
             `https://api.twitter.com/2/users/${businessId}/tweets?max_results=100&start_time=${start}&end_time=${end}`,
             {
               headers: {
-                Authorization: `Bearer ${process.env.X_BEARER_TOKEN}`,
+                Authorization: `Bearer ${accessToken}`,
               },
             }
           );
@@ -114,7 +130,7 @@ export class XInsightsTask {
               `https://api.twitter.com/2/tweets?ids=${tweetIds.join(',')}&tweet.fields=public_metrics`,
               {
                 headers: {
-                  Authorization: `Bearer ${process.env.X_BEARER_TOKEN}`,
+                  Authorization: `Bearer ${accessToken}`,
                 },
               }
             );

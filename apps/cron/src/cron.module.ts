@@ -7,15 +7,15 @@ import { BullMqModule } from '@gitroom/nestjs-libraries/bull-mq-transport-new/bu
 import { InstagramInsightsTask } from './tasks/instagram.insights';
 import { YoutubeInsightsTask } from './tasks/youtube.insights';
 import { FacebookInsightsTask } from './tasks/facebook.insights';
-import { ThreadsInsightsTask } from './tasks/threads.insights';
 import { LinkedInInsightsTask } from './tasks/linkedin.insights';
 import { XInsightsTask } from './tasks/x-insights.task';
 import { GBPInsightsTask } from './tasks/gbp.insights';
 import { WebsiteInsightsTask } from './tasks/website.insights';
+import { SocialTokenRefreshTask } from './tasks/social.token.refresh';
 
 @Module({
   imports: [DatabaseModule, ScheduleModule.forRoot(), BullMqModule],
   controllers: [],
-  providers: [...(!process.env.IS_GENERAL ? [CheckStars, SyncTrending, LinkedInInsightsTask, InstagramInsightsTask, YoutubeInsightsTask, FacebookInsightsTask, ThreadsInsightsTask, XInsightsTask,GBPInsightsTask,WebsiteInsightsTask ] : [])],
+  providers: [...(!process.env.IS_GENERAL ? [CheckStars, SyncTrending, LinkedInInsightsTask, YoutubeInsightsTask ] : [SocialTokenRefreshTask,GBPInsightsTask,InstagramInsightsTask,FacebookInsightsTask,XInsightsTask,WebsiteInsightsTask])],
 })
 export class CronModule { }

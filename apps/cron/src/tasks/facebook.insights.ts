@@ -6,19 +6,36 @@ import { subDays, startOfDay, endOfDay } from 'date-fns';
 
 @Injectable()
 export class FacebookInsightsTask {
+
 	constructor(
 		private _facebookInsightsRepository: PrismaRepository<'facebookInsight'>,
+		private _socialTokenRepo: PrismaRepository<'socialToken'> 
 	) { }
-	//@Cron('* * * * *') // for every minute
 
 	@Cron('0 0 * * *') // Runs every day at midnight
 	async handleFacebookInsights() {
 		console.log('⏰ Facebook Insights Cron job triggered');
 
 		try {
+
+			const tokenEntry = await this._socialTokenRepo.model.socialToken.findFirst({
+				where: {
+					identifier: 'instagram',
+					accessToken: { not: null }
+				},
+				orderBy: { updatedAt: 'desc' },
+			});
+
+			if (!tokenEntry?.accessToken) {
+				console.log('❌ No valid facebook access token found.');
+				return;
+			}
+
+			const accessToken = tokenEntry.accessToken;
+
 			// Step 1: Get all Facebook pages with their access tokens
 			const pagesResponse = await axios.get(
-				`https://graph.facebook.com/v19.0/me/accounts?access_token=${process.env.FACEBOOK_ACCESS_TOKEN}`
+				`https://graph.facebook.com/v19.0/me/accounts?access_token=${accessToken}`
 			);
 			const pages = pagesResponse.data?.data || [];
 
@@ -96,20 +113,18 @@ export class FacebookInsightsTask {
 					}
 
 					const month = new Date().toISOString().slice(0, 7);
-
-					// ✅ Step 5: Store insight with internalId
+					
 					await this._facebookInsightsRepository.model.facebookInsight.create({
 						data: {
-							businessId: page.id,
-							//internalId, // ✅ Add internalId to your DB
+							businessId: internalId,
 							organizationId,
-							customerId: integration.customer?.id,// Add this line
+							customerId: integration.customer?.id,
 							month,
 							likes,
 							followers,
 							impressions,
 							pageViews,
-							totalContent,
+							totalContent
 						},
 					});
 

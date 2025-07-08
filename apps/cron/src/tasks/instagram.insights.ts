@@ -8,6 +8,7 @@ import { subDays, startOfDay, endOfDay } from 'date-fns';
 export class InstagramInsightsTask {
   constructor(
     private _instagramInsightsRepository: PrismaRepository<'instagramInsight'>,
+    private _socialTokenRepo: PrismaRepository<'socialToken'> 
   ) { }
 
   @Cron('0 0 * * *') // for midnight
@@ -33,8 +34,23 @@ export class InstagramInsightsTask {
         return;
       }
 
+      const tokenEntry = await this._socialTokenRepo.model.socialToken.findFirst({
+          where: {
+            identifier: 'instagram',
+            accessToken: { not: null }
+          },
+          orderBy: { updatedAt : 'desc' },
+        });
+
+      if (!tokenEntry?.accessToken) {
+        console.log('❌ No valid Instagram access token found.');
+        return;
+      }
+
+      const accessToken = tokenEntry.accessToken;
+
       for (const account of instagramAccounts) {
-        const accessToken = process.env.INSTAGRAM_ACCESS_TOKEN;
+
         const businessId = account.internalId;
         const organizationId = account.customer?.orgId;
 

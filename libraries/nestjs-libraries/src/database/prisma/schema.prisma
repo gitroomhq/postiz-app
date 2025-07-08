@@ -715,6 +715,20 @@ model PinterestPostPerformance {
   @@index([customerId])
 }
 
+model SocialToken {
+  id              String   @id @default(uuid()) @db.Uuid
+  identifier      String  
+  name            String?  
+  businessId      String
+  organizationId  String?
+  accessToken     String?
+  refreshToken    String?
+  tokenExpiry     DateTime? @db.Timestamptz(6)
+  scope           String?
+  createdAt       DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime  @updatedAt @db.Timestamptz(6)
+}
+
 enum SocialMediaPlatform {
   X
   LINKEDIN

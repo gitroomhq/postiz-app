@@ -9,9 +9,10 @@ export class WebsiteInsightsTask {
   constructor(
     private _websitePerformanceRepo: PrismaRepository<'websitePerformance'>,
     private _websiteLocationRepo: PrismaRepository<'websiteLocation'>,
+    private _socialTokenRepo: PrismaRepository<'socialToken'> 
   ) {}
 
-  @Cron('0 0 * * *')
+  @Cron('20 0 * * *') // Runs at 12:20 AM IST daily
   async handleWebsiteInsights() {
     console.log('⏰ Website Analytics Cron job triggered');
 
@@ -174,6 +175,22 @@ export class WebsiteInsightsTask {
       orderBy?: any;
     }
   ) {
+
+      const tokenEntry = await this._socialTokenRepo.model.socialToken.findFirst({
+          where: {
+            identifier: 'website',
+            refreshToken: { not: null },
+            accessToken: { not: null }
+          },
+          orderBy: { updatedAt: 'desc' },
+        });
+
+        if (!tokenEntry?.accessToken) {
+          console.log('❌ No valid GBP access token found.');
+          return;
+        }
+        const accessToken = tokenEntry.accessToken;
+
     const response = await axios.post(
       `https://analyticsdata.googleapis.com/v1beta/properties/${businessId}:runReport`,
       {
@@ -188,7 +205,7 @@ export class WebsiteInsightsTask {
       },
       {
         headers: {
-          Authorization: `Bearer ${process.env.GOOGLE_WEBSITE_TOKEN}`,
+          Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
         },
         timeout: 10000
