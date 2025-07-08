@@ -43,7 +43,7 @@ export class InstagramInsightsTask {
         });
 
       if (!tokenEntry?.accessToken) {
-        console.log('❌ No valid GBP access token found.');
+        console.log('❌ No valid Instagram access token found.');
         return;
       }
 
