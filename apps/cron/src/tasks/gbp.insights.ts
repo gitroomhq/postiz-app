@@ -10,9 +10,10 @@ export class GBPInsightsTask {
   
   constructor(
     private _gbpInsightsRepository: PrismaRepository<'gbpInsight'>,
+    private _socialTokenRepo: PrismaRepository<'socialToken'> 
   ) {}
 
-  @Cron('0 0 * * *') 
+  @Cron('20 0 * * *') // Runs at 12:20 AM IST daily
   async handleGBPInsights() {
     console.log('⏰ GBP Cron job triggered');
 
@@ -35,6 +36,20 @@ export class GBPInsightsTask {
         return;
       }
 
+      const tokenEntry = await this._socialTokenRepo.model.socialToken.findFirst({
+          where: {
+            identifier: 'gbp',
+            refreshToken: { not: null },
+            accessToken: { not: null }
+          },
+          orderBy: { updatedAt: 'desc' },
+        });
+
+        if (!tokenEntry?.accessToken) {
+          console.log('❌ No valid GBP access token found.');
+          return;
+        }
+        const accessToken = tokenEntry.accessToken;
 
       for (const account of gbpAccounts) {
 
@@ -92,7 +107,7 @@ export class GBPInsightsTask {
               'dailyRange.end_date.day': end_date.day,
             },
             headers: {
-              Authorization: `Bearer ${process.env.GBP_ACCESS_TOKEN}`,
+                Authorization: `Bearer ${accessToken}`,
             },
             paramsSerializer: params => {
               return qs.stringify(params, { arrayFormat: 'repeat' });
@@ -156,7 +171,7 @@ export class GBPInsightsTask {
               'dailyRange.end_date.day': end_date.day,
             },
             headers: {
-              Authorization: `Bearer ${process.env.GBP_ACCESS_TOKEN}`,
+                Authorization: `Bearer ${accessToken}`,
             },
             paramsSerializer: params => {
               return qs.stringify(params, { arrayFormat: 'repeat' });
@@ -186,7 +201,7 @@ export class GBPInsightsTask {
           `https://mybusiness.googleapis.com/v4/accounts/${process.env.GBP_ACCOUNT_ID}/${locationId}/reviews`,
           {
             headers: {
-              Authorization: `Bearer ${process.env.GBP_ACCESS_TOKEN}`,
+                Authorization: `Bearer ${accessToken}`,
             },
           },
         );

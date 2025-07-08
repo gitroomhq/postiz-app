@@ -217,6 +217,41 @@ export class AuthController {
     });
   }
 
+  // @Get('callback')
+  // async handleCallback(
+  //   @Query('code') code: string,
+  //   @Res() res: Response
+  // ) {
+  //   try {
+  //     const client_id = process.env.GOOGLE_CLIENT_ID;
+  //     const client_secret = process.env.GOOGLE_CLIENT_SECRET;
+  //     const redirect_uri = 'http://localhost:3000/auth/callback';
+
+  //     const response = await axios.post('https://oauth2.googleapis.com/token', null, {
+  //       params: {
+  //         code,
+  //         client_id,
+  //         client_secret,
+  //         redirect_uri,
+  //         grant_type: 'authorization_code',
+  //       },
+  //       headers: {
+  //         'Content-Type': 'application/x-www-form-urlencoded',
+  //       },
+  //     });
+
+  //     const { access_token, refresh_token } = response.data;
+
+  //     console.log('✅ ACCESS TOKEN:', access_token);
+  //     console.log('🔄 REFRESH TOKEN:', refresh_token);
+
+  //     // You can save to DB or session here
+  //     return res.send('✅ Token fetched! Check backend logs.');
+  //   } catch (err) {
+  //     console.error('❌ Error in callback:', err.message);
+  //     return res.status(500).send('Failed to fetch token');
+  //   }
+  // }
   @Get('callback')
   async handleCallback(
     @Query('code') code: string,
@@ -227,28 +262,33 @@ export class AuthController {
       const client_secret = process.env.GOOGLE_CLIENT_SECRET;
       const redirect_uri = 'http://localhost:3000/auth/callback';
 
-      const response = await axios.post('https://oauth2.googleapis.com/token', null, {
-        params: {
-          code,
-          client_id,
-          client_secret,
-          redirect_uri,
-          grant_type: 'authorization_code',
-        },
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
+      // ✅ Must send data as form-urlencoded in body, NOT params
+      const body = new URLSearchParams({
+        code,
+        client_id,
+        client_secret,
+        redirect_uri,
+        grant_type: 'authorization_code',
       });
+
+      const response = await axios.post(
+        'https://oauth2.googleapis.com/token',
+        body.toString(), // ✅ Correct: send as body
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        }
+      );
 
       const { access_token, refresh_token } = response.data;
 
       console.log('✅ ACCESS TOKEN:', access_token);
       console.log('🔄 REFRESH TOKEN:', refresh_token);
 
-      // You can save to DB or session here
       return res.send('✅ Token fetched! Check backend logs.');
     } catch (err) {
-      console.error('❌ Error in callback:', err.message);
+      console.error('❌ Error in callback:', err.response?.data || err.message);
       return res.status(500).send('Failed to fetch token');
     }
   }
