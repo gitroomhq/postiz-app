@@ -84,6 +84,11 @@ export class PublicIntegrationsController {
     return this._postsService.deletePost(org.id, getPostById.group);
   }
 
+  @Get('/is-connected')
+  async getActiveIntegrations(@GetOrgFromRequest() org: Organization) {
+    return {connected: true};
+  }
+
   @Get('/integrations')
   async listIntegration(@GetOrgFromRequest() org: Organization) {
     return (await this._integrationService.getIntegrationsList(org.id)).map(
