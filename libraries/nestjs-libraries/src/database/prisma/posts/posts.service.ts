@@ -299,16 +299,10 @@ export class PostsService {
     }
 
     try {
-      const finalPost =
-        firstPost.integration?.type === 'article'
-          ? await this.postArticle(firstPost.integration!, [
-              firstPost,
-              ...morePosts,
-            ])
-          : await this.postSocial(firstPost.integration!, [
-              firstPost,
-              ...morePosts,
-            ]);
+      const finalPost = await this.postSocial(firstPost.integration!, [
+        firstPost,
+        ...morePosts,
+      ]);
 
       if (firstPost?.intervalInDays) {
         this._workerServiceProducer.emit('post', {
@@ -333,31 +327,16 @@ export class PostsService {
 
         return;
       }
-
-      if (firstPost.submittedForOrderId) {
-        this._workerServiceProducer.emit('submit', {
-          payload: {
-            id: firstPost.id,
-            releaseURL: finalPost.releaseURL,
-          },
-        });
-      }
     } catch (err: any) {
       await this._postRepository.changeState(firstPost.id, 'ERROR', err);
-      await this._notificationService.inAppNotification(
-        firstPost.organizationId,
-        `Error posting on ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
-        `An error occurred while posting on ${
-          firstPost.integration?.providerIdentifier
-        } ${
-          !process.env.NODE_ENV || process.env.NODE_ENV === 'development'
-            ? err
-            : ''
-        }`,
-        true
-      );
-
       if (err instanceof BadBody) {
+        await this._notificationService.inAppNotification(
+          firstPost.organizationId,
+          `Error posting on ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
+          `An error occurred while posting on ${firstPost.integration?.providerIdentifier}${err?.message ? `: ${err?.message}` : ``}`,
+          true
+        );
+
         console.error(
           '[Error] posting on',
           firstPost.integration?.providerIdentifier,
@@ -366,15 +345,9 @@ export class PostsService {
           err.body,
           err
         );
-
-        return;
       }
 
-      console.error(
-        '[Error] posting on',
-        firstPost.integration?.providerIdentifier,
-        err
-      );
+      return;
     }
   }
 
@@ -403,7 +376,8 @@ export class PostsService {
   private async postSocial(
     integration: Integration,
     posts: Post[],
-    forceRefresh = false
+    forceRefresh = false,
+    err = ''
   ): Promise<Partial<{ postId: string; releaseURL: string }>> {
     const getIntegration = this._integrationManager.getSocialIntegration(
       integration.providerIdentifier
@@ -533,7 +507,7 @@ export class PostsService {
       };
     } catch (err) {
       if (err instanceof RefreshToken) {
-        return this.postSocial(integration, posts, true);
+        return this.postSocial(integration, posts, true, err?.message || '');
       }
 
       throw err;
@@ -627,41 +601,6 @@ export class PostsService {
     }
   }
 
-  private async postArticle(
-    integration: Integration,
-    posts: Post[]
-  ): Promise<any> {
-    const getIntegration = this._integrationManager.getArticlesIntegration(
-      integration.providerIdentifier
-    );
-    if (!getIntegration) {
-      return;
-    }
-
-    const newPosts = await this.updateTags(integration.organizationId, posts);
-
-    const { postId, releaseURL } = await getIntegration.post(
-      integration.token,
-      newPosts.map((p) => p.content).join('\n\n'),
-      JSON.parse(newPosts[0].settings || '{}')
-    );
-
-    await this._notificationService.inAppNotification(
-      integration.organizationId,
-      `Your article has been published on ${capitalize(
-        integration.providerIdentifier
-      )}`,
-      `Your article has been published at ${releaseURL}`,
-      true
-    );
-    await this._postRepository.updatePost(newPosts[0].id, postId, releaseURL);
-
-    return {
-      postId,
-      releaseURL,
-    };
-  }
-
   async deletePost(orgId: string, group: string) {
     const post = await this._postRepository.deletePost(orgId, group);
     if (post?.id) {
@@ -738,7 +677,7 @@ export class PostsService {
         );
 
       if (!posts?.length) {
-        return;
+        return [] as any[];
       }
 
       await this._workerServiceProducer.delete(
