@@ -59,11 +59,11 @@
     ·
     <a href="https://discord.postiz.com">Join Our Discord (devs only)</a>
     ·
-    <a href="https://twitter.com/getpostiz">X</a>
+    <a href="https://docs.postiz.com/public-api">Public API</a>
     ·
-    <a href="https://gitroom.com">Gitroom</a>
-    ·
-    <a href="https://git.sn/telegram">Telegram (Crypto)</a>
+    <a href="https://www.npmjs.com/package/@postiz/node">NodeJS SDK</a>
+        ·
+    <a href="https://www.npmjs.com/package/@postiz/n8n">N8N custom node</a>
   </p>
 
 <br />
