@@ -43,17 +43,28 @@ export class InstagramProvider
     };
   }
 
-  protected override handleErrors(body: string): {
-    type: 'refresh-token' | 'bad-body';
-    value: string;
-  } | undefined {
-    if (body.indexOf('2207018') > -1) {
+  public override handleErrors(body: string):
+    | {
+        type: 'refresh-token' | 'bad-body';
+        value: string;
+      }
+    | undefined {
+    if (body.indexOf('2207018') > -1 || body.indexOf('REVOKED_ACCESS_TOKEN')) {
       return {
         type: 'refresh-token' as const,
         value:
           'Something is wrong with your connected user, please re-authenticate',
       };
     }
+
+    if (body.indexOf('The user is not an Instagram Business') > -1) {
+      return {
+        type: 'refresh-token' as const,
+        value:
+          'Your Instagram account is not a business account, please convert it to a business account',
+      };
+    }
+
     if (body.indexOf('Error validating access token') > -1) {
       return {
         type: 'refresh-token' as const,
@@ -68,10 +79,155 @@ export class InstagramProvider
       };
     }
 
+    // Media download/upload errors
+    if (body.indexOf('2207003') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Timeout downloading media, please try again',
+      };
+    }
+
+    if (body.indexOf('2207020') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Media expired, please upload again',
+      };
+    }
+
+    if (body.indexOf('2207032') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Failed to create media, please try again',
+      };
+    }
+
+    if (body.indexOf('2207053') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Unknown upload error, please try again',
+      };
+    }
+
+    if (body.indexOf('2207052') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Media fetch failed, please try again',
+      };
+    }
+
+    if (body.indexOf('2207057') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Invalid thumbnail offset for video',
+      };
+    }
+
+    if (body.indexOf('2207026') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Unsupported video format',
+      };
+    }
+
+    if (body.indexOf('2207023') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Unknown media type',
+      };
+    }
+
+    if (body.indexOf('2207006') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Media not found, please upload again',
+      };
+    }
+
+    if (body.indexOf('2207008') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Media builder expired, please try again',
+      };
+    }
+
+    // Content validation errors
+    if (body.indexOf('2207028') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Carousel validation failed',
+      };
+    }
+
+    if (body.indexOf('2207010') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Caption is too long',
+      };
+    }
+
+    // Product tagging errors
+    if (body.indexOf('2207035') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Product tag positions not supported for videos',
+      };
+    }
+
+    if (body.indexOf('2207036') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Product tag positions required for photos',
+      };
+    }
+
+    if (body.indexOf('2207037') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Product tag validation failed',
+      };
+    }
+
+    if (body.indexOf('2207040') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Too many product tags',
+      };
+    }
+
+    // Image format/size errors
+    if (body.indexOf('2207004') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Image is too large',
+      };
+    }
+
+    if (body.indexOf('2207005') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Unsupported image format',
+      };
+    }
+
+    if (body.indexOf('2207009') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Aspect ratio not supported, must be between 4:5 to 1.91:1',
+      };
+    }
+
     if (body.indexOf('Page request limit reached') > -1) {
       return {
         type: 'bad-body' as const,
         value: 'Page posting for today is limited, please try again tomorrow',
+      };
+    }
+
+    if (body.indexOf('2207042') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'You have reached the maximum of 25 posts per day, allowed for your account',
       };
     }
 
@@ -96,26 +252,10 @@ export class InstagramProvider
       };
     }
 
-    if (body.indexOf('2207027') > -1) {
-      return {
-        type: 'bad-body' as const,
-        value: 'Unknown error, please try again later or contact support',
-      };
-    }
-
-    if (body.indexOf('2207042') > -1) {
-      return {
-        type: 'bad-body' as const,
-        value:
-          'You have reached the maximum of 25 posts per day, allowed for your account',
-      };
-    }
-
     if (body.indexOf('2207051') > -1) {
       return {
         type: 'bad-body' as const,
-        value:
-          'Instagram blocked your request',
+        value: 'Instagram blocked your request',
       };
     }
 
@@ -124,6 +264,13 @@ export class InstagramProvider
         type: 'bad-body' as const,
         value:
           'Instagram detected that your post is spam, please try again with different content',
+      };
+    }
+
+    if (body.indexOf('2207027') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Unknown error, please try again later or contact support',
       };
     }
 

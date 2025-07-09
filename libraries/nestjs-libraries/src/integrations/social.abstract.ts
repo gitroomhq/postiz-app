@@ -6,7 +6,7 @@ export class RefreshToken {
     public identifier: string,
     public json: string,
     public body: BodyInit,
-    public message = 'refresh account',
+    public message = '',
   ) {}
 }
 export class BadBody {
@@ -14,7 +14,7 @@ export class BadBody {
     public identifier: string,
     public json: string,
     public body: BodyInit,
-    public message = 'error occurred'
+    public message = ''
   ) {}
 }
 
@@ -24,7 +24,7 @@ export class NotEnoughScopes {
 
 const pThrottleInstance = pThrottle({
   limit: 1,
-  interval: 2000
+  interval: 5000
 });
 
 export abstract class SocialAbstract {
@@ -32,7 +32,7 @@ export abstract class SocialAbstract {
     (url: RequestInfo, options?: RequestInit) => fetch(url, options)
   );
 
-  protected handleErrors(body: string): {type: 'refresh-token' | 'bad-body', value: string}|undefined {
+  public handleErrors(body: string): {type: 'refresh-token' | 'bad-body', value: string}|undefined {
     return {type: 'bad-body', value: 'bad request'};
   }
 
@@ -61,7 +61,7 @@ export abstract class SocialAbstract {
     }
 
     if (json.includes('rate_limit_exceeded') || json.includes('Rate limit')) {
-      await timer(2000);
+      await timer(5000);
       return this.fetch(url, options, identifier, totalRetries + 1);
     }
 
@@ -71,24 +71,11 @@ export abstract class SocialAbstract {
       throw new RefreshToken(identifier, json, options.body!, handleError?.value);
     }
 
-    // if (
-    //   request.status === 401 ||
-    //   (json.includes('OAuthException') &&
-    //     !json.includes('The user is not an Instagram Business') &&
-    //     !json.includes('Unsupported format') &&
-    //     !json.includes('2207018') &&
-    //     !json.includes('352') &&
-    //     !json.includes('REVOKED_ACCESS_TOKEN'))
-    // ) {
-    //   throw new RefreshToken(identifier, json, options.body!);
-    // }
-
     if (totalRetries < 2) {
-      await timer(2000);
       return this.fetch(url, options, identifier, totalRetries + 1);
     }
 
-    throw new BadBody(identifier, json, options.body!, handleError.value);
+    throw new BadBody(identifier, json, options.body!, handleError?.value);
   }
 
   checkScopes(required: string[], got: string | string[]) {
