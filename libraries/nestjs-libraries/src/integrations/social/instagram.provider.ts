@@ -11,6 +11,7 @@ import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { InstagramDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/instagram.dto';
 import { Integration } from '@prisma/client';
+import { number } from 'yup';
 
 export class InstagramProvider
   extends SocialAbstract
@@ -40,6 +41,93 @@ export class InstagramProvider
       picture: '',
       username: '',
     };
+  }
+
+  protected override handleErrors(body: string): {
+    type: 'refresh-token' | 'bad-body';
+    value: string;
+  } | undefined {
+    if (body.indexOf('2207018') > -1) {
+      return {
+        type: 'refresh-token' as const,
+        value:
+          'Something is wrong with your connected user, please re-authenticate',
+      };
+    }
+    if (body.indexOf('Error validating access token') > -1) {
+      return {
+        type: 'refresh-token' as const,
+        value: 'Please re-authenticate your Instagram account',
+      };
+    }
+
+    if (body.indexOf('2207050') > -1) {
+      return {
+        type: 'refresh-token' as const,
+        value: 'Instagram user is restricted',
+      };
+    }
+
+    if (body.indexOf('Page request limit reached') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Page posting for today is limited, please try again tomorrow',
+      };
+    }
+
+    if (body.indexOf('Not enough permissions to post') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Not enough permissions to post',
+      };
+    }
+
+    if (body.indexOf('36003') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Aspect ratio not supported, must be between 4:5 to 1.91:1',
+      };
+    }
+
+    if (body.indexOf('36001') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Invalid Instagram image resolution max: 1920x1080px',
+      };
+    }
+
+    if (body.indexOf('2207027') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Unknown error, please try again later or contact support',
+      };
+    }
+
+    if (body.indexOf('2207042') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'You have reached the maximum of 25 posts per day, allowed for your account',
+      };
+    }
+
+    if (body.indexOf('2207051') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'Instagram blocked your request',
+      };
+    }
+
+    if (body.indexOf('2207001') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'Instagram detected that your post is spam, please try again with different content',
+      };
+    }
+
+    return undefined;
   }
 
   async reConnect(
@@ -226,10 +314,14 @@ export class InstagramProvider
             ? firstPost?.media?.length === 1
               ? isStory
                 ? `video_url=${m.path}&media_type=STORIES`
-                : `video_url=${m.path}&media_type=REELS&thumb_offset=${m?.thumbnailTimestamp || 0}`
+                : `video_url=${m.path}&media_type=REELS&thumb_offset=${
+                    m?.thumbnailTimestamp || 0
+                  }`
               : isStory
               ? `video_url=${m.path}&media_type=STORIES`
-              : `video_url=${m.path}&media_type=VIDEO&thumb_offset=${m?.thumbnailTimestamp || 0}`
+              : `video_url=${m.path}&media_type=VIDEO&thumb_offset=${
+                  m?.thumbnailTimestamp || 0
+                }`
             : isStory
             ? `image_url=${m.path}&media_type=STORIES`
             : `image_url=${m.path}`;
