@@ -6,7 +6,7 @@ export class RefreshToken {
     public identifier: string,
     public json: string,
     public body: BodyInit,
-    public message = '',
+    public message = ''
   ) {}
 }
 export class BadBody {
@@ -24,7 +24,7 @@ export class NotEnoughScopes {
 
 const pThrottleInstance = pThrottle({
   limit: 1,
-  interval: 5000
+  interval: 5000,
 });
 
 export abstract class SocialAbstract {
@@ -32,8 +32,10 @@ export abstract class SocialAbstract {
     (url: RequestInfo, options?: RequestInit) => fetch(url, options)
   );
 
-  public handleErrors(body: string): {type: 'refresh-token' | 'bad-body', value: string}|undefined {
-    return {type: 'bad-body', value: 'bad request'};
+  public handleErrors(
+    body: string
+  ): { type: 'refresh-token' | 'bad-body'; value: string } | undefined {
+    return { type: 'bad-body', value: 'bad request' };
   }
 
   async fetch(
@@ -49,6 +51,7 @@ export abstract class SocialAbstract {
     }
 
     if (totalRetries > 2) {
+      console.log('bad body retries');
       throw new BadBody(identifier, '{}', options.body || '{}');
     }
 
@@ -62,17 +65,23 @@ export abstract class SocialAbstract {
 
     if (json.includes('rate_limit_exceeded') || json.includes('Rate limit')) {
       await timer(5000);
+      console.log('rate limit trying again');
       return this.fetch(url, options, identifier, totalRetries + 1);
     }
 
-    const handleError = this.handleErrors(json);
+    const handleError = this.handleErrors(json || '{}') || {
+      type: 'bad-body',
+      value: '',
+    };
 
     if (request.status === 401 || handleError?.type === 'refresh-token') {
-      throw new RefreshToken(identifier, json, options.body!, handleError?.value);
-    }
-
-    if (totalRetries < 2) {
-      return this.fetch(url, options, identifier, totalRetries + 1);
+      console.log('refresh token');
+      throw new RefreshToken(
+        identifier,
+        json,
+        options.body!,
+        handleError?.value
+      );
     }
 
     throw new BadBody(identifier, json, options.body!, handleError?.value);

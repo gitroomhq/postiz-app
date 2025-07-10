@@ -83,7 +83,7 @@ export class PostsService {
 
     const mappedValues = {
       ...body,
-      type: replaceDraft ? 'schedule': body.type,
+      type: replaceDraft ? 'schedule' : body.type,
       posts: await Promise.all(
         body.posts.map(async (post) => {
           const integration = await this._integrationService.getIntegrationById(
@@ -157,95 +157,102 @@ export class PostsService {
   }
 
   async updateMedia(id: string, imagesList: any[], convertToJPEG = false) {
-    let imageUpdateNeeded = false;
-    const getImageList = await Promise.all(
-      (
-        await Promise.all(
-          imagesList.map(async (p: any) => {
-            if (!p.path && p.id) {
-              imageUpdateNeeded = true;
-              return this._mediaService.getMediaById(p.id);
-            }
+    try {
+      let imageUpdateNeeded = false;
+      const getImageList = await Promise.all(
+        (
+          await Promise.all(
+            imagesList.map(async (p: any) => {
+              if (!p.path && p.id) {
+                imageUpdateNeeded = true;
+                return this._mediaService.getMediaById(p.id);
+              }
 
-            return p;
-          })
+              return p;
+            })
+          )
         )
-      )
-        .map((m) => {
-          return {
-            ...m,
-            url:
-              m.path.indexOf('http') === -1
-                ? process.env.FRONTEND_URL +
-                  '/' +
-                  process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
-                  m.path
-                : m.path,
-            type: 'image',
-            path:
-              m.path.indexOf('http') === -1
-                ? process.env.UPLOAD_DIRECTORY + m.path
-                : m.path,
-          };
-        })
-        .map(async (m) => {
-          if (!convertToJPEG) {
-            return m;
-          }
-
-          if (m.path.indexOf('.png') > -1) {
-            imageUpdateNeeded = true;
-            const response = await axios.get(m.url, {
-              responseType: 'arraybuffer',
-            });
-
-            const imageBuffer = Buffer.from(response.data);
-
-            // Use sharp to get the metadata of the image
-            const buffer = await sharp(imageBuffer)
-              .jpeg({ quality: 100 })
-              .toBuffer();
-
-            const { path, originalname } = await this.storage.uploadFile({
-              buffer,
-              mimetype: 'image/jpeg',
-              size: buffer.length,
-              path: '',
-              fieldname: '',
-              destination: '',
-              stream: new Readable(),
-              filename: '',
-              originalname: '',
-              encoding: '',
-            });
-
+          .map((m) => {
             return {
               ...m,
-              name: originalname,
               url:
-                path.indexOf('http') === -1
+                m.path.indexOf('http') === -1
                   ? process.env.FRONTEND_URL +
                     '/' +
                     process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
-                    path
-                  : path,
+                    m.path
+                  : m.path,
               type: 'image',
               path:
-                path.indexOf('http') === -1
-                  ? process.env.UPLOAD_DIRECTORY + path
-                  : path,
+                m.path.indexOf('http') === -1
+                  ? process.env.UPLOAD_DIRECTORY + m.path
+                  : m.path,
             };
-          }
+          })
+          .map(async (m) => {
+            if (!convertToJPEG) {
+              return m;
+            }
 
-          return m;
-        })
-    );
+            if (m.path.indexOf('.png') > -1) {
+              imageUpdateNeeded = true;
+              const response = await axios.get(m.url, {
+                responseType: 'arraybuffer',
+              });
 
-    if (imageUpdateNeeded) {
-      await this._postRepository.updateImages(id, JSON.stringify(getImageList));
+              const imageBuffer = Buffer.from(response.data);
+
+              // Use sharp to get the metadata of the image
+              const buffer = await sharp(imageBuffer)
+                .jpeg({ quality: 100 })
+                .toBuffer();
+
+              const { path, originalname } = await this.storage.uploadFile({
+                buffer,
+                mimetype: 'image/jpeg',
+                size: buffer.length,
+                path: '',
+                fieldname: '',
+                destination: '',
+                stream: new Readable(),
+                filename: '',
+                originalname: '',
+                encoding: '',
+              });
+
+              return {
+                ...m,
+                name: originalname,
+                url:
+                  path.indexOf('http') === -1
+                    ? process.env.FRONTEND_URL +
+                      '/' +
+                      process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
+                      path
+                    : path,
+                type: 'image',
+                path:
+                  path.indexOf('http') === -1
+                    ? process.env.UPLOAD_DIRECTORY + path
+                    : path,
+              };
+            }
+
+            return m;
+          })
+      );
+
+      if (imageUpdateNeeded) {
+        await this._postRepository.updateImages(
+          id,
+          JSON.stringify(getImageList)
+        );
+      }
+
+      return getImageList;
+    } catch (err: any) {
+      return imagesList;
     }
-
-    return getImageList;
   }
 
   async getPost(orgId: string, id: string, convertToJPEG = false) {
@@ -335,7 +342,9 @@ export class PostsService {
         await this._notificationService.inAppNotification(
           firstPost.organizationId,
           `Error posting on ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
-          `An error occurred while posting on ${firstPost.integration?.providerIdentifier}${err?.message ? `: ${err?.message}` : ``}`,
+          `An error occurred while posting on ${
+            firstPost.integration?.providerIdentifier
+          }${err?.message ? `: ${err?.message}` : ``}`,
           true
         );
 
@@ -379,7 +388,6 @@ export class PostsService {
     integration: Integration,
     posts: Post[],
     forceRefresh = false,
-    err = ''
   ): Promise<Partial<{ postId: string; releaseURL: string }>> {
     const getIntegration = this._integrationManager.getSocialIntegration(
       integration.providerIdentifier
@@ -457,7 +465,7 @@ export class PostsService {
             media: await this.updateMedia(
               p.id,
               JSON.parse(p.image || '[]'),
-              getIntegration.convertToJPEG
+              getIntegration?.convertToJPEG || false
             ),
           }))
         ),
@@ -465,43 +473,47 @@ export class PostsService {
       );
 
       for (const post of publishedPosts) {
-        await this._postRepository.updatePost(
-          post.id,
-          post.postId,
-          post.releaseURL
-        );
+        try {
+          await this._postRepository.updatePost(
+            post.id,
+            post.postId,
+            post.releaseURL
+          );
+        } catch (err) {}
       }
 
-      await this._notificationService.inAppNotification(
-        integration.organizationId,
-        `Your post has been published on ${capitalize(
-          integration.providerIdentifier
-        )}`,
-        `Your post has been published on ${capitalize(
-          integration.providerIdentifier
-        )} at ${publishedPosts[0].releaseURL}`,
-        true,
-        true
-      );
+      try {
+        await this._notificationService.inAppNotification(
+          integration.organizationId,
+          `Your post has been published on ${capitalize(
+            integration.providerIdentifier
+          )}`,
+          `Your post has been published on ${capitalize(
+            integration.providerIdentifier
+          )} at ${publishedPosts[0].releaseURL}`,
+          true,
+          true
+        );
 
-      await this._webhookService.digestWebhooks(
-        integration.organizationId,
-        dayjs(newPosts[0].publishDate).format('YYYY-MM-DDTHH:mm:00')
-      );
+        await this._webhookService.digestWebhooks(
+          integration.organizationId,
+          dayjs(newPosts[0].publishDate).format('YYYY-MM-DDTHH:mm:00')
+        );
 
-      await this.checkPlugs(
-        integration.organizationId,
-        getIntegration.identifier,
-        integration.id,
-        publishedPosts[0].postId
-      );
+        await this.checkPlugs(
+          integration.organizationId,
+          getIntegration.identifier,
+          integration.id,
+          publishedPosts[0].postId
+        );
 
-      await this.checkInternalPlug(
-        integration,
-        integration.organizationId,
-        publishedPosts[0].postId,
-        JSON.parse(newPosts[0].settings || '{}')
-      );
+        await this.checkInternalPlug(
+          integration,
+          integration.organizationId,
+          publishedPosts[0].postId,
+          JSON.parse(newPosts[0].settings || '{}')
+        );
+      } catch (err) {}
 
       return {
         postId: publishedPosts[0].postId,
