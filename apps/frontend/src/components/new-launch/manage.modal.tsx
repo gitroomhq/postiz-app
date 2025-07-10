@@ -412,6 +412,8 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                             ? 'Create output'
                             : !existingData?.integration
                             ? t('add_to_calendar', 'Add to calendar')
+                            : existingData?.posts?.[0]?.state === 'DRAFT'
+                            ? t('schedule', 'Schedule')
                             : t('update', 'Update')}
                         </div>
                         {!dummy && (

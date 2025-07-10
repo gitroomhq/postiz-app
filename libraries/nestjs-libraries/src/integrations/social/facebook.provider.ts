@@ -8,6 +8,7 @@ import {
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { FacebookDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/facebook.dto';
 
 export class FacebookProvider extends SocialAbstract implements SocialProvider {
   identifier = 'facebook';
@@ -22,10 +23,12 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     'read_insights',
   ];
 
-  override handleErrors(body: string): {
-    type: 'refresh-token' | 'bad-body';
-    value: string;
-  } | undefined {
+  override handleErrors(body: string):
+    | {
+        type: 'refresh-token' | 'bad-body';
+        value: string;
+      }
+    | undefined {
     // Access token validation errors - require re-authentication
     if (body.indexOf('Error validating access token') > -1) {
       return {
@@ -274,7 +277,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
   async post(
     id: string,
     accessToken: string,
-    postDetails: PostDetails[]
+    postDetails: PostDetails<FacebookDto>[]
   ): Promise<PostResponse[]> {
     const [firstPost, ...comments] = postDetails;
 
@@ -345,6 +348,9 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
             },
             body: JSON.stringify({
               ...(uploadPhotos?.length ? { attached_media: uploadPhotos } : {}),
+              ...(firstPost?.settings?.url
+                ? { link: firstPost.settings.url }
+                : {}),
               message: firstPost.message,
               published: true,
             }),
