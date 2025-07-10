@@ -23,7 +23,8 @@ export class PostsRepository {
     private _popularPosts: PrismaRepository<'popularPosts'>,
     private _comments: PrismaRepository<'comments'>,
     private _tags: PrismaRepository<'tags'>,
-    private _tagsPosts: PrismaRepository<'tagsPosts'>
+    private _tagsPosts: PrismaRepository<'tagsPosts'>,
+    private _errors: PrismaRepository<'errors'>
   ) {}
 
   getOldPosts(orgId: string, date: string) {
@@ -264,8 +265,8 @@ export class PostsRepository {
     });
   }
 
-  changeState(id: string, state: State, err?: string) {
-    return this._post.model.post.update({
+  async changeState(id: string, state: State, err?: string) {
+    const update = await this._post.model.post.update({
       where: {
         id,
       },
@@ -273,7 +274,29 @@ export class PostsRepository {
         state,
         error: typeof err === 'string' ? err : JSON.stringify(err),
       },
+      include: {
+        integration: {
+          select: {
+            providerIdentifier: true,
+          },
+        },
+      },
     });
+
+    if (state === 'ERROR') {
+      try {
+        await this._errors.model.errors.create({
+          data: {
+            message: typeof err === 'string' ? err : JSON.stringify(err),
+            organizationId: update.organizationId,
+            platform: update.integration.providerIdentifier,
+            postId: update.id,
+          },
+        });
+      } catch (err) {}
+    }
+
+    return update;
   }
 
   async changeDate(orgId: string, id: string, date: string) {

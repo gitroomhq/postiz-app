@@ -39,6 +39,7 @@ model Organization {
   autoPost          AutoPost[]
   sets              Sets[]
   thirdParty        ThirdParty[]
+  errors            Errors[]
 }
 
 model Tags {
@@ -405,6 +406,7 @@ model Post {
   payoutProblems             PayoutProblems[]
   comments                   Comments[]
   tags                       TagsPosts[]
+  errors                     Errors[]
   error                      String?
   createdAt                  DateTime                  @default(now())
   updatedAt                  DateTime                  @updatedAt
@@ -636,6 +638,21 @@ model ThirdParty {
   @@unique([organizationId, internalId])
   @@index([organizationId])
   @@index([deletedAt])
+}
+
+model Errors {
+  id             String       @id @default(uuid())
+  message        String
+  platform       String
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  postId         String
+  post           Post         @relation(fields: [postId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
+  @@index([createdAt])
 }
 
 enum OrderStatus {
