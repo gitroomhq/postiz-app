@@ -447,7 +447,7 @@ export class InstagramProvider
     type = 'graph.facebook.com'
   ): Promise<PostResponse[]> {
     const [firstPost, ...theRest] = postDetails;
-    console.log('in progress');
+    console.log('in progress', id);
     const isStory = firstPost.settings.post_type === 'story';
     const medias = await Promise.all(
       firstPost?.media?.map(async (m) => {
@@ -491,7 +491,7 @@ export class InstagramProvider
             }
           )
         ).json();
-        console.log('in progress2');
+        console.log('in progress2', id);
 
         let status = 'IN_PROGRESS';
         while (status === 'IN_PROGRESS') {
@@ -503,7 +503,7 @@ export class InstagramProvider
           await timer(10000);
           status = status_code;
         }
-        console.log('in progress3');
+        console.log('in progress3', id);
 
         return photoId;
       }) || []
