@@ -616,7 +616,7 @@ export class IntegrationService {
     this._workerServiceProducer.emit('plugs', {
       id: 'plug_' + data.postId + '_' + findPlug.identifier,
       options: {
-        delay: 0, // runPlug.runEveryMilliseconds,
+        delay: data.delay,
       },
       payload: {
         plugId: data.plugId,
