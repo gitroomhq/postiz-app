@@ -69,7 +69,8 @@ export class PublicIntegrationsController {
     @GetOrgFromRequest() org: Organization,
     @Body() rawBody: any
   ) {
-    const body = await this._postsService.mapTypeToPost(rawBody, org.id);
+    const body = await this._postsService.mapTypeToPost(rawBody, org.id, rawBody.type === 'draft');
+    body.type = rawBody.type;
 
     console.log(JSON.stringify(body, null, 2));
     return this._postsService.createPost(org.id, body);

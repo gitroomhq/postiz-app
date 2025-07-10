@@ -74,7 +74,8 @@ export class PostsService {
 
   async mapTypeToPost(
     body: CreatePostDto,
-    organization: string
+    organization: string,
+    replaceDraft: boolean = false
   ): Promise<CreatePostDto> {
     if (!body?.posts?.every((p) => p?.integration?.id)) {
       throw new BadRequestException('All posts must have an integration id');
@@ -82,6 +83,7 @@ export class PostsService {
 
     const mappedValues = {
       ...body,
+      type: replaceDraft ? 'schedule': body.type,
       posts: await Promise.all(
         body.posts.map(async (post) => {
           const integration = await this._integrationService.getIntegrationById(
