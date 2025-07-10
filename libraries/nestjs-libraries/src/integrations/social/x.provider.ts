@@ -28,6 +28,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   @Plug({
     identifier: 'x-autoRepostPost',
     title: 'Auto Repost Posts',
+    disabled: !!process.env.DISABLE_X_ANALYTICS,
     description:
       'When a post reached a certain number of likes, repost it to increase engagement (1 week old posts)',
     runEveryMilliseconds: 21600000,
@@ -104,6 +105,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   @Plug({
     identifier: 'x-autoPlugPost',
     title: 'Auto plug post',
+    disabled: !!process.env.DISABLE_X_ANALYTICS,
     description:
       'When a post reached a certain number of likes, add another post to it so you followers get a notification about your promotion',
     runEveryMilliseconds: 21600000,
@@ -175,7 +177,8 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     });
     const { url, oauth_token, oauth_token_secret } =
       await client.generateAuthLink(
-        (process.env.X_URL || process.env.FRONTEND_URL) + `/integrations/social/x`,
+        (process.env.X_URL || process.env.FRONTEND_URL) +
+          `/integrations/social/x`,
         {
           authAccessType: 'write',
           linkMode: 'authenticate',
@@ -350,26 +353,6 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     }));
   }
 
-  communities(accessToken: string, data: { search: string }) {
-    const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
-    const client = new TwitterApi({
-      appKey: process.env.X_API_KEY!,
-      appSecret: process.env.X_API_SECRET!,
-      accessToken: accessTokenSplit,
-      accessSecret: accessSecretSplit,
-    });
-
-    return client.v2.searchCommunities(data.search);
-
-    // })).data.map(p => {
-    //   return {
-    //     id: p.id,
-    //     name: p.name,
-    //     accessToken
-    //   }
-    // })
-  }
-
   private loadAllTweets = async (
     client: TwitterApi,
     id: string,
@@ -409,6 +392,10 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     accessToken: string,
     date: number
   ): Promise<AnalyticsData[]> {
+    if (process.env.DISABLE_X_ANALYTICS) {
+      return [];
+    }
+
     const until = dayjs().endOf('day');
     const since = dayjs().subtract(date, 'day');
 

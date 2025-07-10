@@ -31,6 +31,10 @@ export async function middleware(request: NextRequest) {
     headers.set(headerName, lng);
   }
 
+  if (nextUrl.pathname.startsWith('/modal/') && !authCookie) {
+    return NextResponse.redirect(new URL(`/auth/login-required`, nextUrl.href));
+  }
+
   if (
     nextUrl.pathname.startsWith('/uploads/') ||
     nextUrl.pathname.startsWith('/p/') ||

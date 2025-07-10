@@ -26,12 +26,13 @@ const PinterestSettings: FC = () => {
     </div>
   );
 };
-export default withProvider(
-  PostComment.COMMENT,
-  PinterestSettings,
-  undefined,
-  PinterestSettingsDto,
-  async ([firstItem, ...otherItems]) => {
+export default withProvider({
+  postComment: PostComment.COMMENT,
+  minimumCharacters: [],
+  SettingsComponent: PinterestSettings,
+  CustomPreviewComponent: undefined,
+  dto: PinterestSettingsDto,
+  checkValidity: async ([firstItem, ...otherItems]) => {
     const isMp4 = firstItem?.find((item) => item.path.indexOf('mp4') > -1);
     const isPicture = firstItem?.find(
       (item) => item.path.indexOf('mp4') === -1
@@ -76,5 +77,5 @@ export default withProvider(
     }
     return true;
   },
-  500
-);
+  maximumCharacters: 500,
+});

@@ -33,7 +33,7 @@ export class IntegrationService {
     private _autopostsRepository: AutopostRepository,
     private _integrationManager: IntegrationManager,
     private _notificationService: NotificationService,
-    private _workerServiceProducer: BullMqClient,
+    private _workerServiceProducer: BullMqClient
   ) {}
 
   async changeActiveCron(orgId: string) {
@@ -163,11 +163,11 @@ export class IntegrationService {
     await this.informAboutRefreshError(orgId, integration);
   }
 
-  async informAboutRefreshError(orgId: string, integration: Integration) {
+  async informAboutRefreshError(orgId: string, integration: Integration, err = '') {
     await this._notificationService.inAppNotification(
       orgId,
-      `Could not refresh your ${integration.providerIdentifier} channel`,
-      `Could not refresh your ${integration.providerIdentifier} channel. Please go back to the system and connect it again ${process.env.FRONTEND_URL}/launches`,
+      `Could not refresh your ${integration.providerIdentifier} channel ${err}`,
+      `Could not refresh your ${integration.providerIdentifier} channel ${err}. Please go back to the system and connect it again ${process.env.FRONTEND_URL}/launches`,
       true
     );
   }
@@ -616,7 +616,7 @@ export class IntegrationService {
     this._workerServiceProducer.emit('plugs', {
       id: 'plug_' + data.postId + '_' + findPlug.identifier,
       options: {
-        delay: 0, // runPlug.runEveryMilliseconds,
+        delay: data.delay,
       },
       payload: {
         plugId: data.plugId,
@@ -673,8 +673,14 @@ export class IntegrationService {
     return difference(id, loadOnlyIds);
   }
 
-  async findFreeDateTime(orgId: string): Promise<number[]> {
-    const findTimes = await this._integrationRepository.getPostingTimes(orgId);
+  async findFreeDateTime(
+    orgId: string,
+    integrationsId?: string
+  ): Promise<number[]> {
+    const findTimes = await this._integrationRepository.getPostingTimes(
+      orgId,
+      integrationsId
+    );
     return uniq(
       findTimes.reduce((all: any, current: any) => {
         return [

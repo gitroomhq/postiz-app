@@ -1,0 +1,6 @@
+{
+  "presets": ["@babel/preset-typescript"],
+  "plugins": [
+    ["@babel/plugin-syntax-decorators", { "legacy": true }]
+  ]
+}

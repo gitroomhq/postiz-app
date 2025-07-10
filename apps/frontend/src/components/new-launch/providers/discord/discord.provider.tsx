@@ -1,6 +1,9 @@
 'use client';
 
-import { PostComment, withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
+import {
+  PostComment,
+  withProvider,
+} from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 import { FC } from 'react';
 import { DiscordDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/discord.dto';
 import { DiscordChannelSelect } from '@gitroom/frontend/components/new-launch/providers/discord/discord.channel.select';
@@ -13,11 +16,12 @@ const DiscordComponent: FC = () => {
     </div>
   );
 };
-export default withProvider(
-  PostComment.COMMENT,
-  DiscordComponent,
-  undefined,
-  DiscordDto,
-  undefined,
-  1980
-);
+export default withProvider({
+  postComment: PostComment.COMMENT,
+  minimumCharacters: [],
+  SettingsComponent: DiscordComponent,
+  CustomPreviewComponent: undefined,
+  dto: DiscordDto,
+  checkValidity: undefined,
+  maximumCharacters: 1980,
+});

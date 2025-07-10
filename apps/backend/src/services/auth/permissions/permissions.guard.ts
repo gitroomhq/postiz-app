@@ -9,8 +9,8 @@ import {
   CHECK_POLICIES_KEY,
 } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import { Organization } from '@prisma/client';
-import { SubscriptionException } from '@gitroom/backend/services/auth/permissions/subscription.exception';
 import { Request } from 'express';
+import { SubscriptionException } from './permission.exception.class';
 
 @Injectable()
 export class PoliciesGuard implements CanActivate {

@@ -21,6 +21,7 @@ import { PictureGeneratorSection } from '@gitroom/frontend/components/launches/p
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { loadVars } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 const store = createStore({
   get key() {
     return loadVars().plontoKey;
@@ -75,6 +76,15 @@ const Polonto: FC<{
   height?: number;
 }> = (props) => {
   const { setMedia, type, closeModal } = props;
+
+  const setActivateExitButton = useLaunchStore((e) => e.setActivateExitButton);
+  useEffect(() => {
+    setActivateExitButton(false);
+    return () => {
+      setActivateExitButton(true);
+    };
+  }, []);
+
   const user = useUser();
   const features = useMemo(() => {
     return [

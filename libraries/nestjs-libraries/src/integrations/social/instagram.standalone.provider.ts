@@ -27,6 +27,10 @@ export class InstagramStandaloneProvider
     'instagram_business_manage_insights',
   ];
 
+  public override handleErrors(body: string): { type: "refresh-token" | "bad-body"; value: string } | undefined {
+    return instagramProvider.handleErrors(body);
+  }
+
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     const { access_token } = await (
       await this.fetch(

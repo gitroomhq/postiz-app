@@ -13,6 +13,7 @@ import { Button } from '@gitroom/react/form/button';
 import { useRouter } from 'next/navigation';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 const allowedIntegrations = [
   'facebook',
   'instagram',
@@ -28,12 +29,21 @@ export const PlatformAnalytics = () => {
   const fetch = useFetch();
   const t = useT();
   const router = useRouter();
+  const { disableXAnalytics } = useVariables();
+
   const [current, setCurrent] = useState(0);
   const [key, setKey] = useState(7);
   const [refresh, setRefresh] = useState(false);
   const toaster = useToaster();
   const load = useCallback(async () => {
-    const int = (await (await fetch('/integrations/list')).json()).integrations;
+    const int = (
+      await (await fetch('/integrations/list')).json()
+    ).integrations.filter((f: any) => {
+      if (f.identifier === 'x' && disableXAnalytics) {
+        return false;
+      }
+      return true;
+    });
     return int.filter((f: any) => allowedIntegrations.includes(f.identifier));
   }, []);
   const { data, isLoading } = useSWR('analytics-list', load, {

@@ -91,8 +91,8 @@ export const TelegramProvider: FC<Web3ProviderInterface> = (props) => {
       </button>
       <div className="justify-center items-center flex flex-col pt-[16px]">
         <div>
-          {t('please_add', 'Please add')}
-          <strong>@{telegramBotName}</strong>
+          {t('please_add', 'Please add')}{' '}
+          <strong>@{telegramBotName}</strong>{' '}
           {t(
             'to_your_telegram_group_channel_and_click_here',
             'to your\n          telegram group / channel and click here:'

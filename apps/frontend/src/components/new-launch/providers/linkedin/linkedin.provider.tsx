@@ -25,12 +25,13 @@ const LinkedInSettings = () => {
     </div>
   );
 };
-export default withProvider<LinkedinDto>(
-  PostComment.COMMENT,
-  LinkedInSettings,
-  undefined,
-  LinkedinDto,
-  async (posts, vals) => {
+export default withProvider<LinkedinDto>({
+  postComment: PostComment.COMMENT,
+  minimumCharacters: [],
+  SettingsComponent: LinkedInSettings,
+  CustomPreviewComponent: undefined,
+  dto: LinkedinDto,
+  checkValidity: async (posts, vals) => {
     const [firstPost, ...restPosts] = posts;
 
     if (
@@ -52,5 +53,5 @@ export default withProvider<LinkedinDto>(
     }
     return true;
   },
-  3000
-);
+  maximumCharacters: 3000,
+});

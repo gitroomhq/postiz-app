@@ -1,4 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  ValidationPipe,
+} from '@nestjs/common';
 import { PostsRepository } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.repository';
 import { CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
 import dayjs from 'dayjs';
@@ -29,6 +34,8 @@ import sharp from 'sharp';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { Readable } from 'stream';
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 dayjs.extend(utc);
 
 type PostWithConditionals = Post & {
@@ -50,7 +57,7 @@ export class PostsService {
     private _mediaService: MediaService,
     private _shortLinkService: ShortLinkService,
     private _webhookService: WebhooksService,
-    private openaiService: OpenaiService,
+    private openaiService: OpenaiService
   ) {}
 
   async getStatistics(orgId: string, id: string) {
@@ -63,6 +70,56 @@ export class PostsService {
     return {
       clicks: shortLinksTracking,
     };
+  }
+
+  async mapTypeToPost(
+    body: CreatePostDto,
+    organization: string,
+    replaceDraft: boolean = false
+  ): Promise<CreatePostDto> {
+    if (!body?.posts?.every((p) => p?.integration?.id)) {
+      throw new BadRequestException('All posts must have an integration id');
+    }
+
+    const mappedValues = {
+      ...body,
+      type: replaceDraft ? 'schedule' : body.type,
+      posts: await Promise.all(
+        body.posts.map(async (post) => {
+          const integration = await this._integrationService.getIntegrationById(
+            organization,
+            post.integration.id
+          );
+
+          if (!integration) {
+            throw new BadRequestException(
+              `Integration with id ${post.integration.id} not found`
+            );
+          }
+
+          return {
+            ...post,
+            settings: {
+              ...(post.settings || ({} as any)),
+              __type: integration.providerIdentifier,
+            },
+          };
+        })
+      ),
+    };
+
+    const validationPipe = new ValidationPipe({
+      skipMissingProperties: false,
+      transform: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+    });
+
+    return await validationPipe.transform(mappedValues, {
+      type: 'body',
+      metatype: CreatePostDto,
+    });
   }
 
   async getPostsRecursively(
@@ -100,95 +157,102 @@ export class PostsService {
   }
 
   async updateMedia(id: string, imagesList: any[], convertToJPEG = false) {
-    let imageUpdateNeeded = false;
-    const getImageList = await Promise.all(
-      (
-        await Promise.all(
-          imagesList.map(async (p: any) => {
-            if (!p.path && p.id) {
-              imageUpdateNeeded = true;
-              return this._mediaService.getMediaById(p.id);
-            }
+    try {
+      let imageUpdateNeeded = false;
+      const getImageList = await Promise.all(
+        (
+          await Promise.all(
+            imagesList.map(async (p: any) => {
+              if (!p.path && p.id) {
+                imageUpdateNeeded = true;
+                return this._mediaService.getMediaById(p.id);
+              }
 
-            return p;
-          })
+              return p;
+            })
+          )
         )
-      )
-        .map((m) => {
-          return {
-            ...m,
-            url:
-              m.path.indexOf('http') === -1
-                ? process.env.FRONTEND_URL +
-                  '/' +
-                  process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
-                  m.path
-                : m.path,
-            type: 'image',
-            path:
-              m.path.indexOf('http') === -1
-                ? process.env.UPLOAD_DIRECTORY + m.path
-                : m.path,
-          };
-        })
-        .map(async (m) => {
-          if (!convertToJPEG) {
-            return m;
-          }
-
-          if (m.path.indexOf('.png') > -1) {
-            imageUpdateNeeded = true;
-            const response = await axios.get(m.url, {
-              responseType: 'arraybuffer',
-            });
-
-            const imageBuffer = Buffer.from(response.data);
-
-            // Use sharp to get the metadata of the image
-            const buffer = await sharp(imageBuffer)
-              .jpeg({ quality: 100 })
-              .toBuffer();
-
-            const { path, originalname } = await this.storage.uploadFile({
-              buffer,
-              mimetype: 'image/jpeg',
-              size: buffer.length,
-              path: '',
-              fieldname: '',
-              destination: '',
-              stream: new Readable(),
-              filename: '',
-              originalname: '',
-              encoding: '',
-            });
-
+          .map((m) => {
             return {
               ...m,
-              name: originalname,
               url:
-                path.indexOf('http') === -1
+                m.path.indexOf('http') === -1
                   ? process.env.FRONTEND_URL +
                     '/' +
                     process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
-                    path
-                  : path,
+                    m.path
+                  : m.path,
               type: 'image',
               path:
-                path.indexOf('http') === -1
-                  ? process.env.UPLOAD_DIRECTORY + path
-                  : path,
+                m.path.indexOf('http') === -1
+                  ? process.env.UPLOAD_DIRECTORY + m.path
+                  : m.path,
             };
-          }
+          })
+          .map(async (m) => {
+            if (!convertToJPEG) {
+              return m;
+            }
 
-          return m;
-        })
-    );
+            if (m.path.indexOf('.png') > -1) {
+              imageUpdateNeeded = true;
+              const response = await axios.get(m.url, {
+                responseType: 'arraybuffer',
+              });
 
-    if (imageUpdateNeeded) {
-      await this._postRepository.updateImages(id, JSON.stringify(getImageList));
+              const imageBuffer = Buffer.from(response.data);
+
+              // Use sharp to get the metadata of the image
+              const buffer = await sharp(imageBuffer)
+                .jpeg({ quality: 100 })
+                .toBuffer();
+
+              const { path, originalname } = await this.storage.uploadFile({
+                buffer,
+                mimetype: 'image/jpeg',
+                size: buffer.length,
+                path: '',
+                fieldname: '',
+                destination: '',
+                stream: new Readable(),
+                filename: '',
+                originalname: '',
+                encoding: '',
+              });
+
+              return {
+                ...m,
+                name: originalname,
+                url:
+                  path.indexOf('http') === -1
+                    ? process.env.FRONTEND_URL +
+                      '/' +
+                      process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
+                      path
+                    : path,
+                type: 'image',
+                path:
+                  path.indexOf('http') === -1
+                    ? process.env.UPLOAD_DIRECTORY + path
+                    : path,
+              };
+            }
+
+            return m;
+          })
+      );
+
+      if (imageUpdateNeeded) {
+        await this._postRepository.updateImages(
+          id,
+          JSON.stringify(getImageList)
+        );
+      }
+
+      return getImageList;
+    } catch (err: any) {
+      return imagesList;
     }
-
-    return getImageList;
   }
 
   async getPost(orgId: string, id: string, convertToJPEG = false) {
@@ -218,7 +282,8 @@ export class PostsService {
   }
 
   async post(id: string) {
-    const [firstPost, ...morePosts] = await this.getPostsRecursively(id, true);
+    const allPosts = await this.getPostsRecursively(id, true);
+    const [firstPost, ...morePosts] = allPosts;
     if (!firstPost) {
       return;
     }
@@ -244,16 +309,10 @@ export class PostsService {
     }
 
     try {
-      const finalPost =
-        firstPost.integration?.type === 'article'
-          ? await this.postArticle(firstPost.integration!, [
-              firstPost,
-              ...morePosts,
-            ])
-          : await this.postSocial(firstPost.integration!, [
-              firstPost,
-              ...morePosts,
-            ]);
+      const finalPost = await this.postSocial(firstPost.integration!, [
+        firstPost,
+        ...morePosts,
+      ]);
 
       if (firstPost?.intervalInDays) {
         this._workerServiceProducer.emit('post', {
@@ -278,31 +337,18 @@ export class PostsService {
 
         return;
       }
-
-      if (firstPost.submittedForOrderId) {
-        this._workerServiceProducer.emit('submit', {
-          payload: {
-            id: firstPost.id,
-            releaseURL: finalPost.releaseURL,
-          },
-        });
-      }
     } catch (err: any) {
-      await this._postRepository.changeState(firstPost.id, 'ERROR', err);
-      await this._notificationService.inAppNotification(
-        firstPost.organizationId,
-        `Error posting on ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
-        `An error occurred while posting on ${
-          firstPost.integration?.providerIdentifier
-        } ${
-          !process.env.NODE_ENV || process.env.NODE_ENV === 'development'
-            ? err
-            : ''
-        }`,
-        true
-      );
-
+      await this._postRepository.changeState(firstPost.id, 'ERROR', err, allPosts);
       if (err instanceof BadBody) {
+        await this._notificationService.inAppNotification(
+          firstPost.organizationId,
+          `Error posting on ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
+          `An error occurred while posting on ${
+            firstPost.integration?.providerIdentifier
+          }${err?.message ? `: ${err?.message}` : ``}`,
+          true
+        );
+
         console.error(
           '[Error] posting on',
           firstPost.integration?.providerIdentifier,
@@ -311,15 +357,9 @@ export class PostsService {
           err.body,
           err
         );
-
-        return;
       }
 
-      console.error(
-        '[Error] posting on',
-        firstPost.integration?.providerIdentifier,
-        err
-      );
+      return;
     }
   }
 
@@ -348,7 +388,7 @@ export class PostsService {
   private async postSocial(
     integration: Integration,
     posts: Post[],
-    forceRefresh = false
+    forceRefresh = false,
   ): Promise<Partial<{ postId: string; releaseURL: string }>> {
     const getIntegration = this._integrationManager.getSocialIntegration(
       integration.providerIdentifier
@@ -426,7 +466,7 @@ export class PostsService {
             media: await this.updateMedia(
               p.id,
               JSON.parse(p.image || '[]'),
-              getIntegration.convertToJPEG
+              getIntegration?.convertToJPEG || false
             ),
           }))
         ),
@@ -434,43 +474,47 @@ export class PostsService {
       );
 
       for (const post of publishedPosts) {
-        await this._postRepository.updatePost(
-          post.id,
-          post.postId,
-          post.releaseURL
-        );
+        try {
+          await this._postRepository.updatePost(
+            post.id,
+            post.postId,
+            post.releaseURL
+          );
+        } catch (err) {}
       }
 
-      await this._notificationService.inAppNotification(
-        integration.organizationId,
-        `Your post has been published on ${capitalize(
-          integration.providerIdentifier
-        )}`,
-        `Your post has been published on ${capitalize(
-          integration.providerIdentifier
-        )} at ${publishedPosts[0].releaseURL}`,
-        true,
-        true
-      );
+      try {
+        await this._notificationService.inAppNotification(
+          integration.organizationId,
+          `Your post has been published on ${capitalize(
+            integration.providerIdentifier
+          )}`,
+          `Your post has been published on ${capitalize(
+            integration.providerIdentifier
+          )} at ${publishedPosts[0].releaseURL}`,
+          true,
+          true
+        );
 
-      await this._webhookService.digestWebhooks(
-        integration.organizationId,
-        dayjs(newPosts[0].publishDate).format('YYYY-MM-DDTHH:mm:00')
-      );
+        await this._webhookService.digestWebhooks(
+          integration.organizationId,
+          dayjs(newPosts[0].publishDate).format('YYYY-MM-DDTHH:mm:00')
+        );
 
-      await this.checkPlugs(
-        integration.organizationId,
-        getIntegration.identifier,
-        integration.id,
-        publishedPosts[0].postId
-      );
+        await this.checkPlugs(
+          integration.organizationId,
+          getIntegration.identifier,
+          integration.id,
+          publishedPosts[0].postId
+        );
 
-      await this.checkInternalPlug(
-        integration,
-        integration.organizationId,
-        publishedPosts[0].postId,
-        JSON.parse(newPosts[0].settings || '{}')
-      );
+        await this.checkInternalPlug(
+          integration,
+          integration.organizationId,
+          publishedPosts[0].postId,
+          JSON.parse(newPosts[0].settings || '{}')
+        );
+      } catch (err) {}
 
       return {
         postId: publishedPosts[0].postId,
@@ -572,38 +616,6 @@ export class PostsService {
     }
   }
 
-  private async postArticle(integration: Integration, posts: Post[]): Promise<any> {
-    const getIntegration = this._integrationManager.getArticlesIntegration(
-      integration.providerIdentifier
-    );
-    if (!getIntegration) {
-      return;
-    }
-
-    const newPosts = await this.updateTags(integration.organizationId, posts);
-
-    const { postId, releaseURL } = await getIntegration.post(
-      integration.token,
-      newPosts.map((p) => p.content).join('\n\n'),
-      JSON.parse(newPosts[0].settings || '{}')
-    );
-
-    await this._notificationService.inAppNotification(
-      integration.organizationId,
-      `Your article has been published on ${capitalize(
-        integration.providerIdentifier
-      )}`,
-      `Your article has been published at ${releaseURL}`,
-      true
-    );
-    await this._postRepository.updatePost(newPosts[0].id, postId, releaseURL);
-
-    return {
-      postId,
-      releaseURL,
-    };
-  }
-
   async deletePost(orgId: string, group: string) {
     const post = await this._postRepository.deletePost(orgId, group);
     if (post?.id) {
@@ -680,7 +692,7 @@ export class PostsService {
         );
 
       if (!posts?.length) {
-        return;
+        return [] as any[];
       }
 
       await this._workerServiceProducer.delete(
@@ -890,7 +902,7 @@ export class PostsService {
                 id: integration.id,
               },
               settings: {
-                subtitle: '',
+                __type: integration.providerIdentifier as any,
                 title: '',
                 tags: [],
                 subreddit: [],
@@ -928,8 +940,11 @@ export class PostsService {
     return this._postRepository.findPopularPosts(category, topic);
   }
 
-  async findFreeDateTime(orgId: string) {
-    const findTimes = await this._integrationService.findFreeDateTime(orgId);
+  async findFreeDateTime(orgId: string, integrationId?: string) {
+    const findTimes = await this._integrationService.findFreeDateTime(
+      orgId,
+      integrationId
+    );
     return this.findFreeDateTimeRecursive(
       orgId,
       findTimes,

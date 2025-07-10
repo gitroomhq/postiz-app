@@ -12,14 +12,9 @@ import {
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization, User } from '@prisma/client';
-import { CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { StarsService } from '@gitroom/nestjs-libraries/database/prisma/stars/stars.service';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
-import {
-  AuthorizationActions,
-  Sections,
-} from '@gitroom/backend/services/auth/permissions/permissions.service';
 import { ApiTags } from '@nestjs/swagger';
 import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
 import { GeneratorDto } from '@gitroom/nestjs-libraries/dtos/generator/generator.dto';
@@ -29,6 +24,7 @@ import { Response } from 'express';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.link.service';
 import { CreateTagDto } from '@gitroom/nestjs-libraries/dtos/posts/create.tag.dto';
+import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 
 @ApiTags('Posts')
 @Controller('/posts')
@@ -38,7 +34,7 @@ export class PostsController {
     private _starsService: StarsService,
     private _messagesService: MessagesService,
     private _agentGraphService: AgentGraphService,
-    private _shortLinkService: ShortLinkService,
+    private _shortLinkService: ShortLinkService
   ) {}
 
   @Get('/:id/statistics')
@@ -111,6 +107,14 @@ export class PostsController {
     return { date: await this._postsService.findFreeDateTime(org.id) };
   }
 
+  @Get('/find-slot/:id')
+  async findSlotIntegration(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id?: string
+  ) {
+    return { date: await this._postsService.findFreeDateTime(org.id, id) };
+  }
+
   @Get('/predict-trending')
   predictTrending() {
     return this._starsService.predictTrending();
@@ -131,11 +135,12 @@ export class PostsController {
 
   @Post('/')
   @CheckPolicies([AuthorizationActions.Create, Sections.POSTS_PER_MONTH])
-  createPost(
+  async createPost(
     @GetOrgFromRequest() org: Organization,
-    @Body() body: CreatePostDto
+    @Body() rawBody: any
   ) {
-    console.log(JSON.stringify(body, null, 2));
+    console.log(JSON.stringify(rawBody, null, 2));
+    const body = await this._postsService.mapTypeToPost(rawBody, org.id);
     return this._postsService.createPost(org.id, body);
   }
 
@@ -183,7 +188,7 @@ export class PostsController {
   @Post('/separate-posts')
   async separatePosts(
     @GetOrgFromRequest() org: Organization,
-    @Body() body: { content: string, len: number }
+    @Body() body: { content: string; len: number }
   ) {
     return this._postsService.separatePosts(body.content, body.len);
   }

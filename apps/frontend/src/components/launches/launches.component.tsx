@@ -453,7 +453,7 @@ export const LaunchesComponent = () => {
                     user?.tier?.ai &&
                     billingEnabled && <GeneratorComponent />}
                   <div className="mt-[5px]">
-                    {process.env.VERSION ? `v${process.env.VERSION}` : ''}
+                    {process.env.NEXT_PUBLIC_VERSION ? `${process.env.NEXT_PUBLIC_VERSION}` : ''}
                   </div>
                 </div>
               </div>

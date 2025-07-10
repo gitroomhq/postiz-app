@@ -25,6 +25,125 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     'user.info.profile',
   ];
 
+  override handleErrors(body: string):
+    | {
+        type: 'refresh-token' | 'bad-body';
+        value: string;
+      }
+    | undefined {
+    // Authentication/Authorization errors - require re-authentication
+    if (body.indexOf('access_token_invalid') > -1) {
+      return {
+        type: 'refresh-token' as const,
+        value:
+          'Access token invalid, please re-authenticate your TikTok account',
+      };
+    }
+
+    if (body.indexOf('scope_not_authorized') > -1) {
+      return {
+        type: 'refresh-token' as const,
+        value:
+          'Missing required permissions, please re-authenticate with all scopes',
+      };
+    }
+
+    if (body.indexOf('scope_permission_missed') > -1) {
+      return {
+        type: 'refresh-token' as const,
+        value: 'Additional permissions required, please re-authenticate',
+      };
+    }
+
+    // Rate limiting errors
+    if (body.indexOf('rate_limit_exceeded') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'TikTok API rate limit exceeded, please try again later',
+      };
+    }
+
+    // Spam/Policy errors
+    if (body.indexOf('spam_risk_too_many_posts') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Daily post limit reached, please try again tomorrow',
+      };
+    }
+
+    if (body.indexOf('spam_risk_user_banned_from_posting') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'Account banned from posting, please check TikTok account status',
+      };
+    }
+
+    if (body.indexOf('reached_active_user_cap') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Daily active user quota reached, please try again later',
+      };
+    }
+
+    if (
+      body.indexOf('unaudited_client_can_only_post_to_private_accounts') > -1
+    ) {
+      return {
+        type: 'bad-body' as const,
+        value: 'App not approved for public posting, contact support',
+      };
+    }
+
+    if (body.indexOf('url_ownership_unverified') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'URL ownership not verified, please verify domain ownership',
+      };
+    }
+
+    if (body.indexOf('privacy_level_option_mismatch') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Privacy level mismatch, please check privacy settings',
+      };
+    }
+
+    // Content/Format validation errors
+    if (body.indexOf('invalid_file_upload') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Invalid file format or specifications not met',
+      };
+    }
+
+    if (body.indexOf('invalid_params') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Invalid request parameters, please check content format',
+      };
+    }
+
+    // Server errors
+    if (body.indexOf('internal_error') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'TikTok server error, please try again later',
+      };
+    }
+
+    // Generic TikTok API errors
+    if (body.indexOf('TikTok API error') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'TikTok API error, please try again',
+      };
+    }
+
+    // Fall back to parent class error handling
+    return undefined;
+  }
+
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const value = {
       client_key: process.env.TIKTOK_CLIENT_ID!,
@@ -256,7 +375,8 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
             Authorization: `Bearer ${accessToken}`,
           },
           body: JSON.stringify({
-            ...((firstPost?.settings?.content_posting_method || 'DIRECT_POST') === 'DIRECT_POST'
+            ...((firstPost?.settings?.content_posting_method ||
+              'DIRECT_POST') === 'DIRECT_POST'
               ? {
                   post_info: {
                     title: firstPost.message,
@@ -283,6 +403,12 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
                   source_info: {
                     source: 'PULL_FROM_URL',
                     video_url: firstPost?.media?.[0]?.path!,
+                    ...(firstPost?.media?.[0]?.thumbnailTimestamp!
+                      ? {
+                          video_cover_timestamp_ms:
+                            firstPost?.media?.[0]?.thumbnailTimestamp!,
+                        }
+                      : {}),
                   },
                 }
               : {

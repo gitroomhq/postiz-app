@@ -204,6 +204,14 @@ const TikTokSettings: FC<{
       </div>
       <div className="flex gap-[40px]">
         <Checkbox
+          label={t('label_comments', 'Comments')}
+          variant="hollow"
+          disabled={isUploadMode}
+          {...register('comment', {
+            value: true,
+          })}
+        />
+        <Checkbox
           variant="hollow"
           label={t('label_duet', 'Duet')}
           disabled={isUploadMode}
@@ -216,14 +224,6 @@ const TikTokSettings: FC<{
           variant="hollow"
           disabled={isUploadMode}
           {...register('stitch', {
-            value: false,
-          })}
-        />
-        <Checkbox
-          label={t('label_comments', 'Comments')}
-          variant="hollow"
-          disabled={isUploadMode}
-          {...register('comment', {
             value: false,
           })}
         />
@@ -346,12 +346,13 @@ const TikTokSettings: FC<{
     </div>
   );
 };
-export default withProvider(
-  PostComment.COMMENT,
-  TikTokSettings,
-  undefined,
-  TikTokDto,
-  async (items) => {
+export default withProvider({
+  postComment: PostComment.COMMENT,
+  minimumCharacters: [],
+  SettingsComponent: TikTokSettings,
+  CustomPreviewComponent: undefined,
+  dto: TikTokDto,
+  checkValidity: async (items) => {
     const [firstItems] = items;
     if (items.length !== 1) {
       return 'Should have one item';
@@ -372,5 +373,5 @@ export default withProvider(
     }
     return true;
   },
-  2000
-);
+  maximumCharacters: 2000,
+});

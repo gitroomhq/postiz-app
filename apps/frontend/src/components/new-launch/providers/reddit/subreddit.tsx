@@ -13,6 +13,7 @@ import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.v
 import { Canonical } from '@gitroom/react/form/canonical';
 import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 export const RenderOptions: FC<{
   options: Array<'self' | 'link' | 'media'>;
   onClick: (current: 'self' | 'link' | 'media') => void;
@@ -65,6 +66,7 @@ export const Subreddit: FC<{
   const t = useT();
 
   const { date } = useIntegration();
+  const dummy = useLaunchStore((state) => state.dummy);
   const split = name.split('.');
   const [loading, setLoading] = useState(false);
   // @ts-ignore
@@ -237,6 +239,7 @@ export const Subreddit: FC<{
               <div className="flex flex-col text-nowrap">
                 <MultiMediaComponent
                   allData={[]}
+                  dummy={dummy}
                   text=""
                   description=""
                   name="media"

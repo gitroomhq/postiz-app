@@ -9,16 +9,13 @@ const SettingsComponent = () => {
   return <ThreadFinisher />;
 };
 
-export default withProvider(
-  PostComment.POST,
-  SettingsComponent,
-  undefined,
-  undefined,
-  async ([firstPost, ...otherPosts], settings) => {
-    if (!firstPost.length) {
-      return 'Should have at least one media';
-    }
-
+export default withProvider({
+  postComment: PostComment.POST,
+  minimumCharacters: [],
+  SettingsComponent: SettingsComponent,
+  CustomPreviewComponent: undefined,
+  dto: undefined,
+  checkValidity: async ([firstPost, ...otherPosts], settings) => {
     const checkVideosLength = await Promise.all(
       firstPost
         .filter((f) => f.path.indexOf('mp4') > -1)
@@ -43,5 +40,5 @@ export default withProvider(
 
     return true;
   },
-  500
-);
+  maximumCharacters: 500,
+});

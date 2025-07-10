@@ -102,6 +102,9 @@ export type PollDetails = {
 export type MediaContent = {
   type: 'image' | 'video'; // Type of the media content
   path: string;
+  alt?: string;
+  thumbnail?: string;
+  thumbnailTimestamp?: number;
 };
 
 export interface SocialProvider

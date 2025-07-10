@@ -27,9 +27,11 @@ interface SelectedIntegrations {
 interface StoreState {
   date: dayjs.Dayjs;
   postComment: PostComment;
+  dummy: boolean;
   repeater?: number;
   isCreateSet: boolean;
   totalChars: number;
+  activateExitButton: boolean;
   tags: { label: string; value: string }[];
   tab: 0 | 1;
   current: string;
@@ -114,9 +116,13 @@ interface StoreState {
     media: { id: string; path: string }[]
   ) => void;
   setPostComment: (postComment: PostComment) => void;
+  setActivateExitButton?: (activateExitButton: boolean) => void;
+  setDummy: (dummy: boolean) => void;
 }
 
 const initialState = {
+  dummy: false,
+  activateExitButton: true,
   date: dayjs(),
   postComment: PostComment.ALL,
   tags: [] as { label: string; value: string }[],
@@ -497,5 +503,13 @@ export const useLaunchStore = create<StoreState>()((set) => ({
   setPostComment: (postComment: PostComment) =>
     set((state) => ({
       postComment,
+    })),
+  setActivateExitButton: (activateExitButton: boolean) =>
+    set((state) => ({
+      activateExitButton,
+    })),
+  setDummy: (dummy: boolean) =>
+    set((state) => ({
+      dummy,
     })),
 }));

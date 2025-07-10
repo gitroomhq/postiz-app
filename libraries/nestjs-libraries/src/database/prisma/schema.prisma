@@ -39,6 +39,7 @@ model Organization {
   autoPost          AutoPost[]
   sets              Sets[]
   thirdParty        ThirdParty[]
+  errors            Errors[]
 }
 
 model Tags {
@@ -177,9 +178,9 @@ model ItemUser {
   userId String
   key    String
 
+  @@unique([userId, key])
   @@index([userId])
   @@index([key])
-  @@unique([userId, key])
 }
 
 model Star {
@@ -197,19 +198,23 @@ model Star {
 }
 
 model Media {
-  id             String              @id @default(uuid())
-  name           String
-  path           String
-  organization   Organization        @relation(fields: [organizationId], references: [id])
-  organizationId String
-  fileSize       Int                 @default(0)
-  type           String              @default("image")
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
-  userPicture    User[]
-  agencies       SocialMediaAgency[]
-  deletedAt      DateTime?
+  id                 String              @id @default(uuid())
+  name               String
+  path               String
+  organization       Organization        @relation(fields: [organizationId], references: [id])
+  organizationId     String
+  thumbnail          String?
+  thumbnailTimestamp Int?
+  alt                String?
+  fileSize           Int                 @default(0)
+  type               String              @default("image")
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  userPicture        User[]
+  agencies           SocialMediaAgency[]
+  deletedAt          DateTime?
 
+  @@index([name])
   @@index([organizationId])
   @@index([type])
 }
@@ -259,6 +264,7 @@ model Credits {
   organization   Organization @relation(fields: [organizationId], references: [id])
   organizationId String
   credits        Int
+  type           String       @default("ai_images")
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
@@ -328,11 +334,11 @@ model Integration {
   additionalSettings    String?                @default("[]")
   webhooks              IntegrationsWebhooks[]
 
+  @@unique([organizationId, internalId])
   @@index([rootInternalId])
   @@index([updatedAt])
   @@index([deletedAt])
   @@index([customerId])
-  @@unique([organizationId, internalId])
 }
 
 model Signatures {
@@ -400,6 +406,7 @@ model Post {
   payoutProblems             PayoutProblems[]
   comments                   Comments[]
   tags                       TagsPosts[]
+  errors                     Errors[]
   error                      String?
   createdAt                  DateTime                  @default(now())
   updatedAt                  DateTime                  @updatedAt
@@ -562,8 +569,8 @@ model IntegrationsWebhooks {
   webhookId     String
   webhook       Webhooks    @relation(fields: [webhookId], references: [id])
 
-  @@unique([integrationId, webhookId])
   @@id([integrationId, webhookId])
+  @@unique([integrationId, webhookId])
   @@index([integrationId])
   @@index([webhookId])
 }
@@ -628,9 +635,25 @@ model ThirdParty {
   updatedAt      DateTime     @updatedAt
   deletedAt      DateTime?
 
+  @@unique([organizationId, internalId])
   @@index([organizationId])
   @@index([deletedAt])
-  @@unique([organizationId, internalId])
+}
+
+model Errors {
+  id             String       @id @default(uuid())
+  message        String
+  body           String       @default("{}")
+  platform       String
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  postId         String
+  post           Post         @relation(fields: [postId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
+  @@index([createdAt])
 }
 
 enum OrderStatus {
