@@ -75,7 +75,7 @@ export abstract class SocialAbstract {
     };
 
     if (request.status === 401 || handleError?.type === 'refresh-token') {
-      console.log('refresh token');
+      console.log('refresh token', json);
       throw new RefreshToken(
         identifier,
         json,
