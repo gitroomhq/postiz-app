@@ -643,6 +643,7 @@ model ThirdParty {
 model Errors {
   id             String       @id @default(uuid())
   message        String
+  body           String       @default("{}")
   platform       String
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id])

@@ -265,14 +265,16 @@ export class PostsRepository {
     });
   }
 
-  async changeState(id: string, state: State, err?: string) {
+  async changeState(id: string, state: State, err?: any, body?: any) {
     const update = await this._post.model.post.update({
       where: {
         id,
       },
       data: {
         state,
-        error: typeof err === 'string' ? err : JSON.stringify(err),
+        ...(err
+          ? { error: typeof err === 'string' ? err : JSON.stringify(err) }
+          : {}),
       },
       include: {
         integration: {
@@ -283,7 +285,7 @@ export class PostsRepository {
       },
     });
 
-    if (state === 'ERROR') {
+    if (state === 'ERROR' && err && body) {
       try {
         await this._errors.model.errors.create({
           data: {
@@ -291,6 +293,7 @@ export class PostsRepository {
             organizationId: update.organizationId,
             platform: update.integration.providerIdentifier,
             postId: update.id,
+            body: typeof body === 'string' ? body : JSON.stringify(body),
           },
         });
       } catch (err) {}

@@ -282,7 +282,8 @@ export class PostsService {
   }
 
   async post(id: string) {
-    const [firstPost, ...morePosts] = await this.getPostsRecursively(id, true);
+    const allPosts = await this.getPostsRecursively(id, true);
+    const [firstPost, ...morePosts] = allPosts;
     if (!firstPost) {
       return;
     }
@@ -337,7 +338,7 @@ export class PostsService {
         return;
       }
     } catch (err: any) {
-      await this._postRepository.changeState(firstPost.id, 'ERROR', err);
+      await this._postRepository.changeState(firstPost.id, 'ERROR', err, allPosts);
       if (err instanceof BadBody) {
         await this._notificationService.inAppNotification(
           firstPost.organizationId,
