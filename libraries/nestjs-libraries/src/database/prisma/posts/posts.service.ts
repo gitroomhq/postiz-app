@@ -521,7 +521,7 @@ export class PostsService {
       };
     } catch (err) {
       if (err instanceof RefreshToken) {
-        return this.postSocial(integration, posts, true, err?.message || '');
+        return this.postSocial(integration, posts, true);
       }
 
       throw err;
