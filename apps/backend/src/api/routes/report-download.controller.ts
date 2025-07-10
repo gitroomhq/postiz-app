@@ -2736,6 +2736,7 @@ table.detailed-table tr:nth-child(even) {
         period: string
     ) {
         const options: pdf.CreateOptions = {
+            phantomPath: '/usr/bin/phantomjs',
             format: 'A4',
             border: {
                 top: '0.5in',
