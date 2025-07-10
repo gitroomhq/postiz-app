@@ -1,4 +1,4 @@
-import { IntegrationRedirectComponent } from '@gitroom/frontend/components/launches/integration.redirect.component';
+import { ContinueIntegration } from '@gitroom/frontend/components/launches/continue.integration';
 export const dynamic = 'force-dynamic';
 export default async function Page({
   params: { provider },
@@ -9,5 +9,5 @@ export default async function Page({
   };
   searchParams: any;
 }) {
-  return <IntegrationRedirectComponent />;
+  return <ContinueIntegration searchParams={searchParams} provider={provider} />;
 }
