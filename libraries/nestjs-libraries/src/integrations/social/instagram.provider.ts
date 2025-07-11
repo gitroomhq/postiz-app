@@ -49,7 +49,8 @@ export class InstagramProvider
         value: string;
       }
     | undefined {
-    if (body.indexOf('2207018') > -1 || body.indexOf('REVOKED_ACCESS_TOKEN')) {
+
+    if (body.indexOf('REVOKED_ACCESS_TOKEN')) {
       return {
         type: 'refresh-token' as const,
         value:
