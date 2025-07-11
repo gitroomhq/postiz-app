@@ -25,10 +25,10 @@ export async function middleware(request: NextRequest) {
           request.headers.get('accept-language')
       );
 
-  const headers = new Headers(request.headers);
+  const topResponse = NextResponse.next();
 
   if (lng) {
-    headers.set(headerName, lng);
+    topResponse.headers.set(cookieName, lng);
   }
 
   if (nextUrl.pathname.startsWith('/modal/') && !authCookie) {
@@ -40,9 +40,7 @@ export async function middleware(request: NextRequest) {
     nextUrl.pathname.startsWith('/p/') ||
     nextUrl.pathname.startsWith('/icons/')
   ) {
-    return NextResponse.next({
-      headers,
-    });
+    return topResponse;
   }
   // If the URL is logout, delete the cookie and redirect to login
   if (nextUrl.href.indexOf('/auth/logout') > -1) {
@@ -63,6 +61,7 @@ export async function middleware(request: NextRequest) {
     });
     return response;
   }
+
   const org = nextUrl.searchParams.get('org');
   const url = new URL(nextUrl).search;
   if (nextUrl.href.indexOf('/auth') === -1 && !authCookie) {
@@ -103,9 +102,7 @@ export async function middleware(request: NextRequest) {
       });
       return redirect;
     }
-    return NextResponse.next({
-      headers,
-    });
+    return topResponse;
   }
   try {
     if (org) {
@@ -144,28 +141,8 @@ export async function middleware(request: NextRequest) {
         )
       );
     }
-    const next = NextResponse.next({
-      headers,
-    });
-    if (
-      nextUrl.pathname === '/marketplace/seller' ||
-      nextUrl.pathname === '/marketplace/buyer'
-    ) {
-      const type = nextUrl.pathname.split('/marketplace/')[1].split('/')[0];
-      next.cookies.set('marketplace', type === 'seller' ? 'seller' : 'buyer', {
-        path: '/',
-        ...(!process.env.NOT_SECURED
-          ? {
-              secure: true,
-              httpOnly: true,
-              sameSite: false,
-            }
-          : {}),
-        expires: new Date(Date.now() + 15 * 60 * 1000),
-        domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-      });
-    }
-    return next;
+
+    return topResponse;
   } catch (err) {
     console.log('err', err);
     return NextResponse.redirect(new URL('/auth/logout', nextUrl.href));
