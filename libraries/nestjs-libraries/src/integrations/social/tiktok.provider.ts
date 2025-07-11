@@ -63,7 +63,63 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
-    // Spam/Policy errors
+    if (body.indexOf('file_format_check_failed') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'File format is invalid, please check video specifications',
+      };
+    }
+
+    if (body.indexOf('duration_check_failed') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Video duration is invalid, please check video specifications',
+      };
+    }
+
+    if (body.indexOf('frame_rate_check_failed') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Video frame rate is invalid, please check video specifications',
+      };
+    }
+
+    if (body.indexOf('video_pull_failed') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Failed to pull video from URL, please check the URL',
+      };
+    }
+
+    if (body.indexOf('photo_pull_failed') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Failed to pull photo from URL, please check the URL',
+      };
+    }
+
+    if (body.indexOf('spam_risk_user_banned_from_posting') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'Account banned from posting, please check TikTok account status',
+      };
+    }
+
+    if (body.indexOf('spam_risk_text') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'TikTok detected potential spam in the post text',
+      };
+    }
+
+    if (body.indexOf('spam_risk') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'TikTok detected potential spam',
+      };
+    }
+
     if (body.indexOf('spam_risk_too_many_posts') > -1) {
       return {
         type: 'bad-body' as const,
@@ -125,14 +181,21 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     }
 
     // Server errors
-    if (body.indexOf('internal_error') > -1) {
+    if (body.indexOf('internal') > -1) {
       return {
         type: 'bad-body' as const,
-        value: 'TikTok server error, please try again later',
+        value: 'There is a problem with TikTok servers, please try again later',
       };
     }
 
     // Generic TikTok API errors
+    if (body.indexOf('picture_size_check_failed') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Picture size is invalid',
+      };
+    }
+
     if (body.indexOf('TikTok API error') > -1) {
       return {
         type: 'bad-body' as const,
@@ -358,8 +421,9 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     postDetails: PostDetails<TikTokDto>[],
     integration: Integration
   ): Promise<PostResponse[]> {
-    const [firstPost, ...comments] = postDetails;
+    const [firstPost] = postDetails;
 
+    const isPhoto = (firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) === -1;
     const {
       data: { publish_id },
     } = await (
@@ -379,8 +443,17 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
               'DIRECT_POST') === 'DIRECT_POST'
               ? {
                   post_info: {
-                    title: firstPost.message,
-                    privacy_level: firstPost.settings.privacy_level || 'PUBLIC_TO_EVERYONE',
+                    ...((firstPost?.settings?.title && isPhoto) ||
+                    (firstPost.message && !isPhoto)
+                      ? {
+                          title: isPhoto
+                            ? firstPost.settings.title
+                            : firstPost.message,
+                        }
+                      : {}),
+                    ...(isPhoto ? { description: firstPost.message } : {}),
+                    privacy_level:
+                      firstPost.settings.privacy_level || 'PUBLIC_TO_EVERYONE',
                     disable_duet: !firstPost.settings.duet || false,
                     disable_comment: !firstPost.settings.comment || false,
                     disable_stitch: !firstPost.settings.stitch || false,

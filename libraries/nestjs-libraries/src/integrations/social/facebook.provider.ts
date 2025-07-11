@@ -66,6 +66,13 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
+    if (body.indexOf('1404006') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: "We couldn't post your comment, A security check in facebook required to proceed.",
+      };
+    }
+
     if (body.indexOf('1404102') > -1) {
       return {
         type: 'bad-body' as const,
