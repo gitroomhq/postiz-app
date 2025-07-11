@@ -1,5 +1,5 @@
 import { timer } from '@gitroom/helpers/utils/timer';
-import pThrottle from 'p-throttle';
+import { concurrencyService } from '@gitroom/helpers/utils/concurrency.service';
 
 export class RefreshToken {
   constructor(
@@ -22,15 +22,8 @@ export class NotEnoughScopes {
   constructor(public message = 'Not enough scopes') {}
 }
 
-const pThrottleInstance = pThrottle({
-  limit: 1,
-  interval: 5000,
-});
-
 export abstract class SocialAbstract {
-  private fetchInstance = pThrottleInstance(
-    (url: RequestInfo, options?: RequestInit) => fetch(url, options)
-  );
+  abstract identifier: string;
 
   public handleErrors(
     body: string
@@ -44,7 +37,7 @@ export abstract class SocialAbstract {
     identifier = '',
     totalRetries = 0
   ): Promise<Response> {
-    const request = await this.fetchInstance(url, options);
+    const request = await concurrencyService(this.identifier.split('-')[0], () => fetch(url, options));
 
     if (request.status === 200 || request.status === 201) {
       return request;
