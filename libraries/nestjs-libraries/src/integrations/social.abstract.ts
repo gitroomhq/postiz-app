@@ -35,7 +35,7 @@ export abstract class SocialAbstract {
   public handleErrors(
     body: string
   ): { type: 'refresh-token' | 'bad-body'; value: string } | undefined {
-    return { type: 'bad-body', value: 'bad request' };
+    return undefined;
   }
 
   async fetch(
