@@ -69,12 +69,9 @@ export abstract class SocialAbstract {
       return this.fetch(url, options, identifier, totalRetries + 1);
     }
 
-    const handleError = this.handleErrors(json || '{}') || {
-      type: 'bad-body',
-      value: '',
-    };
+    const handleError = this.handleErrors(json || '{}');
 
-    if (request.status === 401 || handleError?.type === 'refresh-token') {
+    if (request.status === 401 && (handleError?.type === 'refresh-token' || !handleError)) {
       console.log('refresh token', json);
       throw new RefreshToken(
         identifier,
@@ -84,7 +81,7 @@ export abstract class SocialAbstract {
       );
     }
 
-    throw new BadBody(identifier, json, options.body!, handleError?.value);
+    throw new BadBody(identifier, json, options.body!, handleError?.value || '');
   }
 
   checkScopes(required: string[], got: string | string[]) {
