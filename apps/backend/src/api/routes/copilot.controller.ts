@@ -29,8 +29,8 @@ export class CopilotController {
           // @ts-ignore
           req?.body?.variables?.data?.metadata?.requestType ===
           'TextareaCompletion'
-            ? 'gpt-4o-mini'
-            : 'gpt-4.1',
+            ? process.env.FAST_LLM || 'gpt-4o-mini'
+            : process.env.SMART_LLM || 'gpt-4.1',
       }),
     });
 
