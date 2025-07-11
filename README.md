@@ -65,7 +65,7 @@
 <p align="center">
   <a href="https://www.npmjs.com/package/@postiz/node">NodeJS SDK</a>
   ·
-  <a href="https://www.npmjs.com/package/@postiz/n8n">N8N custom node</a>
+  <a href="https://www.npmjs.com/package/n8n-nodes-postiz">N8N custom node</a>
   ·
   <a href="https://apps.make.com/postiz">Make.com integration</a>
 </p>
