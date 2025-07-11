@@ -2735,16 +2735,32 @@ table.detailed-table tr:nth-child(even) {
         customerId: string,
         period: string
     ) {
+        // const options: pdf.CreateOptions = {
+        //     phantomPath: '/usr/bin/phantomjs',
+        //     format: 'A4',
+        //     border: {
+        //         top: '0.5in',
+        //         right: '0.3in',
+        //         bottom: '0.5in',
+        //         left: '0.3in'
+        //     },
+        //     timeout: 30000
+        // };
+
         const options: pdf.CreateOptions = {
-            phantomPath: '/usr/bin/phantomjs',
-            format: 'A4',
-            border: {
-                top: '0.5in',
-                right: '0.3in',
-                bottom: '0.5in',
-                left: '0.3in'
-            },
-            timeout: 30000
+                format: 'A4',
+                border: {
+                    top: '0.5in',
+                    right: '0.3in',
+                    bottom: '0.5in',
+                    left: '0.3in',
+                },
+                timeout: 30000,
+                childProcessOptions: {
+                    env: {
+                    OPENSSL_CONF: '/dev/null',
+                    },
+                } as any
         };
 
         pdf.create(html, options).toStream((err, stream) => {
