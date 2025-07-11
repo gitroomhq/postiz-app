@@ -162,7 +162,7 @@ export class PostsService {
       const getImageList = await Promise.all(
         (
           await Promise.all(
-            imagesList.map(async (p: any) => {
+            (imagesList || []).map(async (p: any) => {
               if (!p.path && p.id) {
                 imageUpdateNeeded = true;
                 return this._mediaService.getMediaById(p.id);
@@ -260,7 +260,7 @@ export class PostsService {
     const list = {
       group: posts?.[0]?.group,
       posts: await Promise.all(
-        posts.map(async (post) => ({
+        (posts || []).map(async (post) => ({
           ...post,
           image: await this.updateMedia(
             post.id,
@@ -377,7 +377,7 @@ export class PostsService {
       return post;
     }
 
-    const ids = extract.map((e) => e.replace('(post:', '').replace(')', ''));
+    const ids = (extract || []).map((e) => e.replace('(post:', '').replace(')', ''));
     const urls = await this._postRepository.getPostUrls(orgId, ids);
     const newPlainText = ids.reduce((acc, value) => {
       const findUrl = urls?.find?.((u) => u.id === value)?.releaseURL || '';
@@ -464,7 +464,7 @@ export class PostsService {
         integration.internalId,
         integration.token,
         await Promise.all(
-          newPosts.map(async (p) => ({
+          (newPosts || []).map(async (p) => ({
             id: p.id,
             message: p.content,
             settings: JSON.parse(p.settings || '{}'),
@@ -678,12 +678,12 @@ export class PostsService {
   async createPost(orgId: string, body: CreatePostDto): Promise<any[]> {
     const postList = [];
     for (const post of body.posts) {
-      const messages = post.value.map((p) => p.content);
+      const messages = (post.value || []).map((p) => p.content);
       const updateContent = !body.shortLink
         ? messages
         : await this._shortLinkService.convertTextToShortLinks(orgId, messages);
 
-      post.value = post.value.map((p, i) => ({
+      post.value = (post.value || []).map((p, i) => ({
         ...p,
         content: updateContent[i],
       }));
