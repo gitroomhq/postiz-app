@@ -338,7 +338,12 @@ export class PostsService {
         return;
       }
     } catch (err: any) {
-      await this._postRepository.changeState(firstPost.id, 'ERROR', err, allPosts);
+      await this._postRepository.changeState(
+        firstPost.id,
+        'ERROR',
+        err,
+        allPosts
+      );
       if (err instanceof BadBody) {
         await this._notificationService.inAppNotification(
           firstPost.organizationId,
@@ -388,7 +393,7 @@ export class PostsService {
   private async postSocial(
     integration: Integration,
     posts: Post[],
-    forceRefresh = false,
+    forceRefresh = false
   ): Promise<Partial<{ postId: string; releaseURL: string }>> {
     const getIntegration = this._integrationManager.getSocialIntegration(
       integration.providerIdentifier
@@ -525,7 +530,11 @@ export class PostsService {
         return this.postSocial(integration, posts, true);
       }
 
-      throw err;
+      if (err instanceof BadBody) {
+        throw err;
+      }
+
+      throw new BadBody(integration.providerIdentifier, JSON.stringify(err), {} as any, '');
     }
   }
 
