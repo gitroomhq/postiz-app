@@ -262,9 +262,11 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     });
     const {
       data: { username },
-    } = await client.v2.me({
-      'user.fields': 'username',
-    });
+    } = await this.runInConcurrent(async () =>
+      client.v2.me({
+        'user.fields': 'username',
+      })
+    );
 
     // upload everything before, you don't want it to fail between the posts
     const uploadAll = (
@@ -272,20 +274,22 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         postDetails.flatMap((p) =>
           p?.media?.flatMap(async (m) => {
             return {
-              id: await client.v1.uploadMedia(
-                m.path.indexOf('mp4') > -1
-                  ? Buffer.from(await readOrFetch(m.path))
-                  : await sharp(await readOrFetch(m.path), {
-                      animated: lookup(m.path) === 'image/gif',
-                    })
-                      .resize({
-                        width: 1000,
+              id: await this.runInConcurrent(async () =>
+                client.v1.uploadMedia(
+                  m.path.indexOf('mp4') > -1
+                    ? Buffer.from(await readOrFetch(m.path))
+                    : await sharp(await readOrFetch(m.path), {
+                        animated: lookup(m.path) === 'image/gif',
                       })
-                      .gif()
-                      .toBuffer(),
-                {
-                  mimeType: lookup(m.path) || '',
-                }
+                        .resize({
+                          width: 1000,
+                        })
+                        .gif()
+                        .toBuffer(),
+                  {
+                    mimeType: lookup(m.path) || '',
+                  }
+                )
               ),
               postId: p.id,
             };
@@ -308,25 +312,28 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       const media_ids = (uploadAll[post.id] || []).filter((f) => f);
 
       // @ts-ignore
-      const { data }: { data: { id: string } } = await client.v2.tweet({
-        ...(!postDetails?.[0]?.settings?.who_can_reply_post ||
-        postDetails?.[0]?.settings?.who_can_reply_post === 'everyone'
-          ? {}
-          : {
-              reply_settings: postDetails?.[0]?.settings?.who_can_reply_post,
-            }),
-        ...(postDetails?.[0]?.settings?.community
-          ? {
-              community_id:
-                postDetails?.[0]?.settings?.community?.split('/').pop() || '',
-            }
-          : {}),
-        text: post.message,
-        ...(media_ids.length ? { media: { media_ids } } : {}),
-        ...(ids.length
-          ? { reply: { in_reply_to_tweet_id: ids[ids.length - 1].postId } }
-          : {}),
-      });
+      const { data }: { data: { id: string } } = await this.runInConcurrent( async () => client.v2.tweet({
+            ...(!postDetails?.[0]?.settings?.who_can_reply_post ||
+            postDetails?.[0]?.settings?.who_can_reply_post === 'everyone'
+              ? {}
+              : {
+                  reply_settings:
+                    postDetails?.[0]?.settings?.who_can_reply_post,
+                }),
+            ...(postDetails?.[0]?.settings?.community
+              ? {
+                  community_id:
+                    postDetails?.[0]?.settings?.community?.split('/').pop() ||
+                    '',
+                }
+              : {}),
+            text: post.message,
+            ...(media_ids.length ? { media: { media_ids } } : {}),
+            ...(ids.length
+              ? { reply: { in_reply_to_tweet_id: ids[ids.length - 1].postId } }
+              : {}),
+          })
+      );
 
       ids.push({
         postId: data.id,
@@ -337,13 +344,15 @@ export class XProvider extends SocialAbstract implements SocialProvider {
 
     if (postDetails?.[0]?.settings?.active_thread_finisher) {
       try {
-        await client.v2.tweet({
-          text:
-            postDetails?.[0]?.settings?.thread_finisher! +
-            '\n' +
-            ids[0].releaseURL,
-          reply: { in_reply_to_tweet_id: ids[ids.length - 1].postId },
-        });
+        await this.runInConcurrent(async () =>
+          client.v2.tweet({
+            text:
+              postDetails?.[0]?.settings?.thread_finisher! +
+              '\n' +
+              ids[0].releaseURL,
+            reply: { in_reply_to_tweet_id: ids[ids.length - 1].postId },
+          })
+        );
       } catch (err) {}
     }
 

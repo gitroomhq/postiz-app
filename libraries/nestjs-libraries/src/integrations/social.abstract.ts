@@ -31,13 +31,32 @@ export abstract class SocialAbstract {
     return undefined;
   }
 
+  async runInConcurrent<T>(func: (...args: any[]) => Promise<T>) {
+    const value = await concurrencyService<any>(this.identifier.split('-')[0], async () => {
+      try {
+        return await func();
+      } catch (err) {
+        return {type: 'error', value: err};
+      }
+    });
+
+    if (value && value.type === 'error') {
+      throw value.value;
+    }
+
+    return value;
+  }
+
   async fetch(
     url: string,
     options: RequestInit = {},
     identifier = '',
     totalRetries = 0
   ): Promise<Response> {
-    const request = await concurrencyService(this.identifier.split('-')[0], () => fetch(url, options));
+    const request = await concurrencyService(
+      this.identifier.split('-')[0],
+      () => fetch(url, options)
+    );
 
     if (request.status === 200 || request.status === 201) {
       return request;
@@ -64,7 +83,10 @@ export abstract class SocialAbstract {
 
     const handleError = this.handleErrors(json || '{}');
 
-    if (request.status === 401 && (handleError?.type === 'refresh-token' || !handleError)) {
+    if (
+      request.status === 401 &&
+      (handleError?.type === 'refresh-token' || !handleError)
+    ) {
       console.log('refresh token', json);
       throw new RefreshToken(
         identifier,
@@ -74,7 +96,12 @@ export abstract class SocialAbstract {
       );
     }
 
-    throw new BadBody(identifier, json, options.body!, handleError?.value || '');
+    throw new BadBody(
+      identifier,
+      json,
+      options.body!,
+      handleError?.value || ''
+    );
   }
 
   checkScopes(required: string[], got: string | string[]) {
