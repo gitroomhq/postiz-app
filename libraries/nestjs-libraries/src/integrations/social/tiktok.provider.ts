@@ -490,7 +490,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
                     photo_cover_index: 0,
                     photo_images: firstPost.media?.map((p) => p.path),
                   },
-                  post_mode: 'DIRECT_POST',
+                  post_mode: firstPost?.settings?.content_posting_method === 'DIRECT_POST' ? 'DIRECT_POST' : 'MEDIA_UPLOAD',
                   media_type: 'PHOTO',
                 }),
           }),

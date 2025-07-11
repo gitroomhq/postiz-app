@@ -176,7 +176,6 @@ const TikTokSettings: FC<{
       </div>
       <Select
         label={t('label_content_posting_method', 'Content posting method')}
-        disabled={isUploadMode}
         {...register('content_posting_method', {
           value: 'DIRECT_POST',
         })}
