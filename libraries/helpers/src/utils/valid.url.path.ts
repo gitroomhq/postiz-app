@@ -7,7 +7,7 @@ export class ValidUrlPath implements ValidatorConstraintInterface {
       return true;
     }
 
-    return text.indexOf(process.env.RESTRICT_UPLOAD_DOMAINS) > -1;
+    return (text || 'invalid url').indexOf(process.env.RESTRICT_UPLOAD_DOMAINS) > -1;
   }
 
   defaultMessage(args: ValidationArguments) {
