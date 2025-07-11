@@ -50,7 +50,7 @@ export class InstagramProvider
       }
     | undefined {
 
-    if (body.indexOf('REVOKED_ACCESS_TOKEN')) {
+    if (body.indexOf('REVOKED_ACCESS_TOKEN') > -1) {
       return {
         type: 'refresh-token' as const,
         value:
