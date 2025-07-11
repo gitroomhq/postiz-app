@@ -41,9 +41,7 @@ export async function middleware(request: NextRequest) {
     nextUrl.pathname.startsWith('/icons/')
   ) {
     return NextResponse.next({
-      request: {
-        headers: headers,
-      },
+      headers,
     });
   }
   // If the URL is logout, delete the cookie and redirect to login
@@ -106,9 +104,7 @@ export async function middleware(request: NextRequest) {
       return redirect;
     }
     return NextResponse.next({
-      request: {
-        headers: headers,
-      },
+      headers,
     });
   }
   try {
@@ -149,9 +145,7 @@ export async function middleware(request: NextRequest) {
       );
     }
     const next = NextResponse.next({
-      request: {
-        headers: headers,
-      },
+      headers,
     });
     if (
       nextUrl.pathname === '/marketplace/seller' ||
