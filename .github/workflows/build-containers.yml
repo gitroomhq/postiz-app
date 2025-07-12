@@ -51,10 +51,10 @@ jobs:
         run: |
           docker buildx build --platform linux/${{ matrix.arch }} \
             -f Dockerfile.dev \
-            -t ghcr.io/roshangm1/postiz-app:${{ env.CONTAINERVER }}-${{ matrix.arch }} \
+            -t ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }}-${{ matrix.arch }} \
             --build-arg NEXT_PUBLIC_VERSION=${{ env.NEXT_PUBLIC_VERSION }} \
             --provenance=false --sbom=false \
-            --output "type=registry,name=ghcr.io/roshangm1/postiz-app:${{ env.CONTAINERVER }}-${{ matrix.arch }}" .
+            --output "type=registry,name=ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }}-${{ matrix.arch }}" .
 
   build-container-manifest:
     needs: [build-containers, build-containers-common]
@@ -73,29 +73,29 @@ jobs:
         run: |
           # Verify the architecture images
           echo "Verifying AMD64 image:"
-          docker buildx imagetools inspect ghcr.io/roshangm1/postiz-app:${{ env.CONTAINERVER }}-amd64
+          docker buildx imagetools inspect ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }}-amd64
           
           echo "Verifying ARM64 image:"
-          docker buildx imagetools inspect ghcr.io/roshangm1/postiz-app:${{ env.CONTAINERVER }}-arm64
+          docker buildx imagetools inspect ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }}-arm64
           
           # Try to remove any existing manifests first
-          docker manifest rm ghcr.io/roshangm1/postiz-app:${{ env.CONTAINERVER }} || true
-          docker manifest rm ghcr.io/roshangm1/postiz-app:latest || true
+          docker manifest rm ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }} || true
+          docker manifest rm ghcr.io/gitroomhq/postiz-app:latest || true
           
           # Create and push the version-specific manifest
-          docker manifest create ghcr.io/roshangm1/postiz-app:${{ env.CONTAINERVER }} \
-            --amend ghcr.io/roshangm1/postiz-app:${{ env.CONTAINERVER }}-amd64 \
-            --amend ghcr.io/roshangm1/postiz-app:${{ env.CONTAINERVER }}-arm64
+          docker manifest create ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }} \
+            --amend ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }}-amd64 \
+            --amend ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }}-arm64
 
-          docker manifest push ghcr.io/roshangm1/postiz-app:${{ env.CONTAINERVER }}
+          docker manifest push ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }}
 
           # Create and push the latest manifest
-          docker manifest create ghcr.io/roshangm1/postiz-app:latest \
-            --amend ghcr.io/roshangm1/postiz-app:${{ env.CONTAINERVER }}-amd64 \
-            --amend ghcr.io/roshangm1/postiz-app:${{ env.CONTAINERVER }}-arm64
+          docker manifest create ghcr.io/gitroomhq/postiz-app:latest \
+            --amend ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }}-amd64 \
+            --amend ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }}-arm64
 
-          docker manifest push ghcr.io/roshangm1/postiz-app:latest
+          docker manifest push ghcr.io/gitroomhq/postiz-app:latest
 
       - name: Verify Manifest
         run: |
-          docker manifest inspect ghcr.io/roshangm1/postiz-app:latest
+          docker manifest inspect ghcr.io/gitroomhq/postiz-app:latest
