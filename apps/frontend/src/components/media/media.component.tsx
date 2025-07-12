@@ -127,7 +127,7 @@ export const Pagination: FC<{
 export const ShowMediaBoxModal: FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [callBack, setCallBack] =
-    useState<(params: { id: string; path: string }) => void | undefined>();
+    useState<(params: { id: string; path: string }[]) => void | undefined>();
   const closeModal = useCallback(() => {
     setShowModal(false);
     setCallBack(undefined);
@@ -155,7 +155,7 @@ export const showMediaBox = (
 };
 const CHUNK_SIZE = 1024 * 1024;
 export const MediaBox: FC<{
-  setMedia: (params: { id: string; path: string }) => void;
+  setMedia: (params: { id: string; path: string }[]) => void;
   type?: 'image' | 'video';
   closeModal: () => void;
 }> = (props) => {
@@ -767,12 +767,12 @@ export const MediaComponent: FC<{
   const showDesignModal = useCallback(() => {
     setMediaModal(true);
   }, [modal]);
-  const changeMedia = useCallback((m: { path: string; id: string }) => {
-    setCurrentMedia(m);
+  const changeMedia = useCallback((m: { path: string; id: string }[]) => {
+    setCurrentMedia(m[0]);
     onChange({
       target: {
         name,
-        value: m,
+        value: m[0],
       },
     });
   }, []);
@@ -807,7 +807,7 @@ export const MediaComponent: FC<{
         <div className="my-[20px] cursor-pointer w-[200px] h-[200px] border-2 border-tableBorder">
           <img
             className="w-full h-full object-cover"
-            src={mediaDirectory.set(currentMedia.path)}
+            src={currentMedia.path}
             onClick={() => window.open(mediaDirectory.set(currentMedia.path))}
           />
         </div>

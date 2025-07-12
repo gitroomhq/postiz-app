@@ -92,8 +92,8 @@ export default withProvider({
   postComment: PostComment.COMMENT,
   minimumCharacters: [],
   SettingsComponent: HashnodeSettings,
-  CustomPreviewComponent: HashnodePreview,
+  CustomPreviewComponent: undefined, // HashnodePreview,
   dto: HashnodeSettingsDto,
   checkValidity: undefined,
-  maximumCharacters: undefined,
+  maximumCharacters: 10000,
 });

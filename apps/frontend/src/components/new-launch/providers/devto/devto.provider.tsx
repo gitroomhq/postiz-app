@@ -90,8 +90,8 @@ export default withProvider({
   postComment: PostComment.COMMENT,
   minimumCharacters: [],
   SettingsComponent: DevtoSettings,
-  CustomPreviewComponent: DevtoPreview,
+  CustomPreviewComponent: undefined, // DevtoPreview,
   dto: DevToSettingsDto,
   checkValidity: undefined,
-  maximumCharacters: undefined,
+  maximumCharacters: 100000,
 });

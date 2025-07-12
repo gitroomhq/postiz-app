@@ -1,12 +1,61 @@
-import { ArticleProvider } from '@gitroom/nestjs-libraries/integrations/article/article.integrations.interface';
+import {
+  AuthTokenDetails,
+  PostDetails,
+  PostResponse,
+  SocialProvider,
+} from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { tags } from '@gitroom/nestjs-libraries/integrations/article/hashnode.tags';
 import { jsonToGraphQLQuery } from 'json-to-graphql-query';
 import { HashnodeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/hashnode.settings.dto';
+import dayjs from 'dayjs';
+import { Integration } from '@prisma/client';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 
-export class HashnodeProvider implements ArticleProvider {
+export class HashnodeProvider extends SocialAbstract implements SocialProvider {
   identifier = 'hashnode';
   name = 'Hashnode';
-  async authenticate(token: string) {
+  isBetweenSteps = false;
+  scopes = [] as string[];
+
+  async generateAuthUrl() {
+    const state = makeId(6);
+    return {
+      url: '',
+      codeVerifier: makeId(10),
+      state,
+    };
+  }
+
+  async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
+    return {
+      refreshToken: '',
+      expiresIn: 0,
+      accessToken: '',
+      id: '',
+      name: '',
+      picture: '',
+      username: '',
+    };
+  }
+
+  async customFields() {
+    return [
+      {
+        key: 'apiKey',
+        label: 'API key',
+        validation: `/^.{3,}$/`,
+        type: 'password' as const,
+      },
+    ];
+  }
+
+  async authenticate(params: {
+    code: string;
+    codeVerifier: string;
+    refresh?: string;
+  }) {
+    const body = JSON.parse(Buffer.from(params.code, 'base64').toString());
     try {
       const {
         data: {
@@ -17,7 +66,7 @@ export class HashnodeProvider implements ArticleProvider {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `${token}`,
+            Authorization: `${body.apiKey}`,
           },
           body: JSON.stringify({
             query: `
@@ -35,20 +84,16 @@ export class HashnodeProvider implements ArticleProvider {
       ).json();
 
       return {
+        refreshToken: '',
+        expiresIn: dayjs().add(100, 'years').unix() - dayjs().unix(),
+        accessToken: body.apiKey,
         id,
         name,
-        token,
         picture: profilePicture,
         username,
       };
     } catch (err) {
-      return {
-        id: '',
-        name: '',
-        token: '',
-        picture: '',
-        username: '',
-      };
+      return 'Invalid credentials';
     }
   }
 
@@ -56,7 +101,7 @@ export class HashnodeProvider implements ArticleProvider {
     return tags.map((tag) => ({ value: tag.objectID, label: tag.name }));
   }
 
-  async publications(token: string) {
+  async publications(accessToken: string) {
     const {
       data: {
         me: {
@@ -68,7 +113,7 @@ export class HashnodeProvider implements ArticleProvider {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `${token}`,
+          Authorization: `${accessToken}`,
         },
         body: JSON.stringify({
           query: `
@@ -97,7 +142,13 @@ export class HashnodeProvider implements ArticleProvider {
     );
   }
 
-  async post(token: string, content: string, settings: HashnodeSettingsDto) {
+  async post(
+    id: string,
+    accessToken: string,
+    postDetails: PostDetails[],
+    integration: Integration
+  ): Promise<PostResponse[]> {
+    const { settings } = postDetails?.[0] || { settings: {} };
     const query = jsonToGraphQLQuery(
       {
         mutation: {
@@ -109,8 +160,8 @@ export class HashnodeProvider implements ArticleProvider {
                 ...(settings.canonical
                   ? { originalArticleURL: settings.canonical }
                   : {}),
-                contentMarkdown: content,
-                tags: settings.tags.map((tag) => ({ id: tag.value })),
+                contentMarkdown: postDetails?.[0].message,
+                tags: settings.tags.map((tag: any) => ({ id: tag.value })),
                 ...(settings.subtitle ? { subtitle: settings.subtitle } : {}),
                 ...(settings.main_image
                   ? {
@@ -138,15 +189,15 @@ export class HashnodeProvider implements ArticleProvider {
     const {
       data: {
         publishPost: {
-          post: { id, url },
+          post: { id: postId, url },
         },
       },
     } = await (
-      await fetch('https://gql.hashnode.com', {
+      await this.fetch('https://gql.hashnode.com', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `${token}`,
+          Authorization: `${accessToken}`,
         },
         body: JSON.stringify({
           query,
@@ -154,9 +205,13 @@ export class HashnodeProvider implements ArticleProvider {
       })
     ).json();
 
-    return {
-      postId: id,
-      releaseURL: url,
-    };
+    return [
+      {
+        id: postDetails?.[0].id,
+        status: 'completed',
+        postId: postId,
+        releaseURL: url,
+      },
+    ];
   }
 }

@@ -44,7 +44,7 @@ const ActionControls = ({ store }: any) => {
       <Button
         loading={load}
         className="outline-none"
-        innerClassName="invert outline-none"
+        innerClassName="invert outline-none text-black"
         onClick={async () => {
           setLoad(true);
           const blob = await store.toBlob();
@@ -56,10 +56,10 @@ const ActionControls = ({ store }: any) => {
               body: formData,
             })
           ).json();
-          close.setMedia({
+          close.setMedia([{
             id: data.id,
             path: data.path,
-          });
+          }]);
           close.close();
         }}
       >
@@ -69,7 +69,7 @@ const ActionControls = ({ store }: any) => {
   );
 };
 const Polonto: FC<{
-  setMedia: (params: { id: string; path: string }) => void;
+  setMedia: (params: { id: string; path: string }[]) => void;
   type?: 'image' | 'video';
   closeModal: () => void;
   width?: number;
