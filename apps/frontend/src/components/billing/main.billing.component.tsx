@@ -116,7 +116,11 @@ export const Features: FC<{
         `${currentPricing?.image_generation_count} AI Images per month`
       );
     }
-    list.push(`Marketplace full access`);
+    if (currentPricing?.generate_videos) {
+      list.push(
+        `${currentPricing?.generate_videos} AI Videos per month`
+      );
+    }
     return list;
   }, [pack]);
   return (
