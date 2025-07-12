@@ -31,7 +31,6 @@
     "start:prod:frontend": "pnpm --filter ./apps/frontend run start",
     "start:prod:workers": "pnpm --filter ./apps/workers run start",
     "start:prod:cron": "pnpm --filter ./apps/cron run start",
-    "update-plugins": "node build.plugins.js",
     "dev:docker": "docker compose -f ./docker-compose.dev.yaml up -d",
     "commands:build:development": "pnpm --filter ./apps/commands run build",
     "workers": "rm -rf dist/workers && pnpm --filter ./apps/workers run dev",
@@ -41,7 +40,7 @@
     "prisma-reset": "cd ./libraries/nestjs-libraries/src/database/prisma && pnpm dlx prisma db push --force-reset && npx prisma db push",
     "docker-build": "./var/docker/docker-build.sh",
     "docker-create": "./var/docker/docker-create.sh",
-    "postinstall": "pnpm run update-plugins && pnpm run prisma-generate",
+    "postinstall": "pnpm run prisma-generate",
     "test": "jest --coverage --detectOpenHandles --reporters=default --reporters=jest-junit"
   },
   "dependencies": {

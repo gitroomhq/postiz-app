@@ -2,8 +2,6 @@ import 'reflect-metadata';
 
 import {
   Injectable,
-  OnModuleInit,
-  OnModuleDestroy,
 } from '@nestjs/common';
 import { XProvider } from '@gitroom/nestjs-libraries/integrations/social/x.provider';
 import { SocialProvider } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';

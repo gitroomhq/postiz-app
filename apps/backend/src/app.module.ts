@@ -1,11 +1,9 @@
 import { Global, Module } from '@nestjs/common';
-
 import { DatabaseModule } from '@gitroom/nestjs-libraries/database/prisma/database.module';
 import { ApiModule } from '@gitroom/backend/api/api.module';
 import { APP_GUARD } from '@nestjs/core';
 import { PoliciesGuard } from '@gitroom/backend/services/auth/permissions/permissions.guard';
 import { BullMqModule } from '@gitroom/nestjs-libraries/bull-mq-transport-new/bull.mq.module';
-import { PluginModule } from '@gitroom/plugins/plugin.module';
 import { PublicApiModule } from '@gitroom/backend/public-api/public.api.module';
 import { ThrottlerBehindProxyGuard } from '@gitroom/nestjs-libraries/throttler/throttler.provider';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -20,7 +18,6 @@ import { VideoModule } from '@gitroom/nestjs-libraries/videos/video.module';
     BullMqModule,
     DatabaseModule,
     ApiModule,
-    PluginModule,
     PublicApiModule,
     AgentModule,
     McpModule,
@@ -48,7 +45,6 @@ import { VideoModule } from '@gitroom/nestjs-libraries/videos/video.module';
     BullMqModule,
     DatabaseModule,
     ApiModule,
-    PluginModule,
     PublicApiModule,
     AgentModule,
     McpModule,
