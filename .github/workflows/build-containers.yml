@@ -25,19 +25,14 @@ jobs:
         include:
           - runnertags: ubuntu-latest
             arch: amd64
-          - runnertags: ubuntu-latest
+          - runnertags: ubuntu-24.04-arm
             arch: arm64
-
     runs-on: ${{ matrix.runnertags }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Set up QEMU (For ARM64 Builds)
-        if: matrix.arch == 'arm64'
-        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
