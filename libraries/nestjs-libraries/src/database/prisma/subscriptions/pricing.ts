@@ -90,7 +90,7 @@ export const pricing: PricingInterface = {
     public_api: true,
     webhooks: 30,
     autoPost: true,
-    generate_videos: 50,
+    generate_videos: 30,
   },
   ULTIMATE: {
     current: 'ULTIMATE',
@@ -108,6 +108,6 @@ export const pricing: PricingInterface = {
     public_api: true,
     webhooks: 10000,
     autoPost: true,
-    generate_videos: 100,
+    generate_videos: 60,
   },
 };
