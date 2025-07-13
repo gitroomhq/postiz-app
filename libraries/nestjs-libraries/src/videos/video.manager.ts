@@ -17,6 +17,7 @@ export class VideoManager {
         title: p.title,
         description: p.description,
         placement: p.placement,
+        trial: p.trial,
       })
     );
   }

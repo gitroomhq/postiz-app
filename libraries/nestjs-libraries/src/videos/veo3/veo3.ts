@@ -27,19 +27,18 @@ async function getAudioDuration(buffer: Buffer): Promise<number> {
 }
 
 @Video({
-  identifier: 'image-text-slides',
-  title: 'Image Text Slides',
-  description: 'Generate videos slides from images and text',
+  identifier: 'veo3',
+  title: 'Veo3 (Audio + Video)',
+  description: 'Generate videos with the most advanced video model.',
   placement: 'text-to-image',
-  trial: true,
+  trial: false,
   available:
-    !!process.env.ELEVENSLABS_API_KEY &&
     !!process.env.TRANSLOADIT_AUTH &&
     !!process.env.TRANSLOADIT_SECRET &&
     !!process.env.OPENAI_API_KEY &&
-    !!process.env.FAL_KEY,
+    !!process.env.KIEAI_API_KEY,
 })
-export class ImagesSlides extends VideoAbstract {
+export class Veo3 extends VideoAbstract {
   private storage = UploadFactory.createStorage();
   constructor(
     private _openaiService: OpenaiService,

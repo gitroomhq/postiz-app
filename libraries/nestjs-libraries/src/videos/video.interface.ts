@@ -21,6 +21,7 @@ export interface VideoParams {
   description: string;
   placement: 'text-to-image' | 'image-to-video' | 'video-to-video';
   available: boolean;
+  trial: boolean;
 }
 
 export function Video(params: VideoParams) {
