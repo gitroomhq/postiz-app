@@ -51,6 +51,13 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
+    if (body.indexOf('1366046') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Photos should be smaller than 4 MB and saved as JPG, PNG',
+      };
+    }
+
     if (body.indexOf('1390008') > -1) {
       return {
         type: 'bad-body' as const,
