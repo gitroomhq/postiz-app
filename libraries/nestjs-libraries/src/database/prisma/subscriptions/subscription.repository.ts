@@ -125,6 +125,7 @@ export class SubscriptionRepository {
   }
 
   async createOrUpdateSubscription(
+    isTrailing: boolean,
     identifier: string,
     customerId: string,
     totalChannels: number,
@@ -178,6 +179,7 @@ export class SubscriptionRepository {
         id: findOrg.id,
       },
       data: {
+        isTrailing,
         allowTrial: false,
       },
     });
