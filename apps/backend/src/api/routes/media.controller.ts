@@ -180,6 +180,14 @@ export class MediaController {
     return this._mediaService.videoFunction(identifier, functionName, body);
   }
 
+  @Get('/generate-video/:type/allowed')
+  generateVideoAllowed(
+    @GetOrgFromRequest() org: Organization,
+    @Param('type') type: string
+  ) {
+    return this._mediaService.generateVideoAllowed(org, type);
+  }
+
   @Post('/generate-video/:type')
   generateVideo(
     @GetOrgFromRequest() org: Organization,

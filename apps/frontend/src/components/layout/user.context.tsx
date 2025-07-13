@@ -17,6 +17,7 @@ export const UserContext = createContext<
       isLifetime?: boolean;
       impersonate: boolean;
       allowTrial: boolean;
+      isTrailing: boolean;
     })
 >(undefined);
 export const ContextWrapper: FC<{

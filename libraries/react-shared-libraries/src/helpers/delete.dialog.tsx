@@ -4,7 +4,8 @@ import i18next from '@gitroom/react/translation/i18next';
 export const deleteDialog = async (
   message: string,
   confirmButton?: string,
-  title?: string
+  title?: string,
+  cancelButton?: string
 ) => {
   const fire = await Swal.fire({
     title: title || i18next.t('are_you_sure', 'Are you sure?'),
@@ -13,7 +14,7 @@ export const deleteDialog = async (
     showCancelButton: true,
     confirmButtonText:
       confirmButton || i18next.t('yes_delete_it', 'Yes, delete it!'),
-    cancelButtonText: i18next.t('no_cancel', 'No, cancel!'),
+    cancelButtonText: cancelButton || i18next.t('no_cancel', 'No, cancel!'),
   });
   return fire.isConfirmed;
 };

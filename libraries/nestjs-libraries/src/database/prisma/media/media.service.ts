@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { MediaRepository } from '@gitroom/nestjs-libraries/database/prisma/media/media.repository';
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
@@ -7,7 +7,11 @@ import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/sa
 import { VideoManager } from '@gitroom/nestjs-libraries/videos/video.manager';
 import { VideoDto } from '@gitroom/nestjs-libraries/dtos/videos/video.dto';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
-import { AuthorizationActions, Sections, SubscriptionException } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
+import {
+  AuthorizationActions,
+  Sections,
+  SubscriptionException,
+} from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 
 @Injectable()
 export class MediaService {
@@ -61,6 +65,19 @@ export class MediaService {
     return this._videoManager.getAllVideos();
   }
 
+  async generateVideoAllowed(org: Organization, type: string) {
+    const video = this._videoManager.getVideoByName(type);
+    if (!video) {
+      throw new Error(`Video type ${type} not found`);
+    }
+
+    if (!video.trial && org.isTrailing) {
+      throw new HttpException('This video is not available in trial mode', 406);
+    }
+
+    return true;
+  }
+
   async generateVideo(org: Organization, body: VideoDto, type: string) {
     const totalCredits = await this._subscriptionService.checkCredits(
       org,
@@ -76,6 +93,10 @@ export class MediaService {
     const video = this._videoManager.getVideoByName(type);
     if (!video) {
       throw new Error(`Video type ${type} not found`);
+    }
+
+    if (!video.trial && org.isTrailing) {
+      throw new HttpException('This video is not available in trial mode', 406);
     }
 
     const loadedData = await video.instance.process(

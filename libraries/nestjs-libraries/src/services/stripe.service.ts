@@ -141,7 +141,7 @@ export class StripeService {
     }
 
     return this._subscriptionService.createOrUpdateSubscription(
-      event.data.object.status === 'trialing',
+      event.data.object.status !== 'active',
       uniqueId,
       event.data.object.customer as string,
       pricing[billing].channel!,
@@ -169,13 +169,13 @@ export class StripeService {
     }
 
     return this._subscriptionService.createOrUpdateSubscription(
-      event.data.object.status === 'trialing',
+      event.data.object.status !== 'active',
       uniqueId,
       event.data.object.customer as string,
       pricing[billing].channel!,
       billing,
       period,
-      event.data.object.cancel_at,
+      event.data.object.cancel_at
     );
   }
 
@@ -461,6 +461,18 @@ export class StripeService {
     });
 
     return accountLink.url;
+  }
+
+  async finishTrial(paymentId: string) {
+    const list = (
+      await stripe.subscriptions.list({
+        customer: paymentId,
+      })
+    ).data.filter((f) => f.status === 'trialing');
+
+    return stripe.subscriptions.update(list[0].id, {
+      trial_end: 'now',
+    });
   }
 
   async checkSubscription(organizationId: string, subscriptionId: string) {

@@ -16,7 +16,7 @@ import { FAQComponent } from '@gitroom/frontend/components/billing/faq.component
 import { useSWRConfig } from 'swr';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import interClass from '@gitroom/react/helpers/inter.font';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useModals } from '@mantine/modals';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
@@ -28,6 +28,7 @@ import { useTrack } from '@gitroom/react/helpers/use.track';
 import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
 import { PurchaseCrypto } from '@gitroom/frontend/components/billing/purchase.crypto';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { FinishTrial } from '@gitroom/frontend/components/billing/finish.trial';
 export interface Tiers {
   month: Array<{
     name: 'Pro' | 'Standard';
@@ -224,6 +225,8 @@ export const MainBillingComponent: FC<{
   const tolt = useTolt();
   const track = useTrack();
   const t = useT();
+  const queryParams = useSearchParams();
+  const [finishTrial, setFinishTrial] = useState(!!queryParams.get('finishTrial'));
 
   const [subscription, setSubscription] = useState<Subscription | undefined>(
     sub
@@ -399,6 +402,10 @@ export const MainBillingComponent: FC<{
           <div>{t('yearly', 'YEARLY')}</div>
         </div>
       </div>
+
+      {finishTrial && (
+        <FinishTrial close={() => setFinishTrial(false)} />
+      )}
       <div className="flex gap-[16px] [@media(max-width:1024px)]:flex-col [@media(max-width:1024px)]:text-center">
         {Object.entries(pricing)
           .filter((f) => !isGeneral || f[0] !== 'FREE')
