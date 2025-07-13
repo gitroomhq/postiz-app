@@ -141,6 +141,7 @@ export class StripeService {
     }
 
     return this._subscriptionService.createOrUpdateSubscription(
+      event.data.object.status === 'trialing',
       uniqueId,
       event.data.object.customer as string,
       pricing[billing].channel!,
@@ -168,12 +169,13 @@ export class StripeService {
     }
 
     return this._subscriptionService.createOrUpdateSubscription(
+      event.data.object.status === 'trialing',
       uniqueId,
       event.data.object.customer as string,
       pricing[billing].channel!,
       billing,
       period,
-      event.data.object.cancel_at
+      event.data.object.cancel_at,
     );
   }
 
@@ -729,6 +731,7 @@ export class StripeService {
       const findPricing = pricing[nextPackage];
 
       await this._subscriptionService.createOrUpdateSubscription(
+        false,
         makeId(10),
         organizationId,
         getCurrentSubscription?.subscriptionTier === 'PRO'

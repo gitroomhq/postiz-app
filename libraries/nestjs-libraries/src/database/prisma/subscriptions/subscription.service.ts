@@ -150,6 +150,7 @@ export class SubscriptionService {
   }
 
   async createOrUpdateSubscription(
+    isTrailing: boolean,
     identifier: string,
     customerId: string,
     totalChannels: number,
@@ -174,6 +175,7 @@ export class SubscriptionService {
       }
     }
     return this._subscriptionRepository.createOrUpdateSubscription(
+      isTrailing,
       identifier,
       customerId,
       totalChannels,
@@ -219,6 +221,7 @@ export class SubscriptionService {
 
   async lifeTime(orgId: string, identifier: string, subscription: any) {
     return this.createOrUpdateSubscription(
+      false,
       identifier,
       identifier,
       pricing[subscription].channel!,
@@ -233,6 +236,7 @@ export class SubscriptionService {
   async addSubscription(orgId: string, userId: string, subscription: any) {
     await this._subscriptionRepository.setCustomerId(orgId, userId);
     return this.createOrUpdateSubscription(
+      false,
       makeId(5),
       userId,
       pricing[subscription].channel!,
