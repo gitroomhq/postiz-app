@@ -358,29 +358,42 @@ export class ReportService {
       orderBy: {
         createdAt: 'asc',
       },
+      select: {
+        createdAt: true,
+        month: true,
+        subscribers: true,
+        totalViews: true,
+        totalVideos: true,
+        totalLikes: true,
+        totalComments: true,
+      },
     });
 
     if (!insights.length) {
       return {
-        Data: [],
-        Subscribers: [],
-        TotalViews: [],
-        TotalVideos: [],
-        Likes: [],
-        Comments: [],
-        dailyStats: [],
+        table: {
+          Data: [],
+          Subscribers: [],
+          TotalViews: [],
+          TotalVideos: [],
+          Likes: [],
+          Comments: [],
+        },
+        chart: [],
       };
     }
 
+    // Prepare daily data for charts
     const dailyStats = insights.map((entry) => ({
-      date: entry.createdAt.toISOString().split('T')[0],
-      subscribers: entry.subscribers,
-      totalViews: entry.totalViews,
-      totalVideos: entry.totalVideos,
+      date: format(entry.createdAt, 'yyyy-MM-dd'),
+      subscribers: entry.subscribers || 0,
+      totalViews: entry.totalViews || 0,
+      totalVideos: entry.totalVideos || 0,
       likes: entry.totalLikes || 0,
       comments: entry.totalComments || 0,
     }));
 
+    // Group by month for table data
     const monthGroups = new Map<string, {
       subscribers: number[];
       views: number[];
@@ -390,42 +403,51 @@ export class ReportService {
     }>();
 
     for (const record of insights) {
-      const month = record.createdAt.toISOString().slice(0, 7);
-      if (!monthGroups.has(month)) {
-        monthGroups.set(month, { subscribers: [], views: [], videos: [], likes: [], comments: [] });
+      const monthKey = record.month || format(record.createdAt, 'yyyy-MM');
+      if (!monthGroups.has(monthKey)) {
+        monthGroups.set(monthKey, {
+          subscribers: [],
+          views: [],
+          videos: [],
+          likes: [],
+          comments: [],
+        });
       }
 
-      const group = monthGroups.get(month);
-      group.subscribers.push(record.subscribers);
-      group.views.push(record.totalViews);
-      group.videos.push(record.totalVideos);
+      const group = monthGroups.get(monthKey);
+      group.subscribers.push(record.subscribers || 0);
+      group.views.push(record.totalViews || 0);
+      group.videos.push(record.totalVideos || 0);
       group.likes.push(record.totalLikes || 0);
       group.comments.push(record.totalComments || 0);
     }
 
+    // Calculate monthly stats
     const monthStats = [...monthGroups.entries()].map(([month, values]) => ({
       month,
       subscribers: Math.round(values.subscribers.reduce((a, b) => a + b, 0) / values.subscribers.length),
-      totalViews: values.views[values.views.length - 1],
-      totalVideos: values.videos[values.videos.length - 1],
-      totalLikes: values.likes.reduce((a, b) => a + b, 0),
-      totalComments: values.comments.reduce((a, b) => a + b, 0),
+      totalViews: values.views[values.views.length - 1], // Use last value for views
+      totalVideos: values.videos[values.videos.length - 1], // Use last value for videos
+      totalLikes: values.likes.reduce((a, b) => a + b, 0), // Sum of likes
+      totalComments: values.comments.reduce((a, b) => a + b, 0), // Sum of comments
     }));
 
+    // Calculate percentage changes
     const lastMonth = monthStats[monthStats.length - 1];
     const prevMonth = monthStats[monthStats.length - 2];
 
     const changeSubscribers = this.getPercentageChange(prevMonth?.subscribers, lastMonth?.subscribers);
     const changeViews = this.getPercentageChange(prevMonth?.totalViews, lastMonth?.totalViews);
+    const changeVideos = this.getPercentageChange(prevMonth?.totalVideos, lastMonth?.totalVideos);
     const changeLikes = this.getPercentageChange(prevMonth?.totalLikes, lastMonth?.totalLikes);
     const changeComments = this.getPercentageChange(prevMonth?.totalComments, lastMonth?.totalComments);
 
     return {
       table: {
-        Data: [...monthStats.map((m) => new Date(`${m.month}-01`).toLocaleString('default', { month: 'long' })), 'Change %'],
+        Data: [...monthStats.map((m) => format(new Date(`${m.month}-01`), 'MMMM')), 'Change %'],
         Subscribers: [...monthStats.map((m) => this.kFormatter(m.subscribers)), `${changeSubscribers.toFixed(2)}%`],
         TotalViews: [...monthStats.map((m) => this.kFormatter(m.totalViews)), `${changeViews.toFixed(2)}%`],
-        TotalVideos: [...monthStats.map((m) => m.totalVideos.toString()), '0%'],
+        TotalVideos: [...monthStats.map((m) => m.totalVideos.toString()), `${changeVideos.toFixed(2)}%`],
         Likes: [...monthStats.map((m) => this.kFormatter(m.totalLikes)), `${changeLikes.toFixed(2)}%`],
         Comments: [...monthStats.map((m) => this.kFormatter(m.totalComments)), `${changeComments.toFixed(2)}%`],
       },
@@ -433,15 +455,120 @@ export class ReportService {
     };
   }
 
+  async getYoutubeCommunityReport(businessId: string, days: string) {
+    const range = parseInt(days || '30', 10);
+    const today = new Date();
+    const startDate = subDays(today, range);
+
+    const insights = await this._youtubeInsightsRepository.model.youTubeInsight.findMany({
+      where: {
+        businessId,
+        createdAt: {
+          gte: startDate,
+          lte: today,
+        },
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+      select: {
+        createdAt: true,
+        month: true,
+        subscribers: true,
+        totalViews: true,
+        totalVideos: true,
+      },
+    });
+
+    if (!insights.length) {
+      return {
+        table: {
+          Data: [],
+          Subscribers: [],
+          TotalViews: [],
+          TotalVideos: [],
+        },
+        chart: [],
+      };
+    }
+
+    // Group by month
+    const monthGroups = new Map<string, any>();
+    for (const record of insights) {
+      const monthKey = record.month || format(record.createdAt, 'yyyy-MM');
+      if (!monthGroups.has(monthKey)) {
+        monthGroups.set(monthKey, record);
+      }
+    }
+
+    const stats = [...monthGroups.entries()].map(([month, data]) => ({
+      month,
+      subscribers: data.subscribers || 0,
+      totalViews: data.totalViews || 0,
+      totalVideos: data.totalVideos || 0,
+    }));
+
+    const subscribers = stats.map((s) => this.kFormatter(s.subscribers));
+    const totalViews = stats.map((s) => this.kFormatter(s.totalViews));
+    const totalVideos = stats.map((s) => s.totalVideos.toString());
+
+    const lastMonth = stats[stats.length - 1];
+    const prevMonth = stats[stats.length - 2];
+
+    const changeSubscribers = this.getPercentageChange(prevMonth?.subscribers, lastMonth?.subscribers);
+    const changeViews = this.getPercentageChange(prevMonth?.totalViews, lastMonth?.totalViews);
+    const changeVideos = this.getPercentageChange(prevMonth?.totalVideos, lastMonth?.totalVideos);
+
+    const chartData = insights.map((i) => ({
+      date: format(i.createdAt, 'yyyy-MM-dd'),
+      subscribers: i.subscribers,
+      totalViews: i.totalViews,
+      totalVideos: i.totalVideos,
+    }));
+
+    return {
+      table: {
+        Data: [...stats.map((s) => format(new Date(`${s.month}-01`), 'MMMM')), 'Change %'],
+        Subscribers: [...subscribers, `${changeSubscribers.toFixed(2)}%`],
+        TotalViews: [...totalViews, `${changeViews.toFixed(2)}%`],
+        TotalVideos: [...totalVideos, `${changeVideos.toFixed(2)}%`],
+      },
+      chart: chartData,
+    };
+  }
+
   async youtubeInsightList(businessId: string) {
     return this._youtubeInsightsRepository.model.youTubeInsight.findMany({
-      where: { businessId },
+      where: {
+        businessId
+      },
+      select: {
+        id: true,
+        createdAt: true,
+        month: true,
+        subscribers: true,
+        totalViews: true,
+        totalVideos: true,
+        totalLikes: true,
+        totalComments: true,
+        customer: {
+          select: {
+            id: true,
+            name: true,
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
   }
 
   async deleteYoutubeInsight(id: string) {
     return this._youtubeInsightsRepository.model.youTubeInsight.delete({
-      where: { id }
+      where: {
+        id
+      },
     });
   }
 
