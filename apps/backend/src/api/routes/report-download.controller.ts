@@ -8,6 +8,8 @@ import * as path from 'path';
 import * as pdf from 'html-pdf';
 import { ChartJSNodeCanvas } from 'chartjs-node-canvas';
 import { ChartConfiguration } from 'chart.js';
+import * as puppeteer from 'puppeteer';
+import * as playwright from 'playwright';
 
 interface ChartData {
     title: string;
@@ -221,6 +223,9 @@ export class ReportDownloadController {
             });
 
             const logoPath = path.join(__dirname, 'assets', 'upstrapp-logo.png');
+            if (!fs.existsSync(logoPath)) {
+                throw new Error('Logo file not found');
+            }
             const logoBase64 = fs.readFileSync(logoPath, 'base64');
             const logoDataUri = `data:image/png;base64,${logoBase64}`;
 
@@ -239,7 +244,6 @@ export class ReportDownloadController {
 
         } catch (error) {
             console.error('Error in downloadCombinedReport:', error);
-            this.handleErrorResponse(error, res);
         }
     }
 
@@ -260,6 +264,12 @@ export class ReportDownloadController {
             for (const report of reports) {
                 try {
                     console.log(`Calling ${report.serviceMethod} for ${platform}`);
+
+                    // Add check if method exists
+                    if (!this.reportService[report.serviceMethod]) {
+                        console.error(`Method ${report.serviceMethod} not found in reportService`);
+                        continue;
+                    }
                     const data = await this.reportService[report.serviceMethod](customerId, month, year);
                     console.log(`${report.serviceMethod} response:`, data);
 
@@ -746,7 +756,8 @@ export class ReportDownloadController {
                         borderColor: '#E1306C',
                         borderWidth: 2,
                         type: 'bar',
-                        yAxisID: 'y'
+                        yAxisID: 'y',
+                        order: 2 // 👈 put bars behind
                     },
                     {
                         label: 'Avg Reach/Day',
@@ -759,9 +770,11 @@ export class ReportDownloadController {
                         yAxisID: 'y1',
                         pointBackgroundColor: '#36b9cc',
                         pointRadius: 4,
-                        pointHoverRadius: 6
+                        pointHoverRadius: 6,
+                        order: 1 // 👈 line in front
                     }
                 ]
+
             },
             options: {
                 plugins: {
@@ -794,10 +807,11 @@ export class ReportDownloadController {
 
         const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
         return {
-            title: `Instagram Daily Impressions & Reach (${format(new Date(year, month - 1, 1), 'MMMM yyyy')})`,
+            title: `Instagram Profile Overview (${format(new Date(year, month - 1, 1), 'MMMM yyyy')})`,
             image: `data:image/png;base64,${imageBuffer.toString('base64')}`
         };
     }
+
     async generateFacebookImpressionsChart(customerId: string, month: number, year: number, preloadedData?: any): Promise<ChartData> {
         const report = preloadedData?.overview || await this.reportService.getFacebookOverviewReport(customerId, month, year);
         if (!report?.chart?.length) return { title: 'Facebook Impressions & Reach', image: null };
@@ -1044,7 +1058,6 @@ export class ReportDownloadController {
         };
     }
 
-
     async generateLinkedInImpressionsChart(customerId: string, month: number, year: number, preloadedData?: any): Promise<ChartData> {
         const report = preloadedData?.overview || await this.reportService.getLinkedInOverviewReport(customerId, month, year);
         if (!report?.chart?.length) return { title: 'LinkedIn Impressions & Reach', image: null };
@@ -1204,160 +1217,157 @@ export class ReportDownloadController {
         };
     }
 
+    private async generateFollowersChart(
+        customerId: string,
+        month: number,
+        year: number,
+        platform: string,
+        preloadedData?: any
+    ): Promise<ChartData | null> {
+        try {
+            let report = preloadedData?.community;
 
+            if (!report) {
+                if (platform === 'instagram') {
+                    report = await this.reportService.getInstagramCommunityReport(customerId, month, year);
+                } else if (platform === 'facebook') {
+                    report = await this.reportService.getFacebookCommunityReport(customerId, month, year);
+                } else if (platform === 'x') {
+                    report = await this.reportService.getXCommunityReport(customerId, month, year);
+                } else if (platform === 'linkedin') {
+                    report = await this.reportService.getLinkedInCommunityReport(customerId, month, year);
+                }
 
+                if (!report?.chart?.length) {
+                    console.log(`No chart data for ${platform} community report`);
+                    return null;
+                }
+            }
 
-    // private async generateFollowersChart(
-    //     customerId: string,
-    //     month: number,
-    //     year: number,
-    //     platform: string,
-    //     preloadedData?: any
-    // ): Promise<ChartData | null> {
-    //     try {
-    //         let report = preloadedData?.community;
+            // 1. Filter data for the selected month only
+            const monthData = report.chart.filter(item => {
+                const date = new Date(item.date || item.createdAt);
+                return date.getMonth() + 1 === month && date.getFullYear() === year;
+            });
 
-    //         if (!report) {
-    //             if (platform === 'instagram') {
-    //                 report = await this.reportService.getInstagramCommunityReport(customerId, month, year);
-    //             } else if (platform === 'facebook') {
-    //                 report = await this.reportService.getFacebookCommunityReport(customerId, month, year);
-    //             } else if (platform === 'x') {
-    //                 report = await this.reportService.getXCommunityReport(customerId, month, year);
-    //             } else if (platform === 'linkedin') {
-    //                 report = await this.reportService.getLinkedInCommunityReport(customerId, month, year);
-    //             }
+            // 2. Sort by date (oldest to newest)
+            monthData.sort((a, b) =>
+                new Date(a.date || a.createdAt).getTime() - new Date(b.date || b.createdAt).getTime()
+            );
 
-    //             if (!report?.chart?.length) {
-    //                 console.log(`No chart data for ${platform} community report`);
-    //                 return null;
-    //             }
-    //         }
+            // 3. Sample data to show ~10 points for better readability
+            const daysInMonth = new Date(year, month, 0).getDate();
+            const dayInterval = Math.max(1, Math.floor(daysInMonth / 10)); // Show ~10 points
+            const sampledData = [];
 
-    //         // 1. Filter data for the selected month only
-    //         const monthData = report.chart.filter(item => {
-    //             const date = new Date(item.date || item.createdAt);
-    //             return date.getMonth() + 1 === month && date.getFullYear() === year;
-    //         });
+            for (let day = 1; day <= daysInMonth; day += dayInterval) {
+                // Find the closest data point to this day
+                let closest = null;
+                let minDiff = Infinity;
 
-    //         // 2. Sort by date (oldest to newest)
-    //         monthData.sort((a, b) =>
-    //             new Date(a.date || a.createdAt).getTime() - new Date(b.date || b.createdAt).getTime()
-    //         );
+                for (const item of monthData) {
+                    const itemDate = new Date(item.date);
+                    const diff = Math.abs(itemDate.getDate() - day);
 
-    //         // 3. Sample data to show ~10 points for better readability
-    //         const daysInMonth = new Date(year, month, 0).getDate();
-    //         const dayInterval = Math.max(1, Math.floor(daysInMonth / 10)); // Show ~10 points
-    //         const sampledData = [];
+                    if (diff < minDiff) {
+                        minDiff = diff;
+                        closest = item;
+                    }
+                }
 
-    //         for (let day = 1; day <= daysInMonth; day += dayInterval) {
-    //             // Find the closest data point to this day
-    //             let closest = null;
-    //             let minDiff = Infinity;
+                if (closest) sampledData.push(closest);
+            }
 
-    //             for (const item of monthData) {
-    //                 const itemDate = new Date(item.date);
-    //                 const diff = Math.abs(itemDate.getDate() - day);
+            // Always include the last day of month if not already included
+            const lastDayData = monthData.find(item => {
+                const itemDate = new Date(item.date || item.createdAt);
+                return itemDate.getDate() === daysInMonth;
+            });
 
-    //                 if (diff < minDiff) {
-    //                     minDiff = diff;
-    //                     closest = item;
-    //                 }
-    //             }
+            if (lastDayData && !sampledData.some(item => {
+                const itemDate = new Date(item.date || item.createdAt);
+                return itemDate.getDate() === daysInMonth;
+            })) {
+                sampledData.push(lastDayData);
+            }
 
-    //             if (closest) sampledData.push(closest);
-    //         }
+            // Create labels showing abbreviated month and day (Apr 1, Apr 4, etc.)
+            const labels = sampledData.map(item => {
+                const date = new Date(item.date || item.createdAt);
+                return format(date, 'MMM d'); // "Apr 1" format
+            });
 
-    //         // Always include the last day of month if not already included
-    //         const lastDayData = monthData.find(item => {
-    //             const itemDate = new Date(item.date || item.createdAt);
-    //             return itemDate.getDate() === daysInMonth;
-    //         });
+            const platformColor = this.getPlatformColor(platform);
+            const metricName = platform === 'facebook' ? 'Likes' : 'Followers';
 
-    //         if (lastDayData && !sampledData.some(item => {
-    //             const itemDate = new Date(item.date || item.createdAt);
-    //             return itemDate.getDate() === daysInMonth;
-    //         })) {
-    //             sampledData.push(lastDayData);
-    //         }
+            const configuration: ChartConfiguration<'line'> = {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: metricName,
+                        data: sampledData.map(item => platform === 'facebook' ? item.likes : item.followers),
+                        backgroundColor: `${platformColor}20`,
+                        borderColor: platformColor,
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: false,
+                        pointBackgroundColor: platformColor,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `${this.getPlatformDisplayName(platform)} Daily ${metricName} Growth (${format(new Date(year, month - 1, 1), 'MMMM yyyy')})`,
+                            font: { size: 16 }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: (tooltipItems) => {
+                                    const date = new Date(sampledData[tooltipItems[0].dataIndex].date ||
+                                        sampledData[tooltipItems[0].dataIndex].createdAt);
+                                    return format(date, 'MMMM d, yyyy'); // Full date in tooltip
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Day of Month',
+                                font: { weight: 'bold' }
+                            },
+                            ticks: {
+                                autoSkip: false
+                            }
+                        },
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                callback: (value) => {
+                                    return Number(value) >= 1000 ? `${Number(value) / 1000}k` : value;
+                                }
+                            }
+                        }
+                    }
+                }
+            };
 
-    //         // Create labels showing abbreviated month and day (Apr 1, Apr 4, etc.)
-    //         const labels = sampledData.map(item => {
-    //             const date = new Date(item.date || item.createdAt);
-    //             return format(date, 'MMM d'); // "Apr 1" format
-    //         });
-
-    //         const platformColor = this.getPlatformColor(platform);
-    //         const metricName = platform === 'facebook' ? 'Likes' : 'Followers';
-
-    //         const configuration: ChartConfiguration<'line'> = {
-    //             type: 'line',
-    //             data: {
-    //                 labels: labels,
-    //                 datasets: [{
-    //                     label: metricName,
-    //                     data: sampledData.map(item => platform === 'facebook' ? item.likes : item.followers),
-    //                     backgroundColor: `${platformColor}20`,
-    //                     borderColor: platformColor,
-    //                     borderWidth: 2,
-    //                     tension: 0.3,
-    //                     fill: false,
-    //                     pointBackgroundColor: platformColor,
-    //                     pointRadius: 4,
-    //                     pointHoverRadius: 6
-    //                 }]
-    //             },
-    //             options: {
-    //                 responsive: true,
-    //                 plugins: {
-    //                     title: {
-    //                         display: true,
-    //                         text: `${this.getPlatformDisplayName(platform)} Daily ${metricName} Growth (${format(new Date(year, month - 1, 1), 'MMMM yyyy')})`,
-    //                         font: { size: 16 }
-    //                     },
-    //                     tooltip: {
-    //                         callbacks: {
-    //                             title: (tooltipItems) => {
-    //                                 const date = new Date(sampledData[tooltipItems[0].dataIndex].date ||
-    //                                     sampledData[tooltipItems[0].dataIndex].createdAt);
-    //                                 return format(date, 'MMMM d, yyyy'); // Full date in tooltip
-    //                             }
-    //                         }
-    //                     }
-    //                 },
-    //                 scales: {
-    //                     x: {
-    //                         title: {
-    //                             display: true,
-    //                             text: 'Day of Month',
-    //                             font: { weight: 'bold' }
-    //                         },
-    //                         ticks: {
-    //                             autoSkip: false
-    //                         }
-    //                     },
-    //                     y: {
-    //                         beginAtZero: false,
-    //                         ticks: {
-    //                             callback: (value) => {
-    //                                 return Number(value) >= 1000 ? `${Number(value) / 1000}k` : value;
-    //                             }
-    //                         }
-    //                     }
-    //                 }
-    //             }
-    //         };
-
-    //         const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
-    //         return {
-    //             title: `${this.getPlatformDisplayName(platform)} Daily ${metricName} Growth (${format(new Date(year, month - 1, 1), 'MMMM yyyy')})`,
-    //             image: `data:image/png;base64,${imageBuffer.toString('base64')}`
-    //         };
-    //     } catch (error) {
-    //         console.error(`Error generating ${platform} followers chart:`, error);
-    //         return { title: `${this.getPlatformDisplayName(platform)} Followers`, image: null };
-    //     }
-    // }
+            const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+            return {
+                title: `${this.getPlatformDisplayName(platform)} Daily ${metricName} Growth (${format(new Date(year, month - 1, 1), 'MMMM yyyy')})`,
+                image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+            };
+        } catch (error) {
+            console.error(`Error generating ${platform} followers chart:`, error);
+            return { title: `${this.getPlatformDisplayName(platform)} Followers`, image: null };
+        }
+    }
 
     private async generateSubscribersChart(
         customerId: string,
@@ -1390,7 +1400,6 @@ export class ReportDownloadController {
                 new Date(a.date || a.createdAt).getTime() - new Date(b.date || b.createdAt).getTime()
             );
 
-            // Sample data with 4-day gap
             const daysInMonth = new Date(year, month, 0).getDate();
             const sampledData = [];
             const interval = 4;
@@ -1412,7 +1421,6 @@ export class ReportDownloadController {
                 if (closest) sampledData.push(closest);
             }
 
-            // Ensure last day is included
             const lastDayData = monthData.find(item => {
                 const itemDate = new Date(item.date || item.createdAt);
                 return itemDate.getDate() === daysInMonth;
@@ -1430,10 +1438,6 @@ export class ReportDownloadController {
                 return format(date, 'MMM d');
             });
 
-            const platformColor = this.getPlatformColor('youtube');
-            const viewsColor = '#FF0000';
-            const videosColor = '#606060';
-
             const configuration: ChartConfiguration<'bar' | 'line'> = {
                 type: 'bar',
                 data: {
@@ -1441,40 +1445,39 @@ export class ReportDownloadController {
                     datasets: [
                         {
                             label: 'Subscribers',
-                            data: sampledData.map(item => item.subscribers || 0),
-                            backgroundColor: `${platformColor}80`,
-                            borderColor: platformColor,
-                            borderWidth: 1,
+                            data: sampledData.map(item => Number(item.subscribers) || 0),
+                            backgroundColor: '#8e44ad80',
+                            borderColor: '#8e44ad',
+                            borderWidth: 2,
                             type: 'bar',
-                            order: 1,
+                            borderRadius: 5,
+                            order: 2,
                             yAxisID: 'y'
                         },
                         {
                             label: 'Total Views',
-                            data: sampledData.map(item => item.totalViews || 0),
-                            backgroundColor: `${viewsColor}20`,
-                            borderColor: viewsColor,
-                            borderWidth: 2,
+                            data: sampledData.map(item => Number(item.totalViews) || 0),
+                            backgroundColor: '#2ecc7120',
+                            borderColor: '#2ecc71',
+                            borderWidth: 3,
                             type: 'line',
-                            tension: 0.3,
-                            pointBackgroundColor: viewsColor,
-                            pointRadius: 4,
-                            pointHoverRadius: 6,
-                            order: 0,
+                            tension: 0.4,
+                            pointRadius: 0,
+                            pointHoverRadius: 0,
+                            order: 1,
                             yAxisID: 'y1'
                         },
                         {
                             label: 'Total Videos',
-                            data: sampledData.map(item => item.totalVideos || 0),
-                            backgroundColor: `${videosColor}20`,
-                            borderColor: videosColor,
-                            borderWidth: 2,
+                            data: sampledData.map(item => Number(item.totalVideos) || 0),
+                            backgroundColor: '#f39c1220',
+                            borderColor: '#f39c12',
+                            borderWidth: 3,
                             type: 'line',
-                            tension: 0.3,
-                            pointBackgroundColor: videosColor,
-                            pointRadius: 4,
-                            pointHoverRadius: 6,
-                            order: 0,
+                            tension: 0.4,
+                            pointRadius: 0,
+                            pointHoverRadius: 0,
+                            order: 1,
                             yAxisID: 'y2'
                         }
                     ]
@@ -1486,11 +1489,6 @@ export class ReportDownloadController {
                         intersect: false,
                     },
                     plugins: {
-                        title: {
-                            // display: true,
-                            // text: `YouTube Analytics (${format(new Date(year, month - 1, 1), 'MMMM yyyy')})`,
-                            // font: { size: 16 }
-                        },
                         tooltip: {
                             callbacks: {
                                 title: (tooltipItems) => {
@@ -1576,15 +1574,14 @@ export class ReportDownloadController {
         }
     }
 
-
     private async generateViewsChart(
         customerId: string,
         month: number,
         year: number
     ): Promise<ChartData> {
         try {
-            const report = await this.reportService.getYoutubeOverviewReport(customerId, month, year);
-            if (!report?.chart?.length) return { title: 'YouTube Views', image: null };
+            const report = await this.reportService.getYoutubeOverviewReport(customerId, month, year); // Ensure days is string
+            if (!report?.chart?.length) return { title: 'YouTube Analytics', image: null };
 
             const monthData = report.chart
                 .filter(item => {
@@ -1593,7 +1590,7 @@ export class ReportDownloadController {
                 })
                 .sort((a, b) => new Date(a.date || a.createdAt).getTime() - new Date(b.date || b.createdAt).getTime());
 
-            if (!monthData.length) return { title: 'YouTube Views', image: null };
+            if (!monthData.length) return { title: 'YouTube Analytics', image: null };
 
             const daysInMonth = new Date(year, month, 0).getDate();
             const sampledData = [];
@@ -1615,14 +1612,18 @@ export class ReportDownloadController {
                 if (closest) sampledData.push(closest);
             }
 
+            // Ensure last day is included
             const lastDayData = monthData.find(item => {
                 const itemDate = new Date(item.date || item.createdAt);
                 return itemDate.getDate() === daysInMonth;
             });
-            if (lastDayData && !sampledData.some(item => {
-                const itemDate = new Date(item.date || item.createdAt);
-                return itemDate.getDate() === daysInMonth;
-            })) {
+            if (
+                lastDayData &&
+                !sampledData.some(item => {
+                    const itemDate = new Date(item.date || item.createdAt);
+                    return itemDate.getDate() === daysInMonth;
+                })
+            ) {
                 sampledData.push(lastDayData);
             }
 
@@ -1631,56 +1632,61 @@ export class ReportDownloadController {
                 return format(date, 'MMM d');
             });
 
-            const viewsColor = this.getPlatformColor('youtube'); // Bar
-            const likesColor = '#FF6384'; // Line
-            const commentsColor = '#36A2EB'; // Line
-
             const configuration: ChartConfiguration<'bar' | 'line'> = {
                 type: 'bar',
                 data: {
                     labels,
                     datasets: [
+                        // {
+                        //     label: 'Total Views',
+                        //     data: sampledData.map(item => item.totalViews || 0),
+                        //     backgroundColor: '#FF000080', // YouTube red with opacity
+                        //     borderColor: '#FF0000',
+                        //     borderWidth: 1,
+                        //     borderRadius: 4,
+                        //     yAxisID: 'y',
+                        //     type: 'bar',z
+                        //     order: 3
+                        // },
                         {
-                            label: 'Views',
-                            data: sampledData.map(item => item.totalViews || 0),
-                            backgroundColor: `${viewsColor}AA`,
-                            borderColor: viewsColor,
+                            label: 'Total Videos',
+                            data: sampledData.map(item => item.totalVideos || 0),
+                            backgroundColor: '#28282880', // Dark gray
+                            borderColor: '#282828',
                             borderWidth: 1,
                             borderRadius: 4,
                             yAxisID: 'y',
                             type: 'bar',
-                            order: 1
+                            order: 2
                         },
                         {
                             label: 'Likes',
                             data: sampledData.map(item => item.likes || 0),
                             type: 'line',
-                            borderColor: likesColor,
-                            backgroundColor: likesColor,
-                            pointBackgroundColor: likesColor,
+                            borderColor: '#FF6384', // red-pink
+                            backgroundColor: '#FF638420',
+                            borderWidth: 3,
+                            tension: 0.3,
+                            pointBackgroundColor: '#FF6384',
                             pointRadius: 4,
                             pointHoverRadius: 6,
-                            borderWidth: 2,
-                            fill: false,
+                            yAxisID: 'y1',
+                            order: 1
+                        },
+                        {
+                            label: 'Comments',
+                            data: sampledData.map(item => item.comments || 0),
+                            type: 'line',
+                            borderColor: '#36A2EB', // Blue
+                            backgroundColor: '#36A2EB20',
+                            borderWidth: 3,
                             tension: 0.3,
+                            pointBackgroundColor: '#36A2EB',
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
                             yAxisID: 'y1',
                             order: 0
-                        },
-                        // {
-                        //     label: 'Comments',
-                        //     data: sampledData.map(item => item.comments || 0),
-                        //     type: 'line',
-                        //     borderColor: commentsColor,
-                        //     backgroundColor: commentsColor,
-                        //     pointBackgroundColor: commentsColor,
-                        //     pointRadius: 4,
-                        //     pointHoverRadius: 6,
-                        //     borderWidth: 2,
-                        //     fill: false,
-                        //     tension: 0.3,
-                        //     yAxisID: 'y1',
-                        //     order: 0
-                        // }
+                        }
                     ]
                 },
                 options: {
@@ -1692,16 +1698,28 @@ export class ReportDownloadController {
                     plugins: {
                         title: {
                             display: true,
-                            text: `YouTube Engagement (${format(new Date(year, month - 1, 1), 'MMMM yyyy')})`,
+                            text: `YouTube Analytics (${format(new Date(year, month - 1, 1), 'MMMM yyyy')})`,
                             font: { size: 16 }
                         },
                         tooltip: {
                             callbacks: {
-                                title: (tooltipItems) => {
+                                title: tooltipItems => {
                                     const item = sampledData[tooltipItems[0].dataIndex];
                                     const date = new Date(item.date || item.createdAt);
                                     return format(date, 'MMMM d, yyyy');
+                                },
+                                label: context => {
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y;
+                                    return `${label}: ${value.toLocaleString()}`;
                                 }
+                            }
+                        },
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20
                             }
                         }
                     },
@@ -1721,11 +1739,15 @@ export class ReportDownloadController {
                             position: 'left',
                             title: {
                                 display: true,
-                                text: 'Views'
+                                text: 'Views & Videos',
+                                font: { weight: 'bold' }
                             },
                             ticks: {
-                                callback: (value) =>
-                                    Number(value) >= 1000 ? `${Number(value) / 1000}k` : value
+                                callback: value => {
+                                    return Number(value) >= 1000
+                                        ? `${(Number(value) / 1000).toFixed(0)}k`
+                                        : value;
+                                }
                             }
                         },
                         y1: {
@@ -1736,28 +1758,29 @@ export class ReportDownloadController {
                             },
                             title: {
                                 display: true,
-                                text: 'Likes / Comments'
+                                text: 'Likes & Comments',
+                                font: { weight: 'bold' }
                             },
-                            suggestedMax: 100, // ✅ Set a better max (based on your average)
                             ticks: {
-                                stepSize: 20,
-                                callback: (value) =>
-                                    Number(value) >= 1000 ? `${Number(value) / 1000}k` : value
+                                callback: value => {
+                                    return Number(value) >= 1000
+                                        ? `${(Number(value) / 1000).toFixed(0)}k`
+                                        : value;
+                                }
                             }
                         }
-
                     }
                 }
             };
 
             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
             return {
-                title: `YouTube Engagement (${format(new Date(year, month - 1, 1), 'MMMM yyyy')})`,
+                title: `YouTube Analytics (${format(new Date(year, month - 1, 1), 'MMMM yyyy')})`,
                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`
             };
         } catch (error) {
-            console.error('Error generating YouTube views chart:', error);
-            return { title: 'YouTube Views', image: null };
+            console.error('Error generating YouTube analytics chart:', error);
+            return { title: 'YouTube Analytics', image: null };
         }
     }
 
@@ -2275,7 +2298,6 @@ export class ReportDownloadController {
         }
     }
 
-
     private getPlatformColor(platform: string): string {
         const colors: Record<string, string> = {
             instagram: 'rgba(193, 53, 132, 1)',
@@ -2289,6 +2311,284 @@ export class ReportDownloadController {
         return colors[platform.toLowerCase()] || 'rgba(54, 162, 235, 1)';
     }
 
+    //     private generateCombinedReportHtml(options: {
+    //         platformReports: PlatformReport[];
+    //         logoDataUri: string;
+    //         month: string;
+    //         customerName: string;
+    //     }): string {
+    //         const currentDate = format(new Date(), 'MMM d, yyyy');
+
+    //         return `<!DOCTYPE html>
+    // <html>
+    // <head>
+    //     <meta charset="UTF-8">
+    //     <style>
+    //         @page {
+    //             margin: 0;
+    //         }
+
+    //         body {
+    //             margin: 0;
+    //             padding: 30px 40px;
+    //             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    //             color: #2c3e50;
+    //             line-height: 1.6;
+    //             background-color: #fff;
+    //         }
+
+    //         .logo-container {
+    //             text-align: center;
+    //             margin-bottom: 20px;
+    //         }
+
+    //         .logo {
+    //             height: 300px;
+    //             width: 300px;
+    //         }
+
+    //         .header {
+    //             text-align: center;
+    //             margin-bottom: 40px;
+    //         }
+
+    //         .header h1 {
+    //             font-size: 32px;
+    //             margin-bottom: 10px;
+    //             font-weight: 700;
+    //         }
+
+    //         .header p {
+    //             color: #7f8c8d;
+    //             font-size: 16px;
+    //             margin: 5px 0;
+    //         }
+
+    //         .customer-id {
+    //             display: inline-block;
+    //             margin-top: 15px;
+    //             background-color: #ecf0f1;
+    //             padding: 10px 20px;
+    //             border-radius: 6px;
+    //             font-size: 18px;
+    //             font-weight: 600;
+    //             color: #34495e;
+    //         }
+
+    //         .intro-page {
+    //             height: 100vh;
+    //             display: flex;
+    //             flex-direction: column;
+    //             justify-content: center;
+    //             align-items: center;
+    //             page-break-after: always;
+    //         }
+
+    //         .platform-section {
+    //             margin-bottom: 60px;
+    //             page-break-after: always;
+    //         }
+
+    //         .platform-title {
+    //             display: flex;
+    //             align-items: center;
+    //             font-size: 24px;
+    //             font-weight: 700;
+    //             border-bottom: 2px solid #3498db;
+    //             padding-bottom: 10px;
+    //             margin-bottom: 30px;
+    //         }
+
+    //         .platform-icon {
+    //             width: 28px;
+    //             height: 28px;
+    //             margin-right: 12px;
+    //         }
+
+    //         .section {
+    //             margin-bottom: 40px;
+    //         }
+
+    //         .section-title {
+    //             font-size: 20px;
+    //             font-weight: 600;
+    //             margin-bottom: 20px;
+    //             padding-left: 10px;
+    //             border-left: 5px solid #2980b9;
+    //             color: #2c3e50;
+    //         }
+
+    //         table {
+    //             width: 100%;
+    //             border-collapse: collapse;
+    //             margin-bottom: 20px;
+    //             page-break-inside: avoid;
+    //         }
+
+    //         th, td {
+    //             padding: 14px 18px;
+    //             text-align: center;
+    //             border-bottom: 1px solid #e5e5e5;
+    //             font-size: 14px;
+    //         }
+
+    //         th {
+    //             background-color: #f0f4f7;
+    //             text-transform: uppercase;
+    //             font-weight: 600;
+    //             color: #34495e;
+    //         }
+
+    //         td.metric-name {
+    //             text-align: left;
+    //             font-weight: 600;
+    //             color: #2c3e50;
+    //         }
+
+    //         tr:nth-child(even) {
+    //             background-color: #fafafa;
+    //         }
+
+    //         .bold-row {
+    //             font-weight: bold;
+    //         }
+
+    //         .total-content-row {
+    //             background-color: #eaf6ff;
+    //             border-top: 2px solid #3498db;
+    //         }
+
+    //         .positive {
+    //             color: #27ae60;
+    //             font-weight: 600;
+    //         }
+
+    //         .negative {
+    //             color: #e74c3c;
+    //             font-weight: 600;
+    //         }
+
+    //         .growth-text {
+    //             font-style: italic;
+    //             color: #7f8c8d;
+    //             font-size: 14px;
+    //             margin-top: -10px;
+    //             margin-bottom: 30px;
+    //         }
+
+    //         .chart-container {
+    //             margin: 20px 0 50px;
+    //             page-break-inside: avoid;
+    //         }
+
+    //         .chart-title {
+    //             font-size: 16px;
+    //             font-weight: 500;
+    //             text-align: center;
+    //             margin-bottom: 12px;
+    //             color: #2d3436;
+    //         }
+
+    //         .chart-img {
+    //             width: 100%;
+    //             height: auto;
+    //             display: block;
+    //             margin: 0 auto;
+    //             object-fit: contain;
+    //         }
+
+    //         .footer {
+    //             text-align: center;
+    //             font-size: 12px;
+    //             color: #95a5a6;
+    //             border-top: 1px solid #eee;
+    //             padding-top: 20px;
+    //             margin-top: 60px;
+    //         }
+    //     </style>
+    // </head>
+    // <body>
+    //     <div class="intro-page">
+    //         <div class="logo-container">
+    //             <img src="${options.logoDataUri}" class="logo" alt="Company Logo" />
+    //         </div>
+    //         <div class="header">
+    //             <h1>Social Media Analytics Report</h1>
+    //             <p>For ${options.month} | Generated on ${currentDate}</p>
+    //             <div class="customer-id">${options.customerName}</div>
+    //         </div>
+    //     </div>
+
+    //     ${options.platformReports.map(platform => {
+    //             const combinedSections: string[] = [];
+    //             const tables = platform.tables || [];
+    //             const charts = platform.charts || [];
+    //             const max = Math.max(tables.length, charts.length);
+
+    //             for (let i = 0; i < max; i++) {
+    //                 const table = tables[i];
+    //                 const chart = charts[i];
+
+    //                 if (table && table.rows?.length > 0) {
+    //                     combinedSections.push(`
+    //                 <div class="section" style="${table.title.toLowerCase().includes('overview') ? 'page-break-before: always;' : ''}">
+    //                     <div class="section-title">${table.title}</div>
+    //                     <table class="${table.style || 'detailed'}-table">
+    //                         <thead>
+    //                             <tr>
+    //                                 ${table.headers.map(h => `<th>${h}</th>`).join('')}
+    //                             </tr>
+    //                         </thead>
+    //                         <tbody>
+    //                             ${table.rows.map(row => `
+    //                                 <tr${row[0].toLowerCase().includes('total content') ? ' class="bold-row total-content-row"' : ''}>
+    //                                     ${row.map((cell, i) => {
+    //                         if (i === 0) {
+    //                             return `<td class="metric-name">${cell}</td>`;
+    //                         } else if (i === row.length - 1) {
+    //                             const isPositive = cell && !cell.includes('-') && cell !== '0%' && cell !== 'N/A';
+    //                             return `<td class="${isPositive ? 'positive' : cell === '0%' || cell === 'N/A' ? '' : 'negative'}">${cell}</td>`;
+    //                         } else {
+    //                             return `<td>${cell}</td>`;
+    //                         }
+    //                     }).join('')}
+    //                                 </tr>
+    //                             `).join('')}
+    //                         </tbody>
+    //                     </table>
+    //                     ${table.growthText ? `<div class="growth-text">${table.growthText}</div>` : ''}
+    //                 </div>
+    //                 `);
+    //                 }
+
+    //                 if (chart && chart.image) {
+    //                     combinedSections.push(`
+    //                 <div class="chart-container">
+    //                     <div class="chart-title">${chart.title}</div>
+    //                     <img src="${chart.image}" class="chart-img" />
+    //                 </div>
+    //                 `);
+    //                 }
+    //             }
+
+    //             return `
+    //         <div class="platform-section">
+    //             <div class="platform-title">
+    //                 <img src="${this.getPlatformIconDataUri(platform.name)}" class="platform-icon" alt="${platform.name}" />
+    //                 ${platform.name}
+    //             </div>
+    //             ${combinedSections.join('')}
+    //         </div>
+    //         `;
+    //         }).join('')}
+
+    //     <div class="footer">
+    //         <p>© ${new Date().getFullYear()} Upstrapp. All rights reserved.</p>
+    //         <p>This report was automatically generated on ${currentDate}</p>
+    //     </div>
+    // </body>
+    // </html>`;
+    //     }
 
     private generateCombinedReportHtml(options: {
         platformReports: PlatformReport[];
@@ -2306,273 +2606,260 @@ export class ReportDownloadController {
         @page {
             margin: 0;
         }
+
         body {
             margin: 0;
-            padding: 15px 5px;
+            padding: 30px 40px;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #333;
+            color: #2c3e50;
             line-height: 1.6;
+            background-color: #fff;
         }
+
         .logo-container {
-            margin: 0;
-            padding: 0;
             text-align: center;
+            margin-bottom: 20px;
         }
+
         .logo {
-            height: 60px;
+            height: 100px;
             width: auto;
-            margin-bottom: 10px;
         }
+
         .header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
         }
+
         .header h1 {
-            font-size: 28px;
-            margin: 0;
-            color: #2c3e50;
-            font-weight: 600;
+            font-size: 32px;
+            margin-bottom: 10px;
+            font-weight: 700;
         }
+
         .header p {
-            margin: 5px 0 0;
             color: #7f8c8d;
             font-size: 16px;
+            margin: 5px 0;
         }
-      .customer-id {
-    background: #f8f9fa;
-    padding: 8px 15px;
-    border-radius: 4px;
-    display: inline-block;
-    margin-top: 10px;
-    font-size: 20px; /* increased from 14px */
-    font-weight: bold; /* makes the text bold */
-}
 
-        .platform-section {
-            margin-bottom: 50px;
-            page-break-after: always;
-        }
-        .platform-title {
-            font-size: 22px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            color: #2c3e50;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 8px;
-            display: flex;
-            align-items: center;
-        }
-        .platform-icon {
-            width: 24px;
-            height: 24px;
-            margin-right: 10px;
-        }
-        .section {
-            margin-bottom: 30px;
-        }
-        .section-title {
+        .customer-id {
+            display: inline-block;
+            margin-top: 15px;
+            background-color: #ecf0f1;
+            padding: 10px 20px;
+            border-radius: 6px;
             font-size: 18px;
             font-weight: 600;
-            margin-bottom: 15px;
             color: #34495e;
-            padding-left: 5px;
-            border-left: 4px solid #3498db;
         }
-        
-        /* Simple table style */
-        table.simple-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 25px;
-            page-break-inside: avoid;
+
+        .intro-page {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            page-break-after: always;
         }
-        table.simple-table th, table.simple-table td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #e0e0e0;
+
+        .platform-section {
+            margin-bottom: 60px;
+            page-break-after: always;
         }
-        table.simple-table th {
+
+        .platform-title {
+            display: flex;
+            align-items: center;
+            font-size: 24px;
+            font-weight: 700;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+
+        .platform-icon {
+            width: 28px;
+            height: 28px;
+            margin-right: 12px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 20px;
             font-weight: 600;
-            background-color: #f8f9fa;
+            margin-bottom: 20px;
+            padding-left: 10px;
+            border-left: 5px solid #2980b9;
             color: #2c3e50;
-            text-transform: uppercase;
-            font-size: 13px;
-            letter-spacing: 0.5px;
         }
-        table.simple-table td.metric-name {
-            font-weight: bold;
-        }
-        table.simple-table tr:nth-child(even) {
-            background-color: #f8f9fa;
-        }
-        
-        /* Detailed table style */
-        table.detailed-table {
+
+        table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             page-break-inside: avoid;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-        table.detailed-table th, table.detailed-table td {
-            padding: 12px 15px;
+
+        th, td {
+            padding: 14px 18px;
             text-align: center;
-            border-bottom: 1px solid #e0e0e0;
+            border-bottom: 1px solid #e5e5e5;
+            font-size: 14px;
         }
-        table.detailed-table th {
-            font-weight: 600;
-            background-color: #f8f9fa;
-            color: #2c3e50;
+
+        th {
+            background-color: #f0f4f7;
             text-transform: uppercase;
-            font-size: 13px;
-            letter-spacing: 0.5px;
+            font-weight: 600;
+            color: #34495e;
         }
-        table.detailed-table td.metric-name {
+
+        td.metric-name {
             text-align: left;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        tr:nth-child(even) {
+            background-color: #fafafa;
+        }
+
+        .bold-row {
             font-weight: bold;
         }
-        table.detailed-table tr:nth-child(even) {
-            background-color: #f8f9fa;
+
+        .total-content-row {
+            background-color: #eaf6ff;
+            border-top: 2px solid #3498db;
         }
-        
-        /* Common styles for both tables */
+
         .positive {
             color: #27ae60;
             font-weight: 600;
         }
+
         .negative {
             color: #e74c3c;
             font-weight: 600;
         }
-        .bold-row {
-            font-weight: bold;
-        }
+
         .growth-text {
             font-style: italic;
             color: #7f8c8d;
-            margin-top: -15px;
-            margin-bottom: 20px;
             font-size: 14px;
+            margin-top: -10px;
+            margin-bottom: 30px;
         }
+
         .chart-container {
-            margin: 30px 0;
-            height: 300px;
+            margin: 20px 0 50px;
             page-break-inside: avoid;
         }
+
         .chart-title {
-            text-align: center;
             font-size: 16px;
-            margin-bottom: 15px;
-            color: #34495e;
             font-weight: 500;
+            text-align: center;
+            margin-bottom: 12px;
+            color: #2d3436;
         }
+
         .chart-img {
             width: 100%;
-            height: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
             object-fit: contain;
         }
+
         .footer {
             text-align: center;
-            margin-top: 50px;
-            color: #95a5a6;
             font-size: 12px;
+            color: #95a5a6;
             border-top: 1px solid #eee;
-            padding-top: 15px;
+            padding-top: 20px;
+            margin-top: 60px;
         }
-        table.detailed-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 25px;
-    page-break-inside: avoid;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-table.detailed-table th, table.detailed-table td {
-    padding: 12px 15px;
-    text-align: center;
-    border-bottom: 1px solid #e0e0e0;
-}
-table.detailed-table th {
-    font-weight: 600;
-    background-color: #f8f9fa;
-    color: #2c3e50;
-    text-transform: uppercase;
-    font-size: 13px;
-    letter-spacing: 0.5px;
-}
-table.detailed-table td.metric-name {
-    text-align: left;
-    font-weight: bold;
-}
-table.detailed-table tr:nth-child(even) {
-    background-color: #f8f9fa;
-}
-    .total-content-row {
-    background-color: #e8f4fc !important;
-    border-top: 2px solid #3498db;
-}
-.total-content-row td {
-    font-weight: bold !important;
-}
     </style>
 </head>
 <body>
-    <div class="logo-container">
-        <img src="${options.logoDataUri}" class="logo" alt="Company Logo" /> 
+    <div class="intro-page">
+        <div class="logo-container">
+            <img src="${options.logoDataUri}" class="logo" alt="Company Logo" />
+        </div>
+        <div class="header">
+            <h1>Social Media Analytics Report</h1>
+            <p>For ${options.month} | Generated on ${currentDate}</p>
+            <div class="customer-id">${options.customerName}</div>
+        </div>
     </div>
 
-    <div class="header">
-        <h1>Social Media Analytics Report</h1>
-        <p>For ${options.month} | Generated on ${currentDate}</p>
-        <div class="customer-id">${options.customerName}</div>
-    </div>
+    ${options.platformReports.map(platform => {
+            const combinedSections: string[] = [];
+            const tables = platform.tables || [];
+            const charts = platform.charts || [];
+            const max = Math.max(tables.length, charts.length);
 
-    ${options.platformReports.map(platform => `
+            for (let i = 0; i < max; i++) {
+                const table = tables[i];
+                const chart = charts[i];
+
+                if (table && table.rows?.length > 0) {
+                    combinedSections.push(`
+                <div class="section" style="${table.title.toLowerCase().includes('overview') ? 'page-break-before: always;' : ''}">
+                    <div class="section-title">${table.title}</div>
+                    <table class="${table.style || 'detailed'}-table">
+                        <thead>
+                            <tr>
+                                ${table.headers.map(h => `<th>${h}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${table.rows.map(row => `
+                                <tr${row[0].toLowerCase().includes('total content') ? ' class="bold-row total-content-row"' : ''}>
+                                    ${row.map((cell, i) => {
+                        if (i === 0) {
+                            return `<td class="metric-name">${cell}</td>`;
+                        } else if (i === row.length - 1) {
+                            const isPositive = cell && !cell.includes('-') && cell !== '0%' && cell !== 'N/A';
+                            return `<td class="${isPositive ? 'positive' : cell === '0%' || cell === 'N/A' ? '' : 'negative'}">${cell}</td>`;
+                        } else {
+                            return `<td>${cell}</td>`;
+                        }
+                    }).join('')}
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    ${table.growthText ? `<div class="growth-text">${table.growthText}</div>` : ''}
+                </div>
+                `);
+                }
+
+                if (chart && chart.image) {
+                    combinedSections.push(`
+                <div class="chart-container">
+                    <div class="chart-title">${chart.title}</div>
+                    <img src="${chart.image}" class="chart-img" />
+                </div>
+                `);
+                }
+            }
+
+            return `
         <div class="platform-section">
             <div class="platform-title">
                 <img src="${this.getPlatformIconDataUri(platform.name)}" class="platform-icon" alt="${platform.name}" />
                 ${platform.name}
             </div>
-            
-            ${platform.tables.filter(table => table?.rows?.length > 0).map(table => `
-                <div class="section">
-                    <div class="section-title">${table.title}</div>
- <table class="${table.style || 'detailed'}-table">
-    <thead>
-        <tr>
-            ${table.headers.map(header => `<th>${header}</th>`).join('')}
-        </tr>
-    </thead>
-    <tbody>
-        ${table.rows.map(row => `
-            <tr${row[0].toLowerCase().includes('total content') ? ' class="bold-row total-content-row"' : ''}>
-                ${row.map((cell, i) => {
-            if (i === 0) {
-                return `<td class="metric-name">${cell}</td>`;
-            } else if (i === row.length - 1) {
-                const isPositive = cell && !cell.includes('-') && cell !== '0%' && cell !== 'N/A';
-                return `<td class="${isPositive ? 'positive' : cell === '0%' || cell === 'N/A' ? '' : 'negative'}">${cell}</td>`;
-            } else {
-                return `<td>${cell}</td>`;
-            }
-        }).join('')}
-            </tr>
-        `).join('')}
-    </tbody>
-</table>
-                    ${table.growthText ? `<div class="growth-text">${table.growthText}</div>` : ''}
-                </div>
-            `).join('')}
-
-            ${platform.charts.filter(chart => chart?.image).map(chart => `
-                <div class="chart-container">
-                <br>
-                    <div class="chart-title">${chart.title}</div>
-                    <img src="${chart.image}" class="chart-img" />
-                <br>    
-                </div>
-            `).join('')}
+            ${combinedSections.join('')}
         </div>
-    `).join('')}
+        `;
+        }).join('')}
 
     <div class="footer">
         <p>© ${new Date().getFullYear()} Upstrapp. All rights reserved.</p>
@@ -2624,7 +2911,6 @@ table.detailed-table tr:nth-child(even) {
         return `data:image/svg+xml;base64,${Buffer.from(iconSvg).toString('base64')}`;
     }
 
-
     private generateNoDataHtml(logoDataUri: string, month: string, customerName: string): string {
         return `<!DOCTYPE html>
 <html>
@@ -2634,13 +2920,20 @@ table.detailed-table tr:nth-child(even) {
         @page {
             margin: 0;
         }
-        body {
-            margin: 0;
-            padding: 40px;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #333;
-            line-height: 1.6;
-        }
+       body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh; /* full page */
+    text-align: center;
+}
+
         .logo-container {
             margin: 0;
             padding: 0;
@@ -2728,45 +3021,63 @@ table.detailed-table tr:nth-child(even) {
 </html>`;
     }
 
-    private generateAndSendPdf(
+    private async generateAndSendPdf(
         res: Response,
         html: string,
         platform: string,
         customerId: string,
         period: string
     ) {
-        const options: pdf.CreateOptions = {
-            format: 'A4',
-            border: {
-                top: '0.5in',
-                right: '0.3in',
-                bottom: '0.5in',
-                left: '0.3in'
-            },
-            timeout: 30000
-        };
+        let browser;
+        try {
+            console.log('Starting PDF generation...');
 
-        pdf.create(html, options).toStream((err, stream) => {
-            if (err) {
-                console.error('PDF generation error:', err);
-                return res.status(500).send('Error generating PDF');
-            }
+            browser = await playwright.chromium.launch({
+                headless: true,
+                args: ['--no-sandbox', '--disable-setuid-sandbox']
+            });
+            console.log('Browser launched');
+
+            const context = await browser.newContext();
+            const page = await context.newPage();
+            console.log('New page created');
+
+            await page.setContent(html, { waitUntil: 'networkidle0' });
+            console.log('Content set');
+
+            const pdfBuffer = await page.pdf({
+                format: 'A4',
+                margin: {
+                    top: '0.5in',
+                    right: '0.5in',
+                    bottom: '0.5in',
+                    left: '0.5in'
+                },
+                printBackground: true,
+                preferCSSPageSize: true,  // Important for proper sizing
+
+                //timeout: 60000 // Increase timeout to 60 seconds
+
+            });
+            console.log('PDF generated');
+
+            // Save to file for inspection (optional)
+            fs.writeFileSync('debug-report-playwright.pdf', pdfBuffer);
+            console.log('PDF saved to debug-report-playwright.pdf');
+
 
             res.setHeader('Content-Type', 'application/pdf');
-            res.setHeader(
-                'Content-Disposition',
-                `attachment; filename=${platform}-report-${customerId}-${period}.pdf`
-            );
-            stream.pipe(res);
-        });
-    }
+            res.setHeader('Content-Disposition', `attachment; filename=${platform}-report-${customerId}-${period}.pdf`);
+            res.setHeader('Content-Length', pdfBuffer.length);
 
-    private handleErrorResponse(error: any, res: Response) {
-        if (error instanceof BadRequestException) {
-            res.status(400).send(error.message);
-        } else {
-            console.error('PDF Generation Error:', error);
-            res.status(500).send('Error generating report');
+            res.send(pdfBuffer)
+            console.log('Browser closed');
+
+        } catch (err) {
+            console.error('PDF generation error:', err);
+            res.status(500).send('Error generating PDF: ' + err.message);
+        } finally {
+            if (browser) await browser.close();
         }
     }
 

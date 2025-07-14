@@ -294,6 +294,67 @@ export class MonthlyReportService {
 			return null;
 		}
 	}
+
+	async getYoutubeCommunityReport(customerId: string, month: number, year: number) {
+		try {
+			const monthlyData = await this.getDataForMonths(
+				this._youtubeInsightsRepository.model.youTubeInsight,
+				customerId,
+				month,
+				year,
+				['subscribers', 'totalViews', 'totalVideos']
+			);
+
+			if (!monthlyData.length) return null;
+
+			return {
+				table: this.buildYoutubeCommunityTable(monthlyData),
+				chart: await this.getDailyDataForMonth(
+					this._youtubeInsightsRepository.model.youTubeInsight,
+					customerId,
+					month,
+					year,
+					['subscribers', 'totalViews']
+				)
+			};
+		} catch (error) {
+			console.error('YouTube Community Error:', error);
+			return null;
+		}
+	}
+
+	private buildYoutubeCommunityTable(insights: any[]) {
+		const months = insights.map(i => format(new Date(i.createdAt), 'MMM').toUpperCase());
+
+		const calculateChange = (values: number[]) => {
+			if (values.length < 2) return 'N/A';
+			const first = values[0];
+			const last = values[values.length - 1];
+			if (first === 0) return last === 0 ? '0%' : 'N/A';
+			const change = ((last - first) / first) * 100;
+			return `${change.toFixed(2)}%`;
+		};
+
+		const headers = ['Data', ...months, 'Change %'];
+		const rows = [];
+
+		const subscribers = insights.map(i => parseInt(i.subscribers) || 0);
+		const totalViews = insights.map(i => parseInt(i.totalViews) || 0);
+		const totalVideos = insights.map(i => parseInt(i.totalVideos) || 0);
+
+		rows.push(
+			['Subscribers', ...subscribers.map(String), calculateChange(subscribers)],
+			['Total Views', ...totalViews.map(String), calculateChange(totalViews)],
+			['Total Videos', ...totalVideos.map(String), calculateChange(totalVideos)]
+		);
+
+		return {
+			Data: headers,
+			Rows: rows,
+			Growth: `Subscribers growth: ${subscribers[subscribers.length - 1] - subscribers[0]}`
+		};
+	}
+
 	// Updated LinkedIn methods with daily charts
 	async getLinkedInCommunityReport(customerId: string, month: number, year: number) {
 		try {
@@ -532,10 +593,12 @@ export class MonthlyReportService {
 				const subscribers = insights.map(i => parseInt(i.subscribers) || 0);
 				const views = insights.map(i => parseInt(i.totalViews) || 0);
 				const videos = insights.map(i => parseInt(i.totalVideos) || 0);
+				const likes = insights.map(i => parseInt(i.likes) || 0);
+				const comments = insights.map(i => parseInt(i.comments) || 0);
 				rows.push(
-					['Subscribers', ...subscribers.map(String), calculateChange(subscribers)],
-					['Total Views', ...views.map(String), calculateChange(views)],
 					['Total Videos', ...videos.map(String), calculateChange(videos)],
+					['Likes', ...likes.map(String), calculateChange(likes)],
+					['Comments', ...comments.map(String), calculateChange(comments)]
 				);
 				break;
 
