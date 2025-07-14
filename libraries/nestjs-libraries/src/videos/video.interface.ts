@@ -1,17 +1,33 @@
-import { Injectable } from '@nestjs/common';
-
-export interface Prompt {
-  type: 'prompt' | 'image';
-  value: string;
-}
+import { Injectable, Type, ValidationPipe } from '@nestjs/common';
 
 export type URL = string;
 
-export abstract class VideoAbstract {
-  abstract process(
-    prompt: Prompt[],
+export abstract class VideoAbstract<T> {
+  dto: Type<T>;
+
+  async processAndValidate(
     output: 'vertical' | 'horizontal',
-    customParams?: any
+    customParams?: T
+  ) {
+    const validationPipe = new ValidationPipe({
+      skipMissingProperties: false,
+      transform: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+    });
+
+    const transformed = await validationPipe.transform(customParams, {
+      type: 'body',
+      metatype: this.dto,
+    });
+
+    return this.process(output, transformed);
+  }
+
+  protected abstract process(
+    output: 'vertical' | 'horizontal',
+    customParams?: T
   ): Promise<URL>;
 }
 

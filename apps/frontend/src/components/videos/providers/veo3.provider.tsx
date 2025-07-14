@@ -14,7 +14,6 @@ export interface Voice {
 const VEO3Settings: FC = () => {
   const { register, watch, setValue, formState } = useFormContext();
   const { value } = useVideo();
-  const [videoValue, setVideoValue] = useState(value);
 
   const media = register('media', {
     value: [],

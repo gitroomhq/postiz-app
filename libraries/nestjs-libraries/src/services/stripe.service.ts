@@ -685,27 +685,6 @@ export class StripeService {
     return { ok: true };
   }
 
-  async updateOrder(event: Stripe.CheckoutSessionCompletedEvent) {
-    if (event?.data?.object?.metadata?.type !== 'marketplace') {
-      return { ok: true };
-    }
-
-    const { orderId } = event?.data?.object?.metadata || { orderId: '' };
-    if (!orderId) {
-      return;
-    }
-
-    const charge = (
-      await stripe.paymentIntents.retrieve(
-        event.data.object.payment_intent as string
-      )
-    ).latest_charge;
-    const id = typeof charge === 'string' ? charge : charge?.id;
-
-    await this._messagesService.changeOrderStatus(orderId, 'ACCEPTED', id);
-    return { ok: true };
-  }
-
   async payout(
     orderId: string,
     charge: string,

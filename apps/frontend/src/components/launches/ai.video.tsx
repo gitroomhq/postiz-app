@@ -49,10 +49,10 @@ export const Modal: FC<{
       return ;
     }
     try {
-      const image = await fetch(`/media/generate-video/${type.identifier}`, {
+      const image = await fetch(`/media/generate-video`, {
         method: 'POST',
         body: JSON.stringify({
-          prompt: [{ type: 'prompt', value }],
+          type: type.identifier,
           output: position,
           customParams,
         }),

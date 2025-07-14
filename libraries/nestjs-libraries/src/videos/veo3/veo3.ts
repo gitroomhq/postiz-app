@@ -1,10 +1,29 @@
 import {
-  Prompt,
   URL,
   Video,
   VideoAbstract,
 } from '@gitroom/nestjs-libraries/videos/video.interface';
 import { timer } from '@gitroom/helpers/utils/timer';
+import { ArrayMaxSize, IsArray, IsString, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
+
+class Image {
+  @IsString()
+  id: string;
+
+  @IsString()
+  path: string;
+}
+class Params {
+  @IsString()
+  prompt: string;
+
+  @Type(() => Image)
+  @ValidateNested({ each: true })
+  @IsArray()
+  @ArrayMaxSize(3)
+  images: Image[];
+}
 
 @Video({
   identifier: 'veo3',
@@ -14,11 +33,11 @@ import { timer } from '@gitroom/helpers/utils/timer';
   trial: false,
   available: !!process.env.KIEAI_API_KEY,
 })
-export class Veo3 extends VideoAbstract {
+export class Veo3 extends VideoAbstract<Params> {
+  override dto = Params;
   async process(
-    prompt: Prompt[],
     output: 'vertical' | 'horizontal',
-    customParams: { prompt: string; images: { id: string; path: string }[] }
+    customParams: Params
   ): Promise<URL> {
     console.log({
       headers: {

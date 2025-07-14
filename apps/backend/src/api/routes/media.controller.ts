@@ -38,6 +38,16 @@ export class MediaController {
   deleteMedia(@GetOrgFromRequest() org: Organization, @Param('id') id: string) {
     return this._mediaService.deleteMedia(org.id, id);
   }
+
+  @Post('/generate-video')
+  generateVideo(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: VideoDto
+  ) {
+    console.log('hello');
+    return this._mediaService.generateVideo(org, body);
+  }
+
   @Post('/generate-image')
   async generateImage(
     @GetOrgFromRequest() org: Organization,
@@ -186,14 +196,5 @@ export class MediaController {
     @Param('type') type: string
   ) {
     return this._mediaService.generateVideoAllowed(org, type);
-  }
-
-  @Post('/generate-video/:type')
-  generateVideo(
-    @GetOrgFromRequest() org: Organization,
-    @Body() body: VideoDto,
-    @Param('type') type: string
-  ) {
-    return this._mediaService.generateVideo(org, body, type);
   }
 }

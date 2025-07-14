@@ -78,7 +78,7 @@ export class MediaService {
     return true;
   }
 
-  async generateVideo(org: Organization, body: VideoDto, type: string) {
+  async generateVideo(org: Organization, body: VideoDto) {
     const totalCredits = await this._subscriptionService.checkCredits(
       org,
       'ai_videos'
@@ -90,17 +90,16 @@ export class MediaService {
       });
     }
 
-    const video = this._videoManager.getVideoByName(type);
+    const video = this._videoManager.getVideoByName(body.type);
     if (!video) {
-      throw new Error(`Video type ${type} not found`);
+      throw new Error(`Video type ${body.type} not found`);
     }
 
     if (!video.trial && org.isTrailing) {
       throw new HttpException('This video is not available in trial mode', 406);
     }
 
-    const loadedData = await video.instance.process(
-      body.prompt,
+    const loadedData = await video.instance.processAndValidate(
       body.output,
       body.customParams
     );
