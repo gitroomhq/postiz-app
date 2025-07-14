@@ -125,11 +125,10 @@ export class MediaService {
 
     // @ts-ignore
     const functionToCall = video.instance[functionName];
-    if (typeof functionToCall !== 'function') {
-      throw new Error(`Function ${functionName} not found on video instance`);
+    if (typeof functionToCall !== 'function' || this._videoManager.checkAvailableVideoFunction(functionToCall)) {
+      throw new HttpException(`Function ${functionName} not found on video instance`, 400);
     }
 
-    this._videoManager.checkAvailableVideoFunction(functionToCall);
     return functionToCall(body);
   }
 }
