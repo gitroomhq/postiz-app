@@ -6,7 +6,6 @@ export abstract class VideoAbstract<T> {
   dto: Type<T>;
 
   async processAndValidate(
-    output: 'vertical' | 'horizontal',
     customParams?: T
   ) {
     const validationPipe = new ValidationPipe({
@@ -17,15 +16,13 @@ export abstract class VideoAbstract<T> {
       },
     });
 
-    const transformed = await validationPipe.transform(customParams, {
+    await validationPipe.transform(customParams, {
       type: 'body',
       metatype: this.dto,
     });
-
-    return this.process(output, transformed);
   }
 
-  protected abstract process(
+  abstract process(
     output: 'vertical' | 'horizontal',
     customParams?: T
   ): Promise<URL>;

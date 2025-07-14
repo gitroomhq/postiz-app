@@ -37,16 +37,17 @@ export class MediaService {
     org: Organization,
     generatePromptFirst?: boolean
   ) {
-    if (generatePromptFirst) {
-      prompt = await this._openAi.generatePromptForPicture(prompt);
-      console.log('Prompt:', prompt);
-    }
-    const image = await this._openAi.generateImage(
-      prompt,
-      !!generatePromptFirst
+    return await this._subscriptionService.useCredit(
+      org,
+      'ai_images',
+      async () => {
+        if (generatePromptFirst) {
+          prompt = await this._openAi.generatePromptForPicture(prompt);
+          console.log('Prompt:', prompt);
+        }
+        return this._openAi.generateImage(prompt, !!generatePromptFirst);
+      }
     );
-    await this._subscriptionService.useCredit(org);
-    return image;
   }
 
   saveFile(org: string, fileName: string, filePath: string) {
@@ -99,17 +100,21 @@ export class MediaService {
       throw new HttpException('This video is not available in trial mode', 406);
     }
 
-    const loadedData = await video.instance.processAndValidate(
-      body.output,
-      body.customParams
+    await video.instance.processAndValidate(body.customParams);
+
+    return await this._subscriptionService.useCredit(
+      org,
+      'ai_videos',
+      async () => {
+        const loadedData = await video.instance.process(
+          body.output,
+          body.customParams
+        );
+
+        const file = await this.storage.uploadSimple(loadedData);
+        return this.saveFile(org.id, file.split('/').pop(), file);
+      }
     );
-
-    const file = await this.storage.uploadSimple(loadedData);
-    const save = await this.saveFile(org.id, file.split('/').pop(), file);
-
-    await this._subscriptionService.useCredit(org, 'ai_videos');
-
-    return save;
   }
 
   async videoFunction(identifier: string, functionName: string, body: any) {

@@ -21,8 +21,8 @@ export class SubscriptionService {
     );
   }
 
-  useCredit(organization: Organization, type = 'ai_images') {
-    return this._subscriptionRepository.useCredit(organization, type);
+  useCredit<T>(organization: Organization, type = 'ai_images', func: () => Promise<T>) : Promise<T> {
+    return this._subscriptionRepository.useCredit(organization, type, func);
   }
 
   getCode(code: string) {
