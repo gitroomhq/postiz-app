@@ -195,4 +195,62 @@ export class SocialTokenRefreshTask {
       console.error(`❌ Failed to refresh Website token: ${err.message}`);
     }
   }
+
+  @Cron('0 0 * * *') // Runs daily at midnight UTC
+  async handleLinkedInTokenRefresh() {
+    console.log('⏰ LinkedIn Token Refresh Cron Triggered');
+
+    const thresholdDays = 10;
+
+    const tokens = await this._socialTokenRepo.model.socialToken.findMany({
+      where: {
+        identifier: 'linkedin',
+        tokenExpiry: {
+          lte: dayjs().add(thresholdDays, 'days').toDate(),
+        }
+      }
+    });
+
+    if (!tokens.length) {
+      console.log(`✅ No Linkedin tokens need refresh (within next ${thresholdDays} days).`);
+      return;
+    }
+    for (const token of tokens) {
+
+      try {
+
+        const res = await axios.post(
+          'https://www.linkedin.com/oauth/v2/accessToken',
+          qs.stringify({
+            grant_type: 'refresh_token',
+            refresh_token: token.refreshToken,
+            client_id: process.env.LINKEDIN_PLATFORM_CLIENT_ID,
+            client_secret: process.env.LINKEDIN_PLATFORM_CLIENT_SECRET
+          }),
+          {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded'
+            }
+          }
+        );
+
+        const { access_token, expires_in, refresh_token: newRefreshToken } = res.data;
+
+        await this._socialTokenRepo.model.socialToken.update({
+          where: { id: token.id },
+          data: {
+            accessToken: access_token,
+            refreshToken: newRefreshToken || token.refreshToken,
+            tokenExpiry: dayjs().add(expires_in, 'seconds').toDate(),
+          },
+        });
+
+        console.log(`✅ Refreshed LinkedIn token ID ${token.id}`);
+
+      } catch (err) {
+        console.error(`❌ Failed to refresh LinkedIn token ID ${token.id}: ${err.message}`);
+      }
+    }
+  }
+
 }
