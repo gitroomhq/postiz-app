@@ -39,19 +39,6 @@ export class Veo3 extends VideoAbstract<Params> {
     output: 'vertical' | 'horizontal',
     customParams: Params
   ): Promise<URL> {
-    console.log({
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.KIEAI_API_KEY}`,
-      },
-      method: 'POST',
-      body: JSON.stringify({
-        prompt: customParams.prompt,
-        imageUrls: customParams?.images?.map((p) => p.path) || [],
-        model: 'veo3_fast',
-        aspectRatio: output === 'horizontal' ? '16:9' : '9:16',
-      }),
-    });
     const value = await (
       await fetch('https://api.kie.ai/api/v1/veo/generate', {
         headers: {

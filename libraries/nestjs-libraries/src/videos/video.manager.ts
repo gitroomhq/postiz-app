@@ -22,6 +22,16 @@ export class VideoManager {
     );
   }
 
+  checkAvailableVideoFunction(method: any) {
+    const videoFunction = Reflect.getMetadata('video-function', method);
+    if (!videoFunction) {
+      throw new Error(
+        `Method ${method.name} is not a valid video function.`
+      );
+    }
+    return videoFunction;
+  }
+
   getVideoByName(
     identifier: string
   ): (VideoParams & { instance: VideoAbstract<any> }) | undefined {

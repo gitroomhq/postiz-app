@@ -1,8 +1,6 @@
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import {
-  URL,
-  Video,
-  VideoAbstract,
+  ExposeVideoFunction, URL, Video, VideoAbstract
 } from '@gitroom/nestjs-libraries/videos/video.interface';
 import { chunk } from 'lodash';
 import Transloadit from 'transloadit';
@@ -228,6 +226,7 @@ export class ImagesSlides extends VideoAbstract<Params> {
     return results.subtitled[0].url;
   }
 
+  @ExposeVideoFunction()
   async loadVoices(data: any) {
     const { voices } = await (
       await fetch(

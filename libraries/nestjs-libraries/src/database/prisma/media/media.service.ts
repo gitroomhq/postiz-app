@@ -129,6 +129,7 @@ export class MediaService {
       throw new Error(`Function ${functionName} not found on video instance`);
     }
 
+    this._videoManager.checkAvailableVideoFunction(functionToCall);
     return functionToCall(body);
   }
 }

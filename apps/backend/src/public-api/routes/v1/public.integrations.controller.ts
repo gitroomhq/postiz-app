@@ -125,4 +125,13 @@ export class PublicIntegrationsController {
   ) {
     return this._mediaService.generateVideo(org, body);
   }
+
+  @Post('/video/:identifier/:function')
+  videoFunction(
+    @Param('identifier') identifier: string,
+    @Param('function') functionName: string,
+    @Body('params') body: any
+  ) {
+    return this._mediaService.videoFunction(identifier, functionName, body);
+  }
 }
