@@ -1,36 +1,90 @@
 import { ArticleProvider } from '@gitroom/nestjs-libraries/integrations/article/article.integrations.interface';
 import { MediumSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/medium.settings.dto';
+import {
+  AuthTokenDetails,
+  PostDetails,
+  PostResponse,
+  SocialProvider,
+} from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import dayjs from 'dayjs';
+import { Integration } from '@prisma/client';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 
-export class MediumProvider implements ArticleProvider {
+export class MediumProvider extends SocialAbstract implements SocialProvider {
   identifier = 'medium';
   name = 'Medium';
+  isBetweenSteps = false;
+  scopes = [] as string[];
 
-  async authenticate(token: string) {
-    const {
-      data: { name, id, imageUrl, username },
-    } = await (
-      await fetch('https://api.medium.com/v1/me', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-    ).json();
-
+  async generateAuthUrl() {
+    const state = makeId(6);
     return {
-      id,
-      name,
-      token,
-      picture: imageUrl,
-      username,
+      url: '',
+      codeVerifier: makeId(10),
+      state,
     };
   }
 
-  async publications(token: string) {
-    const { id } = await this.authenticate(token);
+  async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
+    return {
+      refreshToken: '',
+      expiresIn: 0,
+      accessToken: '',
+      id: '',
+      name: '',
+      picture: '',
+      username: '',
+    };
+  }
+
+  async customFields() {
+    return [
+      {
+        key: 'apiKey',
+        label: 'API key',
+        validation: `/^.{3,}$/`,
+        type: 'password' as const,
+      },
+    ];
+  }
+
+  async authenticate(params: {
+    code: string;
+    codeVerifier: string;
+    refresh?: string;
+  }) {
+    const body = JSON.parse(Buffer.from(params.code, 'base64').toString());
+    try {
+      const {
+        data: { name, id, imageUrl, username },
+      } = await (
+        await fetch('https://api.medium.com/v1/me', {
+          headers: {
+            Authorization: `Bearer ${body.apiKey}`,
+          },
+        })
+      ).json();
+
+      return {
+        refreshToken: '',
+        expiresIn: dayjs().add(100, 'years').unix() - dayjs().unix(),
+        accessToken: body.apiKey,
+        id,
+        name,
+        picture: imageUrl,
+        username,
+      };
+    } catch (err) {
+      return 'Invalid credentials';
+    }
+  }
+
+  async publications(accessToken: string, _: any, id: string) {
     const { data } = await (
       await fetch(`https://api.medium.com/v1/users/${id}/publications`, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${accessToken}`,
         },
       })
     ).json();
@@ -38,8 +92,13 @@ export class MediumProvider implements ArticleProvider {
     return data;
   }
 
-  async post(token: string, content: string, settings: MediumSettingsDto) {
-    const { id } = await this.authenticate(token);
+  async post(
+    id: string,
+    accessToken: string,
+    postDetails: PostDetails[],
+    integration: Integration
+  ): Promise<PostResponse[]> {
+    const { settings } = postDetails?.[0] || { settings: {} };
     const { data } = await (
       await fetch(
         settings?.publication
@@ -50,24 +109,28 @@ export class MediumProvider implements ArticleProvider {
           body: JSON.stringify({
             title: settings.title,
             contentFormat: 'markdown',
-            content,
+            content: postDetails?.[0].message,
             ...(settings.canonical ? { canonicalUrl: settings.canonical } : {}),
             ...(settings?.tags?.length
-              ? { tags: settings?.tags?.map((p) => p.value) }
+              ? { tags: settings?.tags?.map((p: any) => p.value) }
               : {}),
             publishStatus: settings?.publication ? 'draft' : 'public',
           }),
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${accessToken}`,
             'Content-Type': 'application/json',
           },
         }
       )
     ).json();
 
-    return {
-      postId: data.id,
-      releaseURL: data.url,
-    };
+    return [
+      {
+        id: postDetails?.[0].id,
+        status: 'completed',
+        postId: data.id,
+        releaseURL: data.url,
+      },
+    ];
   }
 }

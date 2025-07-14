@@ -26,6 +26,7 @@ model Organization {
   post              Post[]             @relation("organization")
   submittedPost     Post[]             @relation("submittedForOrg")
   allowTrial        Boolean            @default(false)
+  isTrailing        Boolean            @default(false)
   Comments          Comments[]
   notifications     Notifications[]
   buyerOrganization MessagesGroup[]

@@ -49,7 +49,8 @@ export class InstagramProvider
         value: string;
       }
     | undefined {
-    if (body.indexOf('2207018') > -1 || body.indexOf('REVOKED_ACCESS_TOKEN')) {
+
+    if (body.indexOf('REVOKED_ACCESS_TOKEN') > -1) {
       return {
         type: 'refresh-token' as const,
         value:
@@ -57,7 +58,7 @@ export class InstagramProvider
       };
     }
 
-    if (body.indexOf('The user is not an Instagram Business') > -1) {
+    if (body.toLowerCase().indexOf('the user is not an instagram business') > -1) {
       return {
         type: 'refresh-token' as const,
         value:
@@ -65,7 +66,7 @@ export class InstagramProvider
       };
     }
 
-    if (body.indexOf('Error validating access token') > -1) {
+    if (body.toLowerCase().indexOf('session has been invalidated') > -1) {
       return {
         type: 'refresh-token' as const,
         value: 'Please re-authenticate your Instagram account',

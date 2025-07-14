@@ -1,6 +1,5 @@
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import {
-  Prompt,
   URL,
   Video,
   VideoAbstract,
@@ -14,6 +13,7 @@ import { stringifySync } from 'subtitle';
 
 import pLimit from 'p-limit';
 import { FalService } from '@gitroom/nestjs-libraries/openai/fal.service';
+import { IsString } from 'class-validator';
 const limit = pLimit(2);
 
 const transloadit = new Transloadit({
@@ -26,11 +26,20 @@ async function getAudioDuration(buffer: Buffer): Promise<number> {
   return metadata.format.duration || 0;
 }
 
+class Params {
+  @IsString()
+  voice: string;
+
+  @IsString()
+  prompt: string;
+}
+
 @Video({
   identifier: 'image-text-slides',
   title: 'Image Text Slides',
   description: 'Generate videos slides from images and text',
   placement: 'text-to-image',
+  trial: true,
   available:
     !!process.env.ELEVENSLABS_API_KEY &&
     !!process.env.TRANSLOADIT_AUTH &&
@@ -38,7 +47,8 @@ async function getAudioDuration(buffer: Buffer): Promise<number> {
     !!process.env.OPENAI_API_KEY &&
     !!process.env.FAL_KEY,
 })
-export class ImagesSlides extends VideoAbstract {
+export class ImagesSlides extends VideoAbstract<Params> {
+  override dto = Params;
   private storage = UploadFactory.createStorage();
   constructor(
     private _openaiService: OpenaiService,
@@ -48,12 +58,11 @@ export class ImagesSlides extends VideoAbstract {
   }
 
   async process(
-    prompt: Prompt[],
     output: 'vertical' | 'horizontal',
-    customParams: { voice: string }
+    customParams: Params
   ): Promise<URL> {
     const list = await this._openaiService.generateSlidesFromText(
-      prompt[0].value
+      customParams.prompt
     );
 
     const generated = await Promise.all(
@@ -86,7 +95,7 @@ export class ImagesSlides extends VideoAbstract {
                       },
                       body: JSON.stringify({
                         text: current.voiceText,
-                        model_id: 'eleven_multilingual_v2'
+                        model_id: 'eleven_multilingual_v2',
                       }),
                     }
                   )

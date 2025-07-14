@@ -51,6 +51,13 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
+    if (body.indexOf('1366046') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Photos should be smaller than 4 MB and saved as JPG, PNG',
+      };
+    }
+
     if (body.indexOf('1390008') > -1) {
       return {
         type: 'bad-body' as const,
@@ -63,6 +70,13 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       return {
         type: 'bad-body' as const,
         value: 'Content flagged as abusive by Facebook',
+      };
+    }
+
+    if (body.indexOf('1404006') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: "We couldn't post your comment, A security check in facebook required to proceed.",
       };
     }
 

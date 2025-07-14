@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { MediaRepository } from '@gitroom/nestjs-libraries/database/prisma/media/media.repository';
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
@@ -7,7 +7,11 @@ import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/sa
 import { VideoManager } from '@gitroom/nestjs-libraries/videos/video.manager';
 import { VideoDto } from '@gitroom/nestjs-libraries/dtos/videos/video.dto';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
-import { AuthorizationActions, Sections, SubscriptionException } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
+import {
+  AuthorizationActions,
+  Sections,
+  SubscriptionException,
+} from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 
 @Injectable()
 export class MediaService {
@@ -33,16 +37,17 @@ export class MediaService {
     org: Organization,
     generatePromptFirst?: boolean
   ) {
-    if (generatePromptFirst) {
-      prompt = await this._openAi.generatePromptForPicture(prompt);
-      console.log('Prompt:', prompt);
-    }
-    const image = await this._openAi.generateImage(
-      prompt,
-      !!generatePromptFirst
+    return await this._subscriptionService.useCredit(
+      org,
+      'ai_images',
+      async () => {
+        if (generatePromptFirst) {
+          prompt = await this._openAi.generatePromptForPicture(prompt);
+          console.log('Prompt:', prompt);
+        }
+        return this._openAi.generateImage(prompt, !!generatePromptFirst);
+      }
     );
-    await this._subscriptionService.useCredit(org);
-    return image;
   }
 
   saveFile(org: string, fileName: string, filePath: string) {
@@ -61,7 +66,20 @@ export class MediaService {
     return this._videoManager.getAllVideos();
   }
 
-  async generateVideo(org: Organization, body: VideoDto, type: string) {
+  async generateVideoAllowed(org: Organization, type: string) {
+    const video = this._videoManager.getVideoByName(type);
+    if (!video) {
+      throw new Error(`Video type ${type} not found`);
+    }
+
+    if (!video.trial && org.isTrailing) {
+      throw new HttpException('This video is not available in trial mode', 406);
+    }
+
+    return true;
+  }
+
+  async generateVideo(org: Organization, body: VideoDto) {
     const totalCredits = await this._subscriptionService.checkCredits(
       org,
       'ai_videos'
@@ -73,23 +91,30 @@ export class MediaService {
       });
     }
 
-    const video = this._videoManager.getVideoByName(type);
+    const video = this._videoManager.getVideoByName(body.type);
     if (!video) {
-      throw new Error(`Video type ${type} not found`);
+      throw new Error(`Video type ${body.type} not found`);
     }
 
-    const loadedData = await video.instance.process(
-      body.prompt,
-      body.output,
-      body.customParams
+    if (!video.trial && org.isTrailing) {
+      throw new HttpException('This video is not available in trial mode', 406);
+    }
+
+    await video.instance.processAndValidate(body.customParams);
+
+    return await this._subscriptionService.useCredit(
+      org,
+      'ai_videos',
+      async () => {
+        const loadedData = await video.instance.process(
+          body.output,
+          body.customParams
+        );
+
+        const file = await this.storage.uploadSimple(loadedData);
+        return this.saveFile(org.id, file.split('/').pop(), file);
+      }
     );
-
-    const file = await this.storage.uploadSimple(loadedData);
-    const save = await this.saveFile(org.id, file.split('/').pop(), file);
-
-    await this._subscriptionService.useCredit(org, 'ai_videos');
-
-    return save;
   }
 
   async videoFunction(identifier: string, functionName: string, body: any) {

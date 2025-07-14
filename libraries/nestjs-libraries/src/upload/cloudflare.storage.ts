@@ -58,17 +58,17 @@ class CloudflareStorage implements IUploadProvider {
   }
 
   async uploadSimple(path: string) {
-    const loadImage = await axios.get(path, { responseType: 'arraybuffer' });
+    const loadImage = await fetch(path);
     const contentType =
-      loadImage?.headers?.['content-type'] ||
-      loadImage?.headers?.['Content-Type'];
+      loadImage?.headers?.get('content-type') ||
+      loadImage?.headers?.get('Content-Type');
     const extension = getExtension(contentType)!;
     const id = makeId(10);
 
     const params = {
       Bucket: this._bucketName,
       Key: `${id}.${extension}`,
-      Body: loadImage.data,
+      Body: Buffer.from(await loadImage.arrayBuffer()),
       ContentType: contentType,
       ChecksumMode: 'DISABLED',
     };

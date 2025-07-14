@@ -19,6 +19,8 @@ import { useCustomProviderFunction } from '@gitroom/frontend/components/launches
 import { Checkbox } from '@gitroom/react/form/checkbox';
 import clsx from 'clsx';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
+import { Input } from '@gitroom/react/form/input';
 
 const CheckTikTokValidity: FC<{
   picture: string;
@@ -85,8 +87,13 @@ const CheckTikTokValidity: FC<{
 const TikTokSettings: FC<{
   values?: any;
 }> = (props) => {
-  const { watch, register, formState, control } = useSettings();
+  const { watch, register } = useSettings();
+  const { value } = useIntegration();
   const t = useT();
+
+  const isTitle = useMemo(() => {
+    return value?.[0].image.some((p) => p.path.indexOf('mp4') === -1);
+  }, [value]);
 
   const disclose = watch('disclose');
   const brand_organic_toggle = watch('brand_organic_toggle');
@@ -142,6 +149,9 @@ const TikTokSettings: FC<{
   return (
     <div className="flex flex-col">
       <CheckTikTokValidity picture={props?.values?.[0]?.image?.[0]?.path} />
+      {isTitle && (
+        <Input label="Title" {...register('title')} maxLength={90} />
+      )}
       <Select
         label={t('label_who_can_see_this_video', 'Who can see this video?')}
         hideErrors={true}
@@ -166,7 +176,6 @@ const TikTokSettings: FC<{
       </div>
       <Select
         label={t('label_content_posting_method', 'Content posting method')}
-        disabled={isUploadMode}
         {...register('content_posting_method', {
           value: 'DIRECT_POST',
         })}

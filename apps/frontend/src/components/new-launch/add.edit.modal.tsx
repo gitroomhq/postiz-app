@@ -2,7 +2,6 @@
 import 'reflect-metadata';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import dayjs from 'dayjs';
-import type { CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
 import { FC, useEffect } from 'react';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { ManageModal } from '@gitroom/frontend/components/new-launch/manage.modal';
@@ -16,7 +15,7 @@ export interface AddEditModalProps {
   integrations: Integrations[];
   allIntegrations?: Integrations[];
   selectedChannels?: string[];
-  set?: CreatePostDto;
+  set?: any;
   focusedChannel?: string;
   addEditSets?: (data: any) => void;
   reopenModal: () => void;
@@ -162,7 +161,7 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
             media: p.image || [],
           }))
         : props.set?.posts?.length
-        ? props.set.posts[0].value.map((p) => ({
+        ? props.set.posts[0].value.map((p: any) => ({
             id: makeId(10),
             content: p.content,
             // @ts-ignore

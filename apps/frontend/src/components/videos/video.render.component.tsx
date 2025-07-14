@@ -1,7 +1,9 @@
-import { createContext, FC, useCallback, useContext } from 'react';
+import { createContext, FC, useCallback, useContext, useEffect } from 'react';
 import './providers/image-text-slides.provider';
+import './providers/veo3.provider';
 import { videosList } from '@gitroom/frontend/components/videos/video.wrapper';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 
 const VideoFunctionWrapper = createContext({
   identifier: '',
@@ -28,6 +30,14 @@ export const useVideoFunction = () => {
 };
 
 export const VideoWrapper: FC<{ identifier: string }> = (props) => {
+  const setActivateExitButton = useLaunchStore((e) => e.setActivateExitButton);
+  useEffect(() => {
+    setActivateExitButton(false);
+    return () => {
+      setActivateExitButton(true);
+    };
+  }, []);
+
   const { identifier } = props;
   const Component = videosList.find(
     (v) => v.identifier === identifier

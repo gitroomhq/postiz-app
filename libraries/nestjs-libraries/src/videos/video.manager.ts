@@ -17,13 +17,14 @@ export class VideoManager {
         title: p.title,
         description: p.description,
         placement: p.placement,
+        trial: p.trial,
       })
     );
   }
 
   getVideoByName(
     identifier: string
-  ): (VideoParams & { instance: VideoAbstract }) | undefined {
+  ): (VideoParams & { instance: VideoAbstract<any> }) | undefined {
     const video = (Reflect.getMetadata('video', VideoAbstract) || []).find(
       (p: any) => p.identifier === identifier
     );

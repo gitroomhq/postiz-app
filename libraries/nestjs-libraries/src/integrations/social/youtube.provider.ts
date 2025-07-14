@@ -153,25 +153,27 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
 
     let all: GaxiosResponse<Schema$Video>;
     try {
-      all = await youtubeClient.videos.insert({
-        part: ['id', 'snippet', 'status'],
-        notifySubscribers: true,
-        requestBody: {
-          snippet: {
-            title: settings.title,
-            description: firstPost?.message,
-            ...(settings?.tags?.length
-              ? { tags: settings.tags.map((p) => p.label) }
-              : {}),
+      all = await this.runInConcurrent(async () =>
+        youtubeClient.videos.insert({
+          part: ['id', 'snippet', 'status'],
+          notifySubscribers: true,
+          requestBody: {
+            snippet: {
+              title: settings.title,
+              description: firstPost?.message,
+              ...(settings?.tags?.length
+                ? { tags: settings.tags.map((p) => p.label) }
+                : {}),
+            },
+            status: {
+              privacyStatus: settings.type,
+            },
           },
-          status: {
-            privacyStatus: settings.type,
+          media: {
+            body: response.data,
           },
-        },
-        media: {
-          body: response.data,
-        },
-      });
+        })
+      );
     } catch (err: any) {
       if (
         err.response?.data?.error?.errors?.[0]?.reason === 'failedPrecondition'
@@ -215,18 +217,20 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
 
     if (settings?.thumbnail?.path) {
       try {
-        await youtubeClient.thumbnails.set({
-          videoId: all?.data?.id!,
-          media: {
-            body: (
-              await axios({
-                url: settings?.thumbnail?.path,
-                method: 'GET',
-                responseType: 'stream',
-              })
-            ).data,
-          },
-        });
+        await this.runInConcurrent(async () =>
+          youtubeClient.thumbnails.set({
+            videoId: all?.data?.id!,
+            media: {
+              body: (
+                await axios({
+                  url: settings?.thumbnail?.path,
+                  method: 'GET',
+                  responseType: 'stream',
+                })
+              ).data,
+            },
+          })
+        );
       } catch (err: any) {
         if (
           err.response?.data?.error?.errors?.[0]?.domain === 'youtube.thumbnail'

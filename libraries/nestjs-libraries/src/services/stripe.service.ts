@@ -141,6 +141,7 @@ export class StripeService {
     }
 
     return this._subscriptionService.createOrUpdateSubscription(
+      event.data.object.status !== 'active',
       uniqueId,
       event.data.object.customer as string,
       pricing[billing].channel!,
@@ -168,6 +169,7 @@ export class StripeService {
     }
 
     return this._subscriptionService.createOrUpdateSubscription(
+      event.data.object.status !== 'active',
       uniqueId,
       event.data.object.customer as string,
       pricing[billing].channel!,
@@ -461,6 +463,18 @@ export class StripeService {
     return accountLink.url;
   }
 
+  async finishTrial(paymentId: string) {
+    const list = (
+      await stripe.subscriptions.list({
+        customer: paymentId,
+      })
+    ).data.filter((f) => f.status === 'trialing');
+
+    return stripe.subscriptions.update(list[0].id, {
+      trial_end: 'now',
+    });
+  }
+
   async checkSubscription(organizationId: string, subscriptionId: string) {
     const orgValue = await this._subscriptionService.checkSubscription(
       organizationId,
@@ -671,27 +685,6 @@ export class StripeService {
     return { ok: true };
   }
 
-  async updateOrder(event: Stripe.CheckoutSessionCompletedEvent) {
-    if (event?.data?.object?.metadata?.type !== 'marketplace') {
-      return { ok: true };
-    }
-
-    const { orderId } = event?.data?.object?.metadata || { orderId: '' };
-    if (!orderId) {
-      return;
-    }
-
-    const charge = (
-      await stripe.paymentIntents.retrieve(
-        event.data.object.payment_intent as string
-      )
-    ).latest_charge;
-    const id = typeof charge === 'string' ? charge : charge?.id;
-
-    await this._messagesService.changeOrderStatus(orderId, 'ACCEPTED', id);
-    return { ok: true };
-  }
-
   async payout(
     orderId: string,
     charge: string,
@@ -729,6 +722,7 @@ export class StripeService {
       const findPricing = pricing[nextPackage];
 
       await this._subscriptionService.createOrUpdateSubscription(
+        false,
         makeId(10),
         organizationId,
         getCurrentSubscription?.subscriptionTier === 'PRO'

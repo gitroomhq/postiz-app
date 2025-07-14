@@ -1,5 +1,5 @@
 import { timer } from '@gitroom/helpers/utils/timer';
-import pThrottle from 'p-throttle';
+import { concurrencyService } from '@gitroom/helpers/utils/concurrency.service';
 
 export class RefreshToken {
   constructor(
@@ -22,20 +22,29 @@ export class NotEnoughScopes {
   constructor(public message = 'Not enough scopes') {}
 }
 
-const pThrottleInstance = pThrottle({
-  limit: 1,
-  interval: 5000,
-});
-
 export abstract class SocialAbstract {
-  private fetchInstance = pThrottleInstance(
-    (url: RequestInfo, options?: RequestInit) => fetch(url, options)
-  );
+  abstract identifier: string;
 
   public handleErrors(
     body: string
   ): { type: 'refresh-token' | 'bad-body'; value: string } | undefined {
-    return { type: 'bad-body', value: 'bad request' };
+    return undefined;
+  }
+
+  async runInConcurrent<T>(func: (...args: any[]) => Promise<T>) {
+    const value = await concurrencyService<any>(this.identifier.split('-')[0], async () => {
+      try {
+        return await func();
+      } catch (err) {
+        return {type: 'error', value: err};
+      }
+    });
+
+    if (value && value.type === 'error') {
+      throw value.value;
+    }
+
+    return value;
   }
 
   async fetch(
@@ -44,7 +53,10 @@ export abstract class SocialAbstract {
     identifier = '',
     totalRetries = 0
   ): Promise<Response> {
-    const request = await this.fetchInstance(url, options);
+    const request = await concurrencyService(
+      this.identifier.split('-')[0],
+      () => fetch(url, options)
+    );
 
     if (request.status === 200 || request.status === 201) {
       return request;
@@ -69,12 +81,12 @@ export abstract class SocialAbstract {
       return this.fetch(url, options, identifier, totalRetries + 1);
     }
 
-    const handleError = this.handleErrors(json || '{}') || {
-      type: 'bad-body',
-      value: '',
-    };
+    const handleError = this.handleErrors(json || '{}');
 
-    if (request.status === 401 || handleError?.type === 'refresh-token') {
+    if (
+      request.status === 401 &&
+      (handleError?.type === 'refresh-token' || !handleError)
+    ) {
       console.log('refresh token', json);
       throw new RefreshToken(
         identifier,
@@ -84,7 +96,12 @@ export abstract class SocialAbstract {
       );
     }
 
-    throw new BadBody(identifier, json, options.body!, handleError?.value);
+    throw new BadBody(
+      identifier,
+      json,
+      options.body!,
+      handleError?.value || ''
+    );
   }
 
   checkScopes(required: string[], got: string | string[]) {

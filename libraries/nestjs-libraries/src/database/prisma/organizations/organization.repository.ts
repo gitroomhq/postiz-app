@@ -220,6 +220,7 @@ export class OrganizationRepository {
         name: body.company,
         apiKey: AuthService.fixedEncryption(makeId(20)),
         allowTrial: true,
+        isTrailing: true,
         users: {
           create: {
             role: Role.SUPERADMIN,

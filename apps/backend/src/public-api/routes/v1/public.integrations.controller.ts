@@ -20,7 +20,11 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
-import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
+import {
+  AuthorizationActions,
+  Sections,
+} from '@gitroom/backend/services/auth/permissions/permission.exception.class';
+import { VideoDto } from '@gitroom/nestjs-libraries/dtos/videos/video.dto';
 
 @ApiTags('Public API')
 @Controller('/public/v1')
@@ -69,7 +73,11 @@ export class PublicIntegrationsController {
     @GetOrgFromRequest() org: Organization,
     @Body() rawBody: any
   ) {
-    const body = await this._postsService.mapTypeToPost(rawBody, org.id, rawBody.type === 'draft');
+    const body = await this._postsService.mapTypeToPost(
+      rawBody,
+      org.id,
+      rawBody.type === 'draft'
+    );
     body.type = rawBody.type;
 
     console.log(JSON.stringify(body, null, 2));
@@ -87,7 +95,7 @@ export class PublicIntegrationsController {
 
   @Get('/is-connected')
   async getActiveIntegrations(@GetOrgFromRequest() org: Organization) {
-    return {connected: true};
+    return { connected: true };
   }
 
   @Get('/integrations')
@@ -108,5 +116,13 @@ export class PublicIntegrationsController {
           : undefined,
       })
     );
+  }
+
+  @Post('/generate-video')
+  generateVideo(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: VideoDto
+  ) {
+    return this._mediaService.generateVideo(org, body);
   }
 }

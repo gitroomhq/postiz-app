@@ -67,11 +67,11 @@ const MediumSettings: FC = () => {
   );
 };
 export default withProvider({
-  postComment: PostComment.COMMENT,
+  postComment: PostComment.POST,
   minimumCharacters: [],
   SettingsComponent: MediumSettings,
-  CustomPreviewComponent: MediumPreview,
+  CustomPreviewComponent: undefined, //MediumPreview,
   dto: MediumSettingsDto,
   checkValidity: undefined,
-  maximumCharacters: undefined,
+  maximumCharacters: 100000,
 });

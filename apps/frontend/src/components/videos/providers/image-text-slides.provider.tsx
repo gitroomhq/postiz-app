@@ -5,6 +5,7 @@ import useSWR from 'swr';
 import { useFormContext } from 'react-hook-form';
 import { Button } from '@gitroom/react/form/button';
 import clsx from 'clsx';
+import { useVideo } from '@gitroom/frontend/components/videos/video.context.wrapper';
 
 export interface Voices {
   voices: Voice[];
@@ -22,6 +23,11 @@ const VoiceSelector: FC = () => {
   const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
   const [loadingVoice, setLoadingVoice] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const { value } = useVideo();
+
+  register('prompt', {
+    value,
+  });
 
   const loadVideos = useCallback(() => {
     return videoFunction('loadVoices', {});
