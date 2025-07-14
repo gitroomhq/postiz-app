@@ -5,10 +5,8 @@ import { MonthlyReportService } from '../../services/report/monthly-report.servi
 import { format, startOfMonth, endOfMonth, isValid } from 'date-fns';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as pdf from 'html-pdf';
 import { ChartJSNodeCanvas } from 'chartjs-node-canvas';
 import { ChartConfiguration } from 'chart.js';
-import * as puppeteer from 'puppeteer';
 import * as playwright from 'playwright';
 
 interface ChartData {
