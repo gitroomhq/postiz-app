@@ -16,9 +16,9 @@ export const useVideoFunction = () => {
   return useCallback(
     async (funcName: string, params: any) => {
       return (
-        await fetch(`/media/video/${identifier}/${funcName}`, {
+        await fetch(`/media/video/function`, {
           method: 'POST',
-          body: JSON.stringify({ params }),
+          body: JSON.stringify({ identifier, functionName: funcName, params }),
           headers: {
             'Content-Type': 'application/json',
           },
