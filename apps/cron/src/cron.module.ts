@@ -16,6 +16,6 @@ import { SocialTokenRefreshTask } from './tasks/social.token.refresh';
 @Module({
   imports: [DatabaseModule, ScheduleModule.forRoot(), BullMqModule],
   controllers: [],
-  providers: [...(!process.env.IS_GENERAL ? [CheckStars, SyncTrending, LinkedInInsightsTask, YoutubeInsightsTask ] : [SocialTokenRefreshTask,GBPInsightsTask,InstagramInsightsTask,FacebookInsightsTask,XInsightsTask,WebsiteInsightsTask])],
+  providers: [...(!process.env.IS_GENERAL ? [CheckStars,SyncTrending,YoutubeInsightsTask] : [SocialTokenRefreshTask,GBPInsightsTask,InstagramInsightsTask,FacebookInsightsTask,XInsightsTask,WebsiteInsightsTask,LinkedInInsightsTask])],
 })
 export class CronModule { }

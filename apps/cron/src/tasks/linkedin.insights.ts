@@ -8,6 +8,7 @@ import { subDays, startOfDay, endOfDay } from 'date-fns';
 export class LinkedInInsightsTask {
 	constructor(
 		private _linkedInInsightsRepository: PrismaRepository<'linkedInInsight'>,
+		private _socialTokenRepo: PrismaRepository<'socialToken'> 
 	) { }
 
 	@Cron('0 0 * * *') // for midnight
@@ -31,11 +32,25 @@ export class LinkedInInsightsTask {
 			}
 
 			for (const integration of linkedInIntegrations) {
+
+				const tokenEntry = await this._socialTokenRepo.model.socialToken.findFirst({
+					where: {
+						identifier  : 'linkedin',
+						businessId  : integration.internalId,
+						accessToken: { not: null }
+					}
+        		});
+
+				if (!tokenEntry?.accessToken) {
+							console.log(`❌ No valid linkedin access token found for ${integration.internalId}`);
+							return;
+				}
+
+			   const accessToken = tokenEntry.accessToken;      
+			   
 				let success = true;
 				const organizationId = integration.customer?.orgId;
 				const internalId = integration.internalId;
-				//const accessToken = integration.token?.access_token;
-				const accessToken = 'AQXRJ_5tEAq_Wmeg_PkqH9W4aty2X2is-yh7wCrwdbRFYpLUrYHqHQADO-PGFz0n4Ga5kDGkV0-bHyNOI-0WLvtJyDbnpWF1vfWhDFTbKdZXnY96s-samGxOWe06Yd_Rm92B1Lesv009Yw481j9xpXelRbORF-8maZsDBOHC6eSmWuMlN5wCQnNXCuH8xsjsE0wNwxNrxrOSX6LD9rpq1laRAE_mT3LDwRTw_EncDPhbg0nF4La76FJF7eSU4qrxgsJLu2szTWxw85JMbM0yrjXq6Gn0_7T23DFX3O9LdwyjWy12OmTH7SaY_4yCvcHYOnS4DzewxNCKwsInl6iW3NcmOIG_8w'
 
 				if (!accessToken || !internalId) {
 					console.log(`⚠️ Missing token or internalId for integration ${integration.id}`);
