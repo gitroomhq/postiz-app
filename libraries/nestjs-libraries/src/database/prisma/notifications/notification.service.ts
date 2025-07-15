@@ -37,8 +37,8 @@ export class NotificationService {
     }
   }
 
-  async sendEmail(to: string, subject: string, html: string, replyTo?: string) {
-    await this._emailService.sendEmail(to, subject, html, replyTo);
+  async sendEmail(to:string | string[],subject:string,html: string,replyTo?: string,cc?: string | string[]) {
+    await this._emailService.sendEmail(to,subject,html,replyTo,cc);
   }
 
   hasEmailProvider() {

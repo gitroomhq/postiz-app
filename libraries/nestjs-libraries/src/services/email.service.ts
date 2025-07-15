@@ -32,10 +32,21 @@ export class EmailService {
     }
   }
 
-  async sendEmail(to: string, subject: string, html: string, replyTo?: string) {
-    if (to.indexOf('@') === -1) {
-      return ;
-    }
+  async sendEmail(to: string | string[], subject: string, html: string, replyTo?: string,cc?: string | string[]) {
+    // if (to.indexOf('@') === -1) {
+    //   return ;
+    // }
+if (Array.isArray(to)) {
+  if (!to.length) {
+    console.log('No recipients provided');
+    return;
+  }
+} else if (typeof to === 'string') {
+  if (to.indexOf('@') === -1) {
+    console.log('Invalid recipient');
+    return;
+  }
+}
 
     if (!process.env.EMAIL_FROM_ADDRESS || !process.env.EMAIL_FROM_NAME) {
       console.log(
@@ -88,7 +99,7 @@ export class EmailService {
                         font-weight: 600;
                         color: #1f2937;
                         margin: 0;
-                    ">${process.env.EMAIL_FROM_NAME}</h2>
+                    ">Postiz Application</h2>
                 </div>
             </div>
         </div>
@@ -101,7 +112,8 @@ export class EmailService {
       modifiedHtml,
       process.env.EMAIL_FROM_NAME,
       process.env.EMAIL_FROM_ADDRESS,
-      replyTo
+      replyTo,
+      cc
     );
     console.log(sends);
   }

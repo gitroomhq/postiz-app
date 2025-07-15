@@ -1,3 +1,4 @@
+import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
@@ -7,8 +8,10 @@ import * as qs from 'qs';
 
 @Injectable()
 export class SocialTokenRefreshTask {
-  
-  constructor(private _socialTokenRepo: PrismaRepository<'socialToken'>) {}
+  constructor(
+    private _socialTokenRepo: PrismaRepository<'socialToken'>,
+    private _notificationService: NotificationService
+  ) { }
 
   @Cron('5 0 * * *') // Runs at 12:05 AM IST daily
   async handleGbpTokenRefresh() {
@@ -197,8 +200,9 @@ export class SocialTokenRefreshTask {
   }
 
   @Cron('0 0 * * *') // Runs daily at midnight UTC
-  async handleLinkedInTokenRefresh() {
-    console.log('⏰ LinkedIn Token Refresh Cron Triggered');
+  async checkLinkedInTokenExpiry() {
+    
+    console.log('⏰ Checking LinkedIn Token Expiry...');
 
     const thresholdDays = 10;
 
@@ -207,50 +211,39 @@ export class SocialTokenRefreshTask {
         identifier: 'linkedin',
         tokenExpiry: {
           lte: dayjs().add(thresholdDays, 'days').toDate(),
-        }
-      }
+        },
+      },
     });
 
     if (!tokens.length) {
-      console.log(`✅ No Linkedin tokens need refresh (within next ${thresholdDays} days).`);
+      console.log(`✅ No LinkedIn tokens expiring within ${thresholdDays} days.`);
       return;
     }
+
     for (const token of tokens) {
-
-      try {
-
-        const res = await axios.post(
-          'https://www.linkedin.com/oauth/v2/accessToken',
-          qs.stringify({
-            grant_type: 'refresh_token',
-            refresh_token: token.refreshToken,
-            client_id: process.env.LINKEDIN_PLATFORM_CLIENT_ID,
-            client_secret: process.env.LINKEDIN_PLATFORM_CLIENT_SECRET
-          }),
-          {
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded'
-            }
-          }
-        );
-
-        const { access_token, expires_in, refresh_token: newRefreshToken } = res.data;
-
-        await this._socialTokenRepo.model.socialToken.update({
-          where: { id: token.id },
-          data: {
-            accessToken: access_token,
-            refreshToken: newRefreshToken || token.refreshToken,
-            tokenExpiry: dayjs().add(expires_in, 'seconds').toDate(),
-          },
-        });
-
-        console.log(`✅ Refreshed LinkedIn token ID ${token.id}`);
-
-      } catch (err) {
-        console.error(`❌ Failed to refresh LinkedIn token ID ${token.id}: ${err.message}`);
-      }
+      console.log(`⚠️ LinkedIn token expiring soon for businessId ${token.businessId}`);
+      await this.sendExpiryEmail(token);
     }
+  }
+
+  async sendExpiryEmail(token: any) {
+
+    const message = `
+      Hello,
+      Your LinkedIn token for businessId : ${token.businessId} , Name :${token.name} is expiring on ${dayjs(token.tokenExpiry).format('DD-MM-YYYY')}.
+      Please re-authorize your linkedIn account to avoid disruption.
+      Thanks!
+    `;
+
+    await this._notificationService.sendEmail(
+      ['pathansafvan131@gmail.com','zaidupstrapp@gmail.com'],
+      'LinkedIn Token Expiry Warning',
+      message,
+      undefined,
+      ['pathansafvan131@gmail.com','zaidupstrapp@gmail.com']
+    );
+
+    console.log(`✅ Expiry email sent successfully for LinkedIn token ID ${token.businessId}`);
   }
 
 }
