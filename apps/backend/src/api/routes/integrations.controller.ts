@@ -336,51 +336,6 @@ export class IntegrationsController {
     }
   }
 
-  @Post('/article/:integration/connect')
-  @CheckPolicies([AuthorizationActions.Create, Sections.CHANNEL])
-  async connectArticle(
-    @GetOrgFromRequest() org: Organization,
-    @Param('integration') integration: string,
-    @Body() api: ApiKeyDto
-  ) {
-    if (
-      !this._integrationManager
-        .getAllowedArticlesIntegrations()
-        .includes(integration)
-    ) {
-      throw new Error('Integration not allowed');
-    }
-
-    if (!api) {
-      throw new Error('Missing api');
-    }
-
-    const integrationProvider =
-      this._integrationManager.getArticlesIntegration(integration);
-    const { id, name, token, picture, username } =
-      await integrationProvider.authenticate(api.api);
-
-    if (!id) {
-      throw new Error('Invalid api key');
-    }
-
-    return this._integrationService.createOrUpdateIntegration(
-      undefined,
-      true,
-      org.id,
-      name,
-      picture,
-      'article',
-      String(id),
-      integration,
-      token,
-      '',
-      undefined,
-      username,
-      false
-    );
-  }
-
   @Post('/social/:integration/connect')
   @CheckPolicies([AuthorizationActions.Create, Sections.CHANNEL])
   @UseFilters(new NotEnoughScopesFilter())
