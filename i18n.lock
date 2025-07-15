@@ -143,7 +143,7 @@ checksums:
     webhooks_1: 0329bc102d3ab3c73410d126e119de12
     auto_post: e2dee9c337a4523a626829d6f169ae88
     logout_from: 7e997e00bfc49b02589c10138f5da75c
-    join_10000_entrepreneurs_who_use_postiz: 4bdad4e041ab9f77f1870e4f4ae4c2d0
+    join_10000_entrepreneurs_who_use_postiz: 3661c56dda210e631aff634117af31cc
     to_manage_all_your_social_media_channels: 155f69562b7a791691489f6c13f8ce50
     100_no_risk_trial: 4d8cf3bef45c64d898a678c8d2d7e32f
     pay_nothing_for_the_first_7_days: f85904a77eed00c8009f59b214e15ea1
@@ -184,6 +184,8 @@ checksums:
     add_comment_or_post: b3410d8a203c8d0fd766555e8935247d
     you_are_in_global_editing_mode: 20cdb003abac7601398de7548a4d1289
     the_post_should_be_at_least_6_characters_long: 123cb493f3169815511460be0e0047e8
+    are_you_sure_you_want_to_delete_post: 25e67cb71ee64bf67af09ee20257655f
+    post_deleted_successfully: c763dda64c48349e99190b263a43e7b2
     delete_post: bcf081392c76d2f2a8522944ddd36b78
     save_as_draft: b1b38812110113627d141db981fb1b12
     post_now: 47b412c230a3bdfbd41f1f4092c2e743
@@ -244,7 +246,7 @@ checksums:
     company_voice_we_are_happy_to_announce: fd4c2f62cae8e9be42b226be2a453a6f
     generate: 0345bf322c191e70d01fd6607ec5c2f8
     generate_posts: 82491c7ed2398180d39635c3f720c009
-    purchase_a_life_time_pro_account_with_sol_199: c8e5a46dc575728a76e934dff0b0d82f
+    purchase_a_life_time_pro_account_with_sol_199: ab97631df8c7b544b22a4d6004e914d9
     purchase_now: 7e4891ea26e255f13727c9425c351d9e
     pay_today: 7bf8d80d5a8a14cd4474341ffe623f10
     we_are_sorry_to_see_you_go: 82c943b1dee43adb2a26fb1647b88103
