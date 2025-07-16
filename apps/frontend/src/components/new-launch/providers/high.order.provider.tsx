@@ -246,7 +246,7 @@ export const withProvider = function <T extends object>(params: {
                   {t('preview', 'Preview')}
                 </Button>
               </div>
-              {(!!SettingsComponent || !!data?.internalPlugs?.length) && (
+              {current && (!!SettingsComponent || !!data?.internalPlugs?.length) && (
                 <div className="flex-1 flex">
                   <Button
                     onClick={() => setTab(1)}
@@ -263,7 +263,7 @@ export const withProvider = function <T extends object>(params: {
               )}
             </div>
 
-            {(tab === 0 ||
+            {current && (tab === 0 ||
               (!SettingsComponent && !data?.internalPlugs?.length)) &&
               !value?.[0]?.content?.length && (
                 <div>
@@ -273,8 +273,9 @@ export const withProvider = function <T extends object>(params: {
                   )}
                 </div>
               )}
-            {(tab === 0 ||
-              (!SettingsComponent && !data?.internalPlugs?.length)) &&
+            {current &&
+              (tab === 0 ||
+                (!SettingsComponent && !data?.internalPlugs?.length)) &&
               !!value?.[0]?.content?.length &&
               (CustomPreviewComponent ? (
                 <CustomPreviewComponent
