@@ -14,7 +14,10 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import interClass from '@gitroom/react/helpers/inter.font';
 import { useModals } from '@mantine/modals';
 import { TimeTable } from '@gitroom/frontend/components/launches/time.table';
-import { useCalendar } from '@gitroom/frontend/components/launches/calendar.context';
+import {
+  Integrations,
+  useCalendar,
+} from '@gitroom/frontend/components/launches/calendar.context';
 import { BotPicture } from '@gitroom/frontend/components/launches/bot.picture';
 import { CustomerModal } from '@gitroom/frontend/components/launches/customer.modal';
 import { Integration } from '@prisma/client';
@@ -22,6 +25,8 @@ import { SettingsModal } from '@gitroom/frontend/components/launches/settings.mo
 import { CustomVariables } from '@gitroom/frontend/components/launches/add.provider.component';
 import { useRouter } from 'next/navigation';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
+import dayjs from 'dayjs';
 export const Menu: FC<{
   canEnable: boolean;
   canDisable: boolean;
@@ -50,7 +55,7 @@ export const Menu: FC<{
 
   const fetch = useFetch();
   const router = useRouter();
-  const { integrations } = useCalendar();
+  const { integrations, reloadCalendarView } = useCalendar();
   const toast = useToaster();
   const modal = useModals();
   const [show, setShow] = useState(false);
@@ -112,6 +117,7 @@ export const Menu: FC<{
     setShow(false);
     onChange(true);
   }, []);
+
   const enableChannel = useCallback(async () => {
     await fetch('/integrations/enable', {
       method: 'POST',
@@ -123,6 +129,7 @@ export const Menu: FC<{
     setShow(false);
     onChange(false);
   }, []);
+
   const editTimeTable = useCallback(() => {
     const findIntegration = integrations.find(
       (integration) => integration.id === id
@@ -139,6 +146,42 @@ export const Menu: FC<{
     });
     setShow(false);
   }, [integrations]);
+
+  const createPost = useCallback(
+    (integration: Integrations) => async () => {
+      setShow(false);
+
+      const { date } = await (
+        await fetch(`/posts/find-slot/${integration.id}`)
+      ).json();
+
+      modal.openModal({
+        closeOnClickOutside: false,
+        closeOnEscape: false,
+        withCloseButton: false,
+        classNames: {
+          modal: 'w-[100%] max-w-[1400px] bg-transparent text-textColor',
+        },
+        children: (
+          <AddEditModal
+            allIntegrations={integrations.map((p) => ({
+              ...p,
+            }))}
+            reopenModal={createPost(integration)}
+            mutate={reloadCalendarView}
+            integrations={integrations}
+            selectedChannels={[integration.id]}
+            focusedChannel={integration.id}
+            date={dayjs.utc(date).local()}
+          />
+        ),
+        size: '80%',
+        title: ``,
+      });
+    },
+    [integrations]
+  );
+
   const changeBotPicture = useCallback(() => {
     const findIntegration = integrations.find(
       (integration) => integration.id === id
@@ -251,6 +294,30 @@ export const Menu: FC<{
           onClick={(e) => e.stopPropagation()}
           className={`absolute top-[100%] start-0 p-[8px] px-[20px] bg-fifth flex flex-col gap-[16px] z-[100] rounded-[8px] border border-tableBorder ${interClass} text-nowrap`}
         >
+          {canDisable && !findIntegration?.refreshNeeded && (
+            <div
+              className="flex gap-[12px] items-center"
+              onClick={createPost(findIntegration!)}
+            >
+              <div>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 32 32"
+                  fill="none"
+                >
+                  <path
+                    d="M21 4H11C9.14409 4.00199 7.36477 4.74012 6.05245 6.05245C4.74012 7.36477 4.00199 9.14409 4 11V21C4.00199 22.8559 4.74012 24.6352 6.05245 25.9476C7.36477 27.2599 9.14409 27.998 11 28H17C17.1075 27.9999 17.2142 27.9826 17.3162 27.9487C20.595 26.855 26.855 20.595 27.9487 17.3162C27.9826 17.2142 27.9999 17.1075 28 17V11C27.998 9.14409 27.2599 7.36477 25.9476 6.05245C24.6352 4.74012 22.8559 4.00199 21 4ZM17 25.9275V22C17 20.6739 17.5268 19.4021 18.4645 18.4645C19.4021 17.5268 20.6739 17 22 17H25.9275C24.77 19.6938 19.6938 24.77 17 25.9275Z"
+                    fill="green"
+                  />
+                </svg>
+              </div>
+              <div className="text-[12px]">
+                {t('create_new_post', 'Create a new post')}
+              </div>
+            </div>
+          )}
           {canDisable &&
             findIntegration?.refreshNeeded &&
             !findIntegration.customFields && (

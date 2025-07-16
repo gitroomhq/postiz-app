@@ -41,6 +41,7 @@ export class DevToSettingsDto {
 
   @IsArray()
   @ArrayMaxSize(4)
-  @IsOptional()
+  @Type(() => DevToTagsSettingsDto)
+  @ValidateNested({ each: true })
   tags: DevToTagsSettingsDto[];
 }

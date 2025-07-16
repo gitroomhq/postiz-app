@@ -16,6 +16,7 @@ export const DevtoTags: FC<{
   }) => void;
 }> = (props) => {
   const { onChange, name, label } = props;
+  const form = useSettings();
   const customFunc = useCustomProviderFunction();
   const [tags, setTags] = useState<any[]>([]);
   const { getValues } = useSettings();
@@ -24,14 +25,9 @@ export const DevtoTags: FC<{
     (tagIndex: number) => {
       const modify = tagValue.filter((_, i) => i !== tagIndex);
       setTagValue(modify);
-      onChange({
-        target: {
-          value: modify,
-          name,
-        },
-      });
+      form.setValue(name, modify);
     },
-    [tagValue]
+    [tagValue, name, form]
   );
   const onAddition = useCallback(
     (newTag: any) => {
@@ -40,14 +36,9 @@ export const DevtoTags: FC<{
       }
       const modify = [...tagValue, newTag];
       setTagValue(modify);
-      onChange({
-        target: {
-          value: modify,
-          name,
-        },
-      });
+      form.setValue(name, modify);
     },
-    [tagValue]
+    [tagValue, name, form]
   );
   useEffect(() => {
     customFunc.get('tags').then((data) => setTags(data));

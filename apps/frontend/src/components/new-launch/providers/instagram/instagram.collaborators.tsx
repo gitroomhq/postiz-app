@@ -53,12 +53,13 @@ const InstagramCollaborators: FC<{
     </>
   );
 };
-export default withProvider<InstagramDto>(
-  PostComment.COMMENT,
-  InstagramCollaborators,
-  undefined,
-  InstagramDto,
-  async ([firstPost, ...otherPosts], settings) => {
+export default withProvider<InstagramDto>({
+  postComment: PostComment.COMMENT,
+  minimumCharacters: [],
+  SettingsComponent: InstagramCollaborators,
+  CustomPreviewComponent: undefined,
+  dto: InstagramDto,
+  checkValidity: async ([firstPost, ...otherPosts], settings) => {
     if (!firstPost.length) {
       return 'Should have at least one media';
     }
@@ -90,5 +91,5 @@ export default withProvider<InstagramDto>(
     }
     return true;
   },
-  2200
-);
+  maximumCharacters: 2200,
+});

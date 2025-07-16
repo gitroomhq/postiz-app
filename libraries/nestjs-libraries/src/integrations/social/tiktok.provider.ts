@@ -26,6 +26,190 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   ];
   requiredEnvVars = ['TIKTOK_CLIENT_ID', 'TIKTOK_CLIENT_SECRET'];
 
+  editor = 'normal' as const;
+
+  override handleErrors(body: string):
+    | {
+        type: 'refresh-token' | 'bad-body';
+        value: string;
+      }
+    | undefined {
+    // Authentication/Authorization errors - require re-authentication
+    if (body.indexOf('access_token_invalid') > -1) {
+      return {
+        type: 'refresh-token' as const,
+        value:
+          'Access token invalid, please re-authenticate your TikTok account',
+      };
+    }
+
+    if (body.indexOf('scope_not_authorized') > -1) {
+      return {
+        type: 'refresh-token' as const,
+        value:
+          'Missing required permissions, please re-authenticate with all scopes',
+      };
+    }
+
+    if (body.indexOf('scope_permission_missed') > -1) {
+      return {
+        type: 'refresh-token' as const,
+        value: 'Additional permissions required, please re-authenticate',
+      };
+    }
+
+    // Rate limiting errors
+    if (body.indexOf('rate_limit_exceeded') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'TikTok API rate limit exceeded, please try again later',
+      };
+    }
+
+    if (body.indexOf('file_format_check_failed') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'File format is invalid, please check video specifications',
+      };
+    }
+
+    if (body.indexOf('duration_check_failed') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Video duration is invalid, please check video specifications',
+      };
+    }
+
+    if (body.indexOf('frame_rate_check_failed') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Video frame rate is invalid, please check video specifications',
+      };
+    }
+
+    if (body.indexOf('video_pull_failed') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Failed to pull video from URL, please check the URL',
+      };
+    }
+
+    if (body.indexOf('photo_pull_failed') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Failed to pull photo from URL, please check the URL',
+      };
+    }
+
+    if (body.indexOf('spam_risk_user_banned_from_posting') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'Account banned from posting, please check TikTok account status',
+      };
+    }
+
+    if (body.indexOf('spam_risk_text') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'TikTok detected potential spam in the post text',
+      };
+    }
+
+    if (body.indexOf('spam_risk') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'TikTok detected potential spam',
+      };
+    }
+
+    if (body.indexOf('spam_risk_too_many_posts') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Daily post limit reached, please try again tomorrow',
+      };
+    }
+
+    if (body.indexOf('spam_risk_user_banned_from_posting') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'Account banned from posting, please check TikTok account status',
+      };
+    }
+
+    if (body.indexOf('reached_active_user_cap') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Daily active user quota reached, please try again later',
+      };
+    }
+
+    if (
+      body.indexOf('unaudited_client_can_only_post_to_private_accounts') > -1
+    ) {
+      return {
+        type: 'bad-body' as const,
+        value: 'App not approved for public posting, contact support',
+      };
+    }
+
+    if (body.indexOf('url_ownership_unverified') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'URL ownership not verified, please verify domain ownership',
+      };
+    }
+
+    if (body.indexOf('privacy_level_option_mismatch') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Privacy level mismatch, please check privacy settings',
+      };
+    }
+
+    // Content/Format validation errors
+    if (body.indexOf('invalid_file_upload') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Invalid file format or specifications not met',
+      };
+    }
+
+    if (body.indexOf('invalid_params') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Invalid request parameters, please check content format',
+      };
+    }
+
+    // Server errors
+    if (body.indexOf('internal') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'There is a problem with TikTok servers, please try again later',
+      };
+    }
+
+    // Generic TikTok API errors
+    if (body.indexOf('picture_size_check_failed') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Picture size is invalid',
+      };
+    }
+
+    if (body.indexOf('TikTok API error') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'TikTok API error, please try again',
+      };
+    }
+
+    // Fall back to parent class error handling
+    return undefined;
+  }
+
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const value = {
       client_key: process.env.TIKTOK_CLIENT_ID!,
@@ -240,8 +424,9 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     postDetails: PostDetails<TikTokDto>[],
     integration: Integration
   ): Promise<PostResponse[]> {
-    const [firstPost, ...comments] = postDetails;
+    const [firstPost] = postDetails;
 
+    const isPhoto = (firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) === -1;
     const {
       data: { publish_id },
     } = await (
@@ -257,11 +442,21 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
             Authorization: `Bearer ${accessToken}`,
           },
           body: JSON.stringify({
-            ...((firstPost?.settings?.content_posting_method || 'DIRECT_POST') === 'DIRECT_POST'
+            ...((firstPost?.settings?.content_posting_method ||
+              'DIRECT_POST') === 'DIRECT_POST'
               ? {
                   post_info: {
-                    title: firstPost.message,
-                    privacy_level: firstPost.settings.privacy_level || 'PUBLIC_TO_EVERYONE',
+                    ...((firstPost?.settings?.title && isPhoto) ||
+                    (firstPost.message && !isPhoto)
+                      ? {
+                          title: isPhoto
+                            ? firstPost.settings.title
+                            : firstPost.message,
+                        }
+                      : {}),
+                    ...(isPhoto ? { description: firstPost.message } : {}),
+                    privacy_level:
+                      firstPost.settings.privacy_level || 'PUBLIC_TO_EVERYONE',
                     disable_duet: !firstPost.settings.duet || false,
                     disable_comment: !firstPost.settings.comment || false,
                     disable_stitch: !firstPost.settings.stitch || false,
@@ -284,6 +479,12 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
                   source_info: {
                     source: 'PULL_FROM_URL',
                     video_url: firstPost?.media?.[0]?.path!,
+                    ...(firstPost?.media?.[0]?.thumbnailTimestamp!
+                      ? {
+                          video_cover_timestamp_ms:
+                            firstPost?.media?.[0]?.thumbnailTimestamp!,
+                        }
+                      : {}),
                   },
                 }
               : {
@@ -292,7 +493,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
                     photo_cover_index: 0,
                     photo_images: firstPost.media?.map((p) => p.path),
                   },
-                  post_mode: 'DIRECT_POST',
+                  post_mode: firstPost?.settings?.content_posting_method === 'DIRECT_POST' ? 'DIRECT_POST' : 'MEDIA_UPLOAD',
                   media_type: 'PHOTO',
                 }),
           }),

@@ -13,6 +13,7 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
   identifier = 'slack';
   name = 'Slack';
   isBetweenSteps = false;
+  editor = 'normal' as const;
   scopes = [
     'channels:read',
     'chat:write',

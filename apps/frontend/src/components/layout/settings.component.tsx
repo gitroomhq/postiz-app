@@ -129,7 +129,9 @@ export const SettingsPopup: FC<{
                   {t('auto_post', 'Auto Post')}
                 </Tabs.Tab>
               )}
-              <Tabs.Tab value="sets">{t('sets', 'Sets')}</Tabs.Tab>
+              {user?.tier.current !== 'FREE' && (
+                <Tabs.Tab value="sets">{t('sets', 'Sets')}</Tabs.Tab>
+              )}
               {user?.tier.current !== 'FREE' && (
                 <Tabs.Tab value="signatures">
                   {t('signatures', 'Signatures')}

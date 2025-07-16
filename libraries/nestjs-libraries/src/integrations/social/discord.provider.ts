@@ -11,6 +11,7 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
   identifier = 'discord';
   name = 'Discord';
   isBetweenSteps = false;
+  editor = 'markdown' as const;
   scopes = ['identify', 'guilds'];
   requiredEnvVars = ['DISCORD_CLIENT_ID', 'DISCORD_CLIENT_SECRET'];
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {

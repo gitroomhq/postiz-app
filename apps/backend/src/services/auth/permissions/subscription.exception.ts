@@ -3,18 +3,8 @@ import {
   Catch,
   ExceptionFilter,
   HttpException,
-  HttpStatus,
 } from '@nestjs/common';
-import {
-  AuthorizationActions,
-  Sections,
-} from '@gitroom/backend/services/auth/permissions/permissions.service';
-
-export class SubscriptionException extends HttpException {
-  constructor(message: { section: Sections; action: AuthorizationActions }) {
-    super(message, HttpStatus.PAYMENT_REQUIRED);
-  }
-}
+import { AuthorizationActions, Sections, SubscriptionException } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 
 @Catch(SubscriptionException)
 export class SubscriptionExceptionFilter implements ExceptionFilter {
@@ -54,6 +44,11 @@ const getErrorMessage = (error: {
       switch (error.action) {
         default:
           return 'You have reached the maximum number of webhooks for your subscription. Please upgrade your subscription to add more webhooks.';
+      }
+    case Sections.VIDEOS_PER_MONTH:
+      switch (error.action) {
+        default:
+          return 'You have reached the maximum number of generated videos for your subscription. Please upgrade your subscription to generate more videos.';
       }
   }
 };

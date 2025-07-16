@@ -25,3 +25,12 @@ export class PrismaRepository<T extends keyof PrismaService> {
     this.model = this._prismaService;
   }
 }
+
+
+@Injectable()
+export class PrismaTransaction {
+  public model: Pick<PrismaService, '$transaction'>;
+  constructor(private _prismaService: PrismaService) {
+    this.model = this._prismaService;
+  }
+}

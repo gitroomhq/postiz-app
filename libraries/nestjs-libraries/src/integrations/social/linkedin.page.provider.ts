@@ -31,6 +31,8 @@ export class LinkedinPageProvider
   ];
   requiredEnvVars = ['LINKEDIN_CLIENT_ID', 'LINKEDIN_CLIENT_SECRET'];
 
+  editor = 'normal' as const;
+
   override async refreshToken(
     refresh_token: string
   ): Promise<AuthTokenDetails> {

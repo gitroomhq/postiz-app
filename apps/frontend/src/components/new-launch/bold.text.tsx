@@ -75,17 +75,9 @@ export const BoldText: FC<{
   currentValue: string;
 }> = ({ editor }) => {
   const mark = () => {
-    const selectedText = Editor.string(editor, editor.selection);
-    const newText = Array.from(
-      !selectedText ? prompt('What do you want to write?') || '' : selectedText
-    )
-      .map((char) => {
-        // @ts-ignore
-        return originalMap?.[char] || reverseMap?.[char] || char;
-      })
-      .join('');
-    Transforms.insertText(editor, newText);
-    ReactEditor.focus(editor);
+    editor.commands.unsetUnderline();
+    editor.commands.toggleBold();
+    editor.commands.focus();
   };
   return (
     <div

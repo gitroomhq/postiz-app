@@ -28,6 +28,12 @@ export class InstagramStandaloneProvider
   ];
   requiredEnvVars = ['INSTAGRAM_APP_ID', 'INSTAGRAM_APP_SECRET'];
 
+  editor = 'normal' as const;
+
+  public override handleErrors(body: string): { type: "refresh-token" | "bad-body"; value: string } | undefined {
+    return instagramProvider.handleErrors(body);
+  }
+
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     const { access_token } = await (
       await this.fetch(

@@ -3,6 +3,7 @@ import 'reflect-metadata';
 export function PostPlug(params: {
   identifier: string;
   title: string;
+  disabled?: boolean;
   description: string;
   pickIntegration: string[];
   fields: {

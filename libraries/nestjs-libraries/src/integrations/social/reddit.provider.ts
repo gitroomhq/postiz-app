@@ -16,6 +16,7 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
   isBetweenSteps = false;
   scopes = ['read', 'identity', 'submit', 'flair'];
   requiredEnvVars = ['REDDIT_CLIENT_ID', 'REDDIT_CLIENT_SECRET'];
+  editor = 'normal' as const;
 
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const {

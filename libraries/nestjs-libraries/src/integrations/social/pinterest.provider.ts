@@ -29,6 +29,8 @@ export class PinterestProvider
   ];
   requiredEnvVars = ['PINTEREST_CLIENT_ID', 'PINTEREST_CLIENT_SECRET'];
 
+  editor = 'normal' as const;
+
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const { access_token, expires_in } = await (
       await this.fetch('https://api.pinterest.com/v5/oauth/token', {

@@ -66,9 +66,12 @@ const MediumSettings: FC = () => {
     </>
   );
 };
-export default withProvider(
-  PostComment.COMMENT,
-  MediumSettings,
-  MediumPreview,
-  MediumSettingsDto
-);
+export default withProvider({
+  postComment: PostComment.POST,
+  minimumCharacters: [],
+  SettingsComponent: MediumSettings,
+  CustomPreviewComponent: undefined, //MediumPreview,
+  dto: MediumSettingsDto,
+  checkValidity: undefined,
+  maximumCharacters: 100000,
+});

@@ -531,3 +531,25 @@ html[dir='rtl'] [dir='ltr'] {
 //  padding: 0 !important;
 //}
 //
+
+.ProseMirror {
+  font-family: Arial;
+}
+
+.ProseMirror:focus {
+    outline: none;
+}
+
+.ProseMirror .mention {
+  font-weight: bold;
+  color: #ae8afc;
+}
+
+.ProseMirror ul, .preview ul {
+  list-style: disc;
+  padding-left: 20px;
+}
+
+.preview ul, .preview li {
+  white-space: nowrap;
+}

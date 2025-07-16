@@ -14,6 +14,7 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
   isBetweenSteps = false;
   scopes = ['write:statuses', 'profile', 'write:media'];
   requiredEnvVars = ['MASTODON_CLIENT_ID', 'MASTODON_CLIENT_SECRET'];
+  editor = 'normal' as const;
 
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     return {

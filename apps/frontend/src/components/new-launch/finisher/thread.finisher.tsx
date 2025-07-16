@@ -6,10 +6,12 @@ import { Editor } from '@gitroom/frontend/components/new-launch/editor';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
+import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 
 export const ThreadFinisher = () => {
   const integration = useIntegration();
   const { register, watch, setValue } = useSettings();
+  const dummy = useLaunchStore((p) => p.dummy);
   const t = useT();
 
   register('active_thread_finisher', {
@@ -38,7 +40,7 @@ export const ThreadFinisher = () => {
           />
         </div>
       </div>
-      <div className="w-full mt-[40px]">
+      <div className="w-full mt-[20px]">
         <div
           className={clsx(
             !slider && 'relative opacity-25 pointer-events-none editor'
@@ -51,6 +53,7 @@ export const ThreadFinisher = () => {
                   onChange={(val) => setValue('thread_finisher', val)}
                   value={value}
                   totalPosts={1}
+                  dummy={dummy}
                 />
               </div>
             </div>

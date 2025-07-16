@@ -549,9 +549,10 @@ export class IntegrationRepository {
     });
   }
 
-  async getPostingTimes(orgId: string) {
+  async getPostingTimes(orgId: string, integrationsId?: string) {
     return this._integration.model.integration.findMany({
       where: {
+        ...(integrationsId ? { id: integrationsId } : {}),
         organizationId: orgId,
         disabled: false,
         deletedAt: null,

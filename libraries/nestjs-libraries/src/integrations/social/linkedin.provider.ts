@@ -32,6 +32,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   ];
   requiredEnvVars = ['LINKEDIN_CLIENT_ID', 'LINKEDIN_CLIENT_SECRET'];
   refreshWait = true;
+  editor = 'normal' as const;
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     const {
@@ -383,7 +384,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
 
     // Create a temporary file-like object for the PDF
     const pdfMedia = {
-      url: 'carousel.pdf',
+      path: 'carousel.pdf',
       buffer: pdfBuffer,
     };
 

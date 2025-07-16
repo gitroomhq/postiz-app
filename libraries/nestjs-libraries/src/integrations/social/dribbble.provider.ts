@@ -18,6 +18,7 @@ export class DribbbleProvider extends SocialAbstract implements SocialProvider {
   isBetweenSteps = false;
   scopes = ['public', 'upload'];
   requiredEnvVars = ['DRIBBBLE_CLIENT_ID', 'DRIBBBLE_CLIENT_SECRET'];
+  editor = 'normal' as const;
 
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const { access_token, expires_in } = await (

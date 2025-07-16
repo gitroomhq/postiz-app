@@ -1,6 +1,9 @@
 'use client';
 
-import { PostComment, withProvider } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
+import {
+  PostComment,
+  withProvider,
+} from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 import { ThreadFinisher } from '@gitroom/frontend/components/new-launch/finisher/thread.finisher';
 import { Select } from '@gitroom/react/form/select';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -28,8 +31,8 @@ const whoCanReply = [
   {
     label: 'Verified accounts',
     value: 'verified',
-  }
-]
+  },
+];
 
 const SettingsComponent = () => {
   const t = useT();
@@ -38,7 +41,10 @@ const SettingsComponent = () => {
   return (
     <>
       <Select
-        label={t('label_who_can_reply_to_this_post', 'Who can reply to this post?')}
+        label={t(
+          'label_who_can_reply_to_this_post',
+          'Who can reply to this post?'
+        )}
         className="mb-5"
         hideErrors={true}
         {...register('who_can_reply_post', {
@@ -52,20 +58,28 @@ const SettingsComponent = () => {
         ))}
       </Select>
 
-      <Input label={'Post to a community, URL (Ex: https://x.com/i/communities/1493446837214187523)'} {...register('community')} />
+      <Input
+        label={
+          'Post to a community, URL (Ex: https://x.com/i/communities/1493446837214187523)'
+        }
+        {...register('community')}
+      />
 
       <ThreadFinisher />
     </>
   );
 };
 
-export default withProvider(
-  PostComment.POST,
-  SettingsComponent,
-  undefined,
-  XDto,
-  async (posts, settings, additionalSettings: any) => {
-    const premium = additionalSettings?.find((p: any) => p?.title === 'Verified')?.value || false;
+export default withProvider({
+  postComment: PostComment.POST,
+  minimumCharacters: [],
+  SettingsComponent: SettingsComponent,
+  CustomPreviewComponent: undefined,
+  dto: XDto,
+  checkValidity: async (posts, settings, additionalSettings: any) => {
+    const premium =
+      additionalSettings?.find((p: any) => p?.title === 'Verified')?.value ||
+      false;
     if (posts.some((p) => p.length > 4)) {
       return 'There can be maximum 4 pictures in a post.';
     }
@@ -86,14 +100,17 @@ export default withProvider(
     }
     return true;
   },
-  (settings) => {
+  maximumCharacters: (settings) => {
     if (settings?.[0]?.value) {
       return 4000;
     }
     return 280;
-  }
-);
-const checkVideoDuration = async (url: string, isPremium = false): Promise<boolean> => {
+  },
+});
+const checkVideoDuration = async (
+  url: string,
+  isPremium = false
+): Promise<boolean> => {
   return new Promise((resolve, reject) => {
     const video = document.createElement('video');
     video.src = url;

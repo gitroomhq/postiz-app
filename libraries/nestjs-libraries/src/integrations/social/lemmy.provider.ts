@@ -9,7 +9,7 @@ import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.ab
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
-import { LemmySettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/lemmy.dto';
+import { LemmySettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/lemmy.dto';
 import { groupBy } from 'lodash';
 
 export class LemmyProvider extends SocialAbstract implements SocialProvider {
@@ -17,6 +17,7 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
   name = 'Lemmy';
   isBetweenSteps = false;
   scopes = [] as string[];
+  editor = 'normal' as const;
 
   async customFields() {
     return [

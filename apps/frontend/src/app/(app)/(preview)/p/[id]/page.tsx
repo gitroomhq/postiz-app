@@ -93,7 +93,7 @@ export default async function Auth({
             <div className="flex-1">
               {t('publication_date', 'Publication Date:')}
               {dayjs
-                .utc(post[0].createdAt)
+                .utc(post[0].publishDate)
                 .local()
                 .format('MMMM D, YYYY h:mm A')}
             </div>

@@ -25,8 +25,11 @@ interface SelectedIntegrations {
 }
 
 interface StoreState {
+  editor: undefined | 'normal' | 'markdown' | 'html';
+  loaded: boolean;
   date: dayjs.Dayjs;
   postComment: PostComment;
+  dummy: boolean;
   repeater?: number;
   isCreateSet: boolean;
   totalChars: number;
@@ -116,9 +119,15 @@ interface StoreState {
   ) => void;
   setPostComment: (postComment: PostComment) => void;
   setActivateExitButton?: (activateExitButton: boolean) => void;
+  setDummy: (dummy: boolean) => void;
+  setEditor: (editor: 'normal' | 'markdown' | 'html') => void;
+  setLoaded?: (loaded: boolean) => void;
 }
 
 const initialState = {
+  editor: undefined as undefined,
+  loaded: true,
+  dummy: false,
   activateExitButton: true,
   date: dayjs(),
   postComment: PostComment.ALL,
@@ -151,13 +160,22 @@ export const useLaunchStore = create<StoreState>()((set) => ({
       );
 
       if (existing) {
+        const selectedList = state.selectedIntegrations.filter(
+          (s, index) => s.integration.id !== existing.integration.id
+        );
+
         return {
           ...(existing.integration.id === state.current
             ? { current: 'global' }
             : {}),
-          selectedIntegrations: state.selectedIntegrations.filter(
-            (s, index) => s.integration.id !== existing.integration.id
-          ),
+          loaded: false,
+          selectedIntegrations: selectedList,
+          ...(selectedList.length === 0
+            ? {
+                current: 'global',
+                editor: 'normal',
+              }
+            : {}),
         };
       }
 
@@ -504,5 +522,17 @@ export const useLaunchStore = create<StoreState>()((set) => ({
   setActivateExitButton: (activateExitButton: boolean) =>
     set((state) => ({
       activateExitButton,
+    })),
+  setDummy: (dummy: boolean) =>
+    set((state) => ({
+      dummy,
+    })),
+  setEditor: (editor: 'normal' | 'markdown' | 'html') =>
+    set((state) => ({
+      editor,
+    })),
+  setLoaded: (loaded: boolean) =>
+    set((state) => ({
+      loaded,
     })),
 }));

@@ -30,6 +30,23 @@ export class BillingController {
     };
   }
 
+  @Post('/finish-trial')
+  async finishTrial(@GetOrgFromRequest() org: Organization) {
+    try {
+      await this._stripeService.finishTrial(org.paymentId);
+    } catch (err) {}
+    return {
+      finish: true,
+    };
+  }
+
+  @Get('/is-trial-finished')
+  async isTrialFinished(@GetOrgFromRequest() org: Organization) {
+    return {
+      finished: !org.isTrailing,
+    };
+  }
+
   @Post('/subscribe')
   subscribe(
     @GetOrgFromRequest() org: Organization,

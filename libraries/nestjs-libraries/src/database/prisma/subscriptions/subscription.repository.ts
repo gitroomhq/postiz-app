@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
+import {
+  PrismaRepository,
+  PrismaTransaction,
+} from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import dayjs from 'dayjs';
 import { Organization } from '@prisma/client';
 
@@ -125,6 +128,7 @@ export class SubscriptionRepository {
   }
 
   async createOrUpdateSubscription(
+    isTrailing: boolean,
     identifier: string,
     customerId: string,
     totalChannels: number,
@@ -178,6 +182,7 @@ export class SubscriptionRepository {
         id: findOrg.id,
       },
       data: {
+        isTrailing,
         allowTrial: false,
       },
     });
@@ -201,11 +206,16 @@ export class SubscriptionRepository {
     });
   }
 
-  async getCreditsFrom(organizationId: string, from: dayjs.Dayjs) {
+  async getCreditsFrom(
+    organizationId: string,
+    from: dayjs.Dayjs,
+    type = 'ai_images'
+  ) {
     const load = await this._credits.model.credits.groupBy({
       by: ['organizationId'],
       where: {
         organizationId,
+        type,
         createdAt: {
           gte: from.toDate(),
         },
@@ -218,13 +228,29 @@ export class SubscriptionRepository {
     return load?.[0]?._sum?.credits || 0;
   }
 
-  useCredit(org: Organization) {
-    return this._credits.model.credits.create({
+  async useCredit<T>(
+    org: Organization,
+    type = 'ai_images',
+    func: () => Promise<T>
+  ) {
+    const data = await this._credits.model.credits.create({
       data: {
         organizationId: org.id,
         credits: 1,
+        type,
       },
     });
+
+    try {
+      return await func();
+    } catch (err) {
+      await this._credits.model.credits.delete({
+        where: {
+          id: data.id,
+        },
+      });
+      throw err;
+    }
   }
 
   setCustomerId(orgId: string, customerId: string) {
