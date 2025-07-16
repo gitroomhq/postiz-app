@@ -140,10 +140,13 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
         0,
         existingData.integration,
         existingData.posts.map((post) => ({
-          content: post.content
-            .split('\n')
-            .map((line: string) => `<p>${line}</p>`)
-            .join(''),
+          content:
+            post.content.indexOf('<p>') > -1
+              ? post.content
+              : post.content
+                  .split('\n')
+                  .map((line: string) => `<p>${line}</p>`)
+                  .join(''),
           id: post.id,
           // @ts-ignore
           media: post.image as any[],
@@ -160,7 +163,13 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
       0,
       props.onlyValues?.length
         ? props.onlyValues.map((p) => ({
-            content: p.content,
+            content:
+              p.content.indexOf('<p>') > -1
+                ? p.content
+                : p.content
+                    .split('\n')
+                    .map((line: string) => `<p>${line}</p>`)
+                    .join(''),
             id: makeId(10),
             media: p.image || [],
           }))
