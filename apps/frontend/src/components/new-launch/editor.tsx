@@ -104,22 +104,18 @@ const Span = Node.create({
   renderHTML({ HTMLAttributes }) {
     return [
       'span',
-      mergeAttributes(HTMLAttributes, {
-        'data-linkedin-id': HTMLAttributes.linkedinId,
-        class: 'mention',
-      }),
+      mergeAttributes(
+        // Exclude linkedinId from HTMLAttributes to avoid duplication
+        Object.fromEntries(
+          Object.entries(HTMLAttributes).filter(([key]) => key !== 'linkedinId')
+        ),
+        {
+          'data-linkedin-id': HTMLAttributes.linkedinId,
+          class: 'mention',
+        }
+      ),
       `@${HTMLAttributes.label}`,
     ];
-  },
-
-  addNodeView() {
-    return ({ HTMLAttributes }) => {
-      const span = document.createElement('span');
-      span.classList.add('mention');
-      span.dataset.linkedinId = HTMLAttributes.linkedinId;
-      span.innerText = `@${HTMLAttributes.label}`;
-      return { dom: span };
-    };
   },
 });
 
@@ -557,22 +553,25 @@ export const Editor: FC<{
     [props.value, id]
   );
 
-  const addLinkedinTag = useCallback((text: string) => {
-    const id = text.split('(')[1].split(')')[0];
-    const name = text.split('[')[1].split(']')[0];
+  const addLinkedinTag = useCallback(
+    (text: string) => {
+      const id = text.split('(')[1].split(')')[0];
+      const name = text.split('[')[1].split(']')[0];
 
-    editor
-      ?.chain()
-      .focus()
-      .insertContent({
-        type: 'mention',
-        attrs: {
-          linkedinId: id,
-          label: `@${name}`,
-        },
-      })
-      .run();
-  }, []);
+      editor
+        ?.chain()
+        .focus()
+        .insertContent({
+          type: 'mention',
+          attrs: {
+            linkedinId: id,
+            label: name,
+          },
+        })
+        .run();
+    },
+    [editor]
+  );
 
   if (!editor) {
     return null;

@@ -539,3 +539,8 @@ html[dir='rtl'] [dir='ltr'] {
 .ProseMirror:focus {
     outline: none;
 }
+
+.ProseMirror .mention {
+  font-weight: bold;
+  color: #ae8afc;
+}

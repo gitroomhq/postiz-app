@@ -130,7 +130,10 @@ const underlineMap = {
   '0': '0̲',
 };
 
-export const stripHtmlValidation = (value: string, replaceBold = false): string => {
+export const stripHtmlValidation = (
+  value: string,
+  replaceBold = false
+): string => {
   const html = (value || '')
     .replace(/&nbsp;/gi, ' ')
     .replace(/^<p[^>]*>/i, '')
@@ -138,11 +141,21 @@ export const stripHtmlValidation = (value: string, replaceBold = false): string 
     .replace(/<\/p>/gi, '');
 
   if (replaceBold) {
-    return striptags(convertToAscii(html));
+    return striptags(convertLinkedinMention(convertToAscii(html)));
   }
 
   // Strip all other tags
   return striptags(html);
+};
+
+export const convertLinkedinMention = (value: string) => {
+  return value.replace(
+    /<span.+?data-linkedin-id="(.+?)".+?>(.+?)<\/span>/gi,
+    (match, id, name) => {
+      console.log(id, name);
+      return `@[${name.replace('@', '')}](${id})`;
+    }
+  );
 };
 
 export const convertToAscii = (value: string): string => {
