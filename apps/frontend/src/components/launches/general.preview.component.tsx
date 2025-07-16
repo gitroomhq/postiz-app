@@ -40,7 +40,6 @@ export const GeneralPreviewComponent: FC<{
     return { text: finalValue, images: p.image };
   });
 
-  console.log(renderContent);
   return (
     <div className={clsx('w-full md:w-[555px] px-[16px]')}>
       <div className="w-full h-full relative flex flex-col">
@@ -103,8 +102,8 @@ export const GeneralPreviewComponent: FC<{
                     : integration?.display || '@username'}
                 </div>
               </div>
-              <pre
-                className={clsx('text-wrap', interClass)}
+              <div
+                className={clsx('text-wrap whitespace-pre', 'preview', interClass)}
                 dangerouslySetInnerHTML={{
                   __html: value.text,
                 }}

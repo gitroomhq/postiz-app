@@ -115,6 +115,7 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
     setCurrent,
     internal,
     setTags,
+    setEditor,
   } = useLaunchStore(
     useShallow((state) => ({
       reset: state.reset,
@@ -124,6 +125,7 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
       global: state.global,
       internal: state.internal,
       setTags: state.setTags,
+      setEditor: state.setEditor,
     }))
   );
 
@@ -153,6 +155,9 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
         }))
       );
       setCurrent(existingData.integration);
+    }
+    else {
+      setEditor('normal');
     }
 
     if (props.focusedChannel) {

@@ -13,6 +13,7 @@ export class DevToProvider extends SocialAbstract implements SocialProvider {
   identifier = 'devto';
   name = 'Dev.to';
   isBetweenSteps = false;
+  editor = 'markdown' as const;
   scopes = [] as string[];
 
   async generateAuthUrl() {

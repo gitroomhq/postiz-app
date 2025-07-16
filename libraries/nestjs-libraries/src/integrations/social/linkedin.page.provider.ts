@@ -30,6 +30,8 @@ export class LinkedinPageProvider
     'r_organization_social',
   ];
 
+  editor = 'normal' as const;
+
   override async refreshToken(
     refresh_token: string
   ): Promise<AuthTokenDetails> {

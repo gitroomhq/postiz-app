@@ -27,6 +27,8 @@ export class InstagramStandaloneProvider
     'instagram_business_manage_insights',
   ];
 
+  editor = 'normal' as const;
+
   public override handleErrors(body: string): { type: "refresh-token" | "bad-body"; value: string } | undefined {
     return instagramProvider.handleErrors(body);
   }

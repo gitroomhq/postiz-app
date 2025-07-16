@@ -131,6 +131,7 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
   name = 'Bluesky';
   isBetweenSteps = false;
   scopes = ['write:statuses', 'profile', 'write:media'];
+  editor = 'normal' as const;
 
   async customFields() {
     return [

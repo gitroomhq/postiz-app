@@ -45,6 +45,8 @@ import Paragraph from '@tiptap/extension-paragraph';
 import Underline from '@tiptap/extension-underline';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { History } from '@tiptap/extension-history';
+import { BulletList, ListItem } from '@tiptap/extension-list';
+import { Bullets } from '@gitroom/frontend/components/new-launch/bullets.component';
 
 const InterceptBoldShortcut = Extension.create({
   name: 'preventBoldWithUnderline',
@@ -147,6 +149,9 @@ export const EditorWrapper: FC<{
     totalChars,
     postComment,
     dummy,
+    editor,
+    loadedState,
+    setLoadedState,
   } = useLaunchStore(
     useShallow((state) => ({
       internal: state.internal.find((p) => p.integration.id === state.current),
@@ -172,6 +177,9 @@ export const EditorWrapper: FC<{
       appendInternalValueMedia: state.appendInternalValueMedia,
       appendGlobalValueMedia: state.appendGlobalValueMedia,
       postComment: state.postComment,
+      editor: state.editor,
+      loadedState: state.loaded,
+      setLoadedState: state.setLoaded
     }))
   );
 
@@ -179,12 +187,13 @@ export const EditorWrapper: FC<{
   const [loaded, setLoaded] = useState(true);
 
   useEffect(() => {
-    if (loaded) {
+    if (loaded && loadedState) {
       return;
     }
 
+    setLoadedState(true);
     setLoaded(true);
-  }, [loaded]);
+  }, [loaded, loadedState]);
 
   const canEdit = useMemo(() => {
     return current === 'global' || !!internal;
@@ -341,7 +350,7 @@ export const EditorWrapper: FC<{
     [current, global, internal]
   );
 
-  if (!loaded) {
+  if (!loaded || !loadedState) {
     return null;
   }
 
@@ -371,6 +380,7 @@ export const EditorWrapper: FC<{
           <div className="flex gap-[5px]">
             <div className="flex-1">
               <Editor
+                editorType={editor}
                 allValues={items}
                 onChange={changeValue(index)}
                 key={index}
@@ -451,6 +461,7 @@ export const EditorWrapper: FC<{
 };
 
 export const Editor: FC<{
+  editorType?: 'normal' | 'markdown' | 'html';
   totalPosts: number;
   value: string;
   num?: number;
@@ -466,6 +477,7 @@ export const Editor: FC<{
   dummy: boolean;
 }> = (props) => {
   const {
+    editorType = 'normal',
     allValues,
     pictures,
     setImages,
@@ -520,7 +532,24 @@ export const Editor: FC<{
     [uppy]
   );
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
+  const { getRootProps, isDragActive } = useDropzone({ onDrop });
+
+  const editorOptions = useMemo(() => {
+    if (editorType === 'normal') {
+      return [];
+    }
+
+    const list = [];
+
+    if (
+      editorType === ('markdown' as const) ||
+      editorType === ('html' as const)
+    ) {
+      list.push(BulletList, ListItem);
+    }
+
+    return list;
+  }, [editorType]);
 
   const editor = useEditor({
     extensions: [
@@ -536,6 +565,7 @@ export const Editor: FC<{
         depth: 100, // default is 100
         newGroupDelay: 100, // default is 500ms
       }),
+      ...editorOptions,
     ],
     content: props.value || '',
     shouldRerenderOnTransaction: true,
@@ -590,6 +620,9 @@ export const Editor: FC<{
           <SignatureBox editor={editor} />
           <UText editor={editor} currentValue={props.value!} />
           <BoldText editor={editor} currentValue={props.value!} />
+          {(editorType === 'markdown' || editorType === 'html') && (
+            <Bullets editor={editor} currentValue={props.value!} />
+          )}
           <div
             className="select-none cursor-pointer w-[40px] p-[5px] text-center"
             onClick={() => setEmojiPickerOpen(!emojiPickerOpen)}

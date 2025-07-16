@@ -544,3 +544,12 @@ html[dir='rtl'] [dir='ltr'] {
   font-weight: bold;
   color: #ae8afc;
 }
+
+.ProseMirror ul, .preview ul {
+  list-style: disc;
+  padding-left: 20px;
+}
+
+.preview ul, .preview li {
+  white-space: nowrap;
+}

@@ -74,7 +74,6 @@ export const withProvider = function <T extends object>(params: {
     const fetch = useFetch();
     const {
       current,
-      integrations,
       selectedIntegration,
       setCurrent,
       internal,
@@ -87,6 +86,7 @@ export const withProvider = function <T extends object>(params: {
       justCurrent,
       allIntegrations,
       setPostComment,
+      setEditor,
       dummy,
     } = useLaunchStore(
       useShallow((state) => ({
@@ -104,6 +104,7 @@ export const withProvider = function <T extends object>(params: {
         setCurrent: state.setCurrent,
         setTotalChars: state.setTotalChars,
         setPostComment: state.setPostComment,
+        setEditor: state.setEditor,
         selectedIntegration: state.selectedIntegrations.find(
           (p) => p.integration.id === props.id
         ),
@@ -118,9 +119,11 @@ export const withProvider = function <T extends object>(params: {
       if (isGlobal) {
         setPostComment(PostComment.ALL);
         setTotalChars(0);
+        setEditor('normal');
       }
 
       if (current) {
+        setEditor(selectedIntegration?.integration.editor);
         setPostComment(postComment);
         setTotalChars(
           typeof maximumCharacters === 'number'
@@ -246,25 +249,27 @@ export const withProvider = function <T extends object>(params: {
                   {t('preview', 'Preview')}
                 </Button>
               </div>
-              {current && (!!SettingsComponent || !!data?.internalPlugs?.length) && (
-                <div className="flex-1 flex">
-                  <Button
-                    onClick={() => setTab(1)}
-                    secondary={tab !== 1}
-                    className="rounded-[4px] flex-1 overflow-hidden whitespace-nowrap"
-                  >
-                    {t('settings', 'Settings')} (
-                    {capitalize(
-                      selectedIntegration.integration.identifier.split('-')[0]
-                    )}
-                    )
-                  </Button>
-                </div>
-              )}
+              {current &&
+                (!!SettingsComponent || !!data?.internalPlugs?.length) && (
+                  <div className="flex-1 flex">
+                    <Button
+                      onClick={() => setTab(1)}
+                      secondary={tab !== 1}
+                      className="rounded-[4px] flex-1 overflow-hidden whitespace-nowrap"
+                    >
+                      {t('settings', 'Settings')} (
+                      {capitalize(
+                        selectedIntegration.integration.identifier.split('-')[0]
+                      )}
+                      )
+                    </Button>
+                  </div>
+                )}
             </div>
 
-            {current && (tab === 0 ||
-              (!SettingsComponent && !data?.internalPlugs?.length)) &&
+            {current &&
+              (tab === 0 ||
+                (!SettingsComponent && !data?.internalPlugs?.length)) &&
               !value?.[0]?.content?.length && (
                 <div>
                   {t(

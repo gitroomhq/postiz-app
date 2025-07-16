@@ -24,11 +24,12 @@ import NostrProvider from '@gitroom/frontend/components/new-launch/providers/nos
 import VkProvider from '@gitroom/frontend/components/new-launch/providers/vk/vk.provider';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useShallow } from 'zustand/react/shallow';
-import React, { createRef, FC, forwardRef, useImperativeHandle } from 'react';
+import React, { FC, forwardRef, useEffect, useImperativeHandle } from 'react';
 import { GeneralPreviewComponent } from '@gitroom/frontend/components/launches/general.preview.component';
 import { IntegrationContext } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { Button } from '@gitroom/react/form/button';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { PostComment } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 
 export const Providers = [
   {
@@ -154,8 +155,10 @@ export const ShowAllProviders = forwardRef((props, ref) => {
       );
     },
     triggerAll: () => {
-      return selectedIntegrations.map(async (p) => await p.ref?.current.trigger());
-    }
+      return selectedIntegrations.map(
+        async (p) => await p.ref?.current.trigger()
+      );
+    },
   }));
 
   return (
@@ -176,15 +179,18 @@ export const ShowAllProviders = forwardRef((props, ref) => {
         >
           <div className="flex gap-[4px] mb-[20px]">
             <div className="flex-1 flex">
-              <Button
-                className="rounded-[4px] flex-1 overflow-hidden whitespace-nowrap"
-              >
+              <Button className="rounded-[4px] flex-1 overflow-hidden whitespace-nowrap">
                 {t('preview', 'Preview')}
               </Button>
             </div>
           </div>
           {global?.[0]?.content?.length === 0 ? (
-            <div>{t('start_writing_your_post', 'Start writing your post for a preview')}</div>
+            <div>
+              {t(
+                'start_writing_your_post',
+                'Start writing your post for a preview'
+              )}
+            </div>
           ) : (
             <GeneralPreviewComponent maximumCharacters={100000000} />
           )}

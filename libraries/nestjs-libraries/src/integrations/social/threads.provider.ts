@@ -25,6 +25,8 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     'threads_manage_insights',
   ];
 
+  editor = 'normal' as const;
+
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     const { access_token } = await (
       await this.fetch(

@@ -25,6 +25,7 @@ export class FarcasterProvider
   isBetweenSteps = false;
   isWeb3 = true;
   scopes = [] as string[];
+  editor = 'normal' as const;
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     return {

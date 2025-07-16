@@ -26,6 +26,8 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   toolTip =
     'You will be logged in into your current account, if you would like a different account, change it first on X';
 
+  editor = 'normal' as const;
+
   @Plug({
     identifier: 'x-autoRepostPost',
     title: 'Auto Repost Posts',

@@ -145,11 +145,11 @@ export const stripHtmlValidation = (
     .replace(/<\/p>/gi, '');
 
   if (replaceBold) {
-    return striptags(convertLinkedinMention(convertToAscii(html)));
+    return striptags(convertLinkedinMention(convertToAscii(html)), ['ul', 'li']);
   }
 
   // Strip all other tags
-  return striptags(html);
+  return striptags(html, ['ul', 'li']);
 };
 
 export const convertLinkedinMention = (value: string) => {
