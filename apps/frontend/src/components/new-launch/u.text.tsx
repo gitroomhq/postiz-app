@@ -75,20 +75,9 @@ export const UText: FC<{
   currentValue: string;
 }> = ({ editor }) => {
   const mark = () => {
-    const selectedText = Editor.string(editor, editor.selection);
-    const setUnderline = selectedText.indexOf('̲') === -1;
-    const newText = Array.from(
-      !selectedText
-        ? prompt('What do you want to write?') || ''
-        : selectedText.replace(/̲/g, '')
-    )
-      .map((char) => {
-        // @ts-ignore
-        return ((setUnderline ? underlineMap?.[char] : reverseMap?.[char]) || char);
-      })
-      .join('');
-    Transforms.insertText(editor, newText);
-    ReactEditor.focus(editor);
+    editor.commands.unsetBold();
+    editor.commands.toggleUnderline();
+    editor.commands.focus();
   };
   return (
     <div

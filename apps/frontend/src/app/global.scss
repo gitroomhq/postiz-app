@@ -531,3 +531,11 @@ html[dir='rtl'] [dir='ltr'] {
 //  padding: 0 !important;
 //}
 //
+
+.ProseMirror {
+  font-family: Arial;
+}
+
+.ProseMirror:focus {
+    outline: none;
+}

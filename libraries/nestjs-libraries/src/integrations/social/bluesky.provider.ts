@@ -24,6 +24,7 @@ import sharp from 'sharp';
 import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
 import { timer } from '@gitroom/helpers/utils/timer';
 import axios from 'axios';
+import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 
 async function reduceImageBySize(url: string, maxSizeKB = 976) {
   try {
@@ -311,13 +312,13 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
 
     if (postDetails?.[0]?.settings?.active_thread_finisher) {
       const rt = new RichText({
-        text: postDetails?.[0]?.settings?.thread_finisher,
+        text: stripHtmlValidation(postDetails?.[0]?.settings?.thread_finisher, true),
       });
 
       await rt.detectFacets(agent);
 
       await agent.post({
-        text: postDetails?.[0]?.settings?.thread_finisher,
+        text: stripHtmlValidation(rt.text, true),
         facets: rt.facets,
         createdAt: new Date().toISOString(),
         embed: {
@@ -458,7 +459,7 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
     if (getThread.data.thread.post?.likeCount >= +fields.likesAmount) {
       await timer(2000);
       const rt = new RichText({
-        text: fields.post,
+        text: stripHtmlValidation(fields.post, true),
       });
 
       await agent.post({

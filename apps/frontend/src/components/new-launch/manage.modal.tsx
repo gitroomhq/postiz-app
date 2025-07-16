@@ -29,6 +29,7 @@ import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.titl
 import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
 import { CopilotPopup } from '@copilotkit/react-ui';
 import { DummyCodeComponent } from '@gitroom/frontend/components/new-launch/dummy.code.component';
+import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 
 function countCharacters(text: string, type: string): number {
   if (type !== 'x') {
@@ -145,8 +146,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         const notEnoughChars = checkAllValid.filter((p: any) => {
           return p.values.some((a: any) => {
             return (
-              countCharacters(a.content, p?.integration?.identifier || '') ===
-                0 && a.media?.length === 0
+              countCharacters(
+                stripHtmlValidation(a.content),
+                p?.integration?.identifier || ''
+              ) === 0 && a.media?.length === 0
             );
           });
         });

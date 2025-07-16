@@ -36,6 +36,7 @@ import { Readable } from 'stream';
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
+import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 dayjs.extend(utc);
 
 type PostWithConditionals = Post & {
@@ -466,7 +467,7 @@ export class PostsService {
         await Promise.all(
           (newPosts || []).map(async (p) => ({
             id: p.id,
-            message: p.content,
+            message: stripHtmlValidation(p.content, true),
             settings: JSON.parse(p.settings || '{}'),
             media: await this.updateMedia(
               p.id,

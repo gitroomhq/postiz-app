@@ -12,6 +12,7 @@ import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.ab
 import { capitalize, chunk } from 'lodash';
 import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
 import { Integration } from '@prisma/client';
+import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 
 export class ThreadsProvider extends SocialAbstract implements SocialProvider {
   identifier = 'threads';
@@ -499,7 +500,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
 
       const form = new FormData();
       form.append('media_type', 'TEXT');
-      form.append('text', fields.post);
+      form.append('text', stripHtmlValidation(fields.post, true));
       form.append('reply_to_id', id);
       form.append('access_token', integration.token);
 
