@@ -134,6 +134,10 @@ export const stripHtmlValidation = (
   value: string,
   replaceBold = false
 ): string => {
+  if (value.indexOf("<p>") === -1) {
+    return value;
+  }
+
   const html = (value || '')
     .replace(/&nbsp;/gi, ' ')
     .replace(/^<p[^>]*>/i, '')
