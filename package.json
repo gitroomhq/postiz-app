@@ -81,6 +81,7 @@
     "@tailwindcss/postcss": "^4.1.7",
     "@tiptap/extension-bold": "^3.0.6",
     "@tiptap/extension-document": "^3.0.6",
+    "@tiptap/extension-history": "^3.0.7",
     "@tiptap/extension-paragraph": "^3.0.6",
     "@tiptap/extension-text": "^3.0.6",
     "@tiptap/extension-underline": "^3.0.6",

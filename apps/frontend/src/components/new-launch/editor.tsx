@@ -35,7 +35,6 @@ import {
   useEditor,
   EditorContent,
   Extension,
-  Mark,
   mergeAttributes,
   Node,
 } from '@tiptap/react';
@@ -45,6 +44,7 @@ import Text from '@tiptap/extension-text';
 import Paragraph from '@tiptap/extension-paragraph';
 import Underline from '@tiptap/extension-underline';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
+import { History } from '@tiptap/extension-history';
 
 const InterceptBoldShortcut = Extension.create({
   name: 'preventBoldWithUnderline',
@@ -500,7 +500,7 @@ export const Editor: FC<{
   );
 
   const paste = useCallback(
-    async (event: ClipboardEvent<HTMLDivElement> | File[]) => {
+    async (event: ClipboardEvent | File[]) => {
       // @ts-ignore
       const clipboardItems = event.clipboardData?.items;
       if (!clipboardItems) {
@@ -532,10 +532,16 @@ export const Editor: FC<{
       InterceptBoldShortcut,
       InterceptUnderlineShortcut,
       Span,
+      History.configure({
+        depth: 100, // default is 100
+        newGroupDelay: 100, // default is 500ms
+      }),
     ],
     content: props.value || '',
     shouldRerenderOnTransaction: true,
     immediatelyRender: false,
+    // @ts-ignore
+    onPaste: paste,
     onUpdate: (innerProps) => {
       props?.onChange?.(innerProps.editor.getHTML());
     },

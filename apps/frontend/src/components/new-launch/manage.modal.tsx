@@ -203,16 +203,13 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         });
 
         for (const item of sliceNeeded) {
-          if (
-            !(await deleteDialog(
-              `${item?.integration?.name} (${item?.integration?.identifier}) post is too long, it will be cropped, do you want to continue?`,
-              'Yes, continue'
-            ))
-          ) {
-            item.preview();
-            setLoading(false);
-            return;
-          }
+          toaster.show(
+            `${item?.integration?.name} (${item?.integration?.identifier}) post is too long, please fix it`,
+            'warning'
+          );
+          item.preview();
+          setLoading(false);
+          return;
         }
       }
 
@@ -251,7 +248,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           settings: { ...(post.settings || {}) },
           value: post.values.map((value: any) => ({
             ...(value.id ? { id: value.id } : {}),
-            content: value.content.slice(0, post.maximumCharacters || 1000000),
+            content: value.content,
             image:
               (value?.media || []).map(
                 ({ id, path, alt, thumbnail, thumbnailTimestamp }: any) => ({

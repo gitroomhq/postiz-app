@@ -8,45 +8,59 @@ import { textSlicer } from '@gitroom/helpers/utils/count.length';
 import interClass from '@gitroom/react/helpers/inter.font';
 import Image from 'next/image';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
+import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 export const GeneralPreviewComponent: FC<{
   maximumCharacters?: number;
 }> = (props) => {
   const { value: topValue, integration } = useIntegration();
   const current = useLaunchStore((state) => state.current);
   const mediaDir = useMediaDirectory();
-  const newValues = useFormatting(topValue, {
-    removeMarkdown: true,
-    saveBreaklines: true,
-    specialFunc: (text: string) => {
-      const { start, end } = textSlicer(
-        integration?.identifier || '',
-        props.maximumCharacters || 10000,
-        text
-      );
-      return (
-        text.slice(start, end) +
-        '<mark class="bg-red-500" data-tooltip-id="tooltip" data-tooltip-content="This text will be cropped">' +
-        text?.slice(end) +
-        '</mark>'
-      );
-    },
+
+  const renderContent = topValue.map((p) => {
+    const newContent = stripHtmlValidation(p.content, true)
+      .replace(/(@.+?)(\s)/gi, (match, match1, match2) => {
+        return `<span class="font-bold" style="color: #ae8afc">${match1.trim()}${match2}</span>`;
+      })
+      .replace(/@\[(.+?)]\((.+?)\)/gi, (match, name, id) => {
+        return `<span class="font-bold" style="color: #ae8afc">@${name}</span>`;
+      });
+
+    const { start, end } = textSlicer(
+      integration?.identifier || '',
+      props.maximumCharacters || 10000,
+      newContent
+    );
+
+    const finalValue =
+      newContent.slice(start, end) +
+      `<mark class="bg-red-500" data-tooltip-id="tooltip" data-tooltip-content="This text will be cropped">` +
+      newContent.slice(end) +
+      `</mark>`;
+
+    return { text: finalValue, images: p.image };
   });
+
+  console.log(renderContent);
   return (
     <div className={clsx('w-full md:w-[555px] px-[16px]')}>
       <div className="w-full h-full relative flex flex-col">
-        {newValues.map((value, index) => (
+        {renderContent.map((value, index) => (
           <div
             key={`tweet_${index}`}
             style={{}}
             className={clsx(
               `flex gap-[8px] relative`,
-              index === newValues.length - 1 ? 'pb-[12px]' : 'pb-[24px]'
+              index === renderContent.length - 1 ? 'pb-[12px]' : 'pb-[24px]'
             )}
           >
             <div className="w-[40px] flex flex-col items-center">
               <div className="relative">
                 <img
-                  src={current === 'global' ? '/no-picture.jpg' : (integration?.picture || '/no-picture.jpg')}
+                  src={
+                    current === 'global'
+                      ? '/no-picture.jpg'
+                      : integration?.picture || '/no-picture.jpg'
+                  }
                   alt="x"
                   className="rounded-full relative z-[2]"
                 />
@@ -84,7 +98,9 @@ export const GeneralPreviewComponent: FC<{
                   </svg>
                 </div>
                 <div className="text-[15px] font-[400] text-customColor27 ms-[4px]">
-                  {current === 'global' ? '' : integration?.display || '@username'}
+                  {current === 'global'
+                    ? ''
+                    : integration?.display || '@username'}
                 </div>
               </div>
               <pre
