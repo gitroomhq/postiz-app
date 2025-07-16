@@ -166,15 +166,7 @@ const FirstStep: FC = (props) => {
             mutate={reloadCalendarView}
             date={dayjs.utc(load.date).local()}
             reopenModal={() => ({})}
-            onlyValues={messages.map((p: any) => {
-              return {
-                ...p,
-                content: p.content
-                  .split('\n')
-                  .map((line: string) => `<p>${line}</p>`)
-                  .join(''),
-              };
-            })}
+            onlyValues={messages}
           />
         ),
         size: '80%',

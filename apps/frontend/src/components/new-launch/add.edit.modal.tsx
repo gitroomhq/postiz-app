@@ -33,14 +33,15 @@ export interface AddEditModalProps {
 }
 
 export const AddEditModal: FC<AddEditModalProps> = (props) => {
-  const { setAllIntegrations, setDate, setIsCreateSet, setDummy } = useLaunchStore(
-    useShallow((state) => ({
-      setAllIntegrations: state.setAllIntegrations,
-      setDate: state.setDate,
-      setIsCreateSet: state.setIsCreateSet,
-      setDummy: state.setDummy,
-    }))
-  );
+  const { setAllIntegrations, setDate, setIsCreateSet, setDummy } =
+    useLaunchStore(
+      useShallow((state) => ({
+        setAllIntegrations: state.setAllIntegrations,
+        setDate: state.setDate,
+        setIsCreateSet: state.setIsCreateSet,
+        setDummy: state.setDummy,
+      }))
+    );
 
   const integrations = useLaunchStore((state) => state.integrations);
   useEffect(() => {
@@ -139,7 +140,10 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
         0,
         existingData.integration,
         existingData.posts.map((post) => ({
-          content: post.content,
+          content: post.content
+            .split('\n')
+            .map((line: string) => `<p>${line}</p>`)
+            .join(''),
           id: post.id,
           // @ts-ignore
           media: post.image as any[],
@@ -163,7 +167,10 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
         : props.set?.posts?.length
         ? props.set.posts[0].value.map((p: any) => ({
             id: makeId(10),
-            content: p.content,
+            content: p.content
+              .split('\n')
+              .map((line: string) => `<p>${line}</p>`)
+              .join(''),
             // @ts-ignore
             media: p.media,
           }))
