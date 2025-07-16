@@ -95,6 +95,7 @@ export const ContinueProvider: FC = () => {
                   changeNickName: false,
                   changeProfilePicture: false,
                   identifier: added,
+                  editor: 'normal'
                 },
               }}
             >
