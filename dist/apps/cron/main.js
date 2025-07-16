@@ -36,7 +36,7 @@ exports.CronModule = CronModule = tslib_1.__decorate([
     (0, common_1.Module)({
         imports: [database_module_1.DatabaseModule, schedule_1.ScheduleModule.forRoot(), bull_mq_module_1.BullMqModule],
         controllers: [],
-        providers: [...(!process.env.IS_GENERAL ? [check_stars_1.CheckStars, sync_trending_1.SyncTrending, linkedin_insights_1.LinkedInInsightsTask, youtube_insights_1.YoutubeInsightsTask] : [social_token_refresh_1.SocialTokenRefreshTask, gbp_insights_1.GBPInsightsTask, instagram_insights_1.InstagramInsightsTask, facebook_insights_1.FacebookInsightsTask, x_insights_task_1.XInsightsTask, website_insights_1.WebsiteInsightsTask])],
+        providers: [...(!process.env.IS_GENERAL ? [check_stars_1.CheckStars, sync_trending_1.SyncTrending] : [social_token_refresh_1.SocialTokenRefreshTask, gbp_insights_1.GBPInsightsTask, instagram_insights_1.InstagramInsightsTask, facebook_insights_1.FacebookInsightsTask, x_insights_task_1.XInsightsTask, website_insights_1.WebsiteInsightsTask, linkedin_insights_1.LinkedInInsightsTask, youtube_insights_1.YoutubeInsightsTask])],
     })
 ], CronModule);
 
@@ -700,8 +700,8 @@ let NotificationService = class NotificationService {
             await this.sendEmail(user.user.email, subject, message);
         }
     }
-    async sendEmail(to, subject, html, replyTo) {
-        await this._emailService.sendEmail(to, subject, html, replyTo);
+    async sendEmail(to, subject, html, replyTo, cc) {
+        await this._emailService.sendEmail(to, subject, html, replyTo, cc);
     }
     hasEmailProvider() {
         return this._emailService.hasProvider();
@@ -831,9 +831,21 @@ let EmailService = class EmailService {
                 return new empty_provider_1.EmptyProvider();
         }
     }
-    async sendEmail(to, subject, html, replyTo) {
-        if (to.indexOf('@') === -1) {
-            return;
+    async sendEmail(to, subject, html, replyTo, cc) {
+        // if (to.indexOf('@') === -1) {
+        //   return ;
+        // }
+        if (Array.isArray(to)) {
+            if (!to.length) {
+                console.log('No recipients provided');
+                return;
+            }
+        }
+        else if (typeof to === 'string') {
+            if (to.indexOf('@') === -1) {
+                console.log('Invalid recipient');
+                return;
+            }
         }
         if (!process.env.EMAIL_FROM_ADDRESS || !process.env.EMAIL_FROM_NAME) {
             console.log('Email sender information not found in environment variables');
@@ -883,13 +895,13 @@ let EmailService = class EmailService {
                         font-weight: 600;
                         color: #1f2937;
                         margin: 0;
-                    ">${process.env.EMAIL_FROM_NAME}</h2>
+                    ">Postiz Application</h2>
                 </div>
             </div>
         </div>
     </div>
     `;
-        const sends = await this.emailService.sendEmail(to, subject, modifiedHtml, process.env.EMAIL_FROM_NAME, process.env.EMAIL_FROM_ADDRESS, replyTo);
+        const sends = await this.emailService.sendEmail(to, subject, modifiedHtml, process.env.EMAIL_FROM_NAME, process.env.EMAIL_FROM_ADDRESS, replyTo, cc);
         console.log(sends);
     }
 };
@@ -18160,7 +18172,7 @@ module.exports = require("date-fns");
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 
-var _a;
+var _a, _b;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.YoutubeInsightsTask = void 0;
 const tslib_1 = __webpack_require__(3);
@@ -18169,8 +18181,9 @@ const schedule_1 = __webpack_require__(5);
 const axios_1 = tslib_1.__importDefault(__webpack_require__(50));
 const prisma_service_1 = __webpack_require__(9);
 let YoutubeInsightsTask = class YoutubeInsightsTask {
-    constructor(_youtubeInsightsRepository) {
+    constructor(_youtubeInsightsRepository, _socialTokenRepo) {
         this._youtubeInsightsRepository = _youtubeInsightsRepository;
+        this._socialTokenRepo = _socialTokenRepo;
     }
     async handleYoutubeInsights() {
         console.log('⏰ YouTube insights cron job triggered');
@@ -18189,9 +18202,20 @@ let YoutubeInsightsTask = class YoutubeInsightsTask {
             }
             //console.log(youtubeAccounts)
             for (const account of youtubeAccounts) {
-                const accessToken = account.accessToken; // or use a fixed token for testing
-                const businessId = account.internalId; // using internalId like Instagram
+                const businessId = account.internalId;
                 const organizationId = account.customer?.orgId;
+                const tokenEntry = await this._socialTokenRepo.model.socialToken.findFirst({
+                    where: {
+                        identifier: 'youtube',
+                        businessId: businessId,
+                        accessToken: { not: null }
+                    }
+                });
+                if (!tokenEntry?.accessToken) {
+                    console.log(`❌ No valid youtube access token found for ${businessId}`);
+                    return;
+                }
+                const accessToken = tokenEntry.accessToken;
                 try {
                     // Fetch YouTube channel statistics
                     const statsRes = await axios_1.default.get(`https://www.googleapis.com/youtube/v3/channels?part=statistics&mine=true`, {
@@ -18199,7 +18223,6 @@ let YoutubeInsightsTask = class YoutubeInsightsTask {
                             Authorization: `Bearer ${accessToken}`,
                         },
                     });
-                    console.log('statsRes', statsRes);
                     const stats = statsRes.data?.items?.[0]?.statistics;
                     if (!stats) {
                         console.log(`❌ No statistics found for internalId: ${businessId}`);
@@ -18233,7 +18256,7 @@ let YoutubeInsightsTask = class YoutubeInsightsTask {
 };
 exports.YoutubeInsightsTask = YoutubeInsightsTask;
 tslib_1.__decorate([
-    (0, schedule_1.Cron)('0 0 * * *') // for midnight
+    (0, schedule_1.Cron)('20 0 * * *') // Runs at 12:20 AM IST daily
     ,
     tslib_1.__metadata("design:type", Function),
     tslib_1.__metadata("design:paramtypes", []),
@@ -18241,7 +18264,7 @@ tslib_1.__decorate([
 ], YoutubeInsightsTask.prototype, "handleYoutubeInsights", null);
 exports.YoutubeInsightsTask = YoutubeInsightsTask = tslib_1.__decorate([
     (0, common_1.Injectable)(),
-    tslib_1.__metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaRepository !== "undefined" && prisma_service_1.PrismaRepository) === "function" ? _a : Object])
+    tslib_1.__metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaRepository !== "undefined" && prisma_service_1.PrismaRepository) === "function" ? _a : Object, typeof (_b = typeof prisma_service_1.PrismaRepository !== "undefined" && prisma_service_1.PrismaRepository) === "function" ? _b : Object])
 ], YoutubeInsightsTask);
 
 
@@ -18390,7 +18413,7 @@ exports.FacebookInsightsTask = FacebookInsightsTask = tslib_1.__decorate([
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 
-var _a;
+var _a, _b;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.LinkedInInsightsTask = void 0;
 const tslib_1 = __webpack_require__(3);
@@ -18400,8 +18423,9 @@ const axios_1 = tslib_1.__importDefault(__webpack_require__(50));
 const prisma_service_1 = __webpack_require__(9);
 const date_fns_1 = __webpack_require__(132);
 let LinkedInInsightsTask = class LinkedInInsightsTask {
-    constructor(_linkedInInsightsRepository) {
+    constructor(_linkedInInsightsRepository, _socialTokenRepo) {
         this._linkedInInsightsRepository = _linkedInInsightsRepository;
+        this._socialTokenRepo = _socialTokenRepo;
     }
     async handleLinkedInInsights() {
         console.log('⏰ LinkedIn Insights Cron job triggered');
@@ -18419,11 +18443,21 @@ let LinkedInInsightsTask = class LinkedInInsightsTask {
                 return;
             }
             for (const integration of linkedInIntegrations) {
+                const tokenEntry = await this._socialTokenRepo.model.socialToken.findFirst({
+                    where: {
+                        identifier: 'linkedin',
+                        businessId: integration.internalId,
+                        accessToken: { not: null }
+                    }
+                });
+                if (!tokenEntry?.accessToken) {
+                    console.log(`❌ No valid linkedin access token found for ${integration.internalId}`);
+                    return;
+                }
+                const accessToken = tokenEntry.accessToken;
                 let success = true;
                 const organizationId = integration.customer?.orgId;
                 const internalId = integration.internalId;
-                //const accessToken = integration.token?.access_token;
-                const accessToken = 'AQXRJ_5tEAq_Wmeg_PkqH9W4aty2X2is-yh7wCrwdbRFYpLUrYHqHQADO-PGFz0n4Ga5kDGkV0-bHyNOI-0WLvtJyDbnpWF1vfWhDFTbKdZXnY96s-samGxOWe06Yd_Rm92B1Lesv009Yw481j9xpXelRbORF-8maZsDBOHC6eSmWuMlN5wCQnNXCuH8xsjsE0wNwxNrxrOSX6LD9rpq1laRAE_mT3LDwRTw_EncDPhbg0nF4La76FJF7eSU4qrxgsJLu2szTWxw85JMbM0yrjXq6Gn0_7T23DFX3O9LdwyjWy12OmTH7SaY_4yCvcHYOnS4DzewxNCKwsInl6iW3NcmOIG_8w';
                 if (!accessToken || !internalId) {
                     console.log(`⚠️ Missing token or internalId for integration ${integration.id}`);
                     continue;
@@ -18537,7 +18571,7 @@ tslib_1.__decorate([
 ], LinkedInInsightsTask.prototype, "handleLinkedInInsights", null);
 exports.LinkedInInsightsTask = LinkedInInsightsTask = tslib_1.__decorate([
     (0, common_1.Injectable)(),
-    tslib_1.__metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaRepository !== "undefined" && prisma_service_1.PrismaRepository) === "function" ? _a : Object])
+    tslib_1.__metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaRepository !== "undefined" && prisma_service_1.PrismaRepository) === "function" ? _a : Object, typeof (_b = typeof prisma_service_1.PrismaRepository !== "undefined" && prisma_service_1.PrismaRepository) === "function" ? _b : Object])
 ], LinkedInInsightsTask);
 
 
@@ -19123,10 +19157,11 @@ exports.WebsiteInsightsTask = WebsiteInsightsTask = tslib_1.__decorate([
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 
-var _a;
+var _a, _b;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.SocialTokenRefreshTask = void 0;
 const tslib_1 = __webpack_require__(3);
+const notification_service_1 = __webpack_require__(13);
 const prisma_service_1 = __webpack_require__(9);
 const common_1 = __webpack_require__(4);
 const schedule_1 = __webpack_require__(5);
@@ -19134,8 +19169,9 @@ const axios_1 = tslib_1.__importDefault(__webpack_require__(50));
 const dayjs = __webpack_require__(12);
 const qs = tslib_1.__importStar(__webpack_require__(100));
 let SocialTokenRefreshTask = class SocialTokenRefreshTask {
-    constructor(_socialTokenRepo) {
+    constructor(_socialTokenRepo, _notificationService) {
         this._socialTokenRepo = _socialTokenRepo;
+        this._notificationService = _notificationService;
     }
     async handleGbpTokenRefresh() {
         console.log('⏰ SocialToken refresh cron triggered!');
@@ -19281,6 +19317,83 @@ let SocialTokenRefreshTask = class SocialTokenRefreshTask {
             console.error(`❌ Failed to refresh Website token: ${err.message}`);
         }
     }
+    async checkLinkedInTokenExpiry() {
+        console.log('⏰ Checking LinkedIn Token Expiry...');
+        const thresholdDays = 10;
+        const tokens = await this._socialTokenRepo.model.socialToken.findMany({
+            where: {
+                identifier: 'linkedin',
+                tokenExpiry: {
+                    lte: dayjs().add(thresholdDays, 'days').toDate(),
+                },
+            },
+        });
+        if (!tokens.length) {
+            console.log(`✅ No LinkedIn tokens expiring within ${thresholdDays} days.`);
+            return;
+        }
+        for (const token of tokens) {
+            console.log(`⚠️ LinkedIn token expiring soon for businessId ${token.businessId}`);
+            await this.sendExpiryEmail(token);
+        }
+    }
+    async handleYouTubeTokenRefresh() {
+        console.log('⏰ YouTube token refresh cron triggered!');
+        const token = await this._socialTokenRepo.model.socialToken.findFirst({
+            where: {
+                identifier: 'youtube',
+                refreshToken: { not: null }
+            },
+        });
+        if (!token) {
+            console.log('❌ No YouTube refresh token found.');
+            return;
+        }
+        try {
+            const clientId = process.env.GOOGLE_WEBSITE_CLIENT_ID;
+            const clientSecret = process.env.GOOGLE_WEBSITE_CLIENT_SECRET;
+            const response = await axios_1.default.post('https://oauth2.googleapis.com/token', qs.stringify({
+                client_id: clientId,
+                client_secret: clientSecret,
+                refresh_token: token.refreshToken,
+                grant_type: 'refresh_token',
+            }), {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                }
+            });
+            const { access_token, expires_in, refresh_token: newRefreshToken } = response.data;
+            await this._socialTokenRepo.model.socialToken.upsert({
+                where: { id: token.id },
+                update: {
+                    accessToken: access_token,
+                    refreshToken: newRefreshToken || token.refreshToken,
+                    tokenExpiry: dayjs().add(expires_in, 'seconds').toDate(),
+                },
+                create: {
+                    identifier: 'youtube',
+                    businessId: '114098237445558162556',
+                    accessToken: access_token,
+                    refreshToken: newRefreshToken || token.refreshToken,
+                    tokenExpiry: dayjs().add(expires_in, 'seconds').toDate(),
+                },
+            });
+            console.log('✅ YouTube token refreshed!');
+        }
+        catch (err) {
+            console.error(`❌ Failed to refresh YouTube token: ${err.message}`);
+        }
+    }
+    async sendExpiryEmail(token) {
+        const message = `
+      Hello,
+      Your LinkedIn token for businessId : ${token.businessId} , Name :${token.name} is expiring on ${dayjs(token.tokenExpiry).format('DD-MM-YYYY')}.
+      Please re-authorize your linkedIn account to avoid disruption.
+      Thanks!
+    `;
+        await this._notificationService.sendEmail(['pathansafvan131@gmail.com', 'zaidupstrapp@gmail.com'], 'LinkedIn Token Expiry Warning', message, undefined, ['pathansafvan131@gmail.com', 'zaidupstrapp@gmail.com']);
+        console.log(`✅ Expiry email sent successfully for LinkedIn token ID ${token.businessId}`);
+    }
 };
 exports.SocialTokenRefreshTask = SocialTokenRefreshTask;
 tslib_1.__decorate([
@@ -19304,9 +19417,23 @@ tslib_1.__decorate([
     tslib_1.__metadata("design:paramtypes", []),
     tslib_1.__metadata("design:returntype", Promise)
 ], SocialTokenRefreshTask.prototype, "handleWebsiteTokenRefresh", null);
+tslib_1.__decorate([
+    (0, schedule_1.Cron)('0 0 * * *') // Runs daily at midnight UTC
+    ,
+    tslib_1.__metadata("design:type", Function),
+    tslib_1.__metadata("design:paramtypes", []),
+    tslib_1.__metadata("design:returntype", Promise)
+], SocialTokenRefreshTask.prototype, "checkLinkedInTokenExpiry", null);
+tslib_1.__decorate([
+    (0, schedule_1.Cron)('10 0 * * *') // e.g., 12:10 AM IST daily
+    ,
+    tslib_1.__metadata("design:type", Function),
+    tslib_1.__metadata("design:paramtypes", []),
+    tslib_1.__metadata("design:returntype", Promise)
+], SocialTokenRefreshTask.prototype, "handleYouTubeTokenRefresh", null);
 exports.SocialTokenRefreshTask = SocialTokenRefreshTask = tslib_1.__decorate([
     (0, common_1.Injectable)(),
-    tslib_1.__metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaRepository !== "undefined" && prisma_service_1.PrismaRepository) === "function" ? _a : Object])
+    tslib_1.__metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaRepository !== "undefined" && prisma_service_1.PrismaRepository) === "function" ? _a : Object, typeof (_b = typeof notification_service_1.NotificationService !== "undefined" && notification_service_1.NotificationService) === "function" ? _b : Object])
 ], SocialTokenRefreshTask);
 
 

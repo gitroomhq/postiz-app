@@ -226,6 +226,65 @@ export class SocialTokenRefreshTask {
     }
   }
 
+  @Cron('10 0 * * *') // e.g., 12:10 AM IST daily
+  async handleYouTubeTokenRefresh() {
+    console.log('⏰ YouTube token refresh cron triggered!');
+
+    const token = await this._socialTokenRepo.model.socialToken.findFirst({
+      where: {
+        identifier: 'youtube',
+        refreshToken: { not: null }
+      },
+    });
+
+    if (!token) {
+      console.log('❌ No YouTube refresh token found.');
+      return;
+    }
+
+    try {
+      const clientId = process.env.GOOGLE_WEBSITE_CLIENT_ID;
+      const clientSecret = process.env.GOOGLE_WEBSITE_CLIENT_SECRET;
+
+      const response = await axios.post(
+        'https://oauth2.googleapis.com/token',
+        qs.stringify({
+          client_id: clientId,
+          client_secret: clientSecret,
+          refresh_token: token.refreshToken,
+          grant_type: 'refresh_token',
+        }),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          }
+        }
+      );
+
+      const { access_token, expires_in, refresh_token: newRefreshToken } = response.data;
+
+      await this._socialTokenRepo.model.socialToken.upsert({
+        where: { id: token.id },
+        update: {
+          accessToken: access_token,
+          refreshToken: newRefreshToken || token.refreshToken,
+          tokenExpiry: dayjs().add(expires_in, 'seconds').toDate(),
+        },
+        create: {
+          identifier: 'youtube',
+          businessId: '114098237445558162556', 
+          accessToken: access_token,
+          refreshToken: newRefreshToken || token.refreshToken,
+          tokenExpiry: dayjs().add(expires_in, 'seconds').toDate(),
+        },
+      });
+
+      console.log('✅ YouTube token refreshed!');
+    } catch (err) {
+      console.error(`❌ Failed to refresh YouTube token: ${err.message}`);
+    }
+  }
+
   async sendExpiryEmail(token: any) {
 
     const message = `

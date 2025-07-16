@@ -25213,7 +25213,7 @@ tslib_1.__decorate([
 ], ReportController.prototype, "deleteInstagramInsight", null);
 tslib_1.__decorate([
     (0, common_1.Get)('youtube/overview'),
-    openapi.ApiResponse({ status: 200, type: Object }),
+    openapi.ApiResponse({ status: 200 }),
     tslib_1.__param(0, (0, common_1.Query)('businessId')),
     tslib_1.__param(1, (0, common_1.Query)('days')),
     tslib_1.__metadata("design:type", Function),
@@ -25706,73 +25706,190 @@ let ReportService = class ReportService {
             orderBy: {
                 createdAt: 'asc',
             },
+            select: {
+                createdAt: true,
+                month: true,
+                subscribers: true,
+                totalViews: true,
+                totalVideos: true,
+                totalLikes: true,
+                totalComments: true,
+            },
         });
         if (!insights.length) {
             return {
-                Data: [],
-                Subscribers: [],
-                TotalViews: [],
-                TotalVideos: [],
-                Likes: [],
-                Comments: [],
-                dailyStats: [],
+                table: {
+                    Data: [],
+                    Subscribers: [],
+                    TotalViews: [],
+                    TotalVideos: [],
+                    Likes: [],
+                    Comments: [],
+                },
+                chart: [],
             };
         }
+        // Prepare daily data for charts
         const dailyStats = insights.map((entry) => ({
-            date: entry.createdAt.toISOString().split('T')[0],
-            subscribers: entry.subscribers,
-            totalViews: entry.totalViews,
-            totalVideos: entry.totalVideos,
+            date: (0, date_fns_1.format)(entry.createdAt, 'yyyy-MM-dd'),
+            subscribers: entry.subscribers || 0,
+            totalViews: entry.totalViews || 0,
+            totalVideos: entry.totalVideos || 0,
             likes: entry.totalLikes || 0,
             comments: entry.totalComments || 0,
         }));
+        // Group by month for table data
         const monthGroups = new Map();
         for (const record of insights) {
-            const month = record.createdAt.toISOString().slice(0, 7);
-            if (!monthGroups.has(month)) {
-                monthGroups.set(month, { subscribers: [], views: [], videos: [], likes: [], comments: [] });
+            const monthKey = record.month || (0, date_fns_1.format)(record.createdAt, 'yyyy-MM');
+            if (!monthGroups.has(monthKey)) {
+                monthGroups.set(monthKey, {
+                    subscribers: [],
+                    views: [],
+                    videos: [],
+                    likes: [],
+                    comments: [],
+                });
             }
-            const group = monthGroups.get(month);
-            group.subscribers.push(record.subscribers);
-            group.views.push(record.totalViews);
-            group.videos.push(record.totalVideos);
+            const group = monthGroups.get(monthKey);
+            group.subscribers.push(record.subscribers || 0);
+            group.views.push(record.totalViews || 0);
+            group.videos.push(record.totalVideos || 0);
             group.likes.push(record.totalLikes || 0);
             group.comments.push(record.totalComments || 0);
         }
+        // Calculate monthly stats
         const monthStats = [...monthGroups.entries()].map(([month, values]) => ({
             month,
             subscribers: Math.round(values.subscribers.reduce((a, b) => a + b, 0) / values.subscribers.length),
-            totalViews: values.views[values.views.length - 1],
-            totalVideos: values.videos[values.videos.length - 1],
-            totalLikes: values.likes.reduce((a, b) => a + b, 0),
-            totalComments: values.comments.reduce((a, b) => a + b, 0),
+            totalViews: values.views[values.views.length - 1], // Use last value for views
+            totalVideos: values.videos[values.videos.length - 1], // Use last value for videos
+            totalLikes: values.likes.reduce((a, b) => a + b, 0), // Sum of likes
+            totalComments: values.comments.reduce((a, b) => a + b, 0), // Sum of comments
         }));
+        // Calculate percentage changes
         const lastMonth = monthStats[monthStats.length - 1];
         const prevMonth = monthStats[monthStats.length - 2];
         const changeSubscribers = this.getPercentageChange(prevMonth?.subscribers, lastMonth?.subscribers);
         const changeViews = this.getPercentageChange(prevMonth?.totalViews, lastMonth?.totalViews);
+        const changeVideos = this.getPercentageChange(prevMonth?.totalVideos, lastMonth?.totalVideos);
         const changeLikes = this.getPercentageChange(prevMonth?.totalLikes, lastMonth?.totalLikes);
         const changeComments = this.getPercentageChange(prevMonth?.totalComments, lastMonth?.totalComments);
         return {
             table: {
-                Data: [...monthStats.map((m) => new Date(`${m.month}-01`).toLocaleString('default', { month: 'long' })), 'Change %'],
+                Data: [...monthStats.map((m) => (0, date_fns_1.format)(new Date(`${m.month}-01`), 'MMMM')), 'Change %'],
                 Subscribers: [...monthStats.map((m) => this.kFormatter(m.subscribers)), `${changeSubscribers.toFixed(2)}%`],
                 TotalViews: [...monthStats.map((m) => this.kFormatter(m.totalViews)), `${changeViews.toFixed(2)}%`],
-                TotalVideos: [...monthStats.map((m) => m.totalVideos.toString()), '0%'],
+                TotalVideos: [...monthStats.map((m) => m.totalVideos.toString()), `${changeVideos.toFixed(2)}%`],
                 Likes: [...monthStats.map((m) => this.kFormatter(m.totalLikes)), `${changeLikes.toFixed(2)}%`],
                 Comments: [...monthStats.map((m) => this.kFormatter(m.totalComments)), `${changeComments.toFixed(2)}%`],
             },
             chart: dailyStats,
         };
     }
+    async getYoutubeCommunityReport(businessId, days) {
+        const range = parseInt(days || '30', 10);
+        const today = new Date();
+        const startDate = (0, date_fns_1.subDays)(today, range);
+        const insights = await this._youtubeInsightsRepository.model.youTubeInsight.findMany({
+            where: {
+                businessId,
+                createdAt: {
+                    gte: startDate,
+                    lte: today,
+                },
+            },
+            orderBy: {
+                createdAt: 'asc',
+            },
+            select: {
+                createdAt: true,
+                month: true,
+                subscribers: true,
+                totalViews: true,
+                totalVideos: true,
+            },
+        });
+        if (!insights.length) {
+            return {
+                table: {
+                    Data: [],
+                    Subscribers: [],
+                    TotalViews: [],
+                    TotalVideos: [],
+                },
+                chart: [],
+            };
+        }
+        // Group by month
+        const monthGroups = new Map();
+        for (const record of insights) {
+            const monthKey = record.month || (0, date_fns_1.format)(record.createdAt, 'yyyy-MM');
+            if (!monthGroups.has(monthKey)) {
+                monthGroups.set(monthKey, record);
+            }
+        }
+        const stats = [...monthGroups.entries()].map(([month, data]) => ({
+            month,
+            subscribers: data.subscribers || 0,
+            totalViews: data.totalViews || 0,
+            totalVideos: data.totalVideos || 0,
+        }));
+        const subscribers = stats.map((s) => this.kFormatter(s.subscribers));
+        const totalViews = stats.map((s) => this.kFormatter(s.totalViews));
+        const totalVideos = stats.map((s) => s.totalVideos.toString());
+        const lastMonth = stats[stats.length - 1];
+        const prevMonth = stats[stats.length - 2];
+        const changeSubscribers = this.getPercentageChange(prevMonth?.subscribers, lastMonth?.subscribers);
+        const changeViews = this.getPercentageChange(prevMonth?.totalViews, lastMonth?.totalViews);
+        const changeVideos = this.getPercentageChange(prevMonth?.totalVideos, lastMonth?.totalVideos);
+        const chartData = insights.map((i) => ({
+            date: (0, date_fns_1.format)(i.createdAt, 'yyyy-MM-dd'),
+            subscribers: i.subscribers,
+            totalViews: i.totalViews,
+            totalVideos: i.totalVideos,
+        }));
+        return {
+            table: {
+                Data: [...stats.map((s) => (0, date_fns_1.format)(new Date(`${s.month}-01`), 'MMMM')), 'Change %'],
+                Subscribers: [...subscribers, `${changeSubscribers.toFixed(2)}%`],
+                TotalViews: [...totalViews, `${changeViews.toFixed(2)}%`],
+                TotalVideos: [...totalVideos, `${changeVideos.toFixed(2)}%`],
+            },
+            chart: chartData,
+        };
+    }
     async youtubeInsightList(businessId) {
         return this._youtubeInsightsRepository.model.youTubeInsight.findMany({
-            where: { businessId },
+            where: {
+                businessId
+            },
+            select: {
+                id: true,
+                createdAt: true,
+                month: true,
+                subscribers: true,
+                totalViews: true,
+                totalVideos: true,
+                totalLikes: true,
+                totalComments: true,
+                customer: {
+                    select: {
+                        id: true,
+                        name: true,
+                    }
+                }
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
         });
     }
     async deleteYoutubeInsight(id) {
         return this._youtubeInsightsRepository.model.youTubeInsight.delete({
-            where: { id }
+            where: {
+                id
+            },
         });
     }
     ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -26794,8 +26911,8 @@ const monthly_report_service_1 = __webpack_require__(234);
 const date_fns_1 = __webpack_require__(232);
 const fs = tslib_1.__importStar(__webpack_require__(53));
 const path = tslib_1.__importStar(__webpack_require__(54));
-const pdf = tslib_1.__importStar(__webpack_require__(235));
-const chartjs_node_canvas_1 = __webpack_require__(236);
+const chartjs_node_canvas_1 = __webpack_require__(235);
+const playwright = tslib_1.__importStar(__webpack_require__(236));
 let ReportDownloadController = class ReportDownloadController {
     constructor(reportService) {
         this.reportService = reportService;
@@ -26919,6 +27036,9 @@ let ReportDownloadController = class ReportDownloadController {
                 }))
             });
             const logoPath = path.join(__dirname, 'assets', 'upstrapp-logo.png');
+            if (!fs.existsSync(logoPath)) {
+                throw new Error('Logo file not found');
+            }
             const logoBase64 = fs.readFileSync(logoPath, 'base64');
             const logoDataUri = `data:image/png;base64,${logoBase64}`;
             const monthDisplay = (0, date_fns_1.format)(currentMonthStart, 'MMMM yyyy');
@@ -26934,7 +27054,6 @@ let ReportDownloadController = class ReportDownloadController {
         }
         catch (error) {
             console.error('Error in downloadCombinedReport:', error);
-            this.handleErrorResponse(error, res);
         }
     }
     async processPlatform(platform, customerId, month, year, reports, charts) {
@@ -26945,6 +27064,11 @@ let ReportDownloadController = class ReportDownloadController {
             for (const report of reports) {
                 try {
                     console.log(`Calling ${report.serviceMethod} for ${platform}`);
+                    // Add check if method exists
+                    if (!this.reportService[report.serviceMethod]) {
+                        console.error(`Method ${report.serviceMethod} not found in reportService`);
+                        continue;
+                    }
                     const data = await this.reportService[report.serviceMethod](customerId, month, year);
                     console.log(`${report.serviceMethod} response:`, data);
                     if (data) {
@@ -27366,7 +27490,8 @@ let ReportDownloadController = class ReportDownloadController {
                         borderColor: '#E1306C',
                         borderWidth: 2,
                         type: 'bar',
-                        yAxisID: 'y'
+                        yAxisID: 'y',
+                        order: 2 // 👈 put bars behind
                     },
                     {
                         label: 'Avg Reach/Day',
@@ -27379,7 +27504,8 @@ let ReportDownloadController = class ReportDownloadController {
                         yAxisID: 'y1',
                         pointBackgroundColor: '#36b9cc',
                         pointRadius: 4,
-                        pointHoverRadius: 6
+                        pointHoverRadius: 6,
+                        order: 1 // 👈 line in front
                     }
                 ]
             },
@@ -27413,7 +27539,7 @@ let ReportDownloadController = class ReportDownloadController {
         };
         const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
         return {
-            title: `Instagram Daily Impressions & Reach (${(0, date_fns_1.format)(new Date(year, month - 1, 1), 'MMMM yyyy')})`,
+            title: `Instagram Profile Overview (${(0, date_fns_1.format)(new Date(year, month - 1, 1), 'MMMM yyyy')})`,
             image: `data:image/png;base64,${imageBuffer.toString('base64')}`
         };
     }
@@ -27807,142 +27933,139 @@ let ReportDownloadController = class ReportDownloadController {
             image: `data:image/png;base64,${imageBuffer.toString('base64')}`
         };
     }
-    // private async generateFollowersChart(
-    //     customerId: string,
-    //     month: number,
-    //     year: number,
-    //     platform: string,
-    //     preloadedData?: any
-    // ): Promise<ChartData | null> {
-    //     try {
-    //         let report = preloadedData?.community;
-    //         if (!report) {
-    //             if (platform === 'instagram') {
-    //                 report = await this.reportService.getInstagramCommunityReport(customerId, month, year);
-    //             } else if (platform === 'facebook') {
-    //                 report = await this.reportService.getFacebookCommunityReport(customerId, month, year);
-    //             } else if (platform === 'x') {
-    //                 report = await this.reportService.getXCommunityReport(customerId, month, year);
-    //             } else if (platform === 'linkedin') {
-    //                 report = await this.reportService.getLinkedInCommunityReport(customerId, month, year);
-    //             }
-    //             if (!report?.chart?.length) {
-    //                 console.log(`No chart data for ${platform} community report`);
-    //                 return null;
-    //             }
-    //         }
-    //         // 1. Filter data for the selected month only
-    //         const monthData = report.chart.filter(item => {
-    //             const date = new Date(item.date || item.createdAt);
-    //             return date.getMonth() + 1 === month && date.getFullYear() === year;
-    //         });
-    //         // 2. Sort by date (oldest to newest)
-    //         monthData.sort((a, b) =>
-    //             new Date(a.date || a.createdAt).getTime() - new Date(b.date || b.createdAt).getTime()
-    //         );
-    //         // 3. Sample data to show ~10 points for better readability
-    //         const daysInMonth = new Date(year, month, 0).getDate();
-    //         const dayInterval = Math.max(1, Math.floor(daysInMonth / 10)); // Show ~10 points
-    //         const sampledData = [];
-    //         for (let day = 1; day <= daysInMonth; day += dayInterval) {
-    //             // Find the closest data point to this day
-    //             let closest = null;
-    //             let minDiff = Infinity;
-    //             for (const item of monthData) {
-    //                 const itemDate = new Date(item.date);
-    //                 const diff = Math.abs(itemDate.getDate() - day);
-    //                 if (diff < minDiff) {
-    //                     minDiff = diff;
-    //                     closest = item;
-    //                 }
-    //             }
-    //             if (closest) sampledData.push(closest);
-    //         }
-    //         // Always include the last day of month if not already included
-    //         const lastDayData = monthData.find(item => {
-    //             const itemDate = new Date(item.date || item.createdAt);
-    //             return itemDate.getDate() === daysInMonth;
-    //         });
-    //         if (lastDayData && !sampledData.some(item => {
-    //             const itemDate = new Date(item.date || item.createdAt);
-    //             return itemDate.getDate() === daysInMonth;
-    //         })) {
-    //             sampledData.push(lastDayData);
-    //         }
-    //         // Create labels showing abbreviated month and day (Apr 1, Apr 4, etc.)
-    //         const labels = sampledData.map(item => {
-    //             const date = new Date(item.date || item.createdAt);
-    //             return format(date, 'MMM d'); // "Apr 1" format
-    //         });
-    //         const platformColor = this.getPlatformColor(platform);
-    //         const metricName = platform === 'facebook' ? 'Likes' : 'Followers';
-    //         const configuration: ChartConfiguration<'line'> = {
-    //             type: 'line',
-    //             data: {
-    //                 labels: labels,
-    //                 datasets: [{
-    //                     label: metricName,
-    //                     data: sampledData.map(item => platform === 'facebook' ? item.likes : item.followers),
-    //                     backgroundColor: `${platformColor}20`,
-    //                     borderColor: platformColor,
-    //                     borderWidth: 2,
-    //                     tension: 0.3,
-    //                     fill: false,
-    //                     pointBackgroundColor: platformColor,
-    //                     pointRadius: 4,
-    //                     pointHoverRadius: 6
-    //                 }]
-    //             },
-    //             options: {
-    //                 responsive: true,
-    //                 plugins: {
-    //                     title: {
-    //                         display: true,
-    //                         text: `${this.getPlatformDisplayName(platform)} Daily ${metricName} Growth (${format(new Date(year, month - 1, 1), 'MMMM yyyy')})`,
-    //                         font: { size: 16 }
-    //                     },
-    //                     tooltip: {
-    //                         callbacks: {
-    //                             title: (tooltipItems) => {
-    //                                 const date = new Date(sampledData[tooltipItems[0].dataIndex].date ||
-    //                                     sampledData[tooltipItems[0].dataIndex].createdAt);
-    //                                 return format(date, 'MMMM d, yyyy'); // Full date in tooltip
-    //                             }
-    //                         }
-    //                     }
-    //                 },
-    //                 scales: {
-    //                     x: {
-    //                         title: {
-    //                             display: true,
-    //                             text: 'Day of Month',
-    //                             font: { weight: 'bold' }
-    //                         },
-    //                         ticks: {
-    //                             autoSkip: false
-    //                         }
-    //                     },
-    //                     y: {
-    //                         beginAtZero: false,
-    //                         ticks: {
-    //                             callback: (value) => {
-    //                                 return Number(value) >= 1000 ? `${Number(value) / 1000}k` : value;
-    //                             }
-    //                         }
-    //                     }
-    //                 }
-    //             }
-    //         };
-    //         const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
-    //         return {
-    //             title: `${this.getPlatformDisplayName(platform)} Daily ${metricName} Growth (${format(new Date(year, month - 1, 1), 'MMMM yyyy')})`,
-    //             image: `data:image/png;base64,${imageBuffer.toString('base64')}`
-    //         };
-    //     } catch (error) {
-    //         console.error(`Error generating ${platform} followers chart:`, error);
-    //         return { title: `${this.getPlatformDisplayName(platform)} Followers`, image: null };
-    //     }
-    // }
+    async generateFollowersChart(customerId, month, year, platform, preloadedData) {
+        try {
+            let report = preloadedData?.community;
+            if (!report) {
+                if (platform === 'instagram') {
+                    report = await this.reportService.getInstagramCommunityReport(customerId, month, year);
+                }
+                else if (platform === 'facebook') {
+                    report = await this.reportService.getFacebookCommunityReport(customerId, month, year);
+                }
+                else if (platform === 'x') {
+                    report = await this.reportService.getXCommunityReport(customerId, month, year);
+                }
+                else if (platform === 'linkedin') {
+                    report = await this.reportService.getLinkedInCommunityReport(customerId, month, year);
+                }
+                if (!report?.chart?.length) {
+                    console.log(`No chart data for ${platform} community report`);
+                    return null;
+                }
+            }
+            // 1. Filter data for the selected month only
+            const monthData = report.chart.filter(item => {
+                const date = new Date(item.date || item.createdAt);
+                return date.getMonth() + 1 === month && date.getFullYear() === year;
+            });
+            // 2. Sort by date (oldest to newest)
+            monthData.sort((a, b) => new Date(a.date || a.createdAt).getTime() - new Date(b.date || b.createdAt).getTime());
+            // 3. Sample data to show ~10 points for better readability
+            const daysInMonth = new Date(year, month, 0).getDate();
+            const dayInterval = Math.max(1, Math.floor(daysInMonth / 10)); // Show ~10 points
+            const sampledData = [];
+            for (let day = 1; day <= daysInMonth; day += dayInterval) {
+                // Find the closest data point to this day
+                let closest = null;
+                let minDiff = Infinity;
+                for (const item of monthData) {
+                    const itemDate = new Date(item.date);
+                    const diff = Math.abs(itemDate.getDate() - day);
+                    if (diff < minDiff) {
+                        minDiff = diff;
+                        closest = item;
+                    }
+                }
+                if (closest)
+                    sampledData.push(closest);
+            }
+            // Always include the last day of month if not already included
+            const lastDayData = monthData.find(item => {
+                const itemDate = new Date(item.date || item.createdAt);
+                return itemDate.getDate() === daysInMonth;
+            });
+            if (lastDayData && !sampledData.some(item => {
+                const itemDate = new Date(item.date || item.createdAt);
+                return itemDate.getDate() === daysInMonth;
+            })) {
+                sampledData.push(lastDayData);
+            }
+            // Create labels showing abbreviated month and day (Apr 1, Apr 4, etc.)
+            const labels = sampledData.map(item => {
+                const date = new Date(item.date || item.createdAt);
+                return (0, date_fns_1.format)(date, 'MMM d'); // "Apr 1" format
+            });
+            const platformColor = this.getPlatformColor(platform);
+            const metricName = platform === 'facebook' ? 'Likes' : 'Followers';
+            const configuration = {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                            label: metricName,
+                            data: sampledData.map(item => platform === 'facebook' ? item.likes : item.followers),
+                            backgroundColor: `${platformColor}20`,
+                            borderColor: platformColor,
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: false,
+                            pointBackgroundColor: platformColor,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `${this.getPlatformDisplayName(platform)} Daily ${metricName} Growth (${(0, date_fns_1.format)(new Date(year, month - 1, 1), 'MMMM yyyy')})`,
+                            font: { size: 16 }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: (tooltipItems) => {
+                                    const date = new Date(sampledData[tooltipItems[0].dataIndex].date ||
+                                        sampledData[tooltipItems[0].dataIndex].createdAt);
+                                    return (0, date_fns_1.format)(date, 'MMMM d, yyyy'); // Full date in tooltip
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Day of Month',
+                                font: { weight: 'bold' }
+                            },
+                            ticks: {
+                                autoSkip: false
+                            }
+                        },
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                callback: (value) => {
+                                    return Number(value) >= 1000 ? `${Number(value) / 1000}k` : value;
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+            const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+            return {
+                title: `${this.getPlatformDisplayName(platform)} Daily ${metricName} Growth (${(0, date_fns_1.format)(new Date(year, month - 1, 1), 'MMMM yyyy')})`,
+                image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+            };
+        }
+        catch (error) {
+            console.error(`Error generating ${platform} followers chart:`, error);
+            return { title: `${this.getPlatformDisplayName(platform)} Followers`, image: null };
+        }
+    }
     async generateSubscribersChart(customerId, month, year, platform = 'youtube', preloadedData) {
         try {
             let report = preloadedData?.overview;
@@ -27960,7 +28083,6 @@ let ReportDownloadController = class ReportDownloadController {
                 return { title: 'YouTube Analytics', image: null };
             }
             monthData.sort((a, b) => new Date(a.date || a.createdAt).getTime() - new Date(b.date || b.createdAt).getTime());
-            // Sample data with 4-day gap
             const daysInMonth = new Date(year, month, 0).getDate();
             const sampledData = [];
             const interval = 4;
@@ -27978,7 +28100,6 @@ let ReportDownloadController = class ReportDownloadController {
                 if (closest)
                     sampledData.push(closest);
             }
-            // Ensure last day is included
             const lastDayData = monthData.find(item => {
                 const itemDate = new Date(item.date || item.createdAt);
                 return itemDate.getDate() === daysInMonth;
@@ -27993,9 +28114,6 @@ let ReportDownloadController = class ReportDownloadController {
                 const date = new Date(item.date || item.createdAt);
                 return (0, date_fns_1.format)(date, 'MMM d');
             });
-            const platformColor = this.getPlatformColor('youtube');
-            const viewsColor = '#FF0000';
-            const videosColor = '#606060';
             const configuration = {
                 type: 'bar',
                 data: {
@@ -28003,40 +28121,39 @@ let ReportDownloadController = class ReportDownloadController {
                     datasets: [
                         {
                             label: 'Subscribers',
-                            data: sampledData.map(item => item.subscribers || 0),
-                            backgroundColor: `${platformColor}80`,
-                            borderColor: platformColor,
-                            borderWidth: 1,
+                            data: sampledData.map(item => Number(item.subscribers) || 0),
+                            backgroundColor: '#8e44ad80',
+                            borderColor: '#8e44ad',
+                            borderWidth: 2,
                             type: 'bar',
-                            order: 1,
+                            borderRadius: 5,
+                            order: 2,
                             yAxisID: 'y'
                         },
                         {
                             label: 'Total Views',
-                            data: sampledData.map(item => item.totalViews || 0),
-                            backgroundColor: `${viewsColor}20`,
-                            borderColor: viewsColor,
-                            borderWidth: 2,
+                            data: sampledData.map(item => Number(item.totalViews) || 0),
+                            backgroundColor: '#2ecc7120',
+                            borderColor: '#2ecc71',
+                            borderWidth: 3,
                             type: 'line',
-                            tension: 0.3,
-                            pointBackgroundColor: viewsColor,
-                            pointRadius: 4,
-                            pointHoverRadius: 6,
-                            order: 0,
+                            tension: 0.4,
+                            pointRadius: 0,
+                            pointHoverRadius: 0,
+                            order: 1,
                             yAxisID: 'y1'
                         },
                         {
                             label: 'Total Videos',
-                            data: sampledData.map(item => item.totalVideos || 0),
-                            backgroundColor: `${videosColor}20`,
-                            borderColor: videosColor,
-                            borderWidth: 2,
+                            data: sampledData.map(item => Number(item.totalVideos) || 0),
+                            backgroundColor: '#f39c1220',
+                            borderColor: '#f39c12',
+                            borderWidth: 3,
                             type: 'line',
-                            tension: 0.3,
-                            pointBackgroundColor: videosColor,
-                            pointRadius: 4,
-                            pointHoverRadius: 6,
-                            order: 0,
+                            tension: 0.4,
+                            pointRadius: 0,
+                            pointHoverRadius: 0,
+                            order: 1,
                             yAxisID: 'y2'
                         }
                     ]
@@ -28048,11 +28165,6 @@ let ReportDownloadController = class ReportDownloadController {
                         intersect: false,
                     },
                     plugins: {
-                        title: {
-                        // display: true,
-                        // text: `YouTube Analytics (${format(new Date(year, month - 1, 1), 'MMMM yyyy')})`,
-                        // font: { size: 16 }
-                        },
                         tooltip: {
                             callbacks: {
                                 title: (tooltipItems) => {
@@ -28138,9 +28250,9 @@ let ReportDownloadController = class ReportDownloadController {
     }
     async generateViewsChart(customerId, month, year) {
         try {
-            const report = await this.reportService.getYoutubeOverviewReport(customerId, month, year);
+            const report = await this.reportService.getYoutubeOverviewReport(customerId, month, year); // Ensure days is string
             if (!report?.chart?.length)
-                return { title: 'YouTube Views', image: null };
+                return { title: 'YouTube Analytics', image: null };
             const monthData = report.chart
                 .filter(item => {
                 const date = new Date(item.date || item.createdAt);
@@ -28148,7 +28260,7 @@ let ReportDownloadController = class ReportDownloadController {
             })
                 .sort((a, b) => new Date(a.date || a.createdAt).getTime() - new Date(b.date || b.createdAt).getTime());
             if (!monthData.length)
-                return { title: 'YouTube Views', image: null };
+                return { title: 'YouTube Analytics', image: null };
             const daysInMonth = new Date(year, month, 0).getDate();
             const sampledData = [];
             const interval = 4;
@@ -28166,69 +28278,77 @@ let ReportDownloadController = class ReportDownloadController {
                 if (closest)
                     sampledData.push(closest);
             }
+            // Ensure last day is included
             const lastDayData = monthData.find(item => {
                 const itemDate = new Date(item.date || item.createdAt);
                 return itemDate.getDate() === daysInMonth;
             });
-            if (lastDayData && !sampledData.some(item => {
-                const itemDate = new Date(item.date || item.createdAt);
-                return itemDate.getDate() === daysInMonth;
-            })) {
+            if (lastDayData &&
+                !sampledData.some(item => {
+                    const itemDate = new Date(item.date || item.createdAt);
+                    return itemDate.getDate() === daysInMonth;
+                })) {
                 sampledData.push(lastDayData);
             }
             const labels = sampledData.map(item => {
                 const date = new Date(item.date || item.createdAt);
                 return (0, date_fns_1.format)(date, 'MMM d');
             });
-            const viewsColor = this.getPlatformColor('youtube'); // Bar
-            const likesColor = '#FF6384'; // Line
-            const commentsColor = '#36A2EB'; // Line
             const configuration = {
                 type: 'bar',
                 data: {
                     labels,
                     datasets: [
+                        // {
+                        //     label: 'Total Views',
+                        //     data: sampledData.map(item => item.totalViews || 0),
+                        //     backgroundColor: '#FF000080', // YouTube red with opacity
+                        //     borderColor: '#FF0000',
+                        //     borderWidth: 1,
+                        //     borderRadius: 4,
+                        //     yAxisID: 'y',
+                        //     type: 'bar',z
+                        //     order: 3
+                        // },
                         {
-                            label: 'Views',
-                            data: sampledData.map(item => item.totalViews || 0),
-                            backgroundColor: `${viewsColor}AA`,
-                            borderColor: viewsColor,
+                            label: 'Total Videos',
+                            data: sampledData.map(item => item.totalVideos || 0),
+                            backgroundColor: '#28282880', // Dark gray
+                            borderColor: '#282828',
                             borderWidth: 1,
                             borderRadius: 4,
                             yAxisID: 'y',
                             type: 'bar',
-                            order: 1
+                            order: 2
                         },
                         {
                             label: 'Likes',
                             data: sampledData.map(item => item.likes || 0),
                             type: 'line',
-                            borderColor: likesColor,
-                            backgroundColor: likesColor,
-                            pointBackgroundColor: likesColor,
+                            borderColor: '#FF6384', // red-pink
+                            backgroundColor: '#FF638420',
+                            borderWidth: 3,
+                            tension: 0.3,
+                            pointBackgroundColor: '#FF6384',
                             pointRadius: 4,
                             pointHoverRadius: 6,
-                            borderWidth: 2,
-                            fill: false,
+                            yAxisID: 'y1',
+                            order: 1
+                        },
+                        {
+                            label: 'Comments',
+                            data: sampledData.map(item => item.comments || 0),
+                            type: 'line',
+                            borderColor: '#36A2EB', // Blue
+                            backgroundColor: '#36A2EB20',
+                            borderWidth: 3,
                             tension: 0.3,
+                            pointBackgroundColor: '#36A2EB',
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
                             yAxisID: 'y1',
                             order: 0
-                        },
-                        // {
-                        //     label: 'Comments',
-                        //     data: sampledData.map(item => item.comments || 0),
-                        //     type: 'line',
-                        //     borderColor: commentsColor,
-                        //     backgroundColor: commentsColor,
-                        //     pointBackgroundColor: commentsColor,
-                        //     pointRadius: 4,
-                        //     pointHoverRadius: 6,
-                        //     borderWidth: 2,
-                        //     fill: false,
-                        //     tension: 0.3,
-                        //     yAxisID: 'y1',
-                        //     order: 0
-                        // }
+                        }
                     ]
                 },
                 options: {
@@ -28240,16 +28360,28 @@ let ReportDownloadController = class ReportDownloadController {
                     plugins: {
                         title: {
                             display: true,
-                            text: `YouTube Engagement (${(0, date_fns_1.format)(new Date(year, month - 1, 1), 'MMMM yyyy')})`,
+                            text: `YouTube Analytics (${(0, date_fns_1.format)(new Date(year, month - 1, 1), 'MMMM yyyy')})`,
                             font: { size: 16 }
                         },
                         tooltip: {
                             callbacks: {
-                                title: (tooltipItems) => {
+                                title: tooltipItems => {
                                     const item = sampledData[tooltipItems[0].dataIndex];
                                     const date = new Date(item.date || item.createdAt);
                                     return (0, date_fns_1.format)(date, 'MMMM d, yyyy');
+                                },
+                                label: context => {
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y;
+                                    return `${label}: ${value.toLocaleString()}`;
                                 }
+                            }
+                        },
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20
                             }
                         }
                     },
@@ -28269,10 +28401,15 @@ let ReportDownloadController = class ReportDownloadController {
                             position: 'left',
                             title: {
                                 display: true,
-                                text: 'Views'
+                                text: 'Views & Videos',
+                                font: { weight: 'bold' }
                             },
                             ticks: {
-                                callback: (value) => Number(value) >= 1000 ? `${Number(value) / 1000}k` : value
+                                callback: value => {
+                                    return Number(value) >= 1000
+                                        ? `${(Number(value) / 1000).toFixed(0)}k`
+                                        : value;
+                                }
                             }
                         },
                         y1: {
@@ -28283,12 +28420,15 @@ let ReportDownloadController = class ReportDownloadController {
                             },
                             title: {
                                 display: true,
-                                text: 'Likes / Comments'
+                                text: 'Likes & Comments',
+                                font: { weight: 'bold' }
                             },
-                            suggestedMax: 100, // ✅ Set a better max (based on your average)
                             ticks: {
-                                stepSize: 20,
-                                callback: (value) => Number(value) >= 1000 ? `${Number(value) / 1000}k` : value
+                                callback: value => {
+                                    return Number(value) >= 1000
+                                        ? `${(Number(value) / 1000).toFixed(0)}k`
+                                        : value;
+                                }
                             }
                         }
                     }
@@ -28296,13 +28436,13 @@ let ReportDownloadController = class ReportDownloadController {
             };
             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
             return {
-                title: `YouTube Engagement (${(0, date_fns_1.format)(new Date(year, month - 1, 1), 'MMMM yyyy')})`,
+                title: `YouTube Analytics (${(0, date_fns_1.format)(new Date(year, month - 1, 1), 'MMMM yyyy')})`,
                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`
             };
         }
         catch (error) {
-            console.error('Error generating YouTube views chart:', error);
-            return { title: 'YouTube Views', image: null };
+            console.error('Error generating YouTube analytics chart:', error);
+            return { title: 'YouTube Analytics', image: null };
         }
     }
     async generateLikesChart(customerId, month, year, platform = 'facebook', preloadedData) {
@@ -28764,6 +28904,250 @@ let ReportDownloadController = class ReportDownloadController {
         };
         return colors[platform.toLowerCase()] || 'rgba(54, 162, 235, 1)';
     }
+    //     private generateCombinedReportHtml(options: {
+    //         platformReports: PlatformReport[];
+    //         logoDataUri: string;
+    //         month: string;
+    //         customerName: string;
+    //     }): string {
+    //         const currentDate = format(new Date(), 'MMM d, yyyy');
+    //         return `<!DOCTYPE html>
+    // <html>
+    // <head>
+    //     <meta charset="UTF-8">
+    //     <style>
+    //         @page {
+    //             margin: 0;
+    //         }
+    //         body {
+    //             margin: 0;
+    //             padding: 30px 40px;
+    //             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    //             color: #2c3e50;
+    //             line-height: 1.6;
+    //             background-color: #fff;
+    //         }
+    //         .logo-container {
+    //             text-align: center;
+    //             margin-bottom: 20px;
+    //         }
+    //         .logo {
+    //             height: 300px;
+    //             width: 300px;
+    //         }
+    //         .header {
+    //             text-align: center;
+    //             margin-bottom: 40px;
+    //         }
+    //         .header h1 {
+    //             font-size: 32px;
+    //             margin-bottom: 10px;
+    //             font-weight: 700;
+    //         }
+    //         .header p {
+    //             color: #7f8c8d;
+    //             font-size: 16px;
+    //             margin: 5px 0;
+    //         }
+    //         .customer-id {
+    //             display: inline-block;
+    //             margin-top: 15px;
+    //             background-color: #ecf0f1;
+    //             padding: 10px 20px;
+    //             border-radius: 6px;
+    //             font-size: 18px;
+    //             font-weight: 600;
+    //             color: #34495e;
+    //         }
+    //         .intro-page {
+    //             height: 100vh;
+    //             display: flex;
+    //             flex-direction: column;
+    //             justify-content: center;
+    //             align-items: center;
+    //             page-break-after: always;
+    //         }
+    //         .platform-section {
+    //             margin-bottom: 60px;
+    //             page-break-after: always;
+    //         }
+    //         .platform-title {
+    //             display: flex;
+    //             align-items: center;
+    //             font-size: 24px;
+    //             font-weight: 700;
+    //             border-bottom: 2px solid #3498db;
+    //             padding-bottom: 10px;
+    //             margin-bottom: 30px;
+    //         }
+    //         .platform-icon {
+    //             width: 28px;
+    //             height: 28px;
+    //             margin-right: 12px;
+    //         }
+    //         .section {
+    //             margin-bottom: 40px;
+    //         }
+    //         .section-title {
+    //             font-size: 20px;
+    //             font-weight: 600;
+    //             margin-bottom: 20px;
+    //             padding-left: 10px;
+    //             border-left: 5px solid #2980b9;
+    //             color: #2c3e50;
+    //         }
+    //         table {
+    //             width: 100%;
+    //             border-collapse: collapse;
+    //             margin-bottom: 20px;
+    //             page-break-inside: avoid;
+    //         }
+    //         th, td {
+    //             padding: 14px 18px;
+    //             text-align: center;
+    //             border-bottom: 1px solid #e5e5e5;
+    //             font-size: 14px;
+    //         }
+    //         th {
+    //             background-color: #f0f4f7;
+    //             text-transform: uppercase;
+    //             font-weight: 600;
+    //             color: #34495e;
+    //         }
+    //         td.metric-name {
+    //             text-align: left;
+    //             font-weight: 600;
+    //             color: #2c3e50;
+    //         }
+    //         tr:nth-child(even) {
+    //             background-color: #fafafa;
+    //         }
+    //         .bold-row {
+    //             font-weight: bold;
+    //         }
+    //         .total-content-row {
+    //             background-color: #eaf6ff;
+    //             border-top: 2px solid #3498db;
+    //         }
+    //         .positive {
+    //             color: #27ae60;
+    //             font-weight: 600;
+    //         }
+    //         .negative {
+    //             color: #e74c3c;
+    //             font-weight: 600;
+    //         }
+    //         .growth-text {
+    //             font-style: italic;
+    //             color: #7f8c8d;
+    //             font-size: 14px;
+    //             margin-top: -10px;
+    //             margin-bottom: 30px;
+    //         }
+    //         .chart-container {
+    //             margin: 20px 0 50px;
+    //             page-break-inside: avoid;
+    //         }
+    //         .chart-title {
+    //             font-size: 16px;
+    //             font-weight: 500;
+    //             text-align: center;
+    //             margin-bottom: 12px;
+    //             color: #2d3436;
+    //         }
+    //         .chart-img {
+    //             width: 100%;
+    //             height: auto;
+    //             display: block;
+    //             margin: 0 auto;
+    //             object-fit: contain;
+    //         }
+    //         .footer {
+    //             text-align: center;
+    //             font-size: 12px;
+    //             color: #95a5a6;
+    //             border-top: 1px solid #eee;
+    //             padding-top: 20px;
+    //             margin-top: 60px;
+    //         }
+    //     </style>
+    // </head>
+    // <body>
+    //     <div class="intro-page">
+    //         <div class="logo-container">
+    //             <img src="${options.logoDataUri}" class="logo" alt="Company Logo" />
+    //         </div>
+    //         <div class="header">
+    //             <h1>Social Media Analytics Report</h1>
+    //             <p>For ${options.month} | Generated on ${currentDate}</p>
+    //             <div class="customer-id">${options.customerName}</div>
+    //         </div>
+    //     </div>
+    //     ${options.platformReports.map(platform => {
+    //             const combinedSections: string[] = [];
+    //             const tables = platform.tables || [];
+    //             const charts = platform.charts || [];
+    //             const max = Math.max(tables.length, charts.length);
+    //             for (let i = 0; i < max; i++) {
+    //                 const table = tables[i];
+    //                 const chart = charts[i];
+    //                 if (table && table.rows?.length > 0) {
+    //                     combinedSections.push(`
+    //                 <div class="section" style="${table.title.toLowerCase().includes('overview') ? 'page-break-before: always;' : ''}">
+    //                     <div class="section-title">${table.title}</div>
+    //                     <table class="${table.style || 'detailed'}-table">
+    //                         <thead>
+    //                             <tr>
+    //                                 ${table.headers.map(h => `<th>${h}</th>`).join('')}
+    //                             </tr>
+    //                         </thead>
+    //                         <tbody>
+    //                             ${table.rows.map(row => `
+    //                                 <tr${row[0].toLowerCase().includes('total content') ? ' class="bold-row total-content-row"' : ''}>
+    //                                     ${row.map((cell, i) => {
+    //                         if (i === 0) {
+    //                             return `<td class="metric-name">${cell}</td>`;
+    //                         } else if (i === row.length - 1) {
+    //                             const isPositive = cell && !cell.includes('-') && cell !== '0%' && cell !== 'N/A';
+    //                             return `<td class="${isPositive ? 'positive' : cell === '0%' || cell === 'N/A' ? '' : 'negative'}">${cell}</td>`;
+    //                         } else {
+    //                             return `<td>${cell}</td>`;
+    //                         }
+    //                     }).join('')}
+    //                                 </tr>
+    //                             `).join('')}
+    //                         </tbody>
+    //                     </table>
+    //                     ${table.growthText ? `<div class="growth-text">${table.growthText}</div>` : ''}
+    //                 </div>
+    //                 `);
+    //                 }
+    //                 if (chart && chart.image) {
+    //                     combinedSections.push(`
+    //                 <div class="chart-container">
+    //                     <div class="chart-title">${chart.title}</div>
+    //                     <img src="${chart.image}" class="chart-img" />
+    //                 </div>
+    //                 `);
+    //                 }
+    //             }
+    //             return `
+    //         <div class="platform-section">
+    //             <div class="platform-title">
+    //                 <img src="${this.getPlatformIconDataUri(platform.name)}" class="platform-icon" alt="${platform.name}" />
+    //                 ${platform.name}
+    //             </div>
+    //             ${combinedSections.join('')}
+    //         </div>
+    //         `;
+    //         }).join('')}
+    //     <div class="footer">
+    //         <p>© ${new Date().getFullYear()} Upstrapp. All rights reserved.</p>
+    //         <p>This report was automatically generated on ${currentDate}</p>
+    //     </div>
+    // </body>
+    // </html>`;
+    //     }
     generateCombinedReportHtml(options) {
         const currentDate = (0, date_fns_1.format)(new Date(), 'MMM d, yyyy');
         return `<!DOCTYPE html>
@@ -28774,275 +29158,258 @@ let ReportDownloadController = class ReportDownloadController {
         @page {
             margin: 0;
         }
+
         body {
             margin: 0;
-            padding: 15px 5px;
+            padding: 30px 40px;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #333;
+            color: #2c3e50;
             line-height: 1.6;
+            background-color: #fff;
         }
+
         .logo-container {
-            margin: 0;
-            padding: 0;
             text-align: center;
+            margin-bottom: 20px;
         }
+
         .logo {
-            height: 60px;
+            height: 100px;
             width: auto;
-            margin-bottom: 10px;
         }
+
         .header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
         }
+
         .header h1 {
-            font-size: 28px;
-            margin: 0;
-            color: #2c3e50;
-            font-weight: 600;
+            font-size: 32px;
+            margin-bottom: 10px;
+            font-weight: 700;
         }
+
         .header p {
-            margin: 5px 0 0;
             color: #7f8c8d;
             font-size: 16px;
+            margin: 5px 0;
         }
-      .customer-id {
-    background: #f8f9fa;
-    padding: 8px 15px;
-    border-radius: 4px;
-    display: inline-block;
-    margin-top: 10px;
-    font-size: 20px; /* increased from 14px */
-    font-weight: bold; /* makes the text bold */
-}
 
-        .platform-section {
-            margin-bottom: 50px;
-            page-break-after: always;
-        }
-        .platform-title {
-            font-size: 22px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            color: #2c3e50;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 8px;
-            display: flex;
-            align-items: center;
-        }
-        .platform-icon {
-            width: 24px;
-            height: 24px;
-            margin-right: 10px;
-        }
-        .section {
-            margin-bottom: 30px;
-        }
-        .section-title {
+        .customer-id {
+            display: inline-block;
+            margin-top: 15px;
+            background-color: #ecf0f1;
+            padding: 10px 20px;
+            border-radius: 6px;
             font-size: 18px;
             font-weight: 600;
-            margin-bottom: 15px;
             color: #34495e;
-            padding-left: 5px;
-            border-left: 4px solid #3498db;
         }
-        
-        /* Simple table style */
-        table.simple-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 25px;
-            page-break-inside: avoid;
+
+        .intro-page {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            page-break-after: always;
         }
-        table.simple-table th, table.simple-table td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #e0e0e0;
+
+        .platform-section {
+            margin-bottom: 60px;
+            page-break-after: always;
         }
-        table.simple-table th {
+
+        .platform-title {
+            display: flex;
+            align-items: center;
+            font-size: 24px;
+            font-weight: 700;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+
+        .platform-icon {
+            width: 28px;
+            height: 28px;
+            margin-right: 12px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 20px;
             font-weight: 600;
-            background-color: #f8f9fa;
+            margin-bottom: 20px;
+            padding-left: 10px;
+            border-left: 5px solid #2980b9;
             color: #2c3e50;
-            text-transform: uppercase;
-            font-size: 13px;
-            letter-spacing: 0.5px;
         }
-        table.simple-table td.metric-name {
-            font-weight: bold;
-        }
-        table.simple-table tr:nth-child(even) {
-            background-color: #f8f9fa;
-        }
-        
-        /* Detailed table style */
-        table.detailed-table {
+
+        table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             page-break-inside: avoid;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-        table.detailed-table th, table.detailed-table td {
-            padding: 12px 15px;
+
+        th, td {
+            padding: 14px 18px;
             text-align: center;
-            border-bottom: 1px solid #e0e0e0;
+            border-bottom: 1px solid #e5e5e5;
+            font-size: 14px;
         }
-        table.detailed-table th {
-            font-weight: 600;
-            background-color: #f8f9fa;
-            color: #2c3e50;
+
+        th {
+            background-color: #f0f4f7;
             text-transform: uppercase;
-            font-size: 13px;
-            letter-spacing: 0.5px;
+            font-weight: 600;
+            color: #34495e;
         }
-        table.detailed-table td.metric-name {
+
+        td.metric-name {
             text-align: left;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        tr:nth-child(even) {
+            background-color: #fafafa;
+        }
+
+        .bold-row {
             font-weight: bold;
         }
-        table.detailed-table tr:nth-child(even) {
-            background-color: #f8f9fa;
+
+        .total-content-row {
+            background-color: #eaf6ff;
+            border-top: 2px solid #3498db;
         }
-        
-        /* Common styles for both tables */
+
         .positive {
             color: #27ae60;
             font-weight: 600;
         }
+
         .negative {
             color: #e74c3c;
             font-weight: 600;
         }
-        .bold-row {
-            font-weight: bold;
-        }
+
         .growth-text {
             font-style: italic;
             color: #7f8c8d;
-            margin-top: -15px;
-            margin-bottom: 20px;
             font-size: 14px;
+            margin-top: -10px;
+            margin-bottom: 30px;
         }
+
         .chart-container {
-            margin: 30px 0;
-            height: 300px;
+            margin: 20px 0 50px;
             page-break-inside: avoid;
         }
+
         .chart-title {
-            text-align: center;
             font-size: 16px;
-            margin-bottom: 15px;
-            color: #34495e;
             font-weight: 500;
+            text-align: center;
+            margin-bottom: 12px;
+            color: #2d3436;
         }
+
         .chart-img {
             width: 100%;
-            height: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
             object-fit: contain;
         }
+
         .footer {
             text-align: center;
-            margin-top: 50px;
-            color: #95a5a6;
             font-size: 12px;
+            color: #95a5a6;
             border-top: 1px solid #eee;
-            padding-top: 15px;
+            padding-top: 20px;
+            margin-top: 60px;
         }
-        table.detailed-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 25px;
-    page-break-inside: avoid;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-table.detailed-table th, table.detailed-table td {
-    padding: 12px 15px;
-    text-align: center;
-    border-bottom: 1px solid #e0e0e0;
-}
-table.detailed-table th {
-    font-weight: 600;
-    background-color: #f8f9fa;
-    color: #2c3e50;
-    text-transform: uppercase;
-    font-size: 13px;
-    letter-spacing: 0.5px;
-}
-table.detailed-table td.metric-name {
-    text-align: left;
-    font-weight: bold;
-}
-table.detailed-table tr:nth-child(even) {
-    background-color: #f8f9fa;
-}
-    .total-content-row {
-    background-color: #e8f4fc !important;
-    border-top: 2px solid #3498db;
-}
-.total-content-row td {
-    font-weight: bold !important;
-}
     </style>
 </head>
 <body>
-    <div class="logo-container">
-        <img src="${options.logoDataUri}" class="logo" alt="Company Logo" /> 
+    <div class="intro-page">
+        <div class="logo-container">
+            <img src="${options.logoDataUri}" class="logo" alt="Company Logo" />
+        </div>
+        <div class="header">
+            <h1>Social Media Analytics Report</h1>
+            <p>For ${options.month} | Generated on ${currentDate}</p>
+            <div class="customer-id">${options.customerName}</div>
+        </div>
     </div>
 
-    <div class="header">
-        <h1>Social Media Analytics Report</h1>
-        <p>For ${options.month} | Generated on ${currentDate}</p>
-        <div class="customer-id">${options.customerName}</div>
-    </div>
-
-    ${options.platformReports.map(platform => `
+    ${options.platformReports.map(platform => {
+            const combinedSections = [];
+            const tables = platform.tables || [];
+            const charts = platform.charts || [];
+            const max = Math.max(tables.length, charts.length);
+            for (let i = 0; i < max; i++) {
+                const table = tables[i];
+                const chart = charts[i];
+                if (table && table.rows?.length > 0) {
+                    combinedSections.push(`
+                <div class="section" style="${table.title.toLowerCase().includes('overview') ? 'page-break-before: always;' : ''}">
+                    <div class="section-title">${table.title}</div>
+                    <table class="${table.style || 'detailed'}-table">
+                        <thead>
+                            <tr>
+                                ${table.headers.map(h => `<th>${h}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${table.rows.map(row => `
+                                <tr${row[0].toLowerCase().includes('total content') ? ' class="bold-row total-content-row"' : ''}>
+                                    ${row.map((cell, i) => {
+                        if (i === 0) {
+                            return `<td class="metric-name">${cell}</td>`;
+                        }
+                        else if (i === row.length - 1) {
+                            const isPositive = cell && !cell.includes('-') && cell !== '0%' && cell !== 'N/A';
+                            return `<td class="${isPositive ? 'positive' : cell === '0%' || cell === 'N/A' ? '' : 'negative'}">${cell}</td>`;
+                        }
+                        else {
+                            return `<td>${cell}</td>`;
+                        }
+                    }).join('')}
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    ${table.growthText ? `<div class="growth-text">${table.growthText}</div>` : ''}
+                </div>
+                `);
+                }
+                if (chart && chart.image) {
+                    combinedSections.push(`
+                <div class="chart-container">
+                    <div class="chart-title">${chart.title}</div>
+                    <img src="${chart.image}" class="chart-img" />
+                </div>
+                `);
+                }
+            }
+            return `
         <div class="platform-section">
             <div class="platform-title">
                 <img src="${this.getPlatformIconDataUri(platform.name)}" class="platform-icon" alt="${platform.name}" />
                 ${platform.name}
             </div>
-            
-            ${platform.tables.filter(table => table?.rows?.length > 0).map(table => `
-                <div class="section">
-                    <div class="section-title">${table.title}</div>
- <table class="${table.style || 'detailed'}-table">
-    <thead>
-        <tr>
-            ${table.headers.map(header => `<th>${header}</th>`).join('')}
-        </tr>
-    </thead>
-    <tbody>
-        ${table.rows.map(row => `
-            <tr${row[0].toLowerCase().includes('total content') ? ' class="bold-row total-content-row"' : ''}>
-                ${row.map((cell, i) => {
-            if (i === 0) {
-                return `<td class="metric-name">${cell}</td>`;
-            }
-            else if (i === row.length - 1) {
-                const isPositive = cell && !cell.includes('-') && cell !== '0%' && cell !== 'N/A';
-                return `<td class="${isPositive ? 'positive' : cell === '0%' || cell === 'N/A' ? '' : 'negative'}">${cell}</td>`;
-            }
-            else {
-                return `<td>${cell}</td>`;
-            }
-        }).join('')}
-            </tr>
-        `).join('')}
-    </tbody>
-</table>
-                    ${table.growthText ? `<div class="growth-text">${table.growthText}</div>` : ''}
-                </div>
-            `).join('')}
-
-            ${platform.charts.filter(chart => chart?.image).map(chart => `
-                <div class="chart-container">
-                <br>
-                    <div class="chart-title">${chart.title}</div>
-                    <img src="${chart.image}" class="chart-img" />
-                <br>    
-                </div>
-            `).join('')}
+            ${combinedSections.join('')}
         </div>
-    `).join('')}
+        `;
+        }).join('')}
 
     <div class="footer">
         <p>© ${new Date().getFullYear()} Upstrapp. All rights reserved.</p>
@@ -29097,13 +29464,20 @@ table.detailed-table tr:nth-child(even) {
         @page {
             margin: 0;
         }
-        body {
-            margin: 0;
-            padding: 40px;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #333;
-            line-height: 1.6;
-        }
+       body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh; /* full page */
+    text-align: center;
+}
+
         .logo-container {
             margin: 0;
             padding: 0;
@@ -29190,34 +29564,49 @@ table.detailed-table tr:nth-child(even) {
 </body>
 </html>`;
     }
-    generateAndSendPdf(res, html, platform, customerId, period) {
-        const options = {
-            format: 'A4',
-            border: {
-                top: '0.5in',
-                right: '0.3in',
-                bottom: '0.5in',
-                left: '0.3in'
-            },
-            timeout: 30000
-        };
-        pdf.create(html, options).toStream((err, stream) => {
-            if (err) {
-                console.error('PDF generation error:', err);
-                return res.status(500).send('Error generating PDF');
-            }
+    async generateAndSendPdf(res, html, platform, customerId, period) {
+        let browser;
+        try {
+            console.log('Starting PDF generation...');
+            browser = await playwright.chromium.launch({
+                headless: true,
+                args: ['--no-sandbox', '--disable-setuid-sandbox']
+            });
+            console.log('Browser launched');
+            const context = await browser.newContext();
+            const page = await context.newPage();
+            console.log('New page created');
+            await page.setContent(html, { waitUntil: 'networkidle0' });
+            console.log('Content set');
+            const pdfBuffer = await page.pdf({
+                format: 'A4',
+                margin: {
+                    top: '0.5in',
+                    right: '0.5in',
+                    bottom: '0.5in',
+                    left: '0.5in'
+                },
+                printBackground: true,
+                preferCSSPageSize: true, // Important for proper sizing
+                //timeout: 60000 // Increase timeout to 60 seconds
+            });
+            console.log('PDF generated');
+            // Save to file for inspection (optional)
+            fs.writeFileSync('debug-report-playwright.pdf', pdfBuffer);
+            console.log('PDF saved to debug-report-playwright.pdf');
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', `attachment; filename=${platform}-report-${customerId}-${period}.pdf`);
-            stream.pipe(res);
-        });
-    }
-    handleErrorResponse(error, res) {
-        if (error instanceof common_1.BadRequestException) {
-            res.status(400).send(error.message);
+            res.setHeader('Content-Length', pdfBuffer.length);
+            res.send(pdfBuffer);
+            console.log('Browser closed');
         }
-        else {
-            console.error('PDF Generation Error:', error);
-            res.status(500).send('Error generating report');
+        catch (err) {
+            console.error('PDF generation error:', err);
+            res.status(500).send('Error generating PDF: ' + err.message);
+        }
+        finally {
+            if (browser)
+                await browser.close();
         }
     }
 };
@@ -29465,6 +29854,45 @@ let MonthlyReportService = class MonthlyReportService {
             return null;
         }
     }
+    async getYoutubeCommunityReport(customerId, month, year) {
+        try {
+            const monthlyData = await this.getDataForMonths(this._youtubeInsightsRepository.model.youTubeInsight, customerId, month, year, ['subscribers', 'totalViews', 'totalVideos']);
+            if (!monthlyData.length)
+                return null;
+            return {
+                table: this.buildYoutubeCommunityTable(monthlyData),
+                chart: await this.getDailyDataForMonth(this._youtubeInsightsRepository.model.youTubeInsight, customerId, month, year, ['subscribers', 'totalViews'])
+            };
+        }
+        catch (error) {
+            console.error('YouTube Community Error:', error);
+            return null;
+        }
+    }
+    buildYoutubeCommunityTable(insights) {
+        const months = insights.map(i => (0, date_fns_1.format)(new Date(i.createdAt), 'MMM').toUpperCase());
+        const calculateChange = (values) => {
+            if (values.length < 2)
+                return 'N/A';
+            const first = values[0];
+            const last = values[values.length - 1];
+            if (first === 0)
+                return last === 0 ? '0%' : 'N/A';
+            const change = ((last - first) / first) * 100;
+            return `${change.toFixed(2)}%`;
+        };
+        const headers = ['Data', ...months, 'Change %'];
+        const rows = [];
+        const subscribers = insights.map(i => parseInt(i.subscribers) || 0);
+        const totalViews = insights.map(i => parseInt(i.totalViews) || 0);
+        const totalVideos = insights.map(i => parseInt(i.totalVideos) || 0);
+        rows.push(['Subscribers', ...subscribers.map(String), calculateChange(subscribers)], ['Total Views', ...totalViews.map(String), calculateChange(totalViews)], ['Total Videos', ...totalVideos.map(String), calculateChange(totalVideos)]);
+        return {
+            Data: headers,
+            Rows: rows,
+            Growth: `Subscribers growth: ${subscribers[subscribers.length - 1] - subscribers[0]}`
+        };
+    }
     // Updated LinkedIn methods with daily charts
     async getLinkedInCommunityReport(customerId, month, year) {
         try {
@@ -29626,7 +30054,9 @@ let MonthlyReportService = class MonthlyReportService {
                 const subscribers = insights.map(i => parseInt(i.subscribers) || 0);
                 const views = insights.map(i => parseInt(i.totalViews) || 0);
                 const videos = insights.map(i => parseInt(i.totalVideos) || 0);
-                rows.push(['Subscribers', ...subscribers.map(String), calculateChange(subscribers)], ['Total Views', ...views.map(String), calculateChange(views)], ['Total Videos', ...videos.map(String), calculateChange(videos)]);
+                const likes = insights.map(i => parseInt(i.likes) || 0);
+                const comments = insights.map(i => parseInt(i.comments) || 0);
+                rows.push(['Total Videos', ...videos.map(String), calculateChange(videos)], ['Likes', ...likes.map(String), calculateChange(likes)], ['Comments', ...comments.map(String), calculateChange(comments)]);
                 break;
             case 'LinkedIn':
                 const liImpressions = insights.map(i => parseInt(i.impressions) || 0);
@@ -29941,13 +30371,13 @@ exports.MonthlyReportService = MonthlyReportService = tslib_1.__decorate([
 /* 235 */
 /***/ ((module) => {
 
-module.exports = require("html-pdf");
+module.exports = require("chartjs-node-canvas");
 
 /***/ }),
 /* 236 */
 /***/ ((module) => {
 
-module.exports = require("chartjs-node-canvas");
+module.exports = require("playwright");
 
 /***/ }),
 /* 237 */

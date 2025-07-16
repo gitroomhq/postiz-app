@@ -7,9 +7,10 @@ import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/pris
 export class YoutubeInsightsTask {
 	constructor(
 		private _youtubeInsightsRepository: PrismaRepository<'youTubeInsight'>,
+		private _socialTokenRepo : PrismaRepository<'socialToken'> 
 	) { }
 
-    @Cron('0 0 * * *') // for midnight
+  	@Cron('20 0 * * *') // Runs at 12:20 AM IST daily
 	async handleYoutubeInsights() {
 		console.log('⏰ YouTube insights cron job triggered');
 
@@ -32,9 +33,23 @@ export class YoutubeInsightsTask {
 			}
 			//console.log(youtubeAccounts)
 			for (const account of youtubeAccounts) {
-				const accessToken = account.accessToken; // or use a fixed token for testing
-				const businessId = account.internalId; // using internalId like Instagram
+				const businessId = account.internalId; 
 				const organizationId = account.customer?.orgId;
+
+				const tokenEntry = await this._socialTokenRepo.model.socialToken.findFirst({
+					where: {
+						identifier  : 'youtube',
+						businessId  : businessId,
+						accessToken: { not: null }
+					}
+				});
+
+				if (!tokenEntry?.accessToken) {
+						console.log(`❌ No valid youtube access token found for ${businessId}`);
+						return;
+				}
+
+				const accessToken = tokenEntry?.accessToken;  
 
 				try {
 					// Fetch YouTube channel statistics
@@ -46,7 +61,6 @@ export class YoutubeInsightsTask {
 							},
 						}
 					);
-					console.log('statsRes', statsRes)
 
 					const stats = statsRes.data?.items?.[0]?.statistics;
 					if (!stats) {
