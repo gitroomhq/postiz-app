@@ -143,8 +143,8 @@ const AddOrRemoveSignature: FC<{
       });
       toast.show(
         data?.id
-          ? 'Webhook updated successfully'
-          : 'Webhook added successfully',
+          ? 'Signature updated successfully'
+          : 'Signature added successfully',
         'success'
       );
       modal.closeModal(modal.modals[modal.modals.length - 1].id);

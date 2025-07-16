@@ -252,8 +252,8 @@ export const AddOrEditWebhook: FC<{
       });
       toast.show(
         data?.id
-          ? 'Webhook updated successfully'
-          : 'Webhook added successfully',
+          ? 'Autopost updated successfully'
+          : 'Autopost added successfully',
         'success'
       );
       modal.closeAll();
