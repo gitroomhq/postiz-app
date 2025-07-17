@@ -8,11 +8,12 @@ import React, {
   useRef,
   useState,
   ClipboardEvent,
+  forwardRef,
+  useImperativeHandle,
 } from 'react';
 import clsx from 'clsx';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { Transforms } from 'slate';
 import EmojiPicker from 'emoji-picker-react';
 import { Theme } from 'emoji-picker-react';
 import { BoldText } from '@gitroom/frontend/components/new-launch/bold.text';
@@ -47,6 +48,8 @@ import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validatio
 import { History } from '@tiptap/extension-history';
 import { BulletList, ListItem } from '@tiptap/extension-list';
 import { Bullets } from '@gitroom/frontend/components/new-launch/bullets.component';
+import Heading from '@tiptap/extension-heading';
+import { HeadingComponent } from '@gitroom/frontend/components/new-launch/heading.component';
 
 const InterceptBoldShortcut = Extension.create({
   name: 'preventBoldWithUnderline',
@@ -179,7 +182,7 @@ export const EditorWrapper: FC<{
       postComment: state.postComment,
       editor: state.editor,
       loadedState: state.loaded,
-      setLoadedState: state.setLoaded
+      setLoadedState: state.setLoaded,
     }))
   );
 
@@ -194,6 +197,13 @@ export const EditorWrapper: FC<{
     setLoadedState(true);
     setLoaded(true);
   }, [loaded, loadedState]);
+
+  useEffect(() => {
+    if (editor) {
+      setLoaded(false);
+      setLoadedState(false);
+    }
+  }, [editor]);
 
   const canEdit = useMemo(() => {
     return current === 'global' || !!internal;
@@ -493,6 +503,7 @@ export const Editor: FC<{
   const newRef = useRef<any>(null);
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const t = useT();
+  const editorRef = useRef<undefined | { editor: any }>();
 
   const uppy = useUppyUploader({
     onUploadSuccess: (result: any) => {
@@ -534,94 +545,59 @@ export const Editor: FC<{
 
   const { getRootProps, isDragActive } = useDropzone({ onDrop });
 
-  const editorOptions = useMemo(() => {
-    if (editorType === 'normal') {
-      return [];
-    }
-
-    const list = [];
-
-    if (
-      editorType === ('markdown' as const) ||
-      editorType === ('html' as const)
-    ) {
-      list.push(BulletList, ListItem);
-    }
-
-    return list;
-  }, [editorType]);
-
-  const editor = useEditor({
-    extensions: [
-      Document,
-      Paragraph,
-      Text,
-      Underline,
-      Bold,
-      InterceptBoldShortcut,
-      InterceptUnderlineShortcut,
-      Span,
-      History.configure({
-        depth: 100, // default is 100
-        newGroupDelay: 100, // default is 500ms
-      }),
-      ...editorOptions,
-    ],
-    content: props.value || '',
-    shouldRerenderOnTransaction: true,
-    immediatelyRender: false,
-    // @ts-ignore
-    onPaste: paste,
-    onUpdate: (innerProps) => {
-      props?.onChange?.(innerProps.editor.getHTML());
-    },
-  });
-
   const valueWithoutHtml = useMemo(() => {
-    return stripHtmlValidation('normal', props.value || '');
+    return stripHtmlValidation('normal', props.value || '', false, true);
   }, [props.value]);
 
   const addText = useCallback(
     (emoji: string) => {
-      editor?.commands.insertContent(emoji);
-      editor?.commands.focus();
+      editorRef?.current?.editor.commands.insertContent(emoji);
+      editorRef?.current?.editor.commands.focus();
     },
     [props.value, id]
   );
 
-  const addLinkedinTag = useCallback(
-    (text: string) => {
-      const id = text.split('(')[1].split(')')[0];
-      const name = text.split('[')[1].split(']')[0];
+  const addLinkedinTag = useCallback((text: string) => {
+    const id = text.split('(')[1].split(')')[0];
+    const name = text.split('[')[1].split(']')[0];
 
-      editor
-        ?.chain()
-        .focus()
-        .insertContent({
-          type: 'mention',
-          attrs: {
-            linkedinId: id,
-            label: name,
-          },
-        })
-        .run();
-    },
-    [editor]
-  );
-
-  if (!editor) {
-    return null;
-  }
+    editorRef?.current?.editor
+      .chain()
+      .focus()
+      .insertContent({
+        type: 'mention',
+        attrs: {
+          linkedinId: id,
+          label: name,
+        },
+      })
+      .run();
+  }, []);
 
   return (
     <div>
       <div className="relative bg-customColor2" id={id}>
         <div className="flex gap-[5px] bg-customColor55 border-b border-t border-customColor3 justify-center items-center p-[5px]">
-          <SignatureBox editor={editor} />
-          <UText editor={editor} currentValue={props.value!} />
-          <BoldText editor={editor} currentValue={props.value!} />
+          <SignatureBox editor={editorRef?.current?.editor} />
+          <UText
+            editor={editorRef?.current?.editor}
+            currentValue={props.value!}
+          />
+          <BoldText
+            editor={editorRef?.current?.editor}
+            currentValue={props.value!}
+          />
           {(editorType === 'markdown' || editorType === 'html') && (
-            <Bullets editor={editor} currentValue={props.value!} />
+            <>
+              <Bullets
+                editor={editorRef?.current?.editor}
+                currentValue={props.value!}
+              />
+              <HeadingComponent
+                editor={editorRef?.current?.editor}
+                currentValue={props.value!}
+              />
+            </>
           )}
           <div
             className="select-none cursor-pointer w-[40px] p-[5px] text-center"
@@ -663,16 +639,22 @@ export const Editor: FC<{
               Drop your files here to upload
             </div>
             <div className="px-[10px] pt-[10px]">
-              <EditorContent editor={editor} />
+              <OnlyEditor
+                value={props.value}
+                editorType={editorType}
+                onChange={props.onChange}
+                paste={paste}
+                ref={editorRef}
+              />
             </div>
 
             <div
               className="w-full h-[46px] overflow-hidden absolute left-0"
               onClick={() => {
-                if (editor?.isFocused) {
+                if (editorRef?.current?.editor?.isFocused) {
                   return;
                 }
-                editor?.commands?.focus('end');
+                editorRef?.current?.editor?.commands?.focus('end');
               }}
             >
               <Dashboard
@@ -691,10 +673,10 @@ export const Editor: FC<{
             <div
               className="flex bg-customColor2"
               onClick={() => {
-                if (editor?.isFocused) {
+                if (editorRef?.current?.editor?.isFocused) {
                   return;
                 }
-                editor?.commands?.focus('end');
+                editorRef?.current?.editor?.commands?.focus('end');
               }}
             >
               {setImages && (
@@ -732,3 +714,68 @@ export const Editor: FC<{
     </div>
   );
 };
+
+export const OnlyEditor = forwardRef<
+  any,
+  {
+    editorType: 'normal' | 'markdown' | 'html';
+    value: string;
+    onChange: (value: string) => void;
+    paste?: (event: ClipboardEvent | File[]) => void;
+  }
+>(({ editorType, value, onChange, paste }, ref) => {
+  const editorOptions = useMemo(() => {
+    if (editorType === 'normal') {
+      return [];
+    }
+
+    const list = [];
+
+    if (
+      editorType === ('markdown' as const) ||
+      editorType === ('html' as const)
+    ) {
+      list.push(
+        BulletList,
+        ListItem,
+        Heading.configure({
+          levels: [1, 2, 3],
+        })
+      );
+    }
+
+    return list;
+  }, [editorType]);
+
+  const editor = useEditor({
+    extensions: [
+      Document,
+      Paragraph,
+      Text,
+      Underline,
+      Bold,
+      InterceptBoldShortcut,
+      InterceptUnderlineShortcut,
+      Span,
+      History.configure({
+        depth: 100, // default is 100
+        newGroupDelay: 100, // default is 500ms
+      }),
+      ...editorOptions,
+    ],
+    content: value || '',
+    shouldRerenderOnTransaction: true,
+    immediatelyRender: false,
+    // @ts-ignore
+    onPaste: paste,
+    onUpdate: (innerProps) => {
+      onChange?.(innerProps.editor.getHTML());
+    },
+  });
+
+  useImperativeHandle(ref, () => ({
+    editor,
+  }));
+
+  return <EditorContent editor={editor} />;
+});

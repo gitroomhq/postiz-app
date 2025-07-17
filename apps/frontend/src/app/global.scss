@@ -553,3 +553,22 @@ html[dir='rtl'] [dir='ltr'] {
 .preview ul, .preview li {
   white-space: nowrap;
 }
+
+.ProseMirror h1, .preview h1 {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.ProseMirror h2, .preview h2 {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.ProseMirror h3, .preview h3 {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.preview p {
+  min-height: 24px;
+}

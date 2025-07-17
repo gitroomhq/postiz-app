@@ -132,15 +132,20 @@ const underlineMap = {
 };
 
 export const stripHtmlValidation = (
-  type: 'normal' | 'markdown' | 'html',
+  type: 'plain' | 'none' | 'normal' | 'markdown' | 'html',
   value: string,
-  replaceBold = false
+  replaceBold = false,
+  none = false
 ): string => {
+  if (type === 'plain') {
+    return value;
+  }
+
   if (type === 'markdown') {
     return NodeHtmlMarkdown.translate(value);
   }
 
-  if (value.indexOf('<p>') === -1) {
+  if (value.indexOf('<p>') === -1 && !none) {
     return value;
   }
 
@@ -150,15 +155,22 @@ export const stripHtmlValidation = (
     .replace(/<p[^>]*>/gi, '\n')
     .replace(/<\/p>/gi, '');
 
+  if (none) {
+    return striptags(html);
+  }
+
   if (replaceBold) {
     return striptags(convertLinkedinMention(convertToAscii(html)), [
       'ul',
       'li',
+      'h1',
+      'h2',
+      'h3',
     ]);
   }
 
   // Strip all other tags
-  return striptags(html, ['ul', 'li']);
+  return striptags(html, ['ul', 'li', 'h1', 'h2', 'h3']);
 };
 
 export const convertLinkedinMention = (value: string) => {

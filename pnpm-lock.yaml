@@ -120,6 +120,9 @@ importers:
       '@tiptap/extension-document':
         specifier: ^3.0.6
         version: 3.0.6(@tiptap/core@3.0.6(@tiptap/pm@3.0.6))
+      '@tiptap/extension-heading':
+        specifier: ^3.0.7
+        version: 3.0.7(@tiptap/core@3.0.6(@tiptap/pm@3.0.6))
       '@tiptap/extension-history':
         specifier: ^3.0.7
         version: 3.0.7(@tiptap/extensions@3.0.6(@tiptap/core@3.0.6(@tiptap/pm@3.0.6))(@tiptap/pm@3.0.6))
@@ -5493,10 +5496,10 @@ packages:
     peerDependencies:
       '@tiptap/core': ^3.0.6
 
-  '@tiptap/extension-heading@3.0.6':
-    resolution: {integrity: sha512-umcsnc4IEacQjlnl7d/IaiFsVA5xG993VvnUG5fK08TOuy0yrliOqXsFGp4czGnRLBEh2zfXMMK+vnm2fuk5zw==}
+  '@tiptap/extension-heading@3.0.7':
+    resolution: {integrity: sha512-uS7fFcilFuzKEvhUgndELqlGweD+nZeLOb6oqUE5hM49vECjM7qVjVQnlhV+MH2W1w8eD08cn1lu6lDxaMOe5w==}
     peerDependencies:
-      '@tiptap/core': ^3.0.6
+      '@tiptap/core': ^3.0.7
 
   '@tiptap/extension-history@3.0.7':
     resolution: {integrity: sha512-F+zjS7Wz53sNCWh3KqSAug4/COgxs060tR9up0OXjw7iB3gJz6JMNpGaWmYF5WdOsLxph7FGRMb/Mr5keCqVDA==}
@@ -21208,7 +21211,7 @@ snapshots:
     dependencies:
       '@tiptap/core': 3.0.6(@tiptap/pm@3.0.6)
 
-  '@tiptap/extension-heading@3.0.6(@tiptap/core@3.0.6(@tiptap/pm@3.0.6))':
+  '@tiptap/extension-heading@3.0.7(@tiptap/core@3.0.6(@tiptap/pm@3.0.6))':
     dependencies:
       '@tiptap/core': 3.0.6(@tiptap/pm@3.0.6)
 
@@ -21317,7 +21320,7 @@ snapshots:
       '@tiptap/extension-dropcursor': 3.0.6(@tiptap/extensions@3.0.6(@tiptap/core@3.0.6(@tiptap/pm@3.0.6))(@tiptap/pm@3.0.6))
       '@tiptap/extension-gapcursor': 3.0.6(@tiptap/extensions@3.0.6(@tiptap/core@3.0.6(@tiptap/pm@3.0.6))(@tiptap/pm@3.0.6))
       '@tiptap/extension-hard-break': 3.0.6(@tiptap/core@3.0.6(@tiptap/pm@3.0.6))
-      '@tiptap/extension-heading': 3.0.6(@tiptap/core@3.0.6(@tiptap/pm@3.0.6))
+      '@tiptap/extension-heading': 3.0.7(@tiptap/core@3.0.6(@tiptap/pm@3.0.6))
       '@tiptap/extension-horizontal-rule': 3.0.6(@tiptap/core@3.0.6(@tiptap/pm@3.0.6))(@tiptap/pm@3.0.6)
       '@tiptap/extension-italic': 3.0.6(@tiptap/core@3.0.6(@tiptap/pm@3.0.6))
       '@tiptap/extension-link': 3.0.6(@tiptap/core@3.0.6(@tiptap/pm@3.0.6))(@tiptap/pm@3.0.6)
