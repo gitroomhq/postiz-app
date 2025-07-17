@@ -17,7 +17,7 @@ export const GeneralPreviewComponent: FC<{
   const mediaDir = useMediaDirectory();
 
   const renderContent = topValue.map((p) => {
-    const newContent = stripHtmlValidation(p.content, true)
+    const newContent = stripHtmlValidation('normal', p.content, true)
       .replace(/(@.+?)(\s)/gi, (match, match1, match2) => {
         return `<span class="font-bold" style="color: #ae8afc">${match1.trim()}${match2}</span>`;
       })

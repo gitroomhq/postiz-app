@@ -152,7 +152,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       await timer(2000);
 
       await client.v2.tweet({
-        text: stripHtmlValidation(fields.post, true),
+        text: stripHtmlValidation('normal', fields.post, true),
         reply: { in_reply_to_tweet_id: id },
       });
       return true;

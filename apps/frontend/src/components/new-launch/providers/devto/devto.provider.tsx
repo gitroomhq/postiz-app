@@ -81,7 +81,12 @@ const DevtoSettings: FC = () => {
         <SelectOrganization {...form.register('organization')} />
       </div>
       <div>
-        <DevtoTags label="Tags (Maximum 4)" {...form.register('tags')} />
+        <DevtoTags
+          label="Tags (Maximum 4)"
+          {...form.register('tags', {
+            value: [],
+          })}
+        />
       </div>
     </>
   );

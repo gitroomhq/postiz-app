@@ -1,4 +1,5 @@
 import striptags from 'striptags';
+import { NodeHtmlMarkdown } from 'node-html-markdown';
 
 const bold = {
   a: '𝗮',
@@ -131,10 +132,15 @@ const underlineMap = {
 };
 
 export const stripHtmlValidation = (
+  type: 'normal' | 'markdown' | 'html',
   value: string,
   replaceBold = false
 ): string => {
-  if (value.indexOf("<p>") === -1) {
+  if (type === 'markdown') {
+    return NodeHtmlMarkdown.translate(value);
+  }
+
+  if (value.indexOf('<p>') === -1) {
     return value;
   }
 
@@ -145,7 +151,10 @@ export const stripHtmlValidation = (
     .replace(/<\/p>/gi, '');
 
   if (replaceBold) {
-    return striptags(convertLinkedinMention(convertToAscii(html)), ['ul', 'li']);
+    return striptags(convertLinkedinMention(convertToAscii(html)), [
+      'ul',
+      'li',
+    ]);
   }
 
   // Strip all other tags

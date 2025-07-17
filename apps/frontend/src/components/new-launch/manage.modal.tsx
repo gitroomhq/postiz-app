@@ -147,7 +147,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           return p.values.some((a: any) => {
             return (
               countCharacters(
-                stripHtmlValidation(a.content),
+                stripHtmlValidation('normal', a.content),
                 p?.integration?.identifier || ''
               ) === 0 && a.media?.length === 0
             );
@@ -166,6 +166,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           return;
         }
 
+        console.log(checkAllValid);
         for (const item of checkAllValid) {
           if (item.valid === false) {
             toaster.show('Some fields are not valid', 'warning');

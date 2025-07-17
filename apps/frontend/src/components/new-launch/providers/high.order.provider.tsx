@@ -180,6 +180,7 @@ export const withProvider = function <T extends object>(params: {
             identifier: selectedIntegration.integration.identifier,
             integration: selectedIntegration.integration,
             valid: await form.trigger(),
+            err: form.formState.errors,
             errors: checkValidity
               ? await checkValidity(
                   value.map((p) => p.media || []),

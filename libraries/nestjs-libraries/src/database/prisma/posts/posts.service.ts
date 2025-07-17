@@ -467,7 +467,7 @@ export class PostsService {
         await Promise.all(
           (newPosts || []).map(async (p) => ({
             id: p.id,
-            message: stripHtmlValidation(p.content, true),
+            message: stripHtmlValidation(getIntegration.editor, p.content, true),
             settings: JSON.parse(p.settings || '{}'),
             media: await this.updateMedia(
               p.id,

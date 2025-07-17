@@ -578,7 +578,7 @@ export const Editor: FC<{
   });
 
   const valueWithoutHtml = useMemo(() => {
-    return stripHtmlValidation(props.value || '');
+    return stripHtmlValidation('normal', props.value || '');
   }, [props.value]);
 
   const addText = useCallback(

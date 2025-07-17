@@ -502,7 +502,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
 
       const form = new FormData();
       form.append('media_type', 'TEXT');
-      form.append('text', stripHtmlValidation(fields.post, true));
+      form.append('text', stripHtmlValidation('normal', fields.post, true));
       form.append('reply_to_id', id);
       form.append('access_token', integration.token);
 
