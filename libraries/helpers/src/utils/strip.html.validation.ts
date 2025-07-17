@@ -132,12 +132,12 @@ const underlineMap = {
 };
 
 export const stripHtmlValidation = (
-  type: 'plain' | 'none' | 'normal' | 'markdown' | 'html',
+  type: 'none' | 'normal' | 'markdown' | 'html',
   value: string,
   replaceBold = false,
   none = false
 ): string => {
-  if (type === 'plain') {
+  if (type === 'html') {
     return value;
   }
 
