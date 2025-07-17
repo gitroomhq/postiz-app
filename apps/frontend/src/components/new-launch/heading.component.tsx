@@ -6,9 +6,9 @@ export const HeadingComponent: FC<{
   editor: any;
   currentValue: string;
 }> = ({ editor }) => {
-  const setHeading = useCallback((level: number) => () => {
+  const setHeading = (level: string) => () => {
     editor.commands.toggleHeading({ level })
-  }, []);
+  };
 
   return (
     <div className="select-none cursor-pointer w-[40px] p-[5px] text-center relative group">
