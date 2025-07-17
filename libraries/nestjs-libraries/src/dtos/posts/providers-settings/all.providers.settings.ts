@@ -13,6 +13,7 @@ import { IsIn } from 'class-validator';
 import { MediumSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/medium.settings.dto';
 import { DevToSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dev.to.settings.dto';
 import { HashnodeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/hashnode.settings.dto';
+import { WordpressDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/wordpress.dto';
 
 export type ProviderExtension<T extends string, M> = { __type: T } & M;
 export type AllProvidersSettings =
@@ -32,6 +33,7 @@ export type AllProvidersSettings =
   | ProviderExtension<'medium', MediumSettingsDto>
   | ProviderExtension<'devto', DevToSettingsDto>
   | ProviderExtension<'hashnode', HashnodeSettingsDto>
+  | ProviderExtension<'wordpress', WordpressDto>
   | ProviderExtension<'facebook', None>
   | ProviderExtension<'threads', None>
   | ProviderExtension<'mastodon', None>
@@ -60,6 +62,7 @@ export const allProviders = (setEmpty?: any) => {
     { value: InstagramDto, name: 'instagram-standalone' },
     { value: MediumSettingsDto, name: 'medium' },
     { value: DevToSettingsDto, name: 'devto' },
+    { value: WordpressDto, name: 'wordpress' },
     { value: HashnodeSettingsDto, name: 'hashnode' },
     { value: setEmpty, name: 'facebook' },
     { value: setEmpty, name: 'threads' },

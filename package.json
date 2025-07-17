@@ -195,6 +195,7 @@
     "sha256": "^0.2.0",
     "sharp": "^0.33.4",
     "simple-statistics": "^7.8.3",
+    "slugify": "^1.6.6",
     "stripe": "^15.5.0",
     "striptags": "^3.2.0",
     "subtitle": "4.2.2-alpha.0",
