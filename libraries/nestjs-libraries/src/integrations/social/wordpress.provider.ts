@@ -197,13 +197,12 @@ export class WordpressProvider
         }
       );
 
-      console.log('nevo', mediaResponse);
       mediaId = mediaResponse.data.id;
     }
 
     const submit = await (
       await this.fetch(
-        `https://cms.postiz.com/wp-json/wp/v2/${postDetails?.[0]?.settings?.type}`,
+        `${body.domain}/wp-json/wp/v2/${postDetails?.[0]?.settings?.type}`,
         {
           headers: {
             Authorization: `Basic ${auth}`,
