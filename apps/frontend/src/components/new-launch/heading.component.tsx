@@ -6,7 +6,7 @@ export const HeadingComponent: FC<{
   editor: any;
   currentValue: string;
 }> = ({ editor }) => {
-  const setHeading = (level: string) => () => {
+  const setHeading = (level: number) => () => {
     editor.commands.toggleHeading({ level })
   };
 
