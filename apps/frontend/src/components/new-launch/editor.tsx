@@ -198,13 +198,6 @@ export const EditorWrapper: FC<{
     setLoaded(true);
   }, [loaded, loadedState]);
 
-  useEffect(() => {
-    if (editor) {
-      setLoaded(false);
-      setLoadedState(false);
-    }
-  }, [editor]);
-
   const canEdit = useMemo(() => {
     return current === 'global' || !!internal;
   }, [current, internal]);
@@ -724,29 +717,6 @@ export const OnlyEditor = forwardRef<
     paste?: (event: ClipboardEvent | File[]) => void;
   }
 >(({ editorType, value, onChange, paste }, ref) => {
-  const editorOptions = useMemo(() => {
-    if (editorType === 'normal') {
-      return [];
-    }
-
-    const list = [];
-
-    if (
-      editorType === ('markdown' as const) ||
-      editorType === ('html' as const)
-    ) {
-      list.push(
-        BulletList,
-        ListItem,
-        Heading.configure({
-          levels: [1, 2, 3],
-        })
-      );
-    }
-
-    return list;
-  }, [editorType]);
-
   const editor = useEditor({
     extensions: [
       Document,
@@ -757,11 +727,15 @@ export const OnlyEditor = forwardRef<
       InterceptBoldShortcut,
       InterceptUnderlineShortcut,
       Span,
+      BulletList,
+      ListItem,
+      Heading.configure({
+        levels: [1, 2, 3],
+      }),
       History.configure({
         depth: 100, // default is 100
         newGroupDelay: 100, // default is 500ms
       }),
-      ...editorOptions,
     ],
     content: value || '',
     shouldRerenderOnTransaction: true,
