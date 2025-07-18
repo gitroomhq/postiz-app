@@ -5,7 +5,7 @@ import {
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
-import { tags } from '@gitroom/nestjs-libraries/integrations/article/hashnode.tags';
+import { tags } from '@gitroom/nestjs-libraries/integrations/social/hashnode.tags';
 import { jsonToGraphQLQuery } from 'json-to-graphql-query';
 import { HashnodeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/hashnode.settings.dto';
 import dayjs from 'dayjs';
@@ -17,6 +17,7 @@ export class HashnodeProvider extends SocialAbstract implements SocialProvider {
   name = 'Hashnode';
   isBetweenSteps = false;
   scopes = [] as string[];
+  editor = 'markdown' as const;
 
   async generateAuthUrl() {
     const state = makeId(6);

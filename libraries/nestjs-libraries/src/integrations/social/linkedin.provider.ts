@@ -31,6 +31,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     'r_organization_social',
   ];
   refreshWait = true;
+  editor = 'normal' as const;
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     const {

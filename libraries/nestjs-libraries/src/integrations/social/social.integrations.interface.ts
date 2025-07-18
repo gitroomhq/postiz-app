@@ -114,6 +114,7 @@ export interface SocialProvider
   refreshWait?: boolean;
   convertToJPEG?: boolean;
   isWeb3?: boolean;
+  editor: 'normal' | 'markdown' | 'html';
   customFields?: () => Promise<
     {
       key: string;

@@ -8,12 +8,12 @@ import React, {
   useRef,
   useState,
   ClipboardEvent,
+  forwardRef,
+  useImperativeHandle,
 } from 'react';
-import { CopilotTextarea } from '@copilotkit/react-textarea';
 import clsx from 'clsx';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { Transforms } from 'slate';
 import EmojiPicker from 'emoji-picker-react';
 import { Theme } from 'emoji-picker-react';
 import { BoldText } from '@gitroom/frontend/components/new-launch/bold.text';
@@ -32,6 +32,98 @@ import { LinkedinCompanyPop } from '@gitroom/frontend/components/launches/helper
 import { useDropzone } from 'react-dropzone';
 import { useUppyUploader } from '@gitroom/frontend/components/media/new.uploader';
 import { Dashboard } from '@uppy/react';
+import {
+  useEditor,
+  EditorContent,
+  Extension,
+  mergeAttributes,
+  Node,
+} from '@tiptap/react';
+import Document from '@tiptap/extension-document';
+import Bold from '@tiptap/extension-bold';
+import Text from '@tiptap/extension-text';
+import Paragraph from '@tiptap/extension-paragraph';
+import Underline from '@tiptap/extension-underline';
+import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
+import { History } from '@tiptap/extension-history';
+import { BulletList, ListItem } from '@tiptap/extension-list';
+import { Bullets } from '@gitroom/frontend/components/new-launch/bullets.component';
+import Heading from '@tiptap/extension-heading';
+import { HeadingComponent } from '@gitroom/frontend/components/new-launch/heading.component';
+
+const InterceptBoldShortcut = Extension.create({
+  name: 'preventBoldWithUnderline',
+
+  addKeyboardShortcuts() {
+    return {
+      'Mod-b': () => {
+        // For example, toggle bold while removing underline
+        this.editor.commands.unsetUnderline();
+        return this.editor.commands.toggleBold();
+      },
+    };
+  },
+});
+
+const InterceptUnderlineShortcut = Extension.create({
+  name: 'preventUnderlineWithUnderline',
+
+  addKeyboardShortcuts() {
+    return {
+      'Mod-u': () => {
+        // For example, toggle bold while removing underline
+        this.editor.commands.unsetBold();
+        return this.editor.commands.toggleUnderline();
+      },
+    };
+  },
+});
+
+const Span = Node.create({
+  name: 'mention',
+
+  inline: true,
+  group: 'inline',
+  selectable: false,
+  atom: true,
+
+  addAttributes() {
+    return {
+      linkedinId: {
+        default: null,
+      },
+      label: {
+        default: '',
+      },
+    };
+  },
+
+  parseHTML() {
+    return [
+      {
+        tag: 'span[data-linkedin-id]',
+      },
+    ];
+  },
+
+  renderHTML({ HTMLAttributes }) {
+    return [
+      'span',
+      mergeAttributes(
+        // Exclude linkedinId from HTMLAttributes to avoid duplication
+        Object.fromEntries(
+          Object.entries(HTMLAttributes).filter(([key]) => key !== 'linkedinId')
+        ),
+        {
+          'data-linkedin-id': HTMLAttributes.linkedinId,
+          class: 'mention',
+        }
+      ),
+      `@${HTMLAttributes.label}`,
+    ];
+  },
+});
+
 export const EditorWrapper: FC<{
   totalPosts: number;
   value: string;
@@ -60,6 +152,9 @@ export const EditorWrapper: FC<{
     totalChars,
     postComment,
     dummy,
+    editor,
+    loadedState,
+    setLoadedState,
   } = useLaunchStore(
     useShallow((state) => ({
       internal: state.internal.find((p) => p.integration.id === state.current),
@@ -85,6 +180,9 @@ export const EditorWrapper: FC<{
       appendInternalValueMedia: state.appendInternalValueMedia,
       appendGlobalValueMedia: state.appendGlobalValueMedia,
       postComment: state.postComment,
+      editor: state.editor,
+      loadedState: state.loaded,
+      setLoadedState: state.setLoaded,
     }))
   );
 
@@ -92,12 +190,13 @@ export const EditorWrapper: FC<{
   const [loaded, setLoaded] = useState(true);
 
   useEffect(() => {
-    if (loaded) {
+    if (loaded && loadedState) {
       return;
     }
 
+    setLoadedState(true);
     setLoaded(true);
-  }, [loaded]);
+  }, [loaded, loadedState]);
 
   const canEdit = useMemo(() => {
     return current === 'global' || !!internal;
@@ -254,7 +353,7 @@ export const EditorWrapper: FC<{
     [current, global, internal]
   );
 
-  if (!loaded) {
+  if (!loaded || !loadedState) {
     return null;
   }
 
@@ -284,6 +383,7 @@ export const EditorWrapper: FC<{
           <div className="flex gap-[5px]">
             <div className="flex-1">
               <Editor
+                editorType={editor}
                 allValues={items}
                 onChange={changeValue(index)}
                 key={index}
@@ -364,6 +464,7 @@ export const EditorWrapper: FC<{
 };
 
 export const Editor: FC<{
+  editorType?: 'normal' | 'markdown' | 'html';
   totalPosts: number;
   value: string;
   num?: number;
@@ -379,6 +480,7 @@ export const Editor: FC<{
   dummy: boolean;
 }> = (props) => {
   const {
+    editorType = 'normal',
     allValues,
     pictures,
     setImages,
@@ -394,6 +496,7 @@ export const Editor: FC<{
   const newRef = useRef<any>(null);
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const t = useT();
+  const editorRef = useRef<undefined | { editor: any }>();
 
   const uppy = useUppyUploader({
     onUploadSuccess: (result: any) => {
@@ -413,7 +516,7 @@ export const Editor: FC<{
   );
 
   const paste = useCallback(
-    async (event: ClipboardEvent<HTMLDivElement> | File[]) => {
+    async (event: ClipboardEvent | File[]) => {
       // @ts-ignore
       const clipboardItems = event.clipboardData?.items;
       if (!clipboardItems) {
@@ -433,30 +536,62 @@ export const Editor: FC<{
     [uppy]
   );
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
+  const { getRootProps, isDragActive } = useDropzone({ onDrop });
+
+  const valueWithoutHtml = useMemo(() => {
+    return stripHtmlValidation('normal', props.value || '', false, true);
+  }, [props.value]);
 
   const addText = useCallback(
     (emoji: string) => {
-      setTimeout(() => {
-        // @ts-ignore
-        Transforms.insertText(newRef?.current?.editor!, emoji);
-      }, 10);
+      editorRef?.current?.editor.commands.insertContent(emoji);
+      editorRef?.current?.editor.commands.focus();
     },
     [props.value, id]
   );
+
+  const addLinkedinTag = useCallback((text: string) => {
+    const id = text.split('(')[1].split(')')[0];
+    const name = text.split('[')[1].split(']')[0];
+
+    editorRef?.current?.editor
+      .chain()
+      .focus()
+      .insertContent({
+        type: 'mention',
+        attrs: {
+          linkedinId: id,
+          label: name,
+        },
+      })
+      .run();
+  }, []);
+
   return (
     <div>
       <div className="relative bg-customColor2" id={id}>
         <div className="flex gap-[5px] bg-customColor55 border-b border-t border-customColor3 justify-center items-center p-[5px]">
-          <SignatureBox editor={newRef?.current?.editor!} />
+          <SignatureBox editor={editorRef?.current?.editor} />
           <UText
-            editor={newRef?.current?.editor!}
+            editor={editorRef?.current?.editor}
             currentValue={props.value!}
           />
           <BoldText
-            editor={newRef?.current?.editor!}
+            editor={editorRef?.current?.editor}
             currentValue={props.value!}
           />
+          {(editorType === 'markdown' || editorType === 'html') && (
+            <>
+              <Bullets
+                editor={editorRef?.current?.editor}
+                currentValue={props.value!}
+              />
+              <HeadingComponent
+                editor={editorRef?.current?.editor}
+                currentValue={props.value!}
+              />
+            </>
+          )}
           <div
             className="select-none cursor-pointer w-[40px] p-[5px] text-center"
             onClick={() => setEmojiPickerOpen(!emojiPickerOpen)}
@@ -464,7 +599,7 @@ export const Editor: FC<{
             {'\uD83D\uDE00'}
           </div>
           {identifier === 'linkedin' || identifier === 'linkedin-page' ? (
-            <LinkedinCompanyPop addText={addText} />
+            <LinkedinCompanyPop addText={addLinkedinTag} />
           ) : null}
           <div className="relative">
             <div className="absolute z-[200] top-[35px] -start-[50px]">
@@ -479,12 +614,14 @@ export const Editor: FC<{
             </div>
           </div>
         </div>
-        <div className="relative">
-          {validateChars && props.value.length === 0 && pictures?.length === 0 && (
-            <div className="px-3 text-sm bg-red-600 !text-white mb-[4px]">
-              Your post should have at least one character or one image.
-            </div>
-          )}
+        <div className="relative cursor-text">
+          {validateChars &&
+            props.value.length === 0 &&
+            pictures?.length === 0 && (
+              <div className="px-3 text-sm bg-red-600 !text-white mb-[4px]">
+                Your post should have at least one character or one image.
+              </div>
+            )}
           <div {...getRootProps()}>
             <div
               className={clsx(
@@ -494,32 +631,25 @@ export const Editor: FC<{
             >
               Drop your files here to upload
             </div>
-            <CopilotTextarea
-              disableBranding={true}
-              ref={newRef}
-              className={clsx(
-                '!min-h-40 p-2 overflow-x-hidden scrollbar scrollbar-thumb-[#612AD5] bg-customColor2 outline-none',
-                props.totalPosts > 1 && '!max-h-80'
-              )}
-              value={props.value}
-              onChange={(e) => {
-                props?.onChange?.(e.target.value);
-              }}
-              onPaste={paste}
-              placeholder={t('write_your_reply', 'Write your post...')}
-              autosuggestionsConfig={{
-                textareaPurpose: `Assist me in writing social media posts.`,
-                chatApiConfigs: {
-                  suggestionsApiConfig: {
-                    maxTokens: 20,
-                    stop: ['.', '?', '!'],
-                  },
-                },
-                disabled: user?.tier?.ai ? !autoComplete : true,
-              }}
-            />
+            <div className="px-[10px] pt-[10px]">
+              <OnlyEditor
+                value={props.value}
+                editorType={editorType}
+                onChange={props.onChange}
+                paste={paste}
+                ref={editorRef}
+              />
+            </div>
 
-            <div className="w-full h-[46px] overflow-hidden pointer-events-none absolute left-0">
+            <div
+              className="w-full h-[46px] overflow-hidden absolute left-0"
+              onClick={() => {
+                if (editorRef?.current?.editor?.isFocused) {
+                  return;
+                }
+                editorRef?.current?.editor?.commands?.focus('end');
+              }}
+            >
               <Dashboard
                 height={46}
                 uppy={uppy}
@@ -533,11 +663,19 @@ export const Editor: FC<{
               />
             </div>
             <div className="w-full h-[46px] pointer-events-none" />
-            <div className="flex bg-customColor2">
+            <div
+              className="flex bg-customColor2"
+              onClick={() => {
+                if (editorRef?.current?.editor?.isFocused) {
+                  return;
+                }
+                editorRef?.current?.editor?.commands?.focus('end');
+              }}
+            >
               {setImages && (
                 <MultiMediaComponent
                   allData={allValues}
-                  text={props.value}
+                  text={valueWithoutHtml}
                   label={t('attachments', 'Attachments')}
                   description=""
                   value={props.pictures}
@@ -559,13 +697,59 @@ export const Editor: FC<{
           <div
             className={clsx(
               'text-end text-sm mt-1',
-              props?.value?.length > props.totalChars && '!text-red-500'
+              valueWithoutHtml.length > props.totalChars && '!text-red-500'
             )}
           >
-            {props?.value?.length}/{props.totalChars}
+            {valueWithoutHtml.length}/{props.totalChars}
           </div>
         )}
       </div>
     </div>
   );
 };
+
+export const OnlyEditor = forwardRef<
+  any,
+  {
+    editorType: 'normal' | 'markdown' | 'html';
+    value: string;
+    onChange: (value: string) => void;
+    paste?: (event: ClipboardEvent | File[]) => void;
+  }
+>(({ editorType, value, onChange, paste }, ref) => {
+  const editor = useEditor({
+    extensions: [
+      Document,
+      Paragraph,
+      Text,
+      Underline,
+      Bold,
+      InterceptBoldShortcut,
+      InterceptUnderlineShortcut,
+      Span,
+      BulletList,
+      ListItem,
+      Heading.configure({
+        levels: [1, 2, 3],
+      }),
+      History.configure({
+        depth: 100, // default is 100
+        newGroupDelay: 100, // default is 500ms
+      }),
+    ],
+    content: value || '',
+    shouldRerenderOnTransaction: true,
+    immediatelyRender: false,
+    // @ts-ignore
+    onPaste: paste,
+    onUpdate: (innerProps) => {
+      onChange?.(innerProps.editor.getHTML());
+    },
+  });
+
+  useImperativeHandle(ref, () => ({
+    editor,
+  }));
+
+  return <EditorContent editor={editor} />;
+});

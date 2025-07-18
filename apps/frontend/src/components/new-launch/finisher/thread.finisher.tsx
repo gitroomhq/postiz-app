@@ -40,7 +40,7 @@ export const ThreadFinisher = () => {
           />
         </div>
       </div>
-      <div className="w-full mt-[40px]">
+      <div className="w-full mt-[20px]">
         <div
           className={clsx(
             !slider && 'relative opacity-25 pointer-events-none editor'

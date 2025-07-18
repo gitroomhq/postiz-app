@@ -10,7 +10,8 @@ export const SignatureBox: FC<{
     setShowModal(true);
   }, [showModal]);
   const appendValue = (val: string) => {
-    Transforms.insertText(editor, '\n' + val);
+    editor?.commands.insertContent("\n\n" + val);
+    editor?.commands.focus();
     setShowModal(false);
   };
   return (

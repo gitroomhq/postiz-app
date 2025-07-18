@@ -22,6 +22,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     'pages_read_engagement',
     'read_insights',
   ];
+  editor = 'normal' as const;
 
   override handleErrors(body: string):
     | {

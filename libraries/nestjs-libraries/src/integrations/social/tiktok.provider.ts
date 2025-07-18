@@ -25,6 +25,8 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     'user.info.profile',
   ];
 
+  editor = 'normal' as const;
+
   override handleErrors(body: string):
     | {
         type: 'refresh-token' | 'bad-body';

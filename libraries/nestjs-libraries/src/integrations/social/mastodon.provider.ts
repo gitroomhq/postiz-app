@@ -13,6 +13,7 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
   name = 'Mastodon';
   isBetweenSteps = false;
   scopes = ['write:statuses', 'profile', 'write:media'];
+  editor = 'normal' as const;
 
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     return {

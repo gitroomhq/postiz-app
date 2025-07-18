@@ -1,5 +1,3 @@
-import { ArticleProvider } from '@gitroom/nestjs-libraries/integrations/article/article.integrations.interface';
-import { MediumSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/medium.settings.dto';
 import {
   AuthTokenDetails,
   PostDetails,
@@ -16,6 +14,7 @@ export class MediumProvider extends SocialAbstract implements SocialProvider {
   name = 'Medium';
   isBetweenSteps = false;
   scopes = [] as string[];
+  editor = 'markdown' as const;
 
   async generateAuthUrl() {
     const state = makeId(6);

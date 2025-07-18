@@ -68,6 +68,7 @@ export interface Integrations {
   id: string;
   disabled?: boolean;
   inBetweenSteps: boolean;
+  editor: 'normal' | 'markdown' | 'html';
   display: string;
   identifier: string;
   type: string;

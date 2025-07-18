@@ -28,6 +28,8 @@ export class PinterestProvider
     'user_accounts:read',
   ];
 
+  editor = 'normal' as const;
+
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const { access_token, expires_in } = await (
       await this.fetch('https://api.pinterest.com/v5/oauth/token', {

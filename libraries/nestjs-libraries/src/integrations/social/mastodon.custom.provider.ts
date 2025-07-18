@@ -9,6 +9,8 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 export class MastodonCustomProvider extends MastodonProvider {
   override identifier = 'mastodon-custom';
   override name = 'M. Instance';
+  editor = 'normal' as const;
+
   async externalUrl(url: string) {
     const form = new FormData();
     form.append('client_name', 'Postiz');

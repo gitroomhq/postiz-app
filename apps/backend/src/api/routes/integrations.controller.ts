@@ -33,7 +33,10 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { TelegramProvider } from '@gitroom/nestjs-libraries/integrations/social/telegram.provider';
-import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
+import {
+  AuthorizationActions,
+  Sections,
+} from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 
 @ApiTags('Integrations')
 @Controller('/integrations')
@@ -95,6 +98,7 @@ export class IntegrationsController {
             id: p.id,
             internalId: p.internalId,
             disabled: p.disabled,
+            editor: findIntegration.editor,
             picture: p.picture || '/no-picture.jpg',
             identifier: p.providerIdentifier,
             inBetweenSteps: p.inBetweenSteps,
@@ -255,85 +259,62 @@ export class IntegrationsController {
       throw new Error('Invalid integration');
     }
 
-    if (getIntegration.type === 'social') {
-      const integrationProvider = this._integrationManager.getSocialIntegration(
-        getIntegration.providerIdentifier
-      );
-      if (!integrationProvider) {
-        throw new Error('Invalid provider');
-      }
-
-      if (integrationProvider[body.name]) {
-        try {
-          const load = await integrationProvider[body.name](
-            getIntegration.token,
-            body.data,
-            getIntegration.internalId,
-            getIntegration
-          );
-
-          return load;
-        } catch (err) {
-          if (err instanceof RefreshToken) {
-            const { accessToken, refreshToken, expiresIn, additionalSettings } =
-              await integrationProvider.refreshToken(
-                getIntegration.refreshToken
-              );
-
-            if (accessToken) {
-              await this._integrationService.createOrUpdateIntegration(
-                additionalSettings,
-                !!integrationProvider.oneTimeToken,
-                getIntegration.organizationId,
-                getIntegration.name,
-                getIntegration.picture!,
-                'social',
-                getIntegration.internalId,
-                getIntegration.providerIdentifier,
-                accessToken,
-                refreshToken,
-                expiresIn
-              );
-
-              getIntegration.token = accessToken;
-
-              if (integrationProvider.refreshWait) {
-                await timer(10000);
-              }
-              return this.functionIntegration(org, body);
-            } else {
-              await this._integrationService.disconnectChannel(
-                org.id,
-                getIntegration
-              );
-              return false;
-            }
-          }
-
-          return false;
-        }
-      }
-      throw new Error('Function not found');
+    const integrationProvider = this._integrationManager.getSocialIntegration(
+      getIntegration.providerIdentifier
+    );
+    if (!integrationProvider) {
+      throw new Error('Invalid provider');
     }
 
-    if (getIntegration.type === 'article') {
-      const integrationProvider =
-        this._integrationManager.getArticlesIntegration(
-          getIntegration.providerIdentifier
-        );
-      if (!integrationProvider) {
-        throw new Error('Invalid provider');
-      }
-
-      if (integrationProvider[body.name]) {
-        return integrationProvider[body.name](
+    if (integrationProvider[body.name]) {
+      try {
+        const load = await integrationProvider[body.name](
           getIntegration.token,
           body.data,
-          getIntegration.internalId
+          getIntegration.internalId,
+          getIntegration
         );
+
+        return load;
+      } catch (err) {
+        if (err instanceof RefreshToken) {
+          const { accessToken, refreshToken, expiresIn, additionalSettings } =
+            await integrationProvider.refreshToken(getIntegration.refreshToken);
+
+          if (accessToken) {
+            await this._integrationService.createOrUpdateIntegration(
+              additionalSettings,
+              !!integrationProvider.oneTimeToken,
+              getIntegration.organizationId,
+              getIntegration.name,
+              getIntegration.picture!,
+              'social',
+              getIntegration.internalId,
+              getIntegration.providerIdentifier,
+              accessToken,
+              refreshToken,
+              expiresIn
+            );
+
+            getIntegration.token = accessToken;
+
+            if (integrationProvider.refreshWait) {
+              await timer(10000);
+            }
+            return this.functionIntegration(org, body);
+          } else {
+            await this._integrationService.disconnectChannel(
+              org.id,
+              getIntegration
+            );
+            return false;
+          }
+        }
+
+        return false;
       }
-      throw new Error('Function not found');
     }
+    throw new Error('Function not found');
   }
 
   @Post('/social/:integration/connect')

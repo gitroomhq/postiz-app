@@ -11,7 +11,6 @@ import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { InstagramDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/instagram.dto';
 import { Integration } from '@prisma/client';
-import { number } from 'yup';
 
 export class InstagramProvider
   extends SocialAbstract
@@ -30,6 +29,7 @@ export class InstagramProvider
     'instagram_manage_comments',
     'instagram_manage_insights',
   ];
+  editor = 'normal' as const;
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     return {
