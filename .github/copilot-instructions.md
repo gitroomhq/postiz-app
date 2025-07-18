@@ -1,59 +1,53 @@
-Postiz is an all-in-one Social Media Scheduler.
 
-# Instructions
+# Copilot Coding Agent Instructions for Postiz
 
-## Comments
-Write meaningful comments where necessary, especially for complex logic.
+## Project Architecture
+- Monorepo managed by NX, with apps in `apps/` and shared code in `libraries/`.
+- Main services: `frontend` (Next.js), `backend` (NestJS), `cron`, `commands`, `extension`, `sdk`, and `workers`.
+- Data layer uses Prisma ORM (`libraries/nestjs-libraries/src/database/prisma/schema.prisma`) with PostgreSQL as the default database.
+- Redis (BullMQ) is used for queues and caching.
+- Email notifications via Resend.
+- Social login integrations (Instagram, Facebook) and Make.com/N8N integrations.
 
-## Testing
-If you try to code something for "Postiz", make sure to check your code with these instructions:
-1. Install NodeJS 20.17.0
-2. Install pNPM 8
-3. Install Dependencies: "pnpm install"
-4. Build it: "pnpm run build"
+## Developer Workflows
+- Use Node.js 20.17.0 and pnpm 8+.
+- Install dependencies: `pnpm install`
+- Build all apps: `pnpm run build`
+- Run all apps in dev mode: `pnpm run dev`
+- Test: `pnpm test` (Jest, coverage enabled)
+- Individual app scripts are in each app's `package.json` (e.g., `pnpm --filter ./apps/backend run dev`).
+- Prisma DB commands: `pnpm run prisma-generate`, `pnpm run prisma-db-push`, `pnpm run prisma-reset`.
+- Docker: `docker compose -f ./docker-compose.dev.yaml up -d`
 
-## "Commit"'s 
-Use conventional commits (feat:, fix:, chore: etc.) for commit messages.
+## Conventions & Patterns
+- Use conventional commits (`feat:`, `fix:`, `chore:`).
+- PRs should include clear descriptions, related issue links, and UI screenshots/GIFs if relevant.
+- Comments are required for complex logic.
+- Shared code lives in `libraries/` (e.g., helpers, React shared libraries, NestJS modules).
+- Environment variables are managed via `.env` and referenced in Docker and scripts.
+- Make sure to keep the `.env.example` file updated with new environment variables.
 
----
+## Integration Points
+- External APIs: Social media (Instagram, Facebook), Make.com, N8N, Resend, Stripe, etc.
+- SDK (`apps/sdk`) provides programmatic access to Postiz features.
+- Extension (`apps/extension`) is built with Vite, React, TypeScript, and Tailwind CSS.
 
-# Overview
-Make sure to use any information that you need here:
+## Key Files & Directories
+- `apps/` — Main services and applications
+- `libraries/` — Shared code and modules
+- `docker-compose.dev.yaml` — Local development Docker setup
+- `.env` — Environment configuration
+- `jest.config.ts` — Test configuration
+- `pnpm-workspace.yaml` — Workspace package management
+- `README.md` — General project overview
+- `libraries/nestjs-libraries/src/database/prisma/schema.prisma` — Database schema
 
 ## Documentation
-The Documentation is available under https://docs.postiz.com/
-Developer Documentation is available under https://docs.postiz.com/developer-guide
-
-## Tech Stack
-- NX (Monorepo)
-- NextJS (React)
-- NestJS
-- Prisma (Default to PostgreSQL)
-- Redis (BullMQ)
-- Resend (email notifications)
-
-## License
-This repository's source code is available under the [AGPL-3.0 license](LICENSE).
-
-## Features
-- Schedule all your social media posts (many AI features)
-- Measure your work with analytics.
-- Collaborate with other team members to exchange or buy posts.
-- Invite your team members to collaborate, comment, and schedule posts.
-- At the moment there is no difference between the hosted version to the self-hosted version
+- Main docs: https://docs.postiz.com/
+- Developer guide: https://docs.postiz.com/developer-guide
+- Public API: https://docs.postiz.com/public-api
 
 ---
 
-# PR and Code Review Etiquette
+For questions or unclear conventions, check the main README or ask for clarification in your PR description.
 
-Expand on the PR expectations section:
-
-```markdown
-## Pull Request Expectations
-
-When submitting a PR:
-- Write a clear description of what the PR does and *why* the change was made.
-- Link any related issues using `Closes #<issue-number>` syntax.
-- Include screenshots/GIFs if the PR affects the UI.
-- Add tests if new functionality is introduced.
-- Make sure the PR passes CI and all tests before requesting review.
