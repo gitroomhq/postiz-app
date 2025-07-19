@@ -716,9 +716,9 @@ importers:
 
   apps/sdk:
     dependencies:
-      form-data:
-        specifier: 4.0.3
-        version: 4.0.3
+      node-fetch:
+        specifier: ^3.3.2
+        version: 3.3.2
 
   apps/workers: {}
 
