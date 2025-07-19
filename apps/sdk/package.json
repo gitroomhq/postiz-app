@@ -1,6 +1,6 @@
 {
   "name": "@postiz/node",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "The ultimate social media scheduling tool",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -15,9 +15,9 @@
     "scheduling tool",
     "social media scheduling tool"
   ],
-  "author": "Your Name",
+  "author": "Nevo David",
   "license": "AGPL-3.0",
   "dependencies": {
-    "form-data": "4.0.3"
+    "node-fetch": "^3.3.2"
   }
 }

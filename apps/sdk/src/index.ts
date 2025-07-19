@@ -1,6 +1,6 @@
 import { CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
-import FormData from 'form-data';
+import fetch, { FormData } from 'node-fetch';
 
 function toQueryString(obj: Record<string, any>): string {
   const params = new URLSearchParams();
@@ -45,7 +45,19 @@ export default class Postiz {
 
   async upload(file: Buffer, extension: string) {
     const formData = new FormData();
-    formData.append('file', file, extension);
+    const type =
+      extension === 'png'
+        ? 'image/png'
+        : extension === 'jpg'
+        ? 'image/jpeg'
+        : extension === 'gif'
+        ? 'image/gif'
+        : extension === 'jpeg'
+        ? 'image/jpeg'
+        : 'image/jpeg';
+
+    const blob = new Blob([file], { type });
+    formData.append('file', blob, extension);
 
     return (
       await fetch(`${this._path}/public/v1/upload`, {
@@ -54,7 +66,6 @@ export default class Postiz {
         body: formData,
         headers: {
           Authorization: this._apiKey,
-          ...formData.getHeaders(),
         },
       })
     ).json();
