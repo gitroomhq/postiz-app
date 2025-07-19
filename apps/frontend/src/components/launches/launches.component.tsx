@@ -24,6 +24,8 @@ import { GeneratorComponent } from './generator/generator';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { NewPost } from '@gitroom/frontend/components/launches/new.post';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useIntegrationList } from '@gitroom/frontend/components/launches/helpers/use.integration.list';
+
 interface MenuComponentInterface {
   refreshChannel: (
     integration: Integration & {
@@ -283,16 +285,13 @@ export const LaunchesComponent = () => {
   const fireEvents = useFireEvents();
   const t = useT();
   const [reload, setReload] = useState(false);
-  const load = useCallback(async (path: string) => {
-    return (await (await fetch(path)).json()).integrations;
-  }, []);
+
   const {
     isLoading,
     data: integrations,
     mutate,
-  } = useSWR('/integrations/list', load, {
-    fallbackData: [],
-  });
+  } = useIntegrationList();
+
   const totalNonDisabledChannels = useMemo(() => {
     return (
       integrations?.filter((integration: any) => !integration.disabled)
@@ -453,7 +452,9 @@ export const LaunchesComponent = () => {
                     user?.tier?.ai &&
                     billingEnabled && <GeneratorComponent />}
                   <div className="mt-[5px]">
-                    {process.env.NEXT_PUBLIC_VERSION ? `${process.env.NEXT_PUBLIC_VERSION}` : ''}
+                    {process.env.NEXT_PUBLIC_VERSION
+                      ? `${process.env.NEXT_PUBLIC_VERSION}`
+                      : ''}
                   </div>
                 </div>
               </div>

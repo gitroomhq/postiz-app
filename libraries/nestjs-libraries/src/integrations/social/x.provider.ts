@@ -16,6 +16,7 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
 import dayjs from 'dayjs';
 import { uniqBy } from 'lodash';
+import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 
 export class XProvider extends SocialAbstract implements SocialProvider {
   identifier = 'x';
@@ -24,6 +25,8 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   scopes = [] as string[];
   toolTip =
     'You will be logged in into your current account, if you would like a different account, change it first on X';
+
+  editor = 'normal' as const;
 
   @Plug({
     identifier: 'x-autoRepostPost',
@@ -149,7 +152,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       await timer(2000);
 
       await client.v2.tweet({
-        text: fields.post,
+        text: stripHtmlValidation('normal', fields.post, true),
         reply: { in_reply_to_tweet_id: id },
       });
       return true;

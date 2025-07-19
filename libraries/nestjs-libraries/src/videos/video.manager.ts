@@ -22,6 +22,11 @@ export class VideoManager {
     );
   }
 
+  checkAvailableVideoFunction(method: any) {
+    const videoFunction = Reflect.getMetadata('video-function', method);
+    return !videoFunction;
+  }
+
   getVideoByName(
     identifier: string
   ): (VideoParams & { instance: VideoAbstract<any> }) | undefined {

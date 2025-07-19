@@ -33,14 +33,15 @@ export interface AddEditModalProps {
 }
 
 export const AddEditModal: FC<AddEditModalProps> = (props) => {
-  const { setAllIntegrations, setDate, setIsCreateSet, setDummy } = useLaunchStore(
-    useShallow((state) => ({
-      setAllIntegrations: state.setAllIntegrations,
-      setDate: state.setDate,
-      setIsCreateSet: state.setIsCreateSet,
-      setDummy: state.setDummy,
-    }))
-  );
+  const { setAllIntegrations, setDate, setIsCreateSet, setDummy } =
+    useLaunchStore(
+      useShallow((state) => ({
+        setAllIntegrations: state.setAllIntegrations,
+        setDate: state.setDate,
+        setIsCreateSet: state.setIsCreateSet,
+        setDummy: state.setDummy,
+      }))
+    );
 
   const integrations = useLaunchStore((state) => state.integrations);
   useEffect(() => {
@@ -114,6 +115,7 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
     setCurrent,
     internal,
     setTags,
+    setEditor,
   } = useLaunchStore(
     useShallow((state) => ({
       reset: state.reset,
@@ -123,6 +125,7 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
       global: state.global,
       internal: state.internal,
       setTags: state.setTags,
+      setEditor: state.setEditor,
     }))
   );
 
@@ -139,13 +142,22 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
         0,
         existingData.integration,
         existingData.posts.map((post) => ({
-          content: post.content,
+          content:
+            post.content.indexOf('<p>') > -1
+              ? post.content
+              : post.content
+                  .split('\n')
+                  .map((line: string) => `<p>${line}</p>`)
+                  .join(''),
           id: post.id,
           // @ts-ignore
           media: post.image as any[],
         }))
       );
       setCurrent(existingData.integration);
+    }
+    else {
+      setEditor('normal');
     }
 
     if (props.focusedChannel) {
@@ -156,14 +168,23 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
       0,
       props.onlyValues?.length
         ? props.onlyValues.map((p) => ({
-            content: p.content,
+            content:
+              p.content.indexOf('<p>') > -1
+                ? p.content
+                : p.content
+                    .split('\n')
+                    .map((line: string) => `<p>${line}</p>`)
+                    .join(''),
             id: makeId(10),
             media: p.image || [],
           }))
         : props.set?.posts?.length
         ? props.set.posts[0].value.map((p: any) => ({
             id: makeId(10),
-            content: p.content,
+            content: p.content
+              .split('\n')
+              .map((line: string) => `<p>${line}</p>`)
+              .join(''),
             // @ts-ignore
             media: p.media,
           }))

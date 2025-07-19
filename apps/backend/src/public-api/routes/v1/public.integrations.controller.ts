@@ -25,6 +25,7 @@ import {
   Sections,
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 import { VideoDto } from '@gitroom/nestjs-libraries/dtos/videos/video.dto';
+import { VideoFunctionDto } from '@gitroom/nestjs-libraries/dtos/videos/video.function.dto';
 
 @ApiTags('Public API')
 @Controller('/public/v1')
@@ -124,5 +125,12 @@ export class PublicIntegrationsController {
     @Body() body: VideoDto
   ) {
     return this._mediaService.generateVideo(org, body);
+  }
+
+  @Post('/video/function')
+  videoFunction(
+    @Body() body: VideoFunctionDto
+  ) {
+    return this._mediaService.videoFunction(body.identifier, body.functionName, body.params);
   }
 }

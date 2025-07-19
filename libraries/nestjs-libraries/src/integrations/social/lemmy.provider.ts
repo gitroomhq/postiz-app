@@ -17,6 +17,7 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
   name = 'Lemmy';
   isBetweenSteps = false;
   scopes = [] as string[];
+  editor = 'normal' as const;
 
   async customFields() {
     return [

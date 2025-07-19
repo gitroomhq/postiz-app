@@ -5,9 +5,7 @@ export type URL = string;
 export abstract class VideoAbstract<T> {
   dto: Type<T>;
 
-  async processAndValidate(
-    customParams?: T
-  ) {
+  async processAndValidate(customParams?: T) {
     const validationPipe = new ValidationPipe({
       skipMissingProperties: false,
       transform: true,
@@ -35,6 +33,16 @@ export interface VideoParams {
   placement: 'text-to-image' | 'image-to-video' | 'video-to-video';
   available: boolean;
   trial: boolean;
+}
+
+export function ExposeVideoFunction() {
+  return function (
+    target: any,
+    propertyKey: string,
+    descriptor: PropertyDescriptor
+  ) {
+    Reflect.defineMetadata('video-function', 'true', descriptor.value);
+  };
 }
 
 export function Video(params: VideoParams) {

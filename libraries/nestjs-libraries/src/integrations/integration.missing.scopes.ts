@@ -10,7 +10,7 @@ export class NotEnoughScopesFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
 
     response
-      .status(HttpStatusCode.NotAcceptable)
+      .status(HttpStatusCode.Conflict)
       .json({ msg: exception.message });
   }
 }

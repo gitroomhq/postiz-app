@@ -248,7 +248,7 @@ export const AiVideo: FC<{
               {data.map((p: any) => (
                 <li
                   onClick={generateVideo(p)}
-                  key={p}
+                  key={p.identifier}
                   className="hover:bg-sixth"
                 >
                   {p.title}

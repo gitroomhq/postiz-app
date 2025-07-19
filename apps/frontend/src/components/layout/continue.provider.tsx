@@ -80,6 +80,7 @@ export const ContinueProvider: FC = () => {
                 value: [],
                 allIntegrations: [],
                 integration: {
+                  editor: 'normal',
                   additionalSettings: '',
                   display: '',
                   time: [

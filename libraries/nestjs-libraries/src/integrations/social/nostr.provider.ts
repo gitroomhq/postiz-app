@@ -27,7 +27,8 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
   identifier = 'nostr';
   name = 'Nostr';
   isBetweenSteps = false;
-  scopes = [];
+  scopes = [] as string[];
+  editor = 'normal' as const;
 
   async customFields() {
     return [

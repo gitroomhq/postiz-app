@@ -24,6 +24,7 @@ import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/s
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/save.media.information.dto';
 import { VideoDto } from '@gitroom/nestjs-libraries/dtos/videos/video.dto';
+import { VideoFunctionDto } from '@gitroom/nestjs-libraries/dtos/videos/video.function.dto';
 
 @ApiTags('Media')
 @Controller('/media')
@@ -181,13 +182,11 @@ export class MediaController {
     return this._mediaService.getVideoOptions();
   }
 
-  @Post('/video/:identifier/:function')
+  @Post('/video/function')
   videoFunction(
-    @Param('identifier') identifier: string,
-    @Param('function') functionName: string,
-    @Body('params') body: any
+    @Body() body: VideoFunctionDto
   ) {
-    return this._mediaService.videoFunction(identifier, functionName, body);
+    return this._mediaService.videoFunction(body.identifier, body.functionName, body.params);
   }
 
   @Get('/generate-video/:type/allowed')

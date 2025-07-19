@@ -75,6 +75,7 @@ export abstract class SocialAbstract {
       json = '{}';
     }
 
+    console.log(json);
     if (json.includes('rate_limit_exceeded') || json.includes('Rate limit')) {
       await timer(5000);
       console.log('rate limit trying again');
