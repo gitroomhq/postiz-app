@@ -150,6 +150,7 @@ export const stripHtmlValidation = (
   }
 
   const html = (value || '')
+    .replace(/&amp;/gi, '&')
     .replace(/&nbsp;/gi, ' ')
     .replace(/^<p[^>]*>/i, '')
     .replace(/<p[^>]*>/gi, '\n')
