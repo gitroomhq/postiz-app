@@ -11,7 +11,7 @@
   },
   "packageManager": "pnpm@10.6.1",
   "scripts": {
-    "dev": "pnpm run --filter ./apps/extension --filter ./apps/workers --filter ./apps/backend --filter ./apps/frontend --parallel dev",
+    "dev": "pnpm run --filter ./apps/extension --filter ./apps/backend --filter ./apps/frontend --parallel dev",
     "pm2": "pnpm dlx concurrently \"pnpm run pm2-run\" \"pnpm run entryfile\"",
     "entryfile": "./entrypoint.sh",
     "publish-sdk": "pnpm run --filter ./apps/sdk publish",
