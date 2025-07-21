@@ -15,7 +15,11 @@ export class PostsController {
   @EventPattern('post', Transport.REDIS)
   async post(data: { id: string }) {
     console.log('processing', data);
-    return this._postsService.post(data.id);
+    try {
+      return await this._postsService.post(data.id);
+    } catch (err) {
+      console.log('Unhandled error, let\'s avoid crashing the worker', err);
+    }
   }
 
   @EventPattern('submit', Transport.REDIS)
