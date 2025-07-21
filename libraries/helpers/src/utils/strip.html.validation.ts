@@ -138,7 +138,7 @@ export const stripHtmlValidation = (
   none = false
 ): string => {
   if (type === 'html') {
-    return value;
+    return striptags(value, ['ul', 'ol', 'li', 'h1', 'h2', 'h3', 'p', 'strong', 'u']);
   }
 
   if (type === 'markdown') {
@@ -178,7 +178,6 @@ export const convertLinkedinMention = (value: string) => {
   return value.replace(
     /<span.+?data-linkedin-id="(.+?)".+?>(.+?)<\/span>/gi,
     (match, id, name) => {
-      console.log(id, name);
       return `@[${name.replace('@', '')}](${id})`;
     }
   );
