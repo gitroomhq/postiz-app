@@ -85,7 +85,9 @@ const SelectVoiceComponent: FC<{
               : 'bg-third'
           )}
         >
-          <div className="text-[14px] text-balance whitespace-pre-line">{p.name}</div>
+          <div className="text-[14px] text-balance whitespace-pre-line">
+            {p.name}
+          </div>
           <div className="text-[12px]">{p.language}</div>
         </div>
       ))}
@@ -109,6 +111,7 @@ const HeygenProviderComponent = () => {
       aspect_ratio: '',
       captions: '',
       selectedVoice: '',
+      type: '',
     },
     mode: 'all',
     resolver: zodResolver(
@@ -205,7 +208,15 @@ const HeygenProviderComponent = () => {
                   avatar_name: p.avatar_name || p.name,
                   preview_image_url: p.preview_image_url || p.image_url,
                 }))}
-                onChange={(id: string) => form.setValue('avatar', id)}
+                onChange={(id: string) => {
+                  form.setValue('avatar', id);
+                  form.setValue(
+                    'type',
+                    data?.find((p: any) => p.id === id || p.avatar_id === id)?.id
+                      ? 'talking_photo'
+                      : 'avatar'
+                  );
+                }}
               />
               <div className="text-red-400 text-[12px] mb-3">
                 {form?.formState?.errors?.avatar?.message || ''}

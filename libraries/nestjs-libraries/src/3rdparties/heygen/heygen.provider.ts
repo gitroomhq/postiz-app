@@ -116,19 +116,31 @@ export class HeygenProvider extends ThirdPartyAbstract<{
       aspect_ratio: string;
       captions: string;
       selectedVoice: string;
+      type: 'talking_photo' | 'avatar';
     }
   ): Promise<string> {
-    const {data: {video_id}} = await (
+    const {
+      data: { video_id },
+    } = await (
       await fetch(`https://api.heygen.com/v2/video/generate`, {
         method: 'POST',
         body: JSON.stringify({
           caption: data.captions === 'yes',
           video_inputs: [
             {
-              character: {
-                type: 'avatar',
-                avatar_id: data.avatar,
-              },
+              ...(data.type === 'avatar'
+                ? {
+                    character: {
+                      type: 'avatar',
+                      avatar_id: data.avatar,
+                    },
+                  }
+                : {
+                    character: {
+                      type: 'talking_photo',
+                      talking_photo_id: data.avatar,
+                    },
+                  }),
               voice: {
                 type: 'text',
                 input_text: data.voice,
@@ -156,13 +168,20 @@ export class HeygenProvider extends ThirdPartyAbstract<{
     ).json();
 
     while (true) {
-      const {data: {status, video_url}} = await (await fetch(`https://api.heygen.com/v1/video_status.get?video_id=${video_id}`, {
-        headers: {
-          accept: 'application/json',
-          'content-type': 'application/json',
-          'x-api-key': apiKey,
-        },
-      })).json();
+      const {
+        data: { status, video_url },
+      } = await (
+        await fetch(
+          `https://api.heygen.com/v1/video_status.get?video_id=${video_id}`,
+          {
+            headers: {
+              accept: 'application/json',
+              'content-type': 'application/json',
+              'x-api-key': apiKey,
+            },
+          }
+        )
+      ).json();
 
       if (status === 'completed') {
         return video_url;
