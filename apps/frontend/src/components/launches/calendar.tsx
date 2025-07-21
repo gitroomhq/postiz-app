@@ -55,6 +55,7 @@ import i18next from 'i18next';
 import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 
 // Extend dayjs with necessary plugins
 extend(isSameOrAfter);
@@ -954,7 +955,7 @@ const CalendarItem: FC<{
             {state === 'DRAFT' ? t('draft', 'Draft') + ': ' : ''}
           </div>
           <div className="w-full overflow-hidden overflow-ellipsis text-start">
-            {removeMd(post.content).replace(/\n/g, ' ')}
+            {stripHtmlValidation('none', post.content)}
           </div>
         </div>
       </div>
