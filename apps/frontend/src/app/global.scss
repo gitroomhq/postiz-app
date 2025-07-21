@@ -559,6 +559,10 @@ html[dir='rtl'] [dir='ltr'] {
     font-weight: bold;
 }
 
+.ProseMirror * {
+  white-space: break-spaces;
+}
+
 .ProseMirror h2, .preview h2 {
     font-size: 20px;
     font-weight: bold;

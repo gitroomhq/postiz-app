@@ -48,8 +48,6 @@ export const GeneralPreviewComponent: FC<{
     return { text: finalValue, images: p.image };
   });
 
-  console.log(renderContent);
-
   return (
     <div className={clsx('w-full md:w-[555px] px-[16px]')}>
       <div className="w-full h-full relative flex flex-col">

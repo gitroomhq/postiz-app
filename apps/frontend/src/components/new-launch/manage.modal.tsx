@@ -189,14 +189,15 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
         const sliceNeeded = checkAllValid.filter((p: any) => {
           return p.values.some((a: any) => {
+            const strip = stripHtmlValidation('normal', a.content, true);
             const weightedLength = countCharacters(
-              a.content,
+              strip,
               p?.integration?.identifier || ''
             );
             const totalCharacters =
-              weightedLength > a.content.length
+              weightedLength > strip.length
                 ? weightedLength
-                : a.content.length;
+                : strip.length;
 
             return totalCharacters > (p.maximumCharacters || 1000000);
           });
