@@ -200,7 +200,11 @@ const HeygenProviderComponent = () => {
             <>
               <div className="text-lg my-3">Select Avatar</div>
               <SelectAvatarComponent
-                avatarList={data}
+                avatarList={data.map((p: any) => ({
+                  avatar_id: p.avatar_id || p.id,
+                  avatar_name: p.avatar_name || p.name,
+                  preview_image_url: p.preview_image_url || p.image_url,
+                }))}
                 onChange={(id: string) => form.setValue('avatar', id)}
               />
               <div className="text-red-400 text-[12px] mb-3">
