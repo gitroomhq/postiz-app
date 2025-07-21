@@ -539,7 +539,7 @@ export const Editor: FC<{
   const { getRootProps, isDragActive } = useDropzone({ onDrop });
 
   const valueWithoutHtml = useMemo(() => {
-    return stripHtmlValidation('normal', props.value || '', false, true);
+    return stripHtmlValidation('normal', props.value || '', true);
   }, [props.value]);
 
   const addText = useCallback(

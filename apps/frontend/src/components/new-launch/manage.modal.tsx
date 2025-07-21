@@ -147,7 +147,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           return p.values.some((a: any) => {
             return (
               countCharacters(
-                stripHtmlValidation('normal', a.content),
+                stripHtmlValidation('normal', a.content, true),
                 p?.integration?.identifier || ''
               ) === 0 && a.media?.length === 0
             );
