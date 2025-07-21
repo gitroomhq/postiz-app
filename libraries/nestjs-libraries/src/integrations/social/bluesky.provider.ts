@@ -276,8 +276,8 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
         // If there are images but no video, use image embed
         embed = {
           $type: 'app.bsky.embed.images',
-          images: images.map((p) => ({
-            alt: 'picture',
+          images: images.map((p, index) => ({
+            alt: imageMedia?.[index]?.alt || '',
             image: p.data.blob,
           })),
         };
