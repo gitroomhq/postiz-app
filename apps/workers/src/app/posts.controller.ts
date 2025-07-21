@@ -18,31 +18,59 @@ export class PostsController {
     try {
       return await this._postsService.post(data.id);
     } catch (err) {
-      console.log('Unhandled error, let\'s avoid crashing the worker', err);
+      console.log("Unhandled error, let's avoid crashing the post worker", err);
     }
   }
 
   @EventPattern('submit', Transport.REDIS)
   async payout(data: { id: string; releaseURL: string }) {
-    return this._postsService.payout(data.id, data.releaseURL);
+    try {
+      return await this._postsService.payout(data.id, data.releaseURL);
+    } catch (err) {
+      console.log(
+        "Unhandled error, let's avoid crashing the submit worker",
+        err
+      );
+    }
   }
 
   @EventPattern('sendDigestEmail', Transport.REDIS)
   async sendDigestEmail(data: { subject: string; org: string; since: string }) {
-    return this._postsService.sendDigestEmail(
-      data.subject,
-      data.org,
-      data.since
-    );
+    try {
+      return await this._postsService.sendDigestEmail(
+        data.subject,
+        data.org,
+        data.since
+      );
+    } catch (err) {
+      console.log(
+        "Unhandled error, let's avoid crashing the digest worker",
+        err
+      );
+    }
   }
 
   @EventPattern('webhooks', Transport.REDIS)
   async webhooks(data: { org: string; since: string }) {
-    return this._webhooksService.fireWebhooks(data.org, data.since);
+    try {
+      return await this._webhooksService.fireWebhooks(data.org, data.since);
+    } catch (err) {
+      console.log(
+        "Unhandled error, let's avoid crashing the webhooks worker",
+        err
+      );
+    }
   }
 
   @EventPattern('cron', Transport.REDIS)
   async cron(data: { id: string }) {
-    return this._autopostsService.startAutopost(data.id);
+    try {
+      return await this._autopostsService.startAutopost(data.id);
+    } catch (err) {
+      console.log(
+        "Unhandled error, let's avoid crashing the autopost worker",
+        err
+      );
+    }
   }
 }
