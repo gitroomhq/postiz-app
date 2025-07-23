@@ -215,7 +215,7 @@ export class MonthlyReportService {
 				customerId,
 				month,
 				year,
-				['likes', 'followers'],
+				['likes', 'followers', 'totalContent']
 			);
 
 			if (!monthlyData.length) return null;
@@ -247,7 +247,7 @@ export class MonthlyReportService {
 				customerId,
 				month,
 				year,
-				['impressions', 'pageViews'],
+				['impressions', 'pageViews', 'totalContent'],
 			);
 
 			if (!monthlyData.length) return null;
@@ -271,7 +271,7 @@ export class MonthlyReportService {
 				customerId,
 				month,
 				year,
-				['subscribers', 'totalViews', 'totalVideos', 'totalContent', 'likes', 'comments'],
+				['subscribers', 'totalViews', 'totalVideos', 'likes', 'comments'],
 			);
 
 			// Daily data for chart - add likes and comments
@@ -280,7 +280,7 @@ export class MonthlyReportService {
 				customerId,
 				month,
 				year,
-				['subscribers', 'totalViews', 'likes', 'comments'],
+				['subscribers', 'totalViews', 'totalVideos', 'likes', 'comments'],
 			);
 
 			if (!monthlyData.length) return null;
@@ -302,7 +302,7 @@ export class MonthlyReportService {
 				customerId,
 				month,
 				year,
-				['subscribers', 'totalViews', 'totalVideos']
+				['subscribers', 'totalViews', 'totalVideos', 'likes', 'comments']
 			);
 
 			if (!monthlyData.length) return null;
@@ -314,7 +314,7 @@ export class MonthlyReportService {
 					customerId,
 					month,
 					year,
-					['subscribers', 'totalViews']
+					['subscribers', 'totalViews', 'totalVideos', 'likes', 'comments']
 				)
 			};
 		} catch (error) {
@@ -341,11 +341,15 @@ export class MonthlyReportService {
 		const subscribers = insights.map(i => parseInt(i.subscribers) || 0);
 		const totalViews = insights.map(i => parseInt(i.totalViews) || 0);
 		const totalVideos = insights.map(i => parseInt(i.totalVideos) || 0);
+		const totalLikes = insights.map(i => parseInt(i.totalLikes) || 0);
+		const totalComments = insights.map(i => parseInt(i.totalComments) || 0);
 
 		rows.push(
 			['Subscribers', ...subscribers.map(String), calculateChange(subscribers)],
 			['Total Views', ...totalViews.map(String), calculateChange(totalViews)],
-			['Total Videos', ...totalVideos.map(String), calculateChange(totalVideos)]
+			['Total Videos', ...totalVideos.map(String), calculateChange(totalVideos)],
+			['Total likes', ...totalLikes.map(String), calculateChange(totalLikes)],
+			['Total Comments', ...totalComments.map(String), calculateChange(totalComments)]
 		);
 
 		return {
@@ -364,7 +368,7 @@ export class MonthlyReportService {
 				customerId,
 				month,
 				year,
-				['followers', 'paidFollowers', 'postsCount'],
+				['followers', 'paidFollowers', 'postsCount', 'impressions'],
 			);
 
 			// Daily data for chart
@@ -373,7 +377,7 @@ export class MonthlyReportService {
 				customerId,
 				month,
 				year,
-				['followers', 'paidFollowers'],
+				['followers', 'paidFollowers', 'postsCount', 'impressions'],
 			);
 
 			if (!monthlyData.length) return null;
@@ -387,6 +391,7 @@ export class MonthlyReportService {
 			return null;
 		}
 	}
+
 
 	async getLinkedInOverviewReport(customerId: string, month: number, year: number) {
 		try {
@@ -438,7 +443,7 @@ export class MonthlyReportService {
 				customerId,
 				month,
 				year,
-				['followers', 'following'],
+				['followers', 'following', 'totalContent'],
 			);
 
 			if (!monthlyData.length) return null;
@@ -461,7 +466,7 @@ export class MonthlyReportService {
 				customerId,
 				month,
 				year,
-				['impressions', 'engagement', 'totalContent'],
+				['impressions', 'engagement', 'interactions'],
 			);
 
 			// Daily data for chart
@@ -470,7 +475,7 @@ export class MonthlyReportService {
 				customerId,
 				month,
 				year,
-				['impressions', 'engagement', 'interaction'],
+				['impressions', 'engagement', 'interactions'],
 			);
 
 			if (!monthlyData.length) return null;
@@ -513,7 +518,7 @@ export class MonthlyReportService {
 		]);
 
 		// Platform-specific metrics
-		if (platform === 'Instagram' || platform === 'X') {
+		if (platform === 'Instagram') {
 			const followers = insights.map(i => parseInt(i.followers) || 0);
 			const following = insights.map(i => parseInt(i.following) || 0);
 			rows.push(
@@ -530,11 +535,25 @@ export class MonthlyReportService {
 		} else if (platform === 'LinkedIn') {
 			const followers = insights.map(i => parseInt(i.followers) || 0);
 			const paidFollowers = insights.map(i => parseInt(i.paidFollowers) || 0);
+			const impressions = insights.map(i => parseInt(i.impressions) || 0);
+			const postsCount = insights.map(i => parseInt(i.postsCount) || 0);
 			rows.push(
 				['Followers', ...followers.map(String), calculateChange(followers)],
 				['Paid Followers', ...paidFollowers.map(String), calculateChange(paidFollowers)],
+				['Impressions', ...impressions.map(String), calculateChange(impressions)],
+				['Posts', ...postsCount.map(String), calculateChange(postsCount)],
+			);
+		} else if (platform === 'X') {
+			const followers = insights.map(i => parseInt(i.followers) || 0);
+			const following = insights.map(i => parseInt(i.following) || 0);
+			//const totalContent = insights.map(i => parseInt(i.totalContent) || 0);
+			rows.push(
+				['Followers', ...followers.map(String), calculateChange(followers)],
+				['Following', ...following.map(String), calculateChange(following)],
+				//['Total Content', ...totalContent.map(String), calculateChange(totalContent)],
 			);
 		}
+
 
 		return {
 			Data: headers,
@@ -888,67 +907,89 @@ export class MonthlyReportService {
 		}
 	}
 
-	async getWebsiteLocationsReport(customerId: string, month: number, year: number) {
+	async getWebsiteLocationsReport(customerId: string, selectedMonth: number, selectedYear: number) {
 		try {
-			const { startDate, endDate } = this.getMonthDateRange(month, year);
+			// 1. Build past 3 months
+			const targetDates = [];
+			for (let i = 2; i >= 0; i--) {
+				const date = new Date(selectedYear, selectedMonth - 1, 1); // JS month is 0-based
+				date.setMonth(date.getMonth() - i);
+				targetDates.push({
+					month: date.getMonth() + 1,
+					year: date.getFullYear(),
+					label: format(date, 'MMM')
+				});
+			}
 
-			// Get location data for the month
-			const locations = await this._websiteLocationRepo.model.websiteLocation.findMany({
-				where: {
-					customerId,
-					createdAt: {
-						gte: startDate,
-						lte: endDate
+			const dataByMonth: Record<string, any[]> = {};
+
+			// 2. Fetch data per month
+			for (const { month, year, label } of targetDates) {
+				const { startDate, endDate } = this.getMonthDateRange(month, year);
+				const locations = await this._websiteLocationRepo.model.websiteLocation.findMany({
+					where: {
+						customerId,
+						createdAt: { gte: startDate, lte: endDate },
+						rank: { lte: 10 }
 					},
-					rank: { lte: 10 } // Top 10 locations
-				},
-				orderBy: [
-					{ rank: 'asc' },
-					{ visitors: 'desc' }
-				]
+					orderBy: [
+						{ rank: 'asc' },
+						{ visitors: 'desc' }
+					]
+				});
+				dataByMonth[label] = locations;
+			}
+
+			// 3. Combine data country-wise
+			const countryMap = new Map<string, number[]>();
+			const labels = targetDates.map(d => d.label); // [Mar, Apr, May]
+
+			labels.forEach((month, i) => {
+				const locations = dataByMonth[month] || [];
+				locations.forEach(({ country, visitors }) => {
+					if (!countryMap.has(country)) {
+						countryMap.set(country, Array(labels.length).fill(0));
+					}
+					countryMap.get(country)![i] += visitors || 0;
+				});
 			});
 
-			if (!locations.length) return null;
+			// 4. Sort by latest month (May) and pick top 5
+			const sorted = Array.from(countryMap.entries())
+				.sort((a, b) => (b[1][2] || 0) - (a[1][2] || 0)) // May index = 2
+				.slice(0, 5);
 
-			// Group by country and sum visitors
-			const countryMap = new Map<string, number>();
-			locations.forEach(loc => {
-				const current = countryMap.get(loc.country) || 0;
-				countryMap.set(loc.country, current + (loc.visitors || 0));
-			});
+			const calculateChange = (arr: number[]) => {
+				const prev = arr[1] || 0; // April
+				const curr = arr[2] || 0; // May
+				if (prev === 0) return curr === 0 ? '0%' : '-100.00%';
+				const change = ((curr - prev) / prev) * 100;
+				return `${change.toFixed(2)}%`;
+			};
 
-			// Sort by visitors descending
-			const sortedCountries = Array.from(countryMap.entries())
-				.sort((a, b) => b[1] - a[1])
-				.slice(0, 5); // Top 5 countries
-
-			// Calculate total visitors for percentage calculation
-			const totalVisitors = sortedCountries.reduce((sum, [, visitors]) => sum + visitors, 0);
-
-			// Prepare table data
-			const headers = ['Country', 'Visitors', 'Percentage'];
-			const rows = sortedCountries.map(([country, visitors]) => [
+			const rows = sorted.map(([country, visitors]) => [
 				country,
-				visitors.toString(),
-				`${((visitors / totalVisitors) * 100).toFixed(2)}%`
+				...visitors.map(String),
+				calculateChange(visitors)
 			]);
 
-			// Prepare chart data
-			const chartData = sortedCountries.map(([country, visitors]) => ({
+			// 5. Chart data for May
+			const totalMay = sorted.reduce((sum, [, v]) => sum + (v[2] || 0), 0);
+			const chart = sorted.map(([country, v]) => ({
 				country,
-				visitors,
-				percent: (visitors / totalVisitors) * 100
+				visitors: v[2] || 0,
+				percent: totalMay ? ((v[2] || 0) / totalMay) * 100 : 0
 			}));
 
 			return {
 				table: {
-					Data: headers,
+					Data: ['Country', ...labels, 'Change %'],
 					Rows: rows
 				},
-				chart: chartData
+				chart
 			};
 		} catch (error) {
-			console.error('Website Locations Error:', error);
+			console.error('Website Location Report Error:', error);
 			return null;
 		}
 	}
