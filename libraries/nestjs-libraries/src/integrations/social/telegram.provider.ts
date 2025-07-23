@@ -23,7 +23,7 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
   isBetweenSteps = false;
   isWeb3 = true;
   scopes = [] as string[];
-  editor = 'normal' as const;
+  editor = 'markdown' as const;
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     return {
@@ -187,20 +187,20 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
             ? await telegramBot.sendVideo(
                 accessToken,
                 media.media,
-                { caption: text },
+                { caption: text, parse_mode: 'Markdown' },
                 media.fileOptions
               )
             : media.type === 'photo'
             ? await telegramBot.sendPhoto(
                 accessToken,
                 media.media,
-                { caption: text },
+                { caption: text, parse_mode: 'Markdown' },
                 media.fileOptions
               )
             : await telegramBot.sendDocument(
                 accessToken,
                 media.media,
-                { caption: text },
+                { caption: text, parse_mode: 'Markdown' },
                 media.fileOptions
               );
         messageId = response.message_id;
@@ -213,6 +213,7 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
             type: m.type === 'document' ? 'document' : m.type, // Documents are not allowed in media groups
             media: m.media,
             caption: i === 0 && index === 0 ? text : undefined,
+            parse_mode: 'Markdown'
           }));
 
           const response = await telegramBot.sendMediaGroup(
