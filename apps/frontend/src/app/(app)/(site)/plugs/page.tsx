@@ -7,9 +7,5 @@ export const metadata: Metadata = {
   description: '',
 };
 export default async function Index() {
-  return (
-    <>
-      <Plugs />
-    </>
-  );
+  return <Plugs />;
 }

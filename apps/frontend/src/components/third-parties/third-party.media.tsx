@@ -9,6 +9,7 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
@@ -58,6 +59,7 @@ export const ThirdPartyPopup: FC<{
 }> = (props) => {
   const { closeModal, thirdParties, allData, onChange } = props;
   const [thirdParty, setThirdParty] = useState<any>(null);
+  const refNew = useRef(null);
 
   const setActivateExitButton = useLaunchStore((e) => e.setActivateExitButton);
   useEffect(() => {
@@ -83,11 +85,20 @@ export const ThirdPartyPopup: FC<{
     closeModal();
   }, [setThirdParty, closeModal]);
 
+  useEffect(() => {
+    refNew?.current?.scrollIntoView({
+      behavior: 'smooth',
+    });
+  }, []);
+
   return (
     <div
-      className="removeEditor fixed start-0 top-0 bg-primary/80 z-[300] w-full min-h-full animate-fade bg-black/30"
+      className="removeEditor fixed start-0 top-0 bg-primary/80 z-[300] w-full min-h-full animate-fade bg-black/30 rounded-[24px]"
       onClick={closeModal}
     >
+      <div className="relative">
+        <div className="absolute -top-[50px] left-0" ref={refNew} />
+      </div>
       <div
         className="max-w-[1000px] w-full h-full bg-sixth border-tableBorder border-2 rounded-xl relative mx-auto"
         onClick={(e) => e.stopPropagation()}
@@ -213,7 +224,7 @@ export const ThirdPartyMedia: FC<{
       <div className="relative group">
         <Button
           className={clsx(
-            'relative ms-[10px] !px-[10px] rounded-[4px] gap-[8px] !text-primary justify-center items-center flex border border-dashed border-customColor21 bg-input'
+            'relative ms-[10px] !px-[10px] rounded-[4px] gap-[8px] !text-primary justify-center items-center flex border border-dashed border-newBgLineColor bg-newColColor'
           )}
           onClick={() => setPopup(true)}
         >

@@ -4,6 +4,7 @@ import { FC, useEffect, useMemo, useRef } from 'react';
 import DrawChart from 'chart.js/auto';
 import { TotalList } from '@gitroom/frontend/components/analytics/stars.and.forks.interface';
 import { chunk } from 'lodash';
+import useCookie from 'react-use-cookie';
 function mergeDataPoints(data: TotalList[], numPoints: number): TotalList[] {
   const res = chunk(data, Math.ceil(data.length / numPoints));
   return res.map((row) => {
@@ -17,6 +18,7 @@ export const ChartSocial: FC<{
   data: TotalList[];
 }> = (props) => {
   const { data } = props;
+  const [mode] = useCookie('mode', 'dark');
   const list = useMemo(() => {
     return mergeDataPoints(data, 7);
   }, [data]);
@@ -26,8 +28,8 @@ export const ChartSocial: FC<{
     const gradient = ref.current
       .getContext('2d')
       .createLinearGradient(0, 0, 0, ref.current.height);
-    gradient.addColorStop(0, 'rgb(20,101,6)'); // Start color with some transparency
-    gradient.addColorStop(1, 'rgb(9, 11, 19, 1)');
+    gradient.addColorStop(0, 'rgb(90,46,203)'); // Start color with some transparency
+    gradient.addColorStop(1, 'rgb(65, 38, 136, 1)');
     chart.current = new DrawChart(ref.current!, {
       type: 'line',
       options: {
@@ -64,7 +66,7 @@ export const ChartSocial: FC<{
         labels: list.map((row) => row.date),
         datasets: [
           {
-            borderColor: '#fff',
+            borderColor: mode === 'dark' ? '#fff' : '#000',
             // @ts-ignore
             label: 'Total',
             backgroundColor: gradient,

@@ -195,9 +195,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               p?.integration?.identifier || ''
             );
             const totalCharacters =
-              weightedLength > strip.length
-                ? weightedLength
-                : strip.length;
+              weightedLength > strip.length ? weightedLength : strip.length;
 
             return totalCharacters > (p.maximumCharacters || 1000000);
           });
@@ -314,16 +312,18 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
     <>
       <div
         className={clsx(
-          'flex flex-col md:flex-row p-[10px] rounded-[4px] bg-modalCustom gap-[20px]'
+          'flex flex-col md:flex-row bg-newBgLineColor gap-[1px] rounded-[24px]'
         )}
       >
         <div
           className={clsx(
-            'flex flex-1 flex-col gap-[16px] transition-all duration-700 whitespace-nowrap'
+            'flex flex-1 flex-col gap-[16px] transition-all duration-700 whitespace-nowrap bg-newBgColorInner rounded-s-[24px]'
           )}
         >
-          <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-customColor6 bg-sixth p-[16px] pt-0">
+          <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] p-[24px] pt-0">
             <TopTitle
+              extraClass="h-[75px]"
+              titleSize="text-[24px]"
               title={
                 dummy
                   ? 'Generate an API request'
@@ -350,8 +350,8 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               </div>
             </div>
           </div>
-          <div className="relative min-h-[68px] flex flex-col rounded-[4px] border border-customColor6 bg-sixth">
-            <div className="gap-[10px] relative flex flex-col justify-center items-center min-h-full pe-[16px]">
+          <div className="relative min-h-[68px] flex flex-col rounded-[4px]">
+            <div className="gap-[10px] relative flex flex-col justify-center items-center min-h-full px-[24px]">
               <div
                 id="add-edit-post-dialog-buttons"
                 className="flex flex-row flex-wrap w-full h-full gap-[10px] justify-end items-center"
@@ -453,11 +453,11 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         </div>
         <div
           className={clsx(
-            'flex-grow w-[650px] max-w-[650px] min-w-[650px] flex gap-[20px] flex-col rounded-[4px] border-customColor6 bg-sixth flex-1 transition-all duration-700'
+            'px-[24px] flex-grow rounded-e-[24px] w-[650px] max-w-[650px] min-w-[650px] flex gap-[20px] flex-col rounded-[4px] bg-newBgColorInner border-newBgLineColor flex-1 transition-all duration-700'
           )}
         >
-          <div className="mx-[16px]">
-            <TopTitle title="" removeTitle={true}>
+          <div>
+            <TopTitle title="" removeTitle={true} extraClass="h-[75px]">
               <div className="flex flex-1 gap-[10px]">
                 <div>
                   {!dummy && (
@@ -492,7 +492,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               </svg>
             </TopTitle>
           </div>
-          <div className="flex-1 flex flex-col p-[16px] pt-0">
+          <div className="flex-1 flex flex-col pt-0 pb-[24px]">
             <ShowAllProviders ref={ref} />
           </div>
         </div>

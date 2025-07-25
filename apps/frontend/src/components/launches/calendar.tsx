@@ -56,6 +56,7 @@ import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.m
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
+import { ModalWrapperComponent } from '../new-launch/modal.wrapper.component';
 
 // Extend dayjs with necessary plugins
 extend(isSameOrAfter);
@@ -142,10 +143,10 @@ export const DayView = () => {
     );
   }, [integrations, posts]);
   return (
-    <div className="flex flex-col gap-[10px]">
+    <div className="flex flex-col gap-[10px] flex-1">
       {options.map((option) => (
         <Fragment key={option[0].time}>
-          <div className="text-center text-[20px]">
+          <div className="text-center text-[14px]">
             {dayjs()
               .utc()
               .startOf('day')
@@ -155,7 +156,7 @@ export const DayView = () => {
           </div>
           <div
             key={option[0].time}
-            className="bg-secondary min-h-[60px] border-[2px] border-secondary rounded-[10px] flex justify-center items-center gap-[10px] mb-[20px]"
+            className="min-h-[60px] rounded-[10px] flex justify-center items-center gap-[10px] mb-[20px]"
           >
             <CalendarContext.Provider
               value={{
@@ -202,27 +203,39 @@ export const WeekView = () => {
   }, [i18next.resolvedLanguage, currentYear, currentWeek]);
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden text-textColor flex-1">
+    <div className="flex flex-col text-textColor flex-1">
       <div className="flex-1">
-        <div className="grid grid-cols-8 bg-customColor31 gap-[1px] border-customColor31 border rounded-[10px]">
-          <div className="bg-customColor20 sticky top-0 z-10 bg-gray-900"></div>
+        <div className="grid [grid-template-columns:136px_repeat(7,_minmax(0,_1fr))] gap-[4px] rounded-[10px]">
+          <div className="z-10 bg-newTableHeader flex justify-center items-center flex-col h-[62px] rounded-[8px]"></div>
           {localizedDays.map((day, index) => (
             <div
               key={day.name}
-              className="sticky top-0 z-10 bg-customColor20 p-2 text-center"
+              className="z-10 p-2 text-center bg-newTableHeader flex justify-center items-center flex-col h-[62px] rounded-[8px]"
             >
-              <div>{day.name}</div>
-              <div className={clsx("text-xs", day.day === dayjs().format('L') && 'text-yellow-300')}>{day.day}</div>
+              <div className="text-[14px] font-[500] text-newTableText">
+                {day.name}
+              </div>
+              <div
+                className={clsx(
+                  'text-[14px] font-[600] flex items-center justify-center gap-[6px]',
+                  day.day === dayjs().format('L') && 'text-newTableTextFocused'
+                )}
+              >
+                {day.day === dayjs().format('L') && (
+                  <div className="w-[6px] h-[6px] bg-newTableTextFocused rounded-full" />
+                )}
+                {day.day}
+              </div>
             </div>
           ))}
           {hours.map((hour) => (
             <Fragment key={hour}>
-              <div className="p-2 pe-4 bg-secondary text-center items-center justify-center flex">
+              <div className="p-2 pe-4 text-center items-center justify-center flex text-[14px] text-newTableText">
                 {convertTimeFormatBasedOnLocality(hour)}
               </div>
               {days.map((day, indexDay) => (
                 <Fragment key={`${currentYear}-${currentWeek}-${day}-${hour}`}>
-                  <div className="relative bg-secondary">
+                  <div className="relative">
                     <CalendarColumn
                       getDate={dayjs()
                         .year(currentYear)
@@ -287,13 +300,13 @@ export const MonthView = () => {
   }, [currentYear, currentMonth]);
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden text-textColor flex-1">
+    <div className="flex flex-col text-textColor flex-1">
       <div className="flex-1 flex">
-        <div className="grid grid-cols-7 grid-rows-[40px_auto] bg-customColor31 gap-[1px] border-customColor31 border rounded-[10px] flex-1">
+        <div className="grid grid-cols-7 grid-rows-[62px_auto] gap-[4px] rounded-[10px] flex-1">
           {localizedDays.map((day) => (
             <div
               key={day}
-              className="sticky top-0 z-10 bg-customColor20 p-2 text-center"
+              className="z-10 p-2 bg-newTableHeader flex justify-center items-center flex-col h-[62px] rounded-[8px]"
             >
               <div>{day}</div>
             </div>
@@ -301,7 +314,7 @@ export const MonthView = () => {
           {calendarDays.map((date, index) => (
             <div
               key={index}
-              className="bg-secondary text-center items-center justify-center flex min-h-[100px]"
+              className="text-center items-center justify-center flex min-h-[100px]"
             >
               <CalendarColumn
                 getDate={dayjs(date.day).endOf('day')}
@@ -458,7 +471,7 @@ export const CalendarColumn: FC<{
       const integration = await getIntegration(postInfo);
       modal.openModal({
         classNames: {
-          modal: 'bg-transparent text-textColor',
+          modal: 'text-textColor',
         },
         size: 'auto',
         withCloseButton: false,
@@ -514,7 +527,7 @@ export const CalendarColumn: FC<{
           closeOnEscape: false,
           withCloseButton: false,
           classNames: {
-            modal: 'w-[100%] max-w-[1400px] bg-transparent text-textColor',
+            modal: 'w-[100%] max-w-[1400px] text-textColor',
           },
           children: (
             <ExistingData value={data}>
@@ -564,26 +577,28 @@ export const CalendarColumn: FC<{
       ? undefined
       : await new Promise((resolve) => {
           modal.openModal({
-            title: t('select_set', 'Select a Set'),
+            title: '',
             closeOnClickOutside: true,
             closeOnEscape: true,
-            withCloseButton: true,
+            withCloseButton: false,
             onClose: () => resolve('exit'),
             classNames: {
-              modal: 'bg-secondary text-textColor',
+              modal: 'text-textColor',
             },
             children: (
-              <SetSelectionModal
-                sets={sets}
-                onSelect={(selectedSet) => {
-                  resolve(selectedSet);
-                  modal.closeAll();
-                }}
-                onContinueWithoutSet={() => {
-                  resolve(undefined);
-                  modal.closeAll();
-                }}
-              />
+              <ModalWrapperComponent title={t('select_set', 'Select a Set')}>
+                <SetSelectionModal
+                  sets={sets}
+                  onSelect={(selectedSet) => {
+                    resolve(selectedSet);
+                    modal.closeAll();
+                  }}
+                  onContinueWithoutSet={() => {
+                    resolve(undefined);
+                    modal.closeAll();
+                  }}
+                />
+              </ModalWrapperComponent>
             ),
           });
         });
@@ -595,7 +610,7 @@ export const CalendarColumn: FC<{
       closeOnEscape: false,
       withCloseButton: false,
       classNames: {
-        modal: 'w-[100%] max-w-[1400px] bg-transparent text-textColor',
+        modal: 'w-[100%] max-w-[1400px] text-textColor',
       },
       children: (
         <AddEditModal
@@ -632,9 +647,13 @@ export const CalendarColumn: FC<{
         closeOnEscape: true,
         withCloseButton: false,
         classNames: {
-          modal: 'w-[100%] max-w-[1400px] bg-transparent text-textColor',
+          modal: 'w-[100%] max-w-[1400px]',
         },
-        children: <StatisticsModal postId={id} />,
+        children: (
+          <ModalWrapperComponent title={t('statistics', 'Statistics')}>
+            <StatisticsModal postId={id} />
+          </ModalWrapperComponent>
+        ),
         size: '80%',
         // title: `Adding posts for ${getDate.format('DD/MM/YYYY HH:mm')}`,
       });
@@ -671,34 +690,30 @@ export const CalendarColumn: FC<{
 
   const addProvider = useAddProvider();
   return (
-    <div className="flex flex-col w-full min-h-full" ref={drop as any}>
+    <div
+      className={clsx(
+        'flex flex-col w-full min-h-full',
+        isBeforeNow && 'repeated-strip',
+        isBeforeNow
+          ? 'cursor-not-allowed'
+          : 'border border-newTextColor/5 rounded-[8px]'
+      )}
+      ref={drop as any}
+    >
       {display === 'month' && (
-        <div className={clsx('pt-[5px]', isBeforeNow && 'bg-customColor23')}>
-          {getDate.date()}
-        </div>
+        <div className={clsx('pt-[6px] text-[14px]')}>{getDate.date()}</div>
       )}
       <div
         className={clsx(
-          'relative flex flex-col flex-1 text-white',
-          canDrop && 'bg-white/80',
-          isBeforeNow && postList.length === 0 && 'cursor-not-allowed'
+          'relative flex flex-col flex-1 text-white rounded-[8px] min-h-[70px]',
+          canDrop && 'border border-[#612BD3]'
         )}
       >
         <div
-          {...(canBeTrending
-            ? {
-                'data-tooltip-id': 'tooltip',
-                'data-tooltip-content': t(
-                  'predicted_github_trending_change',
-                  'Predicted GitHub Trending Change'
-                ),
-              }
-            : {})}
           className={clsx(
             'flex-col text-[12px] pointer w-full flex scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary',
-            isBeforeNow ? 'bg-customColor23 flex-1' : 'cursor-pointer',
-            isBeforeNow && postList.length === 0 && 'col-calendar',
-            canBeTrending && 'bg-customColor24'
+            isBeforeNow ? 'flex-1' : 'cursor-pointer',
+            isBeforeNow && postList.length === 0 && 'col-calendar'
           )}
         >
           {list.map((post) => (
@@ -708,7 +723,7 @@ export const CalendarColumn: FC<{
                 'text-textColor p-[2.5px] relative flex flex-col justify-center items-center'
               )}
             >
-              <div className="relative w-full flex flex-col items-center p-[2.5px] h-[66px]">
+              <div className="relative w-full flex flex-col items-center p-[2.5px]">
                 <CalendarItem
                   display={display as 'day' | 'week' | 'month'}
                   isBeforeNow={isBeforeNow}
@@ -761,9 +776,13 @@ export const CalendarColumn: FC<{
               {display !== 'day' && (
                 <div
                   className={clsx(
-                    'hover:before:content-["+"] w-full h-full text-seventh rounded-[10px] hover:border hover:border-seventh flex justify-center items-center'
+                    'group hover:before:h-[30px] w-full h-full rounded-[10px] flex justify-center items-center text-white'
                   )}
-                />
+                >
+                  <div
+                    className={`group-hover:before:content-["+"] pb-[5px] flex justify-center items-center rounded-[8px] transition-all group-hover:bg-btnPrimary w-full h-full max-w-[40px] max-h-[40px]`}
+                  />
+                </div>
               )}
               {display === 'day' && (
                 <div
@@ -776,14 +795,14 @@ export const CalendarColumn: FC<{
                     >
                       <div
                         className={clsx(
-                          'relative w-[34px] h-[34px] rounded-full flex justify-center items-center bg-fifth filter transition-all duration-500'
+                          'relative w-[34px] h-[34px] rounded-[8px] flex justify-center items-center filter transition-all duration-500'
                         )}
                       >
                         <Image
                           src={
                             selectedIntegrations.picture || '/no-picture.jpg'
                           }
-                          className="rounded-full"
+                          className="rounded-[8px]"
                           alt={selectedIntegrations.identifier}
                           width={32}
                           height={32}
@@ -797,7 +816,7 @@ export const CalendarColumn: FC<{
                         ) : (
                           <Image
                             src={`/icons/platforms/${selectedIntegrations.identifier}.png`}
-                            className="rounded-full absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
+                            className="rounded-[8px] absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
                             alt={selectedIntegrations.identifier}
                             width={20}
                             height={20}
@@ -872,7 +891,7 @@ const CalendarItem: FC<{
     >
       <div
         className={clsx(
-          'text-white bg-forth text-[11px] h-[15px] w-full rounded-tr-[10px] rounded-tl-[10px] flex justify-center gap-[10px] px-[5px]'
+          'text-white text-[11px] max-h-[24px] h-[24px] min-h-[24px] w-full rounded-tr-[10px] rounded-tl-[10px] flex items-center justify-center gap-[10px] px-[5px] bg-btnPrimary'
         )}
         style={{
           backgroundColor: post?.tags?.[0]?.tag?.color,
@@ -930,7 +949,7 @@ const CalendarItem: FC<{
       <div
         onClick={editPost}
         className={clsx(
-          'gap-[5px] w-full flex h-full flex-1 rounded-br-[10px] rounded-bl-[10px] border border-seventh px-[5px] p-[2.5px]',
+          'gap-[5px] w-full flex h-full flex-1 rounded-br-[10px] rounded-bl-[10px] p-[8px] text-[14px] bg-newColColor',
           'relative',
           isBeforeNow && '!grayscale'
         )}
@@ -942,11 +961,11 @@ const CalendarItem: FC<{
           )}
         >
           <img
-            className="w-[20px] h-[20px] rounded-full"
+            className="w-[20px] h-[20px] rounded-[8px]"
             src={post.integration.picture! || '/no-picture.jpg'}
           />
           <img
-            className="w-[12px] h-[12px] rounded-full absolute z-10 top-[10px] end-0 border border-fifth"
+            className="w-[12px] h-[12px] rounded-[8px] absolute z-10 top-[10px] end-0 border border-fifth"
             src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
           />
         </div>
@@ -1048,7 +1067,7 @@ export const SetSelectionModal: FC<{
   const t = useT();
 
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <div className="flex flex-col gap-4">
       <div className="text-lg font-medium">
         {t('choose_set_or_continue', 'Choose a set or continue without one')}
       </div>
@@ -1058,7 +1077,7 @@ export const SetSelectionModal: FC<{
           <div
             key={set.id}
             onClick={() => onSelect(set)}
-            className="p-3 border border-tableBorder rounded-lg cursor-pointer hover:bg-customColor31 transition-colors"
+            className="p-3 border border-tableBorder rounded-lg cursor-pointer hover:transition-colors"
           >
             <div className="font-medium">{set.name}</div>
             {set.description && (
@@ -1073,7 +1092,7 @@ export const SetSelectionModal: FC<{
       <div className="flex gap-2 pt-2 border-t border-tableBorder">
         <button
           onClick={onContinueWithoutSet}
-          className="flex-1 px-4 py-2 bg-customColor31 text-textColor rounded-lg hover:bg-customColor23 transition-colors"
+          className="flex-1 px-4 py-2 text-textColor rounded-lg hover:transition-colors"
         >
           {t('continue_without_set', 'Continue without set')}
         </button>
