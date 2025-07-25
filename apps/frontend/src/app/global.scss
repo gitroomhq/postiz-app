@@ -402,7 +402,7 @@ div div .set-font-family {
 
 .col-calendar:hover:before {
   content: 'Date passed';
-  color: white;
+  color: var(--color-text);
   position: absolute;
   left: 50%;
   top: 50%;
