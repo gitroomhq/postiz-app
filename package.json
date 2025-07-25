@@ -7,7 +7,7 @@
   "keywords": [],
   "author": "",
   "engines": {
-    "node": ">=24.0.0"
+    "node": ">=24.0.0 <25.0.0"
   },
   "packageManager": "pnpm@10.6.1",
   "scripts": {
@@ -279,7 +279,7 @@
     "vitest": "3.1.4"
   },
   "volta": {
-    "node": "24.0.0"
+    "node": "24.4.1"
   },
   "jest-junit": {
     "outputDirectory": "./reports",
