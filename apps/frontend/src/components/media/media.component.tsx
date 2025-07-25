@@ -28,7 +28,6 @@ import Image from 'next/image';
 import { DropFiles } from '@gitroom/frontend/components/layout/drop.files';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-import { ThirdPartyMedia } from '@gitroom/frontend/components/third-parties/third-party.media';
 import { ReactSortable } from 'react-sortablejs';
 import { useMediaSettings } from '@gitroom/frontend/components/launches/helpers/media.settings.component';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
@@ -186,13 +185,13 @@ export const MediaBox: FC<{
         selectedMedia.find((p) => p.id === media.id)
           ? selectedMedia.filter((f) => f.id !== media.id)
           : [
-              ...selectedMedia.map((p) => ({
-                ...p,
-              })),
-              {
-                ...media,
-              },
-            ]
+            ...selectedMedia.map((p) => ({
+              ...p,
+            })),
+            {
+              ...media,
+            },
+          ]
       );
     },
     [selectedMedia]
@@ -355,8 +354,8 @@ export const MediaBox: FC<{
                           type === 'video'
                             ? 'video/mp4'
                             : type === 'image'
-                            ? 'image/*'
-                            : 'image/*,video/mp4'
+                              ? 'image/*'
+                              : 'image/*,video/mp4'
                         }
                       />
                     </div>
@@ -368,7 +367,7 @@ export const MediaBox: FC<{
               className={clsx(
                 'flex flex-wrap gap-[10px] mt-[35px] pt-[20px]',
                 !!mediaList.length &&
-                  'justify-center items-center text-textColor'
+                'justify-center items-center text-textColor'
               )}
             >
               {!mediaList.length ? (
@@ -392,8 +391,8 @@ export const MediaBox: FC<{
                         type === 'video'
                           ? 'video/mp4'
                           : type === 'image'
-                          ? 'image/*'
-                          : 'image/*,video/mp4'
+                            ? 'image/*'
+                            : 'image/*,video/mp4'
                       }
                     />
                   </div>
@@ -520,13 +519,13 @@ export const MultiMediaComponent: FC<{
     (
       m:
         | {
-            path: string;
-            id: string;
-          }
+          path: string;
+          id: string;
+        }
         | {
-            path: string;
-            id: string;
-          }[]
+          path: string;
+          id: string;
+        }[]
     ) => {
       const mediaArray = Array.isArray(m) ? m : [m];
       const newMedia = [...(currentMedia || []), ...mediaArray];
@@ -707,8 +706,6 @@ export const MultiMediaComponent: FC<{
                   </div>
                 </div>
               </Button>
-
-              <ThirdPartyMedia allData={allData} onChange={changeMedia} />
 
               {!!user?.tier?.ai && (
                 <>

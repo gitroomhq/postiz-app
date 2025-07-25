@@ -40,7 +40,6 @@ const ModeComponent = dynamic(
 import { extend } from 'dayjs';
 import { useSearchParams } from 'next/navigation';
 import { CheckPayment } from '@gitroom/frontend/components/layout/check.payment';
-import { ChromeExtensionComponent } from '@gitroom/frontend/components/layout/chrome.extension.component';
 import { LanguageComponent } from '@gitroom/frontend/components/layout/language.component';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import i18next from '@gitroom/react/translation/i18next';
@@ -136,7 +135,7 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
                 </div>
               </Link>
               {user?.orgId &&
-              (user.tier !== 'FREE' || !isGeneral || !billingEnabled) ? (
+                (user.tier !== 'FREE' || !isGeneral || !billingEnabled) ? (
                 <TopMenu />
               ) : (
                 <></>
@@ -146,7 +145,6 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
                 className="flex items-center justify-self-end gap-[8px] order-2 md:order-3"
               >
                 <LanguageComponent />
-                <ChromeExtensionComponent />
                 <ModeComponent />
                 <SettingsComponent />
                 <NotificationComponent />
