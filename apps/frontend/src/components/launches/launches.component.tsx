@@ -335,7 +335,7 @@ export const LaunchesComponent = () => {
   const t = useT();
   const [reload, setReload] = useState(false);
   const [collapseMenu, setCollapseMenu] = useCookie('collapseMenu', '0');
-
+  const [mode] = useCookie('mode', 'dark');
   const { isLoading, data: integrations, mutate } = useIntegrationList();
 
   const totalNonDisabledChannels = useMemo(() => {
@@ -474,8 +474,13 @@ export const LaunchesComponent = () => {
           )}
         >
           <div className="flex items-center">
-            <h2 className="group-[.sidebar]:hidden flex-1 text-[20px] font-[500]">{t('channels')}</h2>
-            <div onClick={() => setCollapseMenu(collapseMenu === '1' ? '0' : '1')} className="group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-btnText bg-btnSimple rounded-[6px] w-[24px] h-[24px] flex items-center justify-center cursor-pointer select-none">
+            <h2 className="group-[.sidebar]:hidden flex-1 text-[20px] font-[500]">
+              {t('channels')}
+            </h2>
+            <div
+              onClick={() => setCollapseMenu(collapseMenu === '1' ? '0' : '1')}
+              className="group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-btnText bg-btnSimple rounded-[6px] w-[24px] h-[24px] flex items-center justify-center cursor-pointer select-none"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="7"
@@ -501,16 +506,27 @@ export const LaunchesComponent = () => {
                 user?.tier?.ai &&
                 billingEnabled && <GeneratorComponent />}
             </div>
-            <div className="mt-[5px]">
-              {process.env.NEXT_PUBLIC_VERSION
-                ? `${process.env.NEXT_PUBLIC_VERSION}`
-                : ''}
-            </div>
           </div>
           <div className="gap-[32px] flex flex-col select-none flex-1">
-            {sortedIntegrations.length === 0 && (
-              <div className="text-[12px]">
-                {t('no_channels', 'No channels')}
+            {sortedIntegrations.length === 0 && collapseMenu === '0' && (
+              <div className="flex-1 justify-center items-center flex">
+                <div className="flex flex-col gap-[12px] text-center">
+                  <img
+                    src={
+                      mode === 'dark'
+                        ? '/no-channels.svg'
+                        : '/no-channels-colors.svg'
+                    }
+                    alt="No channels"
+                    className="mx-auto min-w-[100%]"
+                  />
+                  <div className="font-[600] text-[20px]">
+                    {t('no_channels', 'No channels yet')}
+                  </div>
+                  <div className="text-[14px]">
+                    {t('connect_your_accounts')}
+                  </div>
+                </div>
               </div>
             )}
             {menuIntegrations.map((menu) => (
@@ -525,6 +541,11 @@ export const LaunchesComponent = () => {
                 totalNonDisabledChannels={totalNonDisabledChannels}
               />
             ))}
+          </div>
+          <div className="mt-[5px] text-center">
+            {process.env.NEXT_PUBLIC_VERSION
+              ? process.env.NEXT_PUBLIC_VERSION
+              : ''}
           </div>
         </div>
         <div className="bg-newBgColorInner flex-1 flex-col flex p-[20px] gap-[12px]">

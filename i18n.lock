@@ -74,7 +74,8 @@ checksums:
     connect_your_social_media_and_publishing_websites_channels_to_schedule_posts_later: afb54cfa52d39082ae8297789ebeb25a
     social: ff80c74b36f0511287404d286ec7976e
     publishing_platforms: f869373086fbe82e91450684fd805d6c
-    no_channels: ec379ae2974d836f2c3ad48e3770f5be
+    no_channels: af09cbfc2af9f00d5349cf79a93de929
+    connect_your_accounts: b8c601bb78e7cb7762fbff7f842d4b70
     notifications: c52df856139b50dbb1cae7bfb1cf73bb
     no_notifications: c5b494e7fdc5b11a98ec876401dbb66f
     send_message: 487177489aafc9c0243c57ef3850a2d9
@@ -164,7 +165,7 @@ checksums:
     customer: 1d87b244054a1a29cb1727c8b1684167
     repeat_post_every: 0969cb627a580ec4afc19efd11958f4e
     use_this_media: 6aeb1e22711eafe7f3dca7e496b52931
-    create_new_post: d0eba99343fb56e2baf90486eb68e70f
+    create_new_post: 06549e1cb8bbba2645f5ded68259684d
     update_post: f24fceedd97a09c9b26bd7e1f8ce202c
     merge_comments_into_one_post: 2f672bd0b317afb250671ad97ca881f6
     accounts_that_will_engage: adb190c89e1a6f75cc883d904791581d
@@ -451,10 +452,10 @@ checksums:
     choose_upload_without_posting_description: 223c59be260eeaafe420791b76e2523c
     faq_am_i_going_to_be_charged_by_postiz: f4aad17d35bcaf45427216a432f23af3
     faq_to_confirm_credit_card_information_postiz_will_hold: 5087b85985bbb6f46ea869d4796fb891
-    faq_can_i_trust_postiz_gitroom: a95ba51d4c9c7542946237985c7b714a
-    faq_postiz_gitroom_is_proudly_open_source: 3e3338834b64d9ce6fca951a13ac5972
+    faq_can_i_trust_postiz_gitroom: 9ee3c694bc392c339333047484d36003
+    faq_postiz_gitroom_is_proudly_open_source: 17658906aec47f1557f84c71efadee03
     faq_what_are_channels: 22bc7aebd017e487d9a5ac8946a2a08d
-    faq_postiz_gitroom_allows_you_to_schedule_posts: 887f5cb32355558351c7fdf975221886
+    faq_postiz_gitroom_allows_you_to_schedule_posts: 287ddb6d7f14970e29aa6e2431bbe207
     faq_what_are_team_members: bb369e1b85f24dbc4519ce32d71953d6
     faq_if_you_have_a_team_with_multiple_members: ed9a422bfca288261c3959d0fd49f657
     faq_what_is_ai_auto_complete: 3ffc4a069c8e35e01e952375b3c401ba
