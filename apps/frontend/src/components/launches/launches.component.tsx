@@ -177,7 +177,7 @@ export const MenuGroupComponent: FC<
           <div>
             <OpenClose isOpen={isOpen} />
           </div>
-          <div>{group.name}</div>
+          <div className="line-clamp-1">{group.name}</div>
         </div>
       )}
       <div
