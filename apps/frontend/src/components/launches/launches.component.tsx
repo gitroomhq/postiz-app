@@ -509,7 +509,7 @@ export const LaunchesComponent = () => {
           </div>
           <div className="gap-[32px] flex flex-col select-none flex-1">
             {sortedIntegrations.length === 0 && collapseMenu === '0' && (
-              <div className="flex-1 justify-center items-center flex">
+              <div className="flex-1 max-h-[500px] justify-center items-center flex">
                 <div className="flex flex-col gap-[12px] text-center">
                   <img
                     src={
