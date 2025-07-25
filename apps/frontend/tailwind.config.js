@@ -6,7 +6,7 @@ module.exports = {
       colors: {
         primary: 'var(--color-primary)',
         secondary: 'var(--color-secondary)',
-        textColor: 'var(--color-text)',
+        textColor: 'var(--new-btn-text)',
         third: 'var(--color-third)',
         forth: 'var(--color-forth)',
         fifth: 'var(--color-fifth)',
@@ -72,6 +72,30 @@ module.exports = {
         customColor54: 'var(--color-custom54)',
         customColor55: 'var(--color-custom55)',
         modalCustom: 'var(--color-modalCustom)',
+
+
+
+        newBgColor: 'var(--new-bgColor)',
+        newBgColorInner: 'var(--new-bgColorInner)',
+        newBgLineColor: 'var(--new-bgLineColor)',
+        textItemFocused: 'var(--new-textItemFocused)',
+        textItemBlur: 'var(--new-textItemBlur)',
+        boxFocused: 'var(--new-boxFocused)',
+        newTextColor: 'rgb(var(--new-textColor) / <alpha-value>)',
+        blockSeparator: 'var(--new-blockSeparator)',
+        btnSimple: 'var(--new-btn-simple)',
+        btnText: 'var(--new-btn-text)',
+        btnPrimary: 'var(--new-btn-primary)',
+        ai: 'var(--new-ai-btn)',
+        boxHover: 'var(--new-box-hover)',
+        newTableBorder: 'var(--new-table-border)',
+        newTableHeader: 'var(--new-table-header)',
+        newTableText: 'var(--new-table-text)',
+        newTableTextFocused: 'var(--new-table-text-focused)',
+        newColColor: 'var(--new-col-color)',
+        menuDots: 'var(--new-menu-dots)',
+        menuDotsHover: 'var(--new-menu-hover)',
+        bigStrip: 'var(--new-big-strips)',
       },
       gridTemplateColumns: {
         13: 'repeat(13, minmax(0, 1fr));',
@@ -97,6 +121,7 @@ module.exports = {
         yellow: '0 0 60px 20px #6b6237',
         yellowToast: '0px 0px 50px rgba(252, 186, 3, 0.3)',
         greenToast: '0px 0px 50px rgba(60, 124, 90, 0.3)',
+        menu: 'var(--menu-shadow)'
       },
       // that is actual animation
       keyframes: (theme) => ({

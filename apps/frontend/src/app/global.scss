@@ -6,10 +6,15 @@
 @import '@uppy/core/dist/style.css';
 @import '@uppy/dashboard/dist/style.css';
 
-body,
-html {
-  @apply bg-primary;
+body {
+  background: var(--new-bgColor) !important;
+  color: var(--new-btn-text);
 }
+
+body * {
+  outline: none !important;
+}
+
 .box {
   position: relative;
 }
@@ -89,19 +94,25 @@ html {
 }
 
 .react-tags {
-  @apply border border-fifth bg-input;
+  @apply border border-newTableBorder placeholder-textColor;
   position: relative;
   padding-left: 16px;
-  height: 44px;
-  border-radius: 4px;
-  /* shared font styles */
   font-size: 14px;
+  background-color: var(--new-bgColorInner);
+  height: 42px;
+  border-radius: 8px;
+  /* shared font styles */
   line-height: 1.2;
   /* clicking anywhere will focus the input */
   cursor: text;
   display: flex;
   align-items: center;
   margin-right: 0 !important;
+}
+
+.react-tags input {
+  @apply placeholder-textColor;
+  font-size: 14px;
 }
 
 .react-tags.is-active {
@@ -398,6 +409,7 @@ div div .set-font-family {
   transform: translate(-50%, -50%);
   white-space: nowrap;
   opacity: 30%;
+  font-size: 14px;
 }
 
 .loading-shimmer {
@@ -434,20 +446,29 @@ div div .set-font-family {
 }
 
 .tags-top .react-tags__combobox {
-  margin-left: 5px;
+  margin-left: 0;
 }
 
 .tags-top .react-tags__combobox {
-  height: 44px;
+  height: 42px;
   display: flex;
-  background-color: var(--color-input);
+  background-color: var(--new-bgColorInner);
   padding-left: 10px;
   padding-right: 10px;
   min-width: 150px;
   text-align: left;
   border-width: 1px;
-  border-radius: 4px;
-  border-color: var(--color-fifth);
+  border-radius: 8px;
+  border-color: var(--new-table-border);
+  font-size: 14px;
+}
+
+.tags-top input {
+  font-size: 14px;
+}
+
+.tags-top input::placeholder {
+  color: var(--new-textColor);
 }
 
 .tags-top .react-tags__list,
@@ -537,7 +558,7 @@ html[dir='rtl'] [dir='ltr'] {
 }
 
 .ProseMirror:focus {
-    outline: none;
+  outline: none;
 }
 
 .ProseMirror .mention {
@@ -545,34 +566,63 @@ html[dir='rtl'] [dir='ltr'] {
   color: #ae8afc;
 }
 
-.ProseMirror ul, .preview ul {
+.ProseMirror ul,
+.preview ul {
   list-style: disc;
   padding-left: 20px;
 }
 
-.preview ul, .preview li {
+.preview ul,
+.preview li {
   white-space: nowrap;
 }
 
-.ProseMirror h1, .preview h1 {
-    font-size: 24px;
-    font-weight: bold;
+.ProseMirror h1,
+.preview h1 {
+  font-size: 24px;
+  font-weight: bold;
 }
 
 .ProseMirror * {
   white-space: break-spaces;
 }
 
-.ProseMirror h2, .preview h2 {
-    font-size: 20px;
-    font-weight: bold;
+.ProseMirror h2,
+.preview h2 {
+  font-size: 20px;
+  font-weight: bold;
 }
 
-.ProseMirror h3, .preview h3 {
-    font-size: 18px;
-    font-weight: bold;
+.ProseMirror h3,
+.preview h3 {
+  font-size: 18px;
+  font-weight: bold;
 }
 
 .preview p {
   min-height: 24px;
+}
+
+.repeated-strip {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--new-bgColorInner),
+    var(--new-bgColorInner) 4px,
+    var(--new-big-strips) 4px,
+    var(--new-big-strips) 8px
+  );
+}
+
+.mantine-Modal-inner {
+  backdrop-filter: blur(10px);
+}
+
+.mantine-Modal-modal {
+  padding: 0;
+  @apply bg-newBgColorInner;
+  border-radius: 24px;
+}
+
+.mantine-Overlay-root {
+  background: rgba(65, 64, 66, 0.3) !important;
 }

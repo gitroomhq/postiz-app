@@ -156,6 +156,7 @@ export const showMediaBox = (
 const CHUNK_SIZE = 1024 * 1024;
 export const MediaBox: FC<{
   setMedia: (params: { id: string; path: string }[]) => void;
+  standalone?: boolean;
   type?: 'image' | 'video';
   closeModal: () => void;
 }> = (props) => {
@@ -182,6 +183,9 @@ export const MediaBox: FC<{
 
   const setNewMedia = useCallback(
     (media: Media) => () => {
+      if (props.standalone) {
+        return;
+      }
       setSelectedMedia(
         selectedMedia.find((p) => p.id === media.id)
           ? selectedMedia.filter((f) => f.id !== media.id)
@@ -200,12 +204,18 @@ export const MediaBox: FC<{
 
   const addNewMedia = useCallback(
     (media: Media[]) => () => {
+      if (props.standalone) {
+        return;
+      }
       setSelectedMedia((currentMedia) => [...currentMedia, ...media]);
       // closeModal();
     },
     [selectedMedia]
   );
   const addMedia = useCallback(async () => {
+    if (props.standalone) {
+      return;
+    }
     // @ts-ignore
     setMedia(selectedMedia);
     closeModal();
@@ -223,6 +233,11 @@ export const MediaBox: FC<{
         0,
         untilLastMedia === -1 ? newData.results.length : untilLastMedia
       );
+
+      if (props.standalone) {
+        return;
+      }
+
       addNewMedia(onlyNewMedia)();
     },
     [mutate, addNewMedia, mediaList, selectedMedia]
@@ -290,6 +305,9 @@ export const MediaBox: FC<{
     },
     [mutate]
   );
+
+  const refNew = useRef(null);
+
   useEffect(() => {
     if (data?.pages) {
       setPages(data.pages);
@@ -299,37 +317,69 @@ export const MediaBox: FC<{
     }
   }, [data]);
 
+  useEffect(() => {
+    refNew?.current?.scrollIntoView({
+      behavior: 'smooth',
+    });
+  }, []);
+
   const t = useT();
 
   return (
-    <div className="removeEditor fixed start-0 top-0 bg-primary/80 z-[300] w-full min-h-full p-4 md:p-[60px] animate-fade">
-      <div className="max-w-[1000px] w-full h-full bg-sixth border-tableBorder border-2 rounded-xl relative mx-auto">
+    <div
+      {...(props.standalone
+        ? {
+            className:
+              'bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all',
+          }
+        : {
+            ref: refNew,
+            className:
+              'removeEditor fixed start-0 top-0 bg-primary/80 z-[300] w-full min-h-full p-4 md:p-[60px] animate-fade',
+          })}
+    >
+      <div
+        {...(props.standalone
+          ? {}
+          : {
+              className:
+                'max-w-[1000px] w-full h-full bg-newBgColorInner border-tableBorder border-2 rounded-xl relative mx-auto',
+            })}
+      >
         <DropFiles onDrop={dragAndDrop}>
           <div className="pb-[20px] px-[20px] w-full h-full">
             <div className="flex flex-col">
               <div className="flex-1">
-                <TopTitle title="Media Library" />
+                {!props.standalone ? (
+                  <TopTitle title="Media Library" />
+                ) : (
+                  <div className="h-[100px]" />
+                )}
               </div>
-              <button
-                onClick={closeModal}
-                className="outline-none z-[300] absolute end-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root bg-primary hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
-                type="button"
-              >
-                <svg
-                  viewBox="0 0 15 15"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
+              {!props.standalone ? (
+                <button
+                  onClick={closeModal}
+                  className="outline-none z-[300] absolute end-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root bg-primary hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+                  type="button"
                 >
-                  <path
-                    d="M11.7816 4.03157C12.0062 3.80702 12.0062 3.44295 11.7816 3.2184C11.5571 2.99385 11.193 2.99385 10.9685 3.2184L7.50005 6.68682L4.03164 3.2184C3.80708 2.99385 3.44301 2.99385 3.21846 3.2184C2.99391 3.44295 2.99391 3.80702 3.21846 4.03157L6.68688 7.49999L3.21846 10.9684C2.99391 11.193 2.99391 11.557 3.21846 11.7816C3.44301 12.0061 3.80708 12.0061 4.03164 11.7816L7.50005 8.31316L10.9685 11.7816C11.193 12.0061 11.5571 12.0061 11.7816 11.7816C12.0062 11.557 12.0062 11.193 11.7816 10.9684L8.31322 7.49999L11.7816 4.03157Z"
-                    fill="currentColor"
-                    fillRule="evenodd"
-                    clipRule="evenodd"
-                  ></path>
-                </svg>
-              </button>
+                  <svg
+                    viewBox="0 0 15 15"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                  >
+                    <path
+                      d="M11.7816 4.03157C12.0062 3.80702 12.0062 3.44295 11.7816 3.2184C11.5571 2.99385 11.193 2.99385 10.9685 3.2184L7.50005 6.68682L4.03164 3.2184C3.80708 2.99385 3.44301 2.99385 3.21846 3.2184C2.99391 3.44295 2.99391 3.80702 3.21846 4.03157L6.68688 7.49999L3.21846 10.9684C2.99391 11.193 2.99391 11.557 3.21846 11.7816C3.44301 12.0061 3.80708 12.0061 4.03164 11.7816L7.50005 8.31316L10.9685 11.7816C11.193 12.0061 11.5571 12.0061 11.7816 11.7816C12.0062 11.557 12.0062 11.193 11.7816 10.9684L8.31322 7.49999L11.7816 4.03157Z"
+                      fill="currentColor"
+                      fillRule="evenodd"
+                      clipRule="evenodd"
+                    ></path>
+                  </svg>
+                </button>
+              ) : (
+                <div />
+              )}
 
               <div className="absolute flex justify-center mt-[55px] items-center pointer-events-none text-center h-[57px] w-full start-0 rounded-lg transition-all group text-sm font-semibold bg-transparent text-gray-800 hover:bg-gray-100 focus:text-primary-500">
                 {t(
@@ -402,7 +452,10 @@ export const MediaBox: FC<{
                 <>
                   {selectedMedia.length > 0 && (
                     <div className="flex justify-center absolute top-[7px] text-white">
-                      <Button onClick={addMedia} className="!text-white">
+                      <Button
+                        onClick={props.standalone ? () => {} : addMedia}
+                        className="!text-white"
+                      >
                         <span className="!text-white">
                           {t('add_selected_media', 'Add selected media')}
                         </span>
@@ -429,11 +482,11 @@ export const MediaBox: FC<{
                         ? 'border-4 border-forth'
                         : 'border-tableBorder border-2'
                     )}
-                    onClick={setNewMedia(media)}
+                    onClick={props.standalone ? () => {} : setNewMedia(media)}
                   >
                     <div
                       onClick={removeItem(media)}
-                      className="border border-red-400 !text-white flex justify-center items-center absolute w-[20px] h-[20px] rounded-full bg-red-700 -top-[5px] -end-[5px]"
+                      className="border border-red-400 !text-white flex justify-center items-center absolute w-[20px] z-[100] h-[20px] rounded-full bg-red-700 -top-[5px] -end-[5px]"
                     >
                       X
                     </div>
@@ -576,7 +629,7 @@ export const MultiMediaComponent: FC<{
 
   return (
     <>
-      <div className="flex flex-col gap-[8px] bg-input rounded-bl-[8px] select-none w-full">
+      <div className="flex flex-col gap-[8px] bg-bigStrip rounded-bl-[8px] select-none w-full">
         {modal && <MediaBox setMedia={changeMedia} closeModal={showModal} />}
         {mediaModal && !!user?.tier?.ai && !dummy && (
           <Polonto setMedia={changeMedia} closeModal={closeDesignModal} />
@@ -585,7 +638,7 @@ export const MultiMediaComponent: FC<{
         <div className="flex gap-[10px]">
           <Button
             onClick={showModal}
-            className="ms-[10px] !px-[0] !h-[80px] w-[80px] rounded-[4px] mb-[10px] gap-[8px] !text-primary justify-center items-center flex border border-dashed border-customColor21 bg-input"
+            className="ms-[10px] !px-[0] !h-[80px] w-[80px] rounded-[4px] mb-[10px] gap-[8px] !text-primary justify-center items-center flex border border-dashed border-newBgLineColor bg-newColColor"
           >
             <div className="flex flex-col gap-[5px] items-center">
               <div>
@@ -681,11 +734,11 @@ export const MultiMediaComponent: FC<{
           )}
         </div>
         {!dummy && (
-          <div className="flex gap-[10px] bg-customColor55 w-full">
+          <div className="flex gap-[10px] bg-newBgLineColor w-full">
             <div className="flex py-[10px]">
               <Button
                 onClick={designMedia}
-                className="ms-[10px] rounded-[4px] gap-[8px] !text-primary justify-center items-center w-[127px] flex border border-dashed border-customColor21 bg-input"
+                className="ms-[10px] rounded-[4px] gap-[8px] !text-primary justify-center items-center w-[127px] flex border border-dashed border-newBgLineColor bg-newColColor"
               >
                 <div className="flex gap-[5px] items-center">
                   <div>

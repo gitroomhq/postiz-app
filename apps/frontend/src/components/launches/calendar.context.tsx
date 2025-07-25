@@ -19,6 +19,7 @@ import { useSearchParams } from 'next/navigation';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 import { extend } from 'dayjs';
+import useCookie from 'react-use-cookie';
 extend(isoWeek);
 extend(weekOfYear);
 export const CalendarContext = createContext({
@@ -109,7 +110,8 @@ export const CalendarWeekProvider: FC<{
   const [internalData, setInternalData] = useState([] as any[]);
   const [trendings] = useState<string[]>([]);
   const searchParams = useSearchParams();
-  const display = searchParams.get('display') || 'week';
+  const [displaySaved, setDisplaySaved] = useCookie('calendar-display', 'week');
+  const display = searchParams.get('display') || displaySaved;
   const [filters, setFilters] = useState({
     currentDay: +(searchParams.get('day') || dayjs().day()) as
       | 0
@@ -166,6 +168,7 @@ export const CalendarWeekProvider: FC<{
       display: 'week' | 'month' | 'day';
       customer: string | null;
     }) => {
+      setDisplaySaved(filters.display);
       setFilters(filters);
       setInternalData([]);
       const path = [

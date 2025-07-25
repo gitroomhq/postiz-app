@@ -72,7 +72,7 @@ export const SelectCurrent: FC = () => {
 
   return (
     <>
-      <div className="left-0 absolute w-full z-[100] px-[16px]">
+      <div className="left-0 absolute w-full z-[100] px-[24px]">
         <div
           ref={contentRef}
           className={clsx(
@@ -85,7 +85,7 @@ export const SelectCurrent: FC = () => {
               setHide(true);
               setCurrent('global');
             }}
-            className="cursor-pointer flex gap-[8px] items-center bg-customColor2 p-[10px] rounded-tl-[4px] rounded-tr-[4px]"
+            className="cursor-pointer flex gap-[8px] items-center bg-newBgLineColor p-[10px] rounded-tl-[4px] rounded-tr-[4px]"
           >
             <div className={clsx(current !== 'global' ? 'opacity-40' : '')}>
               <svg
@@ -109,7 +109,7 @@ export const SelectCurrent: FC = () => {
                 setCurrent(integration.id);
               }}
               key={integration.id}
-              className="cursor-pointer flex gap-[8px] items-center bg-customColor2 p-[10px] rounded-tl-[4px] rounded-tr-[4px]"
+              className="cursor-pointer flex gap-[8px] items-center bg-newBgLineColor p-[10px] rounded-tl-[4px] rounded-tr-[4px]"
             >
               <div
                 className={clsx(

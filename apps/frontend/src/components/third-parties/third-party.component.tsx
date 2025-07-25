@@ -10,6 +10,8 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import interClass from '@gitroom/react/helpers/inter.font';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
+import useCookie from 'react-use-cookie';
+import { SVGLine } from '@gitroom/frontend/components/launches/launches.component';
 
 export const ThirdPartyMenuComponent: FC<{
   reload: () => void;
@@ -102,64 +104,95 @@ export const ThirdPartyComponent = () => {
   }, []);
 
   const { data, isLoading, mutate } = useSWR('third-party', integrations);
+  const [collapseMenu, setCollapseMenu] = useCookie('collapseMenu', '0');
 
   return (
-    <div className="flex flex-1 flex-col">
-      <div className="flex flex-1 relative">
-        <div className="outline-none w-full h-full grid grid-cols[1fr] md:grid-cols-[220px_minmax(0,1fr)] gap-[30px] scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary">
-          <div className="bg-third p-[16px] flex flex-col gap-[24px] min-h-[100%]">
-            <h2 className="text-[20px]">{t('integrations')}</h2>
-            <div className="flex flex-col gap-[10px]">
-              <div className="flex-1 flex flex-col gap-[14px]">
-                <div className={clsx('gap-[16px] flex flex-col relative')}>
-                  {!isLoading && !data?.length ? (
-                    <div>No Integrations Yet</div>
-                  ) : (
-                    data?.map((p: any) => (
-                      <div
-                        key={p.id}
-                        className={clsx('flex gap-[8px] items-center')}
-                      >
-                        <div
-                          className={clsx(
-                            'relative w-[34px] h-[34px] rounded-full flex justify-center items-center bg-fifth'
-                          )}
-                          data-tooltip-id="tooltip"
-                          data-tooltip-content={p.title}
-                        >
-                          <ImageWithFallback
-                            fallbackSrc={`/icons/third-party/${p.identifier}.png`}
-                            src={`/icons/third-party/${p.identifier}.png`}
-                            className="rounded-full"
-                            alt={p.title}
-                            width={32}
-                            height={32}
-                          />
-                        </div>
-                        <div
-                          // @ts-ignore
-                          role="Handle"
-                          className={clsx(
-                            'flex-1 whitespace-nowrap text-ellipsis overflow-hidden'
-                          )}
-                          data-tooltip-id="tooltip"
-                          data-tooltip-content={p.title}
-                        >
-                          {p.name}
-                        </div>
-                        <ThirdPartyMenuComponent reload={mutate} tParty={p} />
+    <>
+      <div
+        className={clsx(
+          'bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all',
+          collapseMenu === '1' ? 'group sidebar w-[100px]' : 'w-[260px]'
+        )}
+      >
+        <div className="flex gap-[12px] flex-col">
+          <div className="flex items-center">
+            <h2 className="group-[.sidebar]:hidden flex-1 text-[20px] font-[500]">
+              {t('integrations')}
+            </h2>
+            <div
+              onClick={() => setCollapseMenu(collapseMenu === '1' ? '0' : '1')}
+              className="group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-btnText bg-btnSimple rounded-[6px] w-[24px] h-[24px] flex items-center justify-center cursor-pointer select-none"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="7"
+                height="13"
+                viewBox="0 0 7 13"
+                fill="none"
+              >
+                <path
+                  d="M6 11.5L1 6.5L6 1.5"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+          </div>
+          <div className="flex flex-col gap-[10px]">
+            <div className="flex-1 flex flex-col gap-[14px]">
+              <div className={clsx('gap-[16px] flex flex-col relative justify-center group/profile hover:bg-boxHover rounded-e-[8px]')}>
+                {!isLoading && !data?.length ? (
+                  <div>No Integrations Yet</div>
+                ) : (
+                  data?.map((p: any) => (
+                    <div
+                      key={p.id}
+                      className={clsx('flex gap-[8px] items-center')}
+                    >
+                      <div className="h-full w-[4px] -ms-[12px] rounded-s-[3px] opacity-0 group-hover/profile:opacity-100 transition-opacity">
+                        <SVGLine />
                       </div>
-                    ))
-                  )}
-                </div>
+                      <div
+                        className={clsx(
+                          'relative rounded-full flex justify-center items-center bg-fifth'
+                        )}
+                        data-tooltip-id="tooltip"
+                        data-tooltip-content={p.title}
+                      >
+                        <ImageWithFallback
+                          fallbackSrc={`/icons/third-party/${p.identifier}.png`}
+                          src={`/icons/third-party/${p.identifier}.png`}
+                          className="rounded-full"
+                          alt={p.title}
+                          width={32}
+                          height={32}
+                        />
+                      </div>
+                      <div
+                        // @ts-ignore
+                        role="Handle"
+                        className={clsx(
+                          'flex-1 whitespace-nowrap text-ellipsis overflow-hidden group-[.sidebar]:hidden'
+                        )}
+                        data-tooltip-id="tooltip"
+                        data-tooltip-content={p.title}
+                      >
+                        {p.name}
+                      </div>
+                      <ThirdPartyMenuComponent reload={mutate} tParty={p} />
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
-          <div>
-            <ThirdPartyListComponent reload={mutate} />
-          </div>
         </div>
       </div>
-    </div>
+      <div className="bg-newBgColorInner flex-1 flex-col flex p-[20px] gap-[12px]">
+        <ThirdPartyListComponent reload={mutate} />
+      </div>
+    </>
   );
 };

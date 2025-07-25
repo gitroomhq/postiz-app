@@ -57,13 +57,6 @@ For example, you can schedule your posts on X, Facebook, Instagram, TikTok, YouT
         'If you have a team with multiple members, you can invite them to your workspace to collaborate on your posts and add their personal channels'
       ),
     },
-    {
-      title: t('faq_what_is_ai_auto_complete', 'What is AI auto-complete?'),
-      description: t(
-        'faq_we_automate_chatgpt_to_help_you_write',
-        'We automate ChatGPT to help you write your social posts and articles'
-      ),
-    },
   ];
 };
 export const FAQSection: FC<{

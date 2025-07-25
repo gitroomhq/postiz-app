@@ -21,6 +21,7 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { InternalChannels } from '@gitroom/frontend/components/launches/internal.channels';
 import { capitalize } from 'lodash';
+import clsx from 'clsx';
 
 class Empty {
   @IsOptional()
@@ -240,30 +241,27 @@ export const withProvider = function <T extends object>(params: {
       >
         <FormProvider {...form}>
           <div className={current ? '' : 'hidden'}>
-            <div className="flex gap-[4px] mb-[20px]">
+            <div className="flex gap-[4px] mb-[20px] p-[4px] border border-newTableBorder rounded-[8px]">
               <div className="flex-1 flex">
-                <Button
+                <div
                   onClick={() => setTab(0)}
-                  secondary={tab !== 0 && !!SettingsComponent}
-                  className="rounded-[4px] flex-1 overflow-hidden whitespace-nowrap"
+                  className={clsx("cursor-pointer rounded-[4px] flex-1 overflow-hidden whitespace-nowrap text-center pt-[6px] pb-[5px]", tab !== 0 && !!SettingsComponent ? '' : 'text-textItemFocused bg-boxFocused')}
                 >
                   {t('preview', 'Preview')}
-                </Button>
+                </div>
               </div>
               {current &&
                 (!!SettingsComponent || !!data?.internalPlugs?.length) && (
                   <div className="flex-1 flex">
-                    <Button
+                    <div
                       onClick={() => setTab(1)}
-                      secondary={tab !== 1}
-                      className="rounded-[4px] flex-1 overflow-hidden whitespace-nowrap"
+                      className={clsx("cursor-pointer rounded-[4px] flex-1 overflow-hidden whitespace-nowrap text-center pt-[6px] pb-[5px]", tab !== 1 ? '' : 'text-textItemFocused bg-boxFocused')}
                     >
                       {t('settings', 'Settings')} (
                       {capitalize(
                         selectedIntegration.integration.identifier.split('-')[0]
-                      )}
-                      )
-                    </Button>
+                      )})
+                    </div>
                   </div>
                 )}
             </div>

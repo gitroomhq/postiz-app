@@ -1,10 +1,14 @@
 'use client';
 
 import { useModals } from '@mantine/modals';
-import React, { FC, Ref, useCallback, useEffect, useMemo } from 'react';
-import { Input } from '@gitroom/react/form/input';
-import { Button } from '@gitroom/react/form/button';
-import { Textarea } from '@gitroom/react/form/textarea';
+import React, {
+  FC,
+  Ref,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { showMediaBox } from '@gitroom/frontend/components/media/media.component';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
@@ -22,11 +26,10 @@ import { PublicComponent } from '@gitroom/frontend/components/public-api/public.
 import Link from 'next/link';
 import { Webhooks } from '@gitroom/frontend/components/webhooks/webhooks';
 import { Sets } from '@gitroom/frontend/components/sets/sets';
-import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
-import { Tabs } from '@mantine/core';
 import { SignaturesComponent } from '@gitroom/frontend/components/settings/signatures.component';
 import { Autopost } from '@gitroom/frontend/components/autopost/autopost';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { SVGLine } from '@gitroom/frontend/components/launches/launches.component';
 export const SettingsPopup: FC<{
   getRef?: Ref<any>;
 }> = (props) => {
@@ -63,6 +66,7 @@ export const SettingsPopup: FC<{
   const remove = useCallback(() => {
     form.setValue('picture', null);
   }, []);
+
   const submit = useCallback(async (val: any) => {
     await fetch('/user/personal', {
       method: 'POST',
@@ -75,7 +79,8 @@ export const SettingsPopup: FC<{
     swr.mutate('/marketplace/account');
     close();
   }, []);
-  const defaultValueForTabs = useMemo(() => {
+
+  const [tab, setTab] = useState(() => {
     if (user?.tier?.team_members && isGeneral) {
       return 'teams';
     }
@@ -86,106 +91,126 @@ export const SettingsPopup: FC<{
       return 'autopost';
     }
     return 'sets';
-  }, [user?.tier, isGeneral]);
+  });
 
   const t = useT();
+  const list = useMemo(() => {
+    const arr = [];
+    // Populate tabs based on user permissions
+    if (user?.tier?.team_members && isGeneral) {
+      arr.push({ tab: 'teams', label: t('teams', 'Teams') });
+    }
+    if (user?.tier?.webhooks) {
+      arr.push({ tab: 'webhooks', label: t('webhooks_1', 'Webhooks') });
+    }
+    if (user?.tier?.autoPost) {
+      arr.push({ tab: 'autopost', label: t('auto_post', 'Auto Post') });
+    }
+    if (user?.tier.current !== 'FREE') {
+      arr.push({ tab: 'sets', label: t('sets', 'Sets') });
+    }
+    if (user?.tier.current !== 'FREE') {
+      arr.push({ tab: 'signatures', label: t('signatures', 'Signatures') });
+    }
+    if (user?.tier?.public_api && isGeneral && showLogout) {
+      arr.push({ tab: 'api', label: t('public_api', 'Public API') });
+    }
+
+    return arr;
+  }, [user, isGeneral, showLogout, t]);
 
   useEffect(() => {
     loadProfile();
   }, []);
+
   return (
-    <FormProvider {...form}>
-      <form onSubmit={form.handleSubmit(submit)}>
-        {!!getRef && (
-          <button type="submit" className="hidden" ref={getRef}></button>
-        )}
-        <div
-          className={clsx(
-            'w-full mx-auto gap-[24px] flex flex-col relative',
-            !getRef && 'rounded-[4px]'
-          )}
-        >
-          <Tabs
-            defaultValue={defaultValueForTabs}
-            classNames={{
-              root: 'w-full',
-              tabsList: 'border-b border-customColor6 mb-4 gap-[5px]',
-              tab: 'bg-customColor6 hover:bg-forth px-4 py-4 text-[14px] data-[active]:bg-forth data-[active]:text-white text-textColor data-[active]:border-b-2 data-[active]:border-white data-[active]:hover:border-white hover:border-white hover:text-white transition-colors',
-              panel: 'pt-0',
-            }}
-          >
-            <Tabs.List>
-              {/* <Tabs.Tab value="profile">Profile</Tabs.Tab> */}
-              {!!user?.tier?.team_members && isGeneral && (
-                <Tabs.Tab value="teams">{t('teams', 'Teams')}</Tabs.Tab>
+    <>
+      <div className="bg-newBgColorInner p-[20px] flex flex-col transition-all w-[260px]">
+        <div className="flex flex-1 flex-col gap-[15px]">
+          {list.map(({ tab: tabKey, label }) => (
+            <div
+              key={tabKey}
+              className={clsx(
+                'cursor-pointer flex items-center gap-[12px] group/profile hover:bg-boxHover rounded-e-[8px]',
+                tabKey === tab && 'bg-boxHover'
               )}
-              {!!user?.tier?.webhooks && (
-                <Tabs.Tab value="webhooks">
-                  {t('webhooks_1', 'Webhooks')}
-                </Tabs.Tab>
-              )}
-              {!!user?.tier?.autoPost && (
-                <Tabs.Tab value="autopost">
-                  {t('auto_post', 'Auto Post')}
-                </Tabs.Tab>
-              )}
-              {user?.tier.current !== 'FREE' && (
-                <Tabs.Tab value="sets">{t('sets', 'Sets')}</Tabs.Tab>
-              )}
-              {user?.tier.current !== 'FREE' && (
-                <Tabs.Tab value="signatures">
-                  {t('signatures', 'Signatures')}
-                </Tabs.Tab>
-              )}
-              {!!user?.tier?.public_api && isGeneral && showLogout && (
-                <Tabs.Tab value="api">{t('public_api', 'Public API')}</Tabs.Tab>
-              )}
-            </Tabs.List>
-
-            {!!user?.tier?.team_members && isGeneral && (
-              <Tabs.Panel value="teams" pt="md">
-                <TeamsComponent />
-              </Tabs.Panel>
-            )}
-
-            {!!user?.tier?.webhooks && (
-              <Tabs.Panel value="webhooks" pt="md">
-                <Webhooks />
-              </Tabs.Panel>
-            )}
-
-            {!!user?.tier?.autoPost && (
-              <Tabs.Panel value="autopost" pt="md">
-                <Autopost />
-              </Tabs.Panel>
-            )}
-
-            {user?.tier.current !== 'FREE' && (
-              <Tabs.Panel value="sets" pt="md">
-                <Sets />
-              </Tabs.Panel>
-            )}
-
-            {user?.tier.current !== 'FREE' && (
-              <Tabs.Panel value="signatures" pt="md">
-                <SignaturesComponent />
-              </Tabs.Panel>
-            )}
-            {!!user?.tier?.public_api && isGeneral && showLogout && (
-              <Tabs.Panel value="api" pt="md">
-                <PublicComponent />
-              </Tabs.Panel>
-            )}
-          </Tabs>
-
+              onClick={() => setTab(tabKey)}
+            >
+              <div
+                className={clsx(
+                  'h-full w-[4px] rounded-s-[3px] opacity-0 group-hover/profile:opacity-100 transition-opacity',
+                  tabKey === tab && 'opacity-100'
+                )}
+              >
+                <SVGLine />
+              </div>
+              {label}
+            </div>
+          ))}
+        </div>
+        <div>
           {showLogout && (
             <div className="mt-4">
               <LogoutComponent />
             </div>
           )}
         </div>
-      </form>
-    </FormProvider>
+      </div>
+      <div className="bg-newBgColorInner flex-1 flex-col flex p-[20px] gap-[12px]">
+        <FormProvider {...form}>
+          <form onSubmit={form.handleSubmit(submit)}>
+            {!!getRef && (
+              <button type="submit" className="hidden" ref={getRef}></button>
+            )}
+            <div
+              className={clsx(
+                'w-full mx-auto gap-[24px] flex flex-col relative',
+                !getRef && 'rounded-[4px]'
+              )}
+            >
+              {tab === 'teams' && !!user?.tier?.team_members && isGeneral && (
+                <div>
+                  <TeamsComponent />
+                </div>
+              )}
+
+              {tab === 'webhooks' && !!user?.tier?.webhooks && (
+                <div>
+                  <Webhooks />
+                </div>
+              )}
+
+              {tab === 'autopost' && !!user?.tier?.autoPost && (
+                <div>
+                  <Autopost />
+                </div>
+              )}
+
+              {tab === 'sets' && user?.tier.current !== 'FREE' && (
+                <div>
+                  <Sets />
+                </div>
+              )}
+
+              {tab === 'signatures' && user?.tier.current !== 'FREE' && (
+                <div>
+                  <SignaturesComponent />
+                </div>
+              )}
+
+              {tab === 'api' &&
+                !!user?.tier?.public_api &&
+                isGeneral &&
+                showLogout && (
+                  <div>
+                    <PublicComponent />
+                  </div>
+                )}
+            </div>
+          </form>
+        </FormProvider>
+      </div>
+    </>
   );
 };
 export const SettingsComponent = () => {

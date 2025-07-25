@@ -87,7 +87,7 @@ export const RenderAnalytics: FC<{
       )}
       {data?.map((p: any, index: number) => (
         <div key={`pl-${index}`} className="flex">
-          <div className="flex-1 bg-secondary py-[10px] px-[16px] gap-[10px] flex flex-col">
+          <div className="flex-1 bg-newTableHeader rounded-[8px] py-[10px] px-[16px] gap-[10px] flex flex-col">
             <div className="flex items-center gap-[14px]">
               <div className="text-[20px]">{p.label}</div>
             </div>
