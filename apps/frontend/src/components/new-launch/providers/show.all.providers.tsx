@@ -1,8 +1,11 @@
 'use client';
 
+import DevtoProvider from '@gitroom/frontend/components/new-launch/providers/devto/devto.provider';
 import XProvider from '@gitroom/frontend/components/new-launch/providers/x/x.provider';
 import LinkedinProvider from '@gitroom/frontend/components/new-launch/providers/linkedin/linkedin.provider';
 import RedditProvider from '@gitroom/frontend/components/new-launch/providers/reddit/reddit.provider';
+import MediumProvider from '@gitroom/frontend/components/new-launch/providers/medium/medium.provider';
+import HashnodeProvider from '@gitroom/frontend/components/new-launch/providers/hashnode/hashnode.provider';
 import FacebookProvider from '@gitroom/frontend/components/new-launch/providers/facebook/facebook.provider';
 import InstagramProvider from '@gitroom/frontend/components/new-launch/providers/instagram/instagram.collaborators';
 import YoutubeProvider from '@gitroom/frontend/components/new-launch/providers/youtube/youtube.provider';
@@ -30,6 +33,10 @@ import { PostComment } from '@gitroom/frontend/components/new-launch/providers/h
 
 export const Providers = [
   {
+    identifier: 'devto',
+    component: DevtoProvider,
+  },
+  {
     identifier: 'x',
     component: XProvider,
   },
@@ -44,6 +51,14 @@ export const Providers = [
   {
     identifier: 'reddit',
     component: RedditProvider,
+  },
+  {
+    identifier: 'medium',
+    component: MediumProvider,
+  },
+  {
+    identifier: 'hashnode',
+    component: HashnodeProvider,
   },
   {
     identifier: 'facebook',
