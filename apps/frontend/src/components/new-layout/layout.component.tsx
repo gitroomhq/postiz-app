@@ -90,7 +90,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
               jakartaSans.className
             )}
           >
-            {/*<div>{user?.admin ? <Impersonate /> : <div />}</div>*/}
+            <div>{user?.admin ? <Impersonate /> : <div />}</div>
             {user.tier === 'FREE' && isGeneral && billingEnabled ? (
               <BillingAfter />
             ) : (
