@@ -75,7 +75,7 @@ export const Plugs = () => {
   }
   if (!sortedIntegrations.length && !isLoading) {
     return (
-      <div className="flex flex-col items-center mt-[100px] gap-[27px] text-center">
+      <div className="bg-newBgColorInner p-[20px] flex flex-1 flex-col gap-[15px] transition-all items-center justify-center">
         <div>
           <img src="/peoplemarketplace.svg" />
         </div>

@@ -127,7 +127,7 @@ export const PlatformAnalytics = () => {
   }
   if (!sortedIntegrations.length && !isLoading) {
     return (
-      <div className="flex flex-col items-center mt-[100px] gap-[27px] text-center">
+      <div className="bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all flex-1 justify-center items-center text-center">
         <div>
           <img src="/peoplemarketplace.svg" />
         </div>
