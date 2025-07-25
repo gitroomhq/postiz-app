@@ -14,12 +14,12 @@ export const useMenuItems = () => {
   return [
     ...(!isGeneral
       ? [
-          {
-            name: t('analytics', 'Analytics'),
-            icon: 'analytics',
-            path: '/analytics',
-          },
-        ]
+        {
+          name: t('analytics', 'Analytics'),
+          icon: 'analytics',
+          path: '/analytics',
+        },
+      ]
       : []),
     {
       name: isGeneral ? t('calendar', 'Calendar') : t('launches', 'Launches'),
@@ -28,32 +28,27 @@ export const useMenuItems = () => {
     },
     ...(isGeneral
       ? [
-          {
-            name: t('analytics', 'Analytics'),
-            icon: 'analytics',
-            path: '/analytics',
-          },
-        ]
+        {
+          name: t('analytics', 'Analytics'),
+          icon: 'analytics',
+          path: '/analytics',
+        },
+      ]
       : []),
     ...(!isGeneral
       ? [
-          {
-            name: t('settings', 'Settings'),
-            icon: 'settings',
-            path: '/settings',
-            role: ['ADMIN', 'SUPERADMIN'],
-          },
-        ]
+        {
+          name: t('settings', 'Settings'),
+          icon: 'settings',
+          path: '/settings',
+          role: ['ADMIN', 'SUPERADMIN'],
+        },
+      ]
       : []),
     {
       name: t('plugs', 'Plugs'),
       icon: 'plugs',
       path: '/plugs',
-    },
-    {
-      name: t('integrations', 'Integrations'),
-      icon: 'integrations',
-      path: '/third-party',
     },
     {
       name: t('billing', 'Billing'),
