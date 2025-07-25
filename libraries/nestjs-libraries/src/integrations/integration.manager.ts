@@ -5,9 +5,6 @@ import { XProvider } from '@gitroom/nestjs-libraries/integrations/social/x.provi
 import { SocialProvider } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { LinkedinProvider } from '@gitroom/nestjs-libraries/integrations/social/linkedin.provider';
 import { RedditProvider } from '@gitroom/nestjs-libraries/integrations/social/reddit.provider';
-import { DevToProvider } from '@gitroom/nestjs-libraries/integrations/social/dev.to.provider';
-import { HashnodeProvider } from '@gitroom/nestjs-libraries/integrations/social/hashnode.provider';
-import { MediumProvider } from '@gitroom/nestjs-libraries/integrations/social/medium.provider';
 import { FacebookProvider } from '@gitroom/nestjs-libraries/integrations/social/facebook.provider';
 import { InstagramProvider } from '@gitroom/nestjs-libraries/integrations/social/instagram.provider';
 import { YoutubeProvider } from '@gitroom/nestjs-libraries/integrations/social/youtube.provider';
@@ -19,12 +16,9 @@ import { ThreadsProvider } from '@gitroom/nestjs-libraries/integrations/social/t
 import { DiscordProvider } from '@gitroom/nestjs-libraries/integrations/social/discord.provider';
 import { SlackProvider } from '@gitroom/nestjs-libraries/integrations/social/slack.provider';
 import { MastodonProvider } from '@gitroom/nestjs-libraries/integrations/social/mastodon.provider';
-import { BlueskyProvider } from '@gitroom/nestjs-libraries/integrations/social/bluesky.provider';
-import { LemmyProvider } from '@gitroom/nestjs-libraries/integrations/social/lemmy.provider';
 import { InstagramStandaloneProvider } from '@gitroom/nestjs-libraries/integrations/social/instagram.standalone.provider';
 import { FarcasterProvider } from '@gitroom/nestjs-libraries/integrations/social/farcaster.provider';
 import { TelegramProvider } from '@gitroom/nestjs-libraries/integrations/social/telegram.provider';
-import { NostrProvider } from '@gitroom/nestjs-libraries/integrations/social/nostr.provider';
 import { VkProvider } from '@gitroom/nestjs-libraries/integrations/social/vk.provider';
 
 export const socialIntegrationList: SocialProvider[] = [
@@ -43,14 +37,9 @@ export const socialIntegrationList: SocialProvider[] = [
   new DiscordProvider(),
   new SlackProvider(),
   new MastodonProvider(),
-  // new BlueskyProvider(),
   new FarcasterProvider(),
   new TelegramProvider(),
   new VkProvider(),
-  new MediumProvider(),
-  new DevToProvider(),
-  new HashnodeProvider(),
-  // new MastodonCustomProvider(),
 ];
 
 @Injectable()

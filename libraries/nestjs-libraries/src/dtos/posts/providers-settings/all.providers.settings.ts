@@ -10,9 +10,6 @@ import { SlackDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-setting
 import { InstagramDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/instagram.dto';
 import { LinkedinDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/linkedin.dto';
 import { IsIn } from 'class-validator';
-import { MediumSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/medium.settings.dto';
-import { DevToSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dev.to.settings.dto';
-import { HashnodeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/hashnode.settings.dto';
 
 export type ProviderExtension<T extends string, M> = { __type: T } & M;
 export type AllProvidersSettings =
@@ -29,9 +26,6 @@ export type AllProvidersSettings =
   | ProviderExtension<'linkedin-page', LinkedinDto>
   | ProviderExtension<'instagram', InstagramDto>
   | ProviderExtension<'instagram-standalone', InstagramDto>
-  | ProviderExtension<'medium', MediumSettingsDto>
-  | ProviderExtension<'devto', DevToSettingsDto>
-  | ProviderExtension<'hashnode', HashnodeSettingsDto>
   | ProviderExtension<'facebook', None>
   | ProviderExtension<'threads', None>
   | ProviderExtension<'mastodon', None>
@@ -58,9 +52,6 @@ export const allProviders = (setEmpty?: any) => {
     { value: LinkedinDto, name: 'linkedin-page' },
     { value: InstagramDto, name: 'instagram' },
     { value: InstagramDto, name: 'instagram-standalone' },
-    { value: MediumSettingsDto, name: 'medium' },
-    { value: DevToSettingsDto, name: 'devto' },
-    { value: HashnodeSettingsDto, name: 'hashnode' },
     { value: setEmpty, name: 'facebook' },
     { value: setEmpty, name: 'threads' },
     { value: setEmpty, name: 'mastodon' },
