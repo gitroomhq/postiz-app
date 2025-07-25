@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        NODE_VERSION = '24.0.0'
+        NODE_VERSION = '24.4.1'
         PR_NUMBER = "${env.CHANGE_ID}" // PR number comes from webhook payload
         IMAGE_TAG="ghcr.io/gitroomhq/postiz-app-pr:${env.CHANGE_ID}"
     }
