@@ -6,6 +6,7 @@ import { z } from 'zod';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
+  baseURL: process.env.OPENAI_BASE_URL,
 });
 
 const PicturePrompt = z.object({
@@ -18,6 +19,14 @@ const VoicePrompt = z.object({
 
 @Injectable()
 export class OpenaiService {
+  private getSmartModel(): string {
+    return process.env.SMART_LLM || 'gpt-4.1';
+  }
+
+  private getFastModel(): string {
+    return process.env.FAST_LLM || 'gpt-4o-mini';
+  }
+
   async generateImage(prompt: string, isUrl: boolean, isVertical = false) {
     const generate = (
       await openai.images.generate({
@@ -35,7 +44,7 @@ export class OpenaiService {
     return (
       (
         await openai.beta.chat.completions.parse({
-          model: 'gpt-4.1',
+          model: this.getSmartModel(),
           messages: [
             {
               role: 'system',
@@ -56,7 +65,7 @@ export class OpenaiService {
     return (
       (
         await openai.beta.chat.completions.parse({
-          model: 'gpt-4.1',
+          model: this.getSmartModel(),
           messages: [
             {
               role: 'system',
@@ -90,7 +99,7 @@ export class OpenaiService {
           ],
           n: 5,
           temperature: 1,
-          model: 'gpt-4.1',
+          model: this.getFastModel(),
         }),
         openai.chat.completions.create({
           messages: [
@@ -106,7 +115,7 @@ export class OpenaiService {
           ],
           n: 5,
           temperature: 1,
-          model: 'gpt-4.1',
+          model: this.getFastModel(),
         }),
       ])
     ).flatMap((p) => p.choices);
@@ -144,7 +153,7 @@ export class OpenaiService {
           content,
         },
       ],
-      model: 'gpt-4.1',
+      model: this.getFastModel(),
     });
 
     const { content: articleContent } = websiteContent.choices[0].message;
@@ -164,7 +173,7 @@ export class OpenaiService {
     const posts =
       (
         await openai.beta.chat.completions.parse({
-          model: 'gpt-4.1',
+          model: this.getSmartModel(),
           messages: [
             {
               role: 'system',
@@ -197,7 +206,7 @@ export class OpenaiService {
               return (
                 (
                   await openai.beta.chat.completions.parse({
-                    model: 'gpt-4.1',
+                    model: this.getSmartModel(),
                     messages: [
                       {
                         role: 'system',
@@ -231,7 +240,7 @@ export class OpenaiService {
     return (
       (
         await openai.beta.chat.completions.parse({
-          model: 'gpt-4.1',
+          model: this.getSmartModel(),
           messages: [
             {
               role: 'system',
