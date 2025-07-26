@@ -1,4 +1,4 @@
-FROM node:20-alpine3.19
+FROM node:24-alpine3.21
 ARG NEXT_PUBLIC_VERSION
 ENV NEXT_PUBLIC_VERSION=$NEXT_PUBLIC_VERSION
 RUN apk add --no-cache g++ make py3-pip supervisor bash caddy
