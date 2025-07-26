@@ -78,6 +78,7 @@ interface MenuComponentInterface {
       identifier: string;
     }
   ) => () => void;
+  collapsed: boolean;
   continueIntegration: (integration: Integration) => () => void;
   totalNonDisabledChannels: number;
   mutate: (shouldReload?: boolean) => void;
@@ -130,6 +131,7 @@ export const MenuGroupComponent: FC<
     totalNonDisabledChannels,
     refreshChannel,
     changeItemGroup,
+    collapsed,
   } = props;
   const [isOpen, setIsOpen] = useState(
     !!+(localStorage.getItem(group.name + '_isOpen') || '1')
@@ -177,7 +179,17 @@ export const MenuGroupComponent: FC<
           <div>
             <OpenClose isOpen={isOpen} />
           </div>
-          <div className="line-clamp-1">{group.name}</div>
+          <div
+            className="line-clamp-1"
+            {...(collapsed
+              ? {
+                  'data-tooltip-id': 'tooltip',
+                  'data-tooltip-content': group.name,
+                }
+              : {})}
+          >
+            {group.name}
+          </div>
         </div>
       )}
       <div
@@ -188,6 +200,7 @@ export const MenuGroupComponent: FC<
       >
         {group.values.map((integration) => (
           <MenuComponent
+            collapsed={collapsed}
             key={integration.id}
             integration={integration}
             mutate={mutate}
@@ -218,6 +231,7 @@ export const MenuComponent: FC<
     mutate,
     update,
     integration,
+    collapsed,
   } = props;
   const user = useUser();
   const [collected, drag, dragPreview] = useDrag(() => ({
@@ -235,6 +249,12 @@ export const MenuComponent: FC<
         'data-tooltip-id': 'tooltip',
         'data-tooltip-content': 'Channel disconnected, click to reconnect.',
       })}
+      {...(collapsed
+        ? {
+            'data-tooltip-id': 'tooltip',
+            'data-tooltip-content': integration.name,
+          }
+        : {})}
       key={integration.id}
       className={clsx(
         'flex gap-[12px] items-center bg-newBgColorInner hover:bg-boxHover group/profile transition-all rounded-e-[8px]',
@@ -531,6 +551,7 @@ export const LaunchesComponent = () => {
             )}
             {menuIntegrations.map((menu) => (
               <MenuGroupComponent
+                collapsed={collapseMenu === '1'}
                 changeItemGroup={changeItemGroup}
                 key={menu.name}
                 group={menu}
