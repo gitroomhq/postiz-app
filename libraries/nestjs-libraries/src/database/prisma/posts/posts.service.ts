@@ -174,6 +174,13 @@ export class PostsService {
           )
         )
           .map((m) => {
+            // Determine media type based on file extension or existing type
+            const isVideo = m.path.toLowerCase().includes('.mp4') || 
+                           m.path.toLowerCase().includes('.mov') || 
+                           m.path.toLowerCase().includes('.avi') || 
+                           m.path.toLowerCase().includes('.webm') ||
+                           m.type === 'video';
+            
             return {
               ...m,
               url:
@@ -183,7 +190,7 @@ export class PostsService {
                     process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
                     m.path
                   : m.path,
-              type: 'image',
+              type: isVideo ? 'video' : 'image',
               path:
                 m.path.indexOf('http') === -1
                   ? process.env.UPLOAD_DIRECTORY + m.path
@@ -231,7 +238,7 @@ export class PostsService {
                       process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
                       path
                     : path,
-                type: 'image',
+                type: 'image', // After JPEG conversion, it's always an image
                 path:
                   path.indexOf('http') === -1
                     ? process.env.UPLOAD_DIRECTORY + path

@@ -425,14 +425,16 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   ): Promise<PostResponse[]> {
     const [firstPost] = postDetails;
 
-    const isPhoto = (firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) === -1;
+    // Check if it's a photo/image by checking both the file extension and media type
+    const isPhoto = firstPost?.media?.[0]?.type === 'image' || 
+                   (firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) === -1;
     const {
       data: { publish_id },
     } = await (
       await this.fetch(
         `https://open.tiktokapis.com/v2/post/publish${this.postingMethod(
           firstPost.settings.content_posting_method,
-          (firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) === -1
+          isPhoto
         )}`,
         {
           method: 'POST',
@@ -473,7 +475,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
                   },
                 }
               : {}),
-            ...((firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) > -1
+            ...(!isPhoto
               ? {
                   source_info: {
                     source: 'PULL_FROM_URL',
