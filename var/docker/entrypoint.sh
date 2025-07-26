@@ -2,9 +2,9 @@
 
 set -o xtrace
 
-# Wait for port 4200 to be open
-while ! nc -z localhost 4200; do
-  echo "Waiting for port 4200..."
+# Wait for port 5000 to be open (frontend)
+while ! nc -z localhost 5000; do
+  echo "Waiting for port 5000..."
   sleep 1
 done
 
