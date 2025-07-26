@@ -480,7 +480,11 @@ export const LaunchesComponent = () => {
     }
   }, []);
   if (isLoading || reload) {
-    return <LoadingComponent />;
+    return (
+      <div className="bg-newBgColorInner p-[20px] flex flex-1 flex-col gap-[15px] transition-all items-center justify-center">
+        <LoadingComponent />
+      </div>
+    );
   }
 
   // @ts-ignore
