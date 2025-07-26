@@ -29,6 +29,7 @@ import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
 import { PurchaseCrypto } from '@gitroom/frontend/components/billing/purchase.crypto';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { FinishTrial } from '@gitroom/frontend/components/billing/finish.trial';
+import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
 export interface Tiers {
   month: Array<{
     name: 'Pro' | 'Standard';
@@ -118,9 +119,7 @@ export const Features: FC<{
       );
     }
     if (currentPricing?.generate_videos) {
-      list.push(
-        `${currentPricing?.generate_videos} AI Videos per month`
-      );
+      list.push(`${currentPricing?.generate_videos} AI Videos per month`);
     }
     return list;
   }, [pack]);
@@ -226,7 +225,9 @@ export const MainBillingComponent: FC<{
   const track = useTrack();
   const t = useT();
   const queryParams = useSearchParams();
-  const [finishTrial, setFinishTrial] = useState(!!queryParams.get('finishTrial'));
+  const [finishTrial, setFinishTrial] = useState(
+    !!queryParams.get('finishTrial')
+  );
 
   const [subscription, setSubscription] = useState<Subscription | undefined>(
     sub
@@ -403,9 +404,7 @@ export const MainBillingComponent: FC<{
         </div>
       </div>
 
-      {finishTrial && (
-        <FinishTrial close={() => setFinishTrial(false)} />
-      )}
+      {finishTrial && <FinishTrial close={() => setFinishTrial(false)} />}
       <div className="flex gap-[16px] [@media(max-width:1024px)]:flex-col [@media(max-width:1024px)]:text-center">
         {Object.entries(pricing)
           .filter((f) => !isGeneral || f[0] !== 'FREE')

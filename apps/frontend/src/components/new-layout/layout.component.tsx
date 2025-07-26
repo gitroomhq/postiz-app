@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useCallback } from 'react';
+import React, { ReactNode, useCallback } from 'react';
 import { Logo } from '@gitroom/frontend/components/new-layout/logo';
 import { MenuItem } from '@gitroom/frontend/components/new-layout/menu-item';
 import { Plus_Jakarta_Sans } from 'next/font/google';
@@ -39,6 +39,7 @@ import { LanguageComponent } from '@gitroom/frontend/components/layout/language.
 import { ChromeExtensionComponent } from '@gitroom/frontend/components/layout/chrome.extension.component';
 import NotificationComponent from '@gitroom/frontend/components/notifications/notification.component';
 import { BillingAfter } from '@gitroom/frontend/components/new-layout/billing.after';
+import { OrganizationSelector } from '@gitroom/frontend/components/layout/organization.selector';
 
 const jakartaSans = Plus_Jakarta_Sans({
   weight: ['600', '500'],
@@ -109,6 +110,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                       <Title />
                     </div>
                     <div className="flex gap-[20px] text-textItemBlur">
+                      <OrganizationSelector />
                       <div className="hover:text-newTextColor">
                         <ModeComponent />
                       </div>
