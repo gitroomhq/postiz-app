@@ -16,6 +16,6 @@ RUN chmod +x /app/entrypoint.sh
 RUN pnpm install
 RUN pnpm run build
 
-EXPOSE 4200
+EXPOSE 5000
 
 CMD ["pnpm", "run", "pm2"]

@@ -8,7 +8,7 @@
 			"extensions": []
 		}
 	},
-	"forwardPorts": ["4200:4200", "3000:3000"],
+	"forwardPorts": ["5000:5000", "3000:3000"],
 	"mounts": ["source=/apps,destination=/apps/dist/,type=bind,consistency=cached"]
 }
 

@@ -9,6 +9,6 @@
 	}
 
 	handle {
-		reverse_proxy * localhost:4200
+		reverse_proxy * localhost:5000
 	}
 }
