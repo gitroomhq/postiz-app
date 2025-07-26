@@ -41,7 +41,6 @@ export const Subscription = () => {
       name="sub"
       label=""
       value=""
-      className="text-black"
     >
       <option>
         {t('add_free_subscription', '-- ADD FREE SUBSCRIPTION --')}
@@ -116,7 +115,7 @@ export const Impersonate = () => {
   }, [data]);
   return (
     <div>
-      <div className="bg-forth h-[52px] flex justify-center items-center border-input border rounded-[8px]">
+      <div className="bg-forth h-[52px] flex justify-center items-center border-input border rounded-[8px] text-white">
         <div className="relative flex flex-col w-[600px]">
           <div className="relative z-[999]">
             {user?.impersonate ? (
@@ -126,7 +125,7 @@ export const Impersonate = () => {
                 </div>
                 <div>
                   <div
-                    className="px-[10px] rounded-[4px] bg-red-500 text-textColor cursor-pointer"
+                    className="px-[10px] rounded-[4px] bg-red-500 text-white cursor-pointer"
                     onClick={stopImpersonating}
                   >
                     X
