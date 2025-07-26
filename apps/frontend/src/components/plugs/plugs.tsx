@@ -16,6 +16,7 @@ import { Plug } from '@gitroom/frontend/components/plugs/plug';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import useCookie from 'react-use-cookie';
 import { SVGLine } from '@gitroom/frontend/components/launches/launches.component';
+import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 export const Plugs = () => {
   const fetch = useFetch();
   const router = useRouter();
@@ -70,9 +71,15 @@ export const Plugs = () => {
       ...plug,
     };
   }, [currentIntegration, plugList]);
+
   if (isLoading || plugLoading) {
-    return null;
+    return (
+      <div className="bg-newBgColorInner p-[20px] flex flex-1 flex-col gap-[15px] transition-all items-center justify-center">
+        <LoadingComponent />
+      </div>
+    );
   }
+
   if (!sortedIntegrations.length && !isLoading) {
     return (
       <div className="bg-newBgColorInner p-[20px] flex flex-1 flex-col gap-[15px] transition-all items-center justify-center">

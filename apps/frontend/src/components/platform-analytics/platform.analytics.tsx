@@ -16,6 +16,7 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import useCookie from 'react-use-cookie';
 import { SVGLine } from '@gitroom/frontend/components/launches/launches.component';
+import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 const allowedIntegrations = [
   'facebook',
   'instagram',
@@ -122,9 +123,15 @@ export const PlatformAnalytics = () => {
     }
     return options[0]?.key;
   }, [key, currentIntegration]);
+
   if (isLoading) {
-    return null;
+    return (
+      <div className="bg-newBgColorInner p-[20px] flex flex-1 flex-col gap-[15px] transition-all items-center justify-center">
+        <LoadingComponent />
+      </div>
+    );
   }
+
   if (!sortedIntegrations.length && !isLoading) {
     return (
       <div className="bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all flex-1 justify-center items-center text-center">
