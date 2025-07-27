@@ -2,18 +2,28 @@
 import * as Sentry from '@sentry/react';
 import React from 'react';
 
+interface SentryWindow extends Window {
+  __SENTRY_ENABLED__?: boolean;
+  __SENTRY_DSN__?: string;
+  __SENTRY_ENVIRONMENT__?: string;
+  __SENTRY_DEBUG__?: string;
+  __SENTRY_TRACES_SAMPLE_RATE__?: string;
+  __SENTRY_REPLAYS_SESSION_SAMPLE_RATE__?: string;
+  __SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE__?: string;
+}
+
 export function initializeSentryClient() {
   // Only run on client side
   if (typeof window === 'undefined') return;
 
   // Get config from server-injected variables
-  const enabled = (window as any).__SENTRY_ENABLED__;
-  const dsn = (window as any).__SENTRY_DSN__;
-  const environment = (window as any).__SENTRY_ENVIRONMENT__ || 'development';
-  const debug = (window as any).__SENTRY_DEBUG__ === 'true';
-  const tracesSampleRate = parseFloat((window as any).__SENTRY_TRACES_SAMPLE_RATE__ || '0.1');
-  const replaysSessionSampleRate = parseFloat((window as any).__SENTRY_REPLAYS_SESSION_SAMPLE_RATE__ || '0.1');
-  const replaysOnErrorSampleRate = parseFloat((window as any).__SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE__ || '1.0');
+  const enabled = (window as SentryWindow).__SENTRY_ENABLED__;
+  const dsn = (window as SentryWindow).__SENTRY_DSN__;
+  const environment = (window as SentryWindow).__SENTRY_ENVIRONMENT__ || 'development';
+  const debug = (window as SentryWindow).__SENTRY_DEBUG__ === 'true';
+  const tracesSampleRate = parseFloat((window as SentryWindow).__SENTRY_TRACES_SAMPLE_RATE__ || '0.1');
+  const replaysSessionSampleRate = parseFloat((window as SentryWindow).__SENTRY_REPLAYS_SESSION_SAMPLE_RATE__ || '0.1');
+  const replaysOnErrorSampleRate = parseFloat((window as SentryWindow).__SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE__ || '1.0');
 
   if (!enabled || !dsn) {
     console.log('[Frontend] Sentry is disabled');
