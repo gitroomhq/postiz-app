@@ -154,7 +154,7 @@ export class SentryReactService {
     return Sentry.startSpan({
       name,
       op: op || 'custom',
-    }, (span) => span);
+    });
   }
 
   static showReportDialog(eventId?: string) {
