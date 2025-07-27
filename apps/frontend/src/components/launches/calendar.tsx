@@ -102,12 +102,13 @@ export const hours = Array.from(
 );
 export const DayView = () => {
   const calendar = useCalendar();
-  const { integrations, posts, currentYear, currentDay, currentWeek } =
-    calendar;
+  const { integrations, posts, startDate } = calendar;
 
   // Set dayjs locale based on current language
   const currentLanguage = i18next.resolvedLanguage || 'en';
   dayjs.locale(currentLanguage);
+
+  const currentDay = dayjs(startDate);
 
   const options = useMemo(() => {
     const createdPosts = posts.map((post) => ({
@@ -142,6 +143,7 @@ export const DayView = () => {
       (p) => p[0].time
     );
   }, [integrations, posts]);
+
   return (
     <div className="flex flex-col gap-[10px] flex-1">
       {options.map((option) => (
@@ -165,11 +167,7 @@ export const DayView = () => {
               }}
             >
               <CalendarColumn
-                getDate={dayjs()
-                  .utc()
-                  .year(currentYear)
-                  .week(currentWeek)
-                  .day(currentDay)
+                getDate={currentDay
                   .startOf('day')
                   .add(option[0].time, 'minute')
                   .local()}
@@ -182,7 +180,7 @@ export const DayView = () => {
   );
 };
 export const WeekView = () => {
-  const { currentYear, currentWeek } = useCalendar();
+  const { startDate, endDate } = useCalendar();
   const t = useT();
 
   // Use dayjs to get localized day names
@@ -191,16 +189,17 @@ export const WeekView = () => {
     dayjs.locale(currentLanguage);
 
     const days = [];
-    const yearWeek = dayjs()
-      .year(currentYear)
-      .week(currentWeek)
-      .startOf('week');
-    for (let i = 1; i <= 7; i++) {
-      const yearWeekFormat = yearWeek.add(i, 'day').format('L');
-      days.push({ name: dayjs().day(i).format('dddd'), day: yearWeekFormat });
+    const weekStart = dayjs(startDate);
+    for (let i = 0; i < 7; i++) {
+      const day = weekStart.add(i, 'day');
+      days.push({
+        name: day.format('dddd'),
+        day: day.format('L'),
+        date: day,
+      });
     }
     return days;
-  }, [i18next.resolvedLanguage, currentYear, currentWeek]);
+  }, [i18next.resolvedLanguage, startDate]);
 
   return (
     <div className="flex flex-col text-textColor flex-1">
@@ -233,16 +232,13 @@ export const WeekView = () => {
               <div className="p-2 pe-4 text-center items-center justify-center flex text-[14px] text-newTableText">
                 {convertTimeFormatBasedOnLocality(hour)}
               </div>
-              {days.map((day, indexDay) => (
-                <Fragment key={`${currentYear}-${currentWeek}-${day}-${hour}`}>
+              {localizedDays.map((day, indexDay) => (
+                <Fragment
+                  key={`${startDate}-${day.date.format('YYYY-MM-DD')}-${hour}`}
+                >
                   <div className="relative">
                     <CalendarColumn
-                      getDate={dayjs()
-                        .year(currentYear)
-                        .week(currentWeek)
-                        .day(indexDay + 1)
-                        .hour(hour)
-                        .startOf('hour')}
+                      getDate={day.date.hour(hour).startOf('hour')}
                     />
                   </div>
                 </Fragment>
@@ -255,7 +251,7 @@ export const WeekView = () => {
   );
 };
 export const MonthView = () => {
-  const { currentYear, currentMonth } = useCalendar();
+  const { startDate } = useCalendar();
   const t = useT();
 
   // Use dayjs to get localized day names
@@ -272,6 +268,10 @@ export const MonthView = () => {
   }, [i18next.resolvedLanguage]);
 
   const calendarDays = useMemo(() => {
+    const monthStart = dayjs(startDate);
+    const currentMonth = monthStart.month();
+    const currentYear = monthStart.year();
+
     const startOfMonth = dayjs(new Date(currentYear, currentMonth, 1));
 
     // Calculate the day offset for Monday (isoWeekday() returns 1 for Monday)
@@ -279,11 +279,11 @@ export const MonthView = () => {
     const daysBeforeMonth = startDayOfWeek - 1; // Days to show from the previous month
 
     // Get the start date (Monday of the first week that includes this month)
-    const startDate = startOfMonth.subtract(daysBeforeMonth, 'day');
+    const calendarStartDate = startOfMonth.subtract(daysBeforeMonth, 'day');
 
     // Create an array to hold the calendar days (6 weeks * 7 days = 42 days max)
     const calendarDays = [];
-    let currentDay = startDate;
+    let currentDay = calendarStartDate;
     for (let i = 0; i < 42; i++) {
       let label = 'current-month';
       if (currentDay.month() < currentMonth) label = 'previous-month';
@@ -297,7 +297,7 @@ export const MonthView = () => {
       currentDay = currentDay.add(1, 'day');
     }
     return calendarDays;
-  }, [currentYear, currentMonth]);
+  }, [startDate]);
 
   return (
     <div className="flex flex-col text-textColor flex-1">

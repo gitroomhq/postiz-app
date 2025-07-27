@@ -8,191 +8,207 @@ import { SelectCustomer } from '@gitroom/frontend/components/launches/select.cus
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import i18next from 'i18next';
 
+// Helper function to get start and end dates based on display type
+function getDateRange(
+  display: 'day' | 'week' | 'month',
+  referenceDate?: string
+) {
+  const date = referenceDate ? dayjs(referenceDate) : dayjs();
+
+  switch (display) {
+    case 'day':
+      return {
+        startDate: date.format('YYYY-MM-DD'),
+        endDate: date.format('YYYY-MM-DD'),
+      };
+    case 'week':
+      return {
+        startDate: date.startOf('isoWeek').format('YYYY-MM-DD'),
+        endDate: date.endOf('isoWeek').format('YYYY-MM-DD'),
+      };
+    case 'month':
+      return {
+        startDate: date.startOf('month').format('YYYY-MM-DD'),
+        endDate: date.endOf('month').format('YYYY-MM-DD'),
+      };
+  }
+}
+
 export const Filters = () => {
-  const week = useCalendar();
+  const calendar = useCalendar();
   const t = useT();
 
   // Set dayjs locale based on current language
   const currentLanguage = i18next.resolvedLanguage || 'en';
   dayjs.locale();
 
-  const betweenDates =
-    week.display === 'day'
-      ? dayjs()
-          .year(week.currentYear)
-          .isoWeek(week.currentWeek)
-          .day(week.currentDay)
-          .format('L')
-      : week.display === 'week'
-      ? dayjs()
-          .year(week.currentYear)
-          .isoWeek(week.currentWeek)
-          .startOf('isoWeek')
-          .format('L') +
-        ' - ' +
-        dayjs()
-          .year(week.currentYear)
-          .isoWeek(week.currentWeek)
-          .endOf('isoWeek')
-          .format('L')
-      : dayjs()
-          .year(week.currentYear)
-          .month(week.currentMonth)
-          .startOf('month')
-          .format('L') +
-        ' - ' +
-        dayjs()
-          .year(week.currentYear)
-          .month(week.currentMonth)
-          .endOf('month')
-          .format('L');
-  const setDay = useCallback(() => {
+  // Calculate display date range text
+  const getDisplayText = () => {
+    const startDate = dayjs(calendar.startDate);
+    const endDate = dayjs(calendar.endDate);
+
+    switch (calendar.display) {
+      case 'day':
+        return startDate.format('dddd (L)');
+      case 'week':
+        return `${startDate.format('L')} - ${endDate.format('L')}`;
+      case 'month':
+        return startDate.format('MMMM YYYY');
+      default:
+        return '';
+    }
+  };
+
+  const setToday = useCallback(() => {
+    const today = dayjs();
+    const currentRange = getDateRange(
+      calendar.display as 'day' | 'week' | 'month'
+    );
+
+    // Check if we're already showing today's range
     if (
-      week.display === 'day' &&
-      week.currentDay === +dayjs().day() &&
-      week.currentWeek === dayjs().isoWeek() &&
-      week.currentYear === dayjs().year() &&
-      week.currentMonth === dayjs().month()
+      calendar.startDate === currentRange.startDate &&
+      calendar.endDate === currentRange.endDate
     ) {
-      return; // No need to set the same day
+      return; // No need to set the same range
     }
 
-    week.setFilters({
-      currentDay: +dayjs().day() as 0 | 1 | 2 | 3 | 4 | 5 | 6,
-      currentWeek: dayjs().isoWeek(),
-      currentYear: dayjs().year(),
-      currentMonth: dayjs().month(),
+    calendar.setFilters({
+      startDate: currentRange.startDate,
+      endDate: currentRange.endDate,
+      display: calendar.display as 'day' | 'week' | 'month',
+      customer: calendar.customer,
+    });
+  }, [calendar]);
+
+  const setDay = useCallback(() => {
+    // If already in day view and showing today, don't change
+    if (calendar.display === 'day') {
+      const todayRange = getDateRange('day');
+      if (calendar.startDate === todayRange.startDate) {
+        return;
+      }
+    }
+
+    const range = getDateRange('day');
+    calendar.setFilters({
+      startDate: range.startDate,
+      endDate: range.endDate,
       display: 'day',
-      customer: week.customer,
+      customer: calendar.customer,
     });
-  }, [week]);
+  }, [calendar]);
+
   const setWeek = useCallback(() => {
-    if (
-      week.display === 'week' &&
-      week.currentWeek === dayjs().isoWeek() &&
-      week.currentYear === dayjs().year() &&
-      week.currentMonth === dayjs().month()
-    ) {
-      return; // No need to set the same week
+    // If already in week view and showing current week, don't change
+    if (calendar.display === 'week') {
+      const currentWeekRange = getDateRange('week');
+      if (calendar.startDate === currentWeekRange.startDate) {
+        return;
+      }
     }
-    week.setFilters({
-      currentDay: +dayjs().day() as 0 | 1 | 2 | 3 | 4 | 5 | 6,
-      currentWeek: dayjs().isoWeek(),
-      currentYear: dayjs().year(),
-      currentMonth: dayjs().month(),
+
+    const range = getDateRange('week');
+    calendar.setFilters({
+      startDate: range.startDate,
+      endDate: range.endDate,
       display: 'week',
-      customer: week.customer,
+      customer: calendar.customer,
     });
-  }, [week]);
+  }, [calendar]);
+
   const setMonth = useCallback(() => {
-    if (
-      week.display === 'month' &&
-      week.currentMonth === dayjs().month() &&
-      week.currentYear === dayjs().year()
-    ) {
-      return; // No need to set the same month
+    // If already in month view and showing current month, don't change
+    if (calendar.display === 'month') {
+      const currentMonthRange = getDateRange('month');
+      if (calendar.startDate === currentMonthRange.startDate) {
+        return;
+      }
     }
-    week.setFilters({
-      currentDay: +dayjs().day() as 0 | 1 | 2 | 3 | 4 | 5 | 6,
-      currentMonth: dayjs().month(),
-      currentWeek: dayjs().isoWeek(),
-      currentYear: dayjs().year(),
+
+    const range = getDateRange('month');
+    calendar.setFilters({
+      startDate: range.startDate,
+      endDate: range.endDate,
       display: 'month',
-      customer: week.customer,
+      customer: calendar.customer,
     });
-  }, [week]);
+  }, [calendar]);
+
   const setCustomer = useCallback(
     (customer: string) => {
-      if (week.customer === customer) {
+      if (calendar.customer === customer) {
         return; // No need to set the same customer
       }
-      week.setFilters({
-        currentDay: week.currentDay,
-        currentMonth: week.currentMonth,
-        currentWeek: week.currentWeek,
-        currentYear: week.currentYear,
-        display: week.display as any,
+      calendar.setFilters({
+        startDate: calendar.startDate,
+        endDate: calendar.endDate,
+        display: calendar.display as 'day' | 'week' | 'month',
         customer: customer,
       });
     },
-    [week]
+    [calendar]
   );
+
   const next = useCallback(() => {
-    const increaseDay = week.display === 'day';
-    const increaseWeek =
-      week.display === 'week' ||
-      (week.display === 'day' && week.currentDay === 6);
-    const increaseMonth =
-      week.display === 'month' || (increaseWeek && week.currentWeek === 52);
-    week.setFilters({
-      customer: week.customer,
-      currentDay: (!increaseDay
-        ? 0
-        : week.currentDay === 6
-        ? 0
-        : week.currentDay + 1) as 0 | 1 | 2 | 3 | 4 | 5 | 6,
-      currentWeek: !increaseWeek
-        ? week.currentWeek
-        : week.currentWeek === 52
-        ? 1
-        : week.currentWeek + 1,
-      currentYear: !increaseMonth
-        ? week.currentYear
-        : week.currentMonth === 11
-        ? week.currentYear + 1
-        : week.currentYear,
-      display: week.display as any,
-      currentMonth: !increaseMonth
-        ? week.currentMonth
-        : week.currentMonth === 11
-        ? 0
-        : week.currentMonth + 1,
+    const currentStart = dayjs(calendar.startDate);
+    let nextStart: dayjs.Dayjs;
+
+    switch (calendar.display) {
+      case 'day':
+        nextStart = currentStart.add(1, 'day');
+        break;
+      case 'week':
+        nextStart = currentStart.add(1, 'week');
+        break;
+      case 'month':
+        nextStart = currentStart.add(1, 'month');
+        break;
+      default:
+        nextStart = currentStart.add(1, 'week');
+    }
+
+    const range = getDateRange(
+      calendar.display as 'day' | 'week' | 'month',
+      nextStart.format('YYYY-MM-DD')
+    );
+    calendar.setFilters({
+      startDate: range.startDate,
+      endDate: range.endDate,
+      display: calendar.display as 'day' | 'week' | 'month',
+      customer: calendar.customer,
     });
-  }, [
-    week.display,
-    week.currentMonth,
-    week.currentWeek,
-    week.currentYear,
-    week.currentDay,
-  ]);
+  }, [calendar]);
+
   const previous = useCallback(() => {
-    const decreaseDay = week.display === 'day';
-    const decreaseWeek =
-      week.display === 'week' ||
-      (week.display === 'day' && week.currentDay === 0);
-    const decreaseMonth =
-      week.display === 'month' || (decreaseWeek && week.currentWeek === 1);
-    week.setFilters({
-      customer: week.customer,
-      currentDay: (!decreaseDay
-        ? 0
-        : week.currentDay === 0
-        ? 6
-        : week.currentDay - 1) as 0 | 1 | 2 | 3 | 4 | 5 | 6,
-      currentWeek: !decreaseWeek
-        ? week.currentWeek
-        : week.currentWeek === 1
-        ? 52
-        : week.currentWeek - 1,
-      currentYear: !decreaseMonth
-        ? week.currentYear
-        : week.currentMonth === 0
-        ? week.currentYear - 1
-        : week.currentYear,
-      display: week.display as any,
-      currentMonth: !decreaseMonth
-        ? week.currentMonth
-        : week.currentMonth === 0
-        ? 11
-        : week.currentMonth - 1,
+    const currentStart = dayjs(calendar.startDate);
+    let prevStart: dayjs.Dayjs;
+
+    switch (calendar.display) {
+      case 'day':
+        prevStart = currentStart.subtract(1, 'day');
+        break;
+      case 'week':
+        prevStart = currentStart.subtract(1, 'week');
+        break;
+      case 'month':
+        prevStart = currentStart.subtract(1, 'month');
+        break;
+      default:
+        prevStart = currentStart.subtract(1, 'week');
+    }
+
+    const range = getDateRange(
+      calendar.display as 'day' | 'week' | 'month',
+      prevStart.format('YYYY-MM-DD')
+    );
+    calendar.setFilters({
+      startDate: range.startDate,
+      endDate: range.endDate,
+      display: calendar.display as 'day' | 'week' | 'month',
+      customer: calendar.customer,
     });
-  }, [
-    week.display,
-    week.currentMonth,
-    week.currentWeek,
-    week.currentYear,
-    week.currentDay,
-  ]);
+  }, [calendar]);
 
   const setCurrent = useCallback(
     (type: 'day' | 'week' | 'month') => () => {
@@ -204,14 +220,9 @@ export const Filters = () => {
         setMonth();
       }
     },
-    [
-      week.display,
-      week.currentMonth,
-      week.currentWeek,
-      week.currentYear,
-      week.currentDay,
-    ]
+    [setDay, setWeek, setMonth]
   );
+
   return (
     <div className="text-textColor flex flex-col md:flex-row gap-[8px] items-center select-none">
       <div className="flex flex-grow flex-row items-center gap-[10px]">
@@ -238,15 +249,7 @@ export const Filters = () => {
           </div>
           <div className="w-[200px] text-center bg-newBgColorInner h-full flex items-center justify-center">
             <div className="py-[3px] px-[9px] rounded-[5px] transition-all text-[14px]">
-              {week.display === 'day'
-                ? `${dayjs()
-                    .month(week.currentMonth)
-                    .week(week.currentWeek)
-                    .day(week.currentDay)
-                    .format('dddd (L)')}`
-                : week.display === 'week'
-                ? betweenDates
-                : dayjs().month(week.currentMonth).format('MMMM YYYY')}
+              {getDisplayText()}
             </div>
           </div>
           <div
@@ -273,7 +276,7 @@ export const Filters = () => {
         <div className="flex-1 text-[14px] font-[500]">
           <div className="text-center flex h-[42px]">
             <div
-              onClick={setCurrent(week.display as 'day' | 'week' | 'month')}
+              onClick={setToday}
               className="hover:text-textItemFocused hover:bg-boxFocused py-[3px] px-[9px] flex justify-center items-center rounded-[8px] transition-all cursor-pointer text-[14px] bg-newBgColorInner border border-newTableBorder"
             >
               Today
@@ -282,15 +285,15 @@ export const Filters = () => {
         </div>
       </div>
       <SelectCustomer
-        customer={week.customer as string}
+        customer={calendar.customer as string}
         onChange={(customer: string) => setCustomer(customer)}
-        integrations={week.integrations}
+        integrations={calendar.integrations}
       />
       <div className="flex flex-row p-[4px] border border-newTableBorder rounded-[8px] text-[14px] font-[500]">
         <div
           className={clsx(
             'pt-[6px] pb-[5px] cursor-pointer w-[74px] text-center rounded-[6px]',
-            week.display === 'day' && 'text-textItemFocused bg-boxFocused'
+            calendar.display === 'day' && 'text-textItemFocused bg-boxFocused'
           )}
           onClick={setDay}
         >
@@ -299,7 +302,7 @@ export const Filters = () => {
         <div
           className={clsx(
             'pt-[6px] pb-[5px] cursor-pointer w-[74px] text-center rounded-[6px]',
-            week.display === 'week' && 'text-textItemFocused bg-boxFocused'
+            calendar.display === 'week' && 'text-textItemFocused bg-boxFocused'
           )}
           onClick={setWeek}
         >
@@ -308,7 +311,7 @@ export const Filters = () => {
         <div
           className={clsx(
             'pt-[6px] pb-[5px] cursor-pointer w-[74px] text-center rounded-[6px]',
-            week.display === 'month' && 'text-textItemFocused bg-boxFocused'
+            calendar.display === 'month' && 'text-textItemFocused bg-boxFocused'
           )}
           onClick={setMonth}
         >
