@@ -723,80 +723,74 @@ export const CalendarColumn: FC<{
             </div>
           )}
         </div>
-        {(display === 'day'
-          ? !isBeforeNow && postList.length === 0
-          : !isBeforeNow) && (
+        <div
+          className="pb-[2.5px] px-[5px] flex-1 flex"
+          onClick={integrations.length ? addModal : addProvider}
+        >
           <div
-            className="pb-[2.5px] px-[5px] flex-1 flex"
-            onClick={integrations.length ? addModal : addProvider}
+            className={clsx(
+              display === ('month' as any)
+                ? 'flex-1 min-h-[40px] w-full'
+                : !postList.length
+                ? 'h-full w-full absolute start-0 top-0 p-[5px]'
+                : 'min-h-[40px] w-full',
+              'flex items-center justify-center cursor-pointer pb-[2.5px]'
+            )}
           >
-            <div
-              className={clsx(
-                display === ('month' as any)
-                  ? 'flex-1 min-h-[40px] w-full'
-                  : !postList.length
-                  ? 'h-full w-full absolute start-0 top-0 p-[5px]'
-                  : 'min-h-[40px] w-full',
-                'flex items-center justify-center cursor-pointer pb-[2.5px]'
-              )}
-            >
-              {display !== 'day' && (
+            {display !== 'day' && (
+              <div
+                className={clsx(
+                  'group hover:before:h-[30px] w-full h-full rounded-[10px] flex justify-center items-center text-white'
+                )}
+              >
                 <div
-                  className={clsx(
-                    'group hover:before:h-[30px] w-full h-full rounded-[10px] flex justify-center items-center text-white'
-                  )}
-                >
+                  className={`group-hover:before:content-["+"] pb-[5px] flex justify-center items-center rounded-[8px] transition-all group-hover:bg-btnPrimary w-full h-full max-w-[40px] max-h-[40px]`}
+                />
+              </div>
+            )}
+            {display === 'day' && (
+              <div
+                className={`w-full h-full rounded-[10px] hover:border hover:border-seventh flex justify-center items-center gap-[20px] opacity-30 grayscale hover:grayscale-0 hover:opacity-100`}
+              >
+                {integrations.map((selectedIntegrations) => (
                   <div
-                    className={`group-hover:before:content-["+"] pb-[5px] flex justify-center items-center rounded-[8px] transition-all group-hover:bg-btnPrimary w-full h-full max-w-[40px] max-h-[40px]`}
-                  />
-                </div>
-              )}
-              {display === 'day' && (
-                <div
-                  className={`w-full h-full rounded-[10px] hover:border hover:border-seventh flex justify-center items-center gap-[20px] opacity-30 grayscale hover:grayscale-0 hover:opacity-100`}
-                >
-                  {integrations.map((selectedIntegrations) => (
+                    className="relative"
+                    key={selectedIntegrations.identifier}
+                  >
                     <div
-                      className="relative"
-                      key={selectedIntegrations.identifier}
+                      className={clsx(
+                        'relative w-[34px] h-[34px] rounded-[8px] flex justify-center items-center filter transition-all duration-500'
+                      )}
                     >
-                      <div
-                        className={clsx(
-                          'relative w-[34px] h-[34px] rounded-[8px] flex justify-center items-center filter transition-all duration-500'
-                        )}
-                      >
-                        <Image
-                          src={
-                            selectedIntegrations.picture || '/no-picture.jpg'
-                          }
-                          className="rounded-[8px]"
-                          alt={selectedIntegrations.identifier}
-                          width={32}
-                          height={32}
+                      <Image
+                        src={selectedIntegrations.picture || '/no-picture.jpg'}
+                        className="rounded-[8px]"
+                        alt={selectedIntegrations.identifier}
+                        width={32}
+                        height={32}
+                      />
+                      {selectedIntegrations.identifier === 'youtube' ? (
+                        <img
+                          src="/icons/platforms/youtube.svg"
+                          className="absolute z-10 -bottom-[5px] -end-[5px]"
+                          width={20}
                         />
-                        {selectedIntegrations.identifier === 'youtube' ? (
-                          <img
-                            src="/icons/platforms/youtube.svg"
-                            className="absolute z-10 -bottom-[5px] -end-[5px]"
-                            width={20}
-                          />
-                        ) : (
-                          <Image
-                            src={`/icons/platforms/${selectedIntegrations.identifier}.png`}
-                            className="rounded-[8px] absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
-                            alt={selectedIntegrations.identifier}
-                            width={20}
-                            height={20}
-                          />
-                        )}
-                      </div>
+                      ) : (
+                        <Image
+                          src={`/icons/platforms/${selectedIntegrations.identifier}.png`}
+                          className="rounded-[8px] absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
+                          alt={selectedIntegrations.identifier}
+                          width={20}
+                          height={20}
+                        />
+                      )}
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
