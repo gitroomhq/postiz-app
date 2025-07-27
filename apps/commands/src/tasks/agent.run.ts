@@ -11,7 +11,7 @@ export class AgentRun {
   })
   async agentRun() {
     // Using the correct method name from AgentGraphService
-    console.log('Agent feature is available but requires configuration. Check the AgentGraphService.start() method.');
+    console.log('Agent feature is available but requires configuration. Check the _agentGraphService.start() method for details.');
     return true;
   }
 }
