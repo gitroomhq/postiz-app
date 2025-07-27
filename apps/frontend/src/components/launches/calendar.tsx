@@ -35,19 +35,16 @@ import clsx from 'clsx';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { ExistingDataContextProvider } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { useDrag, useDrop } from 'react-dnd';
-import { Integration, Post, State, Tags, TagsPosts } from '@prisma/client';
+import { Integration, Post, State, Tags } from '@prisma/client';
 import { useAddProvider } from '@gitroom/frontend/components/launches/add.provider.component';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
-import { IntegrationContext } from '@gitroom/frontend/components/launches/helpers/use.integration';
-import { PreviewPopup } from '@gitroom/frontend/components/marketplace/special.message';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import { groupBy, random, sortBy } from 'lodash';
 import Image from 'next/image';
 import { extend } from 'dayjs';
 import { isUSCitizen } from './helpers/isuscitizen.utils';
-import removeMd from 'remove-markdown';
 import { useInterval } from '@mantine/hooks';
 import { StatisticsModal } from '@gitroom/frontend/components/launches/statistics';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -659,7 +656,7 @@ export const CalendarColumn: FC<{
   return (
     <div
       className={clsx(
-        'flex flex-col w-full min-h-full',
+        'flex flex-col w-full min-h-full relative',
         isBeforeNow && 'repeated-strip',
         isBeforeNow
           ? 'cursor-not-allowed'
@@ -723,74 +720,78 @@ export const CalendarColumn: FC<{
             </div>
           )}
         </div>
-        <div
-          className="pb-[2.5px] px-[5px] flex-1 flex"
-          onClick={integrations.length ? addModal : addProvider}
-        >
+        {!isBeforeNow && (
           <div
-            className={clsx(
-              display === ('month' as any)
-                ? 'flex-1 min-h-[40px] w-full'
-                : !postList.length
-                ? 'h-full w-full absolute start-0 top-0 p-[5px]'
-                : 'min-h-[40px] w-full',
-              'flex items-center justify-center cursor-pointer pb-[2.5px]'
-            )}
+            className="pb-[2.5px] px-[5px] flex-1 flex"
+            onClick={integrations.length ? addModal : addProvider}
           >
-            {display !== 'day' && (
-              <div
-                className={clsx(
-                  'group hover:before:h-[30px] w-full h-full rounded-[10px] flex justify-center items-center text-white'
-                )}
-              >
+            <div
+              className={clsx(
+                display === ('month' as any)
+                  ? 'flex-1 min-h-[40px] w-full'
+                  : !postList.length
+                  ? 'min-h-full w-full p-[5px]'
+                  : 'min-h-[40px] w-full',
+                'flex items-center justify-center cursor-pointer pb-[2.5px]'
+              )}
+            >
+              {display !== 'day' && (
                 <div
-                  className={`group-hover:before:content-["+"] pb-[5px] flex justify-center items-center rounded-[8px] transition-all group-hover:bg-btnPrimary w-full h-full max-w-[40px] max-h-[40px]`}
-                />
-              </div>
-            )}
-            {display === 'day' && (
-              <div
-                className={`w-full h-full rounded-[10px] hover:border hover:border-seventh flex justify-center items-center gap-[20px] opacity-30 grayscale hover:grayscale-0 hover:opacity-100`}
-              >
-                {integrations.map((selectedIntegrations) => (
+                  className={clsx(
+                    'group hover:before:h-[30px] w-full h-full rounded-[10px] flex justify-center items-center text-white'
+                  )}
+                >
                   <div
-                    className="relative"
-                    key={selectedIntegrations.identifier}
-                  >
+                    className={`group-hover:before:content-["+"] pb-[5px] flex justify-center items-center rounded-[8px] transition-all group-hover:bg-btnPrimary w-full h-full max-w-[40px] max-h-[40px]`}
+                  />
+                </div>
+              )}
+              {display === 'day' && (
+                <div
+                  className={`w-full h-full rounded-[10px] py-[10px] flex-wrap hover:border hover:border-seventh flex justify-center items-center gap-[20px] opacity-30 grayscale hover:grayscale-0 hover:opacity-100`}
+                >
+                  {integrations.map((selectedIntegrations) => (
                     <div
-                      className={clsx(
-                        'relative w-[34px] h-[34px] rounded-[8px] flex justify-center items-center filter transition-all duration-500'
-                      )}
+                      className="relative"
+                      key={selectedIntegrations.identifier}
                     >
-                      <Image
-                        src={selectedIntegrations.picture || '/no-picture.jpg'}
-                        className="rounded-[8px]"
-                        alt={selectedIntegrations.identifier}
-                        width={32}
-                        height={32}
-                      />
-                      {selectedIntegrations.identifier === 'youtube' ? (
-                        <img
-                          src="/icons/platforms/youtube.svg"
-                          className="absolute z-10 -bottom-[5px] -end-[5px]"
-                          width={20}
-                        />
-                      ) : (
+                      <div
+                        className={clsx(
+                          'relative w-[34px] h-[34px] rounded-[8px] flex justify-center items-center filter transition-all duration-500'
+                        )}
+                      >
                         <Image
-                          src={`/icons/platforms/${selectedIntegrations.identifier}.png`}
-                          className="rounded-[8px] absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
+                          src={
+                            selectedIntegrations.picture || '/no-picture.jpg'
+                          }
+                          className="rounded-[8px]"
                           alt={selectedIntegrations.identifier}
-                          width={20}
-                          height={20}
+                          width={32}
+                          height={32}
                         />
-                      )}
+                        {selectedIntegrations.identifier === 'youtube' ? (
+                          <img
+                            src="/icons/platforms/youtube.svg"
+                            className="absolute z-10 -bottom-[5px] -end-[5px]"
+                            width={20}
+                          />
+                        ) : (
+                          <Image
+                            src={`/icons/platforms/${selectedIntegrations.identifier}.png`}
+                            className="rounded-[8px] absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
+                            alt={selectedIntegrations.identifier}
+                            width={20}
+                            height={20}
+                          />
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -915,12 +916,7 @@ const CalendarItem: FC<{
           isBeforeNow && '!grayscale'
         )}
       >
-        <div
-          className={clsx(
-            'relative min-w-[20px] h-[20px]',
-            display === 'day' ? 'h-[40px]' : 'h-[20px]'
-          )}
-        >
+        <div className={clsx('relative min-w-[20px]')}>
           <img
             className="w-[20px] h-[20px] rounded-[8px]"
             src={post.integration.picture! || '/no-picture.jpg'}
@@ -930,12 +926,14 @@ const CalendarItem: FC<{
             src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
           />
         </div>
-        <div className="whitespace-nowrap line-clamp-2">
+        <div className="w-full flex-1 flex flex-col min-h-[40px]">
           <div className="text-start">
             {state === 'DRAFT' ? t('draft', 'Draft') + ': ' : ''}
           </div>
-          <div className="w-full overflow-hidden overflow-ellipsis text-start">
-            {stripHtmlValidation('none', post.content)}
+          <div className="w-full relative">
+            <div className="absolute top-0 start-0 w-full text-ellipsis break-words line-clamp-1 text-left">
+              {stripHtmlValidation('none', post.content)}
+            </div>
           </div>
         </div>
       </div>
