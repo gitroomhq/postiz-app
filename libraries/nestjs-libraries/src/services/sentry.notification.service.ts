@@ -22,18 +22,13 @@ export class SentryNotificationService {
       userId: data.userId,
     };
 
-    const eventHandlers: Record<string, () => void> = {
+    const eventHandlers: Record<'attempt' | 'success' | 'failed', () => void> = {
       attempt: () => this.handleAttemptEvent(baseContext, data),
       success: () => this.handleSuccessEvent(baseContext, data),
       failed: () => this.handleFailedEvent(baseContext, data),
     };
 
-    const handler = eventHandlers[event];
-    if (handler) {
-      handler();
-    } else {
-      throw new Error(`Unsupported event type: ${event}`);
-    }
+    eventHandlers[event]();
   }
 
   private handleAttemptEvent(baseContext: any, data: any) {
