@@ -3,6 +3,9 @@ import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { Logo } from '@gitroom/frontend/components/new-layout/logo';
+import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
+import React from 'react';
+import { OrganizationSelector } from '@gitroom/frontend/components/layout/organization.selector';
 
 export const BillingAfter = () => {
   const user = useUser();
@@ -10,7 +13,12 @@ export const BillingAfter = () => {
   const t = useT();
   return (
     <div className="flex-1 rounded-3xl px-0 py-[17px] flex flex-col max-w-[1440px] mx-auto">
-      <div className="flex justify-center mb-[10px]"><Logo /></div>
+      <div>
+        <OrganizationSelector asOpenSelect={true} />
+      </div>
+      <div className="flex justify-center mb-[10px]">
+        <Logo />
+      </div>
       <div className="text-center mb-[20px] text-xl [@media(max-width:1024px)]:text-xl">
         <h1 className="text-3xl [@media(max-width:1024px)]:text-xl">
           {t(
@@ -88,6 +96,9 @@ export const BillingAfter = () => {
         )}
       </div>
       <BillingComponent />
+      <div className="flex justify-center items-center mt-[20px]">
+        <LogoutComponent />
+      </div>
     </div>
   );
 };
