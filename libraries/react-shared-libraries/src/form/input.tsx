@@ -75,7 +75,9 @@ export const Input = forwardRef<
             'h-full bg-transparent outline-none flex-1 text-[14px] text-textColor',
             icon ? 'pl-[8px] pe-[16px]' : 'px-[16px]'
           )}
-          {...rest}
+          {...(disableForm
+            ? rest
+            : { ...rest, ...(form && form.register ? form.register(props.name) : {}) })}
         />
       </div>
       {!removeError && (
