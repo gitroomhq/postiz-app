@@ -34,6 +34,7 @@ import sharp from 'sharp';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { Readable } from 'stream';
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
+import { SentryNotificationService } from '@gitroom/nestjs-libraries/services/sentry.notification.service';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
@@ -58,7 +59,8 @@ export class PostsService {
     private _mediaService: MediaService,
     private _shortLinkService: ShortLinkService,
     private _webhookService: WebhooksService,
-    private openaiService: OpenaiService
+    private openaiService: OpenaiService,
+    private _sentryNotificationService: SentryNotificationService
   ) {}
 
   async getStatistics(orgId: string, id: string) {
@@ -289,7 +291,24 @@ export class PostsService {
       return;
     }
 
+    // Track post publishing attempt
+    this._sentryNotificationService.trackPostEvent('attempt', {
+      postId: firstPost.id,
+      organizationId: firstPost.organizationId,
+      provider: firstPost.integration?.providerIdentifier || 'unknown',
+      metadata: {
+        postCount: allPosts.length,
+        scheduledDate: firstPost.publishDate,
+      },
+    });
+
     if (firstPost.integration?.refreshNeeded) {
+      this._sentryNotificationService.trackIntegrationEvent('refresh_needed', {
+        integrationId: firstPost.integration.id,
+        organizationId: firstPost.organizationId,
+        provider: firstPost.integration.providerIdentifier,
+      });
+
       await this._notificationService.inAppNotification(
         firstPost.organizationId,
         `We couldn't post to ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
@@ -300,6 +319,12 @@ export class PostsService {
     }
 
     if (firstPost.integration?.disabled) {
+      this._sentryNotificationService.trackIntegrationEvent('disconnected', {
+        integrationId: firstPost.integration.id,
+        organizationId: firstPost.organizationId,
+        provider: firstPost.integration.providerIdentifier,
+      });
+
       await this._notificationService.inAppNotification(
         firstPost.organizationId,
         `We couldn't post to ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
@@ -329,6 +354,19 @@ export class PostsService {
 
       if (!finalPost?.postId || !finalPost?.releaseURL) {
         await this._postRepository.changeState(firstPost.id, 'ERROR');
+        
+        // Track post failure
+        this._sentryNotificationService.trackPostEvent('failed', {
+          postId: firstPost.id,
+          organizationId: firstPost.organizationId,
+          provider: firstPost.integration?.providerIdentifier || 'unknown',
+          error: new Error('Post publishing failed - no postId or releaseURL returned'),
+          metadata: {
+            postCount: allPosts.length,
+            finalPost,
+          },
+        });
+
         await this._notificationService.inAppNotification(
           firstPost.organizationId,
           `Error posting on ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
@@ -338,6 +376,18 @@ export class PostsService {
 
         return;
       }
+
+      // Track successful post
+      this._sentryNotificationService.trackPostEvent('success', {
+        postId: firstPost.id,
+        organizationId: firstPost.organizationId,
+        provider: firstPost.integration?.providerIdentifier || 'unknown',
+        metadata: {
+          postCount: allPosts.length,
+          postUrl: finalPost.releaseURL,
+          externalPostId: finalPost.postId,
+        },
+      });
     } catch (err: any) {
       await this._postRepository.changeState(
         firstPost.id,
@@ -345,6 +395,20 @@ export class PostsService {
         err,
         allPosts
       );
+
+      // Track post failure with error details
+      this._sentryNotificationService.trackPostEvent('failed', {
+        postId: firstPost.id,
+        organizationId: firstPost.organizationId,
+        provider: firstPost.integration?.providerIdentifier || 'unknown',
+        error: err,
+        metadata: {
+          postCount: allPosts.length,
+          isBadBody: err instanceof BadBody,
+          isRefreshToken: err instanceof RefreshToken,
+        },
+      });
+
       if (err instanceof BadBody) {
         await this._notificationService.inAppNotification(
           firstPost.organizationId,

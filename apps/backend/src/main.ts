@@ -1,3 +1,7 @@
+// Initialize Sentry as early as possible
+import { SentryNestJSService } from '@gitroom/helpers/sentry';
+SentryNestJSService.init('backend');
+
 import { loadSwagger } from '@gitroom/helpers/swagger/load.swagger';
 
 process.env.TZ = 'UTC';
@@ -8,6 +12,8 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SubscriptionExceptionFilter } from '@gitroom/backend/services/auth/permissions/subscription.exception';
 import { HttpExceptionFilter } from '@gitroom/nestjs-libraries/services/exception.filter';
+import { SentryExceptionFilter } from '@gitroom/nestjs-libraries/services/sentry.exception.filter';
+import { SentryInterceptor } from '@gitroom/nestjs-libraries/services/sentry.interceptor';
 import { ConfigurationChecker } from '@gitroom/helpers/configuration/configuration.checker';
 
 async function bootstrap() {
@@ -35,6 +41,8 @@ async function bootstrap() {
   );
 
   app.use(cookieParser());
+  app.useGlobalInterceptors(new SentryInterceptor());
+  app.useGlobalFilters(new SentryExceptionFilter());
   app.useGlobalFilters(new SubscriptionExceptionFilter());
   app.useGlobalFilters(new HttpExceptionFilter());
 

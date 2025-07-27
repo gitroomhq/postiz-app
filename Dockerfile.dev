@@ -9,13 +9,16 @@ WORKDIR /app
 COPY . /app
 COPY var/docker/supervisord.conf /etc/supervisord.conf
 COPY var/docker/Caddyfile /app/Caddyfile
-COPY var/docker/entrypoint.sh /app/entrypoint.sh
 COPY var/docker/supervisord/caddy.conf /etc/supervisor.d/caddy.conf
-RUN chmod +x /app/entrypoint.sh
+COPY var/docker/supervisord/backend.conf /etc/supervisor.d/backend.conf
+COPY var/docker/supervisord/frontend.conf /etc/supervisor.d/frontend.conf
+COPY var/docker/supervisord/workers.conf /etc/supervisor.d/workers.conf
+COPY var/docker/supervisord/cron.conf /etc/supervisor.d/cron.conf
+COPY var/docker/supervisord/migrate.conf /etc/supervisor.d/migrate.conf
 
 RUN pnpm install
 RUN pnpm run build
 
-EXPOSE 4200
+EXPOSE 5000
 
-CMD ["pnpm", "run", "pm2"]
+CMD ["supervisord", "-c", "/etc/supervisord.conf"]
