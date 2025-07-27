@@ -47,6 +47,8 @@
 - Developer guide: https://docs.postiz.com/developer-guide
 - Public API: https://docs.postiz.com/public-api
 
+### Do not create Documentation Files for e.g. documenting what you changed.
+
 ---
 
 For questions or unclear conventions, check the main README or ask for clarification in your PR description.

@@ -3,9 +3,10 @@ export const dynamic = 'force-dynamic';
 import '../global.scss';
 import 'react-tooltip/dist/react-tooltip.css';
 import '@copilotkit/react-ui/styles.css';
-import { SentryClientService } from '../../lib/sentry'; // Initialize Sentry
 import LayoutContext from '@gitroom/frontend/components/layout/layout.context';
 import { SentryErrorBoundary } from '@gitroom/frontend/components/sentry/sentry-error-boundary';
+import { SentryScript } from '@gitroom/frontend/components/sentry/sentry-script';
+import { SentryClientProvider } from '@gitroom/frontend/components/sentry/sentry-provider';
 import { ReactNode } from 'react';
 import { Chakra_Petch } from 'next/font/google';
 import PlausibleProvider from 'next-plausible';
@@ -33,12 +34,14 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       phkey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
       host={process.env.NEXT_PUBLIC_POSTHOG_HOST}
     >
-      <SentryErrorBoundary>
-        <LayoutContext>
-          <UtmSaver />
-          {children}
-        </LayoutContext>
-      </SentryErrorBoundary>
+      <SentryClientProvider>
+        <SentryErrorBoundary>
+          <LayoutContext>
+            <UtmSaver />
+            {children}
+          </LayoutContext>
+        </SentryErrorBoundary>
+      </SentryClientProvider>
     </PHProvider>
   );
 
@@ -46,6 +49,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     <html className={interClass}>
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
+        <SentryScript />
       </head>
       <body className={clsx(chakra.className, 'dark text-primary !bg-primary')}>
         <HtmlComponent />

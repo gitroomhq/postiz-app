@@ -1,22 +1,45 @@
 // Initialize Sentry as early as possible for Next.js
 import * as Sentry from '@sentry/nextjs';
+import { SentryConfigService } from '@gitroom/helpers/sentry/sentry.config';
 
 export function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     // Server-side Sentry initialization
+    const config = SentryConfigService.getConfig();
+    
+    if (!config.enabled) {
+      console.log('[Server] Sentry is disabled');
+      return;
+    }
+
+    console.log(`[Server] Initializing Sentry with environment: ${config.environment}`);
+
     Sentry.init({
-      dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-      environment: process.env.NODE_ENV || 'development',
-      debug: process.env.NEXT_PUBLIC_SENTRY_DEBUG === 'true',
-      release: process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0',
+      dsn: config.dsn,
+      environment: config.environment,
+      debug: config.debug,
+      release: config.release,
       
       // Performance Monitoring
-      tracesSampleRate: parseFloat(process.env.NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE || '0.1'),
+      tracesSampleRate: config.tracesSampleRate,
+      
+      // Profiling (server-side only)
+      profilesSampleRate: config.profilesSampleRate,
       
       beforeSend(event, hint) {
-        // Only enable if explicitly enabled
-        if (process.env.NEXT_PUBLIC_SENTRY_ENABLED !== 'true') {
-          return null;
+        // Filter out non-critical errors on server side too
+        if (event.exception) {
+          const error = hint.originalException;
+          
+          // Skip common server errors that aren't actionable
+          if (error && error instanceof Error) {
+            const message = error.message || '';
+            if (message.includes('ECONNRESET') || 
+                message.includes('ENOTFOUND') ||
+                message.includes('ETIMEDOUT')) {
+              return null;
+            }
+          }
         }
         
         return event;
@@ -26,7 +49,7 @@ export function register() {
       initialScope: {
         tags: {
           service: 'frontend-server',
-          version: process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0',
+          version: config.release,
         },
       },
     });

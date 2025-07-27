@@ -13,17 +13,15 @@ export class ConfigurationTask {
     checker.readEnvFromProcess();
     checker.check();
 
-    if (checker.hasIssues()) {
-      for (const issue of checker.getIssues()) {
-        console.warn('Configuration issue:', issue);
-      }
+    checker.printSummary();
 
-      console.error(
-        'Configuration check complete, issues: ',
-        checker.getIssuesCount()
-      );
+    if (checker.hasErrors()) {
+      console.error(`\n❌ Configuration check failed with ${checker.getErrorCount()} error(s). Please fix the errors above.`);
+      process.exit(1);
+    } else if (checker.hasIssues()) {
+      console.warn(`\n⚠️  Configuration check completed with ${checker.getWarningCount()} warning(s). Consider addressing the warnings above.`);
     } else {
-      console.log('Configuration check complete, no issues found.');
+      console.log('\n✅ Configuration check passed! All settings look good.');
     }
 
     console.log('Press Ctrl+C to exit.');

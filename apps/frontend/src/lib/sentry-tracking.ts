@@ -41,12 +41,23 @@ export function trackUserAction(action: string, data?: any) {
   );
 }
 
-export function trackUIError(error: Error, component: string, props?: any) {
+export function trackUIError(error: Error | unknown, component: string, props?: any) {
+  // Enhanced error context for frontend
+  const errorContext = {
+    component,
+    props,
+    url: window.location.href,
+    userAgent: navigator.userAgent,
+    timestamp: new Date().toISOString(),
+  };
+
+  // Log to console in development
+  if (process.env.NODE_ENV === 'development') {
+    console.error('Frontend UI Error:', error, errorContext);
+  }
+
   SentryClientService.captureException(error, {
-    extra: {
-      component,
-      props,
-    },
+    extra: errorContext,
     tags: {
       errorType: 'ui_error',
       component,

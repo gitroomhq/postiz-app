@@ -1,5 +1,7 @@
 import { timer } from '@gitroom/helpers/utils/timer';
 import { concurrencyService } from '@gitroom/helpers/utils/concurrency.service';
+import { ErrorHandler } from '@gitroom/helpers/error/error.handler';
+import { HttpClient } from '@gitroom/helpers/http/http.client';
 
 export class RefreshToken {
   constructor(
@@ -53,56 +55,71 @@ export abstract class SocialAbstract {
     identifier = '',
     totalRetries = 0
   ): Promise<Response> {
-    const request = await concurrencyService(
-      this.identifier.split('-')[0],
-      () => fetch(url, options)
-    );
+    return ErrorHandler.handleAsync(
+      async () => {
+        const request = await concurrencyService(
+          this.identifier.split('-')[0],
+          () => HttpClient.fetch(url, {
+            ...options,
+            timeout: 30000,
+            retries: Math.min(totalRetries, 2),
+            context: `${this.identifier}-provider`,
+          })
+        );
 
-    if (request.status === 200 || request.status === 201) {
-      return request;
-    }
+        if (request.status === 200 || request.status === 201) {
+          return request;
+        }
 
-    if (totalRetries > 2) {
-      console.log('bad body retries');
-      throw new BadBody(identifier, '{}', options.body || '{}');
-    }
+        if (totalRetries > 2) {
+          console.log('bad body retries');
+          throw new BadBody(identifier, '{}', options.body || '{}');
+        }
 
-    let json = '{}';
-    try {
-      json = await request.text();
-      console.log(json);
-    } catch (err) {
-      json = '{}';
-    }
+        let json = '{}';
+        try {
+          json = await request.text();
+          console.log(json);
+        } catch (err) {
+          json = '{}';
+        }
 
-    console.log(json);
-    if (json.includes('rate_limit_exceeded') || json.includes('Rate limit')) {
-      await timer(5000);
-      console.log('rate limit trying again');
-      return this.fetch(url, options, identifier, totalRetries + 1);
-    }
+        console.log(json);
+        if (json.includes('rate_limit_exceeded') || json.includes('Rate limit')) {
+          await timer(5000);
+          console.log('rate limit trying again');
+          return this.fetch(url, options, identifier, totalRetries + 1);
+        }
 
-    const handleError = this.handleErrors(json || '{}');
+        const handleError = this.handleErrors(json || '{}');
 
-    if (
-      request.status === 401 &&
-      (handleError?.type === 'refresh-token' || !handleError)
-    ) {
-      console.log('refresh token', json);
-      throw new RefreshToken(
-        identifier,
-        json,
-        options.body!,
-        handleError?.value
-      );
-    }
+        if (
+          request.status === 401 &&
+          (handleError?.type === 'refresh-token' || !handleError)
+        ) {
+          console.log('refresh token', json);
+          throw new RefreshToken(
+            identifier,
+            json,
+            options.body!,
+            handleError?.value
+          );
+        }
 
-    throw new BadBody(
-      identifier,
-      json,
-      options.body!,
-      handleError?.value || ''
-    );
+        throw new BadBody(
+          identifier,
+          json,
+          options.body!,
+          handleError?.value || ''
+        );
+      },
+      {
+        url,
+        method: options.method || 'GET',
+        provider: this.identifier,
+        metadata: { identifier, totalRetries },
+      }
+    ) as Promise<Response>;
   }
 
   checkScopes(required: string[], got: string | string[]) {
