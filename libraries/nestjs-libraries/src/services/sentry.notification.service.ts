@@ -22,39 +22,17 @@ export class SentryNotificationService {
       userId: data.userId,
     };
 
-    switch (event) {
-      case 'attempt':
-        // Only track as breadcrumb, not as event
-        SentryNestJSService.addBreadcrumb(
-          `Post publishing attempt for ${data.provider}`,
-          'post.attempt',
-          baseContext
-        );
-        break;
+    const eventHandlers: Record<string, () => void> = {
+      attempt: () => this.handleAttemptEvent(baseContext, data),
+      success: () => this.handleSuccessEvent(baseContext, data),
+      failed: () => this.handleFailedEvent(baseContext, data),
+    };
 
-      case 'success':
-        // Only track as breadcrumb, not as event - we don't need to alert on success
-        SentryNestJSService.addBreadcrumb(
-          `Post published successfully to ${data.provider}`,
-          'post.success',
-          baseContext
-        );
-        break;
-
-      case 'failed':
-        // This is an actual error - capture it
-        SentryNestJSService.captureException(data.error || new Error('Post publishing failed'), {
-          extra: {
-            ...baseContext,
-            metadata: data.metadata,
-          },
-          tags: {
-            event: 'post_failed',
-            provider: data.provider,
-          },
-          level: 'error',
-        });
-        break;
+    const handler = eventHandlers[event];
+    if (handler) {
+      handler();
+    } else {
+      throw new Error(`Unsupported event type: ${event}`);
     }
   }
 
