@@ -13,7 +13,7 @@ services:
       POSTGRES_USER: postiz-local
       POSTGRES_DB: postiz-db-local
     volumes:
-      - postgres-volume:/var/lib/postgresql/data
+      - pos-postgres-volume:/var/lib/postgresql/data
     ports:
       - 5432:5432
     networks:
@@ -55,7 +55,7 @@ services:
 
 volumes:
   redisinsight:
-  postgres-volume:
+  pos-postgres-volume:
     external: false
 
 networks:

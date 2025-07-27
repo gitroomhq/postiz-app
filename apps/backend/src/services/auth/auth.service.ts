@@ -9,6 +9,7 @@ import { ProvidersFactory } from '@gitroom/backend/services/auth/providers/provi
 import dayjs from 'dayjs';
 import { NewsletterService } from '@gitroom/nestjs-libraries/services/newsletter.service';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
+import { SentryNotificationService } from '@gitroom/nestjs-libraries/services/sentry.notification.service';
 import { ForgotReturnPasswordDto } from '@gitroom/nestjs-libraries/dtos/auth/forgot-return.password.dto';
 import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 
@@ -18,7 +19,8 @@ export class AuthService {
     private _userService: UsersService,
     private _organizationService: OrganizationService,
     private _notificationService: NotificationService,
-    private _emailService: EmailService
+    private _emailService: EmailService,
+    private _sentryNotificationService: SentryNotificationService
   ) {}
   async canRegister(provider: string) {
     if (!process.env.DISABLE_REGISTRATION || provider === Provider.GENERIC) {
@@ -63,6 +65,16 @@ export class AuthService {
             : false;
 
         const obj = { addedOrg, jwt: await this.jwt(create.users[0].user) };
+        
+        // Track user registration
+        this._sentryNotificationService.trackAuthEvent('registration', {
+          userId: create.users[0].user.id,
+          email: body.email,
+          provider: 'local',
+          ip,
+          userAgent,
+        });
+
         await this._emailService.sendEmail(
           body.email,
           'Activate your account',
@@ -72,12 +84,37 @@ export class AuthService {
       }
 
       if (!user || !AuthChecker.comparePassword(body.password, user.password)) {
+        // Track failed login attempt
+        this._sentryNotificationService.trackAuthEvent('failed_login', {
+          email: body.email,
+          provider: 'local',
+          ip,
+          userAgent,
+        });
         throw new Error('Invalid user name or password');
       }
 
       if (!user.activated) {
+        // Track failed login attempt for unactivated user
+        this._sentryNotificationService.trackAuthEvent('failed_login', {
+          userId: user.id,
+          email: user.email,
+          provider: 'local',
+          error: new Error('User not activated'),
+          ip,
+          userAgent,
+        });
         throw new Error('User is not activated');
       }
+
+      // Track successful login
+      this._sentryNotificationService.trackAuthEvent('login', {
+        userId: user.id,
+        email: user.email,
+        provider: 'local',
+        ip,
+        userAgent,
+      });
 
       return { addedOrg: false, jwt: await this.jwt(user) };
     }

@@ -1,0 +1,68 @@
+services:
+  postiz:
+    image: docker.io/library/postiz-dev:1
+    container_name: postiz
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - postiz-config:/config/
+      - postiz-uploads:/uploads/
+    ports:
+      - 5000:5000  # Caddy proxy
+    networks:
+      - postiz-network
+    depends_on:
+      postiz-postgres:
+        condition: service_healthy
+      postiz-redis:
+        condition: service_healthy
+ 
+  postiz-postgres:
+    image: postgres:17-alpine
+    container_name: postiz-postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: postiz-password
+      POSTGRES_USER: postiz-user
+      POSTGRES_DB: postiz-db-local
+    volumes:
+      - postgres-volume:/var/lib/postgresql/data
+    networks:
+      - postiz-network
+    healthcheck:
+      test: pg_isready -U postiz-user -d postiz-db-local
+      interval: 10s
+      timeout: 3s
+      retries: 3
+  postiz-redis:
+    image: redis:7.2
+    container_name: postiz-redis
+    restart: always
+    healthcheck:
+      test: redis-cli ping
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    volumes:
+      - postiz-redis-data:/data
+    networks:
+      - postiz-network
+ 
+ 
+volumes:
+  postgres-volume:
+    external: false
+ 
+  postiz-redis-data:
+    external: false
+ 
+  postiz-config:
+    external: false
+ 
+  postiz-uploads:
+    external: false
+ 
+networks:
+  postiz-network:
+    external: false

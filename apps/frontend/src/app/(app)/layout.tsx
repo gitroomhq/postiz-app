@@ -3,7 +3,9 @@ export const dynamic = 'force-dynamic';
 import '../global.scss';
 import 'react-tooltip/dist/react-tooltip.css';
 import '@copilotkit/react-ui/styles.css';
+import { SentryClientService } from '../../lib/sentry'; // Initialize Sentry
 import LayoutContext from '@gitroom/frontend/components/layout/layout.context';
+import { SentryErrorBoundary } from '@gitroom/frontend/components/sentry/sentry-error-boundary';
 import { ReactNode } from 'react';
 import { Chakra_Petch } from 'next/font/google';
 import PlausibleProvider from 'next-plausible';
@@ -24,9 +26,22 @@ const chakra = Chakra_Petch({
 });
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const allHeaders = headers();
-  const Plausible = !!process.env.STRIPE_PUBLISHABLE_KEY
-    ? PlausibleProvider
-    : Fragment;
+  const hasStripe = !!process.env.STRIPE_PUBLISHABLE_KEY;
+  
+  const content = (
+    <PHProvider
+      phkey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
+      host={process.env.NEXT_PUBLIC_POSTHOG_HOST}
+    >
+      <SentryErrorBoundary>
+        <LayoutContext>
+          <UtmSaver />
+          {children}
+        </LayoutContext>
+      </SentryErrorBoundary>
+    </PHProvider>
+  );
+
   return (
     <html className={interClass}>
       <head>
@@ -67,19 +82,15 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         >
           <ToltScript />
           <FacebookComponent />
-          <Plausible
-            domain={!!process.env.IS_GENERAL ? 'postiz.com' : 'gitroom.com'}
-          >
-            <PHProvider
-              phkey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
-              host={process.env.NEXT_PUBLIC_POSTHOG_HOST}
+          {hasStripe ? (
+            <PlausibleProvider
+              domain={!!process.env.IS_GENERAL ? 'postiz.com' : 'gitroom.com'}
             >
-              <LayoutContext>
-                <UtmSaver />
-                {children}
-              </LayoutContext>
-            </PHProvider>
-          </Plausible>
+              {content}
+            </PlausibleProvider>
+          ) : (
+            content
+          )}
         </VariableContextComponent>
       </body>
     </html>

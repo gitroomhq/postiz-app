@@ -39,6 +39,8 @@ import { SetsService } from '@gitroom/nestjs-libraries/database/prisma/sets/sets
 import { SetsRepository } from '@gitroom/nestjs-libraries/database/prisma/sets/sets.repository';
 import { ThirdPartyRepository } from '@gitroom/nestjs-libraries/database/prisma/third-party/third-party.repository';
 import { ThirdPartyService } from '@gitroom/nestjs-libraries/database/prisma/third-party/third-party.service';
+import { SentryNotificationService } from '@gitroom/nestjs-libraries/services/sentry.notification.service';
+import { SentryWorkerService } from '@gitroom/nestjs-libraries/services/sentry.worker.service';
 import { VideoManager } from '@gitroom/nestjs-libraries/videos/video.manager';
 import { FalService } from '@gitroom/nestjs-libraries/openai/fal.service';
 
@@ -90,6 +92,8 @@ import { FalService } from '@gitroom/nestjs-libraries/openai/fal.service';
     SetsRepository,
     ThirdPartyRepository,
     ThirdPartyService,
+    SentryNotificationService,
+    SentryWorkerService,
     VideoManager,
   ],
   get exports() {

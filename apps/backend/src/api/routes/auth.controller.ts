@@ -106,7 +106,16 @@ export class AuthController {
         register: true,
       });
     } catch (e: any) {
-      response.status(400).send(e.message);
+      // Provide specific error handling based on the error message
+      if (e.message === 'User already exists') {
+        response.status(409).send('User already exists'); // 409 Conflict for duplicate resource
+      } else if (e.message === 'Registration is disabled') {
+        response.status(403).send('Registration is disabled'); // 403 Forbidden
+      } else {
+        // Log the actual error for debugging
+        console.error('Registration error:', e);
+        response.status(400).send(e.message || 'Registration failed');
+      }
     }
   }
 

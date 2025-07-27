@@ -1,3 +1,7 @@
+// Initialize Sentry as early as possible
+import { SentryNestJSService } from '@gitroom/helpers/sentry';
+SentryNestJSService.init('workers');
+
 import { NestFactory } from '@nestjs/core';
 
 import { AppModule } from './app/app.module';

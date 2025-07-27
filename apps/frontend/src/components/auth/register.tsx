@@ -74,10 +74,16 @@ export function Register() {
 }
 function getHelpfulReasonForRegistrationFailure(httpCode: number) {
   switch (httpCode) {
-    case 400:
+    case 409:
       return 'Email already exists';
+    case 403:
+      return 'Registration is disabled';
     case 404:
       return 'Your browser got a 404 when trying to contact the API, the most likely reasons for this are the NEXT_PUBLIC_BACKEND_URL is set incorrectly, or the backend is not running.';
+    case 400:
+      return 'Invalid registration data. Please check your input.';
+    case 500:
+      return 'Server error. Please try again later.';
   }
   return 'Unhandled error: ' + httpCode;
 }
