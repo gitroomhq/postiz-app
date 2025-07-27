@@ -1,7 +1,4 @@
-import { Type } from 'class-transformer';
 import {
-  IsDefined,
-  IsIn,
   IsOptional,
   IsString,
   IsDateString,
@@ -13,10 +10,6 @@ export class GetPostsDto {
 
   @IsDateString()
   endDate: string;
-
-  @IsDefined()
-  @IsIn(['day', 'week', 'month'])
-  display: 'day' | 'week' | 'month';
 
   @IsOptional()
   @IsString()
