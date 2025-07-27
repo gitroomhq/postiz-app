@@ -5,6 +5,8 @@ import { SentryNestJSService } from '@gitroom/helpers/sentry';
 @Catch()
 export class SentryExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(SentryExceptionFilter.name);
+  
+  private static readonly MONITORING_PATTERNS = ['/health', '/ping', '/status', '/monitor', '/metrics', '/favicon.ico'];
 
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
@@ -75,7 +77,8 @@ export class SentryExceptionFilter implements ExceptionFilter {
       
       // Don't log common monitoring/health check endpoints as errors
       if (status === 404) {
-        if (SentryExceptionFilter.MONITORING_PATTERNS.some(pattern => request.url.includes(pattern))) {
+        const monitoringPatterns = ['/health', '/ping', '/status', '/monitor', '/metrics', '/favicon.ico'];
+        if (monitoringPatterns.some(pattern => request.url.includes(pattern))) {
           return false;
         }
         

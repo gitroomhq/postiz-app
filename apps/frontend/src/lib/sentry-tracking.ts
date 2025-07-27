@@ -75,7 +75,7 @@ export function trackPerformanceIssue(operation: string, duration: number, thres
   }
 }
 
-export function trackAPICall(method: string, url: string, status: number, duration: number, error?: any) {
+export function trackAPICall(method: string, url: string, status: number, duration: number, error?: Error | unknown) {
   const baseData = {
     method,
     url,

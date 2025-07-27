@@ -22,7 +22,7 @@ export class SentryWorkerService {
     });
   }
 
-  trackJobFailed(jobName: string, jobId: string, error: any, attemptNumber: number, organizationId?: string) {
+  trackJobFailed(jobName: string, jobId: string, error: Error | unknown, attemptNumber: number, organizationId?: string) {
     this._sentryNotificationService.trackWorkerJobEvent('failed', {
       jobName,
       jobId,

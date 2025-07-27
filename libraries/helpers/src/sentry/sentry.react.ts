@@ -96,7 +96,7 @@ export class SentryReactService {
     });
   }
 
-  static captureException(error: any, context?: any) {
+  static captureException(error: Error | unknown, context?: Record<string, unknown>) {
     if (!SentryConfigService.isEnabled()) return;
     
     return Sentry.withScope((scope) => {
@@ -107,7 +107,7 @@ export class SentryReactService {
     });
   }
 
-  static captureMessage(message: string, level: Sentry.SeverityLevel = 'info', context?: any) {
+  static captureMessage(message: string, level: Sentry.SeverityLevel = 'info', context?: Record<string, unknown>) {
     if (!SentryConfigService.isEnabled()) return;
     
     return Sentry.withScope((scope) => {
@@ -124,7 +124,7 @@ export class SentryReactService {
     Sentry.setUser(user);
   }
 
-  static addBreadcrumb(message: string, category?: string, data?: any) {
+  static addBreadcrumb(message: string, category?: string, data?: Record<string, unknown>) {
     if (!SentryConfigService.isEnabled()) return;
     
     Sentry.addBreadcrumb({
@@ -141,7 +141,7 @@ export class SentryReactService {
     Sentry.setTag(key, value);
   }
 
-  static setContext(key: string, context: any) {
+  static setContext(key: string, context: Record<string, unknown>) {
     if (!SentryConfigService.isEnabled()) return;
     
     Sentry.setContext(key, context);
@@ -154,7 +154,7 @@ export class SentryReactService {
     return Sentry.startSpan({
       name,
       op: op || 'custom',
-    });
+    }, (span) => span);
   }
 
   static showReportDialog(eventId?: string) {

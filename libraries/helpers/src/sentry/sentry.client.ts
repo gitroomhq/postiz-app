@@ -107,7 +107,7 @@ export class SentryClientService {
     });
   }
 
-  static captureException(error: any, context?: any) {
+  static captureException(error: Error | unknown, context?: Record<string, unknown>) {
     if (typeof window === 'undefined') return;
     
     return Sentry.withScope((scope) => {
@@ -118,7 +118,7 @@ export class SentryClientService {
     });
   }
 
-  static captureMessage(message: string, level: Sentry.SeverityLevel = 'info', context?: any) {
+  static captureMessage(message: string, level: Sentry.SeverityLevel = 'info', context?: Record<string, unknown>) {
     if (typeof window === 'undefined') return;
     
     return Sentry.withScope((scope) => {
@@ -135,7 +135,7 @@ export class SentryClientService {
     Sentry.setUser(user);
   }
 
-  static addBreadcrumb(message: string, category?: string, data?: any) {
+  static addBreadcrumb(message: string, category?: string, data?: Record<string, unknown>) {
     if (typeof window === 'undefined') return;
     
     Sentry.addBreadcrumb({
@@ -152,7 +152,7 @@ export class SentryClientService {
     Sentry.setTag(key, value);
   }
 
-  static setContext(key: string, context: any) {
+  static setContext(key: string, context: Record<string, unknown>) {
     if (typeof window === 'undefined') return;
     
     Sentry.setContext(key, context);

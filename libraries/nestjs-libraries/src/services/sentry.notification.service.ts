@@ -36,6 +36,36 @@ export class SentryNotificationService {
     }
   }
 
+  private handleAttemptEvent(baseContext: any, data: any) {
+    // Track post publishing attempt as breadcrumb
+    SentryNestJSService.addBreadcrumb(
+      `Post publishing attempt: ${data.provider}`,
+      'post.attempt',
+      baseContext
+    );
+  }
+
+  private handleSuccessEvent(baseContext: any, data: any) {
+    // Track successful post publishing as breadcrumb only
+    SentryNestJSService.addBreadcrumb(
+      `Post published successfully: ${data.provider}`,
+      'post.success',
+      baseContext
+    );
+  }
+
+  private handleFailedEvent(baseContext: any, data: any) {
+    // Track failed post publishing as error
+    SentryNestJSService.captureException(data.error || new Error('Post publishing failed'), {
+      extra: { ...baseContext, metadata: data.metadata },
+      tags: {
+        event: 'post_publishing_failed',
+        provider: data.provider,
+      },
+      level: 'error',
+    });
+  }
+
   /**
    * Track integration connection issues
    */

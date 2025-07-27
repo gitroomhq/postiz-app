@@ -9,7 +9,7 @@ export interface SentryConfig {
   enabled: boolean;
   release?: string;
   serverName?: string;
-  beforeSend?: (event: any, hint: any) => any;
+  beforeSend?: (event: any, hint: { originalException?: Error | unknown }) => any;
   integrations?: any[];
 }
 
