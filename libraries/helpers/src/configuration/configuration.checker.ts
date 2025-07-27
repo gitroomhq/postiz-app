@@ -58,7 +58,9 @@ export class ConfigurationChecker {
       
       // Check sample rates are valid numbers
       const tracesSampleRate = this.get('SENTRY_TRACES_SAMPLE_RATE');
-      if (tracesSampleRate && (isNaN(Number(tracesSampleRate)) || Number(tracesSampleRate) < 0 || Number(tracesSampleRate) > 1)) {
+      if (tracesSampleRate === undefined || tracesSampleRate === '') {
+        this.addIssue('SENTRY_TRACES_SAMPLE_RATE', 'warning', 'SENTRY_TRACES_SAMPLE_RATE is not set or is empty', 'Set to a number between 0 and 1, e.g., 0.1 for 10% sampling');
+      } else if (isNaN(Number(tracesSampleRate)) || Number(tracesSampleRate) < 0 || Number(tracesSampleRate) > 1) {
         this.addIssue('SENTRY_TRACES_SAMPLE_RATE', 'warning', 'Should be a number between 0 and 1', 'Set to 0.1 for 10% sampling');
       }
     }
