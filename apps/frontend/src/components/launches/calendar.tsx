@@ -108,7 +108,7 @@ export const DayView = () => {
   const currentLanguage = i18next.resolvedLanguage || 'en';
   dayjs.locale(currentLanguage);
 
-  const currentDay = dayjs(startDate);
+  const currentDay = dayjs.utc(startDate);
 
   const options = useMemo(() => {
     const createdPosts = posts.map((post) => ({
@@ -390,17 +390,16 @@ export const CalendarColumn: FC<{
     }
     return postList.slice(0, 3);
   }, [postList, showAll]);
-  const canBeTrending = useMemo(() => {
-    return !!trendings.find((trend) => {
-      return dayjs
-        .utc(trend)
-        .local()
-        .isBetween(getDate, getDate.add(10, 'minute'), 'minute', '[)');
-    });
-  }, [trendings]);
+
   const isBeforeNow = useMemo(() => {
-    return getDate.startOf('hour').isBefore(dayjs().startOf('hour'));
+    const originalUtc = getDate.startOf('hour');
+    console.log(
+      originalUtc.startOf('hour').format(),
+      dayjs().startOf('hour').utc().format()
+    );
+    return originalUtc.startOf('hour').isBefore(dayjs().startOf('hour').utc());
   }, [getDate, num]);
+
   const { start, stop } = useInterval(
     useCallback(() => {
       if (isBeforeNow) {
@@ -410,6 +409,7 @@ export const CalendarColumn: FC<{
     }, [isBeforeNow]),
     random(120000, 150000)
   );
+
   useEffect(() => {
     start();
     return () => {
@@ -459,42 +459,6 @@ export const CalendarColumn: FC<{
     },
     []
   );
-  const previewPublication = useCallback(
-    async (
-      postInfo: Post & {
-        integration: Integration;
-      }
-    ) => {
-      const post = await (
-        await fetch(`/marketplace/posts/${postInfo.id}`)
-      ).json();
-      const integration = await getIntegration(postInfo);
-      modal.openModal({
-        classNames: {
-          modal: 'text-textColor',
-        },
-        size: 'auto',
-        withCloseButton: false,
-        children: (
-          <IntegrationContext.Provider
-            value={{
-              allIntegrations: [],
-              date: dayjs(),
-              integration,
-              value: [],
-            }}
-          >
-            <PreviewPopup
-              providerId={post?.providerId!}
-              post={post}
-              postId={post.id}
-            />
-          </IntegrationContext.Provider>
-        ),
-      });
-    },
-    []
-  );
 
   const editPost = useCallback(
     (
@@ -509,9 +473,7 @@ export const CalendarColumn: FC<{
           // @ts-ignore
           publishDate: loadPost.actualDate || loadPost.publishDate,
         };
-        if (user?.orgId === post.submittedForOrganizationId) {
-          return previewPublication(post);
-        }
+
         const data = await (await fetch(`/posts/${post.id}`)).json();
         const date = !isDuplicate
           ? null
@@ -631,7 +593,12 @@ export const CalendarColumn: FC<{
               }
             : {})}
           date={
-            randomHour ? getDate.hour(Math.floor(Math.random() * 24)) : getDate
+            randomHour
+              ? getDate.hour(Math.floor(Math.random() * 24))
+              : getDate.format('YYYY-MM-DDTHH:mm:ss') ===
+                dayjs().startOf('hour').format('YYYY-MM-DDTHH:mm:ss')
+              ? dayjs().add(10, 'minute')
+              : getDate
           }
           {...(set?.content ? { set: JSON.parse(set.content) } : {})}
           reopenModal={() => ({})}
