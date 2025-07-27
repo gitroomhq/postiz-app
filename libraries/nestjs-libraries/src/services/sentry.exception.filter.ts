@@ -22,8 +22,14 @@ export class SentryExceptionFilter implements ExceptionFilter {
                 (exceptionResponse as any)?.message || message;
     }
 
-    // Log the error
-    this.logger.error(`${request.method} ${request.url}`, exception);
+    // Only log as ERROR for actual errors, not expected 404s
+    const shouldLogAsError = status >= 500 || (status >= 400 && this.shouldLogError(exception, request));
+    
+    if (shouldLogAsError) {
+      this.logger.error(`${request.method} ${request.url}`, exception);
+    } else if (status >= 400) {
+      this.logger.warn(`${request.method} ${request.url} - ${status} ${message}`);
+    }
 
     // Send to Sentry (only for server errors or critical issues)
     if (status >= 500 || (status >= 400 && this.shouldReportError(exception, request))) {
@@ -56,6 +62,40 @@ export class SentryExceptionFilter implements ExceptionFilter {
         stack: exception instanceof Error ? exception.stack : undefined 
       }),
     });
+  }
+
+  private shouldLogError(exception: unknown, request: Request): boolean {
+    if (exception instanceof HttpException) {
+      const status = exception.getStatus();
+      
+      // Always log authentication/authorization errors
+      if (status === 401 || status === 403) {
+        return true;
+      }
+      
+      // Don't log common monitoring/health check endpoints as errors
+      if (status === 404) {
+        const monitoringPatterns = ['/health', '/ping', '/status', '/monitor', '/metrics', '/favicon.ico'];
+        if (monitoringPatterns.some(pattern => request.url.includes(pattern))) {
+          return false;
+        }
+        
+        // Log other 404s as warnings only
+        return false;
+      }
+      
+      // Log rate limiting
+      if (status === 429) {
+        return true;
+      }
+      
+      // Log validation errors only if they seem suspicious
+      if (status === 400) {
+        return false; // Log as warning instead
+      }
+    }
+    
+    return true; // Log other errors normally
   }
 
   private shouldReportError(exception: unknown, request: Request): boolean {
