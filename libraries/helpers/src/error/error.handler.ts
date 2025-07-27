@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { SentryNestJSService } from '../sentry';
+import { SentryNestJSService } from '../sentry/sentry.nestjs';
 
 export interface ErrorContext {
   url?: string;
