@@ -14,7 +14,7 @@ export const Filters = () => {
 
   // Set dayjs locale based on current language
   const currentLanguage = i18next.resolvedLanguage || 'en';
-  dayjs.locale(currentLanguage);
+  dayjs.locale();
 
   const betweenDates =
     week.display === 'day'
@@ -214,7 +214,7 @@ export const Filters = () => {
   );
   return (
     <div className="text-textColor flex flex-col md:flex-row gap-[8px] items-center select-none">
-      <div className="flex flex-grow flex-row items-center gap-[20px]">
+      <div className="flex flex-grow flex-row items-center gap-[10px]">
         <div className="border h-[42px] border-newTableBorder bg-newTableBorder gap-[1px] flex items-center rounded-[8px] overflow-hidden">
           <div
             onClick={previous}
@@ -236,12 +236,17 @@ export const Filters = () => {
               />
             </svg>
           </div>
-          <div className="w-[80px] text-center bg-newBgColorInner h-full flex items-center justify-center hover:text-textItemFocused hover:bg-boxFocused">
-            <div
-              onClick={setCurrent(week.display as 'day' | 'week' | 'month')}
-              className="py-[3px] rounded-[5px] transition-all cursor-pointer text-[14px]"
-            >
-              Today
+          <div className="w-[200px] text-center bg-newBgColorInner h-full flex items-center justify-center">
+            <div className="py-[3px] px-[9px] rounded-[5px] transition-all text-[14px]">
+              {week.display === 'day'
+                ? `${dayjs()
+                    .month(week.currentMonth)
+                    .week(week.currentWeek)
+                    .day(week.currentDay)
+                    .format('dddd (L)')}`
+                : week.display === 'week'
+                ? betweenDates
+                : dayjs().month(week.currentMonth).format('MMMM YYYY')}
             </div>
           </div>
           <div
@@ -266,15 +271,14 @@ export const Filters = () => {
           </div>
         </div>
         <div className="flex-1 text-[14px] font-[500]">
-          {week.display === 'day'
-            ? `${dayjs()
-                .month(week.currentMonth)
-                .week(week.currentWeek)
-                .day(week.currentDay)
-                .format('dddd (L)')}`
-            : week.display === 'week'
-            ? betweenDates
-            : dayjs().month(week.currentMonth).format('MMMM YYYY')}
+          <div className="text-center flex h-[42px]">
+            <div
+              onClick={setCurrent(week.display as 'day' | 'week' | 'month')}
+              className="hover:text-textItemFocused hover:bg-boxFocused py-[3px] px-[9px] flex justify-center items-center rounded-[8px] transition-all cursor-pointer text-[14px] bg-newBgColorInner border border-newTableBorder"
+            >
+              Today
+            </div>
+          </div>
         </div>
       </div>
       <SelectCustomer
