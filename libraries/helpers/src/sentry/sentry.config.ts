@@ -15,7 +15,7 @@ export interface SentryConfig {
 
 export class SentryConfigService {
   static getConfig(): SentryConfig {
-    const enabled = process.env.SENTRY_ENABLED !== 'false';
+    const enabled = process.env.SENTRY_ENABLED === 'true';
     const dsn = process.env.SENTRY_DSN || '';
     
     // If Sentry is disabled or no DSN, return disabled config
