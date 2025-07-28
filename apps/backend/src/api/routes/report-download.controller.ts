@@ -5,12 +5,29 @@ import { format, startOfMonth, endOfMonth, isValid } from 'date-fns';
 import * as fs from 'fs';
 import * as path from 'path';
 import { ChartJSNodeCanvas } from 'chartjs-node-canvas';
-import { ChartConfiguration } from 'chart.js';
+import { ChartConfiguration, ChartDataset } from 'chart.js';
 import * as playwright from 'playwright';
+import annotationPlugin from 'chartjs-plugin-annotation';
+import { Chart, registerables } from 'chart.js';
+
+Chart.register(...registerables, annotationPlugin);
+
+interface MetricSummary {
+    value: string | number;
+    style?: {
+        backgroundColor?: string;
+        borderColor?: string;
+        borderWidth?: number;
+        borderRadius?: number;
+        textColor?: string;
+    };
+}
+
 
 interface ChartData {
     title: string;
     image: string | null;
+    summary?: any;
 }
 
 interface TableData {
@@ -584,41 +601,31 @@ export class ReportDownloadController {
         preloadedData?: any
     ): Promise<ChartData> {
         try {
-            console.log('Generating LinkedIn Chart for:', { customerId, month, year, platform });
-
             let report = preloadedData?.community;
             if (!report) {
                 report = await this.reportService.getLinkedInCommunityReport(customerId, month, year);
             }
 
             if (!report?.chart?.length) {
-                console.warn('No chart data found in report.');
                 return { title: 'LinkedIn Community Growth', image: null };
             }
 
-            console.log('Full Report Chart Data:', report.chart);
-
-            // Filter data for the given month
             const monthData = report.chart.filter(item => {
                 const date = new Date(item.date || item.createdAt);
                 return date.getMonth() + 1 === month && date.getFullYear() === year;
             });
 
-            console.log('Filtered Month Data:', monthData);
-
             if (!monthData.length) {
-                console.warn('No data entries for specified month/year');
                 return { title: 'LinkedIn Community Growth', image: null };
             }
 
-            // Sort data by date
             monthData.sort((a, b) =>
                 new Date(a.date || a.createdAt).getTime() - new Date(b.date || b.createdAt).getTime()
             );
 
             const daysInMonth = new Date(year, month, 0).getDate();
             const interval = Math.max(1, Math.floor(daysInMonth / 10));
-            const sampledData = [];
+            const sampledData: any[] = [];
 
             for (let day = 1; day <= daysInMonth; day += interval) {
                 let closest = null;
@@ -641,191 +648,196 @@ export class ReportDownloadController {
                 return itemDate.getDate() === daysInMonth;
             });
 
-            if (
-                lastDayData &&
-                !sampledData.some(item => {
-                    const itemDate = new Date(item.date || item.createdAt);
-                    return itemDate.getDate() === daysInMonth;
-                })
-            ) {
+            if (lastDayData && !sampledData.some(item => {
+                const itemDate = new Date(item.date || item.createdAt);
+                return itemDate.getDate() === daysInMonth;
+            })) {
                 sampledData.push(lastDayData);
             }
-
-            console.log('Sampled Data (~10 points):', sampledData);
 
             const labels = sampledData.map(item => {
                 const date = new Date(item.date || item.createdAt);
                 return format(date, 'MMM d');
             });
 
-            const hasFollowersData = sampledData.some(d => d.followers > 0);
-            const hasPaidFollowersData = sampledData.some(d => d.paidFollowers > 0);
-            const hasImpressionsData = sampledData.some(d => d.impressions > 0);
-            const hasPostCountsData = sampledData.some(d => d.postsCount > 0);
+            const datasets: ChartDataset<'bar' | 'line'>[] = [];
 
-            console.log('Available Datasets:', {
-                hasFollowersData,
-                hasPaidFollowersData,
-                hasImpressionsData,
-                hasPostCountsData
+            datasets.push({
+                type: 'line',
+                label: 'Followers',
+                data: sampledData.map(d => d.followers || 0),
+                borderColor: '#0A66C2',
+                backgroundColor: '#0A66C230',
+                borderWidth: 2,
+                tension: 0.4,
+                yAxisID: 'y1',
+                pointBackgroundColor: '#0A66C2',
+                pointRadius: 3,
+                pointHoverRadius: 5,
             });
 
-            const datasets = [];
-
-            if (hasFollowersData) {
-                datasets.push({
-                    label: 'Followers',
-                    data: sampledData.map(d => d.followers || 0),
-                    borderColor: '#0A66C2',
-                    backgroundColor: '#0A66C230',
-                    borderWidth: 2,
-                    tension: 0.4,
-                    type: 'line',
-                    yAxisID: 'y1',
-                    pointBackgroundColor: '#0A66C2',
-                    pointRadius: 4,
-                    pointHoverRadius: 6
-                });
-            }
-
-            if (hasPaidFollowersData) {
-                datasets.push({
-                    label: 'Paid Followers',
-                    data: sampledData.map(d => d.paidFollowers || 0),
-                    borderColor: '#FFB002',
-                    backgroundColor: '#FFB00230',
-                    borderWidth: 2,
-                    tension: 0.4,
-                    type: 'line',
-                    yAxisID: 'y1',
-                    pointBackgroundColor: '#FFB002',
-                    pointRadius: 4,
-                    pointHoverRadius: 6
-                });
-            }
-
-            if (hasImpressionsData) {
-                datasets.push({
-                    label: 'Impressions',
-                    data: sampledData.map(d => d.impressions || 0),
-                    borderColor: '#8D6CAB',
-                    backgroundColor: '#8D6CAB30',
-                    borderWidth: 2,
-                    tension: 0.4,
-                    type: 'line',
-                    yAxisID: 'y',
-                    pointBackgroundColor: '#8D6CAB',
-                    pointRadius: 4,
-                    pointHoverRadius: 6
-                });
-            }
-
-            if (hasPostCountsData) {
-                datasets.push({
-                    label: 'Posts',
-                    data: sampledData.map(d => d.postsCount || 0),
-                    backgroundColor: '#29C76F',
-                    borderColor: '#29C76F',
-                    borderWidth: 1,
-                    type: 'bar',
-                    yAxisID: 'y1'
-                });
-            }
-
-
-            if (datasets.length === 0) {
-                console.warn('No meaningful data to plot in chart.');
-                return { title: 'LinkedIn Community Growth', image: null };
-            }
-
-            console.log('Final Datasets:', datasets);
-
-            const configuration: ChartConfiguration<'line'> = {
+            datasets.push({
                 type: 'line',
+                label: 'Paid Followers',
+                data: sampledData.map(d => d.paidFollowers || 0),
+                borderColor: '#FFB002',
+                backgroundColor: '#FFB00230',
+                borderWidth: 2,
+                tension: 0.4,
+                yAxisID: 'y1',
+                pointBackgroundColor: '#FFB002',
+                pointRadius: 3,
+                pointHoverRadius: 5,
+            });
+
+            datasets.push({
+                type: 'line',
+                label: 'Impressions',
+                data: sampledData.map(d => d.impressions || 0),
+                borderColor: '#8D6CAB',
+                backgroundColor: '#8D6CAB30',
+                borderWidth: 2,
+                tension: 0.4,
+                yAxisID: 'y',
+                pointBackgroundColor: '#8D6CAB',
+                pointRadius: 3,
+                pointHoverRadius: 5,
+            });
+
+            datasets.push({
+                type: 'bar',
+                label: 'Posts',
+                data: sampledData.map(d => d.postsCount || 0),
+                backgroundColor: '#29C76F',
+                borderColor: '#29C76F',
+                borderWidth: 1,
+                yAxisID: 'y1',
+            });
+
+            const configuration: ChartConfiguration<'bar' | 'line'> = {
+                type: 'bar',
                 data: { labels, datasets },
                 options: {
                     responsive: true,
                     plugins: {
-                        title: {
-                            // display: true,
-                            // text: 'LinkedIn Community Growth',
-                            // font: { size: 18, weight: 'bold', family: 'Segoe UI, sans-serif' },
-                            // color: '#0A66C2'
-                        },
                         legend: {
+                            display: false,
                             labels: {
-                                color: '#1D2226',
-                                font: { family: 'Segoe UI, sans-serif', size: 12 }
+                                font: { weight: 'bold' }
                             }
                         },
                         tooltip: {
-                            backgroundColor: '#ffffff',
-                            titleColor: '#0A66C2',
-                            bodyColor: '#000000',
-                            borderColor: '#0A66C2',
-                            borderWidth: 1,
                             callbacks: {
                                 title: (tooltipItems) => {
-                                    const date = new Date(sampledData[tooltipItems[0].dataIndex].date ||
-                                        sampledData[tooltipItems[0].dataIndex].createdAt);
+                                    const date = new Date(sampledData[tooltipItems[0].dataIndex].date || sampledData[tooltipItems[0].dataIndex].createdAt);
                                     return format(date, 'MMMM d, yyyy');
+                                },
+                                label: (context) => {
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y;
+                                    return `${label}: ${Number(value).toLocaleString()}`;
                                 }
                             }
                         }
                     },
-                    layout: {
-                        padding: { top: 20, bottom: 10, left: 10, right: 10 }
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
                     },
                     scales: {
                         x: {
                             title: {
                                 display: true,
-                                text: 'Day of Month',
-                                font: { weight: 'bold', family: 'Segoe UI, sans-serif' },
-                                color: '#0A66C2'
+                                text: 'Date',
+                                font: { weight: 'bold' }
                             },
-                            ticks: { color: '#1D2226' },
-                            grid: { color: '#ECECEC' }
+                            ticks: { autoSkip: false }
                         },
                         y: {
+                            beginAtZero: true,
+                            position: 'left',
                             title: {
                                 display: true,
                                 text: 'Impressions',
-                                font: { weight: 'bold', family: 'Segoe UI, sans-serif' },
-                                color: '#0A66C2'
+                                font: { weight: 'bold' }
                             },
                             ticks: {
-                                color: '#1D2226',
                                 callback: value =>
                                     Number(value) >= 1000 ? `${(Number(value) / 1000).toFixed(0)}k` : value
-                            },
-                            grid: { color: '#ECECEC' },
-                            beginAtZero: true
-                        },
-                        ...(hasPostCountsData ? {
-                            y1: {
-                                position: 'right',
-                                title: {
-                                    display: true,
-                                    text: 'Posts/ Followers',
-                                    font: { weight: 'bold', family: 'Segoe UI, sans-serif' },
-                                    color: '#0A66C2'
-                                },
-                                ticks: { color: '#1D2226', precision: 0 },
-                                grid: { drawOnChartArea: false },
-                                beginAtZero: true
                             }
-                        } : {})
+                        },
+                        y1: {
+                            beginAtZero: true,
+                            position: 'right',
+                            grid: { drawOnChartArea: false },
+                            title: {
+                                display: true,
+                                text: 'Followers / Posts',
+                                font: { weight: 'bold' }
+                            },
+                            ticks: {
+                                callback: value =>
+                                    Number(value) >= 1000 ? `${(Number(value) / 1000).toFixed(0)}k` : value
+                            }
+                        }
                     }
                 }
             };
 
-
             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+
+            const totalFollowers = monthData.reduce((sum, d) => sum + (d.followers || 0), 0);
+            const totalPaidFollowers = monthData.reduce((sum, d) => sum + (d.paidFollowers || 0), 0);
+            const totalImpressions = monthData.reduce((sum, d) => sum + (d.impressions || 0), 0);
+            const totalPosts = monthData.reduce((sum, d) => sum + (d.postsCount || 0), 0);
+
             return {
                 title: 'LinkedIn Community Growth',
-                image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+                image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
+                summary: {
+                    Followers: {
+                        value: totalFollowers.toLocaleString(),
+                        style: {
+                            backgroundColor: '#0A66C230',
+                            borderColor: '#0A66C2',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    },
+                    PaidFollowers: {
+                        value: totalPaidFollowers.toLocaleString(),
+                        style: {
+                            backgroundColor: '#FFB00230',
+                            borderColor: '#FFB002',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    },
+                    Impressions: {
+                        value: totalImpressions.toLocaleString(),
+                        style: {
+                            backgroundColor: '#8D6CAB30',
+                            borderColor: '#8D6CAB',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    },
+                    Posts: {
+                        value: totalPosts.toLocaleString(),
+                        style: {
+                            backgroundColor: '#29C76F30',
+                            borderColor: '#29C76F',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    }
+                }
             };
+
         } catch (error) {
             console.error('Error generating LinkedIn community chart:', error);
             return { title: 'LinkedIn Community Growth', image: null };
@@ -849,221 +861,181 @@ export class ReportDownloadController {
                 return { title: 'X Performance Metrics', image: null };
             }
 
-            // Process the data
-            const monthData = report.chart.filter(item => {
-                const date = new Date(item.date || item.createdAt);
-                return date.getMonth() + 1 === month && date.getFullYear() === year;
-            });
+            const monthData = this.formatChartData(report.chart, month, year);
+            const sampledData = this.getDataWithDayGap(monthData, 1, month, year);
 
-            if (!monthData.length) {
-                return { title: 'X Performance Metrics', image: null };
-            }
+            const labels = sampledData.map(d => format(d.date, 'MMM d'));
+            const impressionsData = sampledData.map(d => d.impressions || 0);
+            const interactionsData = sampledData.map(d => d.interactions || 0);
+            const engagementData = sampledData.map(d => d.engagement || 0);
 
-            monthData.sort((a, b) =>
-                new Date(a.date || a.createdAt).getTime() - new Date(b.date || b.createdAt).getTime()
-            );
-
-            // Sample data to show ~10 points
-            const daysInMonth = new Date(year, month, 0).getDate();
-            const interval = Math.max(1, Math.floor(daysInMonth / 10));
-            const sampledData = [];
-
-            for (let day = 1; day <= daysInMonth; day += interval) {
-                let closest = null;
-                let minDiff = Infinity;
-
-                for (const item of monthData) {
-                    const itemDate = new Date(item.date || item.createdAt);
-                    const diff = Math.abs(itemDate.getDate() - day);
-                    if (diff < minDiff) {
-                        minDiff = diff;
-                        closest = item;
-                    }
-                }
-
-                if (closest) sampledData.push(closest);
-            }
-
-            // Always include the last day
-            const lastDayData = monthData.find(item => {
-                const itemDate = new Date(item.date || item.createdAt);
-                return itemDate.getDate() === daysInMonth;
-            });
-            if (lastDayData && !sampledData.some(item => {
-                const itemDate = new Date(item.date || item.createdAt);
-                return itemDate.getDate() === daysInMonth;
-            })) {
-                sampledData.push(lastDayData);
-            }
-
-            const labels = sampledData.map(item => {
-                const date = new Date(item.date || item.createdAt);
-                return format(date, 'MMM d');
-            });
-
-            // Check which metrics have data
-            const hasImpressions = sampledData.some(d => d.impressions > 0);
-            const hasEngagement = sampledData.some(d => d.engagement > 0);
-            const hasInteractions = sampledData.some(d => d.interactions > 0);
-
-            // Create datasets based on available data
-            const datasets = [];
-
-            if (hasImpressions) {
-                datasets.push({
-                    label: 'Impressions',
-                    data: sampledData.map(d => d.impressions || 0),
-                    backgroundColor: '#1DA1F280',
-                    borderColor: '#1DA1F2',
-                    borderWidth: 2,
-                    type: 'bar',
-                    yAxisID: 'y',
-                    borderRadius: 4
-                });
-
-            }
-
-            if (hasEngagement) {
-                datasets.push({
-                    label: 'Engagement Rate',
-                    data: sampledData.map(d => d.engagement || 0),
-                    borderColor: '#17BF63',
-                    backgroundColor: '#17BF6320',
-                    borderWidth: 2,
-                    type: 'line',
-                    tension: 0.4,
-                    yAxisID: 'y1',
-                    pointBackgroundColor: '#17BF63',
-                    pointRadius: 4,
-                    pointHoverRadius: 6
-                });
-
-            }
-
-            if (hasInteractions) {
-                datasets.push({
-                    label: 'Interactions',
-                    data: sampledData.map(d => d.interactions || 0),
-                    borderColor: '#F45D22',
-                    backgroundColor: '#F45D2220',
-                    borderWidth: 2,
-                    type: 'line',
-                    tension: 0.4,
-                    yAxisID: 'y', // Same as Impressions
-                    pointBackgroundColor: '#F45D22',
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
-                });
-            }
-
-
-
-            // If no meaningful data, return null
-            if (datasets.length === 0) {
-                return { title: 'X Performance Metrics', image: null };
-            }
+            const totalImpressions = monthData.reduce((sum, d) => sum + (d.impressions || 0), 0);
+            const totalInteractions = monthData.reduce((sum, d) => sum + (d.interactions || 0), 0);
+            const totalEngagement = monthData.length
+                ? monthData.reduce((sum, d) => sum + (d.engagement || 0), 0) / monthData.length
+                : 0;
 
             const configuration: ChartConfiguration<'bar' | 'line'> = {
                 type: 'bar',
                 data: {
                     labels,
-                    datasets
+                    datasets: [
+                        {
+                            type: 'bar',
+                            label: 'Impressions',
+                            data: impressionsData,
+                            backgroundColor: '#1DA1F280',
+                            borderColor: '#1DA1F2',
+                            borderWidth: 1,
+                            barThickness: 14,
+                            borderRadius: 6
+                        },
+                        {
+                            type: 'line',
+                            label: 'Engagement Rate',
+                            data: engagementData,
+                            borderColor: '#17BF63',
+                            backgroundColor: '#17BF6320',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            pointBackgroundColor: '#17BF63',
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            yAxisID: 'y1'
+                        },
+                        {
+                            type: 'line',
+                            label: 'Interactions',
+                            data: interactionsData,
+                            borderColor: '#F45D22',
+                            backgroundColor: '#F45D2220',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            pointBackgroundColor: '#F45D22',
+                            pointRadius: 3,
+                            pointHoverRadius: 5
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        title: {
-                            // display: true,
-                            // text: 'X Performance Metrics',
-                            // font: { size: 20, weight: 'bold' },
-                            // color: '#1DA1F2'
-                        },
                         legend: {
-                            position: 'top',
+                            display: false,
                             labels: {
-                                font: { size: 13 },
-                                color: '#333'
+                                font: { size: 12 },
+                                color: '#202124',
+                                boxWidth: 20,
+                                boxHeight: 12,
+                                padding: 20
                             }
                         },
                         tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                            backgroundColor: '#ffffffee',
-                            titleColor: '#1DA1F2',
-                            bodyColor: '#333',
-                            borderColor: '#ccc',
-                            borderWidth: 1,
                             callbacks: {
                                 title: (tooltipItems) => {
-                                    const date = new Date(sampledData[tooltipItems[0].dataIndex].date ||
-                                        sampledData[tooltipItems[0].dataIndex].createdAt);
+                                    const date = new Date(sampledData[tooltipItems[0].dataIndex].date);
                                     return format(date, 'MMMM d, yyyy');
+                                },
+                                label: (context) => {
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y;
+                                    return `${label}: ${typeof value === 'number' ? value.toLocaleString() : value}`;
                                 }
                             }
                         }
                     },
                     scales: {
                         x: {
-                            title: {
-                                display: true,
-                                text: 'Day of Month',
-                                color: '#444',
-                                font: { weight: 'bold' }
-                            },
+                            grid: { display: false },
                             ticks: {
-                                color: '#444'
-                            },
-                            grid: {
-                                color: '#f2f2f2'
+                                color: '#5f6368',
+                                font: { size: 11 }
                             }
                         },
                         y: {
+                            beginAtZero: true,
                             title: {
                                 display: true,
-                                text: 'Impressions',
-                                color: '#444',
-                                font: { weight: 'bold' }
+                                text: 'Count',
+                                font: { size: 12 },
+                                color: '#5f6368'
                             },
                             ticks: {
-                                color: '#444',
-                                callback: value => Number(value) >= 1000 ? `${(Number(value) / 1000).toFixed(0)}k` : value
+                                color: '#5f6368'
                             },
                             grid: {
-                                color: '#e9ecef'
+                                color: '#e0e0e0'
                             }
                         },
                         y1: {
                             position: 'right',
+                            beginAtZero: true,
                             title: {
                                 display: true,
                                 text: 'Engagement Rate (%)',
-                                color: '#444',
-                                font: { weight: 'bold' }
+                                font: { size: 12 },
+                                color: '#5f6368'
                             },
-                            grid: { drawOnChartArea: false },
                             ticks: {
-                                color: '#444',
-                                callback: value =>
-                                    `${Number(value).toFixed(2)}%`
-
+                                color: '#5f6368',
+                                callback: (value) => `${Number(value).toFixed(2)}%`
+                            },
+                            grid: {
+                                drawOnChartArea: false
                             }
                         }
                     }
-                }
+                },
+                plugins: [require('chartjs-plugin-annotation')]
             };
 
-
             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+
             return {
                 title: 'X Performance Metrics',
-                image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+                image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
+                summary: {
+                    impressions: {
+                        value: totalImpressions.toLocaleString(),
+                        style: {
+                            backgroundColor: '#1DA1F220',
+                            borderColor: '#1DA1F2',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    },
+                    interactions: {
+                        value: totalInteractions.toLocaleString(),
+                        style: {
+                            backgroundColor: '#F45D2220',
+                            borderColor: '#F45D22',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    },
+                    Engagement: {
+                        value: `${totalEngagement.toFixed(2)}%`,
+                        style: {
+                            backgroundColor: '#17BF6320',
+                            borderColor: '#17BF63',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    }
+                }
             };
         } catch (error) {
             console.error('Error generating X overview chart:', error);
             return { title: 'X Performance Metrics', image: null };
         }
     }
+
+
+
     private async generateCommunityChart(
         customerId: string,
         month: number,
@@ -1096,18 +1068,15 @@ export class ReportDownloadController {
                 return date.getMonth() + 1 === month && date.getFullYear() === year;
             });
 
-            monthData.sort((a, b) =>
-                new Date(a.date).getTime() - new Date(b.date).getTime()
-            );
+            monthData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
             const sampledData = [];
             const daysInMonth = new Date(year, month, 0).getDate();
-            const dayInterval = 4; // Fixed 4-day gap
+            const dayInterval = 4;
 
             for (let day = 1; day <= daysInMonth; day += dayInterval) {
                 let closest = null;
                 let minDiff = Infinity;
-
                 for (const item of monthData) {
                     const itemDate = new Date(item.date);
                     const diff = Math.abs(itemDate.getDate() - day);
@@ -1116,93 +1085,216 @@ export class ReportDownloadController {
                         closest = item;
                     }
                 }
-
                 if (closest) sampledData.push(closest);
             }
 
-            const lastDayData = monthData.find(item => {
-                const itemDate = new Date(item.date);
-                return itemDate.getDate() === daysInMonth;
-            });
-
-            if (lastDayData && !sampledData.some(item => {
-                const itemDate = new Date(item.date || item.createdAt);
-                return itemDate.getDate() === daysInMonth;
-            })) {
+            const lastDayData = monthData.find(item => new Date(item.date).getDate() === daysInMonth);
+            if (lastDayData && !sampledData.some(item => new Date(item.date).getDate() === daysInMonth)) {
                 sampledData.push(lastDayData);
             }
 
-            const labels = sampledData.map(item => {
-                const date = new Date(item.date || item.createdAt);
-                return format(date, 'MMM d');
-            });
+            const labels = sampledData.map(item => format(new Date(item.date), 'MMM d'));
             const isInstagram = platform === 'instagram';
-            const configuration: ChartConfiguration<'bar'> = {
+
+            // ➕ Rounded Bar Patch
+            const ctx = (this.chartJSNodeCanvas as any)?._canvas?.getContext?.('2d');
+            if (ctx && typeof ctx.roundRect !== 'function') {
+                ctx.roundRect = function (x, y, w, h, r) {
+                    this.beginPath();
+                    this.moveTo(x + r, y);
+                    this.arcTo(x + w, y, x + w, y + h, r);
+                    this.arcTo(x + w, y + h, x, y + h, r);
+                    this.arcTo(x, y + h, x, y, r);
+                    this.arcTo(x, y, x + w, y, r);
+                    this.closePath();
+                };
+            }
+
+            const configuration: ChartConfiguration<'bar' | 'line'> = {
                 type: 'bar',
                 data: {
-                    labels: labels,
+                    labels,
                     datasets: [
                         {
-                            label: platform === 'facebook' ? 'Likes' : 'Followers',
-                            data: sampledData.map(item => platform === 'facebook' ? item.likes : item.followers),
-                            backgroundColor: isInstagram ? 'rgba(253, 29, 29, 0.6)' : 'rgba(193, 53, 132, 0.5)', // Instagram pink-red
-                            borderColor: isInstagram ? 'rgba(253, 29, 29, 1)' : 'rgba(193, 53, 132, 1)',
-                            borderWidth: 2
-                        },
-                        ...(platform !== 'facebook' ? [{
                             label: 'Following',
-                            data: sampledData.map(item => item.following),
-                            backgroundColor: isInstagram ? 'rgba(131, 58, 180, 0.5)' : 'rgba(255, 159, 64, 0.5)', // Instagram purple
-                            borderColor: isInstagram ? 'rgba(131, 58, 180, 1)' : 'rgba(255, 159, 64, 1)',
-                            borderWidth: 2
+                            data: sampledData.map(item => item.following || 0),
+                            backgroundColor: '#833AB430',
+                            borderColor: '#833AB4',
+                            borderWidth: 2,
+                            type: 'bar',
+                            barThickness: 14,
+                            borderRadius: 6,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: platform === 'facebook' ? 'Likes' : 'Followers',
+                            data: sampledData.map(item => platform === 'facebook' ? item.likes : item.followers || 0),
+                            borderColor: '#C13584',
+                            backgroundColor: '#C1358420',
+                            borderWidth: 2,
+                            type: 'line',
+                            tension: 0.4,
+                            fill: false,
+                            pointBackgroundColor: '#C13584',
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            yAxisID: 'y1'
+                        },
+                        ...(isInstagram ? [{
+                            label: 'Posts',
+                            data: sampledData.map(item => item.posts || 0),
+                            borderColor: '#FCAF45',
+                            backgroundColor: '#FCAF4520',
+                            borderWidth: 2,
+                            type: 'line' as const,
+                            tension: 0.4,
+                            fill: false,
+                            pointBackgroundColor: '#FCAF45',
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            yAxisID: 'y1'
                         }] : [])
                     ]
-
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
-                        title: {
-                            display: false
-                        },
+                        title: { display: false },
                         tooltip: {
                             callbacks: {
-                                title: (tooltipItems) => {
-                                    const date = new Date(sampledData[tooltipItems[0].dataIndex].date || sampledData[tooltipItems[0].dataIndex].createdAt);
+                                title: (items) => {
+                                    const date = new Date(sampledData[items[0].dataIndex].date);
                                     return format(date, 'MMMM d, yyyy');
                                 }
+                            }
+                        },
+                        legend: {
+                            display: false,
+                            labels: {
+                                font: { size: 12 },
+                                boxWidth: 20,
+                                boxHeight: 12,
+                                padding: 20
                             }
                         }
                     },
                     scales: {
                         x: {
-                            title: {
-                                display: true,
-                                text: 'Day of Month',
-                                font: { weight: 'bold' }
-                            },
-                            ticks: {
-                                autoSkip: false
-                            },
-                            stacked: false
+                            grid: { display: false },
+                            ticks: { color: '#5f6368', font: { size: 11 } }
                         },
                         y: {
-                            beginAtZero: false,
-                            ticks: {
-                                callback: (value) => {
-                                    return Number(value) >= 1000 ? `${Number(value) / 1000}k` : value;
-                                }
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Following',
+                                font: { size: 12 },
+                                color: '#5f6368'
                             },
-                            stacked: false
+                            ticks: {
+                                color: '#5f6368',
+                                callback: (v) => Number(v) >= 1000 ? `${Number(v) / 1000}k` : v
+                            },
+                            grid: { color: '#e0e0e0' }
+                        },
+                        y1: {
+                            position: 'right',
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: platform === 'facebook' ? 'Likes' : 'Followers / Posts',
+                                font: { size: 12 },
+                                color: '#5f6368'
+                            },
+                            grid: { drawOnChartArea: false },
+                            ticks: {
+                                color: '#5f6368',
+                                callback: (v) => Number(v) >= 1000 ? `${Number(v) / 1000}k` : v
+                            }
                         }
                     }
                 }
             };
 
             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+
+            // 🔢 Summary Cards
+            const summary: Record<string, any> = {};
+
+            if (platform === 'facebook') {
+                const totalLikes = monthData.reduce((sum, d) => sum + (d.likes || 0), 0);
+                summary.totalLikes = {
+                    value: totalLikes.toLocaleString(),
+                    style: {
+                        backgroundColor: '#4267B230',
+                        borderColor: '#4267B2',
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        textColor: '#000000'
+                    }
+                };
+            } else {
+                const totalFollowers = monthData.reduce((sum, d) => sum + (d.followers || 0), 0);
+                const totalFollowing = monthData.reduce((sum, d) => sum + (d.following || 0), 0);
+                const totalContent = monthData.reduce((sum, d) => sum + (d.posts || 0), 0);
+
+                const styleMap = {
+                    instagram: {
+                        followers: ['#C1358430', '#C13584'],
+                        following: ['#833AB430', '#833AB4']
+                    },
+                    linkedin: {
+                        followers: ['#0077B530', '#0077B5'],
+                        following: ['#00A0DC30', '#00A0DC']
+                    },
+                    x: {
+                        followers: ['#1DA1F230', '#1DA1F2'],
+                        following: ['#65778630', '#657786']
+                    }
+                };
+
+                const styles = styleMap[platform] || {
+                    followers: ['#CCCCCC30', '#CCCCCC'],
+                    following: ['#AAAAAA30', '#AAAAAA']
+                };
+
+                summary.totalFollowers = {
+                    value: totalFollowers.toLocaleString(),
+                    style: {
+                        backgroundColor: styles.followers[0],
+                        borderColor: styles.followers[1],
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        textColor: '#000000'
+                    }
+                };
+                summary.totalFollowing = {
+                    value: totalFollowing.toLocaleString(),
+                    style: {
+                        backgroundColor: styles.following[0],
+                        borderColor: styles.following[1],
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        textColor: '#000000'
+                    }
+                };
+                summary.totalContent = {
+                    value: totalContent.toLocaleString(),
+                    style: {
+                        backgroundColor: '#FCAF4530',
+                        borderColor: '#FCAF45',
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        textColor: '#000000'
+                    }
+                };
+            }
+
             return {
                 title: `${this.getPlatformDisplayName(platform)} Community Growth`,
-                image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+                image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
+                summary
             };
         } catch (error) {
             console.error(`Error generating ${platform} community chart:`, error);
@@ -1210,298 +1302,392 @@ export class ReportDownloadController {
         }
     }
 
-    async generateInstagramImpressionsChart(customerId: string, month: number, year: number, preloadedData?: any): Promise<ChartData> {
-        const report = preloadedData?.overview || await this.reportService.getInstagramOverviewReport(customerId, month, year);
-        if (!report?.chart?.length) return { title: 'Instagram Impressions & Reach', image: null };
-
-        const rawChartData = report.chart.map(item => ({
-            date: new Date(item.date || item.createdAt),
-            impressions: item.impressions || 0,
-            avgReachPerDay: item.avgReachPerDay || 0
-        }));
-
-        const daysInMonth = new Date(year, month, 0).getDate();
-        const completeData = Array.from({ length: daysInMonth }, (_, i) => {
-            const day = i + 1;
-            const found = rawChartData.find(d => d.date.getDate() === day && d.date.getMonth() + 1 === month && d.date.getFullYear() === year);
-            return found
-                ? { ...found, day, isActualData: true }
-                : { date: new Date(year, month - 1, day), impressions: 0, avgReachPerDay: 0, day, isActualData: false };
-        });
-
-        const sampledData = [];
-        for (let i = 0; i < daysInMonth; i += 4) sampledData.push(completeData[i]);
-        if (!sampledData.some(d => d.day === daysInMonth)) sampledData.push(completeData[daysInMonth - 1]);
-
-        const labels = sampledData.map(d => format(d.date, 'MMM d'));
-        const impressionsData = sampledData.map(d => d.impressions);
-        const reachData = sampledData.map(d => d.avgReachPerDay);
-
-        const configuration: ChartConfiguration<'bar' | 'line'> = {
-            type: 'bar',
-            data: {
-                labels,
-                datasets: [
-                    {
-                        label: 'Impressions',
-                        data: impressionsData,
-                        backgroundColor: '#FD1D1D99', // Instagram pinkish red with transparency
-                        borderColor: '#FD1D1D',
-                        borderWidth: 2,
-                        type: 'bar',
-                        yAxisID: 'y',
-                        order: 2
-                    },
-                    {
-                        label: 'Avg Reach/Day',
-                        data: reachData,
-                        backgroundColor: '#833AB420', // Instagram purple with light transparency
-                        borderColor: '#833AB4',
-                        borderWidth: 2,
-                        tension: 0.4,
-                        type: 'line',
-                        yAxisID: 'y1',
-                        pointBackgroundColor: '#833AB4',
-                        pointRadius: 5,
-                        pointHoverRadius: 7,
-                        order: 1
-                    }
-                ]
-            },
-            options: {
-                plugins: {
-                    legend: {
-                        labels: {
-                            color: '#262626',
-                            font: {
-                                weight: 'bold',
-                                size: 12
-                            }
-                        }
-                    },
-                    tooltip: {
-                        backgroundColor: '#fff',
-                        titleColor: '#262626',
-                        bodyColor: '#262626',
-                        borderColor: '#FD1D1D',
-                        borderWidth: 1,
-                        titleFont: { weight: 'bold' },
-                        callbacks: {
-                            title: items => format(sampledData[items[0].dataIndex].date, 'MMMM d, yyyy'),
-                            label: ctx => {
-                                const dp = sampledData[ctx.dataIndex];
-                                const val = ctx.parsed.y.toLocaleString();
-                                const label = `${ctx.dataset.label}: ${val}`;
-                                return dp.isActualData ? label : `${label} (estimated)`;
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Day of Month',
-                            font: { weight: 'bold' },
-                            color: '#262626'
-                        },
-                        ticks: { color: '#262626' }
-                    },
-                    y: {
-                        title: {
-                            display: true,
-                            text: 'Impressions',
-                            font: { weight: 'bold' },
-                            color: '#262626'
-                        },
-                        ticks: {
-                            color: '#262626',
-                            callback: v => Number(v) >= 1000 ? `${Number(v) / 1000}k` : v
-                        }
-                    },
-                    y1: {
-                        title: {
-                            display: true,
-                            text: 'Avg Reach/Day',
-                            font: { weight: 'bold' },
-                            color: '#262626'
-                        },
-                        grid: { drawOnChartArea: false },
-                        ticks: {
-                            color: '#262626',
-                            callback: v => Number(v) >= 1000 ? `${Number(v) / 1000}k` : v
-                        }
-                    }
-                }
-            }
-        };
 
 
-        const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
-        return {
-            title: `Instagram Profile Overview`,
-            image: `data:image/png;base64,${imageBuffer.toString('base64')}`
-        };
-    }
-
-    async generateFacebookImpressionsChart(
+    async generateInstagramImpressionsChart(
         customerId: string,
         month: number,
         year: number,
         preloadedData?: any
     ): Promise<ChartData> {
-        const report = preloadedData?.overview || await this.reportService.getFacebookOverviewReport(customerId, month, year);
-        if (!report?.chart?.length) return { title: 'Facebook Impressions & Reach', image: null };
+        try {
+            const report = preloadedData?.overview || await this.reportService.getInstagramOverviewReport(customerId, month, year);
+            if (!report?.chart?.length) {
+                return { title: 'Instagram Impressions & Reach', image: null };
+            }
 
-        const rawChartData = report.chart.map(item => ({
-            date: new Date(item.date || item.createdAt),
-            impressions: item.impressions || 0,
-            pageViews: item.pageViews || 0,
-            totalContent: item.totalContent || 0
-        }));
+            const rawChartData = report.chart.map(item => ({
+                date: new Date(item.date || item.createdAt),
+                impressions: item.impressions || 0,
+                avgReachPerDay: item.avgReachPerDay || 0,
+            }));
 
-        const daysInMonth = new Date(year, month, 0).getDate();
-        const completeData = Array.from({ length: daysInMonth }, (_, i) => {
-            const day = i + 1;
-            const found = rawChartData.find(d =>
-                d.date.getDate() === day &&
-                d.date.getMonth() + 1 === month &&
-                d.date.getFullYear() === year
-            );
-            return found
-                ? { ...found, day, isActualData: true }
-                : {
-                    date: new Date(year, month - 1, day),
-                    impressions: 0,
-                    pageViews: 0,
-                    totalContent: 0,
-                    day,
-                    isActualData: false
+            const daysInMonth = new Date(year, month, 0).getDate();
+            const completeData = Array.from({ length: daysInMonth }, (_, i) => {
+                const day = i + 1;
+                const found = rawChartData.find(d =>
+                    d.date.getDate() === day &&
+                    d.date.getMonth() + 1 === month &&
+                    d.date.getFullYear() === year
+                );
+                return found
+                    ? { ...found, day, isActualData: true }
+                    : {
+                        date: new Date(year, month - 1, day),
+                        impressions: 0,
+                        avgReachPerDay: 0,
+                        day,
+                        isActualData: false
+                    };
+            });
+
+            const sampledData = [];
+            for (let i = 0; i < daysInMonth; i += 4) {
+                sampledData.push(completeData[i]);
+            }
+            if (!sampledData.some(d => d.day === daysInMonth)) {
+                sampledData.push(completeData[daysInMonth - 1]);
+            }
+
+            const labels = sampledData.map(d => format(d.date, 'MMM d'));
+            const impressionsData = sampledData.map(d => d.impressions);
+            const reachData = sampledData.map(d => d.avgReachPerDay);
+
+            // Monkey patch roundRect
+            const testCanvas = (this.chartJSNodeCanvas as any)._canvas;
+            const ctx = testCanvas?.getContext?.('2d');
+            if (ctx && typeof ctx.roundRect !== 'function') {
+                ctx.roundRect = function (x, y, w, h, r) {
+                    this.beginPath();
+                    this.moveTo(x + r, y);
+                    this.arcTo(x + w, y, x + w, y + h, r);
+                    this.arcTo(x + w, y + h, x, y + h, r);
+                    this.arcTo(x, y + h, x, y, r);
+                    this.arcTo(x, y, x + w, y, r);
+                    this.closePath();
                 };
-        });
+            }
 
-        const sampledData = [];
-        for (let i = 0; i < daysInMonth; i += 4) sampledData.push(completeData[i]);
-        if (!sampledData.some(d => d.day === daysInMonth)) sampledData.push(completeData[daysInMonth - 1]);
-
-        const labels = sampledData.map(d => format(d.date, 'MMM d'));
-        const impressionsData = sampledData.map(d => d.impressions);
-        const reachData = sampledData.map(d => d.pageViews);
-        const contentData = sampledData.map(d => d.totalContent);
-        console.log('ReachData:', reachData);
-
-
-        const configuration: ChartConfiguration<'bar' | 'line'> = {
-            type: 'bar',
-            data: {
-                labels,
-                datasets: [
-                    {
-                        label: 'Impressions',
-                        data: impressionsData,
-                        backgroundColor: '#1877F280', // Facebook Blue w/ opacity
-                        borderColor: '#1877F2',
-                        borderWidth: 2,
-                        type: 'bar',
-                        yAxisID: 'y'
-                    },
-                    {
-                        label: 'Page Views',
-                        data: reachData,
-                        backgroundColor: '#00BFA620', // Teal w/ fill
-                        borderColor: '#00BFA6',
-                        borderWidth: 2,
-                        type: 'line',
-                        tension: 0.4,
-                        yAxisID: 'y1',
-                        pointBackgroundColor: '#00BFA6',
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        fill: true
-                    },
-                    {
-                        label: 'Total Content',
-                        data: contentData,
-                        backgroundColor: '#A020F020', // Purple w/ fill
-                        borderColor: '#A020F0',
-                        borderWidth: 2,
-                        type: 'line',
-                        tension: 0.4,
-                        yAxisID: 'y1',
-                        pointBackgroundColor: '#A020F0',
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        fill: true
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        labels: {
-                            font: { weight: 'bold' }
+            const configuration: ChartConfiguration<'bar' | 'line'> = {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            type: 'bar',
+                            label: 'Impressions',
+                            data: impressionsData,
+                            backgroundColor: '#FD1D1D90',
+                            borderColor: '#FD1D1D',
+                            borderWidth: 1,
+                            barThickness: 14,
+                            borderRadius: 6
+                        },
+                        {
+                            type: 'line',
+                            label: 'Avg Reach/Day',
+                            data: reachData,
+                            borderColor: '#833AB4',
+                            backgroundColor: '#833AB420',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            pointBackgroundColor: '#833AB4',
+                            pointRadius: 3,
+                            pointHoverRadius: 5
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false,
+                            labels: {
+                                font: { size: 12 },
+                                color: '#202124',
+                                boxWidth: 20,
+                                boxHeight: 12,
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: (items) => {
+                                    const date = sampledData[items[0].dataIndex].date;
+                                    return format(date, 'MMMM d, yyyy');
+                                },
+                                label: (ctx) => {
+                                    const value = ctx.parsed.y;
+                                    const label = ctx.dataset.label || '';
+                                    return `${label}: ${Number(value).toLocaleString()}${sampledData[ctx.dataIndex].isActualData ? '' : ' (estimated)'}`;
+                                }
+                            }
                         }
                     },
-                    tooltip: {
-                        callbacks: {
-                            title: items => format(sampledData[items[0].dataIndex].date, 'MMMM d, yyyy'),
-                            label: ctx => {
-                                const dp = sampledData[ctx.dataIndex];
-                                const val = ctx.parsed.y.toLocaleString();
-                                const label = `${ctx.dataset.label}: ${val}`;
-                                return dp.isActualData ? label : `${label} (estimated)`;
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                color: '#5f6368',
+                                font: { size: 11 }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Count',
+                                font: { size: 12 },
+                                color: '#5f6368'
+                            },
+                            ticks: {
+                                color: '#5f6368',
+                                callback: (v) => Number(v) >= 1000 ? `${Number(v) / 1000}k` : v
+                            },
+                            grid: {
+                                color: '#e0e0e0'
+                            }
+                        }
+                    }
+                }
+            };
+
+            const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+
+            const totalImpressions = completeData.reduce((sum, d) => sum + d.impressions, 0);
+            const totalReach = completeData.reduce((sum, d) => sum + d.avgReachPerDay, 0);
+
+            return {
+                title: `Instagram Daily Performance`,
+                image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
+                summary: {
+                    impressions: {
+                        value: totalImpressions.toLocaleString(),
+                        style: {
+                            backgroundColor: '#FD1D1D20',
+                            borderColor: '#FD1D1D',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    },
+                    reach: {
+                        value: totalReach.toLocaleString(),
+                        style: {
+                            backgroundColor: '#833AB420',
+                            borderColor: '#833AB4',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    }
+                }
+            };
+        } catch (error) {
+            console.error('Error generating Instagram chart:', error);
+            return { title: 'Instagram Impressions & Reach', image: null };
+        }
+    }
+
+
+
+
+
+    private async generateFacebookImpressionsChart(
+        customerId: string,
+        month: number,
+        year: number,
+        preloadedData?: any
+    ): Promise<ChartData> {
+        try {
+            let report = preloadedData?.overview;
+            if (!report) {
+                report = await this.reportService.getFacebookOverviewReport(customerId, month, year);
+            }
+
+            if (!report?.chart?.length) {
+                return { title: 'Facebook Impressions & Reach', image: null };
+            }
+
+            const rawData = report.chart.map(d => ({
+                date: new Date(d.date || d.createdAt),
+                impressions: d.impressions || 0,
+                pageViews: d.pageViews || 0,
+                totalContent: d.totalContent || 0
+            }));
+
+            const monthData = this.formatChartData(rawData, month, year);
+            const sampledData = this.getDataWithDayGap(monthData, 1, month, year);
+
+            const totalImpressions = monthData.reduce((sum, d) => sum + (d.impressions || 0), 0);
+            const totalPageViews = monthData.reduce((sum, d) => sum + (d.pageViews || 0), 0);
+            const totalContent = monthData.reduce((sum, d) => sum + (d.totalContent || 0), 0);
+
+            const labels = sampledData.map(d => format(d.date, 'MMM d'));
+            const impressionsData = sampledData.map(d => d.impressions || 0);
+            const pageViewsData = sampledData.map(d => d.pageViews || 0);
+            const contentData = sampledData.map(d => d.totalContent || 0);
+
+            // Monkey patch roundRect for Node.js Canvas
+            const testCanvas = (this.chartJSNodeCanvas as any)._canvas;
+            const ctx = testCanvas?.getContext?.('2d');
+            if (ctx && typeof ctx.roundRect !== 'function') {
+                ctx.roundRect = function (x, y, w, h, r) {
+                    this.beginPath();
+                    this.moveTo(x + r, y);
+                    this.arcTo(x + w, y, x + w, y + h, r);
+                    this.arcTo(x + w, y + h, x, y + h, r);
+                    this.arcTo(x, y + h, x, y, r);
+                    this.arcTo(x, y, x + w, y, r);
+                    this.closePath();
+                };
+            }
+
+            const configuration: ChartConfiguration<'bar' | 'line'> = {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            type: 'bar' as const,
+                            label: 'Impressions',
+                            data: impressionsData,
+                            backgroundColor: '#1877F280',
+                            borderColor: '#1877F2',
+                            borderWidth: 1,
+                            barThickness: 14,
+                            borderRadius: 6
+                        },
+                        {
+                            type: 'line' as const,
+                            label: 'Page Views',
+                            data: pageViewsData,
+                            borderColor: '#00BFA6',
+                            backgroundColor: '#00BFA620',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            pointBackgroundColor: '#00BFA6',
+                            pointRadius: 3,
+                            pointHoverRadius: 5
+                        },
+                        {
+                            type: 'line' as const,
+                            label: 'Total Content',
+                            data: contentData,
+                            borderColor: '#A020F0',
+                            backgroundColor: '#A020F020',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            pointBackgroundColor: '#A020F0',
+                            pointRadius: 3,
+                            pointHoverRadius: 5
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false,
+                            labels: {
+                                font: { size: 12 },
+                                color: '#202124',
+                                boxWidth: 20,
+                                boxHeight: 12,
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: (items) => {
+                                    const date = new Date(sampledData[items[0].dataIndex].date);
+                                    return format(date, 'MMMM d, yyyy');
+                                },
+                                label: (ctx) => {
+                                    const label = ctx.dataset.label || '';
+                                    const value = ctx.parsed.y;
+                                    return `${label}: ${Number(value).toLocaleString()}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                color: '#5f6368',
+                                font: { size: 11 }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Count',
+                                font: { size: 12 },
+                                color: '#5f6368'
+                            },
+                            ticks: {
+                                color: '#5f6368',
+                                stepSize: 500
+                            },
+                            grid: {
+                                color: '#e0e0e0'
                             }
                         }
                     }
                 },
-                interaction: {
-                    mode: 'index',
-                    intersect: false
-                },
-                scales: {
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Date',
-                            font: { weight: 'bold' }
-                        },
-                        ticks: { autoSkip: false }
-                    },
-                    y: {
-                        title: {
-                            display: true,
-                            text: 'Impressions',
-                            font: { weight: 'bold' }
-                        },
-                        beginAtZero: true,
-                        ticks: {
-                            callback: v => Number(v) >= 1000 ? `${Number(v) / 1000}k` : v
-                        }
-                    },
-                    y1: {
-                        position: 'right',
-                        grid: { drawOnChartArea: false },
-                        title: {
-                            display: true,
-                            text: 'Page Views',
-                            font: { weight: 'bold' }
-                        },
-                        beginAtZero: true,
-                        ticks: {
-                            callback: v => Number(v) >= 1000 ? `${Number(v) / 1000}k` : v
-                        }
-                    },
-                }
-            }
-        };
+                plugins: [require('chartjs-plugin-annotation')]
+            };
 
-        const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
-        return {
-            title: `Facebook Impressions, Reach & Content`,
-            image: `data:image/png;base64,${imageBuffer.toString('base64')}`
-        };
+            const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+
+            return {
+                title: 'Facebook Daily Impressions & Reach',
+                image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
+                summary: {
+                    impressions: {
+                        value: totalImpressions.toLocaleString(),
+                        style: {
+                            backgroundColor: '#1877F280',
+                            borderColor: '#1877F2',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    },
+                    pageViews: {
+                        value: totalPageViews.toLocaleString(),
+                        style: {
+                            backgroundColor: '#00BFA620',
+                            borderColor: '#00BFA6',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    },
+                    totalContent: {
+                        value: totalContent.toLocaleString(),
+                        style: {
+                            backgroundColor: '#A020F020',
+                            borderColor: '#A020F0',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    }
+                }
+            };
+        } catch (error) {
+            console.error('Error generating Facebook impressions chart:', error);
+            return { title: 'Facebook Impressions & Reach', image: null };
+        }
     }
+
+
+
 
     async generateXImpressionsChart(customerId: string, month: number, year: number, preloadedData?: any): Promise<ChartData> {
         const report = preloadedData?.overview || await this.reportService.getXOverviewReport(customerId, month, year);
@@ -1594,6 +1780,7 @@ export class ReportDownloadController {
                         }
                     },
                     legend: {
+                        display: false,
                         position: 'bottom',
                         labels: { usePointStyle: true, padding: 20 }
                     }
@@ -1716,6 +1903,13 @@ export class ReportDownloadController {
         console.log('postsData:', postsData);
         console.log('impressionsData:', impressionsData);
 
+        // 👇 Add summary block values
+        const totalImpressions = completeData.reduce((sum, d) => sum + d.impressions, 0);
+        const totalPosts = completeData.reduce((sum, d) => sum + d.postsCount, 0);
+        const totalFollowers = completeData.reduce((sum, d) => sum + d.followers, 0);
+        const totalPaidFollowers = completeData.reduce((sum, d) => sum + d.paidFollowers, 0);
+
+
         const configuration: ChartConfiguration<'bar' | 'line'> = {
             type: 'bar',
             data: {
@@ -1785,6 +1979,7 @@ export class ReportDownloadController {
                         }
                     },
                     legend: {
+                        display: false,
                         labels: {
                             font: { weight: 'bold' },
                             color: '#343a40'
@@ -1850,8 +2045,51 @@ export class ReportDownloadController {
         const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
         return {
             title: 'LinkedIn Impressions, Posts & Followers',
-            image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+            image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
+            summary: {
+                totalImpressions: {
+                    value: totalImpressions.toLocaleString(),
+                    style: {
+                        backgroundColor: '#0077B530',
+                        borderColor: '#0077B5',
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        textColor: '#000000'
+                    }
+                },
+                totalPosts: {
+                    value: totalPosts.toLocaleString(),
+                    style: {
+                        backgroundColor: '#F6C23E20',
+                        borderColor: '#F6C23E',
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        textColor: '#000000'
+                    }
+                },
+                totalFollowers: {
+                    value: totalFollowers.toLocaleString(),
+                    style: {
+                        backgroundColor: '#1CC88A20',
+                        borderColor: '#1CC88A',
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        textColor: '#000000'
+                    }
+                },
+                totalPaidFollowers: {
+                    value: totalPaidFollowers.toLocaleString(),
+                    style: {
+                        backgroundColor: '#E74A3B20',
+                        borderColor: '#E74A3B',
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        textColor: '#000000'
+                    }
+                }
+            }
         };
+
     }
 
 
@@ -1882,201 +2120,20 @@ export class ReportDownloadController {
                 }
             }
 
-            // 1. Filter data for the selected month only
             const monthData = report.chart.filter(item => {
                 const date = new Date(item.date || item.createdAt);
                 return date.getMonth() + 1 === month && date.getFullYear() === year;
             });
 
-            // 2. Sort by date (oldest to newest)
             monthData.sort((a, b) =>
                 new Date(a.date || a.createdAt).getTime() - new Date(b.date || b.createdAt).getTime()
             );
 
-            // 3. Sample data to show ~10 points for better readability
             const daysInMonth = new Date(year, month, 0).getDate();
-            const dayInterval = Math.max(1, Math.floor(daysInMonth / 10)); // Show ~10 points
+            const dayInterval = Math.max(1, Math.floor(daysInMonth / 10));
             const sampledData = [];
 
             for (let day = 1; day <= daysInMonth; day += dayInterval) {
-                // Find the closest data point to this day
-                let closest = null;
-                let minDiff = Infinity;
-
-                for (const item of monthData) {
-                    const itemDate = new Date(item.date);
-                    const diff = Math.abs(itemDate.getDate() - day);
-
-                    if (diff < minDiff) {
-                        minDiff = diff;
-                        closest = item;
-                    }
-                }
-
-                if (closest) sampledData.push(closest);
-            }
-
-            // Always include the last day of month if not already included
-            const lastDayData = monthData.find(item => {
-                const itemDate = new Date(item.date || item.createdAt);
-                return itemDate.getDate() === daysInMonth;
-            });
-
-            if (lastDayData && !sampledData.some(item => {
-                const itemDate = new Date(item.date || item.createdAt);
-                return itemDate.getDate() === daysInMonth;
-            })) {
-                sampledData.push(lastDayData);
-            }
-
-            // Create labels showing abbreviated month and day (Apr 1, Apr 4, etc.)
-            const labels = sampledData.map(item => {
-                const date = new Date(item.date || item.createdAt);
-                return format(date, 'MMM d'); // "Apr 1" format
-            });
-
-            const platformColor = this.getPlatformColor(platform);
-            const metricName = platform === 'facebook' ? 'Likes' : 'Followers';
-
-            const configuration: ChartConfiguration<'bar' | 'line'> = {
-                type: 'bar', // base type (can be overridden per dataset)
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            type: 'line',
-                            label: metricName,
-                            data: sampledData.map(item => platform === 'facebook' ? item.likes : item.followers),
-                            backgroundColor: `${platformColor}30`,
-                            borderColor: platformColor,
-                            borderWidth: 3,
-                            tension: 0.4,
-                            fill: false,
-                            pointBackgroundColor: platformColor,
-                            pointRadius: 5,
-                            pointHoverRadius: 7
-                        },
-                        {
-                            type: 'bar',
-                            label: 'Following',
-                            data: sampledData.map(item => item.following || 0),
-                            backgroundColor: '#6C757D',
-                            borderRadius: 4,
-                            barThickness: 14
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            // display: true,
-                            // text: `${this.getPlatformDisplayName(platform)} Daily ${metricName} & Following (${format(new Date(year, month - 1, 1), 'MMMM yyyy')})`,
-                            // font: { size: 18, weight: 'bold' },
-                            // color: '#333'
-                        },
-                        legend: {
-                            position: 'top',
-                            labels: {
-                                color: '#333',
-                                font: { size: 12 }
-                            }
-                        },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                            callbacks: {
-                                title: (tooltipItems) => {
-                                    const date = new Date(sampledData[tooltipItems[0].dataIndex].date || sampledData[tooltipItems[0].dataIndex].createdAt);
-                                    return format(date, 'MMMM d, yyyy');
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Day of Month',
-                                font: { weight: 'bold' },
-                                color: '#444'
-                            },
-                            ticks: {
-                                color: '#555'
-                            },
-                            grid: {
-                                color: '#eee'
-                            }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                color: '#555',
-                                callback: (value) => Number(value) >= 1000 ? `${Number(value) / 1000}k` : value
-                            },
-                            title: {
-                                display: true,
-                                text: 'Count',
-                                color: '#444',
-                                font: { weight: 'bold' }
-                            },
-                            grid: {
-                                color: '#f0f0f0'
-                            }
-                        }
-                    }
-                }
-            };
-
-
-            const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
-            return {
-                title: `${this.getPlatformDisplayName(platform)} Daily ${metricName} Growth (${format(new Date(year, month - 1, 1), 'MMMM yyyy')})`,
-                image: `data:image/png;base64,${imageBuffer.toString('base64')}`
-            };
-        } catch (error) {
-            console.error(`Error generating ${platform} followers chart:`, error);
-            return { title: `${this.getPlatformDisplayName(platform)} Followers`, image: null };
-        }
-    }
-
-    private async generateSubscribersChart(
-        customerId: string,
-        month: number,
-        year: number,
-        platform: string = 'youtube',
-        preloadedData?: any
-    ): Promise<ChartData> {
-        try {
-            let report = preloadedData?.overview;
-
-            if (!report) {
-                report = await this.reportService.getYoutubeOverviewReport(customerId, month, year);
-            }
-
-            if (!report?.chart?.length) {
-                return { title: 'YouTube Analytics', image: null };
-            }
-
-            const monthData = report.chart.filter(item => {
-                const date = new Date(item.date || item.createdAt);
-                return date.getMonth() + 1 === month && date.getFullYear() === year;
-            });
-
-            if (!monthData.length) {
-                return { title: 'YouTube Analytics', image: null };
-            }
-
-            monthData.sort((a, b) =>
-                new Date(a.date || a.createdAt).getTime() - new Date(b.date || b.createdAt).getTime()
-            );
-
-            const daysInMonth = new Date(year, month, 0).getDate();
-            const sampledData = [];
-            const interval = 4;
-
-            for (let day = 1; day <= daysInMonth; day += interval) {
                 let closest = null;
                 let minDiff = Infinity;
 
@@ -2110,6 +2167,165 @@ export class ReportDownloadController {
                 return format(date, 'MMM d');
             });
 
+            const platformColor = this.getPlatformColor(platform);
+            const metricName = platform === 'facebook' ? 'Likes' : 'Followers';
+
+            const configuration: ChartConfiguration<'bar' | 'line'> = {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            type: 'line' as const,
+                            label: metricName,
+                            data: sampledData.map(item => platform === 'facebook' ? item.likes : item.followers),
+                            backgroundColor: `${platformColor}30`,
+                            borderColor: platformColor,
+                            borderWidth: 3,
+                            tension: 0.4,
+                            fill: false,
+                            pointBackgroundColor: platformColor,
+                            pointRadius: 5,
+                            pointHoverRadius: 7
+                        },
+                        {
+                            type: 'bar' as const,
+                            label: 'Following',
+                            data: sampledData.map(item => item.following || 0),
+                            backgroundColor: '#6C757D',
+                            borderRadius: 4,
+                            barThickness: 14
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false,
+                            position: 'top',
+                            labels: {
+                                color: '#333',
+                                font: { size: 12 }
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                title: (tooltipItems) => {
+                                    const date = new Date(sampledData[tooltipItems[0].dataIndex].date || sampledData[tooltipItems[0].dataIndex].createdAt);
+                                    return format(date, 'MMMM d, yyyy');
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Day of Month',
+                                font: { weight: 'bold' },
+                                color: '#444'
+                            },
+                            ticks: { color: '#555' },
+                            grid: { color: '#eee' }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#555',
+                                callback: (value) => Number(value) >= 1000 ? `${Number(value) / 1000}k` : value
+                            },
+                            title: {
+                                display: true,
+                                text: 'Count',
+                                color: '#444',
+                                font: { weight: 'bold' }
+                            },
+                            grid: { color: '#f0f0f0' }
+                        }
+                    }
+                }
+            };
+
+            const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+
+            // ✅ Summary Block
+            const totalFollowers = monthData.reduce((sum, item) => sum + (platform === 'facebook' ? item.likes || 0 : item.followers || 0), 0);
+            const totalFollowing = monthData.reduce((sum, item) => sum + (item.following || 0), 0);
+            // const avgFollowers = monthData.length ? totalFollowers / monthData.length : 0;
+            // const avgFollowing = monthData.length ? totalFollowing / monthData.length : 0;
+
+            return {
+                title: `${this.getPlatformDisplayName(platform)}  ${metricName} Growth`,
+                image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
+                summary: {
+                    totalFollowers: {
+                        value: totalFollowers.toLocaleString(),
+                        style: {
+                            backgroundColor: `${platformColor}30`,
+                            borderColor: platformColor,
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    },
+                    totalFollowing: {
+                        value: totalFollowing.toLocaleString(),
+                        style: {
+                            backgroundColor: '#6C757D20',
+                            borderColor: '#6C757D',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    }
+                }
+            };
+
+        } catch (error) {
+            console.error(`Error generating ${platform} followers chart:`, error);
+            return { title: `${this.getPlatformDisplayName(platform)} Followers`, image: null };
+        }
+    }
+
+
+    private async generateSubscribersChart(
+        customerId: string,
+        month: number,
+        year: number,
+        platform: string = 'youtube',
+        preloadedData?: any
+    ): Promise<ChartData> {
+        try {
+            let report = preloadedData?.overview;
+            if (!report) {
+                report = await this.reportService.getYoutubeOverviewReport(customerId, month, year);
+            }
+
+            if (!report?.chart?.length) {
+                return { title: 'YouTube Analytics', image: null };
+            }
+
+            const monthData = report.chart.filter(item => {
+                const date = new Date(item.date || item.createdAt);
+                return date.getMonth() + 1 === month && date.getFullYear() === year;
+            });
+
+            if (!monthData.length) {
+                return { title: 'YouTube Analytics', image: null };
+            }
+
+            monthData.sort((a, b) =>
+                new Date(a.date || a.createdAt).getTime() - new Date(b.date || b.createdAt).getTime()
+            );
+
+            const sampledData = this.getDataWithDayGap(monthData, 4, month, year);
+
+            const labels = sampledData.map(item => format(new Date(item.date || item.createdAt), 'MMM d'));
+
             const configuration: ChartConfiguration<'bar' | 'line'> = {
                 type: 'bar',
                 data: {
@@ -2121,10 +2337,10 @@ export class ReportDownloadController {
                             backgroundColor: '#FF000080',
                             borderColor: '#FF0000',
                             borderWidth: 2,
+                            borderRadius: 6,
                             type: 'bar',
-                            borderRadius: 5,
-                            order: 2,
-                            yAxisID: 'y'
+                            yAxisID: 'y',
+                            order: 2
                         },
                         {
                             label: 'Total Views',
@@ -2134,10 +2350,10 @@ export class ReportDownloadController {
                             borderWidth: 3,
                             type: 'line',
                             tension: 0.4,
-                            pointRadius: 0,
-                            pointHoverRadius: 4,
-                            order: 1,
-                            yAxisID: 'y'
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            yAxisID: 'y',
+                            order: 1
                         },
                         {
                             label: 'Total Videos',
@@ -2147,10 +2363,10 @@ export class ReportDownloadController {
                             borderWidth: 3,
                             type: 'line',
                             tension: 0.4,
-                            pointRadius: 0,
-                            pointHoverRadius: 4,
-                            order: 1,
-                            yAxisID: 'y1'
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            yAxisID: 'y1',
+                            order: 1
                         },
                         {
                             label: 'Total Likes',
@@ -2160,10 +2376,10 @@ export class ReportDownloadController {
                             borderWidth: 3,
                             type: 'line',
                             tension: 0.4,
-                            pointRadius: 0,
-                            pointHoverRadius: 4,
-                            order: 1,
-                            yAxisID: 'y1'
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            yAxisID: 'y1',
+                            order: 1
                         },
                         {
                             label: 'Total Comments',
@@ -2173,80 +2389,77 @@ export class ReportDownloadController {
                             borderWidth: 3,
                             type: 'line',
                             tension: 0.4,
-                            pointRadius: 0,
-                            pointHoverRadius: 4,
-                            order: 1,
-                            yAxisID: 'y1'
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            yAxisID: 'y1',
+                            order: 1
                         }
                     ]
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     interaction: {
                         mode: 'index',
                         intersect: false
                     },
                     plugins: {
-                        title: {
-                            // display: true,
-                            // text: 'YouTube Analytics',
-                            // font: {
-                            //     size: 18,
-                            //     weight: 'bold'
-                            // },
-                            // align: 'start',
-                            // padding: { top: 10, bottom: 20 }
-                        },
                         tooltip: {
                             callbacks: {
-                                title: (tooltipItems) => {
-                                    const date = new Date(sampledData[tooltipItems[0].dataIndex].date || sampledData[tooltipItems[0].dataIndex].createdAt);
+                                title: (items) => {
+                                    const date = new Date(sampledData[items[0].dataIndex].date || sampledData[items[0].dataIndex].createdAt);
                                     return format(date, 'MMMM d, yyyy');
                                 },
                                 label: (context) => {
                                     const label = context.dataset.label || '';
                                     const value = context.parsed.y;
-                                    return `${label}: ${value.toLocaleString()}`;
+                                    return `${label}: ${typeof value === 'number' ? value.toLocaleString() : value}`;
                                 }
                             }
+                        },
+                        legend: {
+                            display: false
                         }
                     },
                     scales: {
                         x: {
-                            title: {
-                                display: true,
-                                text: 'Day of Month',
-                                font: { weight: 'bold' }
+                            ticks: {
+                                color: '#5f6368',
+                                font: { size: 11 }
                             },
-                            ticks: { autoSkip: false }
+                            grid: { display: false }
                         },
                         y: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
+                            beginAtZero: true,
                             title: {
                                 display: true,
                                 text: 'Subscribers / Views',
-                                font: { weight: 'bold' }
+                                font: { size: 12 },
+                                color: '#5f6368'
                             },
                             ticks: {
+                                color: '#5f6368',
                                 callback: value => Number(value) >= 1000 ? `${(Number(value) / 1000).toFixed(0)}k` : value
+                            },
+                            grid: {
+                                color: '#e0e0e0'
                             }
                         },
                         y1: {
-                            type: 'linear',
-                            display: true,
                             position: 'right',
+                            beginAtZero: true,
                             title: {
                                 display: true,
                                 text: 'Videos / Likes / Comments',
-                                font: { weight: 'bold' }
+                                font: { size: 12 },
+                                color: '#5f6368'
+                            },
+                            ticks: {
+                                color: '#5f6368',
+                                callback: value => Number(value) >= 1000 ? `${(Number(value) / 1000).toFixed(0)}k` : value
                             },
                             grid: {
                                 drawOnChartArea: false
-                            },
-                            ticks: {
-                                callback: value => Number(value) >= 1000 ? `${(Number(value) / 1000).toFixed(0)}k` : value
                             }
                         }
                     }
@@ -2255,15 +2468,74 @@ export class ReportDownloadController {
 
             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
 
+            // 📊 Styled Summary Cards
+            const sum = (key: keyof typeof monthData[0]) =>
+                monthData.reduce((acc, item) => acc + (Number(item[key]) || 0), 0);
+
+            const summary = {
+                Subscribers: {
+                    value: sum('subscribers').toLocaleString(),
+                    style: {
+                        backgroundColor: '#FF000030',
+                        borderColor: '#FF0000',
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        textColor: '#000000'
+                    }
+                },
+                Views: {
+                    value: sum('totalViews').toLocaleString(),
+                    style: {
+                        backgroundColor: '#2ecc7130',
+                        borderColor: '#2ecc71',
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        textColor: '#000000'
+                    }
+                },
+                Videos: {
+                    value: sum('totalVideos').toLocaleString(),
+                    style: {
+                        backgroundColor: '#f39c1230',
+                        borderColor: '#f39c12',
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        textColor: '#000000'
+                    }
+                },
+                Likes: {
+                    value: sum('totalLikes').toLocaleString(),
+                    style: {
+                        backgroundColor: '#9b59b630',
+                        borderColor: '#9b59b6',
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        textColor: '#000000'
+                    }
+                },
+                Comments: {
+                    value: sum('totalComments').toLocaleString(),
+                    style: {
+                        backgroundColor: '#6c5ce730',
+                        borderColor: '#6c5ce7',
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        textColor: '#000000'
+                    }
+                }
+            };
+
             return {
-                title: `YouTube Analytics`,
-                image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+                title: 'YouTube Analytics',
+                image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
+                summary
             };
         } catch (error) {
             console.error('Error generating YouTube analytics chart:', error);
             return { title: 'YouTube Analytics', image: null };
         }
     }
+
 
 
 
@@ -2409,6 +2681,7 @@ export class ReportDownloadController {
                             }
                         },
                         legend: {
+                            display: false,
                             position: 'bottom',
                             labels: {
                                 usePointStyle: true,
@@ -2491,7 +2764,7 @@ export class ReportDownloadController {
             }
 
             if (!report?.chart?.length) {
-                return { title: 'Facebook Likes', image: null };
+                return { title: 'Facebook Likes & Followers Growth', image: null };
             }
 
             const monthData = report.chart.filter(item => {
@@ -2500,7 +2773,7 @@ export class ReportDownloadController {
             });
 
             if (!monthData.length) {
-                return { title: 'Facebook Likes', image: null };
+                return { title: 'Facebook Likes & Followers Growth', image: null };
             }
 
             monthData.sort((a, b) =>
@@ -2509,7 +2782,7 @@ export class ReportDownloadController {
 
             const daysInMonth = new Date(year, month, 0).getDate();
             const interval = 4;
-            const sampledData = [];
+            const sampledData: any[] = [];
 
             for (let day = 1; day <= daysInMonth; day += interval) {
                 let closest = null;
@@ -2544,14 +2817,18 @@ export class ReportDownloadController {
                 return format(date, 'MMM d');
             });
 
-            const likesColor = '#1877F2'; // Facebook Blue
-            const followersColor = '#00BFA6'; // Teal for followers
-            const contentColor = '#A020F0'; // Purple for content
+            const likesColor = '#1877F2';
+            const followersColor = '#00BFA6';
+            const contentColor = '#A020F0';
+
+            const totalLikes = monthData.reduce((sum, d) => sum + (d.likes || 0), 0);
+            const totalFollowers = monthData.reduce((sum, d) => sum + (d.followers || 0), 0);
+            const totalContent = monthData.reduce((sum, d) => sum + (d.totalContent || 0), 0);
 
             const configuration: ChartConfiguration<'bar' | 'line'> = {
                 type: 'bar',
                 data: {
-                    labels: labels,
+                    labels,
                     datasets: [
                         {
                             type: 'bar',
@@ -2560,8 +2837,9 @@ export class ReportDownloadController {
                             backgroundColor: `${likesColor}80`,
                             borderColor: likesColor,
                             borderWidth: 1,
+                            barThickness: 14,
                             borderRadius: 6,
-                            yAxisID: 'y',
+                            yAxisID: 'y'
                         },
                         {
                             type: 'line',
@@ -2569,13 +2847,12 @@ export class ReportDownloadController {
                             data: sampledData.map(item => item.followers || 0),
                             borderColor: followersColor,
                             backgroundColor: `${followersColor}20`,
+                            borderWidth: 2,
                             tension: 0.4,
-                            borderWidth: 3,
-                            fill: true,
                             pointBackgroundColor: followersColor,
                             pointRadius: 3,
                             pointHoverRadius: 5,
-                            yAxisID: 'y1', // unified y-axis
+                            yAxisID: 'y1'
                         },
                         {
                             type: 'line',
@@ -2583,30 +2860,33 @@ export class ReportDownloadController {
                             data: sampledData.map(item => item.totalContent || 0),
                             borderColor: contentColor,
                             backgroundColor: `${contentColor}20`,
+                            borderWidth: 2,
                             tension: 0.4,
-                            borderWidth: 3,
-                            fill: true,
                             pointBackgroundColor: contentColor,
                             pointRadius: 3,
                             pointHoverRadius: 5,
-                            yAxisID: 'y1', // same axis as Followers
+                            yAxisID: 'y1'
                         }
                     ]
-
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
                         legend: {
+                            display: false,
                             labels: {
-                                font: { weight: 'bold' }
+                                font: { size: 12 },
+                                color: '#202124',
+                                boxWidth: 20,
+                                boxHeight: 12,
+                                padding: 20
                             }
                         },
                         tooltip: {
                             callbacks: {
                                 title: (tooltipItems) => {
-                                    const date = new Date(sampledData[tooltipItems[0].dataIndex].date ||
-                                        sampledData[tooltipItems[0].dataIndex].createdAt);
+                                    const date = new Date(sampledData[tooltipItems[0].dataIndex]?.date || sampledData[tooltipItems[0].dataIndex]?.createdAt);
                                     return format(date, 'MMMM d, yyyy');
                                 },
                                 label: (context) => {
@@ -2623,12 +2903,17 @@ export class ReportDownloadController {
                     },
                     scales: {
                         x: {
+                            grid: { display: false },
+                            ticks: {
+                                color: '#5f6368',
+                                font: { size: 11 }
+                            },
                             title: {
                                 display: true,
                                 text: 'Date',
-                                font: { weight: 'bold' }
-                            },
-                            ticks: { autoSkip: false }
+                                font: { size: 12, weight: 'bold' },
+                                color: '#5f6368'
+                            }
                         },
                         y: {
                             beginAtZero: true,
@@ -2636,42 +2921,84 @@ export class ReportDownloadController {
                             title: {
                                 display: true,
                                 text: 'Likes',
-                                font: { weight: 'bold' }
+                                font: { size: 12, weight: 'bold' },
+                                color: '#5f6368'
                             },
                             ticks: {
-                                callback: value =>
-                                    Number(value) >= 1000 ? `${(Number(value) / 1000).toFixed(0)}k` : value
+                                color: '#5f6368',
+                                callback: value => Number(value) >= 1000 ? `${(Number(value) / 1000).toFixed(0)}k` : value
+                            },
+                            grid: {
+                                color: '#e0e0e0'
                             }
                         },
                         y1: {
                             beginAtZero: true,
                             position: 'right',
-                            grid: { drawOnChartArea: false },
+                            grid: {
+                                drawOnChartArea: false
+                            },
                             title: {
                                 display: true,
                                 text: 'Followers & Total Content',
-                                font: { weight: 'bold' }
+                                font: { size: 12, weight: 'bold' },
+                                color: '#5f6368'
                             },
                             ticks: {
-                                callback: value =>
-                                    Number(value) >= 1000 ? `${(Number(value) / 1000).toFixed(0)}k` : value
+                                color: '#5f6368',
+                                callback: value => Number(value) >= 1000 ? `${(Number(value) / 1000).toFixed(0)}k` : value
                             }
                         }
                     }
-
                 }
             };
 
             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+
             return {
-                title: `Facebook Likes & Followers Growth`,
-                image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+                title: 'Facebook Likes & Followers Growth',
+                image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
+                summary: {
+                    Likes: {
+                        value: totalLikes.toLocaleString(),
+                        style: {
+                            backgroundColor: '#1877F220',
+                            borderColor: '#1877F2',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    },
+                    Followers: {
+                        value: totalFollowers.toLocaleString(),
+                        style: {
+                            backgroundColor: '#00BFA620',
+                            borderColor: '#00BFA6',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    },
+                    totalContent: {
+                        value: totalContent.toLocaleString(),
+                        style: {
+                            backgroundColor: '#A020F020',
+                            borderColor: '#A020F0',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    }
+                }
             };
+
         } catch (error) {
             console.error('Error generating Facebook likes chart:', error);
-            return { title: 'Facebook Likes', image: null };
+            return { title: 'Facebook Likes & Followers Growth', image: null };
         }
     }
+
+
 
     // Add these new chart generation methods to the controller
     private async generateGBPImpressionsChart(
@@ -2698,6 +3025,11 @@ export class ReportDownloadController {
             const mapsData = sampledData.map(d => d.maps || 0);
             const searchData = sampledData.map(d => d.search || 0);
             const totalData = sampledData.map((_, i) => (mapsData[i] + searchData[i]));
+
+            // ⬇️ Summary totals
+            const totalMaps = monthData.reduce((sum, d) => sum + (d.maps || 0), 0);
+            const totalSearch = monthData.reduce((sum, d) => sum + (d.search || 0), 0);
+            const total = totalMaps + totalSearch;
 
             const configuration: ChartConfiguration<'bar' | 'line'> = {
                 type: 'bar',
@@ -2740,6 +3072,7 @@ export class ReportDownloadController {
                     responsive: true,
                     plugins: {
                         legend: {
+                            display: false,
                             position: 'top',
                             labels: {
                                 font: { size: 12 },
@@ -2747,11 +3080,7 @@ export class ReportDownloadController {
                             }
                         },
                         title: {
-                            // display: true,
-                            // text: `GBP Daily Impressions (${format(new Date(year, month - 1, 1), 'MMMM yyyy')})`,
-                            // font: { size: 16 },
-                            // color: '#202124',
-                            // padding: { top: 10, bottom: 30 }
+                            display: false
                         },
                         tooltip: {
                             mode: 'index',
@@ -2779,9 +3108,43 @@ export class ReportDownloadController {
             };
 
             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+
             return {
                 title: `GBP Daily Performance`,
-                image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+                image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
+                summary: {
+                    googleMaps: {
+                        value: totalMaps.toLocaleString(),
+                        style: {
+                            backgroundColor: '#1a73e820',  // light blue
+                            borderColor: '#1a73e8',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    },
+                    googleSearch: {
+                        value: totalSearch.toLocaleString(),
+                        style: {
+                            backgroundColor: '#34a85320',  // light green
+                            borderColor: '#34a853',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    },
+                    total: {
+                        value: total.toLocaleString(),
+                        style: {
+                            backgroundColor: '#fbbc0420',  // light yellow
+                            borderColor: '#fbbc04',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    }
+                }
+
             };
         } catch (error) {
             console.error('Error generating GBP impressions chart:', error);
@@ -2814,6 +3177,25 @@ export class ReportDownloadController {
             const phoneData = sampledData.map(d => d.phone || 0);
             const directionsData = sampledData.map(d => d.directions || 0);
 
+            const totalWebsite = monthData.reduce((sum, d) => sum + (d.website || 0), 0);
+            const totalPhone = monthData.reduce((sum, d) => sum + (d.phone || 0), 0);
+            const totalDirections = monthData.reduce((sum, d) => sum + (d.directions || 0), 0);
+
+            // Patch for rounded bars in Node
+            const testCanvas = (this.chartJSNodeCanvas as any)._canvas;
+            const ctx = testCanvas?.getContext?.('2d');
+            if (ctx && typeof ctx.roundRect !== 'function') {
+                ctx.roundRect = function (x, y, w, h, r) {
+                    this.beginPath();
+                    this.moveTo(x + r, y);
+                    this.arcTo(x + w, y, x + w, y + h, r);
+                    this.arcTo(x + w, y + h, x, y + h, r);
+                    this.arcTo(x, y + h, x, y, r);
+                    this.arcTo(x, y, x + w, y, r);
+                    this.closePath();
+                };
+            }
+
             const configuration: ChartConfiguration<'bar'> = {
                 type: 'bar',
                 data: {
@@ -2822,47 +3204,133 @@ export class ReportDownloadController {
                         {
                             label: 'Website',
                             data: websiteData,
-                            backgroundColor: '#4285F4' // Google blue
+                            backgroundColor: '#4285F490',
+                            borderColor: '#4285F4',
+                            borderWidth: 1,
+                            barThickness: 14,
+                            borderRadius: 6
                         },
                         {
                             label: 'Phone',
                             data: phoneData,
-                            backgroundColor: '#EA4335' // Google red
+                            backgroundColor: '#EA433590',
+                            borderColor: '#EA4335',
+                            borderWidth: 1,
+                            barThickness: 14,
+                            borderRadius: 6
                         },
                         {
-                            label: 'Directions',
+                            label: 'Direction',
                             data: directionsData,
-                            backgroundColor: '#FBBC05' // Google yellow
+                            backgroundColor: '#FBBC0590',
+                            borderColor: '#FBBC05',
+                            borderWidth: 1,
+                            barThickness: 14,
+                            borderRadius: 6
                         }
                     ]
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
-                        title: {
-                            // display: true,
-                            // text: `GBP Daily Engagement (${format(new Date(year, month - 1, 1), 'MMMM yyyy')})`
+                        legend: {
+                            display: false,
+                            labels: {
+                                font: { size: 12 },
+                                color: '#202124',
+                                boxWidth: 20,
+                                boxHeight: 12,
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: (tooltipItems) => {
+                                    const date = new Date(sampledData[tooltipItems[0].dataIndex].date);
+                                    return format(date, 'MMMM d, yyyy');
+                                },
+                                label: (context) => {
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y;
+                                    return `${label}: ${Number(value).toLocaleString()}`;
+                                }
+                            }
                         }
                     },
                     scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                color: '#5f6368',
+                                font: { size: 11 }
+                            }
+                        },
                         y: {
                             beginAtZero: true,
-                            title: { display: true, text: 'Engagement' }
+                            title: {
+                                display: true,
+                                text: 'Count',
+                                font: { size: 12 },
+                                color: '#5f6368'
+                            },
+                            ticks: {
+                                color: '#5f6368',
+                                stepSize: 500
+                            },
+                            grid: {
+                                color: '#e0e0e0'
+                            }
                         }
                     }
-                }
+                },
+                plugins: [require('chartjs-plugin-annotation')]
             };
 
             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+
             return {
                 title: `GBP Daily Engagement`,
-                image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+                image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
+                summary: {
+                    website: {
+                        value: totalWebsite.toLocaleString(),
+                        style: {
+                            backgroundColor: '#4285F420',
+                            borderColor: '#4285F4',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    },
+                    phone: {
+                        value: totalPhone.toLocaleString(),
+                        style: {
+                            backgroundColor: '#EA433520',
+                            borderColor: '#EA4335',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    },
+                    direction: {
+                        value: totalDirections.toLocaleString(),
+                        style: {
+                            backgroundColor: '#FBBC0520',
+                            borderColor: '#FBBC05',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    }
+                }
             };
         } catch (error) {
             console.error('Error generating GBP engagement chart:', error);
             return { title: 'GBP Engagement', image: null };
         }
     }
+
 
     private async generateGBPReviewsChart(
         customerId: string,
@@ -2885,7 +3353,13 @@ export class ReportDownloadController {
 
             const labels = sampledData.map(d => format(d.date, 'MMM d'));
             const reviews = sampledData.map(d => d.reviews || 0);
-            const ratings = sampledData.map(d => (d.rating || 0)) //* 20); // Scale for visual comparison
+            const ratings = sampledData.map(d => d.rating || 0);
+
+            // ⬇️ Summary calculations
+            const totalReviews = monthData.reduce((sum, d) => sum + (d.reviews || 0), 0);
+            const averageRating =
+                monthData.filter(d => d.rating !== undefined).reduce((sum, d) => sum + d.rating, 0) /
+                (monthData.filter(d => d.rating !== undefined).length || 1);
 
             const configuration: ChartConfiguration<'bar' | 'line'> = {
                 type: 'bar',
@@ -2921,6 +3395,7 @@ export class ReportDownloadController {
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
+                            display: false,
                             labels: {
                                 font: { size: 12 },
                                 color: '#202124'
@@ -2937,7 +3412,7 @@ export class ReportDownloadController {
                             callbacks: {
                                 label: function (context) {
                                     if (context.dataset.label?.includes('Rating')) {
-                                        return `Avg. Rating: ${(context.raw as number / 20).toFixed(2)}`;
+                                        return `Avg. Rating: ${(context.raw as number).toFixed(2)}`;
                                     }
                                     return `${context.dataset.label}: ${context.formattedValue}`;
                                 }
@@ -2972,9 +3447,32 @@ export class ReportDownloadController {
             };
 
             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+
             return {
                 title: `GBP Reviews & Rating`,
-                image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+                image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
+                summary: {
+                    totalReviews: {
+                        value: totalReviews.toLocaleString(),
+                        style: {
+                            backgroundColor: '#6610f220',
+                            borderColor: '#6610f2',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    },
+                    averageRating: {
+                        value: averageRating.toFixed(2),
+                        style: {
+                            backgroundColor: '#e83e8c20',
+                            borderColor: '#e83e8c',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    }
+                }
             };
         } catch (error) {
             console.error('Error generating GBP reviews chart:', error);
@@ -3002,10 +3500,31 @@ export class ReportDownloadController {
             const monthData = this.formatChartData(report.chart, month, year);
             const sampledData = this.getDataWithDayGap(monthData, 1, month, year);
 
+            // Calculate totals for the month
+            const totalPageViews = monthData.reduce((sum, d) => sum + (d.pageViews || 0), 0);
+            const totalVisits = monthData.reduce((sum, d) => sum + (d.visits || 0), 0);
+            const totalVisitors = monthData.reduce((sum, d) => sum + (d.visitors || 0), 0);
+
             const labels = sampledData.map(d => format(d.date, 'MMM d'));
-            const pageViews = sampledData.map(d => d.pageViews || 0);
-            const visits = sampledData.map(d => d.visits || 0);
-            const visitors = sampledData.map(d => d.visitors || 0);
+            const pageViewsData = sampledData.map(d => d.pageViews || 0);
+            const visitsData = sampledData.map(d => d.visits || 0);
+            const visitorsData = sampledData.map(d => d.visitors || 0);
+
+            // Monkey patch roundRect for Node.js (fix for bar borderRadius)
+            const testCanvas = (this.chartJSNodeCanvas as any)._canvas;
+            const ctx = testCanvas?.getContext?.('2d');
+            if (ctx && typeof ctx.roundRect !== 'function') {
+                ctx.roundRect = function (x, y, w, h, r) {
+                    this.beginPath();
+                    this.moveTo(x + r, y);
+                    this.arcTo(x + w, y, x + w, y + h, r);
+                    this.arcTo(x + w, y + h, x, y + h, r);
+                    this.arcTo(x, y + h, x, y, r);
+                    this.arcTo(x, y, x + w, y, r);
+                    this.closePath();
+                };
+            }
+            const maxY = Math.max(...pageViewsData, ...visitsData, ...visitorsData);
 
             const configuration: ChartConfiguration<'bar' | 'line'> = {
                 type: 'bar',
@@ -3015,8 +3534,8 @@ export class ReportDownloadController {
                         {
                             type: 'bar',
                             label: 'Page Views',
-                            data: pageViews,
-                            backgroundColor: '#0d6efd90', // Bootstrap blue
+                            data: pageViewsData,
+                            backgroundColor: '#0d6efd90',
                             borderColor: '#0d6efd',
                             borderWidth: 1,
                             barThickness: 14,
@@ -3025,8 +3544,8 @@ export class ReportDownloadController {
                         {
                             type: 'line',
                             label: 'Visits',
-                            data: visits,
-                            borderColor: '#fd7e14', // Orange
+                            data: visitsData,
+                            borderColor: '#fd7e14',
                             backgroundColor: '#fd7e1420',
                             borderWidth: 2,
                             tension: 0.4,
@@ -3037,8 +3556,8 @@ export class ReportDownloadController {
                         {
                             type: 'line',
                             label: 'Visitors',
-                            data: visitors,
-                            borderColor: '#20c997', // Teal
+                            data: visitorsData,
+                            borderColor: '#20c997',
                             backgroundColor: '#20c99720',
                             borderWidth: 2,
                             tension: 0.4,
@@ -3052,28 +3571,30 @@ export class ReportDownloadController {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        title: {
-                            // display: true,
-                            // text: `Website Daily Traffic (${format(new Date(year, month - 1, 1), 'MMMM yyyy')})`,
-                            // font: { size: 16, weight: 'bold' },
-                            // color: '#202124',
-                            // padding: { top: 10, bottom: 30 }
-                        },
                         legend: {
+                            display: false,
                             labels: {
                                 font: { size: 12 },
-                                color: '#202124'
+                                color: '#202124',
+                                boxWidth: 20,
+                                boxHeight: 12,
+                                padding: 20,
+                                usePointStyle: false
                             }
                         },
                         tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                            backgroundColor: '#fff',
-                            titleColor: '#000',
-                            bodyColor: '#000',
-                            borderColor: '#ddd',
-                            borderWidth: 1
-                        }
+                            callbacks: {
+                                title: (tooltipItems) => {
+                                    const date = new Date(sampledData[tooltipItems[0].dataIndex].date);
+                                    return format(date, 'MMMM d, yyyy');
+                                },
+                                label: (context) => {
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y;
+                                    return `${label}: ${Number(value).toLocaleString()}`;
+                                }
+                            }
+                        },
                     },
                     scales: {
                         x: {
@@ -3100,13 +3621,48 @@ export class ReportDownloadController {
                             }
                         }
                     }
-                }
+                },
+                plugins: [require('chartjs-plugin-annotation')]
             };
 
             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
             return {
-                title: `Website Daily Traffic (${format(new Date(year, month - 1, 1), 'MMMM yyyy')})`,
-                image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+                title: `Website Daily Traffic`,
+                image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
+                summary: {
+                    pageViews: {
+                        value: 1023,
+                        style: {
+                            backgroundColor: '#0d6efd90',
+                            borderColor: '#0d6efd',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#ffffff'
+                        }
+                    },
+                    visits: {
+                        value: 760,
+                        style: {
+                            backgroundColor: '#fd7e1420',
+                            borderColor: '#fd7e14',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    },
+                    visitors: {
+                        value: 540,
+                        style: {
+                            backgroundColor: '#20c99720',
+                            borderColor: '#20c997',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    }
+                }
+
+
             };
         } catch (error) {
             console.error('Error generating website traffic chart:', error);
@@ -3156,14 +3712,8 @@ export class ReportDownloadController {
                     responsive: true,
                     cutout: '60%',
                     plugins: {
-                        title: {
-                            // display: true,
-                            // text: `Top 10 Visitor Locations (${format(new Date(year, month - 1, 1), 'MMMM yyyy')})`,
-                            // font: { size: 16, weight: 'bold' },
-                            // color: '#212529',
-                            // padding: { top: 10, bottom: 20 }
-                        },
                         legend: {
+                            display: false,
                             position: 'right',
                             labels: {
                                 color: '#343a40',
@@ -3189,15 +3739,33 @@ export class ReportDownloadController {
             };
 
             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+
+            // 👉 Add summary cards for top 3 countries (you can increase if needed)
+            const summary = chartData.slice(0, 5).reduce((acc, item, idx) => {
+                acc[item.country] = {
+                    value: `${item.visitors} visitors`,
+                    style: {
+                        backgroundColor: `${backgroundColors[idx]}20`, // semi-transparent
+                        borderColor: backgroundColors[idx],
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        textColor: '#000000'
+                    }
+                };
+                return acc;
+            }, {});
+
             return {
-                title: `Top 10 Visitor Locations`,
-                image: `data:image/png;base64,${imageBuffer.toString('base64')}`
+                title: `Top 5 Visitor Locations`,
+                image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
+                summary
             };
         } catch (error) {
             console.error('Error generating website locations chart:', error);
             return { title: 'Website Visitor Locations', image: null };
         }
     }
+
 
     private getPlatformColor(platform: string): string {
         const colors: Record<string, string> = {
@@ -3283,8 +3851,8 @@ export class ReportDownloadController {
 }
 
         .platform-section {
-    margin-top: 80px; /* NEW: ensures top spacing */
-    margin-bottom: 60px;
+    margin-top: 10px; /* NEW: ensures top spacing */
+    margin-bottom: 0px;
     page-break-after: always;
 }
 
@@ -3308,8 +3876,8 @@ export class ReportDownloadController {
         }
 
     .section {
-    margin-top: 40px;
-    margin-bottom: 40px;
+    margin-top: 30px;
+    margin-bottom: 30px;
     page-break-inside: avoid; /* NEW: prevents breaking the section */
     break-inside: avoid;
 }
@@ -3412,6 +3980,37 @@ export class ReportDownloadController {
             padding-top: 20px;
             margin-top: 60px;
         }
+            .chart-summary-cards {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 30px;
+    margin-bottom: 8px;
+}
+
+.summary-card {
+    background-color: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 5px 7px;
+    width: 100px;
+    height: 50px;
+    text-align: center;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+
+.summary-value {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.summary-label {
+    font-size: 12px;
+    color:rgb(0, 0, 0);
+    margin-top: 2px;
+}
+
     </style>
 </head>
 <body>
@@ -3469,13 +4068,38 @@ export class ReportDownloadController {
                 }
 
                 if (chart && chart.image) {
+                    const summaryHtml = chart.summary
+                        ? `
+<div class="chart-summary-cards">
+    ${Object.entries(chart.summary).map(([key, metric]) => {
+                            const label = key
+                                .replace(/([A-Z])/g, ' $1')
+                                .replace(/^./, str => str.toUpperCase());
+                            const typedMetric = metric as MetricSummary;
+                            const style = typedMetric.style || {};
+
+                            return `
+        <div class="summary-card" style="
+            background-color: ${style.backgroundColor || '#f8f9fa'};
+            border: ${style.borderWidth || 1}px solid ${style.borderColor || '#e0e0e0'};
+            border-radius: ${style.borderRadius || 10}px;
+            color: ${style.textColor || '#ffffff'};
+        ">
+            <div class="summary-value">${typedMetric.value}</div>
+            <div class="summary-label">${label}</div>
+        </div>`;
+                        }).join('')}
+</div>`
+                        : '';
                     combinedSections.push(`
-                <div class="chart-container">
-                    <div class="chart-title">${chart.title}</div>
-                    <img src="${chart.image}" class="chart-img" />
-                </div>
-                `);
+        <div class="chart-container">
+            ${summaryHtml}
+            <div class="chart-title">${chart.title}</div>
+            <img src="${chart.image}" class="chart-img" />
+        </div>
+    `);
                 }
+                ;
             }
 
             return `
@@ -3487,14 +4111,15 @@ export class ReportDownloadController {
             ${combinedSections.join('')}
         </div>
         `;
-        }).join('')}
+        }).join('')
+            }
 
-    <div class="footer">
-        <p>© ${new Date().getFullYear()} Upstrapp. All rights reserved.</p>
-        <p>This report was automatically generated on ${currentDate}</p>
-    </div>
-</body>
-</html>`;
+<div class="footer" >
+    <p>© ${new Date().getFullYear()} Upstrapp.All rights reserved.</p>
+        < p > This report was automatically generated on ${currentDate} </p>
+            </div>
+            </body>
+            </html>`;
     }
 
     private getPlatformIconDataUri(platformName: string): string {
@@ -3618,7 +4243,6 @@ export class ReportDownloadController {
         }
         .footer {
             text-align: center;
-            margin-top: 50px;
             color: #95a5a6;
             font-size: 12px;
             border-top: 1px solid #eee;
