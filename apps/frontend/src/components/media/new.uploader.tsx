@@ -76,7 +76,74 @@ export function useUppyUploader(props: {
       },
     });
 
-    // Custom file size validation based on file type
+    // check for valid file types it can be something like this image/*,video/mp4.
+    // If it's an image, I need to replace image/* with image/png, image/jpeg, image/jpeg, image/gif (separately)
+    uppy2.addPreProcessor((fileIDs) => {
+      return new Promise<void>((resolve, reject) => {
+        const files = uppy2.getFiles();
+        const allowedTypes = allowedFileTypes
+          .split(',')
+          .map((type) => type.trim());
+
+        // Expand generic types to specific ones
+        const expandedTypes = allowedTypes.flatMap((type) => {
+          if (type === 'image/*') {
+            return [
+              'image/png',
+              'image/jpeg',
+              'image/jpg',
+              'image/gif',
+              'image/webp',
+              'image/svg+xml',
+            ];
+          }
+          if (type === 'video/*') {
+            return [
+              'video/mp4',
+              'video/mpeg',
+              'video/quicktime',
+              'video/x-msvideo',
+              'video/webm',
+            ];
+          }
+          if (type === 'audio/*') {
+            return ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp3'];
+          }
+          return [type];
+        });
+
+        for (const file of files) {
+          if (fileIDs.includes(file.id)) {
+            const fileType = file.type;
+
+            // Check if file type is allowed
+            const isAllowed = expandedTypes.some((allowedType) => {
+              if (allowedType.endsWith('/*')) {
+                const baseType = allowedType.replace('/*', '/');
+                return fileType?.startsWith(baseType);
+              }
+              return fileType === allowedType;
+            });
+
+            if (!isAllowed) {
+              const error = new Error(
+                `File type "${fileType}" is not allowed for file "${file.name}". Allowed types: ${allowedFileTypes}`
+              );
+              uppy2.log(error.message, 'error');
+              uppy2.info(error.message, 'error', 5000);
+              toast.show(
+                `File type "${fileType}" is not allowed. Allowed types: ${allowedFileTypes}`
+              );
+              uppy2.removeFile(file.id);
+              return reject(error);
+            }
+          }
+        }
+
+        resolve();
+      });
+    });
+
     uppy2.addPreProcessor((fileIDs) => {
       return new Promise<void>((resolve, reject) => {
         const files = uppy2.getFiles();
