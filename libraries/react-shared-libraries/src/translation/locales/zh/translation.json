@@ -10,6 +10,7 @@
   "save": "保存",
   "send_test": "发送测试",
   "select_role": "选择角色",
+  "please_add_at_least": "请至少添加20个字符",
   "send_invitation_via_email": "通过电子邮件发送邀请？",
   "team_members": "团队成员",
   "invite_your_assistant_or_team_member_to_manage_your_account": "邀请你的助理或团队成员来管理你的账户",

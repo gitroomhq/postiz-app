@@ -14,6 +14,7 @@ checksums:
     save: f7a2929f33bc420195e59ac5a8bcd454
     send_test: 6252eb4669859b7f7db4cdbc227580e1
     select_role: 406451b1c9a26f1484164b8b71c1bd7e
+    please_add_at_least: 90d3c0237b56e57c7a58d5decf6e9d3c
     send_invitation_via_email: 9275e0b85147a931421b3bf6c3083cb4
     team_members: 61333c4a765e10b2ad46774951725233
     invite_your_assistant_or_team_member_to_manage_your_account: dadd50655759ac32b9ed62e60f8acb1d
