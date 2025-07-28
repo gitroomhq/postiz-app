@@ -10,6 +10,7 @@
   "save": "Сохранить",
   "send_test": "Отправить тест",
   "select_role": "Выбрать роль",
+  "please_add_at_least": "Пожалуйста, добавьте не менее 20 символов",
   "send_invitation_via_email": "Отправить приглашение по электронной почте?",
   "team_members": "Члены команды",
   "invite_your_assistant_or_team_member_to_manage_your_account": "Пригласите помощника или члена команды для управления вашим аккаунтом",

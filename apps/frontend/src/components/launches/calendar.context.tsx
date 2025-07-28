@@ -22,11 +22,10 @@ import { extend } from 'dayjs';
 import useCookie from 'react-use-cookie';
 extend(isoWeek);
 extend(weekOfYear);
+
 export const CalendarContext = createContext({
-  currentDay: dayjs().day() as 0 | 1 | 2 | 3 | 4 | 5 | 6,
-  currentWeek: dayjs().week(),
-  currentYear: dayjs().year(),
-  currentMonth: dayjs().month(),
+  startDate: dayjs().startOf('isoWeek').format('YYYY-MM-DD'),
+  endDate: dayjs().endOf('isoWeek').format('YYYY-MM-DD'),
   customer: null as string | null,
   sets: [] as { name: string; id: string; content: string[] }[],
   signature: undefined as any,
@@ -51,10 +50,8 @@ export const CalendarContext = createContext({
   },
   display: 'week',
   setFilters: (filters: {
-    currentWeek: number;
-    currentYear: number;
-    currentDay: 0 | 1 | 2 | 3 | 4 | 5 | 6;
-    currentMonth: number;
+    startDate: string;
+    endDate: string;
     display: 'week' | 'month' | 'day';
     customer: string | null;
   }) => {
@@ -64,6 +61,7 @@ export const CalendarContext = createContext({
     /** empty **/
   },
 });
+
 export interface Integrations {
   name: string;
   id: string;
@@ -85,23 +83,35 @@ export interface Integrations {
     id?: string;
   };
 }
-function getWeekNumber(date: Date) {
-  // Copy date so don't modify original
-  const targetDate = new Date(
-    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
-  );
-  // Set to nearest Thursday: current date + 4 - current day number
-  // Make Sunday's day number 7
-  targetDate.setUTCDate(
-    targetDate.getUTCDate() + 4 - (targetDate.getUTCDay() || 7)
-  );
-  // Get first day of year
-  const yearStart = new Date(Date.UTC(targetDate.getUTCFullYear(), 0, 1));
-  // Calculate full weeks to nearest Thursday
-  return Math.ceil(
-    ((targetDate.getTime() - yearStart.getTime()) / 86400000 + 1) / 7
-  );
+
+// Helper function to get start and end dates based on display type
+function getDateRange(display: string, referenceDate?: string) {
+  const date = referenceDate ? dayjs(referenceDate) : dayjs();
+
+  switch (display) {
+    case 'day':
+      return {
+        startDate: date.format('YYYY-MM-DD'),
+        endDate: date.format('YYYY-MM-DD'),
+      };
+    case 'week':
+      return {
+        startDate: date.startOf('isoWeek').format('YYYY-MM-DD'),
+        endDate: date.endOf('isoWeek').format('YYYY-MM-DD'),
+      };
+    case 'month':
+      return {
+        startDate: date.startOf('month').format('YYYY-MM-DD'),
+        endDate: date.endOf('month').format('YYYY-MM-DD'),
+      };
+    default:
+      return {
+        startDate: date.startOf('isoWeek').format('YYYY-MM-DD'),
+        endDate: date.endOf('isoWeek').format('YYYY-MM-DD'),
+      };
+  }
 }
+
 export const CalendarWeekProvider: FC<{
   children: ReactNode;
   integrations: Integrations[];
@@ -112,35 +122,45 @@ export const CalendarWeekProvider: FC<{
   const searchParams = useSearchParams();
   const [displaySaved, setDisplaySaved] = useCookie('calendar-display', 'week');
   const display = searchParams.get('display') || displaySaved;
+
+  // Initialize with current date range based on URL params or defaults
+  const initStartDate = searchParams.get('startDate');
+  const initEndDate = searchParams.get('endDate');
+  const initCustomer = searchParams.get('customer');
+
+  const initialRange =
+    initStartDate && initEndDate
+      ? { startDate: initStartDate, endDate: initEndDate }
+      : getDateRange(display);
+
   const [filters, setFilters] = useState({
-    currentDay: +(searchParams.get('day') || dayjs().day()) as
-      | 0
-      | 1
-      | 2
-      | 3
-      | 4
-      | 5
-      | 6,
-    currentWeek: +(searchParams.get('week') || getWeekNumber(new Date())),
-    currentMonth: +(searchParams.get('month') || dayjs().month()),
-    currentYear: +(searchParams.get('year') || dayjs().year()),
-    customer: (searchParams.get('customer') as string) || null,
+    startDate: initialRange.startDate,
+    endDate: initialRange.endDate,
+    customer: initCustomer || null,
     display,
   });
+
   const params = useMemo(() => {
     return new URLSearchParams({
       display: filters.display,
-      day: filters.currentDay.toString(),
-      week: filters.currentWeek.toString(),
-      month: (filters.currentMonth + 1).toString(),
-      year: filters.currentYear.toString(),
+      startDate: filters.startDate,
+      endDate: filters.endDate,
       customer: filters?.customer?.toString() || '',
     }).toString();
-  }, [filters, display]);
+  }, [filters]);
+
   const loadData = useCallback(async () => {
-    const data = (await fetch(`/posts?${params}`)).json();
+    const modifiedParams = new URLSearchParams({
+      display: filters.display,
+      customer: filters?.customer?.toString() || '',
+      startDate: dayjs(filters.startDate).startOf('day').utc().format(),
+      endDate: dayjs(filters.endDate).endOf('day').utc().format(),
+    }).toString();
+
+    const data = (await fetch(`/posts?${modifiedParams}`)).json();
     return data;
   }, [filters, params]);
+
   const swr = useSWR(`/posts-${params}`, loadData, {
     refreshInterval: 3600000,
     refreshWhenOffline: false,
@@ -157,14 +177,12 @@ export const CalendarWeekProvider: FC<{
   }, []);
 
   const { data: sets, mutate } = useSWR('sets', setList);
-  const { data: sign} = useSWR('default-sign', defaultSign);
+  const { data: sign } = useSWR('default-sign', defaultSign);
 
   const setFiltersWrapper = useCallback(
     (filters: {
-      currentDay: 0 | 1 | 2 | 3 | 4 | 5 | 6;
-      currentWeek: number;
-      currentYear: number;
-      currentMonth: number;
+      startDate: string;
+      endDate: string;
       display: 'week' | 'month' | 'day';
       customer: string | null;
     }) => {
@@ -172,10 +190,8 @@ export const CalendarWeekProvider: FC<{
       setFilters(filters);
       setInternalData([]);
       const path = [
-        `day=${filters.currentDay}`,
-        `week=${filters.currentWeek}`,
-        `month=${filters.currentMonth}`,
-        `year=${filters.currentYear}`,
+        `startDate=${filters.startDate}`,
+        `endDate=${filters.endDate}`,
         `display=${filters.display}`,
         filters.customer ? `customer=${filters.customer}` : ``,
       ].filter((f) => f);
@@ -183,11 +199,13 @@ export const CalendarWeekProvider: FC<{
     },
     [filters, swr.mutate]
   );
+
   const { isLoading } = swr;
   const { posts, comments } = swr?.data || {
     posts: [],
     comments: [],
   };
+
   const changeDate = useCallback(
     (id: string, date: dayjs.Dayjs) => {
       setInternalData((d) =>
@@ -204,11 +222,13 @@ export const CalendarWeekProvider: FC<{
     },
     [posts, internalData]
   );
+
   useEffect(() => {
     if (posts) {
       setInternalData(posts);
     }
   }, [posts]);
+
   return (
     <CalendarContext.Provider
       value={{
@@ -228,4 +248,5 @@ export const CalendarWeekProvider: FC<{
     </CalendarContext.Provider>
   );
 };
+
 export const useCalendar = () => useContext(CalendarContext);

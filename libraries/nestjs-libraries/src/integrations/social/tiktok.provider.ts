@@ -194,7 +194,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     if (body.indexOf('picture_size_check_failed') > -1) {
       return {
         type: 'bad-body' as const,
-        value: 'Picture size is invalid',
+        value: 'Picture / Video size is invalid',
       };
     }
 
@@ -393,10 +393,12 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       }
 
       if (status === 'FAILED') {
+        const handleError = this.handleErrors(JSON.stringify(post));
         throw new BadBody(
           'titok-error-upload',
           JSON.stringify(post),
-          Buffer.from(JSON.stringify(post))
+          Buffer.from(JSON.stringify(post)),
+          handleError?.value || '',
         );
       }
 

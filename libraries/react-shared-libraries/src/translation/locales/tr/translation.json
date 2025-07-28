@@ -10,6 +10,7 @@
   "save": "Kaydet",
   "send_test": "Test Gönder",
   "select_role": "Rol Seç",
+  "please_add_at_least": "Lütfen en az 20 karakter ekleyin",
   "send_invitation_via_email": "Davetiyeyi e-posta ile gönderilsin mi?",
   "team_members": "Takım Üyeleri",
   "invite_your_assistant_or_team_member_to_manage_your_account": "Hesabınızı yönetmesi için asistanınızı veya takım üyenizi davet edin",

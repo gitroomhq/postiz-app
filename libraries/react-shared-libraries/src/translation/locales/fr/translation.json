@@ -10,6 +10,7 @@
   "save": "Enregistrer",
   "send_test": "Envoyer un test",
   "select_role": "Sélectionner un rôle",
+  "please_add_at_least": "Veuillez ajouter au moins 20 caractères",
   "send_invitation_via_email": "Envoyer l'invitation par e-mail ?",
   "team_members": "Membres de l'équipe",
   "invite_your_assistant_or_team_member_to_manage_your_account": "Invitez votre assistant ou un membre de votre équipe à gérer votre compte",
