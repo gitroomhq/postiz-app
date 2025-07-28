@@ -119,6 +119,13 @@ export class UsersRepository {
     });
   }
 
+  updateEmailNotifications(id: string, enabled: boolean) {
+    return this._user.model.user.update({
+      where: { id },
+      data: { emailNotifications: enabled },
+    });
+  }
+
   async getPersonal(userId: string) {
     const user = await this._user.model.user.findUnique({
       where: {

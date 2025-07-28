@@ -6,14 +6,19 @@ import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permis
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { AddTeamMemberDto } from '@gitroom/nestjs-libraries/dtos/settings/add.team.member.dto';
 import { ApiTags } from '@nestjs/swagger';
-import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
+import {
+  AuthorizationActions,
+  Sections,
+} from '@gitroom/backend/services/auth/permissions/permission.exception.class';
+import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 
 @ApiTags('Settings')
 @Controller('/settings')
 export class SettingsController {
   constructor(
     private _starsService: StarsService,
-    private _organizationService: OrganizationService
+    private _organizationService: OrganizationService,
+    private _usersService: UsersService
   ) {}
 
   @Get('/github')
@@ -132,5 +137,17 @@ export class SettingsController {
     @Param('id') id: string
   ) {
     return this._organizationService.deleteTeamMember(org, id);
+  }
+
+  @Post('/email-notifications')
+  @CheckPolicies(
+    [AuthorizationActions.Create, Sections.TEAM_MEMBERS],
+    [AuthorizationActions.Create, Sections.ADMIN]
+  )
+  async updateEmailNotifications(
+    @Body('userId') userId: string,
+    @Body('enabled') enabled: boolean
+  ) {
+    return this._usersService.updateEmailNotifications(userId, enabled);
   }
 }

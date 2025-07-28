@@ -55,4 +55,8 @@ export class UsersService {
   changePersonal(userId: string, body: UserDetailDto) {
     return this._usersRepository.changePersonal(userId, body);
   }
+
+  updateEmailNotifications(id: string, enabled: boolean) {
+    return this._usersRepository.updateEmailNotifications(id, enabled);
+  }
 }
