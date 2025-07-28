@@ -390,10 +390,6 @@ export const CalendarColumn: FC<{
 
   const isBeforeNow = useMemo(() => {
     const originalUtc = getDate.startOf('hour');
-    console.log(
-      originalUtc.startOf('hour').format(),
-      dayjs().startOf('hour').utc().format()
-    );
     return originalUtc.startOf('hour').isBefore(dayjs().startOf('hour').utc());
   }, [getDate, num]);
 
