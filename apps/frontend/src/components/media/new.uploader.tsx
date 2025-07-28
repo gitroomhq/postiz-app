@@ -93,21 +93,13 @@ export function useUppyUploader(props: {
               'image/jpeg',
               'image/jpg',
               'image/gif',
-              'image/webp',
-              'image/svg+xml',
             ];
           }
           if (type === 'video/*') {
             return [
               'video/mp4',
               'video/mpeg',
-              'video/quicktime',
-              'video/x-msvideo',
-              'video/webm',
             ];
-          }
-          if (type === 'audio/*') {
-            return ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp3'];
           }
           return [type];
         });
