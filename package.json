@@ -12,8 +12,7 @@
   "packageManager": "pnpm@10.6.1",
   "scripts": {
     "dev": "pnpm run --filter ./apps/extension --filter ./apps/workers --filter ./apps/backend --filter ./apps/frontend --parallel dev",
-    "pm2": "pnpm dlx concurrently \"pnpm run pm2-run\" \"pnpm run entryfile\"",
-    "entryfile": "./entrypoint.sh",
+    "pm2": "pnpm run pm2-run",
     "publish-sdk": "pnpm run --filter ./apps/sdk publish",
     "pm2-run": "pm2 delete all || true && pnpm run prisma-db-push && pnpm run --parallel pm2 && pm2 logs",
     "dev:stripe": "pnpm dlx concurrently \"stripe listen --forward-to localhost:3000/stripe\" \"pnpm run dev\"",

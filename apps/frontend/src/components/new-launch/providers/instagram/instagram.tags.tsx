@@ -3,7 +3,6 @@
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { ReactTags } from 'react-tag-autocomplete';
-import interClass from '@gitroom/react/helpers/inter.font';
 import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import clsx from 'clsx';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -85,7 +84,7 @@ export const InstagramCollaboratorsTags: FC<{
             'opacity-50 pointer-events-none'
         )}
       >
-        <div className={clsx(`${interClass} text-[14px] mb-[6px]`)}>
+        <div className={clsx(`text-[14px] mb-[6px]`)}>
           {label}
         </div>
         <ReactTags

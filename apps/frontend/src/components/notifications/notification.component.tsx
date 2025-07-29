@@ -5,7 +5,6 @@ import useSWR from 'swr';
 import { FC, useCallback, useState } from 'react';
 import clsx from 'clsx';
 import { useClickAway } from '@uidotdev/usehooks';
-import interClass from '@gitroom/react/helpers/inter.font';
 import ReactLoading from 'react-loading';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 function replaceLinks(text: string) {
@@ -30,7 +29,7 @@ export const ShowNotification: FC<{
   return (
     <div
       className={clsx(
-        `text-textColor px-[16px] py-[10px] border-b border-tableBorder last:border-b-0 transition-colors ${interClass} overflow-hidden text-ellipsis`,
+        `text-textColor px-[16px] py-[10px] border-b border-tableBorder last:border-b-0 transition-colors overflow-hidden text-ellipsis`,
         newNotification && 'font-bold bg-seventh animate-newMessages'
       )}
       dangerouslySetInnerHTML={{
@@ -53,7 +52,7 @@ export const NotificationOpenComponent = () => {
       className="opacity-0 animate-normalFadeDown mt-[10px] absolute w-[420px] min-h-[200px] top-[100%] end-0 bg-third text-textColor rounded-[16px] flex flex-col border border-tableBorder z-[20]"
     >
       <div
-        className={`p-[16px] border-b border-tableBorder ${interClass} font-bold`}
+        className={`p-[16px] border-b border-tableBorder font-bold`}
       >
         {t('notifications', 'Notifications')}
       </div>

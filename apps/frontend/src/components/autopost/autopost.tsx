@@ -14,7 +14,6 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import clsx from 'clsx';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { CopilotTextarea } from '@copilotkit/react-textarea';
-import interClass from '@gitroom/react/helpers/inter.font';
 import { Slider } from '@gitroom/react/form/slider';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const Autopost: FC = () => {
@@ -367,7 +366,7 @@ export const AddOrEditWebhook: FC<{
             </Select>
             {!generateContent && (
               <>
-                <div className={`${interClass} text-[14px] mb-[6px]`}>
+                <div className={`text-[14px] mb-[6px]`}>
                   {t('post_content', 'Post content')}
                 </div>
                 <CopilotTextarea

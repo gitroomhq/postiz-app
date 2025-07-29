@@ -1,14 +1,13 @@
 import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
-import { useFormatting } from '@gitroom/frontend/components/launches/helpers/use.formatting';
 import clsx from 'clsx';
 import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
 import { FC } from 'react';
 import { textSlicer } from '@gitroom/helpers/utils/count.length';
-import interClass from '@gitroom/react/helpers/inter.font';
 import Image from 'next/image';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
+
 export const GeneralPreviewComponent: FC<{
   maximumCharacters?: number;
 }> = (props) => {
@@ -113,8 +112,7 @@ export const GeneralPreviewComponent: FC<{
               <div
                 className={clsx(
                   'text-wrap whitespace-pre',
-                  'preview',
-                  interClass
+                  'preview'
                 )}
                 dangerouslySetInnerHTML={{
                   __html: value.text,

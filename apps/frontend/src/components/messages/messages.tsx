@@ -29,7 +29,6 @@ export interface Message {
   deletedAt: any;
 }
 import { Textarea } from '@gitroom/react/form/textarea';
-import interClass from '@gitroom/react/helpers/inter.font';
 import clsx from 'clsx';
 import useSWR from 'swr';
 import {
@@ -114,7 +113,6 @@ export const Message: FC<{
         <pre
           className={clsx(
             'whitespace-pre-line font-[400] text-[12px]',
-            interClass
           )}
         >
           {message.content}

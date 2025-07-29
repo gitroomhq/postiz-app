@@ -2,7 +2,6 @@
 
 import { FC, useCallback, useEffect, useState } from 'react';
 import { ReactTags } from 'react-tag-autocomplete';
-import interClass from '@gitroom/react/helpers/inter.font';
 import { useCustomProviderFunction } from '@gitroom/frontend/components/launches/helpers/use.custom.provider.function';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 export const DevtoTags: FC<{
@@ -52,7 +51,7 @@ export const DevtoTags: FC<{
   }
   return (
     <div>
-      <div className={`${interClass} text-[14px] mb-[6px]`}>{label}</div>
+      <div className={`text-[14px] mb-[6px]`}>{label}</div>
       <ReactTags
         suggestions={tags}
         selected={tagValue}

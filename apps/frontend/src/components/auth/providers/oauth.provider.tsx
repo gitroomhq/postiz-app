@@ -3,7 +3,6 @@
 import { useCallback } from 'react';
 import Image from 'next/image';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import interClass from '@gitroom/react/helpers/inter.font';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const OauthProvider = () => {
@@ -27,7 +26,7 @@ export const OauthProvider = () => {
   return (
     <div
       onClick={gotoLogin}
-      className={`cursor-pointer bg-white h-[44px] rounded-[4px] flex justify-center items-center text-customColor16 ${interClass} gap-[4px]`}
+      className={`cursor-pointer bg-white h-[44px] rounded-[4px] flex justify-center items-center text-customColor16 gap-[4px]`}
     >
       <div>
         <Image

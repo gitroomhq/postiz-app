@@ -17,7 +17,6 @@ import {
 import clsx from 'clsx';
 import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
-import interClass from '@gitroom/react/helpers/inter.font';
 import Image from 'next/image';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useFormatting } from '@gitroom/frontend/components/launches/helpers/use.formatting';
@@ -96,7 +95,7 @@ const RedditPreview: FC = (props) => {
           <div
             key={index}
             className={clsx(
-              `bg-customColor37 w-full p-[10px] flex flex-col ${interClass} border-tableBorder border`
+              `bg-customColor37 w-full p-[10px] flex flex-col border-tableBorder border`
             )}
           >
             <div className="flex flex-col">

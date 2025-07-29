@@ -2,7 +2,6 @@
 
 import { FC, useCallback, useState } from 'react';
 import clsx from 'clsx';
-import interClass from '@gitroom/react/helpers/inter.font';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -74,7 +73,7 @@ export const FAQSection: FC<{
       onClick={changeShow}
     >
       <div
-        className={`text-[20px] ${interClass} cursor-pointer flex justify-center`}
+        className={`text-[20px] cursor-pointer flex justify-center`}
       >
         <div className="flex-1">{title}</div>
         <div className="flex items-center justify-center w-[32px]">
@@ -121,7 +120,7 @@ export const FAQSection: FC<{
           onClick={(e) => {
             e.stopPropagation();
           }}
-          className={`mt-[16px] w-full text-wrap ${interClass} font-[400] text-[16px] text-customColor17 select-text`}
+          className={`mt-[16px] w-full text-wrap font-[400] text-[16px] text-customColor17 select-text`}
           dangerouslySetInnerHTML={{
             __html: description,
           }}

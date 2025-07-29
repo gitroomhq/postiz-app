@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 };
 export default async function Auth(params: {searchParams: {provider: string}}) {
   const t = await getT();
-  if (process.env.DISABLE_REGISTRATION) {
+  if (process.env.DISABLE_REGISTRATION && process.env.DISABLE_REGISTRATION !== 'false') {
     const canRegister = (
       await (await internalFetch('/auth/can-register')).json()
     ).register;

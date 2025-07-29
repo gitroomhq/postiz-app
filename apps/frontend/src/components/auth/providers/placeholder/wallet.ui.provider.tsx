@@ -1,12 +1,11 @@
 import { FC } from 'react';
-import interClass from '@gitroom/react/helpers/inter.font';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 export const WalletUiProvider: FC = () => {
   const t = useT();
   return (
     <div
-      className={`cursor-pointer bg-[#0b2181] h-[44px] rounded-[4px] flex justify-center items-center text-white ${interClass} gap-[7px]`}
+      className={`cursor-pointer bg-[#0b2181] h-[44px] rounded-[4px] flex justify-center items-center text-white gap-[7px]`}
     >
       <svg
         width="18"

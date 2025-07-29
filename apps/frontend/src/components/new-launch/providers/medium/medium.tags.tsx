@@ -3,7 +3,6 @@
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { ReactTags } from 'react-tag-autocomplete';
-import interClass from '@gitroom/react/helpers/inter.font';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 export const MediumTags: FC<{
@@ -68,7 +67,7 @@ export const MediumTags: FC<{
   }, [suggestions, tagValue]);
   return (
     <div>
-      <div className={`${interClass} text-[14px] mb-[6px]`}>{label}</div>
+      <div className={`text-[14px] mb-[6px]`}>{label}</div>
       <ReactTags
         placeholderText={t('add_a_tag', 'Add a tag')}
         suggestions={suggestionsArray}

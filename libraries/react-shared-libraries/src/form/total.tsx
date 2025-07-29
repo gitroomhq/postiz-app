@@ -1,5 +1,4 @@
 import { FC, useCallback, useEffect } from 'react';
-import interClass from '../helpers/inter.font';
 import { clsx } from 'clsx';
 import { useFormContext } from 'react-hook-form';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -29,7 +28,7 @@ export const Total: FC<{
 
   return (
     <div className="flex flex-col gap-[6px] relative w-[158px]">
-      <div className={`${interClass} text-[14px]`}>{t('total', 'Total')}</div>
+      <div className={`text-[14px]`}>{t('total', 'Total')}</div>
       <div
         className={clsx(
           'bg-input h-[44px] border-fifth border rounded-[4px] text-inputText placeholder-inputText items-center justify-center flex'

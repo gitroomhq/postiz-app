@@ -1,7 +1,6 @@
 import { FC, useCallback, useState } from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { useFormContext } from 'react-hook-form';
-import interClass from '../helpers/inter.font';
 import { Button } from './button';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { TranslatedLabel } from '../translation/translated-label';
@@ -73,7 +72,7 @@ export const ColorPicker: FC<{
     <div className="flex flex-col gap-[6px]">
       <div>
         {!!label && (
-          <div className={`${interClass} text-[14px]`}>
+          <div className={`text-[14px]`}>
             <TranslatedLabel
               label={label}
               translationKey={translationKey}

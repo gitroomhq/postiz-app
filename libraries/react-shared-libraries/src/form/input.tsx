@@ -10,7 +10,6 @@ import {
 } from 'react';
 import { clsx } from 'clsx';
 import { useFormContext, useWatch } from 'react-hook-form';
-import interClass from '../helpers/inter.font';
 import { TranslatedLabel } from '../translation/translated-label';
 
 export const Input: FC<
@@ -53,7 +52,7 @@ export const Input: FC<
   return (
     <div className="flex flex-col gap-[6px]">
       {!!label && (
-        <div className={`${interClass} text-[14px]`}>
+        <div className={`text-[14px]`}>
           <TranslatedLabel
             label={label}
             translationKey={translationKey}

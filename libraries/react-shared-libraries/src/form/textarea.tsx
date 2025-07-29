@@ -1,10 +1,8 @@
 'use client';
 
 import { DetailedHTMLProps, FC, InputHTMLAttributes, useMemo } from 'react';
-// @ts-ignore
 import clsx from 'clsx';
 import { useFormContext } from 'react-hook-form';
-import interClass from '../helpers/inter.font';
 import { TranslatedLabel } from '../translation/translated-label';
 
 export const Textarea: FC<
@@ -42,7 +40,7 @@ export const Textarea: FC<
         props.disabled && 'opacity-50'
       )}
     >
-      <div className={`${interClass} text-[14px]`}>
+      <div className={`text-[14px]`}>
         <TranslatedLabel
           label={label}
           translationKey={translationKey}

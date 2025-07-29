@@ -2,7 +2,6 @@
 
 import React, { ReactNode, useCallback } from 'react';
 import { Logo } from '@gitroom/frontend/components/new-layout/logo';
-import { MenuItem } from '@gitroom/frontend/components/new-layout/menu-item';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 const ModeComponent = dynamic(
   () => import('@gitroom/frontend/components/layout/mode.component'),
@@ -14,7 +13,6 @@ const ModeComponent = dynamic(
 import clsx from 'clsx';
 import dynamic from 'next/dynamic';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
