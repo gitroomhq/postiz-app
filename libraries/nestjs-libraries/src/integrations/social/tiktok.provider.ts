@@ -194,7 +194,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     if (body.indexOf('picture_size_check_failed') > -1) {
       return {
         type: 'bad-body' as const,
-        value: 'Picture / Video size is invalid',
+        value: 'Picture / Video size is invalid, must be at least 720p',
       };
     }
 
