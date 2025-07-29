@@ -119,6 +119,15 @@ export class UsersRepository {
     });
   }
 
+  getEmailNotifications(id: string) {
+  return this._user.model.user.findUnique({
+    where: { id },
+    select: {
+      emailNotifications: true,
+    },
+  });
+}
+
   updateEmailNotifications(id: string, enabled: boolean) {
     return this._user.model.user.update({
       where: { id },
