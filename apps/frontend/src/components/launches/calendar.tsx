@@ -35,19 +35,16 @@ import clsx from 'clsx';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { ExistingDataContextProvider } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { useDrag, useDrop } from 'react-dnd';
-import { Integration, Post, State, Tags, TagsPosts } from '@prisma/client';
+import { Integration, Post, State, Tags } from '@prisma/client';
 import { useAddProvider } from '@gitroom/frontend/components/launches/add.provider.component';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
-import { IntegrationContext } from '@gitroom/frontend/components/launches/helpers/use.integration';
-import { PreviewPopup } from '@gitroom/frontend/components/marketplace/special.message';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import { groupBy, random, sortBy } from 'lodash';
 import Image from 'next/image';
 import { extend } from 'dayjs';
 import { isUSCitizen } from './helpers/isuscitizen.utils';
-import removeMd from 'remove-markdown';
 import { useInterval } from '@mantine/hooks';
 import { StatisticsModal } from '@gitroom/frontend/components/launches/statistics';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -102,12 +99,13 @@ export const hours = Array.from(
 );
 export const DayView = () => {
   const calendar = useCalendar();
-  const { integrations, posts, currentYear, currentDay, currentWeek } =
-    calendar;
+  const { integrations, posts, startDate } = calendar;
 
   // Set dayjs locale based on current language
   const currentLanguage = i18next.resolvedLanguage || 'en';
   dayjs.locale(currentLanguage);
+
+  const currentDay = dayjs.utc(startDate);
 
   const options = useMemo(() => {
     const createdPosts = posts.map((post) => ({
@@ -142,6 +140,7 @@ export const DayView = () => {
       (p) => p[0].time
     );
   }, [integrations, posts]);
+
   return (
     <div className="flex flex-col gap-[10px] flex-1">
       {options.map((option) => (
@@ -165,11 +164,7 @@ export const DayView = () => {
               }}
             >
               <CalendarColumn
-                getDate={dayjs()
-                  .utc()
-                  .year(currentYear)
-                  .week(currentWeek)
-                  .day(currentDay)
+                getDate={currentDay
                   .startOf('day')
                   .add(option[0].time, 'minute')
                   .local()}
@@ -182,7 +177,7 @@ export const DayView = () => {
   );
 };
 export const WeekView = () => {
-  const { currentYear, currentWeek } = useCalendar();
+  const { startDate, endDate } = useCalendar();
   const t = useT();
 
   // Use dayjs to get localized day names
@@ -191,16 +186,17 @@ export const WeekView = () => {
     dayjs.locale(currentLanguage);
 
     const days = [];
-    const yearWeek = dayjs()
-      .year(currentYear)
-      .week(currentWeek)
-      .startOf('week');
-    for (let i = 1; i <= 7; i++) {
-      const yearWeekFormat = yearWeek.add(i, 'day').format('L');
-      days.push({ name: dayjs().day(i).format('dddd'), day: yearWeekFormat });
+    const weekStart = dayjs(startDate);
+    for (let i = 0; i < 7; i++) {
+      const day = weekStart.add(i, 'day');
+      days.push({
+        name: day.format('dddd'),
+        day: day.format('L'),
+        date: day,
+      });
     }
     return days;
-  }, [i18next.resolvedLanguage, currentYear, currentWeek]);
+  }, [i18next.resolvedLanguage, startDate]);
 
   return (
     <div className="flex flex-col text-textColor flex-1">
@@ -233,16 +229,13 @@ export const WeekView = () => {
               <div className="p-2 pe-4 text-center items-center justify-center flex text-[14px] text-newTableText">
                 {convertTimeFormatBasedOnLocality(hour)}
               </div>
-              {days.map((day, indexDay) => (
-                <Fragment key={`${currentYear}-${currentWeek}-${day}-${hour}`}>
+              {localizedDays.map((day, indexDay) => (
+                <Fragment
+                  key={`${startDate}-${day.date.format('YYYY-MM-DD')}-${hour}`}
+                >
                   <div className="relative">
                     <CalendarColumn
-                      getDate={dayjs()
-                        .year(currentYear)
-                        .week(currentWeek)
-                        .day(indexDay + 1)
-                        .hour(hour)
-                        .startOf('hour')}
+                      getDate={day.date.hour(hour).startOf('hour')}
                     />
                   </div>
                 </Fragment>
@@ -255,7 +248,7 @@ export const WeekView = () => {
   );
 };
 export const MonthView = () => {
-  const { currentYear, currentMonth } = useCalendar();
+  const { startDate } = useCalendar();
   const t = useT();
 
   // Use dayjs to get localized day names
@@ -272,6 +265,10 @@ export const MonthView = () => {
   }, [i18next.resolvedLanguage]);
 
   const calendarDays = useMemo(() => {
+    const monthStart = dayjs(startDate);
+    const currentMonth = monthStart.month();
+    const currentYear = monthStart.year();
+
     const startOfMonth = dayjs(new Date(currentYear, currentMonth, 1));
 
     // Calculate the day offset for Monday (isoWeekday() returns 1 for Monday)
@@ -279,11 +276,11 @@ export const MonthView = () => {
     const daysBeforeMonth = startDayOfWeek - 1; // Days to show from the previous month
 
     // Get the start date (Monday of the first week that includes this month)
-    const startDate = startOfMonth.subtract(daysBeforeMonth, 'day');
+    const calendarStartDate = startOfMonth.subtract(daysBeforeMonth, 'day');
 
     // Create an array to hold the calendar days (6 weeks * 7 days = 42 days max)
     const calendarDays = [];
-    let currentDay = startDate;
+    let currentDay = calendarStartDate;
     for (let i = 0; i < 42; i++) {
       let label = 'current-month';
       if (currentDay.month() < currentMonth) label = 'previous-month';
@@ -297,7 +294,7 @@ export const MonthView = () => {
       currentDay = currentDay.add(1, 'day');
     }
     return calendarDays;
-  }, [currentYear, currentMonth]);
+  }, [startDate]);
 
   return (
     <div className="flex flex-col text-textColor flex-1">
@@ -390,17 +387,12 @@ export const CalendarColumn: FC<{
     }
     return postList.slice(0, 3);
   }, [postList, showAll]);
-  const canBeTrending = useMemo(() => {
-    return !!trendings.find((trend) => {
-      return dayjs
-        .utc(trend)
-        .local()
-        .isBetween(getDate, getDate.add(10, 'minute'), 'minute', '[)');
-    });
-  }, [trendings]);
+
   const isBeforeNow = useMemo(() => {
-    return getDate.startOf('hour').isBefore(dayjs().startOf('hour'));
+    const originalUtc = getDate.startOf('hour');
+    return originalUtc.startOf('hour').isBefore(dayjs().startOf('hour').utc());
   }, [getDate, num]);
+
   const { start, stop } = useInterval(
     useCallback(() => {
       if (isBeforeNow) {
@@ -410,6 +402,7 @@ export const CalendarColumn: FC<{
     }, [isBeforeNow]),
     random(120000, 150000)
   );
+
   useEffect(() => {
     start();
     return () => {
@@ -459,42 +452,6 @@ export const CalendarColumn: FC<{
     },
     []
   );
-  const previewPublication = useCallback(
-    async (
-      postInfo: Post & {
-        integration: Integration;
-      }
-    ) => {
-      const post = await (
-        await fetch(`/marketplace/posts/${postInfo.id}`)
-      ).json();
-      const integration = await getIntegration(postInfo);
-      modal.openModal({
-        classNames: {
-          modal: 'text-textColor',
-        },
-        size: 'auto',
-        withCloseButton: false,
-        children: (
-          <IntegrationContext.Provider
-            value={{
-              allIntegrations: [],
-              date: dayjs(),
-              integration,
-              value: [],
-            }}
-          >
-            <PreviewPopup
-              providerId={post?.providerId!}
-              post={post}
-              postId={post.id}
-            />
-          </IntegrationContext.Provider>
-        ),
-      });
-    },
-    []
-  );
 
   const editPost = useCallback(
     (
@@ -509,9 +466,7 @@ export const CalendarColumn: FC<{
           // @ts-ignore
           publishDate: loadPost.actualDate || loadPost.publishDate,
         };
-        if (user?.orgId === post.submittedForOrganizationId) {
-          return previewPublication(post);
-        }
+
         const data = await (await fetch(`/posts/${post.id}`)).json();
         const date = !isDuplicate
           ? null
@@ -631,7 +586,12 @@ export const CalendarColumn: FC<{
               }
             : {})}
           date={
-            randomHour ? getDate.hour(Math.floor(Math.random() * 24)) : getDate
+            randomHour
+              ? getDate.hour(Math.floor(Math.random() * 24))
+              : getDate.format('YYYY-MM-DDTHH:mm:ss') ===
+                dayjs().startOf('hour').format('YYYY-MM-DDTHH:mm:ss')
+              ? dayjs().add(10, 'minute')
+              : getDate
           }
           {...(set?.content ? { set: JSON.parse(set.content) } : {})}
           reopenModal={() => ({})}
@@ -692,7 +652,7 @@ export const CalendarColumn: FC<{
   return (
     <div
       className={clsx(
-        'flex flex-col w-full min-h-full',
+        'flex flex-col w-full min-h-full relative',
         isBeforeNow && 'repeated-strip',
         isBeforeNow
           ? 'cursor-not-allowed'
@@ -756,9 +716,7 @@ export const CalendarColumn: FC<{
             </div>
           )}
         </div>
-        {(display === 'day'
-          ? !isBeforeNow && postList.length === 0
-          : !isBeforeNow) && (
+        {!isBeforeNow && (
           <div
             className="pb-[2.5px] px-[5px] flex-1 flex"
             onClick={integrations.length ? addModal : addProvider}
@@ -768,7 +726,7 @@ export const CalendarColumn: FC<{
                 display === ('month' as any)
                   ? 'flex-1 min-h-[40px] w-full'
                   : !postList.length
-                  ? 'h-full w-full absolute start-0 top-0 p-[5px]'
+                  ? 'min-h-full w-full p-[5px]'
                   : 'min-h-[40px] w-full',
                 'flex items-center justify-center cursor-pointer pb-[2.5px]'
               )}
@@ -786,7 +744,7 @@ export const CalendarColumn: FC<{
               )}
               {display === 'day' && (
                 <div
-                  className={`w-full h-full rounded-[10px] hover:border hover:border-seventh flex justify-center items-center gap-[20px] opacity-30 grayscale hover:grayscale-0 hover:opacity-100`}
+                  className={`w-full h-full rounded-[10px] py-[10px] flex-wrap hover:border hover:border-seventh flex justify-center items-center gap-[20px] opacity-30 grayscale hover:grayscale-0 hover:opacity-100`}
                 >
                   {integrations.map((selectedIntegrations) => (
                     <div
@@ -954,12 +912,7 @@ const CalendarItem: FC<{
           isBeforeNow && '!grayscale'
         )}
       >
-        <div
-          className={clsx(
-            'relative min-w-[20px] h-[20px]',
-            display === 'day' ? 'h-[40px]' : 'h-[20px]'
-          )}
-        >
+        <div className={clsx('relative min-w-[20px]')}>
           <img
             className="w-[20px] h-[20px] rounded-[8px]"
             src={post.integration.picture! || '/no-picture.jpg'}
@@ -969,12 +922,14 @@ const CalendarItem: FC<{
             src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
           />
         </div>
-        <div className="whitespace-nowrap line-clamp-2">
+        <div className="w-full flex-1 flex flex-col min-h-[40px]">
           <div className="text-start">
             {state === 'DRAFT' ? t('draft', 'Draft') + ': ' : ''}
           </div>
-          <div className="w-full overflow-hidden overflow-ellipsis text-start">
-            {stripHtmlValidation('none', post.content)}
+          <div className="w-full relative">
+            <div className="absolute top-0 start-0 w-full text-ellipsis break-words line-clamp-1 text-left">
+              {stripHtmlValidation('none', post.content, false, true) || 'no content'}
+            </div>
           </div>
         </div>
       </div>

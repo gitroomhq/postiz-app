@@ -10,6 +10,7 @@
   "save": "保存",
   "send_test": "テスト送信",
   "select_role": "役割を選択",
+  "please_add_at_least": "少なくとも20文字を追加してください",
   "send_invitation_via_email": "メールで招待を送信しますか？",
   "team_members": "チームメンバー",
   "invite_your_assistant_or_team_member_to_manage_your_account": "アシスタントやチームメンバーを招待してアカウントを管理してもらいましょう",

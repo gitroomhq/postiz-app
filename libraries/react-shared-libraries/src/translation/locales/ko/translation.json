@@ -10,6 +10,7 @@
   "save": "저장",
   "send_test": "테스트 전송",
   "select_role": "역할 선택",
+  "please_add_at_least": "최소 20자 이상 입력해 주세요",
   "send_invitation_via_email": "이메일로 초대장을 보내시겠습니까?",
   "team_members": "팀원",
   "invite_your_assistant_or_team_member_to_manage_your_account": "계정을 관리할 수 있도록 어시스턴트나 팀원을 초대하세요.",

@@ -9,7 +9,6 @@ import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { Input } from '@gitroom/react/form/input';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
-import interClass from '@gitroom/react/helpers/inter.font';
 export const CommentBox: FC<{
   value?: string;
   type: 'textarea' | 'input';
@@ -303,7 +302,7 @@ export const CommentComponent: FC<{
               <div className="flex gap-[8px]">
                 <div className="w-[40px] flex flex-col items-center">
                   <div
-                    className={`rounded-full relative z-[2] text-blue-500 font-bold ${interClass} flex justify-center items-center w-[40px] h-[40px] bg-white border-tableBorder border`}
+                    className={`rounded-full relative z-[2] text-blue-500 font-bold flex justify-center items-center w-[40px] h-[40px] bg-white border-tableBorder border`}
                   >
                     {comment.user.email[0].toUpperCase()}
                   </div>
@@ -331,7 +330,7 @@ export const CommentComponent: FC<{
                   >
                     <div className="w-[40px] flex flex-col items-center">
                       <div
-                        className={`rounded-full relative z-[2] text-blue-500 font-bold ${interClass} flex justify-center items-center w-[40px] h-[40px] bg-white border-tableBorder border`}
+                        className={`rounded-full relative z-[2] text-blue-500 font-bold flex justify-center items-center w-[40px] h-[40px] bg-white border-tableBorder border`}
                       >
                         {childComment.user.email[0].toUpperCase()}
                       </div>

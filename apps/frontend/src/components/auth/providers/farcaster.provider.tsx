@@ -1,7 +1,6 @@
 'use client';
 
 import { FC, useCallback } from 'react';
-import interClass from '@gitroom/react/helpers/inter.font';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { NeynarContextProvider, Theme, useNeynarContext } from '@neynar/react';
 import { NeynarAuthButton } from '@gitroom/frontend/components/auth/nayner.auth.button';
@@ -27,7 +26,7 @@ export const ButtonCaster: FC<{
     >
       <NeynarAuthButton onLogin={login}>
         <div
-          className={`cursor-pointer bg-[#855ECD] h-[44px] rounded-[4px] flex justify-center items-center text-white ${interClass} gap-[4px]`}
+          className={`cursor-pointer bg-[#855ECD] h-[44px] rounded-[4px] flex justify-center items-center text-white gap-[4px]`}
         >
           <svg
             width="21px"

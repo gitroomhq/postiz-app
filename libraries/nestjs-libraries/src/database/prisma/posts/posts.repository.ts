@@ -86,32 +86,9 @@ export class PostsRepository {
   }
 
   async getPosts(orgId: string, query: GetPostsDto) {
-    const dateYear = dayjs().year(query.year);
-    const date =
-      query.display === 'day'
-        ? dateYear.isoWeek(query.week).day(query.day)
-        : query.display === 'week'
-        ? dateYear.isoWeek(query.week)
-        : dateYear.month(query.month - 1);
-
-    const startDate = (
-      query.display === 'day'
-        ? date.startOf('day')
-        : query.display === 'week'
-        ? date.startOf('isoWeek')
-        : date.startOf('month')
-    )
-      .subtract(2, 'hours')
-      .toDate();
-    const endDate = (
-      query.display === 'day'
-        ? date.endOf('day')
-        : query.display === 'week'
-        ? date.endOf('isoWeek')
-        : date.endOf('month')
-    )
-      .add(2, 'hours')
-      .toDate();
+    // Use the provided start and end dates directly
+    const startDate = dayjs.utc(query.startDate).toDate();
+    const endDate = dayjs.utc(query.endDate).toDate();
 
     const list = await this._post.model.post.findMany({
       where: {

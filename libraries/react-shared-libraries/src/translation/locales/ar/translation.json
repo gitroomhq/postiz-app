@@ -10,6 +10,7 @@
   "save": "حفظ",
   "send_test": "إرسال اختبار",
   "select_role": "اختر الدور",
+  "please_add_at_least": "يرجى إضافة 20 حرفًا على الأقل",
   "send_invitation_via_email": "إرسال دعوة عبر البريد الإلكتروني؟",
   "team_members": "أعضاء الفريق",
   "invite_your_assistant_or_team_member_to_manage_your_account": "ادعُ مساعدك أو أحد أعضاء فريقك لإدارة حسابك",

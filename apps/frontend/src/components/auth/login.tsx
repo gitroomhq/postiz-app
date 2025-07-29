@@ -10,7 +10,6 @@ import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { LoginUserDto } from '@gitroom/nestjs-libraries/dtos/auth/login.user.dto';
 import { GithubProvider } from '@gitroom/frontend/components/auth/providers/github.provider';
 import { OauthProvider } from '@gitroom/frontend/components/auth/providers/oauth.provider';
-import interClass from '@gitroom/react/helpers/inter.font';
 import { GoogleProvider } from '@gitroom/frontend/components/auth/providers/google.provider';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { FarcasterProvider } from '@gitroom/frontend/components/auth/providers/farcaster.provider';
@@ -76,7 +75,7 @@ export function Login() {
         <div className="h-[20px] mb-[24px] mt-[24px] relative">
           <div className="absolute w-full h-[1px] bg-fifth top-[50%] -translate-y-[50%]" />
           <div
-            className={`absolute z-[1] ${interClass} justify-center items-center w-full start-0 top-0 flex`}
+            className={`absolute z-[1] justify-center items-center w-full start-0 top-0 flex`}
           >
             <div className="bg-customColor15 px-[16px]">{t('or', 'OR')}</div>
           </div>
