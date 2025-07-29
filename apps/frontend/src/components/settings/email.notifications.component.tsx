@@ -22,7 +22,7 @@ export const EmailNotificationsComponent: FC = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          enabled: !data?.enabled, // ✅ match the DTO
+          enabled: !data?.enabled, 
         }),
       });
 
@@ -35,7 +35,7 @@ export const EmailNotificationsComponent: FC = () => {
         ),
         'success'
       );
-      mutate(); // ✅ revalidate cache
+      mutate(); 
     } catch (err) {
       toast.show(
         t('email_notifications_failed', 'Failed to update email notifications'),
