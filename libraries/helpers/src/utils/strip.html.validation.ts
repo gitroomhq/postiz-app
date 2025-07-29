@@ -138,7 +138,17 @@ export const stripHtmlValidation = (
   none = false
 ): string => {
   if (type === 'html') {
-    return striptags(value, ['ul', 'ol', 'li', 'h1', 'h2', 'h3', 'p', 'strong', 'u']);
+    return striptags(value, [
+      'ul',
+      'ol',
+      'li',
+      'h1',
+      'h2',
+      'h3',
+      'p',
+      'strong',
+      'u',
+    ]);
   }
 
   if (type === 'markdown') {
@@ -161,13 +171,22 @@ export const stripHtmlValidation = (
   }
 
   if (replaceBold) {
-    return striptags(convertLinkedinMention(convertToAscii(html)), [
-      'ul',
-      'li',
-      'h1',
-      'h2',
-      'h3',
-    ]);
+    const processedHtml = convertLinkedinMention(
+      convertToAscii(
+        html
+          .replace(/<ul>/, "\n<ul>")
+          .replace(/<\/ul>\n/, "</ul>")
+          .replace(
+          /<li.*?>(.*?)<\/li.*?>/gms,
+          (match, p1) => {
+            return `<li><p>- ${p1.replace(/\n/gms, '')}\n</p></li>`;
+          }
+        )
+      )
+    );
+
+    console.log(processedHtml);
+    return striptags(processedHtml, ['h1', 'h2', 'h3']);
   }
 
   // Strip all other tags
