@@ -21,7 +21,7 @@ export class AuthService {
     private _emailService: EmailService
   ) {}
   async canRegister(provider: string) {
-    if ((!process.env.DISABLE_REGISTRATION && process.env.DISABLE_REGISTRATION !== 'false') || provider === Provider.GENERIC) {
+    if (process.env.DISABLE_REGISTRATION !== 'true' || provider === Provider.GENERIC) {
       return true;
     }
 
