@@ -83,7 +83,7 @@ export class NotificationService {
   async sendEmailsToOrg(orgId: string, subject: string, message: string) {
     const userOrg = await this._organizationRepository.getAllUsersOrgs(orgId);
     for (const user of userOrg?.users || []) {
-      if(user.user.emailNotifications){
+      if (user.user.emailNotifications) {
         await this.sendEmail(user.user.email, subject, message);
       }
     }
