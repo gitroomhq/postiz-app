@@ -24,9 +24,10 @@ export const initializeSentry = (appName: string) => {
       integrations: [
         // Add our Profiling integration
         nodeProfilingIntegration(),
+        Sentry.consoleLoggingIntegration({ levels: ['log', 'error', 'warn'] }),
       ],
       tracesSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.3,
-      profilesSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.1,
+      enableLogs: true,
     });
   } catch (err) {}
   return true;

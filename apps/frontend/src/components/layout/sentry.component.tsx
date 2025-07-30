@@ -9,14 +9,10 @@ export const SentryComponent: FC<{ children: ReactNode }> = ({ children }) => {
 
   useEffect(() => {
     if (!dsn) {
-      return ;
+      return;
     }
 
-    try {
-      initializeSentryClient(dsn);
-    } catch (error) {
-      console.error('[Sentry] Configuration error:', error);
-    }
+    initializeSentryClient(dsn);
   }, [dsn]);
 
   // Always render children - don't block the app
