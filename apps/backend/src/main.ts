@@ -1,5 +1,5 @@
-import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
-initializeSentry('backend', true);
+// import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
+// initializeSentry('backend', true);
 
 import { loadSwagger } from '@gitroom/helpers/swagger/load.swagger';
 
