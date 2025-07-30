@@ -55,25 +55,22 @@ export class MonthlyReportService {
 			const currentMonth = new Date(year, month - 1 - i, 1);
 			const monthNum = currentMonth.getMonth() + 1;
 			const yearNum = currentMonth.getFullYear();
-			const monthStr = this.getMonthString(monthNum, yearNum);
 			const { startDate, endDate } = this.getMonthDateRange(monthNum, yearNum);
 
-			let insights = await repository.findMany({
+			const insights = await repository.findMany({
 				where: {
 					customerId,
-					OR: [
-						{ month: monthStr },
-						{ createdAt: { gte: startDate, lte: endDate } },
-					],
+					createdAt: { gte: startDate, lte: endDate },
 				},
-				orderBy: { createdAt: 'desc' },
-				take: 1,
 			});
 
 			if (insights.length > 0) {
-				allMonthsData.push(insights[0]);
+				const summary: any = { createdAt: new Date(yearNum, monthNum - 1, 15) };
+				fields.forEach(field => {
+					summary[field] = insights.reduce((sum, entry) => sum + (entry[field] || 0), 0);
+				});
+				allMonthsData.push(summary);
 			} else {
-				// Push empty data if no records found
 				const emptyData: any = { createdAt: new Date(yearNum, monthNum - 1, 15) };
 				fields.forEach(field => (emptyData[field] = 0));
 				allMonthsData.push(emptyData);
@@ -82,6 +79,7 @@ export class MonthlyReportService {
 
 		return allMonthsData;
 	}
+
 
 	private async getDailyDataForMonth(
 		repository: any,
@@ -171,6 +169,8 @@ export class MonthlyReportService {
 					createdAt: true,
 					impressions: true,
 					avgReachPerDay: true,
+					totalContent: true  // ✅ Add this line
+
 				},
 			});
 
@@ -189,6 +189,8 @@ export class MonthlyReportService {
 					date: item.createdAt,
 					impressions: item.impressions || 0,
 					avgReachPerDay: item.avgReachPerDay || 0,
+					totalContent: item.totalContent || 0  // ✅ Add this
+
 				})),
 			};
 		} catch (error) {
@@ -271,7 +273,7 @@ export class MonthlyReportService {
 				customerId,
 				month,
 				year,
-				['subscribers', 'totalViews', 'totalVideos', 'likes', 'comments'],
+				['subscribers', 'totalViews', 'totalVideos', 'totalLikes', 'totalComments'],
 			);
 
 			// Daily data for chart - add likes and comments
@@ -280,7 +282,7 @@ export class MonthlyReportService {
 				customerId,
 				month,
 				year,
-				['subscribers', 'totalViews', 'totalVideos', 'likes', 'comments'],
+				['subscribers', 'totalViews', 'totalVideos', 'totalLikes', 'totalComments'],
 			);
 
 			if (!monthlyData.length) return null;
@@ -302,7 +304,7 @@ export class MonthlyReportService {
 				customerId,
 				month,
 				year,
-				['subscribers', 'totalViews', 'totalVideos', 'likes', 'comments']
+				['subscribers', 'totalViews', 'totalVideos', 'totalLikes', 'totalComments']
 			);
 
 			if (!monthlyData.length) return null;
@@ -314,7 +316,7 @@ export class MonthlyReportService {
 					customerId,
 					month,
 					year,
-					['subscribers', 'totalViews', 'totalVideos', 'likes', 'comments']
+					['subscribers', 'totalViews', 'totalVideos', 'totalLikes', 'totalComments']
 				)
 			};
 		} catch (error) {
@@ -1022,6 +1024,20 @@ export class MonthlyReportService {
 		return {
 			Data: headers,
 			Rows: rows
+		};
+	}
+	//hospital
+
+	private getHospitalTable(): any {
+		console.log('getHospitalTable called'); // Debug log
+		return {
+			Data: ['Month', 'Patients', 'Change %'],
+			Rows: [
+				['January', '1200', '+5%'],
+				['February', '1350', '+12.5%'],
+				['March', '1420', '+5.2%']
+			],
+			Growth: 'Patient count increasing steadily'
 		};
 	}
 
