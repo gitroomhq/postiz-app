@@ -89,7 +89,7 @@ export class WordpressProvider
         })
       ).json();
 
-      const biggestImage = Object.entries(avatar_urls).reduce(
+      const biggestImage = Object.entries(avatar_urls || {}).reduce(
         (all, current) => {
           if (all > Number(current[0])) {
             return all;
