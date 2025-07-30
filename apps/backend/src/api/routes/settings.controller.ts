@@ -143,6 +143,9 @@ export class SettingsController {
   @Get('/email-notifications')
   async getEmailNotifications(@GetUserFromRequest() user: User) {
     const userValue = await this._usersService.getEmailNotifications(user.id);
+    if (!userValue) {
+      return { enabled: false };
+    }
     return { enabled: userValue.emailNotifications };
   }
 
