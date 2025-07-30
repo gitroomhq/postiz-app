@@ -27,7 +27,7 @@ export const initializeSentry = (appName: string, allowLogs = false) => {
         ...allowLogs ? [Sentry.consoleLoggingIntegration({ levels: ['log', 'error', 'warn'] })] : [],
       ],
       tracesSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.3,
-      enableLogs: true,
+      enableLogs: allowLogs,
     });
   } catch (err) {}
   return true;
