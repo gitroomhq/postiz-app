@@ -3,10 +3,13 @@
 import React from 'react';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { Save } from 'lucide-react';
-export const ProfileComponent = ({ name, email, setName } : {
+import { Button } from '@gitroom/react/form/button';
+
+export const ProfileComponent = ({ name, email, setName, loading } : {
   name: string;
   email: string;
   setName(name: string): void;
+  loading?: boolean;
 }) => {
   const t = useT();
 
@@ -38,11 +41,15 @@ export const ProfileComponent = ({ name, email, setName } : {
         </div>
         <div className="mt-8 pt-6">
           <div className="flex justify-start">
-            <button
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-              <Save className="w-4 h-4" />
+            <Button
+              className="flex items-center space-x-2 px-4 py-2  rounded-lg hover:bg-violet-900 transition-colors"
+              onClick={() => console.log('Save changes clicked')}
+              loading={loading}
+              type="submit"
+            >
+              <Save className="w-4 h-4 mr-1" />
               <span>{t('save_changes','Save Changes')}</span>
-            </button>
+            </Button>
           </div>
         </div>
       </div>

@@ -14,7 +14,6 @@ import { TeamsComponent } from '@gitroom/frontend/components/settings/teams.comp
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
 import { useSearchParams } from 'next/navigation';
-import { useVariables } from '@gitroom/react/helpers/variable.context';
 import Link from 'next/link';
 import { Tabs } from '@mantine/core';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -24,8 +23,8 @@ import { BillingComponent } from '@gitroom/frontend/components/billing/billing.c
 export const SettingsPopup: FC<{
   getRef?: Ref<any>;
 }> = (props) => {
-  const { isGeneral } = useVariables();
   const { getRef } = props;
+  const [loading, setLoading] = useState(false);
   const fetch = useFetch();
   const toast = useToaster();
   const swr = useSWRConfig();
@@ -43,12 +42,12 @@ export const SettingsPopup: FC<{
   }, []);
   const url = useSearchParams();
   const showLogout = !url.get('onboarding') || user?.tier?.current === 'FREE';
-  const loadProfile = useCallback(async () => {
+  const loadProfile = async () => {
     const personal = await (await fetch('/user/personal')).json();
     form.setValue('fullname', personal.name || '');
     form.setValue('bio', personal.bio || '');
     form.setValue('picture', personal.picture);
-  }, []);
+  };
   const openMedia = useCallback(() => {
     showMediaBox((values) => {
       form.setValue('picture', values);
@@ -65,6 +64,8 @@ export const SettingsPopup: FC<{
     }
 
     try {
+      setLoading(true);
+
       await fetch('/user/personal', {
         method: 'POST',
         body: JSON.stringify({
@@ -78,13 +79,15 @@ export const SettingsPopup: FC<{
 
     toast.show(`${ t('profile_updated','Profile updated') }`);
     swr.mutate('/marketplace/account');
+
+    setLoading(false);
     close();
   };
   const defaultValueForTabs = useMemo(() => {
     if (user?.tier?.profile) {
       return 'profile';
     }
-    if (user?.tier?.team_members && isGeneral) {
+    if (user?.tier?.team_members ) {
       return 'teams';
     }
     if (user?.tier?.webhooks) {
@@ -94,7 +97,7 @@ export const SettingsPopup: FC<{
       return 'autopost';
     }
     return 'sets';
-  }, [user?.tier, isGeneral]);
+  }, [user?.tier]);
 
   const t = useT();
 
@@ -108,9 +111,6 @@ export const SettingsPopup: FC<{
       </h1>
       <FormProvider {...form}>
         <form onSubmit={form.handleSubmit(submit)}>
-          {!!getRef && (
-            <button type="submit" ref={getRef}></button>
-          )}
           <div
             className={clsx(
               'w-full mx-auto gap-[24px] flex flex-col relative',
@@ -142,7 +142,7 @@ export const SettingsPopup: FC<{
 
               {!!user?.tier?.profile && (
                 <Tabs.Panel value="profile" pt="md">
-                  <ProfileComponent name={name} email={user?.email} setName={setName} />
+                  <ProfileComponent name={name} email={user?.email} setName={setName} loading={loading} />
                 </Tabs.Panel>
               )}
               {!!user?.tier?.team_members && (
