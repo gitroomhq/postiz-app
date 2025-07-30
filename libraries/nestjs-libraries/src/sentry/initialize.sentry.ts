@@ -13,7 +13,7 @@ export const initializeSentry = () => {
       // Add our Profiling integration
       nodeProfilingIntegration(),
     ],
-    tracesSampleRate: 1.0,
+    tracesSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.3,
     profilesSampleRate: 1.0,
   });
 

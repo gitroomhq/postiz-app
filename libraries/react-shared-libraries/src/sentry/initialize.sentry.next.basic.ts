@@ -23,6 +23,6 @@ export const initializeSentryBasic = (dsn: string, extension: any) => {
     sendDefaultPii: true,
     ...extension,
     debug: process.env.NODE_ENV === 'development',
-    tracesSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.1,
+    tracesSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.3,
   });
 };
