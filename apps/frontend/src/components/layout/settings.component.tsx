@@ -1,12 +1,8 @@
 'use client';
 
 import { useModals } from '@mantine/modals';
-import React, { FC, Ref, useCallback, useEffect, useMemo, useState } from 'react';
-import { FormProvider, useForm } from 'react-hook-form';
-import { showMediaBox } from '@gitroom/frontend/components/media/media.component';
+import React, { FC, Ref, useCallback, useMemo, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import { classValidatorResolver } from '@hookform/resolvers/class-validator';
-import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useSWRConfig } from 'swr';
 import clsx from 'clsx';
@@ -29,37 +25,19 @@ export const SettingsPopup: FC<{
   const toast = useToaster();
   const swr = useSWRConfig();
   const user = useUser();
-  const resolver = useMemo(() => {
-    return classValidatorResolver(UserDetailDto);
-  }, []);
-  const form = useForm({
-    resolver,
-  });
-  const picture = form.watch('picture');
+
   const modal = useModals();
   const close = useCallback(() => {
     return modal.closeAll();
   }, []);
   const url = useSearchParams();
   const showLogout = !url.get('onboarding') || user?.tier?.current === 'FREE';
-  const loadProfile = async () => {
-    const personal = await (await fetch('/user/personal')).json();
-    form.setValue('fullname', personal.name || '');
-    form.setValue('bio', personal.bio || '');
-    form.setValue('picture', personal.picture);
-  };
-  const openMedia = useCallback(() => {
-    showMediaBox((values) => {
-      form.setValue('picture', values);
-    });
-  }, []);
-  const remove = useCallback(() => {
-    form.setValue('picture', null);
-  }, []);
-  const [name, setName] = useState(user?.name);
+
+  const [name, setName] = useState(user?.name || '');
   const submit = async () => {
+
     if (!name || name.length < 3) {
-      toast.show(`${t('name_must_be_at_least_3_characters_long','Name must be at least 3 characters long')  }`, 'warning');
+      toast.show(`${t('name_must_be_at_least_3_characters_long', 'Name must be at least 3 characters long')}`, 'warning');
       return;
     }
 
@@ -73,21 +51,21 @@ export const SettingsPopup: FC<{
         })
 
       });
+
+      toast.show(`${t('profile_updated', 'Profile updated')}`);
+      swr.mutate('/marketplace/account');
+      close();
     } catch (e) {
-      toast.show(`${t('something_went_wrong_please_try_again_later','Something went wrong, please try again later')}${e}`);
+      toast.show(`${t('something_went_wrong_please_try_again_later', 'Something went wrong, please try again later')}${e}`);
+    } finally {
+      setLoading(false);
     }
-
-    toast.show(`${ t('profile_updated','Profile updated') }`);
-    swr.mutate('/marketplace/account');
-
-    setLoading(false);
-    close();
   };
   const defaultValueForTabs = useMemo(() => {
     if (user?.tier?.profile) {
       return 'profile';
     }
-    if (user?.tier?.team_members ) {
+    if (user?.tier?.team_members) {
       return 'teams';
     }
     if (user?.tier?.webhooks) {
@@ -101,71 +79,65 @@ export const SettingsPopup: FC<{
 
   const t = useT();
 
-  useEffect(() => {
-    loadProfile();
-  }, []);
+
   return (
     <>
       <h1 className={'text-[20px] font-semibold mb-4'}>
         {t('settings', 'Settings')}
       </h1>
-      <FormProvider {...form}>
-        <form onSubmit={form.handleSubmit(submit)}>
-          <div
-            className={clsx(
-              'w-full mx-auto gap-[24px] flex flex-col relative',
-              !getRef && 'rounded-[4px]'
+      <div
+        className={clsx(
+          'w-full mx-auto gap-[24px] flex flex-col relative',
+          !getRef && 'rounded-[4px]'
+        )}
+      >
+        <Tabs
+          defaultValue={defaultValueForTabs}
+          classNames={{
+            root: 'w-full',
+            tabsList: 'border-b border-customColor6 mb-4 gap-[5px]',
+            tab: 'bg-customColor6 hover:bg-forth px-4 py-4 text-[14px] data-[active]:bg-forth data-[active]:text-white text-textColor data-[active]:border-b-2 data-[active]:border-white data-[active]:hover:border-white hover:border-white hover:text-white transition-colors',
+            panel: 'pt-0'
+          }}
+        >
+          <Tabs.List>
+            {!!user?.tier?.profile && (
+              <Tabs.Tab value="profile">{t('profile', 'Profile')}</Tabs.Tab>
             )}
-          >
-            <Tabs
-              defaultValue={defaultValueForTabs}
-              classNames={{
-                root: 'w-full',
-                tabsList: 'border-b border-customColor6 mb-4 gap-[5px]',
-                tab: 'bg-customColor6 hover:bg-forth px-4 py-4 text-[14px] data-[active]:bg-forth data-[active]:text-white text-textColor data-[active]:border-b-2 data-[active]:border-white data-[active]:hover:border-white hover:border-white hover:text-white transition-colors',
-                panel: 'pt-0'
-              }}
-            >
-              <Tabs.List>
-                {!!user?.tier?.profile && (
-                  <Tabs.Tab value="profile">{t('profile', 'Profile')}</Tabs.Tab>
-                )}
 
-                {!!user?.tier?.team_members && (
-                  <Tabs.Tab value="teams">{t('teams', 'Teams')}</Tabs.Tab>
-                )}
-
-                {!!user?.tier?.billing && (
-                  <Tabs.Tab value="billing">{t('billing', 'Billing')}</Tabs.Tab>
-                )}
-              </Tabs.List>
-
-              {!!user?.tier?.profile && (
-                <Tabs.Panel value="profile" pt="md">
-                  <ProfileComponent name={name} email={user?.email} setName={setName} loading={loading} />
-                </Tabs.Panel>
-              )}
-              {!!user?.tier?.team_members && (
-                <Tabs.Panel value="teams" pt="md">
-                  <TeamsComponent />
-                </Tabs.Panel>
-              )}
-
-              {!!user?.tier?.billing && (
-                <Tabs.Panel value="billing" pt="md">
-                  <BillingComponent />
-                </Tabs.Panel>
-              )}
-            </Tabs>
-
-            {showLogout && (
-              <div className="flex justify-start">
-                <LogoutComponent />
-              </div>
+            {!!user?.tier?.team_members && (
+              <Tabs.Tab value="teams">{t('teams', 'Teams')}</Tabs.Tab>
             )}
+
+            {!!user?.tier?.billing && (
+              <Tabs.Tab value="billing">{t('billing', 'Billing')}</Tabs.Tab>
+            )}
+          </Tabs.List>
+
+          {!!user?.tier?.profile && (
+            <Tabs.Panel value="profile" pt="md">
+              <ProfileComponent name={name} email={user?.email || ''} setName={setName} loading={loading} onSubmit={submit} />
+            </Tabs.Panel>
+          )}
+          {!!user?.tier?.team_members && (
+            <Tabs.Panel value="teams" pt="md">
+              <TeamsComponent />
+            </Tabs.Panel>
+          )}
+
+          {!!user?.tier?.billing && (
+            <Tabs.Panel value="billing" pt="md">
+              <BillingComponent />
+            </Tabs.Panel>
+          )}
+        </Tabs>
+
+        {showLogout && (
+          <div className="flex justify-start">
+            <LogoutComponent />
           </div>
-        </form>
-      </FormProvider>
+        )}
+      </div>
     </>
   );
 };
