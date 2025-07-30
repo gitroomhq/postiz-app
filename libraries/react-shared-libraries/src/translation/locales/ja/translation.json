@@ -495,5 +495,12 @@
   "separate_post": "投稿を複数に分割",
   "label_who_can_reply_to_this_post": "この投稿に返信できる人",
   "delete_integration": "連携を削除",
-  "start_writing_your_post": "プレビュー用に投稿を書き始めてください"
+  "start_writing_your_post": "プレビュー用に投稿を書き始めてください",
+  "settings_profile_title": "プロフィール設定",
+  "profile": "プロフィール",
+  "email_address": "メールアドレス",
+  "save_changes": "変更を保存",
+  "name_must_be_at_least_3_characters_long":"名前は3文字以上である必要があります",
+  "something_went_wrong_please_try_again_later":"何か問題が発生しました。後でもう一度お試しください。",
+  "profile_updated":"プロフィールが更新されました"
 }

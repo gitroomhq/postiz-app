@@ -495,5 +495,12 @@
   "separate_post": "פצל פוסט למספר פוסטים",
   "label_who_can_reply_to_this_post": "מי יכול להגיב לפוסט הזה?",
   "delete_integration": "מחק אינטגרציה",
-  "start_writing_your_post": "התחל לכתוב את הפוסט שלך לתצוגה מקדימה"
+  "start_writing_your_post": "התחל לכתוב את הפוסט שלך לתצוגה מקדימה",
+  "settings_profile_title": "הגדרות פרופיל",
+  "profile": "פרופיל",
+  "email_address": "כתובת אימייל",
+  "save_changes": "שמור שינויים",
+  "name_must_be_at_least_3_characters_long":"השם חייב להיות באורך של לפחות 3 תווים",
+  "something_went_wrong_please_try_again_later":"משהו השתבש, אנא נסה שוב מאוחר יותר",
+  "profile_updated":"הפרופיל עודכן בהצלחה"
 }

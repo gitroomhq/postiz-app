@@ -495,5 +495,12 @@
   "separate_post": "Tách bài viết thành nhiều bài",
   "label_who_can_reply_to_this_post": "Ai có thể trả lời bài viết này?",
   "delete_integration": "Xóa tích hợp",
-  "start_writing_your_post": "Bắt đầu viết bài của bạn để xem trước"
+  "start_writing_your_post": "Bắt đầu viết bài của bạn để xem trước",
+  "settings_profile_title": "Cài đặt hồ sơ",
+  "profile": "Hồ sơ",
+  "email_address": "Địa chỉ email",
+  "save_changes": "Lưu thay đổi",
+  "name_must_be_at_least_3_characters_long":"Tên phải có ít nhất 3 ký tự",
+  "something_went_wrong_please_try_again_later":"Đã xảy ra lỗi, vui lòng thử lại sau",
+  "profile_updated":"Hồ sơ đã được cập nhật"
 }

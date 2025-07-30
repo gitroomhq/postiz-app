@@ -8,61 +8,18 @@ import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const useMenuItems = () => {
-  const { isGeneral } = useVariables();
   const t = useT();
 
   return [
-    ...(!isGeneral
-      ? [
-        {
-          name: t('analytics', 'Analytics'),
-          icon: 'analytics',
-          path: '/analytics',
-        },
-      ]
-      : []),
     {
-      name: isGeneral ? t('calendar', 'Calendar') : t('launches', 'Launches'),
+      name: t('calendar', 'Calendar'),
       icon: 'launches',
       path: '/launches',
     },
-    ...(isGeneral
-      ? [
-        {
-          name: t('analytics', 'Analytics'),
-          icon: 'analytics',
-          path: '/analytics',
-        },
-      ]
-      : []),
-    ...(!isGeneral
-      ? [
-        {
-          name: t('settings', 'Settings'),
-          icon: 'settings',
-          path: '/settings',
-          role: ['ADMIN', 'SUPERADMIN'],
-        },
-      ]
-      : []),
     {
-      name: t('plugs', 'Plugs'),
-      icon: 'plugs',
-      path: '/plugs',
-    },
-    {
-      name: t('billing', 'Billing'),
-      icon: 'billing',
-      path: '/billing',
-      role: ['ADMIN', 'SUPERADMIN'],
-      requireBilling: true,
-    },
-    {
-      name: t('settings', 'Settings'),
-      icon: 'settings',
-      path: '/settings',
-      role: ['ADMIN', 'SUPERADMIN'],
-      hide: true,
+      name: t('analytics', 'Analytics'),
+      icon: 'analytics',
+      path: '/analytics',
     },
     {
       name: t('affiliate', 'Affiliate'),
@@ -83,9 +40,6 @@ export const TopMenu: FC = () => {
       <ul className="gap-0 md:gap-1 flex flex-1 items-center text-[18px]">
         {menuItems
           .filter((f) => {
-            if (f.hide) {
-              return false;
-            }
             if (f.requireBilling && !billingEnabled) {
               return false;
             }
@@ -107,9 +61,6 @@ export const TopMenu: FC = () => {
                   'flex gap-2 items-center box px-[6px] md:px-[24px] py-[8px]',
                   menuItems
                     .filter((f) => {
-                      if (f.hide) {
-                        return false;
-                      }
                       if (f.role) {
                         return f.role.includes(user?.role!);
                       }

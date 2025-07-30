@@ -495,5 +495,12 @@
   "separate_post": "Separa il post in più post",
   "label_who_can_reply_to_this_post": "Chi può rispondere a questo post?",
   "delete_integration": "Elimina integrazione",
-  "start_writing_your_post": "Inizia a scrivere il tuo post per un'anteprima"
+  "start_writing_your_post": "Inizia a scrivere il tuo post per un'anteprima",
+  "settings_profile_title": "Informazioni del profilo",
+  "profile": "Profilo",
+  "email_address": "Indirizzo email",
+  "save_changes": "Salva Modifiche",
+  "name_must_be_at_least_3_characters_long":"Il nome deve contenere almeno 3 caratteri",
+  "something_went_wrong_please_try_again_later":"Qualcosa è andato storto, per favore riprova più tardi",
+  "profile_updated":"Profilo aggiornato"
 }

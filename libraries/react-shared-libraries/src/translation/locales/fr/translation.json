@@ -495,5 +495,13 @@
   "separate_post": "Séparer le post en plusieurs publications",
   "label_who_can_reply_to_this_post": "Qui peut répondre à ce post ?",
   "delete_integration": "Supprimer l'intégration",
-  "start_writing_your_post": "Commencez à écrire votre post pour un aperçu"
+  "start_writing_your_post": "Commencez à écrire votre post pour un aperçu",
+  "settings_profile_title": "Paramètres du profil",
+  "profile": "Profil",
+  "email_address": "Adresse e-mail",
+  "save_changes": "Enregistrer les modifications",
+  "name_must_be_at_least_3_characters_long":"Le nom doit comporter au moins 3 caractères",
+  "something_went_wrong_please_try_again_later":"Quelque chose s'est mal passé, veuillez réessayer plus tard",
+  "profile_updated":"Profil mis à jour"
+
 }
