@@ -14,7 +14,7 @@ export const initializeSentry = () => {
       nodeProfilingIntegration(),
     ],
     tracesSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.3,
-    profilesSampleRate: 1.0,
+    profilesSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.1,
   });
 
   return true;
