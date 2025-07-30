@@ -253,6 +253,7 @@
     "@vitest/ui": "1.6.0",
     "autoprefixer": "^10.4.17",
     "babel-jest": "29.7.0",
+    "cross-env": "^10.0.0",
     "eslint": "8.57.0",
     "eslint-config-next": "15.2.1",
     "eslint-config-prettier": "^9.0.0",
