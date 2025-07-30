@@ -1,5 +1,5 @@
-import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
-initializeSentry('cron');
+// import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
+// initializeSentry('cron');
 
 import { NestFactory } from '@nestjs/core';
 import { CronModule } from './cron.module';
