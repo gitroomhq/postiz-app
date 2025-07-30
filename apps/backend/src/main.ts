@@ -1,6 +1,3 @@
-// import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
-// initializeSentry('backend', true);
-
 import { loadSwagger } from '@gitroom/helpers/swagger/load.swagger';
 
 process.env.TZ = 'UTC';
@@ -9,6 +6,10 @@ import cookieParser from 'cookie-parser';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+
+import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
+initializeSentry('backend', true);
+
 import { SubscriptionExceptionFilter } from '@gitroom/backend/services/auth/permissions/subscription.exception';
 import { HttpExceptionFilter } from '@gitroom/nestjs-libraries/services/exception.filter';
 import { ConfigurationChecker } from '@gitroom/helpers/configuration/configuration.checker';

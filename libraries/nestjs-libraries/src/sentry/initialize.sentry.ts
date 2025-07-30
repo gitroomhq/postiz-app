@@ -24,10 +24,10 @@ export const initializeSentry = (appName: string, allowLogs = false) => {
       integrations: [
         // Add our Profiling integration
         nodeProfilingIntegration(),
-        ...allowLogs ? [Sentry.consoleLoggingIntegration({ levels: ['log', 'error', 'warn'] })] : [],
+        Sentry.consoleLoggingIntegration({ levels: ['log', 'error', 'warn'] }),
       ],
       tracesSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.3,
-      enableLogs: allowLogs,
+      enableLogs: true,
     });
   } catch (err) {
     console.log(err);
