@@ -420,6 +420,10 @@ export const CalendarColumn: FC<{
         }),
       });
       if (status !== 500) {
+        if(item.interval) {
+          reloadCalendarView();
+          return ;
+        }
         changeDate(item.id, getDate);
         return;
       }
@@ -435,23 +439,6 @@ export const CalendarColumn: FC<{
       canDrop: isBeforeNow ? false : !!monitor.canDrop() && !!monitor.isOver(),
     }),
   }));
-  const getIntegration = useCallback(
-    async (
-      post: Post & {
-        integration: Integration;
-      }
-    ) => {
-      return (
-        await fetch(
-          `/integrations/${post.integration.id}?order=${post.submittedForOrderId}`,
-          {
-            method: 'GET',
-          }
-        )
-      ).json();
-    },
-    []
-  );
 
   const editPost = useCallback(
     (
@@ -830,6 +817,7 @@ const CalendarItem: FC<{
       type: 'post',
       item: {
         id: post.id,
+        interval: !!post.intervalInDays,
         date,
       },
       collect: (monitor) => ({
