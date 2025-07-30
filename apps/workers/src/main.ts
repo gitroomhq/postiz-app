@@ -1,12 +1,12 @@
-// import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
-// initializeSentry('workers');
+import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
+initializeSentry('workers');
 
 import { NestFactory } from '@nestjs/core';
 
-import { AppModule } from './app/app.module';
 import { MicroserviceOptions } from '@nestjs/microservices';
 import { BullMqServer } from '@gitroom/nestjs-libraries/bull-mq-transport-new/strategy';
 
+import { AppModule } from './app/app.module';
 
 async function bootstrap() {
   process.env.IS_WORKER = 'true';

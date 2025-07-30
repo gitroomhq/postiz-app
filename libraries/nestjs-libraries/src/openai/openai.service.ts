@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import OpenAI from 'openai';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const OpenAI = require('openai').default;
 import { shuffle } from 'lodash';
 import { zodResponseFormat } from 'openai/helpers/zod';
 import { z } from 'zod';
