@@ -1,10 +1,7 @@
 'use client';
 
 import { useModals } from '@mantine/modals';
-import React, { FC, Ref, useCallback, useEffect, useMemo } from 'react';
-import { Input } from '@gitroom/react/form/input';
-import { Button } from '@gitroom/react/form/button';
-import { Textarea } from '@gitroom/react/form/textarea';
+import React, { FC, Ref, useCallback, useEffect, useMemo, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { showMediaBox } from '@gitroom/frontend/components/media/media.component';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
@@ -18,15 +15,12 @@ import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
 import { useSearchParams } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
-import { PublicComponent } from '@gitroom/frontend/components/public-api/public.component';
 import Link from 'next/link';
-import { Webhooks } from '@gitroom/frontend/components/webhooks/webhooks';
-import { Sets } from '@gitroom/frontend/components/sets/sets';
-import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { Tabs } from '@mantine/core';
-import { SignaturesComponent } from '@gitroom/frontend/components/settings/signatures.component';
-import { Autopost } from '@gitroom/frontend/components/autopost/autopost';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { ProfileComponent } from '@gitroom/frontend/components/settings/profile.component';
+import { BillingComponent } from '@gitroom/frontend/components/billing/billing.component';
+
 export const SettingsPopup: FC<{
   getRef?: Ref<any>;
 }> = (props) => {
@@ -63,19 +57,33 @@ export const SettingsPopup: FC<{
   const remove = useCallback(() => {
     form.setValue('picture', null);
   }, []);
-  const submit = useCallback(async (val: any) => {
-    await fetch('/user/personal', {
-      method: 'POST',
-      body: JSON.stringify(val),
-    });
-    if (getRef) {
+  const [name, setName] = useState(user?.name);
+  const submit = async () => {
+    if (!name || name.length < 3) {
+      toast.show(`${t('name_must_be_at_least_3_characters_long','Name must be at least 3 characters long')  }`, 'warning');
       return;
     }
-    toast.show('Profile updated');
+
+    try {
+      await fetch('/user/personal', {
+        method: 'POST',
+        body: JSON.stringify({
+          fullname: name
+        })
+
+      });
+    } catch (e) {
+      toast.show(`${t('something_went_wrong_please_try_again_later','Something went wrong, please try again later')}${e}`);
+    }
+
+    toast.show(`${ t('profile_updated','Profile updated') }`);
     swr.mutate('/marketplace/account');
     close();
-  }, []);
+  };
   const defaultValueForTabs = useMemo(() => {
+    if (user?.tier?.profile) {
+      return 'profile';
+    }
     if (user?.tier?.team_members && isGeneral) {
       return 'teams';
     }
@@ -94,98 +102,71 @@ export const SettingsPopup: FC<{
     loadProfile();
   }, []);
   return (
-    <FormProvider {...form}>
-      <form onSubmit={form.handleSubmit(submit)}>
-        {!!getRef && (
-          <button type="submit" className="hidden" ref={getRef}></button>
-        )}
-        <div
-          className={clsx(
-            'w-full mx-auto gap-[24px] flex flex-col relative',
-            !getRef && 'rounded-[4px]'
+    <>
+      <h1 className={'text-[20px] font-semibold mb-4'}>
+        {t('settings', 'Settings')}
+      </h1>
+      <FormProvider {...form}>
+        <form onSubmit={form.handleSubmit(submit)}>
+          {!!getRef && (
+            <button type="submit" ref={getRef}></button>
           )}
-        >
-          <Tabs
-            defaultValue={defaultValueForTabs}
-            classNames={{
-              root: 'w-full',
-              tabsList: 'border-b border-customColor6 mb-4 gap-[5px]',
-              tab: 'bg-customColor6 hover:bg-forth px-4 py-4 text-[14px] data-[active]:bg-forth data-[active]:text-white text-textColor data-[active]:border-b-2 data-[active]:border-white data-[active]:hover:border-white hover:border-white hover:text-white transition-colors',
-              panel: 'pt-0',
-            }}
+          <div
+            className={clsx(
+              'w-full mx-auto gap-[24px] flex flex-col relative',
+              !getRef && 'rounded-[4px]'
+            )}
           >
-            <Tabs.List>
-              {/* <Tabs.Tab value="profile">Profile</Tabs.Tab> */}
-              {!!user?.tier?.team_members && isGeneral && (
-                <Tabs.Tab value="teams">{t('teams', 'Teams')}</Tabs.Tab>
-              )}
-              {!!user?.tier?.webhooks && (
-                <Tabs.Tab value="webhooks">
-                  {t('webhooks_1', 'Webhooks')}
-                </Tabs.Tab>
-              )}
-              {!!user?.tier?.autoPost && (
-                <Tabs.Tab value="autopost">
-                  {t('auto_post', 'Auto Post')}
-                </Tabs.Tab>
-              )}
-              {user?.tier.current !== 'FREE' && (
-                <Tabs.Tab value="sets">{t('sets', 'Sets')}</Tabs.Tab>
-              )}
-              {user?.tier.current !== 'FREE' && (
-                <Tabs.Tab value="signatures">
-                  {t('signatures', 'Signatures')}
-                </Tabs.Tab>
-              )}
-              {!!user?.tier?.public_api && isGeneral && showLogout && (
-                <Tabs.Tab value="api">{t('public_api', 'Public API')}</Tabs.Tab>
-              )}
-            </Tabs.List>
+            <Tabs
+              defaultValue={defaultValueForTabs}
+              classNames={{
+                root: 'w-full',
+                tabsList: 'border-b border-customColor6 mb-4 gap-[5px]',
+                tab: 'bg-customColor6 hover:bg-forth px-4 py-4 text-[14px] data-[active]:bg-forth data-[active]:text-white text-textColor data-[active]:border-b-2 data-[active]:border-white data-[active]:hover:border-white hover:border-white hover:text-white transition-colors',
+                panel: 'pt-0'
+              }}
+            >
+              <Tabs.List>
+                {!!user?.tier?.profile && (
+                  <Tabs.Tab value="profile">{t('profile', 'Profile')}</Tabs.Tab>
+                )}
 
-            {!!user?.tier?.team_members && isGeneral && (
-              <Tabs.Panel value="teams" pt="md">
-                <TeamsComponent />
-              </Tabs.Panel>
-            )}
+                {!!user?.tier?.team_members && (
+                  <Tabs.Tab value="teams">{t('teams', 'Teams')}</Tabs.Tab>
+                )}
 
-            {!!user?.tier?.webhooks && (
-              <Tabs.Panel value="webhooks" pt="md">
-                <Webhooks />
-              </Tabs.Panel>
-            )}
+                {!!user?.tier?.billing && (
+                  <Tabs.Tab value="billing">{t('billing', 'Billing')}</Tabs.Tab>
+                )}
+              </Tabs.List>
 
-            {!!user?.tier?.autoPost && (
-              <Tabs.Panel value="autopost" pt="md">
-                <Autopost />
-              </Tabs.Panel>
-            )}
+              {!!user?.tier?.profile && (
+                <Tabs.Panel value="profile" pt="md">
+                  <ProfileComponent name={name} email={user?.email} setName={setName} />
+                </Tabs.Panel>
+              )}
+              {!!user?.tier?.team_members && (
+                <Tabs.Panel value="teams" pt="md">
+                  <TeamsComponent />
+                </Tabs.Panel>
+              )}
 
-            {user?.tier.current !== 'FREE' && (
-              <Tabs.Panel value="sets" pt="md">
-                <Sets />
-              </Tabs.Panel>
-            )}
+              {!!user?.tier?.billing && (
+                <Tabs.Panel value="billing" pt="md">
+                  <BillingComponent />
+                </Tabs.Panel>
+              )}
+            </Tabs>
 
-            {user?.tier.current !== 'FREE' && (
-              <Tabs.Panel value="signatures" pt="md">
-                <SignaturesComponent />
-              </Tabs.Panel>
+            {showLogout && (
+              <div className="flex justify-start">
+                <LogoutComponent />
+              </div>
             )}
-            {!!user?.tier?.public_api && isGeneral && showLogout && (
-              <Tabs.Panel value="api" pt="md">
-                <PublicComponent />
-              </Tabs.Panel>
-            )}
-          </Tabs>
-
-          {showLogout && (
-            <div className="mt-4">
-              <LogoutComponent />
-            </div>
-          )}
-        </div>
-      </form>
-    </FormProvider>
+          </div>
+        </form>
+      </FormProvider>
+    </>
   );
 };
 export const SettingsComponent = () => {

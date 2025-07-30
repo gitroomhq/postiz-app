@@ -32,7 +32,7 @@ export const LogoutComponent = () => {
     }
   }, []);
   return (
-    <div className="text-red-400 cursor-pointer" onClick={logout}>
+    <div className="flex items-center space-x-2 px-4 py-2 bg-red-400 text-white rounded-lg hover:bg-red-700 transition-colors" onClick={logout}>
       {t('logout_from', 'Logout from')}
       {isGeneral ? ' Postiz' : ' Gitroom'}
     </div>

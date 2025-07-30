@@ -495,5 +495,12 @@
   "separate_post": "Separate post to multiple posts",
   "label_who_can_reply_to_this_post": "Who can reply to this post?",
   "delete_integration": "Delete Integration",
-  "start_writing_your_post": "Start writing your post for a preview"
+  "start_writing_your_post": "Start writing your post for a preview",
+  "settings_profile_title": "Profile Information",
+  "profile": "Profile",
+  "email_address": "Email Address",
+  "save_changes": "Save Changes",
+  "name_must_be_at_least_3_characters_long":"Name must be at least 3 characters long",
+  "something_went_wrong_please_try_again_later":"Something went wrong, please try again later",
+  "profile_updated":"Profile updated"
 }

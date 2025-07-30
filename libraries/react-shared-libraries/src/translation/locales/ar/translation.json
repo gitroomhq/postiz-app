@@ -495,5 +495,12 @@
   "separate_post": "فصل المنشور إلى عدة منشورات",
   "label_who_can_reply_to_this_post": "من يمكنه الرد على هذا المنشور؟",
   "delete_integration": "حذف التكامل",
-  "start_writing_your_post": "ابدأ بكتابة منشورك لمعاينة"
+  "start_writing_your_post": "ابدأ بكتابة منشورك لمعاينة",
+  "settings_profile_title": "إعدادات الملف الشخصي",
+  "profile": "الملف الشخصي",
+  "email_address": "البريد الإلكتروني",
+  "save_changes": "حفظ التغييرات",
+  "name_must_be_at_least_3_characters_long":"يجب أن يكون الاسم مكونًا من 3 أحرف على الأقل",
+  "something_went_wrong_please_try_again_later":"حدث خطأ ما، يرجى المحاولة مرة أخرى لاحقًا",
+  "profile_updated":"تم تحديث الملف الشخصي بنجاح"
 }

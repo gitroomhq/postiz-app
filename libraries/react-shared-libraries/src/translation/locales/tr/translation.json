@@ -495,5 +495,12 @@
   "separate_post": "Gönderiyi birden fazla gönderiye ayır",
   "label_who_can_reply_to_this_post": "Bu gönderiye kim yanıt verebilir?",
   "delete_integration": "Entegrasyonu Sil",
-  "start_writing_your_post": "Önizleme için gönderinizi yazmaya başlayın"
+  "start_writing_your_post": "Önizleme için gönderinizi yazmaya başlayın",
+  "settings_profile_title": "Profil Ayarları",
+  "profile": "Profil",
+  "email_address": "E-posta Adresi",
+  "save_changes": "Değişiklikleri Kaydet",
+  "name_must_be_at_least_3_characters_long":"Ad en az 3 karakter uzunluğunda olmalıdır",
+  "something_went_wrong_please_try_again_later":"Bir şeyler yanlış gitti, lütfen daha sonra tekrar deneyin",
+  "profile_updated":"Profil güncellendi"
 }

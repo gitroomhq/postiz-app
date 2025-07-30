@@ -495,5 +495,12 @@
   "separate_post": "একটি পোস্টকে একাধিক পোস্টে ভাগ করুন",
   "label_who_can_reply_to_this_post": "এই পোস্টে কে উত্তর দিতে পারবে?",
   "delete_integration": "ইন্টিগ্রেশন মুছে ফেলুন",
-  "start_writing_your_post": "প্রিভিউর জন্য আপনার পোস্ট লেখা শুরু করুন"
+  "start_writing_your_post": "প্রিভিউর জন্য আপনার পোস্ট লেখা শুরু করুন",
+  "settings_profile_title": "প্রোফাইল সেটিংস",
+  "profile": "প্রোফাইল",
+  "email_address": "ইমেইল ঠিকানা",
+  "save_changes": "পরিবর্তন সংরক্ষণ করুন",
+  "name_must_be_at_least_3_characters_long":"নামটি কমপক্ষে ৩ অক্ষরের হতে হবে",
+  "something_went_wrong_please_try_again_later":"কিছু ভুল হয়েছে, অনুগ্রহ করে পরে আবার চেষ্টা করুন",
+  "profile_updated":"প্রোফাইল আপডেট হয়েছে"
 }

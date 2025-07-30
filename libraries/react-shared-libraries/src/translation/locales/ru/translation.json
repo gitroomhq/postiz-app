@@ -495,5 +495,12 @@
   "separate_post": "Разделить пост на несколько постов",
   "label_who_can_reply_to_this_post": "Кто может отвечать на этот пост?",
   "delete_integration": "Удалить интеграцию",
-  "start_writing_your_post": "Начните писать свой пост для предварительного просмотра"
+  "start_writing_your_post": "Начните писать свой пост для предварительного просмотра",
+  "settings_profile_title": "Профиль",
+  "profile": "Профиль",
+  "email_address": "Адрес электронной почты",
+  "save_changes": "Сохранить изменения",
+  "name_must_be_at_least_3_characters_long":"Имя должно содержать не менее 3 символов",
+  "something_went_wrong_please_try_again_later":"Что-то пошло не так, пожалуйста, попробуйте позже",
+  "profile_updated":"Профиль обновлен"
 }

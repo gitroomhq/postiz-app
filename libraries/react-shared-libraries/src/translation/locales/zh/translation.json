@@ -495,5 +495,12 @@
   "separate_post": "将帖子拆分为多个帖子",
   "label_who_can_reply_to_this_post": "谁可以回复此帖子？",
   "delete_integration": "删除集成",
-  "start_writing_your_post": "开始写你的帖子以预览"
+  "start_writing_your_post": "开始写你的帖子以预览",
+  "settings_profile_title": "设置个人资料",
+  "profile": "个人资料",
+  "email_address": "电子邮件地址",
+  "save_changes": "保存更改",
+  "name_must_be_at_least_3_characters_long":"姓名必须至少3个字符",
+  "something_went_wrong_please_try_again_later":"发生错误，请稍后再试",
+  "profile_updated":"个人资料已更新"
 }

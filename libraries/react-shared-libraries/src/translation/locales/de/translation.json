@@ -495,5 +495,12 @@
   "separate_post": "Beitrag in mehrere Beiträge aufteilen",
   "label_who_can_reply_to_this_post": "Wer kann auf diesen Beitrag antworten?",
   "delete_integration": "Integration löschen",
-  "start_writing_your_post": "Beginne, deinen Beitrag für eine Vorschau zu schreiben"
+  "start_writing_your_post": "Beginne, deinen Beitrag für eine Vorschau zu schreiben",
+  "settings_profile_title": "Profil-Einstellungen",
+  "profile": "Profil",
+  "email_address": "E-Mail-Adresse",
+  "save_changes": "Änderungen speichern",
+  "name_must_be_at_least_3_characters_long":"Der Name muss mindestens 3 Zeichen lang sein",
+  "something_went_wrong_please_try_again_later":"Etwas ist schief gelaufen, bitte versuche es später noch einmal",
+  "profile_updated":"Profil aktualisiert"
 }
