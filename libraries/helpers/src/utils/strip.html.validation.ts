@@ -177,15 +177,14 @@ export const stripHtmlValidation = (
           .replace(/<ul>/, "\n<ul>")
           .replace(/<\/ul>\n/, "</ul>")
           .replace(
-          /<li.*?>(.*?)<\/li.*?>/gms,
+          /<li.*?>([.\s\S]*?)<\/li.*?>/gm,
           (match, p1) => {
-            return `<li><p>- ${p1.replace(/\n/gms, '')}\n</p></li>`;
+            return `<li><p>- ${p1.replace(/\n/gm, '')}\n</p></li>`;
           }
         )
       )
     );
 
-    console.log(processedHtml);
     return striptags(processedHtml, ['h1', 'h2', 'h3']);
   }
 

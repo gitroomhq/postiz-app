@@ -11,6 +11,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "incremental": true,
+    "lib": ["es2020", "dom"],
     "plugins": [
       {
         "name": "next"
