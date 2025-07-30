@@ -11,7 +11,7 @@ import { HttpExceptionFilter } from '@gitroom/nestjs-libraries/services/exceptio
 import { ConfigurationChecker } from '@gitroom/helpers/configuration/configuration.checker';
 import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
 
-initializeSentry();
+initializeSentry('backend');
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {

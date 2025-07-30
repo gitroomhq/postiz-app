@@ -5,7 +5,7 @@ import { MicroserviceOptions } from '@nestjs/microservices';
 import { BullMqServer } from '@gitroom/nestjs-libraries/bull-mq-transport-new/strategy';
 import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
 
-initializeSentry();
+initializeSentry('workers');
 
 async function bootstrap() {
   process.env.IS_WORKER = 'true';
