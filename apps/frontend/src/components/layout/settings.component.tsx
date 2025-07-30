@@ -1,13 +1,13 @@
 'use client';
 
 import { useModals } from '@mantine/modals';
-import React, { FC, Ref, useCallback, useMemo, useState } from 'react';
+import React, { FC, Ref, useCallback, useMemo, useState, useEffect } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useSWRConfig } from 'swr';
 import clsx from 'clsx';
 import { TeamsComponent } from '@gitroom/frontend/components/settings/teams.component';
-import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { useUser, useUserMutate } from '@gitroom/frontend/components/layout/user.context';
 import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -25,6 +25,7 @@ export const SettingsPopup: FC<{
   const toast = useToaster();
   const swr = useSWRConfig();
   const user = useUser();
+  const userMutate = useUserMutate();
 
   const modal = useModals();
   const close = useCallback(() => {
@@ -34,6 +35,12 @@ export const SettingsPopup: FC<{
   const showLogout = !url.get('onboarding') || user?.tier?.current === 'FREE';
 
   const [name, setName] = useState(user?.name || '');
+
+  useEffect(() => {
+    if (user?.name) {
+      setName(user.name);
+    }
+  }, [user?.name]);
   const submit = async () => {
 
     if (!name || name.length < 3) {
@@ -53,6 +60,12 @@ export const SettingsPopup: FC<{
       });
 
       toast.show(`${t('profile_updated', 'Profile updated')}`);
+      if (userMutate) {
+        userMutate();
+      }
+      swr.mutate('/user/self-with-personal');
+      swr.mutate('/user/self');
+      swr.mutate('/user/personal');
       swr.mutate('/marketplace/account');
       close();
     } catch (e) {

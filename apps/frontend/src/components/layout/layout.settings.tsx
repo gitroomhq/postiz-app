@@ -58,7 +58,25 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
   const load = useCallback(async (path: string) => {
     return await (await fetch(path)).json();
   }, []);
-  const { data: user, mutate } = useSWR('/user/self', load, {
+  
+  const loadUserWithPersonal = useCallback(async () => {
+    const [userResponse, personalResponse] = await Promise.all([
+      fetch('/user/self'),
+      fetch('/user/personal')
+    ]);
+    
+    const user = await userResponse.json();
+    const personal = await personalResponse.json();
+    
+    return {
+      ...user,
+      name: personal?.name || user?.name || '',
+      bio: personal?.bio || user?.bio || '',
+      picture: personal?.picture || user?.picture || null,
+    };
+  }, []);
+
+  const { data: user, mutate } = useSWR('/user/self-with-personal', loadUserWithPersonal, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
     revalidateIfStale: false,
@@ -67,7 +85,7 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
   });
   if (!user) return null;
   return (
-    <ContextWrapper user={user}>
+    <ContextWrapper user={user} userMutate={mutate}>
       <CopilotKit
         credentials="include"
         runtimeUrl={backendUrl + '/copilot/chat'}
