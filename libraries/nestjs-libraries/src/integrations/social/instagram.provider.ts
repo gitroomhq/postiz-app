@@ -615,6 +615,48 @@ export class InstagramProvider
     return arr;
   }
 
+  private setTitle(name: string) {
+    switch (name) {
+      case "likes": {
+        return 'Likes';
+      }
+
+      case "followers": {
+        return 'Followers';
+      }
+
+      case "reach": {
+        return 'Reach';
+      }
+
+      case "follower_count": {
+        return 'Follower Count';
+      }
+
+      case "views": {
+        return 'Views';
+      }
+
+      case "comments": {
+        return 'Comments';
+      }
+
+      case "shares": {
+        return 'Shares';
+      }
+
+      case "saves": {
+        return 'Saves';
+      }
+
+      case "replies": {
+        return 'Replies';
+      }
+    }
+
+    return "";
+  }
+
   async analytics(
     id: string,
     accessToken: string,
@@ -639,7 +681,7 @@ export class InstagramProvider
 
     analytics.push(
       ...(data?.map((d: any) => ({
-        label: d.title,
+        label: this.setTitle(d.name),
         percentageChange: 5,
         data: d.values.map((v: any) => ({
           total: v.value,
@@ -650,7 +692,7 @@ export class InstagramProvider
 
     analytics.push(
       ...data2.map((d: any) => ({
-        label: d.title,
+        label: this.setTitle(d.name),
         percentageChange: 5,
         data: [
           {
