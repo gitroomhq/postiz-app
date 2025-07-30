@@ -20,6 +20,8 @@ export const UserContext = createContext<
       isTrailing: boolean;
     })
 >(undefined);
+
+export const UserMutateContext = createContext<(() => void) | undefined>(undefined);
 export const ContextWrapper: FC<{
   user: User & {
     orgId: string;
@@ -29,13 +31,21 @@ export const ContextWrapper: FC<{
     totalChannels: number;
   };
   children: ReactNode;
-}> = ({ user, children }) => {
+  userMutate?: () => void;
+}> = ({ user, children, userMutate }) => {
   const values = user
     ? {
         ...user,
         tier: pricing[user.tier],
       }
     : ({} as any);
-  return <UserContext.Provider value={values}>{children}</UserContext.Provider>;
+  return (
+    <UserContext.Provider value={values}>
+      <UserMutateContext.Provider value={userMutate}>
+        {children}
+      </UserMutateContext.Provider>
+    </UserContext.Provider>
+  );
 };
 export const useUser = () => useContext(UserContext);
+export const useUserMutate = () => useContext(UserMutateContext);
