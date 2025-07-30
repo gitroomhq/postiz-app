@@ -116,7 +116,7 @@ export const SettingsPopup: FC<{
     if (user?.tier?.public_api && isGeneral && showLogout) {
       arr.push({ tab: 'api', label: t('public_api', 'Public API') });
     }
-    arr.push({ tab: 'email', label: t('email_notifications', 'Email Notifications') });
+    arr.push({ tab: 'notifications', label: t('email_notifications', 'Notifications') });
 
     return arr;
   }, [user, isGeneral, showLogout, t]);
@@ -209,7 +209,7 @@ export const SettingsPopup: FC<{
                   </div>
                 )}
 
-              {tab === 'email' && (
+              {tab === 'notifications' && (
                 <div>
                   <EmailNotificationsComponent />
                 </div>
