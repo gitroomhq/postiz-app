@@ -1,3 +1,6 @@
+import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
+initializeSentry('backend');
+
 import { loadSwagger } from '@gitroom/helpers/swagger/load.swagger';
 
 process.env.TZ = 'UTC';
@@ -9,9 +12,6 @@ import { AppModule } from './app.module';
 import { SubscriptionExceptionFilter } from '@gitroom/backend/services/auth/permissions/subscription.exception';
 import { HttpExceptionFilter } from '@gitroom/nestjs-libraries/services/exception.filter';
 import { ConfigurationChecker } from '@gitroom/helpers/configuration/configuration.checker';
-import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
-
-initializeSentry('backend');
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
