@@ -1,5 +1,5 @@
-// import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
-// initializeSentry('workers');
+import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
+initializeSentry('workers');
 
 import { NestFactory } from '@nestjs/core';
 
