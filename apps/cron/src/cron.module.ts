@@ -1,13 +1,20 @@
 import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
-import { CheckStars } from '@gitroom/cron/tasks/check.stars';
 import { DatabaseModule } from '@gitroom/nestjs-libraries/database/prisma/database.module';
-import { SyncTrending } from '@gitroom/cron/tasks/sync.trending';
 import { BullMqModule } from '@gitroom/nestjs-libraries/bull-mq-transport-new/bull.mq.module';
+import { SentryModule } from '@sentry/nestjs/setup';
+import { FILTER } from '@gitroom/nestjs-libraries/sentry/sentry.exception';
 
 @Module({
-  imports: [DatabaseModule, ScheduleModule.forRoot(), BullMqModule],
+  imports: [
+    SentryModule.forRoot(),
+    DatabaseModule,
+    ScheduleModule.forRoot(),
+    BullMqModule,
+  ],
   controllers: [],
-  providers: [...(!process.env.IS_GENERAL ? [CheckStars, SyncTrending] : [])],
+  providers: [
+    FILTER
+  ],
 })
 export class CronModule {}

@@ -1,4 +1,6 @@
 // @ts-check
+import { withSentryConfig } from '@sentry/nextjs';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
@@ -40,4 +42,10 @@ const nextConfig = {
     ];
   },
 };
-export default nextConfig;
+export default !!process.env.SENTRY_ORG
+  ? withSentryConfig(nextConfig, {
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+    })
+  : nextConfig;

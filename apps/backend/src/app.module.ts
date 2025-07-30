@@ -11,10 +11,13 @@ import { AgentModule } from '@gitroom/nestjs-libraries/agent/agent.module';
 import { McpModule } from '@gitroom/backend/mcp/mcp.module';
 import { ThirdPartyModule } from '@gitroom/nestjs-libraries/3rdparties/thirdparty.module';
 import { VideoModule } from '@gitroom/nestjs-libraries/videos/video.module';
+import { SentryModule } from "@sentry/nestjs/setup";
+import { FILTER } from '@gitroom/nestjs-libraries/sentry/sentry.exception';
 
 @Global()
 @Module({
   imports: [
+    SentryModule.forRoot(),
     BullMqModule,
     DatabaseModule,
     ApiModule,
@@ -32,6 +35,7 @@ import { VideoModule } from '@gitroom/nestjs-libraries/videos/video.module';
   ],
   controllers: [],
   providers: [
+    FILTER,
     {
       provide: APP_GUARD,
       useClass: ThrottlerBehindProxyGuard,
@@ -39,7 +43,7 @@ import { VideoModule } from '@gitroom/nestjs-libraries/videos/video.module';
     {
       provide: APP_GUARD,
       useClass: PoliciesGuard,
-    },
+    }
   ],
   exports: [
     BullMqModule,
