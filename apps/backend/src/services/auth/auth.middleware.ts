@@ -6,7 +6,17 @@ import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/o
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
 import { HttpForbiddenException } from '@gitroom/nestjs-libraries/services/exception.filter';
-import { setSentryUserContext } from '@gitroom/nestjs-libraries/sentry/sentry.user.context';
+import * as Sentry from '@sentry/nestjs';
+
+/**
+ * Sets Sentry user context tags if DSN is configured
+ */
+const setSentryUserTags = (userId: string, orgId: string) => {
+  if (!process.env.NEXT_PUBLIC_SENTRY_DSN) return;
+  
+  Sentry.getCurrentScope().setTag('user.id', userId);
+  Sentry.getCurrentScope().setTag('org.id', orgId);
+};
 
 export const removeAuth = (res: Response) => {
   res.cookie('auth', '', {
@@ -32,81 +42,84 @@ export class AuthMiddleware implements NestMiddleware {
     private _userService: UsersService
   ) {}
   async use(req: Request, res: Response, next: NextFunction) {
-    const auth = req.headers.auth || req.cookies.auth;
-    if (!auth) {
-      throw new HttpForbiddenException();
-    }
-    try {
-      let user = AuthService.verifyJWT(auth) as User | null;
-      const orgHeader = req.cookies.showorg || req.headers.showorg;
-
-      if (!user) {
+    // Wrap the entire request handling in an isolation scope to prevent context leaking
+    await Sentry.withIsolationScope(async () => {
+      const auth = req.headers.auth || req.cookies.auth;
+      if (!auth) {
         throw new HttpForbiddenException();
       }
+      try {
+        let user = AuthService.verifyJWT(auth) as User | null;
+        const orgHeader = req.cookies.showorg || req.headers.showorg;
 
-      if (!user.activated) {
-        throw new HttpForbiddenException();
-      }
-
-      const impersonate = req.cookies.impersonate || req.headers.impersonate;
-      if (user?.isSuperAdmin && impersonate) {
-        const loadImpersonate = await this._organizationService.getUserOrg(
-          impersonate
-        );
-
-        if (loadImpersonate) {
-          user = loadImpersonate.user;
-          user.isSuperAdmin = true;
-          delete user.password;
-
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-expect-error
-          req.user = user;
-
-          // Set Sentry user context for impersonated user
-          setSentryUserContext(user, loadImpersonate.organization.id);
-
-          // @ts-ignore
-          loadImpersonate.organization.users =
-            loadImpersonate.organization.users.filter(
-              (f) => f.userId === user.id
-            );
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-expect-error
-          req.org = loadImpersonate.organization;
-          next();
-          return;
+        if (!user) {
+          throw new HttpForbiddenException();
         }
-      }
 
-      delete user.password;
-      const organization = (
-        await this._organizationService.getOrgsByUserId(user.id)
-      ).filter((f) => !f.users[0].disabled);
-      const setOrg =
-        organization.find((org) => org.id === orgHeader) || organization[0];
+        if (!user.activated) {
+          throw new HttpForbiddenException();
+        }
 
-      if (!organization) {
+        const impersonate = req.cookies.impersonate || req.headers.impersonate;
+        if (user?.isSuperAdmin && impersonate) {
+          const loadImpersonate = await this._organizationService.getUserOrg(
+            impersonate
+          );
+
+          if (loadImpersonate) {
+            user = loadImpersonate.user;
+            user.isSuperAdmin = true;
+            delete user.password;
+
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-expect-error
+            req.user = user;
+
+            // Set Sentry user context for impersonated user with isolation
+            setSentryUserTags(user.id, loadImpersonate.organization.id);
+
+            // @ts-ignore
+            loadImpersonate.organization.users =
+              loadImpersonate.organization.users.filter(
+                (f) => f.userId === user.id
+              );
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-expect-error
+            req.org = loadImpersonate.organization;
+            next();
+            return;
+          }
+        }
+
+        delete user.password;
+        const organization = (
+          await this._organizationService.getOrgsByUserId(user.id)
+        ).filter((f) => !f.users[0].disabled);
+        const setOrg =
+          organization.find((org) => org.id === orgHeader) || organization[0];
+
+        if (!organization) {
+          throw new HttpForbiddenException();
+        }
+
+        if (!setOrg.apiKey) {
+          await this._organizationService.updateApiKey(setOrg.id);
+        }
+
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
+        req.user = user;
+
+        // Set Sentry user context with isolation
+        setSentryUserTags(user.id, setOrg.id);
+
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
+        req.org = setOrg;
+      } catch (err) {
         throw new HttpForbiddenException();
       }
-
-      if (!setOrg.apiKey) {
-        await this._organizationService.updateApiKey(setOrg.id);
-      }
-
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-expect-error
-      req.user = user;
-
-      // Set Sentry user context
-      setSentryUserContext(user, setOrg.id);
-
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-expect-error
-      req.org = setOrg;
-    } catch (err) {
-      throw new HttpForbiddenException();
-    }
-    next();
+      next();
+    });
   }
 }
