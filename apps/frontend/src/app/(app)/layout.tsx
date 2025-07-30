@@ -1,3 +1,5 @@
+import { SentryComponent } from '@gitroom/frontend/components/layout/sentry.component';
+
 export const dynamic = 'force-dynamic';
 import '../global.scss';
 import 'react-tooltip/dist/react-tooltip.css';
@@ -33,7 +35,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
-      <body className={clsx(jakartaSans.className, 'dark text-primary !bg-primary')}>
+      <body
+        className={clsx(jakartaSans.className, 'dark text-primary !bg-primary')}
+      >
         <HtmlComponent />
         <VariableContextComponent
           storageProvider={
@@ -56,6 +60,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           isSecured={!process.env.NOT_SECURED}
           disableImageCompression={!!process.env.DISABLE_IMAGE_COMPRESSION}
           disableXAnalytics={!!process.env.DISABLE_X_ANALYTICS}
+          sentryDsn={process.env.NEXT_PUBLIC_SENTRY_DSN!}
           language={allHeaders.get(headerName)}
           transloadit={
             process.env.TRANSLOADIT_AUTH && process.env.TRANSLOADIT_TEMPLATE
@@ -66,21 +71,23 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
               : []
           }
         >
-          <ToltScript />
-          <FacebookComponent />
-          <Plausible
-            domain={!!process.env.IS_GENERAL ? 'postiz.com' : 'gitroom.com'}
-          >
-            <PHProvider
-              phkey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
-              host={process.env.NEXT_PUBLIC_POSTHOG_HOST}
+          <SentryComponent>
+            <ToltScript />
+            <FacebookComponent />
+            <Plausible
+              domain={!!process.env.IS_GENERAL ? 'postiz.com' : 'gitroom.com'}
             >
-              <LayoutContext>
-                <UtmSaver />
-                {children}
-              </LayoutContext>
-            </PHProvider>
-          </Plausible>
+              <PHProvider
+                phkey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
+                host={process.env.NEXT_PUBLIC_POSTHOG_HOST}
+              >
+                <LayoutContext>
+                  <UtmSaver />
+                  {children}
+                </LayoutContext>
+              </PHProvider>
+            </Plausible>
+          </SentryComponent>
         </VariableContextComponent>
       </body>
     </html>
