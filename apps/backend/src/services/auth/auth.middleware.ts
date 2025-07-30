@@ -6,6 +6,7 @@ import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/o
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
 import { HttpForbiddenException } from '@gitroom/nestjs-libraries/services/exception.filter';
+import { setSentryUserContext } from '@gitroom/nestjs-libraries/sentry/sentry.user.context';
 
 export const removeAuth = (res: Response) => {
   res.cookie('auth', '', {
@@ -62,6 +63,9 @@ export class AuthMiddleware implements NestMiddleware {
           // @ts-expect-error
           req.user = user;
 
+          // Set Sentry user context for impersonated user
+          setSentryUserContext(user, loadImpersonate.organization.id);
+
           // @ts-ignore
           loadImpersonate.organization.users =
             loadImpersonate.organization.users.filter(
@@ -93,6 +97,9 @@ export class AuthMiddleware implements NestMiddleware {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-expect-error
       req.user = user;
+
+      // Set Sentry user context
+      setSentryUserContext(user, setOrg.id);
 
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-expect-error

@@ -1,7 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { DatabaseModule } from '@gitroom/nestjs-libraries/database/prisma/database.module';
 import { ApiModule } from '@gitroom/backend/api/api.module';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { PoliciesGuard } from '@gitroom/backend/services/auth/permissions/permissions.guard';
 import { BullMqModule } from '@gitroom/nestjs-libraries/bull-mq-transport-new/bull.mq.module';
 import { PublicApiModule } from '@gitroom/backend/public-api/public.api.module';
@@ -13,6 +13,7 @@ import { ThirdPartyModule } from '@gitroom/nestjs-libraries/3rdparties/thirdpart
 import { VideoModule } from '@gitroom/nestjs-libraries/videos/video.module';
 import { SentryModule } from "@sentry/nestjs/setup";
 import { FILTER } from '@gitroom/nestjs-libraries/sentry/sentry.exception';
+import { SentryUserInterceptor } from '@gitroom/nestjs-libraries/sentry/sentry.user.interceptor';
 
 @Global()
 @Module({
@@ -43,6 +44,10 @@ import { FILTER } from '@gitroom/nestjs-libraries/sentry/sentry.exception';
     {
       provide: APP_GUARD,
       useClass: PoliciesGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: SentryUserInterceptor,
     }
   ],
   exports: [
