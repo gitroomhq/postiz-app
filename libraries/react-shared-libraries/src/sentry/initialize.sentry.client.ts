@@ -10,9 +10,11 @@ export const initializeSentryClient = (environment: string, dsn: string) =>
         maskAllText: true,
         maskAllInputs: true,
       }),
+      Sentry.feedbackIntegration({
+        // Disable the injection of the default widget
+        autoInject: false,
+      }),
     ],
-    replaysSessionSampleRate:
-      environment === 'development' ? 1.0 : 0.1,
-    replaysOnErrorSampleRate:
-      environment === 'development' ? 1.0 : 0.1,
+    replaysSessionSampleRate: environment === 'development' ? 1.0 : 0.1,
+    replaysOnErrorSampleRate: environment === 'development' ? 1.0 : 0.1,
   });

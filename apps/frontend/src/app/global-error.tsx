@@ -10,11 +10,23 @@ export default function GlobalError({
   error: Error & { digest?: string };
 }) {
   const { sentryDsn } = useVariables();
+
   useEffect(() => {
     if (!sentryDsn) {
       return;
     }
-    Sentry.captureException(error);
+    const eventId = Sentry.captureException(error);
+    Sentry.showReportDialog({
+      eventId,
+      title: 'Something broke!',
+      subtitle: 'Please help us fix the issue by providing some details.',
+      labelComments: 'What happened?',
+      labelName: 'Your name',
+      labelEmail: 'Your email',
+      labelSubmit: 'Send Report',
+      lang: 'en',
+    });
+
   }, [error]);
   return (
     <html>
