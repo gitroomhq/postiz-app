@@ -337,6 +337,7 @@ model Integration {
 
   @@unique([organizationId, internalId])
   @@index([rootInternalId])
+  @@index([organizationId])
   @@index([updatedAt])
   @@index([deletedAt])
   @@index([customerId])
