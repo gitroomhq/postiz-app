@@ -60,14 +60,8 @@ export const setSentryUserContext = (user: UserInfo | null) => {
  * Only executes if Sentry DSN is configured.
  */
 export const clearSentryUserContext = () => {
-  // Only clear context if Sentry is configured (check at runtime for frontend)
-  if (typeof window !== 'undefined' && !window.location.origin.includes('localhost')) {
-    // For production, check if Sentry DSN exists in environment or is initialized
-    if (!process.env.NEXT_PUBLIC_SENTRY_DSN) {
-      return;
-    }
-  } else if (typeof process !== 'undefined' && !process.env.NEXT_PUBLIC_SENTRY_DSN) {
-    // For server-side or development
+  // Only clear context if Sentry is configured
+  if (!process.env.NEXT_PUBLIC_SENTRY_DSN) {
     return;
   }
 
