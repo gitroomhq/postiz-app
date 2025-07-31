@@ -63,21 +63,18 @@ export abstract class SocialAbstract {
     }
 
     if (totalRetries > 2) {
-      console.log('bad body retries');
       throw new BadBody(identifier, '{}', options.body || '{}');
     }
 
     let json = '{}';
     try {
       json = await request.text();
-      console.log(json);
     } catch (err) {
       json = '{}';
     }
 
     if (request.status === 500 || json.includes('rate_limit_exceeded') || json.includes('Rate limit')) {
       await timer(5000);
-      console.log('rate limit trying again');
       return this.fetch(url, options, identifier, totalRetries + 1);
     }
 
@@ -87,7 +84,6 @@ export abstract class SocialAbstract {
       request.status === 401 &&
       (handleError?.type === 'refresh-token' || !handleError)
     ) {
-      console.log('refresh token', json);
       throw new RefreshToken(
         identifier,
         json,
