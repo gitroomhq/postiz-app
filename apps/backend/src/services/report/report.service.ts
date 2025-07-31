@@ -1756,6 +1756,16 @@ export class ReportService {
 
 
   }
+  //hospital
 
+  async getHospitalTable(customerId: string, month: number, year: number): Promise<any> {
+    console.log('getHospitalTable called for hospital=true'); // Debug log
+    
+    // Return empty table structure for 2 empty pages
+    return {
+      Data: [],
+      Rows: []
+    };
+  }
 
 }

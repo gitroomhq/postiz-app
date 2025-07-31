@@ -34,6 +34,7 @@ import { ReportController } from './routes/report.controller';
 import { ReportService } from '../services/report/report.service';
 import { ReportDownloadController } from './routes/report-download.controller';
 import { MonthlyReportService } from '../services/report/monthly-report.service'
+import { UploadController } from './routes/upload.controller';
 
 const authenticatedController = [
   UsersController,
@@ -62,6 +63,7 @@ const authenticatedController = [
     StripeController,
     AuthController,
     PublicController,
+    UploadController,
     ...authenticatedController,
   ],
   providers: [

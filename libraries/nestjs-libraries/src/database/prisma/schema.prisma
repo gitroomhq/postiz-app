@@ -249,26 +249,28 @@ model Subscription {
 }
 
 model Customer {
-  id               String             @id @default(uuid())
-  name             String
-  email            String?
-  phone            String?
-  orgId            String
-  organization     Organization       @relation(fields: [orgId], references: [id])
-  integrations     Integration[]
-  gbpInsights      GbpInsight[]
-  websitePerformances  WebsitePerformance[]
-  websiteLocations  WebsiteLocation[]
+  id                        String                     @id @default(uuid())
+  name                      String
+  email                     String?
+  phone                     String?
+  brandName                 String? // <-- NEW
+  brandLogo                 String? // <-- NEW (URL / file key)
+  orgId                     String
+  organization              Organization               @relation(fields: [orgId], references: [id])
+  integrations              Integration[]
+  gbpInsights               GbpInsight[]
+  websitePerformances       WebsitePerformance[]
+  websiteLocations          WebsiteLocation[]
   pinterestPostPerformances PinterestPostPerformance[]
-  threadsInsights ThreadsInsight[]
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  deletedAt        DateTime?
-  InstagramInsight InstagramInsight[]
-  LinkedInInsight  LinkedInInsight[]
-  YouTubeInsight   YouTubeInsight[]
-  FacebookInsight  FacebookInsight[]
-  XInsight         XInsight[]
+  threadsInsights           ThreadsInsight[]
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
+  deletedAt                 DateTime?
+  InstagramInsight          InstagramInsight[]
+  LinkedInInsight           LinkedInInsight[]
+  YouTubeInsight            YouTubeInsight[]
+  FacebookInsight           FacebookInsight[]
+  XInsight                  XInsight[]
 
   @@unique([orgId, name, deletedAt])
 }
@@ -558,7 +560,7 @@ model ThreadsInsight {
   id             String    @id @default(uuid()) @db.Uuid
   businessId     String
   organizationId String
-  customerId     String?   
+  customerId     String?
   customer       Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
   month          String
   followers      Int
@@ -665,7 +667,7 @@ model GbpInsight {
 }
 
 model WebsitePerformance {
-  id             String   @id @default(uuid()) @db.Uuid
+  id             String    @id @default(uuid()) @db.Uuid
   businessId     String
   organizationId String
   customerId     String?
@@ -674,15 +676,14 @@ model WebsitePerformance {
   pageViews      Int
   visits         Int
   visitors       Int
-  createdAt      DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt      DateTime @updatedAt @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @db.Timestamptz(6)
 
   @@index([customerId])
 }
 
-
 model WebsiteLocation {
-  id             String   @id @default(uuid()) @db.Uuid
+  id             String    @id @default(uuid()) @db.Uuid
   businessId     String
   organizationId String
   customerId     String?
@@ -691,9 +692,9 @@ model WebsiteLocation {
   country        String
   visitors       Int
   percent        Float
-  rank           Int      
-  createdAt      DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt      DateTime @updatedAt @db.Timestamptz(6)
+  rank           Int
+  createdAt      DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @db.Timestamptz(6)
 
   @@index([customerId])
 }
@@ -702,11 +703,11 @@ model PinterestPostPerformance {
   id             String    @id @default(uuid()) @db.Uuid
   businessId     String
   organizationId String
-  customerId     String?   
+  customerId     String?
   customer       Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
   month          String
-  followers      Int       
-  following      Int       
+  followers      Int
+  following      Int
   impressions    Int
   totalContent   Int
   createdAt      DateTime  @default(now()) @db.Timestamptz(6)
@@ -716,17 +717,17 @@ model PinterestPostPerformance {
 }
 
 model SocialToken {
-  id              String   @id @default(uuid()) @db.Uuid
-  identifier      String  
-  name            String?  
-  businessId      String
-  organizationId  String?
-  accessToken     String?
-  refreshToken    String?
-  tokenExpiry     DateTime? @db.Timestamptz(6)
-  scope           String?
-  createdAt       DateTime  @default(now()) @db.Timestamptz(6)
-  updatedAt       DateTime  @updatedAt @db.Timestamptz(6)
+  id             String    @id @default(uuid()) @db.Uuid
+  identifier     String
+  name           String?
+  businessId     String
+  organizationId String?
+  accessToken    String?
+  refreshToken   String?
+  tokenExpiry    DateTime? @db.Timestamptz(6)
+  scope          String?
+  createdAt      DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @db.Timestamptz(6)
 }
 
 enum SocialMediaPlatform {

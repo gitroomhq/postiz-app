@@ -1,5 +1,5 @@
 "use client";
-import React, { useCallback, useMemo, useEffect } from 'react';
+import React, { useCallback, useMemo, useEffect, useState } from 'react';
 import { Button } from "@gitroom/react/form/button";
 import { useModals } from '@mantine/modals';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
@@ -31,16 +31,32 @@ export const AddUpdateCustomerForm = ({
     return classValidatorResolver(CustomerDto);
   }, []);
 
+  const [uploading, setUploading] = useState(false);
+
+  const uploadLogo = async (file: File) => {
+    if (!file) return;
+    setUploading(true);
+    const form = new FormData();
+    form.append('file', file);
+
+    const res = await fetch('/upload', { method: 'POST', body: form });
+    const { url } = await res.json();
+    setValue('brandLogo', url);   // react-hook-form
+    setUploading(false);
+  };
   // Initialize the form hook
   const form = useForm({
     values: {
       name: currentCustomer?.name || '',
       email: currentCustomer?.email || '',
       phone: currentCustomer?.phone || '',
+      brandName: currentCustomer?.brandName || '',   // NEW
+      brandLogo: currentCustomer?.brandLogo || '',   // NEW
     },
     resolver: undefined, // Disable resolver temporarily
     mode: 'onChange',
   });
+  const { setValue, watch } = form;   // 👈 add this line
 
   const closeModal = useCallback(() => {
     modals.closeAll();
@@ -114,6 +130,20 @@ export const AddUpdateCustomerForm = ({
           <Input key="name" label="Name" placeholder="Enter Name" name="name" />
           <Input key="email" label="Email" placeholder="Enter Email" name="email" />
           <Input key="phone" label="Phone" placeholder="Enter Phone" name="phone" />
+          <Input label="Brand Name" name="brandName" placeholder="e.g. Acme Inc." />
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => uploadLogo(e.target.files![0])}
+            className="file-input"
+          />
+          {uploading && <p className="text-sm text-gray-500">Uploading…</p>}
+          {form.watch('brandLogo') && (
+            <img
+              src={form.watch('brandLogo')}
+              alt="preview"
+              className="w-20 h-20 rounded-md object-cover"
+            />)}
           <Button type="submit" className="mt-[18px]">
             Save
           </Button>
