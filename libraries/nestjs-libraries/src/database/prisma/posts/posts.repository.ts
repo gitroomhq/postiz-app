@@ -394,7 +394,7 @@ export class PostsRepository {
             where: {
               orgId: orgId,
               name: {
-                in: tags.map((tag) => tag.label),
+                in: tags.map((tag) => tag.label).filter(f => f),
               },
             },
           });
