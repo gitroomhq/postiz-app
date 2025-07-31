@@ -66,8 +66,8 @@ export const clearSentryUserContext = () => {
   }
 
   Sentry.setUser(null);
-  Sentry.setTag('user.org_id', undefined);
-  Sentry.setTag('user.role', undefined);
-  Sentry.setTag('user.tier', undefined);
-  Sentry.setTag('user.admin', undefined);
+  Sentry.setTag('user.org_id', '');
+  Sentry.setTag('user.role', '');
+  Sentry.setTag('user.tier', '');
+  Sentry.setTag('user.admin', '');
 };
