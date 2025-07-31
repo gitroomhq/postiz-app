@@ -29,7 +29,6 @@ export class McpService {
       })
     );
 
-    console.log('MCP transport started');
     await server.connect(transport);
 
     return observer;
