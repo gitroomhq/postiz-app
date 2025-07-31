@@ -1758,16 +1758,13 @@ export class ReportService {
   }
   //hospital
 
-  private getHospitalTable(): any {
-    console.log('getHospitalTable called'); // Debug log
+  async getHospitalTable(customerId: string, month: number, year: number): Promise<any> {
+    console.log('getHospitalTable called for hospital=true'); // Debug log
+    
+    // Return empty table structure for 2 empty pages
     return {
-      Data: ['Month', 'Patients', 'Change %'],
-      Rows: [
-        ['January', '1200', '+5%'],
-        ['February', '1350', '+12.5%'],
-        ['March', '1420', '+5.2%']
-      ],
-      Growth: 'Patient count increasing steadily'
+      Data: [],
+      Rows: []
     };
   }
 

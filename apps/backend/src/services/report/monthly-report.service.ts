@@ -1028,16 +1028,13 @@ export class MonthlyReportService {
 	}
 	//hospital
 
-	private getHospitalTable(): any {
-		console.log('getHospitalTable called'); // Debug log
+	async getHospitalTable(customerId: string, month: number, year: number): Promise<any> {
+		console.log('getHospitalTable called for hospital=true - creating 2 empty pages'); // Debug log
+		
+		// Return empty table structure for 2 empty pages
 		return {
-			Data: ['Month', 'Patients', 'Change %'],
-			Rows: [
-				['January', '1200', '+5%'],
-				['February', '1350', '+12.5%'],
-				['March', '1420', '+5.2%']
-			],
-			Growth: 'Patient count increasing steadily'
+			Data: [],
+			Rows: []
 		};
 	}
 
@@ -1052,11 +1049,18 @@ export class MonthlyReportService {
 		return isNaN(parsed) ? 0 : parsed;
 	}
 
-	async getCustomerName(customerId: string): Promise<string> {
+	async getCustomerInfo(customerId: string): Promise<{ name: string; brandLogo: string | null }> {
 		const customer = await this._prisma.model.customer.findUnique({
 			where: { id: customerId },
-			select: { name: true },
+			select: { 
+			name: true ,
+			brandLogo: true
+		},
 		});
-		return customer?.name || `Customer (${customerId.slice(0, 8)}...)`;
+		return {
+			name: customer?.name || `Customer (${customerId.slice(0, 8)}...)`,
+        		brandLogo: customer?.brandLogo || null
+
+		};
 	}
 }
