@@ -49,7 +49,7 @@ export const clearSentryUserContext = () => {
   }
 
   Sentry.setUser(null);
-  Sentry.setTag('user.activated', undefined);
-  Sentry.setTag('user.provider', undefined);
-  Sentry.setTag('user.super_admin', undefined);
+  Sentry.setTag('user.activated', null);
+  Sentry.setTag('user.provider', null);
+  Sentry.setTag('user.super_admin', null);
 };
