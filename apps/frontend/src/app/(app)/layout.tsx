@@ -38,7 +38,6 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       <body
         className={clsx(jakartaSans.className, 'dark text-primary !bg-primary')}
       >
-        <HtmlComponent />
         <VariableContextComponent
           storageProvider={
             process.env.STORAGE_PROVIDER! as 'local' | 'cloudflare'
@@ -73,6 +72,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           }
         >
           <SentryComponent>
+            <HtmlComponent />
             <ToltScript />
             <FacebookComponent />
             <Plausible
