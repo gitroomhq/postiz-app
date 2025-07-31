@@ -413,6 +413,9 @@ export const CalendarColumn: FC<{
     accept: 'post',
     drop: async (item: any) => {
       if (isBeforeNow) return;
+      if (!item.interval) {
+        changeDate(item.id, getDate);
+      }
       const { status } = await fetch(`/posts/${item.id}/date`, {
         method: 'PUT',
         body: JSON.stringify({
@@ -420,20 +423,12 @@ export const CalendarColumn: FC<{
         }),
       });
       if (status !== 500) {
-        if(item.interval) {
+        if (item.interval) {
           reloadCalendarView();
-          return ;
+          return;
         }
-        changeDate(item.id, getDate);
         return;
       }
-      toaster.show(
-        t(
-          'can_t_change_date_remove_post_from_publication',
-          "Can't change date, remove post from publication"
-        ),
-        'warning'
-      );
     },
     collect: (monitor) => ({
       canDrop: isBeforeNow ? false : !!monitor.canDrop() && !!monitor.isOver(),
@@ -916,7 +911,8 @@ const CalendarItem: FC<{
           </div>
           <div className="w-full relative">
             <div className="absolute top-0 start-0 w-full text-ellipsis break-words line-clamp-1 text-left">
-              {stripHtmlValidation('none', post.content, false, true) || 'no content'}
+              {stripHtmlValidation('none', post.content, false, true) ||
+                'no content'}
             </div>
           </div>
         </div>
