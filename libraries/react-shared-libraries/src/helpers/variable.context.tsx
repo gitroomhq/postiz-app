@@ -11,6 +11,7 @@ interface VariableContextInterface {
   plontoKey: string;
   storageProvider: 'local' | 'cloudflare';
   backendUrl: string;
+  environment: string;
   discordUrl: string;
   uploadDirectory: string;
   facebookPixel: string;
