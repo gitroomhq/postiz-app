@@ -19,7 +19,7 @@ export const UserContext = createContext<
       impersonate: boolean;
       allowTrial: boolean;
       isTrailing: boolean;
-      admin: boolean; // Add admin field from backend response
+      admin?: boolean; // Add admin field from backend response
     })
 >(undefined);
 export const ContextWrapper: FC<{
