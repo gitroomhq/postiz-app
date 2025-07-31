@@ -66,7 +66,7 @@ The Sentry initialization needs to be updated to enable the logs feature.
 import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
-  dsn: "https://examplePublicKey@o0.ingest.sentry.io/0",
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
   enableLogs: true,
 });
@@ -76,7 +76,7 @@ Sentry.init({
 
 ```javascript
 Sentry.init({
-  dsn: "https://examplePublicKey@o0.ingest.sentry.io/0",
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
   integrations: [
     // send console.log, console.error, and console.warn calls as logs to Sentry
     Sentry.consoleLoggingIntegration({ levels: ["log", "error", "warn"] }),
