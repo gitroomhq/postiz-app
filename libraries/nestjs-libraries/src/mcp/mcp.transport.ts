@@ -22,7 +22,6 @@ export class McpTransport implements Transport {
   }
 
   async close() {
-    console.log('MCP transport closed');
     McpService.event.removeAllListeners(`organization-${this._organization}`);
   }
 
