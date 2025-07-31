@@ -20,6 +20,7 @@ export const initializeSentry = (appName: string, allowLogs = false) => {
           },
         },
       },
+      environment: process.env.NODE_ENV || 'development',
       dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
       integrations: [
         // Add our Profiling integration

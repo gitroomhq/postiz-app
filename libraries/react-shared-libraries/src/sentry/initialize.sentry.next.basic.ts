@@ -20,7 +20,7 @@ export const initializeSentryBasic = (environment: string, dsn: string, extensio
           },
         },
       },
-      environment,
+      environment: environment || 'development',
       dsn,
       sendDefaultPii: true,
       ...extension,
