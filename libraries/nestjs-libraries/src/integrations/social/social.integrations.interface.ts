@@ -132,4 +132,7 @@ export interface SocialProvider
   externalUrl?: (
     url: string
   ) => Promise<{ client_id: string; client_secret: string }>;
+  mention?: (
+    query: string
+  ) => Promise<{ id: string; name: string; picture: string }[]>;
 }
