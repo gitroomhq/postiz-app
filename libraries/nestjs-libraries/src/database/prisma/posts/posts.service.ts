@@ -378,7 +378,9 @@ export class PostsService {
       return post;
     }
 
-    const ids = (extract || []).map((e) => e.replace('(post:', '').replace(')', ''));
+    const ids = (extract || []).map((e) =>
+      e.replace('(post:', '').replace(')', '')
+    );
     const urls = await this._postRepository.getPostUrls(orgId, ids);
     const newPlainText = ids.reduce((acc, value) => {
       const findUrl = urls?.find?.((u) => u.id === value)?.releaseURL || '';
@@ -467,7 +469,13 @@ export class PostsService {
         await Promise.all(
           (newPosts || []).map(async (p) => ({
             id: p.id,
-            message: stripHtmlValidation(getIntegration.editor, p.content, true),
+            message: stripHtmlValidation(
+              getIntegration.editor,
+              p.content,
+              true,
+              false,
+              getIntegration.mentionFormat
+            ),
             settings: JSON.parse(p.settings || '{}'),
             media: await this.updateMedia(
               p.id,
@@ -535,7 +543,12 @@ export class PostsService {
         throw err;
       }
 
-      throw new BadBody(integration.providerIdentifier, JSON.stringify(err), {} as any, '');
+      throw new BadBody(
+        integration.providerIdentifier,
+        JSON.stringify(err),
+        {} as any,
+        ''
+      );
     }
   }
 

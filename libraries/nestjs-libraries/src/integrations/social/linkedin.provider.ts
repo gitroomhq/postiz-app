@@ -715,4 +715,32 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       },
     });
   }
+
+  override async mention(token: string, data: { query: string }) {
+    const { elements } = await (
+      await this.fetch(
+        `https://api.linkedin.com/v2/organizations?q=vanityName&vanityName=${encodeURIComponent(
+          data.query
+        )}&projection=(elements*(id,localizedName,logoV2(original~:playableStreams)))`,
+        {
+          headers: {
+            'X-Restli-Protocol-Version': '2.0.0',
+            'Content-Type': 'application/json',
+            'LinkedIn-Version': '202504',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+    ).json();
+
+    return elements.map((p: any) => ({
+      id: String(p.id),
+      label: p.localizedName,
+      image: p.logoV2?.['original~']?.elements?.[0]?.identifiers?.[0]?.identifier || '',
+    }));
+  }
+
+  mentionFormat(idOrHandle: string, name: string) {
+    return `@[${name.replace('@', '')}](urn:li:organization:${idOrHandle})`;
+  }
 }
