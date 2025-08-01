@@ -245,6 +245,10 @@ export const MediaBox: FC<{
 
   const dragAndDrop = useCallback(
     async (event: ClipboardEvent<HTMLDivElement> | File[]) => {
+      if (!ref?.current?.setOptions) {
+        return ;
+      }
+
       // @ts-ignore
       const clipboardItems = event.map((p) => ({
         kind: 'file',
