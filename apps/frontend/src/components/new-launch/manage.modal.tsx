@@ -473,7 +473,6 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                   <SelectCustomer
                     onChange={changeCustomer}
                     integrations={integrations}
-                    data-sentry-mask
                   />
                 )}
               </div>
