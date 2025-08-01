@@ -470,12 +470,11 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                   )}
                 </div>
                 {!dummy && (
-                  <div data-sentry-mask>
-                    <SelectCustomer
-                      onChange={changeCustomer}
-                      integrations={integrations}
-                    />
-                  </div>
+                  <SelectCustomer
+                    onChange={changeCustomer}
+                    integrations={integrations}
+                    data-sentry-mask
+                  />
                 )}
               </div>
               <svg

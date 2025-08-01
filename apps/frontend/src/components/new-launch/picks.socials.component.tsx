@@ -47,7 +47,6 @@ export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
                     'data-tooltip-content': integration.name,
                   })}
                 >
-                  <span data-sentry-mask>{integration.name}</span>
                   <div
                     onClick={() => {
                       if (exising.integration) {
