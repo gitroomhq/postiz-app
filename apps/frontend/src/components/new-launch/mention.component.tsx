@@ -96,7 +96,7 @@ const MentionList: FC = (props: any) => {
               className={`flex gap-[10px] w-full p-2 text-left rounded hover:bg-gray-100 ${
                 index === selectedIndex ? 'bg-blue-100' : ''
               }`}
-              key={index}
+              key={item.id || index}
               onClick={() => selectItem(index)}
             >
               <img
@@ -157,10 +157,8 @@ export const suggestion = (
       try {
         component.updateProps({ loading: true, stop: false });
         const result = await debouncedLoadList(query);
-        console.log(result);
         return result;
       } catch (error) {
-        console.error('Error in suggestion items:', error);
         return [];
       }
     },
