@@ -1,18 +1,19 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "jsx": "react-jsx",
-    "module": "esnext",
-    "target": "esnext",
-    "lib": ["dom", "esnext"],
+    "forceConsistentCasingInFileNames": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "resolveJsonModule": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
     "strict": true,
-    "noEmit": true
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist"]
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "./tsconfig.lib.json"
+    }
+  ]
 }
