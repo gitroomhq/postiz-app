@@ -30,6 +30,24 @@ export class PinterestProvider
 
   editor = 'normal' as const;
 
+  public override handleErrors(body: string):
+    | {
+        type: 'refresh-token' | 'bad-body';
+        value: string;
+      }
+    | undefined {
+
+    if (body.indexOf('cover_image_url or cover_image_content_type') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'When uploading a video, you must add also an image to be used as a cover image.',
+      };
+    }
+
+    return undefined;
+  }
+
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const { access_token, expires_in } = await (
       await this.fetch('https://api.pinterest.com/v5/oauth/token', {
