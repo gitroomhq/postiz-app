@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: 32GB
+    runs-on: ubuntu-latest
     
 
     strategy:
