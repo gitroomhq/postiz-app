@@ -199,13 +199,13 @@ export const StarsTableComponent = () => {
           )}
         </div>
       </div>
-      <div className="flex-1 bg-secondary">
+      <div className="flex-1 bg-secondary" data-sentry-mask>
         {stars?.stars?.length ? (
           <table className={`table1`}>
             <thead>
               <tr>
                 <th>
-                  <UpDown name="Repository" param="login" data-sentry-mask />
+                  <UpDown name="Repository" param="login"/>
                 </th>
                 <th>
                   <UpDown name="Date" param="date" />

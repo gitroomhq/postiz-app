@@ -28,7 +28,7 @@ export const PreviewWrapper = ({ children }: { children: ReactNode }) => {
         runtimeUrl={backendUrl + '/copilot/chat'}
       >
         <MantineWrapper>
-          <Toaster data-sentry-mask />
+          <Toaster/>
           {children}
         </MantineWrapper>
       </CopilotKit>
