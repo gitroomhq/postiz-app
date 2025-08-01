@@ -18,7 +18,7 @@ export const SelectCustomer: FC<{
     return null;
   }
   return (
-    <Select
+    <Select data-sentry-mask
       hideErrors={true}
       label=""
       name="customer"
