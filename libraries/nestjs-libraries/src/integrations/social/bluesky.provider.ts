@@ -505,13 +505,13 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
     id: string,
     integration: Integration
   ) {
-    const agent = new BskyAgent({
-      service: 'https://bsky.social',
-    });
-
     const body = JSON.parse(
       AuthService.fixedDecryption(integration.customInstanceDetails!)
     );
+
+    const agent = new BskyAgent({
+      service: body.service,
+    });
 
     await agent.login({
       identifier: body.identifier,
