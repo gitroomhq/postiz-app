@@ -64,8 +64,8 @@ const InterceptBoldShortcut = Extension.create({
     return {
       'Mod-b': () => {
         // For example, toggle bold while removing underline
-        this.editor.commands.unsetUnderline();
-        return this.editor.commands.toggleBold();
+        this?.editor?.commands?.unsetUnderline();
+        return this?.editor?.commands?.toggleBold();
       },
     };
   },
@@ -78,8 +78,8 @@ const InterceptUnderlineShortcut = Extension.create({
     return {
       'Mod-u': () => {
         // For example, toggle bold while removing underline
-        this.editor.commands.unsetBold();
-        return this.editor.commands.toggleUnderline();
+        this?.editor?.commands?.unsetBold();
+        return this?.editor?.commands?.toggleUnderline();
       },
     };
   },
@@ -505,8 +505,8 @@ export const Editor: FC<{
 
   const addText = useCallback(
     (emoji: string) => {
-      editorRef?.current?.editor.commands.insertContent(emoji);
-      editorRef?.current?.editor.commands.focus();
+      editorRef?.current?.editor?.commands?.insertContent(emoji);
+      editorRef?.current?.editor?.commands?.focus();
     },
     [props.value, id]
   );

@@ -7,7 +7,7 @@ export const Bullets: FC<{
   currentValue: string;
 }> = ({ editor }) => {
   const bullet = () => {
-    editor.commands.toggleBulletList();
+    editor?.commands?.toggleBulletList();
   };
   return (
     <div
