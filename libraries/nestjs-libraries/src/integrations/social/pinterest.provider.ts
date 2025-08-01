@@ -212,57 +212,52 @@ export class PinterestProvider
       path: m.path,
     }));
 
-    try {
-      const { id: pId } = await (
-        await this.fetch('https://api.pinterest.com/v5/pins', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            ...(postDetails?.[0]?.settings.link
-              ? { link: postDetails?.[0]?.settings.link }
-              : {}),
-            ...(postDetails?.[0]?.settings.title
-              ? { title: postDetails?.[0]?.settings.title }
-              : {}),
-            description: postDetails?.[0]?.message,
-            ...(postDetails?.[0]?.settings.dominant_color
-              ? { dominant_color: postDetails?.[0]?.settings.dominant_color }
-              : {}),
-            board_id: postDetails?.[0]?.settings.board,
-            media_source: mediaId
-              ? {
-                  source_type: 'video_id',
-                  media_id: mediaId,
-                  cover_image_url: picture?.path,
-                }
-              : mapImages?.length === 1
-              ? {
-                  source_type: 'image_url',
-                  url: mapImages?.[0]?.path,
-                }
-              : {
-                  source_type: 'multiple_image_urls',
-                  items: mapImages,
-                },
-          }),
-        })
-      ).json();
-
-      return [
-        {
-          id: postDetails?.[0]?.id,
-          postId: pId,
-          releaseURL: `https://www.pinterest.com/pin/${pId}`,
-          status: 'success',
+    const { id: pId } = await (
+      await this.fetch('https://api.pinterest.com/v5/pins', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
         },
-      ];
-    } catch (err) {
-      console.log(err);
-      return [];
-    }
+        body: JSON.stringify({
+          ...(postDetails?.[0]?.settings.link
+            ? { link: postDetails?.[0]?.settings.link }
+            : {}),
+          ...(postDetails?.[0]?.settings.title
+            ? { title: postDetails?.[0]?.settings.title }
+            : {}),
+          description: postDetails?.[0]?.message,
+          ...(postDetails?.[0]?.settings.dominant_color
+            ? { dominant_color: postDetails?.[0]?.settings.dominant_color }
+            : {}),
+          board_id: postDetails?.[0]?.settings.board,
+          media_source: mediaId
+            ? {
+                source_type: 'video_id',
+                media_id: mediaId,
+                cover_image_url: picture?.path,
+              }
+            : mapImages?.length === 1
+            ? {
+                source_type: 'image_url',
+                url: mapImages?.[0]?.path,
+              }
+            : {
+                source_type: 'multiple_image_urls',
+                items: mapImages,
+              },
+        }),
+      })
+    ).json();
+
+    return [
+      {
+        id: postDetails?.[0]?.id,
+        postId: pId,
+        releaseURL: `https://www.pinterest.com/pin/${pId}`,
+        status: 'success',
+      },
+    ];
   }
 
   async analytics(
