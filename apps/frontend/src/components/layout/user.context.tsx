@@ -28,7 +28,6 @@ export const ContextWrapper: FC<{
     role: 'USER' | 'ADMIN' | 'SUPERADMIN';
     publicApi: string;
     totalChannels: number;
-    admin: boolean; // Add admin field from backend response
   };
   children: ReactNode;
 }> = ({ user, children }) => {
