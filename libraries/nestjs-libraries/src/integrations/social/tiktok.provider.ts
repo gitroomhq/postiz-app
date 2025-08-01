@@ -469,26 +469,26 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
               : // Direct Post API format
                 {
                   post_info: {
-                    ...((firstPost?.settings?.title && isPhoto) ||
-                    (firstPost.message && !isPhoto)
-                      ? {
-                          title: isPhoto
-                            ? firstPost.settings.title
-                            : firstPost.message,
+                    // For photos, use title and description. For videos, only description
+                    ...(isPhoto && firstPost?.settings?.title
+                      ? { title: firstPost.settings.title }
+                      : {}),
+                    ...(firstPost.message
+                      ? { 
+                          ...(isPhoto 
+                            ? { description: firstPost.message.replace(/<[^>]*>/g, '').trim() }
+                            : { title: firstPost.message.replace(/<[^>]*>/g, '').trim() }
+                          )
                         }
                       : {}),
-                    ...(isPhoto ? { description: firstPost.message } : {}),
-                    privacy_level:
-                      firstPost.settings.privacy_level || 'PUBLIC_TO_EVERYONE',
-                    disable_duet: !firstPost.settings.duet || false,
-                    disable_comment: !firstPost.settings.comment || false,
-                    disable_stitch: !firstPost.settings.stitch || false,
-                    brand_content_toggle:
-                      firstPost.settings.brand_content_toggle || false,
-                    brand_organic_toggle:
-                      firstPost.settings.brand_organic_toggle || false,
-                    ...(isVideo && firstPost.settings.autoAddMusic
-                      ? { auto_add_music: firstPost.settings.autoAddMusic === 'yes' }
+                    privacy_level: firstPost.settings.privacy_level || 'PUBLIC_TO_EVERYONE',
+                    disable_duet: !firstPost.settings.duet,
+                    disable_comment: !firstPost.settings.comment,
+                    disable_stitch: !firstPost.settings.stitch,
+                    brand_content_toggle: !!firstPost.settings.brand_content_toggle,
+                    brand_organic_toggle: !!firstPost.settings.brand_organic_toggle,
+                    ...(isVideo && firstPost.settings.autoAddMusic === 'yes'
+                      ? { auto_add_music: true }
                       : {}),
                   },
                   source_info: {
