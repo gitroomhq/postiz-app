@@ -8,7 +8,6 @@ interface UserInfo {
   orgId?: string;
   role?: string;
   tier?: string;
-  admin?: boolean;
 }
 
 /**
@@ -48,10 +47,6 @@ export const setSentryUserContext = (user: UserInfo | null) => {
   if (user.tier) {
     Sentry.setTag('user.tier', user.tier);
   }
-  
-  if (user.admin) {
-    Sentry.setTag('user.admin', true);
-  }
 };
 
 /**
@@ -69,5 +64,4 @@ export const clearSentryUserContext = () => {
   Sentry.setTag('user.org_id', '');
   Sentry.setTag('user.role', '');
   Sentry.setTag('user.tier', '');
-  Sentry.setTag('user.admin', '');
 };
