@@ -425,14 +425,20 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   ): Promise<PostResponse[]> {
     const [firstPost] = postDetails;
 
-    const isPhoto = (firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) === -1;
+    // Check if it's a photo/image by checking both the file extension and media type
+    const isVideo = firstPost?.media?.[0]?.type === 'video' || 
+                   firstPost?.media?.[0]?.path?.toLowerCase().includes('.mp4') ||
+                   firstPost?.media?.[0]?.path?.toLowerCase().includes('.mov') ||
+                   firstPost?.media?.[0]?.path?.toLowerCase().includes('.avi') ||
+                   firstPost?.media?.[0]?.path?.toLowerCase().includes('.webm');
+    const isPhoto = !isVideo;
     const {
       data: { publish_id },
     } = await (
       await this.fetch(
         `https://open.tiktokapis.com/v2/post/publish${this.postingMethod(
           firstPost.settings.content_posting_method,
-          (firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) === -1
+          isPhoto
         )}`,
         {
           method: 'POST',
@@ -473,24 +479,32 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
                   },
                 }
               : {}),
-            ...((firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) > -1
+            ...(!isPhoto
               ? {
                   source_info: {
-                    source: 'PULL_FROM_URL',
-                    video_url: firstPost?.media?.[0]?.path!,
-                    ...(firstPost?.media?.[0]?.thumbnailTimestamp!
+                    source: firstPost?.settings?.content_posting_method === 'UPLOAD' ? 'FILE_UPLOAD' : 'PULL_FROM_URL',
+                    ...(firstPost?.settings?.content_posting_method === 'UPLOAD' 
+                      ? {} 
+                      : { video_url: firstPost?.media?.[0]?.path! }
+                    ),
+                    ...(firstPost?.media?.[0]?.thumbnailTimestamp! && firstPost?.settings?.content_posting_method !== 'UPLOAD'
                       ? {
                           video_cover_timestamp_ms:
                             firstPost?.media?.[0]?.thumbnailTimestamp!,
                         }
                       : {}),
                   },
+                  post_mode: firstPost?.settings?.content_posting_method === 'DIRECT_POST' ? 'DIRECT_POST' : 'MEDIA_UPLOAD',
+                  media_type: 'VIDEO',
                 }
               : {
                   source_info: {
-                    source: 'PULL_FROM_URL',
+                    source: firstPost?.settings?.content_posting_method === 'UPLOAD' ? 'FILE_UPLOAD' : 'PULL_FROM_URL',
                     photo_cover_index: 0,
-                    photo_images: firstPost.media?.map((p) => p.path),
+                    ...(firstPost?.settings?.content_posting_method === 'UPLOAD' 
+                      ? {} 
+                      : { photo_images: firstPost.media?.map((p) => p.path) }
+                    ),
                   },
                   post_mode: firstPost?.settings?.content_posting_method === 'DIRECT_POST' ? 'DIRECT_POST' : 'MEDIA_UPLOAD',
                   media_type: 'PHOTO',
