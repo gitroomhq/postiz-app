@@ -67,7 +67,7 @@ export const SignaturesComponent: FC<{
               {data?.map((p: any) => (
                 <Fragment key={p.id}>
                   <div className="relative flex-1 me-[20px] overflow-x-hidden">
-                    <div className="absolute start-0 line-clamp-1 top-[50%] -translate-y-[50%] text-ellipsis">
+                    <div className="absolute start-0 line-clamp-1 top-[50%] -translate-y-[50%] text-ellipsis" data-sentry-mask>
                       {p.content.slice(0, 15) + '...'}
                     </div>
                   </div>

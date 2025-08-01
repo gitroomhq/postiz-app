@@ -7,8 +7,13 @@ export const initializeSentryClient = (environment: string, dsn: string) =>
       // Add default integrations back
       Sentry.browserTracingIntegration(),
       Sentry.replayIntegration({
-        maskAllText: true,
+        maskAllText: false,
         maskAllInputs: true,
+        blockAllMedia: true,
+
+        // Manual Masking
+        mask: ['.sentry-mask', '[data-sentry-mask]', 'data-sentry-mask'],
+        unmask: ['.sentry-unmask', '[data-sentry-unmask]', 'data-sentry-unmask'],
       }),
       Sentry.feedbackIntegration({
         // Disable the injection of the default widget

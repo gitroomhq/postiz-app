@@ -169,7 +169,7 @@ export const Sets: FC = () => {
               <div>{t('delete', 'Delete')}</div>
               {data?.map((p: any) => (
                 <Fragment key={p.id}>
-                  <div className="flex flex-col justify-center">{p.name}</div>
+                  <div className="flex flex-col justify-center" data-sentry-mask>{p.name}</div>
                   <div className="flex flex-col justify-center">
                     <div>
                       <Button onClick={addSet(p)}>{t('edit', 'Edit')}</Button>

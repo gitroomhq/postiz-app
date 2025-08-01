@@ -187,6 +187,7 @@ export const MenuGroupComponent: FC<
                   'data-tooltip-content': group.name,
                 }
               : {})}
+            data-sentry-mask
           >
             {group.name}
           </div>
@@ -325,6 +326,7 @@ export const MenuComponent: FC<
           'group-[.sidebar]:hidden flex-1 whitespace-nowrap text-ellipsis overflow-hidden cursor-move',
           integration.disabled && 'opacity-50'
         )}
+        data-sentry-mask
       >
         {integration.name}
       </div>
