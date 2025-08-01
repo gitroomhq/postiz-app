@@ -148,7 +148,7 @@ const TikTokSettings: FC<{
 
   return (
     <div className="flex flex-col">
-      <CheckTikTokValidity picture={props?.values?.[0]?.image?.[0]?.path} />
+      {/*<CheckTikTokValidity picture={props?.values?.[0]?.image?.[0]?.path} />*/}
       {isTitle && (
         <Input label="Title" {...register('title')} maxLength={90} />
       )}
