@@ -718,7 +718,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
 
   override async mention(token: string, data: { query: string }) {
     const { elements } = await (
-      await fetch(
+      await this.fetch(
         `https://api.linkedin.com/v2/organizations?q=vanityName&vanityName=${encodeURIComponent(
           data.query
         )}&projection=(elements*(id,localizedName,logoV2(original~:playableStreams)))`,
