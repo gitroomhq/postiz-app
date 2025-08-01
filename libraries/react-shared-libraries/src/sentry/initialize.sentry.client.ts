@@ -12,7 +12,7 @@ export const initializeSentryClient = (environment: string, dsn: string) =>
         blockAllMedia: true,
 
         // Manual Masking
-        mask: ['.sentry-mask', '[data-sentry-mask]', 'data-sentry-mask'],
+        mask: ['.sentry-mask', '[data-sentry-mask]', '[data-sentry-mask]'],
         unmask: ['.sentry-unmask', '[data-sentry-unmask]', 'data-sentry-unmask'],
       }),
       Sentry.feedbackIntegration({
