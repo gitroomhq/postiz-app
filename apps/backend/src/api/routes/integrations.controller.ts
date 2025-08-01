@@ -275,9 +275,9 @@ export class IntegrationsController {
       await this._integrationService.insertMentions(
         getIntegration.providerIdentifier,
         newList.map((p: any) => ({
-          name: p.label,
-          username: p.id,
-          image: p.image,
+          name: p.label || '',
+          username: p.id || '',
+          image: p.image || '',
         })).filter((f: any) => f.name)
       );
     }
