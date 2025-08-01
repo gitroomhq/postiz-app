@@ -1,5 +1,6 @@
 import striptags from 'striptags';
-import { NodeHtmlMarkdown } from 'node-html-markdown';
+import TurndownService from 'turndown';
+const turndownService = new TurndownService();
 
 const bold = {
   a: '𝗮',
@@ -135,7 +136,8 @@ export const stripHtmlValidation = (
   type: 'none' | 'normal' | 'markdown' | 'html',
   value: string,
   replaceBold = false,
-  none = false
+  none = false,
+  convertMentionFunction?: (idOrHandle: string, name: string) => string,
 ): string => {
   if (type === 'html') {
     return striptags(value, [
@@ -152,7 +154,7 @@ export const stripHtmlValidation = (
   }
 
   if (type === 'markdown') {
-    return NodeHtmlMarkdown.translate(value);
+    return turndownService.turndown(value);
   }
 
   if (value.indexOf('<p>') === -1 && !none) {
@@ -171,18 +173,16 @@ export const stripHtmlValidation = (
   }
 
   if (replaceBold) {
-    const processedHtml = convertLinkedinMention(
+    const processedHtml = convertMention(
       convertToAscii(
         html
-          .replace(/<ul>/, "\n<ul>")
-          .replace(/<\/ul>\n/, "</ul>")
-          .replace(
-          /<li.*?>([.\s\S]*?)<\/li.*?>/gm,
-          (match, p1) => {
+          .replace(/<ul>/, '\n<ul>')
+          .replace(/<\/ul>\n/, '</ul>')
+          .replace(/<li.*?>([.\s\S]*?)<\/li.*?>/gm, (match, p1) => {
             return `<li><p>- ${p1.replace(/\n/gm, '')}\n</p></li>`;
-          }
-        )
-      )
+          })
+      ),
+      convertMentionFunction
     );
 
     return striptags(processedHtml, ['h1', 'h2', 'h3']);
@@ -192,11 +192,18 @@ export const stripHtmlValidation = (
   return striptags(html, ['ul', 'li', 'h1', 'h2', 'h3']);
 };
 
-export const convertLinkedinMention = (value: string) => {
+export const convertMention = (
+  value: string,
+  process?: (idOrHandle: string, name: string) => string
+) => {
+  if (!process) {
+    return value;
+  }
+
   return value.replace(
-    /<span.+?data-linkedin-id="(.+?)".+?>(.+?)<\/span>/gi,
+    /<span.*?data-mention-id="(.*?)".*?>(.*?)<\/span>/gi,
     (match, id, name) => {
-      return `@[${name.replace('@', '')}](${id})`;
+      return `<span>` + process(id, name) + `</span>`;
     }
   );
 };

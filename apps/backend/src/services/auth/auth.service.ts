@@ -36,10 +36,13 @@ export class AuthService {
     addToOrg?: boolean | { orgId: string; role: 'USER' | 'ADMIN'; id: string }
   ) {
     if (provider === Provider.LOCAL) {
+      if (process.env.DISALLOW_PLUS && body.email.includes('+')) {
+        throw new Error('Email with plus sign is not allowed');
+      }
       const user = await this._userService.getUserByEmail(body.email);
       if (body instanceof CreateOrgUserDto) {
         if (user) {
-          throw new Error('User already exists');
+          throw new Error('Email already exists');
         }
 
         if (!(await this.canRegister(provider))) {

@@ -75,9 +75,9 @@ export const UText: FC<{
   currentValue: string;
 }> = ({ editor }) => {
   const mark = () => {
-    editor.commands.unsetBold();
-    editor.commands.toggleUnderline();
-    editor.commands.focus();
+    editor?.commands?.unsetBold();
+    editor?.commands?.toggleUnderline();
+    editor?.commands?.focus();
   };
   return (
     <div

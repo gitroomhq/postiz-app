@@ -50,6 +50,12 @@ import { BulletList, ListItem } from '@tiptap/extension-list';
 import { Bullets } from '@gitroom/frontend/components/new-launch/bullets.component';
 import Heading from '@tiptap/extension-heading';
 import { HeadingComponent } from '@gitroom/frontend/components/new-launch/heading.component';
+import Mention from '@tiptap/extension-mention';
+import { suggestion } from '@gitroom/frontend/components/new-launch/mention.component';
+import { useCustomProviderFunction } from '@gitroom/frontend/components/launches/helpers/use.custom.provider.function';
+import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { useDebouncedCallback } from 'use-debounce';
 
 const InterceptBoldShortcut = Extension.create({
   name: 'preventBoldWithUnderline',
@@ -58,8 +64,8 @@ const InterceptBoldShortcut = Extension.create({
     return {
       'Mod-b': () => {
         // For example, toggle bold while removing underline
-        this.editor.commands.unsetUnderline();
-        return this.editor.commands.toggleBold();
+        this?.editor?.commands?.unsetUnderline();
+        return this?.editor?.commands?.toggleBold();
       },
     };
   },
@@ -72,55 +78,10 @@ const InterceptUnderlineShortcut = Extension.create({
     return {
       'Mod-u': () => {
         // For example, toggle bold while removing underline
-        this.editor.commands.unsetBold();
-        return this.editor.commands.toggleUnderline();
+        this?.editor?.commands?.unsetBold();
+        return this?.editor?.commands?.toggleUnderline();
       },
     };
-  },
-});
-
-const Span = Node.create({
-  name: 'mention',
-
-  inline: true,
-  group: 'inline',
-  selectable: false,
-  atom: true,
-
-  addAttributes() {
-    return {
-      linkedinId: {
-        default: null,
-      },
-      label: {
-        default: '',
-      },
-    };
-  },
-
-  parseHTML() {
-    return [
-      {
-        tag: 'span[data-linkedin-id]',
-      },
-    ];
-  },
-
-  renderHTML({ HTMLAttributes }) {
-    return [
-      'span',
-      mergeAttributes(
-        // Exclude linkedinId from HTMLAttributes to avoid duplication
-        Object.fromEntries(
-          Object.entries(HTMLAttributes).filter(([key]) => key !== 'linkedinId')
-        ),
-        {
-          'data-linkedin-id': HTMLAttributes.linkedinId,
-          class: 'mention',
-        }
-      ),
-      `@${HTMLAttributes.label}`,
-    ];
   },
 });
 
@@ -544,28 +505,11 @@ export const Editor: FC<{
 
   const addText = useCallback(
     (emoji: string) => {
-      editorRef?.current?.editor.commands.insertContent(emoji);
-      editorRef?.current?.editor.commands.focus();
+      editorRef?.current?.editor?.commands?.insertContent(emoji);
+      editorRef?.current?.editor?.commands?.focus();
     },
     [props.value, id]
   );
-
-  const addLinkedinTag = useCallback((text: string) => {
-    const id = text.split('(')[1].split(')')[0];
-    const name = text.split('[')[1].split(']')[0];
-
-    editorRef?.current?.editor
-      .chain()
-      .focus()
-      .insertContent({
-        type: 'mention',
-        attrs: {
-          linkedinId: id,
-          label: name,
-        },
-      })
-      .run();
-  }, []);
 
   return (
     <div>
@@ -580,7 +524,7 @@ export const Editor: FC<{
             editor={editorRef?.current?.editor}
             currentValue={props.value!}
           />
-          {(editorType === 'markdown' || editorType === 'html') && (
+          {(editorType === 'markdown' || editorType === 'html') && identifier !== 'telegram' && (
             <>
               <Bullets
                 editor={editorRef?.current?.editor}
@@ -598,9 +542,6 @@ export const Editor: FC<{
           >
             {'\uD83D\uDE00'}
           </div>
-          {identifier === 'linkedin' || identifier === 'linkedin-page' ? (
-            <LinkedinCompanyPop addText={addLinkedinTag} />
-          ) : null}
           <div className="relative">
             <div className="absolute z-[200] top-[35px] -start-[50px]">
               <EmojiPicker
@@ -717,6 +658,43 @@ export const OnlyEditor = forwardRef<
     paste?: (event: ClipboardEvent | File[]) => void;
   }
 >(({ editorType, value, onChange, paste }, ref) => {
+  const fetch = useFetch();
+  const { internal } = useLaunchStore(
+    useShallow((state) => ({
+      internal: state.internal.find((p) => p.integration.id === state.current),
+    }))
+  );
+
+  const loadList = useCallback(
+    async (query: string) => {
+      if (query.length < 2) {
+        return [];
+      }
+
+      if (!internal?.integration.id) {
+        return [];
+      }
+
+      try {
+        const load = await fetch('/integrations/mentions', {
+          method: 'POST',
+          body: JSON.stringify({
+            name: 'mention',
+            id: internal.integration.id,
+            data: { query },
+          }),
+        });
+
+        const result = await load.json();
+        return result;
+      } catch (error) {
+        console.error('Error loading mentions:', error);
+        return [];
+      }
+    },
+    [internal, fetch]
+  );
+
   const editor = useEditor({
     extensions: [
       Document,
@@ -726,9 +704,28 @@ export const OnlyEditor = forwardRef<
       Bold,
       InterceptBoldShortcut,
       InterceptUnderlineShortcut,
-      Span,
       BulletList,
       ListItem,
+      ...(internal?.integration?.id
+        ? [
+            Mention.configure({
+              HTMLAttributes: {
+                class: 'mention',
+              },
+              renderHTML({ options, node }) {
+                return [
+                  'span',
+                  mergeAttributes(options.HTMLAttributes, {
+                    'data-mention-id': node.attrs.id || '',
+                    'data-mention-label': node.attrs.label || '',
+                  }),
+                  `@${node.attrs.label}`,
+                ];
+              },
+              suggestion: suggestion(loadList),
+            }),
+          ]
+        : []),
       Heading.configure({
         levels: [1, 2, 3],
       }),

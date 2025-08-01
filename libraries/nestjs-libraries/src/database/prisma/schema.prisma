@@ -658,6 +658,18 @@ model Errors {
   @@index([createdAt])
 }
 
+model Mentions {
+  name      String
+  username  String
+  platform  String
+  image     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([name, username, platform, image])
+  @@index([createdAt])
+}
+
 enum OrderStatus {
   PENDING
   ACCEPTED
