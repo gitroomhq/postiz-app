@@ -1,5 +1,6 @@
 import { timer } from '@gitroom/helpers/utils/timer';
 import { concurrencyService } from '@gitroom/helpers/utils/concurrency.service';
+import { Integration } from '@prisma/client';
 
 export class RefreshToken {
   constructor(
@@ -29,6 +30,10 @@ export abstract class SocialAbstract {
     body: string
   ): { type: 'refresh-token' | 'bad-body'; value: string } | undefined {
     return undefined;
+  }
+
+  public async mention(token: string, d: { query: string }, id: string, integration: Integration): Promise<{ id: string; label: string; image: string }[] | {none: true}> {
+    return {none: true};
   }
 
   async runInConcurrent<T>(func: (...args: any[]) => Promise<T>) {
