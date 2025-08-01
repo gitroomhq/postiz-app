@@ -19,7 +19,6 @@ export const UserContext = createContext<
       impersonate: boolean;
       allowTrial: boolean;
       isTrailing: boolean;
-      admin?: boolean; // Add admin field from backend response
     })
 >(undefined);
 export const ContextWrapper: FC<{
@@ -49,7 +48,6 @@ export const ContextWrapper: FC<{
         orgId: user.orgId,
         role: user.role,
         tier: user.tier,
-        admin: user.admin, // Use admin field from backend response
       });
     } else {
       setSentryUserContext(null);
