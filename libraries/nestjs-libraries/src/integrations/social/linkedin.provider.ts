@@ -716,7 +716,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     });
   }
 
-  async mention(token: string, data: { query: string }) {
+  override async mention(token: string, data: { query: string }) {
     const { elements } = await (
       await fetch(
         `https://api.linkedin.com/v2/organizations?q=vanityName&vanityName=${encodeURIComponent(
@@ -738,5 +738,9 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       label: p.localizedName,
       image: p.logoV2?.['original~']?.elements?.[0]?.identifiers?.[0]?.identifier || '',
     }));
+  }
+
+  mentionFormat(idOrHandle: string, name: string) {
+    return `@[${name.replace('@', '')}](urn:li:organization:${idOrHandle})`;
   }
 }

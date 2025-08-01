@@ -519,13 +519,17 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
     });
 
     const list = await agent.searchActors({
-      q: d.query
+      q: d.query,
     });
 
-    return list.data.actors.map(p => ({
+    return list.data.actors.map((p) => ({
       label: p.displayName,
       id: p.handle,
-      image: p.avatar
-    }))
+      image: p.avatar,
+    }));
+  }
+
+  mentionFormat(idOrHandle: string, name: string) {
+    return `@${idOrHandle}`;
   }
 }

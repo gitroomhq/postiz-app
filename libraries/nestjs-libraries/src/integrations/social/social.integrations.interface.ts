@@ -135,4 +135,5 @@ export interface SocialProvider
   mention?: (
     token: string, data: { query: string }, id: string, integration: Integration
   ) => Promise<{ id: string; label: string; image: string }[] | {none: true}>;
+  mentionFormat?(idOrHandle: string, name: string): string;
 }

@@ -526,4 +526,8 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     }
     return [];
   }
+
+  mentionFormat(idOrHandle: string, name: string) {
+    return `@${idOrHandle}`;
+  }
 }

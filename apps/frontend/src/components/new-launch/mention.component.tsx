@@ -73,6 +73,10 @@ const MentionList: FC = (props: any) => {
     },
   }));
 
+  if (props?.stop) {
+    return null;
+  }
+
   return (
     <div className="dropdown-menu bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto p-2">
       {props?.items?.none ? (
@@ -84,22 +88,26 @@ const MentionList: FC = (props: any) => {
           Loading...
         </div>
       ) : props?.items ? (
-        props.items.map((item: any, index: any) => (
-          <button
-            className={`flex gap-[10px] w-full p-2 text-left rounded hover:bg-gray-100 ${
-              index === selectedIndex ? 'bg-blue-100' : ''
-            }`}
-            key={index}
-            onClick={() => selectItem(index)}
-          >
-            <img
-              src={item.image}
-              alt={item.label}
-              className="w-[30px] h-[30px] rounded-full object-cover"
-            />
-            <div className="flex-1 text-gray-800">{item.label}</div>
-          </button>
-        ))
+        props.items.length === 0 ? (
+          <div className="p-2 text-gray-500 text-center">No results found</div>
+        ) : (
+          props.items.map((item: any, index: any) => (
+            <button
+              className={`flex gap-[10px] w-full p-2 text-left rounded hover:bg-gray-100 ${
+                index === selectedIndex ? 'bg-blue-100' : ''
+              }`}
+              key={index}
+              onClick={() => selectItem(index)}
+            >
+              <img
+                src={item.image}
+                alt={item.label}
+                className="w-[30px] h-[30px] rounded-full object-cover"
+              />
+              <div className="flex-1 text-gray-800">{item.label}</div>
+            </button>
+          ))
+        )
       ) : (
         <div className="p-2 text-gray-500 text-center">Loading...</div>
       )}
@@ -142,11 +150,12 @@ export const suggestion = (
   return {
     items: async ({ query }: { query: string }) => {
       if (!query || query.length < 2) {
+        component.updateProps({ loading: true, stop: true });
         return [];
       }
 
       try {
-        component.updateProps({ loading: true });
+        component.updateProps({ loading: true, stop: false });
         const result = await debouncedLoadList(query);
         console.log(result);
         return result;
@@ -169,7 +178,7 @@ export const suggestion = (
             },
             editor: props.editor,
           });
-          component.updateProps({ ...props, loading: true });
+          component.updateProps({ ...props, loading: true, stop: false });
           updatePosition(props.editor, component.element);
         },
         onStart: (props: any) => {
@@ -212,7 +221,7 @@ export const suggestion = (
             newQuery.length >= 2 &&
             (!props.items || props.items.length === 0);
 
-          component.updateProps({ ...props, loading: false });
+          component.updateProps({ ...props, loading: false, stop: false });
 
           if (!props.clientRect) {
             return;

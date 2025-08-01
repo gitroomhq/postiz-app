@@ -15,8 +15,55 @@ export class IntegrationRepository {
     private _posts: PrismaRepository<'post'>,
     private _plugs: PrismaRepository<'plugs'>,
     private _exisingPlugData: PrismaRepository<'exisingPlugData'>,
-    private _customers: PrismaRepository<'customer'>
+    private _customers: PrismaRepository<'customer'>,
+    private _mentions: PrismaRepository<'mentions'>
   ) {}
+
+  getMentions(platform: string, q: string) {
+    return this._mentions.model.mentions.findMany({
+      where: {
+        platform,
+        OR: [
+          {
+            name: {
+              contains: q,
+              mode: 'insensitive',
+            },
+          },
+          {
+            username: {
+              contains: q,
+              mode: 'insensitive',
+            },
+          },
+        ],
+      },
+      orderBy: {
+        name: 'asc',
+      },
+      take: 100,
+      select: {
+        name: true,
+        username: true,
+        image: true,
+      },
+    });
+  }
+
+  insertMentions(
+    platform: string,
+    mentions: { name: string; username: string; image: string }[]
+  ) {
+    return this._mentions.model.mentions.createMany({
+      data: mentions.map((mention) => ({
+        platform,
+        name: mention.name,
+        username: mention.username,
+        image: mention.image,
+      })),
+      skipDuplicates: true,
+    });
+  }
 
   updateProviderSettings(org: string, id: string, settings: string) {
     return this._integration.model.integration.update({

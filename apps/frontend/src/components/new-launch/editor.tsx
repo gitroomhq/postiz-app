@@ -511,23 +511,6 @@ export const Editor: FC<{
     [props.value, id]
   );
 
-  const addLinkedinTag = useCallback((text: string) => {
-    const id = text.split('(')[1].split(')')[0];
-    const name = text.split('[')[1].split(']')[0];
-
-    editorRef?.current?.editor
-      .chain()
-      .focus()
-      .insertContent({
-        type: 'mention',
-        attrs: {
-          linkedinId: id,
-          label: name,
-        },
-      })
-      .run();
-  }, []);
-
   return (
     <div>
       <div className="relative bg-bigStrip" id={id}>
@@ -559,9 +542,6 @@ export const Editor: FC<{
           >
             {'\uD83D\uDE00'}
           </div>
-          {identifier === 'linkedin' || identifier === 'linkedin-page' ? (
-            <LinkedinCompanyPop addText={addLinkedinTag} />
-          ) : null}
           <div className="relative">
             <div className="absolute z-[200] top-[35px] -start-[50px]">
               <EmojiPicker
@@ -696,7 +676,7 @@ export const OnlyEditor = forwardRef<
       }
 
       try {
-        const load = await fetch('/integrations/function', {
+        const load = await fetch('/integrations/mentions', {
           method: 'POST',
           body: JSON.stringify({
             name: 'mention',

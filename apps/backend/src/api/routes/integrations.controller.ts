@@ -37,6 +37,7 @@ import {
   AuthorizationActions,
   Sections,
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
+import { uniqBy } from 'lodash';
 
 @ApiTags('Integrations')
 @Controller('/integrations')
@@ -246,11 +247,59 @@ export class IntegrationsController {
   ) {
     return this._integrationService.setTimes(org.id, id, body);
   }
+
+  @Post('/mentions')
+  async mentions(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: IntegrationFunctionDto
+  ) {
+    const getIntegration = await this._integrationService.getIntegrationById(
+      org.id,
+      body.id
+    );
+    if (!getIntegration) {
+      throw new Error('Invalid integration');
+    }
+
+    const list = await this._integrationService.getMentions(
+      getIntegration.providerIdentifier,
+      body?.data?.query
+    );
+
+    let newList = [];
+    try {
+      newList = await this.functionIntegration(org, body);
+    } catch (err) {}
+
+    if (newList.length) {
+      await this._integrationService.insertMentions(
+        getIntegration.providerIdentifier,
+        newList.map((p: any) => ({
+          name: p.label,
+          username: p.id,
+          image: p.image,
+        }))
+      );
+    }
+
+    return uniqBy(
+      [
+        ...list.map((p) => ({
+          id: p.username,
+          image: p.image,
+          label: p.name,
+        })),
+        ...newList,
+      ],
+      (p) => p.id
+    );
+  }
+
   @Post('/function')
   async functionIntegration(
     @GetOrgFromRequest() org: Organization,
     @Body() body: IntegrationFunctionDto
-  ) {
+  ): Promise<any> {
     const getIntegration = await this._integrationService.getIntegrationById(
       org.id,
       body.id
@@ -266,8 +315,10 @@ export class IntegrationsController {
       throw new Error('Invalid provider');
     }
 
+    // @ts-ignore
     if (integrationProvider[body.name]) {
       try {
+        // @ts-ignore
         const load = await integrationProvider[body.name](
           getIntegration.token,
           body.data,
