@@ -626,3 +626,44 @@ html[dir='rtl'] [dir='ltr'] {
 .mantine-Overlay-root {
   background: rgba(65, 64, 66, 0.3) !important;
 }
+
+.dropdown-menu {
+  @apply shadow-menu;
+  background: var(--new-bgColorInner);
+  border: 1px solid var(--new-bgLineColor);
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  position: relative;
+
+  button {
+    align-items: center;
+    background-color: transparent;
+    display: flex;
+    text-align: left;
+    width: 100%;
+    padding: 10px;
+
+    &:hover,
+    &:hover.is-selected {
+      background-color: var(--new-bgLineColor);
+    }
+  }
+}
+
+.tiptap {
+  :first-child {
+    margin-top: 0;
+  }
+
+  .mention {
+    background-color: var(--purple-light);
+    border-radius: 0.4rem;
+    box-decoration-break: clone;
+    color: #ae8afc;
+    &::after {
+      content: '\200B';
+    }
+  }
+}

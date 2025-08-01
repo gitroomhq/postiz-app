@@ -9,13 +9,13 @@ import {
   RefreshToken,
   SocialAbstract,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
-import { 
-  BskyAgent, 
-  RichText, 
+import {
+  BskyAgent,
+  RichText,
   AppBskyEmbedVideo,
   AppBskyVideoDefs,
   AtpAgent,
-  BlobRef 
+  BlobRef,
 } from '@atproto/api';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
@@ -59,16 +59,19 @@ async function reduceImageBySize(url: string, maxSizeKB = 976) {
   }
 }
 
-async function uploadVideo(agent: AtpAgent, videoPath: string): Promise<AppBskyEmbedVideo.Main> {
-  const { data: serviceAuth } = await agent.com.atproto.server.getServiceAuth(
-    {
-      aud: `did:web:${agent.dispatchUrl.host}`,
-      lxm: "com.atproto.repo.uploadBlob",
-      exp: Date.now() / 1000 + 60 * 30, // 30 minutes
-    },
-  );
+async function uploadVideo(
+  agent: AtpAgent,
+  videoPath: string
+): Promise<AppBskyEmbedVideo.Main> {
+  const { data: serviceAuth } = await agent.com.atproto.server.getServiceAuth({
+    aud: `did:web:${agent.dispatchUrl.host}`,
+    lxm: 'com.atproto.repo.uploadBlob',
+    exp: Date.now() / 1000 + 60 * 30, // 30 minutes
+  });
 
-  async function downloadVideo(url: string): Promise<{ video: Buffer, size: number }> {
+  async function downloadVideo(
+    url: string
+  ): Promise<{ video: Buffer; size: number }> {
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`Failed to fetch video: ${response.statusText}`);
@@ -81,35 +84,37 @@ async function uploadVideo(agent: AtpAgent, videoPath: string): Promise<AppBskyE
 
   const video = await downloadVideo(videoPath);
 
-  console.log("Downloaded video", videoPath, video.size);
-  
-  const uploadUrl = new URL("https://video.bsky.app/xrpc/app.bsky.video.uploadVideo");
-  uploadUrl.searchParams.append("did", agent.session!.did);
-  uploadUrl.searchParams.append("name", videoPath.split("/").pop()!);
-  
+  console.log('Downloaded video', videoPath, video.size);
+
+  const uploadUrl = new URL(
+    'https://video.bsky.app/xrpc/app.bsky.video.uploadVideo'
+  );
+  uploadUrl.searchParams.append('did', agent.session!.did);
+  uploadUrl.searchParams.append('name', videoPath.split('/').pop()!);
+
   const uploadResponse = await fetch(uploadUrl, {
-    method: "POST",
+    method: 'POST',
     headers: {
       Authorization: `Bearer ${serviceAuth.token}`,
-      "Content-Type": "video/mp4",
-      "Content-Length": video.size.toString(),
+      'Content-Type': 'video/mp4',
+      'Content-Length': video.size.toString(),
     },
-    body: video.video
+    body: video.video,
   });
-  
+
   const jobStatus = (await uploadResponse.json()) as AppBskyVideoDefs.JobStatus;
-  console.log("JobId:", jobStatus.jobId);
+  console.log('JobId:', jobStatus.jobId);
   let blob: BlobRef | undefined = jobStatus.blob;
-  const videoAgent = new AtpAgent({ service: "https://video.bsky.app" });
-  
+  const videoAgent = new AtpAgent({ service: 'https://video.bsky.app' });
+
   while (!blob) {
-    const { data: status } = await videoAgent.app.bsky.video.getJobStatus(
-      { jobId: jobStatus.jobId },
-    );
+    const { data: status } = await videoAgent.app.bsky.video.getJobStatus({
+      jobId: jobStatus.jobId,
+    });
     console.log(
-      "Status:",
+      'Status:',
       status.jobStatus.state,
-      status.jobStatus.progress || "",
+      status.jobStatus.progress || ''
     );
     if (status.jobStatus.blob) {
       blob = status.jobStatus.blob;
@@ -117,11 +122,11 @@ async function uploadVideo(agent: AtpAgent, videoPath: string): Promise<AppBskyE
     // wait a second
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }
-  
-  console.log("posting video...");
+
+  console.log('posting video...');
 
   return {
-    $type: "app.bsky.embed.video",
+    $type: 'app.bsky.embed.video',
     video: blob,
   } satisfies AppBskyEmbedVideo.Main;
 }
@@ -243,8 +248,10 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
     const cidUrl = [] as { cid: string; url: string; rev: string }[];
     for (const post of postDetails) {
       // Separate images and videos
-      const imageMedia = post.media?.filter((p) => p.path.indexOf('mp4') === -1) || [];
-      const videoMedia = post.media?.filter((p) => p.path.indexOf('mp4') !== -1) || [];
+      const imageMedia =
+        post.media?.filter((p) => p.path.indexOf('mp4') === -1) || [];
+      const videoMedia =
+        post.media?.filter((p) => p.path.indexOf('mp4') !== -1) || [];
 
       // Upload images
       const images = await Promise.all(
@@ -313,7 +320,11 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
 
     if (postDetails?.[0]?.settings?.active_thread_finisher) {
       const rt = new RichText({
-        text: stripHtmlValidation('normal', postDetails?.[0]?.settings?.thread_finisher, true),
+        text: stripHtmlValidation(
+          'normal',
+          postDetails?.[0]?.settings?.thread_finisher,
+          true
+        ),
       });
 
       await rt.detectFacets(agent);
@@ -486,5 +497,35 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
     }
 
     return true;
+  }
+
+  override async mention(
+    token: string,
+    d: { query: string },
+    id: string,
+    integration: Integration
+  ) {
+    const agent = new BskyAgent({
+      service: 'https://bsky.social',
+    });
+
+    const body = JSON.parse(
+      AuthService.fixedDecryption(integration.customInstanceDetails!)
+    );
+
+    await agent.login({
+      identifier: body.identifier,
+      password: body.password,
+    });
+
+    const list = await agent.searchActors({
+      q: d.query
+    });
+
+    return list.data.actors.map(p => ({
+      label: p.displayName,
+      id: p.handle,
+      image: p.avatar
+    }))
   }
 }

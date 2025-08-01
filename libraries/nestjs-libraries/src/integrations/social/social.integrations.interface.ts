@@ -133,6 +133,6 @@ export interface SocialProvider
     url: string
   ) => Promise<{ client_id: string; client_secret: string }>;
   mention?: (
-    query: string
-  ) => Promise<{ id: string; name: string; picture: string }[]>;
+    token: string, data: { query: string }, id: string, integration: Integration
+  ) => Promise<{ id: string; label: string; image: string }[] | {none: true}>;
 }

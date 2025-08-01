@@ -194,7 +194,7 @@ export const stripHtmlValidation = (
 
 export const convertLinkedinMention = (value: string) => {
   return value.replace(
-    /<span.+?data-linkedin-id="(.+?)".+?>(.+?)<\/span>/gi,
+    /<span.*?data-mention-id="(.*?)".*?>(.*?)<\/span>/gi,
     (match, id, name) => {
       return `@[${name.replace('@', '')}](${id})`;
     }

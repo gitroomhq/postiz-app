@@ -315,7 +315,10 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       const media_ids = (uploadAll[post.id] || []).filter((f) => f);
 
       // @ts-ignore
-      const { data }: { data: { id: string } } = await this.runInConcurrent( async () => client.v2.tweet({
+      const { data }: { data: { id: string } } = await this.runInConcurrent(
+        async () =>
+          // @ts-ignore
+          client.v2.tweet({
             ...(!postDetails?.[0]?.settings?.who_can_reply_post ||
             postDetails?.[0]?.settings?.who_can_reply_post === 'everyone'
               ? {}
@@ -487,6 +490,37 @@ export class XProvider extends SocialAbstract implements SocialProvider {
           },
         ],
       }));
+    } catch (err) {
+      console.log(err);
+    }
+    return [];
+  }
+
+  override async mention(token: string, d: { query: string }) {
+    const [accessTokenSplit, accessSecretSplit] = token.split(':');
+    const client = new TwitterApi({
+      appKey: process.env.X_API_KEY!,
+      appSecret: process.env.X_API_SECRET!,
+      accessToken: accessTokenSplit,
+      accessSecret: accessSecretSplit,
+    });
+
+    try {
+      const data = await client.v2.userByUsername(d.query, {
+        'user.fields': ['username', 'name', 'profile_image_url'],
+      });
+
+      if (!data?.data?.username) {
+        return [];
+      }
+
+      return [
+        {
+          id: data.data.username,
+          image: data.data.profile_image_url,
+          label: data.data.name,
+        },
+      ];
     } catch (err) {
       console.log(err);
     }
