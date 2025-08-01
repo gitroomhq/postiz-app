@@ -446,10 +446,28 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
             'Content-Type': 'application/json; charset=UTF-8',
             Authorization: `Bearer ${accessToken}`,
           },
-          body: JSON.stringify({
-            ...((firstPost?.settings?.content_posting_method ||
-              'DIRECT_POST') === 'DIRECT_POST'
-              ? {
+          body: JSON.stringify(
+            firstPost?.settings?.content_posting_method === 'UPLOAD'
+              ? // Upload API format - only source_info required
+                {
+                  source_info: {
+                    source: 'PULL_FROM_URL',
+                    ...(isVideo 
+                      ? { video_url: firstPost?.media?.[0]?.path! }
+                      : { 
+                          photo_cover_index: 0,
+                          photo_images: firstPost.media?.map((p) => p.path)
+                        }
+                    ),
+                    ...(firstPost?.media?.[0]?.thumbnailTimestamp!
+                      ? {
+                          video_cover_timestamp_ms: firstPost?.media?.[0]?.thumbnailTimestamp!,
+                        }
+                      : {}),
+                  }
+                }
+              : // Direct Post API format
+                {
                   post_info: {
                     ...((firstPost?.settings?.title && isPhoto) ||
                     (firstPost.message && !isPhoto)
@@ -469,47 +487,35 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
                       firstPost.settings.brand_content_toggle || false,
                     brand_organic_toggle:
                       firstPost.settings.brand_organic_toggle || false,
-                    ...((firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) ===
-                    -1
-                      ? {
-                          auto_add_music:
-                            firstPost.settings.autoAddMusic === 'yes',
+                    ...(isVideo && firstPost.settings.autoAddMusic
+                      ? { auto_add_music: firstPost.settings.autoAddMusic === 'yes' }
+                      : {}),
+                  },
+                  source_info: {
+                    source: 'PULL_FROM_URL',
+                    ...(isVideo 
+                      ? { video_url: firstPost?.media?.[0]?.path! }
+                      : { 
+                          photo_cover_index: 0,
+                          photo_images: firstPost.media?.map((p) => p.path)
+                        }
+                    ),
+                    ...(firstPost?.media?.[0]?.thumbnailTimestamp!
+                      ? {       
+                          video_cover_timestamp_ms: firstPost?.media?.[0]?.thumbnailTimestamp!,
                         }
                       : {}),
                   },
+                  // Only add these fields for photos in Direct Post
+                  ...(isPhoto 
+                    ? { 
+                        post_mode: 'DIRECT_POST',
+                        media_type: 'PHOTO'
+                      }
+                    : {}
+                  )
                 }
-              : {}),
-            ...(!isPhoto
-              ? {
-                  source_info: {
-                    source: firstPost?.settings?.content_posting_method === 'UPLOAD' ? 'FILE_UPLOAD' : 'PULL_FROM_URL',
-                    ...(firstPost?.settings?.content_posting_method === 'UPLOAD' 
-                      ? {} 
-                      : { video_url: firstPost?.media?.[0]?.path! }
-                    ),
-                    ...(firstPost?.media?.[0]?.thumbnailTimestamp! && firstPost?.settings?.content_posting_method !== 'UPLOAD'
-                      ? {
-                          video_cover_timestamp_ms:
-                            firstPost?.media?.[0]?.thumbnailTimestamp!,
-                        }
-                      : {}),
-                  },
-                  post_mode: firstPost?.settings?.content_posting_method === 'DIRECT_POST' ? 'DIRECT_POST' : 'MEDIA_UPLOAD',
-                  media_type: 'VIDEO',
-                }
-              : {
-                  source_info: {
-                    source: firstPost?.settings?.content_posting_method === 'UPLOAD' ? 'FILE_UPLOAD' : 'PULL_FROM_URL',
-                    photo_cover_index: 0,
-                    ...(firstPost?.settings?.content_posting_method === 'UPLOAD' 
-                      ? {} 
-                      : { photo_images: firstPost.media?.map((p) => p.path) }
-                    ),
-                  },
-                  post_mode: firstPost?.settings?.content_posting_method === 'DIRECT_POST' ? 'DIRECT_POST' : 'MEDIA_UPLOAD',
-                  media_type: 'PHOTO',
-                }),
-          }),
+          ),
         }
       )
     ).json();
