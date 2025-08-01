@@ -1,5 +1,6 @@
 import striptags from 'striptags';
-import { NodeHtmlMarkdown } from 'node-html-markdown';
+import TurndownService from 'turndown';
+const turndownService = new TurndownService();
 
 const bold = {
   a: '𝗮',
@@ -153,7 +154,7 @@ export const stripHtmlValidation = (
   }
 
   if (type === 'markdown') {
-    return NodeHtmlMarkdown.translate(value);
+    return turndownService.turndown(value);
   }
 
   if (value.indexOf('<p>') === -1 && !none) {

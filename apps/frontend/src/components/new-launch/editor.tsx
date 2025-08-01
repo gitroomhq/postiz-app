@@ -524,7 +524,7 @@ export const Editor: FC<{
             editor={editorRef?.current?.editor}
             currentValue={props.value!}
           />
-          {(editorType === 'markdown' || editorType === 'html') && (
+          {(editorType === 'markdown' || editorType === 'html') && identifier !== 'telegram' && (
             <>
               <Bullets
                 editor={editorRef?.current?.editor}

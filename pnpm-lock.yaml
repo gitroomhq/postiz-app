@@ -207,6 +207,9 @@ importers:
       '@types/striptags':
         specifier: ^0.0.5
         version: 0.0.5
+      '@types/turndown':
+        specifier: ^5.0.5
+        version: 5.0.5
       '@types/yup':
         specifier: ^0.32.0
         version: 0.32.0
@@ -381,9 +384,6 @@ importers:
       node-fetch:
         specifier: ^3.3.2
         version: 3.3.2
-      node-html-markdown:
-        specifier: ^1.3.0
-        version: 1.3.0
       node-telegram-bot-api:
         specifier: ^0.66.0
         version: 0.66.0(request@2.88.2)
@@ -519,6 +519,9 @@ importers:
       tslib:
         specifier: ^2.3.0
         version: 2.8.1
+      turndown:
+        specifier: ^7.2.0
+        version: 7.2.0
       tweetnacl:
         specifier: ^1.0.3
         version: 1.0.3
@@ -2997,6 +3000,9 @@ packages:
 
   '@microsoft/tsdoc@0.15.1':
     resolution: {integrity: sha512-4aErSrCR/On/e5G2hDP0wjooqDdauzEbIq8hIkIe5pXV0rtWJZvdCEKL0ykZxex+IxIwBp0eGeV48hQN07dXtw==}
+
+  '@mixmark-io/domino@2.2.0':
+    resolution: {integrity: sha512-Y28PR25bHXUg88kCV7nivXrP2Nj2RueZ3/l/jdx6J9f8J4nsEGcgX0Qe6lt7Pa+J79+kPiJU3LguR6O/6zrLOw==}
 
   '@modelcontextprotocol/sdk@1.15.0':
     resolution: {integrity: sha512-67hnl/ROKdb03Vuu0YOr+baKTvf1/5YBHBm9KnZdjdAh8hjt4FRCPD5ucwxGB237sBpzlqQsLy1PFu7z/ekZ9Q==}
@@ -6396,6 +6402,9 @@ packages:
   '@types/trusted-types@2.0.7':
     resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
 
+  '@types/turndown@5.0.5':
+    resolution: {integrity: sha512-TL2IgGgc7B5j78rIccBtlYAnkuv8nUQqhQc+DSYV5j9Be9XOcm/SKOVRuA47xAVI3680Tk9B1d8flK2GWT2+4w==}
+
   '@types/unist@2.0.11':
     resolution: {integrity: sha512-CmBKiL6NNo/OqgmMn95Fk9Whlp2mtvIv+KNpQKN2F4SjvrEesubTRWGYSg+BnWZOnlCaSTU1sMpsBOzgbYhnsA==}
 
@@ -9729,10 +9738,6 @@ packages:
   hastscript@9.0.1:
     resolution: {integrity: sha512-g7df9rMFX/SPi34tyGCyUBREQoKkapwdY/T04Qn9TDWfHhAYt4/I0gMVirzK5wEzeUqIjEB+LXC/ypb7Aqno5w==}
 
-  he@1.2.0:
-    resolution: {integrity: sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw==}
-    hasBin: true
-
   header-case@2.0.4:
     resolution: {integrity: sha512-H/vuk5TEEVZwrR0lp2zed9OCo1uAILMlx0JEMgC26rzyJJ3N1v6XkwHHXJQdR2doSjcGPM6OKPYoJgf0plJ11Q==}
 
@@ -11907,13 +11912,6 @@ packages:
   node-gyp-build@4.8.4:
     resolution: {integrity: sha512-LA4ZjwlnUblHVgq0oBF3Jl/6h/Nvs5fzBLwdEF4nuxnFdsfajde4WfxtJr3CaiH+F6ewcIB/q4jQ4UzPyid+CQ==}
     hasBin: true
-
-  node-html-markdown@1.3.0:
-    resolution: {integrity: sha512-OeFi3QwC/cPjvVKZ114tzzu+YoR+v9UXW5RwSXGUqGb0qCl0DvP406tzdL7SFn8pZrMyzXoisfG2zcuF9+zw4g==}
-    engines: {node: '>=10.0.0'}
-
-  node-html-parser@6.1.13:
-    resolution: {integrity: sha512-qIsTMOY4C/dAa5Q5vsobRpOOvPfC4pB61UVW2uSwZNUp0QU/jCekTal1vMmbO0DgdHeLUJpv/ARmDqErVxA3Sg==}
 
   node-int64@0.4.0:
     resolution: {integrity: sha512-O5lz91xSOeoXP6DulyHfllpq+Eg00MWitZIbtPfoSEvqIHdl5gfcY6hYzDWnj0qD5tz52PI08u9qUvSVeUBeHw==}
@@ -14528,6 +14526,9 @@ packages:
 
   tunnel-agent@0.6.0:
     resolution: {integrity: sha512-McnNiV1l8RYeY8tBgEpuodCC1mLUdbSN+CYBL7kJsJNInOP8UjDDEwdk6Mw60vdLLrr5NHKZhMAOSrR2NZuQ+w==}
+
+  turndown@7.2.0:
+    resolution: {integrity: sha512-eCZGBN4nNNqM9Owkv9HAtWRYfLA4h909E/WGAWWBpmB275ehNhZyk87/Tpvjbp0jjNl9XwCsbe6bm6CqFsgD+A==}
 
   tus-js-client@2.3.2:
     resolution: {integrity: sha512-5a2rm7gp+G7Z+ZB0AO4PzD/dwczB3n1fZeWO5W8AWLJ12RRk1rY4Aeb2VAYX9oKGE+/rGPrdxoFPA/vDSVKnpg==}
@@ -18709,6 +18710,8 @@ snapshots:
       react: 18.3.1
 
   '@microsoft/tsdoc@0.15.1': {}
+
+  '@mixmark-io/domino@2.2.0': {}
 
   '@modelcontextprotocol/sdk@1.15.0':
     dependencies:
@@ -22969,6 +22972,8 @@ snapshots:
   '@types/tough-cookie@4.0.5': {}
 
   '@types/trusted-types@2.0.7': {}
+
+  '@types/turndown@5.0.5': {}
 
   '@types/unist@2.0.11': {}
 
@@ -27597,8 +27602,6 @@ snapshots:
       property-information: 7.1.0
       space-separated-tokens: 2.0.2
 
-  he@1.2.0: {}
-
   header-case@2.0.4:
     dependencies:
       capital-case: 1.0.4
@@ -30508,15 +30511,6 @@ snapshots:
     optional: true
 
   node-gyp-build@4.8.4: {}
-
-  node-html-markdown@1.3.0:
-    dependencies:
-      node-html-parser: 6.1.13
-
-  node-html-parser@6.1.13:
-    dependencies:
-      css-select: 5.2.2
-      he: 1.2.0
 
   node-int64@0.4.0: {}
 
@@ -33682,6 +33676,10 @@ snapshots:
   tunnel-agent@0.6.0:
     dependencies:
       safe-buffer: 5.2.1
+
+  turndown@7.2.0:
+    dependencies:
+      '@mixmark-io/domino': 2.2.0
 
   tus-js-client@2.3.2:
     dependencies:
