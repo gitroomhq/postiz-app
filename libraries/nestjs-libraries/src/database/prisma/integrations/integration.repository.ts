@@ -54,6 +54,9 @@ export class IntegrationRepository {
     platform: string,
     mentions: { name: string; username: string; image: string }[]
   ) {
+    if (mentions.length === 0) {
+      return [];
+    }
     return this._mentions.model.mentions.createMany({
       data: mentions.map((mention) => ({
         platform,

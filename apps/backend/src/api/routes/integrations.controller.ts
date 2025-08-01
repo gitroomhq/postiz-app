@@ -278,7 +278,7 @@ export class IntegrationsController {
           name: p.label,
           username: p.id,
           image: p.image,
-        }))
+        })).filter((f: any) => f.name)
       );
     }
 
@@ -292,7 +292,7 @@ export class IntegrationsController {
         ...newList,
       ],
       (p) => p.id
-    );
+    ).filter(f => f.label && f.image && f.id);
   }
 
   @Post('/function')

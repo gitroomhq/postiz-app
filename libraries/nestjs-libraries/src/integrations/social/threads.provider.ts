@@ -13,6 +13,7 @@ import { capitalize, chunk } from 'lodash';
 import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
 import { Integration } from '@prisma/client';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
+import { TwitterApi } from 'twitter-api-v2';
 
 export class ThreadsProvider extends SocialAbstract implements SocialProvider {
   identifier = 'threads';
@@ -23,6 +24,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     'threads_content_publish',
     'threads_manage_replies',
     'threads_manage_insights',
+    // 'threads_profile_discovery',
   ];
 
   editor = 'normal' as const;
@@ -413,8 +415,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
           {
             id: makeId(10),
             media: [],
-            message:
-              postDetails?.[0]?.settings?.thread_finisher,
+            message: postDetails?.[0]?.settings?.thread_finisher,
             settings: {},
           },
           lastReplyId,
@@ -526,4 +527,29 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
 
     return false;
   }
+
+  // override async mention(
+  //   token: string,
+  //   data: { query: string },
+  //   id: string,
+  //   integration: Integration
+  // ) {
+  //   const p = await (
+  //     await fetch(
+  //       `https://graph.threads.net/v1.0/profile_lookup?username=${data.query}&access_token=${integration.token}`
+  //     )
+  //   ).json();
+  //
+  //   return [
+  //     {
+  //       id: String(p.id),
+  //       label: p.name,
+  //       image: p.profile_picture_url,
+  //     },
+  //   ];
+  // }
+  //
+  // mentionFormat(idOrHandle: string, name: string) {
+  //   return `@${idOrHandle}`;
+  // }
 }
