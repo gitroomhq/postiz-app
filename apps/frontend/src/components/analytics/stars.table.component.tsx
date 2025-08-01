@@ -205,7 +205,7 @@ export const StarsTableComponent = () => {
             <thead>
               <tr>
                 <th>
-                  <span data-sentry-mask><UpDown name="Repository" param="login" /></span>
+                  <UpDown name="Repository" param="login" data-sentry-mask />
                 </th>
                 <th>
                   <UpDown name="Date" param="date" />
