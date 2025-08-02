@@ -12,12 +12,14 @@ import { CopilotTextarea } from '@copilotkit/react-textarea';
 import { Select } from '@gitroom/react/form/select';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 export const SignaturesComponent: FC<{
   appendSignature?: (value: string) => void;
 }> = (props) => {
   const { appendSignature } = props;
   const fetch = useFetch();
   const modal = useModals();
+  const toaster = useToaster();
   const load = useCallback(async () => {
     return (await fetch('/signatures')).json();
   }, []);
@@ -34,6 +36,27 @@ export const SignaturesComponent: FC<{
       });
     },
     [mutate]
+  );
+
+  const deleteSignature = useCallback(
+    (data: any) => async () => {
+      if (
+        await deleteDialog(
+          t(
+            'are_you_sure_you_want_to_delete',
+            `Are you sure you want to delete?`,
+            { name: data.content.slice(0, 15) + '...' }
+          )
+        )
+      ) {
+        await fetch(`/signatures/${data.id}`, {
+          method: 'DELETE',
+        });
+        mutate();
+        toaster.show('Signature deleted successfully', 'success');
+      }
+    },
+    []
   );
 
   const t = useT();
@@ -92,7 +115,7 @@ export const SignaturesComponent: FC<{
                   </div>
                   <div className="flex justify-center">
                     <div>
-                      <Button onClick={addSignature(p)}>
+                      <Button onClick={deleteSignature(p)}>
                         {t('delete', 'Delete')}
                       </Button>
                     </div>

@@ -21,4 +21,8 @@ export class SignatureService {
       id
     );
   }
+
+  deleteSignature(orgId: string, id: string) {
+    return this._signatureRepository.deleteSignature(orgId, id);
+  }
 }
