@@ -9,6 +9,11 @@ import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 
+// Sentry
+import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
+
+initializeSentry('medium');
+
 export class MediumProvider extends SocialAbstract implements SocialProvider {
   identifier = 'medium';
   name = 'Medium';

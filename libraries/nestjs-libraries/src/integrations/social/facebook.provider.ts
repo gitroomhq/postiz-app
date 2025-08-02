@@ -10,6 +10,11 @@ import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { FacebookDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/facebook.dto';
 
+// Sentry
+import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
+
+initializeSentry('facebook');
+
 export class FacebookProvider extends SocialAbstract implements SocialProvider {
   identifier = 'facebook';
   name = 'Facebook Page';

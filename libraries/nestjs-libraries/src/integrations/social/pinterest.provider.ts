@@ -13,6 +13,11 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import dayjs from 'dayjs';
 
+// Sentry
+import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
+
+initializeSentry('pinterest');
+
 export class PinterestProvider
   extends SocialAbstract
   implements SocialProvider

@@ -10,6 +10,11 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import { groupBy } from 'lodash';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
+// Sentry
+import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
+
+initializeSentry('reddit');
+
 export class RedditProvider extends SocialAbstract implements SocialProvider {
   identifier = 'reddit';
   name = 'Reddit';

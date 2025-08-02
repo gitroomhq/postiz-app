@@ -7,6 +7,11 @@ import {
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
+// Sentry
+import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
+
+initializeSentry('discord');
+
 export class DiscordProvider extends SocialAbstract implements SocialProvider {
   identifier = 'discord';
   name = 'Discord';

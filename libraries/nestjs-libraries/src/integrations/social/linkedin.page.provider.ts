@@ -12,6 +12,11 @@ import { Integration } from '@prisma/client';
 import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
 import { timer } from '@gitroom/helpers/utils/timer';
 
+// Sentry
+import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
+
+initializeSentry('linkedin-page');
+
 export class LinkedinPageProvider
   extends LinkedinProvider
   implements SocialProvider

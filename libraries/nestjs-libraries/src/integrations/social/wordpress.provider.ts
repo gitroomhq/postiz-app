@@ -13,6 +13,11 @@ import slugify from 'slugify';
 import FormData from 'form-data';
 import axios from 'axios';
 
+// Sentry
+import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
+
+initializeSentry('wordpress');
+
 export class WordpressProvider
   extends SocialAbstract
   implements SocialProvider

@@ -9,6 +9,11 @@ import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.ab
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 
+// Sentry
+import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
+
+initializeSentry('slack');
+
 export class SlackProvider extends SocialAbstract implements SocialProvider {
   identifier = 'slack';
   name = 'Slack';

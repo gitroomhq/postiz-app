@@ -12,6 +12,11 @@ import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.ab
 import { InstagramDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/instagram.dto';
 import { Integration } from '@prisma/client';
 
+// Sentry
+import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
+
+initializeSentry('instagram');
+
 export class InstagramProvider
   extends SocialAbstract
   implements SocialProvider

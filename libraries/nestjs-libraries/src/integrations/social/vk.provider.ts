@@ -12,6 +12,11 @@ import axios from 'axios';
 import FormDataNew from 'form-data';
 import mime from 'mime-types';
 
+// Sentry
+import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
+
+initializeSentry('vk');
+
 export class VkProvider extends SocialAbstract implements SocialProvider {
   identifier = 'vk';
   name = 'VK';

@@ -12,6 +12,11 @@ import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { LemmySettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/lemmy.dto';
 import { groupBy } from 'lodash';
 
+// Sentry
+import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
+
+initializeSentry('lemmy');
+
 export class LemmyProvider extends SocialAbstract implements SocialProvider {
   identifier = 'lemmy';
   name = 'Lemmy';

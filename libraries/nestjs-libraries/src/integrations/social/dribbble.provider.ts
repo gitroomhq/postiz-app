@@ -12,6 +12,11 @@ import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.ab
 import { DribbbleDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dribbble.dto';
 import mime from 'mime-types';
 
+// Sentry
+import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
+
+initializeSentry('dribbble');
+
 export class DribbbleProvider extends SocialAbstract implements SocialProvider {
   identifier = 'dribbble';
   name = 'Dribbble';

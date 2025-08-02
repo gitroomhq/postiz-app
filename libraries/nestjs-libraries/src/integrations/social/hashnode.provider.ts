@@ -12,6 +12,11 @@ import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 
+// Sentry
+import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
+
+initializeSentry('hashnode');
+
 export class HashnodeProvider extends SocialAbstract implements SocialProvider {
   identifier = 'hashnode';
   name = 'Hashnode';

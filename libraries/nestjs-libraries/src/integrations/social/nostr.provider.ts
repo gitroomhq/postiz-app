@@ -11,6 +11,11 @@ import { getPublicKey, Relay, finalizeEvent } from 'nostr-tools';
 import WebSocket from 'ws';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 
+// Sentry
+import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
+
+initializeSentry('nostr');
+
 // @ts-ignore
 global.WebSocket = WebSocket;
 
