@@ -29,6 +29,7 @@ import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
 import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
+import { clearSentryUserContext } from '@gitroom/nestjs-libraries/sentry/sentry.user.context';
 
 @ApiTags('User')
 @Controller('/user')
@@ -199,6 +200,9 @@ export class UsersController {
 
   @Post('/logout')
   logout(@Res({ passthrough: true }) response: Response) {
+    // Clear Sentry user context on logout
+    clearSentryUserContext();
+
     response.cookie('auth', '', {
       domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
       ...(!process.env.NOT_SECURED
