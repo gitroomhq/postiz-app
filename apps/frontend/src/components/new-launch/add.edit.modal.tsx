@@ -116,6 +116,7 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
     internal,
     setTags,
     setEditor,
+    setRepeater,
   } = useLaunchStore(
     useShallow((state) => ({
       reset: state.reset,
@@ -126,11 +127,15 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
       internal: state.internal,
       setTags: state.setTags,
       setEditor: state.setEditor,
+      setRepeater: state.setRepeater
     }))
   );
 
   useEffect(() => {
     if (existingData.integration) {
+      if (existingData?.posts?.[0]?.intervalInDays) {
+        setRepeater(existingData.posts[0].intervalInDays);
+      }
       setTags(
         // @ts-ignore
         existingData?.posts?.[0]?.tags?.map((p: any) => ({
