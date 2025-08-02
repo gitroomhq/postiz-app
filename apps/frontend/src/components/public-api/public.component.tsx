@@ -48,7 +48,7 @@ export const PublicComponent = () => {
         </a>
       </div>
       <div className="my-[16px] mt-[16px] bg-sixth border-fifth items-center border rounded-[4px] p-[24px] flex gap-[24px]">
-        <div className="flex items-center">
+        <div className="flex items-center" data-sentry-mask>
           {reveal ? (
             user.publicApi
           ) : (
@@ -79,7 +79,7 @@ export const PublicComponent = () => {
         )}
       </div>
       <div className="my-[16px] mt-[16px] bg-sixth border-fifth items-center border rounded-[4px] p-[24px] flex gap-[24px]">
-        <div className="flex items-center">
+        <div className="flex items-center" data-sentry-mask>
           {reveal2 ? (
             `${backendUrl}/mcp/` + user.publicApi + '/sse'
           ) : (

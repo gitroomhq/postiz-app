@@ -199,7 +199,7 @@ export const TeamsComponent = () => {
         <div className="flex flex-col gap-[16px]">
           {(data || []).map((p) => (
             <div key={p.user.id} className="flex items-center">
-              <div className="flex-1">
+              <div className="flex-1" data-sentry-mask>
                 {capitalize(p.user.email.split('@')[0]).split('.')[0]}
               </div>
               <div className="flex-1">
