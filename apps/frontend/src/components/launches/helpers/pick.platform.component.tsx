@@ -220,14 +220,14 @@ export const PickPlatforms: FC<{
           ref={ref}
         >
           <div className="innerComponent">
-            <div className="flex">
+            <div className="flex gap-[10px] flex-wrap">
               {integrations
                 .filter((f) => !f.inBetweenSteps)
                 .map((integration) =>
                   !props.singleSelect ? (
                     <div
                       key={integration.id}
-                      className="flex gap-[8px] items-center me-[10px]"
+                      className="flex gap-[8px] items-center"
                       {...(props.toolTip && {
                         'data-tooltip-id': 'tooltip',
                         'data-tooltip-content': integration.name,
