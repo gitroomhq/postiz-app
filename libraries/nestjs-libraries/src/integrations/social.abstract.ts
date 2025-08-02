@@ -32,21 +32,30 @@ export abstract class SocialAbstract {
     return undefined;
   }
 
-  public async mention(token: string, d: { query: string }, id: string, integration: Integration): Promise<{ id: string; label: string; image: string }[] | {none: true}> {
-    return {none: true};
+  public async mention(
+    token: string,
+    d: { query: string },
+    id: string,
+    integration: Integration
+  ): Promise<{ id: string; label: string; image: string }[] | { none: true }> {
+    return { none: true };
   }
 
   async runInConcurrent<T>(func: (...args: any[]) => Promise<T>) {
-    const value = await concurrencyService<any>(this.identifier.split('-')[0], async () => {
-      try {
-        return await func();
-      } catch (err) {
-        return {type: 'error', value: err};
+    const value = await concurrencyService<any>(
+      this.identifier.split('-')[0],
+      async () => {
+        try {
+          return await func();
+        } catch (err) {
+          const handle = this.handleErrors(JSON.stringify(err));
+          return { err: true, ...(handle || {}) };
+        }
       }
-    });
+    );
 
-    if (value && value.type === 'error') {
-      throw value.value;
+    if (value && value?.err && value?.value) {
+      throw new BadBody('', JSON.stringify({}), {} as any, value.value || '');
     }
 
     return value;
@@ -78,7 +87,11 @@ export abstract class SocialAbstract {
       json = '{}';
     }
 
-    if (request.status === 500 || json.includes('rate_limit_exceeded') || json.includes('Rate limit')) {
+    if (
+      request.status === 500 ||
+      json.includes('rate_limit_exceeded') ||
+      json.includes('Rate limit')
+    ) {
       await timer(5000);
       return this.fetch(url, options, identifier, totalRetries + 1);
     }
