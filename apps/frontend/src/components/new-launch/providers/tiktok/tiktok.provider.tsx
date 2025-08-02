@@ -149,9 +149,7 @@ const TikTokSettings: FC<{
   return (
     <div className="flex flex-col">
       {/*<CheckTikTokValidity picture={props?.values?.[0]?.image?.[0]?.path} />*/}
-      {isTitle && (
-        <Input label="Title" {...register('title')} maxLength={90} />
-      )}
+      {isTitle && <Input label="Title" {...register('title')} maxLength={90} />}
       <Select
         label={t('label_who_can_see_this_video', 'Who can see this video?')}
         hideErrors={true}
@@ -238,7 +236,14 @@ const TikTokSettings: FC<{
         />
       </div>
       <hr className="my-[15px] mb-[25px] border-tableBorder" />
-      <div className="flex flex-col">
+      <div className="flex flex-col gap-[20px]">
+        <Checkbox
+          label={t('video_made_with_ai', 'Video made with AI')}
+          variant="hollow"
+          {...register('video_made_with_ai', {
+            value: false,
+          })}
+        />
         <Checkbox
           variant="hollow"
           label={t('label_disclose_video_content', 'Disclose Video Content')}

@@ -461,6 +461,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
                     disable_duet: !firstPost.settings.duet || false,
                     disable_comment: !firstPost.settings.comment || false,
                     disable_stitch: !firstPost.settings.stitch || false,
+                    is_aigc: firstPost.settings.video_made_with_ai || false,
                     brand_content_toggle:
                       firstPost.settings.brand_content_toggle || false,
                     brand_organic_toggle:
