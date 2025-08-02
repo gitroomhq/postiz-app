@@ -376,7 +376,7 @@ export const MainBillingComponent: FC<{
     [monthlyOrYearly, subscription, user, utm]
   );
   if (user?.isLifetime) {
-    router.replace('/billing/lifetime');
+    router.replace('/');
     return null;
   }
   return (
