@@ -131,6 +131,7 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
     postDetails: PostDetails[]
   ): Promise<PostResponse[]> {
     let channel = postDetails[0].settings.channel;
+    console.log(postDetails[0].message);
     if (postDetails.length > 1) {
       const { id: threadId } = await (
         await fetch(
