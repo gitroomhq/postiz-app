@@ -34,9 +34,21 @@ export const Plugs = () => {
     load2,
     {
       fallbackData: [],
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      revalidateIfStale: false,
+      revalidateOnMount: true,
+      refreshWhenHidden: false,
+      refreshWhenOffline: false,
     }
   );
   const { data, isLoading } = useSWR('analytics-list', load, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    revalidateOnMount: true,
+    refreshWhenHidden: false,
+    refreshWhenOffline: false,
     fallbackData: [],
   });
 

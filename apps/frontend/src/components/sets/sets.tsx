@@ -68,6 +68,12 @@ export const Sets: FC = () => {
   }, []);
 
   const { isLoading, data: integrations } = useSWR('/integrations/list', load, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    revalidateOnMount: true,
+    refreshWhenHidden: false,
+    refreshWhenOffline: false,
     fallbackData: [],
   });
 
@@ -75,7 +81,14 @@ export const Sets: FC = () => {
     return (await fetch('/sets')).json();
   }, []);
 
-  const { data, mutate } = useSWR('sets', list);
+  const { data, mutate } = useSWR('sets', list, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    revalidateOnMount: true,
+    refreshWhenHidden: false,
+    refreshWhenOffline: false,
+  });
 
   const addSet = useCallback(
     (params?: { id?: string; name?: string; content?: string }) => () => {

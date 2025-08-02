@@ -103,7 +103,14 @@ export const ThirdPartyListComponent: FC<{ reload: () => void }> = (props) => {
     return (await fetch('/third-party/list')).json();
   }, []);
 
-  const { data } = useSWR('third-party-list', integrationsList);
+  const { data } = useSWR('third-party-list', integrationsList, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    revalidateOnMount: true,
+    refreshWhenHidden: false,
+    refreshWhenOffline: false,
+  });
 
   const addApiKey = useCallback(
     (title: string, identifier: string) => () => {

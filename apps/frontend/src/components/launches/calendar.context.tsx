@@ -176,8 +176,22 @@ export const CalendarWeekProvider: FC<{
     return (await fetch('/sets')).json();
   }, []);
 
-  const { data: sets, mutate } = useSWR('sets', setList);
-  const { data: sign } = useSWR('default-sign', defaultSign);
+  const { data: sets, mutate } = useSWR('sets', setList, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    revalidateOnMount: true,
+    refreshWhenHidden: false,
+    refreshWhenOffline: false,
+  });
+  const { data: sign } = useSWR('default-sign', defaultSign, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    revalidateOnMount: true,
+    refreshWhenHidden: false,
+    refreshWhenOffline: false,
+  });
 
   const setFiltersWrapper = useCallback(
     (filters: {

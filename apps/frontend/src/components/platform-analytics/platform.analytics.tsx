@@ -51,6 +51,12 @@ export const PlatformAnalytics = () => {
     return int.filter((f: any) => allowedIntegrations.includes(f.identifier));
   }, []);
   const { data, isLoading } = useSWR('analytics-list', load, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    revalidateOnMount: true,
+    refreshWhenHidden: false,
+    refreshWhenOffline: false,
     fallbackData: [],
   });
   const sortedIntegrations = useMemo(() => {

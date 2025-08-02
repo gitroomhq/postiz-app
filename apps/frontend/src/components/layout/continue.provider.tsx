@@ -22,6 +22,12 @@ export const ContinueProvider: FC = () => {
     return list;
   }, []);
   const { data: integrations } = useSWR('/integrations/list', load, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    revalidateOnMount: true,
+    refreshWhenHidden: false,
+    refreshWhenOffline: false,
     fallbackData: [],
   });
   const closeModal = useCallback(() => {

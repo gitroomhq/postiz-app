@@ -205,7 +205,14 @@ export const ThirdPartyMedia: FC<{
     );
   }, []);
 
-  const { data, isLoading, mutate } = useSWR('third-party', thirdParties);
+  const { data, isLoading, mutate } = useSWR('third-party', thirdParties, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    revalidateOnMount: true,
+    refreshWhenHidden: false,
+    refreshWhenOffline: false,
+  });
 
   if (isLoading || !data.length) {
     return null;
