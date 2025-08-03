@@ -14,8 +14,10 @@ checksums:
     save: f7a2929f33bc420195e59ac5a8bcd454
     send_test: 6252eb4669859b7f7db4cdbc227580e1
     select_role: 406451b1c9a26f1484164b8b71c1bd7e
+    video_made_with_ai: c37747aaf8107d339d6238a0463f7096
     please_add_at_least: 90d3c0237b56e57c7a58d5decf6e9d3c
     send_invitation_via_email: 9275e0b85147a931421b3bf6c3083cb4
+    copy_id: 831147124db35832872f8470c577e440
     team_members: 61333c4a765e10b2ad46774951725233
     invite_your_assistant_or_team_member_to_manage_your_account: dadd50655759ac32b9ed62e60f8acb1d
     remove: dba2fe5fe9f83f8078c687f28cba4b52
@@ -37,6 +39,7 @@ checksums:
     cancel: 2e2a849c2223911717de8caa2c71bade
     connect: 8778ee245078a8be4a2ce855c8c56edc
     public_api: f02b394bb952777eb3e2432b3c78556b
+    check_n8n: 2e6e406d2c46e83f52a80ef9bd810d10
     use_postiz_api_to_integrate_with_your_tools: ccb5f5cd99f7f087ae360f231ae07985
     read_how_to_use_it_over_the_documentation: 05ac49c5bb91da62103dbbf2f69ea50f
     reveal: 3f7302cc2e097266e447b3e18f1b9ab7
