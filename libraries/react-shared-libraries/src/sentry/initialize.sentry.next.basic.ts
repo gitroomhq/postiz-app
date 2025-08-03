@@ -26,6 +26,12 @@ export const initializeSentryBasic = (environment: string, dsn: string, extensio
       ...extension,
       debug: environment === 'development',
       tracesSampleRate: environment === 'development' ? 1.0 : 0.3,
+      ignoreErrors: [
+        /^Failed to fetch\s*\(api\.postiz\.com\)$/,
+        /^Load failed\s*\(api\.postiz\.com\)$/,
+        /^NetworkError when attempting to fetch resource\.?\s*\(api\.postiz\.com\)$/,
+        /^You have reached the maximum number of channels$/
+     ],
     });
   } catch (err) {}
 };
