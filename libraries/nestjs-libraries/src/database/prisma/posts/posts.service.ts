@@ -653,42 +653,6 @@ export class PostsService {
     return this._postRepository.countPostsFromDay(orgId, date);
   }
 
-  async submit(
-    id: string,
-    order: string,
-    message: string,
-    integrationId: string
-  ) {
-    if (!(await this._messagesService.canAddPost(id, order, integrationId))) {
-      throw new Error('You can not add a post to this publication');
-    }
-    const getOrgByOrder = await this._messagesService.getOrgByOrder(order);
-    const submit = await this._postRepository.submit(
-      id,
-      order,
-      getOrgByOrder?.messageGroup?.buyerOrganizationId!
-    );
-    const messageModel = await this._messagesService.createNewMessage(
-      submit?.submittedForOrder?.messageGroupId || '',
-      From.SELLER,
-      '',
-      {
-        type: 'post',
-        data: {
-          id: order,
-          postId: id,
-          status: 'PENDING',
-          integration: integrationId,
-          description: message.slice(0, 300) + '...',
-        },
-      }
-    );
-
-    await this._postRepository.updateMessage(id, messageModel.id);
-
-    return messageModel;
-  }
-
   async createPost(orgId: string, body: CreatePostDto): Promise<any[]> {
     const postList = [];
     for (const post of body.posts) {
@@ -722,16 +686,6 @@ export class PostsService {
         'post',
         previousPost ? previousPost : posts?.[0]?.id
       );
-
-      if (body.order && body.type !== 'draft') {
-        await this.submit(
-          posts[0].id,
-          body.order,
-          post.value[0].content,
-          post.integration.id
-        );
-        continue;
-      }
 
       if (
         body.type === 'now' ||
@@ -770,17 +724,9 @@ export class PostsService {
 
   async changeDate(orgId: string, id: string, date: string) {
     const getPostById = await this._postRepository.getPostById(id, orgId);
-    if (
-      getPostById?.submittedForOrderId &&
-      getPostById.approvedSubmitForOrder !== 'NO'
-    ) {
-      throw new Error(
-        'You can not change the date of a post that has been submitted'
-      );
-    }
 
     await this._workerServiceProducer.delete('post', id);
-    if (getPostById?.state !== 'DRAFT' && !getPostById?.submittedForOrderId) {
+    if (getPostById?.state !== 'DRAFT') {
       this._workerServiceProducer.emit('post', {
         id: id,
         options: {
