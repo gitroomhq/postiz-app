@@ -52,10 +52,7 @@ import Heading from '@tiptap/extension-heading';
 import { HeadingComponent } from '@gitroom/frontend/components/new-launch/heading.component';
 import Mention from '@tiptap/extension-mention';
 import { suggestion } from '@gitroom/frontend/components/new-launch/mention.component';
-import { useCustomProviderFunction } from '@gitroom/frontend/components/launches/helpers/use.custom.provider.function';
-import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import { useDebouncedCallback } from 'use-debounce';
 
 const InterceptBoldShortcut = Extension.create({
   name: 'preventBoldWithUnderline',
