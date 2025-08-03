@@ -16,7 +16,16 @@ export const GeneralPreviewComponent: FC<{
   const mediaDir = useMediaDirectory();
 
   const renderContent = topValue.map((p) => {
-    const newContent = stripHtmlValidation('normal', p.content, true);
+    const newContent = stripHtmlValidation(
+      'normal',
+      p.content.replace(
+        /<span.*?data-mention-id="([.\s\S]*?)"[.\s\S]*?>([.\s\S]*?)<\/span>/gi,
+        (match, match1, match2) => {
+          return `[[[${match2}]]]`;
+        }
+      ),
+      true
+    );
 
     const { start, end } = textSlicer(
       integration?.identifier || '',
@@ -27,21 +36,13 @@ export const GeneralPreviewComponent: FC<{
     const finalValue =
       newContent
         .slice(start, end)
-        .replace(/(@.+?)(\s)/gi, (match, match1, match2) => {
-          return `<span class="font-bold" style="color: #ae8afc">${match1.trim()}${match2}</span>`;
-        })
-        .replace(/@\[(.+?)]\((.+?)\)/gi, (match, name, id) => {
-          return `<span class="font-bold" style="color: #ae8afc">@${name}</span>`;
+        .replace(/\[\[\[([.\s\S]*?)]]]/, (match, match1) => {
+          return `<span class="font-bold font-[arial]" style="color: #ae8afc">${match1}</span>`;
         }) +
       `<mark class="bg-red-500" data-tooltip-id="tooltip" data-tooltip-content="This text will be cropped">` +
-      newContent
-        .slice(end)
-        .replace(/(@.+?)(\s)/gi, (match, match1, match2) => {
-          return `<span class="font-bold" style="color: #ae8afc">${match1.trim()}${match2}</span>`;
-        })
-        .replace(/@\[(.+?)]\((.+?)\)/gi, (match, name, id) => {
-          return `<span class="font-bold" style="color: #ae8afc">@${name}</span>`;
-        }) +
+      newContent.slice(end).replace(/\[\[\[([.\s\S]*?)]]]/, (match, match1) => {
+        return `<span class="font-bold font-[arial]" style="color: #ae8afc">${match1}</span>`;
+      }) +
       `</mark>`;
 
     return { text: finalValue, images: p.image };
@@ -110,10 +111,7 @@ export const GeneralPreviewComponent: FC<{
                 </div>
               </div>
               <div
-                className={clsx(
-                  'text-wrap whitespace-pre',
-                  'preview'
-                )}
+                className={clsx('text-wrap whitespace-pre', 'preview')}
                 dangerouslySetInnerHTML={{
                   __html: value.text,
                 }}

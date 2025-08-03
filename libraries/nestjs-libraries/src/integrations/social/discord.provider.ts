@@ -6,6 +6,7 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { Integration } from '@prisma/client';
 
 export class DiscordProvider extends SocialAbstract implements SocialProvider {
   identifier = 'discord';
@@ -131,7 +132,6 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
     postDetails: PostDetails[]
   ): Promise<PostResponse[]> {
     let channel = postDetails[0].settings.channel;
-    console.log(postDetails[0].message);
     if (postDetails.length > 1) {
       const { id: threadId } = await (
         await fetch(
@@ -159,7 +159,9 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
       form.append(
         'payload_json',
         JSON.stringify({
-          content: post.message,
+          content: post.message.replace(/\[\[\[(@\d.*?)]]]/g, (match, p1) => {
+            return `<${p1}>`;
+          }),
           attachments: post.media?.map((p, index) => ({
             id: index,
             description: `Picture ${index}`,
@@ -218,5 +220,34 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
     return {
       name,
     };
+  }
+
+  override async mention(
+    token: string,
+    data: { query: string },
+    id: string,
+    integration: Integration
+  ) {
+    const list = await (
+      await fetch(
+        `https://discord.com/api/guilds/${id}/members/search?query=${data.query}`,
+        {
+          headers: {
+            Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN_ID}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+    ).json();
+
+    return list.map((p: any) => ({
+      id: String(p.user.id),
+      label: p.user.global_name || p.user.username,
+      image: `https://cdn.discordapp.com/avatars/${p.user.id}/${p.user.avatar}.png`,
+    }));
+  }
+
+  mentionFormat(idOrHandle: string, name: string) {
+    return `[[[@${idOrHandle}]]]`;
   }
 }
