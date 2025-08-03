@@ -4,12 +4,20 @@ import { Provider } from '@prisma/client';
 import { ItemsDto } from '@gitroom/nestjs-libraries/dtos/marketplace/items.dto';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
 import { OrganizationRepository } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.repository';
+import { ItemUserRepository } from '../marketplace/item.user.repository';
+import { AgenciesRepository } from '../agencies/agencies.repository';
+import { PostsRepository } from '../posts/posts.repository';
+import { MessagesRepository } from '../marketplace/messages.repository';
 
 @Injectable()
 export class UsersService {
   constructor(
     private _usersRepository: UsersRepository,
-    private _organizationRepository: OrganizationRepository
+    private _organizationRepository: OrganizationRepository,
+    private _itemUserRepository: ItemUserRepository,
+    private _agenciesRepository: AgenciesRepository,
+    private _postsRepository: PostsRepository,
+    private _messagesRepository: MessagesRepository
   ) {}
 
   getUserByEmail(email: string) {
@@ -54,5 +62,15 @@ export class UsersService {
 
   changePersonal(userId: string, body: UserDetailDto) {
     return this._usersRepository.changePersonal(userId, body);
+  }
+
+    async deleteUser(userId: string){
+    //Deleting all models the user has first
+    await this._organizationRepository.deleteUserOrganizations(userId);
+    await this._itemUserRepository.deleteAllItemsByUser(userId)
+    await this._agenciesRepository.deleteByUserId(userId)
+    await this._postsRepository.deleteCommentsByUser(userId)
+    await this._messagesRepository.deletePayoutProblemsByUser(userId)
+    return this._usersRepository.deleteUser(userId)
   }
 }
