@@ -1,5 +1,6 @@
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import Bottleneck from 'bottleneck';
+import { timer } from '@gitroom/helpers/utils/timer';
 
 const connection = new Bottleneck.IORedisConnection({
   client: ioRedis,
@@ -20,7 +21,9 @@ export async function concurrencyService<T>(
     load = await bottleneck
       .key(identifier.split('-')[0])
       .schedule<T>({ expiration: 120_000 }, async () => {
-        return await func();
+        const res = await func();
+        await timer(2000);
+        return res;
       });
   } catch (err) {}
 
