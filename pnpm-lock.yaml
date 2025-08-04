@@ -261,6 +261,9 @@ importers:
       bcrypt:
         specifier: ^5.1.1
         version: 5.1.1
+      bottleneck:
+        specifier: ^2.19.5
+        version: 2.19.5
       bs58:
         specifier: ^6.0.0
         version: 6.0.0
@@ -7517,6 +7520,9 @@ packages:
 
   borsh@0.7.0:
     resolution: {integrity: sha512-CLCsZGIBCFnPtkNnieW/a8wmreDmfUtjU2m9yHrzPXIlNbqVs0AQrSatSG6vdNYUqdc83tkQi2eHfF98ubzQLA==}
+
+  bottleneck@2.19.5:
+    resolution: {integrity: sha512-VHiNCbI1lKdl44tGrhNfU3lup0Tj/ZBMJB5/2ZbNXRCPuRCO7ed2mgcK4r17y+KB2EfuYuRaVlwNbAeaWGSpbw==}
 
   bowser@2.11.0:
     resolution: {integrity: sha512-AlcaJBi/pqqJBIQ8U9Mcpc9i8Aqxn88Skv5d+xBX006BY5u8N3mGLHa5Lgppa7L/HfwgwLgZ6NYs+Ag6uUmJRA==}
@@ -24714,6 +24720,8 @@ snapshots:
       bn.js: 5.2.2
       bs58: 4.0.1
       text-encoding-utf-8: 1.0.2
+
+  bottleneck@2.19.5: {}
 
   bowser@2.11.0: {}
 

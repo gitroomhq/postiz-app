@@ -127,6 +127,7 @@
     "array-move": "^4.0.0",
     "axios": "^1.7.7",
     "bcrypt": "^5.1.1",
+    "bottleneck": "^2.19.5",
     "bs58": "^6.0.0",
     "bufferutil": "^4.0.8",
     "bullmq": "^5.12.12",
