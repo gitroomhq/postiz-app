@@ -153,7 +153,9 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
       ])
         .replace(/<strong>/g, '<b>')
         .replace(/<\/strong>/g, '</b>')
-        .replace(/<p>(.*?)<\/p>/g, '$1\n')
+        .replace(/<p>(.*?)<\/p>/g, '$1\n');
+
+      console.log(text);
       // check if media is local to modify url
       const processedMedia = mediaFiles.map((media) => {
         let mediaUrl = media.path;

@@ -27,6 +27,24 @@ export class PostsRepository {
     private _errors: PrismaRepository<'errors'>
   ) {}
 
+  searchForMissingThreeHoursPosts() {
+    return this._post.model.post.findMany({
+      where: {
+        publishDate: {
+          gte: dayjs.utc().toDate(),
+          lt: dayjs.utc().add(3, 'hour').toDate()
+        },
+        state: 'QUEUE',
+        deletedAt: null,
+        parentPostId: null,
+      },
+      select: {
+        id: true,
+        publishDate: true,
+      },
+    });
+  }
+
   getOldPosts(orgId: string, date: string) {
     return this._post.model.post.findMany({
       where: {
