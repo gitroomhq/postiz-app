@@ -326,7 +326,7 @@ export class InstagramProvider
     refresh: string;
   }) {
     const getAccessToken = await (
-      await this.fetch(
+      await fetch(
         'https://graph.facebook.com/v20.0/oauth/access_token' +
           `?client_id=${process.env.FACEBOOK_APP_ID}` +
           `&redirect_uri=${encodeURIComponent(
@@ -340,7 +340,7 @@ export class InstagramProvider
     ).json();
 
     const { access_token, expires_in, ...all } = await (
-      await this.fetch(
+      await fetch(
         'https://graph.facebook.com/v20.0/oauth/access_token' +
           '?grant_type=fb_exchange_token' +
           `&client_id=${process.env.FACEBOOK_APP_ID}` +
@@ -350,7 +350,7 @@ export class InstagramProvider
     ).json();
 
     const { data } = await (
-      await this.fetch(
+      await fetch(
         `https://graph.facebook.com/v20.0/me/permissions?access_token=${access_token}`
       )
     ).json();
@@ -367,7 +367,7 @@ export class InstagramProvider
         data: { url },
       },
     } = await (
-      await this.fetch(
+      await fetch(
         `https://graph.facebook.com/v20.0/me?fields=id,name,picture&access_token=${access_token}`
       )
     ).json();
@@ -419,13 +419,13 @@ export class InstagramProvider
     data: { pageId: string; id: string }
   ) {
     const { access_token, ...all } = await (
-      await this.fetch(
+      await fetch(
         `https://graph.facebook.com/v20.0/${data.pageId}?fields=access_token,name,picture.type(large)&access_token=${accessToken}`
       )
     ).json();
 
     const { id, name, profile_picture_url, username } = await (
-      await this.fetch(
+      await fetch(
         `https://graph.facebook.com/v20.0/${data.id}?fields=username,name,profile_picture_url&access_token=${accessToken}`
       )
     ).json();

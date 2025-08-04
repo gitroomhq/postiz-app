@@ -295,7 +295,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     };
 
     const { access_token, refresh_token, scope } = await (
-      await this.fetch('https://open.tiktokapis.com/v2/oauth/token/', {
+      await fetch('https://open.tiktokapis.com/v2/oauth/token/', {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
@@ -338,7 +338,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     const {
       data: { max_video_post_duration_sec },
     } = await (
-      await this.fetch(
+      await fetch(
         'https://open.tiktokapis.com/v2/post/publish/creator_info/query/',
         {
           method: 'POST',
