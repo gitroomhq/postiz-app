@@ -1,4 +1,5 @@
 import striptags from 'striptags';
+import { parseFragment, serialize } from 'parse5';
 
 const bold = {
   a: '𝗮',
@@ -132,11 +133,13 @@ const underlineMap = {
 
 export const stripHtmlValidation = (
   type: 'none' | 'normal' | 'markdown' | 'html',
-  value: string,
+  val: string,
   replaceBold = false,
   none = false,
   convertMentionFunction?: (idOrHandle: string, name: string) => string
 ): string => {
+  const value = serialize(parseFragment(val));
+
   if (type === 'html') {
     return striptags(convertMention(value, convertMentionFunction), [
       'ul',

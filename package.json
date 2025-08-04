@@ -173,6 +173,7 @@
     "nostr-tools": "^2.10.4",
     "openai": "^5.11.0",
     "p-limit": "^3.1.0",
+    "parse5": "^8.0.0",
     "polotno": "^2.10.5",
     "posthog-js": "^1.178.0",
     "react": "18.3.1",
