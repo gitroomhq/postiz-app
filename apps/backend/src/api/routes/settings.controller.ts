@@ -132,22 +132,11 @@ export class SettingsController {
     @GetOrgFromRequest() org: Organization,
     @Body() body: AddTeamMemberDto
   ) {
-    Logger.log("LOGS HERE")
-    const thisOrg = await this._organizationService.getUserOrg(org.id);
-    const loggedInUser = thisOrg.organization.users!.find(
-      (u) => u.userId === user.id
-    );
-    if (!thisOrg || !thisOrg.organization) {
-      Logger.log("FIRST IF")
-      Logger.log("Logged in Users role in this org", loggedInUser.role)
-      return this._organizationService.inviteTeamMember(org.id, body);
-    }
-
-    Logger.log("Logged in Users role in this org", loggedInUser.role)
-    if (loggedInUser?.role === 'USER' && body.role !== 'USER') {
+    const thisOrg = await this._organizationService.getTeam(org.id);
+    const loggedInUserRole = thisOrg.users.find((u) => user.id == u.user.id).role
+     if (loggedInUserRole === 'USER' && body.role !== 'USER') {
       throw new Error('You are not authorized to invite users as an Admin');
     }
-    Logger.log(loggedInUser?.role === 'USER' && body.role !== 'USER')
     return this._organizationService.inviteTeamMember(org.id, body);
   }
 
