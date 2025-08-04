@@ -19,7 +19,7 @@ export async function concurrencyService<T>(
   try {
     load = await bottleneck
       .key(identifier.split('-')[0])
-      .schedule<T>({ expiration: 60_000 }, async () => {
+      .schedule<T>({ expiration: 120_000 }, async () => {
         return await func();
       });
   } catch (err) {}
