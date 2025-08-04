@@ -192,6 +192,9 @@ importers:
       '@types/nodemailer':
         specifier: ^6.4.16
         version: 6.4.17
+      '@types/parse5':
+        specifier: v6.0.1
+        version: 6.0.1
       '@types/react-dropzone':
         specifier: ^4.2.2
         version: 4.2.2
@@ -6297,6 +6300,9 @@ packages:
 
   '@types/parse-json@4.0.2':
     resolution: {integrity: sha512-dISoDXWWQwUquiKsyZ4Ng+HX2KsPL7LyHKHQwgGFEA3IaKac4Obd+h2a/a6waisAoepJlBcx9paWqjA8/HVjCw==}
+
+  '@types/parse5@6.0.1':
+    resolution: {integrity: sha512-ARATsLdrGPUnaBvxLhUlnltcMgn7pQG312S8ccdYlnyijabrX9RN/KN/iGj9Am96CoW8e/K9628BA7Bv4XHdrA==}
 
   '@types/pg-pool@2.0.6':
     resolution: {integrity: sha512-TaAUE5rq2VQYxab5Ts7WZhKNmuN78Q6PiFonTDdpbx8a1H0M1vhy3rhiMjl+e2iHmogyMw7jZF4FrE6eJUy5HQ==}
@@ -22856,6 +22862,8 @@ snapshots:
       '@types/node': 18.16.9
 
   '@types/parse-json@4.0.2': {}
+
+  '@types/parse5@6.0.1': {}
 
   '@types/pg-pool@2.0.6':
     dependencies:

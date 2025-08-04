@@ -104,6 +104,7 @@
     "@types/mime-types": "^2.1.4",
     "@types/multer": "^1.4.11",
     "@types/nodemailer": "^6.4.16",
+    "@types/parse5": "v6.0.1",
     "@types/react-dropzone": "^4.2.2",
     "@types/remove-markdown": "^0.3.4",
     "@types/sha256": "^0.2.2",
