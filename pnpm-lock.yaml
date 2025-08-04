@@ -400,8 +400,8 @@ importers:
         specifier: ^3.1.0
         version: 3.1.0
       parse5:
-        specifier: ^8.0.0
-        version: 8.0.0
+        specifier: ^6.0.1
+        version: 6.0.1
       polotno:
         specifier: ^2.10.5
         version: 2.25.1(@types/react@18.3.1)(@types/sortablejs@1.15.8)(react-dom@18.3.1(react@18.3.1))(react-native@0.80.1(@babel/core@7.28.0)(@types/react@18.3.1)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@5.0.10))(react@18.3.1)
@@ -12276,11 +12276,11 @@ packages:
   parse5-parser-stream@7.1.2:
     resolution: {integrity: sha512-JyeQc9iwFLn5TbvvqACIF/VXG6abODeB3Fwmv/TGdLk2LfbWkaySGY72at4+Ty7EkPZj854u4CrICqNk2qIbow==}
 
+  parse5@6.0.1:
+    resolution: {integrity: sha512-Ofn/CTFzRGTTxwpNEs9PP93gXShHcTq255nzRYSKe8AkVpZY7e1fpmTfOyoIvjP5HG7Z2ZM7VS9PPhQGW2pOpw==}
+
   parse5@7.3.0:
     resolution: {integrity: sha512-IInvU7fabl34qmi9gY8XOVxhYyMyuH2xUNpb2q8/Y+7552KlejkRvqvD19nMoUW/uQGGbqNpA6Tufu5FL5BZgw==}
-
-  parse5@8.0.0:
-    resolution: {integrity: sha512-9m4m5GSgXjL4AjumKzq1Fgfp3Z8rsvjRNbnkVwfu2ImRqE5D0LnY2QfDen18FSY9C573YU5XxSapdHZTZ2WolA==}
 
   parseley@0.12.1:
     resolution: {integrity: sha512-e6qHKe3a9HWr0oMRVDTRhKce+bRO8VGQR3NyVwcjwrbhMmFCX9KszEV35+rn4AdilFAq9VPxP/Fe1wC9Qjd2lw==}
@@ -30958,11 +30958,9 @@ snapshots:
     dependencies:
       parse5: 7.3.0
 
-  parse5@7.3.0:
-    dependencies:
-      entities: 6.0.1
+  parse5@6.0.1: {}
 
-  parse5@8.0.0:
+  parse5@7.3.0:
     dependencies:
       entities: 6.0.1
 
