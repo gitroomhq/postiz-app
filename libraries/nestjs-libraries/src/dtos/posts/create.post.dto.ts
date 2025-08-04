@@ -1,20 +1,10 @@
 import {
-  ArrayMinSize,
-  IsArray,
-  IsBoolean,
-  IsDateString,
-  IsDefined,
-  IsIn,
-  IsNumber,
-  IsOptional,
-  IsString,
-  MinLength,
-  ValidateIf,
-  ValidateNested,
+  ArrayMinSize, IsArray, IsBoolean, IsDateString, IsDefined, IsIn, IsNumber, IsOptional, IsString, MinLength, Validate, ValidateIf, ValidateNested
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { MediaDto } from '@gitroom/nestjs-libraries/dtos/media/media.dto';
 import { allProviders, type AllProvidersSettings, EmptySettings } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/all.providers.settings';
+import { ValidContent } from '@gitroom/helpers/utils/valid.images';
 
 export class Integration {
   @IsDefined()
@@ -25,6 +15,7 @@ export class Integration {
 export class PostContent {
   @IsDefined()
   @IsString()
+  @Validate(ValidContent)
   content: string;
 
   @IsOptional()
@@ -32,7 +23,6 @@ export class PostContent {
   id: string;
 
   @IsArray()
-  @IsOptional()
   @Type(() => MediaDto)
   @ValidateNested({ each: true })
   image: MediaDto[];
