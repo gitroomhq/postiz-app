@@ -289,7 +289,7 @@ export class PinterestProvider
     const {
       all: { daily_metrics },
     } = await (
-      await this.fetch(
+      await fetch(
         `https://api.pinterest.com/v5/user_account/analytics?start_date=${since}&end_date=${until}`,
         {
           method: 'GET',

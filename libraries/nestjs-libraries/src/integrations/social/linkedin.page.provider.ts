@@ -30,7 +30,7 @@ export class LinkedinPageProvider
     'r_organization_social',
   ];
 
-  editor = 'normal' as const;
+  override editor = 'normal' as const;
 
   override async refreshToken(
     refresh_token: string
@@ -264,7 +264,7 @@ export class LinkedinPageProvider
     const startDate = dayjs().subtract(date, 'days').unix() * 1000;
 
     const { elements }: { elements: Root[]; paging: any } = await (
-      await this.fetch(
+      await fetch(
         `https://api.linkedin.com/v2/organizationPageStatistics?q=organization&organization=${encodeURIComponent(
           `urn:li:organization:${id}`
         )}&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`,
@@ -279,7 +279,7 @@ export class LinkedinPageProvider
     ).json();
 
     const { elements: elements2 }: { elements: Root[]; paging: any } = await (
-      await this.fetch(
+      await fetch(
         `https://api.linkedin.com/v2/organizationalEntityFollowerStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(
           `urn:li:organization:${id}`
         )}&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`,
@@ -294,7 +294,7 @@ export class LinkedinPageProvider
     ).json();
 
     const { elements: elements3 }: { elements: Root[]; paging: any } = await (
-      await this.fetch(
+      await fetch(
         `https://api.linkedin.com/v2/organizationalEntityShareStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(
           `urn:li:organization:${id}`
         )}&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`,

@@ -385,7 +385,7 @@ export class InstagramProvider
 
   async pages(accessToken: string) {
     const { data } = await (
-      await this.fetch(
+      await fetch(
         `https://graph.facebook.com/v20.0/me/accounts?fields=id,instagram_business_account,username,name,picture.type(large)&access_token=${accessToken}&limit=500`
       )
     ).json();
@@ -397,7 +397,7 @@ export class InstagramProvider
           return {
             pageId: p.id,
             ...(await (
-              await this.fetch(
+              await fetch(
                 `https://graph.facebook.com/v20.0/${p.instagram_business_account.id}?fields=name,profile_picture_url&access_token=${accessToken}&limit=500`
               )
             ).json()),
@@ -430,7 +430,6 @@ export class InstagramProvider
       )
     ).json();
 
-    console.log(id, name, profile_picture_url, username);
     return {
       id,
       name,
@@ -667,13 +666,13 @@ export class InstagramProvider
     const since = dayjs().subtract(date, 'day').unix();
 
     const { data, ...all } = await (
-      await this.fetch(
+      await fetch(
         `https://${type}/v21.0/${id}/insights?metric=follower_count,reach&access_token=${accessToken}&period=day&since=${since}&until=${until}`
       )
     ).json();
 
     const { data: data2, ...all2 } = await (
-      await this.fetch(
+      await fetch(
         `https://${type}/v21.0/${id}/insights?metric_type=total_value&metric=likes,views,comments,shares,saves,replies&access_token=${accessToken}&period=day&since=${since}&until=${until}`
       )
     ).json();

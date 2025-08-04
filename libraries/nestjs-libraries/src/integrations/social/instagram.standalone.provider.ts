@@ -35,13 +35,13 @@ export class InstagramStandaloneProvider
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     const { access_token } = await (
-      await this.fetch(
+      await fetch(
         `https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${refresh_token}`
       )
     ).json();
 
     const { user_id, name, username, profile_picture_url } = await (
-      await this.fetch(
+      await fetch(
         `https://graph.instagram.com/v21.0/me?fields=user_id,username,name,profile_picture_url&access_token=${access_token}`
       )
     ).json();
@@ -97,14 +97,14 @@ export class InstagramStandaloneProvider
     formData.append('code', params.code);
 
     const getAccessToken = await (
-      await this.fetch('https://api.instagram.com/oauth/access_token', {
+      await fetch('https://api.instagram.com/oauth/access_token', {
         method: 'POST',
         body: formData,
       })
     ).json();
 
     const { access_token, expires_in, ...all } = await (
-      await this.fetch(
+      await fetch(
         'https://graph.instagram.com/access_token' +
           '?grant_type=ig_exchange_token' +
           `&client_id=${process.env.INSTAGRAM_APP_ID}` +
@@ -116,7 +116,7 @@ export class InstagramStandaloneProvider
     this.checkScopes(this.scopes, getAccessToken.permissions);
 
     const { user_id, name, username, profile_picture_url } = await (
-      await this.fetch(
+      await fetch(
         `https://graph.instagram.com/v21.0/me?fields=user_id,username,name,profile_picture_url&access_token=${access_token}`
       )
     ).json();

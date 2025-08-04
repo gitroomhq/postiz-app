@@ -428,7 +428,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     const since = dayjs().subtract(date, 'day').unix();
 
     const { data } = await (
-      await this.fetch(
+      await fetch(
         `https://graph.facebook.com/v20.0/${id}/insights?metric=page_impressions_unique,page_posts_impressions_unique,page_post_engagements,page_daily_follows,page_video_views&access_token=${accessToken}&period=day&since=${since}&until=${until}`
       )
     ).json();
