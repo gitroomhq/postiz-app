@@ -8,7 +8,6 @@ import striptags from 'striptags';
 @ValidatorConstraint({ name: 'validateContent', async: false })
 export class ValidContent implements ValidatorConstraintInterface {
   validate(contentRaw: string, args: ValidationArguments) {
-    console.log(args.object);
     const content = striptags(contentRaw || '');
     if (
       // @ts-ignore
