@@ -26,6 +26,7 @@ interface MetricSummary {
 
 interface ChartData {
     title: string;
+    date?: string;
     image: string | null;
     summary?: any;
 }
@@ -75,8 +76,8 @@ export class ReportDownloadController {
             if (!customerId) throw new BadRequestException('customerId is required');
             if (!month || !year) throw new BadRequestException('Month and year are required');
             const { name: customerName, brandLogo } = await this.reportService.getCustomerInfo(customerId);
-            console.log('brandLogo',brandLogo);
-            
+            console.log('brandLogo', brandLogo);
+
 
             const monthNum = parseInt(month, 10);
             const yearNum = parseInt(year, 10);
@@ -232,7 +233,7 @@ export class ReportDownloadController {
 
             if (platforms.hospital) {
                 console.log('Hospital platform is enabled - creating 2 empty pages');
-                
+
                 // Create 2 empty pages for hospital
                 const hospitalReport: PlatformReport = {
                     name: 'Hospital',
@@ -248,7 +249,7 @@ export class ReportDownloadController {
                             style: 'hospital'
                         },
                         {
-                            title: 'What’s Next ?', 
+                            title: 'What’s Next ?',
                             headers: [],
                             rows: [],
                             style: 'hospital'
@@ -256,7 +257,7 @@ export class ReportDownloadController {
                     ],
                     charts: []
                 };
-                
+
                 platformReports.push(hospitalReport);
             }
 
@@ -662,6 +663,7 @@ export class ReportDownloadController {
         preloadedData?: any
     ): Promise<ChartData> {
         try {
+            /* 1. Load / filter the data (unchanged) */
             let report = preloadedData?.community;
             if (!report) {
                 report = await this.reportService.getLinkedInCommunityReport(customerId, month, year);
@@ -671,145 +673,126 @@ export class ReportDownloadController {
                 return { title: 'LinkedIn Community Growth', image: null };
             }
 
-            const monthData = report.chart.filter(item => {
-                const date = new Date(item.date || item.createdAt);
-                return date.getMonth() + 1 === month && date.getFullYear() === year;
-            });
+            const monthData = report.chart
+                .map(d => ({ ...d, date: new Date(d.date || d.createdAt) }))
+                .filter(d => d.date.getMonth() + 1 === month && d.date.getFullYear() === year)
+                .sort((a, b) => a.date.getTime() - b.date.getTime());
 
             if (!monthData.length) {
                 return { title: 'LinkedIn Community Growth', image: null };
             }
 
-            monthData.sort((a, b) =>
-                new Date(a.date || a.createdAt).getTime() - new Date(b.date || b.createdAt).getTime()
-            );
-
+            /* 2. Sampling – keep the existing logic */
             const daysInMonth = new Date(year, month, 0).getDate();
             const interval = Math.max(1, Math.floor(daysInMonth / 10));
             const sampledData: any[] = [];
 
             for (let day = 1; day <= daysInMonth; day += interval) {
-                let closest = null;
+                let closest: any = null;
                 let minDiff = Infinity;
 
                 for (const item of monthData) {
-                    const itemDate = new Date(item.date || item.createdAt);
-                    const diff = Math.abs(itemDate.getDate() - day);
+                    const diff = Math.abs(item.date.getDate() - day);
                     if (diff < minDiff) {
                         minDiff = diff;
                         closest = item;
                     }
                 }
-
                 if (closest) sampledData.push(closest);
             }
 
-            const lastDayData = monthData.find(item => {
-                const itemDate = new Date(item.date || item.createdAt);
-                return itemDate.getDate() === daysInMonth;
-            });
-
-            if (lastDayData && !sampledData.some(item => {
-                const itemDate = new Date(item.date || item.createdAt);
-                return itemDate.getDate() === daysInMonth;
-            })) {
+            const lastDayData = monthData.find(d => d.date.getDate() === daysInMonth);
+            if (
+                lastDayData &&
+                !sampledData.some(d => d.date.getDate() === daysInMonth)
+            ) {
                 sampledData.push(lastDayData);
             }
 
-            const labels = sampledData.map(item => {
-                const date = new Date(item.date || item.createdAt);
-                return format(date, 'MMM d');
-            });
+            const labels = sampledData.map(d => format(d.date, 'MMM d'));
 
-            const datasets: ChartDataset<'bar' | 'line'>[] = [];
+            /* 3. Build datasets – all on the same y-axis */
+            const datasets: ChartDataset<'bar' | 'line'>[] = [
+                {
+                    type: 'line',
+                    label: 'Followers',
+                    data: sampledData.map(d => d.followers || 0),
+                    borderColor: '#0A66C2',
+                    backgroundColor: '#0A66C230',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    pointBackgroundColor: '#0A66C2',
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    yAxisID: 'y'   // <- same axis
+                },
+                {
+                    type: 'line',
+                    label: 'Paid Followers',
+                    data: sampledData.map(d => d.paidFollowers || 0),
+                    borderColor: '#FFB002',
+                    backgroundColor: '#FFB00230',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    pointBackgroundColor: '#FFB002',
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    yAxisID: 'y'
+                },
+                {
+                    type: 'line',
+                    label: 'Impressions',
+                    data: sampledData.map(d => d.impressions || 0),
+                    borderColor: '#8D6CAB',
+                    backgroundColor: '#8D6CAB30',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    pointBackgroundColor: '#8D6CAB',
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    yAxisID: 'y'
+                },
+                {
+                    type: 'bar',
+                    label: 'Posts',
+                    data: sampledData.map(d => d.postsCount || 0),
+                    backgroundColor: '#29C76F',
+                    borderColor: '#29C76F',
+                    borderWidth: 1,
+                    borderRadius: 6,   // <- rounded tops
+                    barThickness: 14,
+                    yAxisID: 'y'
+                }
+            ];
 
-            datasets.push({
-                type: 'line',
-                label: 'Followers',
-                data: sampledData.map(d => d.followers || 0),
-                borderColor: '#0A66C2',
-                backgroundColor: '#0A66C230',
-                borderWidth: 2,
-                tension: 0.4,
-                yAxisID: 'y1',
-                pointBackgroundColor: '#0A66C2',
-                pointRadius: 3,
-                pointHoverRadius: 5,
-            });
-
-            datasets.push({
-                type: 'line',
-                label: 'Paid Followers',
-                data: sampledData.map(d => d.paidFollowers || 0),
-                borderColor: '#FFB002',
-                backgroundColor: '#FFB00230',
-                borderWidth: 2,
-                tension: 0.4,
-                yAxisID: 'y1',
-                pointBackgroundColor: '#FFB002',
-                pointRadius: 3,
-                pointHoverRadius: 5,
-            });
-
-            datasets.push({
-                type: 'line',
-                label: 'Impressions',
-                data: sampledData.map(d => d.impressions || 0),
-                borderColor: '#8D6CAB',
-                backgroundColor: '#8D6CAB30',
-                borderWidth: 2,
-                tension: 0.4,
-                yAxisID: 'y',
-                pointBackgroundColor: '#8D6CAB',
-                pointRadius: 3,
-                pointHoverRadius: 5,
-            });
-
-            datasets.push({
-                type: 'bar',
-                label: 'Posts',
-                data: sampledData.map(d => d.postsCount || 0),
-                backgroundColor: '#29C76F',
-                borderColor: '#29C76F',
-                borderWidth: 1,
-                yAxisID: 'y1',
-            });
-
+            /* 4. Chart configuration (single y-axis) */
             const configuration: ChartConfiguration<'bar' | 'line'> = {
                 type: 'bar',
                 data: { labels, datasets },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
-                        legend: {
-                            display: false,
-                            labels: {
-                                font: { weight: 'bold' }
-                            }
-                        },
+                        legend: { display: false },
                         tooltip: {
                             callbacks: {
-                                title: (tooltipItems) => {
-                                    const date = new Date(sampledData[tooltipItems[0].dataIndex].date || sampledData[tooltipItems[0].dataIndex].createdAt);
-                                    return format(date, 'MMMM d, yyyy');
-                                },
-                                label: (context) => {
-                                    const label = context.dataset.label || '';
-                                    const value = context.parsed.y;
-                                    return `${label}: ${Number(value).toLocaleString()}`;
-                                }
+                                title: (items) =>
+                                    format(
+                                        sampledData[items[0].dataIndex].date,
+                                        'MMMM d, yyyy'
+                                    ),
+                                label: (ctx) =>
+                                    `${ctx.dataset.label}: ${Number(
+                                        ctx.parsed.y
+                                    ).toLocaleString()}`
                             }
                         }
                     },
-                    interaction: {
-                        mode: 'index',
-                        intersect: false
-                    },
+                    interaction: { mode: 'index', intersect: false },
                     scales: {
                         x: {
                             title: {
                                 display: true,
-                                text: 'Date',
                                 font: { weight: 'bold' }
                             },
                             ticks: { autoSkip: false }
@@ -819,41 +802,38 @@ export class ReportDownloadController {
                             position: 'left',
                             title: {
                                 display: true,
-                                text: 'Impressions',
+                                text: 'Count',
                                 font: { weight: 'bold' }
                             },
                             ticks: {
-                                callback: value =>
-                                    Number(value) >= 1000 ? `${(Number(value) / 1000).toFixed(0)}k` : value
-                            }
-                        },
-                        y1: {
-                            beginAtZero: true,
-                            position: 'right',
-                            grid: { drawOnChartArea: false },
-                            title: {
-                                display: true,
-                                text: 'Followers / Posts',
-                                font: { weight: 'bold' }
-                            },
-                            ticks: {
-                                callback: value =>
-                                    Number(value) >= 1000 ? `${(Number(value) / 1000).toFixed(0)}k` : value
+                                callback: (value) =>
+                                    Number(value) >= 1000
+                                        ? `${(Number(value) / 1000).toFixed(0)}k`
+                                        : value
                             }
                         }
+                        // y1 removed – everything uses y
                     }
                 }
             };
 
+            /* 5. Render image */
             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
 
-            const totalFollowers = monthData.reduce((sum, d) => sum + (d.followers || 0), 0);
-            const totalPaidFollowers = monthData.reduce((sum, d) => sum + (d.paidFollowers || 0), 0);
-            const totalImpressions = monthData.reduce((sum, d) => sum + (d.impressions || 0), 0);
-            const totalPosts = monthData.reduce((sum, d) => sum + (d.postsCount || 0), 0);
+            /* 6. Summary (unchanged) */
+            const totalFollowers = monthData.reduce((s, d) => s + (d.followers || 0), 0);
+            const totalPaidFollowers = monthData.reduce((s, d) => s + (d.paidFollowers || 0), 0);
+            const totalImpressions = monthData.reduce((s, d) => s + (d.impressions || 0), 0);
+            const totalPosts = monthData.reduce((s, d) => s + (d.postsCount || 0), 0);
+
+            // Get start and end dates from the data
+            const startDate = monthData.length > 0 ? format(new Date(monthData[0].date), 'MMM d, yyyy') : '';
+            const endDate = monthData.length > 0 ? format(new Date(monthData[monthData.length - 1].date), 'MMM d, yyyy') : '';
+            const dateRange = startDate && endDate ? ` (${startDate} - ${endDate})` : '';
 
             return {
-                title: 'LinkedIn Community Growth',
+                title: `Community Growth`,
+                date: `${dateRange}`,
                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
                 summary: {
                     Followers: {
@@ -898,7 +878,6 @@ export class ReportDownloadController {
                     }
                 }
             };
-
         } catch (error) {
             console.error('Error generating LinkedIn community chart:', error);
             return { title: 'LinkedIn Community Growth', image: null };
@@ -1053,8 +1032,14 @@ export class ReportDownloadController {
 
             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
 
+            // Get start and end dates from the data
+            const startDate = monthData.length > 0 ? format(new Date(monthData[0].date), 'MMM d, yyyy') : '';
+            const endDate = monthData.length > 0 ? format(new Date(monthData[monthData.length - 1].date), 'MMM d, yyyy') : '';
+            const dateRange = startDate && endDate ? ` (${startDate} - ${endDate})` : '';
+
             return {
-                title: 'X Performance Metrics',
+                title: `Performance Growth`,
+                date: `${dateRange}`,
                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
                 summary: {
                     impressions: {
@@ -1259,6 +1244,11 @@ export class ReportDownloadController {
             const totalFollowing = monthData.reduce((sum, d) => sum + (d.following || 0), 0);
             const totalContent = monthData.reduce((sum, d) => sum + (d.totalContent || 0), 0);
 
+            // Get start and end dates from the data
+            const startDate = monthData.length > 0 ? format(new Date(monthData[0].date), 'MMM d, yyyy') : '';
+            const endDate = monthData.length > 0 ? format(new Date(monthData[monthData.length - 1].date), 'MMM d, yyyy') : '';
+            const dateRange = startDate && endDate ? ` (${startDate} - ${endDate})` : '';
+
             const summary = {
                 Followers: {
                     value: totalFollowers.toLocaleString(),
@@ -1293,7 +1283,8 @@ export class ReportDownloadController {
             };
 
             return {
-                title: `Instagram Community Growth`,
+                title: `Community Growth`,
+                date: `${dateRange}`,
                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
                 summary
             };
@@ -1354,7 +1345,6 @@ export class ReportDownloadController {
             const impressionsData = sampledData.map(d => d.impressions);
             const reachData = sampledData.map(d => d.avgReachPerDay);
             const totalContentData = sampledData.map(d => d.totalContent);
-
 
             // Monkey patch roundRect
             const testCanvas = (this.chartJSNodeCanvas as any)._canvas;
@@ -1474,8 +1464,14 @@ export class ReportDownloadController {
             const totalReach = completeData.reduce((sum, d) => sum + d.avgReachPerDay, 0);
             const totalContent = completeData.reduce((sum, d) => sum + d.totalContent, 0);
 
+            // Get start and end dates from the data
+            const startDate = completeData.length > 0 ? format(new Date(completeData[0].date), 'MMM d, yyyy') : '';
+            const endDate = completeData.length > 0 ? format(new Date(completeData[completeData.length - 1].date), 'MMM d, yyyy') : '';
+            const dateRange = startDate && endDate ? ` (${startDate} - ${endDate})` : '';
+
             return {
-                title: `Instagram Performance`,
+                title: `Performance Growth`,
+                date: `${dateRange}`,
                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
                 summary: {
                     impressions: {
@@ -1498,7 +1494,7 @@ export class ReportDownloadController {
                             textColor: '#000000'
                         }
                     },
-                    content: {
+                    totalContent: {
                         value: totalContent.toLocaleString(),
                         style: {
                             backgroundColor: '#FCAF4520',
@@ -1512,7 +1508,10 @@ export class ReportDownloadController {
             };
         } catch (error) {
             console.error('Error generating Instagram chart:', error);
-            return { title: 'Instagram Impressions & Reach', image: null };
+            return {
+                title: 'Instagram Impressions & Reach',
+                image: null
+            };
         }
     }
 
@@ -2057,7 +2056,7 @@ export class ReportDownloadController {
                         x: {
                             title: {
                                 display: true,
-                                text: 'Day of Month',
+                                //   text: 'Day of Month',
                                 font: { weight: 'bold' },
                                 color: '#444'
                             },
@@ -2090,8 +2089,14 @@ export class ReportDownloadController {
             // const avgFollowers = monthData.length ? totalFollowers / monthData.length : 0;
             // const avgFollowing = monthData.length ? totalFollowing / monthData.length : 0;
 
+            const startDate = sampledData.length > 0 ? format(sampledData[0].date || sampledData[0].createdAt, 'MMM d, yyyy') : '';
+            const endDate = sampledData.length > 0 ? format(sampledData[sampledData.length - 1].date || sampledData[sampledData.length - 1].createdAt, 'MMM d, yyyy') : '';
+            const dateRange = startDate && endDate ? `(${startDate} - ${endDate})` : '';
+
+
             return {
-                title: `${this.getPlatformDisplayName(platform)}  ${metricName} Growth`,
+                title: `Community Growth`,
+                date: `${dateRange}`,
                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
                 summary: {
                     totalFollowers: {
@@ -2276,7 +2281,7 @@ export class ReportDownloadController {
                             grid: { display: false },
                             title: {
                                 display: true,
-                                text: 'Date',
+                                //  text: 'Date',
                                 font: { size: 12, weight: 'bold' },
                                 color: '#5f6368'
                             }
@@ -2307,6 +2312,10 @@ export class ReportDownloadController {
             // 📊 Styled Summary Cards
             const sum = (key: keyof typeof monthData[0]) =>
                 monthData.reduce((acc, item) => acc + (Number(item[key]) || 0), 0);
+            const startDate = sampledData.length > 0 ? format(sampledData[0].date || sampledData[0].createdAt, 'MMM d, yyyy') : '';
+            const endDate = sampledData.length > 0 ? format(sampledData[sampledData.length - 1].date || sampledData[sampledData.length - 1].createdAt, 'MMM d, yyyy') : '';
+            const dateRange = startDate && endDate ? `(${startDate} - ${endDate})` : '';
+
 
             const summary = {
                 Subscribers: {
@@ -2361,7 +2370,8 @@ export class ReportDownloadController {
                 }
             };
             return {
-                title: 'YouTube Analytics',
+                title: 'Community Analytics',
+                date: `${dateRange}`,
                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
                 summary
             };
@@ -2657,6 +2667,11 @@ export class ReportDownloadController {
             const totalFollowers = monthData.reduce((sum, d) => sum + (d.followers || 0), 0);
             const totalContent = monthData.reduce((sum, d) => sum + (d.totalContent || 0), 0);
 
+            const startDate = sampledData.length > 0 ? format(sampledData[0].date || sampledData[0].createdAt, 'MMM d, yyyy') : '';
+            const endDate = sampledData.length > 0 ? format(sampledData[sampledData.length - 1].date || sampledData[sampledData.length - 1].createdAt, 'MMM d, yyyy') : '';
+            const dateRange = startDate && endDate ? `(${startDate} - ${endDate})` : '';
+
+
             const configuration: ChartConfiguration<'bar' | 'line'> = {
                 type: 'bar',
                 data: {
@@ -2742,7 +2757,7 @@ export class ReportDownloadController {
                             },
                             title: {
                                 display: true,
-                                text: 'Date',
+                                // text: 'Date',
                                 font: { size: 12, weight: 'bold' },
                                 color: '#5f6368'
                             }
@@ -2771,7 +2786,8 @@ export class ReportDownloadController {
             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
 
             return {
-                title: 'Facebook Likes & Followers Growth',
+                title: 'Community Growth',
+                date: `${dateRange}`,
                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
                 summary: {
                     Likes: {
@@ -2825,7 +2841,7 @@ export class ReportDownloadController {
             }
 
             if (!report?.chart?.length) {
-                return { title: 'Facebook Impressions & Page Views', image: null };
+                return { title: 'Overview Performance', image: null };
             }
 
             const rawData = report.chart.map(d => ({
@@ -2846,6 +2862,10 @@ export class ReportDownloadController {
             const impressionsData = sampledData.map(d => d.impressions || 0);
             const pageViewsData = sampledData.map(d => d.pageViews || 0);
             const contentData = sampledData.map(d => d.totalContent || 0);
+
+            const startDate = sampledData.length > 0 ? format(sampledData[0].date || sampledData[0].createdAt, 'MMM d, yyyy') : '';
+            const endDate = sampledData.length > 0 ? format(sampledData[sampledData.length - 1].date || sampledData[sampledData.length - 1].createdAt, 'MMM d, yyyy') : '';
+            const dateRange = startDate && endDate ? `(${startDate} - ${endDate})` : '';
 
             // Monkey patch roundRect for Node.js Canvas
             const testCanvas = (this.chartJSNodeCanvas as any)._canvas;
@@ -2940,7 +2960,7 @@ export class ReportDownloadController {
                             },
                             title: {
                                 display: true,
-                                text: 'Date',
+                                // text: 'Date',
                                 font: { size: 12, weight: 'bold' },
                                 color: '#5f6368'
                             }
@@ -2976,7 +2996,8 @@ export class ReportDownloadController {
             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
 
             return {
-                title: 'Facebook Impressions & Page Views',
+                title: 'Overview Performance',
+                date: `${dateRange}`,
                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
                 summary: {
                     impressions: {
@@ -3048,6 +3069,11 @@ export class ReportDownloadController {
             const totalMaps = monthData.reduce((sum, d) => sum + (d.maps || 0), 0);
             const totalSearch = monthData.reduce((sum, d) => sum + (d.search || 0), 0);
             const total = totalMaps + totalSearch;
+
+            // Get start and end dates from the data
+            const startDate = monthData.length > 0 ? format(new Date(monthData[0].date), 'MMM d, yyyy') : '';
+            const endDate = monthData.length > 0 ? format(new Date(monthData[monthData.length - 1].date), 'MMM d, yyyy') : '';
+            const dateRange = startDate && endDate ? ` (${startDate} - ${endDate})` : '';
 
             const configuration: ChartConfiguration<'bar' | 'line'> = {
                 type: 'bar',
@@ -3128,7 +3154,8 @@ export class ReportDownloadController {
             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
 
             return {
-                title: `GBP Daily Performance`,
+                title: `Performance Growth`,
+                date: `${dateRange}`,
                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
                 summary: {
                     googleMaps: {
@@ -3213,6 +3240,26 @@ export class ReportDownloadController {
                     this.closePath();
                 };
             }
+
+            const parseValidDate = (item: any): Date | null => {
+                const rawDate = item?.date || item?.createdAt;
+                const parsed = rawDate ? new Date(rawDate) : null;
+                return parsed instanceof Date && !isNaN(parsed.getTime()) ? parsed : null;
+            };
+
+            const start = parseValidDate(monthData[0]);
+            const end = parseValidDate(monthData[monthData.length - 1]);
+
+            const startDate = start
+                ? format(start, 'MMM d, yyyy')
+                : format(new Date(year, month - 1, 1), 'MMM d, yyyy');
+
+            const endDate = end
+                ? format(end, 'MMM d, yyyy')
+                : format(new Date(year, month, 0), 'MMM d, yyyy');
+
+            const dateRange = `(${startDate} - ${endDate})`;
+
 
             const configuration: ChartConfiguration<'bar'> = {
                 type: 'bar',
@@ -3308,7 +3355,8 @@ export class ReportDownloadController {
             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
 
             return {
-                title: `GBP Daily Engagement`,
+                title: `Engagement Growth`,
+                date: `${dateRange}`,
                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
                 summary: {
                     website: {
@@ -3378,6 +3426,25 @@ export class ReportDownloadController {
             const averageRating =
                 monthData.filter(d => d.rating !== undefined).reduce((sum, d) => sum + d.rating, 0) /
                 (monthData.filter(d => d.rating !== undefined).length || 1);
+
+            const parseValidDate = (item: any): Date | null => {
+                const rawDate = item?.date || item?.createdAt;
+                const parsed = rawDate ? new Date(rawDate) : null;
+                return parsed instanceof Date && !isNaN(parsed.getTime()) ? parsed : null;
+            };
+
+            const start = parseValidDate(monthData[0]);
+            const end = parseValidDate(monthData[monthData.length - 1]);
+
+            const startDate = start
+                ? format(start, 'MMM d, yyyy')
+                : format(new Date(year, month - 1, 1), 'MMM d, yyyy');
+
+            const endDate = end
+                ? format(end, 'MMM d, yyyy')
+                : format(new Date(year, month, 0), 'MMM d, yyyy');
+
+            const dateRange = `(${startDate} - ${endDate})`;
 
             const configuration: ChartConfiguration<'bar' | 'line'> = {
                 type: 'bar',
@@ -3467,7 +3534,8 @@ export class ReportDownloadController {
             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
 
             return {
-                title: `GBP Reviews & Rating`,
+                title: `Reviews & Rating`,
+                date: `${dateRange}`,
                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
                 summary: {
                     totalReviews: {
@@ -3527,6 +3595,11 @@ export class ReportDownloadController {
             const pageViewsData = sampledData.map(d => d.pageViews || 0);
             const visitsData = sampledData.map(d => d.visits || 0);
             const visitorsData = sampledData.map(d => d.visitors || 0);
+
+            // Get start and end dates from the data
+            const startDate = monthData.length > 0 ? format(new Date(monthData[0].date), 'MMM d, yyyy') : '';
+            const endDate = monthData.length > 0 ? format(new Date(monthData[monthData.length - 1].date), 'MMM d, yyyy') : '';
+            const dateRange = startDate && endDate ? ` (${startDate} - ${endDate})` : '';
 
             // Monkey patch roundRect for Node.js (fix for bar borderRadius)
             const testCanvas = (this.chartJSNodeCanvas as any)._canvas;
@@ -3645,7 +3718,8 @@ export class ReportDownloadController {
 
             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
             return {
-                title: `Website Daily Traffic`,
+                title: `Traffic Growth`,
+                date: `${dateRange}`,
                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
                 summary: {
                     pageViews: {
@@ -3773,8 +3847,31 @@ export class ReportDownloadController {
                 return acc;
             }, {});
 
+            const parseValidDate = (item: any): Date | null => {
+                const rawDate = item?.date || item?.createdAt;
+                const parsed = rawDate ? new Date(rawDate) : null;
+                return parsed instanceof Date && !isNaN(parsed.getTime()) ? parsed : null;
+            };
+
+            const start = parseValidDate(report.chart[0]);
+            const end = parseValidDate(report.chart[report.chart.length - 1]);
+
+            const startDate = start
+                ? format(start, 'MMM d, yyyy')
+                : format(new Date(year, month - 1, 1), 'MMM d, yyyy');
+
+            const endDate = end
+                ? format(end, 'MMM d, yyyy')
+                : format(new Date(year, month, 0), 'MMM d, yyyy'); // end of month
+
+            const dateRange = `(${startDate} - ${endDate})`;
+
+            console.log('Resolved dateRange:', dateRange);
+
+
             return {
                 title: `Top 5 Visitor Locations`,
+                date: `${dateRange}`,
                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
                 summary
             };
@@ -3790,7 +3887,7 @@ export class ReportDownloadController {
             instagram: 'rgba(193, 53, 132, 1)',
             youtube: 'rgba(255, 0, 0, 1)',
             facebook: 'rgba(24, 119, 242, 1)',
-            linkedin: 'rgba(10, 102, 194, 1)', 
+            linkedin: 'rgba(10, 102, 194, 1)',
             x: 'rgba(29, 161, 242, 1)',
             gbp: 'rgba(66, 133, 244, 1)',     // Google Blue
             website: 'rgba(46, 204, 113, 1)'  // Green (custom, can be changed)
@@ -3814,7 +3911,7 @@ export class ReportDownloadController {
         <meta charset="UTF-8">
         <style>
             @page {
-                margin: 40px 0 0 0; /* Top only, no bottom */
+                margin: 30px 0 0 0; /* Top only, no bottom */
             }
             body {
                 margin: 0;
@@ -3891,19 +3988,20 @@ export class ReportDownloadController {
             }
 
             .platform-section {
-            margin: 5px 0 20px 0; /* ❌ Removed left/right margin */
+            margin: 0;
+            padding: 0;
             page-break-before: always; /* ✅ Forces new page */
             }
 
             .platform-title {
-            margin-top: 10px; /* NEW if required */
+            margin: 20px 0 30px 0;
             display: flex;
             align-items: center;
             font-size: 24px;
             font-weight: 700;
             border-bottom: 2px solid #3498db;
             padding-bottom: 10px;
-            margin-bottom: 30px;
+            page-break-after: avoid;
             }
 
             .platform-icon {
@@ -3913,10 +4011,24 @@ export class ReportDownloadController {
             }
 
             .section {
-            margin: 0 0 20px;  /* ❌ Removed left/right margin */
-            padding-top: 10px;  
+            margin: 0 0 30px 0;
+            padding: 0;
             page-break-inside: avoid;
             break-inside: avoid;
+            }
+
+            .chart-container {
+                margin: 0 0 30px 0;
+                padding: 0;
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+
+            .table-container {
+                margin: 0 0 30px 0;
+                padding: 0;
+                page-break-inside: avoid;
+                break-inside: avoid;
             }
 
             .section-title {
@@ -3993,11 +4105,22 @@ export class ReportDownloadController {
             }
 
             .chart-title {
-                font-size: 16px;
-                font-weight: 500;
-                text-align: center;
-                margin-bottom: 12px;
-                color: #2d3436;
+                font-size: 20px;
+                font-weight: 600;
+                margin-bottom: 5px;
+                padding-left: 10px;
+                border-left: 5px solid #2980b9;
+                color: #2c3e50;
+                text-align: left;
+            }
+            
+            .chart-date {
+                font-size: 20px;
+                font-weight: 400;
+                margin-bottom: 20px;
+                padding-left: 10px;
+                color: #2c3e50;
+                text-align: left;
             }
 
             .chart-img {
@@ -4019,8 +4142,11 @@ export class ReportDownloadController {
                 align-items: center;
                 width: 100%;
                 padding-top: 20px;
+                padding-bottom: 50px;
                 font-size: 14px;
                 color: #555;
+                position: relative;
+                z-index: 10000;
             }
 
             .chart-summary-cards {
@@ -4055,8 +4181,8 @@ export class ReportDownloadController {
             }
 
             .footer-logo {
-                    height: 120px;
-                    width: 120px;
+                    height: 35px;
+                    width: 200px;
                 }
             .footer-address {
                     text-align: right;
@@ -4076,13 +4202,36 @@ export class ReportDownloadController {
   padding: 0;
 }
 
+.contact-footer {
+  display: none !important; /* Hidden by default */
+  visibility: hidden !important;
+  position: fixed;
+  bottom: 85px; /* above footer image */
+  left: 0;
+  width: 100%;
+  text-align: center;
+  font-size: 16px;
+  color: #666;
+  z-index: 9997;
+  margin: 0;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.9);
+  line-height: 1.2;
+}
+
+/* Show only when body has show-contact-footer class */
+body.show-contact-footer .contact-footer {
+  display: block !important;
+  visibility: visible !important;
+}
+
         .footer-image {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
   width: 100%;
-  height: 21px;
+  height: 22px;
   object-fit: cover;
   margin: 0;
   padding: 0;
@@ -4165,8 +4314,8 @@ export class ReportDownloadController {
 }
 
 .thank-you-page img {
-    width: 250px; /* ⬅️ Smaller logo */
-    height: 250px;
+    width: auto; /* ⬅️ Smaller logo */
+    height: 60px;
     margin-bottom: 20px;
 }
 
@@ -4175,9 +4324,120 @@ export class ReportDownloadController {
     margin-bottom: 20px;
     color: #2980b9;
 }
-    .fixed-logo-container {
-  display: none; /* Hidden by default */
+
+.colorContainer {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #ffffff;
+    }
+    .container {
+      width: 700px;
+      margin: 50px auto;
+      display: flex;
+      border-radius: 36px;
+      overflow: hidden;
+      background-color: #0176B6;
+      color: white;
+    }
+    .left {
+      flex: 1;
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 30px;
+      text-align: center;
+    }
+    .containerh1 {
+      margin: 0;
+      font-size: 36px;
+      color: #5CD5FF;
+    }
+    .info {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 30px 40px;
+      font-size: 28px;
+    }
+    .info label {
+      display: block;
+      color: #78D8FF;
+      font-weight: 500;
+      font-size: 26px;
+      margin-bottom: 4px;
+    }
+    .info a {
+      color: white;
+      text-decoration: none;
+    }
+      /* Contact line - completely hidden by default */
+.contact-line {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    position: absolute !important;
+    top: -9999px !important;
+    left: -9999px !important;
 }
+
+/* Only show contact line in main content pages */
+.main-content .contact-line {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    height: auto !important;
+    overflow: visible !important;
+    position: fixed !important;
+    top: auto !important;
+    left: 0 !important;
+    right: 0;
+    bottom: 25px;
+    text-align: center;
+    font-size: 14px;
+    color: #000;
+    padding: 8px 0;
+    font-weight: 500;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.95);
+    z-index: 9998;
+    margin: 0;
+}
+
+/* Ensure contact line is hidden on intro and thank you pages */
+.intro-page .contact-line,
+.thank-you-page .contact-line {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    position: absolute !important;
+    top: -9999px !important;
+    left: -9999px !important;
+}
+
+.contact-line img {
+    height: 20px;
+    width: auto;
+}
+
+.contact-line a {
+    color: #000;
+    text-decoration: none;
+}
+
+.contact-line a:hover {
+    color: #000;
+    text-decoration: none;
+}
+
 
     </style>
 </head>
@@ -4197,20 +4457,14 @@ export class ReportDownloadController {
     <div class="footer">
             <img src="${options.logoDataUri}" alt="Upstrapp Logo" class="footer-logo" />
             <div class="footer-address">
-                <strong>Upstrapp Inc</strong><br />
-                B-329, Seventh Heaven Building,<br /> 
-                opp. Al Burooj, Quresh Nagar Society,<br />
-                Makarba, Ahmedabad, Gujarat 380051
+                <strong>Makarba, Ahmedabad</strong><br />
+                hello@upstrapp.com<br /> 
+                www.upstrapp.com
             </div>
     </div>
-
 </div>
 
 <div class="main-content">
-
-    <div class="fixed-logo-container">
-        <img src="${options.logoDataUri}" class="fixed-logo-top-right" alt="Header Logo" />
-    </div>
 
     ${options.platformReports.map(platform => {
             const combinedSections: string[] = [];
@@ -4220,6 +4474,16 @@ export class ReportDownloadController {
 
             // In the generateCombinedReportHtml method, replace the hospital table section with:
             if (platform.name.toLowerCase() === 'hospital') {
+                // Add platform header for hospital
+                combinedSections.push(`
+                    <div class="section-with-header">
+                        <div class="platform-title">
+                            <img src="${this.getPlatformIconDataUri(platform.name)}" class="platform-icon" alt="${platform.name}" />
+                            ${platform.name}
+                        </div>
+                    </div>
+                `);
+
                 tables.forEach(table => {
                     combinedSections.push(`
                 <div class="section">
@@ -4249,10 +4513,60 @@ export class ReportDownloadController {
                     const table = tables[i];
                     const chart = charts[i];
 
+                    // First, add chart if it exists
+                    if (chart && chart.image) {
+                        const summaryHtml = chart.summary
+                            ? `
+    <div class="chart-summary-cards">
+    ${Object.entries(chart.summary).map(([key, metric]) => {
+                                const label = key
+                                    .replace(/([A-Z])/g, ' $1')
+                                    .replace(/^./, str => str.toUpperCase());
+                                const typedMetric = metric as MetricSummary;
+                                const style = typedMetric.style || {};
+
+                                return `
+        <div class="summary-card" style="
+            background-color: ${style.backgroundColor || '#f8f9fa'};
+            border: ${style.borderWidth || 1}px solid ${style.borderColor || '#e0e0e0'};
+            border-radius: ${style.borderRadius || 10}px;
+            color: ${style.textColor || '#ffffff'};
+        ">
+            <div class="summary-value">${typedMetric.value}</div>
+            <div class="summary-label">${label}</div>
+        </div>`;
+                            }).join('')}
+    </div>`
+                            : '';
+                        combinedSections.push(`
+                    <div class="section-with-header">
+                        <div class="platform-title">
+                            <img src="${this.getPlatformIconDataUri(platform.name)}" class="platform-icon" alt="${platform.name}" />
+                            ${platform.name}
+                        </div>
+                        <div class="chart-container">
+                            <div class="chart-title">${chart.title}</div>
+                            <div class="chart-date">${chart.date}</div>
+                            ${summaryHtml}
+                            <img src="${chart.image}" class="chart-img" />
+                        </div>
+                    </div>
+                `);
+                    }
+
+                    // Then, add table if it exists
                     if (table && table.rows?.length > 0) {
+                        // Remove all platform headers from individual tables - only keep page-level platform headings
+                        const needsPlatformHeader = false;
+                        const platformHeader = needsPlatformHeader ? `
+                            <div class="platform-title" style="margin-bottom: 15px; font-size: 18px;">
+                                <img src="${this.getPlatformIconDataUri(platform.name)}" class="platform-icon" alt="${platform.name}" />
+                                ${platform.name}
+                            </div>` : '';
+
                         combinedSections.push(`
                     <div class="allpage">
-                        <div class="section" style="${table.title.toLowerCase().includes('overview') || table.title.toLowerCase().includes('reviews') ? 'page-break-before: always;' : ''}">
+                        <div class="section">
                             <div class="section-title">${table.title}</div>
                             <table class="${table.style || 'detailed'}-table">
                                 <thead>
@@ -4279,51 +4593,19 @@ export class ReportDownloadController {
                             </table>
                             ${table.growthText ? `<div class="growth-text">${table.growthText}</div>` : ''}
                         </div>
-                    </div>
-                `);
-                    }
-
-                    if (chart && chart.image) {
-                        const summaryHtml = chart.summary
-                            ? `
-    <div class="chart-summary-cards">
-    ${Object.entries(chart.summary).map(([key, metric]) => {
-                                const label = key
-                                    .replace(/([A-Z])/g, ' $1')
-                                    .replace(/^./, str => str.toUpperCase());
-                                const typedMetric = metric as MetricSummary;
-                                const style = typedMetric.style || {};
-
-                                return `
-        <div class="summary-card" style="
-            background-color: ${style.backgroundColor || '#f8f9fa'};
-            border: ${style.borderWidth || 1}px solid ${style.borderColor || '#e0e0e0'};
-            border-radius: ${style.borderRadius || 10}px;
-            color: ${style.textColor || '#ffffff'};
-        ">
-            <div class="summary-value">${typedMetric.value}</div>
-            <div class="summary-label">${label}</div>
-        </div>`;
-                            }).join('')}
-    </div>`
-                            : '';
-                        combinedSections.push(`
-                    <div class="chart-container">
-                        ${summaryHtml}
-                        <div class="chart-title">${chart.title}</div>
-                        <img src="${chart.image}" class="chart-img" />
+                          <div class="contact-line">
+                                <img src="${options.logoDataUri}" alt="Logo" />
+                                <a href="mailto:hello@upstrapp.com">hello@upstrapp.com</a>  |  <a href="https://www.upstrapp.com">www.upstrapp.com</a>
+                            </div>
                     </div>
                 `);
                     }
                 }
             }
 
+            // Show platform header for all platforms
             return `
         <div class="platform-section">
-            <div class="platform-title">
-                <img src="${this.getPlatformIconDataUri(platform.name)}" class="platform-icon" alt="${platform.name}" />
-                ${platform.name}
-            </div>
             ${combinedSections.join('')}
         </div>
     `;
@@ -4333,13 +4615,31 @@ export class ReportDownloadController {
 <!-- ✅ Thank You Page (LAST PAGE ONLY) -->
 <div class="thank-you-page">
         <img src="${options.logoDataUri}" alt="Client Logo" />
-        <h2>Thank You!</h2>
-</div>
-
-<!-- ✅ Fixed footer (on all pages) -->
-<div class="global-footer">
-    www.upstrapp.com | hello@upstrapp.com
-</div>
+<div class="colorContainer">
+  <div class="container">
+    <div class="left">
+      <h1 class="containerh1">Thank you</h1>
+      <div class="info">
+        <div>
+          <label>TELEPHONE</label>
+          <div>+91 72111 20206</div>
+        </div>
+        <div>
+          <label>WEBSITE</label>
+          <div><a href="https://www.upstrapp.com">www.upstrapp.com</a></div>
+        </div>
+        <div>
+          <label>EMAIL</label>
+          <div><a href="mailto:hello@upstrapp.com">hello@upstrapp.com</a></div>
+        </div>
+        <div>
+          <label>ADDRESS</label>
+          <div>Makarba, Ahmedabad,<br>Gujarat, INDIA.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div></div>
 <img src="${options.footerBorderDataUri}" class="footer-image" />
 </body>
 </html>`;
@@ -4402,7 +4702,7 @@ export class ReportDownloadController {
                 <path d="M0 0 C0.01797954 2.2490755 0.03083236 4.4981924 0.04150391 6.74731445 C0.04920807 7.9997847 0.05691223 9.25225494 0.06484985 10.54267883 C-0.22710323 26.10748754 -9.42610262 40.48778533 -20.171875 51.15625 C-33.56378936 62.84047058 -52.42240923 68.37407373 -69.96972656 67.20703125 C-87.14178286 65.45596057 -103.17134835 56.3391442 -114.25 43.25 C-122.62272771 32.23859447 -128.08299347 19.19216844 -128.01953125 5.28125 C-128.01530151 4.0756543 -128.01530151 4.0756543 -128.01098633 2.84570312 C-128.00736084 2.23662109 -128.00373535 1.62753906 -128 1 C-115.88818376 0.86763798 -103.77634885 0.73714191 -91.66448879 0.60884857 C-86.0368141 0.54918334 -80.40914697 0.48894144 -74.78149414 0.42724609 C-49.85369321 0.15438002 -24.929549 -0.09671194 0 0 Z " fill="#3849AB" transform="translate(512,194)"/>
                 <path d="M0 0 C10.23 0 20.46 0 31 0 C31 19.77297984 26.51985152 34.41023218 13 49 C0.97556559 60.93792768 -16.8218388 67.20683462 -33.5625 67.25 C-37.23856253 67.23586789 -40.47157801 67.17614066 -44 66 C-43 63 -43 63 -41.46875 61.96020508 C-40.8190625 61.64978271 -40.169375 61.33936035 -39.5 61.01953125 C-38.78199219 60.6647168 -38.06398438 60.30990234 -37.32421875 59.94433594 C-36.55722656 59.57083008 -35.79023438 59.19732422 -35 58.8125 C-18.91842646 50.57836098 -8.76252897 38.21464349 -3 21 C-0.8877663 14.04479952 -0.61146338 7.33756051 0 0 Z " fill="#303F9F" transform="translate(481,194)"/>
                 </svg>`,
-             'hospital': `
+            'hospital': `
         <svg version="1.1"
      xmlns="http://www.w3.org/2000/svg"
      width="16"
@@ -4554,6 +4854,10 @@ export class ReportDownloadController {
         try {
             console.log('Starting PDF generation...');
 
+            // Remove contact line HTML from intro and thank you pages before PDF generation
+            const cleanedHtml = this.removeContactLineFromIntroAndThankYouPages(html);
+            console.log('Contact line HTML cleaned from intro and thank you pages');
+
             browser = await playwright.chromium.launch({
                 headless: true,
                 args: ['--no-sandbox', '--disable-setuid-sandbox']
@@ -4564,7 +4868,7 @@ export class ReportDownloadController {
             const page = await context.newPage();
             console.log('New page created');
 
-            await page.setContent(html, { waitUntil: 'networkidle0' });
+            await page.setContent(cleanedHtml, { waitUntil: 'networkidle0' });
             console.log('Content set');
 
             const pdfBuffer = await page.pdf({
@@ -4584,9 +4888,9 @@ export class ReportDownloadController {
             });
             console.log('PDF generated');
 
-            // Save to file for inspection (optional)
-            fs.writeFileSync('debug-report-playwright.pdf', pdfBuffer);
-            console.log('PDF saved to debug-report-playwright.pdf');
+            // // Save to file for inspection (optional)
+            // fs.writeFileSync('debug-report-playwright.pdf', pdfBuffer);
+            // console.log('PDF saved to debug-report-playwright.pdf');
 
 
             res.setHeader('Content-Type', 'application/pdf');
@@ -4602,6 +4906,24 @@ export class ReportDownloadController {
         } finally {
             if (browser) await browser.close();
         }
+    }
+
+    private removeContactLineFromIntroAndThankYouPages(html: string): string {
+        // Keep the contact line visible in main content but hidden on intro and thank-you pages
+        // The CSS rules already handle this properly by default, but we need to ensure no conflicts
+        let cleanHtml = html;
+
+        // Ensure the contact line CSS is correctly applied
+        // The existing CSS already handles hiding contact-line on intro/thank-you pages
+        // and showing it on main-content pages
+
+        // Make sure contact line is visible in main content by ensuring the CSS is not removed
+        // The CSS already has:
+        // .contact-line { display: none !important; ... } - hidden by default
+        // .main-content .contact-line { display: flex !important; ... } - visible in main content
+        // .intro-page .contact-line, .thank-you-page .contact-line { display: none !important; ... } - hidden on intro/thank-you
+
+        return cleanHtml;
     }
 
 }

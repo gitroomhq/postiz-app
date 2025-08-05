@@ -525,9 +525,9 @@ export const RenderAnalytics: FC<{ integration: IntegrationWithIdentifier; date:
 
         {/* Overview Section */}
         <div className="flex flex-col gap-[20px]">
-          {/* Overview Table */}
+          {/* Overview Section */}
+          <h2 className="text-[20px] mb-[16px]">Page Overview</h2>
           <div className="bg-secondary p-[16px]">
-            <h2 className="text-[20px] mb-[16px]">Page Overview</h2>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -1002,8 +1002,8 @@ export const RenderAnalytics: FC<{ integration: IntegrationWithIdentifier; date:
         {/* Overview Section */}
         <div className="flex flex-col gap-[20px]">
           {/* Overview Table */}
+          <h2 className="text-[20px] mb-[16px]">Overview</h2>
           <div className="bg-secondary p-[16px]">
-            <h2 className="text-[20px] mb-[16px]">Overview</h2>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -1462,8 +1462,8 @@ export const RenderAnalytics: FC<{ integration: IntegrationWithIdentifier; date:
         {/* Overview Section */}
         <div className="flex flex-col gap-[20px]">
           {/* Overview Table */}
+          <h2 className="text-[20px] mb-[16px]">Overview</h2>
           <div className="bg-secondary p-[16px]">
-            <h2 className="text-[20px] mb-[16px]">Overview</h2>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
