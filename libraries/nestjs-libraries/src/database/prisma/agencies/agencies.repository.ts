@@ -180,4 +180,11 @@ export class AgenciesRepository {
 
     return insertAgency;
   }
+  deleteByUserId(userId: string) {
+    return this._socialMediaAgencies.model.socialMediaAgency.deleteMany({
+      where: {
+        userId,
+      },
+    });
+  }
 }

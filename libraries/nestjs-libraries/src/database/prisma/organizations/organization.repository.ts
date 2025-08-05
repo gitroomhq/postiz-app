@@ -325,4 +325,10 @@ export class OrganizationRepository {
       },
     });
   }
+
+  async deleteUserOrganizations(userId: string) {
+  return this._userOrg.model.userOrganization.deleteMany({
+    where: { userId },
+  });
+}
 }

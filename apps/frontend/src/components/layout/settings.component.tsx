@@ -30,6 +30,7 @@ import { SignaturesComponent } from '@gitroom/frontend/components/settings/signa
 import { Autopost } from '@gitroom/frontend/components/autopost/autopost';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { SVGLine } from '@gitroom/frontend/components/launches/launches.component';
+import { UserComponent } from '../settings/user.component';
 export const SettingsPopup: FC<{
   getRef?: Ref<any>;
 }> = (props) => {
@@ -115,6 +116,7 @@ export const SettingsPopup: FC<{
     if (user?.tier?.public_api && isGeneral && showLogout) {
       arr.push({ tab: 'api', label: t('public_api', 'Public API') });
     }
+    arr.push({ tab: 'user', label: t('user', 'User') });
 
     return arr;
   }, [user, isGeneral, showLogout, t]);
@@ -195,6 +197,12 @@ export const SettingsPopup: FC<{
               {tab === 'signatures' && user?.tier.current !== 'FREE' && (
                 <div>
                   <SignaturesComponent />
+                </div>
+              )}
+
+              {tab === 'user' && user?.tier.current !== 'FREE' && (
+                <div>
+                  <UserComponent />
                 </div>
               )}
 

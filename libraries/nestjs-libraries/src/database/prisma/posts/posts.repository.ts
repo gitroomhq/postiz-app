@@ -694,4 +694,12 @@ export class PostsRepository {
       },
     });
   }
+
+  async deleteCommentsByUser(userId: string) {
+    return this._comments.model.comments.deleteMany({
+      where: {
+        userId,
+      },
+    });
+  }
 }

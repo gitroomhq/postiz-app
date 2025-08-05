@@ -38,4 +38,11 @@ export class ItemUserRepository {
       },
     });
   }
+ deleteAllItemsByUser(userId: string) {
+  return this._itemUser.model.itemUser.deleteMany({
+    where: {
+      userId,
+    },
+  });
+}
 }

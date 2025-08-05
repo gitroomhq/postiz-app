@@ -239,4 +239,10 @@ export class UsersRepository {
       count,
     };
   }
+
+  deleteUser(userId: string) {
+    return this._user.model.user.delete({
+      where: { id: userId },
+    });
+  }
 }

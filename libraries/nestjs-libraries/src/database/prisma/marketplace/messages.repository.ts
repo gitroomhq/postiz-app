@@ -912,4 +912,10 @@ export class MessagesRepository {
       },
     });
   }
+
+  async deletePayoutProblemsByUser(userId: string) {
+    await this._payoutProblems.model.payoutProblems.deleteMany({
+      where: { userId },
+    });
+  }
 }

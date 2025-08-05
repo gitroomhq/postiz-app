@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpException,
   Post,
@@ -280,4 +281,9 @@ export class UsersController {
       track: uniqueId,
     });
   }
+
+   @Delete('/delete')
+   async deleteUser(@GetUserFromRequest() user: User) {
+     return this._userService.deleteUser(user.id);
+    }
 }
