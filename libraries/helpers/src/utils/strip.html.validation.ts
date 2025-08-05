@@ -151,6 +151,7 @@ export const stripHtmlValidation = (
       'p',
       'strong',
       'u',
+      'a',
     ]);
   }
 
