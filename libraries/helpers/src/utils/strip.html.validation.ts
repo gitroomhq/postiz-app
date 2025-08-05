@@ -178,7 +178,13 @@ export const stripHtmlValidation = (
           })
           .replace(/<p>([.\s\S]*?)<\/p>/g, (match, p1) => {
             return `<p>${p1}</p>\n`;
-          }),
+          })
+          .replace(
+            /<a.*?href="([.\s\S]*?)".*?>([.\s\S]*?)<\/a>/g,
+            (match, p1, p2) => {
+              return `<a href="${p1}">[${p2}](${p1})</a>`;
+            }
+          ),
         convertMentionFunction
       )
     );
@@ -203,6 +209,12 @@ export const stripHtmlValidation = (
     const processedHtml = convertMention(
       convertToAscii(
         html
+          .replace(
+            /<a.*?href="([.\s\S]*?)".*?>([.\s\S]*?)<\/a>/g,
+            (match, p1, p2) => {
+              return `<a href="${p1}">${p1}</a>`;
+            }
+          )
           .replace(/<ul>/, '\n<ul>')
           .replace(/<\/ul>\n/, '</ul>')
           .replace(/<li.*?>([.\s\S]*?)<\/li.*?>/gm, (match, p1) => {

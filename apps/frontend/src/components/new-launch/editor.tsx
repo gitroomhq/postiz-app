@@ -28,10 +28,10 @@ import { UpDownArrow } from '@gitroom/frontend/components/launches/up.down.arrow
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
-import { LinkedinCompanyPop } from '@gitroom/frontend/components/launches/helpers/linkedin.component';
 import { useDropzone } from 'react-dropzone';
 import { useUppyUploader } from '@gitroom/frontend/components/media/new.uploader';
 import { Dashboard } from '@uppy/react';
+import Link from '@tiptap/extension-link';
 import {
   useEditor,
   EditorContent,
@@ -53,6 +53,7 @@ import { HeadingComponent } from '@gitroom/frontend/components/new-launch/headin
 import Mention from '@tiptap/extension-mention';
 import { suggestion } from '@gitroom/frontend/components/new-launch/mention.component';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { AComponent } from '@gitroom/frontend/components/new-launch/a.component';
 
 const InterceptBoldShortcut = Extension.create({
   name: 'preventBoldWithUnderline',
@@ -521,18 +522,23 @@ export const Editor: FC<{
             editor={editorRef?.current?.editor}
             currentValue={props.value!}
           />
-          {(editorType === 'markdown' || editorType === 'html') && identifier !== 'telegram' && (
-            <>
-              <Bullets
-                editor={editorRef?.current?.editor}
-                currentValue={props.value!}
-              />
-              <HeadingComponent
-                editor={editorRef?.current?.editor}
-                currentValue={props.value!}
-              />
-            </>
-          )}
+          {(editorType === 'markdown' || editorType === 'html') &&
+            identifier !== 'telegram' && (
+              <>
+                <AComponent
+                  editor={editorRef?.current?.editor}
+                  currentValue={props.value!}
+                />
+                <Bullets
+                  editor={editorRef?.current?.editor}
+                  currentValue={props.value!}
+                />
+                <HeadingComponent
+                  editor={editorRef?.current?.editor}
+                  currentValue={props.value!}
+                />
+              </>
+            )}
           <div
             className="select-none cursor-pointer w-[40px] p-[5px] text-center"
             onClick={() => setEmojiPickerOpen(!emojiPickerOpen)}
@@ -703,6 +709,66 @@ export const OnlyEditor = forwardRef<
       InterceptUnderlineShortcut,
       BulletList,
       ListItem,
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+        defaultProtocol: 'https',
+        protocols: ['http', 'https'],
+        isAllowedUri: (url, ctx) => {
+          try {
+            // construct URL
+            const parsedUrl = url.includes(':')
+              ? new URL(url)
+              : new URL(`${ctx.defaultProtocol}://${url}`);
+
+            // use default validation
+            if (!ctx.defaultValidate(parsedUrl.href)) {
+              return false;
+            }
+
+            // disallowed protocols
+            const disallowedProtocols = ['ftp', 'file', 'mailto'];
+            const protocol = parsedUrl.protocol.replace(':', '');
+
+            if (disallowedProtocols.includes(protocol)) {
+              return false;
+            }
+
+            // only allow protocols specified in ctx.protocols
+            const allowedProtocols = ctx.protocols.map((p) =>
+              typeof p === 'string' ? p : p.scheme
+            );
+
+            if (!allowedProtocols.includes(protocol)) {
+              return false;
+            }
+
+            // all checks have passed
+            return true;
+          } catch {
+            return false;
+          }
+        },
+        shouldAutoLink: (url) => {
+          try {
+            // construct URL
+            const parsedUrl = url.includes(':')
+              ? new URL(url)
+              : new URL(`https://${url}`);
+
+            // only auto-link if the domain is not in the disallowed list
+            const disallowedDomains = [
+              'example-no-autolink.com',
+              'another-no-autolink.com',
+            ];
+            const domain = parsedUrl.hostname;
+
+            return !disallowedDomains.includes(domain);
+          } catch {
+            return false;
+          }
+        },
+      }),
       ...(internal?.integration?.id
         ? [
             Mention.configure({

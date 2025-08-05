@@ -653,6 +653,11 @@ html[dir='rtl'] [dir='ltr'] {
 }
 
 .tiptap {
+  a {
+    @apply underline;
+  }
+}
+.tiptap {
   :first-child {
     margin-top: 0;
   }

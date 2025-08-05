@@ -85,6 +85,7 @@
     "@tiptap/extension-document": "^3.0.6",
     "@tiptap/extension-heading": "^3.0.7",
     "@tiptap/extension-history": "^3.0.7",
+    "@tiptap/extension-link": "^3.0.9",
     "@tiptap/extension-list": "^3.0.7",
     "@tiptap/extension-mention": "^3.0.7",
     "@tiptap/extension-paragraph": "^3.0.6",
