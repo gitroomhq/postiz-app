@@ -348,12 +348,14 @@ export const AddProviderComponent: FC<{
               modal: 'bg-transparent text-textColor',
             },
             children: (
-              <Web3Providers
-                onComplete={(code, newState) => {
-                  window.location.href = `/integrations/social/${identifier}?code=${code}&state=${newState}`;
-                }}
-                nonce={url}
-              />
+              <ModalWrapperComponent title="Web3 provider">
+                <Web3Providers
+                  onComplete={(code, newState) => {
+                    window.location.href = `/integrations/social/${identifier}?code=${code}&state=${newState}`;
+                  }}
+                  nonce={url}
+                />
+              </ModalWrapperComponent>
             ),
           });
           return;
@@ -384,7 +386,11 @@ export const AddProviderComponent: FC<{
             classNames: {
               modal: 'bg-transparent text-textColor',
             },
-            children: <UrlModal gotoUrl={gotoIntegration} />,
+            children: (
+              <ModalWrapperComponent title="URL">
+                <UrlModal gotoUrl={gotoIntegration} />
+              </ModalWrapperComponent>
+            ),
           });
           return;
         }
@@ -397,11 +403,13 @@ export const AddProviderComponent: FC<{
               modal: 'bg-transparent text-textColor',
             },
             children: (
-              <CustomVariables
-                identifier={identifier}
-                gotoUrl={(url: string) => router.push(url)}
-                variables={customFields}
-              />
+              <ModalWrapperComponent title="Add Provider">
+                <CustomVariables
+                  identifier={identifier}
+                  gotoUrl={(url: string) => router.push(url)}
+                  variables={customFields}
+                />
+              </ModalWrapperComponent>
             ),
           });
           return;
