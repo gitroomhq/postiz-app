@@ -4399,15 +4399,15 @@ body.show-contact-footer .contact-footer {
     text-align: center;
     font-size: 14px;
     color: #000;
-    padding: 8px 0;
+    padding: 8px 20px;
     font-weight: 500;
     align-items: center;
-    justify-content: center;
-    gap: 10px;
+    justify-content: space-between;
     width: 100%;
     background: rgba(255, 255, 255, 0.95);
     z-index: 9998;
     margin: 0;
+    box-sizing: border-box;
 }
 
 /* Ensure contact line is hidden on intro and thank you pages */
@@ -4595,7 +4595,9 @@ body.show-contact-footer .contact-footer {
                         </div>
                           <div class="contact-line">
                                 <img src="${options.logoDataUri}" alt="Logo" />
-                                <a href="mailto:hello@upstrapp.com">hello@upstrapp.com</a>  |  <a href="https://www.upstrapp.com">www.upstrapp.com</a>
+                                <div class="contact-links">
+                                    <a href="mailto:hello@upstrapp.com">hello@upstrapp.com</a>  |  <a href="https://www.upstrapp.com">www.upstrapp.com</a>
+                                </div>
                             </div>
                     </div>
                 `);
