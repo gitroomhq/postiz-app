@@ -15,7 +15,7 @@ export const concurrency = async <T>(
 ) => {
   const strippedIdentifier = identifier.toLowerCase().split('-')[0];
   mapper[strippedIdentifier] ??= new Bottleneck({
-    id: strippedIdentifier + '-concurrency',
+    id: strippedIdentifier + '-concurrency-new',
     maxConcurrent,
     datastore: 'ioredis',
     connection,
