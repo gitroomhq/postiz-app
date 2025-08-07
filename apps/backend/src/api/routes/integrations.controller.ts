@@ -263,8 +263,10 @@ export class IntegrationsController {
 
     let newList: any[] | {none: true} = [];
     try {
-      newList = await this.functionIntegration(org, body);
-    } catch (err) {}
+      newList = (await this.functionIntegration(org, body)) || [];
+    } catch (err) {
+      console.log(err);
+    }
 
     if (!Array.isArray(newList) && newList?.none) {
       return newList;
@@ -283,8 +285,9 @@ export class IntegrationsController {
             name: p.label || '',
             username: p.id || '',
             image: p.image || '',
+            doNotCache: p.doNotCache || false,
           }))
-          .filter((f: any) => f.name)
+          .filter((f: any) => f.name && !f.doNotCache)
       );
     }
 
@@ -298,7 +301,7 @@ export class IntegrationsController {
         ...newList as any[],
       ],
       (p) => p.id
-    ).filter((f) => f.label && f.image && f.id);
+    ).filter((f) => f.label && f.id);
   }
 
   @Post('/function')

@@ -161,6 +161,8 @@ export const stripHtmlValidation = (
           .replace(/<h1>([.\s\S]*?)<\/h1>/g, (match, p1) => {
             return `<h1># ${p1}</h1>\n`;
           })
+          .replace(/&amp;/gi, '&')
+          .replace(/&nbsp;/gi, ' ')
           .replace(/<h2>([.\s\S]*?)<\/h2>/g, (match, p1) => {
             return `<h2>## ${p1}</h2>\n`;
           })

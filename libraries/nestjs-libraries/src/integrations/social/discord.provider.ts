@@ -159,7 +159,7 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
       form.append(
         'payload_json',
         JSON.stringify({
-          content: post.message.replace(/\[\[\[(@\d.*?)]]]/g, (match, p1) => {
+          content: post.message.replace(/\[\[\[(@.*?)]]]/g, (match, p1) => {
             return `<${p1}>`;
           }),
           attachments: post.media?.map((p, index) => ({
@@ -228,6 +228,21 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
     id: string,
     integration: Integration
   ) {
+    const allRoles = await (
+      await fetch(`https://discord.com/api/guilds/${id}/roles`, {
+        headers: {
+          Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN_ID}`,
+          'Content-Type': 'application/json',
+        },
+      })
+    ).json();
+
+    const matching = allRoles
+      .filter((role: any) =>
+        role.name.toLowerCase().includes(data.query.toLowerCase())
+      )
+      .filter((f) => f.name !== '@everyone' && f.name !== '@here');
+
     const list = await (
       await fetch(
         `https://discord.com/api/guilds/${id}/members/search?query=${data.query}`,
@@ -240,14 +255,41 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
       )
     ).json();
 
-    return list.map((p: any) => ({
-      id: String(p.user.id),
-      label: p.user.global_name || p.user.username,
-      image: `https://cdn.discordapp.com/avatars/${p.user.id}/${p.user.avatar}.png`,
-    }));
+    return [
+      ...[
+        {
+          id: String('here'),
+          label: 'here',
+          image: '',
+          doNotCache: true,
+        },
+        {
+          id: String('everyone'),
+          label: 'everyone',
+          image: '',
+          doNotCache: true,
+        },
+      ].filter((role: any) => {
+        return role.label.toLowerCase().includes(data.query.toLowerCase());
+      }),
+      ...matching.map((p: any) => ({
+        id: String('&' + p.id),
+        label: p.name.split('@')[1],
+        image: '',
+        doNotCache: true,
+      })),
+      ...list.map((p: any) => ({
+        id: String(p.user.id),
+        label: p.user.global_name || p.user.username,
+        image: `https://cdn.discordapp.com/avatars/${p.user.id}/${p.user.avatar}.png`,
+      })),
+    ];
   }
 
   mentionFormat(idOrHandle: string, name: string) {
-    return `[[[@${idOrHandle}]]]`;
+    if (name === '@here' || name === '@everyone') {
+      return name;
+    }
+    return `[[[@${idOrHandle.replace('@', '')}]]]`;
   }
 }

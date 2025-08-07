@@ -37,7 +37,7 @@ export abstract class SocialAbstract {
     d: { query: string },
     id: string,
     integration: Integration
-  ): Promise<{ id: string; label: string; image: string }[] | { none: true }> {
+  ): Promise<{ id: string; label: string; image: string, doNotCache?: boolean }[] | { none: true }> {
     return { none: true };
   }
 
