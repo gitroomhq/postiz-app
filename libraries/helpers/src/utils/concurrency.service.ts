@@ -19,17 +19,19 @@ export const concurrency = async <T>(
     maxConcurrent,
     datastore: 'ioredis',
     connection,
+    minTime: 1000,
   });
   let load: T;
   try {
-    load = await mapper[strippedIdentifier].schedule<T>(
-      { expiration: 120_000 },
-      async () => {
-        const res = await func();
-        await timer(1000);
-        return res;
-      }
-    );
+    load = await mapper[strippedIdentifier].schedule<T>(async () => {
+      return await Promise.race<T>([
+        new Promise<T>(async (res) => {
+          await timer(300000);
+          res(true as T);
+        }),
+        func(),
+      ]);
+    });
   } catch (err) {}
 
   return load;
