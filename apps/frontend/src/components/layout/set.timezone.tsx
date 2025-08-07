@@ -21,18 +21,16 @@ export const newDayjs = (config?: ConfigType) => {
 
 const SetTimezone: FC = () => {
   useEffect(() => {
-    dayjs.utc = new Proxy(originalUtc, {
-      apply(target, thisArg, args) {
-        const result = target.apply(thisArg, args);
+    dayjs.utc = (config?: ConfigType, format?: string, strict?: boolean) => {
+      const result = originalUtc(config, format, strict);
 
-        // Attach `.local()` method to the returned Dayjs object
-        result.local = function () {
-          return result.tz(getTimezone());
-        };
+      // Attach `.local()` method to the returned Dayjs object
+      result.local = function () {
+        return result.tz(getTimezone());
+      };
 
-        return result;
-      },
-    });
+      return result;
+    };
     if (localStorage.getItem('timezone')) {
       dayjs.tz.setDefault(getTimezone());
     }
