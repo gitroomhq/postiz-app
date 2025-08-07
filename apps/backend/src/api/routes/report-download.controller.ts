@@ -96,102 +96,12 @@ export class ReportDownloadController {
                 x: x === 'true',
                 gbp: gbp === 'true',
                 website: website === 'true',
-                hospital: hospital === 'true' // ✅ Add this
+                hospital: hospital === 'true'
             };
 
             const platformReports: PlatformReport[] = [];
 
-            if (platforms.instagram) {
-                const instagramReport = await this.processPlatform(
-                    'instagram',
-                    customerId,
-                    monthNum,
-                    yearNum,
-                    [
-                        { type: 'community', serviceMethod: 'getInstagramCommunityReport' },
-                        { type: 'overview', serviceMethod: 'getInstagramOverviewReport' }
-                    ],
-                    [
-                        { type: 'community', generator: this.generateCommunityChart.bind(this) },
-                        //  { type: 'followers', generator: this.generateFollowersChart.bind(this) },
-                        { type: 'impressions', generator: this.generateInstagramImpressionsChart.bind(this) }
-                    ]
-                );
-                if (instagramReport) platformReports.push(instagramReport);
-            }
-
-            if (platforms.youtube) {
-                const youtubeReport = await this.processPlatform(
-                    'youtube',
-                    customerId,
-                    monthNum,
-                    yearNum,
-                    [
-                        { type: 'community', serviceMethod: 'getYoutubeCommunityReport' },
-                        //  { type: 'overview', serviceMethod: 'getYoutubeOverviewReport' }
-                    ],
-                    [
-                        { type: 'subscribers', generator: this.generateSubscribersChart.bind(this) },
-                        //{ type: 'views', generator: this.generateViewsChart.bind(this) }
-                    ]
-                );
-                if (youtubeReport) platformReports.push(youtubeReport);
-            }
-
-            if (platforms.facebook) {
-                const facebookReport = await this.processPlatform(
-                    'facebook',
-                    customerId,
-                    monthNum,
-                    yearNum,
-                    [
-                        { type: 'community', serviceMethod: 'getFacebookCommunityReport' },
-                        { type: 'overview', serviceMethod: 'getFacebookOverviewReport' }
-                    ],
-                    [
-                        { type: 'likes', generator: this.generateLikesChart.bind(this) },
-                        { type: 'impressions', generator: this.generateFacebookImpressionsChart.bind(this) }
-                    ]
-                );
-                if (facebookReport) platformReports.push(facebookReport);
-            }
-
-            if (platforms.linkedin) {
-                const linkedinReport = await this.processPlatform(
-                    'linkedin',
-                    customerId,
-                    monthNum,
-                    yearNum,
-                    [
-                        { type: 'community', serviceMethod: 'getLinkedInCommunityReport' },
-                        // { type: 'overview', serviceMethod: 'getLinkedInOverviewReport' }
-                    ],
-                    [
-                        // { type: 'followers', generator: this.generateFollowersChart.bind(this) },
-                        { type: 'impressions', generator: this.generateLinkedInCommunityChart.bind(this) }
-                    ]
-                );
-                if (linkedinReport) platformReports.push(linkedinReport);
-            }
-
-            if (platforms.x) {
-                const xReport = await this.processPlatform(
-                    'x',
-                    customerId,
-                    monthNum,
-                    yearNum,
-                    [
-                        { type: 'community', serviceMethod: 'getXCommunityReport' },
-                        { type: 'overview', serviceMethod: 'getXOverviewReport' }
-                    ],
-                    [
-                        { type: 'followers', generator: this.generateFollowersChart.bind(this) },
-                        { type: 'impressions', generator: this.generateXOverviewChart.bind(this) }
-                    ]
-                );
-                if (xReport) platformReports.push(xReport);
-            }
-
+            // GBP first (as per your requested order)
             if (platforms.gbp) {
                 const gbpPerformance = await this.processPlatform(
                     'gbp',
@@ -212,6 +122,137 @@ export class ReportDownloadController {
                 );
                 if (gbpPerformance) platformReports.push(gbpPerformance);
             }
+
+            if (platforms.instagram) {
+                const instagramReport = await this.processPlatform(
+                    'instagram',
+                    customerId,
+                    monthNum,
+                    yearNum,
+                    [
+                        { type: 'community', serviceMethod: 'getInstagramCommunityReport' },
+                        { type: 'overview', serviceMethod: 'getInstagramOverviewReport' }
+                    ],
+                    [
+                        { type: 'community', generator: this.generateCommunityChart.bind(this) },
+                        //  { type: 'followers', generator: this.generateFollowersChart.bind(this) },
+                        { type: 'impressions', generator: this.generateInstagramImpressionsChart.bind(this) }
+                    ]
+                );
+                if (instagramReport) platformReports.push(instagramReport);
+            }
+
+            if (platforms.facebook) {
+                const facebookReport = await this.processPlatform(
+                    'facebook',
+                    customerId,
+                    monthNum,
+                    yearNum,
+                    [
+                        { type: 'community', serviceMethod: 'getFacebookCommunityReport' },
+                        { type: 'overview', serviceMethod: 'getFacebookOverviewReport' }
+                    ],
+                    [
+                        { type: 'likes', generator: this.generateLikesChart.bind(this) },
+                        { type: 'impressions', generator: this.generateFacebookImpressionsChart.bind(this) }
+                    ]
+                );
+                if (facebookReport) platformReports.push(facebookReport);
+            }
+
+            // Thread platform (assuming this needs to be added similar to other platforms)
+            // Note: Thread processing logic not found in current code, keeping placeholder
+            // if (platforms.thread) {
+            //     const threadReport = await this.processPlatform(
+            //         'thread',
+            //         customerId,
+            //         monthNum,
+            //         yearNum,
+            //         [
+            //             { type: 'community', serviceMethod: 'getThreadCommunityReport' },
+            //             { type: 'overview', serviceMethod: 'getThreadOverviewReport' }
+            //         ],
+            //         [
+            //             { type: 'community', generator: this.generateThreadCommunityChart.bind(this) },
+            //             { type: 'impressions', generator: this.generateThreadImpressionsChart.bind(this) }
+            //         ]
+            //     );
+            //     if (threadReport) platformReports.push(threadReport);
+            // }
+
+            if (platforms.youtube) {
+                const youtubeReport = await this.processPlatform(
+                    'youtube',
+                    customerId,
+                    monthNum,
+                    yearNum,
+                    [
+                        { type: 'community', serviceMethod: 'getYoutubeCommunityReport' },
+                        //  { type: 'overview', serviceMethod: 'getYoutubeOverviewReport' }
+                    ],
+                    [
+                        { type: 'subscribers', generator: this.generateSubscribersChart.bind(this) },
+                        //{ type: 'views', generator: this.generateViewsChart.bind(this) }
+                    ]
+                );
+                if (youtubeReport) platformReports.push(youtubeReport);
+            }
+
+            if (platforms.x) {
+                const xReport = await this.processPlatform(
+                    'x',
+                    customerId,
+                    monthNum,
+                    yearNum,
+                    [
+                        { type: 'community', serviceMethod: 'getXCommunityReport' },
+                        { type: 'overview', serviceMethod: 'getXOverviewReport' }
+                    ],
+                    [
+                        { type: 'followers', generator: this.generateFollowersChart.bind(this) },
+                        { type: 'impressions', generator: this.generateXOverviewChart.bind(this) }
+                    ]
+                );
+                if (xReport) platformReports.push(xReport);
+            }
+
+            if (platforms.linkedin) {
+                const linkedinReport = await this.processPlatform(
+                    'linkedin',
+                    customerId,
+                    monthNum,
+                    yearNum,
+                    [
+                        { type: 'community', serviceMethod: 'getLinkedInCommunityReport' },
+                        // { type: 'overview', serviceMethod: 'getLinkedInOverviewReport' }
+                    ],
+                    [
+                        // { type: 'followers', generator: this.generateFollowersChart.bind(this) },
+                        { type: 'impressions', generator: this.generateLinkedInCommunityChart.bind(this) }
+                    ]
+                );
+                if (linkedinReport) platformReports.push(linkedinReport);
+            }
+
+            // Pinterest platform (assuming this needs to be added similar to other platforms)
+            // Note: Pinterest processing logic not found in current code, keeping placeholder
+            // if (platforms.pinterest) {
+            //     const pinterestReport = await this.processPlatform(
+            //         'pinterest',
+            //         customerId,
+            //         monthNum,
+            //         yearNum,
+            //         [
+            //             { type: 'community', serviceMethod: 'getPinterestCommunityReport' },
+            //             { type: 'overview', serviceMethod: 'getPinterestOverviewReport' }
+            //         ],
+            //         [
+            //             { type: 'community', generator: this.generatePinterestCommunityChart.bind(this) },
+            //             { type: 'impressions', generator: this.generatePinterestImpressionsChart.bind(this) }
+            //         ]
+            //     );
+            //     if (pinterestReport) platformReports.push(pinterestReport);
+            // }
 
             if (platforms.website) {
                 const websiteReport = await this.processPlatform(
@@ -249,7 +290,7 @@ export class ReportDownloadController {
                             style: 'hospital'
                         },
                         {
-                            title: 'What’s Next ?',
+                            title: `What's Next ?`,
                             headers: [],
                             rows: [],
                             style: 'hospital'
@@ -3952,7 +3993,7 @@ export class ReportDownloadController {
             }
 
             .header h1 {
-                font-size: 32px;
+                font-size: 40px;
                 margin-bottom: 10px;
                 font-weight: 700;
                 text-transform: capitalize;
@@ -4139,7 +4180,7 @@ export class ReportDownloadController {
             .footer {
                 display: flex;
                 justify-content: space-between;
-                align-items: center;
+                align-items: flex-end;
                 width: 100%;
                 padding-top: 20px;
                 padding-bottom: 50px;
@@ -4876,7 +4917,7 @@ body.show-contact-footer .contact-footer {
             const pdfBuffer = await page.pdf({
                 format: 'A4',
                 margin: {
-                    top: '40px',
+                    top: '30px',
                     right: '0px',
                     bottom: '10px',
                     left: '0px'
