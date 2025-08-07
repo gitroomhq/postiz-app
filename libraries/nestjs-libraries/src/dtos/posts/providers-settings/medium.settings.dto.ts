@@ -9,6 +9,7 @@ import {
   ValidateIf,
   ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class MediumTagsSettings {
   @IsString()
@@ -47,5 +48,7 @@ export class MediumSettingsDto {
   @IsArray()
   @ArrayMaxSize(4)
   @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(p => MediumTagsSettings)
   tags: MediumTagsSettings[];
 }
