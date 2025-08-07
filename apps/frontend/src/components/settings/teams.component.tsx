@@ -71,6 +71,9 @@ export const AddMember = () => {
 
   const t = useT();
 
+  const user = useUser();
+  const isUser = user?.role === 'USER';
+
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(submit)}>
@@ -106,11 +109,13 @@ export const AddMember = () => {
           )}
           <Select label="Role" name="role">
             <option value="">{t('select_role', 'Select Role')}</option>
-            {roles.map((role) => (
-              <option key={role.value} value={role.value}>
-                {role.name}
-              </option>
-            ))}
+            {roles
+              .filter((role) => (isUser ? role.value === 'USER' : true))
+              .map((role) => (
+                <option key={role.value} value={role.value}>
+                  {role.name}
+                </option>
+              ))}
           </Select>
           <div className="flex gap-[5px]">
             <div>

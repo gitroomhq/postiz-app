@@ -7,6 +7,8 @@ import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/o
 import { AddTeamMemberDto } from '@gitroom/nestjs-libraries/dtos/settings/add.team.member.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
+import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
+import { User } from 'facebook-nodejs-business-sdk';
 
 @ApiTags('Settings')
 @Controller('/settings')
@@ -116,9 +118,15 @@ export class SettingsController {
     [AuthorizationActions.Create, Sections.ADMIN]
   )
   async inviteTeamMember(
+    @GetUserFromRequest() user: User,
     @GetOrgFromRequest() org: Organization,
     @Body() body: AddTeamMemberDto
   ) {
+    const thisOrg = await this._organizationService.getTeam(org.id);
+    const loggedInUserRole = thisOrg.users.find((u) => user.id == u.user.id).role
+     if (loggedInUserRole === 'USER' && body.role !== 'USER') {
+      throw new Error('You are not authorized to invite users as an Admin');
+    }
     return this._organizationService.inviteTeamMember(org.id, body);
   }
 
