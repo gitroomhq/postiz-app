@@ -91,7 +91,6 @@ export abstract class SocialAbstract {
       json = '{}';
     }
 
-
     if (
       request.status === 429 ||
       request.status === 500 ||
