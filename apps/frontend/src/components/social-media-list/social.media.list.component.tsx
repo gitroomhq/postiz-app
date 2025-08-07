@@ -145,14 +145,14 @@ const SocialMediaList: React.FC = () => {
   const [customerList, setCustomerList]: Customer[] | any = useState([]);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [selectedPlatforms, setSelectedPlatforms] = useState<Record<string, boolean>>({
+    GBP: false,
     Instagram: false,
     Facebook: false,
-    Youtube: false,
     Thread: false,
+    Youtube: false,
     X: false,
-    Pinterest: false,
     LinkedIn: false,
-    GBP: false,
+    Pinterest: false,
     Website: false,
     Hospital: false,
 
