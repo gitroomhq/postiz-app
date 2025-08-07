@@ -31,7 +31,13 @@ export const concurrency = async <T>(
             await timer(300000);
             res(true as T);
           }),
-          func(),
+          new Promise<T>(async (res) => {
+            try {
+              return res(await func());
+            } catch (err) {
+              res(err as T);
+            }
+          }),
         ]);
       }
     );
