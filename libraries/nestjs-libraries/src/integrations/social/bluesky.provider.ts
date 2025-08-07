@@ -303,12 +303,12 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
           ? {
               reply: {
                 root: {
-                  uri: loadUri,
-                  cid: loadCid,
-                },
-                parent: {
                   uri: replyUri,
                   cid: replyCid,
+                },
+                parent: {
+                  uri: loadUri,
+                  cid: loadCid,
                 },
               },
             }
