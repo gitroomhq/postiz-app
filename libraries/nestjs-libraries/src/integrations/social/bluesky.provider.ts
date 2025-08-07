@@ -246,6 +246,8 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
 
     let loadCid = '';
     let loadUri = '';
+    let replyCid = '';
+    let replyUri = '';
     const cidUrl = [] as { cid: string; url: string; rev: string }[];
     for (const post of postDetails) {
       // Separate images and videos
@@ -305,8 +307,8 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
                   cid: loadCid,
                 },
                 parent: {
-                  uri: loadUri,
-                  cid: loadCid,
+                  uri: replyUri,
+                  cid: replyCid,
                 },
               },
             }
@@ -315,6 +317,8 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
 
       loadCid = loadCid || cid;
       loadUri = loadUri || uri;
+      replyCid = cid;
+      replyUri = uri;
 
       cidUrl.push({ cid, url: uri, rev: commit.rev });
     }
