@@ -1,4 +1,4 @@
 export const isUSCitizen = () => {
-  const userLanguage = navigator.language || navigator.languages[0];
-  return userLanguage.startsWith('en-US');
+  const userLanguage = localStorage.getItem('isUS') || ((navigator.language || navigator.languages[0]).startsWith('en-US') ? 'US' : 'GLOBAL');
+  return userLanguage === 'US';
 };

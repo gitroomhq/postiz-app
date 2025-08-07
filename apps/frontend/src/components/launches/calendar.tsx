@@ -54,6 +54,7 @@ import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { ModalWrapperComponent } from '../new-launch/modal.wrapper.component';
+import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 
 // Extend dayjs with necessary plugins
 extend(isSameOrAfter);
@@ -146,7 +147,7 @@ export const DayView = () => {
       {options.map((option) => (
         <Fragment key={option[0].time}>
           <div className="text-center text-[14px]">
-            {dayjs()
+            {newDayjs()
               .utc()
               .startOf('day')
               .add(option[0].time, 'minute')
@@ -186,7 +187,7 @@ export const WeekView = () => {
     dayjs.locale(currentLanguage);
 
     const days = [];
-    const weekStart = dayjs(startDate);
+    const weekStart = newDayjs(startDate);
     for (let i = 0; i < 7; i++) {
       const day = weekStart.add(i, 'day');
       days.push({
@@ -214,10 +215,10 @@ export const WeekView = () => {
               <div
                 className={clsx(
                   'text-[14px] font-[600] flex items-center justify-center gap-[6px]',
-                  day.day === dayjs().format('L') && 'text-newTableTextFocused'
+                  day.day === newDayjs().format('L') && 'text-newTableTextFocused'
                 )}
               >
-                {day.day === dayjs().format('L') && (
+                {day.day === newDayjs().format('L') && (
                   <div className="w-[6px] h-[6px] bg-newTableTextFocused rounded-full" />
                 )}
                 {day.day}
@@ -259,17 +260,17 @@ export const MonthView = () => {
     const days = [];
     // Starting from Monday (1) to Sunday (7)
     for (let i = 1; i <= 7; i++) {
-      days.push(dayjs().day(i).format('dddd'));
+      days.push(newDayjs().day(i).format('dddd'));
     }
     return days;
   }, [i18next.resolvedLanguage]);
 
   const calendarDays = useMemo(() => {
-    const monthStart = dayjs(startDate);
+    const monthStart = newDayjs(startDate);
     const currentMonth = monthStart.month();
     const currentYear = monthStart.year();
 
-    const startOfMonth = dayjs(new Date(currentYear, currentMonth, 1));
+    const startOfMonth = newDayjs(new Date(currentYear, currentMonth, 1));
 
     // Calculate the day offset for Monday (isoWeekday() returns 1 for Monday)
     const startDayOfWeek = startOfMonth.isoWeekday(); // 1 for Monday, 7 for Sunday
@@ -314,7 +315,7 @@ export const MonthView = () => {
               className="text-center items-center justify-center flex min-h-[100px]"
             >
               <CalendarColumn
-                getDate={dayjs(date.day).endOf('day')}
+                getDate={newDayjs(date.day).endOf('day')}
                 randomHour={true}
               />
             </div>
@@ -390,7 +391,7 @@ export const CalendarColumn: FC<{
 
   const isBeforeNow = useMemo(() => {
     const originalUtc = getDate.startOf('hour');
-    return originalUtc.startOf('hour').isBefore(dayjs().startOf('hour').utc());
+    return originalUtc.startOf('hour').isBefore(newDayjs().startOf('hour').utc());
   }, [getDate, num]);
 
   const { start, stop } = useInterval(
@@ -571,8 +572,8 @@ export const CalendarColumn: FC<{
             randomHour
               ? getDate.hour(Math.floor(Math.random() * 24))
               : getDate.format('YYYY-MM-DDTHH:mm:ss') ===
-                dayjs().startOf('hour').format('YYYY-MM-DDTHH:mm:ss')
-              ? dayjs().add(10, 'minute')
+                newDayjs().startOf('hour').format('YYYY-MM-DDTHH:mm:ss')
+              ? newDayjs().add(10, 'minute')
               : getDate
           }
           {...(set?.content ? { set: JSON.parse(set.content) } : {})}

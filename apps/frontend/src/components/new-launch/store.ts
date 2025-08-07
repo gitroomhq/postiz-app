@@ -6,6 +6,7 @@ import { Integrations } from '@gitroom/frontend/components/launches/calendar.con
 import { createRef, RefObject } from 'react';
 import { arrayMoveImmutable } from 'array-move';
 import { PostComment } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
+import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 
 interface Values {
   id: string;
@@ -129,7 +130,7 @@ const initialState = {
   loaded: true,
   dummy: false,
   activateExitButton: true,
-  date: dayjs(),
+  date: newDayjs(),
   postComment: PostComment.ALL,
   tags: [] as { label: string; value: string }[],
   totalChars: 0,
