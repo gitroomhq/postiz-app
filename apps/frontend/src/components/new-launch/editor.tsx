@@ -368,6 +368,19 @@ export const EditorWrapper: FC<{
                 dummy={dummy}
                 selectedIntegration={selectedIntegration}
                 chars={chars}
+                childButton={
+                  <>
+                    {canEdit ? (
+                      <AddPostButton
+                        num={index}
+                        onClick={addValue(index)}
+                        postComment={postComment}
+                      />
+                    ) : (
+                      <div className="h-[25px]" />
+                    )}
+                  </>
+                }
               />
             </div>
             <div className="flex flex-col items-center gap-[10px]">
@@ -417,16 +430,6 @@ export const EditorWrapper: FC<{
               )}
             </div>
           </div>
-
-          {canEdit ? (
-            <AddPostButton
-              num={index}
-              onClick={addValue(index)}
-              postComment={postComment}
-            />
-          ) : (
-            <div className="h-[25px]" />
-          )}
         </div>
       ))}
     </div>
@@ -450,6 +453,7 @@ export const Editor: FC<{
   selectedIntegration: SelectedIntegrations[];
   dummy: boolean;
   chars: Record<string, number>;
+  childButton?: React.ReactNode;
 }> = (props) => {
   const {
     editorType = 'normal',
@@ -463,6 +467,7 @@ export const Editor: FC<{
     selectedIntegration,
     dummy,
     chars,
+    childButton,
   } = props;
   const user = useUser();
   const [id] = useState(makeId(10));
@@ -524,7 +529,7 @@ export const Editor: FC<{
   );
 
   return (
-    <div>
+    <div className="flex flex-col gap-[20px]">
       <div className="relative bg-bigStrip" id={id}>
         <div className="flex gap-[5px] bg-newBgLineColor border-b border-t border-customColor3 justify-center items-center p-[5px]">
           <SignatureBox editor={editorRef?.current?.editor} />
@@ -650,34 +655,48 @@ export const Editor: FC<{
           </div>
         </div>
       </div>
-      <div className="absolute bottom-10px end-[25px]">
-        {(props?.totalChars || 0) > 0 ? (
-          <div
-            className={clsx(
-              'text-end text-sm mt-1',
-              valueWithoutHtml.length > props.totalChars && '!text-red-500'
-            )}
-          >
-            {valueWithoutHtml.length}/{props.totalChars}
-          </div>
-        ) : (
-          <div
-            className={clsx(
-              'text-end text-sm mt-1 grid grid-cols-[max-content_max-content] gap-x-[5px]'
-            )}
-          >
-            {selectedIntegration?.map((p) => (
-              <Fragment key={p.integration.id}>
-                <div className={valueWithoutHtml.length > chars?.[p.integration.id] && '!text-red-500'}>
-                  {p.integration.name} ({capitalize(p.integration.identifier)}):
-                </div>
-                <div className={valueWithoutHtml.length > chars?.[p.integration.id] && '!text-red-500'}>
-                  {valueWithoutHtml.length}/{chars?.[p.integration.id]}
-                </div>
-              </Fragment>
-            ))}
-          </div>
-        )}
+      <div className="flex">
+        <div className="flex-1">{childButton}</div>
+        <div className="bottom-10px end-[25px]">
+          {(props?.totalChars || 0) > 0 ? (
+            <div
+              className={clsx(
+                'text-end text-sm mt-1',
+                valueWithoutHtml.length > props.totalChars && '!text-red-500'
+              )}
+            >
+              {valueWithoutHtml.length}/{props.totalChars}
+            </div>
+          ) : (
+            <div
+              className={clsx(
+                'text-end text-sm mt-1 grid grid-cols-[max-content_max-content] gap-x-[5px]'
+              )}
+            >
+              {selectedIntegration?.map((p) => (
+                <Fragment key={p.integration.id}>
+                  <div
+                    className={
+                      valueWithoutHtml.length > chars?.[p.integration.id] &&
+                      '!text-red-500'
+                    }
+                  >
+                    {p.integration.name} ({capitalize(p.integration.identifier)}
+                    ):
+                  </div>
+                  <div
+                    className={
+                      valueWithoutHtml.length > chars?.[p.integration.id] &&
+                      '!text-red-500'
+                    }
+                  >
+                    {valueWithoutHtml.length}/{chars?.[p.integration.id]}
+                  </div>
+                </Fragment>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
