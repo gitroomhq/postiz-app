@@ -104,6 +104,8 @@ model User {
   agencies              SocialMediaAgency[]
   ip                    String?
   agent                 String?
+  emailNotifications    Boolean @default(true)
+
 
   @@unique([email, providerName])
   @@index([lastReadNotifications])
