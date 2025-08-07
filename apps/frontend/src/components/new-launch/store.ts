@@ -19,7 +19,7 @@ interface Internal {
   integrationValue: Values[];
 }
 
-interface SelectedIntegrations {
+export interface SelectedIntegrations {
   settings: any;
   integration: Integrations;
   ref?: RefObject<any>;
@@ -123,6 +123,8 @@ interface StoreState {
   setDummy: (dummy: boolean) => void;
   setEditor: (editor: 'normal' | 'markdown' | 'html') => void;
   setLoaded?: (loaded: boolean) => void;
+  setChars: (id: string, chars: number) => void;
+  chars: Record<string, number>;
 }
 
 const initialState = {
@@ -143,6 +145,7 @@ const initialState = {
   selectedIntegrations: [] as SelectedIntegrations[],
   global: [] as Values[],
   internal: [] as Internal[],
+  chars: {},
 };
 
 export const useLaunchStore = create<StoreState>()((set) => ({
@@ -535,5 +538,12 @@ export const useLaunchStore = create<StoreState>()((set) => ({
   setLoaded: (loaded: boolean) =>
     set((state) => ({
       loaded,
+    })),
+  setChars: (id: string, chars: number) =>
+    set((state) => ({
+      chars: {
+        ...state.chars,
+        [id]: chars,
+      },
     })),
 }));

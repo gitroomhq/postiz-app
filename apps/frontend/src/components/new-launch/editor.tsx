@@ -10,6 +10,7 @@ import React, {
   ClipboardEvent,
   forwardRef,
   useImperativeHandle,
+  Fragment,
 } from 'react';
 import clsx from 'clsx';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
@@ -20,7 +21,10 @@ import { BoldText } from '@gitroom/frontend/components/new-launch/bold.text';
 import { UText } from '@gitroom/frontend/components/new-launch/u.text';
 import { SignatureBox } from '@gitroom/frontend/components/signature';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
+import {
+  SelectedIntegrations,
+  useLaunchStore,
+} from '@gitroom/frontend/components/new-launch/store';
 import { useShallow } from 'zustand/react/shallow';
 import { AddPostButton } from '@gitroom/frontend/components/new-launch/add.post.button';
 import { MultiMediaComponent } from '@gitroom/frontend/components/media/media.component';
@@ -54,6 +58,7 @@ import Mention from '@tiptap/extension-mention';
 import { suggestion } from '@gitroom/frontend/components/new-launch/mention.component';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { AComponent } from '@gitroom/frontend/components/new-launch/a.component';
+import { capitalize } from 'lodash';
 
 const InterceptBoldShortcut = Extension.create({
   name: 'preventBoldWithUnderline',
@@ -114,6 +119,8 @@ export const EditorWrapper: FC<{
     editor,
     loadedState,
     setLoadedState,
+    selectedIntegration,
+    chars,
   } = useLaunchStore(
     useShallow((state) => ({
       internal: state.internal.find((p) => p.integration.id === state.current),
@@ -142,6 +149,8 @@ export const EditorWrapper: FC<{
       editor: state.editor,
       loadedState: state.loaded,
       setLoadedState: state.setLoaded,
+      selectedIntegration: state.selectedIntegrations,
+      chars: state.chars,
     }))
   );
 
@@ -357,6 +366,8 @@ export const EditorWrapper: FC<{
                 totalChars={totalChars}
                 appendImages={appendImages(index)}
                 dummy={dummy}
+                selectedIntegration={selectedIntegration}
+                chars={chars}
               />
             </div>
             <div className="flex flex-col items-center gap-[10px]">
@@ -436,7 +447,9 @@ export const Editor: FC<{
   validateChars?: boolean;
   identifier?: string;
   totalChars?: number;
+  selectedIntegration: SelectedIntegrations[];
   dummy: boolean;
+  chars: Record<string, number>;
 }> = (props) => {
   const {
     editorType = 'normal',
@@ -444,11 +457,12 @@ export const Editor: FC<{
     pictures,
     setImages,
     num,
-    autoComplete,
     validateChars,
     identifier,
     appendImages,
+    selectedIntegration,
     dummy,
+    chars,
   } = props;
   const user = useUser();
   const [id] = useState(makeId(10));
@@ -637,7 +651,7 @@ export const Editor: FC<{
         </div>
       </div>
       <div className="absolute bottom-10px end-[25px]">
-        {(props?.totalChars || 0) > 0 && (
+        {(props?.totalChars || 0) > 0 ? (
           <div
             className={clsx(
               'text-end text-sm mt-1',
@@ -645,6 +659,23 @@ export const Editor: FC<{
             )}
           >
             {valueWithoutHtml.length}/{props.totalChars}
+          </div>
+        ) : (
+          <div
+            className={clsx(
+              'text-end text-sm mt-1 grid grid-cols-[max-content_max-content] gap-x-[5px]'
+            )}
+          >
+            {selectedIntegration?.map((p) => (
+              <Fragment key={p.integration.id}>
+                <div className={valueWithoutHtml.length > chars?.[p.integration.id] && '!text-red-500'}>
+                  {p.integration.name} ({capitalize(p.integration.identifier)}):
+                </div>
+                <div className={valueWithoutHtml.length > chars?.[p.integration.id] && '!text-red-500'}>
+                  {valueWithoutHtml.length}/{chars?.[p.integration.id]}
+                </div>
+              </Fragment>
+            ))}
           </div>
         )}
       </div>
