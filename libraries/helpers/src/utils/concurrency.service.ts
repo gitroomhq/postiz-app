@@ -23,15 +23,18 @@ export const concurrency = async <T>(
   });
   let load: T;
   try {
-    load = await mapper[strippedIdentifier].schedule<T>(async () => {
-      return await Promise.race<T>([
-        new Promise<T>(async (res) => {
-          await timer(300000);
-          res(true as T);
-        }),
-        func(),
-      ]);
-    });
+    load = await mapper[strippedIdentifier].schedule<T>(
+      { expiration: 600000 },
+      async () => {
+        return await Promise.race<T>([
+          new Promise<T>(async (res) => {
+            await timer(300000);
+            res(true as T);
+          }),
+          func(),
+        ]);
+      }
+    );
   } catch (err) {}
 
   return load;
