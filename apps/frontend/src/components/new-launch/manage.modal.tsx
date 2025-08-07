@@ -142,6 +142,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
     (type: 'draft' | 'now' | 'schedule') => async () => {
       setLoading(true);
       const checkAllValid = await ref.current.checkAllValid();
+      console.log(checkAllValid);
       if (type !== 'draft') {
         const notEnoughChars = checkAllValid.filter((p: any) => {
           return p.values.some((a: any) => {

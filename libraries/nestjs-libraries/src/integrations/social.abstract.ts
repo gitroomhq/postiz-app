@@ -50,6 +50,7 @@ export abstract class SocialAbstract {
         try {
           return await func();
         } catch (err) {
+          console.log(err);
           const handle = this.handleErrors(JSON.stringify(err));
           return { err: true, ...(handle || {}) };
         }
