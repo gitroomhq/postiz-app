@@ -29,6 +29,7 @@ export class InstagramProvider
     'instagram_manage_comments',
     'instagram_manage_insights',
   ];
+  override maxConcurrentJob = 2; // Instagram/Facebook has moderate rate limits
   editor = 'normal' as const;
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {

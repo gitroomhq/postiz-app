@@ -13,6 +13,7 @@ import FormDataNew from 'form-data';
 import mime from 'mime-types';
 
 export class VkProvider extends SocialAbstract implements SocialProvider {
+  override maxConcurrentJob = 2; // VK has moderate API limits
   identifier = 'vk';
   name = 'VK';
   isBetweenSteps = false;

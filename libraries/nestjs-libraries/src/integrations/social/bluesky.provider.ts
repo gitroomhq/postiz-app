@@ -132,6 +132,7 @@ async function uploadVideo(
 }
 
 export class BlueskyProvider extends SocialAbstract implements SocialProvider {
+  override maxConcurrentJob = 2; // Bluesky has moderate rate limits
   identifier = 'bluesky';
   name = 'Bluesky';
   isBetweenSteps = false;

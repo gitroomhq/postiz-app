@@ -13,6 +13,7 @@ import { Integration } from '@prisma/client';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 
 export class HashnodeProvider extends SocialAbstract implements SocialProvider {
+  override maxConcurrentJob = 3; // Hashnode has lenient publishing limits
   identifier = 'hashnode';
   name = 'Hashnode';
   isBetweenSteps = false;

@@ -13,6 +13,7 @@ import { LemmySettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers
 import { groupBy } from 'lodash';
 
 export class LemmyProvider extends SocialAbstract implements SocialProvider {
+  override maxConcurrentJob = 3; // Lemmy instances typically have moderate limits
   identifier = 'lemmy';
   name = 'Lemmy';
   isBetweenSteps = false;

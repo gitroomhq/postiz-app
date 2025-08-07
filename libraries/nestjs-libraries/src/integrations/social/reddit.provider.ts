@@ -11,6 +11,7 @@ import { groupBy } from 'lodash';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
 export class RedditProvider extends SocialAbstract implements SocialProvider {
+  override maxConcurrentJob = 1; // Reddit has strict rate limits (1 request per second)
   identifier = 'reddit';
   name = 'Reddit';
   isBetweenSteps = false;

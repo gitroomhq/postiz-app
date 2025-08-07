@@ -27,6 +27,7 @@ export class PinterestProvider
     'pins:write',
     'user_accounts:read',
   ];
+  override maxConcurrentJob = 3; // Pinterest has more lenient rate limits
 
   editor = 'normal' as const;
 

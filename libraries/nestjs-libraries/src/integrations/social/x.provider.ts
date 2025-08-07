@@ -23,6 +23,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   name = 'X';
   isBetweenSteps = false;
   scopes = [] as string[];
+  override maxConcurrentJob = 1; // X has strict rate limits (300 posts per 3 hours)
   toolTip =
     'You will be logged in into your current account, if you would like a different account, change it first on X';
 

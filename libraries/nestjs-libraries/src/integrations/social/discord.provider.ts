@@ -9,6 +9,7 @@ import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.ab
 import { Integration } from '@prisma/client';
 
 export class DiscordProvider extends SocialAbstract implements SocialProvider {
+  override maxConcurrentJob = 5; // Discord has generous rate limits for webhook posting
   identifier = 'discord';
   name = 'Discord';
   isBetweenSteps = false;

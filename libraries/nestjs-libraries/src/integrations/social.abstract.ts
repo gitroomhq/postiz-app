@@ -1,5 +1,5 @@
 import { timer } from '@gitroom/helpers/utils/timer';
-import { concurrencyService } from '@gitroom/helpers/utils/concurrency.service';
+import { concurrency } from '@gitroom/helpers/utils/concurrency.service';
 import { Integration } from '@prisma/client';
 
 export class RefreshToken {
@@ -25,6 +25,7 @@ export class NotEnoughScopes {
 
 export abstract class SocialAbstract {
   abstract identifier: string;
+  maxConcurrentJob = 1;
 
   public handleErrors(
     body: string
@@ -42,8 +43,9 @@ export abstract class SocialAbstract {
   }
 
   async runInConcurrent<T>(func: (...args: any[]) => Promise<T>) {
-    const value = await concurrencyService<any>(
-      this.identifier.split('-')[0],
+    const value = await concurrency<any>(
+      this.identifier,
+      this.maxConcurrentJob,
       async () => {
         try {
           return await func();
@@ -67,8 +69,9 @@ export abstract class SocialAbstract {
     identifier = '',
     totalRetries = 0
   ): Promise<Response> {
-    const request = await concurrencyService(
-      this.identifier.split('-')[0],
+    const request = await concurrency(
+      this.identifier,
+      this.maxConcurrentJob,
       () => fetch(url, options)
     );
 

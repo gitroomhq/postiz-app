@@ -25,6 +25,7 @@ export class FarcasterProvider
   isBetweenSteps = false;
   isWeb3 = true;
   scopes = [] as string[];
+  override maxConcurrentJob = 3; // Farcaster has moderate limits
   editor = 'normal' as const;
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {

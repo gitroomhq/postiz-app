@@ -24,6 +24,7 @@ const list = [
 ];
 
 export class NostrProvider extends SocialAbstract implements SocialProvider {
+  override maxConcurrentJob = 5; // Nostr relays typically have generous limits
   identifier = 'nostr';
   name = 'Nostr';
   isBetweenSteps = false;

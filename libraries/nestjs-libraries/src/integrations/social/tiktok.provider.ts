@@ -24,6 +24,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     'video.upload',
     'user.info.profile',
   ];
+  override maxConcurrentJob = 1; // TikTok has strict video upload limits
 
   editor = 'normal' as const;
 
