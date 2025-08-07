@@ -233,7 +233,7 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
     const {
       data: { children },
     } = await (
-      await this.fetch(
+      await fetch(
         `https://oauth.reddit.com/subreddits/search?show=public&q=${data.word}&sort=activity&show_users=false&limit=10`,
         {
           method: 'GET',
@@ -278,7 +278,7 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
     const {
       data: { submission_type, allow_images },
     } = await (
-      await this.fetch(`https://oauth.reddit.com/${data.subreddit}/about`, {
+      await fetch(`https://oauth.reddit.com/${data.subreddit}/about`, {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -287,8 +287,8 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
       })
     ).json();
 
-    const { is_flair_required } = await (
-      await this.fetch(
+    const { is_flair_required, ...all } = await (
+      await fetch(
         `https://oauth.reddit.com/api/v1/${
           data.subreddit.split('/r/')[1]
         }/post_requirements`,
@@ -307,7 +307,7 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
       async (res) => {
         try {
           const flair = await (
-            await this.fetch(
+            await fetch(
               `https://oauth.reddit.com/${data.subreddit}/api/link_flair_v2`,
               {
                 method: 'GET',
@@ -329,7 +329,7 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
     return {
       subreddit: data.subreddit,
       allow: this.getPermissions(submission_type, allow_images),
-      is_flair_required,
+      is_flair_required: is_flair_required && newData.length > 0,
       flairs:
         newData?.map?.((p: any) => ({
           id: p.id,

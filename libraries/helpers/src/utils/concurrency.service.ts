@@ -26,7 +26,7 @@ export const concurrency = async <T>(
       { expiration: 120_000 },
       async () => {
         const res = await func();
-        await timer(2000);
+        await timer(1000);
         return res;
       }
     );
