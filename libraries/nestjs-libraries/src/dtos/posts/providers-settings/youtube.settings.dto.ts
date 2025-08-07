@@ -35,5 +35,7 @@ export class YoutubeSettingsDto {
 
   @IsArray()
   @IsOptional()
+  @ValidateNested()
+  @Type(() => YoutubeTagsSettings)
   tags: YoutubeTagsSettings[];
 }
