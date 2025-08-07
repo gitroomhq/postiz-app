@@ -191,7 +191,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           headers: {
             'Content-Type': 'application/json',
             'X-Restli-Protocol-Version': '2.0.0',
-            'LinkedIn-Version': '202402',
+            'LinkedIn-Version': '202408',
             Authorization: `Bearer ${token}`,
           },
         }
@@ -224,7 +224,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           headers: {
             'Content-Type': 'application/json',
             'X-Restli-Protocol-Version': '2.0.0',
-            'LinkedIn-Version': '202402',
+            'LinkedIn-Version': '202408',
             Authorization: `Bearer ${accessToken}`,
           },
           body: JSON.stringify({
@@ -255,7 +255,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
         method: 'PUT',
         headers: {
           'X-Restli-Protocol-Version': '2.0.0',
-          'LinkedIn-Version': '202402',
+          'LinkedIn-Version': '202408',
           Authorization: `Bearer ${accessToken}`,
           ...(fileName.indexOf('mp4') > -1
             ? { 'Content-Type': 'application/octet-stream' }
@@ -281,7 +281,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           }),
           headers: {
             'X-Restli-Protocol-Version': '2.0.0',
-            'LinkedIn-Version': '202402',
+            'LinkedIn-Version': '202408',
             'Content-Type': 'application/json',
             Authorization: `Bearer ${accessToken}`,
           },
@@ -507,7 +507,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
         headers: {
           'X-Restli-Protocol-Version': '2.0.0',
           'Content-Type': 'application/json',
-          'LinkedIn-Version': '202402',
+          'LinkedIn-Version': '202408',
           Authorization: `Bearer ${integration.token}`,
         },
       });

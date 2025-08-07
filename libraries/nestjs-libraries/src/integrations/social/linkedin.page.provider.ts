@@ -115,7 +115,7 @@ export class LinkedinPageProvider
           headers: {
             Authorization: `Bearer ${accessToken}`,
             'X-Restli-Protocol-Version': '2.0.0',
-            'LinkedIn-Version': '202402',
+            'LinkedIn-Version': '202408',
           },
         }
       )
@@ -404,7 +404,7 @@ export class LinkedinPageProvider
           headers: {
             'X-Restli-Protocol-Version': '2.0.0',
             'Content-Type': 'application/json',
-            'LinkedIn-Version': '202402',
+            'LinkedIn-Version': '202408',
             Authorization: `Bearer ${integration.token}`,
           },
         }
@@ -433,7 +433,7 @@ export class LinkedinPageProvider
         headers: {
           'X-Restli-Protocol-Version': '2.0.0',
           'Content-Type': 'application/json',
-          'LinkedIn-Version': '202402',
+          'LinkedIn-Version': '202408',
           Authorization: `Bearer ${integration.token}`,
         },
       });
@@ -482,7 +482,7 @@ export class LinkedinPageProvider
           headers: {
             'X-Restli-Protocol-Version': '2.0.0',
             'Content-Type': 'application/json',
-            'LinkedIn-Version': '202402',
+            'LinkedIn-Version': '202408',
             Authorization: `Bearer ${integration.token}`,
           },
         }
