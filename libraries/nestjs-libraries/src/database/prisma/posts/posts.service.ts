@@ -44,6 +44,7 @@ type PostWithConditionals = Post & {
   childrenPost: Post[];
 };
 
+
 @Injectable()
 export class PostsService {
   private storage = UploadFactory.createStorage();
@@ -478,6 +479,7 @@ export class PostsService {
               p.content,
               true,
               false,
+              !(/<\/?[a-z][\s\S]*>/i.test(p.content)),
               getIntegration.mentionFormat
             ),
             settings: JSON.parse(p.settings || '{}'),

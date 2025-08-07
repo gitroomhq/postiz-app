@@ -911,7 +911,7 @@ const CalendarItem: FC<{
           </div>
           <div className="w-full relative">
             <div className="absolute top-0 start-0 w-full text-ellipsis break-words line-clamp-1 text-left">
-              {stripHtmlValidation('none', post.content, false, true) ||
+              {stripHtmlValidation('none', post.content, false, true, false) ||
                 'no content'}
             </div>
           </div>

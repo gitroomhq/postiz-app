@@ -136,8 +136,14 @@ export const stripHtmlValidation = (
   val: string,
   replaceBold = false,
   none = false,
+  plain = false,
   convertMentionFunction?: (idOrHandle: string, name: string) => string
 ): string => {
+
+  if (plain) {
+    return val;
+  }
+
   const value = serialize(parseFragment(val));
 
   if (type === 'html') {
