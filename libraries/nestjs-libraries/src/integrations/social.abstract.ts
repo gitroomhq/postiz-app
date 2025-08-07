@@ -92,6 +92,7 @@ export abstract class SocialAbstract {
     }
 
     if (
+      request.status === 429 ||
       request.status === 500 ||
       json.includes('rate_limit_exceeded') ||
       json.includes('Rate limit')

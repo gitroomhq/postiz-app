@@ -220,7 +220,7 @@ export class PinterestProvider
           })
         ).json();
 
-        await timer(3000);
+        await timer(30000);
         statusCode = mediafile.status;
       }
 

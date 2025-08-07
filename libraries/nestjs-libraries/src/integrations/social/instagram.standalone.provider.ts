@@ -26,7 +26,7 @@ export class InstagramStandaloneProvider
     'instagram_business_manage_comments',
     'instagram_business_manage_insights',
   ];
-  override maxConcurrentJob = 1; // Instagram standalone has stricter limits
+  override maxConcurrentJob = 10; // Instagram standalone has stricter limits
 
   editor = 'normal' as const;
 
