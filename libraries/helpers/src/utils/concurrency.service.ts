@@ -26,19 +26,9 @@ export const concurrency = async <T>(
     load = await mapper[strippedIdentifier].schedule<T>(
       { expiration: 600000 },
       async () => {
-        return await Promise.race<T>([
-          new Promise<T>(async (res) => {
-            await timer(300000);
-            res(true as T);
-          }),
-          new Promise<T>(async (res) => {
-            try {
-              return res(await func());
-            } catch (err) {
-              res(err as T);
-            }
-          }),
-        ]);
+        try {
+          return await func();
+        } catch (err) {}
       }
     );
   } catch (err) {}
