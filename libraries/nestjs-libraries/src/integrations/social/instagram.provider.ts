@@ -505,7 +505,7 @@ export class InstagramProvider
               true,
             )
           ).json();
-          await timer(10000);
+          await timer(30000);
           status = status_code;
         }
         console.log('in progress3', id);
@@ -569,7 +569,7 @@ export class InstagramProvider
             true
           )
         ).json();
-        await timer(10000);
+        await timer(30000);
         status = status_code;
       }
 
