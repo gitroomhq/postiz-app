@@ -127,23 +127,61 @@ export class MonthlyReportService {
 
 			if (!insights.length) return null;
 
-			// For table data, still use monthly aggregation
-			const monthlyData = await this.getDataForMonths(
-				this._instagramInsightsRepository.model.instagramInsight,
-				customerId,
-				month,
-				year,
-				['followers', 'following', 'totalContent'],
-			);
+			// Get the latest data point for the requested month
+			const latestData = insights[insights.length - 1];
+
+			// For table data, get data for current and previous 2 months
+			const allMonthsData = [];
+
+			for (let i = 2; i >= 0; i--) {
+				const currentMonth = new Date(year, month - 1 - i, 1);
+				const monthNum = currentMonth.getMonth() + 1;
+				const yearNum = currentMonth.getFullYear();
+				const monthRange = this.getMonthDateRange(monthNum, yearNum);
+
+				// Get the last data point for each month
+				const lastDataPoint = await this._instagramInsightsRepository.model.instagramInsight.findFirst({
+					where: {
+						customerId,
+						createdAt: {
+							gte: monthRange.startDate,
+							lte: monthRange.endDate
+						},
+					},
+					orderBy: { createdAt: 'desc' },
+				});
+
+				if (lastDataPoint) {
+					allMonthsData.push({
+						createdAt: new Date(yearNum, monthNum - 1, 15), // Mid-month date for display
+						followers: lastDataPoint.followers || 0,
+						following: lastDataPoint.following || 0,
+						totalContent: lastDataPoint.totalContent || 0,
+					});
+				} else {
+					// If no data, create empty entry
+					allMonthsData.push({
+						createdAt: new Date(yearNum, monthNum - 1, 15),
+						followers: 0,
+						following: 0,
+						totalContent: 0,
+					});
+				}
+			}
 
 			return {
-				table: this.buildCommunityTable(monthlyData, 'Instagram'),
+				table: this.buildCommunityTable(allMonthsData, 'Instagram'),
 				chart: insights.map(i => ({
 					date: i.createdAt,
 					followers: i.followers || 0,
 					following: i.following || 0,
 					totalContent: i.totalContent || 0,
 				})),
+				latestData: {
+					followers: latestData.followers || 0,
+					following: latestData.following || 0,
+					totalContent: latestData.totalContent || 0,
+				}
 			};
 		} catch (error) {
 			console.error('Instagram Community Error:', error);
@@ -169,29 +207,73 @@ export class MonthlyReportService {
 					createdAt: true,
 					impressions: true,
 					avgReachPerDay: true,
-					totalContent: true  // ✅ Add this line
-
+					totalContent: true
 				},
 			});
 
-			// Get monthly data for comparison table
-			const monthlyData = await this.getDataForMonths(
-				this._instagramInsightsRepository.model.instagramInsight,
-				customerId,
-				month,
-				year,
-				['impressions', 'avgReachPerDay', 'totalContent'],
-			);
+			if (!dailyData.length) return null;
+
+			// Get the latest data point for the requested month
+			const latestData = dailyData[dailyData.length - 1];
+
+			// For table data, get data for current and previous 2 months using last data points
+			const allMonthsData = [];
+
+			for (let i = 2; i >= 0; i--) {
+				const currentMonth = new Date(year, month - 1 - i, 1);
+				const monthNum = currentMonth.getMonth() + 1;
+				const yearNum = currentMonth.getFullYear();
+				const monthRange = this.getMonthDateRange(monthNum, yearNum);
+
+				// Get the last data point for each month
+				const lastDataPoint = await this._instagramInsightsRepository.model.instagramInsight.findFirst({
+					where: {
+						customerId,
+						createdAt: {
+							gte: monthRange.startDate,
+							lte: monthRange.endDate
+						},
+					},
+					orderBy: { createdAt: 'desc' },
+					select: {
+						createdAt: true,
+						impressions: true,
+						avgReachPerDay: true,
+						totalContent: true
+					},
+				});
+
+				if (lastDataPoint) {
+					allMonthsData.push({
+						createdAt: new Date(yearNum, monthNum - 1, 15), // Mid-month date for display
+						impressions: lastDataPoint.impressions || 0,
+						avgReachPerDay: lastDataPoint.avgReachPerDay || 0,
+						totalContent: lastDataPoint.totalContent || 0,
+					});
+				} else {
+					// If no data, create empty entry
+					allMonthsData.push({
+						createdAt: new Date(yearNum, monthNum - 1, 15),
+						impressions: 0,
+						avgReachPerDay: 0,
+						totalContent: 0,
+					});
+				}
+			}
 
 			return {
-				table: this.buildOverviewTable(monthlyData, 'Instagram'),
+				table: this.buildOverviewTable(allMonthsData, 'Instagram'),
 				chart: dailyData.map(item => ({
 					date: item.createdAt,
 					impressions: item.impressions || 0,
 					avgReachPerDay: item.avgReachPerDay || 0,
-					totalContent: item.totalContent || 0  // ✅ Add this
-
+					totalContent: item.totalContent || 0
 				})),
+				latestData: {
+					impressions: latestData.impressions || 0,
+					avgReachPerDay: latestData.avgReachPerDay || 0,
+					totalContent: latestData.totalContent || 0,
+				}
 			};
 		} catch (error) {
 			console.error('Instagram Overview Error:', error);
@@ -299,25 +381,85 @@ export class MonthlyReportService {
 
 	async getYoutubeCommunityReport(customerId: string, month: number, year: number) {
 		try {
-			const monthlyData = await this.getDataForMonths(
-				this._youtubeInsightsRepository.model.youTubeInsight,
-				customerId,
-				month,
-				year,
-				['subscribers', 'totalViews', 'totalVideos', 'totalLikes', 'totalComments']
-			);
+			const { startDate, endDate } = this.getMonthDateRange(month, year);
 
-			if (!monthlyData.length) return null;
+			// Get daily data for the requested month
+			const dailyData = await this._youtubeInsightsRepository.model.youTubeInsight.findMany({
+				where: {
+					customerId,
+					createdAt: {
+						gte: startDate,
+						lte: endDate,
+					},
+				},
+				orderBy: { createdAt: 'asc' },
+			});
+
+			if (!dailyData.length) return null;
+
+			// Get the latest data point for the requested month
+			const latestData = dailyData[dailyData.length - 1];
+
+			// For table data, get data for current and previous 2 months using last data points
+			const allMonthsData = [];
+
+			for (let i = 2; i >= 0; i--) {
+				const currentMonth = new Date(year, month - 1 - i, 1);
+				const monthNum = currentMonth.getMonth() + 1;
+				const yearNum = currentMonth.getFullYear();
+				const monthRange = this.getMonthDateRange(monthNum, yearNum);
+
+				// Get the last data point for each month
+				const lastDataPoint = await this._youtubeInsightsRepository.model.youTubeInsight.findFirst({
+					where: {
+						customerId,
+						createdAt: {
+							gte: monthRange.startDate,
+							lte: monthRange.endDate
+						},
+					},
+					orderBy: { createdAt: 'desc' },
+				});
+
+				if (lastDataPoint) {
+					allMonthsData.push({
+						createdAt: new Date(yearNum, monthNum - 1, 15), // Mid-month date for display
+						subscribers: lastDataPoint.subscribers || 0,
+						totalViews: lastDataPoint.totalViews || 0,
+						totalVideos: lastDataPoint.totalVideos || 0,
+						totalLikes: lastDataPoint.totalLikes || 0,
+						totalComments: lastDataPoint.totalComments || 0
+					});
+				} else {
+					// If no data, create empty entry
+					allMonthsData.push({
+						createdAt: new Date(yearNum, monthNum - 1, 15),
+						subscribers: 0,
+						totalViews: 0,
+						totalVideos: 0,
+						totalLikes: 0,
+						totalComments: 0
+					});
+				}
+			}
 
 			return {
-				table: this.buildYoutubeCommunityTable(monthlyData),
-				chart: await this.getDailyDataForMonth(
-					this._youtubeInsightsRepository.model.youTubeInsight,
-					customerId,
-					month,
-					year,
-					['subscribers', 'totalViews', 'totalVideos', 'totalLikes', 'totalComments']
-				)
+				table: this.buildYoutubeCommunityTable(allMonthsData),
+				chart: dailyData.map(item => ({
+					date: item.createdAt,
+					subscribers: item.subscribers || 0,
+					totalViews: item.totalViews || 0,
+					totalVideos: item.totalVideos || 0,
+					totalLikes: item.totalLikes || 0,
+					totalComments: item.totalComments || 0
+				})),
+				latestData: {
+					subscribers: latestData.subscribers || 0,
+					totalViews: latestData.totalViews || 0,
+					totalVideos: latestData.totalVideos || 0,
+					totalLikes: latestData.totalLikes || 0,
+					totalComments: latestData.totalComments || 0
+				}
 			};
 		} catch (error) {
 			console.error('YouTube Community Error:', error);
@@ -364,29 +506,81 @@ export class MonthlyReportService {
 	// Updated LinkedIn methods with daily charts
 	async getLinkedInCommunityReport(customerId: string, month: number, year: number) {
 		try {
-			// Monthly data for table
-			const monthlyData = await this.getDataForMonths(
-				this._linkedInInsightsRepository.model.linkedInInsight,
-				customerId,
-				month,
-				year,
-				['followers', 'paidFollowers', 'postsCount', 'impressions'],
-			);
+			const { startDate, endDate } = this.getMonthDateRange(month, year);
 
-			// Daily data for chart
-			const dailyData = await this.getDailyDataForMonth(
-				this._linkedInInsightsRepository.model.linkedInInsight,
-				customerId,
-				month,
-				year,
-				['followers', 'paidFollowers', 'postsCount', 'impressions'],
-			);
+			// Get daily data for the requested month
+			const dailyData = await this._linkedInInsightsRepository.model.linkedInInsight.findMany({
+				where: {
+					customerId,
+					createdAt: {
+						gte: startDate,
+						lte: endDate,
+					},
+				},
+				orderBy: { createdAt: 'asc' },
+			});
 
-			if (!monthlyData.length) return null;
+			if (!dailyData.length) return null;
+
+			// Get the latest data point for the requested month
+			const latestData = dailyData[dailyData.length - 1];
+
+			// For table data, get data for current and previous 2 months using last data points
+			const allMonthsData = [];
+
+			for (let i = 2; i >= 0; i--) {
+				const currentMonth = new Date(year, month - 1 - i, 1);
+				const monthNum = currentMonth.getMonth() + 1;
+				const yearNum = currentMonth.getFullYear();
+				const monthRange = this.getMonthDateRange(monthNum, yearNum);
+
+				// Get the last data point for each month
+				const lastDataPoint = await this._linkedInInsightsRepository.model.linkedInInsight.findFirst({
+					where: {
+						customerId,
+						createdAt: {
+							gte: monthRange.startDate,
+							lte: monthRange.endDate
+						},
+					},
+					orderBy: { createdAt: 'desc' },
+				});
+
+				if (lastDataPoint) {
+					allMonthsData.push({
+						createdAt: new Date(yearNum, monthNum - 1, 15), // Mid-month date for display
+						followers: lastDataPoint.followers || 0,
+						paidFollowers: lastDataPoint.paidFollowers || 0,
+						postsCount: lastDataPoint.postsCount || 0,
+						impressions: lastDataPoint.impressions || 0
+					});
+				} else {
+					// If no data, create empty entry
+					allMonthsData.push({
+						createdAt: new Date(yearNum, monthNum - 1, 15),
+						followers: 0,
+						paidFollowers: 0,
+						postsCount: 0,
+						impressions: 0
+					});
+				}
+			}
 
 			return {
-				table: this.buildCommunityTable(monthlyData, 'LinkedIn'),
-				chart: dailyData,
+				table: this.buildCommunityTable(allMonthsData, 'LinkedIn'),
+				chart: dailyData.map(item => ({
+					date: item.createdAt,
+					followers: item.followers || 0,
+					paidFollowers: item.paidFollowers || 0,
+					postsCount: item.postsCount || 0,
+					impressions: item.impressions || 0
+				})),
+				latestData: {
+					followers: latestData.followers || 0,
+					paidFollowers: latestData.paidFollowers || 0,
+					postsCount: latestData.postsCount || 0,
+					impressions: latestData.impressions || 0
+				}
 			};
 		} catch (error) {
 			console.error('LinkedIn Community Error:', error);
@@ -430,29 +624,77 @@ export class MonthlyReportService {
 	// Updated X (Twitter) methods with daily charts
 	async getXCommunityReport(customerId: string, month: number, year: number) {
 		try {
-			// Monthly data for table
-			const monthlyData = await this.getDataForMonths(
-				this._xInsightsRepository.model.xInsight,
-				customerId,
-				month,
-				year,
-				['followers', 'following', 'totalContent'],
-			);
+			const { startDate, endDate } = this.getMonthDateRange(month, year);
 
-			// Daily data for chart
-			const dailyData = await this.getDailyDataForMonth(
-				this._xInsightsRepository.model.xInsight,
-				customerId,
-				month,
-				year,
-				['followers', 'following', 'totalContent'],
-			);
+			// Get daily data for the requested month
+			const dailyData = await this._xInsightsRepository.model.xInsight.findMany({
+				where: {
+					customerId,
+					createdAt: {
+						gte: startDate,
+						lte: endDate,
+					},
+				},
+				orderBy: { createdAt: 'asc' },
+			});
 
-			if (!monthlyData.length) return null;
+			if (!dailyData.length) return null;
+
+			// Get the latest data point for the requested month
+			const latestData = dailyData[dailyData.length - 1];
+
+			// For table data, get data for current and previous 2 months using last data points
+			const allMonthsData = [];
+
+			for (let i = 2; i >= 0; i--) {
+				const currentMonth = new Date(year, month - 1 - i, 1);
+				const monthNum = currentMonth.getMonth() + 1;
+				const yearNum = currentMonth.getFullYear();
+				const monthRange = this.getMonthDateRange(monthNum, yearNum);
+
+				// Get the last data point for each month
+				const lastDataPoint = await this._xInsightsRepository.model.xInsight.findFirst({
+					where: {
+						customerId,
+						createdAt: {
+							gte: monthRange.startDate,
+							lte: monthRange.endDate
+						},
+					},
+					orderBy: { createdAt: 'desc' },
+				});
+
+				if (lastDataPoint) {
+					allMonthsData.push({
+						createdAt: new Date(yearNum, monthNum - 1, 15), // Mid-month date for display
+						followers: lastDataPoint.followers || 0,
+						following: lastDataPoint.following || 0,
+						totalContent: lastDataPoint.totalContent || 0
+					});
+				} else {
+					// If no data, create empty entry
+					allMonthsData.push({
+						createdAt: new Date(yearNum, monthNum - 1, 15),
+						followers: 0,
+						following: 0,
+						totalContent: 0
+					});
+				}
+			}
 
 			return {
-				table: this.buildCommunityTable(monthlyData, 'X'),
-				chart: dailyData,
+				table: this.buildCommunityTable(allMonthsData, 'X'),
+				chart: dailyData.map(item => ({
+					date: item.createdAt,
+					followers: item.followers || 0,
+					following: item.following || 0,
+					totalContent: item.totalContent || 0
+				})),
+				latestData: {
+					followers: latestData.followers || 0,
+					following: latestData.following || 0,
+					totalContent: latestData.totalContent || 0
+				}
 			};
 		} catch (error) {
 			console.error('X Community Error:', error);
@@ -462,29 +704,77 @@ export class MonthlyReportService {
 
 	async getXOverviewReport(customerId: string, month: number, year: number) {
 		try {
-			// Monthly data for table
-			const monthlyData = await this.getDataForMonths(
-				this._xInsightsRepository.model.xInsight,
-				customerId,
-				month,
-				year,
-				['impressions', 'engagement', 'interactions'],
-			);
+			const { startDate, endDate } = this.getMonthDateRange(month, year);
 
-			// Daily data for chart
-			const dailyData = await this.getDailyDataForMonth(
-				this._xInsightsRepository.model.xInsight,
-				customerId,
-				month,
-				year,
-				['impressions', 'engagement', 'interactions'],
-			);
+			// Get daily data for the requested month
+			const dailyData = await this._xInsightsRepository.model.xInsight.findMany({
+				where: {
+					customerId,
+					createdAt: {
+						gte: startDate,
+						lte: endDate,
+					},
+				},
+				orderBy: { createdAt: 'asc' },
+			});
 
-			if (!monthlyData.length) return null;
+			if (!dailyData.length) return null;
+
+			// Get the latest data point for the requested month
+			const latestData = dailyData[dailyData.length - 1];
+
+			// For table data, get data for current and previous 2 months using last data points
+			const allMonthsData = [];
+
+			for (let i = 2; i >= 0; i--) {
+				const currentMonth = new Date(year, month - 1 - i, 1);
+				const monthNum = currentMonth.getMonth() + 1;
+				const yearNum = currentMonth.getFullYear();
+				const monthRange = this.getMonthDateRange(monthNum, yearNum);
+
+				// Get the last data point for each month
+				const lastDataPoint = await this._xInsightsRepository.model.xInsight.findFirst({
+					where: {
+						customerId,
+						createdAt: {
+							gte: monthRange.startDate,
+							lte: monthRange.endDate
+						},
+					},
+					orderBy: { createdAt: 'desc' },
+				});
+
+				if (lastDataPoint) {
+					allMonthsData.push({
+						createdAt: new Date(yearNum, monthNum - 1, 15), // Mid-month date for display
+						impressions: lastDataPoint.impressions || 0,
+						engagement: lastDataPoint.engagement || 0,
+						interactions: lastDataPoint.interactions || 0
+					});
+				} else {
+					// If no data, create empty entry
+					allMonthsData.push({
+						createdAt: new Date(yearNum, monthNum - 1, 15),
+						impressions: 0,
+						engagement: 0,
+						interactions: 0
+					});
+				}
+			}
 
 			return {
-				table: this.buildOverviewTable(monthlyData, 'X'),
-				chart: dailyData,
+				table: this.buildOverviewTable(allMonthsData, 'X'),
+				chart: dailyData.map(item => ({
+					date: item.createdAt,
+					impressions: item.impressions || 0,
+					engagement: item.engagement || 0,
+					interactions: item.interactions || 0
+				})),
+				latestData: {
+					impressions: latestData.impressions || 0,
+					engagement: latestData.engagement || 0,
+					interactions: latestData.interactions || 0
+				}
 			};
 		} catch (error) {
 			console.error('X Overview Error:', error);
@@ -669,34 +959,83 @@ export class MonthlyReportService {
 	// GBP Methods
 	async getGBPPerformanceReport(customerId: string, month: number, year: number) {
 		try {
-			// Monthly data for table
-			const monthlyData = await this.getDataForMonths(
-				this._gbpInsightsRepository.model.gbpInsight,
-				customerId,
-				month,
-				year,
-				['impressionsMaps', 'impressionsSearch', 'websiteClicks', 'phoneClicks', 'directionRequests']
-			);
+			const { startDate, endDate } = this.getMonthDateRange(month, year);
 
-			// Daily data for chart
-			const dailyData = await this.getDailyDataForMonth(
-				this._gbpInsightsRepository.model.gbpInsight,
-				customerId,
-				month,
-				year,
-				['impressionsMaps', 'impressionsSearch', 'websiteClicks', 'phoneClicks', 'directionRequests']
-			);
+			// Get daily data for the requested month
+			const dailyData = await this._gbpInsightsRepository.model.gbpInsight.findMany({
+				where: {
+					customerId,
+					createdAt: {
+						gte: startDate,
+						lte: endDate,
+					},
+				},
+				orderBy: { createdAt: 'asc' },
+			});
 
-			if (!monthlyData.length) return null;
+			if (!dailyData.length) return null;
+
+			// Get the latest data point for the requested month
+			const latestData = dailyData[dailyData.length - 1];
+
+			// For table data, get data for current and previous 2 months using last data points
+			const allMonthsData = [];
+
+			for (let i = 2; i >= 0; i--) {
+				const currentMonth = new Date(year, month - 1 - i, 1);
+				const monthNum = currentMonth.getMonth() + 1;
+				const yearNum = currentMonth.getFullYear();
+				const monthRange = this.getMonthDateRange(monthNum, yearNum);
+
+				// Get the last data point for each month
+				const lastDataPoint = await this._gbpInsightsRepository.model.gbpInsight.findFirst({
+					where: {
+						customerId,
+						createdAt: {
+							gte: monthRange.startDate,
+							lte: monthRange.endDate
+						},
+					},
+					orderBy: { createdAt: 'desc' },
+				});
+
+				if (lastDataPoint) {
+					allMonthsData.push({
+						createdAt: new Date(yearNum, monthNum - 1, 15), // Mid-month date for display
+						impressionsMaps: lastDataPoint.impressionsMaps || 0,
+						impressionsSearch: lastDataPoint.impressionsSearch || 0,
+						websiteClicks: lastDataPoint.websiteClicks || 0,
+						phoneClicks: lastDataPoint.phoneClicks || 0,
+						directionRequests: lastDataPoint.directionRequests || 0
+					});
+				} else {
+					// If no data, create empty entry
+					allMonthsData.push({
+						createdAt: new Date(yearNum, monthNum - 1, 15),
+						impressionsMaps: 0,
+						impressionsSearch: 0,
+						websiteClicks: 0,
+						phoneClicks: 0,
+						directionRequests: 0
+					});
+				}
+			}
 
 			return {
-				table: this.buildGBPPerformanceTable(monthlyData),
+				table: this.buildGBPPerformanceTable(allMonthsData),
 				chart: dailyData.map(item => ({
-					date: item.date,
+					date: item.createdAt,
 					maps: item.impressionsMaps || 0,
 					search: item.impressionsSearch || 0,
 					totalImpressions: (item.impressionsMaps || 0) + (item.impressionsSearch || 0)
-				}))
+				})),
+				latestData: {
+					impressionsMaps: latestData.impressionsMaps || 0,
+					impressionsSearch: latestData.impressionsSearch || 0,
+					websiteClicks: latestData.websiteClicks || 0,
+					phoneClicks: latestData.phoneClicks || 0,
+					directionRequests: latestData.directionRequests || 0
+				}
 			};
 		} catch (error) {
 			console.error('GBP Performance Error:', error);
@@ -706,35 +1045,78 @@ export class MonthlyReportService {
 
 	async getGBPEngagementReport(customerId: string, month: number, year: number) {
 		try {
-			// Monthly data for table
-			const monthlyData = await this.getDataForMonths(
-				this._gbpInsightsRepository.model.gbpInsight,
-				customerId,
-				month,
-				year,
-				['websiteClicks', 'phoneClicks', 'directionRequests']
-			);
+			const { startDate, endDate } = this.getMonthDateRange(month, year);
 
-			// Daily data for chart
-			const dailyData = await this.getDailyDataForMonth(
-				this._gbpInsightsRepository.model.gbpInsight,
-				customerId,
-				month,
-				year,
-				['websiteClicks', 'phoneClicks', 'directionRequests']
-			);
+			// Get daily data for the requested month
+			const dailyData = await this._gbpInsightsRepository.model.gbpInsight.findMany({
+				where: {
+					customerId,
+					createdAt: {
+						gte: startDate,
+						lte: endDate,
+					},
+				},
+				orderBy: { createdAt: 'asc' },
+			});
 
-			if (!monthlyData.length) return null;
+			if (!dailyData.length) return null;
+
+			// Get the latest data point for the requested month
+			const latestData = dailyData[dailyData.length - 1];
+
+			// For table data, get data for current and previous 2 months using last data points
+			const allMonthsData = [];
+
+			for (let i = 2; i >= 0; i--) {
+				const currentMonth = new Date(year, month - 1 - i, 1);
+				const monthNum = currentMonth.getMonth() + 1;
+				const yearNum = currentMonth.getFullYear();
+				const monthRange = this.getMonthDateRange(monthNum, yearNum);
+
+				// Get the last data point for each month
+				const lastDataPoint = await this._gbpInsightsRepository.model.gbpInsight.findFirst({
+					where: {
+						customerId,
+						createdAt: {
+							gte: monthRange.startDate,
+							lte: monthRange.endDate
+						},
+					},
+					orderBy: { createdAt: 'desc' },
+				});
+
+				if (lastDataPoint) {
+					allMonthsData.push({
+						createdAt: new Date(yearNum, monthNum - 1, 15), // Mid-month date for display
+						websiteClicks: lastDataPoint.websiteClicks || 0,
+						phoneClicks: lastDataPoint.phoneClicks || 0,
+						directionRequests: lastDataPoint.directionRequests || 0
+					});
+				} else {
+					// If no data, create empty entry
+					allMonthsData.push({
+						createdAt: new Date(yearNum, monthNum - 1, 15),
+						websiteClicks: 0,
+						phoneClicks: 0,
+						directionRequests: 0
+					});
+				}
+			}
 
 			return {
-				table: this.buildGBPEngagementTable(monthlyData),
+				table: this.buildGBPEngagementTable(allMonthsData),
 				chart: dailyData.map(item => ({
-					date: item.date,
+					date: item.createdAt,
 					website: item.websiteClicks || 0,
 					phone: item.phoneClicks || 0,
 					directions: item.directionRequests || 0,
 					totalEngagement: (item.websiteClicks || 0) + (item.phoneClicks || 0) + (item.directionRequests || 0)
-				}))
+				})),
+				latestData: {
+					websiteClicks: latestData.websiteClicks || 0,
+					phoneClicks: latestData.phoneClicks || 0,
+					directionRequests: latestData.directionRequests || 0
+				}
 			};
 		} catch (error) {
 			console.error('GBP Engagement Error:', error);
@@ -744,33 +1126,73 @@ export class MonthlyReportService {
 
 	async getGBPReviewsReport(customerId: string, month: number, year: number) {
 		try {
-			// Monthly data for table
-			const monthlyData = await this.getDataForMonths(
-				this._gbpInsightsRepository.model.gbpInsight,
-				customerId,
-				month,
-				year,
-				['avgRating', 'totalReviews']
-			);
+			const { startDate, endDate } = this.getMonthDateRange(month, year);
 
-			// Daily data for chart
-			const dailyData = await this.getDailyDataForMonth(
-				this._gbpInsightsRepository.model.gbpInsight,
-				customerId,
-				month,
-				year,
-				['avgRating', 'totalReviews']
-			);
+			// Get daily data for the requested month
+			const dailyData = await this._gbpInsightsRepository.model.gbpInsight.findMany({
+				where: {
+					customerId,
+					createdAt: {
+						gte: startDate,
+						lte: endDate,
+					},
+				},
+				orderBy: { createdAt: 'asc' },
+			});
 
-			if (!monthlyData.length) return null;
+			if (!dailyData.length) return null;
+
+			// Get the latest data point for the requested month
+			const latestData = dailyData[dailyData.length - 1];
+
+			// For table data, get data for current and previous 2 months using last data points
+			const allMonthsData = [];
+
+			for (let i = 2; i >= 0; i--) {
+				const currentMonth = new Date(year, month - 1 - i, 1);
+				const monthNum = currentMonth.getMonth() + 1;
+				const yearNum = currentMonth.getFullYear();
+				const monthRange = this.getMonthDateRange(monthNum, yearNum);
+
+				// Get the last data point for each month
+				const lastDataPoint = await this._gbpInsightsRepository.model.gbpInsight.findFirst({
+					where: {
+						customerId,
+						createdAt: {
+							gte: monthRange.startDate,
+							lte: monthRange.endDate
+						},
+					},
+					orderBy: { createdAt: 'desc' },
+				});
+
+				if (lastDataPoint) {
+					allMonthsData.push({
+						createdAt: new Date(yearNum, monthNum - 1, 15), // Mid-month date for display
+						avgRating: lastDataPoint.avgRating || 0,
+						totalReviews: lastDataPoint.totalReviews || 0
+					});
+				} else {
+					// If no data, create empty entry
+					allMonthsData.push({
+						createdAt: new Date(yearNum, monthNum - 1, 15),
+						avgRating: 0,
+						totalReviews: 0
+					});
+				}
+			}
 
 			return {
-				table: this.buildGBPReviewsTable(monthlyData),
+				table: this.buildGBPReviewsTable(allMonthsData),
 				chart: dailyData.map(item => ({
-					date: item.date,
+					date: item.createdAt,
 					rating: item.avgRating || 0,
 					reviews: item.totalReviews || 0
-				}))
+				})),
+				latestData: {
+					avgRating: latestData.avgRating || 0,
+					totalReviews: latestData.totalReviews || 0
+				}
 			};
 		} catch (error) {
 			console.error('GBP Reviews Error:', error);
@@ -874,40 +1296,83 @@ export class MonthlyReportService {
 	// Website Methods
 	async getWebsitePerformanceReport(customerId: string, month: number, year: number) {
 		try {
-			// Monthly data for table
-			const monthlyData = await this.getDataForMonths(
-				this._websitePerformanceRepo.model.websitePerformance,
-				customerId,
-				month,
-				year,
-				['pageViews', 'visits', 'visitors']
-			);
+			const { startDate, endDate } = this.getMonthDateRange(month, year);
 
-			// Daily data for chart
-			const dailyData = await this.getDailyDataForMonth(
-				this._websitePerformanceRepo.model.websitePerformance,
-				customerId,
-				month,
-				year,
-				['pageViews', 'visits', 'visitors']
-			);
+			// Get daily data for the requested month
+			const dailyData = await this._websitePerformanceRepo.model.websitePerformance.findMany({
+				where: {
+					customerId,
+					createdAt: {
+						gte: startDate,
+						lte: endDate,
+					},
+				},
+				orderBy: { createdAt: 'asc' },
+				select: {
+					createdAt: true,
+					pageViews: true,
+					visits: true,
+					visitors: true
+				}
+			});
 
-			if (!monthlyData.length) return null;
+			if (!dailyData.length) return null;
+
+			// Get data for current and previous 2 months for table
+			const monthlyData = [];
+			for (let i = 2; i >= 0; i--) {
+				const date = new Date(year, month - 1 - i, 1);
+				const monthNum = date.getMonth() + 1;
+				const yearNum = date.getFullYear();
+				const monthRange = this.getMonthDateRange(monthNum, yearNum);
+
+				const monthlyStats = await this._websitePerformanceRepo.model.websitePerformance.aggregate({
+					where: {
+						customerId,
+						createdAt: {
+							gte: monthRange.startDate,
+							lte: monthRange.endDate
+						},
+					},
+					_sum: {
+						pageViews: true,
+						visits: true,
+						visitors: true
+					},
+					_avg: {
+						pageViews: true,
+						visits: true,
+						visitors: true
+					}
+				});
+
+				monthlyData.push({
+					createdAt: new Date(yearNum, monthNum - 1, 15), // Mid-month for display
+					pageViews: monthlyStats._sum.pageViews || 0,
+					visits: monthlyStats._sum.visits || 0,
+					visitors: monthlyStats._sum.visitors || 0,
+					avgPageViews: monthlyStats._avg.pageViews || 0,
+					avgVisits: monthlyStats._avg.visits || 0,
+					avgVisitors: monthlyStats._avg.visitors || 0
+				});
+			}
 
 			return {
 				table: this.buildWebsitePerformanceTable(monthlyData),
 				chart: dailyData.map(item => ({
-					date: item.date,
+					date: item.createdAt,
 					pageViews: item.pageViews || 0,
 					visits: item.visits || 0,
 					visitors: item.visitors || 0
-				}))
+				})),
+				summary: monthlyData[monthlyData.length - 1] // Latest month data
 			};
 		} catch (error) {
 			console.error('Website Performance Error:', error);
 			return null;
 		}
 	}
+
 
 	async getWebsiteLocationsReport(customerId: string, selectedMonth: number, selectedYear: number) {
 		try {
@@ -1000,25 +1465,25 @@ export class MonthlyReportService {
 		const months = insights.map(i => format(new Date(i.createdAt), 'MMM').toUpperCase());
 
 		const calculateChange = (values: number[]) => {
-			if (values.length < 2) return 'N/A';
-			const first = values[0];
-			const last = values[values.length - 1];
-			if (first === 0) return last === 0 ? '0%' : 'N/A';
+			if (values.length < 2) return '0%';
+			const first = values[0] || 0;
+			const last = values[values.length - 1] || 0;
+			if (first === 0) return last === 0 ? '0%' : '∞%';
 			const change = ((last - first) / first) * 100;
-			return `${change.toFixed(2)}%`;
+			return `${change > 0 ? '+' : ''}${change.toFixed(2)}%`;
 		};
 
-		const headers = ['Data', ...months, 'Change %'];
+		const headers = ['Metric', ...months, 'Change %'];
 		const rows = [];
 
-		const pageViews = insights.map(i => parseInt(i.pageViews) || 0);
-		const visits = insights.map(i => parseInt(i.visits) || 0);
-		const visitors = insights.map(i => parseInt(i.visitors) || 0);
+		const pageViews = insights.map(i => i.pageViews);
+		const visits = insights.map(i => i.visits);
+		const visitors = insights.map(i => i.visitors);
 
 		rows.push(
-			['Page Views', ...pageViews.map(String), calculateChange(pageViews)],
-			['Visits', ...visits.map(String), calculateChange(visits)],
-			['Visitors', ...visitors.map(String), calculateChange(visitors)]
+			['Page Views', ...pageViews.map(v => v.toLocaleString()), calculateChange(pageViews)],
+			['Visits', ...visits.map(v => v.toLocaleString()), calculateChange(visits)],
+			['Visitors', ...visitors.map(v => v.toLocaleString()), calculateChange(visitors)]
 		);
 
 		return {
@@ -1030,7 +1495,7 @@ export class MonthlyReportService {
 
 	async getHospitalTable(customerId: string, month: number, year: number): Promise<any> {
 		console.log('getHospitalTable called for hospital=true - creating 2 empty pages'); // Debug log
-		
+
 		// Return empty table structure for 2 empty pages
 		return {
 			Data: [],
@@ -1052,14 +1517,14 @@ export class MonthlyReportService {
 	async getCustomerInfo(customerId: string): Promise<{ name: string; brandLogo: string | null }> {
 		const customer = await this._prisma.model.customer.findUnique({
 			where: { id: customerId },
-			select: { 
-			name: true ,
-			brandLogo: true
-		},
+			select: {
+				name: true,
+				brandLogo: true
+			},
 		});
 		return {
 			name: customer?.name || `Customer (${customerId.slice(0, 8)}...)`,
-        		brandLogo: customer?.brandLogo || null
+			brandLogo: customer?.brandLogo || null
 
 		};
 	}
