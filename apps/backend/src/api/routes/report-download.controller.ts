@@ -607,23 +607,6 @@ export class ReportDownloadController {
         return num >= 1000 ? (num / 1000).toFixed(1) + 'k' : num.toString();
     }
 
-    private sampleData(data: any[], maxPoints = 10) {
-        if (data.length <= maxPoints) return data;
-
-        const step = Math.ceil(data.length / maxPoints);
-        const sampledData = [];
-
-        for (let i = 0; i < data.length; i += step) {
-            sampledData.push(data[i]);
-        }
-
-        // Always include the last data point
-        if (!sampledData.includes(data[data.length - 1])) {
-            sampledData.push(data[data.length - 1]);
-        }
-
-        return sampledData;
-    }
 
     private getDataWithDayGap(data: any[], dayGap: number, month: number, year: number): any[] {
         if (data.length === 0) return [];
@@ -704,7 +687,6 @@ export class ReportDownloadController {
         preloadedData?: any
     ): Promise<ChartData> {
         try {
-            /* 1. Load / filter the data (unchanged) */
             let report = preloadedData?.community;
             if (!report) {
                 report = await this.reportService.getLinkedInCommunityReport(customerId, month, year);
@@ -713,6 +695,14 @@ export class ReportDownloadController {
             if (!report?.chart?.length) {
                 return { title: 'LinkedIn Community Growth', image: null };
             }
+
+            // Use latest data for summary
+            const latestData = report.latestData || {
+                followers: 0,
+                paidFollowers: 0,
+                postsCount: 0,
+                impressions: 0
+            };
 
             const monthData = report.chart
                 .map(d => ({ ...d, date: new Date(d.date || d.createdAt) }))
@@ -723,7 +713,7 @@ export class ReportDownloadController {
                 return { title: 'LinkedIn Community Growth', image: null };
             }
 
-            /* 2. Sampling – keep the existing logic */
+            /* Sampling logic */
             const daysInMonth = new Date(year, month, 0).getDate();
             const interval = Math.max(1, Math.floor(daysInMonth / 10));
             const sampledData: any[] = [];
@@ -743,16 +733,13 @@ export class ReportDownloadController {
             }
 
             const lastDayData = monthData.find(d => d.date.getDate() === daysInMonth);
-            if (
-                lastDayData &&
-                !sampledData.some(d => d.date.getDate() === daysInMonth)
-            ) {
+            if (lastDayData && !sampledData.some(d => d.date.getDate() === daysInMonth)) {
                 sampledData.push(lastDayData);
             }
 
             const labels = sampledData.map(d => format(d.date, 'MMM d'));
 
-            /* 3. Build datasets – all on the same y-axis */
+            /* Chart datasets */
             const datasets: ChartDataset<'bar' | 'line'>[] = [
                 {
                     type: 'line',
@@ -765,7 +752,7 @@ export class ReportDownloadController {
                     pointBackgroundColor: '#0A66C2',
                     pointRadius: 3,
                     pointHoverRadius: 5,
-                    yAxisID: 'y'   // <- same axis
+                    yAxisID: 'y'
                 },
                 {
                     type: 'line',
@@ -800,13 +787,12 @@ export class ReportDownloadController {
                     backgroundColor: '#29C76F',
                     borderColor: '#29C76F',
                     borderWidth: 1,
-                    borderRadius: 6,   // <- rounded tops
+                    borderRadius: 6,
                     barThickness: 14,
                     yAxisID: 'y'
                 }
             ];
 
-            /* 4. Chart configuration (single y-axis) */
             const configuration: ChartConfiguration<'bar' | 'line'> = {
                 type: 'bar',
                 data: { labels, datasets },
@@ -853,23 +839,15 @@ export class ReportDownloadController {
                                         : value
                             }
                         }
-                        // y1 removed – everything uses y
                     }
                 }
             };
 
-            /* 5. Render image */
             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
 
-            /* 6. Summary (unchanged) */
-            const totalFollowers = monthData.reduce((s, d) => s + (d.followers || 0), 0);
-            const totalPaidFollowers = monthData.reduce((s, d) => s + (d.paidFollowers || 0), 0);
-            const totalImpressions = monthData.reduce((s, d) => s + (d.impressions || 0), 0);
-            const totalPosts = monthData.reduce((s, d) => s + (d.postsCount || 0), 0);
-
             // Get start and end dates from the data
-            const startDate = monthData.length > 0 ? format(new Date(monthData[0].date), 'MMM d, yyyy') : '';
-            const endDate = monthData.length > 0 ? format(new Date(monthData[monthData.length - 1].date), 'MMM d, yyyy') : '';
+            const startDate = monthData.length > 0 ? format(monthData[0].date, 'MMM d, yyyy') : '';
+            const endDate = monthData.length > 0 ? format(monthData[monthData.length - 1].date, 'MMM d, yyyy') : '';
             const dateRange = startDate && endDate ? ` (${startDate} - ${endDate})` : '';
 
             return {
@@ -878,7 +856,7 @@ export class ReportDownloadController {
                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
                 summary: {
                     Followers: {
-                        value: totalFollowers.toLocaleString(),
+                        value: latestData.followers.toLocaleString(),
                         style: {
                             backgroundColor: '#0A66C230',
                             borderColor: '#0A66C2',
@@ -888,7 +866,7 @@ export class ReportDownloadController {
                         }
                     },
                     PaidFollowers: {
-                        value: totalPaidFollowers.toLocaleString(),
+                        value: latestData.paidFollowers.toLocaleString(),
                         style: {
                             backgroundColor: '#FFB00230',
                             borderColor: '#FFB002',
@@ -898,7 +876,7 @@ export class ReportDownloadController {
                         }
                     },
                     Impressions: {
-                        value: totalImpressions.toLocaleString(),
+                        value: latestData.impressions.toLocaleString(),
                         style: {
                             backgroundColor: '#8D6CAB30',
                             borderColor: '#8D6CAB',
@@ -908,7 +886,7 @@ export class ReportDownloadController {
                         }
                     },
                     Posts: {
-                        value: totalPosts.toLocaleString(),
+                        value: latestData.postsCount.toLocaleString(),
                         style: {
                             backgroundColor: '#29C76F30',
                             borderColor: '#29C76F',
@@ -924,6 +902,7 @@ export class ReportDownloadController {
             return { title: 'LinkedIn Community Growth', image: null };
         }
     }
+
 
     private async generateXOverviewChart(
         customerId: string,
@@ -942,6 +921,13 @@ export class ReportDownloadController {
                 return { title: 'X Performance Metrics', image: null };
             }
 
+            // Use latest data for summary
+            const latestData = report.latestData || {
+                impressions: 0,
+                engagement: 0,
+                interactions: 0
+            };
+
             const monthData = this.formatChartData(report.chart, month, year);
             const sampledData = this.getDataWithDayGap(monthData, 1, month, year);
 
@@ -949,12 +935,6 @@ export class ReportDownloadController {
             const impressionsData = sampledData.map(d => d.impressions || 0);
             const interactionsData = sampledData.map(d => d.interactions || 0);
             const engagementData = sampledData.map(d => d.engagement || 0);
-
-            const totalImpressions = monthData.reduce((sum, d) => sum + (d.impressions || 0), 0);
-            const totalInteractions = monthData.reduce((sum, d) => sum + (d.interactions || 0), 0);
-            const totalEngagement = monthData.length
-                ? monthData.reduce((sum, d) => sum + (d.engagement || 0), 0) / monthData.length
-                : 0;
 
             const configuration: ChartConfiguration<'bar' | 'line'> = {
                 type: 'bar',
@@ -1084,7 +1064,7 @@ export class ReportDownloadController {
                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
                 summary: {
                     impressions: {
-                        value: totalImpressions.toLocaleString(),
+                        value: latestData.impressions.toLocaleString(),
                         style: {
                             backgroundColor: '#1DA1F220',
                             borderColor: '#1DA1F2',
@@ -1094,7 +1074,7 @@ export class ReportDownloadController {
                         }
                     },
                     interactions: {
-                        value: totalInteractions.toLocaleString(),
+                        value: latestData.interactions.toLocaleString(),
                         style: {
                             backgroundColor: '#F45D2220',
                             borderColor: '#F45D22',
@@ -1104,7 +1084,7 @@ export class ReportDownloadController {
                         }
                     },
                     Engagement: {
-                        value: `${totalEngagement.toFixed(2)}%`,
+                        value: `${latestData.engagement.toFixed(2)}%`,
                         style: {
                             backgroundColor: '#17BF6320',
                             borderColor: '#17BF63',
@@ -1173,7 +1153,7 @@ export class ReportDownloadController {
 
             const labels = sampledData.map(item => format(new Date(item.date), 'MMM d'));
 
-            // ➕ Rounded Bar Patch
+            // Rounded Bar Patch
             const ctx = (this.chartJSNodeCanvas as any)?._canvas?.getContext?.('2d');
             if (ctx && typeof ctx.roundRect !== 'function') {
                 ctx.roundRect = function (x, y, w, h, r) {
@@ -1229,7 +1209,6 @@ export class ReportDownloadController {
                             pointHoverRadius: 5
                         }
                     ]
-
                 },
                 options: {
                     responsive: true,
@@ -1274,16 +1253,17 @@ export class ReportDownloadController {
                             grid: { color: '#e0e0e0' }
                         }
                     }
-
-
                 }
             };
 
             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
 
-            const totalFollowers = monthData.reduce((sum, d) => sum + (d.followers || 0), 0);
-            const totalFollowing = monthData.reduce((sum, d) => sum + (d.following || 0), 0);
-            const totalContent = monthData.reduce((sum, d) => sum + (d.totalContent || 0), 0);
+            // Get latest data from the report
+            const latestData = report.latestData || {
+                followers: 0,
+                following: 0,
+                totalContent: 0
+            };
 
             // Get start and end dates from the data
             const startDate = monthData.length > 0 ? format(new Date(monthData[0].date), 'MMM d, yyyy') : '';
@@ -1292,7 +1272,7 @@ export class ReportDownloadController {
 
             const summary = {
                 Followers: {
-                    value: totalFollowers.toLocaleString(),
+                    value: latestData.followers.toLocaleString(),
                     style: {
                         backgroundColor: '#C1358430',
                         borderColor: '#C13584',
@@ -1302,7 +1282,7 @@ export class ReportDownloadController {
                     }
                 },
                 Following: {
-                    value: totalFollowing.toLocaleString(),
+                    value: latestData.following.toLocaleString(),
                     style: {
                         backgroundColor: '#833AB430',
                         borderColor: '#833AB4',
@@ -1312,7 +1292,7 @@ export class ReportDownloadController {
                     }
                 },
                 totalContent: {
-                    value: totalContent.toLocaleString(),
+                    value: latestData.totalContent.toLocaleString(),
                     style: {
                         backgroundColor: '#FCAF4530',
                         borderColor: '#FCAF45',
@@ -1347,11 +1327,18 @@ export class ReportDownloadController {
                 return { title: 'Instagram Impressions & Reach', image: null };
             }
 
+            // Use the latest data for summary instead of calculating totals
+            const latestData = report.latestData || {
+                impressions: 0,
+                avgReachPerDay: 0,
+                totalContent: 0
+            };
+
             const rawChartData = report.chart.map(item => ({
                 date: new Date(item.date || item.createdAt),
                 impressions: item.impressions || 0,
                 avgReachPerDay: item.avgReachPerDay || 0,
-                totalContent: item.totalContent || 0  // <-- Add this line
+                totalContent: item.totalContent || 0
             }));
 
             const daysInMonth = new Date(year, month, 0).getDate();
@@ -1501,13 +1488,9 @@ export class ReportDownloadController {
 
             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
 
-            const totalImpressions = completeData.reduce((sum, d) => sum + d.impressions, 0);
-            const totalReach = completeData.reduce((sum, d) => sum + d.avgReachPerDay, 0);
-            const totalContent = completeData.reduce((sum, d) => sum + d.totalContent, 0);
-
             // Get start and end dates from the data
-            const startDate = completeData.length > 0 ? format(new Date(completeData[0].date), 'MMM d, yyyy') : '';
-            const endDate = completeData.length > 0 ? format(new Date(completeData[completeData.length - 1].date), 'MMM d, yyyy') : '';
+            const startDate = completeData.length > 0 ? format(completeData[0].date, 'MMM d, yyyy') : '';
+            const endDate = completeData.length > 0 ? format(completeData[completeData.length - 1].date, 'MMM d, yyyy') : '';
             const dateRange = startDate && endDate ? ` (${startDate} - ${endDate})` : '';
 
             return {
@@ -1516,7 +1499,7 @@ export class ReportDownloadController {
                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
                 summary: {
                     impressions: {
-                        value: totalImpressions.toLocaleString(),
+                        value: latestData.impressions.toLocaleString(),
                         style: {
                             backgroundColor: '#FD1D1D20',
                             borderColor: '#FD1D1D',
@@ -1526,7 +1509,7 @@ export class ReportDownloadController {
                         }
                     },
                     reach: {
-                        value: totalReach.toLocaleString(),
+                        value: latestData.avgReachPerDay.toLocaleString(),
                         style: {
                             backgroundColor: '#833AB420',
                             borderColor: '#833AB4',
@@ -1536,7 +1519,7 @@ export class ReportDownloadController {
                         }
                     },
                     totalContent: {
-                        value: totalContent.toLocaleString(),
+                        value: latestData.totalContent.toLocaleString(),
                         style: {
                             backgroundColor: '#FCAF4520',
                             borderColor: '#FCAF45',
@@ -1976,21 +1959,20 @@ export class ReportDownloadController {
             let report = preloadedData?.community;
 
             if (!report) {
-                if (platform === 'instagram') {
-                    report = await this.reportService.getInstagramCommunityReport(customerId, month, year);
-                } else if (platform === 'facebook') {
-                    report = await this.reportService.getFacebookCommunityReport(customerId, month, year);
-                } else if (platform === 'x') {
-                    report = await this.reportService.getXCommunityReport(customerId, month, year);
-                } else if (platform === 'linkedin') {
-                    report = await this.reportService.getLinkedInCommunityReport(customerId, month, year);
-                }
+                report = await this.reportService.getXCommunityReport(customerId, month, year);
 
                 if (!report?.chart?.length) {
-                    console.log(`No chart data for ${platform} community report`);
+                    console.log(`No chart data for X community report`);
                     return null;
                 }
             }
+
+            // Use latest data for summary
+            const latestData = report.latestData || {
+                followers: 0,
+                following: 0,
+                totalContent: 0
+            };
 
             const monthData = report.chart.filter(item => {
                 const date = new Date(item.date || item.createdAt);
@@ -2039,8 +2021,8 @@ export class ReportDownloadController {
                 return format(date, 'MMM d');
             });
 
-            const platformColor = this.getPlatformColor(platform);
-            const metricName = platform === 'facebook' ? 'Likes' : 'Followers';
+            const platformColor = '#1DA1F2'; // Twitter/X blue
+            const metricName = 'Followers';
 
             const configuration: ChartConfiguration<'bar' | 'line'> = {
                 type: 'bar',
@@ -2050,7 +2032,7 @@ export class ReportDownloadController {
                         {
                             type: 'line' as const,
                             label: metricName,
-                            data: sampledData.map(item => platform === 'facebook' ? item.likes : item.followers),
+                            data: sampledData.map(item => item.followers || 0),
                             backgroundColor: `${platformColor}30`,
                             borderColor: platformColor,
                             borderWidth: 3,
@@ -2097,7 +2079,6 @@ export class ReportDownloadController {
                         x: {
                             title: {
                                 display: true,
-                                //   text: 'Day of Month',
                                 font: { weight: 'bold' },
                                 color: '#444'
                             },
@@ -2124,16 +2105,10 @@ export class ReportDownloadController {
 
             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
 
-            // ✅ Summary Block
-            const totalFollowers = monthData.reduce((sum, item) => sum + (platform === 'facebook' ? item.likes || 0 : item.followers || 0), 0);
-            const totalFollowing = monthData.reduce((sum, item) => sum + (item.following || 0), 0);
-            // const avgFollowers = monthData.length ? totalFollowers / monthData.length : 0;
-            // const avgFollowing = monthData.length ? totalFollowing / monthData.length : 0;
-
+            // Get start and end dates from the data
             const startDate = sampledData.length > 0 ? format(sampledData[0].date || sampledData[0].createdAt, 'MMM d, yyyy') : '';
             const endDate = sampledData.length > 0 ? format(sampledData[sampledData.length - 1].date || sampledData[sampledData.length - 1].createdAt, 'MMM d, yyyy') : '';
             const dateRange = startDate && endDate ? `(${startDate} - ${endDate})` : '';
-
 
             return {
                 title: `Community Growth`,
@@ -2141,7 +2116,7 @@ export class ReportDownloadController {
                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
                 summary: {
                     totalFollowers: {
-                        value: totalFollowers.toLocaleString(),
+                        value: latestData.followers.toLocaleString(),
                         style: {
                             backgroundColor: `${platformColor}30`,
                             borderColor: platformColor,
@@ -2151,7 +2126,7 @@ export class ReportDownloadController {
                         }
                     },
                     totalFollowing: {
-                        value: totalFollowing.toLocaleString(),
+                        value: latestData.following.toLocaleString(),
                         style: {
                             backgroundColor: '#6C757D20',
                             borderColor: '#6C757D',
@@ -2164,8 +2139,8 @@ export class ReportDownloadController {
             };
 
         } catch (error) {
-            console.error(`Error generating ${platform} followers chart:`, error);
-            return { title: `${this.getPlatformDisplayName(platform)} Followers`, image: null };
+            console.error(`Error generating X followers chart:`, error);
+            return { title: `X Followers`, image: null };
         }
     }
 
@@ -2178,14 +2153,23 @@ export class ReportDownloadController {
         preloadedData?: any
     ): Promise<ChartData> {
         try {
-            let report = preloadedData?.overview;
+            let report = preloadedData?.community;
             if (!report) {
-                report = await this.reportService.getYoutubeOverviewReport(customerId, month, year);
+                report = await this.reportService.getYoutubeCommunityReport(customerId, month, year);
             }
 
             if (!report?.chart?.length) {
                 return { title: 'YouTube Analytics', image: null };
             }
+
+            // Use latest data for summary
+            const latestData = report.latestData || {
+                subscribers: 0,
+                totalViews: 0,
+                totalVideos: 0,
+                totalLikes: 0,
+                totalComments: 0
+            };
 
             const monthData = report.chart.filter(item => {
                 const date = new Date(item.date || item.createdAt);
@@ -2204,7 +2188,7 @@ export class ReportDownloadController {
 
             const labels = sampledData.map(item => format(new Date(item.date || item.createdAt), 'MMM d'));
 
-            // ➕ Rounded Bar Patch for NodeCanvas
+            // Rounded Bar Patch for NodeCanvas
             const ctx = (this.chartJSNodeCanvas as any)?._canvas?.getContext?.('2d');
             if (ctx && typeof ctx.roundRect !== 'function') {
                 ctx.roundRect = function (x, y, w, h, r) {
@@ -2217,7 +2201,6 @@ export class ReportDownloadController {
                     this.closePath();
                 };
             }
-
 
             const configuration: ChartConfiguration<'bar' | 'line'> = {
                 type: 'bar',
@@ -2233,9 +2216,8 @@ export class ReportDownloadController {
                             borderRadius: 6,
                             type: 'bar',
                             order: 2,
-                            barThickness: 14,       // ✅ Consistent bar width
-                            borderSkipped: false    // ✅ Ensures full corner rounding
-
+                            barThickness: 14,
+                            borderSkipped: false
                         },
                         {
                             label: 'Total Views',
@@ -2286,7 +2268,6 @@ export class ReportDownloadController {
                             order: 1
                         }
                     ]
-
                 },
                 options: {
                     responsive: true,
@@ -2322,7 +2303,6 @@ export class ReportDownloadController {
                             grid: { display: false },
                             title: {
                                 display: true,
-                                //  text: 'Date',
                                 font: { size: 12, weight: 'bold' },
                                 color: '#5f6368'
                             }
@@ -2344,23 +2324,19 @@ export class ReportDownloadController {
                             }
                         }
                     }
-
                 }
             };
 
             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
 
-            // 📊 Styled Summary Cards
-            const sum = (key: keyof typeof monthData[0]) =>
-                monthData.reduce((acc, item) => acc + (Number(item[key]) || 0), 0);
-            const startDate = sampledData.length > 0 ? format(sampledData[0].date || sampledData[0].createdAt, 'MMM d, yyyy') : '';
-            const endDate = sampledData.length > 0 ? format(sampledData[sampledData.length - 1].date || sampledData[sampledData.length - 1].createdAt, 'MMM d, yyyy') : '';
+            // Get start and end dates from the data
+            const startDate = sampledData.length > 0 ? format(new Date(sampledData[0].date || sampledData[0].createdAt), 'MMM d, yyyy') : '';
+            const endDate = sampledData.length > 0 ? format(new Date(sampledData[sampledData.length - 1].date || sampledData[sampledData.length - 1].createdAt), 'MMM d, yyyy') : '';
             const dateRange = startDate && endDate ? `(${startDate} - ${endDate})` : '';
-
 
             const summary = {
                 Subscribers: {
-                    value: sum('subscribers').toLocaleString(),
+                    value: latestData.subscribers.toLocaleString(),
                     style: {
                         backgroundColor: '#FF000030',
                         borderColor: '#FF0000',
@@ -2370,7 +2346,7 @@ export class ReportDownloadController {
                     }
                 },
                 Views: {
-                    value: sum('totalViews').toLocaleString(),
+                    value: latestData.totalViews.toLocaleString(),
                     style: {
                         backgroundColor: '#2ecc7130',
                         borderColor: '#2ecc71',
@@ -2380,7 +2356,7 @@ export class ReportDownloadController {
                     }
                 },
                 Videos: {
-                    value: sum('totalVideos').toLocaleString(),
+                    value: latestData.totalVideos.toLocaleString(),
                     style: {
                         backgroundColor: '#f39c1230',
                         borderColor: '#f39c12',
@@ -2390,7 +2366,7 @@ export class ReportDownloadController {
                     }
                 },
                 Likes: {
-                    value: sum('totalLikes').toLocaleString(),
+                    value: latestData.totalLikes.toLocaleString(),
                     style: {
                         backgroundColor: '#9b59b630',
                         borderColor: '#9b59b6',
@@ -2400,7 +2376,7 @@ export class ReportDownloadController {
                     }
                 },
                 Comments: {
-                    value: sum('totalComments').toLocaleString(),
+                    value: latestData.totalComments.toLocaleString(),
                     style: {
                         backgroundColor: '#6c5ce730',
                         borderColor: '#6c5ce7',
@@ -2410,6 +2386,7 @@ export class ReportDownloadController {
                     }
                 }
             };
+
             return {
                 title: 'Community Analytics',
                 date: `${dateRange}`,
@@ -3098,6 +3075,12 @@ export class ReportDownloadController {
                 return { title: 'GBP Performance', image: null };
             }
 
+            // Use latest data for summary
+            const latestData = report.latestData || {
+                impressionsMaps: 0,
+                impressionsSearch: 0
+            };
+
             const monthData = this.formatChartData(report.chart, month, year);
             const sampledData = this.getDataWithDayGap(monthData, 1, month, year);
 
@@ -3105,11 +3088,6 @@ export class ReportDownloadController {
             const mapsData = sampledData.map(d => d.maps || 0);
             const searchData = sampledData.map(d => d.search || 0);
             const totalData = sampledData.map((_, i) => (mapsData[i] + searchData[i]));
-
-            // ⬇️ Summary totals
-            const totalMaps = monthData.reduce((sum, d) => sum + (d.maps || 0), 0);
-            const totalSearch = monthData.reduce((sum, d) => sum + (d.search || 0), 0);
-            const total = totalMaps + totalSearch;
 
             // Get start and end dates from the data
             const startDate = monthData.length > 0 ? format(new Date(monthData[0].date), 'MMM d, yyyy') : '';
@@ -3200,9 +3178,9 @@ export class ReportDownloadController {
                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
                 summary: {
                     googleMaps: {
-                        value: totalMaps.toLocaleString(),
+                        value: latestData.impressionsMaps.toLocaleString(),
                         style: {
-                            backgroundColor: '#1a73e820',  // light blue
+                            backgroundColor: '#1a73e820',
                             borderColor: '#1a73e8',
                             borderWidth: 1,
                             borderRadius: 6,
@@ -3210,9 +3188,9 @@ export class ReportDownloadController {
                         }
                     },
                     googleSearch: {
-                        value: totalSearch.toLocaleString(),
+                        value: latestData.impressionsSearch.toLocaleString(),
                         style: {
-                            backgroundColor: '#34a85320',  // light green
+                            backgroundColor: '#34a85320',
                             borderColor: '#34a853',
                             borderWidth: 1,
                             borderRadius: 6,
@@ -3220,9 +3198,9 @@ export class ReportDownloadController {
                         }
                     },
                     total: {
-                        value: total.toLocaleString(),
+                        value: (latestData.impressionsMaps + latestData.impressionsSearch).toLocaleString(),
                         style: {
-                            backgroundColor: '#fbbc0420',  // light yellow
+                            backgroundColor: '#fbbc0420',
                             borderColor: '#fbbc04',
                             borderWidth: 1,
                             borderRadius: 6,
@@ -3230,7 +3208,6 @@ export class ReportDownloadController {
                         }
                     }
                 }
-
             };
         } catch (error) {
             console.error('Error generating GBP impressions chart:', error);
@@ -3255,6 +3232,13 @@ export class ReportDownloadController {
                 return { title: 'GBP Engagement', image: null };
             }
 
+            // Use latest data for summary
+            const latestData = report.latestData || {
+                websiteClicks: 0,
+                phoneClicks: 0,
+                directionRequests: 0
+            };
+
             const monthData = this.formatChartData(report.chart, month, year);
             const sampledData = this.getDataWithDayGap(monthData, 1, month, year);
 
@@ -3262,10 +3246,6 @@ export class ReportDownloadController {
             const websiteData = sampledData.map(d => d.website || 0);
             const phoneData = sampledData.map(d => d.phone || 0);
             const directionsData = sampledData.map(d => d.directions || 0);
-
-            const totalWebsite = monthData.reduce((sum, d) => sum + (d.website || 0), 0);
-            const totalPhone = monthData.reduce((sum, d) => sum + (d.phone || 0), 0);
-            const totalDirections = monthData.reduce((sum, d) => sum + (d.directions || 0), 0);
 
             // Patch for rounded bars in Node
             const testCanvas = (this.chartJSNodeCanvas as any)._canvas;
@@ -3300,7 +3280,6 @@ export class ReportDownloadController {
                 : format(new Date(year, month, 0), 'MMM d, yyyy');
 
             const dateRange = `(${startDate} - ${endDate})`;
-
 
             const configuration: ChartConfiguration<'bar'> = {
                 type: 'bar',
@@ -3401,7 +3380,7 @@ export class ReportDownloadController {
                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
                 summary: {
                     website: {
-                        value: totalWebsite.toLocaleString(),
+                        value: latestData.websiteClicks.toLocaleString(),
                         style: {
                             backgroundColor: '#4285F420',
                             borderColor: '#4285F4',
@@ -3411,7 +3390,7 @@ export class ReportDownloadController {
                         }
                     },
                     phone: {
-                        value: totalPhone.toLocaleString(),
+                        value: latestData.phoneClicks.toLocaleString(),
                         style: {
                             backgroundColor: '#EA433520',
                             borderColor: '#EA4335',
@@ -3421,7 +3400,7 @@ export class ReportDownloadController {
                         }
                     },
                     direction: {
-                        value: totalDirections.toLocaleString(),
+                        value: latestData.directionRequests.toLocaleString(),
                         style: {
                             backgroundColor: '#FBBC0520',
                             borderColor: '#FBBC05',
@@ -3437,7 +3416,6 @@ export class ReportDownloadController {
             return { title: 'GBP Engagement', image: null };
         }
     }
-
 
     private async generateGBPReviewsChart(
         customerId: string,
@@ -3455,18 +3433,18 @@ export class ReportDownloadController {
                 return { title: 'GBP Reviews & Rating', image: null };
             }
 
+            // Use latest data for summary
+            const latestData = report.latestData || {
+                avgRating: 0,
+                totalReviews: 0
+            };
+
             const monthData = this.formatChartData(report.chart, month, year);
             const sampledData = this.getDataWithDayGap(monthData, 1, month, year);
 
             const labels = sampledData.map(d => format(d.date, 'MMM d'));
             const reviews = sampledData.map(d => d.reviews || 0);
             const ratings = sampledData.map(d => d.rating || 0);
-
-            // ⬇️ Summary calculations
-            const totalReviews = monthData.reduce((sum, d) => sum + (d.reviews || 0), 0);
-            const averageRating =
-                monthData.filter(d => d.rating !== undefined).reduce((sum, d) => sum + d.rating, 0) /
-                (monthData.filter(d => d.rating !== undefined).length || 1);
 
             const parseValidDate = (item: any): Date | null => {
                 const rawDate = item?.date || item?.createdAt;
@@ -3580,7 +3558,7 @@ export class ReportDownloadController {
                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
                 summary: {
                     totalReviews: {
-                        value: totalReviews.toLocaleString(),
+                        value: latestData.totalReviews.toLocaleString(),
                         style: {
                             backgroundColor: '#6610f220',
                             borderColor: '#6610f2',
@@ -3590,7 +3568,7 @@ export class ReportDownloadController {
                         }
                     },
                     averageRating: {
-                        value: averageRating.toFixed(2),
+                        value: latestData.avgRating.toFixed(2),
                         style: {
                             backgroundColor: '#e83e8c20',
                             borderColor: '#e83e8c',
@@ -3624,40 +3602,21 @@ export class ReportDownloadController {
                 return { title: 'Website Traffic', image: null };
             }
 
-            const monthData = this.formatChartData(report.chart, month, year);
-            const sampledData = this.getDataWithDayGap(monthData, 1, month, year);
+            // Process chart data
+            const chartData = report.chart
+                .map(d => ({ ...d, date: new Date(d.date) }))
+                .filter(d => d.date.getMonth() + 1 === month && d.date.getFullYear() === year)
+                .sort((a, b) => a.date.getTime() - b.date.getTime());
 
-            // Calculate totals for the month
-            const totalPageViews = monthData.reduce((sum, d) => sum + (d.pageViews || 0), 0);
-            const totalVisits = monthData.reduce((sum, d) => sum + (d.visits || 0), 0);
-            const totalVisitors = monthData.reduce((sum, d) => sum + (d.visitors || 0), 0);
+            // Smart sampling for better chart readability
+            const sampledData = this.sampleData(chartData, 15); // Max 15 data points
 
             const labels = sampledData.map(d => format(d.date, 'MMM d'));
-            const pageViewsData = sampledData.map(d => d.pageViews || 0);
-            const visitsData = sampledData.map(d => d.visits || 0);
-            const visitorsData = sampledData.map(d => d.visitors || 0);
+            const pageViewsData = sampledData.map(d => d.pageViews);
+            const visitsData = sampledData.map(d => d.visits);
+            const visitorsData = sampledData.map(d => d.visitors);
 
-            // Get start and end dates from the data
-            const startDate = monthData.length > 0 ? format(new Date(monthData[0].date), 'MMM d, yyyy') : '';
-            const endDate = monthData.length > 0 ? format(new Date(monthData[monthData.length - 1].date), 'MMM d, yyyy') : '';
-            const dateRange = startDate && endDate ? ` (${startDate} - ${endDate})` : '';
-
-            // Monkey patch roundRect for Node.js (fix for bar borderRadius)
-            const testCanvas = (this.chartJSNodeCanvas as any)._canvas;
-            const ctx = testCanvas?.getContext?.('2d');
-            if (ctx && typeof ctx.roundRect !== 'function') {
-                ctx.roundRect = function (x, y, w, h, r) {
-                    this.beginPath();
-                    this.moveTo(x + r, y);
-                    this.arcTo(x + w, y, x + w, y + h, r);
-                    this.arcTo(x + w, y + h, x, y + h, r);
-                    this.arcTo(x, y + h, x, y, r);
-                    this.arcTo(x, y, x + w, y, r);
-                    this.closePath();
-                };
-            }
-            const maxY = Math.max(...pageViewsData, ...visitsData, ...visitorsData);
-
+            // Chart configuration
             const configuration: ChartConfiguration<'bar' | 'line'> = {
                 type: 'bar',
                 data: {
@@ -3670,8 +3629,8 @@ export class ReportDownloadController {
                             backgroundColor: '#0d6efd90',
                             borderColor: '#0d6efd',
                             borderWidth: 1,
-                            barThickness: 14,
-                            borderRadius: 6
+                            borderRadius: 6,
+                            barThickness: 14
                         },
                         {
                             type: 'line',
@@ -3682,8 +3641,7 @@ export class ReportDownloadController {
                             borderWidth: 2,
                             tension: 0.4,
                             pointBackgroundColor: '#fd7e14',
-                            pointRadius: 3,
-                            pointHoverRadius: 5
+                            pointRadius: 3
                         },
                         {
                             type: 'line',
@@ -3694,114 +3652,83 @@ export class ReportDownloadController {
                             borderWidth: 2,
                             tension: 0.4,
                             pointBackgroundColor: '#20c997',
-                            pointRadius: 3,
-                            pointHoverRadius: 5
+                            pointRadius: 3
                         }
                     ]
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: false,
                     plugins: {
-                        legend: {
-                            display: false,
-                            labels: {
-                                font: { size: 12 },
-                                color: '#202124',
-                                boxWidth: 20,
-                                boxHeight: 12,
-                                padding: 20,
-                                usePointStyle: false
-                            }
-                        },
                         tooltip: {
                             callbacks: {
-                                title: (tooltipItems) => {
-                                    const date = new Date(sampledData[tooltipItems[0].dataIndex].date);
-                                    return format(date, 'MMMM d, yyyy');
-                                },
-                                label: (context) => {
-                                    const label = context.dataset.label || '';
-                                    const value = context.parsed.y;
-                                    return `${label}: ${Number(value).toLocaleString()}`;
-                                }
+                                title: (items) => format(sampledData[items[0].dataIndex].date, 'MMMM d, yyyy'),
+                                label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()}`
                             }
                         },
+                        legend: { display: false }
                     },
                     scales: {
-                        x: {
-                            grid: { display: false },
-                            ticks: {
-                                color: '#5f6368',
-                                font: { size: 11 }
-                            }
-                        },
+                        x: { grid: { display: false } },
                         y: {
                             beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Count',
-                                font: { size: 12 },
-                                color: '#5f6368'
-                            },
                             ticks: {
-                                color: '#5f6368',
-                                stepSize: 500
-                            },
-                            grid: {
-                                color: '#e0e0e0'
+                                callback: (val) => Number(val) >= 1000 ? `${(Number(val) / 1000).toFixed(0)}k` : val
                             }
-                        }
-                    }
-                },
-                plugins: [require('chartjs-plugin-annotation')]
-            };
-
-            const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
-            return {
-                title: `Traffic Growth`,
-                date: `${dateRange}`,
-                image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
-                summary: {
-                    pageViews: {
-                        value: 1023,
-                        style: {
-                            backgroundColor: '#0d6efd90',
-                            borderColor: '#0d6efd',
-                            borderWidth: 1,
-                            borderRadius: 6,
-                            textColor: '#ffffff'
-                        }
-                    },
-                    visits: {
-                        value: 760,
-                        style: {
-                            backgroundColor: '#fd7e1420',
-                            borderColor: '#fd7e14',
-                            borderWidth: 1,
-                            borderRadius: 6,
-                            textColor: '#000000'
-                        }
-                    },
-                    visitors: {
-                        value: 540,
-                        style: {
-                            backgroundColor: '#20c99720',
-                            borderColor: '#20c997',
-                            borderWidth: 1,
-                            borderRadius: 6,
-                            textColor: '#000000'
                         }
                     }
                 }
+            };
 
+            const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+            const dateRange = this.getDateRangeString(chartData);
 
+            return {
+                title: 'Website Traffic Performance',
+                date: dateRange,
+                image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
+                summary: {
+                    'Page Views': {
+                        value: report.summary?.pageViews?.toLocaleString() || '0',
+                        change: this.calculateMonthOverMonthChange(report.table?.Rows?.[0]?.slice(1, -1))
+                    },
+                    'Visits': {
+                        value: report.summary?.visits?.toLocaleString() || '0',
+                        change: this.calculateMonthOverMonthChange(report.table?.Rows?.[1]?.slice(1, -1))
+                    },
+                    'Visitors': {
+                        value: report.summary?.visitors?.toLocaleString() || '0',
+                        change: this.calculateMonthOverMonthChange(report.table?.Rows?.[2]?.slice(1, -1))
+                    }
+                }
             };
         } catch (error) {
-            console.error('Error generating website traffic chart:', error);
+            console.error('Website Traffic Chart Error:', error);
             return { title: 'Website Traffic', image: null };
         }
     }
+
+    private sampleData(data: any[], maxPoints: number): any[] {
+        if (data.length <= maxPoints) return data;
+        const step = Math.ceil(data.length / maxPoints);
+        return data.filter((_, i) => i % step === 0 || i === data.length - 1);
+    }
+
+    private getDateRangeString(data: any[]): string {
+        if (!data.length) return '';
+        const start = format(data[0].date, 'MMM d');
+        const end = format(data[data.length - 1].date, 'MMM d, yyyy');
+        return `${start} - ${end}`;
+    }
+
+    private calculateMonthOverMonthChange(values: number[]): string {
+        if (!values || values.length < 2) return '0%';
+        const prev = values[values.length - 2] || 0;
+        const curr = values[values.length - 1] || 0;
+        if (prev === 0) return curr === 0 ? '0%' : '∞%';
+        const change = ((curr - prev) / prev) * 100;
+        return `${change > 0 ? '+' : ''}${change.toFixed(2)}%`;
+    }
+
 
     private async generateWebsiteLocationsChart(
         customerId: string,
