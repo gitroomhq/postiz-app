@@ -15,31 +15,6 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
   scopes = ['write:statuses', 'profile', 'write:media'];
   editor = 'normal' as const;
 
-  async customFields() {
-    return [
-      {
-        key: 'service',
-        label: 'Service',
-        defaultValue: 'https://mastodon.social',
-        validation: `/^https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_\\+.~#?&//=]*)$/`,
-        type: 'text' as const,
-      },
-      {
-        key: 'clientId',
-        label: 'Client ID',
-        defaultValue: '',
-        validation: `/^.{3,}$/`,
-        type: 'password' as const,
-      },
-      {
-        key: 'clientSecret',
-        label: 'Client Secret',
-        defaultValue: '',
-        validation: `/^.{3,}$/`,
-        type: 'password' as const,
-      },
-    ];
-  }
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     return {
       refreshToken: '',
@@ -125,7 +100,6 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
     codeVerifier: string;
     refresh?: string;
   }) {
-    const body = JSON.parse(Buffer.from(params.code, 'base64').toString());
     return this.dynamicAuthenticate(
       process.env.MASTODON_CLIENT_ID!,
       process.env.MASTODON_CLIENT_SECRET!,
