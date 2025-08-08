@@ -1,6 +1,7 @@
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import Bottleneck from 'bottleneck';
 import { timer } from '@gitroom/helpers/utils/timer';
+import { BadBody } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
 const connection = new Bottleneck.IORedisConnection({
   client: ioRedis,
@@ -23,19 +24,28 @@ export const concurrency = async <T>(
     minTime: 1000,
   });
   let load: T;
+
+  if (ignoreConcurrency) {
+    return await func();
+  }
+
   try {
-    if (ignoreConcurrency) {
-      return await func();
-    }
     load = await mapper[strippedIdentifier].schedule<T>(
-      { expiration: 600000 },
+      { expiration: 10000 },
       async () => {
         try {
           return await func();
         } catch (err) {}
       }
     );
-  } catch (err) {}
+  } catch (err) {
+    throw new BadBody(
+      identifier,
+      JSON.stringify({}),
+      {} as any,
+      `Something is wrong with ${identifier}`
+    );
+  }
 
   return load;
 };
