@@ -19,9 +19,11 @@ export class CheckMissingQueues {
           id: p.id,
           publishDate: p.publishDate,
           isJob:
-            (await this._workerServiceProducer
-              .getQueue('post')
-              .getJobState(p.id)) === 'delayed',
+            ['delayed', 'waiting'].indexOf(
+              await this._workerServiceProducer
+                .getQueue('post')
+                .getJobState(p.id)
+            ) > -1,
         }))
       )
     ).filter((p) => !p.isJob);
