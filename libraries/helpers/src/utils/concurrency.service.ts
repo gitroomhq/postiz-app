@@ -11,7 +11,8 @@ const mapper = {} as Record<string, Bottleneck>;
 export const concurrency = async <T>(
   identifier: string,
   maxConcurrent = 1,
-  func: (...args: any[]) => Promise<T>
+  func: (...args: any[]) => Promise<T>,
+  ignoreConcurrency = false
 ) => {
   const strippedIdentifier = identifier.toLowerCase().split('-')[0];
   mapper[strippedIdentifier] ??= new Bottleneck({
@@ -23,6 +24,9 @@ export const concurrency = async <T>(
   });
   let load: T;
   try {
+    if (ignoreConcurrency) {
+      return await func();
+    }
     load = await mapper[strippedIdentifier].schedule<T>(
       { expiration: 600000 },
       async () => {

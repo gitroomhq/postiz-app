@@ -375,7 +375,10 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
             body: JSON.stringify({
               publish_id: publishId,
             }),
-          }
+          },
+          '',
+          0,
+          true
         )
       ).json();
 
@@ -399,11 +402,11 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
           'titok-error-upload',
           JSON.stringify(post),
           Buffer.from(JSON.stringify(post)),
-          handleError?.value || '',
+          handleError?.value || ''
         );
       }
 
-      await timer(3000);
+      await timer(10000);
     }
   }
 
@@ -496,7 +499,11 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
                     photo_cover_index: 0,
                     photo_images: firstPost.media?.map((p) => p.path),
                   },
-                  post_mode: firstPost?.settings?.content_posting_method === 'DIRECT_POST' ? 'DIRECT_POST' : 'MEDIA_UPLOAD',
+                  post_mode:
+                    firstPost?.settings?.content_posting_method ===
+                    'DIRECT_POST'
+                      ? 'DIRECT_POST'
+                      : 'MEDIA_UPLOAD',
                   media_type: 'PHOTO',
                 }),
           }),

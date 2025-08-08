@@ -68,12 +68,14 @@ export abstract class SocialAbstract {
     url: string,
     options: RequestInit = {},
     identifier = '',
-    totalRetries = 0
+    totalRetries = 0,
+    ignoreConcurrency = false
   ): Promise<Response> {
     const request = await concurrency(
       this.identifier,
       this.maxConcurrentJob,
-      () => fetch(url, options)
+      () => fetch(url, options),
+      ignoreConcurrency
     );
 
     if (request.status === 200 || request.status === 201) {
