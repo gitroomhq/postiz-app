@@ -31,7 +31,7 @@ export const concurrency = async <T>(
 
   try {
     load = await mapper[strippedIdentifier].schedule<T>(
-      { expiration: 10000 },
+      { expiration: 60000 },
       async () => {
         try {
           return await func();
