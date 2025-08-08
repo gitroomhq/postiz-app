@@ -5,7 +5,7 @@ import { socialIntegrationList } from '@gitroom/nestjs-libraries/integrations/in
 export class McpSettings {
   private _server: McpServer;
   createServer(organization: string, service: MainMcp) {
-    this._server = Sentry.wrapMcpServerWithSentry(new McpServer(
+    this._server = new McpServer(
       {
         name: 'Postiz',
         version: '2.0.0',
