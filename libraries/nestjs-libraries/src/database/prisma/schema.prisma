@@ -338,9 +338,14 @@ model Integration {
   @@unique([organizationId, internalId])
   @@index([rootInternalId])
   @@index([organizationId])
+  @@index([providerIdentifier])
   @@index([updatedAt])
+  @@index([createdAt])
   @@index([deletedAt])
   @@index([customerId])
+  @@index([inBetweenSteps])
+  @@index([refreshNeeded])
+  @@index([disabled])
 }
 
 model Signatures {
