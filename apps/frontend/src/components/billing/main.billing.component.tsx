@@ -505,7 +505,7 @@ export const MainBillingComponent: FC<{
           {t(
             'your_subscription_will_be_canceled_at',
             'Your subscription will be canceled at'
-          )}
+          )}{' '}
           {newDayjs(subscription.cancelAt).local().format('D MMM, YYYY')}
           <br />
           {t(

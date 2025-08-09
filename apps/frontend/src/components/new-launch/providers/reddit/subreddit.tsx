@@ -233,24 +233,6 @@ export const Subreddit: FC<{
               onChange={setURL}
             />
           )}
-          {value.type === 'media' && (
-            <div className="flex flex-col">
-              <div className="w-full h-[10px] bg-input rounded-tr-[8px] rounded-tl-[8px]" />
-              <div className="flex flex-col text-nowrap">
-                <MultiMediaComponent
-                  allData={[]}
-                  dummy={dummy}
-                  text=""
-                  description=""
-                  name="media"
-                  label="Media"
-                  value={value.media}
-                  onChange={setMedia}
-                  error={errors?.media?.message}
-                />
-              </div>
-            </div>
-          )}
         </>
       ) : (
         <div className="relative">

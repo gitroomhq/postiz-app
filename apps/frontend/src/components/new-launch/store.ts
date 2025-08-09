@@ -11,7 +11,7 @@ import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 interface Values {
   id: string;
   content: string;
-  media: { id: string; path: string }[];
+  media: { id: string; path: string, thumbnail?: string }[];
 }
 
 interface Internal {
