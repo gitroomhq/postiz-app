@@ -11,7 +11,6 @@ const dateMetrics = [
 
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
-import { timezoneSaver } from '@gitroom/frontend/components/layout/set.timezone';
 dayjs.extend(timezone);
 
 const MetricComponent = () => {
