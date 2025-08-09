@@ -11,6 +11,7 @@ const dateMetrics = [
 
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
+import { timezoneSaver } from '@gitroom/frontend/components/layout/set.timezone';
 dayjs.extend(timezone);
 
 const MetricComponent = () => {
@@ -46,23 +47,23 @@ const MetricComponent = () => {
         ))}
       </Select>
 
-      <div className="mt-[4px]">Current Timezone</div>
-      <Select
-        name="timezone"
-        disableForm={true}
-        label=""
-        onChange={changeTimezone}
-      >
-        {timezones.map((metric) => (
-          <option
-            key={metric.name}
-            value={metric.tzCode}
-            selected={metric.tzCode === timezone}
-          >
-            {metric.label}
-          </option>
-        ))}
-      </Select>
+      {/*<div className="mt-[4px]">Current Timezone</div>*/}
+      {/*<Select*/}
+      {/*  name="timezone"*/}
+      {/*  disableForm={true}*/}
+      {/*  label=""*/}
+      {/*  onChange={changeTimezone}*/}
+      {/*>*/}
+      {/*  {timezones.map((metric) => (*/}
+      {/*    <option*/}
+      {/*      key={metric.name}*/}
+      {/*      value={metric.tzCode}*/}
+      {/*      selected={metric.tzCode === timezone}*/}
+      {/*    >*/}
+      {/*      {metric.label}*/}
+      {/*    </option>*/}
+      {/*  ))}*/}
+      {/*</Select>*/}
     </div>
   );
 };
