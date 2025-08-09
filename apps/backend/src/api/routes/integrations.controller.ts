@@ -1,13 +1,5 @@
 import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Post,
-  Put,
-  Query,
-  UseFilters,
+  Body, Controller, Delete, Get, HttpException, Param, Post, Put, Query, UseFilters
 } from '@nestjs/common';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { ConnectIntegrationDto } from '@gitroom/nestjs-libraries/dtos/integrations/connect.integration.dto';
@@ -261,7 +253,7 @@ export class IntegrationsController {
       throw new Error('Invalid integration');
     }
 
-    let newList: any[] | {none: true} = [];
+    let newList: any[] | { none: true } = [];
     try {
       newList = (await this.functionIntegration(org, body)) || [];
     } catch (err) {
@@ -298,7 +290,7 @@ export class IntegrationsController {
           image: p.image,
           label: p.name,
         })),
-        ...newList as any[],
+        ...(newList as any[]),
       ],
       (p) => p.id
     ).filter((f) => f.label && f.id);
@@ -487,6 +479,18 @@ export class IntegrationsController {
         validName = `Channel_${String(id).slice(0, 8)}`;
       }
     }
+
+    if (
+      process.env.STRIPE_PUBLISHABLE_KEY &&
+      org.isTrailing &&
+      !!(await this._integrationService.checkPreviousConnections(
+        org.id,
+        String(id)
+      ))
+    ) {
+      throw new HttpException('', 412);
+    }
+
     return this._integrationService.createOrUpdateIntegration(
       additionalSettings,
       !!integrationProvider.oneTimeToken,

@@ -55,7 +55,7 @@ export class IntegrationRepository {
     mentions: { name: string; username: string; image: string }[]
   ) {
     if (mentions.length === 0) {
-      return [];
+      return [] as any[];
     }
     return this._mentions.model.mentions.createMany({
       data: mentions.map((mention) => ({
@@ -66,6 +66,19 @@ export class IntegrationRepository {
       })),
       skipDuplicates: true,
     });
+  }
+
+  async checkPreviousConnections(org: string, id: string) {
+    const findIt = await this._integration.model.integration.findFirst({
+      where: {
+        organizationId: {
+          not: org,
+        },
+        rootInternalId: id.split('_').pop(),
+      },
+    });
+
+    return findIt;
   }
 
   updateProviderSettings(org: string, id: string, settings: string) {
