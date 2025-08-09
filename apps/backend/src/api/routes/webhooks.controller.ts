@@ -14,13 +14,10 @@ import { ApiTags } from '@nestjs/swagger';
 import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import {
-  AuthorizationActions,
-  Sections,
-} from '@gitroom/backend/services/auth/permissions/permissions.service';
-import {
   UpdateDto,
   WebhooksDto,
 } from '@gitroom/nestjs-libraries/dtos/webhooks/webhooks.dto';
+import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 
 @ApiTags('Webhooks')
 @Controller('/webhooks')

@@ -1,51 +1,87 @@
 import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
-import { useFormatting } from '@gitroom/frontend/components/launches/helpers/use.formatting';
 import clsx from 'clsx';
 import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
 import { FC } from 'react';
 import { textSlicer } from '@gitroom/helpers/utils/count.length';
-import interClass from '@gitroom/react/helpers/inter.font';
+import Image from 'next/image';
+import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
+import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
+
 export const GeneralPreviewComponent: FC<{
   maximumCharacters?: number;
 }> = (props) => {
   const { value: topValue, integration } = useIntegration();
+  const current = useLaunchStore((state) => state.current);
   const mediaDir = useMediaDirectory();
-  const newValues = useFormatting(topValue, {
-    removeMarkdown: true,
-    saveBreaklines: true,
-    specialFunc: (text: string) => {
-      const { start, end } = textSlicer(
-        integration?.identifier || '',
-        props.maximumCharacters || 10000,
-        text
-      );
-      return (
-        text.slice(start, end) +
-        '<mark class="bg-red-500" data-tooltip-id="tooltip" data-tooltip-content="This text will be cropped">' +
-        text?.slice(end) +
-        '</mark>'
-      );
-    },
+
+  const renderContent = topValue.map((p) => {
+    const newContent = stripHtmlValidation(
+      'normal',
+      p.content.replace(
+        /<span.*?data-mention-id="([.\s\S]*?)"[.\s\S]*?>([.\s\S]*?)<\/span>/gi,
+        (match, match1, match2) => {
+          return `[[[${match2}]]]`;
+        }
+      ),
+      true
+    );
+
+    const { start, end } = textSlicer(
+      integration?.identifier || '',
+      props.maximumCharacters || 10000,
+      newContent
+    );
+
+    const finalValue =
+      newContent
+        .slice(start, end)
+        .replace(/\[\[\[([.\s\S]*?)]]]/, (match, match1) => {
+          return `<span class="font-bold font-[arial]" style="color: #ae8afc">${match1}</span>`;
+        }) +
+      `<mark class="bg-red-500" data-tooltip-id="tooltip" data-tooltip-content="This text will be cropped">` +
+      newContent.slice(end).replace(/\[\[\[([.\s\S]*?)]]]/, (match, match1) => {
+        return `<span class="font-bold font-[arial]" style="color: #ae8afc">${match1}</span>`;
+      }) +
+      `</mark>`;
+
+    return { text: finalValue, images: p.image };
   });
+
   return (
     <div className={clsx('w-full md:w-[555px] px-[16px]')}>
       <div className="w-full h-full relative flex flex-col">
-        {newValues.map((value, index) => (
+        {renderContent.map((value, index) => (
           <div
             key={`tweet_${index}`}
             style={{}}
             className={clsx(
               `flex gap-[8px] relative`,
-              index === newValues.length - 1 ? 'pb-[12px]' : 'pb-[24px]'
+              index === renderContent.length - 1 ? 'pb-[12px]' : 'pb-[24px]'
             )}
           >
             <div className="w-[40px] flex flex-col items-center">
-              <img
-                src={integration?.picture || '/no-picture.jpg'}
-                alt="x"
-                className="rounded-full relative z-[2]"
-              />
+              <div className="relative">
+                <img
+                  src={
+                    current === 'global'
+                      ? '/no-picture.jpg'
+                      : integration?.picture || '/no-picture.jpg'
+                  }
+                  alt="x"
+                  className="rounded-full relative z-[2]"
+                />
+
+                {current !== 'global' && (
+                  <Image
+                    src={`/icons/platforms/${integration?.identifier}.png`}
+                    className="rounded-full absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
+                    alt={integration.identifier}
+                    width={20}
+                    height={20}
+                  />
+                )}
+              </div>
               {index !== topValue.length - 1 && (
                 <div className="flex-1 w-[2px] h-[calc(100%-10px)] bg-customColor25 absolute top-[10px] z-[1]" />
               )}
@@ -53,7 +89,7 @@ export const GeneralPreviewComponent: FC<{
             <div className="flex-1 flex flex-col gap-[4px]">
               <div className="flex">
                 <div className="h-[22px] text-[15px] font-[700]">
-                  {integration?.name}
+                  {current === 'global' ? 'Global Edit' : integration?.name}
                 </div>
                 <div className="text-[15px] text-customColor26 mt-[1px] ms-[2px]">
                   <svg
@@ -69,11 +105,13 @@ export const GeneralPreviewComponent: FC<{
                   </svg>
                 </div>
                 <div className="text-[15px] font-[400] text-customColor27 ms-[4px]">
-                  {integration?.display || '@username'}
+                  {current === 'global'
+                    ? ''
+                    : integration?.display || '@username'}
                 </div>
               </div>
-              <pre
-                className={clsx('text-wrap', interClass)}
+              <div
+                className={clsx('text-wrap whitespace-pre', 'preview')}
                 dangerouslySetInnerHTML={{
                   __html: value.text,
                 }}

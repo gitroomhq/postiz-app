@@ -11,6 +11,7 @@ interface VariableContextInterface {
   plontoKey: string;
   storageProvider: 'local' | 'cloudflare';
   backendUrl: string;
+  environment: string;
   discordUrl: string;
   uploadDirectory: string;
   facebookPixel: string;
@@ -18,8 +19,11 @@ interface VariableContextInterface {
   neynarClientId: string;
   isSecured: boolean;
   disableImageCompression: boolean;
+  disableXAnalytics: boolean;
   language: string;
   tolt: string;
+  transloadit: string[];
+  sentryDsn: string;
 }
 const VariableContext = createContext({
   billingEnabled: false,
@@ -38,8 +42,11 @@ const VariableContext = createContext({
   facebookPixel: '',
   neynarClientId: '',
   disableImageCompression: false,
+  disableXAnalytics: false,
   language: '',
   tolt: '',
+  transloadit: [],
+  sentryDsn: '',
 } as VariableContextInterface);
 export const VariableContextComponent: FC<
   VariableContextInterface & {

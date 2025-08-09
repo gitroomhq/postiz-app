@@ -11,7 +11,6 @@ import { clsx } from 'clsx';
 import { useFormContext } from 'react-hook-form';
 import dayjs from 'dayjs';
 import { useShowPostSelector } from '../../../../apps/frontend/src/components/post-url-selector/post.url.selector';
-import interClass from '../helpers/inter.font';
 import { TranslatedLabel } from '../translation/translated-label';
 
 export const Canonical: FC<
@@ -59,7 +58,7 @@ export const Canonical: FC<
   return (
     <div className="flex flex-col gap-[6px]">
       <div className="flex items-center gap-[3px]">
-        <div className={`${interClass} text-[14px]`}>
+        <div className={`text-[14px]`}>
           <TranslatedLabel
             label={label}
             translationKey={translationKey}

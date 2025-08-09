@@ -13,10 +13,12 @@ import { DribbbleDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-sett
 import mime from 'mime-types';
 
 export class DribbbleProvider extends SocialAbstract implements SocialProvider {
+  override maxConcurrentJob = 3; // Dribbble has moderate API limits
   identifier = 'dribbble';
   name = 'Dribbble';
   isBetweenSteps = false;
   scopes = ['public', 'upload'];
+  editor = 'normal' as const;
 
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const { access_token, expires_in } = await (
@@ -130,13 +132,13 @@ export class DribbbleProvider extends SocialAbstract implements SocialProvider {
     postDetails: PostDetails<DribbbleDto>[]
   ): Promise<PostResponse[]> {
     const { data, status } = await axios.get(
-      postDetails?.[0]?.media?.[0]?.url!,
+      postDetails?.[0]?.media?.[0]?.path!,
       {
         responseType: 'stream',
       }
     );
 
-    const slash = postDetails?.[0]?.media?.[0]?.url.split('/').at(-1);
+    const slash = postDetails?.[0]?.media?.[0]?.path.split('/').at(-1);
 
     const formData = new FormData();
     formData.append('image', data, {

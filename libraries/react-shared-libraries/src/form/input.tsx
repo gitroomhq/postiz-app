@@ -10,7 +10,6 @@ import {
 } from 'react';
 import { clsx } from 'clsx';
 import { useFormContext, useWatch } from 'react-hook-form';
-import interClass from '../helpers/inter.font';
 import { TranslatedLabel } from '../translation/translated-label';
 
 export const Input: FC<
@@ -53,7 +52,7 @@ export const Input: FC<
   return (
     <div className="flex flex-col gap-[6px]">
       {!!label && (
-        <div className={`${interClass} text-[14px]`}>
+        <div className={`text-[14px]`}>
           <TranslatedLabel
             label={label}
             translationKey={translationKey}
@@ -63,14 +62,14 @@ export const Input: FC<
       )}
       <div
         className={clsx(
-          'bg-input h-[44px] border-fifth border rounded-[4px] text-inputText placeholder-inputText flex items-center justify-center',
+          'bg-newBgColorInner h-[42px] border-newTableBorder border rounded-[8px] text-textColor placeholder-textColor flex items-center justify-center',
           className
         )}
       >
         {icon && <div className="ps-[16px]">{icon}</div>}
         <input
           className={clsx(
-            'h-full bg-transparent outline-none flex-1',
+            'h-full bg-transparent outline-none flex-1 text-[14px] text-textColor',
             icon ? 'pl-[8px] pe-[16px]' : 'px-[16px]'
           )}
           {...(disableForm ? {} : form.register(props.name))}

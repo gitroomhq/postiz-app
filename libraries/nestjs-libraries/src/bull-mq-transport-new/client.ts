@@ -77,6 +77,19 @@ export class BullMqClient extends ClientProxy {
     );
   }
 
+  async checkForStuckWaitingJobs(queueName: string) {
+    const queue = this.getQueue(queueName);
+    const getJobs = await queue.getJobs('waiting' as const);
+    const now = Date.now();
+    const thresholdMs = 60 * 60 * 1000;
+    return {
+      valid: !getJobs.some((job) => {
+        const age = now - job.timestamp;
+        return age > thresholdMs;
+      }),
+    };
+  }
+
   async dispatchEvent(packet: ReadPacket<any>): Promise<any> {
     console.log('event to dispatch: ', packet);
     const queue = this.getQueue(packet.pattern);

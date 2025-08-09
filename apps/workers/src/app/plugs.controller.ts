@@ -14,7 +14,14 @@ export class PlugsController {
     totalRuns: number;
     currentRun: number;
   }) {
-    return this._integrationService.processPlugs(data);
+    try {
+      return await this._integrationService.processPlugs(data);
+    } catch (err) {
+      console.log(
+        "Unhandled error, let's avoid crashing the plugs worker",
+        err
+      );
+    }
   }
 
   @EventPattern('internal-plugs', Transport.REDIS)
@@ -27,6 +34,13 @@ export class PlugsController {
     delay: number;
     information: any;
   }) {
-    return this._integrationService.processInternalPlug(data);
+    try {
+      return await this._integrationService.processInternalPlug(data);
+    } catch (err) {
+      console.log(
+        "Unhandled error, let's avoid crashing the internal plugs worker",
+        err
+      );
+    }
   }
 }

@@ -11,10 +11,12 @@ import { useClickOutside } from '@mantine/hooks';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useToaster } from '@gitroom/react/toaster/toaster';
-import interClass from '@gitroom/react/helpers/inter.font';
 import { useModals } from '@mantine/modals';
 import { TimeTable } from '@gitroom/frontend/components/launches/time.table';
-import { useCalendar } from '@gitroom/frontend/components/launches/calendar.context';
+import {
+  Integrations,
+  useCalendar,
+} from '@gitroom/frontend/components/launches/calendar.context';
 import { BotPicture } from '@gitroom/frontend/components/launches/bot.picture';
 import { CustomerModal } from '@gitroom/frontend/components/launches/customer.modal';
 import { Integration } from '@prisma/client';
@@ -22,6 +24,11 @@ import { SettingsModal } from '@gitroom/frontend/components/launches/settings.mo
 import { CustomVariables } from '@gitroom/frontend/components/launches/add.provider.component';
 import { useRouter } from 'next/navigation';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
+import dayjs from 'dayjs';
+import { ModalWrapperComponent } from '@gitroom/frontend/components/new-launch/modal.wrapper.component';
+import copy from 'copy-to-clipboard';
+
 export const Menu: FC<{
   canEnable: boolean;
   canDisable: boolean;
@@ -50,7 +57,7 @@ export const Menu: FC<{
 
   const fetch = useFetch();
   const router = useRouter();
-  const { integrations } = useCalendar();
+  const { integrations, reloadCalendarView } = useCalendar();
   const toast = useToaster();
   const modal = useModals();
   const [show, setShow] = useState(false);
@@ -112,6 +119,7 @@ export const Menu: FC<{
     setShow(false);
     onChange(true);
   }, []);
+
   const enableChannel = useCallback(async () => {
     await fetch('/integrations/enable', {
       method: 'POST',
@@ -123,6 +131,7 @@ export const Menu: FC<{
     setShow(false);
     onChange(false);
   }, []);
+
   const editTimeTable = useCallback(() => {
     const findIntegration = integrations.find(
       (integration) => integration.id === id
@@ -135,10 +144,60 @@ export const Menu: FC<{
       withCloseButton: false,
       closeOnEscape: false,
       closeOnClickOutside: false,
-      children: <TimeTable integration={findIntegration!} mutate={mutate} />,
+      children: (
+        <ModalWrapperComponent title="Time Table Slots" ask={true}>
+          <TimeTable integration={findIntegration!} mutate={mutate} />
+        </ModalWrapperComponent>
+      ),
     });
     setShow(false);
   }, [integrations]);
+
+  const copyChannelId = useCallback(
+    (integration: Integrations) => async () => {
+      setShow(false);
+      const channelId = integration.id;
+      copy(channelId);
+      toast.show(`Channel ID ${channelId} copied to clipboard`, 'success');
+    },
+    []
+  );
+
+  const createPost = useCallback(
+    (integration: Integrations) => async () => {
+      setShow(false);
+
+      const { date } = await (
+        await fetch(`/posts/find-slot/${integration.id}`)
+      ).json();
+
+      modal.openModal({
+        closeOnClickOutside: false,
+        closeOnEscape: false,
+        withCloseButton: false,
+        classNames: {
+          modal: 'w-[100%] max-w-[1400px] bg-transparent text-textColor',
+        },
+        children: (
+          <AddEditModal
+            allIntegrations={integrations.map((p) => ({
+              ...p,
+            }))}
+            reopenModal={createPost(integration)}
+            mutate={reloadCalendarView}
+            integrations={integrations}
+            selectedChannels={[integration.id]}
+            focusedChannel={integration.id}
+            date={dayjs.utc(date).local()}
+          />
+        ),
+        size: '80%',
+        title: ``,
+      });
+    },
+    [integrations]
+  );
+
   const changeBotPicture = useCallback(() => {
     const findIntegration = integrations.find(
       (integration) => integration.id === id
@@ -193,21 +252,23 @@ export const Menu: FC<{
     );
     modal.openModal({
       classNames: {
-        modal: 'w-[100%] max-w-[600px] bg-transparent text-textColor',
+        modal: 'md',
       },
-      size: '100%',
+      title: '',
       withCloseButton: false,
       closeOnEscape: true,
       closeOnClickOutside: true,
       children: (
-        <CustomerModal
-          // @ts-ignore
-          integration={findIntegration}
-          onClose={() => {
-            mutate();
-            toast.show('Customer Updated', 'success');
-          }}
-        />
+        <ModalWrapperComponent title="Move / Add to customer">
+          <CustomerModal
+            // @ts-ignore
+            integration={findIntegration}
+            onClose={() => {
+              mutate();
+              toast.show('Customer Updated', 'success');
+            }}
+          />
+        </ModalWrapperComponent>
       ),
     });
     setShow(false);
@@ -217,14 +278,16 @@ export const Menu: FC<{
       title: '',
       withCloseButton: false,
       classNames: {
-        modal: 'bg-transparent text-textColor',
+        modal: 'md',
       },
       children: (
-        <CustomVariables
-          identifier={findIntegration.identifier}
-          gotoUrl={(url: string) => router.push(url)}
-          variables={findIntegration.customFields}
-        />
+        <ModalWrapperComponent title="Custom URL">
+          <CustomVariables
+            identifier={findIntegration.identifier}
+            gotoUrl={(url: string) => router.push(url)}
+            variables={findIntegration.customFields}
+          />
+        </ModalWrapperComponent>
       ),
     });
   }, []);
@@ -240,22 +303,75 @@ export const Menu: FC<{
         height="24"
         viewBox="0 0 24 24"
         fill="none"
+        className="text-menuDots group-hover/profile:text-menuDotsHover"
       >
         <path
           d="M13.125 12C13.125 12.2225 13.059 12.44 12.9354 12.625C12.8118 12.81 12.6361 12.9542 12.4305 13.0394C12.225 13.1245 11.9988 13.1468 11.7805 13.1034C11.5623 13.06 11.3618 12.9528 11.2045 12.7955C11.0472 12.6382 10.94 12.4377 10.8966 12.2195C10.8532 12.0012 10.8755 11.775 10.9606 11.5695C11.0458 11.3639 11.19 11.1882 11.375 11.0646C11.56 10.941 11.7775 10.875 12 10.875C12.2984 10.875 12.5845 10.9935 12.7955 11.2045C13.0065 11.4155 13.125 11.7016 13.125 12ZM12 6.75C12.2225 6.75 12.44 6.68402 12.625 6.5604C12.81 6.43679 12.9542 6.26109 13.0394 6.05552C13.1245 5.84995 13.1468 5.62375 13.1034 5.40552C13.06 5.1873 12.9528 4.98684 12.7955 4.82951C12.6382 4.67217 12.4377 4.56503 12.2195 4.52162C12.0012 4.47821 11.775 4.50049 11.5695 4.58564C11.3639 4.67078 11.1882 4.81498 11.0646 4.99998C10.941 5.18499 10.875 5.4025 10.875 5.625C10.875 5.92337 10.9935 6.20952 11.2045 6.4205C11.4155 6.63147 11.7016 6.75 12 6.75ZM12 17.25C11.7775 17.25 11.56 17.316 11.375 17.4396C11.19 17.5632 11.0458 17.7389 10.9606 17.9445C10.8755 18.15 10.8532 18.3762 10.8966 18.5945C10.94 18.8127 11.0472 19.0132 11.2045 19.1705C11.3618 19.3278 11.5623 19.435 11.7805 19.4784C11.9988 19.5218 12.225 19.4995 12.4305 19.4144C12.6361 19.3292 12.8118 19.185 12.9354 19C13.059 18.815 13.125 18.5975 13.125 18.375C13.125 18.0766 13.0065 17.7905 12.7955 17.5795C12.5845 17.3685 12.2984 17.25 12 17.25Z"
-          fill="#506490"
+          fill="currentColor"
         />
       </svg>
       {show && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className={`absolute top-[100%] start-0 p-[8px] px-[20px] bg-fifth flex flex-col gap-[16px] z-[100] rounded-[8px] border border-tableBorder ${interClass} text-nowrap`}
+          className={`absolute top-[100%] start-0 p-[12px] bg-newBgColorInner shadow-menu flex flex-col gap-[16px] z-[100] rounded-[8px] border border-tableBorder text-nowrap`}
         >
+          {canDisable && !findIntegration?.refreshNeeded && (
+            <div
+              className="flex gap-[12px] items-center py-[8px] px-[10px]"
+              onClick={createPost(findIntegration!)}
+            >
+              <div>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 32 32"
+                  fill="none"
+                >
+                  <path
+                    d="M21 4H11C9.14409 4.00199 7.36477 4.74012 6.05245 6.05245C4.74012 7.36477 4.00199 9.14409 4 11V21C4.00199 22.8559 4.74012 24.6352 6.05245 25.9476C7.36477 27.2599 9.14409 27.998 11 28H17C17.1075 27.9999 17.2142 27.9826 17.3162 27.9487C20.595 26.855 26.855 20.595 27.9487 17.3162C27.9826 17.2142 27.9999 17.1075 28 17V11C27.998 9.14409 27.2599 7.36477 25.9476 6.05245C24.6352 4.74012 22.8559 4.00199 21 4ZM17 25.9275V22C17 20.6739 17.5268 19.4021 18.4645 18.4645C19.4021 17.5268 20.6739 17 22 17H25.9275C24.77 19.6938 19.6938 24.77 17 25.9275Z"
+                    fill="green"
+                  />
+                </svg>
+              </div>
+              <div className="text-[14px]">
+                {t('create_new_post', 'Create a new post')}
+              </div>
+            </div>
+          )}
+          <div
+            className="flex gap-[12px] items-center py-[8px] px-[10px]"
+            onClick={copyChannelId(findIntegration)}
+          >
+            <div>
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 26 28"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M13 0.749756C13.2093 0.749756 13.4155 0.802887 13.5986 0.904053L13.5996 0.905029L24.5996 6.92749C24.7962 7.03506 24.9608 7.19374 25.0752 7.38647C25.1609 7.53099 25.2159 7.69083 25.2383 7.8562L25.25 8.02319V19.9773C25.25 20.2016 25.1896 20.4221 25.0752 20.615C24.9608 20.8078 24.7963 20.9664 24.5996 21.074L13.5996 27.0955H13.5986C13.4153 27.1965 13.2093 27.2498 13 27.2498L12.8438 27.24C12.689 27.2203 12.5388 27.1712 12.4014 27.0955H12.4004L1.40039 21.074C1.20372 20.9664 1.03916 20.8078 0.924805 20.615C0.810442 20.4221 0.750028 20.2016 0.75 19.9773V8.02222L0.761719 7.85522C0.784096 7.68984 0.839135 7.53004 0.924805 7.3855C1.03917 7.19259 1.20366 7.03416 1.40039 6.92651L12.4004 0.905029L12.4014 0.904053C12.5845 0.802887 12.7907 0.749756 13 0.749756ZM24.0098 8.25659L13.5098 14.0066L13.25 14.1492V26.7195L13.9902 26.3132L18.4902 23.8484L18.75 23.7058V16.9998L18.7588 16.9333C18.7647 16.9119 18.7737 16.8911 18.7852 16.8718C18.808 16.8333 18.8406 16.8015 18.8799 16.78L24.4902 13.7087L24.75 13.5662V7.85132L24.0098 8.25659ZM24.0098 14.5427L19.5098 17.0056L19.25 17.1472V23.4333L19.9902 23.0291L24.3652 20.6365L24.625 20.4939V20.3914C24.6326 20.3798 24.6415 20.3691 24.6484 20.3572C24.6978 20.2723 24.7299 20.1784 24.7432 20.0818L24.75 19.9841V14.1375L24.0098 14.5427ZM18.3721 4.34741L13.1221 7.22241C13.0855 7.2424 13.0446 7.25359 13.0029 7.25366C12.961 7.25366 12.9196 7.2425 12.8828 7.22241L7.63281 4.34741L7.39258 4.21655L7.15234 4.34741L2.32129 6.99097L1.51953 7.43042L2.32129 7.8689L12.7598 13.5837L13 13.7146L13.2402 13.5837L23.6836 7.8689L24.4854 7.43042L23.6836 6.99097L18.8525 4.34741L18.6123 4.21655L18.3721 4.34741ZM12.9951 1.25073C12.8693 1.25073 12.7451 1.28213 12.6348 1.34253L8.71289 3.49292L7.91309 3.9314L8.71387 4.36987L12.7598 6.58374L13 6.71558L13.2402 6.58374L17.2803 4.36987L18.0811 3.9314L17.2803 3.49292L13.3555 1.34253L13.2695 1.30249C13.2115 1.27967 13.1507 1.2644 13.0889 1.25659L12.9951 1.25073ZM6.75 17.1433L6.49023 17.0017L1.99023 14.5388L1.25 14.1335V19.9734C1.24887 20.1061 1.2828 20.2371 1.34863 20.3523C1.39806 20.4387 1.46456 20.5137 1.54297 20.574L1.625 20.6296L1.63574 20.6355L6.01074 23.0242L6.75 23.4275V17.1433ZM12.75 14.1501L12.4902 14.0076L1.99023 8.25757L1.25 7.85229V13.5671L1.50977 13.7097L7.12012 16.781C7.15938 16.8025 7.19198 16.8343 7.21484 16.8728C7.22629 16.8921 7.23533 16.9129 7.24121 16.9343L7.25 17.0007V23.7058L7.50977 23.8484L12.0098 26.3132L12.75 26.7195V14.1501Z"
+                  fill="#343330"
+                />
+                <path
+                  d="M13 0.749756C13.2093 0.749756 13.4155 0.802887 13.5986 0.904053L13.5996 0.905029L24.5996 6.92749C24.7962 7.03506 24.9608 7.19374 25.0752 7.38647C25.1609 7.53099 25.2159 7.69083 25.2383 7.8562L25.25 8.02319V19.9773C25.25 20.2016 25.1896 20.4221 25.0752 20.615C24.9608 20.8078 24.7963 20.9664 24.5996 21.074L13.5996 27.0955H13.5986C13.4153 27.1965 13.2093 27.2498 13 27.2498L12.8438 27.24C12.689 27.2203 12.5388 27.1712 12.4014 27.0955H12.4004L1.40039 21.074C1.20372 20.9664 1.03916 20.8078 0.924805 20.615C0.810442 20.4221 0.750028 20.2016 0.75 19.9773V8.02222L0.761719 7.85522C0.784096 7.68984 0.839135 7.53004 0.924805 7.3855C1.03917 7.19259 1.20366 7.03416 1.40039 6.92651L12.4004 0.905029L12.4014 0.904053C12.5845 0.802887 12.7907 0.749756 13 0.749756ZM24.0098 8.25659L13.5098 14.0066L13.25 14.1492V26.7195L13.9902 26.3132L18.4902 23.8484L18.75 23.7058V16.9998L18.7588 16.9333C18.7647 16.9119 18.7737 16.8911 18.7852 16.8718C18.808 16.8333 18.8406 16.8015 18.8799 16.78L24.4902 13.7087L24.75 13.5662V7.85132L24.0098 8.25659ZM24.0098 14.5427L19.5098 17.0056L19.25 17.1472V23.4333L19.9902 23.0291L24.3652 20.6365L24.625 20.4939V20.3914C24.6326 20.3798 24.6415 20.3691 24.6484 20.3572C24.6978 20.2723 24.7299 20.1784 24.7432 20.0818L24.75 19.9841V14.1375L24.0098 14.5427ZM18.3721 4.34741L13.1221 7.22241C13.0855 7.2424 13.0446 7.25359 13.0029 7.25366C12.961 7.25366 12.9196 7.2425 12.8828 7.22241L7.63281 4.34741L7.39258 4.21655L7.15234 4.34741L2.32129 6.99097L1.51953 7.43042L2.32129 7.8689L12.7598 13.5837L13 13.7146L13.2402 13.5837L23.6836 7.8689L24.4854 7.43042L23.6836 6.99097L18.8525 4.34741L18.6123 4.21655L18.3721 4.34741ZM12.9951 1.25073C12.8693 1.25073 12.7451 1.28213 12.6348 1.34253L8.71289 3.49292L7.91309 3.9314L8.71387 4.36987L12.7598 6.58374L13 6.71558L13.2402 6.58374L17.2803 4.36987L18.0811 3.9314L17.2803 3.49292L13.3555 1.34253L13.2695 1.30249C13.2115 1.27967 13.1507 1.2644 13.0889 1.25659L12.9951 1.25073ZM6.75 17.1433L6.49023 17.0017L1.99023 14.5388L1.25 14.1335V19.9734C1.24887 20.1061 1.2828 20.2371 1.34863 20.3523C1.39806 20.4387 1.46456 20.5137 1.54297 20.574L1.625 20.6296L1.63574 20.6355L6.01074 23.0242L6.75 23.4275V17.1433ZM12.75 14.1501L12.4902 14.0076L1.99023 8.25757L1.25 7.85229V13.5671L1.50977 13.7097L7.12012 16.781C7.15938 16.8025 7.19198 16.8343 7.21484 16.8728C7.22629 16.8921 7.23533 16.9129 7.24121 16.9343L7.25 17.0007V23.7058L7.50977 23.8484L12.0098 26.3132L12.75 26.7195V14.1501Z"
+                  stroke="currentColor"
+                />
+                <path
+                  d="M13 0.749756C13.2093 0.749756 13.4155 0.802887 13.5986 0.904053L13.5996 0.905029L24.5996 6.92749C24.7962 7.03506 24.9608 7.19374 25.0752 7.38647C25.1609 7.53099 25.2159 7.69083 25.2383 7.8562L25.25 8.02319V19.9773C25.25 20.2016 25.1896 20.4221 25.0752 20.615C24.9608 20.8078 24.7963 20.9664 24.5996 21.074L13.5996 27.0955H13.5986C13.4153 27.1965 13.2093 27.2498 13 27.2498L12.8438 27.24C12.689 27.2203 12.5388 27.1712 12.4014 27.0955H12.4004L1.40039 21.074C1.20372 20.9664 1.03916 20.8078 0.924805 20.615C0.810442 20.4221 0.750028 20.2016 0.75 19.9773V8.02222L0.761719 7.85522C0.784096 7.68984 0.839135 7.53004 0.924805 7.3855C1.03917 7.19259 1.20366 7.03416 1.40039 6.92651L12.4004 0.905029L12.4014 0.904053C12.5845 0.802887 12.7907 0.749756 13 0.749756ZM24.0098 8.25659L13.5098 14.0066L13.25 14.1492V26.7195L13.9902 26.3132L18.4902 23.8484L18.75 23.7058V16.9998L18.7588 16.9333C18.7647 16.9119 18.7737 16.8911 18.7852 16.8718C18.808 16.8333 18.8406 16.8015 18.8799 16.78L24.4902 13.7087L24.75 13.5662V7.85132L24.0098 8.25659ZM24.0098 14.5427L19.5098 17.0056L19.25 17.1472V23.4333L19.9902 23.0291L24.3652 20.6365L24.625 20.4939V20.3914C24.6326 20.3798 24.6415 20.3691 24.6484 20.3572C24.6978 20.2723 24.7299 20.1784 24.7432 20.0818L24.75 19.9841V14.1375L24.0098 14.5427ZM18.3721 4.34741L13.1221 7.22241C13.0855 7.2424 13.0446 7.25359 13.0029 7.25366C12.961 7.25366 12.9196 7.2425 12.8828 7.22241L7.63281 4.34741L7.39258 4.21655L7.15234 4.34741L2.32129 6.99097L1.51953 7.43042L2.32129 7.8689L12.7598 13.5837L13 13.7146L13.2402 13.5837L23.6836 7.8689L24.4854 7.43042L23.6836 6.99097L18.8525 4.34741L18.6123 4.21655L18.3721 4.34741ZM12.9951 1.25073C12.8693 1.25073 12.7451 1.28213 12.6348 1.34253L8.71289 3.49292L7.91309 3.9314L8.71387 4.36987L12.7598 6.58374L13 6.71558L13.2402 6.58374L17.2803 4.36987L18.0811 3.9314L17.2803 3.49292L13.3555 1.34253L13.2695 1.30249C13.2115 1.27967 13.1507 1.2644 13.0889 1.25659L12.9951 1.25073ZM6.75 17.1433L6.49023 17.0017L1.99023 14.5388L1.25 14.1335V19.9734C1.24887 20.1061 1.2828 20.2371 1.34863 20.3523C1.39806 20.4387 1.46456 20.5137 1.54297 20.574L1.625 20.6296L1.63574 20.6355L6.01074 23.0242L6.75 23.4275V17.1433ZM12.75 14.1501L12.4902 14.0076L1.99023 8.25757L1.25 7.85229V13.5671L1.50977 13.7097L7.12012 16.781C7.15938 16.8025 7.19198 16.8343 7.21484 16.8728C7.22629 16.8921 7.23533 16.9129 7.24121 16.9343L7.25 17.0007V23.7058L7.50977 23.8484L12.0098 26.3132L12.75 26.7195V14.1501Z"
+                  stroke="currentColor"
+                />
+              </svg>
+            </div>
+            <div className="text-[14px]">{t('copy_id', 'Copy Channel ID')}</div>
+          </div>
           {canDisable &&
             findIntegration?.refreshNeeded &&
             !findIntegration.customFields && (
               <div
-                className="flex gap-[12px] items-center"
+                className="flex gap-[12px] items-center py-[8px] px-[10px]"
                 onClick={refreshChannel(findIntegration!)}
               >
                 <div>
@@ -272,14 +388,14 @@ export const Menu: FC<{
                     />
                   </svg>
                 </div>
-                <div className="text-[12px]">
+                <div className="text-[14px]">
                   {t('reconnect_channel', 'Reconnect channel')}
                 </div>
               </div>
             )}
           {!!findIntegration?.isCustomFields && (
             <div
-              className="flex gap-[12px] items-center"
+              className="flex gap-[12px] items-center py-[8px] px-[10px]"
               onClick={updateCredentials}
             >
               <div>
@@ -287,23 +403,23 @@ export const Menu: FC<{
                   width={18}
                   height={18}
                   viewBox="0 0 32 32"
-                  fill="yellow"
+                  fill="currentColor"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
                     d="M3.00079 15.9999C3.00343 13.6138 3.95249 11.3262 5.63975 9.63891C7.327 7.95165 9.61465 7.00259 12.0008 6.99995H25.587L24.2933 5.70745C24.1056 5.5198 24.0002 5.26531 24.0002 4.99995C24.0002 4.73458 24.1056 4.48009 24.2933 4.29245C24.4809 4.1048 24.7354 3.99939 25.0008 3.99939C25.2661 3.99939 25.5206 4.10481 25.7083 4.29245L28.7083 7.29245C28.8013 7.38532 28.875 7.49561 28.9253 7.61701C28.9757 7.7384 29.0016 7.86853 29.0016 7.99995C29.0016 8.13136 28.9757 8.26149 28.9253 8.38289C28.875 8.50428 28.8013 8.61457 28.7083 8.70745L25.7083 11.7074C25.5206 11.8951 25.2661 12.0005 25.0008 12.0005C24.7354 12.0005 24.4809 11.8951 24.2933 11.7074C24.1056 11.5198 24.0002 11.2653 24.0002 10.9999C24.0002 10.7346 24.1056 10.4801 24.2933 10.2924L25.587 8.99995H12.0008C10.1449 9.00193 8.36556 9.74007 7.05323 11.0524C5.74091 12.3647 5.00277 14.144 5.00079 15.9999C5.00079 16.2652 4.89543 16.5195 4.70789 16.7071C4.52036 16.8946 4.266 16.9999 4.00079 16.9999C3.73557 16.9999 3.48122 16.8946 3.29368 16.7071C3.10614 16.5195 3.00079 16.2652 3.00079 15.9999ZM28.0008 14.9999C27.7356 14.9999 27.4812 15.1053 27.2937 15.2928C27.1061 15.4804 27.0008 15.7347 27.0008 15.9999C26.9988 17.8559 26.2607 19.6352 24.9483 20.9475C23.636 22.2598 21.8567 22.998 20.0008 22.9999H6.41454L7.70829 21.7074C7.8012 21.6145 7.8749 21.5042 7.92518 21.3828C7.97546 21.2614 8.00134 21.1313 8.00134 20.9999C8.00134 20.8686 7.97546 20.7384 7.92518 20.6171C7.8749 20.4957 7.8012 20.3854 7.70829 20.2924C7.61538 20.1995 7.50508 20.1258 7.38368 20.0756C7.26229 20.0253 7.13218 19.9994 7.00079 19.9994C6.86939 19.9994 6.73928 20.0253 6.61789 20.0756C6.4965 20.1258 6.3862 20.1995 6.29329 20.2924L3.29329 23.2924C3.20031 23.3853 3.12655 23.4956 3.07623 23.617C3.0259 23.7384 3 23.8685 3 23.9999C3 24.1314 3.0259 24.2615 3.07623 24.3829C3.12655 24.5043 3.20031 24.6146 3.29329 24.7074L6.29329 27.7074C6.3862 27.8004 6.4965 27.8741 6.61789 27.9243C6.73928 27.9746 6.86939 28.0005 7.00079 28.0005C7.13218 28.0005 7.26229 27.9746 7.38368 27.9243C7.50508 27.8741 7.61538 27.8004 7.70829 27.7074C7.8012 27.6145 7.8749 27.5042 7.92518 27.3828C7.97546 27.2614 8.00134 27.1313 8.00134 26.9999C8.00134 26.8686 7.97546 26.7384 7.92518 26.6171C7.8749 26.4957 7.8012 26.3854 7.70829 26.2924L6.41454 24.9999H20.0008C22.3869 24.9973 24.6746 24.0482 26.3618 22.361C28.0491 20.6737 28.9981 18.3861 29.0008 15.9999C29.0008 15.7347 28.8954 15.4804 28.7079 15.2928C28.5204 15.1053 28.266 14.9999 28.0008 14.9999Z"
-                    fill="yellow"
+                    fill="currentColor"
                   />
                 </svg>
               </div>
-              <div className="text-[12px]">
+              <div className="text-[14px]">
                 {t('update_credentials', 'Update Credentials')}
               </div>
             </div>
           )}
           {findIntegration?.additionalSettings !== '[]' && (
             <div
-              className="flex gap-[12px] items-center"
+              className="flex gap-[12px] items-center py-[8px] px-[10px]"
               onClick={additionalSettings}
             >
               <div>
@@ -320,14 +436,14 @@ export const Menu: FC<{
                   />
                 </svg>
               </div>
-              <div className="text-[12px]">
+              <div className="text-[14px]">
                 {t('additional_settings', 'Additional Settings')}
               </div>
             </div>
           )}
           {(canChangeProfilePicture || canChangeNickName) && (
             <div
-              className="flex gap-[12px] items-center"
+              className="flex gap-[12px] items-center py-[8px] px-[10px]"
               onClick={changeBotPicture}
             >
               <div>
@@ -344,7 +460,7 @@ export const Menu: FC<{
                   />
                 </svg>
               </div>
-              <div className="text-[12px]">
+              <div className="text-[14px]">
                 {t('change_bot', 'Change Bot')}
                 {[
                   canChangeProfilePicture && 'Picture',
@@ -355,7 +471,10 @@ export const Menu: FC<{
               </div>
             </div>
           )}
-          <div className="flex gap-[12px] items-center" onClick={addToCustomer}>
+          <div
+            className="flex gap-[12px] items-center py-[8px] px-[10px]"
+            onClick={addToCustomer}
+          >
             <div>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -370,11 +489,14 @@ export const Menu: FC<{
                 />
               </svg>
             </div>
-            <div className="text-[12px]">
+            <div className="text-[14px]">
               {t('move_add_to_customer', 'Move / add to customer')}
             </div>
           </div>
-          <div className="flex gap-[12px] items-center" onClick={editTimeTable}>
+          <div
+            className="flex gap-[12px] items-center py-[8px] px-[10px]"
+            onClick={editTimeTable}
+          >
             <div>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -389,13 +511,13 @@ export const Menu: FC<{
                 />
               </svg>
             </div>
-            <div className="text-[12px]">
+            <div className="text-[14px]">
               {t('edit_time_slots', 'Edit Time Slots')}
             </div>
           </div>
           {canEnable && (
             <div
-              className="flex gap-[12px] items-center"
+              className="flex gap-[12px] items-center py-[8px] px-[10px]"
               onClick={enableChannel}
             >
               <div>
@@ -412,7 +534,7 @@ export const Menu: FC<{
                   />
                 </svg>
               </div>
-              <div className="text-[12px]">
+              <div className="text-[14px]">
                 {t('enable_channel', 'Enable Channel')}
               </div>
             </div>
@@ -420,7 +542,7 @@ export const Menu: FC<{
 
           {canDisable && (
             <div
-              className="flex gap-[12px] items-center"
+              className="flex gap-[12px] items-center py-[8px] px-[10px]"
               onClick={disableChannel}
             >
               <div>
@@ -437,13 +559,16 @@ export const Menu: FC<{
                   />
                 </svg>
               </div>
-              <div className="text-[12px]">
+              <div className="text-[14px]">
                 {t('disable_channel', 'Disable Channel')}
               </div>
             </div>
           )}
 
-          <div className="flex gap-[12px] items-center" onClick={deleteChannel}>
+          <div
+            className="flex gap-[12px] items-center py-[8px] px-[10px]"
+            onClick={deleteChannel}
+          >
             <div>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -458,7 +583,7 @@ export const Menu: FC<{
                 />
               </svg>
             </div>
-            <div className="text-[12px]">{t('delete', 'Delete')}</div>
+            <div className="text-[14px]">{t('delete', 'Delete')}</div>
           </div>
         </div>
       )}

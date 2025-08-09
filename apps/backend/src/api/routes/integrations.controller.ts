@@ -17,10 +17,6 @@ import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.reque
 import { Organization, User } from '@prisma/client';
 import { ApiKeyDto } from '@gitroom/nestjs-libraries/dtos/integrations/api.key.dto';
 import { IntegrationFunctionDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.function.dto';
-import {
-  AuthorizationActions,
-  Sections,
-} from '@gitroom/backend/services/auth/permissions/permissions.service';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { ApiTags } from '@nestjs/swagger';
@@ -37,6 +33,11 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { TelegramProvider } from '@gitroom/nestjs-libraries/integrations/social/telegram.provider';
+import {
+  AuthorizationActions,
+  Sections,
+} from '@gitroom/backend/services/auth/permissions/permission.exception.class';
+import { uniqBy } from 'lodash';
 
 @ApiTags('Integrations')
 @Controller('/integrations')
@@ -98,6 +99,7 @@ export class IntegrationsController {
             id: p.id,
             internalId: p.internalId,
             disabled: p.disabled,
+            editor: findIntegration.editor,
             picture: p.picture || '/no-picture.jpg',
             identifier: p.providerIdentifier,
             inBetweenSteps: p.inBetweenSteps,
@@ -245,8 +247,9 @@ export class IntegrationsController {
   ) {
     return this._integrationService.setTimes(org.id, id, body);
   }
-  @Post('/function')
-  async functionIntegration(
+
+  @Post('/mentions')
+  async mentions(
     @GetOrgFromRequest() org: Organization,
     @Body() body: IntegrationFunctionDto
   ) {
@@ -258,130 +261,120 @@ export class IntegrationsController {
       throw new Error('Invalid integration');
     }
 
-    if (getIntegration.type === 'social') {
-      const integrationProvider = this._integrationManager.getSocialIntegration(
-        getIntegration.providerIdentifier
+    let newList: any[] | {none: true} = [];
+    try {
+      newList = (await this.functionIntegration(org, body)) || [];
+    } catch (err) {
+      console.log(err);
+    }
+
+    if (!Array.isArray(newList) && newList?.none) {
+      return newList;
+    }
+
+    const list = await this._integrationService.getMentions(
+      getIntegration.providerIdentifier,
+      body?.data?.query
+    );
+
+    if (Array.isArray(newList) && newList.length) {
+      await this._integrationService.insertMentions(
+        getIntegration.providerIdentifier,
+        newList
+          .map((p: any) => ({
+            name: p.label || '',
+            username: p.id || '',
+            image: p.image || '',
+            doNotCache: p.doNotCache || false,
+          }))
+          .filter((f: any) => f.name && !f.doNotCache)
       );
-      if (!integrationProvider) {
-        throw new Error('Invalid provider');
-      }
-
-      if (integrationProvider[body.name]) {
-        try {
-          const load = await integrationProvider[body.name](
-            getIntegration.token,
-            body.data,
-            getIntegration.internalId,
-            getIntegration
-          );
-
-          return load;
-        } catch (err) {
-          if (err instanceof RefreshToken) {
-            const { accessToken, refreshToken, expiresIn, additionalSettings } =
-              await integrationProvider.refreshToken(
-                getIntegration.refreshToken
-              );
-
-            if (accessToken) {
-              await this._integrationService.createOrUpdateIntegration(
-                additionalSettings,
-                !!integrationProvider.oneTimeToken,
-                getIntegration.organizationId,
-                getIntegration.name,
-                getIntegration.picture!,
-                'social',
-                getIntegration.internalId,
-                getIntegration.providerIdentifier,
-                accessToken,
-                refreshToken,
-                expiresIn
-              );
-
-              getIntegration.token = accessToken;
-
-              if (integrationProvider.refreshWait) {
-                await timer(10000);
-              }
-              return this.functionIntegration(org, body);
-            } else {
-              await this._integrationService.disconnectChannel(
-                org.id,
-                getIntegration
-              );
-              return false;
-            }
-          }
-
-          return false;
-        }
-      }
-      throw new Error('Function not found');
     }
 
-    if (getIntegration.type === 'article') {
-      const integrationProvider =
-        this._integrationManager.getArticlesIntegration(
-          getIntegration.providerIdentifier
-        );
-      if (!integrationProvider) {
-        throw new Error('Invalid provider');
-      }
-
-      if (integrationProvider[body.name]) {
-        return integrationProvider[body.name](
-          getIntegration.token,
-          body.data,
-          getIntegration.internalId
-        );
-      }
-      throw new Error('Function not found');
-    }
+    return uniqBy(
+      [
+        ...list.map((p) => ({
+          id: p.username,
+          image: p.image,
+          label: p.name,
+        })),
+        ...newList as any[],
+      ],
+      (p) => p.id
+    ).filter((f) => f.label && f.id);
   }
 
-  @Post('/article/:integration/connect')
-  @CheckPolicies([AuthorizationActions.Create, Sections.CHANNEL])
-  async connectArticle(
+  @Post('/function')
+  async functionIntegration(
     @GetOrgFromRequest() org: Organization,
-    @Param('integration') integration: string,
-    @Body() api: ApiKeyDto
-  ) {
-    if (
-      !this._integrationManager
-        .getAllowedArticlesIntegrations()
-        .includes(integration)
-    ) {
-      throw new Error('Integration not allowed');
-    }
-
-    if (!api) {
-      throw new Error('Missing api');
-    }
-
-    const integrationProvider =
-      this._integrationManager.getArticlesIntegration(integration);
-    const { id, name, token, picture, username } =
-      await integrationProvider.authenticate(api.api);
-
-    if (!id) {
-      throw new Error('Invalid api key');
-    }
-
-    return this._integrationService.createOrUpdateIntegration(
-      undefined,
-      true,
+    @Body() body: IntegrationFunctionDto
+  ): Promise<any> {
+    const getIntegration = await this._integrationService.getIntegrationById(
       org.id,
-      name,
-      picture,
-      'article',
-      String(id),
-      integration,
-      token,
-      '',
-      undefined,
-      username,
-      false
+      body.id
     );
+    if (!getIntegration) {
+      throw new Error('Invalid integration');
+    }
+
+    const integrationProvider = this._integrationManager.getSocialIntegration(
+      getIntegration.providerIdentifier
+    );
+    if (!integrationProvider) {
+      throw new Error('Invalid provider');
+    }
+
+    // @ts-ignore
+    if (integrationProvider[body.name]) {
+      try {
+        // @ts-ignore
+        const load = await integrationProvider[body.name](
+          getIntegration.token,
+          body.data,
+          getIntegration.internalId,
+          getIntegration
+        );
+
+        return load;
+      } catch (err) {
+        if (err instanceof RefreshToken) {
+          const { accessToken, refreshToken, expiresIn, additionalSettings } =
+            await integrationProvider.refreshToken(getIntegration.refreshToken);
+
+          if (accessToken) {
+            await this._integrationService.createOrUpdateIntegration(
+              additionalSettings,
+              !!integrationProvider.oneTimeToken,
+              getIntegration.organizationId,
+              getIntegration.name,
+              getIntegration.picture!,
+              'social',
+              getIntegration.internalId,
+              getIntegration.providerIdentifier,
+              accessToken,
+              refreshToken,
+              expiresIn
+            );
+
+            getIntegration.token = accessToken;
+
+            if (integrationProvider.refreshWait) {
+              await timer(10000);
+            }
+            return this.functionIntegration(org, body);
+          } else {
+            await this._integrationService.disconnectChannel(
+              org.id,
+              getIntegration
+            );
+            return false;
+          }
+        }
+
+        return false;
+      }
+    }
+    throw new Error('Function not found');
   }
 
   @Post('/social/:integration/connect')

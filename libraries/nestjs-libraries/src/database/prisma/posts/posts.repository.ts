@@ -23,12 +23,59 @@ export class PostsRepository {
     private _popularPosts: PrismaRepository<'popularPosts'>,
     private _comments: PrismaRepository<'comments'>,
     private _tags: PrismaRepository<'tags'>,
-    private _tagsPosts: PrismaRepository<'tagsPosts'>
+    private _tagsPosts: PrismaRepository<'tagsPosts'>,
+    private _errors: PrismaRepository<'errors'>
   ) {}
+
+  checkPending15minutesBack() {
+    return this._post.model.post.findMany({
+      where: {
+        publishDate: {
+          lte: dayjs.utc().subtract(15, 'minute').toDate(),
+          gte: dayjs.utc().subtract(30, 'minute').toDate(),
+        },
+        state: 'QUEUE',
+        deletedAt: null,
+        parentPostId: null,
+      },
+      select: {
+        id: true,
+        publishDate: true,
+      },
+    });
+  }
+
+  searchForMissingThreeHoursPosts() {
+    return this._post.model.post.findMany({
+      where: {
+        integration: {
+          refreshNeeded: false,
+          inBetweenSteps: false,
+          disabled: false,
+        },
+        publishDate: {
+          gte: dayjs.utc().toDate(),
+          lt: dayjs.utc().add(3, 'hour').toDate(),
+        },
+        state: 'QUEUE',
+        deletedAt: null,
+        parentPostId: null,
+      },
+      select: {
+        id: true,
+        publishDate: true,
+      },
+    });
+  }
 
   getOldPosts(orgId: string, date: string) {
     return this._post.model.post.findMany({
       where: {
+        integration: {
+          refreshNeeded: false,
+          inBetweenSteps: false,
+          disabled: false,
+        },
         organizationId: orgId,
         publishDate: {
           lte: dayjs(date).toDate(),
@@ -85,32 +132,9 @@ export class PostsRepository {
   }
 
   async getPosts(orgId: string, query: GetPostsDto) {
-    const dateYear = dayjs().year(query.year);
-    const date =
-      query.display === 'day'
-        ? dateYear.isoWeek(query.week).day(query.day)
-        : query.display === 'week'
-        ? dateYear.isoWeek(query.week)
-        : dateYear.month(query.month - 1);
-
-    const startDate = (
-      query.display === 'day'
-        ? date.startOf('day')
-        : query.display === 'week'
-        ? date.startOf('isoWeek')
-        : date.startOf('month')
-    )
-      .subtract(2, 'hours')
-      .toDate();
-    const endDate = (
-      query.display === 'day'
-        ? date.endOf('day')
-        : query.display === 'week'
-        ? date.endOf('isoWeek')
-        : date.endOf('month')
-    )
-      .add(2, 'hours')
-      .toDate();
+    // Use the provided start and end dates directly
+    const startDate = dayjs.utc(query.startDate).toDate();
+    const endDate = dayjs.utc(query.endDate).toDate();
 
     const list = await this._post.model.post.findMany({
       where: {
@@ -160,6 +184,7 @@ export class PostsRepository {
         submittedForOrderId: true,
         state: true,
         intervalInDays: true,
+        group: true,
         tags: {
           select: {
             tag: true,
@@ -263,16 +288,41 @@ export class PostsRepository {
     });
   }
 
-  changeState(id: string, state: State, err?: string) {
-    return this._post.model.post.update({
+  async changeState(id: string, state: State, err?: any, body?: any) {
+    const update = await this._post.model.post.update({
       where: {
         id,
       },
       data: {
         state,
-        error: typeof err === 'string' ? err : JSON.stringify(err),
+        ...(err
+          ? { error: typeof err === 'string' ? err : JSON.stringify(err) }
+          : {}),
+      },
+      include: {
+        integration: {
+          select: {
+            providerIdentifier: true,
+          },
+        },
       },
     });
+
+    if (state === 'ERROR' && err && body) {
+      try {
+        await this._errors.model.errors.create({
+          data: {
+            message: typeof err === 'string' ? err : JSON.stringify(err),
+            organizationId: update.organizationId,
+            platform: update.integration.providerIdentifier,
+            postId: update.id,
+            body: typeof body === 'string' ? body : JSON.stringify(body),
+          },
+        });
+      } catch (err) {}
+    }
+
+    return update;
   }
 
   async changeDate(orgId: string, id: string, date: string) {
@@ -390,7 +440,7 @@ export class PostsRepository {
             where: {
               orgId: orgId,
               name: {
-                in: tags.map((tag) => tag.label),
+                in: tags.map((tag) => tag.label).filter((f) => f),
               },
             },
           });

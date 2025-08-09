@@ -24,7 +24,9 @@ export class FarcasterProvider
   name = 'Warpcast';
   isBetweenSteps = false;
   isWeb3 = true;
-  scopes = [];
+  scopes = [] as string[];
+  override maxConcurrentJob = 3; // Farcaster has moderate limits
+  editor = 'normal' as const;
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     return {
@@ -82,7 +84,7 @@ export class FarcasterProvider
         const data = await client.publishCast({
           embeds:
             post?.media?.map((media) => ({
-              url: media.url,
+              url: media.path,
             })) || [],
           signerUuid: accessToken,
           text: post.message,

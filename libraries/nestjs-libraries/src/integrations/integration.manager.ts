@@ -5,10 +5,9 @@ import { XProvider } from '@gitroom/nestjs-libraries/integrations/social/x.provi
 import { SocialProvider } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { LinkedinProvider } from '@gitroom/nestjs-libraries/integrations/social/linkedin.provider';
 import { RedditProvider } from '@gitroom/nestjs-libraries/integrations/social/reddit.provider';
-import { DevToProvider } from '@gitroom/nestjs-libraries/integrations/article/dev.to.provider';
-import { HashnodeProvider } from '@gitroom/nestjs-libraries/integrations/article/hashnode.provider';
-import { MediumProvider } from '@gitroom/nestjs-libraries/integrations/article/medium.provider';
-import { ArticleProvider } from '@gitroom/nestjs-libraries/integrations/article/article.integrations.interface';
+import { DevToProvider } from '@gitroom/nestjs-libraries/integrations/social/dev.to.provider';
+import { HashnodeProvider } from '@gitroom/nestjs-libraries/integrations/social/hashnode.provider';
+import { MediumProvider } from '@gitroom/nestjs-libraries/integrations/social/medium.provider';
 import { FacebookProvider } from '@gitroom/nestjs-libraries/integrations/social/facebook.provider';
 import { InstagramProvider } from '@gitroom/nestjs-libraries/integrations/social/instagram.provider';
 import { YoutubeProvider } from '@gitroom/nestjs-libraries/integrations/social/youtube.provider';
@@ -27,6 +26,7 @@ import { FarcasterProvider } from '@gitroom/nestjs-libraries/integrations/social
 import { TelegramProvider } from '@gitroom/nestjs-libraries/integrations/social/telegram.provider';
 import { NostrProvider } from '@gitroom/nestjs-libraries/integrations/social/nostr.provider';
 import { VkProvider } from '@gitroom/nestjs-libraries/integrations/social/vk.provider';
+import { WordpressProvider } from '@gitroom/nestjs-libraries/integrations/social/wordpress.provider';
 
 export const socialIntegrationList: SocialProvider[] = [
   new XProvider(),
@@ -50,13 +50,11 @@ export const socialIntegrationList: SocialProvider[] = [
   new TelegramProvider(),
   new NostrProvider(),
   new VkProvider(),
-  // new MastodonCustomProvider(),
-];
-
-const articleIntegrationList = [
+  new MediumProvider(),
   new DevToProvider(),
   new HashnodeProvider(),
-  new MediumProvider(),
+  new WordpressProvider(),
+  // new MastodonCustomProvider(),
 ];
 
 @Injectable()
@@ -68,15 +66,13 @@ export class IntegrationManager {
           name: p.name,
           identifier: p.identifier,
           toolTip: p.toolTip,
+          editor: p.editor,
           isExternal: !!p.externalUrl,
           isWeb3: !!p.isWeb3,
           ...(p.customFields ? { customFields: await p.customFields() } : {}),
         }))
       ),
-      article: articleIntegrationList.map((p) => ({
-        name: p.name,
-        identifier: p.identifier,
-      })),
+      article: [] as any[],
     };
   }
 
@@ -88,13 +84,15 @@ export class IntegrationManager {
           identifier: p.identifier,
           plugs: (
             Reflect.getMetadata('custom:plug', p.constructor.prototype) || []
-          ).map((p: any) => ({
-            ...p,
-            fields: p.fields.map((c: any) => ({
-              ...c,
-              validation: c?.validation?.toString(),
+          )
+            .filter((f: any) => !f.disabled)
+            .map((p: any) => ({
+              ...p,
+              fields: p.fields.map((c: any) => ({
+                ...c,
+                validation: c?.validation?.toString(),
+              })),
             })),
-          })),
         };
       })
       .filter((f) => f.plugs.length);
@@ -104,8 +102,12 @@ export class IntegrationManager {
     const p = socialIntegrationList.find((p) => p.identifier === providerName)!;
     return {
       internalPlugs:
-        Reflect.getMetadata('custom:internal_plug', p.constructor.prototype) ||
-        [],
+        (
+          Reflect.getMetadata(
+            'custom:internal_plug',
+            p.constructor.prototype
+          ) || []
+        ).filter((f: any) => !f.disabled) || [],
     };
   }
 
@@ -114,11 +116,5 @@ export class IntegrationManager {
   }
   getSocialIntegration(integration: string): SocialProvider {
     return socialIntegrationList.find((i) => i.identifier === integration)!;
-  }
-  getAllowedArticlesIntegrations() {
-    return articleIntegrationList.map((p) => p.identifier);
-  }
-  getArticlesIntegration(integration: string): ArticleProvider {
-    return articleIntegrationList.find((i) => i.identifier === integration)!;
   }
 }

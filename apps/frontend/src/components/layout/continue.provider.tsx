@@ -1,11 +1,12 @@
 import React, { FC, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
-import { continueProviderList } from '@gitroom/frontend/components/launches/providers/continue-provider/list';
 import { IntegrationContext } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import dayjs from 'dayjs';
 import useSWR, { useSWRConfig } from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { continueProviderList } from '@gitroom/frontend/components/new-launch/providers/continue-provider/list';
+import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 export const Null: FC<{
   closeModal: () => void;
   existingId: string[];
@@ -22,6 +23,12 @@ export const ContinueProvider: FC = () => {
     return list;
   }, []);
   const { data: integrations } = useSWR('/integrations/list', load, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    revalidateOnMount: true,
+    refreshWhenHidden: false,
+    refreshWhenOffline: false,
     fallbackData: [],
   });
   const closeModal = useCallback(() => {
@@ -76,10 +83,11 @@ export const ContinueProvider: FC = () => {
           <div className="pt-[16px] max-h-[600px] overflow-hidden overflow-y-auto">
             <IntegrationContext.Provider
               value={{
-                date: dayjs(),
+                date: newDayjs(),
                 value: [],
                 allIntegrations: [],
                 integration: {
+                  editor: 'normal',
                   additionalSettings: '',
                   display: '',
                   time: [

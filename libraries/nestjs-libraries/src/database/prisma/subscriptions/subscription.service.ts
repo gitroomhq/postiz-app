@@ -21,8 +21,8 @@ export class SubscriptionService {
     );
   }
 
-  useCredit(organization: Organization) {
-    return this._subscriptionRepository.useCredit(organization);
+  useCredit<T>(organization: Organization, type = 'ai_images', func: () => Promise<T>) : Promise<T> {
+    return this._subscriptionRepository.useCredit(organization, type, func);
   }
 
   getCode(code: string) {
@@ -150,6 +150,7 @@ export class SubscriptionService {
   }
 
   async createOrUpdateSubscription(
+    isTrailing: boolean,
     identifier: string,
     customerId: string,
     totalChannels: number,
@@ -174,6 +175,7 @@ export class SubscriptionService {
       }
     }
     return this._subscriptionRepository.createOrUpdateSubscription(
+      isTrailing,
       identifier,
       customerId,
       totalChannels,
@@ -189,7 +191,7 @@ export class SubscriptionService {
     return this._subscriptionRepository.getSubscription(organizationId);
   }
 
-  async checkCredits(organization: Organization) {
+  async checkCredits(organization: Organization, checkType = 'ai_images') {
     // @ts-ignore
     const type = organization?.subscription?.subscriptionTier || 'FREE';
 
@@ -204,11 +206,12 @@ export class SubscriptionService {
     }
 
     const checkFromMonth = date.subtract(1, 'month');
-    const imageGenerationCount = pricing[type].image_generation_count;
+    const imageGenerationCount = checkType === 'ai_images' ? pricing[type].image_generation_count : pricing[type].generate_videos
 
     const totalUse = await this._subscriptionRepository.getCreditsFrom(
       organization.id,
-      checkFromMonth
+      checkFromMonth,
+      checkType
     );
 
     return {
@@ -218,6 +221,7 @@ export class SubscriptionService {
 
   async lifeTime(orgId: string, identifier: string, subscription: any) {
     return this.createOrUpdateSubscription(
+      false,
       identifier,
       identifier,
       pricing[subscription].channel!,
@@ -232,6 +236,7 @@ export class SubscriptionService {
   async addSubscription(orgId: string, userId: string, subscription: any) {
     await this._subscriptionRepository.setCustomerId(orgId, userId);
     return this.createOrUpdateSubscription(
+      false,
       makeId(5),
       userId,
       pricing[subscription].channel!,

@@ -23,6 +23,7 @@ export class StripeController {
   stripeConnect(@Req() req: RawBodyRequest<Request>) {
     const event = this._stripeService.validateRequest(
       req.rawBody,
+      // @ts-ignore
       req.headers['stripe-signature'],
       process.env.STRIPE_SIGNING_KEY_CONNECT
     );
@@ -35,8 +36,6 @@ export class StripeController {
     }
 
     switch (event.type) {
-      case 'checkout.session.completed':
-        return this._stripeService.updateOrder(event);
       case 'account.updated':
         return this._stripeService.updateAccount(event);
       default:
@@ -48,6 +47,7 @@ export class StripeController {
   stripe(@Req() req: RawBodyRequest<Request>) {
     const event = this._stripeService.validateRequest(
       req.rawBody,
+      // @ts-ignore
       req.headers['stripe-signature'],
       process.env.STRIPE_SIGNING_KEY
     );
@@ -66,8 +66,6 @@ export class StripeController {
       switch (event.type) {
         case 'invoice.payment_succeeded':
           return this._stripeService.paymentSucceeded(event);
-        case 'checkout.session.completed':
-          return this._stripeService.updateOrder(event);
         case 'account.updated':
           return this._stripeService.updateAccount(event);
         case 'customer.subscription.created':

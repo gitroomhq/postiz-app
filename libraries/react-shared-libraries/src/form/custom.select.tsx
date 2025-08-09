@@ -6,7 +6,6 @@ import {
   useMemo,
   useState,
 } from 'react';
-import interClass from '../helpers/inter.font';
 import { clsx } from 'clsx';
 import { useFormContext } from 'react-hook-form';
 import { TranslatedLabel } from '../translation/translated-label';
@@ -83,7 +82,7 @@ export const CustomSelect: FC<{
   return (
     <div className={clsx('flex flex-col gap-[6px] relative', className)}>
       {!!label && (
-        <div className={`${interClass} text-[14px]`}>
+        <div className={`text-[14px]`}>
           <TranslatedLabel
             label={label}
             translationKey={translationKey}

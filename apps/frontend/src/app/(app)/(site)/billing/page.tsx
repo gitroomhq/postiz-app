@@ -7,5 +7,9 @@ export const metadata: Metadata = {
   description: '',
 };
 export default async function Page() {
-  return <BillingComponent />;
+  return (
+    <div className="bg-newBgColorInner flex-1 flex-col flex p-[20px] gap-[12px]">
+      <BillingComponent />
+    </div>
+  );
 }

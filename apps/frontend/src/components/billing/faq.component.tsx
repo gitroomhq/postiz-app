@@ -2,7 +2,6 @@
 
 import { FC, useCallback, useState } from 'react';
 import clsx from 'clsx';
-import interClass from '@gitroom/react/helpers/inter.font';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -57,13 +56,6 @@ For example, you can schedule your posts on X, Facebook, Instagram, TikTok, YouT
         'If you have a team with multiple members, you can invite them to your workspace to collaborate on your posts and add their personal channels'
       ),
     },
-    {
-      title: t('faq_what_is_ai_auto_complete', 'What is AI auto-complete?'),
-      description: t(
-        'faq_we_automate_chatgpt_to_help_you_write',
-        'We automate ChatGPT to help you write your social posts and articles'
-      ),
-    },
   ];
 };
 export const FAQSection: FC<{
@@ -81,7 +73,7 @@ export const FAQSection: FC<{
       onClick={changeShow}
     >
       <div
-        className={`text-[20px] ${interClass} cursor-pointer flex justify-center`}
+        className={`text-[20px] cursor-pointer flex justify-center`}
       >
         <div className="flex-1">{title}</div>
         <div className="flex items-center justify-center w-[32px]">
@@ -128,7 +120,7 @@ export const FAQSection: FC<{
           onClick={(e) => {
             e.stopPropagation();
           }}
-          className={`mt-[16px] w-full text-wrap ${interClass} font-[400] text-[16px] text-customColor17 select-text`}
+          className={`mt-[16px] w-full text-wrap font-[400] text-[16px] text-customColor17 select-text`}
           dangerouslySetInnerHTML={{
             __html: description,
           }}

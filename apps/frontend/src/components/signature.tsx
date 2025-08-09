@@ -10,7 +10,8 @@ export const SignatureBox: FC<{
     setShowModal(true);
   }, [showModal]);
   const appendValue = (val: string) => {
-    Transforms.insertText(editor, '\n' + val);
+    editor?.commands?.insertContent("\n\n" + val);
+    editor?.commands?.focus();
     setShowModal(false);
   };
   return (
@@ -23,7 +24,7 @@ export const SignatureBox: FC<{
       )}
       <div
         onClick={addSignature}
-        className="select-none cursor-pointer bg-customColor2 w-[40px] p-[5px] text-center rounded-tl-lg rounded-tr-lg"
+        className="select-none cursor-pointer w-[40px] p-[5px] text-center"
       >
         <svg
           width="25"

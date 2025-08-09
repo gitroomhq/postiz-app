@@ -32,10 +32,12 @@ if (relaysOverrideEnv) {
 }
 
 export class NostrProvider extends SocialAbstract implements SocialProvider {
+  override maxConcurrentJob = 5; // Nostr relays typically have generous limits
   identifier = 'nostr';
   name = 'Nostr';
   isBetweenSteps = false;
-  scopes = [];
+  scopes = [] as string[];
+  editor = 'normal' as const;
 
   async customFields() {
     return [
@@ -176,7 +178,7 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
         {
           kind: 1, // Text note
           content:
-            post.message + '\n\n' + post.media?.map((m) => m.url).join('\n\n'),
+            post.message + '\n\n' + post.media?.map((m) => m.path).join('\n\n'),
           tags: [
             ...(lastId
               ? [

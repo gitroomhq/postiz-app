@@ -32,7 +32,14 @@ export const TagsComponent: FC<{
       name: string;
       color: string;
     }[];
-  }>('tags', loadTags);
+  }>('tags', loadTags, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    revalidateOnMount: true,
+    refreshWhenHidden: false,
+    refreshWhenOffline: false,
+  });
   const onDelete = useCallback(
     (tagIndex: number) => {
       const modify = tagValue.filter((_, i) => i !== tagIndex);

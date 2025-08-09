@@ -6,7 +6,8 @@ export class ThrottlerBehindProxyGuard extends ThrottlerGuard {
   public override async canActivate(
     context: ExecutionContext
   ): Promise<boolean> {
-    if (context.switchToHttp().getRequest().url.includes('/public/v1')) {
+    const { url } = context.switchToHttp().getRequest();
+    if (url.includes('/public/v1/posts') || url.includes('/public/v1/upload')) {
       return super.canActivate(context);
     }
 

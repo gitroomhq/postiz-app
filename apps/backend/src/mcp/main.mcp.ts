@@ -72,6 +72,7 @@ export class MainMcp {
       date: obj.date,
       type: obj.type,
       tags: [],
+      shortLink: false,
       posts: [
         {
           group: makeId(10),
@@ -92,8 +93,9 @@ export class MainMcp {
                   ],
             }))
           ),
-          // @ts-ignore
-          settings: {},
+          settings: {
+            __type: 'any' as any,
+          },
           integration: {
             id: obj.providerId,
           },

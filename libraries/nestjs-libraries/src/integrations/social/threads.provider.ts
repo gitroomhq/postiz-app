@@ -12,6 +12,8 @@ import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.ab
 import { capitalize, chunk } from 'lodash';
 import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
 import { Integration } from '@prisma/client';
+import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
+import { TwitterApi } from 'twitter-api-v2';
 
 export class ThreadsProvider extends SocialAbstract implements SocialProvider {
   identifier = 'threads';
@@ -22,7 +24,11 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     'threads_content_publish',
     'threads_manage_replies',
     'threads_manage_insights',
+    // 'threads_profile_discovery',
   ];
+  override maxConcurrentJob = 2; // Threads has moderate rate limits
+
+  editor = 'normal' as const;
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     const { access_token } = await (
@@ -164,16 +170,16 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
   private async createSingleMediaContent(
     userId: string,
     accessToken: string,
-    media: { url: string },
+    media: { path: string },
     message: string,
     isCarouselItem = false,
     replyToId?: string
   ): Promise<string> {
     const mediaType =
-      media.url.indexOf('.mp4') > -1 ? 'video_url' : 'image_url';
+      media.path.indexOf('.mp4') > -1 ? 'video_url' : 'image_url';
     const mediaParams = new URLSearchParams({
-      ...(mediaType === 'video_url' ? { video_url: media.url } : {}),
-      ...(mediaType === 'image_url' ? { image_url: media.url } : {}),
+      ...(mediaType === 'video_url' ? { video_url: media.path } : {}),
+      ...(mediaType === 'image_url' ? { image_url: media.path } : {}),
       ...(isCarouselItem ? { is_carousel_item: 'true' } : {}),
       ...(replyToId ? { reply_to_id: replyToId } : {}),
       media_type: mediaType === 'video_url' ? 'VIDEO' : 'IMAGE',
@@ -196,7 +202,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
   private async createCarouselContent(
     userId: string,
     accessToken: string,
-    media: { url: string }[],
+    media: { path: string }[],
     message: string,
     replyToId?: string
   ): Promise<string> {
@@ -410,8 +416,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
           {
             id: makeId(10),
             media: [],
-            message:
-              postDetails?.[0]?.settings?.thread_finisher,
+            message: postDetails?.[0]?.settings?.thread_finisher,
             settings: {},
           },
           lastReplyId,
@@ -499,7 +504,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
 
       const form = new FormData();
       form.append('media_type', 'TEXT');
-      form.append('text', fields.post);
+      form.append('text', stripHtmlValidation('normal', fields.post, true));
       form.append('reply_to_id', id);
       form.append('access_token', integration.token);
 
@@ -523,4 +528,29 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
 
     return false;
   }
+
+  // override async mention(
+  //   token: string,
+  //   data: { query: string },
+  //   id: string,
+  //   integration: Integration
+  // ) {
+  //   const p = await (
+  //     await fetch(
+  //       `https://graph.threads.net/v1.0/profile_lookup?username=${data.query}&access_token=${integration.token}`
+  //     )
+  //   ).json();
+  //
+  //   return [
+  //     {
+  //       id: String(p.id),
+  //       label: p.name,
+  //       image: p.profile_picture_url,
+  //     },
+  //   ];
+  // }
+  //
+  // mentionFormat(idOrHandle: string, name: string) {
+  //   return `@${idOrHandle}`;
+  // }
 }

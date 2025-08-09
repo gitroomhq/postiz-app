@@ -12,8 +12,9 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import clsx from 'clsx';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-import { AddEditModal } from '@gitroom/frontend/components/launches/add.edit.model';
 import dayjs from 'dayjs';
+import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
+import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 
 const SaveSetModal: FC<{
   postData: any;
@@ -68,6 +69,12 @@ export const Sets: FC = () => {
   }, []);
 
   const { isLoading, data: integrations } = useSWR('/integrations/list', load, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    revalidateOnMount: true,
+    refreshWhenHidden: false,
+    refreshWhenOffline: false,
     fallbackData: [],
   });
 
@@ -75,7 +82,14 @@ export const Sets: FC = () => {
     return (await fetch('/sets')).json();
   }, []);
 
-  const { data, mutate } = useSWR('sets', list);
+  const { data, mutate } = useSWR('sets', list, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    revalidateOnMount: true,
+    refreshWhenHidden: false,
+    refreshWhenOffline: false,
+  });
 
   const addSet = useCallback(
     (params?: { id?: string; name?: string; content?: string }) => () => {
@@ -129,7 +143,7 @@ export const Sets: FC = () => {
             reopenModal={() => {}}
             mutate={() => {}}
             integrations={integrations}
-            date={dayjs()}
+            date={newDayjs()}
           />
         ),
         size: '80%',

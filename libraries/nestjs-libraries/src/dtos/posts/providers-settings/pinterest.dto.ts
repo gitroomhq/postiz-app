@@ -1,23 +1,20 @@
 import {
-  IsDefined,
-  IsOptional,
-  IsString,
-  IsUrl,
-  MinLength,
+  IsDefined, IsOptional, IsString, IsUrl, MaxLength, MinLength, ValidateIf
 } from 'class-validator';
 
 export class PinterestSettingsDto {
   @IsString()
-  @IsOptional()
+  @ValidateIf((o) => !!o.title)
+  @MaxLength(100)
   title: string;
 
   @IsString()
-  @IsOptional()
+  @ValidateIf((o) => !!o.link)
   @IsUrl()
   link: string;
 
   @IsString()
-  @IsOptional()
+  @ValidateIf((o) => !!o.dominant_color)
   dominant_color: string;
 
   @IsDefined({

@@ -29,7 +29,6 @@ export interface Message {
   deletedAt: any;
 }
 import { Textarea } from '@gitroom/react/form/textarea';
-import interClass from '@gitroom/react/helpers/inter.font';
 import clsx from 'clsx';
 import useSWR from 'swr';
 import {
@@ -55,6 +54,7 @@ import { MarketplaceProvider } from '@gitroom/frontend/components/marketplace/ma
 import { SpecialMessage } from '@gitroom/frontend/components/marketplace/special.message';
 import { usePageVisibility } from '@gitroom/react/helpers/use.is.visible';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 export const Message: FC<{
   message: Message;
   seller: SellerBuyer;
@@ -90,7 +90,7 @@ export const Message: FC<{
     );
   }, [amITheBuyerOrSeller, message]);
   const time = useMemo(() => {
-    return dayjs(message.createdAt).format('h:mm A');
+    return newDayjs(message.createdAt).format('h:mm A');
   }, [message]);
   return (
     <div className="flex gap-[10px]">
@@ -114,7 +114,6 @@ export const Message: FC<{
         <pre
           className={clsx(
             'whitespace-pre-line font-[400] text-[12px]',
-            interClass
           )}
         >
           {message.content}

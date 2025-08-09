@@ -9,7 +9,6 @@ import {
 } from 'react';
 import { clsx } from 'clsx';
 import { useFormContext } from 'react-hook-form';
-import interClass from '../helpers/inter.font';
 import { RegisterOptions } from 'react-hook-form/dist/types/validator';
 import { TranslatedLabel } from '../translation/translated-label';
 
@@ -47,7 +46,7 @@ export const Select: FC<
   }, [form?.formState?.errors?.[props?.name!]?.message, error]);
   return (
     <div className={clsx('flex flex-col', label ? 'gap-[6px]' : '')}>
-      <div className={`${interClass} text-[14px]`}>
+      <div className={`text-[14px]`}>
         <TranslatedLabel
           label={label}
           translationKey={translationKey}
@@ -58,7 +57,7 @@ export const Select: FC<
         ref={ref}
         {...(disableForm ? {} : form.register(props.name, extraForm))}
         className={clsx(
-          'bg-input h-[44px] px-[16px] outline-none border-fifth border rounded-[4px] text-inputText placeholder-inputText',
+          'h-[42px] bg-newBgColorInner px-[16px] outline-none border-newTableBorder border rounded-[8px] text-[14px]',
           className
         )}
         {...rest}

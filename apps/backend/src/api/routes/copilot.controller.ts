@@ -1,4 +1,4 @@
-import { Logger, Controller, Get, Post, Req, Res } from '@nestjs/common';
+import { Logger, Controller, Get, Post, Req, Res, Query } from '@nestjs/common';
 import {
   CopilotRuntime,
   OpenAIAdapter,
@@ -39,7 +39,10 @@ export class CopilotController {
   }
 
   @Get('/credits')
-  calculateCredits(@GetOrgFromRequest() organization: Organization) {
-    return this._subscriptionService.checkCredits(organization);
+  calculateCredits(
+    @GetOrgFromRequest() organization: Organization,
+    @Query('type') type: 'ai_images' | 'ai_videos',
+  ) {
+    return this._subscriptionService.checkCredits(organization, type || 'ai_images');
   }
 }

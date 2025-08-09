@@ -3,7 +3,7 @@ import { INestApplication } from '@nestjs/common';
 
 export const loadSwagger = (app: INestApplication) => {
   const config = new DocumentBuilder()
-    .setTitle('crosspublic Swagger file')
+    .setTitle('Postiz Swagger file')
     .setDescription('API description')
     .setVersion('1.0')
     .build();

@@ -7,6 +7,7 @@
     "allowSyntheticDefaultImports": true,
     "noLib": false,
     "target": "ES2021",
-    "sourceMap": true
+    "sourceMap": true,
+    "esModuleInterop": true,
   }
 }

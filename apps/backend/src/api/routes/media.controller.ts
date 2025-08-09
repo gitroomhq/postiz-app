@@ -22,6 +22,9 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { CustomFileValidationPipe } from '@gitroom/nestjs-libraries/upload/custom.upload.validation';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
+import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/save.media.information.dto';
+import { VideoDto } from '@gitroom/nestjs-libraries/dtos/videos/video.dto';
+import { VideoFunctionDto } from '@gitroom/nestjs-libraries/dtos/videos/video.function.dto';
 
 @ApiTags('Media')
 @Controller('/media')
@@ -36,6 +39,16 @@ export class MediaController {
   deleteMedia(@GetOrgFromRequest() org: Organization, @Param('id') id: string) {
     return this._mediaService.deleteMedia(org.id, id);
   }
+
+  @Post('/generate-video')
+  generateVideo(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: VideoDto
+  ) {
+    console.log('hello');
+    return this._mediaService.generateVideo(org, body);
+  }
+
   @Post('/generate-image')
   async generateImage(
     @GetOrgFromRequest() org: Organization,
@@ -86,13 +99,44 @@ export class MediaController {
     );
   }
 
+  @Post('/save-media')
+  async saveMedia(
+    @GetOrgFromRequest() org: Organization,
+    @Req() req: Request,
+    @Body('name') name: string
+  ) {
+    if (!name) {
+      return false;
+    }
+    return this._mediaService.saveFile(
+      org.id,
+      name,
+      process.env.CLOUDFLARE_BUCKET_URL + '/' + name
+    );
+  }
+
+  @Post('/information')
+  saveMediaInformation(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: SaveMediaInformationDto
+  ) {
+    return this._mediaService.saveMediaInformation(org.id, body);
+  }
+
   @Post('/upload-simple')
   @UseInterceptors(FileInterceptor('file'))
   async uploadSimple(
     @GetOrgFromRequest() org: Organization,
-    @UploadedFile('file') file: Express.Multer.File
+    @UploadedFile('file') file: Express.Multer.File,
+    @Body('preventSave') preventSave: string = 'false'
   ) {
     const getFile = await this.storage.uploadFile(file);
+
+    if (preventSave === 'true') {
+      const { path } = getFile;
+      return { path };
+    }
+
     return this._mediaService.saveFile(
       org.id,
       getFile.originalname,
@@ -131,5 +175,25 @@ export class MediaController {
     @Query('page') page: number
   ) {
     return this._mediaService.getMedia(org.id, page);
+  }
+
+  @Get('/video-options')
+  getVideos() {
+    return this._mediaService.getVideoOptions();
+  }
+
+  @Post('/video/function')
+  videoFunction(
+    @Body() body: VideoFunctionDto
+  ) {
+    return this._mediaService.videoFunction(body.identifier, body.functionName, body.params);
+  }
+
+  @Get('/generate-video/:type/allowed')
+  generateVideoAllowed(
+    @GetOrgFromRequest() org: Organization,
+    @Param('type') type: string
+  ) {
+    return this._mediaService.generateVideoAllowed(org, type);
   }
 }

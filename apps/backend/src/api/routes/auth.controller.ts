@@ -41,7 +41,7 @@ export class AuthController {
   async register(
     @Req() req: Request,
     @Body() body: CreateOrgUserDto,
-    @Res({ passthrough: true }) response: Response,
+    @Res({ passthrough: false }) response: Response,
     @RealIP() ip: string,
     @UserAgent() userAgent: string
   ) {
@@ -114,7 +114,7 @@ export class AuthController {
   async login(
     @Req() req: Request,
     @Body() body: LoginUserDto,
-    @Res({ passthrough: true }) response: Response,
+    @Res({ passthrough: false }) response: Response,
     @RealIP() ip: string,
     @UserAgent() userAgent: string
   ) {
@@ -204,11 +204,11 @@ export class AuthController {
   @Post('/activate')
   async activate(
     @Body('code') code: string,
-    @Res({ passthrough: true }) response: Response
+    @Res({ passthrough: false }) response: Response
   ) {
     const activate = await this._authService.activate(code);
     if (!activate) {
-      return response.status(200).send({ can: false });
+      return response.status(200).json({ can: false });
     }
 
     response.cookie('auth', activate, {
@@ -228,16 +228,18 @@ export class AuthController {
     }
 
     response.header('onboarding', 'true');
-    return response.status(200).send({ can: true });
+
+    return response.status(200).json({ can: true });
   }
 
   @Post('/oauth/:provider/exists')
   async oauthExists(
     @Body('code') code: string,
     @Param('provider') provider: string,
-    @Res({ passthrough: true }) response: Response
+    @Res({ passthrough: false }) response: Response
   ) {
     const { jwt, token } = await this._authService.checkExists(provider, code);
+
     if (token) {
       return response.json({ token });
     }

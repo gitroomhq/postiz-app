@@ -24,7 +24,8 @@ const finalInformation = {} as {
           path: string;
         }>
       >,
-      settings: any
+      settings: any,
+      additionalSettings: any,
     ) => Promise<string | true>;
     maximumCharacters?: number;
   };
@@ -45,7 +46,8 @@ export const useValues = (
         path: string;
       }>
     >,
-    settings: any
+    settings: any,
+    additionalSettings: any,
   ) => Promise<string | true>,
   maximumCharacters?: number
 ) => {

@@ -1,6 +1,12 @@
-import { IsBoolean, IsDefined, IsIn, IsString } from 'class-validator';
+import {
+  IsBoolean, ValidateIf, IsIn, IsString, MaxLength, IsOptional
+} from 'class-validator';
 
 export class TikTokDto {
+  @ValidateIf((p) => p.title)
+  @MaxLength(90)
+  title: string;
+
   @IsIn([
     'PUBLIC_TO_EVERYONE',
     'MUTUAL_FOLLOW_FRIENDS',
@@ -30,11 +36,11 @@ export class TikTokDto {
   brand_content_toggle: boolean;
 
   @IsBoolean()
-  brand_organic_toggle: boolean;
+  @IsOptional()
+  video_made_with_ai: boolean;
 
-  // @IsIn(['true'])
-  // @IsDefined()
-  // isValidVideo: boolean;
+  @IsBoolean()
+  brand_organic_toggle: boolean;
 
   @IsIn(['DIRECT_POST', 'UPLOAD'])
   @IsString()

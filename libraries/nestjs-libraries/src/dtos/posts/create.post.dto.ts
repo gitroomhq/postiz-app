@@ -1,33 +1,11 @@
 import {
-  ArrayMinSize,
-  IsArray,
-  IsBoolean,
-  IsDateString,
-  IsDefined,
-  IsIn,
-  IsNumber,
-  IsOptional,
-  IsString,
-  MinLength,
-  ValidateIf,
-  ValidateNested,
+  ArrayMinSize, IsArray, IsBoolean, IsDateString, IsDefined, IsIn, IsNumber, IsOptional, IsString, MinLength, Validate, ValidateIf, ValidateNested
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { DevToSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dev.to.settings.dto';
 import { MediaDto } from '@gitroom/nestjs-libraries/dtos/media/media.dto';
-import { type AllProvidersSettings } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/all.providers.settings';
-import { MediumSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/medium.settings.dto';
-import { HashnodeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/hashnode.settings.dto';
-import { RedditSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/reddit.dto';
-import { YoutubeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/youtube.settings.dto';
-import { PinterestSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/pinterest.dto';
-import { DribbbleDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dribbble.dto';
-import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
-import { DiscordDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/discord.dto';
-import { SlackDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/slack.dto';
-import { LemmySettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/lemmy.dto';
+import { allProviders, type AllProvidersSettings, EmptySettings } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/all.providers.settings';
+import { ValidContent } from '@gitroom/helpers/utils/valid.images';
 
-export class EmptySettings {}
 export class Integration {
   @IsDefined()
   @IsString()
@@ -37,7 +15,7 @@ export class Integration {
 export class PostContent {
   @IsDefined()
   @IsString()
-  @MinLength(6)
+  @Validate(ValidContent)
   content: string;
 
   @IsOptional()
@@ -45,7 +23,6 @@ export class PostContent {
   id: string;
 
   @IsArray()
-  @IsOptional()
   @Type(() => MediaDto)
   @ValidateNested({ each: true })
   image: MediaDto[];
@@ -70,22 +47,10 @@ export class Post {
 
   @ValidateNested()
   @Type(() => EmptySettings, {
-    keepDiscriminatorProperty: false,
+    keepDiscriminatorProperty: true,
     discriminator: {
       property: '__type',
-      subTypes: [
-        { value: DevToSettingsDto, name: 'devto' },
-        { value: MediumSettingsDto, name: 'medium' },
-        { value: HashnodeSettingsDto, name: 'hashnode' },
-        { value: RedditSettingsDto, name: 'reddit' },
-        { value: LemmySettingsDto, name: 'lemmy' },
-        { value: YoutubeSettingsDto, name: 'youtube' },
-        { value: PinterestSettingsDto, name: 'pinterest' },
-        { value: DribbbleDto, name: 'dribbble' },
-        { value: TikTokDto, name: 'tiktok' },
-        { value: DiscordDto, name: 'discord' },
-        { value: SlackDto, name: 'slack' },
-      ],
+      subTypes: allProviders(EmptySettings),
     },
   })
   settings: AllProvidersSettings;
@@ -108,7 +73,7 @@ export class CreatePostDto {
 
   @IsOptional()
   @IsString()
-  order: string;
+  order?: string;
 
   @IsDefined()
   @IsBoolean()

@@ -4,6 +4,7 @@ import clsx from 'clsx';
 import Loading from 'react-loading';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 const list = [
   'Realistic',
   'Cartoon',
@@ -27,10 +28,12 @@ export const AiImage: FC<{
   const t = useT();
   const { value, onChange } = props;
   const [loading, setLoading] = useState(false);
+  const setLocked = useLaunchStore(p => p.setLocked);
   const fetch = useFetch();
   const generateImage = useCallback(
     (type: string) => async () => {
       setLoading(true);
+      setLocked(true);
       const image = await (
         await fetch('/media/generate-image-with-prompt', {
           method: 'POST',
@@ -49,6 +52,7 @@ ${type}
         })
       ).json();
       setLoading(false);
+      setLocked(false);
       onChange(image);
     },
     [value, onChange]
@@ -64,7 +68,7 @@ ${type}
             }
           : {})}
         className={clsx(
-          'relative ms-[10px] rounded-[4px] mb-[10px] gap-[8px] !text-primary justify-center items-center flex border border-dashed border-customColor21 bg-input',
+          'relative ms-[10px] rounded-[4px] gap-[8px] !text-primary justify-center items-center flex border border-dashed border-newBgLineColor bg-newColColor',
           value.length < 30 && 'opacity-25'
         )}
       >
@@ -94,13 +98,13 @@ ${type}
             </svg>
           </div>
           <div className="text-[12px] font-[500] !text-current">
-            {t('ai', 'AI')}
+            {t('ai', 'AI')} Image
           </div>
         </div>
       </Button>
       {value.length >= 30 && !loading && (
         <div className="text-[12px] ms-[10px] -mt-[10px] w-[200px] absolute top-[100%] z-[500] start-0 hidden group-hover:block">
-          <ul className="cursor-pointer rounded-[4px] border border-dashed border-customColor21 mt-[3px] p-[5px] bg-customColor2">
+          <ul className="cursor-pointer rounded-[4px] border border-dashed mt-[3px] p-[5px] border-newBgLineColor bg-newColColor">
             {list.map((p) => (
               <li onClick={generateImage(p)} key={p} className="hover:bg-sixth">
                 {p}

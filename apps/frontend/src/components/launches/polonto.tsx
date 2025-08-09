@@ -21,6 +21,7 @@ import { PictureGeneratorSection } from '@gitroom/frontend/components/launches/p
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { loadVars } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 const store = createStore({
   get key() {
     return loadVars().plontoKey;
@@ -43,7 +44,7 @@ const ActionControls = ({ store }: any) => {
       <Button
         loading={load}
         className="outline-none"
-        innerClassName="invert outline-none"
+        innerClassName="invert outline-none text-black"
         onClick={async () => {
           setLoad(true);
           const blob = await store.toBlob();
@@ -55,10 +56,10 @@ const ActionControls = ({ store }: any) => {
               body: formData,
             })
           ).json();
-          close.setMedia({
+          close.setMedia([{
             id: data.id,
             path: data.path,
-          });
+          }]);
           close.close();
         }}
       >
@@ -68,13 +69,22 @@ const ActionControls = ({ store }: any) => {
   );
 };
 const Polonto: FC<{
-  setMedia: (params: { id: string; path: string }) => void;
+  setMedia: (params: { id: string; path: string }[]) => void;
   type?: 'image' | 'video';
   closeModal: () => void;
   width?: number;
   height?: number;
 }> = (props) => {
   const { setMedia, type, closeModal } = props;
+
+  const setActivateExitButton = useLaunchStore((e) => e.setActivateExitButton);
+  useEffect(() => {
+    setActivateExitButton(false);
+    return () => {
+      setActivateExitButton(true);
+    };
+  }, []);
+
   const user = useUser();
   const features = useMemo(() => {
     return [

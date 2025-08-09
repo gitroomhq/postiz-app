@@ -53,5 +53,7 @@ export class HashnodeSettingsDto {
 
   @IsArray()
   @ArrayMinSize(1)
+  @Type(() => HashnodeTagsSettings)
+  @ValidateNested({ each: true })
   tags: HashnodeTagsSettings[];
 }

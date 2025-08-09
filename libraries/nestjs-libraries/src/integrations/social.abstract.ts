@@ -1,17 +1,21 @@
 import { timer } from '@gitroom/helpers/utils/timer';
+import { concurrency } from '@gitroom/helpers/utils/concurrency.service';
+import { Integration } from '@prisma/client';
 
 export class RefreshToken {
   constructor(
     public identifier: string,
     public json: string,
-    public body: BodyInit
+    public body: BodyInit,
+    public message = ''
   ) {}
 }
 export class BadBody {
   constructor(
     public identifier: string,
     public json: string,
-    public body: BodyInit
+    public body: BodyInit,
+    public message = ''
   ) {}
 }
 
@@ -20,14 +24,60 @@ export class NotEnoughScopes {
 }
 
 export abstract class SocialAbstract {
+  abstract identifier: string;
+  maxConcurrentJob = 1;
+
+  public handleErrors(
+    body: string
+  ): { type: 'refresh-token' | 'bad-body'; value: string } | undefined {
+    return undefined;
+  }
+
+  public async mention(
+    token: string,
+    d: { query: string },
+    id: string,
+    integration: Integration
+  ): Promise<{ id: string; label: string; image: string, doNotCache?: boolean }[] | { none: true }> {
+    return { none: true };
+  }
+
+  async runInConcurrent<T>(func: (...args: any[]) => Promise<T>) {
+    const value = await concurrency<any>(
+      this.identifier,
+      this.maxConcurrentJob,
+      async () => {
+        try {
+          return await func();
+        } catch (err) {
+          console.log(err);
+          const handle = this.handleErrors(JSON.stringify(err));
+          return { err: true, ...(handle || {}) };
+        }
+      }
+    );
+
+    if (value && value?.err && value?.value) {
+      throw new BadBody('', JSON.stringify({}), {} as any, value.value || '');
+    }
+
+    return value;
+  }
+
   async fetch(
     url: string,
     options: RequestInit = {},
     identifier = '',
-    totalRetries = 0
+    totalRetries = 0,
+    ignoreConcurrency = false
   ): Promise<Response> {
-    const request = await fetch(url, options);
-``
+    const request = await concurrency(
+      this.identifier,
+      this.maxConcurrentJob,
+      () => fetch(url, options),
+      ignoreConcurrency
+    );
+
     if (request.status === 200 || request.status === 201) {
       return request;
     }
@@ -39,34 +89,40 @@ export abstract class SocialAbstract {
     let json = '{}';
     try {
       json = await request.text();
-      console.log(json);
     } catch (err) {
       json = '{}';
     }
 
-    if (json.includes('rate_limit_exceeded') || json.includes('Rate limit')) {
-      await timer(2000);
+    if (
+      request.status === 429 ||
+      request.status === 500 ||
+      json.includes('rate_limit_exceeded') ||
+      json.includes('Rate limit')
+    ) {
+      await timer(5000);
       return this.fetch(url, options, identifier, totalRetries + 1);
     }
+
+    const handleError = this.handleErrors(json || '{}');
 
     if (
-      request.status === 401 ||
-      (json.includes('OAuthException') &&
-        !json.includes('The user is not an Instagram Business') &&
-        !json.includes('Unsupported format') &&
-        !json.includes('2207018') &&
-        !json.includes('352') &&
-        !json.includes('REVOKED_ACCESS_TOKEN'))
+      request.status === 401 &&
+      (handleError?.type === 'refresh-token' || !handleError)
     ) {
-      throw new RefreshToken(identifier, json, options.body!);
+      throw new RefreshToken(
+        identifier,
+        json,
+        options.body!,
+        handleError?.value
+      );
     }
 
-    if (totalRetries < 2) {
-      await timer(2000);
-      return this.fetch(url, options, identifier, totalRetries + 1);
-    }
-
-    throw new BadBody(identifier, json, options.body!);
+    throw new BadBody(
+      identifier,
+      json,
+      options.body!,
+      handleError?.value || ''
+    );
   }
 
   checkScopes(required: string[], got: string | string[]) {

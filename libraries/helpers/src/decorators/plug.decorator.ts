@@ -6,6 +6,7 @@ export function Plug(params: {
   description: string;
   runEveryMilliseconds: number;
   totalRuns: number;
+  disabled?: boolean;
   fields: {
     name: string;
     description: string;

@@ -164,7 +164,14 @@ export const AddOrEditWebhook: FC<{
     },
     []
   );
-  const { data: dataList, isLoading } = useSWR('integrations', integration);
+  const { data: dataList, isLoading } = useSWR('integrations', integration, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    revalidateOnMount: true,
+    refreshWhenHidden: false,
+    refreshWhenOffline: false,
+  });
   const callBack = useCallback(
     async (values: any) => {
       await fetch('/webhooks', {

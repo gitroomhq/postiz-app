@@ -15,8 +15,7 @@ import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions
 import { FAQComponent } from '@gitroom/frontend/components/billing/faq.component';
 import { useSWRConfig } from 'swr';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
-import interClass from '@gitroom/react/helpers/inter.font';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useModals } from '@mantine/modals';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
@@ -28,18 +27,9 @@ import { useTrack } from '@gitroom/react/helpers/use.track';
 import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
 import { PurchaseCrypto } from '@gitroom/frontend/components/billing/purchase.crypto';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-export interface Tiers {
-  month: Array<{
-    name: 'Pro' | 'Standard';
-    recurring: 'month' | 'year';
-    price: number;
-  }>;
-  year: Array<{
-    name: 'Pro' | 'Standard';
-    recurring: 'month' | 'year';
-    price: number;
-  }>;
-}
+import { FinishTrial } from '@gitroom/frontend/components/billing/finish.trial';
+import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+
 export const Prorate: FC<{
   period: 'MONTHLY' | 'YEARLY';
   pack: 'STANDARD' | 'PRO';
@@ -116,7 +106,9 @@ export const Features: FC<{
         `${currentPricing?.image_generation_count} AI Images per month`
       );
     }
-    list.push(`Marketplace full access`);
+    if (currentPricing?.generate_videos) {
+      list.push(`${currentPricing?.generate_videos} AI Videos per month`);
+    }
     return list;
   }, [pack]);
   return (
@@ -190,6 +182,7 @@ const Info: FC<{
       </div>
       <div>
         <Textarea
+          className="bg-newBgColorInner"
           label={'Feedback'}
           name="feedback"
           disableForm={true}
@@ -199,7 +192,7 @@ const Info: FC<{
       </div>
       <div>
         <Button disabled={feedback.length < 20} onClick={cancel}>
-          {t('cancel_subscription', 'Cancel Subscription')}
+          {feedback.length < 20 ? t('please_add_at_least', 'Please add at least 20 chars') : t('cancel_subscription', 'Cancel Subscription')}
         </Button>
       </div>
     </div>
@@ -220,6 +213,10 @@ export const MainBillingComponent: FC<{
   const tolt = useTolt();
   const track = useTrack();
   const t = useT();
+  const queryParams = useSearchParams();
+  const [finishTrial, setFinishTrial] = useState(
+    !!queryParams.get('finishTrial')
+  );
 
   const [subscription, setSubscription] = useState<Subscription | undefined>(
     sub
@@ -380,7 +377,7 @@ export const MainBillingComponent: FC<{
     [monthlyOrYearly, subscription, user, utm]
   );
   if (user?.isLifetime) {
-    router.replace('/billing/lifetime');
+    router.replace('/');
     return null;
   }
   return (
@@ -395,6 +392,8 @@ export const MainBillingComponent: FC<{
           <div>{t('yearly', 'YEARLY')}</div>
         </div>
       </div>
+
+      {finishTrial && <FinishTrial close={() => setFinishTrial(false)} />}
       <div className="flex gap-[16px] [@media(max-width:1024px)]:flex-col [@media(max-width:1024px)]:text-center">
         {Object.entries(pricing)
           .filter((f) => !isGeneral || f[0] !== 'FREE')
@@ -411,7 +410,7 @@ export const MainBillingComponent: FC<{
                     ? values.year_price
                     : values.month_price}
                 </div>
-                <div className={`text-[14px] ${interClass} text-customColor18`}>
+                <div className={`text-[14px] text-customColor18`}>
                   {monthlyOrYearly === 'on' ? '/year' : '/month'}
                 </div>
               </div>
@@ -506,8 +505,8 @@ export const MainBillingComponent: FC<{
           {t(
             'your_subscription_will_be_canceled_at',
             'Your subscription will be canceled at'
-          )}
-          {dayjs(subscription.cancelAt).local().format('D MMM, YYYY')}
+          )}{' '}
+          {newDayjs(subscription.cancelAt).local().format('D MMM, YYYY')}
           <br />
           {t(
             'you_will_never_be_charged_again',

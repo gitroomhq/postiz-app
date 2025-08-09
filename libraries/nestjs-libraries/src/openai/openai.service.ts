@@ -12,14 +12,19 @@ const PicturePrompt = z.object({
   prompt: z.string(),
 });
 
+const VoicePrompt = z.object({
+  voice: z.string(),
+});
+
 @Injectable()
 export class OpenaiService {
-  async generateImage(prompt: string, isUrl: boolean) {
+  async generateImage(prompt: string, isUrl: boolean, isVertical = false) {
     const generate = (
       await openai.images.generate({
         prompt,
         response_format: isUrl ? 'url' : 'b64_json',
         model: 'dall-e-3',
+        ...(isVertical ? { size: '1024x1792' } : {}),
       })
     ).data[0];
 
@@ -29,7 +34,7 @@ export class OpenaiService {
   async generatePromptForPicture(prompt: string) {
     return (
       (
-        await openai.beta.chat.completions.parse({
+        await openai.chat.completions.parse({
           model: 'gpt-4.1',
           messages: [
             {
@@ -44,6 +49,27 @@ export class OpenaiService {
           response_format: zodResponseFormat(PicturePrompt, 'picturePrompt'),
         })
       ).choices[0].message.parsed?.prompt || ''
+    );
+  }
+
+  async generateVoiceFromText(prompt: string) {
+    return (
+      (
+        await openai.chat.completions.parse({
+          model: 'gpt-4.1',
+          messages: [
+            {
+              role: 'system',
+              content: `You are an assistant that takes a social media post and convert it to a normal human voice, to be later added to a character, when a person talk they don\'t use "-", and sometimes they add pause with "..." to make it sounds more natural, make sure you use a lot of pauses and make it sound like a real person`,
+            },
+            {
+              role: 'user',
+              content: `prompt: ${prompt}`,
+            },
+          ],
+          response_format: zodResponseFormat(VoicePrompt, 'voice'),
+        })
+      ).choices[0].message.parsed?.voice || ''
     );
   }
 
@@ -137,12 +163,14 @@ export class OpenaiService {
 
     const posts =
       (
-        await openai.beta.chat.completions.parse({
+        await openai.chat.completions.parse({
           model: 'gpt-4.1',
           messages: [
             {
               role: 'system',
-              content: `You are an assistant that take a social media post and break it to a thread, each post must be minimum ${len - 10} and maximum ${len} characters, keeping the exact wording and break lines, however make sure you split posts based on context`,
+              content: `You are an assistant that take a social media post and break it to a thread, each post must be minimum ${
+                len - 10
+              } and maximum ${len} characters, keeping the exact wording and break lines, however make sure you split posts based on context`,
             },
             {
               role: 'user',
@@ -158,7 +186,7 @@ export class OpenaiService {
 
     return {
       posts: await Promise.all(
-        posts.map(async (post) => {
+        posts.map(async (post: any) => {
           if (post.length <= len) {
             return post;
           }
@@ -168,7 +196,7 @@ export class OpenaiService {
             try {
               return (
                 (
-                  await openai.beta.chat.completions.parse({
+                  await openai.chat.completions.parse({
                     model: 'gpt-4.1',
                     messages: [
                       {
@@ -196,5 +224,37 @@ export class OpenaiService {
         })
       ),
     };
+  }
+
+  async generateSlidesFromText(text: string) {
+    const message = `You are an assistant that takes a text and break it into slides, each slide should have an image prompt and voice text to be later used to generate a video and voice, image prompt should capture the essence of the slide and also have a back dark gradient on top, image prompt should not contain text in the picture, generate between 3-5 slides maximum`;
+    return (
+      (
+        await openai.chat.completions.parse({
+          model: 'gpt-4.1',
+          messages: [
+            {
+              role: 'system',
+              content: message,
+            },
+            {
+              role: 'user',
+              content: text,
+            },
+          ],
+          response_format: zodResponseFormat(
+            z.object({
+              slides: z.array(
+                z.object({
+                  imagePrompt: z.string(),
+                  voiceText: z.string(),
+                })
+              ),
+            }),
+            'slides'
+          ),
+        })
+      ).choices[0].message.parsed?.slides || []
+    );
   }
 }

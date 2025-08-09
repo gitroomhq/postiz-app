@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import interClass from '@gitroom/react/helpers/inter.font';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const GoogleProvider = () => {
   const fetch = useFetch();
@@ -12,7 +11,7 @@ export const GoogleProvider = () => {
   return (
     <div
       onClick={gotoLogin}
-      className={`cursor-pointer bg-white h-[44px] rounded-[4px] flex justify-center items-center text-customColor16 ${interClass} gap-[4px]`}
+      className={`cursor-pointer bg-white h-[44px] rounded-[4px] flex justify-center items-center text-customColor16 gap-[4px]`}
     >
       <div>
         <svg

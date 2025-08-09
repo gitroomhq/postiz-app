@@ -25,19 +25,14 @@ jobs:
         include:
           - runnertags: ubuntu-latest
             arch: amd64
-          - runnertags: ubuntu-latest
+          - runnertags: ubuntu-24.04-arm
             arch: arm64
-
     runs-on: ${{ matrix.runnertags }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Set up QEMU (For ARM64 Builds)
-        if: matrix.arch == 'arm64'
-        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -52,10 +47,12 @@ jobs:
       - name: Build and Push Image
         env:
           CONTAINERVER: ${{ needs.build-containers-common.outputs.containerver }}
+          NEXT_PUBLIC_VERSION: ${{ github.ref_name }}
         run: |
           docker buildx build --platform linux/${{ matrix.arch }} \
             -f Dockerfile.dev \
             -t ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }}-${{ matrix.arch }} \
+            --build-arg NEXT_PUBLIC_VERSION=${{ env.NEXT_PUBLIC_VERSION }} \
             --provenance=false --sbom=false \
             --output "type=registry,name=ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }}-${{ matrix.arch }}" .
 
