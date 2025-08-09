@@ -69,16 +69,17 @@ export class IntegrationRepository {
   }
 
   async checkPreviousConnections(org: string, id: string) {
-    const findIt = await this._integration.model.integration.findFirst({
+    const findIt = await this._integration.model.integration.findMany({
       where: {
-        organizationId: {
-          not: org,
-        },
         rootInternalId: id.split('_').pop(),
+      },
+      select: {
+        organizationId: true,
+        id: true,
       },
     });
 
-    return findIt;
+    return findIt.some((f) => f.organizationId === org) || findIt.length === 0;
   }
 
   updateProviderSettings(org: string, id: string, settings: string) {

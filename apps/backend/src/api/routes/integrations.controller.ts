@@ -1,5 +1,14 @@
 import {
-  Body, Controller, Delete, Get, HttpException, Param, Post, Put, Query, UseFilters
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpException,
+  Param,
+  Post,
+  Put,
+  Query,
+  UseFilters,
 } from '@nestjs/common';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { ConnectIntegrationDto } from '@gitroom/nestjs-libraries/dtos/integrations/connect.integration.dto';
@@ -483,7 +492,7 @@ export class IntegrationsController {
     if (
       process.env.STRIPE_PUBLISHABLE_KEY &&
       org.isTrailing &&
-      !!(await this._integrationService.checkPreviousConnections(
+      (await this._integrationService.checkPreviousConnections(
         org.id,
         String(id)
       ))
