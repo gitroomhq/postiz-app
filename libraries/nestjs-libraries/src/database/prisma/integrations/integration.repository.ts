@@ -79,7 +79,11 @@ export class IntegrationRepository {
       },
     });
 
-    return findIt.some((f) => f.organizationId === org) || findIt.length === 0;
+    if (findIt.some((f) => f.organizationId === org)) {
+      return false;
+    }
+
+    return findIt.length > 0;
   }
 
   updateProviderSettings(org: string, id: string, settings: string) {
