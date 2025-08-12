@@ -54,6 +54,7 @@ import { MarketplaceProvider } from '@gitroom/frontend/components/marketplace/ma
 import { SpecialMessage } from '@gitroom/frontend/components/marketplace/special.message';
 import { usePageVisibility } from '@gitroom/react/helpers/use.is.visible';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 export const Message: FC<{
   message: Message;
   seller: SellerBuyer;
@@ -89,7 +90,7 @@ export const Message: FC<{
     );
   }, [amITheBuyerOrSeller, message]);
   const time = useMemo(() => {
-    return dayjs(message.createdAt).format('h:mm A');
+    return newDayjs(message.createdAt).format('h:mm A');
   }, [message]);
   return (
     <div className="flex gap-[10px]">

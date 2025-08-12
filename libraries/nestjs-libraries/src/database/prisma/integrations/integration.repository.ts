@@ -55,7 +55,7 @@ export class IntegrationRepository {
     mentions: { name: string; username: string; image: string }[]
   ) {
     if (mentions.length === 0) {
-      return [];
+      return [] as any[];
     }
     return this._mentions.model.mentions.createMany({
       data: mentions.map((mention) => ({
@@ -66,6 +66,24 @@ export class IntegrationRepository {
       })),
       skipDuplicates: true,
     });
+  }
+
+  async checkPreviousConnections(org: string, id: string) {
+    const findIt = await this._integration.model.integration.findMany({
+      where: {
+        rootInternalId: id.split('_').pop(),
+      },
+      select: {
+        organizationId: true,
+        id: true,
+      },
+    });
+
+    if (findIt.some((f) => f.organizationId === org)) {
+      return false;
+    }
+
+    return findIt.length > 0;
   }
 
   updateProviderSettings(org: string, id: string, settings: string) {

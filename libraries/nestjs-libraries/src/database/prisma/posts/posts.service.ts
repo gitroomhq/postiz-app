@@ -61,6 +61,9 @@ export class PostsService {
     private openaiService: OpenaiService
   ) {}
 
+  checkPending15minutesBack() {
+    return this._postRepository.checkPending15minutesBack();
+  }
   searchForMissingThreeHoursPosts() {
     return this._postRepository.searchForMissingThreeHoursPosts();
   }
@@ -478,6 +481,7 @@ export class PostsService {
               p.content,
               true,
               false,
+              !/<\/?[a-z][\s\S]*>/i.test(p.content),
               getIntegration.mentionFormat
             ),
             settings: JSON.parse(p.settings || '{}'),

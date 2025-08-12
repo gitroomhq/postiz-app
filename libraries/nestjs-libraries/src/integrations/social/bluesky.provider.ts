@@ -52,7 +52,7 @@ async function reduceImageBySize(url: string, maxSizeKB = 976) {
       if (width < 10 || height < 10) break; // Prevent overly small dimensions
     }
 
-    return imageBuffer;
+    return { width, height, buffer: imageBuffer };
   } catch (error) {
     console.error('Error processing image:', error);
     throw error;
@@ -132,6 +132,7 @@ async function uploadVideo(
 }
 
 export class BlueskyProvider extends SocialAbstract implements SocialProvider {
+  override maxConcurrentJob = 2; // Bluesky has moderate rate limits
   identifier = 'bluesky';
   name = 'Bluesky';
   isBetweenSteps = false;
@@ -245,6 +246,8 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
 
     let loadCid = '';
     let loadUri = '';
+    let replyCid = '';
+    let replyUri = '';
     const cidUrl = [] as { cid: string; url: string; rev: string }[];
     for (const post of postDetails) {
       // Separate images and videos
@@ -256,9 +259,12 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
       // Upload images
       const images = await Promise.all(
         imageMedia.map(async (p) => {
-          return await agent.uploadBlob(
-            new Blob([await reduceImageBySize(p.path)])
-          );
+          const { buffer, width, height } = await reduceImageBySize(p.path);
+          return {
+            width,
+            height,
+            buffer: await agent.uploadBlob(new Blob([buffer])),
+          };
         })
       );
 
@@ -285,7 +291,11 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
           $type: 'app.bsky.embed.images',
           images: images.map((p, index) => ({
             alt: imageMedia?.[index]?.alt || '',
-            image: p.data.blob,
+            image: p.buffer.data.blob,
+            aspectRatio: {
+              width: p.width,
+              height: p.height,
+            }
           })),
         };
       }
@@ -300,8 +310,8 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
           ? {
               reply: {
                 root: {
-                  uri: loadUri,
-                  cid: loadCid,
+                  uri: replyUri,
+                  cid: replyCid,
                 },
                 parent: {
                   uri: loadUri,
@@ -314,6 +324,8 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
 
       loadCid = loadCid || cid;
       loadUri = loadUri || uri;
+      replyCid = cid;
+      replyUri = uri;
 
       cidUrl.push({ cid, url: uri, rev: commit.rev });
     }

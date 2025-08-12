@@ -1,14 +1,14 @@
 'use client';
 
 import { useModals } from '@mantine/modals';
-import React, { FC, useCallback, useMemo } from 'react';
+import React, { FC, useCallback, useEffect, useMemo } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Input } from '@gitroom/react/form/input';
 import { FieldValues, FormProvider, useForm } from 'react-hook-form';
 import { Button } from '@gitroom/react/form/button';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { ApiKeyDto } from '@gitroom/nestjs-libraries/dtos/integrations/api.key.dto';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useToaster } from '@gitroom/react/toaster/toaster';
@@ -42,8 +42,15 @@ export const AddProviderButton: FC<{
   update?: () => void;
 }> = (props) => {
   const { update } = props;
+  const query = useSearchParams();
   const add = useAddProvider(update);
   const t = useT();
+
+  useEffect(() => {
+    if (query.get('onboarding')) {
+      add();
+    }
+  }, []);
 
   return (
     <button
@@ -348,12 +355,14 @@ export const AddProviderComponent: FC<{
               modal: 'bg-transparent text-textColor',
             },
             children: (
-              <Web3Providers
-                onComplete={(code, newState) => {
-                  window.location.href = `/integrations/social/${identifier}?code=${code}&state=${newState}`;
-                }}
-                nonce={url}
-              />
+              <ModalWrapperComponent title="Web3 provider">
+                <Web3Providers
+                  onComplete={(code, newState) => {
+                    window.location.href = `/integrations/social/${identifier}?code=${code}&state=${newState}`;
+                  }}
+                  nonce={url}
+                />
+              </ModalWrapperComponent>
             ),
           });
           return;
@@ -384,7 +393,11 @@ export const AddProviderComponent: FC<{
             classNames: {
               modal: 'bg-transparent text-textColor',
             },
-            children: <UrlModal gotoUrl={gotoIntegration} />,
+            children: (
+              <ModalWrapperComponent title="URL">
+                <UrlModal gotoUrl={gotoIntegration} />
+              </ModalWrapperComponent>
+            ),
           });
           return;
         }
@@ -397,11 +410,13 @@ export const AddProviderComponent: FC<{
               modal: 'bg-transparent text-textColor',
             },
             children: (
-              <CustomVariables
-                identifier={identifier}
-                gotoUrl={(url: string) => router.push(url)}
-                variables={customFields}
-              />
+              <ModalWrapperComponent title="Add Provider">
+                <CustomVariables
+                  identifier={identifier}
+                  gotoUrl={(url: string) => router.push(url)}
+                  variables={customFields}
+                />
+              </ModalWrapperComponent>
             ),
           });
           return;

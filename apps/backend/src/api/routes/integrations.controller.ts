@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
   Param,
   Post,
   Put,
@@ -261,10 +262,12 @@ export class IntegrationsController {
       throw new Error('Invalid integration');
     }
 
-    let newList: any[] | {none: true} = [];
+    let newList: any[] | { none: true } = [];
     try {
-      newList = await this.functionIntegration(org, body);
-    } catch (err) {}
+      newList = (await this.functionIntegration(org, body)) || [];
+    } catch (err) {
+      console.log(err);
+    }
 
     if (!Array.isArray(newList) && newList?.none) {
       return newList;
@@ -283,8 +286,9 @@ export class IntegrationsController {
             name: p.label || '',
             username: p.id || '',
             image: p.image || '',
+            doNotCache: p.doNotCache || false,
           }))
-          .filter((f: any) => f.name)
+          .filter((f: any) => f.name && !f.doNotCache)
       );
     }
 
@@ -295,10 +299,10 @@ export class IntegrationsController {
           image: p.image,
           label: p.name,
         })),
-        ...newList as any[],
+        ...(newList as any[]),
       ],
       (p) => p.id
-    ).filter((f) => f.label && f.image && f.id);
+    ).filter((f) => f.label && f.id);
   }
 
   @Post('/function')
@@ -484,6 +488,18 @@ export class IntegrationsController {
         validName = `Channel_${String(id).slice(0, 8)}`;
       }
     }
+
+    if (
+      process.env.STRIPE_PUBLISHABLE_KEY &&
+      org.isTrailing &&
+      (await this._integrationService.checkPreviousConnections(
+        org.id,
+        String(id)
+      ))
+    ) {
+      throw new HttpException('', 412);
+    }
+
     return this._integrationService.createOrUpdateIntegration(
       additionalSettings,
       !!integrationProvider.oneTimeToken,

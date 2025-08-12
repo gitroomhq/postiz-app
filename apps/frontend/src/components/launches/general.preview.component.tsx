@@ -27,7 +27,6 @@ export const GeneralPreviewComponent: FC<{
       true
     );
 
-    console.log('newConetnt', newContent);
     const { start, end } = textSlicer(
       integration?.identifier || '',
       props.maximumCharacters || 10000,
@@ -46,7 +45,6 @@ export const GeneralPreviewComponent: FC<{
       }) +
       `</mark>`;
 
-    console.log(finalValue);
     return { text: finalValue, images: p.image };
   });
 

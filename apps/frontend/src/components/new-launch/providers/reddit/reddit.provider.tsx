@@ -111,7 +111,6 @@ const RedditPreview: FC = (props) => {
               <div className="font-[600] text-[24px] mb-[16px]">
                 {value.title}
               </div>
-              <RenderRedditComponent type={value.type} images={value.media} />
               <div
                 className={clsx(
                   restOfPosts.length && 'mt-[40px] flex flex-col gap-[20px]'
@@ -213,8 +212,27 @@ export default withProvider({
   postComment: PostComment.POST,
   minimumCharacters: [],
   SettingsComponent: RedditSettings,
-  CustomPreviewComponent: RedditPreview,
+  CustomPreviewComponent: undefined,
   dto: RedditSettingsDto,
-  checkValidity: undefined,
+  checkValidity: async (posts, settings: any) => {
+    if (
+      settings?.subreddit?.some(
+        (p: any, index: number) =>
+          p?.value?.type === 'media' && posts[0].length !== 1
+      )
+    ) {
+      return 'When posting a media post, you must attached exactly one media file.';
+    }
+
+    if (
+      posts.some((p) =>
+        p.some((a) => !a.thumbnail && a.path.indexOf('mp4') > -1)
+      )
+    ) {
+      return 'You must attach a thumbnail to your video post.';
+    }
+
+    return true;
+  },
   maximumCharacters: 10000,
 });

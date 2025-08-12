@@ -5,6 +5,7 @@ import { BullMqModule } from '@gitroom/nestjs-libraries/bull-mq-transport-new/bu
 import { SentryModule } from '@sentry/nestjs/setup';
 import { FILTER } from '@gitroom/nestjs-libraries/sentry/sentry.exception';
 import { CheckMissingQueues } from '@gitroom/cron/tasks/check.missing.queues';
+import { PostNowPendingQueues } from '@gitroom/cron/tasks/post.now.pending.queues';
 
 @Module({
   imports: [
@@ -14,6 +15,6 @@ import { CheckMissingQueues } from '@gitroom/cron/tasks/check.missing.queues';
     BullMqModule,
   ],
   controllers: [],
-  providers: [FILTER, CheckMissingQueues],
+  providers: [FILTER, CheckMissingQueues, PostNowPendingQueues],
 })
 export class CronModule {}

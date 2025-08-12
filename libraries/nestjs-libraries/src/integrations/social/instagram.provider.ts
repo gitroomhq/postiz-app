@@ -29,6 +29,7 @@ export class InstagramProvider
     'instagram_manage_comments',
     'instagram_manage_insights',
   ];
+  override maxConcurrentJob = 10;
   editor = 'normal' as const;
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
@@ -497,10 +498,14 @@ export class InstagramProvider
         while (status === 'IN_PROGRESS') {
           const { status_code } = await (
             await this.fetch(
-              `https://${type}/v20.0/${photoId}?access_token=${accessToken}&fields=status_code`
+              `https://${type}/v20.0/${photoId}?access_token=${accessToken}&fields=status_code`,
+              undefined,
+              '',
+              0,
+              true,
             )
           ).json();
-          await timer(10000);
+          await timer(30000);
           status = status_code;
         }
         console.log('in progress3', id);
@@ -557,10 +562,14 @@ export class InstagramProvider
       while (status === 'IN_PROGRESS') {
         const { status_code } = await (
           await this.fetch(
-            `https://${type}/v20.0/${containerId}?fields=status_code&access_token=${accessToken}`
+            `https://${type}/v20.0/${containerId}?fields=status_code&access_token=${accessToken}`,
+            undefined,
+            '',
+            0,
+            true
           )
         ).json();
-        await timer(10000);
+        await timer(30000);
         status = status_code;
       }
 

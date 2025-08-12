@@ -134,6 +134,6 @@ export interface SocialProvider
   ) => Promise<{ client_id: string; client_secret: string }>;
   mention?: (
     token: string, data: { query: string }, id: string, integration: Integration
-  ) => Promise<{ id: string; label: string; image: string }[] | {none: true}>;
+  ) => Promise<{ id: string; label: string; image: string, doNotCache?: boolean }[] | {none: true}>;
   mentionFormat?(idOrHandle: string, name: string): string;
 }

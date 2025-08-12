@@ -73,6 +73,10 @@ export class IntegrationService {
     );
   }
 
+  checkPreviousConnections(org: string, id: string) {
+    return this._integrationRepository.checkPreviousConnections(org, id);
+  }
+
   async createOrUpdateIntegration(
     additionalSettings:
       | {

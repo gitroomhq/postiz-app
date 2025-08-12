@@ -10,6 +10,7 @@ import { Integration } from '@prisma/client';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 
 export class MediumProvider extends SocialAbstract implements SocialProvider {
+  override maxConcurrentJob = 3; // Medium has lenient publishing limits
   identifier = 'medium';
   name = 'Medium';
   isBetweenSteps = false;

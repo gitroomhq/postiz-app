@@ -23,6 +23,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   name = 'X';
   isBetweenSteps = false;
   scopes = [] as string[];
+  override maxConcurrentJob = 1; // X has strict rate limits (300 posts per 3 hours)
   toolTip =
     'You will be logged in into your current account, if you would like a different account, change it first on X';
 
@@ -466,7 +467,6 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         return [];
       }
 
-      console.log(tweets.map((p) => p.id));
       const data = await client.v2.tweets(
         tweets.map((p) => p.id),
         {
@@ -501,9 +501,6 @@ export class XProvider extends SocialAbstract implements SocialProvider {
           retweet_count: 0,
         }
       );
-
-      console.log(metrics);
-      console.log(JSON.stringify(data, null, 2));
 
       return Object.entries(metrics).map(([key, value]) => ({
         label: key.replace('_count', '').replace('_', ' ').toUpperCase(),

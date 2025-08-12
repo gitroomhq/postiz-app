@@ -9,6 +9,7 @@ import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.ab
 import dayjs from 'dayjs';
 
 export class MastodonProvider extends SocialAbstract implements SocialProvider {
+  override maxConcurrentJob = 5; // Mastodon instances typically have generous limits
   identifier = 'mastodon';
   name = 'Mastodon';
   isBetweenSteps = false;

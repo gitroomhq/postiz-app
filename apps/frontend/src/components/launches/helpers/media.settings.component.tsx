@@ -106,16 +106,12 @@ export const CreateThumbnail: FC<{
   const [isCapturing, setIsCapturing] = useState(false);
 
   const handleLoadedMetadata = useCallback(() => {
-    if (videoRef.current) {
-      setDuration(videoRef.current.duration);
-      setIsLoaded(true);
-    }
+    setDuration(videoRef?.current?.duration);
+    setIsLoaded(true);
   }, []);
 
   const handleTimeUpdate = useCallback(() => {
-    if (videoRef.current) {
-      setCurrentTime(videoRef.current.currentTime);
-    }
+    setCurrentTime(videoRef?.current?.currentTime);
   }, []);
 
   const handleSeek = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -127,8 +123,6 @@ export const CreateThumbnail: FC<{
   }, []);
 
   const captureFrame = useCallback(async () => {
-    if (!videoRef.current || !canvasRef.current) return;
-
     setIsCapturing(true);
 
     try {
@@ -299,7 +293,14 @@ export const MediaComponentInner: FC<{
     alt: string;
   }) => void;
   media:
-    | { id: string; name: string; path: string; thumbnail: string; alt: string, thumbnailTimestamp?: number }
+    | {
+        id: string;
+        name: string;
+        path: string;
+        thumbnail: string;
+        alt: string;
+        thumbnailTimestamp?: number;
+      }
     | undefined;
 }> = (props) => {
   const { onClose, onSelect, media } = props;

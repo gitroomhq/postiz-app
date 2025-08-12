@@ -8,6 +8,7 @@ import { ManageModal } from '@gitroom/frontend/components/new-launch/manage.moda
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
 import { useShallow } from 'zustand/react/shallow';
 import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
+import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 
 export interface AddEditModalProps {
   dummy?: boolean;
@@ -46,7 +47,7 @@ export const AddEditModal: FC<AddEditModalProps> = (props) => {
   const integrations = useLaunchStore((state) => state.integrations);
   useEffect(() => {
     setDummy(!!props.dummy);
-    setDate(props.date || dayjs());
+    setDate(props.date || newDayjs());
     setAllIntegrations(props.allIntegrations || []);
     setIsCreateSet(!!props.addEditSets);
   }, []);

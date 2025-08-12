@@ -14,6 +14,7 @@ import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import dayjs from 'dayjs';
 import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
+import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 
 const SaveSetModal: FC<{
   postData: any;
@@ -142,7 +143,7 @@ export const Sets: FC = () => {
             reopenModal={() => {}}
             mutate={() => {}}
             integrations={integrations}
-            date={dayjs()}
+            date={newDayjs()}
           />
         ),
         size: '80%',

@@ -6,11 +6,12 @@ import { Integrations } from '@gitroom/frontend/components/launches/calendar.con
 import { createRef, RefObject } from 'react';
 import { arrayMoveImmutable } from 'array-move';
 import { PostComment } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
+import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 
 interface Values {
   id: string;
   content: string;
-  media: { id: string; path: string }[];
+  media: { id: string; path: string, thumbnail?: string }[];
 }
 
 interface Internal {
@@ -18,7 +19,7 @@ interface Internal {
   integrationValue: Values[];
 }
 
-interface SelectedIntegrations {
+export interface SelectedIntegrations {
   settings: any;
   integration: Integrations;
   ref?: RefObject<any>;
@@ -122,6 +123,8 @@ interface StoreState {
   setDummy: (dummy: boolean) => void;
   setEditor: (editor: 'normal' | 'markdown' | 'html') => void;
   setLoaded?: (loaded: boolean) => void;
+  setChars: (id: string, chars: number) => void;
+  chars: Record<string, number>;
 }
 
 const initialState = {
@@ -129,7 +132,7 @@ const initialState = {
   loaded: true,
   dummy: false,
   activateExitButton: true,
-  date: dayjs(),
+  date: newDayjs(),
   postComment: PostComment.ALL,
   tags: [] as { label: string; value: string }[],
   totalChars: 0,
@@ -142,6 +145,7 @@ const initialState = {
   selectedIntegrations: [] as SelectedIntegrations[],
   global: [] as Values[],
   internal: [] as Internal[],
+  chars: {},
 };
 
 export const useLaunchStore = create<StoreState>()((set) => ({
@@ -534,5 +538,12 @@ export const useLaunchStore = create<StoreState>()((set) => ({
   setLoaded: (loaded: boolean) =>
     set((state) => ({
       loaded,
+    })),
+  setChars: (id: string, chars: number) =>
+    set((state) => ({
+      chars: {
+        ...state.chars,
+        [id]: chars,
+      },
     })),
 }));

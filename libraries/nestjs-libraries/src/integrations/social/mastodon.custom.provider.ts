@@ -9,6 +9,7 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 export class MastodonCustomProvider extends MastodonProvider {
   override identifier = 'mastodon-custom';
   override name = 'M. Instance';
+  override maxConcurrentJob = 5; // Custom Mastodon instances typically have generous limits
   editor = 'normal' as const;
 
   async externalUrl(url: string) {

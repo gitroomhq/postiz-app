@@ -136,14 +136,19 @@ export const stripHtmlValidation = (
   val: string,
   replaceBold = false,
   none = false,
+  plain = false,
   convertMentionFunction?: (idOrHandle: string, name: string) => string
 ): string => {
+
+  if (plain) {
+    return val;
+  }
+
   const value = serialize(parseFragment(val));
 
   if (type === 'html') {
     return striptags(convertMention(value, convertMentionFunction), [
       'ul',
-      'ol',
       'li',
       'h1',
       'h2',
@@ -162,6 +167,8 @@ export const stripHtmlValidation = (
           .replace(/<h1>([.\s\S]*?)<\/h1>/g, (match, p1) => {
             return `<h1># ${p1}</h1>\n`;
           })
+          .replace(/&amp;/gi, '&')
+          .replace(/&nbsp;/gi, ' ')
           .replace(/<h2>([.\s\S]*?)<\/h2>/g, (match, p1) => {
             return `<h2>## ${p1}</h2>\n`;
           })
@@ -225,7 +232,7 @@ export const stripHtmlValidation = (
       convertMentionFunction
     );
 
-    return striptags(processedHtml, ['h1', 'h2', 'h3']);
+    return striptags(processedHtml);
   }
 
   // Strip all other tags
