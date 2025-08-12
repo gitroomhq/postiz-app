@@ -27,5 +27,7 @@ export class ResendProvider implements EmailInterface {
     } catch (err) {
       console.log(err);
     }
+
+    return { sent: false };
   }
 }
