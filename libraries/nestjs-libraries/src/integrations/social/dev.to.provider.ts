@@ -81,7 +81,7 @@ export class DevToProvider extends SocialAbstract implements SocialProvider {
         accessToken: body.apiKey,
         id,
         name,
-        picture: profile_image,
+        picture: profile_image || '',
         username,
       };
     } catch (err) {

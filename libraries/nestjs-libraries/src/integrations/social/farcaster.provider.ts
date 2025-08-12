@@ -61,7 +61,7 @@ export class FarcasterProvider
       accessToken: data.signer_uuid,
       refreshToken: '',
       expiresIn: dayjs().add(200, 'year').unix() - dayjs().unix(),
-      picture: data.pfp_url,
+      picture: data?.pfp_url || '',
       username: data.username,
     };
   }

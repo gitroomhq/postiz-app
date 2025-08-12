@@ -95,7 +95,7 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
       accessToken: access_token,
       refreshToken: 'null',
       expiresIn: dayjs().add(100, 'years').unix() - dayjs().unix(),
-      picture: user.profile.image_original,
+      picture: user?.profile?.image_original || '',
       username: user.name,
     };
   }

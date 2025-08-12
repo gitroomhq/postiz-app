@@ -41,7 +41,7 @@ export class InstagramStandaloneProvider
       )
     ).json();
 
-    const { user_id, name, username, profile_picture_url } = await (
+    const { user_id, name, username, profile_picture_url = '' } = await (
       await fetch(
         `https://graph.instagram.com/v21.0/me?fields=user_id,username,name,profile_picture_url&access_token=${access_token}`
       )
@@ -53,7 +53,7 @@ export class InstagramStandaloneProvider
       accessToken: access_token,
       refreshToken: access_token,
       expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
-      picture: profile_picture_url,
+      picture: profile_picture_url || '',
       username,
     };
   }

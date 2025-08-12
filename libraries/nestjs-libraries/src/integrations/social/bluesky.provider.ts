@@ -213,7 +213,7 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
         accessToken: accessJwt,
         id: did,
         name: profile.data.displayName!,
-        picture: profile.data.avatar!,
+        picture: profile?.data?.avatar || '',
         username: profile.data.handle!,
       };
     } catch (e) {

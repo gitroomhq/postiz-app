@@ -65,7 +65,7 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
       accessToken: access_token,
       refreshToken: refresh_token + '&&&&' + device_id,
       expiresIn: dayjs().add(expires_in, 'seconds').unix() - dayjs().unix(),
-      picture: avatar,
+      picture: avatar || '',
       username: first_name.toLowerCase(),
     };
   }
@@ -150,7 +150,7 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
       accessToken: access_token,
       refreshToken: refresh_token + '&&&&' + device_id,
       expiresIn: dayjs().add(expires_in, 'seconds').unix() - dayjs().unix(),
-      picture: avatar,
+      picture: avatar || '',
       username: first_name.toLowerCase(),
     };
   }

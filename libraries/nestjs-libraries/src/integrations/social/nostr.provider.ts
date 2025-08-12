@@ -147,7 +147,7 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
         accessToken: AuthService.signJWT({ password: body.password }),
         refreshToken: '',
         expiresIn: dayjs().add(200, 'year').unix() - dayjs().unix(),
-        picture: user.picture,
+        picture: user?.picture || '',
         username: user.name || 'nousername',
       };
     } catch (e) {

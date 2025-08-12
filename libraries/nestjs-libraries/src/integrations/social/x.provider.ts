@@ -258,7 +258,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       name,
       refreshToken: '',
       expiresIn: 999999999,
-      picture: profile_image_url,
+      picture: profile_image_url || '',
       username,
       additionalSettings: [
         {

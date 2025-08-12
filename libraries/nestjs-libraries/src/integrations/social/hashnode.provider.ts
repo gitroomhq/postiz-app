@@ -91,7 +91,7 @@ export class HashnodeProvider extends SocialAbstract implements SocialProvider {
         accessToken: body.apiKey,
         id,
         name,
-        picture: profilePicture,
+        picture: profilePicture || '',
         username,
       };
     } catch (err) {

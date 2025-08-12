@@ -80,7 +80,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       refreshToken,
       expiresIn: expires_in,
       name,
-      picture,
+      picture: picture || '',
       username: vanityName,
     };
   }

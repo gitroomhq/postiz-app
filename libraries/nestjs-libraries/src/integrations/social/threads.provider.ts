@@ -41,9 +41,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       id,
       name,
       username,
-      picture: {
-        data: { url },
-      },
+      picture
     } = await this.fetchPageInformation(access_token);
 
     return {
@@ -52,7 +50,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       accessToken: access_token,
       refreshToken: access_token,
       expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
-      picture: url,
+      picture: picture?.data?.url || '',
       username: '',
     };
   }
@@ -112,9 +110,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       id,
       name,
       username,
-      picture: {
-        data: { url },
-      },
+      picture,
     } = await this.fetchPageInformation(access_token);
 
     return {
@@ -123,7 +119,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       accessToken: access_token,
       refreshToken: access_token,
       expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
-      picture: url,
+      picture: picture?.data?.url || '',
       username: username,
     };
   }

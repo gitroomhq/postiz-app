@@ -364,9 +364,7 @@ export class InstagramProvider
     const {
       id,
       name,
-      picture: {
-        data: { url },
-      },
+      picture
     } = await (
       await fetch(
         `https://graph.facebook.com/v20.0/me?fields=id,name,picture&access_token=${access_token}`
@@ -379,7 +377,7 @@ export class InstagramProvider
       accessToken: access_token,
       refreshToken: access_token,
       expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
-      picture: url,
+      picture: picture?.data?.url || '',
       username: '',
     };
   }
