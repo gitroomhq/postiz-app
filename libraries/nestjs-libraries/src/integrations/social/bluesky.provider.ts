@@ -52,7 +52,7 @@ async function reduceImageBySize(url: string, maxSizeKB = 976) {
       if (width < 10 || height < 10) break; // Prevent overly small dimensions
     }
 
-    return imageBuffer;
+    return { width, height, buffer: imageBuffer };
   } catch (error) {
     console.error('Error processing image:', error);
     throw error;
@@ -213,7 +213,7 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
         accessToken: accessJwt,
         id: did,
         name: profile.data.displayName!,
-        picture: profile.data.avatar!,
+        picture: profile?.data?.avatar || '',
         username: profile.data.handle!,
       };
     } catch (e) {
@@ -259,9 +259,12 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
       // Upload images
       const images = await Promise.all(
         imageMedia.map(async (p) => {
-          return await agent.uploadBlob(
-            new Blob([await reduceImageBySize(p.path)])
-          );
+          const { buffer, width, height } = await reduceImageBySize(p.path);
+          return {
+            width,
+            height,
+            buffer: await agent.uploadBlob(new Blob([buffer])),
+          };
         })
       );
 
@@ -288,7 +291,11 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
           $type: 'app.bsky.embed.images',
           images: images.map((p, index) => ({
             alt: imageMedia?.[index]?.alt || '',
-            image: p.data.blob,
+            image: p.buffer.data.blob,
+            aspectRatio: {
+              width: p.width,
+              height: p.height,
+            }
           })),
         };
       }

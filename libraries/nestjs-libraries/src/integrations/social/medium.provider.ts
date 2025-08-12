@@ -72,7 +72,7 @@ export class MediumProvider extends SocialAbstract implements SocialProvider {
         accessToken: body.apiKey,
         id,
         name,
-        picture: imageUrl,
+        picture: imageUrl || '',
         username,
       };
     } catch (err) {

@@ -91,7 +91,7 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
       accessToken: tokenInformation.access_token,
       refreshToken: 'null',
       expiresIn: dayjs().add(100, 'years').unix() - dayjs().unix(),
-      picture: personalInformation.avatar,
+      picture: personalInformation?.avatar || '',
       username: personalInformation.username,
     };
   }

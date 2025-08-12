@@ -242,7 +242,7 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
       .filter((role: any) =>
         role.name.toLowerCase().includes(data.query.toLowerCase())
       )
-      .filter((f) => f.name !== '@everyone' && f.name !== '@here');
+      .filter((f: any) => f.name !== '@everyone' && f.name !== '@here');
 
     const list = await (
       await fetch(

@@ -132,7 +132,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       refreshToken: credentials.refresh_token!,
       id: data.id!,
       name: data.name!,
-      picture: data.picture!,
+      picture: data?.picture || '',
       username: '',
     };
   }
@@ -178,7 +178,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       refreshToken: tokens.refresh_token!,
       id: data.id!,
       name: data.name!,
-      picture: data.picture!,
+      picture: data?.picture || '',
       username: '',
     };
   }

@@ -48,6 +48,11 @@ export class PostsRepository {
   searchForMissingThreeHoursPosts() {
     return this._post.model.post.findMany({
       where: {
+        integration: {
+          refreshNeeded: false,
+          inBetweenSteps: false,
+          disabled: false,
+        },
         publishDate: {
           gte: dayjs.utc().toDate(),
           lt: dayjs.utc().add(3, 'hour').toDate(),
@@ -66,6 +71,11 @@ export class PostsRepository {
   getOldPosts(orgId: string, date: string) {
     return this._post.model.post.findMany({
       where: {
+        integration: {
+          refreshNeeded: false,
+          inBetweenSteps: false,
+          disabled: false,
+        },
         organizationId: orgId,
         publishDate: {
           lte: dayjs(date).toDate(),

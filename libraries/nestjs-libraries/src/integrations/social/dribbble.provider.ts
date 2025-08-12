@@ -54,7 +54,7 @@ export class DribbbleProvider extends SocialAbstract implements SocialProvider {
       accessToken: access_token,
       refreshToken: refreshToken,
       expiresIn: expires_in,
-      picture: profile_image,
+      picture: profile_image || '',
       username,
     };
   }

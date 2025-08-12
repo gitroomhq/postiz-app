@@ -71,7 +71,7 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
       accessToken: String(chat.id),
       refreshToken: '',
       expiresIn: dayjs().add(200, 'year').unix() - dayjs().unix(),
-      picture: photo,
+      picture: photo || '',
       username: chat.username!,
     };
   }

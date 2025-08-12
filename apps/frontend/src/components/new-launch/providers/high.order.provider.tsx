@@ -54,6 +54,7 @@ export const withProvider = function <T extends object>(params: {
     value: Array<
       Array<{
         path: string;
+        thumbnail?: string;
       }>
     >,
     settings: T,

@@ -37,7 +37,6 @@ export class PinterestProvider
         value: string;
       }
     | undefined {
-
     if (body.indexOf('cover_image_url or cover_image_content_type') > -1) {
       return {
         type: 'bad-body' as const,
@@ -83,7 +82,7 @@ export class PinterestProvider
       accessToken: access_token,
       refreshToken: refreshToken,
       expiresIn: expires_in,
-      picture: profile_image,
+      picture: profile_image || '',
       username,
     };
   }
@@ -212,12 +211,18 @@ export class PinterestProvider
       let statusCode = '';
       while (statusCode !== 'succeeded') {
         const mediafile = await (
-          await this.fetch('https://api.pinterest.com/v5/media/' + media_id, {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
+          await this.fetch(
+            'https://api.pinterest.com/v5/media/' + media_id,
+            {
+              method: 'GET',
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
             },
-          })
+            '',
+            0,
+            true
+          )
         ).json();
 
         await timer(30000);

@@ -9,6 +9,12 @@ import { RedditSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/provider
 import { timer } from '@gitroom/helpers/utils/timer';
 import { groupBy } from 'lodash';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { lookup } from 'mime-types';
+import axios from 'axios';
+import WebSocket from 'ws';
+
+// @ts-ignore
+global.WebSocket = WebSocket;
 
 export class RedditProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 1; // Reddit has strict rate limits (1 request per second)
@@ -53,7 +59,7 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
       accessToken,
       refreshToken: newRefreshToken,
       expiresIn,
-      picture: icon_img.split('?')[0],
+      picture: icon_img?.split?.('?')?.[0] || '',
       username: name,
     };
   }
@@ -112,9 +118,58 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
       accessToken,
       refreshToken,
       expiresIn,
-      picture: icon_img.split('?')[0],
+      picture: icon_img?.split?.('?')?.[0] || '',
       username: name,
     };
+  }
+
+  private async uploadFileToReddit(accessToken: string, path: string) {
+    const mimeType = lookup(path);
+    const formData = new FormData();
+    formData.append('filepath', path.split('/').pop());
+    formData.append('mimetype', mimeType || 'application/octet-stream');
+
+    const {
+      args: { action, fields },
+    } = await (
+      await this.fetch(
+        'https://oauth.reddit.com/api/media/asset',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: formData,
+        },
+        'reddit',
+        0,
+        true
+      )
+    ).json();
+
+    const { data } = await axios.get(path, {
+      responseType: 'arraybuffer',
+    });
+
+    const upload = (fields as { name: string; value: string }[]).reduce(
+      (acc, value) => {
+        acc.append(value.name, value.value);
+        return acc;
+      },
+      new FormData()
+    );
+
+    upload.append(
+      'file',
+      new Blob([Buffer.from(data)], { type: mimeType as string })
+    );
+
+    const d = await fetch('https:' + action, {
+      method: 'POST',
+      body: upload,
+    });
+
+    return [...(await d.text()).matchAll(/<Location>(.*?)<\/Location>/g)][0][1];
   }
 
   async post(
@@ -131,7 +186,9 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
         title: firstPostSettings.value.title || '',
         kind:
           firstPostSettings.value.type === 'media'
-            ? 'image'
+            ? post.media[0].path.indexOf('mp4') > -1
+              ? 'video'
+              : 'image'
             : firstPostSettings.value.type,
         ...(firstPostSettings.value.flair
           ? { flair_id: firstPostSettings.value.flair.id }
@@ -143,22 +200,25 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
           : {}),
         ...(firstPostSettings.value.type === 'media'
           ? {
-              url: `${
-                firstPostSettings.value.media[0].path.indexOf('http') === -1
-                  ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/uploads`
-                  : ``
-              }${firstPostSettings.value.media[0].path}`,
+              url: await this.uploadFileToReddit(
+                accessToken,
+                post.media[0].path
+              ),
+              ...(post.media[0].path.indexOf('mp4') > -1
+                ? {
+                    video_poster_url: await this.uploadFileToReddit(
+                      accessToken,
+                      post.media[0].thumbnail
+                    ),
+                  }
+                : {}),
             }
           : {}),
         text: post.message,
         sr: firstPostSettings.value.subreddit,
       };
 
-      const {
-        json: {
-          data: { id, name, url },
-        },
-      } = await (
+      const all = await (
         await this.fetch('https://oauth.reddit.com/api/submit', {
           method: 'POST',
           headers: {
@@ -168,6 +228,38 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
           body: new URLSearchParams(postData),
         })
       ).json();
+
+      const { id, name, url } = await new Promise<{
+        id: string;
+        name: string;
+        url: string;
+      }>((res) => {
+        if (all?.json?.data?.id) {
+          res(all.json.data);
+        }
+
+        const ws = new WebSocket(all.json.data.websocket_url);
+        ws.on('message', (data: any) => {
+          setTimeout(() => {
+            res({ id: '', name: '', url: '' });
+            ws.close();
+          }, 30_000);
+          try {
+            const parsedData = JSON.parse(data.toString());
+            if (parsedData?.payload?.redirect) {
+              const onlyId = parsedData?.payload?.redirect.replace(
+                /https:\/\/www\.reddit\.com\/r\/.*?\/comments\/(.*?)\/.*/g,
+                '$1'
+              );
+              res({
+                id: onlyId,
+                name: `t3_${onlyId}`,
+                url: parsedData?.payload?.redirect,
+              });
+            }
+          } catch (err) {}
+        });
+      });
 
       valueArray.push({
         postId: id,
@@ -202,8 +294,6 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
           })
         ).json();
 
-        // console.log(JSON.stringify(allTop, null, 2), JSON.stringify(allJson, null, 2), JSON.stringify(allData, null, 2));
-
         valueArray.push({
           postId: commentId,
           releaseURL: 'https://www.reddit.com' + permalink,
@@ -233,7 +323,7 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
     const {
       data: { children },
     } = await (
-      await fetch(
+      await this.fetch(
         `https://oauth.reddit.com/subreddits/search?show=public&q=${data.word}&sort=activity&show_users=false&limit=10`,
         {
           method: 'GET',
@@ -241,7 +331,10 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
             Authorization: `Bearer ${accessToken}`,
             'Content-Type': 'application/x-www-form-urlencoded',
           },
-        }
+        },
+        'reddit',
+        0,
+        false
       )
     ).json();
 
@@ -267,28 +360,34 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
       permissions.push('link');
     }
 
-    // if (submissionType === 'any' || allow_images) {
-    //   permissions.push('media');
-    // }
+    if (allow_images) {
+      permissions.push('media');
+    }
 
     return permissions;
   }
 
   async restrictions(accessToken: string, data: { subreddit: string }) {
     const {
-      data: { submission_type, allow_images },
+      data: { submission_type, allow_images, ...all2 },
     } = await (
-      await fetch(`https://oauth.reddit.com/${data.subreddit}/about`, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
+      await this.fetch(
+        `https://oauth.reddit.com/${data.subreddit}/about`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
         },
-      })
+        'reddit',
+        0,
+        false
+      )
     ).json();
 
     const { is_flair_required, ...all } = await (
-      await fetch(
+      await this.fetch(
         `https://oauth.reddit.com/api/v1/${
           data.subreddit.split('/r/')[1]
         }/post_requirements`,
@@ -298,7 +397,10 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
             Authorization: `Bearer ${accessToken}`,
             'Content-Type': 'application/x-www-form-urlencoded',
           },
-        }
+        },
+        'reddit',
+        0,
+        false
       )
     ).json();
 
@@ -307,7 +409,7 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
       async (res) => {
         try {
           const flair = await (
-            await fetch(
+            await this.fetch(
               `https://oauth.reddit.com/${data.subreddit}/api/link_flair_v2`,
               {
                 method: 'GET',
@@ -315,7 +417,10 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
                   Authorization: `Bearer ${accessToken}`,
                   'Content-Type': 'application/x-www-form-urlencoded',
                 },
-              }
+              },
+              'reddit',
+              0,
+              false
             )
           ).json();
 

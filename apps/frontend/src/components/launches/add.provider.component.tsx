@@ -1,14 +1,14 @@
 'use client';
 
 import { useModals } from '@mantine/modals';
-import React, { FC, useCallback, useMemo } from 'react';
+import React, { FC, useCallback, useEffect, useMemo } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Input } from '@gitroom/react/form/input';
 import { FieldValues, FormProvider, useForm } from 'react-hook-form';
 import { Button } from '@gitroom/react/form/button';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { ApiKeyDto } from '@gitroom/nestjs-libraries/dtos/integrations/api.key.dto';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useToaster } from '@gitroom/react/toaster/toaster';
@@ -42,8 +42,15 @@ export const AddProviderButton: FC<{
   update?: () => void;
 }> = (props) => {
   const { update } = props;
+  const query = useSearchParams();
   const add = useAddProvider(update);
   const t = useT();
+
+  useEffect(() => {
+    if (query.get('onboarding')) {
+      add();
+    }
+  }, []);
 
   return (
     <button

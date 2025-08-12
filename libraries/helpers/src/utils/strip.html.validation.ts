@@ -232,7 +232,7 @@ export const stripHtmlValidation = (
       convertMentionFunction
     );
 
-    return striptags(processedHtml, ['h1', 'h2', 'h3']);
+    return striptags(processedHtml);
   }
 
   // Strip all other tags

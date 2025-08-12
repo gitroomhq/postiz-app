@@ -34,7 +34,7 @@ export class BullMqServer extends Server implements CustomTransportStrategy {
           },
           {
             maxStalledCount: 10,
-            concurrency: 5,
+            concurrency: 300,
             connection: ioRedis,
             removeOnComplete: {
               count: 0,
