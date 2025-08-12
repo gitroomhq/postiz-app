@@ -39,6 +39,7 @@ export const concurrency = async <T>(
       }
     );
   } catch (err) {
+    console.log(err);
     throw new BadBody(
       identifier,
       JSON.stringify({}),
