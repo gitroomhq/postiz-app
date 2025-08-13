@@ -6,6 +6,7 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import {
+  BadBody,
   RefreshToken,
   SocialAbstract,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
@@ -118,6 +119,15 @@ async function uploadVideo(
     );
     if (status.jobStatus.blob) {
       blob = status.jobStatus.blob;
+    }
+
+    if (status.jobStatus.state === 'JOB_STATE_FAILED') {
+      throw new BadBody(
+        'bluesky',
+        JSON.stringify({}),
+        {} as any,
+        'Could not upload video, job failed'
+      );
     }
     // wait a second
     await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -295,7 +305,7 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
             aspectRatio: {
               width: p.width,
               height: p.height,
-            }
+            },
           })),
         };
       }
