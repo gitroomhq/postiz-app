@@ -317,22 +317,24 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         postDetails.flatMap((p) =>
           p?.media?.flatMap(async (m) => {
             return {
-              id: await this.runInConcurrent(async () =>
-                client.v1.uploadMedia(
-                  m.path.indexOf('mp4') > -1
-                    ? Buffer.from(await readOrFetch(m.path))
-                    : await sharp(await readOrFetch(m.path), {
-                        animated: lookup(m.path) === 'image/gif',
-                      })
-                        .resize({
-                          width: 1000,
+              id: await this.runInConcurrent(
+                async () =>
+                  client.v1.uploadMedia(
+                    m.path.indexOf('mp4') > -1
+                      ? Buffer.from(await readOrFetch(m.path))
+                      : await sharp(await readOrFetch(m.path), {
+                          animated: lookup(m.path) === 'image/gif',
                         })
-                        .gif()
-                        .toBuffer(),
-                  {
-                    mimeType: lookup(m.path) || '',
-                  }
-                )
+                          .resize({
+                            width: 1000,
+                          })
+                          .gif()
+                          .toBuffer(),
+                    {
+                      mimeType: lookup(m.path) || '',
+                    }
+                  ),
+                true
               ),
               postId: p.id,
             };
