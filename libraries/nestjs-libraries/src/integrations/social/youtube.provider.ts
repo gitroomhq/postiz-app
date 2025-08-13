@@ -222,7 +222,8 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
           media: {
             body: response.data,
           },
-        })
+        }),
+      true
     );
 
     if (settings?.thumbnail?.path) {
