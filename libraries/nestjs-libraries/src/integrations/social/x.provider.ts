@@ -38,8 +38,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     if (body.includes('usage-capped')) {
       return {
         type: 'refresh-token',
-        value:
-          'Posting failed - capped reached. Please try again later',
+        value: 'Posting failed - capped reached. Please try again later',
       };
     }
     if (body.includes('duplicate-rules')) {
@@ -53,6 +52,17 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       return {
         type: 'bad-body',
         value: 'The Tweet contains a URL that is not allowed on X',
+      };
+    }
+    if (
+      body.includes(
+        'This user is not allowed to post a video longer than 2 minutes'
+      )
+    ) {
+      return {
+        type: 'bad-body',
+        value:
+          'The video you are trying to post is longer than 2 minutes, which is not allowed for this account',
       };
     }
     return undefined;
