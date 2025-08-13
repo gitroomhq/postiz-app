@@ -129,8 +129,8 @@ async function uploadVideo(
         'Could not upload video, job failed'
       );
     }
-    // wait a second
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    await timer(30000);
   }
 
   console.log('posting video...');
