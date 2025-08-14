@@ -11,6 +11,7 @@ export class MonthlyReportService {
 		private _youtubeInsightsRepository: PrismaRepository<'youTubeInsight'>,
 		private _facebookInsightsRepository: PrismaRepository<'facebookInsight'>,
 		private _linkedInInsightsRepository: PrismaRepository<'linkedInInsight'>,
+		private _threadsInsightsRepository: PrismaRepository<'threadsInsight'>,
 		private _gbpInsightsRepository: PrismaRepository<'gbpInsight'>,
 		private _websitePerformanceRepo: PrismaRepository<'websitePerformance'>,
 		private _websiteLocationRepo: PrismaRepository<'websiteLocation'>,
@@ -169,19 +170,61 @@ export class MonthlyReportService {
 				}
 			}
 
+			// Calculate monthly totals
+			const firstData = insights[0];
+			const monthlyTotals = {
+				followers: latestData.followers || 0, // Use latest for followers (it's cumulative)
+				following: latestData.following || 0, // Use latest for following (it's cumulative)
+				// For totalContent, if values are daily increments (0 or 1), sum them up
+				// If values appear to be cumulative, calculate the difference
+				totalContent: (() => {
+					// Check if totalContent appears to be daily increments (all values are 0 or 1)
+					const allValuesSmall = insights.every(i => (i.totalContent || 0) <= 1);
+					
+					if (allValuesSmall) {
+						// Sum up daily increments
+						return insights.reduce((sum, item) => sum + (item.totalContent || 0), 0);
+					} else {
+						// Treat as cumulative - subtract first from last
+						return firstData && latestData 
+							? Math.max(0, (latestData.totalContent || 0) - (firstData.totalContent || 0))
+							: (latestData.totalContent || 0);
+					}
+				})()
+			};
+
+			// Convert daily increments to cumulative for chart if needed
+			let cumulativeContent = 0;
+			const chartData = insights.map(i => {
+				// If totalContent appears to be daily increments, make it cumulative for the chart
+				const allValuesSmall = insights.every(item => (item.totalContent || 0) <= 1);
+				if (allValuesSmall) {
+					cumulativeContent += (i.totalContent || 0);
+					return {
+						date: i.createdAt,
+						followers: i.followers || 0,
+						following: i.following || 0,
+						totalContent: cumulativeContent,
+					};
+				} else {
+					return {
+						date: i.createdAt,
+						followers: i.followers || 0,
+						following: i.following || 0,
+						totalContent: i.totalContent || 0,
+					};
+				}
+			});
+
 			return {
 				table: this.buildCommunityTable(allMonthsData, 'Instagram'),
-				chart: insights.map(i => ({
-					date: i.createdAt,
-					followers: i.followers || 0,
-					following: i.following || 0,
-					totalContent: i.totalContent || 0,
-				})),
+				chart: chartData,
 				latestData: {
 					followers: latestData.followers || 0,
 					following: latestData.following || 0,
 					totalContent: latestData.totalContent || 0,
-				}
+				},
+				monthlyTotals: monthlyTotals
 			};
 		} catch (error) {
 			console.error('Instagram Community Error:', error);
@@ -216,7 +259,7 @@ export class MonthlyReportService {
 			// Get the latest data point for the requested month
 			const latestData = dailyData[dailyData.length - 1];
 
-			// For table data, get data for current and previous 2 months using last data points
+			// For table data, get monthly totals for current and previous 2 months
 			const allMonthsData = [];
 
 			for (let i = 2; i >= 0; i--) {
@@ -225,8 +268,8 @@ export class MonthlyReportService {
 				const yearNum = currentMonth.getFullYear();
 				const monthRange = this.getMonthDateRange(monthNum, yearNum);
 
-				// Get the last data point for each month
-				const lastDataPoint = await this._instagramInsightsRepository.model.instagramInsight.findFirst({
+				// Get all data points for the month
+				const monthlyDataPoints = await this._instagramInsightsRepository.model.instagramInsight.findMany({
 					where: {
 						customerId,
 						createdAt: {
@@ -234,7 +277,6 @@ export class MonthlyReportService {
 							lte: monthRange.endDate
 						},
 					},
-					orderBy: { createdAt: 'desc' },
 					select: {
 						createdAt: true,
 						impressions: true,
@@ -243,13 +285,29 @@ export class MonthlyReportService {
 					},
 				});
 
-				if (lastDataPoint) {
-					allMonthsData.push({
+				if (monthlyDataPoints.length > 0) {
+					// Calculate monthly totals
+					const monthlyTotal = {
 						createdAt: new Date(yearNum, monthNum - 1, 15), // Mid-month date for display
-						impressions: lastDataPoint.impressions || 0,
-						avgReachPerDay: lastDataPoint.avgReachPerDay || 0,
-						totalContent: lastDataPoint.totalContent || 0,
-					});
+						impressions: monthlyDataPoints.reduce((sum, item) => sum + (item.impressions || 0), 0),
+						avgReachPerDay: Math.round(
+							monthlyDataPoints.reduce((sum, item) => sum + (item.avgReachPerDay || 0), 0) / monthlyDataPoints.length
+						),
+						totalContent: (() => {
+							// Check if totalContent appears to be daily increments
+							const allValuesSmall = monthlyDataPoints.every(i => (i.totalContent || 0) <= 1);
+							if (allValuesSmall) {
+								// Sum up daily increments
+								return monthlyDataPoints.reduce((sum, item) => sum + (item.totalContent || 0), 0);
+							} else {
+								// Get difference between last and first
+								const firstData = monthlyDataPoints[0];
+								const lastData = monthlyDataPoints[monthlyDataPoints.length - 1];
+								return Math.max(0, (lastData.totalContent || 0) - (firstData.totalContent || 0));
+							}
+						})()
+					};
+					allMonthsData.push(monthlyTotal);
 				} else {
 					// If no data, create empty entry
 					allMonthsData.push({
@@ -261,19 +319,63 @@ export class MonthlyReportService {
 				}
 			}
 
+			// Calculate monthly totals
+			const firstData = dailyData[0];
+			const monthlyTotals = {
+				impressions: dailyData.reduce((sum, item) => sum + (item.impressions || 0), 0),
+				// Calculate average reach per day across the month
+				avgReachPerDay: Math.round(
+					dailyData.reduce((sum, item) => sum + (item.avgReachPerDay || 0), 0) / dailyData.length
+				),
+				// For totalContent, handle both daily increments and cumulative values
+				totalContent: (() => {
+					// Check if totalContent appears to be daily increments (all values are 0 or 1)
+					const allValuesSmall = dailyData.every(i => (i.totalContent || 0) <= 1);
+					
+					if (allValuesSmall) {
+						// Sum up daily increments
+						return dailyData.reduce((sum, item) => sum + (item.totalContent || 0), 0);
+					} else {
+						// Treat as cumulative - subtract first from last
+						return firstData && latestData 
+							? Math.max(0, (latestData.totalContent || 0) - (firstData.totalContent || 0))
+							: (latestData.totalContent || 0);
+					}
+				})()
+			};
+
+			// Convert daily increments to cumulative for chart if needed
+			let cumulativeContent = 0;
+			const chartData = dailyData.map(item => {
+				// If totalContent appears to be daily increments, make it cumulative for the chart
+				const allValuesSmall = dailyData.every(i => (i.totalContent || 0) <= 1);
+				if (allValuesSmall) {
+					cumulativeContent += (item.totalContent || 0);
+					return {
+						date: item.createdAt,
+						impressions: item.impressions || 0,
+						avgReachPerDay: item.avgReachPerDay || 0,
+						totalContent: cumulativeContent
+					};
+				} else {
+					return {
+						date: item.createdAt,
+						impressions: item.impressions || 0,
+						avgReachPerDay: item.avgReachPerDay || 0,
+						totalContent: item.totalContent || 0
+					};
+				}
+			});
+
 			return {
 				table: this.buildOverviewTable(allMonthsData, 'Instagram'),
-				chart: dailyData.map(item => ({
-					date: item.createdAt,
-					impressions: item.impressions || 0,
-					avgReachPerDay: item.avgReachPerDay || 0,
-					totalContent: item.totalContent || 0
-				})),
+				chart: chartData,
 				latestData: {
 					impressions: latestData.impressions || 0,
 					avgReachPerDay: latestData.avgReachPerDay || 0,
 					totalContent: latestData.totalContent || 0,
-				}
+				},
+				monthlyTotals: monthlyTotals
 			};
 		} catch (error) {
 			console.error('Instagram Overview Error:', error);
@@ -284,29 +386,126 @@ export class MonthlyReportService {
 	// Updated Facebook methods with daily charts
 	async getFacebookCommunityReport(customerId: string, month: number, year: number) {
 		try {
-			// Monthly data for table
-			const monthlyData = await this.getDataForMonths(
-				this._facebookInsightsRepository.model.facebookInsight,
-				customerId,
-				month,
-				year,
-				['likes', 'followers', 'totalContent'],
-			);
+			console.log('=== FACEBOOK COMMUNITY REPORT ===');
+			console.log('CustomerId:', customerId);
+			console.log('Month:', month, 'Year:', year);
+			const { startDate, endDate } = this.getMonthDateRange(month, year);
 
-			// Daily data for chart
-			const dailyData = await this.getDailyDataForMonth(
-				this._facebookInsightsRepository.model.facebookInsight,
-				customerId,
-				month,
-				year,
-				['likes', 'followers', 'totalContent']
-			);
+			// Get daily data for the requested month
+			const dailyData = await this._facebookInsightsRepository.model.facebookInsight.findMany({
+				where: {
+					customerId,
+					createdAt: {
+						gte: startDate,
+						lte: endDate,
+					},
+				},
+				orderBy: { createdAt: 'asc' },
+			});
 
-			if (!monthlyData.length) return null;
+			if (!dailyData.length) return null;
+
+			// Get the latest data point for the requested month
+			const latestData = dailyData[dailyData.length - 1];
+
+			// For table data, get data for current and previous 2 months using last data points
+			const allMonthsData = [];
+
+			for (let i = 2; i >= 0; i--) {
+				const currentMonth = new Date(year, month - 1 - i, 1);
+				const monthNum = currentMonth.getMonth() + 1;
+				const yearNum = currentMonth.getFullYear();
+				const monthRange = this.getMonthDateRange(monthNum, yearNum);
+
+				// Get the last data point for each month
+				const lastDataPoint = await this._facebookInsightsRepository.model.facebookInsight.findFirst({
+					where: {
+						customerId,
+						createdAt: {
+							gte: monthRange.startDate,
+							lte: monthRange.endDate
+						},
+					},
+					orderBy: { createdAt: 'desc' },
+				});
+
+				if (lastDataPoint) {
+					allMonthsData.push({
+						createdAt: new Date(yearNum, monthNum - 1, 15), // Mid-month date for display
+						likes: lastDataPoint.likes || 0,
+						followers: lastDataPoint.followers || 0,
+						totalContent: lastDataPoint.totalContent || 0,
+					});
+				} else {
+					// If no data, create empty entry
+					allMonthsData.push({
+						createdAt: new Date(yearNum, monthNum - 1, 15),
+						likes: 0,
+						followers: 0,
+						totalContent: 0,
+					});
+				}
+			}
+
+			// Remove duplicates - keep only one entry per day
+			const uniqueDailyData = [];
+			const seenDates = new Set();
+			
+			for (const item of dailyData) {
+				const dateKey = format(new Date(item.createdAt), 'yyyy-MM-dd');
+				if (!seenDates.has(dateKey)) {
+					seenDates.add(dateKey);
+					uniqueDailyData.push(item);
+				}
+			}
+
+			// Calculate monthly totals
+			const firstData = uniqueDailyData[0];
+			const lastUniqueData = uniqueDailyData[uniqueDailyData.length - 1] || latestData;
+			const monthlyTotals = {
+				likes: latestData.likes || 0, // Use latest for likes (it's cumulative)
+				followers: latestData.followers || 0, // Use latest for followers (it's cumulative)
+				// For totalContent, handle both daily increments and cumulative values
+				totalContent: (() => {
+					// Check if totalContent appears to be daily increments (all values are 0 or 1)
+					const allValuesSmall = uniqueDailyData.every(i => (i.totalContent || 0) <= 1);
+					
+					if (allValuesSmall) {
+						// Sum up daily increments
+						return uniqueDailyData.reduce((sum, item) => sum + (item.totalContent || 0), 0);
+					} else {
+						// Treat as cumulative - subtract first from last
+						return firstData && lastUniqueData 
+							? Math.max(0, (lastUniqueData.totalContent || 0) - (firstData.totalContent || 0))
+							: (lastUniqueData.totalContent || 0);
+					}
+				})()
+			};
+
+			// Keep daily values for chart (don't convert to cumulative)
+			const chartData = uniqueDailyData.map(item => {
+				return {
+					date: item.createdAt,
+					likes: item.likes || 0,
+					followers: item.followers || 0,
+					totalContent: item.totalContent || 0, // Show daily values
+				};
+			});
 
 			return {
-				table: this.buildCommunityTable(monthlyData, 'Facebook'),
-				chart: dailyData,
+				table: this.buildCommunityTable(allMonthsData, 'Facebook'),
+				chart: chartData,
+				latestData: {
+					likes: latestData.likes || 0,
+					followers: latestData.followers || 0,
+					totalContent: latestData.totalContent || 0,
+				},
+				monthlyTotals: monthlyTotals,
+				summary: {
+					likes: latestData.likes || 0, // Latest data for likes
+					followers: latestData.followers || 0, // Latest data for followers
+					totalContent: monthlyTotals.totalContent // Monthly total for content
+				}
 			};
 		} catch (error) {
 			console.error('Facebook Community Error:', error);
@@ -316,29 +515,152 @@ export class MonthlyReportService {
 
 	async getFacebookOverviewReport(customerId: string, month: number, year: number) {
 		try {
-			// Monthly data for table
-			const monthlyData = await this.getDataForMonths(
-				this._facebookInsightsRepository.model.facebookInsight,
-				customerId,
-				month,
-				year,
-				['impressions', 'pageViews', 'totalContent'],
-			);
+			const { startDate, endDate } = this.getMonthDateRange(month, year);
 
-			// Daily data for chart
-			const dailyData = await this.getDailyDataForMonth(
-				this._facebookInsightsRepository.model.facebookInsight,
-				customerId,
-				month,
-				year,
-				['impressions', 'pageViews', 'totalContent'],
-			);
+			// Get daily data for the requested month
+			const dailyData = await this._facebookInsightsRepository.model.facebookInsight.findMany({
+				where: {
+					customerId,
+					createdAt: {
+						gte: startDate,
+						lte: endDate,
+					},
+				},
+				orderBy: { createdAt: 'asc' },
+				select: {
+					createdAt: true,
+					impressions: true,
+					pageViews: true,
+					totalContent: true
+				},
+			});
 
-			if (!monthlyData.length) return null;
+			if (!dailyData.length) return null;
+
+			// Remove duplicates - keep only one entry per day
+			const uniqueDailyData = [];
+			const seenDates = new Set();
+			
+			for (const item of dailyData) {
+				const dateKey = format(new Date(item.createdAt), 'yyyy-MM-dd');
+				if (!seenDates.has(dateKey)) {
+					seenDates.add(dateKey);
+					uniqueDailyData.push(item);
+				}
+			}
+
+			// Get the latest data point for the requested month
+			const latestData = uniqueDailyData[uniqueDailyData.length - 1];
+
+			// For table data, get monthly totals for current and previous 2 months
+			const allMonthsData = [];
+
+			for (let i = 2; i >= 0; i--) {
+				const currentMonth = new Date(year, month - 1 - i, 1);
+				const monthNum = currentMonth.getMonth() + 1;
+				const yearNum = currentMonth.getFullYear();
+				const monthRange = this.getMonthDateRange(monthNum, yearNum);
+
+				// Get all data points for the month
+				const monthlyDataPoints = await this._facebookInsightsRepository.model.facebookInsight.findMany({
+					where: {
+						customerId,
+						createdAt: {
+							gte: monthRange.startDate,
+							lte: monthRange.endDate
+						},
+					},
+					select: {
+						createdAt: true,
+						impressions: true,
+						pageViews: true,
+						totalContent: true
+					},
+				});
+
+				// Remove duplicates for monthly data
+				const uniqueMonthlyData = [];
+				const monthSeenDates = new Set();
+				
+				for (const item of monthlyDataPoints) {
+					const dateKey = format(new Date(item.createdAt), 'yyyy-MM-dd');
+					if (!monthSeenDates.has(dateKey)) {
+						monthSeenDates.add(dateKey);
+						uniqueMonthlyData.push(item);
+					}
+				}
+
+				if (uniqueMonthlyData.length > 0) {
+					// Calculate monthly totals
+					const monthlyTotal = {
+						createdAt: new Date(yearNum, monthNum - 1, 15), // Mid-month date for display
+						impressions: uniqueMonthlyData.reduce((sum, item) => sum + (item.impressions || 0), 0),
+						pageViews: uniqueMonthlyData.reduce((sum, item) => sum + (item.pageViews || 0), 0),
+						totalContent: (() => {
+							// Check if totalContent appears to be daily increments
+							const allValuesSmall = uniqueMonthlyData.every(i => (i.totalContent || 0) <= 1);
+							if (allValuesSmall) {
+								// Sum up daily increments
+								return uniqueMonthlyData.reduce((sum, item) => sum + (item.totalContent || 0), 0);
+							} else {
+								// Get difference between last and first
+								const firstData = uniqueMonthlyData[0];
+								const lastData = uniqueMonthlyData[uniqueMonthlyData.length - 1];
+								return Math.max(0, (lastData.totalContent || 0) - (firstData.totalContent || 0));
+							}
+						})()
+					};
+					allMonthsData.push(monthlyTotal);
+				} else {
+					// If no data, create empty entry
+					allMonthsData.push({
+						createdAt: new Date(yearNum, monthNum - 1, 15),
+						impressions: 0,
+						pageViews: 0,
+						totalContent: 0,
+					});
+				}
+			}
+
+			// Calculate monthly totals from unique daily data
+			const firstData = uniqueDailyData[0];
+			const monthlyTotals = {
+				impressions: uniqueDailyData.reduce((sum, item) => sum + (item.impressions || 0), 0),
+				pageViews: uniqueDailyData.reduce((sum, item) => sum + (item.pageViews || 0), 0),
+				// For totalContent, handle both daily increments and cumulative values
+				totalContent: (() => {
+					// Check if totalContent appears to be daily increments (all values are 0 or 1)
+					const allValuesSmall = uniqueDailyData.every(i => (i.totalContent || 0) <= 1);
+					
+					if (allValuesSmall) {
+						// Sum up daily increments
+						return uniqueDailyData.reduce((sum, item) => sum + (item.totalContent || 0), 0);
+					} else {
+						// Treat as cumulative - subtract first from last
+						return firstData && latestData 
+							? Math.max(0, (latestData.totalContent || 0) - (firstData.totalContent || 0))
+							: (latestData.totalContent || 0);
+					}
+				})()
+			};
+
+			// Keep daily values for chart (don't convert to cumulative)
+			const chartData = uniqueDailyData.map(item => ({
+				date: item.createdAt,
+				impressions: item.impressions || 0,
+				pageViews: item.pageViews || 0,
+				totalContent: item.totalContent || 0 // Show daily values
+			}));
 
 			return {
-				table: this.buildOverviewTable(monthlyData, 'Facebook'),
-				chart: dailyData,
+				table: this.buildOverviewTable(allMonthsData, 'Facebook'),
+				chart: chartData,
+				latestData: {
+					impressions: latestData.impressions || 0,
+					pageViews: latestData.pageViews || 0,
+					totalContent: latestData.totalContent || 0,
+				},
+				monthlyTotals: monthlyTotals
 			};
 		} catch (error) {
 			console.error('Facebook Overview Error:', error);
@@ -472,10 +794,13 @@ export class MonthlyReportService {
 
 		const calculateChange = (values: number[]) => {
 			if (values.length < 2) return 'N/A';
-			const first = values[0];
-			const last = values[values.length - 1];
-			if (first === 0) return last === 0 ? '0%' : 'N/A';
-			const change = ((last - first) / first) * 100;
+			const previous = values[values.length - 2]; // Previous month
+			const current = values[values.length - 1];  // Current month
+			if (previous === 0) {
+				if (current === 0) return '0%';
+				return `${current * 100}%`; // e.g., 5 → 500%
+			}
+			const change = ((current - previous) / previous) * 100;
 			return `${change.toFixed(2)}%`;
 		};
 
@@ -489,17 +814,17 @@ export class MonthlyReportService {
 		const totalComments = insights.map(i => parseInt(i.totalComments) || 0);
 
 		rows.push(
-			['Subscribers', ...subscribers.map(String), calculateChange(subscribers)],
-			['Total Views', ...totalViews.map(String), calculateChange(totalViews)],
+			['Subscribers', ...subscribers.map(v => this.kFormatter(v)), calculateChange(subscribers)],
+			['Total Views', ...totalViews.map(v => this.kFormatter(v)), calculateChange(totalViews)],
 			['Total Videos', ...totalVideos.map(String), calculateChange(totalVideos)],
-			['Total likes', ...totalLikes.map(String), calculateChange(totalLikes)],
-			['Total Comments', ...totalComments.map(String), calculateChange(totalComments)]
+			['Total likes', ...totalLikes.map(v => this.kFormatter(v)), calculateChange(totalLikes)],
+			['Total Comments', ...totalComments.map(v => this.kFormatter(v)), calculateChange(totalComments)]
 		);
 
 		return {
 			Data: headers,
 			Rows: rows,
-			Growth: `Subscribers growth: ${subscribers[subscribers.length - 1] - subscribers[0]}`
+			Growth: `Subscribers growth: ${subscribers[subscribers.length - 1] - subscribers[subscribers.length - 2]}`
 		};
 	}
 
@@ -782,6 +1107,280 @@ export class MonthlyReportService {
 		}
 	}
 
+	// Threads methods
+	async getThreadsCommunityReport(customerId: string, month: number, year: number) {
+		try {
+			console.log('getThreadsCommunityReport called with:', { customerId, month, year });
+			const { startDate, endDate } = this.getMonthDateRange(month, year);
+			console.log('Date range:', { startDate, endDate });
+
+			// Get daily data for the requested month
+			const dailyData = await this._threadsInsightsRepository.model.threadsInsight.findMany({
+				where: {
+					customerId,
+					createdAt: {
+						gte: startDate,
+						lte: endDate,
+					},
+				},
+				orderBy: { createdAt: 'asc' },
+			});
+
+			console.log('Threads daily data found:', dailyData.length, 'records');
+			if (!dailyData.length) return null;
+
+			// Get the latest data point for the requested month
+			const latestData = dailyData[dailyData.length - 1];
+
+			// For table data, get data for current and previous 2 months
+			const allMonthsData = [];
+
+			for (let i = 2; i >= 0; i--) {
+				const currentMonth = new Date(year, month - 1 - i, 1);
+				const monthNum = currentMonth.getMonth() + 1;
+				const yearNum = currentMonth.getFullYear();
+				const monthRange = this.getMonthDateRange(monthNum, yearNum);
+
+				// Get all data points for each month to calculate totals
+				const monthData = await this._threadsInsightsRepository.model.threadsInsight.findMany({
+					where: {
+						customerId,
+						createdAt: {
+							gte: monthRange.startDate,
+							lte: monthRange.endDate
+						},
+					},
+					orderBy: { createdAt: 'asc' },
+				});
+
+				if (monthData.length > 0) {
+					const lastDataPoint = monthData[monthData.length - 1];
+					const firstDataPoint = monthData[0];
+					
+					// For totalContent, calculate the monthly total
+					const monthlyContentTotal = (() => {
+						// Check if totalContent appears to be daily increments
+						const allValuesSmall = monthData.every(i => (i.totalContent || 0) <= 1);
+						
+						if (allValuesSmall) {
+							// Sum up daily increments
+							return monthData.reduce((sum, item) => sum + (item.totalContent || 0), 0);
+						} else {
+							// Treat as cumulative - subtract first from last
+							return Math.max(0, (lastDataPoint.totalContent || 0) - (firstDataPoint.totalContent || 0));
+						}
+					})();
+
+					allMonthsData.push({
+						createdAt: new Date(yearNum, monthNum - 1, 15), // Mid-month date for display
+						followers: lastDataPoint.followers || 0,
+						totalContent: monthlyContentTotal
+					});
+				} else {
+					// If no data, create empty entry
+					allMonthsData.push({
+						createdAt: new Date(yearNum, monthNum - 1, 15),
+						followers: 0,
+						totalContent: 0
+					});
+				}
+			}
+
+			// Calculate monthly totals
+			const monthlyTotals = {
+				followers: latestData.followers || 0, // Use latest for followers (it's cumulative)
+				// For totalContent, handle both daily increments and cumulative values
+				totalContent: (() => {
+					// Check if totalContent appears to be daily increments (all values are 0 or 1)
+					const allValuesSmall = dailyData.every(i => (i.totalContent || 0) <= 1);
+					
+					if (allValuesSmall) {
+						// Sum up daily increments
+						return dailyData.reduce((sum, item) => sum + (item.totalContent || 0), 0);
+					} else {
+						// Treat as cumulative - subtract first from last
+						const firstData = dailyData[0];
+						return firstData && latestData 
+							? Math.max(0, (latestData.totalContent || 0) - (firstData.totalContent || 0))
+							: (latestData.totalContent || 0);
+					}
+				})()
+			};
+
+			// Convert daily increments to cumulative for chart if needed
+			let cumulativeContent = 0;
+			const chartData = dailyData.map(item => {
+				// If totalContent appears to be daily increments, make it cumulative for the chart
+				const allValuesSmall = dailyData.every(i => (i.totalContent || 0) <= 1);
+				if (allValuesSmall) {
+					cumulativeContent += (item.totalContent || 0);
+					return {
+						date: item.createdAt,
+						followers: item.followers || 0,
+						totalContent: cumulativeContent,
+					};
+				} else {
+					return {
+						date: item.createdAt,
+						followers: item.followers || 0,
+						totalContent: item.totalContent || 0,
+					};
+				}
+			});
+
+			return {
+				table: this.buildCommunityTable(allMonthsData, 'Threads'),
+				chart: chartData,
+				latestData: {
+					followers: latestData.followers || 0,
+					totalContent: latestData.totalContent || 0,
+				},
+				monthlyTotals: monthlyTotals
+			};
+		} catch (error) {
+			console.error('Threads Community Error:', error);
+			return null;
+		}
+	}
+
+	async getThreadsOverviewReport(customerId: string, month: number, year: number) {
+		try {
+			const { startDate, endDate } = this.getMonthDateRange(month, year);
+
+			// Get daily data for the requested month
+			const dailyData = await this._threadsInsightsRepository.model.threadsInsight.findMany({
+				where: {
+					customerId,
+					createdAt: {
+						gte: startDate,
+						lte: endDate,
+					},
+				},
+				orderBy: { createdAt: 'asc' },
+				select: {
+					createdAt: true,
+					impressions: true,
+					engagement: true,
+					interactions: true,
+					totalContent: true
+				},
+			});
+
+			if (!dailyData.length) return null;
+
+			// Get the latest data point for the requested month
+			const latestData = dailyData[dailyData.length - 1];
+
+			// For table data, get monthly totals for current and previous 2 months
+			const allMonthsData = [];
+
+			for (let i = 2; i >= 0; i--) {
+				const currentMonth = new Date(year, month - 1 - i, 1);
+				const monthNum = currentMonth.getMonth() + 1;
+				const yearNum = currentMonth.getFullYear();
+				const monthRange = this.getMonthDateRange(monthNum, yearNum);
+
+				// Get all data points for the month
+				const monthlyDataPoints = await this._threadsInsightsRepository.model.threadsInsight.findMany({
+					where: {
+						customerId,
+						createdAt: {
+							gte: monthRange.startDate,
+							lte: monthRange.endDate
+						},
+					},
+					select: {
+						createdAt: true,
+						impressions: true,
+						engagement: true,
+						interactions: true,
+						totalContent: true
+					},
+				});
+
+				if (monthlyDataPoints.length > 0) {
+					// Calculate monthly totals
+					const monthlyTotal = {
+						createdAt: new Date(yearNum, monthNum - 1, 15), // Mid-month date for display
+						impressions: monthlyDataPoints.reduce((sum, item) => sum + (item.impressions || 0), 0),
+						engagement: monthlyDataPoints.reduce((sum, item) => sum + (item.engagement || 0), 0) / monthlyDataPoints.length, // Average
+						interactions: monthlyDataPoints.reduce((sum, item) => sum + (item.interactions || 0), 0),
+						totalContent: (() => {
+							// Check if totalContent appears to be daily increments
+							const allValuesSmall = monthlyDataPoints.every(i => (i.totalContent || 0) <= 1);
+							if (allValuesSmall) {
+								// Sum up daily increments
+								return monthlyDataPoints.reduce((sum, item) => sum + (item.totalContent || 0), 0);
+							} else {
+								// Get difference between last and first
+								const firstData = monthlyDataPoints[0];
+								const lastData = monthlyDataPoints[monthlyDataPoints.length - 1];
+								return Math.max(0, (lastData.totalContent || 0) - (firstData.totalContent || 0));
+							}
+						})()
+					};
+					allMonthsData.push(monthlyTotal);
+				} else {
+					// If no data, create empty entry
+					allMonthsData.push({
+						createdAt: new Date(yearNum, monthNum - 1, 15),
+						impressions: 0,
+						engagement: 0,
+						interactions: 0,
+						totalContent: 0,
+					});
+				}
+			}
+
+			// Calculate monthly totals
+			const monthlyTotals = {
+				impressions: dailyData.reduce((sum, item) => sum + (item.impressions || 0), 0),
+				engagement: dailyData.reduce((sum, item) => sum + (item.engagement || 0), 0) / dailyData.length, // Average
+				interactions: dailyData.reduce((sum, item) => sum + (item.interactions || 0), 0),
+				// For totalContent, handle both daily increments and cumulative values
+				totalContent: (() => {
+					// Check if totalContent appears to be daily increments (all values are 0 or 1)
+					const allValuesSmall = dailyData.every(i => (i.totalContent || 0) <= 1);
+					
+					if (allValuesSmall) {
+						// Sum up daily increments
+						return dailyData.reduce((sum, item) => sum + (item.totalContent || 0), 0);
+					} else {
+						// Treat as cumulative - subtract first from last
+						const firstData = dailyData[0];
+						return firstData && latestData 
+							? Math.max(0, (latestData.totalContent || 0) - (firstData.totalContent || 0))
+							: (latestData.totalContent || 0);
+					}
+				})()
+			};
+
+			// Keep daily values for chart
+			const chartData = dailyData.map(item => ({
+				date: item.createdAt,
+				impressions: item.impressions || 0,
+				engagement: item.engagement || 0,
+				interactions: item.interactions || 0,
+				totalContent: item.totalContent || 0
+			}));
+
+			return {
+				table: this.buildOverviewTable(allMonthsData, 'Threads'),
+				chart: chartData,
+				latestData: {
+					impressions: latestData.impressions || 0,
+					engagement: latestData.engagement || 0,
+					interactions: latestData.interactions || 0,
+					totalContent: latestData.totalContent || 0,
+				},
+				monthlyTotals: monthlyTotals
+			};
+		} catch (error) {
+			console.error('Threads Overview Error:', error);
+			return null;
+		}
+	}
+
 	// The rest of the methods (buildCommunityTable, buildOverviewTable, etc.) remain unchanged
 	private buildCommunityTable(insights: any[], platform: string) {
 		// Get month abbreviations (JAN, FEB, MAR)
@@ -790,10 +1389,13 @@ export class MonthlyReportService {
 		// Calculate percentage change
 		const calculateChange = (values: number[]) => {
 			if (values.length < 2) return 'N/A';
-			const first = values[0];
-			const last = values[values.length - 1];
-			if (first === 0) return last === 0 ? '0%' : 'N/A';
-			const change = ((last - first) / first) * 100;
+			const previous = values[values.length - 2]; // Previous month
+			const current = values[values.length - 1];  // Current month
+			if (previous === 0) {
+				if (current === 0) return '0%';
+				return `${(current * 100).toFixed(2)}%`; // e.g., 5 → 500.00%
+			}
+			const change = ((current - previous) / previous) * 100;
 			return `${change.toFixed(2)}%`;
 		};
 
@@ -801,28 +1403,31 @@ export class MonthlyReportService {
 		const headers = ['Data', ...months, 'Change %'];
 		const rows = [];
 
-		// Common metrics
-		const totalContents = insights.map(i => parseInt(i.totalContent) || 0);
-		rows.push([
-			'Total Content',
-			...totalContents.map(String),
-			calculateChange(totalContents),
-		]);
+		// For Threads, don't add Total Content here - we'll add it after Followers
+		if (platform !== 'Threads') {
+			// Common metrics
+			const totalContents = insights.map(i => parseInt(i.totalContent) || 0);
+			rows.push([
+				'Total Content',
+				...totalContents.map(String),
+				calculateChange(totalContents),
+			]);
+		}
 
 		// Platform-specific metrics
 		if (platform === 'Instagram') {
 			const followers = insights.map(i => parseInt(i.followers) || 0);
 			const following = insights.map(i => parseInt(i.following) || 0);
 			rows.push(
-				['Followers', ...followers.map(String), calculateChange(followers)],
-				['Following', ...following.map(String), calculateChange(following)],
+				['Followers', ...followers.map(v => this.kFormatter(v)), calculateChange(followers)],
+				['Following', ...following.map(v => this.kFormatter(v)), calculateChange(following)],
 			);
 		} else if (platform === 'Facebook') {
 			const likes = insights.map(i => parseInt(i.likes) || 0);
 			const followers = insights.map(i => parseInt(i.followers) || 0);
 			rows.push(
-				['Likes', ...likes.map(String), calculateChange(likes)],
-				['Followers', ...followers.map(String), calculateChange(followers)],
+				['Likes', ...likes.map(v => this.kFormatter(v)), calculateChange(likes)],
+				['Followers', ...followers.map(v => this.kFormatter(v)), calculateChange(followers)],
 			);
 		} else if (platform === 'LinkedIn') {
 			const followers = insights.map(i => parseInt(i.followers) || 0);
@@ -830,9 +1435,9 @@ export class MonthlyReportService {
 			const impressions = insights.map(i => parseInt(i.impressions) || 0);
 			const postsCount = insights.map(i => parseInt(i.postsCount) || 0);
 			rows.push(
-				['Followers', ...followers.map(String), calculateChange(followers)],
-				['Paid Followers', ...paidFollowers.map(String), calculateChange(paidFollowers)],
-				['Impressions', ...impressions.map(String), calculateChange(impressions)],
+				['Followers', ...followers.map(v => this.kFormatter(v)), calculateChange(followers)],
+				['Paid Followers', ...paidFollowers.map(v => this.kFormatter(v)), calculateChange(paidFollowers)],
+				['Impressions', ...impressions.map(v => this.kFormatter(v)), calculateChange(impressions)],
 				['Posts', ...postsCount.map(String), calculateChange(postsCount)],
 			);
 		} else if (platform === 'X') {
@@ -840,9 +1445,18 @@ export class MonthlyReportService {
 			const following = insights.map(i => parseInt(i.following) || 0);
 			//const totalContent = insights.map(i => parseInt(i.totalContent) || 0);
 			rows.push(
-				['Followers', ...followers.map(String), calculateChange(followers)],
-				['Following', ...following.map(String), calculateChange(following)],
+				['Followers', ...followers.map(v => this.kFormatter(v)), calculateChange(followers)],
+				['Following', ...following.map(v => this.kFormatter(v)), calculateChange(following)],
 				//['Total Content', ...totalContent.map(String), calculateChange(totalContent)],
+			);
+		} else if (platform === 'Threads') {
+			const followers = insights.map(i => parseInt(i.followers) || 0);
+			const totalContent = insights.map(i => parseInt(i.totalContent) || 0);
+			
+			// Show followers first, then total content
+			rows.push(
+				['Followers', ...followers.map(v => this.kFormatter(v)), calculateChange(followers)],
+				['Total Content', ...totalContent.map(String), calculateChange(totalContent)]
 			);
 		}
 
@@ -850,7 +1464,7 @@ export class MonthlyReportService {
 		return {
 			Data: headers,
 			Rows: rows,
-			Growth: this.calculateGrowthText(insights[0], insights[insights.length - 1], platform),
+			Growth: this.calculateGrowthText(insights[insights.length - 2], insights[insights.length - 1], platform),
 		};
 	}
 
@@ -861,10 +1475,13 @@ export class MonthlyReportService {
 		// Calculate percentage change
 		const calculateChange = (values: number[]) => {
 			if (values.length < 2) return 'N/A';
-			const first = values[0];
-			const last = values[values.length - 1];
-			if (first === 0) return last === 0 ? '0%' : 'N/A';
-			const change = ((last - first) / first) * 100;
+			const previous = values[values.length - 2]; // Previous month
+			const current = values[values.length - 1];  // Current month
+			if (previous === 0) {
+				if (current === 0) return '0%';
+				return `${(current * 100).toFixed(2)}%`; // e.g., 5 → 500.00%
+			}
+			const change = ((current - previous) / previous) * 100;
 			return `${change.toFixed(2)}%`;
 		};
 
@@ -872,13 +1489,16 @@ export class MonthlyReportService {
 		const headers = ['Data', ...monthAbbreviations, 'Change %'];
 		const rows = [];
 
-		// Add Total Content row
-		const totalContents = insights.map(i => parseInt(i.totalContent) || 0);
-		rows.push([
-			'Total Content',
-			...totalContents.map(String),
-			calculateChange(totalContents),
-		]);
+		// For Threads, add Total Content at the end
+		if (platform !== 'Threads') {
+			// Add Total Content row at the beginning for other platforms
+			const totalContents = insights.map(i => parseInt(i.totalContent) || 0);
+			rows.push([
+				'Total Content',
+				...totalContents.map(String),
+				calculateChange(totalContents),
+			]);
+		}
 
 		// Platform-specific metrics
 		switch (platform) {
@@ -886,8 +1506,8 @@ export class MonthlyReportService {
 				const impressions = insights.map(i => parseInt(i.impressions) || 0);
 				const reach = insights.map(i => parseInt(i.avgReachPerDay) || 0);
 				rows.push(
-					['Impressions', ...impressions.map(String), calculateChange(impressions)],
-					['Avg Reach/Day', ...reach.map(String), calculateChange(reach)],
+					['Impressions', ...impressions.map(v => this.kFormatter(v)), calculateChange(impressions)],
+					['Avg Reach/Day', ...reach.map(v => this.kFormatter(v)), calculateChange(reach)],
 				);
 				break;
 
@@ -895,8 +1515,8 @@ export class MonthlyReportService {
 				const fbImpressions = insights.map(i => parseInt(i.impressions) || 0);
 				const pageViews = insights.map(i => parseInt(i.pageViews) || 0);
 				rows.push(
-					['Impressions', ...fbImpressions.map(String), calculateChange(fbImpressions)],
-					['Page Views', ...pageViews.map(String), calculateChange(pageViews)],
+					['Impressions', ...fbImpressions.map(v => this.kFormatter(v)), calculateChange(fbImpressions)],
+					['Page Views', ...pageViews.map(v => this.kFormatter(v)), calculateChange(pageViews)],
 				);
 				break;
 
@@ -917,7 +1537,7 @@ export class MonthlyReportService {
 				const liImpressions = insights.map(i => parseInt(i.impressions) || 0);
 				const posts = insights.map(i => parseInt(i.postsCount) || 0);
 				rows.push(
-					['Impressions', ...liImpressions.map(String), calculateChange(liImpressions)],
+					['Impressions', ...liImpressions.map(v => this.kFormatter(v)), calculateChange(liImpressions)],
 					['Posts', ...posts.map(String), calculateChange(posts)],
 				);
 				break;
@@ -927,10 +1547,23 @@ export class MonthlyReportService {
 				const engagement = insights.map(i => parseFloat(i.engagement) || 0);
 				const interactions = insights.map(i => parseInt(i.interactions) || 0); // 👈 New line added
 				rows.push(
-					['Impressions', ...xImpressions.map(String), calculateChange(xImpressions)],
+					['Impressions', ...xImpressions.map(v => this.kFormatter(v)), calculateChange(xImpressions)],
 					['Engagement', ...engagement.map(String), calculateChange(engagement)],
-					['Interactions', ...interactions.map(String), calculateChange(interactions)] // 👈 New row added
+					['Interactions', ...interactions.map(v => this.kFormatter(v)), calculateChange(interactions)] // 👈 New row added
 
+				);
+				break;
+
+			case 'Threads':
+				const threadsImpressions = insights.map(i => parseInt(i.impressions) || 0);
+				const threadsEngagement = insights.map(i => parseFloat(i.engagement) || 0);
+				const threadsInteractions = insights.map(i => parseInt(i.interactions) || 0);
+				const threadsTotalContent = insights.map(i => parseInt(i.totalContent) || 0);
+				rows.push(
+					['Impressions', ...threadsImpressions.map(v => this.kFormatter(v)), calculateChange(threadsImpressions)],
+					['Engagement', ...threadsEngagement.map(v => v.toFixed(2)), calculateChange(threadsEngagement)],
+					['Interactions', ...threadsInteractions.map(v => this.kFormatter(v)), calculateChange(threadsInteractions)],
+					['Total Content', ...threadsTotalContent.map(String), calculateChange(threadsTotalContent)]
 				);
 				break;
 		}
@@ -941,13 +1574,13 @@ export class MonthlyReportService {
 		};
 	}
 
-	private calculateGrowthText(firstRecord: any, lastRecord: any, platform: string): string {
-		if (!firstRecord || !lastRecord) return 'Insufficient data';
+	private calculateGrowthText(previousRecord: any, currentRecord: any, platform: string): string {
+		if (!previousRecord || !currentRecord) return 'Insufficient data';
 
 		let field = 'followers';
 		if (platform === 'Facebook') field = 'likes';
 
-		const change = (lastRecord[field] || 0) - (firstRecord[field] || 0);
+		const change = (currentRecord[field] || 0) - (previousRecord[field] || 0);
 		const changeText = `${change >= 0 ? '+' : ''}${change}`;
 
 		if (platform === 'Facebook') return `${changeText} New Likes`;
@@ -978,7 +1611,7 @@ export class MonthlyReportService {
 			// Get the latest data point for the requested month
 			const latestData = dailyData[dailyData.length - 1];
 
-			// For table data, get data for current and previous 2 months using last data points
+			// For table data, get monthly totals for current and previous 2 months
 			const allMonthsData = [];
 
 			for (let i = 2; i >= 0; i--) {
@@ -987,8 +1620,8 @@ export class MonthlyReportService {
 				const yearNum = currentMonth.getFullYear();
 				const monthRange = this.getMonthDateRange(monthNum, yearNum);
 
-				// Get the last data point for each month
-				const lastDataPoint = await this._gbpInsightsRepository.model.gbpInsight.findFirst({
+				// Get all data points for the month and sum them
+				const monthlyDataPoints = await this._gbpInsightsRepository.model.gbpInsight.findMany({
 					where: {
 						customerId,
 						createdAt: {
@@ -996,20 +1629,21 @@ export class MonthlyReportService {
 							lte: monthRange.endDate
 						},
 					},
-					orderBy: { createdAt: 'desc' },
 				});
 
-				if (lastDataPoint) {
-					allMonthsData.push({
+				if (monthlyDataPoints.length > 0) {
+					// Calculate monthly totals
+					const monthlyTotal = {
 						createdAt: new Date(yearNum, monthNum - 1, 15), // Mid-month date for display
-						impressionsMaps: lastDataPoint.impressionsMaps || 0,
-						impressionsSearch: lastDataPoint.impressionsSearch || 0,
-						websiteClicks: lastDataPoint.websiteClicks || 0,
-						phoneClicks: lastDataPoint.phoneClicks || 0,
-						directionRequests: lastDataPoint.directionRequests || 0
-					});
+						impressionsMaps: monthlyDataPoints.reduce((sum, item) => sum + (item.impressionsMaps || 0), 0),
+						impressionsSearch: monthlyDataPoints.reduce((sum, item) => sum + (item.impressionsSearch || 0), 0),
+						websiteClicks: monthlyDataPoints.reduce((sum, item) => sum + (item.websiteClicks || 0), 0),
+						phoneClicks: monthlyDataPoints.reduce((sum, item) => sum + (item.phoneClicks || 0), 0),
+						directionRequests: monthlyDataPoints.reduce((sum, item) => sum + (item.directionRequests || 0), 0)
+					};
+					allMonthsData.push(monthlyTotal);
 				} else {
-					// If no data, create empty entry
+					// No data → create empty entry
 					allMonthsData.push({
 						createdAt: new Date(yearNum, monthNum - 1, 15),
 						impressionsMaps: 0,
@@ -1021,13 +1655,24 @@ export class MonthlyReportService {
 				}
 			}
 
+			// Calculate monthly totals
+			const monthlyTotals = {
+				impressionsMaps: dailyData.reduce((sum, item) => sum + (item.impressionsMaps || 0), 0),
+				impressionsSearch: dailyData.reduce((sum, item) => sum + (item.impressionsSearch || 0), 0),
+				websiteClicks: dailyData.reduce((sum, item) => sum + (item.websiteClicks || 0), 0),
+				phoneClicks: dailyData.reduce((sum, item) => sum + (item.phoneClicks || 0), 0),
+				directionRequests: dailyData.reduce((sum, item) => sum + (item.directionRequests || 0), 0)
+			};
+
 			return {
 				table: this.buildGBPPerformanceTable(allMonthsData),
 				chart: dailyData.map(item => ({
 					date: item.createdAt,
 					maps: item.impressionsMaps || 0,
 					search: item.impressionsSearch || 0,
-					totalImpressions: (item.impressionsMaps || 0) + (item.impressionsSearch || 0)
+					totalImpressions:
+						(item.impressionsMaps || 0) +
+						(item.impressionsSearch || 0)
 				})),
 				latestData: {
 					impressionsMaps: latestData.impressionsMaps || 0,
@@ -1035,7 +1680,8 @@ export class MonthlyReportService {
 					websiteClicks: latestData.websiteClicks || 0,
 					phoneClicks: latestData.phoneClicks || 0,
 					directionRequests: latestData.directionRequests || 0
-				}
+				},
+				monthlyTotals: monthlyTotals
 			};
 		} catch (error) {
 			console.error('GBP Performance Error:', error);
@@ -1064,7 +1710,7 @@ export class MonthlyReportService {
 			// Get the latest data point for the requested month
 			const latestData = dailyData[dailyData.length - 1];
 
-			// For table data, get data for current and previous 2 months using last data points
+			// For table data, get monthly totals for current and previous 2 months
 			const allMonthsData = [];
 
 			for (let i = 2; i >= 0; i--) {
@@ -1073,8 +1719,8 @@ export class MonthlyReportService {
 				const yearNum = currentMonth.getFullYear();
 				const monthRange = this.getMonthDateRange(monthNum, yearNum);
 
-				// Get the last data point for each month
-				const lastDataPoint = await this._gbpInsightsRepository.model.gbpInsight.findFirst({
+				// Get all data points for the month and sum them
+				const monthlyDataPoints = await this._gbpInsightsRepository.model.gbpInsight.findMany({
 					where: {
 						customerId,
 						createdAt: {
@@ -1082,18 +1728,19 @@ export class MonthlyReportService {
 							lte: monthRange.endDate
 						},
 					},
-					orderBy: { createdAt: 'desc' },
 				});
 
-				if (lastDataPoint) {
-					allMonthsData.push({
+				if (monthlyDataPoints.length > 0) {
+					// Calculate monthly totals
+					const monthlyTotal = {
 						createdAt: new Date(yearNum, monthNum - 1, 15), // Mid-month date for display
-						websiteClicks: lastDataPoint.websiteClicks || 0,
-						phoneClicks: lastDataPoint.phoneClicks || 0,
-						directionRequests: lastDataPoint.directionRequests || 0
-					});
+						websiteClicks: monthlyDataPoints.reduce((sum, item) => sum + (item.websiteClicks || 0), 0),
+						phoneClicks: monthlyDataPoints.reduce((sum, item) => sum + (item.phoneClicks || 0), 0),
+						directionRequests: monthlyDataPoints.reduce((sum, item) => sum + (item.directionRequests || 0), 0)
+					};
+					allMonthsData.push(monthlyTotal);
 				} else {
-					// If no data, create empty entry
+					// No data → create empty entry
 					allMonthsData.push({
 						createdAt: new Date(yearNum, monthNum - 1, 15),
 						websiteClicks: 0,
@@ -1102,6 +1749,13 @@ export class MonthlyReportService {
 					});
 				}
 			}
+
+			// Calculate monthly totals
+			const monthlyTotals = {
+				websiteClicks: dailyData.reduce((sum, item) => sum + (item.websiteClicks || 0), 0),
+				phoneClicks: dailyData.reduce((sum, item) => sum + (item.phoneClicks || 0), 0),
+				directionRequests: dailyData.reduce((sum, item) => sum + (item.directionRequests || 0), 0)
+			};
 
 			return {
 				table: this.buildGBPEngagementTable(allMonthsData),
@@ -1116,7 +1770,8 @@ export class MonthlyReportService {
 					websiteClicks: latestData.websiteClicks || 0,
 					phoneClicks: latestData.phoneClicks || 0,
 					directionRequests: latestData.directionRequests || 0
-				}
+				},
+				monthlyTotals: monthlyTotals
 			};
 		} catch (error) {
 			console.error('GBP Engagement Error:', error);
@@ -1182,6 +1837,12 @@ export class MonthlyReportService {
 				}
 			}
 
+			// Calculate monthly totals/averages
+			const monthlyTotals = {
+				avgRating: latestData.avgRating || 0, // Keep the latest average rating
+				totalReviews: dailyData.reduce((sum, item) => sum + (item.totalReviews || 0), 0) // Sum all reviews
+			};
+
 			return {
 				table: this.buildGBPReviewsTable(allMonthsData),
 				chart: dailyData.map(item => ({
@@ -1192,7 +1853,8 @@ export class MonthlyReportService {
 				latestData: {
 					avgRating: latestData.avgRating || 0,
 					totalReviews: latestData.totalReviews || 0
-				}
+				},
+				monthlyTotals: monthlyTotals
 			};
 		} catch (error) {
 			console.error('GBP Reviews Error:', error);
@@ -1205,12 +1867,16 @@ export class MonthlyReportService {
 
 		const calculateChange = (values: number[]) => {
 			if (values.length < 2) return 'N/A';
-			const first = values[0];
-			const last = values[values.length - 1];
-			if (first === 0) return last === 0 ? '0%' : 'N/A';
+			const first = values[values.length - 2]; // May value
+			const last = values[values.length - 1];  // June value
+			if (first === 0) {
+				if (last === 0) return '0%';
+				return `${last * 100}%`; // e.g., 5 → 500%
+			}
 			const change = ((last - first) / first) * 100;
 			return `${change.toFixed(2)}%`;
 		};
+
 
 		const headers = ['Data', ...months, 'Change %'];
 		const rows = [];
@@ -1220,9 +1886,9 @@ export class MonthlyReportService {
 		const totalImpressions = insights.map((_, i) => mapsImpressions[i] + searchImpressions[i]);
 
 		rows.push(
-			['Google maps', ...mapsImpressions.map(String), calculateChange(mapsImpressions)],
-			['Google search', ...searchImpressions.map(String), calculateChange(searchImpressions)],
-			['Total', ...totalImpressions.map(String), calculateChange(totalImpressions)]
+			['Google maps', ...mapsImpressions.map(v => this.kFormatter(v)), calculateChange(mapsImpressions)],
+			['Google search', ...searchImpressions.map(v => this.kFormatter(v)), calculateChange(searchImpressions)],
+			['Total', ...totalImpressions.map(v => this.kFormatter(v)), calculateChange(totalImpressions)]
 		);
 
 		return {
@@ -1235,10 +1901,13 @@ export class MonthlyReportService {
 		const months = insights.map(i => format(new Date(i.createdAt), 'MMM').toUpperCase());
 
 		const calculateChange = (values: number[]) => {
-			if (values.length < 2) return 'N/A';
-			const first = values[0];
+			if (values.length < 2) return '0%';
+			const first = values[values.length - 2]; // second last value (May)
 			const last = values[values.length - 1];
-			if (first === 0) return last === 0 ? '0%' : 'N/A';
+			if (first === 0) {
+				if (last === 0) return '0%';
+				return `${last * 100}%`; // e.g., 5 → 500%
+			}
 			const change = ((last - first) / first) * 100;
 			return `${change.toFixed(2)}%`;
 		};
@@ -1269,7 +1938,7 @@ export class MonthlyReportService {
 
 		const calculateChange = (values: number[]) => {
 			if (values.length < 2) return 'N/A';
-			const first = values[0];
+			const first = values[values.length - 2]; // second last value (May)
 			const last = values[values.length - 1];
 			if (first === 0) return last === 0 ? '0%' : 'N/A';
 			const change = ((last - first) / first) * 100;
@@ -1429,7 +2098,10 @@ export class MonthlyReportService {
 			const calculateChange = (arr: number[]) => {
 				const prev = arr[1] || 0; // April
 				const curr = arr[2] || 0; // May
-				if (prev === 0) return curr === 0 ? '0%' : '-100.00%';
+				if (prev === 0) {
+					if (curr === 0) return '0%';
+					return `${curr * 100}%`; // e.g., 5 → 500%
+				}
 				const change = ((curr - prev) / prev) * 100;
 				return `${change.toFixed(2)}%`;
 			};
@@ -1466,10 +2138,13 @@ export class MonthlyReportService {
 
 		const calculateChange = (values: number[]) => {
 			if (values.length < 2) return '0%';
-			const first = values[0] || 0;
-			const last = values[values.length - 1] || 0;
-			if (first === 0) return last === 0 ? '0%' : '∞%';
-			const change = ((last - first) / first) * 100;
+			const previous = values[values.length - 2] || 0; // Previous month
+			const current = values[values.length - 1] || 0;  // Current month
+			if (previous === 0) {
+				if (current === 0) return '0%';
+				return `${current * 100}%`; // e.g., 5 → 500%
+			}
+			const change = ((current - previous) / previous) * 100;
 			return `${change > 0 ? '+' : ''}${change.toFixed(2)}%`;
 		};
 
@@ -1505,7 +2180,7 @@ export class MonthlyReportService {
 
 	private kFormatter(num: number): string {
 		if (!num) return '0';
-		return num >= 1000 ? `${(num / 1000).toFixed(1)}k` : num.toString();
+		return num >= 1000 ? `${(num / 1000).toFixed(2)}k` : num.toString();
 	}
 
 	private parseNumber(value: string | number): number {

@@ -23,7 +23,6 @@ interface MetricSummary {
     };
 }
 
-
 interface ChartData {
     title: string;
     date?: string;
@@ -67,6 +66,7 @@ export class ReportDownloadController {
         @Query('facebook') facebook: string,
         @Query('linkedin') linkedin: string,
         @Query('x') x: string,
+        @Query('threads') threads: string,
         @Query('gbp') gbp: string,
         @Query('website') website: string,
         @Query('hospital') hospital: string,
@@ -94,6 +94,7 @@ export class ReportDownloadController {
                 facebook: facebook === 'true',
                 linkedin: linkedin === 'true',
                 x: x === 'true',
+                threads: threads === 'true',
                 gbp: gbp === 'true',
                 website: website === 'true',
                 hospital: hospital === 'true'
@@ -143,6 +144,8 @@ export class ReportDownloadController {
             }
 
             if (platforms.facebook) {
+                console.log('Processing Facebook platform...');
+                console.log('CustomerId for Facebook:', customerId);
                 const facebookReport = await this.processPlatform(
                     'facebook',
                     customerId,
@@ -160,25 +163,26 @@ export class ReportDownloadController {
                 if (facebookReport) platformReports.push(facebookReport);
             }
 
-            // Thread platform (assuming this needs to be added similar to other platforms)
-            // Note: Thread processing logic not found in current code, keeping placeholder
-            // if (platforms.thread) {
-            //     const threadReport = await this.processPlatform(
-            //         'thread',
-            //         customerId,
-            //         monthNum,
-            //         yearNum,
-            //         [
-            //             { type: 'community', serviceMethod: 'getThreadCommunityReport' },
-            //             { type: 'overview', serviceMethod: 'getThreadOverviewReport' }
-            //         ],
-            //         [
-            //             { type: 'community', generator: this.generateThreadCommunityChart.bind(this) },
-            //             { type: 'impressions', generator: this.generateThreadImpressionsChart.bind(this) }
-            //         ]
-            //     );
-            //     if (threadReport) platformReports.push(threadReport);
-            // }
+            if (platforms.threads) {
+                console.log('Processing Threads platform...');
+                console.log('CustomerId for Threads:', customerId);
+                const threadsReport = await this.processPlatform(
+                    'threads',
+                    customerId,
+                    monthNum,
+                    yearNum,
+                    [
+                        { type: 'community', serviceMethod: 'getThreadsCommunityReport' },
+                        { type: 'overview', serviceMethod: 'getThreadsOverviewReport' }
+                    ],
+                    [
+                        { type: 'community', generator: this.generateThreadsCommunityChart.bind(this) },
+                        { type: 'overview', generator: this.generateThreadsOverviewChart.bind(this) }
+                    ]
+                );
+                console.log('Threads report result:', threadsReport ? 'Found' : 'Not found');
+                if (threadsReport) platformReports.push(threadsReport);
+            }
 
             if (platforms.youtube) {
                 const youtubeReport = await this.processPlatform(
@@ -433,6 +437,7 @@ export class ReportDownloadController {
             facebook: 'Facebook',
             linkedin: 'LinkedIn',
             x: 'X (Twitter)',
+            threads: 'Threads',
             gbp: 'Google Business Profile',
             website: 'Website',
             hospital: 'Hospital' // ✅ Add this
@@ -483,12 +488,12 @@ export class ReportDownloadController {
 
         // Helper to calculate percentage change between first and last value
         const calculateChange = (values: string[]) => {
-            if (values.length < 2) return 'N/A';
+            if (values.length < 2) return '0%';
 
             const first = this.parseNumber(values[0]);
             const last = this.parseNumber(values[values.length - 1]);
 
-            if (first === 0) return last === 0 ? '0%' : 'N/A';
+            if (first === 0) return last === 0 ? '0%' : '0%';
 
             const change = ((last - first) / first) * 100;
             return `${change.toFixed(2)}%`;
@@ -590,7 +595,7 @@ export class ReportDownloadController {
 
     private parseNumber(value: string): number {
         if (!value) return 0;
-        if (value === 'N/A') return 0;
+        if (value === '0%') return 0;
 
         // Handle k-formatted numbers (e.g., 1.2k)
         if (value.toLowerCase().includes('k')) {
@@ -1121,37 +1126,10 @@ export class ReportDownloadController {
                 }
             }
 
-            const monthData = report.chart.filter(item => {
-                const date = new Date(item.date);
-                return date.getMonth() + 1 === month && date.getFullYear() === year;
-            });
+            const monthData = this.formatChartData(report.chart, month, year);
+            const sampledData = this.getDataWithDayGap(monthData, 1, month, year);
 
-            monthData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-            const sampledData = [];
-            const daysInMonth = new Date(year, month, 0).getDate();
-            const dayInterval = 4;
-
-            for (let day = 1; day <= daysInMonth; day += dayInterval) {
-                let closest = null;
-                let minDiff = Infinity;
-                for (const item of monthData) {
-                    const itemDate = new Date(item.date);
-                    const diff = Math.abs(itemDate.getDate() - day);
-                    if (diff < minDiff) {
-                        minDiff = diff;
-                        closest = item;
-                    }
-                }
-                if (closest) sampledData.push(closest);
-            }
-
-            const lastDayData = monthData.find(item => new Date(item.date).getDate() === daysInMonth);
-            if (lastDayData && !sampledData.some(item => new Date(item.date).getDate() === daysInMonth)) {
-                sampledData.push(lastDayData);
-            }
-
-            const labels = sampledData.map(item => format(new Date(item.date), 'MMM d'));
+            const labels = sampledData.map(item => format(item.date, 'MMM d'));
 
             // Rounded Bar Patch
             const ctx = (this.chartJSNodeCanvas as any)?._canvas?.getContext?.('2d');
@@ -1218,7 +1196,7 @@ export class ReportDownloadController {
                         tooltip: {
                             callbacks: {
                                 title: (items) => {
-                                    const date = new Date(sampledData[items[0].dataIndex].date);
+                                    const date = sampledData[items[0].dataIndex].date;
                                     return format(date, 'MMMM d, yyyy');
                                 }
                             }
@@ -1265,6 +1243,9 @@ export class ReportDownloadController {
                 totalContent: 0
             };
 
+            // Use monthly total for totalContent if available
+            const totalContentValue = report.monthlyTotals?.totalContent || latestData.totalContent;
+
             // Get start and end dates from the data
             const startDate = monthData.length > 0 ? format(new Date(monthData[0].date), 'MMM d, yyyy') : '';
             const endDate = monthData.length > 0 ? format(new Date(monthData[monthData.length - 1].date), 'MMM d, yyyy') : '';
@@ -1292,7 +1273,7 @@ export class ReportDownloadController {
                     }
                 },
                 totalContent: {
-                    value: latestData.totalContent.toLocaleString(),
+                    value: totalContentValue.toLocaleString(),
                     style: {
                         backgroundColor: '#FCAF4530',
                         borderColor: '#FCAF45',
@@ -1327,8 +1308,8 @@ export class ReportDownloadController {
                 return { title: 'Instagram Impressions & Reach', image: null };
             }
 
-            // Use the latest data for summary instead of calculating totals
-            const latestData = report.latestData || {
+            // Use monthly totals for summary (fallback to latest data if not available)
+            const summaryData = report.monthlyTotals || report.latestData || {
                 impressions: 0,
                 avgReachPerDay: 0,
                 totalContent: 0
@@ -1493,13 +1474,21 @@ export class ReportDownloadController {
             const endDate = completeData.length > 0 ? format(completeData[completeData.length - 1].date, 'MMM d, yyyy') : '';
             const dateRange = startDate && endDate ? ` (${startDate} - ${endDate})` : '';
 
+            // Format numbers with k for values >= 10000
+            const formatWithK = (value: number): string => {
+                if (value >= 10000) {
+                    return `${(value / 1000).toFixed(2)}k`;
+                }
+                return value.toLocaleString();
+            };
+
             return {
                 title: `Performance Growth`,
                 date: `${dateRange}`,
                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
                 summary: {
                     impressions: {
-                        value: latestData.impressions.toLocaleString(),
+                        value: formatWithK(summaryData.impressions),
                         style: {
                             backgroundColor: '#FD1D1D20',
                             borderColor: '#FD1D1D',
@@ -1508,8 +1497,8 @@ export class ReportDownloadController {
                             textColor: '#000000'
                         }
                     },
-                    reach: {
-                        value: latestData.avgReachPerDay.toLocaleString(),
+                    avgReach: {
+                        value: formatWithK(summaryData.avgReachPerDay),
                         style: {
                             backgroundColor: '#833AB420',
                             borderColor: '#833AB4',
@@ -1519,7 +1508,7 @@ export class ReportDownloadController {
                         }
                     },
                     totalContent: {
-                        value: latestData.totalContent.toLocaleString(),
+                        value: summaryData.totalContent.toLocaleString(),
                         style: {
                             backgroundColor: '#FCAF4520',
                             borderColor: '#FCAF45',
@@ -2681,9 +2670,44 @@ export class ReportDownloadController {
             const followersColor = '#00BFA6';
             const contentColor = '#A020F0';
 
-            const totalLikes = monthData.reduce((sum, d) => sum + (d.likes || 0), 0);
-            const totalFollowers = monthData.reduce((sum, d) => sum + (d.followers || 0), 0);
-            const totalContent = monthData.reduce((sum, d) => sum + (d.totalContent || 0), 0);
+            // Get latest data for likes and followers (from the last entry)
+            const latestData = monthData[monthData.length - 1];
+            const latestLikes = latestData?.likes || 0;
+            const latestFollowers = latestData?.followers || 0;
+
+            // Use report's monthly totals if available, otherwise calculate
+            const monthlyTotalContent = report.monthlyTotals?.totalContent || (() => {
+                // Check if totalContent appears to be daily increments (all values are 0 or 1)
+                const uniqueData = [];
+                const seen = new Set();
+                monthData.forEach(item => {
+                    const dateKey = format(new Date(item.date || item.createdAt), 'yyyy-MM-dd');
+                    if (!seen.has(dateKey)) {
+                        seen.add(dateKey);
+                        uniqueData.push(item);
+                    }
+                });
+
+                const allValuesSmall = uniqueData.every(i => (i.totalContent || 0) <= 1);
+                if (allValuesSmall) {
+                    // Sum up daily increments
+                    return uniqueData.reduce((sum, item) => sum + (item.totalContent || 0), 0);
+                } else {
+                    // Calculate difference between first and last
+                    const firstData = uniqueData[0];
+                    const lastData = uniqueData[uniqueData.length - 1];
+                    return firstData && lastData
+                        ? Math.max(0, (lastData.totalContent || 0) - (firstData.totalContent || 0))
+                        : (lastData?.totalContent || 0);
+                }
+            })();
+
+            // Use monthly totals for summary (fallback to latest data if not available)
+            const summaryData = {
+                likes: latestLikes,
+                followers: latestFollowers,
+                totalContent: monthlyTotalContent
+            };
 
             const startDate = sampledData.length > 0 ? format(sampledData[0].date || sampledData[0].createdAt, 'MMM d, yyyy') : '';
             const endDate = sampledData.length > 0 ? format(sampledData[sampledData.length - 1].date || sampledData[sampledData.length - 1].createdAt, 'MMM d, yyyy') : '';
@@ -2782,20 +2806,14 @@ export class ReportDownloadController {
                         },
                         y: {
                             beginAtZero: true,
-                            position: 'left',
                             title: {
                                 display: true,
                                 text: 'Count',
-                                font: { size: 12, weight: 'bold' },
-                                color: '#5f6368'
-                            },
-                            ticks: {
                                 color: '#5f6368',
-                                callback: value => Number(value) >= 1000 ? `${(Number(value) / 1000).toFixed(0)}k` : value
+                                font: { size: 12 }
                             },
-                            grid: {
-                                color: '#e0e0e0'
-                            }
+                            ticks: { color: '#5f6368' },
+                            grid: { color: '#e0e0e0' }
                         },
                     }
                 }
@@ -2808,8 +2826,8 @@ export class ReportDownloadController {
                 date: `${dateRange}`,
                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
                 summary: {
-                    Likes: {
-                        value: totalLikes.toLocaleString(),
+                    likes: {
+                        value: summaryData.likes.toLocaleString(), // Latest data for likes
                         style: {
                             backgroundColor: '#1877F220',
                             borderColor: '#1877F2',
@@ -2818,8 +2836,8 @@ export class ReportDownloadController {
                             textColor: '#000000'
                         }
                     },
-                    Followers: {
-                        value: totalFollowers.toLocaleString(),
+                    followers: {
+                        value: summaryData.followers.toLocaleString(), // Latest data for followers
                         style: {
                             backgroundColor: '#00BFA620',
                             borderColor: '#00BFA6',
@@ -2829,7 +2847,7 @@ export class ReportDownloadController {
                         }
                     },
                     totalContent: {
-                        value: totalContent.toLocaleString(),
+                        value: summaryData.totalContent.toLocaleString(), // Monthly total for content
                         style: {
                             backgroundColor: '#A020F020',
                             borderColor: '#A020F0',
@@ -3075,8 +3093,8 @@ export class ReportDownloadController {
                 return { title: 'GBP Performance', image: null };
             }
 
-            // Use latest data for summary
-            const latestData = report.latestData || {
+            // Use monthly totals for summary (fallback to latest data if not available)
+            const summaryData = report.monthlyTotals || report.latestData || {
                 impressionsMaps: 0,
                 impressionsSearch: 0
             };
@@ -3178,7 +3196,7 @@ export class ReportDownloadController {
                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
                 summary: {
                     googleMaps: {
-                        value: latestData.impressionsMaps.toLocaleString(),
+                        value: summaryData.impressionsMaps.toLocaleString(),
                         style: {
                             backgroundColor: '#1a73e820',
                             borderColor: '#1a73e8',
@@ -3188,7 +3206,7 @@ export class ReportDownloadController {
                         }
                     },
                     googleSearch: {
-                        value: latestData.impressionsSearch.toLocaleString(),
+                        value: summaryData.impressionsSearch.toLocaleString(),
                         style: {
                             backgroundColor: '#34a85320',
                             borderColor: '#34a853',
@@ -3198,7 +3216,7 @@ export class ReportDownloadController {
                         }
                     },
                     total: {
-                        value: (latestData.impressionsMaps + latestData.impressionsSearch).toLocaleString(),
+                        value: (summaryData.impressionsMaps + summaryData.impressionsSearch).toLocaleString(),
                         style: {
                             backgroundColor: '#fbbc0420',
                             borderColor: '#fbbc04',
@@ -3232,8 +3250,8 @@ export class ReportDownloadController {
                 return { title: 'GBP Engagement', image: null };
             }
 
-            // Use latest data for summary
-            const latestData = report.latestData || {
+            // Use monthly totals for summary (fallback to latest data if not available)
+            const summaryData = report.monthlyTotals || report.latestData || {
                 websiteClicks: 0,
                 phoneClicks: 0,
                 directionRequests: 0
@@ -3380,7 +3398,7 @@ export class ReportDownloadController {
                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
                 summary: {
                     website: {
-                        value: latestData.websiteClicks.toLocaleString(),
+                        value: summaryData.websiteClicks.toLocaleString(),
                         style: {
                             backgroundColor: '#4285F420',
                             borderColor: '#4285F4',
@@ -3390,7 +3408,7 @@ export class ReportDownloadController {
                         }
                     },
                     phone: {
-                        value: latestData.phoneClicks.toLocaleString(),
+                        value: summaryData.phoneClicks.toLocaleString(),
                         style: {
                             backgroundColor: '#EA433520',
                             borderColor: '#EA4335',
@@ -3400,7 +3418,7 @@ export class ReportDownloadController {
                         }
                     },
                     direction: {
-                        value: latestData.directionRequests.toLocaleString(),
+                        value: summaryData.directionRequests.toLocaleString(),
                         style: {
                             backgroundColor: '#FBBC0520',
                             borderColor: '#FBBC05',
@@ -4045,7 +4063,6 @@ export class ReportDownloadController {
 
             .total-content-row {
                 background-color: #eaf6ff;
-                border-top: 2px solid #3498db;
             }
 
             .positive {
@@ -4549,8 +4566,8 @@ body.show-contact-footer .contact-footer {
                             if (i === 0) {
                                 return `<td class="metric-name">${cell}</td>`;
                             } else if (i === row.length - 1) {
-                                const isPositive = cell && !cell.includes('-') && cell !== '0%' && cell !== 'N/A';
-                                return `<td class="${isPositive ? 'positive' : cell === '0%' || cell === 'N/A' ? '' : 'negative'}">${cell}</td>`;
+                                const isPositive = cell && !cell.includes('-') && cell !== '0%' && cell !== '0%';
+                                return `<td class="${isPositive ? 'positive' : cell === '0%' || cell === '0%' ? '' : 'negative'}">${cell}</td>`;
                             } else {
                                 return `<td>${cell}</td>`;
                             }
@@ -4636,8 +4653,11 @@ body.show-contact-footer .contact-footer {
             'x (twitter)': `
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#000000">
             <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-        </svg>`
-            ,
+        </svg>`,
+            'threads': `
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#000000" class="bi bi-threads" viewBox="0 0 16 16">
+  <path d="M6.321 6.016c-.27-.18-1.166-.802-1.166-.802.756-1.081 1.753-1.502 3.132-1.502.975 0 1.803.327 2.394.948s.928 1.509 1.005 2.644q.492.207.905.484c1.109.745 1.719 1.86 1.719 3.137 0 2.716-2.226 5.075-6.256 5.075C4.594 16 1 13.987 1 7.994 1 2.034 4.482 0 8.044 0 9.69 0 13.55.243 15 5.036l-1.36.353C12.516 1.974 10.163 1.43 8.006 1.43c-3.565 0-5.582 2.171-5.582 6.79 0 4.143 2.254 6.343 5.63 6.343 2.777 0 4.847-1.443 4.847-3.556 0-1.438-1.208-2.127-1.27-2.127-.236 1.234-.868 3.31-3.644 3.31-1.618 0-3.013-1.118-3.013-2.582 0-2.09 1.984-2.847 3.55-2.847.586 0 1.294.04 1.663.114 0-.637-.54-1.728-1.9-1.728-1.25 0-1.566.405-1.967.868ZM8.716 8.19c-2.04 0-2.304.87-2.304 1.416 0 .878 1.043 1.168 1.6 1.168 1.02 0 2.067-.282 2.232-2.423a6.2 6.2 0 0 0-1.528-.161"/>
+</svg>`,
             'website': `
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#2ECC71" viewBox="0 0 16 16">
   <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m7.5-6.923c-.67.204-1.335.82-1.887 1.855A8 8 0 0 0 5.145 4H7.5zM4.09 4a9.3 9.3 0 0 1 .64-1.539 7 7 0 0 1 .597-.933A7.03 7.03 0 0 0 2.255 4zm-.582 3.5c.03-.877.138-1.718.312-2.5H1.674a7 7 0 0 0-.656 2.5zM4.847 5a12.5 12.5 0 0 0-.338 2.5H7.5V5zM8.5 5v2.5h2.99a12.5 12.5 0 0 0-.337-2.5zM4.51 8.5a12.5 12.5 0 0 0 .337 2.5H7.5V8.5zm3.99 0V11h2.653c.187-.765.306-1.608.338-2.5zM5.145 12q.208.58.468 1.068c.552 1.035 1.218 1.65 1.887 1.855V12zm.182 2.472a7 7 0 0 1-.597-.933A9.3 9.3 0 0 1 4.09 12H2.255a7 7 0 0 0 3.072 2.472M3.82 11a13.7 13.7 0 0 1-.312-2.5h-2.49c.062.89.291 1.733.656 2.5zm6.853 3.472A7 7 0 0 0 13.745 12H11.91a9.3 9.3 0 0 1-.64 1.539 7 7 0 0 1-.597.933M8.5 12v2.923c.67-.204 1.335-.82 1.887-1.855q.26-.487.468-1.068zm3.68-1h2.146c.365-.767.594-1.61.656-2.5h-2.49a13.7 13.7 0 0 1-.312 2.5m2.802-3.5a7 7 0 0 0-.656-2.5H12.18c.174.782.282 1.623.312 2.5zM11.27 2.461c.247.464.462.98.64 1.539h1.835a7 7 0 0 0-3.072-2.472c.218.284.418.598.597.933M10.855 4a8 8 0 0 0-.468-1.068C9.835 1.897 9.17 1.282 8.5 1.077V4z"/>
@@ -4894,6 +4914,386 @@ body.show-contact-footer .contact-footer {
         // .intro-page .contact-line, .thank-you-page .contact-line { display: none !important; ... } - hidden on intro/thank-you
 
         return cleanHtml;
+    }
+
+    // Threads chart generators
+    private async generateThreadsCommunityChart(
+        customerId: string,
+        month: number,
+        year: number,
+        platform: string = 'threads',
+        preloadedData?: any
+    ): Promise<ChartData | null> {
+        try {
+            let report = preloadedData?.community;
+
+            if (!report) {
+                report = await this.reportService.getThreadsCommunityReport(customerId, month, year);
+                if (!report?.chart?.length) {
+                    console.log(`No chart data for Threads community report`);
+                    return null;
+                }
+            }
+
+            const monthData = this.formatChartData(report.chart, month, year);
+
+            // Convert to daily content values (not cumulative)
+            const dailyData = monthData.map((item, index) => {
+                const dailyContent = index === 0
+                    ? item.totalContent
+                    : Math.max(0, item.totalContent - monthData[index - 1].totalContent);
+                return {
+                    ...item,
+                    dailyContent
+                };
+            });
+
+            const sampledData = this.getDataWithDayGap(dailyData, 1, month, year);
+
+            const labels = sampledData.map(item => format(item.date, 'MMM d'));
+
+            const configuration: ChartConfiguration<'bar' | 'line'> = {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Content',
+                            data: sampledData.map(item => item.dailyContent || 0),
+                            backgroundColor: '#FF6B6B80',
+                            borderColor: '#FF6B6B',
+                            borderWidth: 1,
+                            type: 'bar',
+                            borderRadius: 4,
+                            barThickness: 20
+                        },
+                        {
+                            label: 'Followers',
+                            data: sampledData.map(item => item.followers || 0),
+                            borderColor: '#000000',
+                            backgroundColor: '#00000020',
+                            borderWidth: 2,
+                            type: 'line',
+                            tension: 0.4,
+                            fill: false,
+                            pointBackgroundColor: '#000000',
+                            pointRadius: 3,
+                            pointHoverRadius: 5
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: (items) => {
+                                    const date = sampledData[items[0].dataIndex].date;
+                                    return format(date, 'MMMM d, yyyy');
+                                }
+                            }
+                        },
+                        legend: {
+                            display: false,
+                            labels: {
+                                font: { size: 12 },
+                                boxWidth: 20,
+                                boxHeight: 12,
+                                padding: 20
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#5f6368', font: { size: 11 } }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Count',
+                                font: { size: 12 },
+                                color: '#5f6368'
+                            },
+                            ticks: {
+                                color: '#5f6368',
+                                callback: (v) => Number(v) >= 1000 ? `${Number(v) / 1000}k` : v
+                            },
+                            grid: { color: '#e0e0e0' }
+                        }
+                    }
+                }
+            };
+
+            const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+
+            // Get latest data from the report
+            const latestData = report.latestData || {
+                followers: 0,
+                totalContent: 0
+            };
+
+            // Use monthly total for totalContent if available
+            const totalContentValue = report.monthlyTotals?.totalContent || latestData.totalContent;
+
+            // Get start and end dates from the data
+            const startDate = monthData.length > 0 ? format(new Date(monthData[0].date), 'MMM d, yyyy') : '';
+            const endDate = monthData.length > 0 ? format(new Date(monthData[monthData.length - 1].date), 'MMM d, yyyy') : '';
+            const dateRange = startDate && endDate ? ` (${startDate} - ${endDate})` : '';
+
+            const summary = {
+                Followers: {
+                    value: latestData.followers.toLocaleString(),
+                    style: {
+                        backgroundColor: '#00000020',
+                        borderColor: '#000000',
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        textColor: '#000000'
+                    }
+                },
+                totalContent: {
+                    value: totalContentValue.toLocaleString(),
+                    style: {
+                        backgroundColor: '#FF6B6B20',
+                        borderColor: '#FF6B6B',
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        textColor: '#000000'
+                    }
+                }
+            };
+
+            return {
+                title: `Community Growth`,
+                date: `${dateRange}`,
+                image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
+                summary
+            };
+        } catch (error) {
+            console.error(`Error generating Threads community chart:`, error);
+            return null;
+        }
+    }
+
+    async generateThreadsOverviewChart(
+        customerId: string,
+        month: number,
+        year: number,
+        preloadedData?: any
+    ): Promise<ChartData> {
+        try {
+            const report = preloadedData?.overview || await this.reportService.getThreadsOverviewReport(customerId, month, year);
+            if (!report?.chart?.length) {
+                return { title: 'Threads Performance', image: null };
+            }
+
+            // Use monthly totals for summary (fallback to latest data if not available)
+            const summaryData = report.monthlyTotals || report.latestData || {
+                impressions: 0,
+                engagement: 0,
+                interactions: 0,
+                totalContent: 0
+            };
+
+            const monthData = this.formatChartData(report.chart, month, year);
+
+            // Convert cumulative data to daily increments where needed
+            const dailyData = monthData.map((item, index) => {
+                // For impressions, if values are cumulative, convert to daily
+                const dailyImpressions = index === 0
+                    ? item.impressions
+                    : Math.max(0, item.impressions - monthData[index - 1].impressions);
+
+                // For totalContent, convert to daily increments
+                const dailyContent = index === 0
+                    ? item.totalContent
+                    : Math.max(0, item.totalContent - monthData[index - 1].totalContent);
+
+                return {
+                    ...item,
+                    dailyImpressions: dailyImpressions || item.impressions || 0,
+                    dailyContent: dailyContent || 0,
+                    engagement: item.engagement || 0,
+                    interactions: item.interactions || 0
+                };
+            });
+
+            const sampledData = this.getDataWithDayGap(dailyData, 1, month, year);
+
+            const labels = sampledData.map(d => format(d.date, 'MMM d'));
+            const impressionsData = sampledData.map(d => d.dailyImpressions || 0);
+            const engagementData = sampledData.map(d => d.engagement || 0);
+            const interactionsData = sampledData.map(d => d.interactions || 0);
+            const contentData = sampledData.map(d => d.dailyContent || 0);
+
+            const configuration: ChartConfiguration<'bar' | 'line'> = {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            type: 'bar',
+                            label: 'Impressions',
+                            data: impressionsData,
+                            backgroundColor: '#00000080',
+                            borderColor: '#000000',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            barThickness: 20
+                        },
+                        {
+                            type: 'bar',
+                            label: 'Content',
+                            data: contentData,
+                            backgroundColor: '#4ECDC480',
+                            borderColor: '#4ECDC4',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            barThickness: 20
+                        },
+                        {
+                            type: 'line',
+                            label: 'Engagement',
+                            data: engagementData,
+                            borderColor: '#FF6B6B',
+                            backgroundColor: '#FF6B6B20',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            pointBackgroundColor: '#FF6B6B',
+                            pointRadius: 3,
+                            fill: false
+                        },
+                        {
+                            type: 'line',
+                            label: 'Interactions',
+                            data: interactionsData,
+                            borderColor: '#FFA500',
+                            backgroundColor: '#FFA50020',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            pointBackgroundColor: '#FFA500',
+                            pointRadius: 3,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false,
+                            position: 'top',
+                            labels: {
+                                font: { size: 12 },
+                                color: '#202124'
+                            }
+                        },
+                        title: {
+                            display: false
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#5f6368', font: { size: 11 } }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Count',
+                                font: { size: 12 },
+                                color: '#5f6368'
+                            },
+                            ticks: {
+                                color: '#5f6368',
+                                callback: (v) => Number(v) >= 1000 ? `${Number(v) / 1000}k` : v
+                            },
+                            grid: {
+                                color: '#e0e0e0'
+                            }
+                        }
+                    }
+                }
+            };
+
+            const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+
+            // Get start and end dates from the data
+            const startDate = monthData.length > 0 ? format(monthData[0].date, 'MMM d, yyyy') : '';
+            const endDate = monthData.length > 0 ? format(monthData[monthData.length - 1].date, 'MMM d, yyyy') : '';
+            const dateRange = startDate && endDate ? ` (${startDate} - ${endDate})` : '';
+
+            // Format numbers with k for values >= 10000
+            const formatWithK = (value: number): string => {
+                if (value >= 10000) {
+                    return `${(value / 1000).toFixed(2)}k`;
+                }
+                return value.toLocaleString();
+            };
+
+            return {
+                title: `Performance Growth`,
+                date: `${dateRange}`,
+                image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
+                summary: {
+                    Impressions: {
+                        value: formatWithK(summaryData.impressions),
+                        style: {
+                            backgroundColor: '#00000020',
+                            borderColor: '#000000',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    },
+                    Engagement: {
+                        value: formatWithK(summaryData.engagement || 0),
+                        style: {
+                            backgroundColor: '#FF6B6B20',
+                            borderColor: '#FF6B6B',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    },
+                    Interactions: {
+                        value: formatWithK(summaryData.interactions || 0),
+                        style: {
+                            backgroundColor: '#FFA50020',
+                            borderColor: '#FFA500',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    },
+                    totalContent: {
+                        value: summaryData.totalContent.toLocaleString(),
+                        style: {
+                            backgroundColor: '#4ECDC420',
+                            borderColor: '#4ECDC4',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    }
+                }
+            };
+        } catch (error) {
+            console.error('Error generating Threads chart:', error);
+            return {
+                title: 'Threads Performance',
+                image: null
+            };
+        }
     }
 
 }
