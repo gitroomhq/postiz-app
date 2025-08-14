@@ -109,16 +109,17 @@ export abstract class SocialAbstract {
       json.includes('Rate limit')
     ) {
       await timer(5000);
-      return this.fetch(url, options, identifier, totalRetries + 1);
+      return this.fetch(url, options, identifier, totalRetries + 1, ignoreConcurrency);
     }
 
     const handleError = this.handleErrors(json || '{}');
 
     if (handleError?.type === 'retry') {
       await timer(5000);
-      return this.fetch(url, options, identifier, totalRetries + 1);
+      return this.fetch(url, options, identifier, totalRetries + 1, ignoreConcurrency);
     }
 
+    
     if (
       request.status === 401 &&
       (handleError?.type === 'refresh-token' || !handleError)
