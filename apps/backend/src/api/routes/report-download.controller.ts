@@ -4350,7 +4350,7 @@ body.show-contact-footer .contact-footer {
       display: block;
       color: #78D8FF;
       font-weight: 500;
-      font-size: 26px;
+      font-size: 27px;
       margin-bottom: 4px;
     }
     .info a {
@@ -4435,7 +4435,7 @@ body.show-contact-footer .contact-footer {
 
     <div class="header">
         <h1>Digital Performance Report</h1>
-        <p>For ${options.month} | Generated on ${currentDate}</p>
+        <p>For ${options.month} </p>
         <div class="customer-id">${options.customerName}</div>
     </div>
 
