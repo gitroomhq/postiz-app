@@ -119,7 +119,6 @@ export abstract class SocialAbstract {
       return this.fetch(url, options, identifier, totalRetries + 1, ignoreConcurrency);
     }
 
-    
     if (
       request.status === 401 &&
       (handleError?.type === 'refresh-token' || !handleError)
