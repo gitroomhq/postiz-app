@@ -29,7 +29,9 @@ export abstract class SocialAbstract {
 
   public handleErrors(
     body: string
-  ): { type: 'refresh-token' | 'bad-body'; value: string } | undefined {
+  ):
+    | { type: 'refresh-token' | 'bad-body' | 'retry'; value: string }
+    | undefined {
     return undefined;
   }
 
@@ -111,6 +113,11 @@ export abstract class SocialAbstract {
     }
 
     const handleError = this.handleErrors(json || '{}');
+
+    if (handleError?.type === 'retry') {
+      await timer(5000);
+      return this.fetch(url, options, identifier, totalRetries + 1);
+    }
 
     if (
       request.status === 401 &&
