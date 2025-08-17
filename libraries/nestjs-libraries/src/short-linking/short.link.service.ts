@@ -5,6 +5,7 @@ import { Injectable } from '@nestjs/common';
 import { ShortIo } from './providers/short.io';
 import { Kutt } from './providers/kutt';
 import { LinkDrip } from './providers/linkdrip';
+import { uniq } from 'lodash';
 
 const getProvider = (): ShortLinking => {
   if (process.env.DUB_TOKEN) {
@@ -36,7 +37,8 @@ export class ShortLinkService {
     }
 
     const mergeMessages = messages.join(' ');
-    const urlRegex = /https?:\/\/[^\s/$.?#].[^\s]*/g;
+    const urlRegex =
+      /(https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&//=]*))/gm;
     const urls = mergeMessages.match(urlRegex);
     if (!urls) {
       // No URLs found, return the original text
@@ -48,15 +50,23 @@ export class ShortLinkService {
     );
   }
 
-  async convertTextToShortLinks(id: string, messages: string[]) {
+  async convertTextToShortLinks(id: string, messagesList: string[]) {
     if (ShortLinkService.provider.shortLinkDomain === 'empty') {
-      return messages;
+      return messagesList;
     }
 
-    const urlRegex = /https?:\/\/[^\s/$.?#].[^\s]*/g;
+    const messages = messagesList.map((text) => {
+      return text
+        .replace(/&amp;/g, '&')
+        .replace(/&quest;/g, '?')
+        .replace(/&num;/g, '#');
+    });
+
+    const urlRegex =
+      /(https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&//=]*))/gm;
     return Promise.all(
       messages.map(async (text) => {
-        const urls = text.match(urlRegex);
+        const urls = uniq(text.match(urlRegex));
         if (!urls) {
           // No URLs found, return the original text
           return text;

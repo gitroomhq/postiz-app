@@ -22,6 +22,7 @@ export class WordpressProvider
   isBetweenSteps = false;
   editor = 'html' as const;
   scopes = [] as string[];
+  override maxConcurrentJob = 5; // WordPress self-hosted typically has generous limits
 
   async generateAuthUrl() {
     const state = makeId(6);

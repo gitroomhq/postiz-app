@@ -1,5 +1,5 @@
 import { timer } from '@gitroom/helpers/utils/timer';
-import { concurrencyService } from '@gitroom/helpers/utils/concurrency.service';
+import { concurrency } from '@gitroom/helpers/utils/concurrency.service';
 import { Integration } from '@prisma/client';
 
 export class RefreshToken {
@@ -25,10 +25,13 @@ export class NotEnoughScopes {
 
 export abstract class SocialAbstract {
   abstract identifier: string;
+  maxConcurrentJob = 1;
 
   public handleErrors(
     body: string
-  ): { type: 'refresh-token' | 'bad-body'; value: string } | undefined {
+  ):
+    | { type: 'refresh-token' | 'bad-body' | 'retry'; value: string }
+    | undefined {
     return undefined;
   }
 
@@ -37,21 +40,30 @@ export abstract class SocialAbstract {
     d: { query: string },
     id: string,
     integration: Integration
-  ): Promise<{ id: string; label: string; image: string, doNotCache?: boolean }[] | { none: true }> {
+  ): Promise<
+    | { id: string; label: string; image: string; doNotCache?: boolean }[]
+    | { none: true }
+  > {
     return { none: true };
   }
 
-  async runInConcurrent<T>(func: (...args: any[]) => Promise<T>) {
-    const value = await concurrencyService<any>(
-      this.identifier.split('-')[0],
+  async runInConcurrent<T>(
+    func: (...args: any[]) => Promise<T>,
+    ignoreConcurrency?: boolean
+  ) {
+    const value = await concurrency<any>(
+      this.identifier,
+      this.maxConcurrentJob,
       async () => {
         try {
           return await func();
         } catch (err) {
+          console.log(err);
           const handle = this.handleErrors(JSON.stringify(err));
           return { err: true, ...(handle || {}) };
         }
-      }
+      },
+      ignoreConcurrency
     );
 
     if (value && value?.err && value?.value) {
@@ -65,11 +77,14 @@ export abstract class SocialAbstract {
     url: string,
     options: RequestInit = {},
     identifier = '',
-    totalRetries = 0
+    totalRetries = 0,
+    ignoreConcurrency = false
   ): Promise<Response> {
-    const request = await concurrencyService(
-      this.identifier.split('-')[0],
-      () => fetch(url, options)
+    const request = await concurrency(
+      this.identifier,
+      this.maxConcurrentJob,
+      () => fetch(url, options),
+      ignoreConcurrency
     );
 
     if (request.status === 200 || request.status === 201) {
@@ -88,15 +103,21 @@ export abstract class SocialAbstract {
     }
 
     if (
+      request.status === 429 ||
       request.status === 500 ||
       json.includes('rate_limit_exceeded') ||
       json.includes('Rate limit')
     ) {
       await timer(5000);
-      return this.fetch(url, options, identifier, totalRetries + 1);
+      return this.fetch(url, options, identifier, totalRetries + 1, ignoreConcurrency);
     }
 
     const handleError = this.handleErrors(json || '{}');
+
+    if (handleError?.type === 'retry') {
+      await timer(5000);
+      return this.fetch(url, options, identifier, totalRetries + 1, ignoreConcurrency);
+    }
 
     if (
       request.status === 401 &&

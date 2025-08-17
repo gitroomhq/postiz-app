@@ -2,17 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/client';
-import dayjs from 'dayjs';
 
 @Injectable()
-export class CheckMissingQueues {
+export class PostNowPendingQueues {
   constructor(
     private _postService: PostsService,
     private _workerServiceProducer: BullMqClient
   ) {}
-  @Cron('0 * * * *')
+  @Cron('*/16 * * * *')
   async handleCron() {
-    const list = await this._postService.searchForMissingThreeHoursPosts();
+    const list = await this._postService.checkPending15minutesBack();
     const notExists = (
       await Promise.all(
         list.map(async (p) => ({
@@ -32,11 +31,11 @@ export class CheckMissingQueues {
       this._workerServiceProducer.emit('post', {
         id: job.id,
         options: {
-          delay: dayjs(job.publishDate).diff(dayjs(), 'millisecond'),
+          delay: 0,
         },
         payload: {
           id: job.id,
-          delay: dayjs(job.publishDate).diff(dayjs(), 'millisecond'),
+          delay: 0,
         },
       });
     }

@@ -29,6 +29,7 @@ export class InstagramProvider
     'instagram_manage_comments',
     'instagram_manage_insights',
   ];
+  override maxConcurrentJob = 10;
   editor = 'normal' as const;
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
@@ -45,10 +46,17 @@ export class InstagramProvider
 
   public override handleErrors(body: string):
     | {
-        type: 'refresh-token' | 'bad-body';
+        type: 'refresh-token' | 'bad-body' | 'retry';
         value: string;
       }
     | undefined {
+
+    if (body.indexOf('An unknown error occurred') > -1) {
+      return {
+        type: 'retry' as const,
+        value: 'An unknown error occurred, please try again later',
+      };
+    }
 
     if (body.indexOf('REVOKED_ACCESS_TOKEN') > -1) {
       return {
@@ -363,9 +371,7 @@ export class InstagramProvider
     const {
       id,
       name,
-      picture: {
-        data: { url },
-      },
+      picture
     } = await (
       await fetch(
         `https://graph.facebook.com/v20.0/me?fields=id,name,picture&access_token=${access_token}`
@@ -378,7 +384,7 @@ export class InstagramProvider
       accessToken: access_token,
       refreshToken: access_token,
       expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
-      picture: url,
+      picture: picture?.data?.url || '',
       username: '',
     };
   }
@@ -497,10 +503,14 @@ export class InstagramProvider
         while (status === 'IN_PROGRESS') {
           const { status_code } = await (
             await this.fetch(
-              `https://${type}/v20.0/${photoId}?access_token=${accessToken}&fields=status_code`
+              `https://${type}/v20.0/${photoId}?access_token=${accessToken}&fields=status_code`,
+              undefined,
+              '',
+              0,
+              true,
             )
           ).json();
-          await timer(10000);
+          await timer(30000);
           status = status_code;
         }
         console.log('in progress3', id);
@@ -557,10 +567,14 @@ export class InstagramProvider
       while (status === 'IN_PROGRESS') {
         const { status_code } = await (
           await this.fetch(
-            `https://${type}/v20.0/${containerId}?fields=status_code&access_token=${accessToken}`
+            `https://${type}/v20.0/${containerId}?fields=status_code&access_token=${accessToken}`,
+            undefined,
+            '',
+            0,
+            true
           )
         ).json();
-        await timer(10000);
+        await timer(30000);
         status = status_code;
       }
 

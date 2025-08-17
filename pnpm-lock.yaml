@@ -516,6 +516,9 @@ importers:
       tailwindcss-rtl:
         specifier: ^0.9.0
         version: 0.9.0
+      timezones-list:
+        specifier: ^3.1.0
+        version: 3.1.0
       tippy.js:
         specifier: ^6.3.7
         version: 6.3.7
@@ -14262,6 +14265,9 @@ packages:
 
   thunky@1.1.0:
     resolution: {integrity: sha512-eHY7nBftgThBqOyHGVN+l8gF0BucP09fMo0oO/Lb0w1OF80dJv+lDVpXG60WMQvkcxAkNybKsrEIE3ZtKGmPrA==}
+
+  timezones-list@3.1.0:
+    resolution: {integrity: sha512-PcDBt9tae330KTOIufK/wArTlJp+unuuRcG0EEu+4oLHZACHefKQyP2D51gMZID+urye92mHND60KRVuDDAmbA==}
 
   tiny-case@1.0.3:
     resolution: {integrity: sha512-Eet/eeMhkO6TX8mnUteS9zgPbUMQa4I6Kkp5ORiBD5476/m+PIRiumP5tmh5ioJpH7k51Kehawy2UDfsnxxY8Q==}
@@ -33422,6 +33428,8 @@ snapshots:
 
   thunky@1.1.0:
     optional: true
+
+  timezones-list@3.1.0: {}
 
   tiny-case@1.0.3: {}
 

@@ -84,7 +84,6 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
           <Toaster />
           <ShowPostSelector />
           <NewSubscription />
-          {user.tier !== 'FREE' && <Onboarding />}
           <Support />
           <ContinueProvider />
           <div className="min-h-[100vh] w-full max-w-[1440px] mx-auto bg-primary px-6 text-textColor flex flex-col">

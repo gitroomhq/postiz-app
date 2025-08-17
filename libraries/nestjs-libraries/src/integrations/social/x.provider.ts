@@ -23,6 +23,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   name = 'X';
   isBetweenSteps = false;
   scopes = [] as string[];
+  override maxConcurrentJob = 1; // X has strict rate limits (300 posts per 3 hours)
   toolTip =
     'You will be logged in into your current account, if you would like a different account, change it first on X';
 
@@ -37,8 +38,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     if (body.includes('usage-capped')) {
       return {
         type: 'refresh-token',
-        value:
-          'Posting failed - capped reached. Please try again later',
+        value: 'Posting failed - capped reached. Please try again later',
       };
     }
     if (body.includes('duplicate-rules')) {
@@ -52,6 +52,17 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       return {
         type: 'bad-body',
         value: 'The Tweet contains a URL that is not allowed on X',
+      };
+    }
+    if (
+      body.includes(
+        'This user is not allowed to post a video longer than 2 minutes'
+      )
+    ) {
+      return {
+        type: 'bad-body',
+        value:
+          'The video you are trying to post is longer than 2 minutes, which is not allowed for this account',
       };
     }
     return undefined;
@@ -257,7 +268,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       name,
       refreshToken: '',
       expiresIn: 999999999,
-      picture: profile_image_url,
+      picture: profile_image_url || '',
       username,
       additionalSettings: [
         {
@@ -306,22 +317,24 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         postDetails.flatMap((p) =>
           p?.media?.flatMap(async (m) => {
             return {
-              id: await this.runInConcurrent(async () =>
-                client.v1.uploadMedia(
-                  m.path.indexOf('mp4') > -1
-                    ? Buffer.from(await readOrFetch(m.path))
-                    : await sharp(await readOrFetch(m.path), {
-                        animated: lookup(m.path) === 'image/gif',
-                      })
-                        .resize({
-                          width: 1000,
+              id: await this.runInConcurrent(
+                async () =>
+                  client.v1.uploadMedia(
+                    m.path.indexOf('mp4') > -1
+                      ? Buffer.from(await readOrFetch(m.path))
+                      : await sharp(await readOrFetch(m.path), {
+                          animated: lookup(m.path) === 'image/gif',
                         })
-                        .gif()
-                        .toBuffer(),
-                  {
-                    mimeType: lookup(m.path) || '',
-                  }
-                )
+                          .resize({
+                            width: 1000,
+                          })
+                          .gif()
+                          .toBuffer(),
+                    {
+                      mimeType: lookup(m.path) || '',
+                    }
+                  ),
+                true
               ),
               postId: p.id,
             };
@@ -466,7 +479,6 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         return [];
       }
 
-      console.log(tweets.map((p) => p.id));
       const data = await client.v2.tweets(
         tweets.map((p) => p.id),
         {
@@ -501,9 +513,6 @@ export class XProvider extends SocialAbstract implements SocialProvider {
           retweet_count: 0,
         }
       );
-
-      console.log(metrics);
-      console.log(JSON.stringify(data, null, 2));
 
       return Object.entries(metrics).map(([key, value]) => ({
         label: key.replace('_count', '').replace('_', ' ').toUpperCase(),

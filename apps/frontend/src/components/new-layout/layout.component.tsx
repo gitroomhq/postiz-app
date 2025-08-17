@@ -38,6 +38,7 @@ import { ChromeExtensionComponent } from '@gitroom/frontend/components/layout/ch
 import NotificationComponent from '@gitroom/frontend/components/notifications/notification.component';
 import { BillingAfter } from '@gitroom/frontend/components/new-layout/billing.after';
 import { OrganizationSelector } from '@gitroom/frontend/components/layout/organization.selector';
+import { PreConditionComponent } from '@gitroom/frontend/components/layout/pre-condition.component';
 
 const jakartaSans = Plus_Jakarta_Sans({
   weight: ['600', '500'],
@@ -79,8 +80,8 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
           <MediaSettingsLayout />
           <Toaster />
           <ShowPostSelector />
+          <PreConditionComponent />
           <NewSubscription />
-          {user.tier !== 'FREE' && <Onboarding />}
           <Support />
           <ContinueProvider />
           <div

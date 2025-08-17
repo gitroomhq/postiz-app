@@ -14,6 +14,7 @@ import { useModals } from '@mantine/modals';
 import { sortBy } from 'lodash';
 import { usePreventWindowUnload } from '@gitroom/react/helpers/use.prevent.window.unload';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 const hours = [...Array(24).keys()].map((i, index) => ({
@@ -70,12 +71,12 @@ export const TimeTable: FC<{
   );
   const addHour = useCallback(() => {
     const calculateMinutes =
-      dayjs()
+      newDayjs()
         .utc()
         .startOf('day')
         .add(hour, 'hours')
         .add(minute, 'minutes')
-        .diff(dayjs().utc().startOf('day'), 'minutes') - dayjs.tz().utcOffset();
+        .diff(newDayjs().utc().startOf('day'), 'minutes') - dayjs.tz().utcOffset();
     setCurrentTimes((prev) => [
       ...prev,
       {

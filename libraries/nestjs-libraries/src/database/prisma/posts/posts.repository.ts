@@ -27,12 +27,35 @@ export class PostsRepository {
     private _errors: PrismaRepository<'errors'>
   ) {}
 
-  searchForMissingThreeHoursPosts() {
+  checkPending15minutesBack() {
     return this._post.model.post.findMany({
       where: {
         publishDate: {
+          lte: dayjs.utc().subtract(15, 'minute').toDate(),
+          gte: dayjs.utc().subtract(30, 'minute').toDate(),
+        },
+        state: 'QUEUE',
+        deletedAt: null,
+        parentPostId: null,
+      },
+      select: {
+        id: true,
+        publishDate: true,
+      },
+    });
+  }
+
+  searchForMissingThreeHoursPosts() {
+    return this._post.model.post.findMany({
+      where: {
+        integration: {
+          refreshNeeded: false,
+          inBetweenSteps: false,
+          disabled: false,
+        },
+        publishDate: {
           gte: dayjs.utc().toDate(),
-          lt: dayjs.utc().add(3, 'hour').toDate()
+          lt: dayjs.utc().add(3, 'hour').toDate(),
         },
         state: 'QUEUE',
         deletedAt: null,
@@ -48,6 +71,11 @@ export class PostsRepository {
   getOldPosts(orgId: string, date: string) {
     return this._post.model.post.findMany({
       where: {
+        integration: {
+          refreshNeeded: false,
+          inBetweenSteps: false,
+          disabled: false,
+        },
         organizationId: orgId,
         publishDate: {
           lte: dayjs(date).toDate(),

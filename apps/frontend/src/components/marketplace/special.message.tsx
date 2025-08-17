@@ -15,6 +15,7 @@ import dynamic from 'next/dynamic';
 import { IntegrationContext } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import dayjs from 'dayjs';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 const PreviewPopupDynamic = dynamic(() =>
   import('@gitroom/frontend/components/marketplace/preview.popup.dynamic').then(
     (mod) => mod.PreviewPopupDynamic
@@ -279,7 +280,7 @@ export const Post: FC<{
         <IntegrationContext.Provider
           value={{
             allIntegrations: [],
-            date: dayjs(),
+            date: newDayjs(),
             integration,
             value: [],
           }}

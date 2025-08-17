@@ -13,7 +13,6 @@ import { capitalize, chunk } from 'lodash';
 import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
 import { Integration } from '@prisma/client';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
-import { TwitterApi } from 'twitter-api-v2';
 
 export class ThreadsProvider extends SocialAbstract implements SocialProvider {
   identifier = 'threads';
@@ -26,6 +25,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     'threads_manage_insights',
     // 'threads_profile_discovery',
   ];
+  override maxConcurrentJob = 2; // Threads has moderate rate limits
 
   editor = 'normal' as const;
 
@@ -40,9 +40,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       id,
       name,
       username,
-      picture: {
-        data: { url },
-      },
+      picture
     } = await this.fetchPageInformation(access_token);
 
     return {
@@ -51,7 +49,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       accessToken: access_token,
       refreshToken: access_token,
       expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
-      picture: url,
+      picture: picture?.data?.url || '',
       username: '',
     };
   }
@@ -111,9 +109,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       id,
       name,
       username,
-      picture: {
-        data: { url },
-      },
+      picture,
     } = await this.fetchPageInformation(access_token);
 
     return {
@@ -122,7 +118,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       accessToken: access_token,
       refreshToken: access_token,
       expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
-      picture: url,
+      picture: picture?.data?.url || '',
       username: username,
     };
   }

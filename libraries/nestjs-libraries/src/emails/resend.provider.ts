@@ -14,14 +14,20 @@ export class ResendProvider implements EmailInterface {
     emailFromAddress: string,
     replyTo?: string
   ) {
-    const sends = await resend.emails.send({
-      from: `${emailFromName} <${emailFromAddress}>`,
-      to,
-      subject,
-      html,
-      ...(replyTo && { reply_to: replyTo }),
-    });
+    try {
+      const sends = await resend.emails.send({
+        from: `${emailFromName} <${emailFromAddress}>`,
+        to,
+        subject,
+        html,
+        ...(replyTo && { reply_to: replyTo }),
+      });
 
-    return sends;
+      return sends;
+    } catch (err) {
+      console.log(err);
+    }
+
+    return { sent: false };
   }
 }
