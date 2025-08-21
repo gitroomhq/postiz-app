@@ -41,6 +41,7 @@ model Organization {
   sets              Sets[]
   thirdParty        ThirdParty[]
   errors            Errors[]
+  Assessment        Assessment[]
 }
 
 model Tags {
@@ -655,6 +656,101 @@ model Errors {
 
   @@index([organizationId])
   @@index([createdAt])
+}
+
+model Assessment {
+  id                  String               @id @default(cuid())
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  organizationId      String
+  organization        Organization         @relation(fields: [organizationId], references: [id])
+  companyProfileId    String
+  companyProfile      CompanyProfile       @relation(fields: [companyProfileId], references: [id])
+  competitors         Competitor[]
+  marketingGoals      MarketingGoalsType[]
+  preferedContentType contentType[]
+}
+
+model CompanyProfile {
+  id             String          @id @default(cuid())
+  name           String
+  industry       IndustryType
+  description    String
+  website        String
+  toneOfVoice    ToneOfVoiceType
+  offering       Offering[]
+  targetAudience String
+  BrandColor     String?
+  assessment     Assessment[]
+}
+
+model Competitor {
+  id           String      @id @default(cuid())
+  name         String
+  website      String
+  difference   String
+  Assessment   Assessment? @relation(fields: [assessmentId], references: [id])
+  assessmentId String?
+}
+
+model Offering {
+  id               String          @id @default(cuid())
+  name             String
+  type             OfferingType
+  keyFeature       String
+  CompanyProfile   CompanyProfile? @relation(fields: [companyProfileId], references: [id])
+  companyProfileId String?
+}
+
+enum contentType {
+  EDUCATIONAL_POSTS
+  BEHIND_THE_SCENES
+  PRODUCT_SHOWCASE
+  CUSTOMER_TESTIMONIALS
+  INDUSTRY_NEWS
+  TIPS_AND_TUTORIALS
+  COMPANY_UPDATES
+  USER_GENERATED_CONTENT
+  INSPIRATIONAL_QUOTES
+  INTERACTIVE_POLLS
+  VIDEO_CONTENT
+  INFOGRAPHICS
+}
+
+enum MarketingGoalsType {
+  AWARENESS_AND_VISIBILITY
+  LEAD_GENERATION
+  SALES_INCREASE
+  ACQUISITION_AND_ONBOARDING
+  CUSTOMER_ENGAGEMENT
+  RETENTION_AND_EXPANSION
+  BRAND_POSITIONING_AND_AUTHORITY
+  REVENUE_GROWTH
+  ANALYTICS_AND_OPTIMIZATION
+}
+
+enum OfferingType {
+  PRODUCT
+  SERVICE
+}
+
+enum ToneOfVoiceType {
+  PROFESSIONAL
+  CASUAL
+  FRIENDLY
+  AUTHORITATIVE
+  PLAYFUL
+}
+
+enum IndustryType {
+  TECHNOLOGY
+  FINANCE
+  HEALTHCARE
+  RETAIL
+  MANUFACTURING
+  EDUCATION
+  CONSULTING
+  OTHER
 }
 
 enum OrderStatus {
