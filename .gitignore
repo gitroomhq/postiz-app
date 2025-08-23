@@ -58,3 +58,6 @@ Thumbs.db
 .secrets/
 libraries/plugins/src/plugins.ts
 i18n.cache
+
+# Kiro IDE files
+.kiro/
