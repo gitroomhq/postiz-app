@@ -20,6 +20,8 @@ model Organization {
   Assessment        Assessment[]
   autoPost          AutoPost[]
   Comments          Comments[]
+  companyProfiles   CompanyProfileAI[]
+  contentPlans      ContentPlan[]
   credits           Credits[]
   customers         Customer[]
   errors            Errors[]
@@ -36,6 +38,7 @@ model Organization {
   subscription      Subscription?
   tags              Tags[]
   thirdParty        ThirdParty[]
+  usageTracking     UsageTracking[]
   usedCodes         UsedCodes[]
   users             UserOrganization[]
   webhooks          Webhooks[]
@@ -395,6 +398,7 @@ model Post {
   createdAt                  DateTime                  @default(now())
   updatedAt                  DateTime                  @updatedAt
   deletedAt                  DateTime?
+  automationLogEntries       AutomationLogEntry[]
   comments                   Comments[]
   errors                     Errors[]
   payoutProblems             PayoutProblems[]
@@ -693,6 +697,132 @@ model Offering {
   keyFeature       String
   companyProfileId String?
   CompanyProfile   CompanyProfile? @relation(fields: [companyProfileId], references: [id])
+}
+
+model CompanyProfileAI {
+  id                String   @id @default(uuid())
+  name              String
+  industry          String
+  description       String?
+  products          Json     // Array of product/service descriptions
+  targetAudience    String
+  competitors       Json     // Array of competitor information
+  usp               String   // Unique Selling Proposition
+  brandVoice        String   // Brand voice description
+  marketingGoals    Json     // Array of marketing objectives
+  organizationId    String
+  isTemplate        Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  organization      Organization @relation(fields: [organizationId], references: [id])
+  contentPlans      ContentPlan[]
+  
+  @@index([organizationId])
+  @@index([isTemplate])
+}
+
+model ContentPlan {
+  id                String   @id @default(uuid())
+  name              String
+  companyProfileId  String
+  status            ContentPlanStatus @default(DRAFT)
+  weeklySchedule    Json     // Detailed weekly content schedule
+  platformConfig    Json     // Platform-specific configurations
+  isTemplate        Boolean  @default(false)
+  organizationId    String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  activatedAt       DateTime?
+  
+  companyProfile    CompanyProfileAI @relation(fields: [companyProfileId], references: [id])
+  organization      Organization @relation(fields: [organizationId], references: [id])
+  automationLogs    AutomationLog[]
+  
+  @@index([organizationId])
+  @@index([status])
+  @@index([isTemplate])
+}
+
+model AutomationLog {
+  id              String   @id @default(uuid())
+  contentPlanId   String
+  weekStartDate   DateTime
+  status          AutomationStatus
+  totalPlanned    Int
+  totalGenerated  Int
+  totalScheduled  Int
+  totalFailed     Int
+  errorDetails    Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  contentPlan     ContentPlan @relation(fields: [contentPlanId], references: [id])
+  logEntries      AutomationLogEntry[]
+  
+  @@index([contentPlanId])
+  @@index([weekStartDate])
+  @@index([status])
+}
+
+model AutomationLogEntry {
+  id              String   @id @default(uuid())
+  automationLogId String
+  postType        String
+  platform        String
+  contentCategory String
+  status          LogEntryStatus
+  scheduledFor    DateTime?
+  postId          String?  // Reference to generated Post
+  errorMessage    String?
+  createdAt       DateTime @default(now())
+  
+  automationLog   AutomationLog @relation(fields: [automationLogId], references: [id])
+  post            Post? @relation(fields: [postId], references: [id])
+  
+  @@index([automationLogId])
+  @@index([status])
+  @@index([scheduledFor])
+}
+
+model UsageTracking {
+  id             String   @id @default(uuid())
+  organizationId String
+  month          Int
+  year           Int
+  apiCalls       Int      @default(0)
+  monthlyLimit   Int
+  extraCredits   Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  
+  @@unique([organizationId, month, year])
+  @@index([organizationId])
+}
+
+enum ContentPlanStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+enum AutomationStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  PAUSED
+}
+
+enum LogEntryStatus {
+  PENDING
+  GENERATING
+  GENERATED
+  SCHEDULED
+  FAILED
 }
 
 enum contentType {

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { v4 as uuidv4 } from 'uuid';
-import { CompanyProfileDto } from '@gitroom/nestjs-libraries/dtos/company-profile/company.profile.dto';
+import { CompanyProfileDto, Offering } from '@gitroom/nestjs-libraries/dtos/company-profile/company.profile.dto';
 
 @Injectable()
 export class CompanyProfileRepository {
@@ -45,17 +45,23 @@ export class CompanyProfileRepository {
         toneOfVoice: body.toneOfVoice,
         targetAudience: body.targetAudience,
         brandColor: body.brandColor,
-        // offerings:{
-        //   update: body.offerings.map((Offering) => ({
-        //     id: uuidv4(),
-        //     name: Offering.name,
-        //     type: Offering.type,
-        //     keyFeature: Offering.keyFeature,
-        //   })),
-        // },
       },
     });
   }
+
+  updateOffering(id: string,body: Offering) {
+    return this._offering.model.offering.update({
+      where: {
+        id,
+      },
+      data: {
+        name: body.name,
+        type: body.type,
+        keyFeature: body.keyFeature,
+      },
+    });
+  }
+
   getCompanyProfiles(id: string, body: CompanyProfileDto) {
     return this._companyProfile.model.companyProfile.findMany({
       where: {
