@@ -41,10 +41,6 @@ import { ThirdPartyRepository } from '@gitroom/nestjs-libraries/database/prisma/
 import { ThirdPartyService } from '@gitroom/nestjs-libraries/database/prisma/third-party/third-party.service';
 import { VideoManager } from '@gitroom/nestjs-libraries/videos/video.manager';
 import { FalService } from '@gitroom/nestjs-libraries/openai/fal.service';
-import { CompanyProfileRepository } from '@gitroom/nestjs-libraries/database/prisma/company-profile/company.profile.repository';
-import { CompanyProfileService } from '@gitroom/nestjs-libraries/database/prisma/company-profile/company.profile.service';
-import { AssessmentRepository } from '@gitroom/nestjs-libraries/database/prisma/assessment/assessment.repository';
-import { AssessmentService } from '@gitroom/nestjs-libraries/database/prisma/assessment/assessment.service';
 
 @Global()
 @Module({
@@ -95,10 +91,6 @@ import { AssessmentService } from '@gitroom/nestjs-libraries/database/prisma/ass
     ThirdPartyRepository,
     ThirdPartyService,
     VideoManager,
-    CompanyProfileRepository,
-    CompanyProfileService,
-    AssessmentRepository,
-    AssessmentService,
   ],
   get exports() {
     return this.providers;
