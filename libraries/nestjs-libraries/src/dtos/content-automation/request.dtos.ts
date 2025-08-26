@@ -9,7 +9,10 @@ import {
   IsObject,
   MinLength,
   MaxLength,
-  IsUUID
+  IsUUID,
+  IsNumber,
+  Min,
+  Max
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import {
@@ -22,7 +25,9 @@ import {
   CompetitorInfo,
   MarketingGoal,
   WeeklySchedule,
-  PlatformConfig
+  PlatformConfig,
+  AutomationStatus,
+  LogEntryStatus
 } from './interfaces';
 
 // Company Profile DTOs
@@ -316,4 +321,172 @@ export class ActivateContentPlanDto {
   @IsString()
   @MaxLength(500)
   activationNotes?: string;
+}
+
+export class AutomationLogFiltersDto {
+  @IsOptional()
+  @IsUUID()
+  contentPlanId?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsEnum(AutomationStatus, { each: true })
+  status?: AutomationStatus[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  platforms?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  contentCategories?: string[];
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => DateRangeDto)
+  dateRange?: DateRangeDto;
+
+  @IsOptional()
+  @Type(() => Date)
+  weekStartDate?: Date;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  page?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(100)
+  limit?: number;
+}
+
+export class DateRangeDto {
+  @Type(() => Date)
+  @IsDefined()
+  start: Date;
+
+  @Type(() => Date)
+  @IsDefined()
+  end: Date;
+}
+
+export class UpdateLogEntryDto {
+  @IsOptional()
+  @IsEnum(LogEntryStatus)
+  status?: LogEntryStatus;
+
+  @IsOptional()
+  @Type(() => Date)
+  scheduledFor?: Date;
+
+  @IsOptional()
+  @IsUUID()
+  postId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  errorMessage?: string;
+}
+
+export class StartWeeklyAutomationDto {
+  @IsUUID()
+  @IsDefined()
+  contentPlanId: string;
+
+  @Type(() => Date)
+  @IsDefined()
+  weekStartDate: Date;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PlannedPostDto)
+  plannedPosts: PlannedPostDto[];
+}
+
+export class PlannedPostDto {
+  @IsString()
+  @IsDefined()
+  postType: string;
+
+  @IsString()
+  @IsDefined()
+  platform: string;
+
+  @IsString()
+  @IsDefined()
+  contentCategory: string;
+
+  @IsOptional()
+  @Type(() => Date)
+  scheduledFor?: Date;
+}
+
+export class TrackApiUsageDto {
+  @IsNumber()
+  @Min(1)
+  @IsDefined()
+  calls: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  operation?: string;
+
+  @IsOptional()
+  @IsObject()
+  metadata?: {
+    contentPlanId?: string;
+    postType?: string;
+    platform?: string;
+  };
+}
+
+export class UpdateMonthlyLimitDto {
+  @IsNumber()
+  @Min(0)
+  @IsDefined()
+  monthlyLimit: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  reason?: string;
+}
+
+export class PurchaseExtraCreditsDto {
+  @IsNumber()
+  @Min(1)
+  @IsDefined()
+  credits: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  paymentMethod?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  transactionId?: string;
+}
+
+export class UsageStatsFiltersDto {
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(24)
+  months?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  includeProjections?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  includeHistory?: boolean;
 }

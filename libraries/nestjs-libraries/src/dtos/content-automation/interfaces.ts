@@ -109,7 +109,6 @@ export interface MarketingGoal {
   metrics: string[];
 }
 
-// Enums
 export enum Platform {
   TWITTER = 'twitter',
   INSTAGRAM = 'instagram',
@@ -203,7 +202,6 @@ export enum MarketingGoalType {
   CRISIS_MANAGEMENT = 'crisis_management'
 }
 
-// Status enums for content automation
 export enum ContentPlanStatus {
   DRAFT = 'DRAFT',
   ACTIVE = 'ACTIVE',
@@ -225,4 +223,59 @@ export enum LogEntryStatus {
   GENERATED = 'GENERATED',
   SCHEDULED = 'SCHEDULED',
   FAILED = 'FAILED'
+}
+
+export interface UsageTrackingData {
+  id?: string;
+  organizationId: string;
+  month: number;
+  year: number;
+  apiCalls: number;
+  monthlyLimit: number;
+  extraCredits: number;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface UsageLimitResult {
+  canProceed: boolean;
+  remainingCalls: number;
+  monthlyLimit: number;
+  extraCredits: number;
+  usagePercentage: number;
+  resetDate: Date;
+  warningLevel: 'none' | 'low' | 'medium' | 'high' | 'critical';
+  message: string;
+}
+
+export interface UsageStats {
+  organizationId: string;
+  currentMonth: {
+    month: number;
+    year: number;
+    apiCalls: number;
+    monthlyLimit: number;
+    extraCredits: number;
+    remainingCalls: number;
+    usagePercentage: number;
+  };
+  history: {
+    month: number;
+    year: number;
+    apiCalls: number;
+    monthlyLimit: number;
+    extraCredits: number;
+  }[];
+  projectedUsage?: {
+    estimatedMonthlyUsage: number;
+    daysUntilLimit: number;
+    recommendedAction: string;
+  };
+}
+
+export interface UsageProjection {
+  estimatedMonthlyUsage: number;
+  daysUntilLimit: number;
+  recommendedAction: string;
+  confidence: number;
 }
