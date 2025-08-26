@@ -43,8 +43,10 @@ import { VideoManager } from '@gitroom/nestjs-libraries/videos/video.manager';
 import { FalService } from '@gitroom/nestjs-libraries/openai/fal.service';
 import { CompanyProfileRepository } from '@gitroom/nestjs-libraries/database/prisma/company-profile/company.profile.repository';
 import { CompanyProfileService } from '@gitroom/nestjs-libraries/database/prisma/company-profile/company.profile.service';
-import { AssessmentRepository } from '@gitroom/nestjs-libraries/database/prisma/assessment/assessment.repository';
-import { AssessmentService } from '@gitroom/nestjs-libraries/database/prisma/assessment/assessment.service';
+import { ContentPlanRepository } from '@gitroom/nestjs-libraries/database/prisma/content-plan/content.plan.repository';
+import { ContentPlanService } from '@gitroom/nestjs-libraries/database/prisma/content-plan/content.plan.service';
+import { AutomationLogRepository } from '@gitroom/nestjs-libraries/database/prisma/automation-log/automation.log.repository';
+import { AutomationLogService } from '@gitroom/nestjs-libraries/database/prisma/automation-log/automation.log.service';
 
 @Global()
 @Module({
@@ -97,8 +99,10 @@ import { AssessmentService } from '@gitroom/nestjs-libraries/database/prisma/ass
     VideoManager,
     CompanyProfileRepository,
     CompanyProfileService,
-    AssessmentRepository,
-    AssessmentService,
+    ContentPlanRepository,
+    ContentPlanService,
+    AutomationLogRepository,
+    AutomationLogService,
   ],
   get exports() {
     return this.providers;
