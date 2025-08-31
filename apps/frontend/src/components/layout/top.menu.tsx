@@ -1,7 +1,6 @@
 'use client';
 
 import { FC, ReactNode } from 'react';
-import { usePathname } from 'next/navigation';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -130,6 +129,39 @@ export const useMenuItem = () => {
 
   const secondMenu = [
     {
+      name: 'GrowChief',
+      icon: (
+        <svg
+          width="20"
+          height="21"
+          viewBox="0 0 50 28"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          data-tooltip-id="tooltip"
+          data-tooltip-content="New! Automate your X and LinkedIn outreach with GrowChief"
+        >
+          <path
+            d="M24.8789 0.191772C39.9967 0.198463 49.621 14.0845 49.6514 14.1283C49.6514 14.1283 40.0206 27.8931 24.8789 27.8998C9.73703 27.9062 0.189453 14.1283 0.189453 14.1283C0.235704 14.0609 9.77381 0.185332 24.8789 0.191772Z"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3"
+          />
+
+          <circle
+            cx="24.9189"
+            cy="14.2621"
+            r="9.1328"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3"
+          />
+        </svg>
+      ),
+      path: 'https://growchief.com',
+      role: ['ADMIN', 'SUPERADMIN', 'USER'],
+      requireBilling: true,
+    },
+    {
       name: t('affiliate', 'Affiliate'),
       icon: (
         <svg
@@ -237,7 +269,7 @@ export const useMenuItem = () => {
         </svg>
       ),
       path: '/settings',
-      role: ['ADMIN', "USER", 'SUPERADMIN'],
+      role: ['ADMIN', 'USER', 'SUPERADMIN'],
     },
   ] satisfies MenuItemInterface[] as MenuItemInterface[];
 
