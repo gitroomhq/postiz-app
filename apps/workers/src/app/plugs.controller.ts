@@ -18,7 +18,7 @@ export class PlugsController {
       return await this._integrationService.processPlugs(data);
     } catch (err) {
       console.log(
-        "Unhandled error, let's avoid crashing the plugs worker",
+        "Unhandled error, let's avoid crashing the plug worker",
         err
       );
     }
