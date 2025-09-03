@@ -50,7 +50,7 @@ jobs:
           NEXT_PUBLIC_VERSION: ${{ github.ref_name }}
         run: |
           docker buildx build --platform linux/${{ matrix.arch }} \
-            -f Dockerfile.dev \
+            -f Dockerfile \
             -t ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }}-${{ matrix.arch }} \
             --build-arg NEXT_PUBLIC_VERSION=${{ env.NEXT_PUBLIC_VERSION }} \
             --provenance=false --sbom=false \
