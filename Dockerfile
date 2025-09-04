@@ -68,8 +68,6 @@ RUN rm -rf /root/.npm /root/.pnpm-store /tmp/* /var/cache/apk/* && \
     find . -name "LICENSE" -delete && \
     find . -name "CHANGELOG" -delete && \
     find . -name "README" -delete && \
-    find . -name "test" -type d -exec rm -rf {} + 2>/dev/null || true && \
-    find . -name "tests" -type d -exec rm -rf {} + 2>/dev/null || true && \
     find . -name "*.test.*" -delete && \
     find . -name "*.spec.*" -delete
 
