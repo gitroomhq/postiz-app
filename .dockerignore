@@ -1,23 +1,105 @@
 # We want the docker builds to be clean, and as fast as possible. Don't send
 # any half-built stuff in the build context as a pre-caution (also saves copying
 # 180k files in node_modules that isn't used!).
+# Dependencies
 **/node_modules
-node_modules/*
-node_modules
-docker-data/*
-dist
-.nx
-/apps/frontend/.next
-/apps/backend/dist
-/apps/workers/dist
-/apps/cron/dist
-/apps/commands/dist
-.devcontainer
-**/.git
-**/*.md
-**/LICENSE
-**/npm-debug.log
-**/*.vscode
+pnpm-debug.log*
+
+# Production builds
+**/dist
+**/.next
+**/build
+**/out
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE and editor files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Git
 .git
-.github
-reports
+.gitignore
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# nyc test coverage
+.nyc_output
+
+# Optional npm cache directory
+**/.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Next.js build output
+**/.next
+
+**/.cache/
+
+# Storybook build outputs
+**/.out
+**/.storybook-out
+
+# Temporary folders
+tmp/
+temp/
+
+# Test files
+test
+tests
+__tests__
+*.test.js
+*.test.ts
+*.test.tsx
+*.spec.js
+*.spec.ts
+*.spec.tsx
+
+# Documentation
+README.md
+CHANGELOG.md
+CONTRIBUTING.md
+
+
+# Reports
+coverage/
+
+# Uploads and var directories
+uploads/
+var/docker/docker-build.sh
+var/docker/docker-create.sh
+
+# Jest
+jest.config.js
+jest.setup.js

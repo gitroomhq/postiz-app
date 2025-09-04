@@ -47,7 +47,7 @@ pipeline {
                     '''
                     // Build Docker image
                     sh '''
-                        docker build -f Dockerfile.dev -t $IMAGE_TAG .
+                        docker build -f Dockerfile -t $IMAGE_TAG .
                     '''
                     // Push Docker image to GitHub Container Registry
                     sh '''
