@@ -90,8 +90,8 @@ export const Autopost: FC = () => {
               <div>{t('active', 'Active')}</div>
               {data?.map((p: any) => (
                 <Fragment key={p.id}>
-                  <div className="flex flex-col justify-center">{p.title}</div>
-                  <div className="flex flex-col justify-center">{p.url}</div>
+                  <div className="flex flex-col justify-center" data-sentry-mask>{p.title}</div>
+                  <div className="flex flex-col justify-center" data-sentry-mask>{p.url}</div>
                   <div className="flex flex-col justify-center">
                     <div>
                       <Button onClick={addWebhook(p)}>
