@@ -1,11 +1,11 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { MainMcp } from '@gitroom/backend/mcp/main.mcp';
 import { socialIntegrationList } from '@gitroom/nestjs-libraries/integrations/integration.manager';
-
+import * as Sentry from '@sentry/nestjs';
 export class McpSettings {
   private _server: McpServer;
   createServer(organization: string, service: MainMcp) {
-    this._server = new McpServer(
+    this._server = Sentry.wrapMcpServerWithSentry(new McpServer(
       {
         name: 'Postiz',
         version: '2.0.0',
@@ -17,7 +17,7 @@ export class McpSettings {
             ', '
           )} to schedule you need to have the providerId (you can get it from POSTIZ_PROVIDERS_LIST), user need to specify the schedule date (or now), text, you also can send base64 images and text for the comments. When you get POSTIZ_PROVIDERS_LIST, always display all the options to the user`,
       }
-    );
+    ));
 
     for (const usePrompt of Reflect.getMetadata(
       'MCP_PROMPT',
