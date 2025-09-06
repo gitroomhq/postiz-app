@@ -109,9 +109,12 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
     );
   }
 
-  async uploadFile(instanceUrl: string, fileUrl: string, accessToken: string) {
+  async uploadFile(instanceUrl: string, fileUrl: string, accessToken: string, description?: string) {
     const form = new FormData();
     form.append('file', await fetch(fileUrl).then((r) => r.blob()));
+    if (description) {
+      form.append('description', description);
+    }
     const media = await (
       await this.fetch(`${instanceUrl}/api/v1/media`, {
         method: 'POST',
@@ -135,7 +138,7 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
     for (const getPost of postDetails) {
       const uploadFiles = await Promise.all(
         getPost?.media?.map((media) =>
-          this.uploadFile(url, media.path, accessToken)
+          this.uploadFile(url, media.path, accessToken, media.alt)
         ) || []
       );
 
