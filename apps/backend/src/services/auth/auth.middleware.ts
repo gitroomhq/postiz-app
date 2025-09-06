@@ -6,6 +6,7 @@ import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/o
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
 import { HttpForbiddenException } from '@gitroom/nestjs-libraries/services/exception.filter';
+import { setSentryUserContext } from '@gitroom/nestjs-libraries/sentry/sentry.user.context';
 
 export const removeAuth = (res: Response) => {
   res.cookie('auth', '', {
@@ -33,6 +34,8 @@ export class AuthMiddleware implements NestMiddleware {
   async use(req: Request, res: Response, next: NextFunction) {
     const auth = req.headers.auth || req.cookies.auth;
     if (!auth) {
+      // Clear Sentry user context when no auth token is present
+      setSentryUserContext(null);
       throw new HttpForbiddenException();
     }
     try {
@@ -70,6 +73,10 @@ export class AuthMiddleware implements NestMiddleware {
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-expect-error
           req.org = loadImpersonate.organization;
+
+          // Set Sentry user context for impersonated user
+          setSentryUserContext(user);
+
           next();
           return;
         }
@@ -97,7 +104,12 @@ export class AuthMiddleware implements NestMiddleware {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-expect-error
       req.org = setOrg;
+
+      // Set Sentry user context for this request
+      setSentryUserContext(user);
     } catch (err) {
+      // Clear Sentry user context on authentication failure
+      setSentryUserContext(null);
       throw new HttpForbiddenException();
     }
     next();
