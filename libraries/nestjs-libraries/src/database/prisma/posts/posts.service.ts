@@ -113,11 +113,20 @@ export class PostsService {
               responseType: 'arraybuffer',
             });
 
-            const buffer = Buffer.from(response.data);
+            const processedBuffer = await sharp(Buffer.from(response.data))
+              .jpeg({ quality: 90 })
+              .toBuffer();
+
+            if (processedBuffer.length > 8 * 1024 * 1024) {
+              throw new BadRequestException(
+                'Cover image is too large. Maximum size is 8MB.'
+              );
+            }
+
             const { path } = await this.storage.uploadFile({
-              buffer,
-              mimetype: 'image/png',
-              size: buffer.length,
+              buffer: processedBuffer,
+              mimetype: 'image/jpeg',
+              size: processedBuffer.length,
               path: '',
               fieldname: '',
               destination: '',
