@@ -120,6 +120,11 @@ export class PostsService {
             }
 
             const processedBuffer = await sharp(Buffer.from(response.data))
+              .resize(1080, 1920, {
+                fit: 'cover',
+                position: 'center',
+              })
+              .toColourspace('srgb')
               .jpeg({ quality: 90 })
               .toBuffer();
 
