@@ -105,6 +105,32 @@ export class PostsService {
             );
           }
 
+          if (post.settings?.cover_url) {
+            const response = await axios.get(post.settings.cover_url, {
+              responseType: 'arraybuffer',
+            });
+
+            const buffer = Buffer.from(response.data);
+            const { path } = await this.storage.uploadFile({
+              buffer,
+              mimetype: 'image/png',
+              size: buffer.length,
+              path: '',
+              fieldname: '',
+              destination: '',
+              stream: new Readable(),
+              filename: '',
+              originalname: '',
+              encoding: '',
+            });
+
+            post.settings.cover_url =
+              process.env.FRONTEND_URL +
+              '/' +
+              process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
+              path;
+          }
+
           return {
             ...post,
             settings: {
