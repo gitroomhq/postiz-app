@@ -105,8 +105,11 @@ export class PostsService {
             );
           }
 
-          if (post.settings?.cover_url) {
-            const response = await axios.get(post.settings.cover_url, {
+          if (
+            integration.providerIdentifier === 'instagram' &&
+            (post.settings as any)?.cover_url
+          ) {
+            const response = await axios.get((post.settings as any).cover_url, {
               responseType: 'arraybuffer',
             });
 
@@ -124,7 +127,7 @@ export class PostsService {
               encoding: '',
             });
 
-            post.settings.cover_url =
+            (post.settings as any).cover_url =
               process.env.FRONTEND_URL +
               '/' +
               process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
