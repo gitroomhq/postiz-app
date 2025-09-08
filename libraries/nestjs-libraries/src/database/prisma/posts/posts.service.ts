@@ -113,6 +113,12 @@ export class PostsService {
               responseType: 'arraybuffer',
             });
 
+            if (!response.headers['content-type']?.startsWith('image/')) {
+              throw new BadRequestException(
+                'The cover_url did not point to a valid image.'
+              );
+            }
+
             const processedBuffer = await sharp(Buffer.from(response.data))
               .jpeg({ quality: 90 })
               .toBuffer();
