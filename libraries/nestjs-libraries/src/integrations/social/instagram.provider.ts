@@ -455,6 +455,7 @@ export class InstagramProvider
     const [firstPost, ...theRest] = postDetails;
     console.log('in progress', id);
     const isStory = firstPost.settings.post_type === 'story';
+    const isReel = firstPost.settings.post_type === 'reel';
     const medias = await Promise.all(
       firstPost?.media?.map(async (m) => {
         const caption =
@@ -468,6 +469,14 @@ export class InstagramProvider
             ? firstPost?.media?.length === 1
               ? isStory
                 ? `video_url=${m.path}&media_type=STORIES`
+                : isReel
+                ? `video_url=${m.path}&media_type=REELS&thumb_offset=${
+                    firstPost.settings.thumb_offset || 0
+                  }${
+                    firstPost.settings.cover_url
+                      ? `&cover_url=${firstPost.settings.cover_url}`
+                      : ''
+                  }`
                 : `video_url=${m.path}&media_type=REELS&thumb_offset=${
                     m?.thumbnailTimestamp || 0
                   }`
