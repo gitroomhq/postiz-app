@@ -142,16 +142,20 @@ export class PostsService {
               fieldname: '',
               destination: '',
               stream: new Readable(),
-              filename: '',
-              originalname: '',
+              filename: `${makeId(20)}.jpg`,
+              originalname: `${makeId(20)}.jpg`,
               encoding: '',
             });
 
             (post.settings as any).cover_url =
-              process.env.FRONTEND_URL +
-              '/' +
-              process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
-              path;
+              path.indexOf('http') === -1
+                ? process.env.FRONTEND_URL +
+                  '/' +
+                  (process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY ||
+                    'uploads') +
+                  '/' +
+                  path
+                : path;
           }
 
           return {
