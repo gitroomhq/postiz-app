@@ -1,0 +1,61 @@
+#!/bin/bash
+
+# Configuration - UPDATE THESE PATHS FOR YOUR UBUNTU SYSTEM
+PROJECT_DIR="/home/YOUR_USERNAME/projects/faizan/upstrapp/postiz-app-copy"
+LOG_FILE="/var/log/postiz-autostart.log"
+USER_NAME="YOUR_USERNAME"
+
+# Function to log messages
+log_message() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S'): $1" >> $LOG_FILE
+}
+
+# Wait for system to be ready (network, desktop, etc.)
+sleep 30
+
+log_message "Starting Postiz auto-start process..."
+
+# Check if project directory exists
+if [ ! -d "$PROJECT_DIR" ]; then
+    log_message "ERROR: Project directory does not exist: $PROJECT_DIR"
+    exit 1
+fi
+
+# Change to project directory
+cd "$PROJECT_DIR" || exit 1
+
+# Set environment variables
+export NODE_ENV=development
+export HOME="/home/$USER_NAME"
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/$USER_NAME/.local/bin"
+
+# If using NVM (Node Version Manager), uncomment these lines:
+# export NVM_DIR="$HOME/.nvm"
+# [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+# nvm use 20
+
+log_message "Environment set up. Starting npm dev server from: $PROJECT_DIR"
+
+# Check if npm is available
+if ! command -v npm &> /dev/null; then
+    log_message "ERROR: npm command not found. Please ensure Node.js is installed."
+    exit 1
+fi
+
+# Install dependencies if node_modules doesn't exist
+if [ ! -d "node_modules" ]; then
+    log_message "Installing npm dependencies..."
+    npm install >> $LOG_FILE 2>&1
+fi
+
+# Start the development server in background
+npm run dev >> $LOG_FILE 2>&1 &
+
+# Get the process ID
+PID=$!
+log_message "Postiz started successfully with PID: $PID"
+
+# Save PID for service management
+echo $PID > /var/run/postiz.pid
+
+log_message "Auto-start process completed. Check http://localhost:4200 in browser."
