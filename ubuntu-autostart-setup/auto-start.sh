@@ -27,12 +27,15 @@ cd "$PROJECT_DIR" || exit 1
 # Set environment variables
 export NODE_ENV=development
 export HOME="/home/$USER_NAME"
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/$USER_NAME/.local/bin"
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/$USER_NAME/.local/bin:/home/$USER_NAME/.nvm/versions/node/v20.19.4/bin"
 
 # If using NVM (Node Version Manager), uncomment these lines:
-# export NVM_DIR="$HOME/.nvm"
-# [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-# nvm use 20
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+# If NVM is installed, use Node 20
+if command -v nvm &> /dev/null; then
+    nvm use 20
+fi
 
 log_message "Environment set up. Starting npm dev server from: $PROJECT_DIR"
 
