@@ -753,8 +753,8 @@ let NotificationService = class NotificationService {
             await this.sendEmail(user.user.email, subject, message);
         }
     }
-    async sendEmail(to, subject, html, replyTo) {
-        await this._emailService.sendEmail(to, subject, html, replyTo);
+    async sendEmail(to, subject, html, replyTo, cc) {
+        await this._emailService.sendEmail(to, subject, html, replyTo, cc);
     }
     hasEmailProvider() {
         return this._emailService.hasProvider();
@@ -884,9 +884,21 @@ let EmailService = class EmailService {
                 return new empty_provider_1.EmptyProvider();
         }
     }
-    async sendEmail(to, subject, html, replyTo) {
-        if (to.indexOf('@') === -1) {
-            return;
+    async sendEmail(to, subject, html, replyTo, cc) {
+        // if (to.indexOf('@') === -1) {
+        //   return ;
+        // }
+        if (Array.isArray(to)) {
+            if (!to.length) {
+                console.log('No recipients provided');
+                return;
+            }
+        }
+        else if (typeof to === 'string') {
+            if (to.indexOf('@') === -1) {
+                console.log('Invalid recipient');
+                return;
+            }
         }
         if (!process.env.EMAIL_FROM_ADDRESS || !process.env.EMAIL_FROM_NAME) {
             console.log('Email sender information not found in environment variables');
@@ -936,13 +948,13 @@ let EmailService = class EmailService {
                         font-weight: 600;
                         color: #1f2937;
                         margin: 0;
-                    ">${process.env.EMAIL_FROM_NAME}</h2>
+                    ">Postiz Application</h2>
                 </div>
             </div>
         </div>
     </div>
     `;
-        const sends = await this.emailService.sendEmail(to, subject, modifiedHtml, process.env.EMAIL_FROM_NAME, process.env.EMAIL_FROM_ADDRESS, replyTo);
+        const sends = await this.emailService.sendEmail(to, subject, modifiedHtml, process.env.EMAIL_FROM_NAME, process.env.EMAIL_FROM_ADDRESS, replyTo, cc);
         console.log(sends);
     }
 };
@@ -4591,7 +4603,7 @@ class LinkedinProvider extends social_abstract_1.SocialAbstract {
             headers: {
                 'Content-Type': 'application/json',
                 'X-Restli-Protocol-Version': '2.0.0',
-                'LinkedIn-Version': '202402',
+                'LinkedIn-Version': '202408',
                 Authorization: `Bearer ${token}`,
             },
         })).json();
@@ -4608,7 +4620,7 @@ class LinkedinProvider extends social_abstract_1.SocialAbstract {
             headers: {
                 'Content-Type': 'application/json',
                 'X-Restli-Protocol-Version': '2.0.0',
-                'LinkedIn-Version': '202402',
+                'LinkedIn-Version': '202408',
                 Authorization: `Bearer ${accessToken}`,
             },
             body: JSON.stringify({
@@ -4634,7 +4646,7 @@ class LinkedinProvider extends social_abstract_1.SocialAbstract {
                 method: 'PUT',
                 headers: {
                     'X-Restli-Protocol-Version': '2.0.0',
-                    'LinkedIn-Version': '202402',
+                    'LinkedIn-Version': '202408',
                     Authorization: `Bearer ${accessToken}`,
                     ...(fileName.indexOf('mp4') > -1
                         ? { 'Content-Type': 'application/octet-stream' }
@@ -4656,7 +4668,7 @@ class LinkedinProvider extends social_abstract_1.SocialAbstract {
                 }),
                 headers: {
                     'X-Restli-Protocol-Version': '2.0.0',
-                    'LinkedIn-Version': '202402',
+                    'LinkedIn-Version': '202408',
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${accessToken}`,
                 },
@@ -4825,7 +4837,7 @@ class LinkedinProvider extends social_abstract_1.SocialAbstract {
                 headers: {
                     'X-Restli-Protocol-Version': '2.0.0',
                     'Content-Type': 'application/json',
-                    'LinkedIn-Version': '202402',
+                    'LinkedIn-Version': '202408',
                     Authorization: `Bearer ${integration.token}`,
                 },
             });
@@ -12011,7 +12023,7 @@ class LinkedinPageProvider extends linkedin_provider_1.LinkedinProvider {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
                 'X-Restli-Protocol-Version': '2.0.0',
-                'LinkedIn-Version': '202402',
+                'LinkedIn-Version': '202408',
             },
         })).json();
         return (elements || []).map((e) => ({
@@ -12171,7 +12183,7 @@ class LinkedinPageProvider extends linkedin_provider_1.LinkedinProvider {
             headers: {
                 'X-Restli-Protocol-Version': '2.0.0',
                 'Content-Type': 'application/json',
-                'LinkedIn-Version': '202402',
+                'LinkedIn-Version': '202408',
                 Authorization: `Bearer ${integration.token}`,
             },
         })).json();
@@ -12197,7 +12209,7 @@ class LinkedinPageProvider extends linkedin_provider_1.LinkedinProvider {
                 headers: {
                     'X-Restli-Protocol-Version': '2.0.0',
                     'Content-Type': 'application/json',
-                    'LinkedIn-Version': '202402',
+                    'LinkedIn-Version': '202408',
                     Authorization: `Bearer ${integration.token}`,
                 },
             });
@@ -12211,7 +12223,7 @@ class LinkedinPageProvider extends linkedin_provider_1.LinkedinProvider {
             headers: {
                 'X-Restli-Protocol-Version': '2.0.0',
                 'Content-Type': 'application/json',
-                'LinkedIn-Version': '202402',
+                'LinkedIn-Version': '202408',
                 Authorization: `Bearer ${integration.token}`,
             },
         })).json();
@@ -14090,7 +14102,10 @@ let GbpProvider = class GbpProvider {
         this.isWeb3 = false;
         this.oneTimeToken = false;
         this.isBetweenSteps = false;
-        this.scopes = ['https://www.googleapis.com/auth/business.manage'];
+        this.scopes = [
+            'https://www.googleapis.com/auth/business.manage',
+            'https://www.googleapis.com/auth/plus.business.manage'
+        ];
         this.GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
         this.GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
         this.REDIRECT_URI = `${process.env.FRONTEND_URL}/integrations/social/gbp`;
@@ -14239,31 +14254,153 @@ let GbpProvider = class GbpProvider {
             version: 'v1',
             auth: oauth2Client,
         });
-        // Get location to post to
-        const locations = await this._getAllLocations(oauth2Client, id);
-        const location = locations[0];
+        // The 'id' should be the location name (e.g., "locations/1234567890")
+        // If it's just a number, we need to get the account first
+        let location;
+        if (id.startsWith('locations/')) {
+            // Direct location ID - use it directly
+            location = { name: id };
+        }
+        else {
+            // We have a location ID or account name, need to fetch locations
+            try {
+                // First, try to get account information
+                const accountManagement = googleapis_1.google.mybusinessaccountmanagement({
+                    version: 'v1',
+                    auth: oauth2Client,
+                });
+                const { data: accountsData } = await accountManagement.accounts.list();
+                const account = accountsData.accounts?.[0];
+                if (!account?.name) {
+                    throw new Error('No Google Business Profile account found');
+                }
+                // Get all locations for the account
+                const locations = await this._getAllLocations(oauth2Client, account.name);
+                if (locations.length === 0) {
+                    throw new Error('No business locations found for this account');
+                }
+                // Find the location by ID or use the first one
+                location = locations.find(loc => loc.name?.includes(id)) || locations[0];
+            }
+            catch (error) {
+                console.error('Error fetching account/locations:', error);
+                throw new Error('Failed to fetch business locations');
+            }
+        }
         if (!location) {
             throw new Error('No GBP location found for this account');
         }
         const message = postDetails[0]?.message || 'Posted via GBP';
-        const response = await fetch(`https://mybusiness.googleapis.com/v4/${location.name}/localPosts`, {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${accessToken}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
+        const media = postDetails[0]?.media || [];
+        let postId = 'unknown';
+        console.log(`✅ Using APPROVED GBP API credentials`);
+        console.log(`📍 Attempting to post to location: ${location.name}`);
+        console.log(`📝 Post message: ${message}`);
+        console.log(`🖼️  Media count: ${media.length}`);
+        if (media.length > 0) {
+            console.log(`🖼️  Media details:`, media.map(m => ({ type: m.type, path: m.path })));
+        }
+        try {
+            // Get account information first
+            const accountManagement = googleapis_1.google.mybusinessaccountmanagement({
+                version: 'v1',
+                auth: oauth2Client,
+            });
+            const { data: accountsData } = await accountManagement.accounts.list();
+            const account = accountsData.accounts?.[0];
+            if (!account?.name) {
+                throw new Error('No Google Business Profile account found');
+            }
+            const accountId = account.name.split('/').pop();
+            const locationId = location.name.split('/').pop();
+            console.log(`🏢 Account ID: ${accountId}`);
+            console.log(`📍 Location ID: ${locationId}`);
+            // Prepare post data for Google My Business API v4 (the working API for approved clients)
+            const postData = {
                 languageCode: 'en-US',
                 summary: message,
                 topicType: 'STANDARD',
-            }),
-        });
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Failed to create GBP post: ${errorText}`);
+            };
+            // Add media/images to the post if provided
+            if (media.length > 0) {
+                const mediaContent = [];
+                for (const mediaItem of media) {
+                    if (mediaItem.type === 'image') {
+                        console.log(`📸 Adding image: ${mediaItem.url || mediaItem.path}`);
+                        mediaContent.push({
+                            mediaFormat: 'PHOTO',
+                            sourceUrl: mediaItem.url || mediaItem.path
+                        });
+                    }
+                    else if (mediaItem.type === 'video') {
+                        console.log(`🎥 Adding video: ${mediaItem.url || mediaItem.path}`);
+                        mediaContent.push({
+                            mediaFormat: 'VIDEO',
+                            sourceUrl: mediaItem.url || mediaItem.path
+                        });
+                    }
+                }
+                if (mediaContent.length > 0) {
+                    postData.media = mediaContent;
+                    console.log(`🖼️  Added ${mediaContent.length} media items to post`);
+                }
+            }
+            console.log('📤 Post data:', JSON.stringify(postData, null, 2));
+            // Use the correct Google My Business API v4 endpoint for approved clients
+            const gmbApiUrl = `https://mybusiness.googleapis.com/v4/accounts/${accountId}/locations/${locationId}/localPosts`;
+            console.log(`🌐 Using GMB API v4 URL: ${gmbApiUrl}`);
+            const response = await fetch(gmbApiUrl, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify(postData),
+            });
+            console.log(`📊 Response status: ${response.status}`);
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error(`❌ GBP API Error (${response.status}):`, errorText);
+                // Try to provide more specific error messages
+                if (response.status === 400) {
+                    throw new Error(`Invalid post data: ${errorText}`);
+                }
+                else if (response.status === 401) {
+                    throw new Error(`Authentication failed. Please re-authenticate your Google Business Profile account.`);
+                }
+                else if (response.status === 403) {
+                    throw new Error(`Access denied. Your account may not have posting permissions for this location.`);
+                }
+                else if (response.status === 404) {
+                    throw new Error(`Location not found. Please verify the business location is properly set up.`);
+                }
+                else {
+                    throw new Error(`GBP API error (${response.status}): ${errorText}`);
+                }
+            }
+            const postRes = await response.json();
+            postId = postRes.name || postRes.id || 'unknown';
+            console.log('🎉 GBP Post Success!', JSON.stringify(postRes, null, 2));
         }
-        const postRes = await response.json();
-        const postId = postRes.name || 'unknown';
+        catch (fetchError) {
+            console.error('💥 GBP Post Error:', fetchError);
+            // Provide helpful error message based on the error type
+            if (fetchError instanceof Error) {
+                if (fetchError.message.includes('Authentication failed')) {
+                    throw new Error('Authentication failed. Please reconnect your Google Business Profile account.');
+                }
+                else if (fetchError.message.includes('Access denied')) {
+                    throw new Error('Access denied. Please ensure your Google Business Profile account has posting permissions.');
+                }
+                else {
+                    throw new Error(`Failed to create GBP post: ${fetchError.message}`);
+                }
+            }
+            else {
+                throw new Error('Failed to create GBP post: Unknown error occurred');
+            }
+        }
         return [{
                 id: postId,
                 postId: postId,
@@ -14272,22 +14409,51 @@ let GbpProvider = class GbpProvider {
             }];
     }
     async _getAllLocations(auth, accountName) {
-        const businessInfo = googleapis_1.google.mybusinessbusinessinformation({
-            version: 'v1',
-            auth: auth,
-        });
+        console.log('_getAllLocations called with accountName:', accountName);
         let allLocations = [];
         let pageToken = undefined;
+        // Get access token from auth client
+        const accessToken = auth.credentials?.access_token;
+        if (!accessToken) {
+            throw new Error('No access token available');
+        }
         do {
             try {
-                const { data } = await businessInfo.accounts.locations.list({
-                    parent: accountName,
+                console.log(`Fetching locations for parent: ${accountName}, pageToken: ${pageToken}`);
+                // Build URL parameters
+                const params = new URLSearchParams({
                     readMask: 'name,title,profile',
-                    pageSize: 100,
-                    pageToken: pageToken,
+                    pageSize: '100',
                 });
+                if (pageToken) {
+                    params.append('pageToken', pageToken);
+                }
+                const url = `https://mybusinessbusinessinformation.googleapis.com/v1/${accountName}/locations?${params.toString()}`;
+                console.log('Requesting URL:', url);
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error(`API Error (${response.status}):`, errorText);
+                    if (response.status === 404) {
+                        console.log('404 error - Account may not have business locations or API access');
+                        break;
+                    }
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+                const data = await response.json();
+                console.log('API Response data:', JSON.stringify(data, null, 2));
                 if (data.locations) {
+                    console.log(`Found ${data.locations.length} locations`);
                     allLocations = allLocations.concat(data.locations);
+                }
+                else {
+                    console.log('No locations found in response');
                 }
                 pageToken = data.nextPageToken || undefined;
             }
@@ -14296,6 +14462,7 @@ let GbpProvider = class GbpProvider {
                 break;
             }
         } while (pageToken);
+        console.log(`Total locations found: ${allLocations.length}`);
         return allLocations;
     }
     _findMatchingLocation(locations, customerName) {
