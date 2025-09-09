@@ -94,8 +94,13 @@ sudo cp "$SCRIPT_DIR/auto-start.sh" /opt/postiz/
 sudo chmod +x /opt/postiz/auto-start.sh
 sudo chown root:root /opt/postiz/auto-start.sh
 
-# Install systemd service
-sudo cp "$SCRIPT_DIR/postiz-autostart.service" /etc/systemd/system/
+# Install systemd service (use simple version if it exists, otherwise original)
+if [ -f "$SCRIPT_DIR/postiz-autostart-simple.service" ]; then
+    echo "Using simplified service file..."
+    sudo cp "$SCRIPT_DIR/postiz-autostart-simple.service" /etc/systemd/system/postiz-autostart.service
+else
+    sudo cp "$SCRIPT_DIR/postiz-autostart.service" /etc/systemd/system/
+fi
 sudo chown root:root /etc/systemd/system/postiz-autostart.service
 
 echo

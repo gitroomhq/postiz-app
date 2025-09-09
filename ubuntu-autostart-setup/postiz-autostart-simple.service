@@ -1,0 +1,22 @@
+[Unit]
+Description=Postiz Development Server Auto-Start
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=YOUR_USERNAME
+Group=YOUR_USERNAME
+WorkingDirectory=/home/YOUR_USERNAME/projects/faizan/upstrapp/postiz-app-copy
+Environment="NODE_ENV=development"
+Environment="HOME=/home/YOUR_USERNAME"
+Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/YOUR_USERNAME/.local/bin:/home/YOUR_USERNAME/.nvm/versions/node/v20.19.4/bin"
+ExecStartPre=/bin/sleep 10
+ExecStart=/bin/bash /opt/postiz/auto-start.sh
+Restart=always
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
