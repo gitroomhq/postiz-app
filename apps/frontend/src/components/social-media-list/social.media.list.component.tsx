@@ -277,7 +277,7 @@ const SocialMediaList: React.FC = () => {
         Youtube: 'youtube',
         X: 'x',
         LinkedIn: 'linkedin',
-        Thread: 'thread',
+        Thread: 'threads',
         Pinterest: 'pinterest',
         GBP: 'gbp',
         Website: 'website',

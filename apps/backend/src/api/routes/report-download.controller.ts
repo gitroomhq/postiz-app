@@ -67,6 +67,7 @@ export class ReportDownloadController {
         @Query('linkedin') linkedin: string,
         @Query('x') x: string,
         @Query('threads') threads: string,
+        @Query('pinterest') pinterest: string,
         @Query('gbp') gbp: string,
         @Query('website') website: string,
         @Query('hospital') hospital: string,
@@ -95,6 +96,7 @@ export class ReportDownloadController {
                 linkedin: linkedin === 'true',
                 x: x === 'true',
                 threads: threads === 'true',
+                pinterest: pinterest === 'true',
                 gbp: gbp === 'true',
                 website: website === 'true',
                 hospital: hospital === 'true'
@@ -238,25 +240,24 @@ export class ReportDownloadController {
                 if (linkedinReport) platformReports.push(linkedinReport);
             }
 
-            // Pinterest platform (assuming this needs to be added similar to other platforms)
-            // Note: Pinterest processing logic not found in current code, keeping placeholder
-            // if (platforms.pinterest) {
-            //     const pinterestReport = await this.processPlatform(
-            //         'pinterest',
-            //         customerId,
-            //         monthNum,
-            //         yearNum,
-            //         [
-            //             { type: 'community', serviceMethod: 'getPinterestCommunityReport' },
-            //             { type: 'overview', serviceMethod: 'getPinterestOverviewReport' }
-            //         ],
-            //         [
-            //             { type: 'community', generator: this.generatePinterestCommunityChart.bind(this) },
-            //             { type: 'impressions', generator: this.generatePinterestImpressionsChart.bind(this) }
-            //         ]
-            //     );
-            //     if (pinterestReport) platformReports.push(pinterestReport);
-            // }
+            // Pinterest platform
+            if (platforms.pinterest) {
+                const pinterestReport = await this.processPlatform(
+                    'pinterest',
+                    customerId,
+                    monthNum,
+                    yearNum,
+                    [
+                        { type: 'community', serviceMethod: 'getPinterestCommunityReport' },
+                        { type: 'overview', serviceMethod: 'getPinterestOverviewReport' }
+                    ],
+                    [
+                        { type: 'community', generator: this.generatePinterestCommunityChart.bind(this) },
+                        { type: 'impressions', generator: this.generatePinterestImpressionsChart.bind(this) }
+                    ]
+                );
+                if (pinterestReport) platformReports.push(pinterestReport);
+            }
 
             if (platforms.website) {
                 const websiteReport = await this.processPlatform(
@@ -438,6 +439,7 @@ export class ReportDownloadController {
             linkedin: 'LinkedIn',
             x: 'X (Twitter)',
             threads: 'Threads',
+            pinterest: 'Pinterest',
             gbp: 'Google Business Profile',
             website: 'Website',
             hospital: 'Hospital' // ✅ Add this
@@ -718,6 +720,13 @@ export class ReportDownloadController {
                 return { title: 'LinkedIn Community Growth', image: null };
             }
 
+            // Calculate monthly totals (handles negative values properly)
+            const monthlyTotals = {
+                paidFollowers: Math.abs(monthData.reduce((sum, item) => sum + (Number(item.paidFollowers) || 0), 0)),
+                impressions: Math.abs(monthData.reduce((sum, item) => sum + (Number(item.impressions) || 0), 0)),
+                posts: Math.abs(monthData.reduce((sum, item) => sum + (Number(item.postsCount) || 0), 0))
+            };
+
             /* Sampling logic */
             const daysInMonth = new Date(year, month, 0).getDate();
             const interval = Math.max(1, Math.floor(daysInMonth / 10));
@@ -871,7 +880,7 @@ export class ReportDownloadController {
                         }
                     },
                     PaidFollowers: {
-                        value: latestData.paidFollowers.toLocaleString(),
+                        value: monthlyTotals.paidFollowers.toLocaleString(),
                         style: {
                             backgroundColor: '#FFB00230',
                             borderColor: '#FFB002',
@@ -881,7 +890,7 @@ export class ReportDownloadController {
                         }
                     },
                     Impressions: {
-                        value: latestData.impressions.toLocaleString(),
+                        value: monthlyTotals.impressions.toLocaleString(),
                         style: {
                             backgroundColor: '#8D6CAB30',
                             borderColor: '#8D6CAB',
@@ -891,7 +900,7 @@ export class ReportDownloadController {
                         }
                     },
                     Posts: {
-                        value: latestData.postsCount.toLocaleString(),
+                        value: monthlyTotals.posts.toLocaleString(),
                         style: {
                             backgroundColor: '#29C76F30',
                             borderColor: '#29C76F',
@@ -930,16 +939,28 @@ export class ReportDownloadController {
             const latestData = report.latestData || {
                 impressions: 0,
                 engagement: 0,
-                interactions: 0
+                interactions: 0,
+                totalContent: 0
             };
 
             const monthData = this.formatChartData(report.chart, month, year);
             const sampledData = this.getDataWithDayGap(monthData, 1, month, year);
 
+            // Calculate monthly totals (handles negative values properly)
+            const monthlyTotals = {
+                impressions: Math.abs(monthData.reduce((sum, item) => sum + (Number(item.impressions) || 0), 0)),
+                interactions: Math.abs(monthData.reduce((sum, item) => sum + (Number(item.interactions) || 0), 0)),
+                engagement: monthData.length > 0
+                    ? Math.abs(monthData.reduce((sum, item) => sum + (Number(item.engagement) || 0), 0) / monthData.length)
+                    : 0,
+                totalContent: Math.abs(monthData.reduce((sum, item) => sum + (Number(item.totalContent) || 0), 0))
+            };
+
             const labels = sampledData.map(d => format(d.date, 'MMM d'));
             const impressionsData = sampledData.map(d => d.impressions || 0);
             const interactionsData = sampledData.map(d => d.interactions || 0);
             const engagementData = sampledData.map(d => d.engagement || 0);
+            const totalContentData = sampledData.map(d => d.totalContent || 0);
 
             const configuration: ChartConfiguration<'bar' | 'line'> = {
                 type: 'bar',
@@ -948,13 +969,28 @@ export class ReportDownloadController {
                     datasets: [
                         {
                             type: 'bar',
+                            label: 'Total Content',
+                            data: totalContentData,
+                            backgroundColor: '#9b59b680',
+                            borderColor: '#9b59b6',
+                            borderWidth: 2,
+                            barThickness: 14,
+                            borderRadius: 6,
+                            order: 2
+                        },
+                        {
+                            type: 'line',
                             label: 'Impressions',
                             data: impressionsData,
-                            backgroundColor: '#1DA1F280',
                             borderColor: '#1DA1F2',
-                            borderWidth: 1,
-                            barThickness: 14,
-                            borderRadius: 6
+                            backgroundColor: '#1DA1F230',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            pointBackgroundColor: '#1DA1F2',
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            fill: false,
+                            order: 1
                         },
                         {
                             type: 'line',
@@ -967,7 +1003,8 @@ export class ReportDownloadController {
                             pointBackgroundColor: '#17BF63',
                             pointRadius: 3,
                             pointHoverRadius: 5,
-                            yAxisID: 'y1'
+                            yAxisID: 'y1',
+                            order: 1
                         },
                         {
                             type: 'line',
@@ -979,7 +1016,8 @@ export class ReportDownloadController {
                             tension: 0.4,
                             pointBackgroundColor: '#F45D22',
                             pointRadius: 3,
-                            pointHoverRadius: 5
+                            pointHoverRadius: 5,
+                            order: 1
                         }
                     ]
                 },
@@ -1069,7 +1107,7 @@ export class ReportDownloadController {
                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
                 summary: {
                     impressions: {
-                        value: latestData.impressions.toLocaleString(),
+                        value: monthlyTotals.impressions.toLocaleString(),
                         style: {
                             backgroundColor: '#1DA1F220',
                             borderColor: '#1DA1F2',
@@ -1079,7 +1117,7 @@ export class ReportDownloadController {
                         }
                     },
                     interactions: {
-                        value: latestData.interactions.toLocaleString(),
+                        value: monthlyTotals.interactions.toLocaleString(),
                         style: {
                             backgroundColor: '#F45D2220',
                             borderColor: '#F45D22',
@@ -1089,10 +1127,20 @@ export class ReportDownloadController {
                         }
                     },
                     Engagement: {
-                        value: `${latestData.engagement.toFixed(2)}%`,
+                        value: `${monthlyTotals.engagement.toFixed(2)}%`,
                         style: {
                             backgroundColor: '#17BF6320',
                             borderColor: '#17BF63',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    },
+                    totalContent: {
+                        value: monthlyTotals.totalContent.toLocaleString(),
+                        style: {
+                            backgroundColor: '#9b59b630',
+                            borderColor: '#9b59b6',
                             borderWidth: 1,
                             borderRadius: 6,
                             textColor: '#000000'
@@ -1972,6 +2020,9 @@ export class ReportDownloadController {
                 new Date(a.date || a.createdAt).getTime() - new Date(b.date || b.createdAt).getTime()
             );
 
+            // Calculate monthly total for content (handles negative values)
+            const monthlyContentTotal = Math.abs(monthData.reduce((sum, item) => sum + (Number(item.totalContent) || 0), 0));
+
             const daysInMonth = new Date(year, month, 0).getDate();
             const dayInterval = Math.max(1, Math.floor(daysInMonth / 10));
             const sampledData = [];
@@ -2029,15 +2080,33 @@ export class ReportDownloadController {
                             fill: false,
                             pointBackgroundColor: platformColor,
                             pointRadius: 5,
-                            pointHoverRadius: 7
+                            pointHoverRadius: 7,
+                            order: 1
+                        },
+                        {
+                            type: 'line' as const,
+                            label: 'Following',
+                            data: sampledData.map(item => item.following || 0),
+                            backgroundColor: '#6C757D30',
+                            borderColor: '#6C757D',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            fill: false,
+                            pointBackgroundColor: '#6C757D',
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                            order: 2
                         },
                         {
                             type: 'bar' as const,
-                            label: 'Following',
-                            data: sampledData.map(item => item.following || 0),
-                            backgroundColor: '#6C757D',
+                            label: 'Total Content',
+                            data: sampledData.map(item => item.totalContent || 0),
+                            backgroundColor: '#28a74580',
+                            borderColor: '#28a745',
+                            borderWidth: 2,
                             borderRadius: 4,
-                            barThickness: 14
+                            barThickness: 14,
+                            order: 3
                         }
                     ]
                 },
@@ -2104,7 +2173,7 @@ export class ReportDownloadController {
                 date: `${dateRange}`,
                 image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
                 summary: {
-                    totalFollowers: {
+                    Followers: {
                         value: latestData.followers.toLocaleString(),
                         style: {
                             backgroundColor: `${platformColor}30`,
@@ -2114,11 +2183,21 @@ export class ReportDownloadController {
                             textColor: '#000000'
                         }
                     },
-                    totalFollowing: {
+                    Following: {
                         value: latestData.following.toLocaleString(),
                         style: {
                             backgroundColor: '#6C757D20',
                             borderColor: '#6C757D',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    },
+                    totalContent: {
+                        value: monthlyContentTotal.toLocaleString(),
+                        style: {
+                            backgroundColor: '#28a74530',
+                            borderColor: '#28a745',
                             borderWidth: 1,
                             borderRadius: 6,
                             textColor: '#000000'
@@ -2164,6 +2243,18 @@ export class ReportDownloadController {
                 const date = new Date(item.date || item.createdAt);
                 return date.getMonth() + 1 === month && date.getFullYear() === year;
             });
+
+            // Calculate monthly totals - sum all values for the month (handles negative values)
+            const monthlyTotals = {
+                // Views: Sum of all views in the month
+                totalViews: Math.abs(monthData.reduce((sum, item) => sum + (Number(item.totalViews) || 0), 0)),
+                // Videos: Sum of all videos in the month
+                totalVideos: Math.abs(monthData.reduce((sum, item) => sum + (Number(item.totalVideos) || 0), 0)),
+                // Likes: Sum of all likes in the month
+                totalLikes: Math.abs(monthData.reduce((sum, item) => sum + (Number(item.totalLikes) || 0), 0)),
+                // Comments: Sum of all comments in the month
+                totalComments: Math.abs(monthData.reduce((sum, item) => sum + (Number(item.totalComments) || 0), 0))
+            };
 
             if (!monthData.length) {
                 return { title: 'YouTube Analytics', image: null };
@@ -2335,7 +2426,7 @@ export class ReportDownloadController {
                     }
                 },
                 Views: {
-                    value: latestData.totalViews.toLocaleString(),
+                    value: monthlyTotals.totalViews.toLocaleString(),
                     style: {
                         backgroundColor: '#2ecc7130',
                         borderColor: '#2ecc71',
@@ -2345,7 +2436,7 @@ export class ReportDownloadController {
                     }
                 },
                 Videos: {
-                    value: latestData.totalVideos.toLocaleString(),
+                    value: monthlyTotals.totalVideos.toLocaleString(),
                     style: {
                         backgroundColor: '#f39c1230',
                         borderColor: '#f39c12',
@@ -2355,7 +2446,7 @@ export class ReportDownloadController {
                     }
                 },
                 Likes: {
-                    value: latestData.totalLikes.toLocaleString(),
+                    value: monthlyTotals.totalLikes.toLocaleString(),
                     style: {
                         backgroundColor: '#9b59b630',
                         borderColor: '#9b59b6',
@@ -2365,7 +2456,7 @@ export class ReportDownloadController {
                     }
                 },
                 Comments: {
-                    value: latestData.totalComments.toLocaleString(),
+                    value: monthlyTotals.totalComments.toLocaleString(),
                     style: {
                         backgroundColor: '#6c5ce730',
                         borderColor: '#6c5ce7',
@@ -3707,15 +3798,36 @@ export class ReportDownloadController {
                 summary: {
                     'Page Views': {
                         value: report.summary?.pageViews?.toLocaleString() || '0',
-                        change: this.calculateMonthOverMonthChange(report.table?.Rows?.[0]?.slice(1, -1))
+                        change: this.calculateMonthOverMonthChange(report.table?.Rows?.[0]?.slice(1, -1)),
+                        style: {
+                            backgroundColor: '#4285F430',
+                            borderColor: '#4285F4',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
                     },
                     'Visits': {
                         value: report.summary?.visits?.toLocaleString() || '0',
-                        change: this.calculateMonthOverMonthChange(report.table?.Rows?.[1]?.slice(1, -1))
+                        change: this.calculateMonthOverMonthChange(report.table?.Rows?.[1]?.slice(1, -1)),
+                        style: {
+                            backgroundColor: '#34A85330',
+                            borderColor: '#34A853',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
                     },
                     'Visitors': {
                         value: report.summary?.visitors?.toLocaleString() || '0',
-                        change: this.calculateMonthOverMonthChange(report.table?.Rows?.[2]?.slice(1, -1))
+                        change: this.calculateMonthOverMonthChange(report.table?.Rows?.[2]?.slice(1, -1)),
+                        style: {
+                            backgroundColor: '#FBBC0530',
+                            borderColor: '#FBBC05',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
                     }
                 }
             };
@@ -3748,6 +3860,19 @@ export class ReportDownloadController {
     }
 
 
+    // Helper function to get full country name from country code
+    private getCountryName(countryCode: string): string {
+        try {
+            // Use Intl.DisplayNames API to get country name in English
+            const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
+            const countryName = regionNames.of(countryCode.toUpperCase());
+            return countryName || countryCode; // Fallback to code if name not found
+        } catch {
+            // Fallback to country code if API not supported or error
+            return countryCode;
+        }
+    }
+
     private async generateWebsiteLocationsChart(
         customerId: string,
         month: number,
@@ -3768,7 +3893,7 @@ export class ReportDownloadController {
             const chartData = report.chart.slice(0, 10); // Top 10 countries
             const totalVisitors = chartData.reduce((sum, item) => sum + item.visitors, 0);
 
-            const labels = chartData.map(d => `${d.country} (${((d.visitors / totalVisitors) * 100).toFixed(1)}%)`);
+            const labels = chartData.map(d => `${this.getCountryName(d.country)} (${((d.visitors / totalVisitors) * 100).toFixed(1)}%)`);
             const data = chartData.map(d => d.visitors);
 
             const backgroundColors = [
@@ -3818,9 +3943,9 @@ export class ReportDownloadController {
 
             const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
 
-            // 👉 Add summary cards for top 3 countries (you can increase if needed)
+            // 👉 Add summary cards for top 5 countries with full names
             const summary = chartData.slice(0, 5).reduce((acc, item, idx) => {
-                acc[item.country] = {
+                acc[this.getCountryName(item.country)] = {
                     value: `${item.visitors} visitors`,
                     style: {
                         backgroundColor: `${backgroundColors[idx]}20`, // semi-transparent
@@ -3972,6 +4097,14 @@ export class ReportDownloadController {
                 position: relative;
                 box-sizing: border-box;
             }
+            
+            // .intro-page .content-center {
+            //     flex-grow: 1;
+            //     display: flex;
+            //     flex-direction: column;
+            //     justify-content: center;
+            //     align-items: center;
+            // }
 
             .platform-section {
             margin: 0;
@@ -4124,7 +4257,7 @@ export class ReportDownloadController {
             .footer {
                 display: flex;
                 justify-content: space-between;
-                align-items: flex-end;
+                align-items: center;
                 width: 100%;
                 padding-top: 20px;
                 padding-bottom: 50px;
@@ -4251,11 +4384,12 @@ body.show-contact-footer .contact-footer {
 
     
 .hospital-table {
-    width: 100%;
+    width: calc(100% - 80px); /* Equal spacing on both sides */
     border-collapse: collapse;
-    margin: 30px 0;
+    margin: 30px 40px; /* Equal left and right margins */
     font-size: 25px;
-    min-width: 800px;
+    max-width: 100%;
+    table-layout: fixed; /* Ensures columns have equal width */
 }
 
 .hospital-table th {
@@ -4266,6 +4400,7 @@ body.show-contact-footer .contact-footer {
     padding: 18px 24px;
     text-align: center;
     height: 60px;
+    width: 33.33%; /* Equal width for 3 columns */
 }
 
 .hospital-table td {
@@ -4273,6 +4408,7 @@ body.show-contact-footer .contact-footer {
     border-bottom: 1px solid #e0e0e0;
     text-align: center;
     height: 50px;
+    width: 33.33%; /* Equal width for 3 columns */
 }
 
 .hospital-table tr:nth-child(even) {
@@ -4299,7 +4435,7 @@ body.show-contact-footer .contact-footer {
 }
 
 .thank-you-page img {
-    width: auto; /* ⬅️ Smaller logo */
+    width: auto;
     height: 60px;
     margin-bottom: 20px;
 }
@@ -4391,7 +4527,7 @@ body.show-contact-footer .contact-footer {
     width: 100%;
     background: rgba(255, 255, 255, 0.95);
     z-index: 9998;
-    margin: 0;
+    margin: 20px 0 0 0;
     box-sizing: border-box;
 }
 
@@ -4429,14 +4565,16 @@ body.show-contact-footer .contact-footer {
 <body>
 
 <div class="intro-page">
-    <div class="logo-container">
-        <img src="${options.brandLogo}" alt="Client Logo" />
-    </div>
+    <div class="content-center">
+        <div class="logo-container">
+            <img src="${options.brandLogo}" alt="Client Logo" />
+        </div>
 
-    <div class="header">
-        <h1>Digital Performance Report</h1>
-        <p>For ${options.month} </p>
-        <div class="customer-id">${options.customerName}</div>
+        <div class="header">
+            <h1>Digital Performance Report</h1>
+            <p>For ${options.month} </p>
+            <div class="customer-id">${options.customerName}</div>
+        </div>
     </div>
 
     <div class="footer">
@@ -4601,7 +4739,7 @@ body.show-contact-footer .contact-footer {
 
 <!-- ✅ Thank You Page (LAST PAGE ONLY) -->
 <div class="thank-you-page">
-        <img src="${options.logoDataUri}" alt="Client Logo" />
+        <img src="${options.logoDataUri}" alt="Client Logo"  />
 <div class="colorContainer">
   <div class="container">
     <div class="left">
@@ -4657,6 +4795,10 @@ body.show-contact-footer .contact-footer {
             'threads': `
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#000000" class="bi bi-threads" viewBox="0 0 16 16">
   <path d="M6.321 6.016c-.27-.18-1.166-.802-1.166-.802.756-1.081 1.753-1.502 3.132-1.502.975 0 1.803.327 2.394.948s.928 1.509 1.005 2.644q.492.207.905.484c1.109.745 1.719 1.86 1.719 3.137 0 2.716-2.226 5.075-6.256 5.075C4.594 16 1 13.987 1 7.994 1 2.034 4.482 0 8.044 0 9.69 0 13.55.243 15 5.036l-1.36.353C12.516 1.974 10.163 1.43 8.006 1.43c-3.565 0-5.582 2.171-5.582 6.79 0 4.143 2.254 6.343 5.63 6.343 2.777 0 4.847-1.443 4.847-3.556 0-1.438-1.208-2.127-1.27-2.127-.236 1.234-.868 3.31-3.644 3.31-1.618 0-3.013-1.118-3.013-2.582 0-2.09 1.984-2.847 3.55-2.847.586 0 1.294.04 1.663.114 0-.637-.54-1.728-1.9-1.728-1.25 0-1.566.405-1.967.868ZM8.716 8.19c-2.04 0-2.304.87-2.304 1.416 0 .878 1.043 1.168 1.6 1.168 1.02 0 2.067-.282 2.232-2.423a6.2 6.2 0 0 0-1.528-.161"/>
+</svg>`,
+            'pinterest': `
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#E60023" class="bi bi-pinterest" viewBox="0 0 16 16">
+  <path d="M8 0a8 8 0 0 0-2.915 15.452c-.07-.633-.134-1.606.027-2.297.146-.625.938-3.977.938-3.977s-.239-.479-.239-1.187c0-1.113.645-1.943 1.448-1.943.682 0 1.012.512 1.012 1.127 0 .686-.437 1.712-.663 2.663-.188.796.4 1.446 1.185 1.446 1.422 0 2.515-1.5 2.515-3.664 0-1.915-1.377-3.254-3.342-3.254-2.276 0-3.612 1.707-3.612 3.471 0 .688.265 1.425.595 1.826a.24.24 0 0 1 .056.23c-.061.252-.196.796-.222.907-.035.146-.116.177-.268.107-1-.465-1.624-1.926-1.624-3.1 0-2.523 1.834-4.84 5.286-4.84 2.775 0 4.932 1.977 4.932 4.62 0 2.757-1.739 4.976-4.151 4.976-.811 0-1.573-.421-1.834-.919l-.498 1.902c-.181.695-.669 1.566-.995 2.097A8 8 0 1 0 8 0"/>
 </svg>`,
             'website': `
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#2ECC71" viewBox="0 0 16 16">
@@ -4914,6 +5056,427 @@ body.show-contact-footer .contact-footer {
         // .intro-page .contact-line, .thank-you-page .contact-line { display: none !important; ... } - hidden on intro/thank-you
 
         return cleanHtml;
+    }
+
+    // Pinterest chart generators
+    private async generatePinterestCommunityChart(
+        customerId: string,
+        month: number,
+        year: number,
+        platform: string = 'pinterest',
+        preloadedData?: any
+    ): Promise<ChartData> {
+        try {
+            let report = preloadedData?.community;
+            if (!report) {
+                report = await this.reportService.getPinterestCommunityReport(customerId, month, year);
+            }
+
+            if (!report?.chart?.length) {
+                return { title: 'Pinterest Community Growth', image: null };
+            }
+
+            // Use latest data for summary
+            const latestData = report.latestData || {
+                followers: 0,
+                following: 0,
+                totalContent: 0,
+                engagement: 0
+            };
+
+            const monthData = report.chart
+                .map(d => ({ ...d, date: new Date(d.date || d.createdAt) }))
+                .filter(d => d.date.getMonth() + 1 === month && d.date.getFullYear() === year)
+                .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+            if (!monthData.length) {
+                return { title: 'Pinterest Community Growth', image: null };
+            }
+
+            // Calculate monthly totals
+            const monthlyTotals = {
+                totalContent: Math.abs(monthData.reduce((sum, item) => sum + (Number(item.totalContent) || 0), 0)),
+                engagement: monthData.length > 0
+                    ? Math.abs(monthData.reduce((sum, item) => sum + (Number(item.engagement) || 0), 0) / monthData.length)
+                    : 0
+            };
+
+            // Sampling logic
+            const daysInMonth = new Date(year, month, 0).getDate();
+            const interval = Math.max(1, Math.floor(daysInMonth / 10));
+            const sampledData: any[] = [];
+
+            for (let day = 1; day <= daysInMonth; day += interval) {
+                let closest: any = null;
+                let minDiff = Infinity;
+
+                for (const item of monthData) {
+                    const diff = Math.abs(item.date.getDate() - day);
+                    if (diff < minDiff) {
+                        minDiff = diff;
+                        closest = item;
+                    }
+                }
+                if (closest) sampledData.push(closest);
+            }
+
+            const labels = sampledData.map(d => format(d.date, 'MMM d'));
+
+            // Chart datasets
+            const datasets: ChartDataset<'bar' | 'line'>[] = [
+                {
+                    type: 'line',
+                    label: 'Followers',
+                    data: sampledData.map(d => d.followers || 0),
+                    borderColor: '#60A5FA',
+                    backgroundColor: '#60A5FA40',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    pointBackgroundColor: '#60A5FA',
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    yAxisID: 'y'
+                },
+                {
+                    type: 'line',
+                    label: 'Following',
+                    data: sampledData.map(d => d.following || 0),
+                    borderColor: '#34D399',
+                    backgroundColor: '#34D39940',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    pointBackgroundColor: '#34D399',
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    yAxisID: 'y'
+                },
+                {
+                    type: 'bar',
+                    label: 'Total Pins',
+                    data: sampledData.map(d => d.totalContent || 0),
+                    backgroundColor: '#FDBA74',
+                    borderColor: '#FB923C',
+                    borderWidth: 1,
+                    borderRadius: 6,
+                    barThickness: 14,
+                    yAxisID: 'y'
+                }
+            ];
+
+            const configuration: ChartConfiguration<'bar' | 'line'> = {
+                type: 'bar',
+                data: { labels, datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: (items) =>
+                                    format(
+                                        sampledData[items[0].dataIndex].date,
+                                        'MMMM d, yyyy'
+                                    ),
+                                label: (ctx) =>
+                                    `${ctx.dataset.label}: ${Number(
+                                        ctx.parsed.y
+                                    ).toLocaleString()}`
+                            }
+                        }
+                    },
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                font: { weight: 'bold' }
+                            },
+                            ticks: { autoSkip: false }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Count',
+                                font: { weight: 'bold' }
+                            },
+                            ticks: {
+                                callback: (value) =>
+                                    Number(value) >= 1000
+                                        ? `${(Number(value) / 1000).toFixed(0)}k`
+                                        : value
+                            }
+                        }
+                    }
+                }
+            };
+
+            const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+
+            // Get date range
+            const startDate = monthData.length > 0 ? format(monthData[0].date, 'MMM d, yyyy') : '';
+            const endDate = monthData.length > 0 ? format(monthData[monthData.length - 1].date, 'MMM d, yyyy') : '';
+            const dateRange = startDate && endDate ? ` (${startDate} - ${endDate})` : '';
+
+            return {
+                title: `Community Growth`,
+                date: `${dateRange}`,
+                image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
+                summary: {
+                    Followers: {
+                        value: latestData.followers.toLocaleString(),
+                        style: {
+                            backgroundColor: '#60A5FA40',
+                            borderColor: '#60A5FA',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    },
+                    Following: {
+                        value: latestData.following.toLocaleString(),
+                        style: {
+                            backgroundColor: '#34D39940',
+                            borderColor: '#34D399',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    },
+                    TotalPins: {
+                        value: monthlyTotals.totalContent.toLocaleString(),
+                        style: {
+                            backgroundColor: '#FDBA7440',
+                            borderColor: '#FB923C',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    },
+                    // Engagement: {
+                    //     value: `${monthlyTotals.engagement.toFixed(2)}%`,
+                    //     style: {
+                    //         backgroundColor: '#77216F30',
+                    //         borderColor: '#77216F',
+                    //         borderWidth: 1,
+                    //         borderRadius: 6,
+                    //         textColor: '#000000'
+                    //     }
+                    // }
+                }
+            };
+        } catch (error) {
+            console.error('Error generating Pinterest community chart:', error);
+            return { title: 'Pinterest Community Growth', image: null };
+        }
+    }
+
+    private async generatePinterestImpressionsChart(
+        customerId: string,
+        month: number,
+        year: number,
+        platform: string = 'pinterest',
+        preloadedData?: any
+    ): Promise<ChartData> {
+        try {
+            let report = preloadedData?.overview;
+            if (!report) {
+                report = await this.reportService.getPinterestOverviewReport(customerId, month, year);
+            }
+
+            if (!report?.chart?.length) {
+                return { title: 'Pinterest Performance', image: null };
+            }
+
+            // Use latest data for summary
+            const latestData = report.latestData || {
+                impressions: 0,
+                saves: 0,
+                clicks: 0,
+                totalContent: 0
+            };
+
+            const monthData = this.formatChartData(report.chart, month, year);
+            const sampledData = this.getDataWithDayGap(monthData, 1, month, year);
+
+            // Calculate monthly totals
+            const monthlyTotals = {
+                impressions: Math.abs(monthData.reduce((sum, item) => sum + (Number(item.impressions) || 0), 0)),
+                saves: Math.abs(monthData.reduce((sum, item) => sum + (Number(item.saves) || 0), 0)),
+                clicks: Math.abs(monthData.reduce((sum, item) => sum + (Number(item.clicks) || 0), 0)),
+                totalContent: Math.abs(monthData.reduce((sum, item) => sum + (Number(item.totalContent) || 0), 0))
+            };
+
+            const labels = sampledData.map(d => format(d.date, 'MMM d'));
+            const impressionsData = sampledData.map(d => d.impressions || 0);
+            const savesData = sampledData.map(d => d.saves || 0);
+            const clicksData = sampledData.map(d => d.clicks || 0);
+            const totalContentData = sampledData.map(d => d.totalContent || 0);
+
+            const configuration: ChartConfiguration<'bar' | 'line'> = {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            type: 'bar',
+                            label: 'Total Pins',
+                            data: totalContentData,
+                            backgroundColor: '#10B98140',
+                            borderColor: '#10B981',
+                            borderWidth: 2,
+                            barThickness: 14,
+                            borderRadius: 6,
+                            order: 2
+                        },
+                        {
+                            type: 'line',
+                            label: 'Impressions',
+                            data: impressionsData,
+                            borderColor: '#EF4444',
+                            backgroundColor: '#EF444440',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            pointBackgroundColor: '#EF4444',
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            fill: false,
+                            order: 1
+                        },
+                        {
+                            type: 'line',
+                            label: 'Saves',
+                            data: savesData,
+                            borderColor: '#F59E0B',
+                            backgroundColor: '#F59E0B40',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            pointBackgroundColor: '#F59E0B',
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            order: 1
+                        },
+                        {
+                            type: 'line',
+                            label: 'Clicks',
+                            data: clicksData,
+                            borderColor: '#3B82F6',
+                            backgroundColor: '#3B82F640',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            pointBackgroundColor: '#3B82F6',
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            order: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: (tooltipItems) => {
+                                    const date = new Date(sampledData[tooltipItems[0].dataIndex].date);
+                                    return format(date, 'MMMM d, yyyy');
+                                },
+                                label: (context) => {
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y;
+                                    return `${label}: ${typeof value === 'number' ? value.toLocaleString() : value}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                color: '#5f6368',
+                                font: { size: 11 }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Count',
+                                font: { size: 12 },
+                                color: '#5f6368'
+                            },
+                            ticks: {
+                                color: '#5f6368'
+                            },
+                            grid: {
+                                color: '#e0e0e0'
+                            }
+                        }
+                    }
+                }
+            };
+
+            const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration);
+
+            // Get date range
+            const startDate = monthData.length > 0 ? format(new Date(monthData[0].date), 'MMM d, yyyy') : '';
+            const endDate = monthData.length > 0 ? format(new Date(monthData[monthData.length - 1].date), 'MMM d, yyyy') : '';
+            const dateRange = startDate && endDate ? ` (${startDate} - ${endDate})` : '';
+
+            return {
+                title: `Performance Metrics`,
+                date: `${dateRange}`,
+                image: `data:image/png;base64,${imageBuffer.toString('base64')}`,
+                summary: {
+                    Impressions: {
+                        value: monthlyTotals.impressions.toLocaleString(),
+                        style: {
+                            backgroundColor: '#EF444440',
+                            borderColor: '#EF4444',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    },
+                    Saves: {
+                        value: monthlyTotals.saves.toLocaleString(),
+                        style: {
+                            backgroundColor: '#F59E0B40',
+                            borderColor: '#F59E0B',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    },
+                    Clicks: {
+                        value: monthlyTotals.clicks.toLocaleString(),
+                        style: {
+                            backgroundColor: '#3B82F640',
+                            borderColor: '#3B82F6',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    },
+                    TotalPins: {
+                        value: monthlyTotals.totalContent.toLocaleString(),
+                        style: {
+                            backgroundColor: '#10B98140',
+                            borderColor: '#10B981',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            textColor: '#000000'
+                        }
+                    }
+                }
+            };
+        } catch (error) {
+            console.error('Error generating Pinterest impressions chart:', error);
+            return { title: 'Pinterest Performance', image: null };
+        }
     }
 
     // Threads chart generators
