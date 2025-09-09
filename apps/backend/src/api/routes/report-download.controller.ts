@@ -4575,7 +4575,6 @@ body.show-contact-footer .contact-footer {
             <p>For ${options.month} </p>
             <div class="customer-id">${options.customerName}</div>
         </div>
-    </div>
 
     <div class="footer">
             <img src="${options.logoDataUri}" alt="Upstrapp Logo" class="footer-logo" />
