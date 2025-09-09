@@ -12,6 +12,7 @@ export class MonthlyReportService {
 		private _facebookInsightsRepository: PrismaRepository<'facebookInsight'>,
 		private _linkedInInsightsRepository: PrismaRepository<'linkedInInsight'>,
 		private _threadsInsightsRepository: PrismaRepository<'threadsInsight'>,
+		private _pinterestInsightsRepository: PrismaRepository<'pinterestPostPerformance'>,
 		private _gbpInsightsRepository: PrismaRepository<'gbpInsight'>,
 		private _websitePerformanceRepo: PrismaRepository<'websitePerformance'>,
 		private _websiteLocationRepo: PrismaRepository<'websiteLocation'>,
@@ -180,13 +181,13 @@ export class MonthlyReportService {
 				totalContent: (() => {
 					// Check if totalContent appears to be daily increments (all values are 0 or 1)
 					const allValuesSmall = insights.every(i => (i.totalContent || 0) <= 1);
-					
+
 					if (allValuesSmall) {
 						// Sum up daily increments
 						return insights.reduce((sum, item) => sum + (item.totalContent || 0), 0);
 					} else {
 						// Treat as cumulative - subtract first from last
-						return firstData && latestData 
+						return firstData && latestData
 							? Math.max(0, (latestData.totalContent || 0) - (firstData.totalContent || 0))
 							: (latestData.totalContent || 0);
 					}
@@ -331,13 +332,13 @@ export class MonthlyReportService {
 				totalContent: (() => {
 					// Check if totalContent appears to be daily increments (all values are 0 or 1)
 					const allValuesSmall = dailyData.every(i => (i.totalContent || 0) <= 1);
-					
+
 					if (allValuesSmall) {
 						// Sum up daily increments
 						return dailyData.reduce((sum, item) => sum + (item.totalContent || 0), 0);
 					} else {
 						// Treat as cumulative - subtract first from last
-						return firstData && latestData 
+						return firstData && latestData
 							? Math.max(0, (latestData.totalContent || 0) - (firstData.totalContent || 0))
 							: (latestData.totalContent || 0);
 					}
@@ -450,7 +451,7 @@ export class MonthlyReportService {
 			// Remove duplicates - keep only one entry per day
 			const uniqueDailyData = [];
 			const seenDates = new Set();
-			
+
 			for (const item of dailyData) {
 				const dateKey = format(new Date(item.createdAt), 'yyyy-MM-dd');
 				if (!seenDates.has(dateKey)) {
@@ -469,13 +470,13 @@ export class MonthlyReportService {
 				totalContent: (() => {
 					// Check if totalContent appears to be daily increments (all values are 0 or 1)
 					const allValuesSmall = uniqueDailyData.every(i => (i.totalContent || 0) <= 1);
-					
+
 					if (allValuesSmall) {
 						// Sum up daily increments
 						return uniqueDailyData.reduce((sum, item) => sum + (item.totalContent || 0), 0);
 					} else {
 						// Treat as cumulative - subtract first from last
-						return firstData && lastUniqueData 
+						return firstData && lastUniqueData
 							? Math.max(0, (lastUniqueData.totalContent || 0) - (firstData.totalContent || 0))
 							: (lastUniqueData.totalContent || 0);
 					}
@@ -540,7 +541,7 @@ export class MonthlyReportService {
 			// Remove duplicates - keep only one entry per day
 			const uniqueDailyData = [];
 			const seenDates = new Set();
-			
+
 			for (const item of dailyData) {
 				const dateKey = format(new Date(item.createdAt), 'yyyy-MM-dd');
 				if (!seenDates.has(dateKey)) {
@@ -581,7 +582,7 @@ export class MonthlyReportService {
 				// Remove duplicates for monthly data
 				const uniqueMonthlyData = [];
 				const monthSeenDates = new Set();
-				
+
 				for (const item of monthlyDataPoints) {
 					const dateKey = format(new Date(item.createdAt), 'yyyy-MM-dd');
 					if (!monthSeenDates.has(dateKey)) {
@@ -631,13 +632,13 @@ export class MonthlyReportService {
 				totalContent: (() => {
 					// Check if totalContent appears to be daily increments (all values are 0 or 1)
 					const allValuesSmall = uniqueDailyData.every(i => (i.totalContent || 0) <= 1);
-					
+
 					if (allValuesSmall) {
 						// Sum up daily increments
 						return uniqueDailyData.reduce((sum, item) => sum + (item.totalContent || 0), 0);
 					} else {
 						// Treat as cumulative - subtract first from last
-						return firstData && latestData 
+						return firstData && latestData
 							? Math.max(0, (latestData.totalContent || 0) - (firstData.totalContent || 0))
 							: (latestData.totalContent || 0);
 					}
@@ -722,7 +723,7 @@ export class MonthlyReportService {
 			// Get the latest data point for the requested month
 			const latestData = dailyData[dailyData.length - 1];
 
-			// For table data, get data for current and previous 2 months using last data points
+			// For table data, get data for current and previous 2 months
 			const allMonthsData = [];
 
 			for (let i = 2; i >= 0; i--) {
@@ -731,8 +732,8 @@ export class MonthlyReportService {
 				const yearNum = currentMonth.getFullYear();
 				const monthRange = this.getMonthDateRange(monthNum, yearNum);
 
-				// Get the last data point for each month
-				const lastDataPoint = await this._youtubeInsightsRepository.model.youTubeInsight.findFirst({
+				// Get all data points for each month
+				const monthData = await this._youtubeInsightsRepository.model.youTubeInsight.findMany({
 					where: {
 						customerId,
 						createdAt: {
@@ -740,17 +741,25 @@ export class MonthlyReportService {
 							lte: monthRange.endDate
 						},
 					},
-					orderBy: { createdAt: 'desc' },
+					orderBy: { createdAt: 'asc' },
 				});
 
-				if (lastDataPoint) {
+				if (monthData.length > 0) {
+					// Get latest subscriber count (last data point)
+					const lastDataPoint = monthData[monthData.length - 1];
+					
+					// Calculate monthly totals
+					const monthlyTotals = {
+						subscribers: lastDataPoint.subscribers || 0, // Latest subscriber count
+						totalViews: monthData.reduce((sum, item) => sum + (item.totalViews || 0), 0), // Sum of all views
+						totalVideos: monthData.reduce((sum, item) => sum + (item.totalVideos || 0), 0), // Sum of all videos
+						totalLikes: monthData.reduce((sum, item) => sum + (item.totalLikes || 0), 0), // Sum of all likes
+						totalComments: monthData.reduce((sum, item) => sum + (item.totalComments || 0), 0) // Sum of all comments
+					};
+
 					allMonthsData.push({
 						createdAt: new Date(yearNum, monthNum - 1, 15), // Mid-month date for display
-						subscribers: lastDataPoint.subscribers || 0,
-						totalViews: lastDataPoint.totalViews || 0,
-						totalVideos: lastDataPoint.totalVideos || 0,
-						totalLikes: lastDataPoint.totalLikes || 0,
-						totalComments: lastDataPoint.totalComments || 0
+						...monthlyTotals
 					});
 				} else {
 					// If no data, create empty entry
@@ -824,7 +833,7 @@ export class MonthlyReportService {
 		return {
 			Data: headers,
 			Rows: rows,
-			Growth: `Subscribers growth: ${subscribers[subscribers.length - 1] - subscribers[subscribers.length - 2]}`
+			//Growth: `Subscribers growth: ${subscribers[subscribers.length - 1] - subscribers[subscribers.length - 2]}`
 		};
 	}
 
@@ -850,7 +859,7 @@ export class MonthlyReportService {
 			// Get the latest data point for the requested month
 			const latestData = dailyData[dailyData.length - 1];
 
-			// For table data, get data for current and previous 2 months using last data points
+			// For table data, get data for current and previous 2 months with monthly totals
 			const allMonthsData = [];
 
 			for (let i = 2; i >= 0; i--) {
@@ -859,8 +868,8 @@ export class MonthlyReportService {
 				const yearNum = currentMonth.getFullYear();
 				const monthRange = this.getMonthDateRange(monthNum, yearNum);
 
-				// Get the last data point for each month
-				const lastDataPoint = await this._linkedInInsightsRepository.model.linkedInInsight.findFirst({
+				// Get all data points for each month to calculate totals
+				const monthData = await this._linkedInInsightsRepository.model.linkedInInsight.findMany({
 					where: {
 						customerId,
 						createdAt: {
@@ -868,16 +877,26 @@ export class MonthlyReportService {
 							lte: monthRange.endDate
 						},
 					},
-					orderBy: { createdAt: 'desc' },
+					orderBy: { createdAt: 'asc' },
 				});
 
-				if (lastDataPoint) {
+				if (monthData.length > 0) {
+					// Get latest value for followers (last data point)
+					const lastDataPoint = monthData[monthData.length - 1];
+					
+					// Calculate monthly totals for other metrics
+					const monthlyTotals = {
+						paidFollowers: Math.abs(monthData.reduce((sum, item) => sum + (item.paidFollowers || 0), 0)),
+						postsCount: Math.abs(monthData.reduce((sum, item) => sum + (item.postsCount || 0), 0)),
+						impressions: Math.abs(monthData.reduce((sum, item) => sum + (item.impressions || 0), 0))
+					};
+					
 					allMonthsData.push({
 						createdAt: new Date(yearNum, monthNum - 1, 15), // Mid-month date for display
-						followers: lastDataPoint.followers || 0,
-						paidFollowers: lastDataPoint.paidFollowers || 0,
-						postsCount: lastDataPoint.postsCount || 0,
-						impressions: lastDataPoint.impressions || 0
+						followers: lastDataPoint.followers || 0,  // Latest value
+						paidFollowers: monthlyTotals.paidFollowers,  // Monthly total
+						postsCount: monthlyTotals.postsCount,  // Monthly total
+						impressions: monthlyTotals.impressions  // Monthly total
 					});
 				} else {
 					// If no data, create empty entry
@@ -968,7 +987,7 @@ export class MonthlyReportService {
 			// Get the latest data point for the requested month
 			const latestData = dailyData[dailyData.length - 1];
 
-			// For table data, get data for current and previous 2 months using last data points
+			// For table data, get data for current and previous 2 months
 			const allMonthsData = [];
 
 			for (let i = 2; i >= 0; i--) {
@@ -977,8 +996,8 @@ export class MonthlyReportService {
 				const yearNum = currentMonth.getFullYear();
 				const monthRange = this.getMonthDateRange(monthNum, yearNum);
 
-				// Get the last data point for each month
-				const lastDataPoint = await this._xInsightsRepository.model.xInsight.findFirst({
+				// Get all data points for each month to calculate totals
+				const monthData = await this._xInsightsRepository.model.xInsight.findMany({
 					where: {
 						customerId,
 						createdAt: {
@@ -986,15 +1005,21 @@ export class MonthlyReportService {
 							lte: monthRange.endDate
 						},
 					},
-					orderBy: { createdAt: 'desc' },
+					orderBy: { createdAt: 'asc' },
 				});
 
-				if (lastDataPoint) {
+				if (monthData.length > 0) {
+					// Get latest values for followers and following
+					const lastDataPoint = monthData[monthData.length - 1];
+					
+					// Calculate monthly total for content
+					const monthlyContentTotal = monthData.reduce((sum, item) => sum + (item.totalContent || 0), 0);
+					
 					allMonthsData.push({
 						createdAt: new Date(yearNum, monthNum - 1, 15), // Mid-month date for display
-						followers: lastDataPoint.followers || 0,
-						following: lastDataPoint.following || 0,
-						totalContent: lastDataPoint.totalContent || 0
+						followers: lastDataPoint.followers || 0,  // Latest value
+						following: lastDataPoint.following || 0,  // Latest value
+						totalContent: monthlyContentTotal  // Monthly total
 					});
 				} else {
 					// If no data, create empty entry
@@ -1048,7 +1073,7 @@ export class MonthlyReportService {
 			// Get the latest data point for the requested month
 			const latestData = dailyData[dailyData.length - 1];
 
-			// For table data, get data for current and previous 2 months using last data points
+			// For table data, get data for current and previous 2 months with monthly totals
 			const allMonthsData = [];
 
 			for (let i = 2; i >= 0; i--) {
@@ -1057,8 +1082,8 @@ export class MonthlyReportService {
 				const yearNum = currentMonth.getFullYear();
 				const monthRange = this.getMonthDateRange(monthNum, yearNum);
 
-				// Get the last data point for each month
-				const lastDataPoint = await this._xInsightsRepository.model.xInsight.findFirst({
+				// Get all data points for each month to calculate totals
+				const monthData = await this._xInsightsRepository.model.xInsight.findMany({
 					where: {
 						customerId,
 						createdAt: {
@@ -1066,15 +1091,21 @@ export class MonthlyReportService {
 							lte: monthRange.endDate
 						},
 					},
-					orderBy: { createdAt: 'desc' },
+					orderBy: { createdAt: 'asc' },
 				});
 
-				if (lastDataPoint) {
+				if (monthData.length > 0) {
+					// Calculate monthly totals
+					const monthlyTotals = {
+						impressions: monthData.reduce((sum, item) => sum + (item.impressions || 0), 0),
+						interactions: monthData.reduce((sum, item) => sum + (item.interactions || 0), 0),
+						engagement: monthData.reduce((sum, item) => sum + (item.engagement || 0), 0) / monthData.length,
+						totalContent: monthData.reduce((sum, item) => sum + (item.totalContent || 0), 0)
+					};
+					
 					allMonthsData.push({
 						createdAt: new Date(yearNum, monthNum - 1, 15), // Mid-month date for display
-						impressions: lastDataPoint.impressions || 0,
-						engagement: lastDataPoint.engagement || 0,
-						interactions: lastDataPoint.interactions || 0
+						...monthlyTotals
 					});
 				} else {
 					// If no data, create empty entry
@@ -1082,7 +1113,8 @@ export class MonthlyReportService {
 						createdAt: new Date(yearNum, monthNum - 1, 15),
 						impressions: 0,
 						engagement: 0,
-						interactions: 0
+						interactions: 0,
+						totalContent: 0
 					});
 				}
 			}
@@ -1093,12 +1125,14 @@ export class MonthlyReportService {
 					date: item.createdAt,
 					impressions: item.impressions || 0,
 					engagement: item.engagement || 0,
-					interactions: item.interactions || 0
+					interactions: item.interactions || 0,
+					totalContent: item.totalContent || 0
 				})),
 				latestData: {
 					impressions: latestData.impressions || 0,
 					engagement: latestData.engagement || 0,
-					interactions: latestData.interactions || 0
+					interactions: latestData.interactions || 0,
+					totalContent: latestData.totalContent || 0
 				}
 			};
 		} catch (error) {
@@ -1156,12 +1190,12 @@ export class MonthlyReportService {
 				if (monthData.length > 0) {
 					const lastDataPoint = monthData[monthData.length - 1];
 					const firstDataPoint = monthData[0];
-					
+
 					// For totalContent, calculate the monthly total
 					const monthlyContentTotal = (() => {
 						// Check if totalContent appears to be daily increments
 						const allValuesSmall = monthData.every(i => (i.totalContent || 0) <= 1);
-						
+
 						if (allValuesSmall) {
 							// Sum up daily increments
 							return monthData.reduce((sum, item) => sum + (item.totalContent || 0), 0);
@@ -1193,14 +1227,14 @@ export class MonthlyReportService {
 				totalContent: (() => {
 					// Check if totalContent appears to be daily increments (all values are 0 or 1)
 					const allValuesSmall = dailyData.every(i => (i.totalContent || 0) <= 1);
-					
+
 					if (allValuesSmall) {
 						// Sum up daily increments
 						return dailyData.reduce((sum, item) => sum + (item.totalContent || 0), 0);
 					} else {
 						// Treat as cumulative - subtract first from last
 						const firstData = dailyData[0];
-						return firstData && latestData 
+						return firstData && latestData
 							? Math.max(0, (latestData.totalContent || 0) - (firstData.totalContent || 0))
 							: (latestData.totalContent || 0);
 					}
@@ -1341,14 +1375,14 @@ export class MonthlyReportService {
 				totalContent: (() => {
 					// Check if totalContent appears to be daily increments (all values are 0 or 1)
 					const allValuesSmall = dailyData.every(i => (i.totalContent || 0) <= 1);
-					
+
 					if (allValuesSmall) {
 						// Sum up daily increments
 						return dailyData.reduce((sum, item) => sum + (item.totalContent || 0), 0);
 					} else {
 						// Treat as cumulative - subtract first from last
 						const firstData = dailyData[0];
-						return firstData && latestData 
+						return firstData && latestData
 							? Math.max(0, (latestData.totalContent || 0) - (firstData.totalContent || 0))
 							: (latestData.totalContent || 0);
 					}
@@ -1403,8 +1437,8 @@ export class MonthlyReportService {
 		const headers = ['Data', ...months, 'Change %'];
 		const rows = [];
 
-		// For Threads, don't add Total Content here - we'll add it after Followers
-		if (platform !== 'Threads') {
+		// For Threads and Pinterest, don't add Total Content here - we'll add it differently
+		if (platform !== 'Threads' && platform !== 'Pinterest') {
 			// Common metrics
 			const totalContents = insights.map(i => parseInt(i.totalContent) || 0);
 			rows.push([
@@ -1452,11 +1486,20 @@ export class MonthlyReportService {
 		} else if (platform === 'Threads') {
 			const followers = insights.map(i => parseInt(i.followers) || 0);
 			const totalContent = insights.map(i => parseInt(i.totalContent) || 0);
-			
+
 			// Show followers first, then total content
 			rows.push(
 				['Followers', ...followers.map(v => this.kFormatter(v)), calculateChange(followers)],
 				['Total Content', ...totalContent.map(String), calculateChange(totalContent)]
+			);
+		} else if (platform === 'Pinterest') {
+			const followers = insights.map(i => parseInt(i.followers) || 0);
+			const following = insights.map(i => parseInt(i.following) || 0);
+			const totalContent = insights.map(i => parseInt(i.totalContent) || 0);
+			rows.push(
+				['Followers', ...followers.map(v => this.kFormatter(v)), calculateChange(followers)],
+				['Following', ...following.map(v => this.kFormatter(v)), calculateChange(following)],
+				['Total Pins', ...totalContent.map(String), calculateChange(totalContent)]
 			);
 		}
 
@@ -1488,17 +1531,6 @@ export class MonthlyReportService {
 		// Prepare table data
 		const headers = ['Data', ...monthAbbreviations, 'Change %'];
 		const rows = [];
-
-		// For Threads, add Total Content at the end
-		if (platform !== 'Threads') {
-			// Add Total Content row at the beginning for other platforms
-			const totalContents = insights.map(i => parseInt(i.totalContent) || 0);
-			rows.push([
-				'Total Content',
-				...totalContents.map(String),
-				calculateChange(totalContents),
-			]);
-		}
 
 		// Platform-specific metrics
 		switch (platform) {
@@ -1545,12 +1577,13 @@ export class MonthlyReportService {
 			case 'X':
 				const xImpressions = insights.map(i => parseInt(i.impressions) || 0);
 				const engagement = insights.map(i => parseFloat(i.engagement) || 0);
-				const interactions = insights.map(i => parseInt(i.interactions) || 0); // 👈 New line added
+				const interactions = insights.map(i => parseInt(i.interactions) || 0);
+				const xTotalContent = insights.map(i => parseInt(i.totalContent) || 0);
 				rows.push(
 					['Impressions', ...xImpressions.map(v => this.kFormatter(v)), calculateChange(xImpressions)],
-					['Engagement', ...engagement.map(String), calculateChange(engagement)],
-					['Interactions', ...interactions.map(v => this.kFormatter(v)), calculateChange(interactions)] // 👈 New row added
-
+					['Engagement', ...engagement.map(v => v.toFixed(2)), calculateChange(engagement)],
+					['Interactions', ...interactions.map(v => this.kFormatter(v)), calculateChange(interactions)],
+					['Total Content', ...xTotalContent.map(String), calculateChange(xTotalContent)]
 				);
 				break;
 
@@ -1564,6 +1597,19 @@ export class MonthlyReportService {
 					['Engagement', ...threadsEngagement.map(v => v.toFixed(2)), calculateChange(threadsEngagement)],
 					['Interactions', ...threadsInteractions.map(v => this.kFormatter(v)), calculateChange(threadsInteractions)],
 					['Total Content', ...threadsTotalContent.map(String), calculateChange(threadsTotalContent)]
+				);
+				break;
+
+			case 'Pinterest':
+				const pinterestImpressions = insights.map(i => parseInt(i.impressions) || 0);
+				const pinterestSaves = insights.map(i => parseInt(i.saves) || 0);
+				const pinterestClicks = insights.map(i => parseInt(i.clicks) || 0);
+				const pinterestTotalContent = insights.map(i => parseInt(i.totalContent) || 0);
+				rows.push(
+					['Impressions', ...pinterestImpressions.map(v => this.kFormatter(v)), calculateChange(pinterestImpressions)],
+					['Saves', ...pinterestSaves.map(v => this.kFormatter(v)), calculateChange(pinterestSaves)],
+					['Clicks', ...pinterestClicks.map(v => this.kFormatter(v)), calculateChange(pinterestClicks)],
+					['Total Pins', ...pinterestTotalContent.map(String), calculateChange(pinterestTotalContent)]
 				);
 				break;
 		}
@@ -1588,6 +1634,189 @@ export class MonthlyReportService {
 	}
 
 	// Add these methods to the MonthlyReportService class in monthly-report.service.ts
+
+	// Pinterest Methods
+	async getPinterestCommunityReport(customerId: string, month: number, year: number) {
+		try {
+			const { startDate, endDate } = this.getMonthDateRange(month, year);
+
+			// Get daily data for the requested month
+			const dailyData = await this._pinterestInsightsRepository.model.pinterestPostPerformance.findMany({
+				where: {
+					customerId,
+					createdAt: {
+						gte: startDate,
+						lte: endDate,
+					},
+				},
+				orderBy: { createdAt: 'asc' },
+			});
+
+			if (!dailyData.length) return null;
+
+			// Get the latest data point for the requested month
+			const latestData = dailyData[dailyData.length - 1];
+
+			// For table data, get data for current and previous 2 months
+			const allMonthsData = [];
+
+			for (let i = 2; i >= 0; i--) {
+				const currentMonth = new Date(year, month - 1 - i, 1);
+				const monthNum = currentMonth.getMonth() + 1;
+				const yearNum = currentMonth.getFullYear();
+				const monthRange = this.getMonthDateRange(monthNum, yearNum);
+
+				// Get all data points for each month to calculate totals
+				const monthData = await this._pinterestInsightsRepository.model.pinterestPostPerformance.findMany({
+					where: {
+						customerId,
+						createdAt: {
+							gte: monthRange.startDate,
+							lte: monthRange.endDate
+						},
+					},
+					orderBy: { createdAt: 'asc' },
+				});
+
+				if (monthData.length > 0) {
+					// Get latest value for followers (last data point)
+					const lastDataPoint = monthData[monthData.length - 1];
+					
+					// Calculate monthly totals for other metrics
+					const monthlyTotals = {
+						totalContent: Math.abs(monthData.reduce((sum, item) => sum + (item.totalContent || 0), 0))
+					};
+					
+					allMonthsData.push({
+						createdAt: new Date(yearNum, monthNum - 1, 15), // Mid-month date for display
+						followers: lastDataPoint.followers || 0,  // Latest value
+						following: lastDataPoint.following || 0,  // Latest value
+						totalContent: monthlyTotals.totalContent,  // Monthly total
+						totalPins: monthlyTotals.totalContent  // Use totalContent as totalPins
+					});
+				} else {
+					// If no data, create empty entry
+					allMonthsData.push({
+						createdAt: new Date(yearNum, monthNum - 1, 15),
+						followers: 0,
+						following: 0,
+						totalContent: 0,
+						totalPins: 0
+					});
+				}
+			}
+
+			return {
+				table: this.buildCommunityTable(allMonthsData, 'Pinterest'),
+				chart: dailyData.map(item => ({
+					date: item.createdAt,
+					followers: item.followers || 0,
+					following: item.following || 0,
+					totalContent: item.totalContent || 0,
+					totalPins: item.totalContent || 0
+				})),
+				latestData: {
+					followers: latestData.followers || 0,
+					following: latestData.following || 0,
+					totalContent: latestData.totalContent || 0,
+					totalPins: latestData.totalContent || 0
+				}
+			};
+		} catch (error) {
+			console.error('Pinterest Community Error:', error);
+			return null;
+		}
+	}
+
+	async getPinterestOverviewReport(customerId: string, month: number, year: number) {
+		try {
+			const { startDate, endDate } = this.getMonthDateRange(month, year);
+
+			// Get daily data for the requested month
+			const dailyData = await this._pinterestInsightsRepository.model.pinterestPostPerformance.findMany({
+				where: {
+					customerId,
+					createdAt: {
+						gte: startDate,
+						lte: endDate,
+					},
+				},
+				orderBy: { createdAt: 'asc' },
+			});
+
+			if (!dailyData.length) return null;
+
+			// Get the latest data point for the requested month
+			const latestData = dailyData[dailyData.length - 1];
+
+			// For table data, get data for current and previous 2 months with monthly totals
+			const allMonthsData = [];
+
+			for (let i = 2; i >= 0; i--) {
+				const currentMonth = new Date(year, month - 1 - i, 1);
+				const monthNum = currentMonth.getMonth() + 1;
+				const yearNum = currentMonth.getFullYear();
+				const monthRange = this.getMonthDateRange(monthNum, yearNum);
+
+				// Get all data points for each month to calculate totals
+				const monthData = await this._pinterestInsightsRepository.model.pinterestPostPerformance.findMany({
+					where: {
+						customerId,
+						createdAt: {
+							gte: monthRange.startDate,
+							lte: monthRange.endDate
+						},
+					},
+					orderBy: { createdAt: 'asc' },
+				});
+
+				if (monthData.length > 0) {
+					// Calculate monthly totals
+					const monthlyTotals = {
+						impressions: Math.abs(monthData.reduce((sum, item) => sum + (item.impressions || 0), 0)),
+						totalContent: Math.abs(monthData.reduce((sum, item) => sum + (item.totalContent || 0), 0))
+					};
+					
+					allMonthsData.push({
+						createdAt: new Date(yearNum, monthNum - 1, 15), // Mid-month date for display
+						impressions: monthlyTotals.impressions,
+						saves: 0,  // Not available in Pinterest data
+						clicks: 0,  // Not available in Pinterest data
+						totalContent: monthlyTotals.totalContent
+					});
+				} else {
+					// If no data, create empty entry
+					allMonthsData.push({
+						createdAt: new Date(yearNum, monthNum - 1, 15),
+						impressions: 0,
+						saves: 0,
+						clicks: 0,
+						totalContent: 0
+					});
+				}
+			}
+
+			return {
+				table: this.buildOverviewTable(allMonthsData, 'Pinterest'),
+				chart: dailyData.map(item => ({
+					date: item.createdAt,
+					impressions: item.impressions || 0,
+					saves: 0,  // Not available in Pinterest data
+					clicks: 0,  // Not available in Pinterest data
+					totalContent: item.totalContent || 0
+				})),
+				latestData: {
+					impressions: latestData.impressions || 0,
+					saves: 0,  // Not available in Pinterest data
+					clicks: 0,  // Not available in Pinterest data
+					totalContent: latestData.totalContent || 0
+				}
+			};
+		} catch (error) {
+			console.error('Pinterest Overview Error:', error);
+			return null;
+		}
+	}
 
 	// GBP Methods
 	async getGBPPerformanceReport(customerId: string, month: number, year: number) {
@@ -1800,7 +2029,7 @@ export class MonthlyReportService {
 			// Get the latest data point for the requested month
 			const latestData = dailyData[dailyData.length - 1];
 
-			// For table data, get data for current and previous 2 months using last data points
+			// For table data, get monthly totals for current and previous 2 months
 			const allMonthsData = [];
 
 			for (let i = 2; i >= 0; i--) {
@@ -1809,8 +2038,8 @@ export class MonthlyReportService {
 				const yearNum = currentMonth.getFullYear();
 				const monthRange = this.getMonthDateRange(monthNum, yearNum);
 
-				// Get the last data point for each month
-				const lastDataPoint = await this._gbpInsightsRepository.model.gbpInsight.findFirst({
+				// Get all data points for the month to calculate totals
+				const monthlyDataPoints = await this._gbpInsightsRepository.model.gbpInsight.findMany({
 					where: {
 						customerId,
 						createdAt: {
@@ -1818,14 +2047,20 @@ export class MonthlyReportService {
 							lte: monthRange.endDate
 						},
 					},
-					orderBy: { createdAt: 'desc' },
+					orderBy: { createdAt: 'asc' },
 				});
 
-				if (lastDataPoint) {
+				if (monthlyDataPoints.length > 0) {
+					// Calculate monthly totals
+					const totalReviews = monthlyDataPoints.reduce((sum, item) => sum + (item.totalReviews || 0), 0);
+					const avgRating = monthlyDataPoints.length > 0
+						? monthlyDataPoints.reduce((sum, item) => sum + (item.avgRating || 0), 0) / monthlyDataPoints.length
+						: 0;
+
 					allMonthsData.push({
 						createdAt: new Date(yearNum, monthNum - 1, 15), // Mid-month date for display
-						avgRating: lastDataPoint.avgRating || 0,
-						totalReviews: lastDataPoint.totalReviews || 0
+						avgRating: avgRating,
+						totalReviews: totalReviews
 					});
 				} else {
 					// If no data, create empty entry
@@ -1837,22 +2072,56 @@ export class MonthlyReportService {
 				}
 			}
 
-			// Calculate monthly totals/averages
+			// Calculate monthly totals/averages for current month
 			const monthlyTotals = {
-				avgRating: latestData.avgRating || 0, // Keep the latest average rating
-				totalReviews: dailyData.reduce((sum, item) => sum + (item.totalReviews || 0), 0) // Sum all reviews
+				avgRating: dailyData.length > 0
+					? dailyData.reduce((sum, item) => sum + (item.avgRating || 0), 0) / dailyData.length
+					: 0,
+				totalReviews: dailyData.reduce((sum, item) => sum + (item.totalReviews || 0), 0)
 			};
+
+			// Merge duplicate entries by date - sum up reviews and average ratings
+			const dailyDataMap = new Map();
+
+			for (const item of dailyData) {
+				const dateKey = format(new Date(item.createdAt), 'yyyy-MM-dd');
+
+				if (dailyDataMap.has(dateKey)) {
+					// If date exists, merge the data
+					const existing = dailyDataMap.get(dateKey);
+					existing.reviews += (item.totalReviews || 0);
+					existing.ratingSum += (item.avgRating || 0) * (item.totalReviews || 1);
+					existing.ratingCount += (item.totalReviews || 1);
+					existing.count += 1;
+				} else {
+					// First entry for this date
+					dailyDataMap.set(dateKey, {
+						date: item.createdAt,
+						reviews: item.totalReviews || 0,
+						ratingSum: (item.avgRating || 0) * (item.totalReviews || 1),
+						ratingCount: item.totalReviews || 1,
+						count: 1
+					});
+				}
+			}
+
+			// Convert map back to array with calculated averages
+			const uniqueDailyData = Array.from(dailyDataMap.values()).map(item => ({
+				createdAt: item.date,
+				avgRating: item.ratingCount > 0 ? item.ratingSum / item.ratingCount : 0,
+				totalReviews: item.reviews
+			}));
 
 			return {
 				table: this.buildGBPReviewsTable(allMonthsData),
-				chart: dailyData.map(item => ({
+				chart: uniqueDailyData.map(item => ({
 					date: item.createdAt,
 					rating: item.avgRating || 0,
 					reviews: item.totalReviews || 0
 				})),
 				latestData: {
-					avgRating: latestData.avgRating || 0,
-					totalReviews: latestData.totalReviews || 0
+					avgRating: monthlyTotals.avgRating,
+					totalReviews: monthlyTotals.totalReviews
 				},
 				monthlyTotals: monthlyTotals
 			};
@@ -2043,6 +2312,19 @@ export class MonthlyReportService {
 	}
 
 
+	// Helper function to get full country name from country code
+	private getCountryName(countryCode: string): string {
+		try {
+			// Use Intl.DisplayNames API to get country name in English
+			const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
+			const countryName = regionNames.of(countryCode.toUpperCase());
+			return countryName || countryCode; // Fallback to code if name not found
+		} catch {
+			// Fallback to country code if API not supported or error
+			return countryCode;
+		}
+	}
+
 	async getWebsiteLocationsReport(customerId: string, selectedMonth: number, selectedYear: number) {
 		try {
 			// 1. Build past 3 months
@@ -2107,15 +2389,15 @@ export class MonthlyReportService {
 			};
 
 			const rows = sorted.map(([country, visitors]) => [
-				country,
+				this.getCountryName(country), // Convert country code to full name
 				...visitors.map(String),
 				calculateChange(visitors)
 			]);
 
-			// 5. Chart data for May
+			// 5. Chart data for May (keep country codes for chart as they'll be converted elsewhere)
 			const totalMay = sorted.reduce((sum, [, v]) => sum + (v[2] || 0), 0);
 			const chart = sorted.map(([country, v]) => ({
-				country,
+				country, // Keep country code here as it's converted in generateWebsiteLocationsChart
 				visitors: v[2] || 0,
 				percent: totalMay ? ((v[2] || 0) / totalMay) * 100 : 0
 			}));
