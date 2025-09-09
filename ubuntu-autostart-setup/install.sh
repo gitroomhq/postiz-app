@@ -76,6 +76,12 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 sed -i.bak "s|YOUR_USERNAME|$CURRENT_USER|g" "$SCRIPT_DIR/auto-start.sh"
 sed -i.bak "s|/home/YOUR_USERNAME/projects/faizan/upstrapp/postiz-app-copy|$PROJECT_DIR|g" "$SCRIPT_DIR/auto-start.sh"
 
+# Also update the fixed version if it exists
+if [ -f "$SCRIPT_DIR/auto-start-fixed.sh" ]; then
+    sed -i.bak "s|YOUR_USERNAME|$CURRENT_USER|g" "$SCRIPT_DIR/auto-start-fixed.sh"
+    sed -i.bak "s|/home/YOUR_USERNAME/Development/postiz-app|$PROJECT_DIR|g" "$SCRIPT_DIR/auto-start-fixed.sh"
+fi
+
 # Update service file with current user and project path
 sed -i.bak "s|YOUR_USERNAME|$CURRENT_USER|g" "$SCRIPT_DIR/postiz-autostart.service"
 sed -i.bak "s|/home/YOUR_USERNAME/projects/faizan/upstrapp/postiz-app-copy|$PROJECT_DIR|g" "$SCRIPT_DIR/postiz-autostart.service"
@@ -89,8 +95,13 @@ echo "Step 5: Installing files (requires sudo)..."
 # Create directory for script
 sudo mkdir -p /opt/postiz
 
-# Copy and install auto-start script
-sudo cp "$SCRIPT_DIR/auto-start.sh" /opt/postiz/
+# Copy and install auto-start script (use fixed version if available)
+if [ -f "$SCRIPT_DIR/auto-start-fixed.sh" ]; then
+    echo "Using improved auto-start script..."
+    sudo cp "$SCRIPT_DIR/auto-start-fixed.sh" /opt/postiz/auto-start.sh
+else
+    sudo cp "$SCRIPT_DIR/auto-start.sh" /opt/postiz/
+fi
 sudo chmod +x /opt/postiz/auto-start.sh
 sudo chown root:root /opt/postiz/auto-start.sh
 
