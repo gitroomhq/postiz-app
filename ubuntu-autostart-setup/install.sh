@@ -69,13 +69,16 @@ echo "Project directory: $PROJECT_DIR"
 echo
 echo "Step 4: Updating configuration files..."
 
+# Get the directory where this script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 # Update auto-start.sh with current user and project path
-sed -i.bak "s|YOUR_USERNAME|$CURRENT_USER|g" auto-start.sh
-sed -i.bak "s|/home/YOUR_USERNAME/projects/faizan/upstrapp/postiz-app-copy|$PROJECT_DIR|g" auto-start.sh
+sed -i.bak "s|YOUR_USERNAME|$CURRENT_USER|g" "$SCRIPT_DIR/auto-start.sh"
+sed -i.bak "s|/home/YOUR_USERNAME/projects/faizan/upstrapp/postiz-app-copy|$PROJECT_DIR|g" "$SCRIPT_DIR/auto-start.sh"
 
 # Update service file with current user and project path
-sed -i.bak "s|YOUR_USERNAME|$CURRENT_USER|g" postiz-autostart.service
-sed -i.bak "s|/home/YOUR_USERNAME/projects/faizan/upstrapp/postiz-app-copy|$PROJECT_DIR|g" postiz-autostart.service
+sed -i.bak "s|YOUR_USERNAME|$CURRENT_USER|g" "$SCRIPT_DIR/postiz-autostart.service"
+sed -i.bak "s|/home/YOUR_USERNAME/projects/faizan/upstrapp/postiz-app-copy|$PROJECT_DIR|g" "$SCRIPT_DIR/postiz-autostart.service"
 
 echo "Configuration files updated for user: $CURRENT_USER"
 echo "Project path: $PROJECT_DIR"
@@ -87,12 +90,12 @@ echo "Step 5: Installing files (requires sudo)..."
 sudo mkdir -p /opt/postiz
 
 # Copy and install auto-start script
-sudo cp auto-start.sh /opt/postiz/
+sudo cp "$SCRIPT_DIR/auto-start.sh" /opt/postiz/
 sudo chmod +x /opt/postiz/auto-start.sh
 sudo chown root:root /opt/postiz/auto-start.sh
 
 # Install systemd service
-sudo cp postiz-autostart.service /etc/systemd/system/
+sudo cp "$SCRIPT_DIR/postiz-autostart.service" /etc/systemd/system/
 sudo chown root:root /etc/systemd/system/postiz-autostart.service
 
 echo
