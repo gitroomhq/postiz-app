@@ -1,3 +1,5 @@
+import '@fontsource/roboto/400.css';
+import '@fontsource/roboto/700.css';
 import interClass from '@gitroom/react/helpers/inter.font';
 export const dynamic = 'force-dynamic';
 import '../global.scss';
@@ -32,7 +34,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
-      <body className={clsx(chakra.className, 'dark text-primary !bg-primary')}>
+      <body className={clsx('dark text-primary !bg-primary')}>
         <HtmlComponent />
         <VariableContextComponent
           storageProvider={
@@ -59,9 +61,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           transloadit={
             process.env.TRANSLOADIT_AUTH && process.env.TRANSLOADIT_TEMPLATE
               ? [
-                  process.env.TRANSLOADIT_AUTH!,
-                  process.env.TRANSLOADIT_TEMPLATE!,
-                ]
+                process.env.TRANSLOADIT_AUTH!,
+                process.env.TRANSLOADIT_TEMPLATE!,
+              ]
               : []
           }
         >

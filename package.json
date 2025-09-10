@@ -52,6 +52,7 @@
     "@copilotkit/react-textarea": "^1.8.9",
     "@copilotkit/react-ui": "^1.8.9",
     "@copilotkit/runtime": "^1.8.9",
+    "@fontsource/roboto": "^5.2.6",
     "@hookform/resolvers": "^3.3.4",
     "@langchain/community": "^0.3.40",
     "@langchain/core": "^0.3.44",

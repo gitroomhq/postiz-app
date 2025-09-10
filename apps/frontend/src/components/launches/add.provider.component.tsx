@@ -242,8 +242,8 @@ export const CustomVariables: FC<{
         ...acc,
         ...(item.defaultValue
           ? {
-              [item.key]: item.defaultValue,
-            }
+            [item.key]: item.defaultValue,
+          }
           : {}),
       }),
       {}
@@ -335,17 +335,17 @@ export const AddProviderComponent: FC<{
   const modal = useModals();
   const getSocialLink = useCallback(
     (
-        identifier: string,
-        isExternal: boolean,
-        isWeb3: boolean,
-        customFields?: Array<{
-          key: string;
-          label: string;
-          validation: string;
-          defaultValue?: string;
-          type: 'text' | 'password';
-        }>
-      ) =>
+      identifier: string,
+      isExternal: boolean,
+      isWeb3: boolean,
+      customFields?: Array<{
+        key: string;
+        label: string;
+        validation: string;
+        defaultValue?: string;
+        type: 'text' | 'password';
+      }>
+    ) =>
       async () => {
         const openWeb3 = async () => {
           const { component: Web3Providers } = web3List.find(
@@ -374,8 +374,7 @@ export const AddProviderComponent: FC<{
         const gotoIntegration = async (externalUrl?: string) => {
           const { url, err } = await (
             await fetch(
-              `/integrations/social/${identifier}${
-                externalUrl ? `?externalUrl=${externalUrl}` : ``
+              `/integrations/social/${identifier}${externalUrl ? `?externalUrl=${externalUrl}` : ``
               }`
             )
           ).json();
@@ -481,24 +480,26 @@ export const AddProviderComponent: FC<{
               )}
               {...(!!item.toolTip
                 ? {
-                    'data-tooltip-id': 'tooltip',
-                    'data-tooltip-content': item.toolTip,
-                  }
+                  'data-tooltip-id': 'tooltip',
+                  'data-tooltip-content': item.toolTip,
+                }
                 : {})}
               className={
                 'w-[200px] h-[100px] text-[14px] bg-input text-textColor relative justify-center items-center flex flex-col gap-[10px] cursor-pointer'
               }
             >
               <div>
-                {item.identifier === 'youtube' ? (
-                  <Image alt="youtube logo" src={`/icons/platforms/youtube.svg`} />
-                ) : (
-                  <Image
-                    alt={item.identifier}
-                    className="w-[32px] h-[32px] rounded-full"
-                    src={`/icons/platforms/${item.identifier}.png`}
-                  />
-                )}
+                <Image
+                  alt={item.identifier === 'youtube' ? 'youtube logo' : item.identifier}
+                  className="w-[32px] h-[32px] rounded-full"
+                  src={
+                    item.identifier === 'youtube'
+                      ? '/icons/platforms/youtube.svg'
+                      : `/icons/platforms/${item.identifier}.png`
+                  }
+                  width={32}
+                  height={32}
+                />
               </div>
               <div className="whitespace-pre-wrap text-center">
                 {item.name}
