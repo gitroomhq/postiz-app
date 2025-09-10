@@ -6,7 +6,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { ChartJSNodeCanvas } from 'chartjs-node-canvas';
 import { ChartConfiguration, ChartDataset } from 'chart.js';
-import * as playwright from 'playwright';
+const { chromium } = require('playwright');
 import annotationPlugin from 'chartjs-plugin-annotation';
 import { Chart, registerables } from 'chart.js';
 
@@ -4575,7 +4575,6 @@ body.show-contact-footer .contact-footer {
             <p>For ${options.month} </p>
             <div class="customer-id">${options.customerName}</div>
         </div>
-    </div>
 
     <div class="footer">
             <img src="${options.logoDataUri}" alt="Upstrapp Logo" class="footer-logo" />
@@ -4990,7 +4989,7 @@ body.show-contact-footer .contact-footer {
             const cleanedHtml = this.removeContactLineFromIntroAndThankYouPages(html);
             console.log('Contact line HTML cleaned from intro and thank you pages');
 
-            browser = await playwright.chromium.launch({
+            browser = await chromium.launch({
                 headless: true,
                 args: ['--no-sandbox', '--disable-setuid-sandbox']
             });

@@ -1,0 +1,42 @@
+[Unit]
+Description=Postiz Development Server Auto-Start
+Documentation=https://github.com/your-repo/postiz
+After=network-online.target graphical-session.target
+Wants=network-online.target
+RequiresMountsFor=/home
+
+[Service]
+Type=forking
+User=faizan
+Group=faizan
+WorkingDirectory=/home/faizan/projects/faizan/upstrapp/postiz-app-copy
+Environment=NODE_ENV=development
+<<<<<<< HEAD
+Environment=HOME=/home/faizan
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/faizan/.local/bin
+ExecStart=/opt/postiz/auto-start.sh
+=======
+Environment=HOME=/home/YOUR_USERNAME
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/YOUR_USERNAME/.local/bin:/home/YOUR_USERNAME/.nvm/versions/node/v20.19.4/bin
+ExecStartPre=/bin/bash -c 'sleep 10'
+ExecStart=/bin/bash /opt/postiz/auto-start.sh
+>>>>>>> 8ae4adde8cfd99cbd431f1218559fc7188eec89c
+ExecStop=/bin/bash -c 'kill $(cat /var/run/postiz.pid 2>/dev/null) 2>/dev/null || pkill -f "npm run dev"'
+ExecReload=/bin/bash -c 'kill $(cat /var/run/postiz.pid 2>/dev/null) 2>/dev/null; /opt/postiz/auto-start.sh'
+PIDFile=/var/run/postiz.pid
+Restart=always
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+TimeoutStartSec=120
+TimeoutStopSec=30
+
+# Security settings
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/log /var/run /home/faizan/projects
+
+[Install]
+WantedBy=multi-user.target

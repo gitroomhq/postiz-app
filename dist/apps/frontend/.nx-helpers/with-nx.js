@@ -18,7 +18,7 @@ function regexEqual(x, y) {
  */
 function getWithNxContext() {
 return {
-workspaceRoot: '/Users/apple/projects/safvan/upstrapp/postiz-app',
+workspaceRoot: '/home/faizan/Development/postiz-app',
 libsDir: 'libs'
 }
 }
