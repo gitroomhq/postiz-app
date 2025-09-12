@@ -29,6 +29,11 @@ const WalletProvider = dynamic(
     loading: () => <WalletUiProvider />,
   }
 );
+const TERMS_URL =
+  process.env.NEXT_PUBLIC_TERMS_URL ?? 'https://postiz.com/terms';
+const PRIVACY_URL =
+  process.env.NEXT_PUBLIC_PRIVACY_URL ?? 'https://postiz.com/privacy';
+
 type Inputs = {
   email: string;
   password: string;
@@ -206,14 +211,14 @@ export function RegisterAfter({
             'By registering you agree to our'
           )}&nbsp;
           <a
-            href={`https://postiz.com/terms`}
+            href={TERMS_URL}
             className="underline hover:font-bold"
           >
             {t('terms_of_service', 'Terms of Service')}
           </a>&nbsp;
           {t('and', 'and')}&nbsp;
           <a
-            href={`https://postiz.com/privacy`}
+            href={PRIVACY_URL}
             className="underline hover:font-bold"
           >
             {t('privacy_policy', 'Privacy Policy')}
