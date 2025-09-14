@@ -37,6 +37,9 @@ RUN sh -lc 'VAL=$(awk '\''/injectWorkspacePackages:/{print $2; exit}'\'' pnpm-lo
 ENV PRISMA_SKIP_POSTINSTALL=1
 RUN pnpm install --frozen-lockfile --ignore-scripts
 
+# ⬇️ Compile o bcrypt nativo (necessário no Alpine)
+RUN npm_config_build_from_source=true pnpm rebuild bcrypt
+
 # Agora copie o resto do código e nginx.conf
 COPY . /app
 COPY var/docker/nginx.conf /etc/nginx/nginx.conf
