@@ -5,6 +5,7 @@ import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 const postUrlEmitter = new EventEmitter();
 
 export const MediaSettingsLayout = () => {
@@ -97,7 +98,8 @@ export const CreateThumbnail: FC<{
   altText?: string;
   onAltTextChange?: (altText: string) => void;
 }> = (props) => {
-  const { onSelect, media, altText, onAltTextChange } = props;
+  const { onSelect, media } = props;
+  const { backendUrl } = useVariables();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [currentTime, setCurrentTime] = useState(0);
@@ -211,7 +213,7 @@ export const CreateThumbnail: FC<{
       <div className="relative bg-black rounded-lg overflow-hidden">
         <video
           ref={videoRef}
-          src={media.path}
+          src={backendUrl + '/public/stream?url=' + encodeURIComponent(media.path)}
           className="w-full h-[200px] object-contain"
           onLoadedMetadata={handleLoadedMetadata}
           onTimeUpdate={handleTimeUpdate}
