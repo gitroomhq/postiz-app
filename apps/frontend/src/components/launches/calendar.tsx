@@ -30,7 +30,7 @@ import 'dayjs/locale/ar';
 import 'dayjs/locale/tr';
 import 'dayjs/locale/vi';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
-import { useModals } from '@mantine/modals';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import clsx from 'clsx';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { ExistingDataContextProvider } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
@@ -215,7 +215,8 @@ export const WeekView = () => {
               <div
                 className={clsx(
                   'text-[14px] font-[600] flex items-center justify-center gap-[6px]',
-                  day.day === newDayjs().format('L') && 'text-newTableTextFocused'
+                  day.day === newDayjs().format('L') &&
+                    'text-newTableTextFocused'
                 )}
               >
                 {day.day === newDayjs().format('L') && (
@@ -391,7 +392,9 @@ export const CalendarColumn: FC<{
 
   const isBeforeNow = useMemo(() => {
     const originalUtc = getDate.startOf('hour');
-    return originalUtc.startOf('hour').isBefore(newDayjs().startOf('hour').utc());
+    return originalUtc
+      .startOf('hour')
+      .isBefore(newDayjs().startOf('hour').utc());
   }, [getDate, num]);
 
   const { start, stop } = useInterval(
@@ -462,8 +465,10 @@ export const CalendarColumn: FC<{
           : Fragment;
         modal.openModal({
           closeOnClickOutside: false,
+          removeLayout: true,
           closeOnEscape: false,
           withCloseButton: false,
+          askClose: true,
           classNames: {
             modal: 'w-[100%] max-w-[1400px] text-textColor',
           },
@@ -515,28 +520,24 @@ export const CalendarColumn: FC<{
       ? undefined
       : await new Promise((resolve) => {
           modal.openModal({
-            title: '',
+            title: t('select_set', 'Select a Set'),
             closeOnClickOutside: true,
+            askClose: true,
             closeOnEscape: true,
-            withCloseButton: false,
+            withCloseButton: true,
             onClose: () => resolve('exit'),
-            classNames: {
-              modal: 'text-textColor',
-            },
             children: (
-              <ModalWrapperComponent title={t('select_set', 'Select a Set')}>
-                <SetSelectionModal
-                  sets={sets}
-                  onSelect={(selectedSet) => {
-                    resolve(selectedSet);
-                    modal.closeAll();
-                  }}
-                  onContinueWithoutSet={() => {
-                    resolve(undefined);
-                    modal.closeAll();
-                  }}
-                />
-              </ModalWrapperComponent>
+              <SetSelectionModal
+                sets={sets}
+                onSelect={(selectedSet) => {
+                  resolve(selectedSet);
+                  modal.closeAll();
+                }}
+                onContinueWithoutSet={() => {
+                  resolve(undefined);
+                  modal.closeAll();
+                }}
+              />
             ),
           });
         });
@@ -547,6 +548,8 @@ export const CalendarColumn: FC<{
       closeOnClickOutside: false,
       closeOnEscape: false,
       withCloseButton: false,
+      removeLayout: true,
+      askClose: true,
       classNames: {
         modal: 'w-[100%] max-w-[1400px] text-textColor',
       },
@@ -586,17 +589,14 @@ export const CalendarColumn: FC<{
   const openStatistics = useCallback(
     (id: string) => () => {
       modal.openModal({
+        title: t('statistics', 'Statistics'),
         closeOnClickOutside: true,
         closeOnEscape: true,
         withCloseButton: false,
         classNames: {
           modal: 'w-[100%] max-w-[1400px]',
         },
-        children: (
-          <ModalWrapperComponent title={t('statistics', 'Statistics')}>
-            <StatisticsModal postId={id} />
-          </ModalWrapperComponent>
-        ),
+        children: <StatisticsModal postId={id} />,
         size: '80%',
         // title: `Adding posts for ${getDate.format('DD/MM/YYYY HH:mm')}`,
       });

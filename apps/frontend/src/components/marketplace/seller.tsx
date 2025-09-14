@@ -10,7 +10,7 @@ import useSWR from 'swr';
 import { Input } from '@gitroom/react/form/input';
 import { useDebouncedCallback } from 'use-debounce';
 import { OrderList } from '@gitroom/frontend/components/marketplace/order.list';
-import { useModals } from '@mantine/modals';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { Select } from '@gitroom/react/form/select';
 import { countries } from '@gitroom/nestjs-libraries/services/stripe.country.list';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';

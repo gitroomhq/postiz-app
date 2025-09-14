@@ -186,6 +186,7 @@
     "react-dom": "18.3.1",
     "react-dropzone": "^14.3.5",
     "react-hook-form": "^7.58.1",
+    "react-hotkeys-hook": "^5.1.0",
     "react-i18next": "^15.5.2",
     "react-loading": "^2.0.3",
     "react-sortablejs": "^6.1.4",

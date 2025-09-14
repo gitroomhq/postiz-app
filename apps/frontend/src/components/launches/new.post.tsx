@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { useModals } from '@mantine/modals';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import dayjs from 'dayjs';
 import { useCalendar } from '@gitroom/frontend/components/launches/calendar.context';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
@@ -21,7 +21,7 @@ export const NewPost = () => {
       ? undefined
       : await new Promise((resolve) => {
           modal.openModal({
-            title: '',
+            title: t('select_set', 'Select a Set'),
             closeOnClickOutside: true,
             closeOnEscape: true,
             withCloseButton: false,
@@ -30,19 +30,17 @@ export const NewPost = () => {
               modal: 'text-textColor',
             },
             children: (
-              <ModalWrapperComponent title={t('select_set', 'Select a Set')}>
-                <SetSelectionModal
-                  sets={sets}
-                  onSelect={(selectedSet) => {
-                    resolve(selectedSet);
-                    modal.closeAll();
-                  }}
-                  onContinueWithoutSet={() => {
-                    resolve(undefined);
-                    modal.closeAll();
-                  }}
-                />
-              </ModalWrapperComponent>
+              <SetSelectionModal
+                sets={sets}
+                onSelect={(selectedSet) => {
+                  resolve(selectedSet);
+                  modal.closeAll();
+                }}
+                onContinueWithoutSet={() => {
+                  resolve(undefined);
+                  modal.closeAll();
+                }}
+              />
             ),
           });
         });
@@ -53,6 +51,8 @@ export const NewPost = () => {
       closeOnClickOutside: false,
       closeOnEscape: false,
       withCloseButton: false,
+      removeLayout: true,
+      askClose: true,
       classNames: {
         modal: 'w-[100%] max-w-[1400px] bg-transparent text-textColor',
       },

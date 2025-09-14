@@ -55,6 +55,7 @@ export class RedditSettingsDtoInner {
   @ValidateIf((e) => e.is_flair_required)
   @IsDefined()
   @ValidateNested()
+  @Type(() => RedditFlairDto)
   flair: RedditFlairDto;
 }
 
