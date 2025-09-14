@@ -57,7 +57,7 @@ importers:
       '@mantine/hooks':
         specifier: ^5.10.5
         version: 5.10.5(react@18.3.1)
-      '@gitroom/frontend/components/layout/new-modal':
+      '@mantine/modals':
         specifier: ^5.10.5
         version: 5.10.5(@mantine/core@5.10.5(@emotion/react@11.14.0(@types/react@18.3.1)(react@18.3.1))(@mantine/hooks@5.10.5(react@18.3.1))(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@mantine/hooks@5.10.5(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@modelcontextprotocol/sdk':
