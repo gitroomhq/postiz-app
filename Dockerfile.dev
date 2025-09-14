@@ -1,21 +1,47 @@
 FROM node:20-alpine3.19
+
 ARG NEXT_PUBLIC_VERSION
 ENV NEXT_PUBLIC_VERSION=$NEXT_PUBLIC_VERSION
-RUN apk add --no-cache g++ make py3-pip bash nginx
-RUN adduser -D -g 'www' www
-RUN mkdir /www
-RUN chown -R www:www /var/lib/nginx
-RUN chown -R www:www /www
+ENV NODE_ENV=production
 
+# deps úteis p/ Prisma no Alpine + seu stack
+RUN apk add --no-cache g++ make py3-pip bash nginx openssl libc6-compat
 
+# nginx user/dirs
+RUN adduser -D -g 'www' www \
+ && mkdir /www \
+ && chown -R www:www /var/lib/nginx /www
+
+# pnpm/pm2 globais
 RUN npm --no-update-notifier --no-fund --global install pnpm@10.6.1 pm2
 
 WORKDIR /app
 
+# Copia apenas manifests primeiro (melhor cache)
+COPY pnpm-lock.yaml package.json ./
+# se for monorepo, copie tbm os package.json relevantes
+# COPY packages/*/package.json ./packages/*/
+
+# 👉 Evita scripts durante install (inclui postinstall do Prisma)
+ENV PRISMA_SKIP_POSTINSTALL=1
+RUN pnpm install --frozen-lockfile --ignore-scripts
+
+# Agora sim, copie o resto do código
 COPY . /app
 COPY var/docker/nginx.conf /etc/nginx/nginx.conf
 
-RUN pnpm install
+# 👉 Gera o Prisma Client DEPOIS do install
+# Ajuste o --schema conforme seu path real:
+RUN pnpm exec prisma generate --schema libraries/nestjs-libraries/src/database/prisma/schema.prisma
+# Se o CLI estiver em um pacote específico, use:
+# RUN pnpm --filter @gitroom/nestjs-libraries exec prisma generate --schema src/database/prisma/schema.prisma
+
+# (Opcional) se você NÃO quer wasm/edge, use engineType=library no schema.
+# Como workaround sem editar schema, pode exportar:
+# ENV PRISMA_CLIENT_ENGINE_TYPE=library
+
+# Build do app
 RUN NODE_OPTIONS="--max-old-space-size=4096" pnpm run build
 
+# Start
 CMD ["sh", "-c", "nginx && pnpm run pm2"]
