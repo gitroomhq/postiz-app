@@ -19,16 +19,17 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 
 # Lê versão do packageManager (pnpm@X.Y.Z); se não houver, usa 10.6.1
-RUN sh -lc 'VER=$(node -e "try{const pm=require(\"./package.json\").packageManager||\"\";console.log(pm.includes(\"pnpm@\")?pm.split(\"@\")[1]:\"\")}catch{console.log(\"\")}"); \
-            [ -z \"$VER\" ] && VER=10.6.1; \
-            echo \"Instalando pnpm@$VER\"; \
-            npm --no-update-notifier --no-fund -g install pnpm@\"$VER\" pm2'
+RUN sh -lc '\
+  VER=$(node -e "try{const pm=require(\"./package.json\").packageManager||\"\";console.log(pm.includes(\"pnpm@\")?pm.split(\"@\")[1]:\"\")}catch{console.log(\"\")}") ; \
+  [ -z \"$VER\" ] && VER=10.6.1 ; \
+  echo Installing pnpm@$VER ; \
+  npm --no-update-notifier --no-fund -g install pnpm@$VER pm2 \
+'
 
-# (Opcional) se existir .npmrc no repo, copiamos (não quebra se faltar? -> então mantenha só se existir)
-# Se você TEM .npmrc, deixe a linha abaixo. Se não tiver, remova.
+# (Opcional) se você tem .npmrc no repo, mantenha a linha abaixo; senão, remova.
 COPY .npmrc ./.npmrc
 
-# ⚙️ alinhar inject-workspace-packages com o lockfile (evita ERR_PNPM_LOCKFILE_CONFIG_MISMATCH)
+# Alinha inject-workspace-packages ao lockfile (evita ERR_PNPM_LOCKFILE_CONFIG_MISMATCH)
 RUN sh -lc 'VAL=$(awk '\''/injectWorkspacePackages:/{print $2; exit}'\'' pnpm-lock.yaml | tr -d \"\\r\"); \
             [ -n \"$VAL\" ] && pnpm config set inject-workspace-packages \"$VAL\" || true'
 
