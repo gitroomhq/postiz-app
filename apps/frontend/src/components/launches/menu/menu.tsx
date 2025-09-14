@@ -11,7 +11,7 @@ import { useClickOutside } from '@mantine/hooks';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useToaster } from '@gitroom/react/toaster/toaster';
-import { useModals } from '@mantine/modals';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { TimeTable } from '@gitroom/frontend/components/launches/time.table';
 import {
   Integrations,
@@ -137,18 +137,12 @@ export const Menu: FC<{
       (integration) => integration.id === id
     );
     modal.openModal({
-      classNames: {
-        modal: 'w-[100%] max-w-[600px] bg-transparent text-textColor',
-      },
-      size: '100%',
       withCloseButton: false,
       closeOnEscape: false,
       closeOnClickOutside: false,
-      children: (
-        <ModalWrapperComponent title="Time Table Slots" ask={true}>
-          <TimeTable integration={findIntegration!} mutate={mutate} />
-        </ModalWrapperComponent>
-      ),
+      askClose: true,
+      title: 'Time Table Slots',
+      children: <TimeTable integration={findIntegration!} mutate={mutate} />,
     });
     setShow(false);
   }, [integrations]);
@@ -175,6 +169,8 @@ export const Menu: FC<{
         closeOnClickOutside: false,
         closeOnEscape: false,
         withCloseButton: false,
+        removeLayout: true,
+        askClose: true,
         classNames: {
           modal: 'w-[100%] max-w-[1400px] bg-transparent text-textColor',
         },
@@ -254,40 +250,36 @@ export const Menu: FC<{
       classNames: {
         modal: 'md',
       },
-      title: '',
+      title: 'Move / Add to customer',
       withCloseButton: false,
       closeOnEscape: true,
       closeOnClickOutside: true,
       children: (
-        <ModalWrapperComponent title="Move / Add to customer">
-          <CustomerModal
-            // @ts-ignore
-            integration={findIntegration}
-            onClose={() => {
-              mutate();
-              toast.show('Customer Updated', 'success');
-            }}
-          />
-        </ModalWrapperComponent>
+        <CustomerModal
+          // @ts-ignore
+          integration={findIntegration}
+          onClose={() => {
+            mutate();
+            toast.show('Customer Updated', 'success');
+          }}
+        />
       ),
     });
     setShow(false);
   }, [integrations]);
   const updateCredentials = useCallback(() => {
     modal.openModal({
-      title: '',
+      title: 'Custom URL',
       withCloseButton: false,
       classNames: {
         modal: 'md',
       },
       children: (
-        <ModalWrapperComponent title="Custom URL">
-          <CustomVariables
-            identifier={findIntegration.identifier}
-            gotoUrl={(url: string) => router.push(url)}
-            variables={findIntegration.customFields}
-          />
-        </ModalWrapperComponent>
+        <CustomVariables
+          identifier={findIntegration.identifier}
+          gotoUrl={(url: string) => router.push(url)}
+          variables={findIntegration.customFields}
+        />
       ),
     });
   }, []);

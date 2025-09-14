@@ -3,7 +3,7 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { Button } from '@gitroom/react/form/button';
 import clsx from 'clsx';
-import { useModals } from '@mantine/modals';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { array, boolean, object, string } from 'yup';
 import { FormProvider, useForm } from 'react-hook-form';
@@ -27,11 +27,8 @@ export const SignaturesComponent: FC<{
   const addSignature = useCallback(
     (data?: any) => () => {
       modal.openModal({
-        title: '',
-        withCloseButton: false,
-        classNames: {
-          modal: 'bg-transparent text-textColor',
-        },
+        title: data ? 'Edit Signature' : 'Add Signature',
+        withCloseButton: true,
         children: <AddOrRemoveSignature data={data} reload={mutate} />,
       });
     },
@@ -170,7 +167,7 @@ const AddOrRemoveSignature: FC<{
           : 'Signature added successfully',
         'success'
       );
-      modal.closeModal(modal.modals[modal.modals.length - 1].id);
+      modal.closeCurrent();
       reload();
     },
     [data, modal]
@@ -181,14 +178,11 @@ const AddOrRemoveSignature: FC<{
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(callBack)}>
-        <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-customColor6 bg-sixth p-[16px] pt-0 w-[500px]">
-          <TopTitle title={data ? 'Edit Signature' : 'Add Signature'} />
+        <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] pt-0">
           <button
             className="outline-none absolute end-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
             type="button"
-            onClick={() =>
-              modal.closeModal(modal.modals[modal.modals.length - 1].id)
-            }
+            onClick={() => modal.closeCurrent()}
           >
             <svg
               viewBox="0 0 15 15"

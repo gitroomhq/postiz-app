@@ -2,7 +2,7 @@
 
 import { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useModals } from '@mantine/modals';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { Button } from '@gitroom/react/form/button';
 import { ConnectChannels } from '@gitroom/frontend/components/onboarding/connect.channels';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
@@ -46,15 +46,11 @@ export const Onboarding: FC = () => {
     }
     modalOpen.current = true;
     modal.openModal({
-      title: '',
+      title: t('onboarding', 'Onboarding'),
       withCloseButton: false,
       closeOnEscape: false,
       size: '900px',
-      children: (
-        <ModalWrapperComponent title={t('onboarding', 'Onboarding')}>
-          <Welcome />
-        </ModalWrapperComponent>
-      ),
+      children: <Welcome />,
     });
   }, [query]);
   return null;
