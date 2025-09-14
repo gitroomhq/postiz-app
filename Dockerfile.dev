@@ -4,7 +4,7 @@ ARG NEXT_PUBLIC_VERSION
 ENV NEXT_PUBLIC_VERSION=$NEXT_PUBLIC_VERSION
 ENV NODE_ENV=production
 
-# deps úteis p/ Prisma no Alpine + seu stack
+# deps úteis p/ Prisma + build em Alpine
 RUN apk add --no-cache g++ make py3-pip bash nginx openssl libc6-compat
 
 # nginx user/dirs
@@ -12,33 +12,40 @@ RUN adduser -D -g 'www' www \
  && mkdir /www \
  && chown -R www:www /var/lib/nginx /www
 
-# pnpm/pm2 globais
-RUN npm --no-update-notifier --no-fund --global install pnpm@10.6.1 pm2
-
 WORKDIR /app
 
-# Copia apenas manifests primeiro (melhor cache)
-COPY pnpm-lock.yaml package.json ./
-# se for monorepo, copie tbm os package.json relevantes
-# COPY packages/*/package.json ./packages/*/
+# Use a versão de pnpm do projeto (Corepack) e deixe o PM2 global
+RUN corepack enable
+RUN npm --no-update-notifier --no-fund --global install pm2
 
-# 👉 Evita scripts durante install (inclui postinstall do Prisma)
+# Copie manifestos antes (melhor cache)
+COPY package.json pnpm-lock.yaml ./
+# (Se você tiver workspaces com package.json próprios, copie-os aqui também)
+
+# ⚙️ Alinhar pnpm à versão do packageManager (se existir)
+RUN sh -lc 'PM=$(node -e "try{console.log(require(\"./package.json\").packageManager.split(\"@\")[1])}catch{process.exit(0)}"); \
+            if [ -n \"$PM\" ]; then corepack prepare pnpm@\"$PM\" --activate; fi'
+
+# ⚙️ Fazer o inject-workspace-packages combinar com o lockfile (evita ERR_PNPM_LOCKFILE_CONFIG_MISMATCH)
+RUN sh -lc 'VAL=$(awk '\''/injectWorkspacePackages:/{print $2; exit}'\'' pnpm-lock.yaml | tr -d \"\\r\"); \
+            [ -n \"$VAL\" ] && pnpm config set inject-workspace-packages \"$VAL\" || true'
+
+# Evitar scripts (inclui postinstall do Prisma) durante o install
 ENV PRISMA_SKIP_POSTINSTALL=1
 RUN pnpm install --frozen-lockfile --ignore-scripts
 
-# Agora sim, copie o resto do código
+# Agora copie o resto do código e nginx.conf
 COPY . /app
 COPY var/docker/nginx.conf /etc/nginx/nginx.conf
 
-# 👉 Gera o Prisma Client DEPOIS do install
-# Ajuste o --schema conforme seu path real:
-RUN pnpm exec prisma generate --schema libraries/nestjs-libraries/src/database/prisma/schema.prisma
-# Se o CLI estiver em um pacote específico, use:
-# RUN pnpm --filter @gitroom/nestjs-libraries exec prisma generate --schema src/database/prisma/schema.prisma
-
-# (Opcional) se você NÃO quer wasm/edge, use engineType=library no schema.
-# Como workaround sem editar schema, pode exportar:
+# (Opcional) Se não quer runtime WASM/edge:
 # ENV PRISMA_CLIENT_ENGINE_TYPE=library
+
+# Gerar Prisma Client DEPOIS do install
+# Ajuste o --schema se necessário
+RUN pnpm exec prisma generate --schema libraries/nestjs-libraries/src/database/prisma/schema.prisma
+# Se o CLI estiver em um pacote específico:
+# RUN pnpm --filter @gitroom/nestjs-libraries exec prisma generate --schema src/database/prisma/schema.prisma
 
 # Build do app
 RUN NODE_OPTIONS="--max-old-space-size=4096" pnpm run build
