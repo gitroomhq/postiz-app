@@ -25,8 +25,8 @@ jobs:
         id: vars
         run: echo "IMAGE_TAG=ghcr.io/gitroomhq/postiz-app-pr:${{ github.event.pull_request.number }}" >> $GITHUB_ENV
 
-      - name: Build Docker image from Dockerfile.dev
-        run: docker build -f Dockerfile.dev -t $IMAGE_TAG .
+      - name: Build Docker image from Dockerfile
+        run: docker build -f Dockerfile -t $IMAGE_TAG .
 
       - name: Push Docker image to GHCR
         run: docker push $IMAGE_TAG
