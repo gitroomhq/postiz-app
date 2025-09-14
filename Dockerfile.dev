@@ -26,7 +26,7 @@ RUN sh -lc 'VER=$(node -e "try{const pm=require(\"./package.json\").packageManag
 
 # (Opcional) se existir .npmrc no repo, copiamos (não quebra se faltar? -> então mantenha só se existir)
 # Se você TEM .npmrc, deixe a linha abaixo. Se não tiver, remova.
-#COPY .npmrc ./.npmrc
+COPY .npmrc ./.npmrc
 
 # ⚙️ alinhar inject-workspace-packages com o lockfile (evita ERR_PNPM_LOCKFILE_CONFIG_MISMATCH)
 RUN sh -lc 'VAL=$(awk '\''/injectWorkspacePackages:/{print $2; exit}'\'' pnpm-lock.yaml | tr -d \"\\r\"); \
