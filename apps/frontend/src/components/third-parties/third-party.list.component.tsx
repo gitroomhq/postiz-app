@@ -5,7 +5,7 @@ import useSWR from 'swr';
 import React, { FC, useCallback, useState } from 'react';
 import { Button } from '@gitroom/react/form/button';
 import { useRouter } from 'next/navigation';
-import { useModals } from '@mantine/modals';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { FieldValues, FormProvider, useForm } from 'react-hook-form';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { Input } from '@gitroom/react/form/input';
@@ -115,12 +115,10 @@ export const ThirdPartyListComponent: FC<{ reload: () => void }> = (props) => {
   const addApiKey = useCallback(
     (title: string, identifier: string) => () => {
       modals.openModal({
-        title: '',
+        title: `Add API key for ${title}`,
         withCloseButton: false,
         children: (
-          <ModalWrapperComponent title={`Add API key for ${title}`}>
-            <ApiModal identifier={identifier} title={title} update={reload} />
-          </ModalWrapperComponent>
+          <ApiModal identifier={identifier} title={title} update={reload} />
         ),
       });
     },

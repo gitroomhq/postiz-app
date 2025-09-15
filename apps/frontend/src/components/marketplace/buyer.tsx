@@ -20,7 +20,7 @@ import {
 import { capitalize, chunk, fill } from 'lodash';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import { useModals } from '@mantine/modals';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { Textarea } from '@gitroom/react/form/textarea';
 import { FormProvider, SubmitHandler, useForm } from 'react-hook-form';

@@ -6,15 +6,14 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { Button } from '@gitroom/react/form/button';
-import { useModals } from '@mantine/modals';
 import { Input } from '@gitroom/react/form/input';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import clsx from 'clsx';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-import dayjs from 'dayjs';
 import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 
 const SaveSetModal: FC<{
   postData: any;
@@ -97,9 +96,8 @@ export const Sets: FC = () => {
         closeOnClickOutside: false,
         closeOnEscape: false,
         withCloseButton: false,
-        classNames: {
-          modal: 'w-[100%] max-w-[1400px] bg-transparent text-textColor',
-        },
+        removeLayout: true,
+        askClose: true,
         children: (
           <AddEditModal
             allIntegrations={integrations.map((p: any) => ({
@@ -109,10 +107,6 @@ export const Sets: FC = () => {
             addEditSets={(data) => {
               modal.openModal({
                 title: 'Save as Set',
-                classNames: {
-                  modal: 'bg-sixth text-textColor',
-                  title: 'text-textColor',
-                },
                 children: (
                   <SaveSetModal
                     initialValue={params?.name || ''}
@@ -137,7 +131,6 @@ export const Sets: FC = () => {
                     onCancel={() => modal.closeAll()}
                   />
                 ),
-                size: 'md',
               });
             }}
             reopenModal={() => {}}
@@ -146,7 +139,6 @@ export const Sets: FC = () => {
             date={newDayjs()}
           />
         ),
-        size: '80%',
         title: ``,
       });
     },
