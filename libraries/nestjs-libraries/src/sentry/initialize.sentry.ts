@@ -27,11 +27,11 @@ export const initializeSentry = (appName: string, allowLogs = false) => {
         nodeProfilingIntegration(),
         Sentry.consoleLoggingIntegration({ levels: ['log', 'error', 'warn'] }),
       ],
-      tracesSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.3,
+      tracesSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.25,
       enableLogs: true,
 
       // Profiling
-      profileSessionSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.3,
+      profileSessionSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.15,
       profileLifecycle: 'trace',
     });
   } catch (err) {
