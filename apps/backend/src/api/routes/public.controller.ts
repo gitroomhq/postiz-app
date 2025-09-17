@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Param, Post, Req, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  Req,
+  Res,
+  StreamableFile,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { AgenciesService } from '@gitroom/nestjs-libraries/database/prisma/agencies/agencies.service';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
@@ -11,6 +21,10 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
 import { AgentGraphInsertService } from '@gitroom/nestjs-libraries/agent/agent.graph.insert.service';
 import { Nowpayments } from '@gitroom/nestjs-libraries/crypto/nowpayments';
+import { Readable, pipeline } from 'stream';
+import { promisify } from 'util';
+
+const pump = promisify(pipeline);
 
 @ApiTags('Public')
 @Controller('/public')
@@ -135,5 +149,47 @@ export class PublicController {
   async cryptoPost(@Body() body: any, @Param('path') path: string) {
     console.log('cryptoPost', body, path);
     return this._nowpayments.processPayment(path, body);
+  }
+
+  @Get('/stream')
+  async streamFile(
+    @Query('url') url: string,
+    @Res() res: Response,
+    @Req() req: Request
+  ) {
+    if (!url.endsWith('mp4')) {
+      return res.status(400).send('Invalid video URL');
+    }
+
+    const ac = new AbortController();
+    const onClose = () => ac.abort();
+    req.on('aborted', onClose);
+    res.on('close', onClose);
+
+    const r = await fetch(url, { signal: ac.signal });
+
+    if (!r.ok && r.status !== 206) {
+      res.status(r.status);
+      throw new Error(`Upstream error: ${r.statusText}`);
+    }
+
+    const type = r.headers.get('content-type') ?? 'application/octet-stream';
+    res.setHeader('Content-Type', type);
+
+    const contentRange = r.headers.get('content-range');
+    if (contentRange) res.setHeader('Content-Range', contentRange);
+
+    const len = r.headers.get('content-length');
+    if (len) res.setHeader('Content-Length', len);
+
+    const acceptRanges = r.headers.get('accept-ranges') ?? 'bytes';
+    res.setHeader('Accept-Ranges', acceptRanges);
+
+    if (r.status === 206) res.status(206); // Partial Content for range responses
+
+    try {
+      await pump(Readable.fromWeb(r.body as any), res);
+    } catch (err) {
+    }
   }
 }
