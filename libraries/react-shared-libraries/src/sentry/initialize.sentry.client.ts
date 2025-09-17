@@ -6,6 +6,7 @@ export const initializeSentryClient = (environment: string, dsn: string) =>
     integrations: [
       // Add default integrations back
       Sentry.browserTracingIntegration(),
+      Sentry.browserProfilingIntegration(),
       Sentry.replayIntegration({
         maskAllText: true,
         maskAllInputs: true,
@@ -17,4 +18,6 @@ export const initializeSentryClient = (environment: string, dsn: string) =>
     ],
     replaysSessionSampleRate: environment === 'development' ? 1.0 : 0.5,
     replaysOnErrorSampleRate: 1.0,
+
+    profilesSampleRate: environment === 'development' ? 1.0 : 0.1,
   });
