@@ -60,7 +60,7 @@ export default withSentryConfig(nextConfig, {
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
   authToken: process.env.SENTRY_AUTH_TOKEN,
-  
+
   // Sourcemap configuration optimized for monorepo
   sourcemaps: {
     disable: false,
@@ -68,7 +68,7 @@ export default withSentryConfig(nextConfig, {
     assets: [
       ".next/static/**/*.js",
       ".next/static/**/*.js.map",
-      ".next/server/**/*.js", 
+      ".next/server/**/*.js",
       ".next/server/**/*.js.map",
     ],
     ignore: [
@@ -97,12 +97,23 @@ export default withSentryConfig(nextConfig, {
   telemetry: false,
   silent: process.env.NODE_ENV === 'production',
   debug: process.env.NODE_ENV === 'development',
-  
+
   // Error handling for CI/CD
   errorHandler: (error) => {
     console.warn("Sentry build error occurred:", error.message);
     console.warn("This might be due to missing Sentry environment variables or network issues");
     // Don't fail the build if Sentry upload fails in monorepo context
     return;
+  },
+
+  // Document-Policy header for browser profiling
+  async headers() {
+    return [{
+      source: "/:path*",
+      headers: [{
+        key: "Document-Policy",
+        value: "js-profiling",
+      }, ],
+    }, ];
   },
 });
