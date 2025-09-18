@@ -29,7 +29,9 @@ export abstract class SocialAbstract {
 
   public handleErrors(
     body: string
-  ): { type: 'refresh-token' | 'bad-body'; value: string } | undefined {
+  ):
+    | { type: 'refresh-token' | 'bad-body' | 'retry'; value: string }
+    | undefined {
     return undefined;
   }
 
@@ -38,11 +40,17 @@ export abstract class SocialAbstract {
     d: { query: string },
     id: string,
     integration: Integration
-  ): Promise<{ id: string; label: string; image: string, doNotCache?: boolean }[] | { none: true }> {
+  ): Promise<
+    | { id: string; label: string; image: string; doNotCache?: boolean }[]
+    | { none: true }
+  > {
     return { none: true };
   }
 
-  async runInConcurrent<T>(func: (...args: any[]) => Promise<T>) {
+  async runInConcurrent<T>(
+    func: (...args: any[]) => Promise<T>,
+    ignoreConcurrency?: boolean
+  ) {
     const value = await concurrency<any>(
       this.identifier,
       this.maxConcurrentJob,
@@ -54,7 +62,8 @@ export abstract class SocialAbstract {
           const handle = this.handleErrors(JSON.stringify(err));
           return { err: true, ...(handle || {}) };
         }
-      }
+      },
+      ignoreConcurrency
     );
 
     if (value && value?.err && value?.value) {
@@ -100,10 +109,15 @@ export abstract class SocialAbstract {
       json.includes('Rate limit')
     ) {
       await timer(5000);
-      return this.fetch(url, options, identifier, totalRetries + 1);
+      return this.fetch(url, options, identifier, totalRetries + 1, ignoreConcurrency);
     }
 
     const handleError = this.handleErrors(json || '{}');
+
+    if (handleError?.type === 'retry') {
+      await timer(5000);
+      return this.fetch(url, options, identifier, totalRetries + 1, ignoreConcurrency);
+    }
 
     if (
       request.status === 401 &&

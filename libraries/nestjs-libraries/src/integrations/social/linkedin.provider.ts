@@ -254,20 +254,26 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
 
     const etags = [];
     for (let i = 0; i < picture.length; i += 1024 * 1024 * 2) {
-      const upload = await this.fetch(sendUrlRequest, {
-        method: 'PUT',
-        headers: {
-          'X-Restli-Protocol-Version': '2.0.0',
-          'LinkedIn-Version': '202501',
-          Authorization: `Bearer ${accessToken}`,
-          ...(isVideo
-            ? { 'Content-Type': 'application/octet-stream' }
-            : isPdf
-            ? { 'Content-Type': 'application/pdf' }
-            : {}),
+      const upload = await this.fetch(
+        sendUrlRequest,
+        {
+          method: 'PUT',
+          headers: {
+            'X-Restli-Protocol-Version': '2.0.0',
+            'LinkedIn-Version': '202501',
+            Authorization: `Bearer ${accessToken}`,
+            ...(isVideo
+              ? { 'Content-Type': 'application/octet-stream' }
+              : isPdf
+              ? { 'Content-Type': 'application/pdf' }
+              : {}),
+          },
+          body: picture.slice(i, i + 1024 * 1024 * 2),
         },
-        body: picture.slice(i, i + 1024 * 1024 * 2),
-      });
+        'linkedin',
+        0,
+        true
+      );
 
       etags.push(upload.headers.get('etag'));
     }
@@ -737,7 +743,9 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     return elements.map((p: any) => ({
       id: String(p.id),
       label: p.localizedName,
-      image: p.logoV2?.['original~']?.elements?.[0]?.identifiers?.[0]?.identifier || '',
+      image:
+        p.logoV2?.['original~']?.elements?.[0]?.identifiers?.[0]?.identifier ||
+        '',
     }));
   }
 

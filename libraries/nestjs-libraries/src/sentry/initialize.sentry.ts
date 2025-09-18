@@ -31,8 +31,12 @@ export const initializeSentry = (appName: string, allowLogs = false) => {
           recordOutputs: true,
         }),
       ],
-      tracesSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.3,
+      tracesSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.25,
       enableLogs: true,
+
+      // Profiling
+      profileSessionSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.35,
+      profileLifecycle: 'trace',
     });
   } catch (err) {
     console.log(err);

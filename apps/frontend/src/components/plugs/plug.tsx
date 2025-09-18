@@ -9,7 +9,7 @@ import { Button } from '@gitroom/react/form/button';
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR, { mutate } from 'swr';
-import { useModals } from '@mantine/modals';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import {
   FormProvider,
@@ -243,18 +243,17 @@ export const Plug = () => {
             mutate();
           },
           size: '500px',
+          title: `Auto Plug: ${p.title}`,
           children: (
-            <ModalWrapperComponent title={`Auto Plug: ${p.title}`}>
-              <PlugPop
-                plug={p}
-                data={data}
-                settings={{
-                  identifier: plug.identifier,
-                  providerId: plug.providerId,
-                  name: plug.name,
-                }}
-              />
-            </ModalWrapperComponent>
+            <PlugPop
+              plug={p}
+              data={data}
+              settings={{
+                identifier: plug.identifier,
+                providerId: plug.providerId,
+                name: plug.name,
+              }}
+            />
           ),
         });
       },

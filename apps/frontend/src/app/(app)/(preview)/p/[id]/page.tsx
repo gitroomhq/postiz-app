@@ -10,6 +10,16 @@ import utc from 'dayjs/plugin/utc';
 import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
 import { CopyClient } from '@gitroom/frontend/components/preview/copy.client';
 import { getT } from '@gitroom/react/translation/get.translation.service.backend';
+import dynamicLoad from 'next/dynamic';
+
+const RenderPreviewDate = dynamicLoad(
+  () =>
+    import('@gitroom/frontend/components/preview/render.preview.date').then(
+      (mod) => mod.RenderPreviewDate
+    ),
+  { ssr: false }
+);
+
 dayjs.extend(utc);
 export const metadata: Metadata = {
   title: `${isGeneralServerSide() ? 'Postiz' : 'Gitroom'} Preview`,
@@ -91,11 +101,8 @@ export default async function Auth({
               </div>
             )}
             <div className="flex-1">
-              {t('publication_date', 'Publication Date:')}
-              {dayjs
-                .utc(post[0].publishDate)
-                .local()
-                .format('MMMM D, YYYY h:mm A')}
+              {t('publication_date', 'Publication Date:')}{' '}
+              <RenderPreviewDate date={post[0].publishDate} />
             </div>
           </div>
         </div>

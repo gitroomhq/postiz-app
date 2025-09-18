@@ -30,7 +30,7 @@ export class InstagramStandaloneProvider
 
   editor = 'normal' as const;
 
-  public override handleErrors(body: string): { type: "refresh-token" | "bad-body"; value: string } | undefined {
+  public override handleErrors(body: string): { type: "refresh-token" | "bad-body" | "retry"; value: string } | undefined {
     return instagramProvider.handleErrors(body);
   }
 

@@ -50,7 +50,7 @@ export class MainMcp {
   @McpTool({
     toolName: 'POSTIZ_SCHEDULE_POST',
     zod: {
-      type: eenum(['draft', 'scheduled']),
+      type: eenum(['draft', 'schedule']),
       configId: string(),
       generatePictures: boolean(),
       date: string().describe('UTC TIME'),

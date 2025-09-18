@@ -31,6 +31,7 @@ import { Button } from '@gitroom/react/form/button';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { PostComment } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 import WordpressProvider from '@gitroom/frontend/components/new-launch/providers/wordpress/wordpress.provider';
+import ListmonkProvider from '@gitroom/frontend/components/new-launch/providers/listmonk/listmonk.provider';
 
 export const Providers = [
   {
@@ -132,6 +133,10 @@ export const Providers = [
   {
     identifier: 'wordpress',
     component: WordpressProvider,
+  },
+  {
+    identifier: 'listmonk',
+    component: ListmonkProvider,
   },
 ];
 export const ShowAllProviders = forwardRef((props, ref) => {

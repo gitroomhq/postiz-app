@@ -357,6 +357,10 @@ body * {
 //  /*right: -5rem !important;*/
 //}
 
+.trz {
+  transform: translateZ(0);
+}
+
 .uppy-FileInput-container {
   @apply cursor-pointer font-[500] flex justify-center items-center gap-[4px] text-[12px] rounded-[4px] w-[107px] h-[25px] text-textColor border-[2px];
   @apply bg-customColor3 border-customColor21;
@@ -671,4 +675,7 @@ html[dir='rtl'] [dir='ltr'] {
       content: '\200B';
     }
   }
+}
+.blur-xs {
+  filter: blur(4px);
 }
