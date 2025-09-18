@@ -6,6 +6,16 @@ const nextConfig = {
   experimental: {
     proxyTimeout: 90_000,
   },
+  // Document-Policy header for browser profiling
+  async headers() {
+    return [{
+      source: "/:path*",
+      headers: [{
+        key: "Document-Policy",
+        value: "js-profiling",
+      }, ],
+    }, ];
+  },
   reactStrictMode: false,
   transpilePackages: ['crypto-hash'],
   // Enable production sourcemaps for Sentry
@@ -104,16 +114,5 @@ export default withSentryConfig(nextConfig, {
     console.warn("This might be due to missing Sentry environment variables or network issues");
     // Don't fail the build if Sentry upload fails in monorepo context
     return;
-  },
-
-  // Document-Policy header for browser profiling
-  async headers() {
-    return [{
-      source: "/:path*",
-      headers: [{
-        key: "Document-Policy",
-        value: "js-profiling",
-      }, ],
-    }, ];
   },
 });
