@@ -674,7 +674,6 @@ export class PostsService {
     const scheduleDateToUse = (() => {
       const input = dayjs.utc(targetDateForAll).second(0).millisecond(0);
       if (shouldRandomize) {
-        // Only randomize if the incoming minute is exactly 0; otherwise respect chosen minute
         if (input.minute() === 0) {
           let minute = Math.floor(Math.random() * 60);
           const now = dayjs.utc();
@@ -686,8 +685,7 @@ export class PostsService {
         }
         return input.format('YYYY-MM-DDTHH:mm:00');
       }
-      // Not randomizing: clamp to exact hour (minute:00)
-      return input.minute(0).format('YYYY-MM-DDTHH:mm:00');
+      return input.format('YYYY-MM-DDTHH:mm:00');
     })();
 
     for (const post of body.posts) {
@@ -913,14 +911,14 @@ export class PostsService {
                 ...toPost.list.map((l) => ({
                   id: '',
                   content: l.post,
-                  image: [],
+                  image: [] as any[],
                 })),
                 {
                   id: '',
                   content: `Check out the full story here:\n${
                     body.postId || body.url
                   }`,
-                  image: [],
+                  image: [] as any[],
                 },
               ],
             },
