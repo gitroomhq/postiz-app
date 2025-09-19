@@ -1,36 +1,52 @@
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
+import Bottleneck from 'bottleneck';
 import { timer } from '@gitroom/helpers/utils/timer';
+import { BadBody } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
-export async function concurrencyService<T>(
+const connection = new Bottleneck.IORedisConnection({
+  client: ioRedis,
+});
+
+const mapper = {} as Record<string, Bottleneck>;
+
+export const concurrency = async <T>(
   identifier: string,
-  func: (...args: any[]) => Promise<T>
-): Promise<T> {
-  const key = `throttle:${identifier.split('-')[0]}`;
-  const expirationSeconds = 180;
+  maxConcurrent = 1,
+  func: (...args: any[]) => Promise<T>,
+  ignoreConcurrency = false
+) => {
+  const strippedIdentifier = identifier.toLowerCase().split('-')[0];
+  mapper[strippedIdentifier] ??= new Bottleneck({
+    id: strippedIdentifier + '-concurrency-new',
+    maxConcurrent,
+    datastore: 'ioredis',
+    connection,
+    minTime: 1000,
+  });
+  let load: T;
 
-  while (true) {
-    const setLock = await ioRedis.set(
-      key,
-      'locked',
-      'EX',
-      expirationSeconds,
-      'NX'
-    );
-
-    if (setLock) {
-      break;
-    }
-
-    // Wait before trying again
-    await timer(1000);
+  if (ignoreConcurrency) {
+    return await func();
   }
 
-  let load: T;
   try {
-    load = await func();
-  } catch (err) {}
-  await timer(2000);
-  await ioRedis.del(key);
+    load = await mapper[strippedIdentifier].schedule<T>(
+      { expiration: 60000 },
+      async () => {
+        try {
+          return await func();
+        } catch (err) {}
+      }
+    );
+  } catch (err) {
+    console.log(err);
+    throw new BadBody(
+      identifier,
+      JSON.stringify({}),
+      {} as any,
+      `Something is wrong with ${identifier}`
+    );
+  }
 
   return load;
-}
+};

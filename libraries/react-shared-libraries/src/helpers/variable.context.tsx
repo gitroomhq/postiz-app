@@ -11,6 +11,7 @@ interface VariableContextInterface {
   plontoKey: string;
   storageProvider: 'local' | 'cloudflare';
   backendUrl: string;
+  environment: string;
   discordUrl: string;
   uploadDirectory: string;
   facebookPixel: string;
@@ -22,6 +23,7 @@ interface VariableContextInterface {
   language: string;
   tolt: string;
   transloadit: string[];
+  sentryDsn: string;
 }
 const VariableContext = createContext({
   billingEnabled: false,
@@ -44,6 +46,7 @@ const VariableContext = createContext({
   language: '',
   tolt: '',
   transloadit: [],
+  sentryDsn: '',
 } as VariableContextInterface);
 export const VariableContextComponent: FC<
   VariableContextInterface & {

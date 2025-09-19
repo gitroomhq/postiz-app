@@ -23,7 +23,9 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     'threads_content_publish',
     'threads_manage_replies',
     'threads_manage_insights',
+    // 'threads_profile_discovery',
   ];
+  override maxConcurrentJob = 2; // Threads has moderate rate limits
 
   editor = 'normal' as const;
 
@@ -38,9 +40,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       id,
       name,
       username,
-      picture: {
-        data: { url },
-      },
+      picture
     } = await this.fetchPageInformation(access_token);
 
     return {
@@ -49,7 +49,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       accessToken: access_token,
       refreshToken: access_token,
       expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
-      picture: url,
+      picture: picture?.data?.url || '',
       username: '',
     };
   }
@@ -109,9 +109,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       id,
       name,
       username,
-      picture: {
-        data: { url },
-      },
+      picture,
     } = await this.fetchPageInformation(access_token);
 
     return {
@@ -120,7 +118,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       accessToken: access_token,
       refreshToken: access_token,
       expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
-      picture: url,
+      picture: picture?.data?.url || '',
       username: username,
     };
   }
@@ -413,8 +411,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
           {
             id: makeId(10),
             media: [],
-            message:
-              postDetails?.[0]?.settings?.thread_finisher,
+            message: postDetails?.[0]?.settings?.thread_finisher,
             settings: {},
           },
           lastReplyId,
@@ -526,4 +523,29 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
 
     return false;
   }
+
+  // override async mention(
+  //   token: string,
+  //   data: { query: string },
+  //   id: string,
+  //   integration: Integration
+  // ) {
+  //   const p = await (
+  //     await fetch(
+  //       `https://graph.threads.net/v1.0/profile_lookup?username=${data.query}&access_token=${integration.token}`
+  //     )
+  //   ).json();
+  //
+  //   return [
+  //     {
+  //       id: String(p.id),
+  //       label: p.name,
+  //       image: p.profile_picture_url,
+  //     },
+  //   ];
+  // }
+  //
+  // mentionFormat(idOrHandle: string, name: string) {
+  //   return `@${idOrHandle}`;
+  // }
 }

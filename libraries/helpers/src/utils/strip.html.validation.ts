@@ -1,5 +1,5 @@
 import striptags from 'striptags';
-import { NodeHtmlMarkdown } from 'node-html-markdown';
+import { parseFragment, serialize } from 'parse5';
 
 const bold = {
   a: '𝗮',
@@ -133,14 +133,22 @@ const underlineMap = {
 
 export const stripHtmlValidation = (
   type: 'none' | 'normal' | 'markdown' | 'html',
-  value: string,
+  val: string,
   replaceBold = false,
-  none = false
+  none = false,
+  plain = false,
+  convertMentionFunction?: (idOrHandle: string, name: string) => string
 ): string => {
+
+  if (plain) {
+    return val;
+  }
+
+  const value = serialize(parseFragment(val));
+
   if (type === 'html') {
-    return striptags(value, [
+    return striptags(convertMention(value, convertMentionFunction), [
       'ul',
-      'ol',
       'li',
       'h1',
       'h2',
@@ -148,11 +156,46 @@ export const stripHtmlValidation = (
       'p',
       'strong',
       'u',
+      'a',
     ]);
   }
 
   if (type === 'markdown') {
-    return NodeHtmlMarkdown.translate(value);
+    return striptags(
+      convertMention(
+        value
+          .replace(/<h1>([.\s\S]*?)<\/h1>/g, (match, p1) => {
+            return `<h1># ${p1}</h1>\n`;
+          })
+          .replace(/&amp;/gi, '&')
+          .replace(/&nbsp;/gi, ' ')
+          .replace(/<h2>([.\s\S]*?)<\/h2>/g, (match, p1) => {
+            return `<h2>## ${p1}</h2>\n`;
+          })
+          .replace(/<h3>([.\s\S]*?)<\/h3>/g, (match, p1) => {
+            return `<h3>### ${p1}</h3>\n`;
+          })
+          .replace(/<u>([.\s\S]*?)<\/u>/g, (match, p1) => {
+            return `<u>__${p1}__</u>`;
+          })
+          .replace(/<strong>([.\s\S]*?)<\/strong>/g, (match, p1) => {
+            return `<strong>**${p1}**</strong>`;
+          })
+          .replace(/<li.*?>([.\s\S]*?)<\/li.*?>/gm, (match, p1) => {
+            return `<li>- ${p1.replace(/\n/gm, '')}</li>`;
+          })
+          .replace(/<p>([.\s\S]*?)<\/p>/g, (match, p1) => {
+            return `<p>${p1}</p>\n`;
+          })
+          .replace(
+            /<a.*?href="([.\s\S]*?)".*?>([.\s\S]*?)<\/a>/g,
+            (match, p1, p2) => {
+              return `<a href="${p1}">[${p2}](${p1})</a>`;
+            }
+          ),
+        convertMentionFunction
+      )
+    );
   }
 
   if (value.indexOf('<p>') === -1 && !none) {
@@ -164,40 +207,52 @@ export const stripHtmlValidation = (
     .replace(/&nbsp;/gi, ' ')
     .replace(/^<p[^>]*>/i, '')
     .replace(/<p[^>]*>/gi, '\n')
-    .replace(/<\/p>/gi, '');
+    .replace(/<\/p>/gi, '')
+    .replace(/&gt;/gi, '>')
+    .replace(/&lt;/gi, '<')
 
   if (none) {
     return striptags(html);
   }
 
   if (replaceBold) {
-    const processedHtml = convertLinkedinMention(
+    const processedHtml = convertMention(
       convertToAscii(
         html
-          .replace(/<ul>/, "\n<ul>")
-          .replace(/<\/ul>\n/, "</ul>")
           .replace(
-          /<li.*?>(.*?)<\/li.*?>/gms,
-          (match, p1) => {
-            return `<li><p>- ${p1.replace(/\n/gms, '')}\n</p></li>`;
-          }
-        )
-      )
+            /<a.*?href="([.\s\S]*?)".*?>([.\s\S]*?)<\/a>/g,
+            (match, p1, p2) => {
+              return `<a href="${p1}">${p1}</a>`;
+            }
+          )
+          .replace(/<ul>/, '\n<ul>')
+          .replace(/<\/ul>\n/, '</ul>')
+          .replace(/<li.*?>([.\s\S]*?)<\/li.*?>/gm, (match, p1) => {
+            return `<li><p>- ${p1.replace(/\n/gm, '')}\n</p></li>`;
+          })
+      ),
+      convertMentionFunction
     );
 
-    console.log(processedHtml);
-    return striptags(processedHtml, ['h1', 'h2', 'h3']);
+    return striptags(processedHtml);
   }
 
   // Strip all other tags
   return striptags(html, ['ul', 'li', 'h1', 'h2', 'h3']);
 };
 
-export const convertLinkedinMention = (value: string) => {
+export const convertMention = (
+  value: string,
+  process?: (idOrHandle: string, name: string) => string
+) => {
+  if (!process) {
+    return value;
+  }
+
   return value.replace(
-    /<span.+?data-linkedin-id="(.+?)".+?>(.+?)<\/span>/gi,
+    /<span.*?data-mention-id="([.\s\S]*?)"[.\s\S]*?>([.\s\S]*?)<\/span>/gi,
     (match, id, name) => {
-      return `@[${name.replace('@', '')}](${id})`;
+      return `<span>` + process(id, name) + `</span>`;
     }
   );
 };

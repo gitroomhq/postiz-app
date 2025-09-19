@@ -17,7 +17,7 @@ import { useSWRConfig } from 'swr';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
-import { useModals } from '@mantine/modals';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { Textarea } from '@gitroom/react/form/textarea';
 import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
@@ -28,6 +28,7 @@ import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
 import { PurchaseCrypto } from '@gitroom/frontend/components/billing/purchase.crypto';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { FinishTrial } from '@gitroom/frontend/components/billing/finish.trial';
+import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 
 export const Prorate: FC<{
   period: 'MONTHLY' | 'YEARLY';
@@ -376,7 +377,7 @@ export const MainBillingComponent: FC<{
     [monthlyOrYearly, subscription, user, utm]
   );
   if (user?.isLifetime) {
-    router.replace('/billing/lifetime');
+    router.replace('/');
     return null;
   }
   return (
@@ -504,8 +505,8 @@ export const MainBillingComponent: FC<{
           {t(
             'your_subscription_will_be_canceled_at',
             'Your subscription will be canceled at'
-          )}
-          {dayjs(subscription.cancelAt).local().format('D MMM, YYYY')}
+          )}{' '}
+          {newDayjs(subscription.cancelAt).local().format('D MMM, YYYY')}
           <br />
           {t(
             'you_will_never_be_charged_again',

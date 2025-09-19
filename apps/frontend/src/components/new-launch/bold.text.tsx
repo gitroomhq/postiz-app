@@ -75,9 +75,9 @@ export const BoldText: FC<{
   currentValue: string;
 }> = ({ editor }) => {
   const mark = () => {
-    editor.commands.unsetUnderline();
-    editor.commands.toggleBold();
-    editor.commands.focus();
+    editor?.commands?.unsetUnderline();
+    editor?.commands?.toggleBold();
+    editor?.commands?.focus();
   };
   return (
     <div

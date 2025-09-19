@@ -27,12 +27,30 @@ export class PinterestProvider
     'pins:write',
     'user_accounts:read',
   ];
+  override maxConcurrentJob = 3; // Pinterest has more lenient rate limits
 
   editor = 'normal' as const;
 
+  public override handleErrors(body: string):
+    | {
+        type: 'refresh-token' | 'bad-body';
+        value: string;
+      }
+    | undefined {
+    if (body.indexOf('cover_image_url or cover_image_content_type') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'When uploading a video, you must add also an image to be used as a cover image.',
+      };
+    }
+
+    return undefined;
+  }
+
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const { access_token, expires_in } = await (
-      await this.fetch('https://api.pinterest.com/v5/oauth/token', {
+      await fetch('https://api.pinterest.com/v5/oauth/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -50,7 +68,7 @@ export class PinterestProvider
     ).json();
 
     const { id, profile_image, username } = await (
-      await this.fetch('https://api.pinterest.com/v5/user_account', {
+      await fetch('https://api.pinterest.com/v5/user_account', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${access_token}`,
@@ -64,7 +82,7 @@ export class PinterestProvider
       accessToken: access_token,
       refreshToken: refreshToken,
       expiresIn: expires_in,
-      picture: profile_image,
+      picture: profile_image || '',
       username,
     };
   }
@@ -90,7 +108,7 @@ export class PinterestProvider
     refresh: string;
   }) {
     const { access_token, refresh_token, expires_in, scope } = await (
-      await this.fetch('https://api.pinterest.com/v5/oauth/token', {
+      await fetch('https://api.pinterest.com/v5/oauth/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -109,7 +127,7 @@ export class PinterestProvider
     this.checkScopes(this.scopes, scope);
 
     const { id, profile_image, username } = await (
-      await this.fetch('https://api.pinterest.com/v5/user_account', {
+      await fetch('https://api.pinterest.com/v5/user_account', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${access_token}`,
@@ -130,7 +148,7 @@ export class PinterestProvider
 
   async boards(accessToken: string) {
     const { items } = await (
-      await this.fetch('https://api.pinterest.com/v5/boards', {
+      await fetch('https://api.pinterest.com/v5/boards', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -193,15 +211,21 @@ export class PinterestProvider
       let statusCode = '';
       while (statusCode !== 'succeeded') {
         const mediafile = await (
-          await this.fetch('https://api.pinterest.com/v5/media/' + media_id, {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
+          await this.fetch(
+            'https://api.pinterest.com/v5/media/' + media_id,
+            {
+              method: 'GET',
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
             },
-          })
+            '',
+            0,
+            true
+          )
         ).json();
 
-        await timer(3000);
+        await timer(30000);
         statusCode = mediafile.status;
       }
 
@@ -212,57 +236,52 @@ export class PinterestProvider
       path: m.path,
     }));
 
-    try {
-      const { id: pId } = await (
-        await this.fetch('https://api.pinterest.com/v5/pins', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            ...(postDetails?.[0]?.settings.link
-              ? { link: postDetails?.[0]?.settings.link }
-              : {}),
-            ...(postDetails?.[0]?.settings.title
-              ? { title: postDetails?.[0]?.settings.title }
-              : {}),
-            description: postDetails?.[0]?.message,
-            ...(postDetails?.[0]?.settings.dominant_color
-              ? { dominant_color: postDetails?.[0]?.settings.dominant_color }
-              : {}),
-            board_id: postDetails?.[0]?.settings.board,
-            media_source: mediaId
-              ? {
-                  source_type: 'video_id',
-                  media_id: mediaId,
-                  cover_image_url: picture?.path,
-                }
-              : mapImages?.length === 1
-              ? {
-                  source_type: 'image_url',
-                  url: mapImages?.[0]?.path,
-                }
-              : {
-                  source_type: 'multiple_image_urls',
-                  items: mapImages,
-                },
-          }),
-        })
-      ).json();
-
-      return [
-        {
-          id: postDetails?.[0]?.id,
-          postId: pId,
-          releaseURL: `https://www.pinterest.com/pin/${pId}`,
-          status: 'success',
+    const { id: pId } = await (
+      await this.fetch('https://api.pinterest.com/v5/pins', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
         },
-      ];
-    } catch (err) {
-      console.log(err);
-      return [];
-    }
+        body: JSON.stringify({
+          ...(postDetails?.[0]?.settings.link
+            ? { link: postDetails?.[0]?.settings.link }
+            : {}),
+          ...(postDetails?.[0]?.settings.title
+            ? { title: postDetails?.[0]?.settings.title }
+            : {}),
+          description: postDetails?.[0]?.message,
+          ...(postDetails?.[0]?.settings.dominant_color
+            ? { dominant_color: postDetails?.[0]?.settings.dominant_color }
+            : {}),
+          board_id: postDetails?.[0]?.settings.board,
+          media_source: mediaId
+            ? {
+                source_type: 'video_id',
+                media_id: mediaId,
+                cover_image_url: picture?.path,
+              }
+            : mapImages?.length === 1
+            ? {
+                source_type: 'image_url',
+                url: mapImages?.[0]?.path,
+              }
+            : {
+                source_type: 'multiple_image_urls',
+                items: mapImages,
+              },
+        }),
+      })
+    ).json();
+
+    return [
+      {
+        id: postDetails?.[0]?.id,
+        postId: pId,
+        releaseURL: `https://www.pinterest.com/pin/${pId}`,
+        status: 'success',
+      },
+    ];
   }
 
   async analytics(
@@ -276,7 +295,7 @@ export class PinterestProvider
     const {
       all: { daily_metrics },
     } = await (
-      await this.fetch(
+      await fetch(
         `https://api.pinterest.com/v5/user_account/analytics?start_date=${since}&end_date=${until}`,
         {
           method: 'GET',

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Put } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization } from '@prisma/client';
 import { ApiTags } from '@nestjs/swagger';
@@ -26,6 +26,14 @@ export class SignatureController {
     @Body() body: SignatureDto
   ) {
     return this._signatureService.createOrUpdateSignature(org.id, body);
+  }
+
+  @Delete('/:id')
+  async deleteSignature(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string
+  ) {
+    return this._signatureService.deleteSignature(org.id, id);
   }
 
   @Put('/:id')

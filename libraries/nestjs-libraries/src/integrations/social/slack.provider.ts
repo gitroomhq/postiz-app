@@ -10,6 +10,7 @@ import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 
 export class SlackProvider extends SocialAbstract implements SocialProvider {
+  override maxConcurrentJob = 3; // Slack has moderate API limits
   identifier = 'slack';
   name = 'Slack';
   isBetweenSteps = false;
@@ -94,7 +95,7 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
       accessToken: access_token,
       refreshToken: 'null',
       expiresIn: dayjs().add(100, 'years').unix() - dayjs().unix(),
-      picture: user.profile.image_original,
+      picture: user?.profile?.image_original || '',
       username: user.name,
     };
   }

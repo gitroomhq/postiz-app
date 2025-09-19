@@ -11,6 +11,7 @@ import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.ab
 import mime from 'mime';
 import TelegramBot from 'node-telegram-bot-api';
 import { Integration } from '@prisma/client';
+import striptags from 'striptags';
 
 const telegramBot = new TelegramBot(process.env.TELEGRAM_TOKEN!);
 // Added to support local storage posting
@@ -18,12 +19,13 @@ const frontendURL = process.env.FRONTEND_URL || 'http://localhost:5000';
 const mediaStorage = process.env.STORAGE_PROVIDER || 'local';
 
 export class TelegramProvider extends SocialAbstract implements SocialProvider {
+  override maxConcurrentJob = 3; // Telegram has moderate bot API limits
   identifier = 'telegram';
   name = 'Telegram';
   isBetweenSteps = false;
   isWeb3 = true;
   scopes = [] as string[];
-  editor = 'markdown' as const;
+  editor = 'html' as const;
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     return {
@@ -69,7 +71,7 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
       accessToken: String(chat.id),
       refreshToken: '',
       expiresIn: dayjs().add(200, 'year').unix() - dayjs().unix(),
-      picture: photo,
+      picture: photo || '',
       username: chat.username!,
     };
   }
@@ -145,7 +147,16 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
     for (const message of postDetails) {
       let messageId: number | null = null;
       const mediaFiles = message.media || [];
-      const text = message.message || '';
+      const text = striptags(message.message || '', [
+        'u',
+        'strong',
+        'p',
+      ])
+        .replace(/<strong>/g, '<b>')
+        .replace(/<\/strong>/g, '</b>')
+        .replace(/<p>(.*?)<\/p>/g, '$1\n');
+
+      console.log(text);
       // check if media is local to modify url
       const processedMedia = mediaFiles.map((media) => {
         let mediaUrl = media.path;
@@ -176,7 +187,9 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
       });
       // if there's no media, bot sends a text message only
       if (processedMedia.length === 0) {
-        const response = await telegramBot.sendMessage(accessToken, text);
+        const response = await telegramBot.sendMessage(accessToken, text, {
+          parse_mode: 'HTML',
+        });
         messageId = response.message_id;
       }
       // if there's only one media, bot sends the media with the text message as caption
@@ -187,20 +200,20 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
             ? await telegramBot.sendVideo(
                 accessToken,
                 media.media,
-                { caption: text, parse_mode: 'Markdown' },
+                { caption: text, parse_mode: 'HTML' },
                 media.fileOptions
               )
             : media.type === 'photo'
             ? await telegramBot.sendPhoto(
                 accessToken,
                 media.media,
-                { caption: text, parse_mode: 'Markdown' },
+                { caption: text, parse_mode: 'HTML' },
                 media.fileOptions
               )
             : await telegramBot.sendDocument(
                 accessToken,
                 media.media,
-                { caption: text, parse_mode: 'Markdown' },
+                { caption: text, parse_mode: 'HTML' },
                 media.fileOptions
               );
         messageId = response.message_id;
@@ -213,7 +226,7 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
             type: m.type === 'document' ? 'document' : m.type, // Documents are not allowed in media groups
             media: m.media,
             caption: i === 0 && index === 0 ? text : undefined,
-            parse_mode: 'Markdown'
+            parse_mode: 'HTML',
           }));
 
           const response = await telegramBot.sendMediaGroup(

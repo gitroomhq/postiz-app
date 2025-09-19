@@ -46,6 +46,17 @@ export class IntegrationService {
     return true;
   }
 
+  getMentions(platform: string, q: string) {
+    return this._integrationRepository.getMentions(platform, q);
+  }
+
+  insertMentions(
+    platform: string,
+    mentions: { name: string; username: string; image: string }[]
+  ) {
+    return this._integrationRepository.insertMentions(platform, mentions);
+  }
+
   async setTimes(
     orgId: string,
     integrationId: string,
@@ -60,6 +71,10 @@ export class IntegrationService {
       id,
       additionalSettings
     );
+  }
+
+  checkPreviousConnections(org: string, id: string) {
+    return this._integrationRepository.checkPreviousConnections(org, id);
   }
 
   async createOrUpdateIntegration(
@@ -163,7 +178,11 @@ export class IntegrationService {
     await this.informAboutRefreshError(orgId, integration);
   }
 
-  async informAboutRefreshError(orgId: string, integration: Integration, err = '') {
+  async informAboutRefreshError(
+    orgId: string,
+    integration: Integration,
+    err = ''
+  ) {
     await this._notificationService.inAppNotification(
       orgId,
       `Could not refresh your ${integration.providerIdentifier} channel ${err}`,

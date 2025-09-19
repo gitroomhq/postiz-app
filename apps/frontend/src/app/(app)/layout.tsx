@@ -1,3 +1,5 @@
+import { SentryComponent } from '@gitroom/frontend/components/layout/sentry.component';
+
 export const dynamic = 'force-dynamic';
 import '../global.scss';
 import 'react-tooltip/dist/react-tooltip.css';
@@ -16,6 +18,13 @@ import { FacebookComponent } from '@gitroom/frontend/components/layout/facebook.
 import { headers } from 'next/headers';
 import { headerName } from '@gitroom/react/translation/i18n.config';
 import { HtmlComponent } from '@gitroom/frontend/components/layout/html.component';
+// import dynamicLoad from 'next/dynamic';
+// const SetTimezone = dynamicLoad(
+//   () => import('@gitroom/frontend/components/layout/set.timezone'),
+//   {
+//     ssr: false,
+//   }
+// );
 
 const jakartaSans = Plus_Jakarta_Sans({
   weight: ['600', '500'],
@@ -33,12 +42,14 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
-      <body className={clsx(jakartaSans.className, 'dark text-primary !bg-primary')}>
-        <HtmlComponent />
+      <body
+        className={clsx(jakartaSans.className, 'dark text-primary !bg-primary')}
+      >
         <VariableContextComponent
           storageProvider={
             process.env.STORAGE_PROVIDER! as 'local' | 'cloudflare'
           }
+          environment={process.env.NODE_ENV!}
           backendUrl={process.env.NEXT_PUBLIC_BACKEND_URL!}
           plontoKey={process.env.NEXT_PUBLIC_POLOTNO!}
           billingEnabled={!!process.env.STRIPE_PUBLISHABLE_KEY}
@@ -56,6 +67,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           isSecured={!process.env.NOT_SECURED}
           disableImageCompression={!!process.env.DISABLE_IMAGE_COMPRESSION}
           disableXAnalytics={!!process.env.DISABLE_X_ANALYTICS}
+          sentryDsn={process.env.NEXT_PUBLIC_SENTRY_DSN!}
           language={allHeaders.get(headerName)}
           transloadit={
             process.env.TRANSLOADIT_AUTH && process.env.TRANSLOADIT_TEMPLATE
@@ -66,21 +78,25 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
               : []
           }
         >
-          <ToltScript />
-          <FacebookComponent />
-          <Plausible
-            domain={!!process.env.IS_GENERAL ? 'postiz.com' : 'gitroom.com'}
-          >
-            <PHProvider
-              phkey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
-              host={process.env.NEXT_PUBLIC_POSTHOG_HOST}
+          <SentryComponent>
+            {/*<SetTimezone />*/}
+            <HtmlComponent />
+            <ToltScript />
+            <FacebookComponent />
+            <Plausible
+              domain={!!process.env.IS_GENERAL ? 'postiz.com' : 'gitroom.com'}
             >
-              <LayoutContext>
-                <UtmSaver />
-                {children}
-              </LayoutContext>
-            </PHProvider>
-          </Plausible>
+              <PHProvider
+                phkey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
+                host={process.env.NEXT_PUBLIC_POSTHOG_HOST}
+              >
+                <LayoutContext>
+                  <UtmSaver />
+                  {children}
+                </LayoutContext>
+              </PHProvider>
+            </Plausible>
+          </SentryComponent>
         </VariableContextComponent>
       </body>
     </html>

@@ -116,7 +116,7 @@ export function RegisterAfter({
         ...data,
       }),
     })
-      .then((response) => {
+      .then(async (response) => {
         setLoading(false);
         if (response.status === 200) {
           fireEvents('register');
@@ -129,7 +129,7 @@ export function RegisterAfter({
           });
         } else {
           form.setError('email', {
-            message: getHelpfulReasonForRegistrationFailure(response.status),
+            message: await response.text(),
           });
         }
       })

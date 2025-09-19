@@ -1,5 +1,5 @@
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
-import { useModals } from '@mantine/modals';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import React, { FC } from 'react';
 import { Button } from '@gitroom/react/form/button';
 import copy from 'copy-to-clipboard';

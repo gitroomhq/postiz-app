@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "dotenv -e ../../.env -- next dev -p 4200",
     "build": "next build",
+    "build:sentry": "dotenv -e ../../.env -- next build",
     "start": "dotenv -e ../../.env -- next start -p 4200",
     "pm2": "pm2 start pnpm --name frontend -- start"
   },

@@ -102,7 +102,14 @@ export const ThirdPartyComponent = () => {
     return (await fetch('/third-party')).json();
   }, []);
 
-  const { data, isLoading, mutate } = useSWR('third-party', integrations);
+  const { data, isLoading, mutate } = useSWR('third-party', integrations, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    revalidateOnMount: true,
+    refreshWhenHidden: false,
+    refreshWhenOffline: false,
+  });
   const [collapseMenu, setCollapseMenu] = useCookie('collapseMenu', '0');
 
   return (
@@ -141,7 +148,11 @@ export const ThirdPartyComponent = () => {
           </div>
           <div className="flex flex-col gap-[10px]">
             <div className="flex-1 flex flex-col gap-[14px]">
-              <div className={clsx('gap-[16px] flex flex-col relative justify-center group/profile hover:bg-boxHover rounded-e-[8px]')}>
+              <div
+                className={clsx(
+                  'gap-[16px] flex flex-col relative justify-center group/profile hover:bg-boxHover rounded-e-[8px]'
+                )}
+              >
                 {!isLoading && !data?.length ? (
                   <div>No Integrations Yet</div>
                 ) : (

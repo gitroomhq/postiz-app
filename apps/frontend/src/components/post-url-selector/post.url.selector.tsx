@@ -9,6 +9,7 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import removeMd from 'remove-markdown';
 import clsx from 'clsx';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 const postUrlEmitter = new EventEmitter();
 export const ShowPostSelector = () => {
   const [showPostSelector, setShowPostSelector] = useState(false);
@@ -19,7 +20,7 @@ export const ShowPostSelector = () => {
       return tag;
     },
   } as any);
-  const [date, setDate] = useState(dayjs());
+  const [date, setDate] = useState(newDayjs());
   useEffect(() => {
     postUrlEmitter.on(
       'show',
@@ -35,14 +36,14 @@ export const ShowPostSelector = () => {
     return () => {
       setShowPostSelector(false);
       setCallback(null);
-      setDate(dayjs());
+      setDate(newDayjs());
       postUrlEmitter.removeAllListeners();
     };
   }, []);
   const close = useCallback(() => {
     setShowPostSelector(false);
     setCallback(null);
-    setDate(dayjs());
+    setDate(newDayjs());
   }, []);
   if (!showPostSelector) {
     return <></>;

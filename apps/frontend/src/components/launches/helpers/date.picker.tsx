@@ -5,6 +5,7 @@ import { useClickOutside } from '@mantine/hooks';
 import { Button } from '@gitroom/react/form/button';
 import { isUSCitizen } from './isuscitizen.utils';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 export const DatePicker: FC<{
   date: dayjs.Dayjs;
   onChange: (day: dayjs.Dayjs) => void;
@@ -22,10 +23,10 @@ export const DatePicker: FC<{
   const changeDate = useCallback(
     (type: 'date' | 'time') => (day: Date) => {
       onChange(
-        dayjs(
+        newDayjs(
           type === 'time'
-            ? date.format('YYYY-MM-DD') + ' ' + dayjs(day).format('HH:mm:ss')
-            : dayjs(day).format('YYYY-MM-DD') + ' ' + date.format('HH:mm:ss')
+            ? date.format('YYYY-MM-DD') + ' ' + newDayjs(day).format('HH:mm:ss')
+            : newDayjs(day).format('YYYY-MM-DD') + ' ' + date.format('HH:mm:ss')
         )
       );
     },

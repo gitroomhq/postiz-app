@@ -22,6 +22,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     'pages_read_engagement',
     'read_insights',
   ];
+  override maxConcurrentJob = 3; // Facebook has reasonable rate limits
   editor = 'normal' as const;
 
   override handleErrors(body: string):
@@ -198,7 +199,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     refresh?: string;
   }) {
     const getAccessToken = await (
-      await this.fetch(
+      await fetch(
         'https://graph.facebook.com/v20.0/oauth/access_token' +
           `?client_id=${process.env.FACEBOOK_APP_ID}` +
           `&redirect_uri=${encodeURIComponent(
@@ -212,7 +213,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     ).json();
 
     const { access_token } = await (
-      await this.fetch(
+      await fetch(
         'https://graph.facebook.com/v20.0/oauth/access_token' +
           '?grant_type=fb_exchange_token' +
           `&client_id=${process.env.FACEBOOK_APP_ID}` +
@@ -222,7 +223,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     ).json();
 
     const { data } = await (
-      await this.fetch(
+      await fetch(
         `https://graph.facebook.com/v20.0/me/permissions?access_token=${access_token}`
       )
     ).json();
@@ -235,11 +236,9 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     const {
       id,
       name,
-      picture: {
-        data: { url },
-      },
+      picture
     } = await (
-      await this.fetch(
+      await fetch(
         `https://graph.facebook.com/v20.0/me?fields=id,name,picture&access_token=${access_token}`
       )
     ).json();
@@ -250,14 +249,14 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       accessToken: access_token,
       refreshToken: access_token,
       expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
-      picture: url,
+      picture: picture?.data?.url || '',
       username: '',
     };
   }
 
   async pages(accessToken: string) {
     const { data } = await (
-      await this.fetch(
+      await fetch(
         `https://graph.facebook.com/v20.0/me/accounts?fields=id,username,name,picture.type(large)&access_token=${accessToken}`
       )
     ).json();
@@ -275,7 +274,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
         data: { url },
       },
     } = await (
-      await this.fetch(
+      await fetch(
         `https://graph.facebook.com/v20.0/${pageId}?fields=username,access_token,name,picture.type(large)&access_token=${accessToken}`
       )
     ).json();
@@ -428,7 +427,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     const since = dayjs().subtract(date, 'day').unix();
 
     const { data } = await (
-      await this.fetch(
+      await fetch(
         `https://graph.facebook.com/v20.0/${id}/insights?metric=page_impressions_unique,page_posts_impressions_unique,page_post_engagements,page_daily_follows,page_video_views&access_token=${accessToken}&period=day&since=${since}&until=${until}`
       )
     ).json();

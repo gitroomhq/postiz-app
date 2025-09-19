@@ -24,6 +24,7 @@ const list = [
 ];
 
 export class NostrProvider extends SocialAbstract implements SocialProvider {
+  override maxConcurrentJob = 5; // Nostr relays typically have generous limits
   identifier = 'nostr';
   name = 'Nostr';
   isBetweenSteps = false;
@@ -146,7 +147,7 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
         accessToken: AuthService.signJWT({ password: body.password }),
         refreshToken: '',
         expiresIn: dayjs().add(200, 'year').unix() - dayjs().unix(),
-        picture: user.picture,
+        picture: user?.picture || '',
         username: user.name || 'nousername',
       };
     } catch (e) {

@@ -5,7 +5,7 @@ import React, { FC, useMemo, useState, useCallback, useEffect } from 'react';
 import { Web3ProviderInterface } from '@gitroom/frontend/components/launches/web3/web3.provider.interface';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
-import { useModals } from '@mantine/modals';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import {
   NeynarAuthButton,
