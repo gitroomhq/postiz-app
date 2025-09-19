@@ -888,7 +888,7 @@ export class PostsService {
                 ...toPost.list.map((l) => ({
                   id: '',
                   content: l.post,
-                  image: [] as any[],
+                  image: [],
                 })),
                 {
                   id: '',
