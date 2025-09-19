@@ -1,6 +1,6 @@
 'use client';
 
-import React, { FC, useCallback, useRef, useState } from 'react';
+import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { AddEditModalProps } from '@gitroom/frontend/components/new-launch/add.edit.modal';
 import clsx from 'clsx';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -28,6 +28,7 @@ import { CopilotPopup } from '@copilotkit/react-ui';
 import { DummyCodeComponent } from '@gitroom/frontend/components/new-launch/dummy.code.component';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { Checkbox } from '@gitroom/react/form/checkbox';
+import dayjs from 'dayjs';
 
 function countCharacters(text: string, type: string): number {
   if (type !== 'x') {
@@ -133,6 +134,26 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
     },
     [integrations]
   );
+
+  const didRandomizeInitially = useRef(false);
+  useEffect(() => {
+    if (dummy) return;
+    if (!randomizeMinute) return;
+    if (existingData.integration) return;
+    if (!date) return;
+    if (didRandomizeInitially.current) return;
+    if (date.minute() !== 0) return;
+
+    const base = date.clone().second(0).millisecond(0);
+    let minute = Math.floor(Math.random() * 60);
+    const now = dayjs();
+    if (base.isSame(now, 'hour')) {
+      const minNowPlus1 = now.minute() + 1;
+      if (minute < minNowPlus1) minute = Math.min(minNowPlus1, 59);
+    }
+    setDate(base.minute(minute));
+    didRandomizeInitially.current = true;
+  }, [randomizeMinute, date, dummy, existingData, setDate]);
 
   const schedule = useCallback(
     (type: 'draft' | 'now' | 'schedule') => async () => {
@@ -335,7 +356,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                   <RepeatComponent repeat={repeater} onChange={setRepeater} />
                 )}
                 <DatePicker onChange={setDate} date={date} />
-                {!dummy && (
+                {!dummy && !existingData.integration && (
                   <div className="ms-[12px] flex items-center gap-[6px]">
                     <Checkbox
                       disableForm={true}

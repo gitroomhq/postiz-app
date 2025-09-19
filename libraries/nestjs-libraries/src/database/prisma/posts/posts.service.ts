@@ -663,31 +663,6 @@ export class PostsService {
 
   async createPost(orgId: string, body: CreatePostDto): Promise<any[]> {
     const postList = [];
-
-    const targetDateForAll =
-      body.type === 'now'
-        ? dayjs().format('YYYY-MM-DDTHH:mm:00')
-        : body.date;
-
-    const shouldRandomize = body.type === 'schedule' && (body.randomizeMinute ?? true);
-
-    const scheduleDateToUse = (() => {
-      const input = dayjs.utc(targetDateForAll).second(0).millisecond(0);
-      if (shouldRandomize) {
-        if (input.minute() === 0) {
-          let minute = Math.floor(Math.random() * 60);
-          const now = dayjs.utc();
-          if (input.isSame(now, 'hour')) {
-            const minNowPlus1 = now.minute() + 1;
-            if (minute < minNowPlus1) minute = Math.min(minNowPlus1, 59);
-          }
-          return input.minute(minute).format('YYYY-MM-DDTHH:mm:00');
-        }
-        return input.format('YYYY-MM-DDTHH:mm:00');
-      }
-      return input.format('YYYY-MM-DDTHH:mm:00');
-    })();
-
     for (const post of body.posts) {
       const messages = (post.value || []).map((p) => p.content);
       const updateContent = !body.shortLink
@@ -703,7 +678,9 @@ export class PostsService {
         await this._postRepository.createOrUpdatePost(
           body.type,
           orgId,
-          scheduleDateToUse,
+          body.type === 'now'
+            ? dayjs().format('YYYY-MM-DDTHH:mm:00')
+            : body.date,
           post,
           body.tags,
           body.inter
@@ -720,7 +697,7 @@ export class PostsService {
 
       if (
         body.type === 'now' ||
-        (body.type === 'schedule' && dayjs(posts[0].publishDate).isAfter(dayjs()))
+        (body.type === 'schedule' && dayjs(body.date).isAfter(dayjs()))
       ) {
         this._workerServiceProducer.emit('post', {
           id: posts[0].id,
@@ -918,7 +895,7 @@ export class PostsService {
                   content: `Check out the full story here:\n${
                     body.postId || body.url
                   }`,
-                  image: [] as any[],
+                  image: [],
                 },
               ],
             },
