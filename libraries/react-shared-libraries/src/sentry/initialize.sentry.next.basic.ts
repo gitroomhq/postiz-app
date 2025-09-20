@@ -5,6 +5,15 @@ export const initializeSentryBasic = (environment: string, dsn: string, extensio
     return;
   }
 
+  const ignorePatterns = [
+    /^Failed to fetch$/,
+    /^Failed to fetch .*/i,
+    /^Load failed$/i,
+    /^Load failed .*/i,
+    /^NetworkError when attempting to fetch resource\.$/i,
+    /^NetworkError when attempting to fetch resource\. .*/i,
+  ];
+
   try {
     Sentry.init({
       initialScope: {
@@ -27,24 +36,25 @@ export const initializeSentryBasic = (environment: string, dsn: string, extensio
       debug: environment === 'development',
       tracesSampleRate: environment === 'development' ? 1.0 : 0.3,
 
-      // Filtert Events und zeigt das User-Feedback-Modal an
       beforeSend(event, hint) {
         if (event.exception && event.exception.values) {
           for (const exception of event.exception.values) {
-            // Filtert "Failed to fetch" Fehler heraus
-            if (exception.value && /Failed to fetch/.test(exception.value)) {
-              return null; // Verwirft den Event
+            if (exception.value) {
+              for (const pattern of ignorePatterns) {
+                if (pattern.test(exception.value)) {
+                  return null; // Ignore the event
+                }
+              }
             }
           }
         }
-        
-        // Wenn der Event eine Ausnahme ist und nicht gefiltert wurde, 
-        // wird das User-Feedback-Modal angezeigt
+
+        // Show user feedback modal if not filtered
         if (event.exception && event.event_id) {
           Sentry.showReportDialog({ eventId: event.event_id });
         }
-        
-        return event; // Sendet den Event an Sentry
+
+        return event; // Send the event to Sentry
       },
     });
   } catch (err) {}
