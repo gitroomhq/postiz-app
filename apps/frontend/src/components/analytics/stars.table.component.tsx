@@ -150,7 +150,7 @@ export const StarsTableComponent = () => {
     [page, key, state]
   );
   return (
-    <div className="flex flex-1 flex-col gap-[15px] min-h-[426px]">
+    <div className="flex flex-1 flex-col gap-[15px] min-h-[426px]" data-sentry-mask>
       <div className="text-textColor flex gap-[8px] items-center select-none">
         <div
           onClick={changePage('decrease')}
@@ -199,13 +199,13 @@ export const StarsTableComponent = () => {
           )}
         </div>
       </div>
-      <div className="flex-1 bg-secondary">
+      <div className="flex-1 bg-secondary" data-sentry-mask>
         {stars?.stars?.length ? (
           <table className={`table1`}>
             <thead>
               <tr>
                 <th>
-                  <UpDown name="Repository" param="login" />
+                  <UpDown name="Repository" param="login"/>
                 </th>
                 <th>
                   <UpDown name="Date" param="date" />

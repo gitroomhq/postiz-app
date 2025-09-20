@@ -29,7 +29,7 @@ export const PreviewWrapper = ({ children }: { children: ReactNode }) => {
         showDevConsole={false}
       >
         <MantineWrapper>
-          <Toaster />
+          <Toaster/>
           {children}
         </MantineWrapper>
       </CopilotKit>
