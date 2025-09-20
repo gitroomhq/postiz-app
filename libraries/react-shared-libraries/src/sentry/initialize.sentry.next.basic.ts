@@ -50,7 +50,7 @@ export const initializeSentryBasic = (environment: string, dsn: string, extensio
         }
 
         // Show user feedback modal if not filtered
-        if (event.exception && event.event_id) {
+        if (event.event_id) {
           Sentry.showReportDialog({ eventId: event.event_id });
         }
 
