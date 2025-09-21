@@ -168,8 +168,6 @@ export const stripHtmlValidation = (
           })
           .replace(/&amp;/gi, '&')
           .replace(/&nbsp;/gi, ' ')
-          .replace(/&gt;/gi, '>')
-          .replace(/&lt;/gi, '<')
           .replace(/<h2>([.\s\S]*?)<\/h2>/g, (match, p1) => {
             return `<h2>## ${p1}</h2>\n`;
           })
@@ -196,7 +194,9 @@ export const stripHtmlValidation = (
           ),
         convertMentionFunction
       )
-    );
+    )
+      .replace(/&gt;/gi, '>')
+      .replace(/&lt;/gi, '<');
   }
 
   if (value.indexOf('<p>') === -1 && !none) {
