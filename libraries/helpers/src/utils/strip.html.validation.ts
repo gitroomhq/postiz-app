@@ -139,7 +139,6 @@ export const stripHtmlValidation = (
   plain = false,
   convertMentionFunction?: (idOrHandle: string, name: string) => string
 ): string => {
-
   if (plain) {
     return val;
   }
@@ -169,6 +168,8 @@ export const stripHtmlValidation = (
           })
           .replace(/&amp;/gi, '&')
           .replace(/&nbsp;/gi, ' ')
+          .replace(/&gt;/gi, '>')
+          .replace(/&lt;/gi, '<')
           .replace(/<h2>([.\s\S]*?)<\/h2>/g, (match, p1) => {
             return `<h2>## ${p1}</h2>\n`;
           })
@@ -209,7 +210,7 @@ export const stripHtmlValidation = (
     .replace(/<p[^>]*>/gi, '\n')
     .replace(/<\/p>/gi, '')
     .replace(/&gt;/gi, '>')
-    .replace(/&lt;/gi, '<')
+    .replace(/&lt;/gi, '<');
 
   if (none) {
     return striptags(html);
