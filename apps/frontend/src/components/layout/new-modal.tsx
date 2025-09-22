@@ -45,13 +45,17 @@ interface State extends ModalManagerStoreInterface {
 
 const useModalStore = create<State>((set) => ({
   modalManager: [],
-  openModal: (params) =>
+  openModal: (params) => {
+    const newId = params.id || makeId(20);
     set((state) => ({
       modalManager: [
         ...state.modalManager,
-        { id: params.id || makeId(20), ...params },
+        ...(!state.modalManager.some((p) => p.id === newId)
+          ? [{ id: newId, ...params }]
+          : []),
       ],
-    })),
+    }));
+  },
   closeById: (id) =>
     set((state) => ({
       modalManager: state.modalManager.filter((modal) => modal.id !== id),

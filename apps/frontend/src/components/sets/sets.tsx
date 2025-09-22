@@ -98,6 +98,7 @@ export const Sets: FC = () => {
         withCloseButton: false,
         removeLayout: true,
         askClose: true,
+        id: 'add-edit-modal',
         children: (
           <AddEditModal
             allIntegrations={integrations.map((p: any) => ({

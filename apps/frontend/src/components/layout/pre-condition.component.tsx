@@ -5,6 +5,7 @@ import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { Button } from '@gitroom/react/form/button';
 
 export const PreConditionComponentModal: FC = () => {
+  const modal = useModals();
   return (
     <div className="flex flex-col gap-[16px]">
       <div className="whitespace-pre-line">
@@ -21,7 +22,7 @@ export const PreConditionComponentModal: FC = () => {
         >
           Fast track - Charge me now
         </Button>
-        <Button secondary={true}>Cancel</Button>
+        <Button onClick={modal.closeCurrent} secondary={true}>Cancel</Button>
       </div>
     </div>
   );
@@ -33,11 +34,10 @@ export const PreConditionComponent: FC = () => {
     if (query.get('precondition')) {
       modal.openModal({
         title: 'Suspicious activity detected',
-        withCloseButton: false,
+        withCloseButton: true,
         classNames: {
           modal: 'text-textColor',
         },
-        size: 'auto',
         children: <PreConditionComponentModal />,
       });
     }
