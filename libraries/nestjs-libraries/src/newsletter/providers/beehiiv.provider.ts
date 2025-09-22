@@ -1,13 +1,8 @@
-export class NewsletterService {
-  static async register(email: string) {
-    if (
-      !process.env.BEEHIIVE_API_KEY ||
-      !process.env.BEEHIIVE_PUBLICATION_ID ||
-      process.env.NODE_ENV === 'development' ||
-      email.indexOf('@') === -1
-    ) {
-      return;
-    }
+import { NewsletterInterface } from '@gitroom/nestjs-libraries/newsletter/newsletter.interface';
+
+export class BeehiivProvider implements NewsletterInterface {
+  name = 'beehiiv';
+  async register(email: string) {
     const body = {
       email,
       reactivate_existing: false,

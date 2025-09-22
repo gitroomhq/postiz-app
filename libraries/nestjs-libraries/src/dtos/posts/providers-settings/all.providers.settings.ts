@@ -14,6 +14,7 @@ import { MediumSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/provider
 import { DevToSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dev.to.settings.dto';
 import { HashnodeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/hashnode.settings.dto';
 import { WordpressDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/wordpress.dto';
+import { ListmonkDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/listmonk.dto';
 
 export type ProviderExtension<T extends string, M> = { __type: T } & M;
 export type AllProvidersSettings =
@@ -34,6 +35,7 @@ export type AllProvidersSettings =
   | ProviderExtension<'devto', DevToSettingsDto>
   | ProviderExtension<'hashnode', HashnodeSettingsDto>
   | ProviderExtension<'wordpress', WordpressDto>
+  | ProviderExtension<'listmonk', ListmonkDto>
   | ProviderExtension<'facebook', None>
   | ProviderExtension<'threads', None>
   | ProviderExtension<'mastodon', None>
@@ -64,6 +66,7 @@ export const allProviders = (setEmpty?: any) => {
     { value: DevToSettingsDto, name: 'devto' },
     { value: WordpressDto, name: 'wordpress' },
     { value: HashnodeSettingsDto, name: 'hashnode' },
+    { value: ListmonkDto, name: 'listmonk' },
     { value: setEmpty, name: 'facebook' },
     { value: setEmpty, name: 'threads' },
     { value: setEmpty, name: 'mastodon' },
