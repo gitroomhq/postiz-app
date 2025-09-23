@@ -23,8 +23,8 @@ export default withProvider(
     return true;
   },
 
-  // Optional: Delay calculation based on settings (not required for GBP)
-  () => 300
+  // Character limit for GBP posts - 1500 characters
+  () => 1500
 );
 
 // Utility: Check duration of video before posting

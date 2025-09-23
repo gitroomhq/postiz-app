@@ -317,17 +317,28 @@ export class GbpProvider implements SocialProvider {
         const mediaContent = [];
         
         for (const mediaItem of media) {
-          if (mediaItem.type === 'image') {
-            console.log(`📸 Adding image: ${mediaItem.url || mediaItem.path}`);
+          const mediaUrl = mediaItem.url || mediaItem.path;
+          
+          // Detect actual media type from URL/extension
+          const isVideo = /\.(mp4|avi|mov|wmv|flv|webm|mkv|m4v)$/i.test(mediaUrl);
+          const isImage = /\.(jpg|jpeg|png|gif|webp|bmp|tiff)$/i.test(mediaUrl);
+          
+          if (isVideo || mediaItem.type === 'video') {
+            console.log(`⚠️  Video detected but GBP doesn't support video uploads: ${mediaUrl}`);
+            console.log(`ℹ️  Skipping video - only text post will be created`);
+            // Skip videos as GBP API doesn't support them
+            continue;
+          } else if (isImage || mediaItem.type === 'image') {
+            console.log(`📸 Adding image: ${mediaUrl}`);
             mediaContent.push({
               mediaFormat: 'PHOTO',
-              sourceUrl: mediaItem.url || mediaItem.path
+              sourceUrl: mediaUrl
             });
-          } else if (mediaItem.type === 'video') {
-            console.log(`🎥 Adding video: ${mediaItem.url || mediaItem.path}`);
+          } else {
+            console.log(`⚠️  Unknown media type for: ${mediaUrl}, treating as image`);
             mediaContent.push({
-              mediaFormat: 'VIDEO', 
-              sourceUrl: mediaItem.url || mediaItem.path
+              mediaFormat: 'PHOTO',
+              sourceUrl: mediaUrl
             });
           }
         }
