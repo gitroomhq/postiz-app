@@ -408,7 +408,7 @@ export class GbpProvider implements SocialProvider {
     }
 
     return [{
-      id: postId,
+      id: postDetails[0]?.id,
       postId: postId,
       releaseURL: `https://business.google.com/posts/l/${location.name?.split('/').pop()}`,
       status: 'success',
