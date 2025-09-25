@@ -66,7 +66,7 @@ export const Toaster = () => {
           </svg>
         )}
       </div>
-      <div className="flex-1 text-textColor">{toasterText}</div>
+      <div className="flex-1 text-textColor" data-sentry-mask>{toasterText}</div>
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="60"
