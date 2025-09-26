@@ -46,6 +46,8 @@
     "@atproto/api": "^0.15.15",
     "@aws-sdk/client-s3": "^3.787.0",
     "@aws-sdk/s3-request-presigner": "^3.787.0",
+    "basic-ftp": "^5.0.5",
+    "ssh2-sftp-client": "^10.0.3",
     "@casl/ability": "^6.5.0",
     "@copilotkit/react-core": "^1.8.9",
     "@copilotkit/react-textarea": "^1.8.9",
