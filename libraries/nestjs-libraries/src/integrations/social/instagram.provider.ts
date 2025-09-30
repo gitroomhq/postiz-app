@@ -618,7 +618,7 @@ export class InstagramProvider
       ).json();
 
       arr.push({
-        id: firstPost.id,
+        id: post.id,
         postId: commentId,
         releaseURL: linkGlobal,
         status: 'success',

@@ -1,4 +1,4 @@
-'use client';
+ 'use client';
 
 import React, { ReactNode, useCallback } from 'react';
 import { Logo } from '@gitroom/frontend/components/new-layout/logo';
@@ -24,7 +24,6 @@ import { MediaSettingsLayout } from '@gitroom/frontend/components/launches/helpe
 import { Toaster } from '@gitroom/react/toaster/toaster';
 import { ShowPostSelector } from '@gitroom/frontend/components/post-url-selector/post.url.selector';
 import { NewSubscription } from '@gitroom/frontend/components/layout/new.subscription';
-import { Onboarding } from '@gitroom/frontend/components/onboarding/onboarding';
 import { Support } from '@gitroom/frontend/components/layout/support';
 import { ContinueProvider } from '@gitroom/frontend/components/layout/continue.provider';
 import { ContextWrapper } from '@gitroom/frontend/components/layout/user.context';
@@ -39,6 +38,7 @@ import NotificationComponent from '@gitroom/frontend/components/notifications/no
 import { BillingAfter } from '@gitroom/frontend/components/new-layout/billing.after';
 import { OrganizationSelector } from '@gitroom/frontend/components/layout/organization.selector';
 import { PreConditionComponent } from '@gitroom/frontend/components/layout/pre-condition.component';
+ import { AttachToFeedbackIcon } from '@gitroom/frontend/components/new-layout/sentry.feedback.component';
 
 const jakartaSans = Plus_Jakarta_Sans({
   weight: ['600', '500'],
@@ -50,6 +50,8 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
   const fetch = useFetch();
 
   const { backendUrl, billingEnabled, isGeneral } = useVariables();
+
+  // Feedback icon component attaches Sentry feedback to a top-bar icon when DSN is present
   const searchParams = useSearchParams();
   const load = useCallback(async (path: string) => {
     return await (await fetch(path)).json();
@@ -118,6 +120,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                       <LanguageComponent />
                       <ChromeExtensionComponent />
                       <div className="w-[1px] h-[20px] bg-blockSeparator" />
+                      <AttachToFeedbackIcon />
                       <NotificationComponent />
                     </div>
                   </div>

@@ -56,6 +56,14 @@ export class PublicIntegrationsController {
     );
   }
 
+  @Get('/find-slot/:id')
+  async findSlotIntegration(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id?: string
+  ) {
+    return { date: await this._postsService.findFreeDateTime(org.id, id) };
+  }
+
   @Get('/posts')
   async getPosts(
     @GetOrgFromRequest() org: Organization,
@@ -128,9 +136,11 @@ export class PublicIntegrationsController {
   }
 
   @Post('/video/function')
-  videoFunction(
-    @Body() body: VideoFunctionDto
-  ) {
-    return this._mediaService.videoFunction(body.identifier, body.functionName, body.params);
+  videoFunction(@Body() body: VideoFunctionDto) {
+    return this._mediaService.videoFunction(
+      body.identifier,
+      body.functionName,
+      body.params
+    );
   }
 }

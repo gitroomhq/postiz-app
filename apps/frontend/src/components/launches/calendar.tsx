@@ -53,7 +53,6 @@ import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.m
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
-import { ModalWrapperComponent } from '../new-launch/modal.wrapper.component';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 
 // Extend dayjs with necessary plugins
@@ -464,6 +463,7 @@ export const CalendarColumn: FC<{
           ? ExistingDataContextProvider
           : Fragment;
         modal.openModal({
+          id: 'add-edit-modal',
           closeOnClickOutside: false,
           removeLayout: true,
           closeOnEscape: false,
@@ -553,6 +553,7 @@ export const CalendarColumn: FC<{
       classNames: {
         modal: 'w-[100%] max-w-[1400px] text-textColor',
       },
+      id: 'add-edit-modal',
       children: (
         <AddEditModal
           allIntegrations={integrations.map((p) => ({
