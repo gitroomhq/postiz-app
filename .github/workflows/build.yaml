@@ -21,6 +21,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
+          fetch-depth: 0
 
       - name: Install pnpm
         uses: pnpm/action-setup@v2
@@ -48,3 +49,36 @@ jobs:
 
       - name: Build
         run: pnpm run build
+
+      - name: Get Project Version from Git Tag
+        id: get_version
+        run: |
+          # Use 'git describe' to find the closest tag, falling back to the commit SHA if no tag is found.
+          # --tags includes all tags, --always ensures it always outputs something.
+          VERSION=$(git describe --tags --always)
+          echo "Project version is $VERSION"
+          echo "tag=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: SonarQube Analysis (Pull Request)
+        uses: SonarSource/sonarqube-scan-action@v6
+        if: always() && github.event_name == 'pull_request'
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          
+          SONAR_PULL_REQUEST_KEY: ${{ github.event.pull_request.number }}
+          SONAR_PULL_REQUEST_BRANCH: ${{ github.head_ref }}
+          SONAR_PULL_REQUEST_BASE: ${{ github.base_ref }}
+        with: 
+          args: >
+            -Dsonar.projectVersion=${{ steps.get_version.outputs.tag }}
+      
+      - name: SonarQube Analysis (Branch)
+        uses: SonarSource/sonarqube-scan-action@v6
+        if: always() && github.event_name != 'pull_request'
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        with: 
+          args: >
+            -Dsonar.projectVersion=${{ steps.get_version.outputs.tag }}
