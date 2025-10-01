@@ -4,6 +4,8 @@ import { DatabaseModule } from '@gitroom/nestjs-libraries/database/prisma/databa
 import { BullMqModule } from '@gitroom/nestjs-libraries/bull-mq-transport-new/bull.mq.module';
 import { SentryModule } from '@sentry/nestjs/setup';
 import { FILTER } from '@gitroom/nestjs-libraries/sentry/sentry.exception';
+import { CheckMissingQueues } from '@gitroom/cron/tasks/check.missing.queues';
+import { PostNowPendingQueues } from '@gitroom/cron/tasks/post.now.pending.queues';
 
 @Module({
   imports: [
@@ -13,8 +15,6 @@ import { FILTER } from '@gitroom/nestjs-libraries/sentry/sentry.exception';
     BullMqModule,
   ],
   controllers: [],
-  providers: [
-    FILTER
-  ],
+  providers: [FILTER, CheckMissingQueues, PostNowPendingQueues],
 })
 export class CronModule {}

@@ -1,7 +1,9 @@
-import { IsBoolean, ValidateIf, IsIn, IsString, MaxLength } from 'class-validator';
+import {
+  IsBoolean, ValidateIf, IsIn, IsString, MaxLength, IsOptional
+} from 'class-validator';
 
 export class TikTokDto {
-  @ValidateIf(p => p.title)
+  @ValidateIf((p) => p.title)
   @MaxLength(90)
   title: string;
 
@@ -32,6 +34,10 @@ export class TikTokDto {
 
   @IsBoolean()
   brand_content_toggle: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  video_made_with_ai: boolean;
 
   @IsBoolean()
   brand_organic_toggle: boolean;

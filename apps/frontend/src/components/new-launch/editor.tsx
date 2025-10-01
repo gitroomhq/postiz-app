@@ -10,6 +10,7 @@ import React, {
   ClipboardEvent,
   forwardRef,
   useImperativeHandle,
+  Fragment,
 } from 'react';
 import clsx from 'clsx';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
@@ -20,7 +21,10 @@ import { BoldText } from '@gitroom/frontend/components/new-launch/bold.text';
 import { UText } from '@gitroom/frontend/components/new-launch/u.text';
 import { SignatureBox } from '@gitroom/frontend/components/signature';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
+import {
+  SelectedIntegrations,
+  useLaunchStore,
+} from '@gitroom/frontend/components/new-launch/store';
 import { useShallow } from 'zustand/react/shallow';
 import { AddPostButton } from '@gitroom/frontend/components/new-launch/add.post.button';
 import { MultiMediaComponent } from '@gitroom/frontend/components/media/media.component';
@@ -28,10 +32,10 @@ import { UpDownArrow } from '@gitroom/frontend/components/launches/up.down.arrow
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
-import { LinkedinCompanyPop } from '@gitroom/frontend/components/launches/helpers/linkedin.component';
 import { useDropzone } from 'react-dropzone';
 import { useUppyUploader } from '@gitroom/frontend/components/media/new.uploader';
 import { Dashboard } from '@uppy/react';
+import Link from '@tiptap/extension-link';
 import {
   useEditor,
   EditorContent,
@@ -52,10 +56,9 @@ import Heading from '@tiptap/extension-heading';
 import { HeadingComponent } from '@gitroom/frontend/components/new-launch/heading.component';
 import Mention from '@tiptap/extension-mention';
 import { suggestion } from '@gitroom/frontend/components/new-launch/mention.component';
-import { useCustomProviderFunction } from '@gitroom/frontend/components/launches/helpers/use.custom.provider.function';
-import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import { useDebouncedCallback } from 'use-debounce';
+import { AComponent } from '@gitroom/frontend/components/new-launch/a.component';
+import { capitalize } from 'lodash';
 
 const InterceptBoldShortcut = Extension.create({
   name: 'preventBoldWithUnderline',
@@ -64,8 +67,8 @@ const InterceptBoldShortcut = Extension.create({
     return {
       'Mod-b': () => {
         // For example, toggle bold while removing underline
-        this.editor.commands.unsetUnderline();
-        return this.editor.commands.toggleBold();
+        this?.editor?.commands?.unsetUnderline();
+        return this?.editor?.commands?.toggleBold();
       },
     };
   },
@@ -78,8 +81,8 @@ const InterceptUnderlineShortcut = Extension.create({
     return {
       'Mod-u': () => {
         // For example, toggle bold while removing underline
-        this.editor.commands.unsetBold();
-        return this.editor.commands.toggleUnderline();
+        this?.editor?.commands?.unsetBold();
+        return this?.editor?.commands?.toggleUnderline();
       },
     };
   },
@@ -116,6 +119,8 @@ export const EditorWrapper: FC<{
     editor,
     loadedState,
     setLoadedState,
+    selectedIntegration,
+    chars,
   } = useLaunchStore(
     useShallow((state) => ({
       internal: state.internal.find((p) => p.integration.id === state.current),
@@ -144,6 +149,8 @@ export const EditorWrapper: FC<{
       editor: state.editor,
       loadedState: state.loaded,
       setLoadedState: state.setLoaded,
+      selectedIntegration: state.selectedIntegrations,
+      chars: state.chars,
     }))
   );
 
@@ -359,6 +366,21 @@ export const EditorWrapper: FC<{
                 totalChars={totalChars}
                 appendImages={appendImages(index)}
                 dummy={dummy}
+                selectedIntegration={selectedIntegration}
+                chars={chars}
+                childButton={
+                  <>
+                    {canEdit ? (
+                      <AddPostButton
+                        num={index}
+                        onClick={addValue(index)}
+                        postComment={postComment}
+                      />
+                    ) : (
+                      <div className="h-[25px]" />
+                    )}
+                  </>
+                }
               />
             </div>
             <div className="flex flex-col items-center gap-[10px]">
@@ -408,16 +430,6 @@ export const EditorWrapper: FC<{
               )}
             </div>
           </div>
-
-          {canEdit ? (
-            <AddPostButton
-              num={index}
-              onClick={addValue(index)}
-              postComment={postComment}
-            />
-          ) : (
-            <div className="h-[25px]" />
-          )}
         </div>
       ))}
     </div>
@@ -438,7 +450,10 @@ export const Editor: FC<{
   validateChars?: boolean;
   identifier?: string;
   totalChars?: number;
+  selectedIntegration: SelectedIntegrations[];
   dummy: boolean;
+  chars: Record<string, number>;
+  childButton?: React.ReactNode;
 }> = (props) => {
   const {
     editorType = 'normal',
@@ -446,11 +461,13 @@ export const Editor: FC<{
     pictures,
     setImages,
     num,
-    autoComplete,
     validateChars,
     identifier,
     appendImages,
+    selectedIntegration,
     dummy,
+    chars,
+    childButton,
   } = props;
   const user = useUser();
   const [id] = useState(makeId(10));
@@ -505,14 +522,14 @@ export const Editor: FC<{
 
   const addText = useCallback(
     (emoji: string) => {
-      editorRef?.current?.editor.commands.insertContent(emoji);
-      editorRef?.current?.editor.commands.focus();
+      editorRef?.current?.editor?.commands?.insertContent(emoji);
+      editorRef?.current?.editor?.commands?.focus();
     },
     [props.value, id]
   );
 
   return (
-    <div>
+    <div className="flex flex-col gap-[20px]">
       <div className="relative bg-bigStrip" id={id}>
         <div className="flex gap-[5px] bg-newBgLineColor border-b border-t border-customColor3 justify-center items-center p-[5px]">
           <SignatureBox editor={editorRef?.current?.editor} />
@@ -524,18 +541,23 @@ export const Editor: FC<{
             editor={editorRef?.current?.editor}
             currentValue={props.value!}
           />
-          {(editorType === 'markdown' || editorType === 'html') && (
-            <>
-              <Bullets
-                editor={editorRef?.current?.editor}
-                currentValue={props.value!}
-              />
-              <HeadingComponent
-                editor={editorRef?.current?.editor}
-                currentValue={props.value!}
-              />
-            </>
-          )}
+          {(editorType === 'markdown' || editorType === 'html') &&
+            identifier !== 'telegram' && (
+              <>
+                <AComponent
+                  editor={editorRef?.current?.editor}
+                  currentValue={props.value!}
+                />
+                <Bullets
+                  editor={editorRef?.current?.editor}
+                  currentValue={props.value!}
+                />
+                <HeadingComponent
+                  editor={editorRef?.current?.editor}
+                  currentValue={props.value!}
+                />
+              </>
+            )}
           <div
             className="select-none cursor-pointer w-[40px] p-[5px] text-center"
             onClick={() => setEmojiPickerOpen(!emojiPickerOpen)}
@@ -633,17 +655,48 @@ export const Editor: FC<{
           </div>
         </div>
       </div>
-      <div className="absolute bottom-10px end-[25px]">
-        {(props?.totalChars || 0) > 0 && (
-          <div
-            className={clsx(
-              'text-end text-sm mt-1',
-              valueWithoutHtml.length > props.totalChars && '!text-red-500'
-            )}
-          >
-            {valueWithoutHtml.length}/{props.totalChars}
-          </div>
-        )}
+      <div className="flex">
+        <div className="flex-1">{childButton}</div>
+        <div className="bottom-10px end-[25px]">
+          {(props?.totalChars || 0) > 0 ? (
+            <div
+              className={clsx(
+                'text-end text-sm mt-1',
+                valueWithoutHtml.length > props.totalChars && '!text-red-500'
+              )}
+            >
+              {valueWithoutHtml.length}/{props.totalChars}
+            </div>
+          ) : (
+            <div
+              className={clsx(
+                'text-end text-sm mt-1 grid grid-cols-[max-content_max-content] gap-x-[5px]'
+              )}
+            >
+              {selectedIntegration?.map((p) => (
+                <Fragment key={p.integration.id}>
+                  <div
+                    className={
+                      valueWithoutHtml.length > chars?.[p.integration.id] &&
+                      '!text-red-500'
+                    }
+                  >
+                    {p.integration.name} ({capitalize(p.integration.identifier)}
+                    ):
+                  </div>
+                  <div
+                    className={
+                      valueWithoutHtml.length > chars?.[p.integration.id] &&
+                      '!text-red-500'
+                    }
+                  >
+                    {valueWithoutHtml.length}/{chars?.[p.integration.id]}
+                  </div>
+                </Fragment>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -706,6 +759,84 @@ export const OnlyEditor = forwardRef<
       InterceptUnderlineShortcut,
       BulletList,
       ListItem,
+      ...(editorType === 'html' || editorType === 'markdown'
+        ? [
+            Link.configure({
+              openOnClick: false,
+              autolink: true,
+              defaultProtocol: 'https',
+              protocols: ['http', 'https'],
+              isAllowedUri: (url, ctx) => {
+                try {
+                  // prevent transforming plain emails like foo@bar.com into links
+                  const trimmed = String(url).trim();
+                  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                  if (emailPattern.test(trimmed)) {
+                    return false;
+                  }
+
+                  // construct URL
+                  const parsedUrl = url.includes(':')
+                    ? new URL(url)
+                    : new URL(`${ctx.defaultProtocol}://${url}`);
+
+                  // use default validation
+                  if (!ctx.defaultValidate(parsedUrl.href)) {
+                    return false;
+                  }
+
+                  // disallowed protocols
+                  const disallowedProtocols = ['ftp', 'file', 'mailto'];
+                  const protocol = parsedUrl.protocol.replace(':', '');
+
+                  if (disallowedProtocols.includes(protocol)) {
+                    return false;
+                  }
+
+                  // only allow protocols specified in ctx.protocols
+                  const allowedProtocols = ctx.protocols.map((p) =>
+                    typeof p === 'string' ? p : p.scheme
+                  );
+
+                  if (!allowedProtocols.includes(protocol)) {
+                    return false;
+                  }
+
+                  // all checks have passed
+                  return true;
+                } catch {
+                  return false;
+                }
+              },
+              shouldAutoLink: (url) => {
+                try {
+                  // prevent auto-linking of plain emails like foo@bar.com
+                  const trimmed = String(url).trim();
+                  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                  if (emailPattern.test(trimmed)) {
+                    return false;
+                  }
+
+                  // construct URL
+                  const parsedUrl = url.includes(':')
+                    ? new URL(url)
+                    : new URL(`https://${url}`);
+
+                  // only auto-link if the domain is not in the disallowed list
+                  const disallowedDomains = [
+                    'example-no-autolink.com',
+                    'another-no-autolink.com',
+                  ];
+                  const domain = parsedUrl.hostname;
+
+                  return !disallowedDomains.includes(domain);
+                } catch {
+                  return false;
+                }
+              },
+            }),
+          ]
+        : []),
       ...(internal?.integration?.id
         ? [
             Mention.configure({
@@ -726,9 +857,13 @@ export const OnlyEditor = forwardRef<
             }),
           ]
         : []),
-      Heading.configure({
-        levels: [1, 2, 3],
-      }),
+      ...(editorType === 'html' || editorType === 'markdown'
+        ? [
+            Heading.configure({
+              levels: [1, 2, 3],
+            }),
+          ]
+        : []),
       History.configure({
         depth: 100, // default is 100
         newGroupDelay: 100, // default is 500ms

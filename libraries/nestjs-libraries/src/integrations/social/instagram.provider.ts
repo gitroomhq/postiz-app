@@ -29,6 +29,7 @@ export class InstagramProvider
     'instagram_manage_comments',
     'instagram_manage_insights',
   ];
+  override maxConcurrentJob = 10;
   editor = 'normal' as const;
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
@@ -45,10 +46,17 @@ export class InstagramProvider
 
   public override handleErrors(body: string):
     | {
-        type: 'refresh-token' | 'bad-body';
+        type: 'refresh-token' | 'bad-body' | 'retry';
         value: string;
       }
     | undefined {
+
+    if (body.indexOf('An unknown error occurred') > -1) {
+      return {
+        type: 'retry' as const,
+        value: 'An unknown error occurred, please try again later',
+      };
+    }
 
     if (body.indexOf('REVOKED_ACCESS_TOKEN') > -1) {
       return {
@@ -326,7 +334,7 @@ export class InstagramProvider
     refresh: string;
   }) {
     const getAccessToken = await (
-      await this.fetch(
+      await fetch(
         'https://graph.facebook.com/v20.0/oauth/access_token' +
           `?client_id=${process.env.FACEBOOK_APP_ID}` +
           `&redirect_uri=${encodeURIComponent(
@@ -340,7 +348,7 @@ export class InstagramProvider
     ).json();
 
     const { access_token, expires_in, ...all } = await (
-      await this.fetch(
+      await fetch(
         'https://graph.facebook.com/v20.0/oauth/access_token' +
           '?grant_type=fb_exchange_token' +
           `&client_id=${process.env.FACEBOOK_APP_ID}` +
@@ -350,7 +358,7 @@ export class InstagramProvider
     ).json();
 
     const { data } = await (
-      await this.fetch(
+      await fetch(
         `https://graph.facebook.com/v20.0/me/permissions?access_token=${access_token}`
       )
     ).json();
@@ -363,11 +371,9 @@ export class InstagramProvider
     const {
       id,
       name,
-      picture: {
-        data: { url },
-      },
+      picture
     } = await (
-      await this.fetch(
+      await fetch(
         `https://graph.facebook.com/v20.0/me?fields=id,name,picture&access_token=${access_token}`
       )
     ).json();
@@ -378,14 +384,14 @@ export class InstagramProvider
       accessToken: access_token,
       refreshToken: access_token,
       expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
-      picture: url,
+      picture: picture?.data?.url || '',
       username: '',
     };
   }
 
   async pages(accessToken: string) {
     const { data } = await (
-      await this.fetch(
+      await fetch(
         `https://graph.facebook.com/v20.0/me/accounts?fields=id,instagram_business_account,username,name,picture.type(large)&access_token=${accessToken}&limit=500`
       )
     ).json();
@@ -397,7 +403,7 @@ export class InstagramProvider
           return {
             pageId: p.id,
             ...(await (
-              await this.fetch(
+              await fetch(
                 `https://graph.facebook.com/v20.0/${p.instagram_business_account.id}?fields=name,profile_picture_url&access_token=${accessToken}&limit=500`
               )
             ).json()),
@@ -419,18 +425,17 @@ export class InstagramProvider
     data: { pageId: string; id: string }
   ) {
     const { access_token, ...all } = await (
-      await this.fetch(
+      await fetch(
         `https://graph.facebook.com/v20.0/${data.pageId}?fields=access_token,name,picture.type(large)&access_token=${accessToken}`
       )
     ).json();
 
     const { id, name, profile_picture_url, username } = await (
-      await this.fetch(
+      await fetch(
         `https://graph.facebook.com/v20.0/${data.id}?fields=username,name,profile_picture_url&access_token=${accessToken}`
       )
     ).json();
 
-    console.log(id, name, profile_picture_url, username);
     return {
       id,
       name,
@@ -498,10 +503,14 @@ export class InstagramProvider
         while (status === 'IN_PROGRESS') {
           const { status_code } = await (
             await this.fetch(
-              `https://${type}/v20.0/${photoId}?access_token=${accessToken}&fields=status_code`
+              `https://${type}/v20.0/${photoId}?access_token=${accessToken}&fields=status_code`,
+              undefined,
+              '',
+              0,
+              true,
             )
           ).json();
-          await timer(10000);
+          await timer(30000);
           status = status_code;
         }
         console.log('in progress3', id);
@@ -558,10 +567,14 @@ export class InstagramProvider
       while (status === 'IN_PROGRESS') {
         const { status_code } = await (
           await this.fetch(
-            `https://${type}/v20.0/${containerId}?fields=status_code&access_token=${accessToken}`
+            `https://${type}/v20.0/${containerId}?fields=status_code&access_token=${accessToken}`,
+            undefined,
+            '',
+            0,
+            true
           )
         ).json();
-        await timer(10000);
+        await timer(30000);
         status = status_code;
       }
 
@@ -605,7 +618,7 @@ export class InstagramProvider
       ).json();
 
       arr.push({
-        id: firstPost.id,
+        id: post.id,
         postId: commentId,
         releaseURL: linkGlobal,
         status: 'success',
@@ -667,13 +680,13 @@ export class InstagramProvider
     const since = dayjs().subtract(date, 'day').unix();
 
     const { data, ...all } = await (
-      await this.fetch(
+      await fetch(
         `https://${type}/v21.0/${id}/insights?metric=follower_count,reach&access_token=${accessToken}&period=day&since=${since}&until=${until}`
       )
     ).json();
 
     const { data: data2, ...all2 } = await (
-      await this.fetch(
+      await fetch(
         `https://${type}/v21.0/${id}/insights?metric_type=total_value&metric=likes,views,comments,shares,saves,replies&access_token=${accessToken}&period=day&since=${since}&until=${until}`
       )
     ).json();

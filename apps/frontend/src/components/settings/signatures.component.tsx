@@ -3,7 +3,7 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { Button } from '@gitroom/react/form/button';
 import clsx from 'clsx';
-import { useModals } from '@mantine/modals';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { array, boolean, object, string } from 'yup';
 import { FormProvider, useForm } from 'react-hook-form';
@@ -12,12 +12,14 @@ import { CopilotTextarea } from '@copilotkit/react-textarea';
 import { Select } from '@gitroom/react/form/select';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 export const SignaturesComponent: FC<{
   appendSignature?: (value: string) => void;
 }> = (props) => {
   const { appendSignature } = props;
   const fetch = useFetch();
   const modal = useModals();
+  const toaster = useToaster();
   const load = useCallback(async () => {
     return (await fetch('/signatures')).json();
   }, []);
@@ -25,15 +27,33 @@ export const SignaturesComponent: FC<{
   const addSignature = useCallback(
     (data?: any) => () => {
       modal.openModal({
-        title: '',
-        withCloseButton: false,
-        classNames: {
-          modal: 'bg-transparent text-textColor',
-        },
+        title: data ? 'Edit Signature' : 'Add Signature',
+        withCloseButton: true,
         children: <AddOrRemoveSignature data={data} reload={mutate} />,
       });
     },
     [mutate]
+  );
+
+  const deleteSignature = useCallback(
+    (data: any) => async () => {
+      if (
+        await deleteDialog(
+          t(
+            'are_you_sure_you_want_to_delete',
+            `Are you sure you want to delete?`,
+            { name: data.content.slice(0, 15) + '...' }
+          )
+        )
+      ) {
+        await fetch(`/signatures/${data.id}`, {
+          method: 'DELETE',
+        });
+        mutate();
+        toaster.show('Signature deleted successfully', 'success');
+      }
+    },
+    []
   );
 
   const t = useT();
@@ -92,7 +112,7 @@ export const SignaturesComponent: FC<{
                   </div>
                   <div className="flex justify-center">
                     <div>
-                      <Button onClick={addSignature(p)}>
+                      <Button onClick={deleteSignature(p)}>
                         {t('delete', 'Delete')}
                       </Button>
                     </div>
@@ -147,7 +167,7 @@ const AddOrRemoveSignature: FC<{
           : 'Signature added successfully',
         'success'
       );
-      modal.closeModal(modal.modals[modal.modals.length - 1].id);
+      modal.closeCurrent();
       reload();
     },
     [data, modal]
@@ -158,14 +178,11 @@ const AddOrRemoveSignature: FC<{
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(callBack)}>
-        <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-customColor6 bg-sixth p-[16px] pt-0 w-[500px]">
-          <TopTitle title={data ? 'Edit Signature' : 'Add Signature'} />
+        <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] pt-0">
           <button
             className="outline-none absolute end-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
             type="button"
-            onClick={() =>
-              modal.closeModal(modal.modals[modal.modals.length - 1].id)
-            }
+            onClick={() => modal.closeCurrent()}
           >
             <svg
               viewBox="0 0 15 15"

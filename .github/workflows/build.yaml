@@ -3,11 +3,11 @@ name: Build
 
 on:
   push:
-  pull_request:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    
 
     strategy:
       matrix:
@@ -16,6 +16,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
@@ -47,3 +50,20 @@ jobs:
 
       - name: Build
         run: pnpm run build
+
+      - name: Get Commit SHA (short)
+        id: get_version
+        run: |
+          # Get the short 8-character commit SHA
+          VERSION=$(git rev-parse --short=8 HEAD)
+          echo "Commit SHA is $VERSION"
+          echo "tag=$VERSION" >> $GITHUB_OUTPUT
+      
+      - name: SonarQube Analysis (Branch)
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        with: 
+          args: >
+            -Dsonar.projectVersion=${{ steps.get_version.outputs.tag }}

@@ -30,7 +30,7 @@ import 'dayjs/locale/ar';
 import 'dayjs/locale/tr';
 import 'dayjs/locale/vi';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
-import { useModals } from '@mantine/modals';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import clsx from 'clsx';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { ExistingDataContextProvider } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
@@ -53,7 +53,7 @@ import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.m
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
-import { ModalWrapperComponent } from '../new-launch/modal.wrapper.component';
+import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 
 // Extend dayjs with necessary plugins
 extend(isSameOrAfter);
@@ -146,7 +146,7 @@ export const DayView = () => {
       {options.map((option) => (
         <Fragment key={option[0].time}>
           <div className="text-center text-[14px]">
-            {dayjs()
+            {newDayjs()
               .utc()
               .startOf('day')
               .add(option[0].time, 'minute')
@@ -186,7 +186,7 @@ export const WeekView = () => {
     dayjs.locale(currentLanguage);
 
     const days = [];
-    const weekStart = dayjs(startDate);
+    const weekStart = newDayjs(startDate);
     for (let i = 0; i < 7; i++) {
       const day = weekStart.add(i, 'day');
       days.push({
@@ -214,10 +214,11 @@ export const WeekView = () => {
               <div
                 className={clsx(
                   'text-[14px] font-[600] flex items-center justify-center gap-[6px]',
-                  day.day === dayjs().format('L') && 'text-newTableTextFocused'
+                  day.day === newDayjs().format('L') &&
+                    'text-newTableTextFocused'
                 )}
               >
-                {day.day === dayjs().format('L') && (
+                {day.day === newDayjs().format('L') && (
                   <div className="w-[6px] h-[6px] bg-newTableTextFocused rounded-full" />
                 )}
                 {day.day}
@@ -259,17 +260,17 @@ export const MonthView = () => {
     const days = [];
     // Starting from Monday (1) to Sunday (7)
     for (let i = 1; i <= 7; i++) {
-      days.push(dayjs().day(i).format('dddd'));
+      days.push(newDayjs().day(i).format('dddd'));
     }
     return days;
   }, [i18next.resolvedLanguage]);
 
   const calendarDays = useMemo(() => {
-    const monthStart = dayjs(startDate);
+    const monthStart = newDayjs(startDate);
     const currentMonth = monthStart.month();
     const currentYear = monthStart.year();
 
-    const startOfMonth = dayjs(new Date(currentYear, currentMonth, 1));
+    const startOfMonth = newDayjs(new Date(currentYear, currentMonth, 1));
 
     // Calculate the day offset for Monday (isoWeekday() returns 1 for Monday)
     const startDayOfWeek = startOfMonth.isoWeekday(); // 1 for Monday, 7 for Sunday
@@ -314,7 +315,7 @@ export const MonthView = () => {
               className="text-center items-center justify-center flex min-h-[100px]"
             >
               <CalendarColumn
-                getDate={dayjs(date.day).endOf('day')}
+                getDate={newDayjs(date.day).endOf('day')}
                 randomHour={true}
               />
             </div>
@@ -390,7 +391,9 @@ export const CalendarColumn: FC<{
 
   const isBeforeNow = useMemo(() => {
     const originalUtc = getDate.startOf('hour');
-    return originalUtc.startOf('hour').isBefore(dayjs().startOf('hour').utc());
+    return originalUtc
+      .startOf('hour')
+      .isBefore(newDayjs().startOf('hour').utc());
   }, [getDate, num]);
 
   const { start, stop } = useInterval(
@@ -460,9 +463,12 @@ export const CalendarColumn: FC<{
           ? ExistingDataContextProvider
           : Fragment;
         modal.openModal({
+          id: 'add-edit-modal',
           closeOnClickOutside: false,
+          removeLayout: true,
           closeOnEscape: false,
           withCloseButton: false,
+          askClose: true,
           classNames: {
             modal: 'w-[100%] max-w-[1400px] text-textColor',
           },
@@ -514,28 +520,24 @@ export const CalendarColumn: FC<{
       ? undefined
       : await new Promise((resolve) => {
           modal.openModal({
-            title: '',
+            title: t('select_set', 'Select a Set'),
             closeOnClickOutside: true,
+            askClose: true,
             closeOnEscape: true,
-            withCloseButton: false,
+            withCloseButton: true,
             onClose: () => resolve('exit'),
-            classNames: {
-              modal: 'text-textColor',
-            },
             children: (
-              <ModalWrapperComponent title={t('select_set', 'Select a Set')}>
-                <SetSelectionModal
-                  sets={sets}
-                  onSelect={(selectedSet) => {
-                    resolve(selectedSet);
-                    modal.closeAll();
-                  }}
-                  onContinueWithoutSet={() => {
-                    resolve(undefined);
-                    modal.closeAll();
-                  }}
-                />
-              </ModalWrapperComponent>
+              <SetSelectionModal
+                sets={sets}
+                onSelect={(selectedSet) => {
+                  resolve(selectedSet);
+                  modal.closeAll();
+                }}
+                onContinueWithoutSet={() => {
+                  resolve(undefined);
+                  modal.closeAll();
+                }}
+              />
             ),
           });
         });
@@ -546,9 +548,12 @@ export const CalendarColumn: FC<{
       closeOnClickOutside: false,
       closeOnEscape: false,
       withCloseButton: false,
+      removeLayout: true,
+      askClose: true,
       classNames: {
         modal: 'w-[100%] max-w-[1400px] text-textColor',
       },
+      id: 'add-edit-modal',
       children: (
         <AddEditModal
           allIntegrations={integrations.map((p) => ({
@@ -571,8 +576,8 @@ export const CalendarColumn: FC<{
             randomHour
               ? getDate.hour(Math.floor(Math.random() * 24))
               : getDate.format('YYYY-MM-DDTHH:mm:ss') ===
-                dayjs().startOf('hour').format('YYYY-MM-DDTHH:mm:ss')
-              ? dayjs().add(10, 'minute')
+                newDayjs().startOf('hour').format('YYYY-MM-DDTHH:mm:ss')
+              ? newDayjs().add(10, 'minute')
               : getDate
           }
           {...(set?.content ? { set: JSON.parse(set.content) } : {})}
@@ -585,17 +590,14 @@ export const CalendarColumn: FC<{
   const openStatistics = useCallback(
     (id: string) => () => {
       modal.openModal({
+        title: t('statistics', 'Statistics'),
         closeOnClickOutside: true,
         closeOnEscape: true,
         withCloseButton: false,
         classNames: {
           modal: 'w-[100%] max-w-[1400px]',
         },
-        children: (
-          <ModalWrapperComponent title={t('statistics', 'Statistics')}>
-            <StatisticsModal postId={id} />
-          </ModalWrapperComponent>
-        ),
+        children: <StatisticsModal postId={id} />,
         size: '80%',
         // title: `Adding posts for ${getDate.format('DD/MM/YYYY HH:mm')}`,
       });
@@ -911,7 +913,7 @@ const CalendarItem: FC<{
           </div>
           <div className="w-full relative">
             <div className="absolute top-0 start-0 w-full text-ellipsis break-words line-clamp-1 text-left">
-              {stripHtmlValidation('none', post.content, false, true) ||
+              {stripHtmlValidation('none', post.content, false, true, false) ||
                 'no content'}
             </div>
           </div>

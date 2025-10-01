@@ -27,6 +27,7 @@ export class PinterestProvider
     'pins:write',
     'user_accounts:read',
   ];
+  override maxConcurrentJob = 3; // Pinterest has more lenient rate limits
 
   editor = 'normal' as const;
 
@@ -36,7 +37,6 @@ export class PinterestProvider
         value: string;
       }
     | undefined {
-
     if (body.indexOf('cover_image_url or cover_image_content_type') > -1) {
       return {
         type: 'bad-body' as const,
@@ -50,7 +50,7 @@ export class PinterestProvider
 
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const { access_token, expires_in } = await (
-      await this.fetch('https://api.pinterest.com/v5/oauth/token', {
+      await fetch('https://api.pinterest.com/v5/oauth/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -68,7 +68,7 @@ export class PinterestProvider
     ).json();
 
     const { id, profile_image, username } = await (
-      await this.fetch('https://api.pinterest.com/v5/user_account', {
+      await fetch('https://api.pinterest.com/v5/user_account', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${access_token}`,
@@ -82,7 +82,7 @@ export class PinterestProvider
       accessToken: access_token,
       refreshToken: refreshToken,
       expiresIn: expires_in,
-      picture: profile_image,
+      picture: profile_image || '',
       username,
     };
   }
@@ -108,7 +108,7 @@ export class PinterestProvider
     refresh: string;
   }) {
     const { access_token, refresh_token, expires_in, scope } = await (
-      await this.fetch('https://api.pinterest.com/v5/oauth/token', {
+      await fetch('https://api.pinterest.com/v5/oauth/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -127,7 +127,7 @@ export class PinterestProvider
     this.checkScopes(this.scopes, scope);
 
     const { id, profile_image, username } = await (
-      await this.fetch('https://api.pinterest.com/v5/user_account', {
+      await fetch('https://api.pinterest.com/v5/user_account', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${access_token}`,
@@ -148,7 +148,7 @@ export class PinterestProvider
 
   async boards(accessToken: string) {
     const { items } = await (
-      await this.fetch('https://api.pinterest.com/v5/boards', {
+      await fetch('https://api.pinterest.com/v5/boards', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -211,15 +211,21 @@ export class PinterestProvider
       let statusCode = '';
       while (statusCode !== 'succeeded') {
         const mediafile = await (
-          await this.fetch('https://api.pinterest.com/v5/media/' + media_id, {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
+          await this.fetch(
+            'https://api.pinterest.com/v5/media/' + media_id,
+            {
+              method: 'GET',
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
             },
-          })
+            '',
+            0,
+            true
+          )
         ).json();
 
-        await timer(3000);
+        await timer(30000);
         statusCode = mediafile.status;
       }
 
@@ -289,7 +295,7 @@ export class PinterestProvider
     const {
       all: { daily_metrics },
     } = await (
-      await this.fetch(
+      await fetch(
         `https://api.pinterest.com/v5/user_account/analytics?start_date=${since}&end_date=${until}`,
         {
           method: 'GET',

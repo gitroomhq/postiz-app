@@ -1,7 +1,7 @@
 import React, { FC, useCallback, useContext, useMemo, useState } from 'react';
 import { MarketplaceProvider } from '@gitroom/frontend/components/marketplace/marketplace.provider';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
-import { useModals } from '@mantine/modals';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { Input } from '@gitroom/react/form/input';
 import { CustomSelect } from '@gitroom/react/form/custom.select';

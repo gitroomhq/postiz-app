@@ -1,14 +1,14 @@
 'use client';
 
-import { useModals } from '@mantine/modals';
-import React, { FC, useCallback, useMemo } from 'react';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
+import React, { FC, useCallback, useEffect, useMemo } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Input } from '@gitroom/react/form/input';
 import { FieldValues, FormProvider, useForm } from 'react-hook-form';
 import { Button } from '@gitroom/react/form/button';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { ApiKeyDto } from '@gitroom/nestjs-libraries/dtos/integrations/api.key.dto';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useToaster } from '@gitroom/react/toaster/toaster';
@@ -24,17 +24,9 @@ export const useAddProvider = (update?: () => void) => {
   return useCallback(async () => {
     const data = await (await fetch('/integrations')).json();
     modal.openModal({
-      title: '',
-      withCloseButton: false,
-      classNames: {
-        modal: 'text-textColor',
-      },
-      size: 'auto',
-      children: (
-        <ModalWrapperComponent title="Add Channel">
-          <AddProviderComponent update={update} {...data} />
-        </ModalWrapperComponent>
-      ),
+      title: 'Add Channel',
+      withCloseButton: true,
+      children: <AddProviderComponent update={update} {...data} />,
     });
   }, []);
 };
@@ -42,8 +34,15 @@ export const AddProviderButton: FC<{
   update?: () => void;
 }> = (props) => {
   const { update } = props;
+  const query = useSearchParams();
   const add = useAddProvider(update);
   const t = useT();
+
+  useEffect(() => {
+    if (query.get('onboarding')) {
+      add();
+    }
+  }, []);
 
   return (
     <button
@@ -259,6 +258,7 @@ export const CustomVariables: FC<{
   });
   const submit = useCallback(
     async (data: FieldValues) => {
+      modals.closeAll();
       gotoUrl(
         `/integrations/social/${identifier}?state=nostate&code=${Buffer.from(
           JSON.stringify(data)
@@ -342,7 +342,7 @@ export const AddProviderComponent: FC<{
             await fetch(`/integrations/social/${identifier}`)
           ).json();
           modal.openModal({
-            title: '',
+            title: 'Web3 provider',
             withCloseButton: false,
             classNames: {
               modal: 'bg-transparent text-textColor',
@@ -379,7 +379,7 @@ export const AddProviderComponent: FC<{
         if (isExternal) {
           modal.closeAll();
           modal.openModal({
-            title: '',
+            title: 'URL',
             withCloseButton: false,
             classNames: {
               modal: 'bg-transparent text-textColor',
@@ -391,7 +391,7 @@ export const AddProviderComponent: FC<{
         if (customFields) {
           modal.closeAll();
           modal.openModal({
-            title: '',
+            title: 'Add Provider',
             withCloseButton: false,
             classNames: {
               modal: 'bg-transparent text-textColor',
@@ -410,9 +410,7 @@ export const AddProviderComponent: FC<{
       },
     []
   );
-  const close = useCallback(() => {
-    modal.closeAll();
-  }, []);
+
   const showApiButton = useCallback(
     (identifier: string, name: string) => async () => {
       modal.openModal({
@@ -434,7 +432,6 @@ export const AddProviderComponent: FC<{
   return (
     <div className="w-full flex flex-col gap-[20px] rounded-[4px] relative">
       <div className="flex flex-col">
-        <h2 className="pt-[16px] pb-[10px]">{t('social', 'Social')}</h2>
         <div className="grid grid-cols-5 gap-[10px] justify-items-center justify-center">
           {social.map((item) => (
             <div

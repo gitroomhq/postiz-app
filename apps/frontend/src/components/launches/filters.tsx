@@ -7,13 +7,14 @@ import { useCallback } from 'react';
 import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import i18next from 'i18next';
+import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 
 // Helper function to get start and end dates based on display type
 function getDateRange(
   display: 'day' | 'week' | 'month',
   referenceDate?: string
 ) {
-  const date = referenceDate ? dayjs(referenceDate) : dayjs();
+  const date = referenceDate ? newDayjs(referenceDate) : newDayjs();
 
   switch (display) {
     case 'day':
@@ -44,8 +45,8 @@ export const Filters = () => {
 
   // Calculate display date range text
   const getDisplayText = () => {
-    const startDate = dayjs(calendar.startDate);
-    const endDate = dayjs(calendar.endDate);
+    const startDate = newDayjs(calendar.startDate);
+    const endDate = newDayjs(calendar.endDate);
 
     switch (calendar.display) {
       case 'day':
@@ -60,7 +61,7 @@ export const Filters = () => {
   };
 
   const setToday = useCallback(() => {
-    const today = dayjs();
+    const today = newDayjs();
     const currentRange = getDateRange(
       calendar.display as 'day' | 'week' | 'month'
     );
@@ -151,7 +152,7 @@ export const Filters = () => {
   );
 
   const next = useCallback(() => {
-    const currentStart = dayjs(calendar.startDate);
+    const currentStart = newDayjs(calendar.startDate);
     let nextStart: dayjs.Dayjs;
 
     switch (calendar.display) {
@@ -181,7 +182,7 @@ export const Filters = () => {
   }, [calendar]);
 
   const previous = useCallback(() => {
-    const currentStart = dayjs(calendar.startDate);
+    const currentStart = newDayjs(calendar.startDate);
     let prevStart: dayjs.Dayjs;
 
     switch (calendar.display) {

@@ -24,6 +24,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     'video.upload',
     'user.info.profile',
   ];
+  override maxConcurrentJob = 1; // TikTok has strict video upload limits
 
   editor = 'normal' as const;
 
@@ -249,7 +250,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       accessToken: access_token,
       id: open_id.replace(/-/g, ''),
       name: display_name,
-      picture: avatar_url,
+      picture: avatar_url || '',
       username: username,
     };
   }
@@ -295,7 +296,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     };
 
     const { access_token, refresh_token, scope } = await (
-      await this.fetch('https://open.tiktokapis.com/v2/oauth/token/', {
+      await fetch('https://open.tiktokapis.com/v2/oauth/token/', {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
@@ -338,7 +339,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     const {
       data: { max_video_post_duration_sec },
     } = await (
-      await this.fetch(
+      await fetch(
         'https://open.tiktokapis.com/v2/post/publish/creator_info/query/',
         {
           method: 'POST',
@@ -374,7 +375,10 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
             body: JSON.stringify({
               publish_id: publishId,
             }),
-          }
+          },
+          '',
+          0,
+          true
         )
       ).json();
 
@@ -398,11 +402,11 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
           'titok-error-upload',
           JSON.stringify(post),
           Buffer.from(JSON.stringify(post)),
-          handleError?.value || '',
+          handleError?.value || ''
         );
       }
 
-      await timer(3000);
+      await timer(10000);
     }
   }
 
@@ -461,6 +465,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
                     disable_duet: !firstPost.settings.duet || false,
                     disable_comment: !firstPost.settings.comment || false,
                     disable_stitch: !firstPost.settings.stitch || false,
+                    is_aigc: firstPost.settings.video_made_with_ai || false,
                     brand_content_toggle:
                       firstPost.settings.brand_content_toggle || false,
                     brand_organic_toggle:
@@ -494,7 +499,11 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
                     photo_cover_index: 0,
                     photo_images: firstPost.media?.map((p) => p.path),
                   },
-                  post_mode: firstPost?.settings?.content_posting_method === 'DIRECT_POST' ? 'DIRECT_POST' : 'MEDIA_UPLOAD',
+                  post_mode:
+                    firstPost?.settings?.content_posting_method ===
+                    'DIRECT_POST'
+                      ? 'DIRECT_POST'
+                      : 'MEDIA_UPLOAD',
                   media_type: 'PHOTO',
                 }),
           }),

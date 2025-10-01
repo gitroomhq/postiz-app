@@ -30,6 +30,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     'w_organization_social',
     'r_organization_social',
   ];
+  override maxConcurrentJob = 2; // LinkedIn has professional posting limits
   refreshWait = true;
   editor = 'normal' as const;
 
@@ -54,7 +55,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     ).json();
 
     const { vanityName } = await (
-      await this.fetch('https://api.linkedin.com/v2/me', {
+      await fetch('https://api.linkedin.com/v2/me', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -66,7 +67,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       sub: id,
       picture,
     } = await (
-      await this.fetch('https://api.linkedin.com/v2/userinfo', {
+      await fetch('https://api.linkedin.com/v2/userinfo', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -79,7 +80,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       refreshToken,
       expiresIn: expires_in,
       name,
-      picture,
+      picture: picture || '',
       username: vanityName,
     };
   }
@@ -122,7 +123,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       refresh_token: refreshToken,
       scope,
     } = await (
-      await this.fetch('https://www.linkedin.com/oauth/v2/accessToken', {
+      await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -138,7 +139,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       sub: id,
       picture,
     } = await (
-      await this.fetch('https://api.linkedin.com/v2/userinfo', {
+      await fetch('https://api.linkedin.com/v2/userinfo', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -146,7 +147,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     ).json();
 
     const { vanityName } = await (
-      await this.fetch('https://api.linkedin.com/v2/me', {
+      await fetch('https://api.linkedin.com/v2/me', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -174,7 +175,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     }
 
     const { elements } = await (
-      await this.fetch(
+      await fetch(
         `https://api.linkedin.com/v2/organizations?q=vanityName&vanityName=${getCompanyVanity[1]}`,
         {
           method: 'GET',
@@ -253,20 +254,26 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
 
     const etags = [];
     for (let i = 0; i < picture.length; i += 1024 * 1024 * 2) {
-      const upload = await this.fetch(sendUrlRequest, {
-        method: 'PUT',
-        headers: {
-          'X-Restli-Protocol-Version': '2.0.0',
-          'LinkedIn-Version': '202501',
-          Authorization: `Bearer ${accessToken}`,
-          ...(isVideo
-            ? { 'Content-Type': 'application/octet-stream' }
-            : isPdf
-            ? { 'Content-Type': 'application/pdf' }
-            : {}),
+      const upload = await this.fetch(
+        sendUrlRequest,
+        {
+          method: 'PUT',
+          headers: {
+            'X-Restli-Protocol-Version': '2.0.0',
+            'LinkedIn-Version': '202501',
+            Authorization: `Bearer ${accessToken}`,
+            ...(isVideo
+              ? { 'Content-Type': 'application/octet-stream' }
+              : isPdf
+              ? { 'Content-Type': 'application/pdf' }
+              : {}),
+          },
+          body: picture.slice(i, i + 1024 * 1024 * 2),
         },
-        body: picture.slice(i, i + 1024 * 1024 * 2),
-      });
+        'linkedin',
+        0,
+        true
+      );
 
       etags.push(upload.headers.get('etag'));
     }
@@ -718,7 +725,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
 
   override async mention(token: string, data: { query: string }) {
     const { elements } = await (
-      await this.fetch(
+      await fetch(
         `https://api.linkedin.com/v2/organizations?q=vanityName&vanityName=${encodeURIComponent(
           data.query
         )}&projection=(elements*(id,localizedName,logoV2(original~:playableStreams)))`,
@@ -736,7 +743,9 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     return elements.map((p: any) => ({
       id: String(p.id),
       label: p.localizedName,
-      image: p.logoV2?.['original~']?.elements?.[0]?.identifiers?.[0]?.identifier || '',
+      image:
+        p.logoV2?.['original~']?.elements?.[0]?.identifiers?.[0]?.identifier ||
+        '',
     }));
   }
 

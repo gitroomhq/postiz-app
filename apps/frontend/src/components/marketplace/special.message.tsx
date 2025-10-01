@@ -9,12 +9,13 @@ import useSWR from 'swr';
 import { capitalize } from 'lodash';
 import removeMd from 'remove-markdown';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
-import { useModals } from '@mantine/modals';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { Post as PrismaPost } from '@prisma/client';
 import dynamic from 'next/dynamic';
 import { IntegrationContext } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import dayjs from 'dayjs';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 const PreviewPopupDynamic = dynamic(() =>
   import('@gitroom/frontend/components/marketplace/preview.popup.dynamic').then(
     (mod) => mod.PreviewPopupDynamic
@@ -279,7 +280,7 @@ export const Post: FC<{
         <IntegrationContext.Provider
           value={{
             allIntegrations: [],
-            date: dayjs(),
+            date: newDayjs(),
             integration,
             value: [],
           }}

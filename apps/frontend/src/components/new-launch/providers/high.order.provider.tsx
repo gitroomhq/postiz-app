@@ -54,6 +54,7 @@ export const withProvider = function <T extends object>(params: {
     value: Array<
       Array<{
         path: string;
+        thumbnail?: string;
       }>
     >,
     settings: T,
@@ -89,6 +90,7 @@ export const withProvider = function <T extends object>(params: {
       setPostComment,
       setEditor,
       dummy,
+      setChars,
     } = useLaunchStore(
       useShallow((state) => ({
         date: state.date,
@@ -106,6 +108,7 @@ export const withProvider = function <T extends object>(params: {
         setTotalChars: state.setTotalChars,
         setPostComment: state.setPostComment,
         setEditor: state.setEditor,
+        setChars: state.setChars,
         selectedIntegration: state.selectedIntegrations.find(
           (p) => p.integration.id === props.id
         ),
@@ -116,6 +119,17 @@ export const withProvider = function <T extends object>(params: {
       if (!setTotalChars) {
         return;
       }
+
+      setChars(
+        props.id,
+        typeof maximumCharacters === 'number'
+          ? maximumCharacters
+          : maximumCharacters(
+              JSON.parse(
+                selectedIntegration.integration.additionalSettings || '[]'
+              )
+            )
+      );
 
       if (isGlobal) {
         setPostComment(PostComment.ALL);
@@ -245,7 +259,12 @@ export const withProvider = function <T extends object>(params: {
               <div className="flex-1 flex">
                 <div
                   onClick={() => setTab(0)}
-                  className={clsx("cursor-pointer rounded-[4px] flex-1 overflow-hidden whitespace-nowrap text-center pt-[6px] pb-[5px]", tab !== 0 && !!SettingsComponent ? '' : 'text-textItemFocused bg-boxFocused')}
+                  className={clsx(
+                    'cursor-pointer rounded-[4px] flex-1 overflow-hidden whitespace-nowrap text-center pt-[6px] pb-[5px]',
+                    tab !== 0 && !!SettingsComponent
+                      ? ''
+                      : 'text-textItemFocused bg-boxFocused'
+                  )}
                 >
                   {t('preview', 'Preview')}
                 </div>
@@ -255,12 +274,16 @@ export const withProvider = function <T extends object>(params: {
                   <div className="flex-1 flex">
                     <div
                       onClick={() => setTab(1)}
-                      className={clsx("cursor-pointer rounded-[4px] flex-1 overflow-hidden whitespace-nowrap text-center pt-[6px] pb-[5px]", tab !== 1 ? '' : 'text-textItemFocused bg-boxFocused')}
+                      className={clsx(
+                        'cursor-pointer rounded-[4px] flex-1 overflow-hidden whitespace-nowrap text-center pt-[6px] pb-[5px]',
+                        tab !== 1 ? '' : 'text-textItemFocused bg-boxFocused'
+                      )}
                     >
                       {t('settings', 'Settings')} (
                       {capitalize(
                         selectedIntegration.integration.identifier.split('-')[0]
-                      )})
+                      )}
+                      )
                     </div>
                   </div>
                 )}

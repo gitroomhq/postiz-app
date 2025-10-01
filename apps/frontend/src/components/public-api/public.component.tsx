@@ -37,13 +37,23 @@ export const PublicComponent = () => {
         )}
         <br />
         <a
-          className="underline hover:text-white"
+          className="underline hover:font-bold hover:underline"
           href="https://docs.postiz.com/public-api"
           target="_blank"
         >
           {t(
             'read_how_to_use_it_over_the_documentation',
             'Read how to use it over the documentation.'
+          )}
+        </a>
+        <a
+          className="underline hover:font-bold hover:underline"
+          href="https://www.npmjs.com/package/n8n-nodes-postiz"
+          target="_blank"
+        ><br />
+          {t(
+            'check_n8n',
+            'Check out our N8N custom node for Postiz.'
           )}
         </a>
       </div>

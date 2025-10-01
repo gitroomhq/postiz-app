@@ -91,7 +91,7 @@ const MentionList: FC = (props: any) => {
         props.items.length === 0 ? (
           <div className="p-2 text-gray-500 text-center">No results found</div>
         ) : (
-          props.items.map((item: any, index: any) => (
+          props?.items?.map((item: any, index: any) => (
             <button
               className={`flex gap-[10px] w-full p-2 text-left rounded hover:bg-gray-100 ${
                 index === selectedIndex ? 'bg-blue-100' : ''
@@ -100,7 +100,7 @@ const MentionList: FC = (props: any) => {
               onClick={() => selectItem(index)}
             >
               <img
-                src={item.image}
+                src={item.image || '/no-picture.jpg'}
                 alt={item.label}
                 className="w-[30px] h-[30px] rounded-full object-cover"
               />

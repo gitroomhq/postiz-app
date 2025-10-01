@@ -10,6 +10,7 @@ import { Integration } from '@prisma/client';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 
 export class DevToProvider extends SocialAbstract implements SocialProvider {
+  override maxConcurrentJob = 3; // Dev.to has moderate publishing limits
   identifier = 'devto';
   name = 'Dev.to';
   isBetweenSteps = false;
@@ -80,7 +81,7 @@ export class DevToProvider extends SocialAbstract implements SocialProvider {
         accessToken: body.apiKey,
         id,
         name,
-        picture: profile_image,
+        picture: profile_image || '',
         username,
       };
     } catch (err) {

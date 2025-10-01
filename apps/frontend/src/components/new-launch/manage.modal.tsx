@@ -20,11 +20,8 @@ import { weightedLength } from '@gitroom/helpers/utils/count.length';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { useModals } from '@mantine/modals';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { capitalize } from 'lodash';
-import { usePreventWindowUnload } from '@gitroom/react/helpers/use.prevent.window.unload';
-// @ts-ignore
-import useKeypress from 'react-use-keypress';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
 import { CopilotPopup } from '@copilotkit/react-ui';
@@ -46,7 +43,6 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   const [loading, setLoading] = useState(false);
   const toaster = useToaster();
   const modal = useModals();
-  usePreventWindowUnload(true);
 
   const { addEditSets, mutate, customClose, dummy } = props;
 
@@ -136,8 +132,6 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
     [integrations]
   );
 
-  useKeypress('Escape', askClose);
-
   const schedule = useCallback(
     (type: 'draft' | 'now' | 'schedule') => async () => {
       setLoading(true);
@@ -166,6 +160,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           return;
         }
 
+        console.log(checkAllValid);
         for (const item of checkAllValid) {
           if (item.valid === false) {
             toaster.show('Some fields are not valid', 'warning');
@@ -312,7 +307,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
     <>
       <div
         className={clsx(
-          'flex flex-col md:flex-row bg-newBgLineColor gap-[1px] rounded-[24px]'
+          'flex flex-col md:flex-row bg-newBgLineColor gap-[1px] rounded-[24px] trz'
         )}
       >
         <div
@@ -496,11 +491,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             <ShowAllProviders ref={ref} />
           </div>
         </div>
-      </div>
-      <CopilotPopup
-        hitEscapeToClose={false}
-        clickOutsideToClose={true}
-        instructions={`
+        <CopilotPopup
+          hitEscapeToClose={false}
+          clickOutsideToClose={true}
+          instructions={`
 You are an assistant that help the user to schedule their social media posts,
 Here are the things you can do:
 - Add a new comment / post to the list of posts
@@ -511,11 +505,12 @@ Here are the things you can do:
 Post content can be added using the addPostContentFor{num} function.
 After using the addPostFor{num} it will create a new addPostContentFor{num+ 1} function.
 `}
-        labels={{
-          title: 'Your Assistant',
-          initial: 'Hi! 👋 How can I assist you today?',
-        }}
-      />
+          labels={{
+            title: 'Your Assistant',
+            initial: 'Hi! 👋 How can I assist you today?',
+          }}
+        />
+      </div>
     </>
   );
 };
