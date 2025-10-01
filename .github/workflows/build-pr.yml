@@ -60,6 +60,9 @@ jobs:
       
       - name: SonarQube Analysis (Pull Request)
         uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         with: 
           args: >
             -Dsonar.projectVersion=${{ steps.get_version.outputs.tag }}
