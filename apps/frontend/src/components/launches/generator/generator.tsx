@@ -158,6 +158,7 @@ const FirstStep: FC = (props) => {
         classNames: {
           modal: 'w-[100%] max-w-[1400px] bg-transparent text-textColor',
         },
+        id: 'add-edit-modal',
         children: (
           <AddEditModal
             allIntegrations={integrations.map((p) => ({

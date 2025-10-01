@@ -259,7 +259,7 @@ export class ListmonkProvider extends SocialAbstract implements SocialProvider {
 
     return [
       {
-        id,
+        id: postDetails[0].id,
         status: 'completed',
         releaseURL: `${body.url}/api/campaigns/${campaignId}/preview`,
         postId,
