@@ -20,7 +20,18 @@
 </p>
 
 <p align="center">
-[![Quality Gate Status](https://sonarqube.ennogelhaus.de/api/project_badges/measure?project=gitroomhq_postiz-app_bd4cd369-af44-4d19-903b-c4bdb0b66022&metric=alert_status&token=sqb_4ef7409d8d3bb84ff51d945f5a62bc0df93895a9)](https://sonarqube.ennogelhaus.de/dashboard?id=gitroomhq_postiz-app_bd4cd369-af44-4d19-903b-c4bdb0b66022) [![Maintainability Rating](https://sonarqube.ennogelhaus.de/api/project_badges/measure?project=gitroomhq_postiz-app_bd4cd369-af44-4d19-903b-c4bdb0b66022&metric=software_quality_maintainability_rating&token=sqb_4ef7409d8d3bb84ff51d945f5a62bc0df93895a9)](https://sonarqube.ennogelhaus.de/dashboard?id=gitroomhq_postiz-app_bd4cd369-af44-4d19-903b-c4bdb0b66022) [![Reliability Rating](https://sonarqube.ennogelhaus.de/api/project_badges/measure?project=gitroomhq_postiz-app_bd4cd369-af44-4d19-903b-c4bdb0b66022&metric=software_quality_reliability_rating&token=sqb_4ef7409d8d3bb84ff51d945f5a62bc0df93895a9)](https://sonarqube.ennogelhaus.de/dashboard?id=gitroomhq_postiz-app_bd4cd369-af44-4d19-903b-c4bdb0b66022) [![Security Rating](https://sonarqube.ennogelhaus.de/api/project_badges/measure?project=gitroomhq_postiz-app_bd4cd369-af44-4d19-903b-c4bdb0b66022&metric=software_quality_security_rating&token=sqb_4ef7409d8d3bb84ff51d945f5a62bc0df93895a9)](https://sonarqube.ennogelhaus.de/dashboard?id=gitroomhq_postiz-app_bd4cd369-af44-4d19-903b-c4bdb0b66022)
+  <a href="https://sonarqube.ennogelhaus.de/dashboard?id=gitroomhq_postiz-app_bd4cd369-af44-4d19-903b-c4bdb0b66022">
+    <img src="https://sonarqube.ennogelhaus.de/api/project_badges/measure?project=...&metric=alert_status&token=..." alt="Quality Gate Status" />
+  </a>
+  <a href="https://sonarqube.ennogelhaus.de/dashboard?id=gitroomhq_postiz-app_bd4cd369-af44-4d19-903b-c4bdb0b66022">
+    <img src="https://sonarqube.ennogelhaus.de/api/project_badges/measure?project=...&metric=software_quality_maintainability_rating&token=..." alt="Maintainability Rating" />
+  </a>
+  <a href="https://sonarqube.ennogelhaus.de/dashboard?id=gitroomhq_postiz-app_bd4cd369-af44-4d19-903b-c4bdb0b66022">
+    <img src="https://sonarqube.ennogelhaus.de/api/project_badges/measure?project=...&metric=software_quality_reliability_rating&token=..." alt="Reliability Rating" />
+  </a>
+  <a href="https://sonarqube.ennogelhaus.de/dashboard?id=gitroomhq_postiz-app_bd4cd369-af44-4d19-903b-c4bdb0b66022">
+    <img src="https://sonarqube.ennogelhaus.de/api/project_badges/measure?project=...&metric=software_quality_security_rating&token=..." alt="Security Rating" />
+  </a>
 </p>
 
 <div align="center">
