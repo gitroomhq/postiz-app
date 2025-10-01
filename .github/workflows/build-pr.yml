@@ -2,14 +2,11 @@
 name: Build
 
 on:
-  pull_request_target:
+  pull_request:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
-    environment: 
-      name: build-pr
 
     strategy:
       matrix:
@@ -20,7 +17,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
@@ -64,9 +60,6 @@ jobs:
       
       - name: SonarQube Analysis (Pull Request)
         uses: SonarSource/sonarqube-scan-action@v6
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         with: 
           args: >
             -Dsonar.projectVersion=${{ steps.get_version.outputs.tag }}
