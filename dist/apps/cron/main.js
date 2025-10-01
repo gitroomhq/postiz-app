@@ -13981,7 +13981,6 @@ var _a;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GbpProvider = void 0;
 const tslib_1 = __webpack_require__(3);
-const dayjs_1 = tslib_1.__importDefault(__webpack_require__(12));
 const googleapis_1 = __webpack_require__(76);
 const customers_repository_1 = __webpack_require__(97);
 const common_1 = __webpack_require__(4);
@@ -14135,7 +14134,7 @@ let GbpProvider = class GbpProvider {
             refreshToken: credentials.refresh_token || refreshToken,
             expiresIn: credentials.expiry_date
                 ? Math.floor((credentials.expiry_date - Date.now()) / 1000)
-                : (0, dayjs_1.default)().add(1, 'hour').unix(),
+                : 3600, // 1 hour in seconds
             id: '',
             name: '',
             picture: '',
@@ -14221,18 +14220,28 @@ let GbpProvider = class GbpProvider {
             if (media.length > 0) {
                 const mediaContent = [];
                 for (const mediaItem of media) {
-                    if (mediaItem.type === 'image') {
-                        console.log(`📸 Adding image: ${mediaItem.url || mediaItem.path}`);
+                    const mediaUrl = mediaItem.url || mediaItem.path;
+                    // Detect actual media type from URL/extension
+                    const isVideo = /\.(mp4|avi|mov|wmv|flv|webm|mkv|m4v)$/i.test(mediaUrl);
+                    const isImage = /\.(jpg|jpeg|png|gif|webp|bmp|tiff)$/i.test(mediaUrl);
+                    if (isVideo || mediaItem.type === 'video') {
+                        console.log(`⚠️  Video detected but GBP doesn't support video uploads: ${mediaUrl}`);
+                        console.log(`ℹ️  Skipping video - only text post will be created`);
+                        // Skip videos as GBP API doesn't support them
+                        continue;
+                    }
+                    else if (isImage || mediaItem.type === 'image') {
+                        console.log(`📸 Adding image: ${mediaUrl}`);
                         mediaContent.push({
                             mediaFormat: 'PHOTO',
-                            sourceUrl: mediaItem.url || mediaItem.path
+                            sourceUrl: mediaUrl
                         });
                     }
-                    else if (mediaItem.type === 'video') {
-                        console.log(`🎥 Adding video: ${mediaItem.url || mediaItem.path}`);
+                    else {
+                        console.log(`⚠️  Unknown media type for: ${mediaUrl}, treating as image`);
                         mediaContent.push({
-                            mediaFormat: 'VIDEO',
-                            sourceUrl: mediaItem.url || mediaItem.path
+                            mediaFormat: 'PHOTO',
+                            sourceUrl: mediaUrl
                         });
                     }
                 }
@@ -14298,7 +14307,7 @@ let GbpProvider = class GbpProvider {
             }
         }
         return [{
-                id: postId,
+                id: postDetails[0]?.id,
                 postId: postId,
                 releaseURL: `https://business.google.com/posts/l/${location.name?.split('/').pop()}`,
                 status: 'success',
