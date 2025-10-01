@@ -207,7 +207,7 @@ export class GbpProvider implements SocialProvider {
       refreshToken: credentials.refresh_token || refreshToken,
       expiresIn: credentials.expiry_date
         ? Math.floor((credentials.expiry_date - Date.now()) / 1000)
-        : dayjs().add(1, 'hour').unix(),
+        : 3600, // 1 hour in seconds
       id: '',
       name: '',
       picture: '',
