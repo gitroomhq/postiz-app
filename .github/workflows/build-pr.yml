@@ -72,6 +72,8 @@ jobs:
           method: jwt
           path: jwt # Matches the path enabled in Vault (Step 5)
           role: postiz-ci # Matches the role name created in Vault (Step 6)
+
+          kv-version: 2
           
           # Define the secret path and expose the value as an environment variable
           secrets: |
