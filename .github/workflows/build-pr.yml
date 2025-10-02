@@ -75,8 +75,8 @@ jobs:
           
           # Define the secret path and expose the value as an environment variable
           secrets: |
-            postiz/ci/sonar SONAR_TOKEN | env
-            postiz/ci/sonar SONAR_HOST_URL | env
+            postiz/data/ci/sonar SONAR_TOKEN | env
+            postiz/data/ci/sonar SONAR_HOST_URL | env
       
       - name: SonarQube Analysis (Pull Request)
         uses: SonarSource/sonarqube-scan-action@v6
