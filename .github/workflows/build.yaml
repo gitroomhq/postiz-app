@@ -51,13 +51,12 @@ jobs:
       - name: Build
         run: pnpm run build
 
-      - name: Get Project Version from Git Tag
+      - name: Get Commit SHA (short)
         id: get_version
         run: |
-          # Use 'git describe' to find the closest tag, falling back to the commit SHA if no tag is found.
-          # --tags includes all tags, --always ensures it always outputs something.
-          VERSION=$(git describe --tags --always)
-          echo "Project version is $VERSION"
+          # Get the short 8-character commit SHA
+          VERSION=$(git rev-parse --short=8 HEAD)
+          echo "Commit SHA is $VERSION"
           echo "tag=$VERSION" >> $GITHUB_OUTPUT
       
       - name: SonarQube Analysis (Branch)
