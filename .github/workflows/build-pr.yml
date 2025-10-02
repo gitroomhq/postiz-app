@@ -72,13 +72,11 @@ jobs:
           method: jwt
           path: jwt # Matches the path enabled in Vault (Step 5)
           role: postiz-ci # Matches the role name created in Vault (Step 6)
-
-          kv-version: 2
           
           # Define the secret path and expose the value as an environment variable
           secrets: |
-            postiz/data/ci/sonar SONAR_TOKEN | env
-            postiz/data/ci/sonar SONAR_HOST_URL | env
+           postiz/data/ci/sonar SONAR_HOST_URL | SONAR_HOST_URL ;
+           postiz/data/ci/sonar SONAR_TOKEN | SONAR_TOKEN
       
       - name: SonarQube Analysis (Pull Request)
         uses: SonarSource/sonarqube-scan-action@v6
