@@ -60,9 +60,29 @@ jobs:
           VERSION=$(git rev-parse --short=8 HEAD)
           echo "Commit SHA is $VERSION"
           echo "tag=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: 'Retrieve Sonar Variables from Vault'
+        id: vault_auth
+        uses: hashicorp/vault-action@v3
+        with:
+          # Uses the GitHub Repository Secret
+          url: https://vault.ennogelhaus.de
+          
+          # Use the JWT method with the OIDC token
+          method: jwt
+          path: jwt # Matches the path enabled in Vault (Step 5)
+          role: postiz-ci # Matches the role name created in Vault (Step 6)
+          
+          # Define the secret path and expose the value as an environment variable
+          secrets: |
+            postiz/ci/sonar SONAR_TOKEN | env
+            postiz/ci/sonar SONAR_HOST_URL | env
       
       - name: SonarQube Analysis (Pull Request)
         uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         with: 
           args: >
             -Dsonar.projectVersion=${{ steps.get_version.outputs.tag }}
