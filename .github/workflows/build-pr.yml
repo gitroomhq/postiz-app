@@ -2,17 +2,19 @@
 name: Build
 
 on:
-  push:
+  pull_request:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
 
     strategy:
       matrix:
         node-version: ['20.17.0']
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+
+    environment: 
+      name: build-pr
 
     steps:
       - uses: actions/checkout@v4
@@ -59,11 +61,11 @@ jobs:
           echo "Commit SHA is $VERSION"
           echo "tag=$VERSION" >> $GITHUB_OUTPUT
       
-      - name: SonarQube Analysis (Branch)
+      - name: SonarQube Analysis (Pull Request)
         uses: SonarSource/sonarqube-scan-action@v6
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         with: 
           args: >
             -Dsonar.projectVersion=${{ steps.get_version.outputs.tag }}
+            -Dsonar.pullrequest.key=${{ github.event.pull_request.number }}
+            -Dsonar.pullrequest.branch=${{ github.event.pull_request.head.ref }}
+            -Dsonar.pullrequest.base=${{ github.event.pull_request.base.ref }}
