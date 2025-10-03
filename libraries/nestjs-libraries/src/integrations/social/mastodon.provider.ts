@@ -121,7 +121,20 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
         body: form,
       })
     ).json();
-    return media.id;
+    return media;
+  }
+
+  async updateMediaDescription(instanceUrl: string, mediaId: string, accessToken: string, description: string) {
+    const form = new FormData();
+    form.append('description', description);
+
+    await this.fetch(`${instanceUrl}/api/v1/media/${mediaId}`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: form,
+    });
   }
 
   async dynamicPost(
@@ -133,11 +146,28 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
     let loadId = '';
     const ids = [] as string[];
     for (const getPost of postDetails) {
-      const uploadFiles = await Promise.all(
+      // Upload media files and get media objects
+      const uploadedMedia = await Promise.all(
         getPost?.media?.map((media) =>
           this.uploadFile(url, media.path, accessToken)
         ) || []
       );
+
+      // Update media descriptions (alt text) if provided
+      if (getPost?.media) {
+        await Promise.all(
+          getPost.media.map(async (media, index) => {
+            if (media.alt && uploadedMedia[index]) {
+              await this.updateMediaDescription(
+                url,
+                uploadedMedia[index].id,
+                accessToken,
+                media.alt
+              );
+            }
+          })
+        );
+      }
 
       const form = new FormData();
       form.append('status', getPost.message);
@@ -145,9 +175,9 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
       if (loadId) {
         form.append('in_reply_to_id', loadId);
       }
-      if (uploadFiles.length) {
-        for (const file of uploadFiles) {
-          form.append('media_ids[]', file);
+      if (uploadedMedia.length) {
+        for (const media of uploadedMedia) {
+          form.append('media_ids[]', media.id);
         }
       }
 
