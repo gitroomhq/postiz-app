@@ -1,29 +1,36 @@
 // Declarative Pipeline for building Node.js application and running SonarQube analysis triggered by a push event.
 pipeline {
-    // Defines the execution environment. Replace 'linux-agent' with your specific agent label.
-    agent any
+    // Defines the execution environment. Using 'agent any' to ensure an agent is available.
+    agent any 
 
     stages {
         // Stage 1: Checkout the code with full history (fetch-depth: 0)
         stage('Source Checkout') {
             steps {
-                script {
-                    // This performs a deep clone (fetch-depth: 0)
-                    // NOTE: Replace 'YOUR_GIT_CREDENTIALS_ID' with the actual Jenkins credential ID 
-                    // that has access to your repository.
-                    checkout([
-                        $class: 'GitSCM', 
-                        branches: [[name: 'HEAD']], 
-                        extensions: [
-                            [$class: 'WipeWorkspace'], 
-                            [$class: 'CleanBeforeCheckout'], 
-                            [$class: 'CloneOption', depth: 0, noTags: false, reference: '', shallow: false]
-                        ], 
-                        userRemoteConfigs: [
-                            [credentialsId: 'YOUR_GIT_CREDENTIALS_ID', url: env.GIT_URL ?: ''] // Replace env.GIT_URL if needed
-                        ]
-                    ])
-                }
+                // STEP 1: Install Git and other necessary system dependencies first.
+                // This command ensures the 'git' command is available on the agent's PATH, 
+                // which is the root cause of the previous 'No such file or directory' error.
+                sh '''
+                    echo "Ensuring git, curl, and build tools are installed..."
+                    sudo apt-get update
+                    sudo apt-get install -y git curl build-essential
+                '''
+                
+                // STEP 2: Perform the deep clone checkout using the installed Git.
+                // NOTE: Replace 'YOUR_GIT_CREDENTIALS_ID' with the actual Jenkins credential ID 
+                // that has access to your repository.
+                checkout([
+                    $class: 'GitSCM', 
+                    branches: [[name: 'HEAD']], 
+                    extensions: [
+                        [$class: 'WipeWorkspace'], 
+                        [$class: 'CleanBeforeCheckout'], 
+                        [$class: 'CloneOption', depth: 0, noTags: false, reference: '', shallow: false]
+                    ], 
+                    userRemoteConfigs: [
+                        [url: env.GIT_URL ?: ''] // Replace env.GIT_URL if needed
+                    ]
+                ])
             }
         }
 
@@ -32,7 +39,6 @@ pipeline {
             steps {
                 sh '''
                     # Install Node.js v20 (closest matching the specified version '20.17.0')
-                    # This uses Nodesource to ensure a specific major version is available.
                     curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
                     sudo apt-get update
                     sudo apt-get install -y nodejs
@@ -69,7 +75,7 @@ pipeline {
                          vaultSecrets: [
                              // Map key 'SONAR_TOKEN' from Vault path 'postiz/data/ci/sonar' to Jenkins environment variable 'SONAR_TOKEN'
                              [$class: 'VaultSecret', secretPath: 'postiz/data/ci/sonar', secretKey: 'SONAR_TOKEN', envVar: 'SONAR_TOKEN'],
-                             // Map key 'SONAR_HOST_URL' from Vault path 'postiz/data/ci/sonar' to Jenkins environment variable 'SONAR_HOST_URL'
+                             // Map key 'SONAR_HOST_URL' from Vault path 'postiz/data/ci/sonar', to Jenkins environment variable 'SONAR_HOST_URL']
                              [$class: 'VaultSecret', secretPath: 'postiz/data/ci/sonar', secretKey: 'SONAR_HOST_URL', envVar: 'SONAR_HOST_URL']
                          ]]
                     ]) {
