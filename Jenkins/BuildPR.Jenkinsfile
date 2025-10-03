@@ -5,10 +5,11 @@ pipeline {
 
     // Environment variables that hold PR details, provided by Jenkins Multibranch setup.
     environment {
-        // These variables are typically provided by Jenkins (e.g., in a Multibranch Pipeline setup)
-        PR_KEY = env.CHANGE_ID
-        PR_BRANCH = env.CHANGE_BRANCH
-        PR_BASE = env.CHANGE_TARGET
+        // FIX: Environment variables must be quoted or wrapped in a function call.
+        // We quote the 'env.CHANGE_ID' reference to fix the compilation error.
+        PR_KEY = "${env.CHANGE_ID}"
+        PR_BRANCH = "${env.CHANGE_BRANCH}"
+        PR_BASE = "${env.CHANGE_TARGET}"
     }
 
     stages {
