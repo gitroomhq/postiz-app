@@ -1,9 +1,7 @@
 // Declarative Pipeline for building Node.js application and running SonarQube analysis triggered by a push event.
 pipeline {
     // Defines the execution environment. Replace 'linux-agent' with your specific agent label.
-    agent {
-        label 'linux-agent'
-    }
+    agent any
 
     // Configure options, primarily to ensure full Git history is fetched for SonarQube and versioning.
     options {
