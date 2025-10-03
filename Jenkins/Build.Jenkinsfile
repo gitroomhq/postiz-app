@@ -3,16 +3,6 @@ pipeline {
     // Defines the execution environment. Using 'agent any' to ensure an agent is available.
     agent any 
 
-    // Define environment variables for fixed values and credentials needed later
-    environment {
-        // Sonar Host URL taken from your previous successful log injection
-        SONAR_HOST_URL = 'https://sonarqube.ennogelhaus.de/'
-        // IMPORTANT: Replace this with the ID of your Jenkins Secret Text credential containing the Sonar Token
-        SONAR_TOKEN_CREDENTIAL_ID = 'YOUR_SECRET_TOKEN_ID' 
-        // This will hold the path to the downloaded scanner directory later
-        SCANNER_HOME = '' 
-    }
-
     stages {
         // Stage 1: Checkout the code (Relies on the initial SCM checkout done by Jenkins)
         stage('Source Checkout') {
@@ -21,27 +11,45 @@ pipeline {
             }
         }
 
-        // Stage 2: Setup Node.js v20 and install pnpm
-        stage('Setup Environment') {
+        // Stage 2: Setup Node.js v20, install pnpm, and MANUALLY install Sonar Scanner
+        stage('Setup Environment and Tools') {
             steps {
-                // Ensure required utilities are installed (curl, unzip, which is needed for scanner extraction)
                 sh '''
-                    echo "Ensuring required utilities are installed (curl, unzip)..."
+                    echo "Ensuring required utilities and Node.js are installed..."
                     sudo apt-get update
-                    sudo apt-get install -y curl unzip
-                '''
-                
-                // Install Node.js v20 and pnpm
-                sh '''
-                    echo "Setting up Node.js v20..."
+                    sudo apt-get install -y curl unzip nodejs
+                    
+                    # 1. Install Node.js v20 
+                    # We are using the package manager approach which we fixed earlier
                     curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
                     sudo apt-get install -y nodejs
+                    
                     echo "Node.js version: \$(node -v)"
                     
-                    echo "Installing pnpm globally..."
+                    # 2. Install pnpm globally (version 8)
                     npm install -g pnpm@8
                     echo "pnpm version: \$(pnpm -v)"
                 '''
+
+                // --- MANUALLY INSTALL THE SONAR SCANNER CLI ---
+                // We do this to work around the path injection failure of the SonarQube plugin.
+                script {
+                    sh """
+                        echo "Manually downloading and installing Sonar Scanner CLI..."
+                        # Download the stable scanner CLI package
+                        curl -sS -o sonar-scanner.zip \
+                        "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.7.0.2747.zip"
+                        
+                        unzip -q sonar-scanner.zip -d .
+                        
+                        # Find the extracted directory name 
+                        def scannerDir = sh(returnStdout: true, script: 'find . -maxdepth 1 -type d -name "sonar-scanner*" | head -n 1').trim()
+                        
+                        # Add the scanner's bin directory to the execution PATH for subsequent steps
+                        echo "Adding ${scannerDir}/bin to PATH"
+                        env.PATH = "\$PATH:\$PWD/${scannerDir}/bin"
+                    """
+                }
             }
         }
 
@@ -53,44 +61,24 @@ pipeline {
             }
         }
 
-        // Stage 4: Manual SonarQube Analysis (Download Scanner + Execute)
+        // Stage 4: Run SonarQube analysis using the plugin's variables but the manually added executable path.
         stage('SonarQube Analysis') {
             steps {
                 script {
                     // 1. Get the short 8-character commit SHA for project versioning
                     def commitShaShort = sh(returnStdout: true, script: 'git rev-parse --short=8 HEAD').trim()
                     echo "Commit SHA (short) is: ${commitShaShort}"
-
-                    // --- Manual Scanner Installation ---
-                    // Download the latest scanner CLI package and extract it into the workspace
-                    sh """
-                        echo "Downloading Sonar Scanner CLI..."
-                        # Using a stable, public download link for the scanner CLI
-                        curl -sS -o sonar-scanner.zip \
-                        "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.7.0.2747.zip"
-                        
-                        unzip -q sonar-scanner.zip -d .
-                        
-                        # Find the extracted directory name (e.g., sonar-scanner-4.7.0.2747)
-                        def scannerDir = sh(returnStdout: true, script: 'find . -maxdepth 1 -type d -name "sonar-scanner*" | head -n 1').trim()
-                        
-                        echo "Scanner extracted to: \${scannerDir}"
-                        env.SCANNER_HOME = "\${scannerDir}"
-                    """
-
-                    // 2. Use withCredentials to inject the token securely
-                    // The token is temporarily available as SONAR_TOKEN_VAR inside this block.
-                    withCredentials([string(credentialsId: env.SONAR_TOKEN_CREDENTIAL_ID, variable: 'SONAR_TOKEN_VAR')]) {
-                        // 3. Execute sonar-scanner CLI using the direct path
+                    
+                    // 2. Use withSonarQubeEnv to set up the secure variables (which worked last time)
+                    // IMPORTANT: Replace 'YOUR_SONAR_INSTALLATION_NAME' 
+                    withSonarQubeEnv(installationName: 'SonarQube-Server') {
+                        // 3. Execute sonar-scanner CLI (which is now in PATH)
                         sh """
                             echo "Starting SonarQube Analysis for project version: ${commitShaShort}"
-                            
-                            \${SCANNER_HOME}/bin/sonar-scanner \\
+                            # SONAR_HOST_URL and SONAR_TOKEN are injected by withSonarQubeEnv
+                            sonar-scanner \\
                                 -Dsonar.projectVersion=${commitShaShort} \\
-                                -Dsonar.sources=. \\
-                                -Dsonar.host.url=${env.SONAR_HOST_URL} \\
-                                -Dsonar.token=\${env.SONAR_AUTH_TOKEN}
-                                # Replace 'YOUR_PROJECT_KEY_HERE' with the unique key for your project in SonarQube.
+                                -Dsonar.sources=.
                         """
                     }
                 }
