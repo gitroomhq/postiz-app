@@ -1,4 +1,4 @@
-// Declarative Pipeline for building Node.js application and running SonarQube analysis.
+// Declarative Pipeline for building Node.js application and running SonarQube analysis triggered by a push event.
 pipeline {
     // Defines the execution environment. Replace 'linux-agent' with your specific agent label.
     agent {
@@ -17,8 +17,8 @@ pipeline {
             steps {
                 script {
                     // This performs a deep clone (fetch-depth: 0)
-                    // NOTE: You must replace 'YOUR_GIT_CREDENTIALS_ID' with the actual Jenkins credential ID 
-                    // that has access to your repository. If using Anonymous checkout, remove the credentialsId line.
+                    // NOTE: Replace 'YOUR_GIT_CREDENTIALS_ID' with the actual Jenkins credential ID 
+                    // that has access to your repository.
                     checkout([
                         $class: 'GitSCM', 
                         branches: [[name: 'HEAD']], 
@@ -28,7 +28,7 @@ pipeline {
                             [$class: 'CloneOption', depth: 0, noTags: false, reference: '', shallow: false]
                         ], 
                         userRemoteConfigs: [
-                            [url: env.GIT_URL ?: ''] // Replace env.GIT_URL if needed
+                            [credentialsId: 'YOUR_GIT_CREDENTIALS_ID', url: env.GIT_URL ?: ''] // Replace env.GIT_URL if needed
                         ]
                     ])
                 }
@@ -42,6 +42,7 @@ pipeline {
                     # Install Node.js v20 (closest matching the specified version '20.17.0')
                     # This uses Nodesource to ensure a specific major version is available.
                     curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+                    sudo apt-get update
                     sudo apt-get install -y nodejs
                     
                     echo "Node.js version: \$(node -v)"
@@ -50,9 +51,6 @@ pipeline {
                     npm install -g pnpm@8
                     echo "pnpm version: \$(pnpm -v)"
                 '''
-                
-                // Skipping the complex pnpm cache setup as it relies on specific GitHub Actions features.
-                // In Jenkins, artifact caching is typically handled differently (e.g., using dedicated workspace cache plugins).
             }
         }
 
@@ -73,10 +71,8 @@ pipeline {
                     echo "Commit SHA (short) is: ${commitShaShort}"
                     
                     // 2. Retrieve secrets from HashiCorp Vault using the dedicated plugin binding.
-                    // The secret values will be available as the environment variables SONAR_TOKEN and SONAR_HOST_URL 
-                    // only within this 'withCredentials' block.
                     withCredentials([
-                        // The $class: 'VaultSecretCredentialsBinding' requires the Jenkins HashiCorp Vault Plugin
+                        // Requires the Jenkins HashiCorp Vault Plugin
                         [$class: 'VaultSecretCredentialsBinding',
                          vaultSecrets: [
                              // Map key 'SONAR_TOKEN' from Vault path 'postiz/data/ci/sonar' to Jenkins environment variable 'SONAR_TOKEN'
@@ -86,8 +82,6 @@ pipeline {
                          ]]
                     ]) {
                         // 3. Execute sonar-scanner CLI
-                        // NOTE: sonar-scanner must be installed and available on the agent's PATH, 
-                        // or configured via Jenkins' Global Tool Configuration.
                         sh """
                             echo "Starting SonarQube Analysis for project version: ${commitShaShort}"
                             sonar-scanner \\
