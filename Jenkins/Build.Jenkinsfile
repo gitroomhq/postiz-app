@@ -22,7 +22,7 @@ pipeline {
                         [$class: 'CloneOption', depth: 0, noTags: false, reference: '', shallow: false]
                     ], 
                     userRemoteConfigs: [
-                        [credentialsId: 'YOUR_GIT_CREDENTIALS_ID', url: env.GIT_URL ?: ''] // Replace env.GIT_URL if needed
+                        [url: env.GIT_URL ?: ''] // Replace env.GIT_URL if needed
                     ]
                 ])
             }
