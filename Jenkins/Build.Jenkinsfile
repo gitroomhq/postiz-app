@@ -3,10 +3,7 @@ pipeline {
     // Defines the execution environment. Using 'agent any' to ensure an agent is available.
     agent any 
 
-    // Global environment variable to store the path to the manually installed scanner.
-    environment {
-        SONAR_SCANNER_PATH = ''
-    }
+    // Global environment block removed to prevent Groovy scoping issues with manual path calculation.
 
     stages {
         // Stage 1: Checkout the code (Relies on the initial SCM checkout done by Jenkins)
@@ -16,7 +13,7 @@ pipeline {
             }
         }
 
-        // Stage 2: Setup Node.js v20, install pnpm, and MANUALLY install Sonar Scanner
+        // Stage 2: Setup Node.js v20 and install pnpm
         stage('Setup Environment and Tools') {
             steps {
                 sh '''
@@ -33,34 +30,6 @@ pipeline {
                     npm install -g pnpm@8
                     echo "pnpm version: \$(pnpm -v)"
                 '''
-
-                // --- MANUALLY INSTALL THE SONAR SCANNER CLI (FIXED GROOVY SCOPE) ---
-                script {
-                    sh """
-                        echo "Manually downloading and installing Sonar Scanner CLI..."
-                        
-                        # Download the stable scanner CLI package
-                        curl -sS -o sonar-scanner.zip \
-                        "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.7.0.2747.zip"
-                        
-                        unzip -q sonar-scanner.zip -d .
-                        
-                        # Find the extracted directory name 
-                        def scannerDir = \$(find . -maxdepth 1 -type d -name "sonar-scanner*" | head -n 1)
-                        
-                        echo "Scanner extracted to: \${scannerDir}"
-                        
-                        # Set the global environment variable (SONAR_SCANNER_PATH) 
-                        // This allows us to run the scanner by full path in the next stage
-                        echo "SONAR_SCANNER_PATH=\${scannerDir}/bin" > .scanner_path.env
-                    """
-                    // Load the environment variable set by the shell script 
-                    // This is the correct way to pass shell variables back to Groovy/Jenkins environment
-                    def scannerPath = readProperties file: '.scanner_path.env'
-                    env.SONAR_SCANNER_PATH = "${env.WORKSPACE}/${scannerPath.SONAR_SCANNER_PATH}"
-                    
-                    echo "Global Sonar Path set to: ${env.SONAR_SCANNER_PATH}"
-                }
             }
         }
 
@@ -72,7 +41,7 @@ pipeline {
             }
         }
 
-        // Stage 4: Run SonarQube analysis using the plugin's variables and the manual path.
+        // Stage 4: Run SonarQube analysis: Install scanner, get version, and execute.
         stage('SonarQube Analysis') {
             steps {
                 script {
@@ -80,15 +49,39 @@ pipeline {
                     def commitShaShort = sh(returnStdout: true, script: 'git rev-parse --short=8 HEAD').trim()
                     echo "Commit SHA (short) is: ${commitShaShort}"
                     
-                    // 2. Use withSonarQubeEnv to set up the secure variables (HOST and TOKEN)
-                    // The 'SonarQube-Server' name is used as per your previous log.
+                    // --- 2. MANUALLY INSTALL THE SONAR SCANNER CLI LOCALLY IN THIS STAGE ---
+                    sh """
+                        echo "Manually downloading and installing Sonar Scanner CLI..."
+                        
+                        # Download the stable scanner CLI package
+                        curl -sS -o sonar-scanner.zip \
+                        "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.7.0.2747.zip"
+                        
+                        # Added -o flag to force overwrite and prevent interactive prompt failure
+                        unzip -o -q sonar-scanner.zip -d .
+                    """
+
+                    // 3. Find the extracted directory name and capture the full absolute bin path in Groovy
+                    // This is defined locally and used directly, avoiding environment variable issues.
+                    def scannerBinPath = sh(
+                        returnStdout: true,
+                        script: '''
+                            SCANNER_DIR=$(find . -maxdepth 1 -type d -name "sonar-scanner*" | head -n 1)
+                            # Get the full absolute path to the executable file
+                            echo \$(pwd)/\${SCANNER_DIR}/bin/sonar-scanner
+                        '''
+                    ).trim()
+                    
+                    echo "Scanner executable path captured: ${scannerBinPath}"
+                    
+                    // 4. Use withSonarQubeEnv to set up the secure variables (HOST and TOKEN)
                     withSonarQubeEnv(installationName: 'SonarQube-Server') {
-                        // 3. Execute the scanner using the manually determined full path.
-                        // We rely on the sonar-project.properties file for the project key.
+                        // 5. Execute the scanner using the Groovy variable directly.
                         sh """
                             echo "Starting SonarQube Analysis for project version: ${commitShaShort}"
                             
-                            \${SONAR_SCANNER_PATH}/sonar-scanner \\
+                            # Execute the full, absolute path captured in the Groovy variable.
+                            '${scannerBinPath}' \\
                                 -Dsonar.projectVersion=${commitShaShort} \\
                                 -Dsonar.sources=.
                                 
