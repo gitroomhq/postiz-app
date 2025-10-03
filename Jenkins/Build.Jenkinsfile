@@ -4,30 +4,6 @@ pipeline {
     agent any 
 
     stages {
-        // Stage 1: Checkout the code with full history (fetch-depth: 0)
-        stage('Source Checkout') {
-            steps {
-                // Since 'git' is confirmed to be installed on agent2 (per log 'git version 2.43.0'), 
-                // we remove the apt-get installation command which was failing due to a lock.
-                
-                // STEP: Perform the deep clone checkout using the existing Git executable.
-                // NOTE: Replace 'YOUR_GIT_CREDENTIALS_ID' with the actual Jenkins credential ID 
-                // that has access to your repository.
-                checkout([
-                    $class: 'GitSCM', 
-                    branches: [[name: 'HEAD']], 
-                    extensions: [
-                        [$class: 'WipeWorkspace'], 
-                        [$class: 'CleanBeforeCheckout'], 
-                        [$class: 'CloneOption', depth: 0, noTags: false, reference: '', shallow: false]
-                    ], 
-                    userRemoteConfigs: [
-                        [url: env.GIT_URL ?: ''] // Replace env.GIT_URL if needed
-                    ]
-                ])
-            }
-        }
-
         // Stage 2: Setup Node.js v20 and install pnpm
         stage('Setup Environment') {
             steps {
@@ -40,6 +16,7 @@ pipeline {
                         CMD=\$1
                         ATTEMPTS=0
                         while [ \$ATTEMPTS -lt \$MAX_ATTEMPTS ]; do
+                            # Run update first, then the command
                             if sudo apt-get update && \$CMD; then
                                 return 0 # Success
                             else
