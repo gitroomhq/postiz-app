@@ -51,7 +51,7 @@ pipeline {
                     // 2. Use withSonarQubeEnv to set up the environment and PATH for sonar-scanner.
                     // IMPORTANT: Replace 'YourSonarServerName' with the name you configured 
                     // for your SonarQube server instance in Jenkins (Manage Jenkins -> Configure System).
-                    withSonarQubeEnv(installationName: 'YourSonarServerName') {
+                    withSonarQubeEnv(installationName: 'SonarQube-Server') {
                         // 3. Execute sonar-scanner CLI
                         sh """
                             echo "Starting SonarQube Analysis for project version: ${commitShaShort}"
@@ -59,7 +59,7 @@ pipeline {
                                 -Dsonar.projectVersion=${commitShaShort} \\
                                 -Dsonar.sources=. \\
                                 -Dsonar.host.url=\${SONAR_HOST_URL} \\
-                                -Dsonar.token=\${SONAR_TOKEN}
+                                -Dsonar.token=\${SONAR_AUTH_TOKEN}
                                 # Add -Dsonar.projectKey=YourKeyHere if not defined in sonar-project.properties
                         """
                     }
