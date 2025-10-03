@@ -26,6 +26,58 @@ import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
 import { timer } from '@gitroom/helpers/utils/timer';
 import axios from 'axios';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
+import * as MP4BoxNS from 'mp4box';
+
+type MP4BoxBuffer = ArrayBuffer & { fileStart: number };
+
+async function getMp4PixelSizeFromBuffer(buf: Buffer): Promise<{ width: number; height: number }> {
+    try {
+        const ab = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer;
+        const mp4buf = ab as MP4BoxBuffer;
+        mp4buf.fileStart = 0;
+
+        // Handle ESM/CJS interop: mp4box can appear as default export or namespace
+        const MP4: any = (MP4BoxNS as any)?.createFile
+            ? MP4BoxNS
+            : (MP4BoxNS as any)?.default?.createFile
+                ? (MP4BoxNS as any).default
+                : null;
+
+        if (!MP4 || typeof MP4.createFile !== 'function') {
+            throw new Error('mp4box import did not expose createFile()');
+        }
+
+        const mp4 = MP4.createFile();
+
+        return await new Promise<{ width: number; height: number }>((resolve, reject) => {
+            mp4.onError = (e: unknown) => {
+                console.error('ARCheck - onError', e);
+                reject(new Error(String(e)));
+            };
+            mp4.onReady = (info: any) => {
+                try {
+                    const track = info?.tracks?.find((t: any) => t?.video);
+                    const w = Number(track?.video?.width || 0);
+                    const h = Number(track?.video?.height || 0);
+                    if (!w || !h) return reject(new Error('No video track dimensions found'));
+
+                    const rotation = Number(track?.video?.rotation ?? 0);
+                    const width  = rotation === 90 || rotation === 270 ? h : w;
+                    const height = rotation === 90 || rotation === 270 ? w : h;
+
+                    resolve({ width, height });
+                } catch (e) {
+                    reject(e);
+                }
+            };
+            mp4.appendBuffer(mp4buf);
+            mp4.flush();
+        });
+    } catch (err) {
+        console.error('getMp4PixelSizeFromBuffer - FAILED:', err);
+        throw err; // rethrow so the caller surfaces the real error
+    }
+}
 
 async function reduceImageBySize(url: string, maxSizeKB = 976) {
   try {
@@ -62,7 +114,8 @@ async function reduceImageBySize(url: string, maxSizeKB = 976) {
 
 async function uploadVideo(
   agent: AtpAgent,
-  videoPath: string
+  videoPath: string,
+  videoAlt: string
 ): Promise<AppBskyEmbedVideo.Main> {
   const { data: serviceAuth } = await agent.com.atproto.server.getServiceAuth({
     aud: `did:web:${agent.dispatchUrl.host}`,
@@ -135,10 +188,20 @@ async function uploadVideo(
 
   console.log('posting video...');
 
-  return {
-    $type: 'app.bsky.embed.video',
-    video: blob,
-  } satisfies AppBskyEmbedVideo.Main;
+    let width = 0, height = 0;
+    try {
+        ({ width, height } = await getMp4PixelSizeFromBuffer(video.video));
+    } catch (e) {
+        console.error('[BlueSky] aspect probe failed:', e);
+        throw e;
+    }
+
+    return {
+        $type: 'app.bsky.embed.video',
+        video: blob,
+        aspectRatio: { width, height },
+        alt: videoAlt,
+    } satisfies AppBskyEmbedVideo.Main;
 }
 
 export class BlueskyProvider extends SocialAbstract implements SocialProvider {
@@ -281,7 +344,7 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
       // Upload videos (only one video per post is supported by Bluesky)
       let videoEmbed: AppBskyEmbedVideo.Main | null = null;
       if (videoMedia.length > 0) {
-        videoEmbed = await uploadVideo(agent, videoMedia[0].path);
+        videoEmbed = await uploadVideo(agent, videoMedia[0].path, videoMedia[0].alt);
       }
 
       const rt = new RichText({
