@@ -2,11 +2,6 @@
 pipeline {
     // Defines the execution environment. Replace 'linux-agent' with your specific agent label.
     agent any
-    // Configure options, primarily to ensure full Git history is fetched for SonarQube and versioning.
-    options {
-        // Skip the default checkout to manage it explicitly and ensure fetch-depth: 0.
-        skipDefaultCheckout()
-    }
     
     // Environment variables that hold PR details (set automatically by Jenkins SCM plugins like Git/GitHub Branch Source)
     environment {
