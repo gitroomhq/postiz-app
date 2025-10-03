@@ -7,16 +7,10 @@ pipeline {
         // Stage 1: Checkout the code with full history (fetch-depth: 0)
         stage('Source Checkout') {
             steps {
-                // STEP 1: Install Git and other necessary system dependencies first.
-                // This command ensures the 'git' command is available on the agent's PATH, 
-                // which is the root cause of the previous 'No such file or directory' error.
-                sh '''
-                    echo "Ensuring git, curl, and build tools are installed..."
-                    sudo apt-get update
-                    sudo apt-get install -y git curl build-essential
-                '''
+                // Since 'git' is confirmed to be installed on agent2 (per log 'git version 2.43.0'), 
+                // we remove the apt-get installation command which was failing due to a lock.
                 
-                // STEP 2: Perform the deep clone checkout using the installed Git.
+                // STEP: Perform the deep clone checkout using the existing Git executable.
                 // NOTE: Replace 'YOUR_GIT_CREDENTIALS_ID' with the actual Jenkins credential ID 
                 // that has access to your repository.
                 checkout([
@@ -28,7 +22,7 @@ pipeline {
                         [$class: 'CloneOption', depth: 0, noTags: false, reference: '', shallow: false]
                     ], 
                     userRemoteConfigs: [
-                        [url: env.GIT_URL ?: ''] // Replace env.GIT_URL if needed
+                        [credentialsId: 'YOUR_GIT_CREDENTIALS_ID', url: env.GIT_URL ?: ''] // Replace env.GIT_URL if needed
                     ]
                 ])
             }
@@ -38,14 +32,39 @@ pipeline {
         stage('Setup Environment') {
             steps {
                 sh '''
-                    # Install Node.js v20 (closest matching the specified version '20.17.0')
+                    ATTEMPTS=0
+                    MAX_ATTEMPTS=5
+                    
+                    # Function to robustly run apt commands with retries in case of lock conflict
+                    install_with_retry() {
+                        CMD=\$1
+                        ATTEMPTS=0
+                        while [ \$ATTEMPTS -lt \$MAX_ATTEMPTS ]; do
+                            if sudo apt-get update && \$CMD; then
+                                return 0 # Success
+                            else
+                                ATTEMPTS=\$((ATTEMPTS + 1))
+                                if [ \$ATTEMPTS -lt \$MAX_ATTEMPTS ]; then
+                                    echo "Apt lock detected or command failed. Retrying in 5 seconds (Attempt \$ATTEMPTS of \$MAX_ATTEMPTS)..."
+                                    sleep 5
+                                fi
+                            fi
+                        done
+                        echo "Failed to execute apt command after \$MAX_ATTEMPTS attempts."
+                        return 1 # Failure
+                    }
+                    
+                    # 1. Install curl (required for NodeSource script)
+                    install_with_retry "sudo apt-get install -y curl" || exit 1
+                    
+                    # 2. Install Node.js v20 (closest matching the specified version '20.17.0')
+                    # This step uses curl (installed above) and needs its own apt-get execution.
                     curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-                    sudo apt-get update
-                    sudo apt-get install -y nodejs
+                    install_with_retry "sudo apt-get install -y nodejs" || exit 1
                     
                     echo "Node.js version: \$(node -v)"
                     
-                    # Install pnpm globally (version 8)
+                    # 3. Install pnpm globally (version 8)
                     npm install -g pnpm@8
                     echo "pnpm version: \$(pnpm -v)"
                 '''
