@@ -39,6 +39,9 @@ testem.log
 .DS_Store
 Thumbs.db
 
+# macOS resource fork files
+._*
+
 .nx/cache
 .nx/workspace-data
 
