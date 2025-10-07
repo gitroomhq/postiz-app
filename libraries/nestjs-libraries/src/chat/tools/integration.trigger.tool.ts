@@ -39,7 +39,7 @@ export class IntegrationTriggerTool implements AgentToolInterface {
         ),
       }),
       outputSchema: z.object({
-        output: z.record(z.string(), z.any()),
+        output: z.array(z.object()),
       }),
       execute: async ({ runtimeContext, context }) => {
         console.log('triggerTool', context);

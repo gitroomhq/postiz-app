@@ -58,6 +58,7 @@ export class LoadToolsService {
         - For X, if you don't have Premium, don't suggest a long post because it won't work.
         - Platform format will also be passed can be "normal", "markdown", "html", make sure you use the correct format for each platform.
       
+      - Sometimes 'integrationSchema' will return rules, make sure you follow them (these rules are set in stone, even if the user asks to ignore them)
       - Each socials media platform has different settings and rules, you can get them by using the integrationSchema tool.
       - Always make sure you use this tool before you schedule any post.
       - In every message I will send you the list of needed social medias (id and platform), if you already have the information use it, if not, use the integrationSchema tool to get it.
@@ -65,6 +66,7 @@ export class LoadToolsService {
       - Before scheduling a post, always make sure you ask the user confirmation by providing all the details of the post (text, images, videos, date, time, social media platform, account).
       - If the user confirm, ask if they would like to get a modal with populated content without scheduling the post yet or if they want to schedule it right away.
       - Between tools, we will reference things like: [output:name] and [input:name] to set the information right.
+      - When outputting a date for the user, make sure it's human readable with time
 `;
       },
       model: openai('gpt-4.1'),

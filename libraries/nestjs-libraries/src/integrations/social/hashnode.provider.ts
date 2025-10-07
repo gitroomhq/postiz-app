@@ -108,6 +108,11 @@ export class HashnodeProvider extends SocialAbstract implements SocialProvider {
     return tags.map((tag) => ({ value: tag.objectID, label: tag.name }));
   }
 
+  @Tool({ description: 'Tags', dataSchema: [] })
+  tagsList() {
+    return tags;
+  }
+
   @Tool({ description: 'Publications', dataSchema: [] })
   async publications(accessToken: string) {
     const {

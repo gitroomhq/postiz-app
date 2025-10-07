@@ -11,7 +11,11 @@ import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { InstagramDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/instagram.dto';
 import { Integration } from '@prisma/client';
+import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
+@Rules(
+  "Instagram should have at least one attachment, if it's a story, it can have only one picture"
+)
 export class InstagramProvider
   extends SocialAbstract
   implements SocialProvider

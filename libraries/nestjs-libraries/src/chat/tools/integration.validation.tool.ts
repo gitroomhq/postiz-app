@@ -35,6 +35,7 @@ export class IntegrationValidationTool implements AgentToolInterface {
       }),
       outputSchema: z.object({
         output: z.object({
+          rules: z.string(),
           maxLength: z
             .number()
             .describe('The maximum length of a post / comment'),
@@ -77,7 +78,7 @@ export class IntegrationValidationTool implements AgentToolInterface {
 
         if (!integration) {
           return {
-            output: { maxLength: 0, settings: {}, tools: [] },
+            output: { rules: '', maxLength: 0, settings: {}, tools: [] },
           };
         }
 
@@ -86,9 +87,11 @@ export class IntegrationValidationTool implements AgentToolInterface {
           ? false
           : validationMetadatasToSchemas()[integration.dto.name];
         const tools = this._integrationManager.getAllTools();
+        const rules = this._integrationManager.getAllRulesDescription();
 
         return {
           output: {
+            rules: rules[integration.identifier],
             maxLength,
             settings: !schemas ? 'No additional settings required' : schemas,
             tools: tools[integration.identifier],

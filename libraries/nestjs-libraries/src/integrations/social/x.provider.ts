@@ -18,7 +18,11 @@ import dayjs from 'dayjs';
 import { uniqBy } from 'lodash';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { XDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/x.dto';
+import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
+@Rules(
+  'X can have maximum 4 pictures, or maximum one video, it can also be without attachments'
+)
 export class XProvider extends SocialAbstract implements SocialProvider {
   identifier = 'x';
   name = 'X';
