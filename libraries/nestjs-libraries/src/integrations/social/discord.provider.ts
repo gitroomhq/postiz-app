@@ -7,6 +7,8 @@ import {
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { Integration } from '@prisma/client';
+import { DiscordDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/discord.dto';
+import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 
 export class DiscordProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 5; // Discord has generous rate limits for webhook posting
@@ -15,6 +17,11 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
   isBetweenSteps = false;
   editor = 'markdown' as const;
   scopes = ['identify', 'guilds'];
+  maxLength() {
+    return 1980;
+  }
+  dto = DiscordDto;
+
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const { access_token, expires_in, refresh_token } = await (
       await this.fetch('https://discord.com/api/oauth2/token', {
@@ -110,6 +117,7 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
+  @Tool({ description: 'Channels', dataSchema: [] })
   async channels(accessToken: string, params: any, id: string) {
     const list = await (
       await fetch(`https://discord.com/api/guilds/${id}/channels`, {

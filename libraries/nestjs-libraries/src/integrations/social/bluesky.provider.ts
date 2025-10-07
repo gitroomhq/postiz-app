@@ -148,6 +148,9 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
   isBetweenSteps = false;
   scopes = ['write:statuses', 'profile', 'write:media'];
   editor = 'normal' as const;
+  maxLength() {
+    return 300;
+  }
 
   async customFields() {
     return [

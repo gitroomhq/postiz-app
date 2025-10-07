@@ -11,8 +11,9 @@ import { AgentModule } from '@gitroom/nestjs-libraries/agent/agent.module';
 import { McpModule } from '@gitroom/backend/mcp/mcp.module';
 import { ThirdPartyModule } from '@gitroom/nestjs-libraries/3rdparties/thirdparty.module';
 import { VideoModule } from '@gitroom/nestjs-libraries/videos/video.module';
-import { SentryModule } from "@sentry/nestjs/setup";
+import { SentryModule } from '@sentry/nestjs/setup';
 import { FILTER } from '@gitroom/nestjs-libraries/sentry/sentry.exception';
+import { ChatModule } from '@gitroom/nestjs-libraries/chat/chat.module';
 
 @Global()
 @Module({
@@ -26,6 +27,7 @@ import { FILTER } from '@gitroom/nestjs-libraries/sentry/sentry.exception';
     McpModule,
     ThirdPartyModule,
     VideoModule,
+    ChatModule,
     ThrottlerModule.forRoot([
       {
         ttl: 3600000,
@@ -43,7 +45,7 @@ import { FILTER } from '@gitroom/nestjs-libraries/sentry/sentry.exception';
     {
       provide: APP_GUARD,
       useClass: PoliciesGuard,
-    }
+    },
   ],
   exports: [
     BullMqModule,
@@ -53,6 +55,7 @@ import { FILTER } from '@gitroom/nestjs-libraries/sentry/sentry.exception';
     AgentModule,
     McpModule,
     ThrottlerModule,
+    ChatModule,
   ],
 })
 export class AppModule {}

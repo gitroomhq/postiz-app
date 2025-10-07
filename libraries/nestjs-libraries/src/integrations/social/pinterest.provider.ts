@@ -12,6 +12,7 @@ import FormData from 'form-data';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import dayjs from 'dayjs';
+import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 
 export class PinterestProvider
   extends SocialAbstract
@@ -28,6 +29,11 @@ export class PinterestProvider
     'user_accounts:read',
   ];
   override maxConcurrentJob = 3; // Pinterest has more lenient rate limits
+  maxLength() {
+    return 500;
+  }
+
+  dto = PinterestSettingsDto;
 
   editor = 'normal' as const;
 
@@ -146,6 +152,7 @@ export class PinterestProvider
     };
   }
 
+  @Tool({ description: 'List of boards', dataSchema: [] })
   async boards(accessToken: string) {
     const { items } = await (
       await fetch('https://api.pinterest.com/v5/boards', {

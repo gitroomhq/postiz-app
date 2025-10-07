@@ -27,10 +27,18 @@ export class InstagramStandaloneProvider
     'instagram_business_manage_insights',
   ];
   override maxConcurrentJob = 10; // Instagram standalone has stricter limits
+  dto = InstagramDto;
 
   editor = 'normal' as const;
+  maxLength() {
+    return 2200;
+  }
 
-  public override handleErrors(body: string): { type: "refresh-token" | "bad-body" | "retry"; value: string } | undefined {
+  public override handleErrors(
+    body: string
+  ):
+    | { type: 'refresh-token' | 'bad-body' | 'retry'; value: string }
+    | undefined {
     return instagramProvider.handleErrors(body);
   }
 
@@ -41,7 +49,12 @@ export class InstagramStandaloneProvider
       )
     ).json();
 
-    const { user_id, name, username, profile_picture_url = '' } = await (
+    const {
+      user_id,
+      name,
+      username,
+      profile_picture_url = '',
+    } = await (
       await fetch(
         `https://graph.instagram.com/v21.0/me?fields=user_id,username,name,profile_picture_url&access_token=${access_token}`
       )

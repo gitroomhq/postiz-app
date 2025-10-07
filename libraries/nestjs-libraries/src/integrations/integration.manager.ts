@@ -78,6 +78,24 @@ export class IntegrationManager {
     };
   }
 
+  getAllTools(): {
+    [key: string]: {
+      description: string;
+      dataSchema: any;
+      methodName: string;
+    }[];
+  } {
+    return socialIntegrationList.reduce(
+      (all, current) => ({
+        ...all,
+        [current.identifier]:
+          Reflect.getMetadata('custom:tool', current.constructor.prototype) ||
+          [],
+      }),
+      {}
+    );
+  }
+
   getAllPlugs() {
     return socialIntegrationList
       .map((p) => {
