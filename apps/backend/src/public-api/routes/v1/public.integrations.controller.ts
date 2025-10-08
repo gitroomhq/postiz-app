@@ -26,6 +26,9 @@ import {
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 import { VideoDto } from '@gitroom/nestjs-libraries/dtos/videos/video.dto';
 import { VideoFunctionDto } from '@gitroom/nestjs-libraries/dtos/videos/video.function.dto';
+import { UploadDto } from '@gitroom/nestjs-libraries/dtos/media/upload.dto';
+import axios from 'axios';
+import { Readable } from 'stream';
 
 @ApiTags('Public API')
 @Controller('/public/v1')
@@ -49,6 +52,37 @@ export class PublicIntegrationsController {
     }
 
     const getFile = await this.storage.uploadFile(file);
+    return this._mediaService.saveFile(
+      org.id,
+      getFile.originalname,
+      getFile.path
+    );
+  }
+
+  @Post('/upload-from-url')
+  async uploadFromUrl(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: UploadDto
+  ) {
+    const response = await axios.get(body.url, {
+      responseType: 'arraybuffer',
+    });
+
+    const buffer = Buffer.from(response.data);
+
+    const getFile = await this.storage.uploadFile({
+      buffer,
+      mimetype: 'image/jpeg',
+      size: buffer.length,
+      path: '',
+      fieldname: '',
+      destination: '',
+      stream: new Readable(),
+      filename: '',
+      originalname: '',
+      encoding: '',
+    });
+
     return this._mediaService.saveFile(
       org.id,
       getFile.originalname,
