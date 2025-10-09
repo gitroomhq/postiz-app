@@ -163,6 +163,7 @@
     "md5": "^2.3.0",
     "mime": "^3.0.0",
     "mime-types": "^2.1.35",
+    "mp4box": "^2.1.0",
     "multer": "^1.4.5-lts.1",
     "music-metadata": "^7.14.0",
     "nestjs-command": "^3.1.4",
