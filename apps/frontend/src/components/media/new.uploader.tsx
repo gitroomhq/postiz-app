@@ -88,18 +88,10 @@ export function useUppyUploader(props: {
         // Expand generic types to specific ones
         const expandedTypes = allowedTypes.flatMap((type) => {
           if (type === 'image/*') {
-            return [
-              'image/png',
-              'image/jpeg',
-              'image/jpg',
-              'image/gif',
-            ];
+            return ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
           }
           if (type === 'video/*') {
-            return [
-              'video/mp4',
-              'video/mpeg',
-            ];
+            return ['video/mp4', 'video/mpeg'];
           }
           return [type];
         });
@@ -214,12 +206,11 @@ export function useUppyUploader(props: {
         return;
       }
 
-      console.log(result);
       if (transloadit.length > 0) {
         // @ts-ignore
         const allRes = result.transloadit[0].results;
         const toSave = uniq<string>(
-          allRes[Object.keys(allRes)[0]].flatMap((item: any) =>
+          (allRes[Object.keys(allRes)[0]] || []).flatMap((item: any) =>
             item.url.split('/').pop()
           )
         );

@@ -82,7 +82,7 @@ export class PinterestProvider
       accessToken: access_token,
       refreshToken: refreshToken,
       expiresIn: expires_in,
-      picture: profile_image,
+      picture: profile_image || '',
       username,
     };
   }

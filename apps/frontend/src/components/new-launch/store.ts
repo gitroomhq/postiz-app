@@ -11,7 +11,7 @@ import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 interface Values {
   id: string;
   content: string;
-  media: { id: string; path: string, thumbnail?: string }[];
+  media: { id: string; path: string; thumbnail?: string }[];
 }
 
 interface Internal {
@@ -504,7 +504,9 @@ export const useLaunchStore = create<StoreState>()((set) => ({
           ? {
               ...item,
               integrationValue: item.integrationValue.map((v, i) =>
-                i === index ? { ...v, media: [...v.media, ...media] } : v
+                i === index
+                  ? { ...v, media: [...(v?.media || []), ...media] }
+                  : v
               ),
             }
           : item
@@ -516,7 +518,9 @@ export const useLaunchStore = create<StoreState>()((set) => ({
   ) =>
     set((state) => ({
       global: state.global.map((item, i) =>
-        i === index ? { ...item, media: [...item.media, ...media] } : item
+        i === index
+          ? { ...item, media: [...(item?.media || []), ...media] }
+          : item
       ),
     })),
   setPostComment: (postComment: PostComment) =>

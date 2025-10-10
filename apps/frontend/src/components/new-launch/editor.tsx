@@ -759,66 +759,84 @@ export const OnlyEditor = forwardRef<
       InterceptUnderlineShortcut,
       BulletList,
       ListItem,
-      Link.configure({
-        openOnClick: false,
-        autolink: true,
-        defaultProtocol: 'https',
-        protocols: ['http', 'https'],
-        isAllowedUri: (url, ctx) => {
-          try {
-            // construct URL
-            const parsedUrl = url.includes(':')
-              ? new URL(url)
-              : new URL(`${ctx.defaultProtocol}://${url}`);
+      ...(editorType === 'html' || editorType === 'markdown'
+        ? [
+            Link.configure({
+              openOnClick: false,
+              autolink: true,
+              defaultProtocol: 'https',
+              protocols: ['http', 'https'],
+              isAllowedUri: (url, ctx) => {
+                try {
+                  // prevent transforming plain emails like foo@bar.com into links
+                  const trimmed = String(url).trim();
+                  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                  if (emailPattern.test(trimmed)) {
+                    return false;
+                  }
 
-            // use default validation
-            if (!ctx.defaultValidate(parsedUrl.href)) {
-              return false;
-            }
+                  // construct URL
+                  const parsedUrl = url.includes(':')
+                    ? new URL(url)
+                    : new URL(`${ctx.defaultProtocol}://${url}`);
 
-            // disallowed protocols
-            const disallowedProtocols = ['ftp', 'file', 'mailto'];
-            const protocol = parsedUrl.protocol.replace(':', '');
+                  // use default validation
+                  if (!ctx.defaultValidate(parsedUrl.href)) {
+                    return false;
+                  }
 
-            if (disallowedProtocols.includes(protocol)) {
-              return false;
-            }
+                  // disallowed protocols
+                  const disallowedProtocols = ['ftp', 'file', 'mailto'];
+                  const protocol = parsedUrl.protocol.replace(':', '');
 
-            // only allow protocols specified in ctx.protocols
-            const allowedProtocols = ctx.protocols.map((p) =>
-              typeof p === 'string' ? p : p.scheme
-            );
+                  if (disallowedProtocols.includes(protocol)) {
+                    return false;
+                  }
 
-            if (!allowedProtocols.includes(protocol)) {
-              return false;
-            }
+                  // only allow protocols specified in ctx.protocols
+                  const allowedProtocols = ctx.protocols.map((p) =>
+                    typeof p === 'string' ? p : p.scheme
+                  );
 
-            // all checks have passed
-            return true;
-          } catch {
-            return false;
-          }
-        },
-        shouldAutoLink: (url) => {
-          try {
-            // construct URL
-            const parsedUrl = url.includes(':')
-              ? new URL(url)
-              : new URL(`https://${url}`);
+                  if (!allowedProtocols.includes(protocol)) {
+                    return false;
+                  }
 
-            // only auto-link if the domain is not in the disallowed list
-            const disallowedDomains = [
-              'example-no-autolink.com',
-              'another-no-autolink.com',
-            ];
-            const domain = parsedUrl.hostname;
+                  // all checks have passed
+                  return true;
+                } catch {
+                  return false;
+                }
+              },
+              shouldAutoLink: (url) => {
+                try {
+                  // prevent auto-linking of plain emails like foo@bar.com
+                  const trimmed = String(url).trim();
+                  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                  if (emailPattern.test(trimmed)) {
+                    return false;
+                  }
 
-            return !disallowedDomains.includes(domain);
-          } catch {
-            return false;
-          }
-        },
-      }),
+                  // construct URL
+                  const parsedUrl = url.includes(':')
+                    ? new URL(url)
+                    : new URL(`https://${url}`);
+
+                  // only auto-link if the domain is not in the disallowed list
+                  const disallowedDomains = [
+                    'example-no-autolink.com',
+                    'another-no-autolink.com',
+                  ];
+                  const domain = parsedUrl.hostname;
+
+                  return !disallowedDomains.includes(domain);
+                } catch {
+                  return false;
+                }
+              },
+            }),
+          ]
+        : []),
       ...(internal?.integration?.id
         ? [
             Mention.configure({
@@ -839,9 +857,13 @@ export const OnlyEditor = forwardRef<
             }),
           ]
         : []),
-      Heading.configure({
-        levels: [1, 2, 3],
-      }),
+      ...(editorType === 'html' || editorType === 'markdown'
+        ? [
+            Heading.configure({
+              levels: [1, 2, 3],
+            }),
+          ]
+        : []),
       History.configure({
         depth: 100, // default is 100
         newGroupDelay: 100, // default is 500ms

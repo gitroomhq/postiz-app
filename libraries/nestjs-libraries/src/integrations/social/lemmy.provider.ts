@@ -107,7 +107,7 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
           user.person_view.person.display_name ||
           user.person_view.person.name ||
           '',
-        picture: user.person_view.person.avatar || '',
+        picture: user?.person_view?.person?.avatar || '',
         username: body.identifier || '',
       };
     } catch (e) {

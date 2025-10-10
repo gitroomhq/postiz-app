@@ -2,7 +2,7 @@ import React, { FC, useCallback, useMemo, useState } from 'react';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useRouter } from 'next/navigation';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
-import { useModals } from '@mantine/modals';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { FormProvider, SubmitHandler, useForm } from 'react-hook-form';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { GeneratorDto } from '@gitroom/nestjs-libraries/dtos/generator/generator.dto';
@@ -153,9 +153,12 @@ const FirstStep: FC = (props) => {
         closeOnClickOutside: false,
         closeOnEscape: false,
         withCloseButton: false,
+        removeLayout: true,
+        askClose: true,
         classNames: {
           modal: 'w-[100%] max-w-[1400px] bg-transparent text-textColor',
         },
+        id: 'add-edit-modal',
         children: (
           <AddEditModal
             allIntegrations={integrations.map((p) => ({
@@ -301,7 +304,7 @@ export const GeneratorComponent = () => {
       return;
     }
     modal.openModal({
-      title: '',
+      title: 'Generate Posts',
       withCloseButton: false,
       classNames: {
         modal: 'bg-transparent text-textColor',
@@ -309,9 +312,7 @@ export const GeneratorComponent = () => {
       size: 'xl',
       children: (
         <CalendarWeekProvider {...all}>
-          <ModalWrapperComponent title="Generate Posts">
-            <GeneratorPopup />
-          </ModalWrapperComponent>
+          <GeneratorPopup />
         </CalendarWeekProvider>
       ),
     });

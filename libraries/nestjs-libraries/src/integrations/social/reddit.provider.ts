@@ -59,7 +59,7 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
       accessToken,
       refreshToken: newRefreshToken,
       expiresIn,
-      picture: icon_img.split('?')[0],
+      picture: icon_img?.split?.('?')?.[0] || '',
       username: name,
     };
   }
@@ -118,7 +118,7 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
       accessToken,
       refreshToken,
       expiresIn,
-      picture: icon_img.split('?')[0],
+      picture: icon_img?.split?.('?')?.[0] || '',
       username: name,
     };
   }

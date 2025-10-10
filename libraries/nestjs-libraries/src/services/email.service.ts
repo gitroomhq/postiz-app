@@ -96,16 +96,18 @@ export class EmailService {
     </div>
     `;
 
-    const sends = await concurrency('send-email', 1, () =>
-      this.emailService.sendEmail(
+    try {
+      const sends = await this.emailService.sendEmail(
         to,
         subject,
         modifiedHtml,
         process.env.EMAIL_FROM_NAME,
         process.env.EMAIL_FROM_ADDRESS,
         replyTo
-      )
-    );
-    console.log(sends);
+      );
+      console.log(sends);
+    } catch (err) {
+      console.log(err);
+    }
   }
 }

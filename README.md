@@ -1,6 +1,6 @@
 <p align="center">
-  <a href="https://affiliate.postiz.com">
-    <img src="https://github.com/user-attachments/assets/af9f47b3-e20c-402b-bd11-02f39248d738" />
+  <a href="https://github.com/growchief/growchief">
+    <img alt="automate" src="https://github.com/user-attachments/assets/d760188d-8d56-4b05-a6c1-c57e67ef25cd" />
   </a>
 </p>
 
@@ -18,6 +18,21 @@
   <img src="https://img.shields.io/badge/License-AGPL%203.0-blue.svg" alt="License">
 </a>
 </p>
+
+<div align="center">
+  <a href="https://sonarqube.ennogelhaus.de/dashboard?id=gitroomhq_postiz-app_bd4cd369-af44-4d19-903b-c4bdb0b66022">
+    <img src="https://sonarqube.ennogelhaus.de/api/project_badges/measure?project=gitroomhq_postiz-app_bd4cd369-af44-4d19-903b-c4bdb0b66022&metric=alert_status&token=sqb_4ef7409d8d3bb84ff51d945f5a62bc0df93895a9" alt="Quality Gate Status" />
+  </a>
+  <a href="https://sonarqube.ennogelhaus.de/dashboard?id=gitroomhq_postiz-app_bd4cd369-af44-4d19-903b-c4bdb0b66022">
+    <img src="https://sonarqube.ennogelhaus.de/api/project_badges/measure?project=gitroomhq_postiz-app_bd4cd369-af44-4d19-903b-c4bdb0b66022&metric=software_quality_maintainability_rating&token=sqb_4ef7409d8d3bb84ff51d945f5a62bc0df93895a9" alt="Maintainability Rating" />
+  </a>
+  <a href="https://sonarqube.ennogelhaus.de/dashboard?id=gitroomhq_postiz-app_bd4cd369-af44-4d19-903b-c4bdb0b66022">
+    <img src="https://sonarqube.ennogelhaus.de/api/project_badges/measure?project=gitroomhq_postiz-app_bd4cd369-af44-4d19-903b-c4bdb0b66022&metric=software_quality_reliability_rating&token=sqb_4ef7409d8d3bb84ff51d945f5a62bc0df93895a9" alt="Reliability Rating" />
+  </a>
+  <a href="https://sonarqube.ennogelhaus.de/dashboard?id=gitroomhq_postiz-app_bd4cd369-af44-4d19-903b-c4bdb0b66022">
+    <img src="https://sonarqube.ennogelhaus.de/api/project_badges/measure?project=gitroomhq_postiz-app_bd4cd369-af44-4d19-903b-c4bdb0b66022&metric=software_quality_security_rating&token=sqb_4ef7409d8d3bb84ff51d945f5a62bc0df93895a9" alt="Security Rating" />
+  </a>
+</div>
 
 <div align="center">
   <strong>

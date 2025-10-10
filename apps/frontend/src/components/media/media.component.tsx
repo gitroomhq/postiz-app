@@ -30,9 +30,13 @@ import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { ThirdPartyMedia } from '@gitroom/frontend/components/third-parties/third-party.media';
 import { ReactSortable } from 'react-sortablejs';
-import { useMediaSettings } from '@gitroom/frontend/components/launches/helpers/media.settings.component';
+import {
+  MediaComponentInner,
+  useMediaSettings,
+} from '@gitroom/frontend/components/launches/helpers/media.settings.component';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { AiVideo } from '@gitroom/frontend/components/launches/ai.video';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 const Polonto = dynamic(
   () => import('@gitroom/frontend/components/launches/polonto')
 );
@@ -246,7 +250,7 @@ export const MediaBox: FC<{
   const dragAndDrop = useCallback(
     async (event: ClipboardEvent<HTMLDivElement> | File[]) => {
       if (!ref?.current?.setOptions) {
-        return ;
+        return;
       }
 
       // @ts-ignore
@@ -564,12 +568,12 @@ export const MultiMediaComponent: FC<{
     dummy,
   } = props;
   const user = useUser();
+  const modals = useModals();
   useEffect(() => {
     if (value) {
       setCurrentMedia(value);
     }
   }, [value]);
-  const [modal, setShowModal] = useState(false);
   const [mediaModal, setMediaModal] = useState(false);
   const [currentMedia, setCurrentMedia] = useState(value);
   const mediaDirectory = useMediaDirectory();
@@ -598,17 +602,14 @@ export const MultiMediaComponent: FC<{
     [currentMedia]
   );
   const showModal = useCallback(() => {
-    if (!modal) {
-      onOpen?.();
-    } else {
-      onClose?.();
-    }
-    setShowModal(!modal);
-  }, [modal, onOpen, onClose]);
-  const closeDesignModal = useCallback(() => {
-    onClose?.();
-    setMediaModal(false);
-  }, [modal]);
+    modals.openModal({
+      askClose: false,
+      children: (close) => (
+        <MediaBox setMedia={changeMedia} closeModal={close} />
+      ),
+    });
+  }, [changeMedia]);
+
   const clearMedia = useCallback(
     (topIndex: number) => () => {
       const newMedia = currentMedia?.filter((f, index) => index !== topIndex);
@@ -622,10 +623,19 @@ export const MultiMediaComponent: FC<{
     },
     [currentMedia]
   );
+
   const designMedia = useCallback(() => {
-    onOpen?.();
-    setMediaModal(true);
-  }, []);
+    if (!!user?.tier?.ai && !dummy) {
+      modals.openModal({
+        askClose: false,
+        title: 'Design Media',
+        size: '80%',
+        children: (close) => (
+          <Polonto setMedia={changeMedia} closeModal={close} />
+        ),
+      });
+    }
+  }, [changeMedia]);
 
   const mediaSettings = useMediaSettings();
 
@@ -634,11 +644,6 @@ export const MultiMediaComponent: FC<{
   return (
     <>
       <div className="flex flex-col gap-[8px] bg-bigStrip rounded-bl-[8px] select-none w-full">
-        {modal && <MediaBox setMedia={changeMedia} closeModal={showModal} />}
-        {mediaModal && !!user?.tier?.ai && !dummy && (
-          <Polonto setMedia={changeMedia} closeModal={closeDesignModal} />
-        )}
-
         <div className="flex gap-[10px]">
           <Button
             onClick={showModal}
@@ -687,17 +692,31 @@ export const MultiMediaComponent: FC<{
                     <div className="w-full h-full relative group">
                       <div
                         onClick={async () => {
-                          const data: any = await mediaSettings(media);
-                          console.log(
-                            value?.map((p) => (p.id === data.id ? data : p))
-                          );
-                          onChange({
-                            target: {
-                              name: 'upload',
-                              value: value?.map((p) =>
-                                p.id === data.id ? data : p
-                              ),
-                            },
+                          modals.openModal({
+                            title: 'Media Settings',
+                            children: (close) => (
+                              <MediaComponentInner
+                                media={media as any}
+                                onClose={close}
+                                onSelect={(value: any) => {
+                                  console.log(value);
+                                  onChange({
+                                    target: {
+                                      name: 'upload',
+                                      value: currentMedia.map((p) => {
+                                        if (p.id === media.id) {
+                                          return {
+                                            ...p,
+                                            ...value,
+                                          };
+                                        }
+                                        return p;
+                                      }),
+                                    },
+                                  });
+                                }}
+                              />
+                            ),
                           });
                         }}
                         className="absolute top-[50%] left-[50%] -translate-x-[50%] -translate-y-[50%] bg-black/80 rounded-[10px] opacity-0 group-hover:opacity-100 transition-opacity z-[100]"

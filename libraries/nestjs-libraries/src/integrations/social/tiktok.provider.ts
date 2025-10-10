@@ -250,7 +250,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       accessToken: access_token,
       id: open_id.replace(/-/g, ''),
       name: display_name,
-      picture: avatar_url,
+      picture: avatar_url || '',
       username: username,
     };
   }

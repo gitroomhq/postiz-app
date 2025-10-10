@@ -9,7 +9,7 @@ import useSWR from 'swr';
 import { capitalize } from 'lodash';
 import removeMd from 'remove-markdown';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
-import { useModals } from '@mantine/modals';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { Post as PrismaPost } from '@prisma/client';
 import dynamic from 'next/dynamic';
 import { IntegrationContext } from '@gitroom/frontend/components/launches/helpers/use.integration';

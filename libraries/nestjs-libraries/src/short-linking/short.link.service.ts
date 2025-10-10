@@ -37,7 +37,8 @@ export class ShortLinkService {
     }
 
     const mergeMessages = messages.join(' ');
-    const urlRegex = /(https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&//=]*))/gm;
+    const urlRegex =
+      /(https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&//=]*))/gm;
     const urls = mergeMessages.match(urlRegex);
     if (!urls) {
       // No URLs found, return the original text
@@ -49,12 +50,20 @@ export class ShortLinkService {
     );
   }
 
-  async convertTextToShortLinks(id: string, messages: string[]) {
+  async convertTextToShortLinks(id: string, messagesList: string[]) {
     if (ShortLinkService.provider.shortLinkDomain === 'empty') {
-      return messages;
+      return messagesList;
     }
 
-    const urlRegex = /(https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&//=]*))/gm;
+    const messages = messagesList.map((text) => {
+      return text
+        .replace(/&amp;/g, '&')
+        .replace(/&quest;/g, '?')
+        .replace(/&num;/g, '#');
+    });
+
+    const urlRegex =
+      /(https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&//=]*))/gm;
     return Promise.all(
       messages.map(async (text) => {
         const urls = uniq(text.match(urlRegex));

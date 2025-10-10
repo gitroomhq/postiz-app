@@ -46,10 +46,17 @@ export class InstagramProvider
 
   public override handleErrors(body: string):
     | {
-        type: 'refresh-token' | 'bad-body';
+        type: 'refresh-token' | 'bad-body' | 'retry';
         value: string;
       }
     | undefined {
+
+    if (body.indexOf('An unknown error occurred') > -1) {
+      return {
+        type: 'retry' as const,
+        value: 'An unknown error occurred, please try again later',
+      };
+    }
 
     if (body.indexOf('REVOKED_ACCESS_TOKEN') > -1) {
       return {
@@ -364,9 +371,7 @@ export class InstagramProvider
     const {
       id,
       name,
-      picture: {
-        data: { url },
-      },
+      picture
     } = await (
       await fetch(
         `https://graph.facebook.com/v20.0/me?fields=id,name,picture&access_token=${access_token}`
@@ -379,7 +384,7 @@ export class InstagramProvider
       accessToken: access_token,
       refreshToken: access_token,
       expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
-      picture: url,
+      picture: picture?.data?.url || '',
       username: '',
     };
   }
@@ -613,7 +618,7 @@ export class InstagramProvider
       ).json();
 
       arr.push({
-        id: firstPost.id,
+        id: post.id,
         postId: commentId,
         releaseURL: linkGlobal,
         status: 'success',
