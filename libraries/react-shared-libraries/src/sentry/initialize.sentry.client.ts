@@ -16,8 +16,8 @@ export const initializeSentryClient = (environment: string, dsn: string) =>
         autoInject: false,
       }),
     ],
-    replaysSessionSampleRate: environment === 'development' ? 1.0 : 0.5,
+    replaysSessionSampleRate: 1.0,
     replaysOnErrorSampleRate: 1.0,
 
-    profilesSampleRate: environment === 'development' ? 1.0 : 0.45,
+    profilesSampleRate: environment === 'development' ? 1.0 : 0.75,
   });
