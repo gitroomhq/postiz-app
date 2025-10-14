@@ -170,33 +170,80 @@ export const TagsComponent: FC<{
           selected={tagValue}
           onAdd={onAddition}
           onInput={setSuggestions}
-          onDelete={onDelete}
-          renderTag={(tag) => {
-            const findTag = data?.tags?.find((f) => f.name === tag.tag.label);
-            const findIndex = tagValue.findIndex(
-              (f) => f.label === tag.tag.label
+          renderOption={(option) => {
+            const findTag = data?.tags?.find(
+              (f) => f.name === option.option.label
             );
             return (
               <div
-                className={`min-w-[50px] float-left ms-[4px] p-[3px] rounded-sm relative`}
+                className="flex flex-row items-center gap-2 p-2 cursor-pointer hover:bg-customColor1 group max-w-72"
+                {...option}
+              >
+                {findTag ? (
+                  <>
+                    <input
+                      type="checkbox"
+                      checked={
+                        tagValue.findIndex(
+                          (f) => f.label === option.option.label
+                        ) > -1
+                      }
+                      readOnly
+                    />
+                    <div
+                      className="size-3 rounded-full flex-shrink-0"
+                      style={{
+                        backgroundColor: findTag?.color || '#942828',
+                      }}
+                    />
+                  </>
+                ) : (
+                  <div className="size-3 flex justify-center items-center">
+                    +
+                  </div>
+                )}
+                <div className="max-w-24 overflow-hidden overflow-ellipsis whitespace-nowrap">
+                  {option.option.label}
+                </div>
+                <div className="flex items-center flex-grow flex-row-reverse">
+                  {findTag && (
+                    <Button
+                      onClick={edit(findTag)}
+                      className="!h-6 !px-2 !rounded !text-xs !bg-third items-center !opacity-70 hover:!opacity-100 invisible group-hover:visible"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                        className="w-3 h-3"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"
+                        />
+                      </svg>
+                      {t('edit', 'Edit')}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            );
+          }}
+          onDelete={onDelete}
+          renderTag={(tag) => {
+            const findTag = data?.tags?.find((f) => f.name === tag.tag.label);
+            return (
+              <div
+                className={`min-w-[50px] float-left ms-[4px] p-[3px] rounded-lg relative cursor-pointer text-[12px] flex items-center justify-center tag-item`}
                 style={{
                   backgroundColor: findTag?.color,
                 }}
               >
-                <div
-                  className="absolute -top-[5px] start-[10px] text-[12px] text-red-600 bg-white px-[3px] rounded-full"
-                  onClick={edit(findTag)}
-                >
-                  {t('edit', 'Edit')}
-                </div>
-                <div
-                  className="absolute -top-[5px] -start-[5px] text-[12px] text-red-600 bg-white px-[3px] rounded-full"
-                  onClick={() => onDelete(findIndex)}
-                >
-                  X
-                </div>
                 <div className="text-white mix-blend-difference">
-                  {tag.tag.label}
+                  {findTag?.name}
                 </div>
               </div>
             );
@@ -206,6 +253,7 @@ export const TagsComponent: FC<{
     </>
   );
 };
+
 const ShowModal: FC<{
   tag: string;
   color?: string;
