@@ -65,7 +65,7 @@ export class MainMcp {
       generatePictures: boolean;
       date: string;
       providerId: string;
-      posts: { text: string }[];
+      posts: { text: string; images: string[] }[];
     }
   ) {
     const create = await this._postsService.createPost(organization, {
@@ -77,21 +77,35 @@ export class MainMcp {
         {
           group: makeId(10),
           value: await Promise.all(
-            obj.posts.map(async (post) => ({
-              content: post.text,
-              id: makeId(10),
-              image: !obj.generatePictures
-                ? []
-                : [
-                    {
-                      id: makeId(10),
-                      path: await this._openAiService.generateImage(
-                        post.text,
-                        true
-                      ),
-                    },
-                  ],
-            }))
+            obj.posts.map(async (post) => {
+              let images: { id: string; path: string }[] = [];
+              
+              // First priority: use provided images if they exist
+              if (post.images && post.images.length > 0) {
+                images = post.images.map(imagePath => ({
+                  id: makeId(10),
+                  path: imagePath,
+                }));
+              }
+              // Second priority: generate AI images if no images provided but generatePictures is true
+              else if (obj.generatePictures) {
+                images = [
+                  {
+                    id: makeId(10),
+                    path: await this._openAiService.generateImage(
+                      post.text,
+                      true
+                    ),
+                  },
+                ];
+              }
+              
+              return {
+                content: post.text,
+                id: makeId(10),
+                image: images,
+              };
+            })
           ),
           settings: {
             __type: 'any' as any,
