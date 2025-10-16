@@ -37,7 +37,7 @@ export class CopilotController {
     private _mastraService: MastraService
   ) {}
   @Post('/chat')
-  chat(@Req() req: Request, @Res() res: Response) {
+  chatAgent(@Req() req: Request, @Res() res: Response) {
     if (
       process.env.OPENAI_API_KEY === undefined ||
       process.env.OPENAI_API_KEY === ''
