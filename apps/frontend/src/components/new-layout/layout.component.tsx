@@ -3,6 +3,8 @@
 import React, { ReactNode, useCallback } from 'react';
 import { Logo } from '@gitroom/frontend/components/new-layout/logo';
 import { Plus_Jakarta_Sans } from 'next/font/google';
+import Image from 'next/image';
+
 const ModeComponent = dynamic(
   () => import('@gitroom/frontend/components/layout/mode.component'),
   {
@@ -102,6 +104,12 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                   <div className={clsx("fixed h-full w-[64px] start-[17px] flex flex-1 top-0", user?.admin && 'pt-[60px]')}>
                     <div className="flex flex-col h-full gap-[32px] flex-1 py-[12px]">
                       <Logo />
+                      <Image
+                        src={'/newlogo3.png'}
+                        width={200}
+                        height={53}
+                        alt="Logo"
+                      />
                       <TopMenu />
                     </div>
                   </div>
