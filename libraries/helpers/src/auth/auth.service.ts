@@ -2,33 +2,39 @@ import { sign, verify } from 'jsonwebtoken';
 import { hashSync, compareSync } from 'bcrypt';
 import crypto from 'crypto';
 import EVP_BytesToKey from 'evp_bytestokey';
-const KEY_SIZE = 24;
 const algorithm = 'aes-256-cbc';
+const { keyLength, ivLength } = crypto.getCipherInfo(algorithm);
 
-function decrypt_legacy_using_IV(text) {
-  const result = EVP_BytesToKey(
-    process.env.JWT_SECRET,
-    null,
-    KEY_SIZE * 8, // byte to bit size
-    16
-  );
-
-  const decipher = crypto.createDecipheriv(algorithm, result.key, result.iv);
-  const decrypted = decipher.update(text, 'hex', 'utf8') + decipher.final('utf8');
-  return decrypted.toString();
+function deriveLegacyKeyIv(secret) {
+  const pass = Buffer.isBuffer(secret)
+    ? secret
+    : Buffer.from(secret ?? '', 'utf8');
+  // EVP_BytesToKey(password, salt, keyLen, ivLen) — lengths are BYTES
+  const { key, iv } = EVP_BytesToKey(pass, null, keyLength, ivLength); // MD5, 1 iter, no salt (legacy)
+  if (key.length !== keyLength || iv.length !== ivLength) {
+    throw new Error(`Derived wrong sizes (key=${key.length}, iv=${iv.length})`);
+  }
+  return { key, iv };
 }
 
-function encrypt_legacy_using_IV(text) {
-  const result = EVP_BytesToKey(
-    process.env.JWT_SECRET,
-    null,
-    KEY_SIZE * 8, // byte to bit size
-    16
-  );
+export function decrypt_legacy_using_IV(hexCiphertext) {
+  const { key, iv } = deriveLegacyKeyIv(process.env.JWT_SECRET);
+  const decipher = crypto.createDecipheriv(algorithm, key, iv);
+  const out = Buffer.concat([
+    decipher.update(hexCiphertext, 'hex'),
+    decipher.final(),
+  ]);
+  return out.toString('utf8');
+}
 
-  const cipher = crypto.createCipheriv(algorithm, result.key, result.iv);
-  const encrypted = cipher.update(text, 'utf8', 'hex') + cipher.final('hex');
-  return encrypted.toString();
+export function encrypt_legacy_using_IV(utf8Plaintext) {
+  const { key, iv } = deriveLegacyKeyIv(process.env.JWT_SECRET);
+  const cipher = crypto.createCipheriv(algorithm, key, iv);
+  const out = Buffer.concat([
+    cipher.update(utf8Plaintext, 'utf8'),
+    cipher.final(),
+  ]);
+  return out.toString('hex');
 }
 
 export class AuthService {
