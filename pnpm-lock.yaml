@@ -5,6 +5,9 @@ settings:
   excludeLinksFromLockfile: false
   injectWorkspacePackages: true
 
+overrides:
+  exit-hook: 2.2.1
+
 importers:
 
   .:
@@ -10040,9 +10043,9 @@ packages:
   exifr@7.1.3:
     resolution: {integrity: sha512-g/aje2noHivrRSLbAUtBPWFbxKdKhgj/xr1vATDdUXPOFYJlQ62Ft0oy+72V6XLIpDJfHs6gXLbBLAolqOXYRw==}
 
-  exit-hook@4.0.0:
-    resolution: {integrity: sha512-Fqs7ChZm72y40wKjOFXBKg7nJZvQJmewP5/7LtePDdnah/+FH9Hp5sgMujSCMPXlxOAW2//1jrW9pnsY7o20vQ==}
-    engines: {node: '>=18'}
+  exit-hook@2.2.1:
+    resolution: {integrity: sha512-eNTPlAD67BmP31LDINZ3U7HSF8l57TxOY2PmBJ1shpCvpnxBF93mWCE8YHBnXs8qiUZJc9WDcWIeC3a2HIAMfw==}
+    engines: {node: '>=6'}
 
   exit@0.1.2:
     resolution: {integrity: sha512-Zk/eNKV2zbjpKzrsQ+n1G6poVbErQxJ0LBOJXaKZ1EViLzH+hrLu9cdXI4zw9dBQJslwBEpbQ2P1oS7nDxs6jQ==}
@@ -20208,7 +20211,7 @@ snapshots:
       '@mastra/core': 0.20.2(effect@3.16.12)(openapi-types@12.1.3)(react@18.3.1)(zod@3.25.76)
       '@modelcontextprotocol/sdk': 1.18.2
       date-fns: 4.1.0
-      exit-hook: 4.0.0
+      exit-hook: 2.2.1
       fast-deep-equal: 3.1.3
       uuid: 11.1.0
       zod: 3.25.76
@@ -29122,7 +29125,7 @@ snapshots:
 
   exifr@7.1.3: {}
 
-  exit-hook@4.0.0: {}
+  exit-hook@2.2.1: {}
 
   exit@0.1.2: {}
 
