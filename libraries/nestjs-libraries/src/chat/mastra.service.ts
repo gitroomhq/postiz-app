@@ -17,7 +17,7 @@ export class MastraService {
           postiz: await this._loadToolsService.agent(),
         },
         logger: new ConsoleLogger({
-          level: 'debug',
+          level: 'info',
         }),
       });
 
