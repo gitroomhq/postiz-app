@@ -48,7 +48,7 @@ export class IntegrationsController {
     private _postService: PostsService
   ) {}
   @Get('/')
-  getIntegration() {
+  getIntegrations() {
     return this._integrationManager.getAllIntegrations();
   }
 
