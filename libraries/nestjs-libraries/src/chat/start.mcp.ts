@@ -38,7 +38,8 @@ export const startMcp = async (app: INestApplication) => {
       req.auth = await organizationService.getOrgByApiKey(req.params.id);
       // @ts-ignore
       if (!req.auth) {
-        throw new HttpException('Invalid API Key', 400);
+        res.status(400).send('Invalid API Key');
+        return ;
       }
 
       const url = new URL(
