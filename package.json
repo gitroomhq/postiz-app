@@ -308,7 +308,8 @@
       "bcrypt"
     ],
     "overrides": {
-      "exit-hook": "2.2.1"
+      "exit-hook": "2.2.1",
+      "@sindresorhus/slugify": "1.1.0"
     }
   }
 }
