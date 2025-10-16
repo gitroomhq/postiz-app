@@ -14,7 +14,7 @@ export class PostsController {
 
   @EventPattern('post', Transport.REDIS)
   async post(data: { id: string }) {
-    console.log('process', data);
+    console.log('processing', data);
     try {
       return await this._postsService.post(data.id);
     } catch (err) {
