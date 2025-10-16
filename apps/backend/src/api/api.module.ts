@@ -31,8 +31,6 @@ import { Nowpayments } from '@gitroom/nestjs-libraries/crypto/nowpayments';
 import { WebhookController } from '@gitroom/backend/api/routes/webhooks.controller';
 import { SignatureController } from '@gitroom/backend/api/routes/signature.controller';
 import { AutopostController } from '@gitroom/backend/api/routes/autopost.controller';
-import { McpService } from '@gitroom/nestjs-libraries/mcp/mcp.service';
-import { McpController } from '@gitroom/backend/api/routes/mcp.controller';
 import { SetsController } from '@gitroom/backend/api/routes/sets.controller';
 import { ThirdPartyController } from '@gitroom/backend/api/routes/third-party.controller';
 import { MonitorController } from '@gitroom/backend/api/routes/monitor.controller';
@@ -63,7 +61,6 @@ const authenticatedController = [
     StripeController,
     AuthController,
     PublicController,
-    McpController,
     MonitorController,
     ...authenticatedController,
   ],
@@ -80,7 +77,6 @@ const authenticatedController = [
     TrackService,
     ShortLinkService,
     Nowpayments,
-    McpService,
   ],
   get exports() {
     return [...this.imports, ...this.providers];

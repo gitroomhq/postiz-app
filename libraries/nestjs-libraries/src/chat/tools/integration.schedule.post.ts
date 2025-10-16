@@ -9,6 +9,7 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { AllProvidersSettings } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/all.providers.settings';
 import { validate } from 'class-validator';
 import { Integration } from '@prisma/client';
+import { checkAuth } from '@gitroom/nestjs-libraries/chat/auth.context';
 
 @Injectable()
 export class IntegrationSchedulePostTool implements AgentToolInterface {
@@ -18,7 +19,7 @@ export class IntegrationSchedulePostTool implements AgentToolInterface {
   ) {}
   name = 'integrationSchedulePostTool';
 
-  async run(): Promise<any> {
+  run() {
     return createTool({
       id: 'schedulePostTool',
       description: `
@@ -56,7 +57,11 @@ If the tools return errors, you would need to rerun it with the right parameters
               postsAndComments: z
                 .array(
                   z.object({
-                    content: z.string().describe('The content of the post'),
+                    content: z
+                      .string()
+                      .describe(
+                        "The content of the post, HTML, Each line must be wrapped in <p> here is the possible tags: h1, h2, h3, u, strong, li, ul, p (you can't have u and strong together)"
+                      ),
                     attachments: z
                       .array(z.string())
                       .describe('The image of the post (URLS)'),
@@ -97,10 +102,14 @@ If the tools return errors, you would need to rerun it with the right parameters
           )
           .or(z.object({ errors: z.string() })),
       }),
-      execute: async ({ runtimeContext, context }) => {
+      execute: async (args, options) => {
+        const { context, runtimeContext } = args;
+        checkAuth(args, options);
         console.log(JSON.stringify(context, null, 2));
-        // @ts-ignore
-        const organizationId = runtimeContext.get('organization') as string;
+        const organizationId = JSON.parse(
+          // @ts-ignore
+          runtimeContext.get('organization') as string
+        ).id;
         const finalOutput = [];
 
         const integrations = {} as Record<string, Integration>;

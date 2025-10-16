@@ -1,22 +1,33 @@
-import { Logger, Controller, Get, Post, Req, Res, Query } from '@nestjs/common';
+import {
+  Logger,
+  Controller,
+  Get,
+  Post,
+  Req,
+  Res,
+  Query,
+  Param,
+} from '@nestjs/common';
 import {
   CopilotRuntime,
   OpenAIAdapter,
   copilotRuntimeNodeHttpEndpoint,
+  copilotRuntimeNextJSAppRouterEndpoint,
 } from '@copilotkit/runtime';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization } from '@prisma/client';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { MastraAgent } from '@ag-ui/mastra';
 import { MastraService } from '@gitroom/nestjs-libraries/chat/mastra.service';
-import { Mastra } from '@mastra/core/dist/mastra';
 import { Request, Response } from 'express';
 import { RuntimeContext } from '@mastra/core/di';
-let mastra: Mastra;
+import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
+import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 
 export type ChannelsContext = {
   integrations: string;
   organization: string;
+  ui: string;
 };
 
 @Controller('/copilot')
@@ -47,6 +58,7 @@ export class CopilotController {
   }
 
   @Post('/agent')
+  @CheckPolicies([AuthorizationActions.Create, Sections.AI])
   async agent(
     @Req() req: Request,
     @Res() res: Response,
@@ -59,33 +71,37 @@ export class CopilotController {
       Logger.warn('OpenAI API key not set, chat functionality will not work');
       return;
     }
-    mastra = mastra || (await this._mastraService.mastra());
+    const mastra = await this._mastraService.mastra();
     const runtimeContext = new RuntimeContext<ChannelsContext>();
     runtimeContext.set(
       'integrations',
       req?.body?.variables?.properties?.integrations || []
     );
 
-    runtimeContext.set('organization', organization.id);
+    runtimeContext.set('organization', JSON.stringify(organization));
+    runtimeContext.set('ui', 'true');
 
-    const runtime = new CopilotRuntime({
-      agents: MastraAgent.getLocalAgents({
-        mastra,
-        // @ts-ignore
-        runtimeContext,
-      }),
+    const agents = MastraAgent.getLocalAgents({
+      resourceId: organization.id,
+      mastra,
+      // @ts-ignore
+      runtimeContext,
     });
 
-    const copilotRuntimeHandler = copilotRuntimeNodeHttpEndpoint({
+    const runtime = new CopilotRuntime({
+      agents,
+    });
+
+    const copilotRuntimeHandler = copilotRuntimeNextJSAppRouterEndpoint({
       endpoint: '/copilot/agent',
       runtime,
-      properties: req.body.variables.properties,
+      // properties: req.body.variables.properties,
       serviceAdapter: new OpenAIAdapter({
         model: 'gpt-4.1',
       }),
     });
 
-    return copilotRuntimeHandler(req, res);
+    return copilotRuntimeHandler.handleRequest(req, res);
   }
 
   @Get('/credits')
@@ -97,5 +113,45 @@ export class CopilotController {
       organization,
       type || 'ai_images'
     );
+  }
+
+  @Get('/:thread/list')
+  @CheckPolicies([AuthorizationActions.Create, Sections.AI])
+  async getMessagesList(
+    @GetOrgFromRequest() organization: Organization,
+    @Param('thread') threadId: string
+  ): Promise<any> {
+    const mastra = await this._mastraService.mastra();
+    const memory = await mastra.getAgent('postiz').getMemory();
+    try {
+      return await memory.query({
+        resourceId: organization.id,
+        threadId,
+      });
+    } catch (err) {
+      return { messages: [] };
+    }
+  }
+
+  @Get('/list')
+  @CheckPolicies([AuthorizationActions.Create, Sections.AI])
+  async getList(@GetOrgFromRequest() organization: Organization) {
+    const mastra = await this._mastraService.mastra();
+    // @ts-ignore
+    const memory = await mastra.getAgent('postiz').getMemory();
+    const list = await memory.getThreadsByResourceIdPaginated({
+      resourceId: organization.id,
+      perPage: 100000,
+      page: 0,
+      orderBy: 'createdAt',
+      sortDirection: 'DESC',
+    });
+
+    return {
+      threads: list.threads.map((p) => ({
+        id: p.id,
+        title: p.title,
+      })),
+    };
   }
 }

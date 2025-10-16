@@ -700,3 +700,7 @@ html[dir='rtl'] [dir='ltr'] {
 .copilotKitMessage img {
   width: 200px;
 }
+
+.copilotKitMessage a {
+  color: var(--new-btn-text) !important;
+}

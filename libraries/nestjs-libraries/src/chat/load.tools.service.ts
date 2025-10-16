@@ -12,6 +12,11 @@ export const AgentState = object({
   proverbs: array(string()).default([]),
 });
 
+const renderArray = (list: string[], show: boolean) => {
+  if (!show) return '';
+  return list.map((p) => `- ${p}`).join('\n');
+};
+
 @Injectable()
 export class LoadToolsService {
   constructor(private _moduleRef: ModuleRef) {}
@@ -39,7 +44,9 @@ export class LoadToolsService {
     const tools = await this.loadTools();
     return new Agent({
       name: 'postiz',
-      instructions: () => {
+      description: 'Agent that helps manage and schedule social media posts for users',
+      instructions: ({ runtimeContext }) => {
+        const ui: string = runtimeContext.get('ui' as never);
         return `
       Global information:
         - Date (UTC): ${dayjs().format('YYYY-MM-DD HH:mm:ss')}
@@ -47,9 +54,12 @@ export class LoadToolsService {
       You are an agent that helps manage and schedule social media posts for users, you can:
         - Schedule posts into the future, or now, adding texts, images and videos
         - Generate pictures for posts
+        - Generate videos for posts
         - Generate text for posts
         - Show global analytics about socials
+        - List integrations (channels)
       
+      - We schedule posts to different integration like facebook, instagram, etc. but to the user we don't say integrations we say channels as integration is the technical name
       - When scheduling a post, you must follow the social media rules and best practices.
       - When scheduling a post, you can pass an array for list of posts for a social media platform, But it has different behavior depending on the platform.
         - For platforms like Threads, Bluesky and X (Twitter), each post in the array will be a separate post in the thread.
@@ -64,9 +74,15 @@ export class LoadToolsService {
       - In every message I will send you the list of needed social medias (id and platform), if you already have the information use it, if not, use the integrationSchema tool to get it.
       - Make sure you always take the last information I give you about the socials, it might have changed.
       - Before scheduling a post, always make sure you ask the user confirmation by providing all the details of the post (text, images, videos, date, time, social media platform, account).
-      - If the user confirm, ask if they would like to get a modal with populated content without scheduling the post yet or if they want to schedule it right away.
       - Between tools, we will reference things like: [output:name] and [input:name] to set the information right.
       - When outputting a date for the user, make sure it's human readable with time
+      - The content of the post, HTML, Each line must be wrapped in <p> here is the possible tags: h1, h2, h3, u, strong, li, ul, p (you can\'t have u and strong together), don't use a "code" box
+      ${renderArray(
+        [
+          'If the user confirm, ask if they would like to get a modal with populated content without scheduling the post yet or if they want to schedule it right away.',
+        ],
+        !!ui
+      )}
 `;
       },
       model: openai('gpt-4.1'),
@@ -74,6 +90,9 @@ export class LoadToolsService {
       memory: new Memory({
         storage: pStore,
         options: {
+          threads: {
+            generateTitle: true,
+          },
           workingMemory: {
             enabled: true,
             schema: AgentState,

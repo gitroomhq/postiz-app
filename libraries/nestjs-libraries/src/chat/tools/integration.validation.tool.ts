@@ -7,13 +7,14 @@ import {
   socialIntegrationList,
 } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { validationMetadatasToSchemas } from 'class-validator-jsonschema';
+import { checkAuth } from '@gitroom/nestjs-libraries/chat/auth.context';
 
 @Injectable()
 export class IntegrationValidationTool implements AgentToolInterface {
   constructor(private _integrationManager: IntegrationManager) {}
   name = 'integrationSchema';
 
-  async run(): Promise<any> {
+  run() {
     return createTool({
       id: 'integrationSchema',
       description: `Everytime we want to schedule a social media post, we need to understand the schema of the integration.
@@ -71,7 +72,9 @@ export class IntegrationValidationTool implements AgentToolInterface {
             ),
         }),
       }),
-      execute: async ({ context }) => {
+      execute: async (args, options) => {
+        const { context, runtimeContext } = args;
+        checkAuth(args, options);
         const integration = socialIntegrationList.find(
           (p) => p.identifier === context.platform
         )!;

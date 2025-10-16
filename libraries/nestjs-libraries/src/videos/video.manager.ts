@@ -10,16 +10,28 @@ import {
 export class VideoManager {
   constructor(private _moduleRef: ModuleRef) {}
 
-  getAllVideos(): any[] {
-    return (Reflect.getMetadata('video', VideoAbstract) || []).filter((f: any) => f.available).map(
-      (p: any) => ({
+  getAllVideos(): {
+    identifier: string;
+    title: string;
+    dto: any;
+    description: string;
+    target: VideoAbstract<any>,
+    tools: { functionName: string; output: string }[];
+    placement: string;
+    trial: boolean;
+  }[] {
+    return (Reflect.getMetadata('video', VideoAbstract) || [])
+      .filter((f: any) => f.available)
+      .map((p: any) => ({
+        target: p.target,
         identifier: p.identifier,
         title: p.title,
+        tools: p.tools,
+        dto: p.dto,
         description: p.description,
         placement: p.placement,
         trial: p.trial,
-      })
-    );
+      }));
   }
 
   checkAvailableVideoFunction(method: any) {

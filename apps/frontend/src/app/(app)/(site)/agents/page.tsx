@@ -1,11 +1,11 @@
 import { Metadata } from 'next';
-import { Agent } from '@gitroom/frontend/components/agents/agent';
+import { redirect } from 'next/navigation';
+
 export const metadata: Metadata = {
-  title: 'Agent',
+  title: 'Postiz - Agent',
   description: '',
 };
+
 export default async function Page() {
-  return (
-    <Agent />
-  );
+  return redirect('/agents/new');
 }

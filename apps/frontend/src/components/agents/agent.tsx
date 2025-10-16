@@ -6,11 +6,8 @@ import React, {
   useCallback,
   useMemo,
   useState,
-  useContext,
+  ReactNode,
 } from 'react';
-import { useVariables } from '@gitroom/react/helpers/variable.context';
-import { CopilotKit } from '@copilotkit/react-core';
-import { CopilotChat, CopilotKitCSSProperties } from '@copilotkit/react-ui';
 import clsx from 'clsx';
 import useCookie from 'react-use-cookie';
 import useSWR from 'swr';
@@ -21,12 +18,9 @@ import Image from 'next/image';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useWaitForClass } from '@gitroom/helpers/utils/use.wait.for.class';
 import { MultiMediaComponent } from '@gitroom/frontend/components/media/media.component';
-import {
-  InputProps,
-  UserMessageProps,
-} from '@copilotkit/react-ui/dist/components/chat/props';
-import { Input } from '@gitroom/frontend/components/agents/agent.input';
 import { Integration } from '@prisma/client';
+import Link from 'next/link';
+import { useParams, usePathname, useRouter } from 'next/navigation';
 
 export const MediaPortal: FC<{
   media: { path: string; id: string }[];
@@ -115,29 +109,6 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
       )}
     >
       <div className="absolute top-0 start-0 w-full h-full p-[20px] overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
-        <div className="mb-[15px] justify-center flex group-[.sidebar]:pb-[15px]">
-          <button className="text-white whitespace-nowrap flex-1 pt-[12px] pb-[14px] ps-[16px] pe-[20px] group-[.sidebar]:p-0 min-h-[44px] max-h-[44px] rounded-md bg-btnPrimary flex justify-center items-center gap-[5px] outline-none">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="21"
-              height="20"
-              viewBox="0 0 21 20"
-              fill="none"
-              className="min-w-[21px] min-h-[20px]"
-            >
-              <path
-                d="M10.5001 4.16699V15.8337M4.66675 10.0003H16.3334"
-                stroke="white"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <div className="flex-1 text-start text-[16px] group-[.sidebar]:hidden">
-              Start a new session
-            </div>
-          </button>
-        </div>
         <div className="flex items-center">
           <h2 className="group-[.sidebar]:hidden flex-1 text-[20px] font-[500] mb-[15px]">
             Select Channels
@@ -222,121 +193,79 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
   );
 };
 
-const PropertiesContext = createContext({ properties: [] });
-export const Agent: FC = () => {
-  const { backendUrl } = useVariables();
+export const PropertiesContext = createContext({ properties: [] });
+export const Agent: FC<{ children: ReactNode }> = ({ children }) => {
   const [properties, setProperties] = useState([]);
 
   return (
     <PropertiesContext.Provider value={{ properties }}>
-      <CopilotKit
-        credentials="include"
-        runtimeUrl={backendUrl + '/copilot/agent'}
-        showDevConsole={false}
-        // publicApiKey="ck_pub_35c5e2cef8891a02b99bffed73c53d8d"
-        agent="postiz"
-        properties={{
-          integrations: properties,
-        }}
-      >
-        <AgentList onChange={setProperties} />
-        <div
-          style={
-            {
-              '--copilot-kit-primary-color': 'var(--new-btn-text)',
-              '--copilot-kit-background-color': 'var(--new-bg-color)',
-            } as CopilotKitCSSProperties
-          }
-          className="trz agent bg-newBgColorInner flex flex-col gap-[15px] transition-all flex-1 items-center relative"
-        >
-          <div className="absolute left-0 w-full h-full pb-[20px]">
-            <CopilotChat
-              className="w-full h-full"
-              labels={{
-                title: 'Your Assistant',
-                initial: 'Hi! 👋 How can I assist you today?',
-              }}
-              UserMessage={Message}
-              Input={NewInput}
-            />
-          </div>
-        </div>
-      </CopilotKit>
+      <AgentList onChange={setProperties} />
+      <div className="bg-newBgColorInner flex flex-1">{children}</div>
+      <Threads />
     </PropertiesContext.Provider>
   );
 };
 
-const Message: FC<UserMessageProps> = (props) => {
-  const convertContentToImagesAndVideo = useMemo(() => {
-    return (props.message?.content || '')
-      .replace(/Video: (http.*mp4\n)/g, (match, p1) => {
-        return `<video controls class="h-[150px] w-[150px] rounded-[8px] mb-[10px]"><source src="${p1.trim()}" type="video/mp4">Your browser does not support the video tag.</video>`;
-      })
-      .replace(/Image: (http.*\n)/g, (match, p1) => {
-        return `<img src="${p1.trim()}" class="h-[150px] w-[150px] max-w-full border border-newBgColorInner" />`;
-      })
-      .replace(/\[\-\-Media\-\-\](.*)\[\-\-Media\-\-\]/g, (match, p1) => {
-        return `<div class="flex justify-center mt-[20px]">${p1}</div>`;
-      })
-      .replace(
-        /(\[--integrations--\][\s\S]*?\[--integrations--\])/g,
-        (match, p1) => {
-          return ``;
-        }
-      );
-  }, [props.message?.content]);
+const Threads: FC = () => {
+  const fetch = useFetch();
+  const router = useRouter();
+  const pathname = usePathname();
+  const threads = useCallback(async () => {
+    return (await fetch('/copilot/list')).json();
+  }, []);
+  const { id } = useParams<{ id: string }>();
+
+  const { data } = useSWR('threads', threads);
+
   return (
     <div
-      className="copilotKitMessage copilotKitUserMessage min-w-[300px]"
-      dangerouslySetInnerHTML={{ __html: convertContentToImagesAndVideo }}
-    />
-  );
-};
-const NewInput: FC<InputProps> = (props) => {
-  const [media, setMedia] = useState([] as { path: string; id: string }[]);
-  const [value, setValue] = useState('');
-  const { properties } = useContext(PropertiesContext);
-  return (
-    <>
-      <MediaPortal
-        value={value}
-        media={media}
-        setMedia={(e) => setMedia(e.target.value)}
-      />
-      <Input
-        {...props}
-        onChange={setValue}
-        onSend={(text) => {
-          const send = props.onSend(
-            text +
-              (media.length > 0
-                ? '\n[--Media--]' +
-                  media
-                    .map((m) =>
-                      m.path.indexOf('mp4') > -1
-                        ? `Video: ${m.path}`
-                        : `Image: ${m.path}`
-                    )
-                    .join('\n') +
-                  '\n[--Media--]'
-                : '') +
-              `
-[--integrations--]
-Use the following social media platforms: ${JSON.stringify(
-                properties.map((p) => ({
-                  id: p.id,
-                  platform: p.identifier,
-                  profilePicture: p.picture,
-                  additionalSettings: p.additionalSettings,
-                }))
+      className={clsx(
+        'trz bg-newBgColorInner flex flex-col gap-[15px] transition-all relative',
+        'w-[260px]'
+      )}
+    >
+      <div className="absolute top-0 start-0 w-full h-full p-[20px] overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
+        <div className="mb-[15px] justify-center flex group-[.sidebar]:pb-[15px]">
+          <Link
+            href={`/agents`}
+            className="text-white whitespace-nowrap flex-1 pt-[12px] pb-[14px] ps-[16px] pe-[20px] group-[.sidebar]:p-0 min-h-[44px] max-h-[44px] rounded-md bg-btnPrimary flex justify-center items-center gap-[5px] outline-none"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="21"
+              height="20"
+              viewBox="0 0 21 20"
+              fill="none"
+              className="min-w-[21px] min-h-[20px]"
+            >
+              <path
+                d="M10.5001 4.16699V15.8337M4.66675 10.0003H16.3334"
+                stroke="white"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <div className="flex-1 text-start text-[16px] group-[.sidebar]:hidden">
+              Start a new chat
+            </div>
+          </Link>
+        </div>
+        <div className="flex flex-col gap-[1px]">
+          {data?.threads?.map((p: any) => (
+            <Link
+              className={clsx(
+                'overflow-ellipsis overflow-hidden whitespace-nowrap hover:bg-newBgColor px-[10px] py-[6px] rounded-[10px] cursor-pointer',
+                p.id === id && 'bg-newBgColor'
               )}
-[--integrations--]`
-          );
-          setValue('');
-          setMedia([]);
-          return send;
-        }}
-      />
-    </>
+              href={`/agents/${p.id}`}
+              key={p.id}
+            >
+              {p.title}
+            </Link>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 };

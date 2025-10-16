@@ -10,6 +10,7 @@ import { validationMetadatasToSchemas } from 'class-validator-jsonschema';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { timer } from '@gitroom/helpers/utils/timer';
+import { checkAuth } from '@gitroom/nestjs-libraries/chat/auth.context';
 
 @Injectable()
 export class IntegrationTriggerTool implements AgentToolInterface {
@@ -19,7 +20,7 @@ export class IntegrationTriggerTool implements AgentToolInterface {
   ) {}
   name = 'triggerTool';
 
-  async run(): Promise<any> {
+  run() {
     return createTool({
       id: 'triggerTool',
       description: `After using the integrationSchema, we sometimes miss details we can\'t ask from the user, like ids.
@@ -39,12 +40,16 @@ export class IntegrationTriggerTool implements AgentToolInterface {
         ),
       }),
       outputSchema: z.object({
-        output: z.array(z.object()),
+        output: z.array(z.record(z.string(), z.any())),
       }),
-      execute: async ({ runtimeContext, context }) => {
+      execute: async (args, options) => {
+        const { context, runtimeContext } = args;
+        checkAuth(args, options);
         console.log('triggerTool', context);
-        // @ts-ignore
-        const organizationId = runtimeContext.get('organization') as string;
+        const organizationId = JSON.parse(
+          // @ts-ignore
+          runtimeContext.get('organization') as string
+        ).id;
 
         const getIntegration =
           await this._integrationService.getIntegrationById(

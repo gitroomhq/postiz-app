@@ -1,6 +1,9 @@
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import {
-  ExposeVideoFunction, URL, Video, VideoAbstract
+  ExposeVideoFunction,
+  URL,
+  Video,
+  VideoAbstract,
 } from '@gitroom/nestjs-libraries/videos/video.interface';
 import { chunk } from 'lodash';
 import Transloadit from 'transloadit';
@@ -12,6 +15,7 @@ import { stringifySync } from 'subtitle';
 import pLimit from 'p-limit';
 import { FalService } from '@gitroom/nestjs-libraries/openai/fal.service';
 import { IsString } from 'class-validator';
+import { JSONSchema } from 'class-validator-jsonschema';
 const limit = pLimit(2);
 
 const transloadit = new Transloadit({
@@ -24,10 +28,16 @@ async function getAudioDuration(buffer: Buffer): Promise<number> {
   return metadata.format.duration || 0;
 }
 
-class Params {
+class ImagesSlidesParams {
+  @JSONSchema({
+    description: 'Elevenlabs voice id, use a special tool to get it, this is a required filed',
+  })
   @IsString()
   voice: string;
 
+  @JSONSchema({
+    description: 'Simple string of the prompt, not a json',
+  })
   @IsString()
   prompt: string;
 }
@@ -35,8 +45,10 @@ class Params {
 @Video({
   identifier: 'image-text-slides',
   title: 'Image Text Slides',
-  description: 'Generate videos slides from images and text',
+  description: 'Generate videos slides from images and text, Don\'t break down the slides, provide only the first slide information',
   placement: 'text-to-image',
+  tools: [{ functionName: 'loadVoices', output: 'voice id' }],
+  dto: ImagesSlidesParams,
   trial: true,
   available:
     !!process.env.ELEVENSLABS_API_KEY &&
@@ -45,8 +57,8 @@ class Params {
     !!process.env.OPENAI_API_KEY &&
     !!process.env.FAL_KEY,
 })
-export class ImagesSlides extends VideoAbstract<Params> {
-  override dto = Params;
+export class ImagesSlides extends VideoAbstract<ImagesSlidesParams> {
+  override dto = ImagesSlidesParams;
   private storage = UploadFactory.createStorage();
   constructor(
     private _openaiService: OpenaiService,
@@ -57,7 +69,7 @@ export class ImagesSlides extends VideoAbstract<Params> {
 
   async process(
     output: 'vertical' | 'horizontal',
-    customParams: Params
+    customParams: ImagesSlidesParams
   ): Promise<URL> {
     const list = await this._openaiService.generateSlidesFromText(
       customParams.prompt
@@ -152,6 +164,8 @@ export class ImagesSlides extends VideoAbstract<Params> {
         })),
       { format: 'SRT' }
     );
+
+    console.log(split);
 
     const { results } = await transloadit.createAssembly({
       uploads: {
