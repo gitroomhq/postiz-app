@@ -1,7 +1,35 @@
 import { sign, verify } from 'jsonwebtoken';
 import { hashSync, compareSync } from 'bcrypt';
-import bcrypt from 'bcrypt';
 import crypto from 'crypto';
+import EVP_BytesToKey from 'evp_bytestokey';
+const KEY_SIZE = 24;
+const algorithm = 'aes-256-cbc';
+
+function decrypt_legacy_using_IV(text) {
+  const result = EVP_BytesToKey(
+    process.env.JWT_SECRET,
+    null,
+    KEY_SIZE * 8, // byte to bit size
+    16
+  );
+
+  const decipher = crypto.createDecipheriv(algorithm, result.key, result.iv);
+  const decrypted = decipher.update(text, 'hex', 'utf8') + decipher.final('utf8');
+  return decrypted.toString();
+}
+
+function encrypt_legacy_using_IV(text) {
+  const result = EVP_BytesToKey(
+    process.env.JWT_SECRET,
+    null,
+    KEY_SIZE * 8, // byte to bit size
+    16
+  );
+
+  const cipher = crypto.createCipheriv(algorithm, result.key, result.iv);
+  const encrypted = cipher.update(text, 'utf8', 'hex') + cipher.final('hex');
+  return encrypted.toString();
+}
 
 export class AuthService {
   static hashPassword(password: string) {
@@ -18,27 +46,10 @@ export class AuthService {
   }
 
   static fixedEncryption(value: string) {
-    // encryption algorithm
-    const algorithm = 'aes-256-cbc';
-
-    // create a cipher object
-    const cipher = crypto.createCipher(algorithm, process.env.JWT_SECRET);
-
-    // encrypt the plain text
-    let encrypted = cipher.update(value, 'utf8', 'hex');
-    encrypted += cipher.final('hex');
-
-    return encrypted;
+    return encrypt_legacy_using_IV(value);
   }
 
   static fixedDecryption(hash: string) {
-    const algorithm = 'aes-256-cbc';
-    const decipher = crypto.createDecipher(algorithm, process.env.JWT_SECRET);
-
-    // decrypt the encrypted text
-    let decrypted = decipher.update(hash, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
-
-    return decrypted;
+    return decrypt_legacy_using_IV(hash);
   }
 }

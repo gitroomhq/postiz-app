@@ -152,6 +152,7 @@
     "dotenv": "^16.5.0",
     "dotenv-cli": "^8.0.0",
     "emoji-picker-react": "^4.12.0",
+    "evp_bytestokey": "^1.0.3",
     "facebook-nodejs-business-sdk": "^21.0.5",
     "fast-xml-parser": "^4.5.1",
     "google-auth-library": "^9.11.0",
