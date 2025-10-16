@@ -85,20 +85,20 @@ export const PublicComponent = () => {
       <div className="text-customColor18 mt-[4px]">
         {t(
           'connect_your_mcp_client_to_postiz_to_schedule_your_posts_faster',
-          'Connect your MCP client to Postiz to schedule your posts faster!'
+          'Connect Postiz MCP server to your client (Http streaming) to schedule your posts faster.'
         )}
       </div>
       <div className="my-[16px] mt-[16px] bg-sixth border-fifth items-center border rounded-[4px] p-[24px] flex gap-[24px]">
         <div className="flex items-center">
           {reveal2 ? (
-            `${backendUrl}/mcp/` + user.publicApi + '/sse'
+            `${backendUrl}/mcp/` + user.publicApi
           ) : (
             <>
               <div className="blur-sm">
-                {(`${backendUrl}/mcp/` + user.publicApi + '/sse').slice(0, -5)}
+                {(`${backendUrl}/mcp/` + user.publicApi).slice(0, -5)}
               </div>
               <div>
-                {(`${backendUrl}/mcp/` + user.publicApi + '/sse').slice(-5)}
+                {(`${backendUrl}/mcp/` + user.publicApi).slice(-5)}
               </div>
             </>
           )}

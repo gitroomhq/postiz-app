@@ -42,7 +42,7 @@
   "reveal": "Reveal",
   "copy_key": "Copy Key",
   "mcp": "MCP",
-  "connect_your_mcp_client_to_postiz_to_schedule_your_posts_faster": "Connect your MCP client to Postiz to schedule your posts faster!",
+  "connect_your_mcp_client_to_postiz_to_schedule_your_posts_faster": "Connect Postiz MCP server to your client (Http streaming) to schedule your posts faster!",
   "share_with_a_client": "Share with a client",
   "post": "Post",
   "comments": "Comments",

@@ -15,6 +15,9 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
   isBetweenSteps = false;
   scopes = ['write:statuses', 'profile', 'write:media'];
   editor = 'normal' as const;
+  maxLength() {
+    return 500;
+  }
 
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     return {

@@ -113,6 +113,8 @@ export interface SocialProvider
   identifier: string;
   refreshWait?: boolean;
   convertToJPEG?: boolean;
+  dto?: any;
+  maxLength: (additionalSettings?: any) => number;
   isWeb3?: boolean;
   editor: 'normal' | 'markdown' | 'html';
   customFields?: () => Promise<

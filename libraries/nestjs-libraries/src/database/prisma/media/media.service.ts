@@ -37,7 +37,7 @@ export class MediaService {
     org: Organization,
     generatePromptFirst?: boolean
   ) {
-    return await this._subscriptionService.useCredit(
+    const generating = await this._subscriptionService.useCredit(
       org,
       'ai_images',
       async () => {
@@ -48,6 +48,8 @@ export class MediaService {
         return this._openAi.generateImage(prompt, !!generatePromptFirst);
       }
     );
+
+    return generating;
   }
 
   saveFile(org: string, fileName: string, filePath: string) {
@@ -84,6 +86,7 @@ export class MediaService {
       org,
       'ai_videos'
     );
+
     if (totalCredits.credits <= 0) {
       throw new SubscriptionException({
         action: AuthorizationActions.Create,
@@ -100,7 +103,9 @@ export class MediaService {
       throw new HttpException('This video is not available in trial mode', 406);
     }
 
+    console.log(body.customParams);
     await video.instance.processAndValidate(body.customParams);
+    console.log('no err');
 
     return await this._subscriptionService.useCredit(
       org,
@@ -125,8 +130,14 @@ export class MediaService {
 
     // @ts-ignore
     const functionToCall = video.instance[functionName];
-    if (typeof functionToCall !== 'function' || this._videoManager.checkAvailableVideoFunction(functionToCall)) {
-      throw new HttpException(`Function ${functionName} not found on video instance`, 400);
+    if (
+      typeof functionToCall !== 'function' ||
+      this._videoManager.checkAvailableVideoFunction(functionToCall)
+    ) {
+      throw new HttpException(
+        `Function ${functionName} not found on video instance`,
+        400
+      );
     }
 
     return functionToCall(body);
