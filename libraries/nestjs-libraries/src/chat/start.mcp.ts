@@ -1,11 +1,11 @@
 import { INestApplication } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { MastraService } from '@gitroom/nestjs-libraries/chat/mastra.service';
+import { MCPServer } from '@mastra/mcp';
 import { randomUUID } from 'crypto';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { runWithContext } from './async.storage';
 export const startMcp = async (app: INestApplication) => {
-  const MCPServer = await import('@mastra/mcp').then(m => m.MCPServer);
   const mastraService = app.get(MastraService, { strict: false });
   const organizationService = app.get(OrganizationService, { strict: false });
 

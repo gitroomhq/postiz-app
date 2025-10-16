@@ -21,11 +21,12 @@ async function bootstrap() {
     rawBody: true,
     cors: {
       ...(!process.env.NOT_SECURED ? { credentials: true } : {}),
-      allowedHeaders: ['Content-Type', 'Authorization'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'x-copilotkit-runtime-client-gql-version'],
       exposedHeaders: [
         'reload',
         'onboarding',
         'activate',
+        'x-copilotkit-runtime-client-gql-version',
         ...(process.env.NOT_SECURED ? ['auth', 'showorg', 'impersonate'] : []),
       ],
       origin: [
