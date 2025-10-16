@@ -7,7 +7,7 @@
   "keywords": [],
   "author": "",
   "engines": {
-    "node": ">=20.0.0 <21.0.0"
+    "node": ">=22.0.0 <23.0.0"
   },
   "packageManager": "pnpm@10.6.1",
   "scripts": {
@@ -306,10 +306,6 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "bcrypt"
-    ],
-    "overrides": {
-      "exit-hook": "2.2.1",
-      "@sindresorhus/slugify": "1.1.0"
-    }
+    ]
   }
 }
