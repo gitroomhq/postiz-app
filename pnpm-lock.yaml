@@ -11,7 +11,7 @@ importers:
     dependencies:
       '@ag-ui/mastra':
         specifier: 0.2.0
-        version: 0.2.0(@ag-ui/client@0.0.40)(@ag-ui/core@0.0.37)(@copilotkit/runtime@1.10.6(35415372e5e36eaf8297399bb868a9dd))(@mastra/core@0.20.2(effect@3.16.12)(openapi-types@12.1.3)(react@18.3.1)(zod@3.25.76))(effect@3.16.12)(openapi-types@12.1.3)(react@18.3.1)(zod@3.25.76)
+        version: 0.2.0(@ag-ui/client@0.0.40)(@ag-ui/core@0.0.39)(@copilotkit/runtime@1.10.6(d13074c5646666f7f1336979aaba8e8f))(@mastra/core@0.20.2(effect@3.16.12)(openapi-types@12.1.3)(react@18.3.1)(zod@3.25.76))(effect@3.16.12)(openapi-types@12.1.3)(react@18.3.1)(zod@3.25.76)
       '@ai-sdk/openai':
         specifier: ^2.0.52
         version: 2.0.52(zod@3.25.76)
@@ -38,7 +38,7 @@ importers:
         version: 1.10.6(@types/react@18.3.1)(graphql@16.11.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@copilotkit/runtime':
         specifier: 1.10.6
-        version: 1.10.6(35415372e5e36eaf8297399bb868a9dd)
+        version: 1.10.6(d13074c5646666f7f1336979aaba8e8f)
       '@hookform/resolvers':
         specifier: ^3.3.4
         version: 3.10.0(react-hook-form@7.65.0(react@18.3.1))
@@ -391,8 +391,8 @@ importers:
         specifier: ^2.1.35
         version: 2.1.35
       multer:
-        specifier: ^1.4.5-lts.1
-        version: 1.4.5-lts.2
+        specifier: ^2.0.2
+        version: 2.0.2
       music-metadata:
         specifier: ^7.14.0
         version: 7.14.0
@@ -415,8 +415,8 @@ importers:
         specifier: ^0.66.0
         version: 0.66.0(request@2.88.2)
       nodemailer:
-        specifier: ^6.9.15
-        version: 6.10.1
+        specifier: ^7.0.7
+        version: 7.0.7
       nostr-tools:
         specifier: ^2.10.4
         version: 2.17.0(typescript@5.5.4)
@@ -9026,10 +9026,6 @@ packages:
   concat-map@0.0.1:
     resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
 
-  concat-stream@1.6.2:
-    resolution: {integrity: sha512-27HBghJxjiZtIk3Ycvn/4kbJk/1uZuJFfuPEns6LaEvpvG1f0hTea8lilrouyo9mVc2GWdcEZ8OLoGmSADlrCw==}
-    engines: {'0': node >= 0.8}
-
   concat-stream@2.0.0:
     resolution: {integrity: sha512-MWufYdFw53ccGjCA+Ol7XJYpAlW6/prSMzuPOTRnJGcGzuhLn4Scrz7qf6o8bROZ514ltazcIFJZevcfbo0x7A==}
     engines: {'0': node >= 6.0}
@@ -12778,11 +12774,6 @@ packages:
   msgpackr@1.11.5:
     resolution: {integrity: sha512-UjkUHN0yqp9RWKy0Lplhh+wlpdt9oQBYgULZOiFhV3VclSF1JnSQWZ5r9gORQlNYaUKQoR8itv7g7z1xDDuACA==}
 
-  multer@1.4.5-lts.2:
-    resolution: {integrity: sha512-VzGiVigcG9zUAoCNU+xShztrlr1auZOlurXynNvO9GiWD1/mTBbUljOKY+qMeazBqXgRnjzeEgJI/wyjJUHg9A==}
-    engines: {node: '>= 6.0.0'}
-    deprecated: Multer 1.x is impacted by a number of vulnerabilities, which have been patched in 2.x. You should upgrade to the latest 2.x version.
-
   multer@2.0.2:
     resolution: {integrity: sha512-u7f2xaZ/UG8oLXHvtF/oWTRvT44p9ecwBBqTwgJVq0+4BW1g8OW01TyMEGWBHbyMOYVHXslaut7qEQ1meATXgw==}
     engines: {node: '>= 10.16.0'}
@@ -12985,8 +12976,8 @@ packages:
     resolution: {integrity: sha512-s4Hrg5q+VPl4/tJVG++pImxF6eb8tNJNj4KnDqAOKL6zGU34lo9RXmyAN158njwGN+v8hdNf8s9fWIYW9hPb5A==}
     engines: {node: '>=0.12'}
 
-  nodemailer@6.10.1:
-    resolution: {integrity: sha512-Z+iLaBGVaSjbIzQ4pX6XV41HrooLsQ10ZWPUehGmuantvzWoDVBnmsdUcOIDM1t+yPor5pDhVlDESgOMEGxhHA==}
+  nodemailer@7.0.7:
+    resolution: {integrity: sha512-jGOaRznodf62TVzdyhKt/f1Q/c3kYynk8629sgJHpRzGZj01ezbgMMWJSAjHADcwTKxco3B68/R+KHJY2T5BaA==}
     engines: {node: '>=6.0.0'}
 
   nodemon@3.1.10:
@@ -16736,10 +16727,10 @@ snapshots:
       '@ag-ui/core': 0.0.39
       '@ag-ui/proto': 0.0.39
 
-  '@ag-ui/langgraph@0.0.18(@ag-ui/client@0.0.40)(@ag-ui/core@0.0.37)(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.1.0(@opentelemetry/api@1.9.0))(openai@6.4.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.25.76))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@ag-ui/langgraph@0.0.18(@ag-ui/client@0.0.40)(@ag-ui/core@0.0.39)(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.1.0(@opentelemetry/api@1.9.0))(openai@6.4.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.25.76))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@ag-ui/client': 0.0.40
-      '@ag-ui/core': 0.0.37
+      '@ag-ui/core': 0.0.39
       '@langchain/core': 0.3.78(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.1.0(@opentelemetry/api@1.9.0))(openai@6.4.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.25.76))
       '@langchain/langgraph-sdk': 0.1.10(@langchain/core@0.3.78(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.1.0(@opentelemetry/api@1.9.0))(openai@6.4.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.25.76)))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       partial-json: 0.1.7
@@ -16752,12 +16743,12 @@ snapshots:
       - react
       - react-dom
 
-  '@ag-ui/mastra@0.2.0(@ag-ui/client@0.0.40)(@ag-ui/core@0.0.37)(@copilotkit/runtime@1.10.6(35415372e5e36eaf8297399bb868a9dd))(@mastra/core@0.20.2(effect@3.16.12)(openapi-types@12.1.3)(react@18.3.1)(zod@3.25.76))(effect@3.16.12)(openapi-types@12.1.3)(react@18.3.1)(zod@3.25.76)':
+  '@ag-ui/mastra@0.2.0(@ag-ui/client@0.0.40)(@ag-ui/core@0.0.39)(@copilotkit/runtime@1.10.6(d13074c5646666f7f1336979aaba8e8f))(@mastra/core@0.20.2(effect@3.16.12)(openapi-types@12.1.3)(react@18.3.1)(zod@3.25.76))(effect@3.16.12)(openapi-types@12.1.3)(react@18.3.1)(zod@3.25.76)':
     dependencies:
       '@ag-ui/client': 0.0.40
-      '@ag-ui/core': 0.0.37
+      '@ag-ui/core': 0.0.39
       '@ai-sdk/ui-utils': 1.2.11(zod@3.25.76)
-      '@copilotkit/runtime': 1.10.6(35415372e5e36eaf8297399bb868a9dd)
+      '@copilotkit/runtime': 1.10.6(d13074c5646666f7f1336979aaba8e8f)
       '@mastra/client-js': 0.15.2(effect@3.16.12)(openapi-types@12.1.3)(react@18.3.1)(zod@3.25.76)
       '@mastra/core': 0.20.2(effect@3.16.12)(openapi-types@12.1.3)(react@18.3.1)(zod@3.25.76)
       rxjs: 7.8.1
@@ -18702,12 +18693,12 @@ snapshots:
       - encoding
       - graphql
 
-  '@copilotkit/runtime@1.10.6(35415372e5e36eaf8297399bb868a9dd)':
+  '@copilotkit/runtime@1.10.6(d13074c5646666f7f1336979aaba8e8f)':
     dependencies:
       '@ag-ui/client': 0.0.40
-      '@ag-ui/core': 0.0.37
+      '@ag-ui/core': 0.0.39
       '@ag-ui/encoder': 0.0.39
-      '@ag-ui/langgraph': 0.0.18(@ag-ui/client@0.0.40)(@ag-ui/core@0.0.37)(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.1.0(@opentelemetry/api@1.9.0))(openai@6.4.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.25.76))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@ag-ui/langgraph': 0.0.18(@ag-ui/client@0.0.40)(@ag-ui/core@0.0.39)(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.1.0(@opentelemetry/api@1.9.0))(openai@6.4.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.25.76))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@ag-ui/proto': 0.0.39
       '@anthropic-ai/sdk': 0.57.0
       '@copilotkit/shared': 1.10.6
@@ -27891,13 +27882,6 @@ snapshots:
 
   concat-map@0.0.1: {}
 
-  concat-stream@1.6.2:
-    dependencies:
-      buffer-from: 1.1.2
-      inherits: 2.0.4
-      readable-stream: 2.3.8
-      typedarray: 0.0.6
-
   concat-stream@2.0.0:
     dependencies:
       buffer-from: 1.1.2
@@ -32904,16 +32888,6 @@ snapshots:
     optionalDependencies:
       msgpackr-extract: 3.0.3
 
-  multer@1.4.5-lts.2:
-    dependencies:
-      append-field: 1.0.0
-      busboy: 1.6.0
-      concat-stream: 1.6.2
-      mkdirp: 0.5.6
-      object-assign: 4.1.1
-      type-is: 1.6.18
-      xtend: 4.0.2
-
   multer@2.0.2:
     dependencies:
       append-field: 1.0.0
@@ -33131,7 +33105,7 @@ snapshots:
       - request
       - supports-color
 
-  nodemailer@6.10.1: {}
+  nodemailer@7.0.7: {}
 
   nodemon@3.1.10:
     dependencies:
