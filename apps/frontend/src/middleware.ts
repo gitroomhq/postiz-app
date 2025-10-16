@@ -9,15 +9,23 @@ import {
   headerName,
   languages,
 } from '@gitroom/react/translation/i18n.config';
+
 acceptLanguage.languages(languages);
 
-// This function can be marked `async` if using `await` inside
 export async function middleware(request: NextRequest) {
   const nextUrl = request.nextUrl;
+
   const authCookie =
     request.cookies.get('auth') ||
     request.headers.get('auth') ||
     nextUrl.searchParams.get('loggedAuth');
+
+  // 🟢 Skip auth in frontend-only deployments
+  if (process.env.SKIP_AUTH === '1') {
+    console.log('🟢 Skipping auth check (frontend-only mode)');
+    return NextResponse.next();
+  }
+
   const lng = request.cookies.has(cookieName)
     ? acceptLanguage.get(request.cookies.get(cookieName).value)
     : acceptLanguage.get(
@@ -26,10 +34,7 @@ export async function middleware(request: NextRequest) {
       );
 
   const topResponse = NextResponse.next();
-
-  if (lng) {
-    topResponse.headers.set(cookieName, lng);
-  }
+  if (lng) topResponse.headers.set(cookieName, lng);
 
   if (nextUrl.pathname.startsWith('/modal/') && !authCookie) {
     return NextResponse.redirect(new URL(`/auth/login-required`, nextUrl.href));
@@ -42,8 +47,9 @@ export async function middleware(request: NextRequest) {
   ) {
     return topResponse;
   }
-  // If the URL is logout, delete the cookie and redirect to login
-  if (nextUrl.href.indexOf('/auth/logout') > -1) {
+
+  // Handle logout
+  if (nextUrl.href.includes('/auth/logout')) {
     const response = NextResponse.redirect(
       new URL('/auth/login', nextUrl.href)
     );
@@ -64,28 +70,30 @@ export async function middleware(request: NextRequest) {
 
   const org = nextUrl.searchParams.get('org');
   const url = new URL(nextUrl).search;
-  if (nextUrl.href.indexOf('/auth') === -1 && !authCookie) {
+
+  if (!nextUrl.href.includes('/auth') && !authCookie) {
     const providers = ['google', 'settings'];
-    const findIndex = providers.find((p) => nextUrl.href.indexOf(p) > -1);
+    const findIndex = providers.find((p) => nextUrl.href.includes(p));
     const additional = !findIndex
       ? ''
-      : (url.indexOf('?') > -1 ? '&' : '?') +
-        `provider=${(findIndex === 'settings'
-          ? process.env.POSTIZ_GENERIC_OAUTH
-            ? 'generic'
-            : 'github'
-          : findIndex
+      : (url.includes('?') ? '&' : '?') +
+        `provider=${(
+          findIndex === 'settings'
+            ? process.env.POSTIZ_GENERIC_OAUTH
+              ? 'generic'
+              : 'github'
+            : findIndex
         ).toUpperCase()}`;
     return NextResponse.redirect(
       new URL(`/auth${url}${additional}`, nextUrl.href)
     );
   }
 
-  // If the url is /auth and the cookie exists, redirect to /
-  if (nextUrl.href.indexOf('/auth') > -1 && authCookie) {
+  if (nextUrl.href.includes('/auth') && authCookie) {
     return NextResponse.redirect(new URL(`/${url}`, nextUrl.href));
   }
-  if (nextUrl.href.indexOf('/auth') > -1 && !authCookie) {
+
+  if (nextUrl.href.includes('/auth') && !authCookie) {
     if (org) {
       const redirect = NextResponse.redirect(new URL(`/`, nextUrl.href));
       redirect.cookies.set('org', org, {
@@ -104,19 +112,20 @@ export async function middleware(request: NextRequest) {
     }
     return topResponse;
   }
+
   try {
     if (org) {
       const { id } = await (
         await internalFetch('/user/join-org', {
-          body: JSON.stringify({
-            org,
-          }),
+          body: JSON.stringify({ org }),
           method: 'POST',
         })
       ).json();
+
       const redirect = NextResponse.redirect(
         new URL(`/?added=true`, nextUrl.href)
       );
+
       if (id) {
         redirect.cookies.set('showorg', id, {
           ...(!process.env.NOT_SECURED
@@ -133,6 +142,7 @@ export async function middleware(request: NextRequest) {
       }
       return redirect;
     }
+
     if (nextUrl.pathname === '/') {
       return NextResponse.redirect(
         new URL(
@@ -149,7 +159,6 @@ export async function middleware(request: NextRequest) {
   }
 }
 
-// See "Matching Paths" below to learn more
 export const config = {
   matcher: '/((?!api/|_next/|_static/|_vercel|[\\w-]+\\.\\w+).*)',
 };
