@@ -94,10 +94,8 @@ If the tools return errors, you would need to rerun it with the right parameters
         output: z
           .array(
             z.object({
-              id: z.string(),
               postId: z.string(),
-              releaseURL: z.string(),
-              status: z.string(),
+              integration: z.string(),
             })
           )
           .or(z.object({ errors: z.string() })),
