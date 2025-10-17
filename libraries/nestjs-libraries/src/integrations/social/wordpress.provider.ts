@@ -12,6 +12,7 @@ import { WordpressDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-set
 import slugify from 'slugify';
 // import FormData from 'form-data';
 import axios from 'axios';
+import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 
 export class WordpressProvider
   extends SocialAbstract
@@ -23,6 +24,10 @@ export class WordpressProvider
   editor = 'html' as const;
   scopes = [] as string[];
   override maxConcurrentJob = 5; // WordPress self-hosted typically has generous limits
+  dto = WordpressDto;
+  maxLength() {
+    return 100000;
+  }
 
   async generateAuthUrl() {
     const state = makeId(6);
@@ -115,6 +120,10 @@ export class WordpressProvider
     }
   }
 
+  @Tool({
+    description: 'Get list of post types',
+    dataSchema: [],
+  })
   async postTypes(token: string) {
     const body = JSON.parse(Buffer.from(token, 'base64').toString()) as {
       domain: string;

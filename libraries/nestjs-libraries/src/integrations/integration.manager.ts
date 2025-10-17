@@ -78,6 +78,40 @@ export class IntegrationManager {
     };
   }
 
+  getAllTools(): {
+    [key: string]: {
+      description: string;
+      dataSchema: any;
+      methodName: string;
+    }[];
+  } {
+    return socialIntegrationList.reduce(
+      (all, current) => ({
+        ...all,
+        [current.identifier]:
+          Reflect.getMetadata('custom:tool', current.constructor.prototype) ||
+          [],
+      }),
+      {}
+    );
+  }
+
+  getAllRulesDescription(): {
+    [key: string]: string;
+  } {
+    return socialIntegrationList.reduce(
+      (all, current) => ({
+        ...all,
+        [current.identifier]:
+          Reflect.getMetadata(
+            'custom:rules:description',
+            current.constructor
+          ) || '',
+      }),
+      {}
+    );
+  }
+
   getAllPlugs() {
     return socialIntegrationList
       .map((p) => {

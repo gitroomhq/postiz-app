@@ -12,7 +12,12 @@ import FormData from 'form-data';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import dayjs from 'dayjs';
+import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
+import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
+@Rules(
+  'Pinterest requires at least one media, if posting a video, you must have two attachment, one for video, one for the cover picture, When posting a video, there can be only one'
+)
 export class PinterestProvider
   extends SocialAbstract
   implements SocialProvider
@@ -28,6 +33,11 @@ export class PinterestProvider
     'user_accounts:read',
   ];
   override maxConcurrentJob = 3; // Pinterest has more lenient rate limits
+  maxLength() {
+    return 500;
+  }
+
+  dto = PinterestSettingsDto;
 
   editor = 'normal' as const;
 
@@ -146,6 +156,7 @@ export class PinterestProvider
     };
   }
 
+  @Tool({ description: 'List of boards', dataSchema: [] })
   async boards(accessToken: string) {
     const { items } = await (
       await fetch('https://api.pinterest.com/v5/boards', {
