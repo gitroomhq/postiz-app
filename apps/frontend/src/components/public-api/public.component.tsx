@@ -19,7 +19,7 @@ export const PublicComponent = () => {
   }, [user]);
   const copyToClipboard2 = useCallback(() => {
     toaster.show('MCP copied to clipboard', 'success');
-    copy(`${backendUrl}/mcp/` + user?.publicApi + '/sse');
+    copy(`${backendUrl}/mcp/` + user?.publicApi);
   }, [user]);
 
   const t = useT();

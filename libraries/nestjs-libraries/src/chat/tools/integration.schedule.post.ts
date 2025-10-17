@@ -103,7 +103,6 @@ If the tools return errors, you would need to rerun it with the right parameters
       execute: async (args, options) => {
         const { context, runtimeContext } = args;
         checkAuth(args, options);
-        console.log(JSON.stringify(context, null, 2));
         const organizationId = JSON.parse(
           // @ts-ignore
           runtimeContext.get('organization') as string
