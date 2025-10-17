@@ -7,10 +7,10 @@ const Features = () => {
   return (
     <motion.section 
       id="features"
-      className="relative flex flex-col items-center w-full gap-3 pb-[170px] overflow-hidden mt-[15px] md:mt-[15px] lg:mt-[50px] p-2 max-w-[390px] md:max-w-[810px] lg:max-w-[1200px] mx-auto"
+      className="relative flex flex-col items-center w-full gap-3  overflow-hidden mt-[15px] md:mt-[15px] lg:mt-[50px] p-2 max-w-[390px] md:max-w-[810px] lg:max-w-[1200px] mx-auto"
       initial={{ opacity: 0 }}
       whileInView={{ opacity: 1 }}
-      viewport={{ once: true, amount: 0.3 }}
+      viewport={{ once: true, amount: 0.2 }}
       transition={{ duration: 0.8 }}
     >
       <motion.div 
@@ -30,7 +30,7 @@ const Features = () => {
         viewport={{ once: true }}
         transition={{ delay: 0.2, duration: 0.6 }}
       >
-        <div className="font-[Geist] font-semibold tracking-[-0.03em] leading-[1.1em] text-start mb-[40px] text-[28px] md:text-[38px] lg:text-[48px]">
+        <div className="text-black text-center text-[28px] leading-[1em] md:text-[38px] w-full lg:text-[48px] font-semibold leading-[50px]">
           Make Your Platform Work Harder For You
         </div>
       </motion.div>

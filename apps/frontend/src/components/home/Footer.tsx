@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 const Footer = () => {
   return (
     <motion.footer 
-      className="mt-[240px] pt-[50px] pl-[50px] bg-white w-full"
+      className=" pt-[50px] pl-[50px] bg-white w-full"
       initial={{ opacity: 0, y: 50 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
@@ -27,7 +27,7 @@ const Footer = () => {
         </div>
 
         {/* Sections */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-[180px]">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-[40px]">
           <div>
             <h3 className="text-gray-900 text-[20px] font-semibold mb-3">Sections</h3>
             <ul className="space-y-2 text-[16px] text-gray-500">

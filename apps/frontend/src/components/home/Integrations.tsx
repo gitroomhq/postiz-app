@@ -43,7 +43,7 @@ const Integrations = () => {
       className="relative flex flex-col items-center w-full gap-3 pb-[170px] overflow-hidden mt-[15px] md:mt-[15px] lg:mt-[50px] p-2 max-w-[390px] md:max-w-[810px] lg:max-w-[1200px] mx-auto"
       initial={{ opacity: 0 }}
       whileInView={{ opacity: 1 }}
-      viewport={{ once: true, amount: 0.3 }}
+      viewport={{ once: true, amount: 0.2 }}
       transition={{ duration: 0.8 }}
     >
       <div className="bg-white rounded-2xl shadow-sm flex flex-col md:flex-row w-full max-w-6xl overflow-hidden">

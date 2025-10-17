@@ -6,10 +6,10 @@ import { motion } from "framer-motion";
 const HowItWorks = () => {
   return (
     <motion.section 
-    className="relative flex flex-col items-center w-full gap-3 pb-[170px] pt-[80px] overflow-hidden mt-[15px] md:mt-[15px] lg:mt-[50px] p-2 max-w-[390px] md:max-w-[810px] lg:max-w-[1200px] mx-auto"
+    className="relative flex flex-col items-center w-full gap-3  pt-[80px] overflow-hidden mt-[15px] md:mt-[15px] lg:mt-[50px] p-2 max-w-[390px] md:max-w-[810px] lg:max-w-[1200px] mx-auto"
     initial={{ opacity: 0 }}
       whileInView={{ opacity: 1 }}
-      viewport={{ once: true, amount: 0.3 }}
+      viewport={{ once: true, amount: 0.2 }}
       transition={{ duration: 0.8 }}
     >
       <div className="flex flex-col w-full gap-4 items-center">
@@ -31,7 +31,7 @@ const HowItWorks = () => {
             viewport={{ once: true }}
             transition={{ delay: 0.2, duration: 0.6 }}
           >
-            <div className="font-[Geist] text-center font-semibold tracking-[-0.03em] leading-[1.1em] text-start text-[28px] md:text-[38px] w-full lg:text-[48px] text-black">
+            <div className="text-black text-center text-[28px] leading-[1em] md:text-[38px] w-full lg:text-[48px] font-semibold leading-[50px]">
               Get clear answers in 3 simple steps
             </div>
           </motion.div>
