@@ -19,7 +19,7 @@ export default withProvider({
   checkValidity: async (posts) => {
     if (
       posts.some(
-        (p) => p.some((a) => a.path.indexOf('mp4') > -1) && p.length > 1
+        (p) => p.some((a) => a.path.toLowerCase().indexOf('mp4') > -1) && p.length > 1
       )
     ) {
       return 'You can only upload one video per post.';

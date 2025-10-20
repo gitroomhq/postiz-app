@@ -211,7 +211,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     type = 'personal' as 'company' | 'personal'
   ) {
     // Determine the appropriate endpoint based on file type
-    const isVideo = fileName.indexOf('mp4') > -1;
+    const isVideo = fileName.toLowerCase().indexOf('mp4') > -1;
     const isPdf = fileName.toLowerCase().indexOf('pdf') > -1;
 
     let endpoint: string;
@@ -474,7 +474,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   }
 
   private async prepareMediaBuffer(mediaUrl: string): Promise<Buffer> {
-    const isVideo = mediaUrl.indexOf('mp4') > -1;
+    const isVideo = mediaUrl.toLowerCase().indexOf('mp4') > -1;
 
     if (isVideo) {
       return Buffer.from(await readOrFetch(mediaUrl));

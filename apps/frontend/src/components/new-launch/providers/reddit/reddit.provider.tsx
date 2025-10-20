@@ -226,7 +226,7 @@ export default withProvider({
 
     if (
       posts.some((p) =>
-        p.some((a) => !a.thumbnail && a.path.indexOf('mp4') > -1)
+        p.some((a) => !a.thumbnail && a.path.toLowerCase().indexOf('mp4') > -1)
       )
     ) {
       return 'You must attach a thumbnail to your video post.';

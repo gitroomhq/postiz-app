@@ -159,7 +159,7 @@ const NewInput: FC<InputProps> = (props) => {
                 ? '\n[--Media--]' +
                   media
                     .map((m) =>
-                      m.path.indexOf('mp4') > -1
+                      m.path.toLowerCase().indexOf('mp4') > -1
                         ? `Video: ${m.path}`
                         : `Image: ${m.path}`
                     )

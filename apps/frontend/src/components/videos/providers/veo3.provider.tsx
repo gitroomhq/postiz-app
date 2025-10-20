@@ -46,7 +46,7 @@ const VEO3Settings: FC = () => {
           setValue(
             'images',
             val.target.value
-              .filter((f) => f.path.indexOf('mp4') === -1)
+              .filter((f) => f.path.toLowerCase().indexOf('mp4') === -1)
               .slice(0, 3)
           )
         }

@@ -438,14 +438,14 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   ): Promise<PostResponse[]> {
     const [firstPost] = postDetails;
 
-    const isPhoto = (firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) === -1;
+    const isPhoto = (firstPost?.media?.[0]?.path?.toLowerCase().indexOf('mp4') || -1) === -1;
     const {
       data: { publish_id },
     } = await (
       await this.fetch(
         `https://open.tiktokapis.com/v2/post/publish${this.postingMethod(
           firstPost.settings.content_posting_method,
-          (firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) === -1
+          (firstPost?.media?.[0]?.path?.toLowerCase().indexOf('mp4') || -1) === -1
         )}`,
         {
           method: 'POST',
@@ -477,7 +477,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
                       firstPost.settings.brand_content_toggle || false,
                     brand_organic_toggle:
                       firstPost.settings.brand_organic_toggle || false,
-                    ...((firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) ===
+                    ...((firstPost?.media?.[0]?.path?.toLowerCase().indexOf('mp4') || -1) ===
                     -1
                       ? {
                           auto_add_music:
@@ -487,7 +487,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
                   },
                 }
               : {}),
-            ...((firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) > -1
+            ...((firstPost?.media?.[0]?.path?.toLowerCase().indexOf('mp4') || -1) > -1
               ? {
                   source_info: {
                     source: 'PULL_FROM_URL',

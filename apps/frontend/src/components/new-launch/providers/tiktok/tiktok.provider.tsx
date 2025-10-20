@@ -59,7 +59,7 @@ const CheckTikTokValidity: FC<{
     },
     [maxVideoLength, registerVideo]
   );
-  if (!maxVideoLength || !video || video.indexOf('mp4') === -1) {
+  if (!maxVideoLength || !video || video.toLowerCase().indexOf('mp4') === -1) {
     return null;
   }
   return (
@@ -92,7 +92,7 @@ const TikTokSettings: FC<{
   const t = useT();
 
   const isTitle = useMemo(() => {
-    return value?.[0].image.some((p) => p.path.indexOf('mp4') === -1);
+    return value?.[0].image.some((p) => p.path.toLowerCase().indexOf('mp4') === -1);
   }, [value]);
 
   const disclose = watch('disclose');
@@ -376,12 +376,12 @@ export default withProvider({
     }
     if (
       firstItems.length > 1 &&
-      firstItems?.some((p) => p?.path?.indexOf('mp4') > -1)
+      firstItems?.some((p) => p?.path?.toLowerCase().indexOf('mp4') > -1)
     ) {
       return 'Only pictures are supported when selecting multiple items';
     } else if (
       firstItems?.length !== 1 &&
-      firstItems?.[0]?.path?.indexOf('mp4') > -1
+      firstItems?.[0]?.path?.toLowerCase().indexOf('mp4') > -1
     ) {
       return 'You need one media';
     }

@@ -299,7 +299,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
 
     let finalId = '';
     let finalUrl = '';
-    if ((firstPost?.media?.[0]?.path?.indexOf('mp4') || -2) > -1) {
+    if ((firstPost?.media?.[0]?.path?.toLowerCase().indexOf('mp4') || -2) > -1) {
       const {
         id: videoId,
         permalink_url,

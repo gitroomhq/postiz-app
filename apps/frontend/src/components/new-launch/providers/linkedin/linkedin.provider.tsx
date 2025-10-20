@@ -37,14 +37,14 @@ export default withProvider<LinkedinDto>({
     if (
       vals.post_as_images_carousel &&
       (firstPost.length < 2 ||
-        firstPost.some((p) => p.path.indexOf('mp4') > -1))
+        firstPost.some((p) => p.path.toLowerCase().indexOf('mp4') > -1))
     ) {
       return 'Carousel can only be created with 2 or more images and no videos.';
     }
 
     if (
       firstPost.length > 1 &&
-      firstPost.some((p) => p.path.indexOf('mp4') > -1)
+      firstPost.some((p) => p.path.toLowerCase().indexOf('mp4') > -1)
     ) {
       return 'Can have maximum 1 media when selecting a video.';
     }

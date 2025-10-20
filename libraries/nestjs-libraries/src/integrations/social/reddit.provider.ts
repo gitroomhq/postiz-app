@@ -192,7 +192,7 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
         title: firstPostSettings.value.title || '',
         kind:
           firstPostSettings.value.type === 'media'
-            ? post.media[0].path.indexOf('mp4') > -1
+            ? post.media[0].path.toLowerCase().indexOf('mp4') > -1
               ? 'video'
               : 'image'
             : firstPostSettings.value.type,
@@ -210,7 +210,7 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
                 accessToken,
                 post.media[0].path
               ),
-              ...(post.media[0].path.indexOf('mp4') > -1
+              ...(post.media[0].path.toLowerCase().indexOf('mp4') > -1
                 ? {
                     video_poster_url: await this.uploadFileToReddit(
                       accessToken,

@@ -85,13 +85,13 @@ export default withProvider({
     }
     if (
       posts.some(
-        (p) => p.some((m) => m.path.indexOf('mp4') > -1) && p.length > 1
+        (p) => p.some((m) => m.path.toLowerCase().indexOf('mp4') > -1) && p.length > 1
       )
     ) {
       return 'There can be maximum 1 video in a post.';
     }
     for (const load of posts.flatMap((p) => p.flatMap((a) => a.path))) {
-      if (load.indexOf('mp4') > -1) {
+      if (load.toLowerCase().indexOf('mp4') > -1) {
         const isValid = await checkVideoDuration(load, premium);
         if (!isValid) {
           return 'Video duration must be less than or equal to 140 seconds.';

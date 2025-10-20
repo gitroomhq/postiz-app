@@ -18,7 +18,7 @@ export default withProvider({
   checkValidity: async ([firstPost, ...otherPosts], settings) => {
     const checkVideosLength = await Promise.all(
       firstPost
-        .filter((f) => f.path.indexOf('mp4') > -1)
+        .filter((f) => f.path.toLowerCase().indexOf('mp4') > -1)
         .flatMap((p) => p.path)
         .map((p) => {
           return new Promise<number>((res) => {

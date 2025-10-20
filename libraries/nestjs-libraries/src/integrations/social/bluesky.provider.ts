@@ -269,9 +269,9 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
     for (const post of postDetails) {
       // Separate images and videos
       const imageMedia =
-        post.media?.filter((p) => p.path.indexOf('mp4') === -1) || [];
+        post.media?.filter((p) => p.path.toLowerCase().indexOf('mp4') === -1) || [];
       const videoMedia =
-        post.media?.filter((p) => p.path.indexOf('mp4') !== -1) || [];
+        post.media?.filter((p) => p.path.toLowerCase().indexOf('mp4') !== -1) || [];
 
       // Upload images
       const images = await Promise.all(
