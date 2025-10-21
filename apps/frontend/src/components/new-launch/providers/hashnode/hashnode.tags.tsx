@@ -51,7 +51,7 @@ export const HashnodeTags: FC<{
   );
   useEffect(() => {
     customFunc.get('tags').then((data) => setTags(data));
-    const settings = getValues()[props.name];
+    const settings = getValues()[props.name] || [];
     if (settings) {
       setTagValue(settings);
     }
@@ -63,12 +63,13 @@ export const HashnodeTags: FC<{
   if (!tags.length) {
     return null;
   }
+
   return (
     <div>
       <div className={`text-[14px] mb-[6px]`}>{label}</div>
       <ReactTags
-        suggestions={tags}
-        selected={tagValue}
+        suggestions={tags || []}
+        selected={tagValue || []}
         onAdd={onAddition}
         onDelete={onDelete}
       />

@@ -31,6 +31,10 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
   scopes = [] as string[];
   editor = 'normal' as const;
 
+  maxLength() {
+    return 100000;
+  }
+
   async customFields() {
     return [
       {
