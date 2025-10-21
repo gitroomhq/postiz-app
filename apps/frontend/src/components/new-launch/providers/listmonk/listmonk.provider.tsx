@@ -18,7 +18,7 @@ const SettingsComponent = () => {
       <Input label="Subject" {...form.register('subject')} />
       <Input label="Preview" {...form.register('preview')} />
       <SelectList {...form.register('list')} />
-      <SelectTemplates {...form.register('templates')} />
+      <SelectTemplates {...form.register('template')} />
     </>
   );
 };
@@ -29,19 +29,6 @@ export default withProvider({
   SettingsComponent: SettingsComponent,
   CustomPreviewComponent: undefined,
   dto: ListmonkDto,
-  checkValidity: async (posts) => {
-    if (
-      posts.some(
-        (p) => p.some((a) => a.path.indexOf('mp4') > -1) && p.length > 1
-      )
-    ) {
-      return 'You can only upload one video per post.';
-    }
-
-    if (posts.some((p) => p.length > 4)) {
-      return 'There can be maximum 4 pictures in a post.';
-    }
-    return true;
-  },
+  checkValidity: undefined,
   maximumCharacters: 300000,
 });

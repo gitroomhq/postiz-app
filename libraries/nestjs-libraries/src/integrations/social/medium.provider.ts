@@ -8,6 +8,8 @@ import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.ab
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { MediumSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/medium.settings.dto';
+import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 
 export class MediumProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 3; // Medium has lenient publishing limits
@@ -16,6 +18,10 @@ export class MediumProvider extends SocialAbstract implements SocialProvider {
   isBetweenSteps = false;
   scopes = [] as string[];
   editor = 'markdown' as const;
+  dto = MediumSettingsDto;
+  maxLength() {
+    return 100000;
+  }
 
   async generateAuthUrl() {
     const state = makeId(6);
@@ -80,6 +86,7 @@ export class MediumProvider extends SocialAbstract implements SocialProvider {
     }
   }
 
+  @Tool({ description: 'List of publications', dataSchema: [] })
   async publications(accessToken: string, _: any, id: string) {
     const { data } = await (
       await fetch(`https://api.medium.com/v1/users/${id}/publications`, {

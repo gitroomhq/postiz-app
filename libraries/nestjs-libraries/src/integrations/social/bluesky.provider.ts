@@ -26,6 +26,7 @@ import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
 import { timer } from '@gitroom/helpers/utils/timer';
 import axios from 'axios';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
+import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
 async function reduceImageBySize(url: string, maxSizeKB = 976) {
   try {
@@ -141,6 +142,9 @@ async function uploadVideo(
   } satisfies AppBskyEmbedVideo.Main;
 }
 
+@Rules(
+  'Bluesky can have maximum 1 video or 4 pictures in one post, it can also be without attachments'
+)
 export class BlueskyProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 2; // Bluesky has moderate rate limits
   identifier = 'bluesky';
@@ -148,6 +152,9 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
   isBetweenSteps = false;
   scopes = ['write:statuses', 'profile', 'write:media'];
   editor = 'normal' as const;
+  maxLength() {
+    return 300;
+  }
 
   async customFields() {
     return [

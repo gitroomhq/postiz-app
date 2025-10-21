@@ -7,7 +7,7 @@
   "keywords": [],
   "author": "",
   "engines": {
-    "node": ">=20.0.0 <21.0.0"
+    "node": ">=22.0.0 <23.0.0"
   },
   "packageManager": "pnpm@10.6.1",
   "scripts": {
@@ -43,14 +43,16 @@
     "test": "jest --coverage --detectOpenHandles --reporters=default --reporters=jest-junit"
   },
   "dependencies": {
+    "@ag-ui/mastra": "0.2.0",
+    "@ai-sdk/openai": "^2.0.52",
     "@atproto/api": "^0.15.15",
     "@aws-sdk/client-s3": "^3.787.0",
     "@aws-sdk/s3-request-presigner": "^3.787.0",
     "@casl/ability": "^6.5.0",
-    "@copilotkit/react-core": "^1.8.9",
-    "@copilotkit/react-textarea": "^1.8.9",
-    "@copilotkit/react-ui": "^1.8.9",
-    "@copilotkit/runtime": "^1.8.9",
+    "@copilotkit/react-core": "1.10.6",
+    "@copilotkit/react-textarea": "1.10.6",
+    "@copilotkit/react-ui": "1.10.6",
+    "@copilotkit/runtime": "1.10.6",
     "@hookform/resolvers": "^3.3.4",
     "@langchain/community": "^0.3.40",
     "@langchain/core": "^0.3.44",
@@ -60,6 +62,9 @@
     "@mantine/dates": "^5.10.5",
     "@mantine/hooks": "^5.10.5",
     "@mantine/modals": "^5.10.5",
+    "@mastra/core": "^0.20.2",
+    "@mastra/memory": "^0.15.6",
+    "@mastra/pg": "^0.17.2",
     "@modelcontextprotocol/sdk": "^1.9.0",
     "@nestjs/cli": "10.0.2",
     "@nestjs/common": "^10.0.2",
@@ -137,6 +142,7 @@
     "chart.js": "^4.4.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
+    "class-validator-jsonschema": "^5.1.0",
     "clsx": "^2.1.0",
     "concat-stream": "^2.0.0",
     "cookie-parser": "^1.4.7",
@@ -146,6 +152,7 @@
     "dotenv": "^16.5.0",
     "dotenv-cli": "^8.0.0",
     "emoji-picker-react": "^4.12.0",
+    "evp_bytestokey": "^1.0.3",
     "facebook-nodejs-business-sdk": "^21.0.5",
     "fast-xml-parser": "^4.5.1",
     "google-auth-library": "^9.11.0",
@@ -160,6 +167,7 @@
     "json-to-graphql-query": "^2.2.5",
     "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21",
+    "mastra": "^0.13.2",
     "md5": "^2.3.0",
     "mime": "^3.0.0",
     "mime-types": "^2.1.35",
@@ -173,7 +181,7 @@
     "node-telegram-bot-api": "^0.66.0",
     "nodemailer": "^6.9.15",
     "nostr-tools": "^2.10.4",
-    "openai": "^5.11.0",
+    "openai": "^6.2.0",
     "p-limit": "^3.1.0",
     "parse5": "^6.0.1",
     "polotno": "^2.10.5",
@@ -229,7 +237,7 @@
     "ws": "^8.18.0",
     "yargs": "^17.7.2",
     "yup": "^1.4.0",
-    "zod": "^3.24.1",
+    "zod": "^3.25.76",
     "zustand": "^5.0.5"
   },
   "devDependencies": {

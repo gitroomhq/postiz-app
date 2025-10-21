@@ -18,6 +18,7 @@ import * as process from 'node:process';
 import dayjs from 'dayjs';
 import { GaxiosResponse } from 'gaxios/build/src/common';
 import Schema$Video = youtube_v3.Schema$Video;
+import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
 const clientAndYoutube = () => {
   const client = new google.auth.OAuth2({
@@ -47,11 +48,15 @@ const clientAndYoutube = () => {
   return { client, youtube, oauth2, youtubeAnalytics };
 };
 
+@Rules(
+  'YouTube must have on video attachment, it cannot be empty'
+)
 export class YoutubeProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 1; // YouTube has strict upload quotas
   identifier = 'youtube';
   name = 'YouTube';
   isBetweenSteps = false;
+  dto = YoutubeSettingsDto;
   scopes = [
     'https://www.googleapis.com/auth/userinfo.profile',
     'https://www.googleapis.com/auth/userinfo.email',
@@ -64,6 +69,9 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
   ];
 
   editor = 'normal' as const;
+  maxLength() {
+    return 5000;
+  }
 
   override handleErrors(body: string):
     | {
