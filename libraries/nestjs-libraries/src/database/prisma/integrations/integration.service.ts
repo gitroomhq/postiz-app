@@ -104,7 +104,7 @@ export class IntegrationService {
     customInstanceDetails?: string
   ) {
     const uploadedPicture = picture
-      ? picture?.indexOf('imagedelivery.net') > -1
+      ? picture?.indexOf('imagedelivery.net') > -1 || picture?.indexOf('/uploads') > -1
         ? picture
         : await this.storage.uploadSimple(picture)
       : undefined;
