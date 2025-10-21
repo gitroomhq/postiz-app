@@ -1,0 +1,15 @@
+{
+    "Servers": {
+        "1": {
+            "Name": "Postiz PostgreSQL",
+            "Group": "Servers",
+            "Host": "postiz-postgres",
+            "Port": 5432,
+            "MaintenanceDB": "postiz-db-local",
+            "Username": "postiz-local",
+            "SSLMode": "prefer",
+            "Favorite": true,
+            "Comment": "Postiz development database server"
+        }
+    }
+}
