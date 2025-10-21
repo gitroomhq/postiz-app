@@ -28,6 +28,9 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 2; // Threads has moderate rate limits
 
   editor = 'normal' as const;
+  maxLength() {
+    return 500;
+  }
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     const { access_token } = await (
@@ -36,12 +39,9 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       )
     ).json();
 
-    const {
-      id,
-      name,
-      username,
-      picture
-    } = await this.fetchPageInformation(access_token);
+    const { id, name, username, picture } = await this.fetchPageInformation(
+      access_token
+    );
 
     return {
       id,
@@ -105,12 +105,9 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       )
     ).json();
 
-    const {
-      id,
-      name,
-      username,
-      picture,
-    } = await this.fetchPageInformation(access_token);
+    const { id, name, username, picture } = await this.fetchPageInformation(
+      access_token
+    );
 
     return {
       id,

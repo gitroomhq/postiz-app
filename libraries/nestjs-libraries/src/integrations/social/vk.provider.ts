@@ -28,6 +28,9 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
   ];
 
   editor = 'normal' as const;
+  maxLength() {
+    return 2048;
+  }
 
   async refreshToken(refresh: string): Promise<AuthTokenDetails> {
     const [oldRefreshToken, device_id] = refresh.split('&&&&');

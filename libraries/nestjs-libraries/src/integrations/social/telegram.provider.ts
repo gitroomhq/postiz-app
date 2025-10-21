@@ -26,6 +26,9 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
   isWeb3 = true;
   scopes = [] as string[];
   editor = 'html' as const;
+  maxLength() {
+    return 4096;
+  }
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     return {
@@ -147,11 +150,7 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
     for (const message of postDetails) {
       let messageId: number | null = null;
       const mediaFiles = message.media || [];
-      const text = striptags(message.message || '', [
-        'u',
-        'strong',
-        'p',
-      ])
+      const text = striptags(message.message || '', ['u', 'strong', 'p'])
         .replace(/<strong>/g, '<b>')
         .replace(/<\/strong>/g, '</b>')
         .replace(/<p>(.*?)<\/p>/g, '$1\n');

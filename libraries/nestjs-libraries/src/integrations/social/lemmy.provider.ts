@@ -11,6 +11,7 @@ import { Integration } from '@prisma/client';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { LemmySettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/lemmy.dto';
 import { groupBy } from 'lodash';
+import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 
 export class LemmyProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 3; // Lemmy instances typically have moderate limits
@@ -19,6 +20,10 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
   isBetweenSteps = false;
   scopes = [] as string[];
   editor = 'normal' as const;
+  maxLength() {
+    return 10000;
+  }
+  dto = LemmySettingsDto;
 
   async customFields() {
     return [
@@ -203,6 +208,16 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
     }));
   }
 
+  @Tool({
+    description: 'Search for Lemmy communities by keyword',
+    dataSchema: [
+      {
+        key: 'word',
+        type: 'string',
+        description: 'Keyword to search for',
+      },
+    ],
+  })
   async subreddits(
     accessToken: string,
     data: any,
