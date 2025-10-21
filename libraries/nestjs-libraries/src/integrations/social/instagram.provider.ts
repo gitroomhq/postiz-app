@@ -468,22 +468,38 @@ export class InstagramProvider
             : ``;
         const isCarousel =
           (firstPost?.media?.length || 0) > 1 ? `&is_carousel_item=true` : ``;
+
+        // Construct proper media URL using FRONTEND_URL
+        let mediaUrl = m.path;
+
+        // If it's not already a full HTTPS URL, construct it using FRONTEND_URL
+        if (!mediaUrl.startsWith('https://')) {
+          // Remove localhost URL prefix if present
+          const cleanPath = mediaUrl.replace(/^https?:\/\/[^\/]+/, '');
+          // Ensure path starts with /
+          const pathWithSlash = cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`;
+          // Use FRONTEND_URL to construct the full URL
+          mediaUrl = `${process.env.FRONTEND_URL}${pathWithSlash}`;
+        }
+
+        console.log('Media URL being sent to Instagram:', mediaUrl);
+
         const mediaType =
-          m.path.indexOf('.mp4') > -1
+          m.path.toLowerCase().indexOf('.mp4') > -1
             ? firstPost?.media?.length === 1
               ? isStory
-                ? `video_url=${m.path}&media_type=STORIES`
-                : `video_url=${m.path}&media_type=REELS&thumb_offset=${
+                ? `video_url=${mediaUrl}&media_type=STORIES`
+                : `video_url=${mediaUrl}&media_type=REELS&thumb_offset=${
                     m?.thumbnailTimestamp || 0
                   }`
               : isStory
-              ? `video_url=${m.path}&media_type=STORIES`
-              : `video_url=${m.path}&media_type=VIDEO&thumb_offset=${
+              ? `video_url=${mediaUrl}&media_type=STORIES`
+              : `video_url=${mediaUrl}&media_type=VIDEO&thumb_offset=${
                   m?.thumbnailTimestamp || 0
                 }`
             : isStory
-            ? `image_url=${m.path}&media_type=STORIES`
-            : `image_url=${m.path}`;
+            ? `image_url=${mediaUrl}&media_type=STORIES`
+            : `image_url=${mediaUrl}`;
         console.log('in progress1');
 
         const collaborators =
@@ -529,7 +545,8 @@ export class InstagramProvider
     let containerIdGlobal = '';
     let linkGlobal = '';
     if (medias.length === 1) {
-      const { id: mediaId } = await (
+      console.log('Publishing media to Instagram, container ID:', medias[0]);
+      const publishResponse = await (
         await this.fetch(
           `https://${type}/v20.0/${id}/media_publish?creation_id=${medias[0]}&access_token=${accessToken}&field=id`,
           {
@@ -538,6 +555,9 @@ export class InstagramProvider
         )
       ).json();
 
+      console.log('Instagram publish response:', JSON.stringify(publishResponse));
+      const { id: mediaId } = publishResponse;
+
       containerIdGlobal = mediaId;
 
       const { permalink } = await (
@@ -545,6 +565,8 @@ export class InstagramProvider
           `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${accessToken}`
         )
       ).json();
+
+      console.log('Instagram post published successfully! Permalink:', permalink);
 
       arr.push({
         id: firstPost.id,

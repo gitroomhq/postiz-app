@@ -51,10 +51,17 @@ export const RepeatComponent: FC<{
       label=""
       hideErrors={true}
       name="repeat"
-      value={repeat ? repeat : undefined}
-      onChange={(e) => props.onChange(Number(e.target.value))}
+      value={repeat ?? 0}
+      onChange={(e) => {
+        const value = e.target.value;
+        if (value === '0') {
+          props.onChange(0);
+          return;
+        }
+        props.onChange(Number(value));
+      }}
     >
-      <option>{t('repeat_post_every', 'Repeat Post Every...')}</option>
+      <option value="0">{t('no_repeat', 'No Repeat (Post Once)')}</option>
       {list.map((item) => (
         <option key={item.value} value={item.value}>
           {item.label}

@@ -375,7 +375,7 @@ export const MediaComponentInner: FC<{
           className="w-full px-3 py-2 bg-fifth border border-tableBorder rounded-lg text-textColor placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-forth focus:border-transparent"
         />
       </div>
-      {media?.path.indexOf('mp4') > -1 && (
+      {media?.path.toLowerCase().indexOf('mp4') > -1 && (
         <>
           {/* Alt Text Input */}
           <div>

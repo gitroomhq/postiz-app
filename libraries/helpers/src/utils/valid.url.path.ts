@@ -7,19 +7,21 @@ import {
 @ValidatorConstraint({ name: 'checkValidExtension', async: false })
 export class ValidUrlExtension implements ValidatorConstraintInterface {
   validate(text: string, args: ValidationArguments) {
+    if (!text) return false;
+    const lowerText = text.toLowerCase();
     return (
-      text?.endsWith('.png') ||
-      text?.endsWith('.jpg') ||
-      text?.endsWith('.jpeg') ||
-      text?.endsWith('.gif') ||
-      text?.endsWith('.mp4')
+      lowerText.endsWith('.png') ||
+      lowerText.endsWith('.jpg') ||
+      lowerText.endsWith('.jpeg') ||
+      lowerText.endsWith('.gif') ||
+      lowerText.endsWith('.mp4')
     );
   }
 
   defaultMessage(args: ValidationArguments) {
     // here you can provide default error message if validation failed
     return (
-      'File must have a valid extension: .png, .jpg, .jpeg, .gif, or .mp4'
+      'File must have a valid extension: .png, .jpg, .jpeg, .gif, or .mp4 (case-insensitive)'
     );
   }
 }

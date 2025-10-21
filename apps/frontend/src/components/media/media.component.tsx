@@ -475,9 +475,9 @@ export const MediaBox: FC<{
               {mediaList
                 .filter((f) => {
                   if (type === 'video') {
-                    return f.path.indexOf('mp4') > -1;
+                    return f.path.toLowerCase().indexOf('mp4') > -1;
                   } else if (type === 'image') {
-                    return f.path.indexOf('mp4') === -1;
+                    return f.path.toLowerCase().indexOf('mp4') === -1;
                   }
                   return true;
                 })
@@ -499,7 +499,7 @@ export const MediaBox: FC<{
                       X
                     </div>
 
-                    {media.path.indexOf('mp4') > -1 ? (
+                    {media.path.toLowerCase().indexOf('mp4') > -1 ? (
                       <VideoFrame url={mediaDirectory.set(media.path)} />
                     ) : (
                       <Image
@@ -735,7 +735,7 @@ export const MultiMediaComponent: FC<{
                           />
                         </svg>
                       </div>
-                      {media?.path?.indexOf('mp4') > -1 ? (
+                      {media?.path?.toLowerCase().indexOf('mp4') > -1 ? (
                         <VideoFrame url={mediaDirectory.set(media?.path)} />
                       ) : (
                         <img

@@ -168,7 +168,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     replyToId?: string
   ): Promise<string> {
     const mediaType =
-      media.path.indexOf('.mp4') > -1 ? 'video_url' : 'image_url';
+      media.path.toLowerCase().indexOf('.mp4') > -1 ? 'video_url' : 'image_url';
     const mediaParams = new URLSearchParams({
       ...(mediaType === 'video_url' ? { video_url: media.path } : {}),
       ...(mediaType === 'image_url' ? { image_url: media.path } : {}),

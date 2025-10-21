@@ -33,9 +33,9 @@ export default withProvider({
   CustomPreviewComponent: undefined,
   dto: PinterestSettingsDto,
   checkValidity: async ([firstItem, ...otherItems]) => {
-    const isMp4 = firstItem?.find((item) => item.path.indexOf('mp4') > -1);
+    const isMp4 = firstItem?.find((item) => item.path.toLowerCase().indexOf('mp4') > -1);
     const isPicture = firstItem?.find(
-      (item) => item.path.indexOf('mp4') === -1
+      (item) => item.path.toLowerCase().indexOf('mp4') === -1
     );
     if (firstItem.length === 0) {
       return 'Requires at least one media';
@@ -51,7 +51,7 @@ export default withProvider({
     }
     if (
       firstItem.length > 1 &&
-      firstItem.every((p) => p.path.indexOf('mp4') == -1)
+      firstItem.every((p) => p.path.toLowerCase().indexOf('mp4') == -1)
     ) {
       const loadAll: Array<{
         width: number;

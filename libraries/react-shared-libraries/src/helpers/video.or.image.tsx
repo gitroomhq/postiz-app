@@ -6,7 +6,7 @@ export const VideoOrImage: FC<{
   isContain?: boolean;
 }> = (props) => {
   const { src, autoplay, isContain } = props;
-  if (src?.indexOf('mp4') > -1) {
+  if (src?.toLowerCase().indexOf('mp4') > -1) {
     return (
       <video
         src={src}

@@ -19,30 +19,39 @@ function iteratorToStream(iterator: any) {
     },
   });
 }
-export const GET = (
+export const GET = async (
   request: NextRequest,
   context: {
-    params: {
+    params: Promise<{
       path: string[];
-    };
+    }>;
   }
 ) => {
-  const filePath =
-    process.env.UPLOAD_DIRECTORY + '/' + context.params.path.join('/');
-  const response = createReadStream(filePath);
-  const fileStats = statSync(filePath);
-  const contentType = mime.getType(filePath) || 'application/octet-stream';
-  const iterator = nodeStreamToIterator(response);
-  const webStream = iteratorToStream(iterator);
-  return new Response(webStream, {
-    headers: {
-      'Content-Type': contentType,
-      // Set the appropriate content-type header
-      'Content-Length': fileStats.size.toString(),
-      // Set the content-length header
-      'Last-Modified': fileStats.mtime.toUTCString(),
-      // Set the last-modified header
-      'Cache-Control': 'public, max-age=31536000, immutable', // Example cache-control header
-    },
-  });
+  try {
+    const params = await context.params;
+    const filePath =
+      process.env.UPLOAD_DIRECTORY + '/' + params.path.join('/');
+    const response = createReadStream(filePath);
+    const fileStats = statSync(filePath);
+    const contentType = mime.getType(filePath) || 'application/octet-stream';
+    const iterator = nodeStreamToIterator(response);
+    const webStream = iteratorToStream(iterator);
+    return new Response(webStream, {
+      headers: {
+        'Content-Type': contentType,
+        // Set the appropriate content-type header
+        'Content-Length': fileStats.size.toString(),
+        // Set the content-length header
+        'Last-Modified': fileStats.mtime.toUTCString(),
+        // Set the last-modified header
+        'Cache-Control': 'public, max-age=31536000, immutable', // Example cache-control header
+      },
+    });
+  } catch (error: any) {
+    console.error('Error serving upload:', error);
+    return new NextResponse(
+      JSON.stringify({ error: 'File not found', message: error.message }),
+      { status: 404, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
 };

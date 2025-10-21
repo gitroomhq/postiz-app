@@ -25,7 +25,7 @@ export default withProvider({
   CustomPreviewComponent: undefined,
   dto: DribbbleDto,
   checkValidity: async ([firstItem, ...otherItems]) => {
-    const isMp4 = firstItem?.find((item) => item.path.indexOf('mp4') > -1);
+    const isMp4 = firstItem?.find((item) => item.path.toLowerCase().indexOf('mp4') > -1);
     if (firstItem.length !== 1) {
       return 'Requires one item';
     }

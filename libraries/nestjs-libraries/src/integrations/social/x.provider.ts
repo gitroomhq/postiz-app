@@ -330,7 +330,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
               id: await this.runInConcurrent(
                 async () =>
                   client.v1.uploadMedia(
-                    m.path.indexOf('mp4') > -1
+                    m.path.toLowerCase().indexOf('mp4') > -1
                       ? Buffer.from(await readOrFetch(m.path))
                       : await sharp(await readOrFetch(m.path), {
                           animated: lookup(m.path) === 'image/gif',
