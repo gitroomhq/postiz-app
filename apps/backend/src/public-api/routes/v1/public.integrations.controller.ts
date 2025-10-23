@@ -60,7 +60,7 @@ export class PublicIntegrationsController {
   }
 
   @Post('/upload-from-url')
-  async uploadFromUrl(
+  async uploadsFromUrl(
     @GetOrgFromRequest() org: Organization,
     @Body() body: UploadDto
   ) {
