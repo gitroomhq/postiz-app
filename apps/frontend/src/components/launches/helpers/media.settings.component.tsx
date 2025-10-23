@@ -217,23 +217,19 @@ export const CreateThumbnail: FC<{
       const file = e.target.files?.[0];
       if (!file) return;
 
-      // Vérifier que c'est bien une image
       if (!file.type.startsWith('image/')) {
         alert('Veuillez sélectionner un fichier image valide');
         return;
       }
 
-      // Convertir le fichier en blob et appeler onSelect
       const reader = new FileReader();
       reader.onload = () => {
-        // Créer un blob à partir du fichier
         const blob = new Blob([file], { type: file.type });
-        // Utiliser 0 comme timestamp pour les images téléchargées
+
         onSelect(blob, 0);
       };
       reader.readAsArrayBuffer(file);
 
-      // Réinitialiser l'input pour permettre de sélectionner le même fichier à nouveau
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -304,7 +300,6 @@ export const CreateThumbnail: FC<{
               {isCapturing ? 'Capturing...' : 'Select This Frame'}
             </button>
 
-            {/* Bouton pour télécharger une image */}
             <button
               onClick={triggerFileInput}
               className="bg-third text-textColor px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all border border-tableBorder disabled:cursor-not-allowed"
@@ -341,8 +336,6 @@ export const CreateThumbnail: FC<{
   );
 };
 
-// Dans media.settings.component.tsx, modifiez le composant MediaComponentInner
-
 export const MediaComponentInner: FC<{
   onClose: () => void;
   onSelect: (media: {
@@ -377,7 +370,6 @@ export const MediaComponentInner: FC<{
     props.media?.thumbnailTimestamp || null
   );
 
-  // AJOUT: État pour afficher la modal MediaBox
   const [showMediaBoxModal, setShowMediaBoxModal] = useState(false);
 
   useEffect(() => {
@@ -387,26 +379,23 @@ export const MediaComponentInner: FC<{
     };
   }, []);
 
-  // AJOUT: Fonction pour gérer l'import depuis MediaBox
   const handleImportThumbnail = useCallback(
     (selectedMedia: Array<{ id: string; path: string }>) => {
       if (selectedMedia && selectedMedia.length > 0) {
         const selected = selectedMedia[0];
-        // Utiliser directement le chemin de l'image sélectionnée
+
         setNewThumbnail(selected.path);
-        setThumbnailTimestamp(null); // Pas de timestamp pour les images importées
+        setThumbnailTimestamp(null);
         setShowMediaBoxModal(false);
       }
     },
     []
   );
 
-  // AJOUT: Fonction pour ouvrir la modal MediaBox
   const openMediaBoxForThumbnail = useCallback(() => {
     setShowMediaBoxModal(true);
   }, []);
 
-  // AJOUT: Fonction pour fermer la modal MediaBox
   const closeMediaBoxModal = useCallback(() => {
     setShowMediaBoxModal(false);
   }, []);
@@ -414,18 +403,23 @@ export const MediaComponentInner: FC<{
   const save = useCallback(async () => {
     setLoading(true);
     let path = thumbnail || '';
+
     if (newThumbnail) {
-      const blob = await (await fetch(newThumbnail)).blob();
-      const formData = new FormData();
-      formData.append('file', blob, 'media.jpg');
-      formData.append('preventSave', 'true');
-      const data = await (
-        await newFetch('/media/upload-simple', {
-          method: 'POST',
-          body: formData,
-        })
-      ).json();
-      path = data.path;
+      if (newThumbnail.startsWith('blob:')) {
+        const blob = await (await fetch(newThumbnail)).blob();
+        const formData = new FormData();
+        formData.append('file', blob, 'media.jpg');
+        formData.append('preventSave', 'true');
+        const data = await (
+          await newFetch('/media/upload-simple', {
+            method: 'POST',
+            body: formData,
+          })
+        ).json();
+        path = data.path;
+      } else {
+        path = newThumbnail;
+      }
     }
 
     const media = await (
@@ -446,7 +440,6 @@ export const MediaComponentInner: FC<{
 
   return (
     <div className="text-textColor fixed start-0 top-0 bg-primary/80 z-[300] w-full h-full p-[60px] animate-fade justify-center flex bg-black/40">
-      {/* AJOUT: Afficher MediaBox quand nécessaire */}
       {showMediaBoxModal && (
         <MediaBox
           setMedia={handleImportThumbnail}
