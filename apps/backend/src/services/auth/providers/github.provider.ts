@@ -9,7 +9,7 @@ export class GithubProvider implements ProvidersInterface {
     )}`;
   }
 
-  async getToken(code: string): Promise<string> {
+  async getToken(code: string, state?: string): Promise<string> {
     const { access_token } = await (
       await fetch('https://github.com/login/oauth/access_token', {
         method: 'POST',

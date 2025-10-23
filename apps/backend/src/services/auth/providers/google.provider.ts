@@ -47,7 +47,7 @@ export class GoogleProvider implements ProvidersInterface {
     });
   }
 
-  async getToken(code: string) {
+  async getToken(code: string, state?: string) {
     const { client, oauth2 } = clientAndYoutube();
     const { tokens } = await client.getToken(code);
     return tokens.access_token;
