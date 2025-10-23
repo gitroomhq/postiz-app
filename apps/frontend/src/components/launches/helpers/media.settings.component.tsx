@@ -5,7 +5,7 @@ import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
-import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { MediaBox } from '../../media/media.component';
 const postUrlEmitter = new EventEmitter();
 
 export const MediaSettingsLayout = () => {
@@ -98,22 +98,26 @@ export const CreateThumbnail: FC<{
   altText?: string;
   onAltTextChange?: (altText: string) => void;
 }> = (props) => {
-  const { onSelect, media } = props;
-  const { backendUrl } = useVariables();
+  const { onSelect, media, altText, onAltTextChange } = props;
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
 
   const handleLoadedMetadata = useCallback(() => {
-    setDuration(videoRef?.current?.duration);
-    setIsLoaded(true);
+    if (videoRef.current) {
+      setDuration(videoRef.current.duration);
+      setIsLoaded(true);
+    }
   }, []);
 
   const handleTimeUpdate = useCallback(() => {
-    setCurrentTime(videoRef?.current?.currentTime);
+    if (videoRef.current) {
+      setCurrentTime(videoRef.current.currentTime);
+    }
   }, []);
 
   const handleSeek = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -125,6 +129,8 @@ export const CreateThumbnail: FC<{
   }, []);
 
   const captureFrame = useCallback(async () => {
+    if (!videoRef.current || !canvasRef.current) return;
+
     setIsCapturing(true);
 
     try {
@@ -206,6 +212,41 @@ export const CreateThumbnail: FC<{
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   }, []);
 
+  const handleFileUpload = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      // Vérifier que c'est bien une image
+      if (!file.type.startsWith('image/')) {
+        alert('Veuillez sélectionner un fichier image valide');
+        return;
+      }
+
+      // Convertir le fichier en blob et appeler onSelect
+      const reader = new FileReader();
+      reader.onload = () => {
+        // Créer un blob à partir du fichier
+        const blob = new Blob([file], { type: file.type });
+        // Utiliser 0 comme timestamp pour les images téléchargées
+        onSelect(blob, 0);
+      };
+      reader.readAsArrayBuffer(file);
+
+      // Réinitialiser l'input pour permettre de sélectionner le même fichier à nouveau
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    },
+    [onSelect]
+  );
+
+  const triggerFileInput = useCallback(() => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  }, []);
+
   if (!media) return null;
 
   return (
@@ -213,9 +254,7 @@ export const CreateThumbnail: FC<{
       <div className="relative bg-black rounded-lg overflow-hidden">
         <video
           ref={videoRef}
-          src={
-            backendUrl + '/public/stream?url=' + encodeURIComponent(media.path)
-          }
+          src={media.path}
           className="w-full h-[200px] object-contain"
           onLoadedMetadata={handleLoadedMetadata}
           onTimeUpdate={handleTimeUpdate}
@@ -225,6 +264,13 @@ export const CreateThumbnail: FC<{
         />
         <canvas ref={canvasRef} className="hidden" />
       </div>
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileUpload}
+        accept="image/*"
+        className="hidden"
+      />
 
       {isLoaded && (
         <>
@@ -249,13 +295,21 @@ export const CreateThumbnail: FC<{
             </div>
           </div>
 
-          <div className="flex justify-center">
+          <div className="flex justify-center space-x-2">
             <button
               onClick={captureFrame}
               disabled={isCapturing}
               className="bg-forth text-white px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isCapturing ? 'Capturing...' : 'Select This Frame'}
+            </button>
+
+            {/* Bouton pour télécharger une image */}
+            <button
+              onClick={triggerFileInput}
+              className="bg-third text-textColor px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all border border-tableBorder disabled:cursor-not-allowed"
+            >
+              Upload Image
             </button>
           </div>
         </>
@@ -286,6 +340,8 @@ export const CreateThumbnail: FC<{
     </div>
   );
 };
+
+// Dans media.settings.component.tsx, modifiez le composant MediaComponentInner
 
 export const MediaComponentInner: FC<{
   onClose: () => void;
@@ -321,11 +377,38 @@ export const MediaComponentInner: FC<{
     props.media?.thumbnailTimestamp || null
   );
 
+  // AJOUT: État pour afficher la modal MediaBox
+  const [showMediaBoxModal, setShowMediaBoxModal] = useState(false);
+
   useEffect(() => {
     setActivateExitButton(false);
     return () => {
       setActivateExitButton(true);
     };
+  }, []);
+
+  // AJOUT: Fonction pour gérer l'import depuis MediaBox
+  const handleImportThumbnail = useCallback(
+    (selectedMedia: Array<{ id: string; path: string }>) => {
+      if (selectedMedia && selectedMedia.length > 0) {
+        const selected = selectedMedia[0];
+        // Utiliser directement le chemin de l'image sélectionnée
+        setNewThumbnail(selected.path);
+        setThumbnailTimestamp(null); // Pas de timestamp pour les images importées
+        setShowMediaBoxModal(false);
+      }
+    },
+    []
+  );
+
+  // AJOUT: Fonction pour ouvrir la modal MediaBox
+  const openMediaBoxForThumbnail = useCallback(() => {
+    setShowMediaBoxModal(true);
+  }, []);
+
+  // AJOUT: Fonction pour fermer la modal MediaBox
+  const closeMediaBoxModal = useCallback(() => {
+    setShowMediaBoxModal(false);
   }, []);
 
   const save = useCallback(async () => {
@@ -362,132 +445,177 @@ export const MediaComponentInner: FC<{
   }, [altText, newThumbnail, thumbnail, thumbnailTimestamp]);
 
   return (
-    <div className="mt-[10px] flex flex-col gap-[20px]">
-      <div className="flex flex-col space-y-2">
-        <label className="text-sm text-textColor font-medium">
-          Alt Text (for accessibility)
-        </label>
-        <input
-          type="text"
-          value={altText}
-          onChange={(e) => setAltText(e.target.value)}
-          placeholder="Describe the image/video content..."
-          className="w-full px-3 py-2 bg-fifth border border-tableBorder rounded-lg text-textColor placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-forth focus:border-transparent"
+    <div className="text-textColor fixed start-0 top-0 bg-primary/80 z-[300] w-full h-full p-[60px] animate-fade justify-center flex bg-black/40">
+      {/* AJOUT: Afficher MediaBox quand nécessaire */}
+      {showMediaBoxModal && (
+        <MediaBox
+          setMedia={handleImportThumbnail}
+          closeModal={closeMediaBoxModal}
+          type="image"
         />
-      </div>
-      {media?.path.indexOf('mp4') > -1 && (
-        <>
-          {/* Alt Text Input */}
-          <div>
-            {!isEditingThumbnail ? (
-              <div className="flex flex-col">
-                {/* Show existing thumbnail if it exists */}
-                {(newThumbnail || thumbnail) && (
-                  <div className="flex flex-col space-y-2">
-                    <span className="text-sm text-textColor">
-                      Current Thumbnail:
-                    </span>
-                    <img
-                      src={newThumbnail || thumbnail}
-                      alt="Current thumbnail"
-                      className="max-w-full max-h-[500px] object-contain rounded-lg border border-tableBorder"
-                    />
-                  </div>
-                )}
+      )}
 
-                {/* Action Buttons */}
-                <div className="flex space-x-2">
-                  <button
-                    disabled={loading}
-                    onClick={() => setIsEditingThumbnail(true)}
-                    className="bg-third text-textColor px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all flex-1 border border-tableBorder"
-                  >
-                    {media.thumbnail || newThumbnail
-                      ? 'Edit Thumbnail'
-                      : 'Create Thumbnail'}
-                  </button>
-                  {(thumbnail || newThumbnail) && (
-                    <button
-                      disabled={loading}
-                      onClick={() => {
-                        setNewThumbnail(null);
-                        setThumbnail(null);
-                      }}
-                      className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all flex-1 border border-red-700"
-                    >
-                      Clear Thumbnail
-                    </button>
+      <div className="w-full h-full relative">
+        <div className="w-[500px] bg-sixth border-tableBorder border-2 rounded-xl pb-[20px] px-[20px] absolute left-[50%] top-[10px] -translate-x-[50%]">
+          <div className="flex">
+            <div className="flex-1">
+              <TopTitle title={'Media Setting'} />
+            </div>
+            <button
+              onClick={onClose}
+              className="outline-none absolute end-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root bg-primary hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+              type="button"
+            >
+              <svg
+                viewBox="0 0 15 15"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+              >
+                <path
+                  d="M11.7816 4.03157C12.0062 3.80702 12.0062 3.44295 11.7816 3.2184C11.5571 2.99385 11.193 2.99385 10.9685 3.2184L7.50005 6.68682L4.03164 3.2184C3.80708 2.99385 3.44301 2.99385 3.21846 3.2184C2.99391 3.44295 2.99391 3.80702 3.21846 4.03157L6.68688 7.49999L3.21846 10.9684C2.99391 11.193 2.99391 11.557 3.21846 11.7816C3.44301 12.0061 3.80708 12.0061 4.03164 11.7816L7.50005 8.31316L10.9685 11.7816C11.193 12.0061 11.5571 12.0061 11.7816 11.7816C12.0062 11.557 12.0062 11.193 11.7816 10.9684L8.31322 7.49999L11.7816 4.03157Z"
+                  fill="currentColor"
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                ></path>
+              </svg>
+            </button>
+          </div>
+          <div className="mt-[10px] flex flex-col gap-[20px]">
+            <div className="flex flex-col space-y-2">
+              <label className="text-sm text-textColor font-medium">
+                Alt Text (for accessibility)
+              </label>
+              <input
+                type="text"
+                value={altText}
+                onChange={(e) => setAltText(e.target.value)}
+                placeholder="Describe the image/video content..."
+                className="w-full px-3 py-2 bg-fifth border border-tableBorder rounded-lg text-textColor placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-forth focus:border-transparent"
+              />
+            </div>
+            {media?.path.indexOf('mp4') > -1 && (
+              <>
+                <div>
+                  {!isEditingThumbnail ? (
+                    <div className="flex flex-col">
+                      {/* Show existing thumbnail if it exists */}
+                      {(newThumbnail || thumbnail) && (
+                        <div className="flex flex-col space-y-2">
+                          <span className="text-sm text-textColor">
+                            Current Thumbnail:
+                          </span>
+                          <img
+                            src={newThumbnail || thumbnail}
+                            alt="Current thumbnail"
+                            className="max-w-full max-h-[280px] object-contain rounded-lg border border-tableBorder"
+                          />
+                        </div>
+                      )}
+
+                      {/* Action Buttons */}
+                      <div className="flex space-x-2 mt-2">
+                        <button
+                          disabled={loading}
+                          onClick={() => setIsEditingThumbnail(true)}
+                          className="bg-third text-textColor px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all flex-1 border border-tableBorder"
+                        >
+                          {media.thumbnail || newThumbnail
+                            ? 'Edit Thumbnail'
+                            : 'Create Thumbnail'}
+                        </button>
+                        {(thumbnail || newThumbnail) && (
+                          <button
+                            disabled={loading}
+                            onClick={() => {
+                              setNewThumbnail(null);
+                              setThumbnail(null);
+                            }}
+                            className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all flex-1 border border-red-700"
+                          >
+                            Clear Thumbnail
+                          </button>
+                        )}
+                      </div>
+                      {/* MODIFICATION: Bouton Import Thumbnail use MediaBox */}
+                      <button
+                        disabled={loading}
+                        onClick={openMediaBoxForThumbnail}
+                        className="bg-third text-textColor px-6 py-2 mt-2 rounded-lg hover:bg-opacity-80 transition-all w-full border border-tableBorder"
+                      >
+                        Import Thumbnail
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      {/* Back button */}
+                      <div className="flex justify-start">
+                        <button
+                          onClick={() => setIsEditingThumbnail(false)}
+                          className="text-textColor hover:text-white transition-colors flex items-center space-x-2"
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              d="M19 12H5M12 19L5 12L12 5"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                          <span>Back</span>
+                        </button>
+                      </div>
+
+                      {/* Thumbnail Editor */}
+                      <CreateThumbnail
+                        onSelect={(blob: Blob, timestampMs: number) => {
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            const url = URL.createObjectURL(blob);
+                            setNewThumbnail(url);
+                            setThumbnailTimestamp(timestampMs);
+                            setIsEditingThumbnail(false);
+                          };
+                          reader.readAsDataURL(blob);
+                        }}
+                        media={media}
+                        altText={altText}
+                        onAltTextChange={setAltText}
+                      />
+                    </div>
                   )}
                 </div>
-              </div>
-            ) : (
-              <div>
-                {/* Back button */}
-                <div className="flex justify-start">
-                  <button
-                    onClick={() => setIsEditingThumbnail(false)}
-                    className="text-textColor hover:text-white transition-colors flex items-center space-x-2"
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M19 12H5M12 19L5 12L12 5"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                    <span>Back</span>
-                  </button>
-                </div>
+              </>
+            )}
 
-                {/* Thumbnail Editor */}
-                <CreateThumbnail
-                  onSelect={(blob: Blob, timestampMs: number) => {
-                    // Convert blob to base64 or handle as needed
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                      // You can handle the result here - for now just call onSelect with the blob URL
-                      const url = URL.createObjectURL(blob);
-                      setNewThumbnail(url);
-                      setThumbnailTimestamp(timestampMs);
-                      setIsEditingThumbnail(false);
-                    };
-                    reader.readAsDataURL(blob);
-                  }}
-                  media={media}
-                  altText={altText}
-                  onAltTextChange={setAltText}
-                />
+            {!isEditingThumbnail && (
+              <div className="flex space-x-2 !mt-[20px]">
+                <button
+                  disabled={loading}
+                  onClick={onClose}
+                  className="flex-1 bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={save}
+                  className="flex-1 bg-forth text-white px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all"
+                >
+                  Save Changes
+                </button>
               </div>
             )}
           </div>
-        </>
-      )}
-
-      {!isEditingThumbnail && (
-        <div className="flex space-x-2 !mt-[20px]">
-          <button
-            disabled={loading}
-            onClick={onClose}
-            className="flex-1 bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={save}
-            className="flex-1 bg-forth text-white px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all"
-          >
-            Save Changes
-          </button>
         </div>
-      )}
+      </div>
     </div>
   );
 };
