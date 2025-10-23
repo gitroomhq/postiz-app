@@ -29,6 +29,7 @@ import { VideoFunctionDto } from '@gitroom/nestjs-libraries/dtos/videos/video.fu
 import { UploadDto } from '@gitroom/nestjs-libraries/dtos/media/upload.dto';
 import axios from 'axios';
 import { Readable } from 'stream';
+import { lookup } from 'mime-types';
 
 @ApiTags('Public API')
 @Controller('/public/v1')
@@ -72,7 +73,7 @@ export class PublicIntegrationsController {
 
     const getFile = await this.storage.uploadFile({
       buffer,
-      mimetype: 'image/jpeg',
+      mimetype: lookup(body?.url?.split?.('?')?.[0]) || 'image/jpeg',
       size: buffer.length,
       path: '',
       fieldname: '',
