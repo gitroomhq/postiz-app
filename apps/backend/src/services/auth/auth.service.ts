@@ -218,18 +218,18 @@ export class AuthService {
     return false;
   }
 
-  oauthLink(provider: string, query?: any) {
+  async oauthLink(provider: string, query?: any) {
     const providerInstance = ProvidersFactory.loadProvider(
       provider as Provider
     );
-    return providerInstance.generateLink(query);
+    return await providerInstance.generateLink(query);
   }
 
-  async checkExists(provider: string, code: string) {
+  async checkExists(provider: string, code: string, state?: string) {
     const providerInstance = ProvidersFactory.loadProvider(
       provider as Provider
     );
-    const token = await providerInstance.getToken(code);
+    const token = await providerInstance.getToken(code, state);
     const user = await providerInstance.getUser(token);
     if (!user) {
       throw new Error('Invalid user');
