@@ -48,9 +48,7 @@ const clientAndYoutube = () => {
   return { client, youtube, oauth2, youtubeAnalytics };
 };
 
-@Rules(
-  'YouTube must have on video attachment, it cannot be empty'
-)
+@Rules('YouTube must have on video attachment, it cannot be empty')
 export class YoutubeProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 1; // YouTube has strict upload quotas
   identifier = 'youtube';
@@ -225,6 +223,8 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
             },
             status: {
               privacyStatus: settings.type,
+              selfDeclaredMadeForKids:
+                settings.selfDeclaredMadeForKids === 'yes',
             },
           },
           media: {

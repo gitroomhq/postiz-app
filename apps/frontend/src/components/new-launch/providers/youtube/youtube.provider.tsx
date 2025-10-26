@@ -25,6 +25,17 @@ const type = [
     value: 'unlisted',
   },
 ];
+
+const madeForKids = [
+  {
+    label: 'No',
+    value: 'no',
+  },
+  {
+    label: 'Yes',
+    value: 'yes',
+  },
+];
 const YoutubeSettings: FC = () => {
   const { register, control } = useSettings();
   return (
@@ -37,6 +48,18 @@ const YoutubeSettings: FC = () => {
         })}
       >
         {type.map((t) => (
+          <option key={t.value} value={t.value}>
+            {t.label}
+          </option>
+        ))}
+      </Select>
+      <Select
+        label="Made for kids"
+        {...register('selfDeclaredMadeForKids', {
+          value: 'no',
+        })}
+      >
+        {madeForKids.map((t) => (
           <option key={t.value} value={t.value}>
             {t.label}
           </option>
