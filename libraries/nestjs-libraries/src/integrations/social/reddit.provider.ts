@@ -129,15 +129,16 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
-  private async uploadFileToReddit(accessToken: string, path: string) {
+  private async uploadFileToReddit(
+    accessToken: string,
+    path: string
+  ): Promise<{ url: string; assetId?: string }> {
     const mimeType = lookup(path);
     const formData = new FormData();
     formData.append('filepath', path.split('/').pop());
     formData.append('mimetype', mimeType || 'application/octet-stream');
 
-    const {
-      args: { action, fields },
-    } = await (
+    const responseData = await (
       await this.fetch(
         'https://oauth.reddit.com/api/media/asset',
         {
@@ -152,6 +153,13 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
         true
       )
     ).json();
+
+    const {
+      args: { action, fields },
+      asset,
+    } = responseData;
+
+    const assetId = asset?.asset_id || asset?.id;
 
     const { data } = await axios.get(path, {
       responseType: 'arraybuffer',
@@ -175,7 +183,11 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
       body: upload,
     });
 
-    return [...(await d.text()).matchAll(/<Location>(.*?)<\/Location>/g)][0][1];
+    const url = [
+      ...(await d.text()).matchAll(/<Location>(.*?)<\/Location>/g),
+    ][0][1];
+
+    return { url, assetId };
   }
 
   async post(
@@ -187,53 +199,159 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
 
     const valueArray: PostResponse[] = [];
     for (const firstPostSettings of post.settings.subreddit) {
-      const postData = {
+      const hasVideo =
+        post.media?.some((m) => m.path.indexOf('mp4') > -1) === true;
+      const images = (post.media || []).filter(
+        (m) => m.path.indexOf('mp4') === -1
+      );
+
+      // Determine post kind based on actual content
+      let useGalleryEndpoint = false;
+      let kind: string;
+
+      if (hasVideo) {
+        kind = 'video';
+      } else if (images.length > 1) {
+        useGalleryEndpoint = true;
+        kind = 'gallery';
+      } else if (images.length === 1) {
+        kind = 'image';
+      } else {
+        kind = firstPostSettings.value.type;
+      }
+
+      let postData: any = {
         api_type: 'json',
         title: firstPostSettings.value.title || '',
-        kind:
-          firstPostSettings.value.type === 'media'
-            ? post.media[0].path.indexOf('mp4') > -1
-              ? 'video'
-              : 'image'
-            : firstPostSettings.value.type,
+        kind,
+        text: post.message,
+        sr: firstPostSettings.value.subreddit,
         ...(firstPostSettings.value.flair
           ? { flair_id: firstPostSettings.value.flair.id }
           : {}),
-        ...(firstPostSettings.value.type === 'link'
-          ? {
-              url: firstPostSettings.value.url,
-            }
-          : {}),
-        ...(firstPostSettings.value.type === 'media'
-          ? {
-              url: await this.uploadFileToReddit(
-                accessToken,
-                post.media[0].path
-              ),
-              ...(post.media[0].path.indexOf('mp4') > -1
-                ? {
-                    video_poster_url: await this.uploadFileToReddit(
-                      accessToken,
-                      post.media[0].thumbnail
-                    ),
-                  }
-                : {}),
-            }
-          : {}),
-        text: post.message,
-        sr: firstPostSettings.value.subreddit,
       };
 
-      const all = await (
-        await this.fetch('https://oauth.reddit.com/api/submit', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: new URLSearchParams(postData),
-        })
-      ).json();
+      // Handle different post types
+      if (firstPostSettings.value.type === 'link') {
+        postData.url = firstPostSettings.value.url;
+      } else if (firstPostSettings.value.type === 'media') {
+        if (kind === 'video') {
+          const videoUpload = await this.uploadFileToReddit(
+            accessToken,
+            post.media[0].path
+          );
+          postData.url = videoUpload.url;
+
+          if (post.media[0].thumbnail) {
+            const thumbnailUpload = await this.uploadFileToReddit(
+              accessToken,
+              post.media[0].thumbnail
+            );
+            postData.video_poster_url = thumbnailUpload.url;
+          }
+        } else if (!useGalleryEndpoint) {
+          const imageUpload = await this.uploadFileToReddit(
+            accessToken,
+            post.media[0].path
+          );
+          postData.url = imageUpload.url;
+        }
+      }
+
+      let all: any;
+
+      if (useGalleryEndpoint && images.length > 1) {
+        // Upload all images for gallery
+        const uploads: { url: string; assetId?: string }[] = [];
+        for (let i = 0; i < images.length; i++) {
+          const uploaded = await this.uploadFileToReddit(
+            accessToken,
+            images[i].path
+          );
+          uploads.push(uploaded);
+
+          if (i < images.length - 1) {
+            await timer(1000);
+          }
+        }
+
+        const items = uploads
+          .filter((u) => u.assetId)
+          .map((u) => ({
+            media_id: u.assetId,
+            caption: '',
+            outbound_url: '',
+          }));
+
+        if (items.length < 2) {
+          // Fallback to single image if insufficient asset IDs
+          const firstImageUpload = await this.uploadFileToReddit(
+            accessToken,
+            images[0].path
+          );
+          postData = {
+            api_type: 'json',
+            kind: 'image',
+            sr: firstPostSettings.value.subreddit,
+            title: firstPostSettings.value.title || '',
+            url: firstImageUpload.url,
+            ...(firstPostSettings.value.flair
+              ? { flair_id: firstPostSettings.value.flair.id }
+              : {}),
+          };
+
+          all = await (
+            await this.fetch('https://oauth.reddit.com/api/submit', {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/x-www-form-urlencoded',
+              },
+              body: new URLSearchParams(postData),
+            })
+          ).json();
+        } else {
+          // Submit gallery post
+          const galleryBody = {
+            sr: firstPostSettings.value.subreddit,
+            title: firstPostSettings.value.title || '',
+            items,
+            api_type: 'json',
+            resubmit: true,
+            sendreplies: true,
+            nsfw: false,
+            spoiler: false,
+            ...(firstPostSettings.value.flair
+              ? { flair_id: firstPostSettings.value.flair.id }
+              : {}),
+          };
+
+          all = await (
+            await this.fetch(
+              'https://oauth.reddit.com/api/submit_gallery_post.json?raw_json=1',
+              {
+                method: 'POST',
+                headers: {
+                  Authorization: `Bearer ${accessToken}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(galleryBody),
+              }
+            )
+          ).json();
+        }
+      } else {
+        all = await (
+          await this.fetch('https://oauth.reddit.com/api/submit', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams(postData),
+          })
+        ).json();
+      }
 
       const { id, name, url } = await new Promise<{
         id: string;
@@ -242,6 +360,11 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
       }>((res) => {
         if (all?.json?.data?.id) {
           res(all.json.data);
+        }
+
+        if (!all?.json?.data?.websocket_url) {
+          res({ id: '', name: '', url: '' });
+          return;
         }
 
         const ws = new WebSocket(all.json.data.websocket_url);
