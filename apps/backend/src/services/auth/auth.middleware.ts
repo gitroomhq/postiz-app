@@ -102,7 +102,7 @@ export class AuthMiddleware implements NestMiddleware {
                 selectedOrg = organizations[0];
               }
 
-              if (!organizations || !selectedOrg) {
+              if (!organizations || organizations.length === 0 || !selectedOrg) {
                 if (process.env.NODE_ENV !== 'production') {
                   console.error('[SSO] No organization found for user:', lookupEmail);
                 }
@@ -223,7 +223,7 @@ export class AuthMiddleware implements NestMiddleware {
       const setOrg =
         organization.find((org) => org.id === orgHeader) || organization[0];
 
-      if (!organization) {
+      if (!organization || organization.length === 0 || !setOrg) {
         throw new HttpForbiddenException();
       }
 
