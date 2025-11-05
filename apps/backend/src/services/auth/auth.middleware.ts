@@ -79,7 +79,8 @@ export class AuthMiddleware implements NestMiddleware {
           const lookupEmail = ssoEmail || `${ssoUser}@sso.local`;
 
           try {
-            let user = await this._userService.getUserByEmail(lookupEmail);
+            // Use provider-agnostic lookup for SSO users
+            let user = await this._userService.getUserByEmailAnyProvider(lookupEmail);
 
             if (user && user.activated) {
               // Load organization context
