@@ -11,7 +11,7 @@
     "send_test": "ტესტის გაგზავნა",
     "select_role": "როლის არჩევა",
     "video_made_with_ai": "ვიდეო შექმნილია AI-ის მეშვეობით",
-    "please_add_at_least": "გთხოვთ დაამატოთ მინიმუმ 20 სიმბოლო",
+    "please_add_at_least": "Დაამატეთ მინიმუმ 20 სიმბოლო",
     "send_invitation_via_email": "მოწვევა გადაიგზავნოს ელფოსტით?",
     "global_settings": "გლობალური პარამეტრები",
     "copy_id": "არხის ID-ის კოპირება",
@@ -90,7 +90,7 @@
     "you_can_also_drag_drop_pictures": "ასევე შეგიძლიათ გადაათრიოთ და ჩააგდოთ სურათები",
     "you_don_t_have_any_assets_yet": "ჯერ არ გაქვთ ასეტები",
     "click_the_button_below_to_upload_one": "დააჭირეთ ქვედა ღილაკს ატვირთვისთვის",
-    "click_the_button_below_to_upload_other": "",
+    "click_the_button_below_to_upload_other": "Დააწკაპუნეთ ქვემოთ მოცემულ ღილაკზე, რომ ატვირთოთ რამდენიმე",
     "add_selected_media": "არჩეული მედიის დამატება",
     "insert_media": "მედიის ჩასმა",
     "design_media": "მედიის დიზაინი",
@@ -502,5 +502,6 @@
     "separate_post": "თრედის დაყოფა რამდენიმე პოსტად",
     "label_who_can_reply_to_this_post": "ვის შეუძლია პასუხის გაცემა ამ პოსტზე?",
     "delete_integration": "ინტეგრაციის წაშლა",
-    "start_writing_your_post": "დაიწყეთ თქვენი პოსტის წერა წინასწარი ხედვისთვის"
+    "start_writing_your_post": "დაიწყეთ თქვენი პოსტის წერა წინასწარი ხედვისთვის",
+    "faq_can_i_trust_postiz_gitroom": "Შემიძლია ვენდო Postiz-ს?"
 }
