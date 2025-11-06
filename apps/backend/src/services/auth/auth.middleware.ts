@@ -161,7 +161,7 @@ export class AuthMiddleware implements NestMiddleware {
               if (process.env.NODE_ENV !== 'production') {
                 console.error('[SSO] User authenticated by Authelia but not found in Postiz:', lookupEmail);
               }
-              throw new HttpForbiddenException('Your SSO account is not authorized for Postiz. Please contact your administrator.');
+              throw new HttpForbiddenException();
             }
           } catch (err) {
             // Re-throw HttpForbiddenException to prevent fallback to normal auth
