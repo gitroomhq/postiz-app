@@ -1,7 +1,7 @@
 {
     "calendar": "Kalender",
     "webhooks": "Webhooks",
-    "webhooks_are_a_way_to_get_notified_when_something_happens_in_postiz_via_an_http_request": "Webhooks sind eine Möglichkeit, benachrichtigt zu werden, wenn etwas in Postiz passiert, über eine HTTP-Anfrage.",
+    "webhooks_are_a_way_to_get_notified_when_something_happens_in_postiz_via_an_http_request": "Webhooks sind eine Möglichkeit, benachrichtigt zu werden, wenn etwas in Postiz passiert,\n über eine HTTP-Anfrage.",
     "name": "Name",
     "url": "URL",
     "edit": "Bearbeiten",
@@ -289,7 +289,7 @@
     "go_back_to_login": "Zurück zum Login",
     "we_have_send_you_an_email_with_a_link_to_reset_your_password": "Wir haben Ihnen eine E-Mail mit einem Link zum Zurücksetzen Ihres Passworts gesendet.",
     "change_password": "Passwort ändern",
-    "we_successfully_reset_your_password_you_can_now_login_with_your": "Wir haben Ihr Passwort erfolgreich zurückgesetzt. Sie können sich jetzt mit Ihrem neuen Passwort anmelden.",
+    "we_successfully_reset_your_password_you_can_now_login_with_your": "Wir haben Ihr Passwort erfolgreich zurückgesetzt. Sie können sich jetzt anmelden mit ihrem",
     "click_here_to_go_back_to_login": "Klicken Sie hier, um zum Login zurückzukehren",
     "activate_your_account": "Aktivieren Sie Ihr Konto",
     "thank_you_for_registering": "Vielen Dank für Ihre Registrierung!",
