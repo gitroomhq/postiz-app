@@ -30,6 +30,7 @@ import { UploadDto } from '@gitroom/nestjs-libraries/dtos/media/upload.dto';
 import axios from 'axios';
 import { Readable } from 'stream';
 import { lookup } from 'mime-types';
+import * as Sentry from '@sentry/nestjs';
 
 @ApiTags('Public API')
 @Controller('/public/v1')
@@ -41,6 +42,8 @@ export class PublicIntegrationsController {
     private _postsService: PostsService,
     private _mediaService: MediaService
   ) {}
+
+  Sentry.metrics.count("public_api-request", 1);
 
   @Post('/upload')
   @UseInterceptors(FileInterceptor('file'))

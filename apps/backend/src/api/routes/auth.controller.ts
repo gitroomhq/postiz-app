@@ -21,6 +21,7 @@ import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 import { RealIP } from 'nestjs-real-ip';
 import { UserAgent } from '@gitroom/nestjs-libraries/user/user.agent';
 import { Provider } from '@prisma/client';
+import * as Sentry from '@sentry/nestjs';
 
 @ApiTags('Auth')
 @Controller('/auth')
@@ -102,6 +103,7 @@ export class AuthController {
       }
 
       response.header('onboarding', 'true');
+      Sentry.metrics.count("new_user", 1);
       response.status(200).json({
         register: true,
       });

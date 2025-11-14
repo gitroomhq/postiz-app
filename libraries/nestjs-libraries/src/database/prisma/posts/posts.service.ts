@@ -38,6 +38,7 @@ import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 dayjs.extend(utc);
+import * as Sentry from '@sentry/nestjs';
 
 type PostWithConditionals = Post & {
   integration?: Integration;
@@ -60,6 +61,8 @@ export class PostsService {
     private _webhookService: WebhooksService,
     private openaiService: OpenaiService
   ) {}
+
+  Sentry.metrics.count("post_created", 1);
 
   checkPending15minutesBack() {
     return this._postRepository.checkPending15minutesBack();
