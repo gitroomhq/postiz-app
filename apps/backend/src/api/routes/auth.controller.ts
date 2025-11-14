@@ -21,7 +21,7 @@ import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 import { RealIP } from 'nestjs-real-ip';
 import { UserAgent } from '@gitroom/nestjs-libraries/user/user.agent';
 import { Provider } from '@prisma/client';
-import * as Sentry from '@sentry/nestjs';
+const Sentry = require("@sentry/nestjs");
 
 @ApiTags('Auth')
 @Controller('/auth')
