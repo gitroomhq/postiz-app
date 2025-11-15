@@ -15,8 +15,13 @@ WORKDIR /app
 COPY . /app
 COPY var/docker/nginx.conf /etc/nginx/nginx.conf
 
+# Install with ignore-scripts, then manually run bcrypt install
 RUN pnpm install --frozen-lockfile --ignore-scripts
+RUN cd node_modules/bcrypt && node-pre-gyp install --fallback-to-build
+
+# Now generate Prisma client
 RUN pnpm exec prisma generate --schema ./libraries/nestjs-libraries/src/database/prisma/schema.prisma
+
 RUN NODE_OPTIONS="--max-old-space-size=4096" pnpm run build
 
 CMD ["sh", "-c", "nginx && pnpm run pm2"]
