@@ -14,7 +14,7 @@ export class MastodonCustomProvider extends MastodonProvider {
 
   async externalUrl(url: string) {
     const form = new FormData();
-    form.append('client_name', 'Postiz');
+    form.append('client_name', 'Darch Poster');
     form.append(
       'redirect_uris',
       `${process.env.FRONTEND_URL}/integrations/social/mastodon`

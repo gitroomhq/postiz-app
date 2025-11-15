@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Postiz",
+  "name": "Darch Poster",
   "description": "Your ultimate social media scheduling tool",
   "options_ui": {
     "page": "src/pages/options/index.html"

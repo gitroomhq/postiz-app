@@ -7,7 +7,7 @@ export class McpSettings {
   createServer(organization: string, service: MainMcp) {
     this._server = new McpServer(
       {
-        name: 'Postiz',
+        name: 'Darch Poster',
         version: '2.0.0',
       },
       {
