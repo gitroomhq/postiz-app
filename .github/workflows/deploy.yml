@@ -3,7 +3,8 @@ name: Build and Push Docker Image to GHCR
 on:
   push:
     branches:
-      - main # This workflow runs on pushes to the main branch
+      - main
+      - working-commit # Add other branches you want to build
 
 jobs:
   build-and-push:
@@ -20,6 +21,18 @@ jobs:
         id: string
         run: echo "owner_lc=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
+      - name: Generate Docker tags
+        id: meta
+        run: |
+          BRANCH_NAME="${{ github.ref_name }}"
+          SANITIZED_BRANCH=$(echo "$BRANCH_NAME" | sed 's/[^a-zA-Z0-9._-]/-/g')
+          echo "tag=$SANITIZED_BRANCH" >> $GITHUB_OUTPUT
+          if [ "$BRANCH_NAME" = "main" ]; then
+            echo "tags=ghcr.io/${{ steps.string.outputs.owner_lc }}/${{ github.event.repository.name }}:latest,ghcr.io/${{ steps.string.outputs.owner_lc }}/${{ github.event.repository.name }}:$SANITIZED_BRANCH" >> $GITHUB_OUTPUT
+          else
+            echo "tags=ghcr.io/${{ steps.string.outputs.owner_lc }}/${{ github.event.repository.name }}:$SANITIZED_BRANCH" >> $GITHUB_OUTPUT
+          fi
+
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -33,4 +46,4 @@ jobs:
           context: .
           file: ./Dockerfile.dev
           push: true
-          tags: ghcr.io/${{ steps.string.outputs.owner_lc }}/${{ github.event.repository.name }}:latest
+          tags: ${{ steps.meta.outputs.tags }}
