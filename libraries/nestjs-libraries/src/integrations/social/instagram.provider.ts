@@ -283,6 +283,14 @@ export class InstagramProvider
       };
     }
 
+    // Handle 413 Payload Too Large error
+    if (body.indexOf('413') > -1 || body.toLowerCase().indexOf('payload too large') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Video file is too large for Instagram. Instagram may have failed to download the video from your server. Try reducing the video file size or check if your CDN/proxy has size limits.',
+      };
+    }
+
     console.log('err', body);
     return undefined;
   }
