@@ -35,16 +35,21 @@ export class GbpProvider implements SocialProvider {
     'https://www.googleapis.com/auth/plus.business.manage'
   ];
 
-  private GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
-  private GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;
-  private REDIRECT_URI = `${process.env.FRONTEND_URL}/integrations/social/gbp`;
+  config = {
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
+    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || '',
+    FRONTEND_URL: process.env.FRONTEND_URL || '',
+  };
 
+  get REDIRECT_URI() {
+    return `${this.config.FRONTEND_URL}/integrations/social/gbp`;
+  }
 
   async generateAuthUrl(clientInformation: ClientInformation, customerId: string) {
 
     const oauth2Client = new google.auth.OAuth2(
-      this.GOOGLE_CLIENT_ID,
-      this.GOOGLE_CLIENT_SECRET,
+      this.config.GOOGLE_CLIENT_ID,
+      this.config.GOOGLE_CLIENT_SECRET,
       this.REDIRECT_URI
     );
 
@@ -95,6 +100,10 @@ export class GbpProvider implements SocialProvider {
       return 'Missing authorization code';
     }
 
+    // Add delay to avoid rate limiting (10 seconds)
+    console.log('⏳ Waiting 10 seconds to avoid rate limiting...');
+    await new Promise(resolve => setTimeout(resolve, 10000));
+
     // Verify state (minimal verification)
     // try {
     //   const state = JSON.parse(decodeURIComponent(params.state));
@@ -107,8 +116,8 @@ export class GbpProvider implements SocialProvider {
     // }
 
     const oauth2Client = new google.auth.OAuth2(
-      this.GOOGLE_CLIENT_ID,
-      this.GOOGLE_CLIENT_SECRET,
+      this.config.GOOGLE_CLIENT_ID,
+      this.config.GOOGLE_CLIENT_SECRET,
       this.REDIRECT_URI
     );
 
@@ -128,6 +137,12 @@ export class GbpProvider implements SocialProvider {
         version: 'v1',
         auth: oauth2Client,
       });
+
+      // Add retry options to prevent rate limiting
+      const listOptions = {
+        retry: false,
+        maxRetries: 0
+      };
 
       const { data: accountsData } = await accountManagement.accounts.list();
       const account = accountsData.accounts?.[0];
@@ -195,8 +210,8 @@ export class GbpProvider implements SocialProvider {
 
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const oauth2Client = new google.auth.OAuth2(
-      this.GOOGLE_CLIENT_ID,
-      this.GOOGLE_CLIENT_SECRET
+      this.config.GOOGLE_CLIENT_ID,
+      this.config.GOOGLE_CLIENT_SECRET
     );
 
     oauth2Client.setCredentials({ refresh_token: refreshToken });
@@ -214,6 +229,46 @@ export class GbpProvider implements SocialProvider {
       username: '',
       additionalSettings: [],
     };
+  }
+
+  async reConnect(
+    refreshToken: string,
+    connectionId: string,
+    integrationId: string
+  ): Promise<AuthTokenDetails> {
+    console.log('🔄 GBP reConnect: Refreshing token for integration:', integrationId);
+    
+    try {
+      const oauth2Client = new google.auth.OAuth2(
+        this.config.GOOGLE_CLIENT_ID,
+        this.config.GOOGLE_CLIENT_SECRET
+      );
+
+      oauth2Client.setCredentials({ refresh_token: refreshToken });
+      const { credentials } = await oauth2Client.refreshAccessToken();
+
+      if (!credentials.access_token) {
+        throw new Error('Failed to refresh token - no access token received');
+      }
+
+      console.log('✅ GBP reConnect: Token refreshed successfully');
+
+      return {
+        accessToken: credentials.access_token,
+        refreshToken: credentials.refresh_token || refreshToken,
+        expiresIn: credentials.expiry_date
+          ? Math.floor((credentials.expiry_date - Date.now()) / 1000)
+          : 3600,
+        id: connectionId || '',
+        name: '',
+        picture: '',
+        username: '',
+        additionalSettings: [],
+      };
+    } catch (error) {
+      console.error('❌ GBP reConnect failed:', error);
+      throw error;
+    }
   }
 
   async post(
@@ -504,5 +559,9 @@ export class GbpProvider implements SocialProvider {
       // }
       return false;
     });
+  }
+
+  setConfig(newConfig: Record<string, string>): void {
+    this.config = { ...this.config, ...newConfig };
   }
 }

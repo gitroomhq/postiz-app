@@ -21,6 +21,7 @@ import { PlugDto } from '@gitroom/nestjs-libraries/dtos/plugs/plug.dto';
 import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/client';
 import { difference, uniq } from 'lodash';
 import utc from 'dayjs/plugin/utc';
+import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 dayjs.extend(utc);
 
 @Injectable()
@@ -30,7 +31,8 @@ export class IntegrationService {
     private _integrationRepository: IntegrationRepository,
     private _integrationManager: IntegrationManager,
     private _notificationService: NotificationService,
-    private _workerServiceProducer: BullMqClient
+    private _workerServiceProducer: BullMqClient,
+    private _socialTokenRepo: PrismaRepository<'socialToken'>
   ) {}
 
   async setTimes(
@@ -82,7 +84,7 @@ export class IntegrationService {
         : await this.storage.uploadSimple(picture)
       : undefined;
 
-    return this._integrationRepository.createOrUpdateIntegration(
+    const integration = await this._integrationRepository.createOrUpdateIntegration(
       additionalSettings,
       oneTimeToken,
       org,
@@ -101,6 +103,78 @@ export class IntegrationService {
       timezone,
       customInstanceDetails
     );
+
+    // Sync tokens to SocialToken table for social providers that need it
+    if (type === 'social' && (token || refreshToken)) {
+      await this.syncTokensToSocialTokenTable(
+        org,
+        customerId,
+        internalId,
+        name,
+        provider,
+        token,
+        refreshToken,
+        expiresIn
+      );
+    }
+
+    return integration;
+  }
+
+  /**
+   * Sync tokens from Integration table to SocialToken table
+   * This ensures that the refresh token cron job can find the tokens
+   */
+  private async syncTokensToSocialTokenTable(
+    orgId: string,
+    customerId: string | null,
+    internalId: string,
+    name: string,
+    provider: string,
+    accessToken: string,
+    refreshToken: string,
+    expiresIn?: number
+  ) {
+    // Only sync tokens for providers that use the SocialToken table
+    const providersUsingSocialToken = ['gbp', 'instagram', 'website', 'linkedin', 'youtube', 'x', 'facebook'];
+    
+    if (!providersUsingSocialToken.includes(provider)) {
+      return;
+    }
+
+    const tokenExpiry = expiresIn 
+      ? new Date(Date.now() + expiresIn * 1000)
+      : undefined;
+
+    try {
+      await this._socialTokenRepo.model.socialToken.upsert({
+        where: {
+          identifier_businessId: {
+            identifier: provider,
+            businessId: internalId,
+          }
+        },
+        create: {
+          identifier: provider,
+          name: name,
+          businessId: internalId,
+          organizationId: orgId,
+          accessToken: accessToken || null,
+          refreshToken: refreshToken || null,
+          tokenExpiry: tokenExpiry,
+        },
+        update: {
+          name: name,
+          organizationId: orgId,
+          accessToken: accessToken || null,
+          refreshToken: refreshToken || null,
+          tokenExpiry: tokenExpiry,
+          updatedAt: new Date(),
+        },
+      });
+    } catch (error) {
+      console.error(`Failed to sync tokens for provider ${provider}:`, error);
+    }
   }
 
   updateIntegrationGroup(org: string, id: string, group: string) {

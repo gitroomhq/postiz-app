@@ -173,10 +173,12 @@ export class IntegrationManager {
           }
         }
         else {
-          throw new Error(`${socialIntegration.identifier} Configuration not found`);
+          console.warn(`Configuration not found for ${socialIntegration.identifier} with orgId: ${orgId} and customerId: ${customerId}`);
+          // Don't throw an error here, just let it use the default config from environment variables
         }
       } catch (error) {
-        throw new Error(`Error fetching platform config for ${socialIntegration.identifier}`);
+        console.error(`Error fetching platform config for ${socialIntegration.identifier}:`, error);
+        // Don't throw an error here, just let it use the default config from environment variables
       }
     }
   }

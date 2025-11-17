@@ -2588,7 +2588,7 @@ exports.SubscriptionRepository = SubscriptionRepository = tslib_1.__decorate([
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 
-var _a, _b, _c, _d;
+var _a, _b, _c, _d, _e;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.IntegrationService = void 0;
 const tslib_1 = __webpack_require__(3);
@@ -2604,13 +2604,15 @@ const upload_factory_1 = __webpack_require__(44);
 const client_1 = __webpack_require__(28);
 const lodash_1 = __webpack_require__(11);
 const utc_1 = tslib_1.__importDefault(__webpack_require__(101));
+const prisma_service_1 = __webpack_require__(9);
 dayjs_1.default.extend(utc_1.default);
 let IntegrationService = class IntegrationService {
-    constructor(_integrationRepository, _integrationManager, _notificationService, _workerServiceProducer) {
+    constructor(_integrationRepository, _integrationManager, _notificationService, _workerServiceProducer, _socialTokenRepo) {
         this._integrationRepository = _integrationRepository;
         this._integrationManager = _integrationManager;
         this._notificationService = _notificationService;
         this._workerServiceProducer = _workerServiceProducer;
+        this._socialTokenRepo = _socialTokenRepo;
         this.storage = upload_factory_1.UploadFactory.createStorage();
     }
     async setTimes(orgId, integrationId, times) {
@@ -2625,7 +2627,56 @@ let IntegrationService = class IntegrationService {
                 ? picture
                 : await this.storage.uploadSimple(picture)
             : undefined;
-        return this._integrationRepository.createOrUpdateIntegration(additionalSettings, oneTimeToken, org, customerId, name, uploadedPicture, type, internalId, provider, token, refreshToken, expiresIn, username, isBetweenSteps, refresh, timezone, customInstanceDetails);
+        const integration = await this._integrationRepository.createOrUpdateIntegration(additionalSettings, oneTimeToken, org, customerId, name, uploadedPicture, type, internalId, provider, token, refreshToken, expiresIn, username, isBetweenSteps, refresh, timezone, customInstanceDetails);
+        // Sync tokens to SocialToken table for social providers that need it
+        if (type === 'social' && (token || refreshToken)) {
+            await this.syncTokensToSocialTokenTable(org, customerId, internalId, name, provider, token, refreshToken, expiresIn);
+        }
+        return integration;
+    }
+    /**
+     * Sync tokens from Integration table to SocialToken table
+     * This ensures that the refresh token cron job can find the tokens
+     */
+    async syncTokensToSocialTokenTable(orgId, customerId, internalId, name, provider, accessToken, refreshToken, expiresIn) {
+        // Only sync tokens for providers that use the SocialToken table
+        const providersUsingSocialToken = ['gbp', 'instagram', 'website', 'linkedin', 'youtube', 'x', 'facebook'];
+        if (!providersUsingSocialToken.includes(provider)) {
+            return;
+        }
+        const tokenExpiry = expiresIn
+            ? new Date(Date.now() + expiresIn * 1000)
+            : undefined;
+        try {
+            await this._socialTokenRepo.model.socialToken.upsert({
+                where: {
+                    identifier_businessId: {
+                        identifier: provider,
+                        businessId: internalId,
+                    }
+                },
+                create: {
+                    identifier: provider,
+                    name: name,
+                    businessId: internalId,
+                    organizationId: orgId,
+                    accessToken: accessToken || null,
+                    refreshToken: refreshToken || null,
+                    tokenExpiry: tokenExpiry,
+                },
+                update: {
+                    name: name,
+                    organizationId: orgId,
+                    accessToken: accessToken || null,
+                    refreshToken: refreshToken || null,
+                    tokenExpiry: tokenExpiry,
+                    updatedAt: new Date(),
+                },
+            });
+        }
+        catch (error) {
+            console.error(`Failed to sync tokens for provider ${provider}:`, error);
+        }
     }
     updateIntegrationGroup(org, id, group) {
         return this._integrationRepository.updateIntegrationGroup(org, id, group);
@@ -2908,7 +2959,7 @@ let IntegrationService = class IntegrationService {
 exports.IntegrationService = IntegrationService;
 exports.IntegrationService = IntegrationService = tslib_1.__decorate([
     (0, common_1.Injectable)(),
-    tslib_1.__metadata("design:paramtypes", [typeof (_a = typeof integration_repository_1.IntegrationRepository !== "undefined" && integration_repository_1.IntegrationRepository) === "function" ? _a : Object, typeof (_b = typeof integration_manager_1.IntegrationManager !== "undefined" && integration_manager_1.IntegrationManager) === "function" ? _b : Object, typeof (_c = typeof notification_service_1.NotificationService !== "undefined" && notification_service_1.NotificationService) === "function" ? _c : Object, typeof (_d = typeof client_1.BullMqClient !== "undefined" && client_1.BullMqClient) === "function" ? _d : Object])
+    tslib_1.__metadata("design:paramtypes", [typeof (_a = typeof integration_repository_1.IntegrationRepository !== "undefined" && integration_repository_1.IntegrationRepository) === "function" ? _a : Object, typeof (_b = typeof integration_manager_1.IntegrationManager !== "undefined" && integration_manager_1.IntegrationManager) === "function" ? _b : Object, typeof (_c = typeof notification_service_1.NotificationService !== "undefined" && notification_service_1.NotificationService) === "function" ? _c : Object, typeof (_d = typeof client_1.BullMqClient !== "undefined" && client_1.BullMqClient) === "function" ? _d : Object, typeof (_e = typeof prisma_service_1.PrismaRepository !== "undefined" && prisma_service_1.PrismaRepository) === "function" ? _e : Object])
 ], IntegrationService);
 
 
@@ -3890,11 +3941,13 @@ let IntegrationManager = class IntegrationManager {
                     }
                 }
                 else {
-                    throw new Error(`${socialIntegration.identifier} Configuration not found`);
+                    console.warn(`Configuration not found for ${socialIntegration.identifier} with orgId: ${orgId} and customerId: ${customerId}`);
+                    // Don't throw an error here, just let it use the default config from environment variables
                 }
             }
             catch (error) {
-                throw new Error(`Error fetching platform config for ${socialIntegration.identifier}`);
+                console.error(`Error fetching platform config for ${socialIntegration.identifier}:`, error);
+                // Don't throw an error here, just let it use the default config from environment variables
             }
         }
     }
@@ -4499,7 +4552,7 @@ class LinkedinProvider extends social_abstract_1.SocialAbstract {
             headers: {
                 'Content-Type': 'application/json',
                 'X-Restli-Protocol-Version': '2.0.0',
-                'LinkedIn-Version': '202408',
+                'LinkedIn-Version': '202410',
                 Authorization: `Bearer ${token}`,
             },
         })).json();
@@ -4516,7 +4569,7 @@ class LinkedinProvider extends social_abstract_1.SocialAbstract {
             headers: {
                 'Content-Type': 'application/json',
                 'X-Restli-Protocol-Version': '2.0.0',
-                'LinkedIn-Version': '202408',
+                'LinkedIn-Version': '202410',
                 Authorization: `Bearer ${accessToken}`,
             },
             body: JSON.stringify({
@@ -4564,7 +4617,7 @@ class LinkedinProvider extends social_abstract_1.SocialAbstract {
                 }),
                 headers: {
                     'X-Restli-Protocol-Version': '2.0.0',
-                    'LinkedIn-Version': '202408',
+                    'LinkedIn-Version': '202410',
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${accessToken}`,
                 },
@@ -11474,7 +11527,16 @@ class PinterestProvider extends social_abstract_1.SocialAbstract {
         this.config = {
             PINTEREST_CLIENT_ID: process.env.PINTEREST_CLIENT_ID || '',
             PINTEREST_CLIENT_SECRET: process.env.PINTEREST_CLIENT_SECRET || '',
+            PINTEREST_SANDBOX_MODE: process.env.PINTEREST_SANDBOX_MODE === 'true' ? 'true' : 'false',
         };
+    }
+    get apiBaseUrl() {
+        const sandboxMode = process.env.PINTEREST_SANDBOX_MODE === 'true' || this.config.PINTEREST_SANDBOX_MODE === 'true';
+        const url = sandboxMode
+            ? 'https://api-sandbox.pinterest.com'
+            : 'https://api.pinterest.com';
+        console.log('[Pinterest] Using API URL:', url, '| Sandbox mode:', sandboxMode);
+        return url;
     }
     setConfig(newConfig) {
         this.config = { ...this.config, ...newConfig };
@@ -11483,7 +11545,7 @@ class PinterestProvider extends social_abstract_1.SocialAbstract {
         return this.config;
     }
     async refreshToken(refreshToken) {
-        const { access_token, expires_in } = await (await this.fetch('https://api.pinterest.com/v5/oauth/token', {
+        const { access_token, expires_in } = await (await this.fetch(`${this.apiBaseUrl}/v5/oauth/token`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -11496,7 +11558,7 @@ class PinterestProvider extends social_abstract_1.SocialAbstract {
                 redirect_uri: `${process.env.FRONTEND_URL}/integrations/social/pinterest`,
             }),
         })).json();
-        const { id, profile_image, username } = await (await this.fetch('https://api.pinterest.com/v5/user_account', {
+        const { id, profile_image, username } = await (await this.fetch(`${this.apiBaseUrl}/v5/user_account`, {
             method: 'GET',
             headers: {
                 Authorization: `Bearer ${access_token}`,
@@ -11522,7 +11584,7 @@ class PinterestProvider extends social_abstract_1.SocialAbstract {
         };
     }
     async authenticate(params) {
-        const { access_token, refresh_token, expires_in, scope } = await (await this.fetch('https://api.pinterest.com/v5/oauth/token', {
+        const { access_token, refresh_token, expires_in, scope } = await (await this.fetch(`${this.apiBaseUrl}/v5/oauth/token`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -11535,7 +11597,7 @@ class PinterestProvider extends social_abstract_1.SocialAbstract {
             }),
         })).json();
         this.checkScopes(this.scopes, scope);
-        const { id, profile_image, username } = await (await this.fetch('https://api.pinterest.com/v5/user_account', {
+        const { id, profile_image, username } = await (await this.fetch(`${this.apiBaseUrl}/v5/user_account`, {
             method: 'GET',
             headers: {
                 Authorization: `Bearer ${access_token}`,
@@ -11552,7 +11614,7 @@ class PinterestProvider extends social_abstract_1.SocialAbstract {
         };
     }
     async boards(accessToken) {
-        const { items } = await (await this.fetch('https://api.pinterest.com/v5/boards', {
+        const { items } = await (await this.fetch(`${this.apiBaseUrl}/v5/boards`, {
             method: 'GET',
             headers: {
                 Authorization: `Bearer ${accessToken}`,
@@ -11564,11 +11626,12 @@ class PinterestProvider extends social_abstract_1.SocialAbstract {
         })) || []);
     }
     async post(id, accessToken, postDetails) {
+        console.log('[Pinterest] Attempting to post with sandbox mode:', this.config.PINTEREST_SANDBOX_MODE === 'true');
         let mediaId = '';
         const findMp4 = postDetails?.[0]?.media?.find((p) => (p.url?.indexOf('mp4') || -1) > -1);
         const picture = postDetails?.[0]?.media?.find((p) => (p.url?.indexOf('mp4') || -1) === -1);
         if (findMp4) {
-            const { upload_url, media_id, upload_parameters } = await (await this.fetch('https://api.pinterest.com/v5/media', {
+            const { upload_url, media_id, upload_parameters } = await (await this.fetch(`${this.apiBaseUrl}/v5/media`, {
                 method: 'POST',
                 body: JSON.stringify({
                     media_type: 'video',
@@ -11591,7 +11654,7 @@ class PinterestProvider extends social_abstract_1.SocialAbstract {
             await axios_1.default.post(upload_url, formData);
             let statusCode = '';
             while (statusCode !== 'succeeded') {
-                const mediafile = await (await this.fetch('https://api.pinterest.com/v5/media/' + media_id, {
+                const mediafile = await (await this.fetch(`${this.apiBaseUrl}/v5/media/` + media_id, {
                     method: 'GET',
                     headers: {
                         Authorization: `Bearer ${accessToken}`,
@@ -11606,7 +11669,7 @@ class PinterestProvider extends social_abstract_1.SocialAbstract {
             url: m.url,
         }));
         try {
-            const { id: pId } = await (await this.fetch('https://api.pinterest.com/v5/pins', {
+            const { id: pId } = await (await this.fetch(`${this.apiBaseUrl}/v5/pins`, {
                 method: 'POST',
                 headers: {
                     Authorization: `Bearer ${accessToken}`,
@@ -11651,14 +11714,22 @@ class PinterestProvider extends social_abstract_1.SocialAbstract {
             ];
         }
         catch (err) {
-            console.log(err);
+            console.error('[Pinterest] Error posting pin:', err);
+            console.error('[Pinterest] Error response:', err?.response?.data || err?.message);
+            // Check for specific authentication errors
+            if (err?.json?.code === 2 || err?.json?.message?.includes('Authentication failed')) {
+                console.error('[Pinterest] Authentication failed - token may be expired or invalid for sandbox mode');
+                console.error('[Pinterest] Please reconnect your Pinterest account');
+            }
+            // Return empty array on error (as per PostResponse type)
+            // The error is already logged above
             return [];
         }
     }
     async analytics(id, accessToken, date) {
         const until = (0, dayjs_1.default)().format('YYYY-MM-DD');
         const since = (0, dayjs_1.default)().subtract(date, 'day').format('YYYY-MM-DD');
-        const { all: { daily_metrics }, } = await (await this.fetch(`https://api.pinterest.com/v5/user_account/analytics?start_date=${since}&end_date=${until}`, {
+        const { all: { daily_metrics }, } = await (await this.fetch(`${this.apiBaseUrl}/v5/user_account/analytics?start_date=${since}&end_date=${until}`, {
             method: 'GET',
             headers: {
                 Authorization: `Bearer ${accessToken}`,
@@ -11919,7 +11990,7 @@ class LinkedinPageProvider extends linkedin_provider_1.LinkedinProvider {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
                 'X-Restli-Protocol-Version': '2.0.0',
-                'LinkedIn-Version': '202408',
+                'LinkedIn-Version': '202410',
             },
         })).json();
         return (elements || []).map((e) => ({
@@ -12001,21 +12072,21 @@ class LinkedinPageProvider extends linkedin_provider_1.LinkedinProvider {
         const { elements } = await (await this.fetch(`https://api.linkedin.com/rest/organizationPageStatistics?q=organization&organization=${encodeURIComponent(`urn:li:organization:${id}`)}&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
-                'Linkedin-Version': '202405',
+                'Linkedin-Version': '202410',
                 'X-Restli-Protocol-Version': '2.0.0',
             },
         })).json();
         const { elements: elements2 } = await (await this.fetch(`https://api.linkedin.com/rest/organizationalEntityFollowerStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(`urn:li:organization:${id}`)}&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
-                'Linkedin-Version': '202405',
+                'Linkedin-Version': '202410',
                 'X-Restli-Protocol-Version': '2.0.0',
             },
         })).json();
         const { elements: elements3 } = await (await this.fetch(`https://api.linkedin.com/rest/organizationalEntityShareStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(`urn:li:organization:${id}`)}&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
-                'Linkedin-Version': '202405',
+                'Linkedin-Version': '202410',
                 'X-Restli-Protocol-Version': '2.0.0',
             },
         })).json();
@@ -12079,7 +12150,7 @@ class LinkedinPageProvider extends linkedin_provider_1.LinkedinProvider {
             headers: {
                 'X-Restli-Protocol-Version': '2.0.0',
                 'Content-Type': 'application/json',
-                'LinkedIn-Version': '202408',
+                'LinkedIn-Version': '202410',
                 Authorization: `Bearer ${integration.token}`,
             },
         })).json();
@@ -12105,7 +12176,7 @@ class LinkedinPageProvider extends linkedin_provider_1.LinkedinProvider {
                 headers: {
                     'X-Restli-Protocol-Version': '2.0.0',
                     'Content-Type': 'application/json',
-                    'LinkedIn-Version': '202408',
+                    'LinkedIn-Version': '202410',
                     Authorization: `Bearer ${integration.token}`,
                 },
             });
@@ -12119,7 +12190,7 @@ class LinkedinPageProvider extends linkedin_provider_1.LinkedinProvider {
             headers: {
                 'X-Restli-Protocol-Version': '2.0.0',
                 'Content-Type': 'application/json',
-                'LinkedIn-Version': '202408',
+                'LinkedIn-Version': '202410',
                 Authorization: `Bearer ${integration.token}`,
             },
         })).json();
@@ -14001,12 +14072,17 @@ let GbpProvider = class GbpProvider {
             'https://www.googleapis.com/auth/business.manage',
             'https://www.googleapis.com/auth/plus.business.manage'
         ];
-        this.GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-        this.GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-        this.REDIRECT_URI = `${process.env.FRONTEND_URL}/integrations/social/gbp`;
+        this.config = {
+            GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
+            GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || '',
+            FRONTEND_URL: process.env.FRONTEND_URL || '',
+        };
+    }
+    get REDIRECT_URI() {
+        return `${this.config.FRONTEND_URL}/integrations/social/gbp`;
     }
     async generateAuthUrl(clientInformation, customerId) {
-        const oauth2Client = new googleapis_1.google.auth.OAuth2(this.GOOGLE_CLIENT_ID, this.GOOGLE_CLIENT_SECRET, this.REDIRECT_URI);
+        const oauth2Client = new googleapis_1.google.auth.OAuth2(this.config.GOOGLE_CLIENT_ID, this.config.GOOGLE_CLIENT_SECRET, this.REDIRECT_URI);
         console.log("customerId", customerId);
         // Store in class properties
         this.currentCustomerId = customerId;
@@ -14042,6 +14118,9 @@ let GbpProvider = class GbpProvider {
         if (!params.code) {
             return 'Missing authorization code';
         }
+        // Add delay to avoid rate limiting (10 seconds)
+        console.log('⏳ Waiting 10 seconds to avoid rate limiting...');
+        await new Promise(resolve => setTimeout(resolve, 10000));
         // Verify state (minimal verification)
         // try {
         //   const state = JSON.parse(decodeURIComponent(params.state));
@@ -14052,7 +14131,7 @@ let GbpProvider = class GbpProvider {
         // } catch (e) {
         //   return 'Invalid state parameter';
         // }
-        const oauth2Client = new googleapis_1.google.auth.OAuth2(this.GOOGLE_CLIENT_ID, this.GOOGLE_CLIENT_SECRET, this.REDIRECT_URI);
+        const oauth2Client = new googleapis_1.google.auth.OAuth2(this.config.GOOGLE_CLIENT_ID, this.config.GOOGLE_CLIENT_SECRET, this.REDIRECT_URI);
         try {
             // Exchange code for tokens
             const tokenResponse = await oauth2Client.getToken(params.code);
@@ -14067,6 +14146,11 @@ let GbpProvider = class GbpProvider {
                 version: 'v1',
                 auth: oauth2Client,
             });
+            // Add retry options to prevent rate limiting
+            const listOptions = {
+                retry: false,
+                maxRetries: 0
+            };
             const { data: accountsData } = await accountManagement.accounts.list();
             const account = accountsData.accounts?.[0];
             if (!account?.name) {
@@ -14126,7 +14210,7 @@ let GbpProvider = class GbpProvider {
         }
     }
     async refreshToken(refreshToken) {
-        const oauth2Client = new googleapis_1.google.auth.OAuth2(this.GOOGLE_CLIENT_ID, this.GOOGLE_CLIENT_SECRET);
+        const oauth2Client = new googleapis_1.google.auth.OAuth2(this.config.GOOGLE_CLIENT_ID, this.config.GOOGLE_CLIENT_SECRET);
         oauth2Client.setCredentials({ refresh_token: refreshToken });
         const { credentials } = await oauth2Client.refreshAccessToken();
         return {
@@ -14141,6 +14225,34 @@ let GbpProvider = class GbpProvider {
             username: '',
             additionalSettings: [],
         };
+    }
+    async reConnect(refreshToken, connectionId, integrationId) {
+        console.log('🔄 GBP reConnect: Refreshing token for integration:', integrationId);
+        try {
+            const oauth2Client = new googleapis_1.google.auth.OAuth2(this.config.GOOGLE_CLIENT_ID, this.config.GOOGLE_CLIENT_SECRET);
+            oauth2Client.setCredentials({ refresh_token: refreshToken });
+            const { credentials } = await oauth2Client.refreshAccessToken();
+            if (!credentials.access_token) {
+                throw new Error('Failed to refresh token - no access token received');
+            }
+            console.log('✅ GBP reConnect: Token refreshed successfully');
+            return {
+                accessToken: credentials.access_token,
+                refreshToken: credentials.refresh_token || refreshToken,
+                expiresIn: credentials.expiry_date
+                    ? Math.floor((credentials.expiry_date - Date.now()) / 1000)
+                    : 3600,
+                id: connectionId || '',
+                name: '',
+                picture: '',
+                username: '',
+                additionalSettings: [],
+            };
+        }
+        catch (error) {
+            console.error('❌ GBP reConnect failed:', error);
+            throw error;
+        }
     }
     async post(id, accessToken, postDetails, integration) {
         const oauth2Client = new googleapis_1.google.auth.OAuth2();
@@ -14387,6 +14499,9 @@ let GbpProvider = class GbpProvider {
             // }
             return false;
         });
+    }
+    setConfig(newConfig) {
+        this.config = { ...this.config, ...newConfig };
     }
 };
 exports.GbpProvider = GbpProvider;

@@ -525,6 +525,8 @@ model SocialMediaPlatformConfig {
   config         SocialMediaPlatformConfigItem[]
   createdAt      DateTime                        @default(now())
   updatedAt      DateTime                        @updatedAt
+
+  @@unique([platformKey, organizationId, customerId])
 }
 
 model SocialMediaPlatformConfigItem {
@@ -728,6 +730,8 @@ model SocialToken {
   scope          String?
   createdAt      DateTime  @default(now()) @db.Timestamptz(6)
   updatedAt      DateTime  @updatedAt @db.Timestamptz(6)
+
+  @@unique([identifier, businessId])
 }
 
 enum SocialMediaPlatform {
