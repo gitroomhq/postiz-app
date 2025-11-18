@@ -32,6 +32,8 @@ import { Readable } from 'stream';
 import { lookup } from 'mime-types';
 const Sentry = require("@sentry/nestjs");
 
+Sentry.metrics.count("public_api-request", 1);
+
 @ApiTags('Public API')
 @Controller('/public/v1')
 export class PublicIntegrationsController {
@@ -42,8 +44,6 @@ export class PublicIntegrationsController {
     private _postsService: PostsService,
     private _mediaService: MediaService
   ) {}
-
-  Sentry.metrics.count("public_api-request", 1);
 
   @Post('/upload')
   @UseInterceptors(FileInterceptor('file'))
