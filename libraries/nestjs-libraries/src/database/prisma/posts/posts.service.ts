@@ -62,8 +62,6 @@ export class PostsService {
     private openaiService: OpenaiService
   ) {}
 
-  Sentry.metrics.count("post_created", 1);
-
   checkPending15minutesBack() {
     return this._postRepository.checkPending15minutesBack();
   }
@@ -106,6 +104,7 @@ export class PostsService {
             throw new BadRequestException(
               `Integration with id ${post.integration.id} not found`
             );
+          Sentry.metrics.count("post_created", 1);   
           }
 
           return {
