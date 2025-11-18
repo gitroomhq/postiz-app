@@ -30,7 +30,7 @@ import { UploadDto } from '@gitroom/nestjs-libraries/dtos/media/upload.dto';
 import axios from 'axios';
 import { Readable } from 'stream';
 import { lookup } from 'mime-types';
-const Sentry = require("@sentry/nestjs");
+import * as Sentry from '@sentry/nestjs';
 
 Sentry.metrics.count("public_api-request", 1);
 
