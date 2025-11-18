@@ -38,7 +38,7 @@ import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 dayjs.extend(utc);
-const Sentry = require("@sentry/nestjs");
+import * as Sentry from '@sentry/nestjs';
 
 type PostWithConditionals = Post & {
   integration?: Integration;
