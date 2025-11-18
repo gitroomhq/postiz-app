@@ -31,7 +31,7 @@ export const initializeSentry = (appName: string, allowLogs = false) => {
           recordOutputs: true,
         }),
       ],
-      tracesSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.25,
+      tracesSampleRate: 1.0,
       enableLogs: true,
 
       // Profiling
