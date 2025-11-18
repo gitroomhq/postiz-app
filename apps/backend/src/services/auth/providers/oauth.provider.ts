@@ -56,7 +56,7 @@ export class OauthProvider implements ProvidersInterface {
       redirect_uri: `${this.frontendUrl}/settings`,
     });
 
-    return `${this.authUrl}/?${params.toString()}`;
+    return `${this.authUrl}?${params.toString()}`;
   }
 
   async getToken(code: string): Promise<string> {
