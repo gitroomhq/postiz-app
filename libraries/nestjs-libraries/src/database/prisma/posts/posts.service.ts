@@ -104,9 +104,9 @@ export class PostsService {
             throw new BadRequestException(
               `Integration with id ${post.integration.id} not found`
             );
-          Sentry.metrics.count("post_created", 1);   
           }
 
+          Sentry.metrics.count("post_created", 1);
           return {
             ...post,
             settings: {
