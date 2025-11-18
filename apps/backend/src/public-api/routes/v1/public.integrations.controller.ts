@@ -32,13 +32,12 @@ import { Readable } from 'stream';
 import { lookup } from 'mime-types';
 import * as Sentry from '@sentry/nestjs';
 
-Sentry.metrics.count("public_api-request", 1);
-
 @ApiTags('Public API')
 @Controller('/public/v1')
 export class PublicIntegrationsController {
   private storage = UploadFactory.createStorage();
-
+  Sentry.metrics.count("public_api-request", 1);
+  
   constructor(
     private _integrationService: IntegrationService,
     private _postsService: PostsService,
