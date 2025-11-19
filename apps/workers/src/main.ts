@@ -8,7 +8,7 @@ import { BullMqServer } from '@gitroom/nestjs-libraries/bull-mq-transport-new/st
 
 import { AppModule } from './app/app.module';
 
-async function bootstrap() {
+async function start() {
   process.env.IS_WORKER = 'true';
 
   // some comment again
@@ -22,4 +22,4 @@ async function bootstrap() {
   await app.listen();
 }
 
-bootstrap();
+start();
