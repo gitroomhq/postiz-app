@@ -106,7 +106,6 @@ export class PostsService {
             );
           }
 
-          Sentry.metrics.count("post_created", 1);
           return {
             ...post,
             settings: {
@@ -719,6 +718,7 @@ export class PostsService {
         });
       }
 
+      Sentry.metrics.count("post_created", 1);
       postList.push({
         postId: posts[0].id,
         integration: post.integration.id,
