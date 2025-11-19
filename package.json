@@ -7,7 +7,7 @@
   "keywords": [],
   "author": "",
   "engines": {
-    "node": ">=22.0.0 <23.0.0"
+    "node": ">=22.12.0 <23.0.0"
   },
   "packageManager": "pnpm@10.6.1",
   "scripts": {
@@ -34,9 +34,9 @@
     "commands:build:development": "pnpm --filter ./apps/commands run build",
     "workers": "rm -rf dist/workers && pnpm --filter ./apps/workers run dev",
     "cron": "rm -rf dist/cron && pnpm --filter ./apps/cron run dev",
-    "prisma-generate": "pnpm dlx prisma generate --schema ./libraries/nestjs-libraries/src/database/prisma/schema.prisma",
-    "prisma-db-push": "pnpm dlx prisma db push --schema ./libraries/nestjs-libraries/src/database/prisma/schema.prisma",
-    "prisma-reset": "cd ./libraries/nestjs-libraries/src/database/prisma && pnpm dlx prisma db push --force-reset && npx prisma db push",
+    "prisma-generate": "pnpm dlx prisma@6.5.0 generate --schema ./libraries/nestjs-libraries/src/database/prisma/schema.prisma",
+    "prisma-db-push": "pnpm dlx prisma@6.5.0 db push --schema ./libraries/nestjs-libraries/src/database/prisma/schema.prisma",
+    "prisma-reset": "cd ./libraries/nestjs-libraries/src/database/prisma && pnpm dlx prisma@6.5.0 db push --force-reset && pnpx prisma@6.5.0 db push",
     "docker-build": "./var/docker/docker-build.sh",
     "docker-create": "./var/docker/docker-create.sh",
     "postinstall": "pnpm run prisma-generate",
@@ -77,7 +77,7 @@
     "@neynar/nodejs-sdk": "^2.8.1",
     "@neynar/react": "^0.9.7",
     "@postiz/wallets": "^0.0.1",
-    "@prisma/client": "^6.5.0",
+    "@prisma/client": "6.5.0",
     "@sentry/nestjs": "^10.25.0",
     "@sentry/nextjs": "^10.25.0",
     "@sentry/profiling-node": "^10.25.0",
@@ -287,7 +287,7 @@
     "nodemon": "^3.1.9",
     "postcss": "8.4.38",
     "prettier": "^2.6.2",
-    "prisma": "^6.5.0",
+    "prisma": "6.5.0",
     "react-refresh": "^0.10.0",
     "ts-jest": "^29.1.0",
     "ts-node": "10.9.2",
