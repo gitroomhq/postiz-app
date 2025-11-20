@@ -215,21 +215,44 @@ export default withProvider({
   CustomPreviewComponent: undefined,
   dto: RedditSettingsDto,
   checkValidity: async (posts, settings: any) => {
-    if (
-      settings?.subreddit?.some(
-        (p: any, index: number) =>
-          p?.value?.type === 'media' && posts[0].length !== 1
-      )
-    ) {
-      return 'When posting a media post, you must attached exactly one media file.';
-    }
+    // Check if type is media in any subreddit setting
+    const hasMediaType = settings?.subreddit?.some(
+      (p: any) => p?.value?.type === 'media'
+    );
 
-    if (
-      posts.some((p) =>
-        p.some((a) => !a.thumbnail && a.path.indexOf('mp4') > -1)
-      )
-    ) {
-      return 'You must attach a thumbnail to your video post.';
+    if (hasMediaType && posts[0]) {
+      const firstPost = posts[0];
+      
+      // Detect video and image media
+      const hasVideo = firstPost.some((m: any) => m.path.indexOf('mp4') > -1);
+      const hasImage = firstPost.some((m: any) => m.path.indexOf('mp4') === -1);
+      
+      // Disallow mixed media (video + images)
+      if (hasVideo && hasImage) {
+        return 'You cannot mix videos and images in a Reddit post. Please use either a video or images, not both.';
+      }
+      
+      // Video validation
+      if (hasVideo) {
+        if (firstPost.length !== 1) {
+          return 'When posting a video, you must attach exactly one media file.';
+        }
+        
+        // Check for thumbnail
+        const videoMedia = firstPost.find((m: any) => m.path.indexOf('mp4') > -1);
+        if (!videoMedia?.thumbnail) {
+          return 'You must attach a thumbnail to your video post.';
+        }
+      } else {
+        // Image validation (no video)
+        if (firstPost.length === 0) {
+          return 'When posting a media post, you must attach at least one image.';
+        }
+        
+        if (firstPost.length > 20) {
+          return 'Reddit allows a maximum of 20 images per post.';
+        }
+      }
     }
 
     return true;
