@@ -28,6 +28,7 @@ import { NostrProvider } from '@gitroom/nestjs-libraries/integrations/social/nos
 import { VkProvider } from '@gitroom/nestjs-libraries/integrations/social/vk.provider';
 import { WordpressProvider } from '@gitroom/nestjs-libraries/integrations/social/wordpress.provider';
 import { ListmonkProvider } from '@gitroom/nestjs-libraries/integrations/social/listmonk.provider';
+import { SkoolProvider } from '@gitroom/nestjs-libraries/integrations/social/skool.provider';
 
 export const socialIntegrationList: SocialProvider[] = [
   new XProvider(),
@@ -56,6 +57,7 @@ export const socialIntegrationList: SocialProvider[] = [
   new HashnodeProvider(),
   new WordpressProvider(),
   new ListmonkProvider(),
+  new SkoolProvider(),
   // new MastodonCustomProvider(),
 ];
 
