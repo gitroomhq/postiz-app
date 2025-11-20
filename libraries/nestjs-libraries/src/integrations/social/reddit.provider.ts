@@ -12,6 +12,7 @@ import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.ab
 import { lookup } from 'mime-types';
 import axios from 'axios';
 import WebSocket from 'ws';
+import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 
 // @ts-ignore
 global.WebSocket = WebSocket;
@@ -23,6 +24,11 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
   isBetweenSteps = false;
   scopes = ['read', 'identity', 'submit', 'flair'];
   editor = 'normal' as const;
+  dto = RedditSettingsDto;
+
+  maxLength() {
+    return 10000;
+  }
 
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const {
@@ -319,6 +325,16 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
     }));
   }
 
+  @Tool({
+    description: 'Get list of subreddits with information',
+    dataSchema: [
+      {
+        key: 'word',
+        type: 'string',
+        description: 'Search subreddit by string',
+      },
+    ],
+  })
   async subreddits(accessToken: string, data: any) {
     const {
       data: { children },
@@ -367,6 +383,16 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
     return permissions;
   }
 
+  @Tool({
+    description: 'Get list of flairs and restrictions for a subreddit',
+    dataSchema: [
+      {
+        key: 'subreddit',
+        type: 'string',
+        description: 'Search flairs and restrictions by subreddit key should be "/r/[name]"',
+      },
+    ],
+  })
   async restrictions(accessToken: string, data: { subreddit: string }) {
     const {
       data: { submission_type, allow_images, ...all2 },

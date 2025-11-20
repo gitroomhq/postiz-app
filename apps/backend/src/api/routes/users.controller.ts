@@ -199,6 +199,7 @@ export class UsersController {
 
   @Post('/logout')
   logout(@Res({ passthrough: true }) response: Response) {
+    response.header('logout', 'true');
     response.cookie('auth', '', {
       domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
       ...(!process.env.NOT_SECURED

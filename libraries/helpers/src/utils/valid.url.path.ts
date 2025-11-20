@@ -9,11 +9,11 @@ export class ValidUrlExtension implements ValidatorConstraintInterface {
   validate(text: string, args: ValidationArguments) {
     text = text?.toLowerCase();
     return (
-      text?.endsWith('.png') ||
-      text?.endsWith('.jpg') ||
-      text?.endsWith('.jpeg') ||
-      text?.endsWith('.gif') ||
-      text?.endsWith('.mp4')
+      !!text?.split?.('?')?.[0].endsWith('.png') ||
+      !!text?.split?.('?')?.[0].endsWith('.jpg') ||
+      !!text?.split?.('?')?.[0].endsWith('.jpeg') ||
+      !!text?.split?.('?')?.[0].endsWith('.gif') ||
+      !!text?.split?.('?')?.[0].endsWith('.mp4')
     );
   }
 

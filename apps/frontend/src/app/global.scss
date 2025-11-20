@@ -679,3 +679,28 @@ html[dir='rtl'] [dir='ltr'] {
 .blur-xs {
   filter: blur(4px);
 }
+
+.agent {
+  .copilotKitInputContainer {
+    padding: 0 24px !important;
+  }
+
+  .copilotKitInput {
+    width: 100% !important;
+  }
+}
+.rm-bg .b2 {
+  padding-top: 0 !important;
+}
+.rm-bg .b1 {
+  background: transparent !important;
+  gap: 0 !important;
+}
+
+.copilotKitMessage img {
+  width: 200px;
+}
+
+.copilotKitMessage a {
+  color: var(--new-btn-text) !important;
+}

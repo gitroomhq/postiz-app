@@ -38,6 +38,7 @@ import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 dayjs.extend(utc);
+import * as Sentry from '@sentry/nestjs';
 
 type PostWithConditionals = Post & {
   integration?: Integration;
@@ -717,6 +718,7 @@ export class PostsService {
         });
       }
 
+      Sentry.metrics.count("post_created", 1);
       postList.push({
         postId: posts[0].id,
         integration: post.integration.id,
