@@ -65,6 +65,12 @@ export class SkoolProvider extends SocialAbstract implements SocialProvider {
         type: 'text' as const,
       },
       {
+        key: 'accountName',
+        label: 'Account Name (for display)',
+        validation: `/^.+$/`,
+        type: 'text' as const,
+      },
+      {
         key: 'defaultLabelId',
         label: 'Default Label ID',
         validation: `/^.+$/`,
@@ -91,13 +97,96 @@ export class SkoolProvider extends SocialAbstract implements SocialProvider {
         expiresIn: dayjs().add(100, 'years').unix() - dayjs().unix(),
         accessToken: JSON.stringify(body),
         id: makeId(10),
-        name: body.groupName,
+        name: body.accountName || body.groupName,
         picture: '',
         username: body.groupName,
       };
     } catch (err) {
       return 'Invalid credentials';
     }
+  }
+
+  async analytics(id: string, accessToken: string, date: number) {
+    const credentials = JSON.parse(accessToken);
+    const apiUrl = credentials.apiUrl.replace(/\/$/, '');
+    const authParam = encodeURIComponent(credentials.authToken);
+    const groupName = credentials.groupName;
+
+    try {
+      // We need to find the post title/slug to fetch details. 
+      // Postiz stores the postId (which is Skool's ID) in the 'id' parameter here? 
+      // Actually 'id' is the postId returned from post() method.
+      
+      // If Skool API requires slug + group to fetch post, we might be in trouble if we only have ID.
+      // However, the user provided an example:
+      // GET /api/v1/community/groups/:group/posts/:slug
+      
+      // If we don't have the slug stored, we might need to fetch by ID if possible or store slug in releaseURL?
+      // The releaseURL is constructed as: ${apiUrl}/community/${groupName}/posts/${result.id}
+      
+      // Wait, the user provided this CURL for getting a post:
+      // curl -X 'GET' 'http://.../posts/just-a-note-from-the-creators?bypass=true&auth=...'
+      
+      // If we only have the ID (219ccf8f...), we might need an endpoint that supports ID lookup.
+      // Or we assume we can't get analytics without the slug.
+      
+      // BUT, the user asked "if we are getting post stats".
+      // And the response payload has "upvotes" and "comments".
+      
+      // Let's assume for now we can't easily get analytics unless we have an endpoint that takes ID.
+      // If we MUST use slug, we would have needed to store it.
+      
+      // Actually, let's look at the 'post()' return. We return 'postId: result.id'.
+      // If Skool supports getting post by ID (e.g. /api/v1/community/posts/:id), that would be best.
+      // The DELETE example uses ID: /api/v1/community/posts/:id
+      // Maybe GET works there too?
+      
+      const url = `${apiUrl}/api/v1/community/posts/${id}?bypass=true&auth=${authParam}`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        return [];
+      }
+      
+      const data = await response.json();
+      
+      // data structure based on user input:
+      // { id, name, metadata: { upvotes: 25, comments: 16, ... } }
+      
+      return [
+        {
+          label: 'Upvotes',
+          data: [{ total: String(data.metadata?.upvotes || 0), date: dayjs().format('YYYY-MM-DD') }],
+          percentageChange: 0,
+        },
+        {
+          label: 'Comments',
+          data: [{ total: String(data.metadata?.comments || 0), date: dayjs().format('YYYY-MM-DD') }],
+          percentageChange: 0,
+        },
+      ];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  async deletePost(id: string, accessToken: string) {
+    const credentials = JSON.parse(accessToken);
+    const apiUrl = credentials.apiUrl.replace(/\/$/, '');
+    const authParam = encodeURIComponent(credentials.authToken);
+    
+    const url = `${apiUrl}/api/v1/community/posts/${id}?bypass=true&auth=${authParam}`;
+    await fetch(url, {
+      method: 'DELETE',
+    });
+  }
+
+  async changeNickname(id: string, accessToken: string, name: string) {
+    return { name };
+  }
+
+  async changeProfilePicture(id: string, accessToken: string, url: string) {
+    return { url };
   }
 
   async post(

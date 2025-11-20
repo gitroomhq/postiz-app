@@ -138,4 +138,5 @@ export interface SocialProvider
     token: string, data: { query: string }, id: string, integration: Integration
   ) => Promise<{ id: string; label: string; image: string, doNotCache?: boolean }[] | {none: true}>;
   mentionFormat?(idOrHandle: string, name: string): string;
+  deletePost?(id: string, accessToken: string): Promise<void>;
 }
