@@ -9,5 +9,9 @@ export class SkoolSettingsDto {
   @IsString()
   @IsOptional()
   labelId?: string;
+
+  @IsString()
+  @IsOptional()
+  label?: string;
 }
 

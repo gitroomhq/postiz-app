@@ -8,13 +8,17 @@ import {
 import { SkoolSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/skool.settings.dto';
 import { Input } from '@gitroom/react/form/input';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
+import { SelectLabel } from '@gitroom/frontend/components/new-launch/providers/skool/select.label';
 
 const SkoolSettings: FC = () => {
   const form = useSettings();
   return (
     <>
       <Input label="Title" {...form.register('title')} />
-      <Input label="Label ID (Optional, overrides default)" {...form.register('labelId')} />
+      <div className="mb-4">
+        <SelectLabel {...form.register('label')} />
+      </div>
+      <Input label="Label ID (Overrides dropdown selection)" {...form.register('labelId')} />
     </>
   );
 };
@@ -28,4 +32,3 @@ export default withProvider({
   checkValidity: undefined,
   maximumCharacters: 100000,
 });
-

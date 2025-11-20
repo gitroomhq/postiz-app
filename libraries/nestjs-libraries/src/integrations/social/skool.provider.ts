@@ -11,6 +11,8 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
 import removeMarkdown from 'remove-markdown';
 
+import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
+
 export class SkoolProvider extends SocialAbstract implements SocialProvider {
   identifier = 'skool';
   name = 'Skool';
@@ -72,8 +74,14 @@ export class SkoolProvider extends SocialAbstract implements SocialProvider {
       },
       {
         key: 'defaultLabelId',
-        label: 'Default Label ID',
-        validation: `/^.+$/`,
+        label: 'Default Label ID (optional)',
+        validation: ``,
+        type: 'text' as const,
+      },
+      {
+        key: 'availableLabels',
+        label: 'Available Labels (format: id:name, id2:name2)',
+        validation: ``,
         type: 'text' as const,
       },
     ];
@@ -98,12 +106,28 @@ export class SkoolProvider extends SocialAbstract implements SocialProvider {
         accessToken: JSON.stringify(body),
         id: makeId(10),
         name: body.accountName || body.groupName,
-        picture: '',
+        picture: '/icons/platforms/skool.png',
         username: body.groupName,
       };
     } catch (err) {
       return 'Invalid credentials';
     }
+  }
+
+  @Tool({ description: 'Get available labels', dataSchema: [] })
+  async getLabels(accessToken: string) {
+    const credentials = JSON.parse(accessToken);
+    const availableLabels = credentials.availableLabels || '';
+    
+    if (!availableLabels) {
+      return [];
+    }
+
+    return availableLabels.split(',').map((l: string) => {
+      const [value, label] = l.split(':').map((s) => s.trim());
+      if (!value || !label) return null;
+      return { value, label };
+    }).filter(Boolean);
   }
 
   async analytics(id: string, accessToken: string, date: number) {
@@ -236,7 +260,7 @@ export class SkoolProvider extends SocialAbstract implements SocialProvider {
     const title = settings.title || content.split('\n')[0].substring(0, 100);
     // If title is derived from content, we might want to remove it from content to avoid duplication if Skool shows both
     
-    const labelId = settings.labelId || credentials.defaultLabelId;
+    const labelId = settings.label?.value || settings.labelId || credentials.defaultLabelId;
 
     if (!labelId) {
         throw new Error('Label ID is required. Please set it in the provider settings or post settings.');
