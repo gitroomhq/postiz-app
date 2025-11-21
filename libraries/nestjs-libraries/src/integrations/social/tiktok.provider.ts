@@ -430,6 +430,47 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     }
   }
 
+  private generatePostInfo(
+    post: PostDetails<TikTokDto>,
+    isPhoto: boolean
+  ): Record<string, any> {
+    const postingMethod = post.settings?.content_posting_method || 'DIRECT_POST';
+
+    return {
+      // Title (max 90 chars for photos/videos)
+      ...((post.settings?.title && isPhoto) || (post.message && !isPhoto)
+        ? {
+            title: isPhoto
+              ? post.settings.title?.slice(0, 90) || undefined
+              : post.message?.slice(0, 90) || undefined,
+          }
+        : {}),
+
+      // Description for photos only (max 4000 chars)
+      ...(isPhoto ? { description: post.message?.slice(0, 4000) || undefined } : {}),
+
+      // DIRECT_POST specific fields
+      ...(postingMethod === 'DIRECT_POST'
+        ? {
+            privacy_level: post.settings?.privacy_level || 'PUBLIC_TO_EVERYONE',
+            disable_comment: !post.settings?.comment || false,
+            disable_duet: !post.settings?.duet || false,
+            disable_stitch: !post.settings?.stitch || false,
+            ...(isPhoto
+              ? {
+                  auto_add_music: post.settings?.autoAddMusic === 'yes',
+                }
+              : {}),
+          }
+        : {}),
+
+      // Common fields for both methods
+      is_aigc: post.settings?.video_made_with_ai || false,
+      brand_content_toggle: true, // Required for both methods per API docs
+      brand_organic_toggle: true, // Required for both methods per API docs
+    };
+  }
+
   async post(
     id: string,
     accessToken: string,
@@ -454,39 +495,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
             Authorization: `Bearer ${accessToken}`,
           },
           body: JSON.stringify({
-            ...((firstPost?.settings?.content_posting_method ||
-              'DIRECT_POST') === 'DIRECT_POST'
-              ? {
-                  post_info: {
-                    ...((firstPost?.settings?.title && isPhoto) ||
-                    (firstPost.message && !isPhoto)
-                      ? {
-                          title: isPhoto
-                            ? firstPost.settings.title
-                            : firstPost.message,
-                        }
-                      : {}),
-                    ...(isPhoto ? { description: firstPost.message } : {}),
-                    privacy_level:
-                      firstPost.settings.privacy_level || 'PUBLIC_TO_EVERYONE',
-                    disable_duet: !firstPost.settings.duet || false,
-                    disable_comment: !firstPost.settings.comment || false,
-                    disable_stitch: !firstPost.settings.stitch || false,
-                    is_aigc: firstPost.settings.video_made_with_ai || false,
-                    brand_content_toggle:
-                      firstPost.settings.brand_content_toggle || false,
-                    brand_organic_toggle:
-                      firstPost.settings.brand_organic_toggle || false,
-                    ...((firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) ===
-                    -1
-                      ? {
-                          auto_add_music:
-                            firstPost.settings.autoAddMusic === 'yes',
-                        }
-                      : {}),
-                  },
-                }
-              : {}),
+            post_info: this.generatePostInfo(firstPost, isPhoto),
             ...((firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) > -1
               ? {
                   source_info: {
