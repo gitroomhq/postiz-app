@@ -10,8 +10,10 @@ export const languages = [
   'de',
   'it',
   'ja',
+  'kmr',
   'ko',
   'ar',
+  'ckb',
   'tr',
   'vi',
 ];
