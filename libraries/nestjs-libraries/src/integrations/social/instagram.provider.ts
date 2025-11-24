@@ -11,7 +11,11 @@ import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { InstagramDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/instagram.dto';
 import { Integration } from '@prisma/client';
+import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
+@Rules(
+  "Instagram should have at least one attachment, if it's a story, it can have only one picture"
+)
 export class InstagramProvider
   extends SocialAbstract
   implements SocialProvider
@@ -29,7 +33,12 @@ export class InstagramProvider
     'instagram_manage_comments',
     'instagram_manage_insights',
   ];
+  override maxConcurrentJob = 10;
   editor = 'normal' as const;
+  dto = InstagramDto;
+  maxLength() {
+    return 2200;
+  }
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     return {
@@ -45,10 +54,16 @@ export class InstagramProvider
 
   public override handleErrors(body: string):
     | {
-        type: 'refresh-token' | 'bad-body';
+        type: 'refresh-token' | 'bad-body' | 'retry';
         value: string;
       }
     | undefined {
+    if (body.indexOf('An unknown error occurred') > -1) {
+      return {
+        type: 'retry' as const,
+        value: 'An unknown error occurred, please try again later',
+      };
+    }
 
     if (body.indexOf('REVOKED_ACCESS_TOKEN') > -1) {
       return {
@@ -58,7 +73,9 @@ export class InstagramProvider
       };
     }
 
-    if (body.toLowerCase().indexOf('the user is not an instagram business') > -1) {
+    if (
+      body.toLowerCase().indexOf('the user is not an instagram business') > -1
+    ) {
       return {
         type: 'refresh-token' as const,
         value:
@@ -326,7 +343,7 @@ export class InstagramProvider
     refresh: string;
   }) {
     const getAccessToken = await (
-      await this.fetch(
+      await fetch(
         'https://graph.facebook.com/v20.0/oauth/access_token' +
           `?client_id=${process.env.FACEBOOK_APP_ID}` +
           `&redirect_uri=${encodeURIComponent(
@@ -340,7 +357,7 @@ export class InstagramProvider
     ).json();
 
     const { access_token, expires_in, ...all } = await (
-      await this.fetch(
+      await fetch(
         'https://graph.facebook.com/v20.0/oauth/access_token' +
           '?grant_type=fb_exchange_token' +
           `&client_id=${process.env.FACEBOOK_APP_ID}` +
@@ -350,7 +367,7 @@ export class InstagramProvider
     ).json();
 
     const { data } = await (
-      await this.fetch(
+      await fetch(
         `https://graph.facebook.com/v20.0/me/permissions?access_token=${access_token}`
       )
     ).json();
@@ -360,14 +377,8 @@ export class InstagramProvider
       .map((p: any) => p.permission);
     this.checkScopes(this.scopes, permissions);
 
-    const {
-      id,
-      name,
-      picture: {
-        data: { url },
-      },
-    } = await (
-      await this.fetch(
+    const { id, name, picture } = await (
+      await fetch(
         `https://graph.facebook.com/v20.0/me?fields=id,name,picture&access_token=${access_token}`
       )
     ).json();
@@ -378,14 +389,14 @@ export class InstagramProvider
       accessToken: access_token,
       refreshToken: access_token,
       expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
-      picture: url,
+      picture: picture?.data?.url || '',
       username: '',
     };
   }
 
   async pages(accessToken: string) {
     const { data } = await (
-      await this.fetch(
+      await fetch(
         `https://graph.facebook.com/v20.0/me/accounts?fields=id,instagram_business_account,username,name,picture.type(large)&access_token=${accessToken}&limit=500`
       )
     ).json();
@@ -397,7 +408,7 @@ export class InstagramProvider
           return {
             pageId: p.id,
             ...(await (
-              await this.fetch(
+              await fetch(
                 `https://graph.facebook.com/v20.0/${p.instagram_business_account.id}?fields=name,profile_picture_url&access_token=${accessToken}&limit=500`
               )
             ).json()),
@@ -419,18 +430,17 @@ export class InstagramProvider
     data: { pageId: string; id: string }
   ) {
     const { access_token, ...all } = await (
-      await this.fetch(
+      await fetch(
         `https://graph.facebook.com/v20.0/${data.pageId}?fields=access_token,name,picture.type(large)&access_token=${accessToken}`
       )
     ).json();
 
     const { id, name, profile_picture_url, username } = await (
-      await this.fetch(
+      await fetch(
         `https://graph.facebook.com/v20.0/${data.id}?fields=username,name,profile_picture_url&access_token=${accessToken}`
       )
     ).json();
 
-    console.log(id, name, profile_picture_url, username);
     return {
       id,
       name,
@@ -498,10 +508,14 @@ export class InstagramProvider
         while (status === 'IN_PROGRESS') {
           const { status_code } = await (
             await this.fetch(
-              `https://${type}/v20.0/${photoId}?access_token=${accessToken}&fields=status_code`
+              `https://${type}/v20.0/${photoId}?access_token=${accessToken}&fields=status_code`,
+              undefined,
+              '',
+              0,
+              true
             )
           ).json();
-          await timer(10000);
+          await timer(30000);
           status = status_code;
         }
         console.log('in progress3', id);
@@ -558,10 +572,14 @@ export class InstagramProvider
       while (status === 'IN_PROGRESS') {
         const { status_code } = await (
           await this.fetch(
-            `https://${type}/v20.0/${containerId}?fields=status_code&access_token=${accessToken}`
+            `https://${type}/v20.0/${containerId}?fields=status_code&access_token=${accessToken}`,
+            undefined,
+            '',
+            0,
+            true
           )
         ).json();
-        await timer(10000);
+        await timer(30000);
         status = status_code;
       }
 
@@ -605,7 +623,7 @@ export class InstagramProvider
       ).json();
 
       arr.push({
-        id: firstPost.id,
+        id: post.id,
         postId: commentId,
         releaseURL: linkGlobal,
         status: 'success',
@@ -617,44 +635,44 @@ export class InstagramProvider
 
   private setTitle(name: string) {
     switch (name) {
-      case "likes": {
+      case 'likes': {
         return 'Likes';
       }
 
-      case "followers": {
+      case 'followers': {
         return 'Followers';
       }
 
-      case "reach": {
+      case 'reach': {
         return 'Reach';
       }
 
-      case "follower_count": {
+      case 'follower_count': {
         return 'Follower Count';
       }
 
-      case "views": {
+      case 'views': {
         return 'Views';
       }
 
-      case "comments": {
+      case 'comments': {
         return 'Comments';
       }
 
-      case "shares": {
+      case 'shares': {
         return 'Shares';
       }
 
-      case "saves": {
+      case 'saves': {
         return 'Saves';
       }
 
-      case "replies": {
+      case 'replies': {
         return 'Replies';
       }
     }
 
-    return "";
+    return '';
   }
 
   async analytics(
@@ -667,13 +685,13 @@ export class InstagramProvider
     const since = dayjs().subtract(date, 'day').unix();
 
     const { data, ...all } = await (
-      await this.fetch(
+      await fetch(
         `https://${type}/v21.0/${id}/insights?metric=follower_count,reach&access_token=${accessToken}&period=day&since=${since}&until=${until}`
       )
     ).json();
 
     const { data: data2, ...all2 } = await (
-      await this.fetch(
+      await fetch(
         `https://${type}/v21.0/${id}/insights?metric_type=total_value&metric=likes,views,comments,shares,saves,replies&access_token=${accessToken}&period=day&since=${since}&until=${until}`
       )
     ).json();

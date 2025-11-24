@@ -9,11 +9,15 @@ import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.ab
 import dayjs from 'dayjs';
 
 export class MastodonProvider extends SocialAbstract implements SocialProvider {
+  override maxConcurrentJob = 5; // Mastodon instances typically have generous limits
   identifier = 'mastodon';
   name = 'Mastodon';
   isBetweenSteps = false;
   scopes = ['write:statuses', 'profile', 'write:media'];
   editor = 'normal' as const;
+  maxLength() {
+    return 500;
+  }
 
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     return {
@@ -90,7 +94,7 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
       accessToken: tokenInformation.access_token,
       refreshToken: 'null',
       expiresIn: dayjs().add(100, 'years').unix() - dayjs().unix(),
-      picture: personalInformation.avatar,
+      picture: personalInformation?.avatar || '',
       username: personalInformation.username,
     };
   }

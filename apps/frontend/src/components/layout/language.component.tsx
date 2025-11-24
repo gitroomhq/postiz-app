@@ -1,6 +1,6 @@
 'use client';
 
-import { useModals } from '@mantine/modals';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import {
   cookieName,
   fallbackLng,
@@ -70,7 +70,7 @@ export const ChangeLanguageComponent = () => {
   const handleLanguageChange = (language: string) => {
     setCookie(language);
     i18next.changeLanguage(language);
-    modals.closeModal('change-language');
+    modals.closeCurrent();
   };
 
   // Function to get language name in its native script
@@ -123,16 +123,9 @@ export const LanguageComponent = () => {
   const t = useT();
   const openModal = () => {
     modal.openModal({
-      title: '',
-      withCloseButton: false,
-      modalId: 'change-language',
-      children: (
-        <ModalWrapperComponent title={t('change_language', 'Change Language')}>
-          <ChangeLanguageComponent />
-        </ModalWrapperComponent>
-      ),
-      size: 'lg',
-      centered: true,
+      title: t('change_language', 'Change Language'),
+      withCloseButton: true,
+      children: <ChangeLanguageComponent />,
     });
   };
   return (

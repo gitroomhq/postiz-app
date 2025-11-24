@@ -7,10 +7,10 @@ import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/o
 import { AuthService as AuthChecker } from '@gitroom/helpers/auth/auth.service';
 import { ProvidersFactory } from '@gitroom/backend/services/auth/providers/providers.factory';
 import dayjs from 'dayjs';
-import { NewsletterService } from '@gitroom/nestjs-libraries/services/newsletter.service';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { ForgotReturnPasswordDto } from '@gitroom/nestjs-libraries/dtos/auth/forgot-return.password.dto';
 import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
+import { NewsletterService } from '@gitroom/nestjs-libraries/newsletter/newsletter.service';
 
 @Injectable()
 export class AuthService {
@@ -36,10 +36,13 @@ export class AuthService {
     addToOrg?: boolean | { orgId: string; role: 'USER' | 'ADMIN'; id: string }
   ) {
     if (provider === Provider.LOCAL) {
+      if (process.env.DISALLOW_PLUS && body.email.includes('+')) {
+        throw new Error('Email with plus sign is not allowed');
+      }
       const user = await this._userService.getUserByEmail(body.email);
       if (body instanceof CreateOrgUserDto) {
         if (user) {
-          throw new Error('User already exists');
+          throw new Error('Email already exists');
         }
 
         if (!(await this.canRegister(provider))) {

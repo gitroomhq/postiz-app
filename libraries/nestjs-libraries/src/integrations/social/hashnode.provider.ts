@@ -11,13 +11,19 @@ import { HashnodeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/provid
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 
 export class HashnodeProvider extends SocialAbstract implements SocialProvider {
+  override maxConcurrentJob = 3; // Hashnode has lenient publishing limits
   identifier = 'hashnode';
   name = 'Hashnode';
   isBetweenSteps = false;
   scopes = [] as string[];
   editor = 'markdown' as const;
+  maxLength() {
+    return 10000;
+  }
+  dto = HashnodeSettingsDto;
 
   async generateAuthUrl() {
     const state = makeId(6);
@@ -90,7 +96,7 @@ export class HashnodeProvider extends SocialAbstract implements SocialProvider {
         accessToken: body.apiKey,
         id,
         name,
-        picture: profilePicture,
+        picture: profilePicture || '',
         username,
       };
     } catch (err) {
@@ -102,6 +108,12 @@ export class HashnodeProvider extends SocialAbstract implements SocialProvider {
     return tags.map((tag) => ({ value: tag.objectID, label: tag.name }));
   }
 
+  @Tool({ description: 'Tags', dataSchema: [] })
+  tagsList() {
+    return tags;
+  }
+
+  @Tool({ description: 'Publications', dataSchema: [] })
   async publications(accessToken: string) {
     const {
       data: {

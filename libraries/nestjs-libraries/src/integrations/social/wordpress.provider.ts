@@ -10,8 +10,9 @@ import { Integration } from '@prisma/client';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { WordpressDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/wordpress.dto';
 import slugify from 'slugify';
-import FormData from 'form-data';
+// import FormData from 'form-data';
 import axios from 'axios';
+import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 
 export class WordpressProvider
   extends SocialAbstract
@@ -22,6 +23,11 @@ export class WordpressProvider
   isBetweenSteps = false;
   editor = 'html' as const;
   scopes = [] as string[];
+  override maxConcurrentJob = 5; // WordPress self-hosted typically has generous limits
+  dto = WordpressDto;
+  maxLength() {
+    return 100000;
+  }
 
   async generateAuthUrl() {
     const state = makeId(6);
@@ -114,6 +120,10 @@ export class WordpressProvider
     }
   }
 
+  @Tool({
+    description: 'Get list of post types',
+    dataSchema: [],
+  })
   async postTypes(token: string) {
     const body = JSON.parse(Buffer.from(token, 'base64').toString()) as {
       domain: string;
@@ -169,35 +179,30 @@ export class WordpressProvider
 
     let mediaId = '';
     if (postDetails?.[0]?.settings?.main_image?.path) {
-      console.log('Uploading image to WordPress', postDetails[0].settings.main_image.path);
-      const imageData = await axios.get(postDetails[0].settings.main_image.path, {
-        responseType: 'stream',
-      });
-
-      const form = new FormData();
-      form.append('file', imageData.data, {
-        filename: postDetails[0].settings.main_image.path.split('/').pop(), // You can customize the filename
-        contentType: imageData.headers['content-type'],
-      });
-      if (postDetails[0].settings.main_image?.alt) {
-        form.append('alt_text', postDetails[0].settings.main_image.alt);
-      }
-
-      const mediaResponse = await axios.post(
-        `${body.domain}/wp-json/wp/v2/media`,
-        {
-          method: 'POST',
-          body: form,
-        },
-        {
-          headers: {
-            Authorization: `Basic ${auth}`,
-            'Content-Type': 'application/json',
-          },
-        }
+      console.log(
+        'Uploading image to WordPress',
+        postDetails[0].settings.main_image.path
       );
 
-      mediaId = mediaResponse.data.id;
+      const blob = await this.fetch(
+        postDetails[0].settings.main_image.path
+      ).then((r) => r.blob());
+
+      const mediaResponse = await (
+        await this.fetch(`${body.domain}/wp-json/wp/v2/media`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Basic ${auth}`,
+            'Content-Disposition': `attachment; filename="${postDetails[0].settings.main_image.path
+              .split('/')
+              .pop()}"`,
+            'Content-Type': blob.type,
+          },
+          body: blob,
+        })
+      ).json();
+
+      mediaId = mediaResponse.id;
     }
 
     const submit = await (

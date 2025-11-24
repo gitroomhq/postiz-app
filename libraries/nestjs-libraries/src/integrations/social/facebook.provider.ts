@@ -9,6 +9,7 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { FacebookDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/facebook.dto';
+import { DribbbleDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dribbble.dto';
 
 export class FacebookProvider extends SocialAbstract implements SocialProvider {
   identifier = 'facebook';
@@ -22,7 +23,12 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     'pages_read_engagement',
     'read_insights',
   ];
+  override maxConcurrentJob = 3; // Facebook has reasonable rate limits
   editor = 'normal' as const;
+  maxLength() {
+    return 63206;
+  }
+  dto = FacebookDto;
 
   override handleErrors(body: string):
     | {
@@ -77,7 +83,8 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     if (body.indexOf('1404006') > -1) {
       return {
         type: 'bad-body' as const,
-        value: "We couldn't post your comment, A security check in facebook required to proceed.",
+        value:
+          "We couldn't post your comment, A security check in facebook required to proceed.",
       };
     }
 
@@ -198,7 +205,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     refresh?: string;
   }) {
     const getAccessToken = await (
-      await this.fetch(
+      await fetch(
         'https://graph.facebook.com/v20.0/oauth/access_token' +
           `?client_id=${process.env.FACEBOOK_APP_ID}` +
           `&redirect_uri=${encodeURIComponent(
@@ -212,7 +219,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     ).json();
 
     const { access_token } = await (
-      await this.fetch(
+      await fetch(
         'https://graph.facebook.com/v20.0/oauth/access_token' +
           '?grant_type=fb_exchange_token' +
           `&client_id=${process.env.FACEBOOK_APP_ID}` +
@@ -222,7 +229,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     ).json();
 
     const { data } = await (
-      await this.fetch(
+      await fetch(
         `https://graph.facebook.com/v20.0/me/permissions?access_token=${access_token}`
       )
     ).json();
@@ -232,14 +239,8 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       .map((p: any) => p.permission);
     this.checkScopes(this.scopes, permissions);
 
-    const {
-      id,
-      name,
-      picture: {
-        data: { url },
-      },
-    } = await (
-      await this.fetch(
+    const { id, name, picture } = await (
+      await fetch(
         `https://graph.facebook.com/v20.0/me?fields=id,name,picture&access_token=${access_token}`
       )
     ).json();
@@ -250,14 +251,14 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       accessToken: access_token,
       refreshToken: access_token,
       expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
-      picture: url,
+      picture: picture?.data?.url || '',
       username: '',
     };
   }
 
   async pages(accessToken: string) {
     const { data } = await (
-      await this.fetch(
+      await fetch(
         `https://graph.facebook.com/v20.0/me/accounts?fields=id,username,name,picture.type(large)&access_token=${accessToken}`
       )
     ).json();
@@ -275,7 +276,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
         data: { url },
       },
     } = await (
-      await this.fetch(
+      await fetch(
         `https://graph.facebook.com/v20.0/${pageId}?fields=username,access_token,name,picture.type(large)&access_token=${accessToken}`
       )
     ).json();
@@ -428,7 +429,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     const since = dayjs().subtract(date, 'day').unix();
 
     const { data } = await (
-      await this.fetch(
+      await fetch(
         `https://graph.facebook.com/v20.0/${id}/insights?metric=page_impressions_unique,page_posts_impressions_unique,page_post_engagements,page_daily_follows,page_video_views&access_token=${accessToken}&period=day&since=${since}&until=${until}`
       )
     ).json();

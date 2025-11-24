@@ -10,7 +10,7 @@ import { CreateAgencyDto } from '@gitroom/nestjs-libraries/dtos/agencies/create.
 export class AgenciesController {
   constructor(private _agenciesService: AgenciesService) {}
   @Get('/')
-  async getAgencyByUser(@GetUserFromRequest() user: User) {
+  async getAgencyByUsers(@GetUserFromRequest() user: User) {
     return (await this._agenciesService.getAgencyByUser(user)) || {};
   }
 

@@ -12,7 +12,12 @@ import {
 import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { Integration } from '@prisma/client';
+import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 
+@Rules(
+  'TikTok can have one video or one picture or multiple pictures, it cannot be without an attachment'
+)
 export class TiktokProvider extends SocialAbstract implements SocialProvider {
   identifier = 'tiktok';
   name = 'Tiktok';
@@ -24,8 +29,12 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     'video.upload',
     'user.info.profile',
   ];
-
+  override maxConcurrentJob = 1; // TikTok has strict video upload limits
+  dto = TikTokDto;
   editor = 'normal' as const;
+  maxLength() {
+    return 2000;
+  }
 
   override handleErrors(body: string):
     | {
@@ -249,7 +258,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       accessToken: access_token,
       id: open_id.replace(/-/g, ''),
       name: display_name,
-      picture: avatar_url,
+      picture: avatar_url || '',
       username: username,
     };
   }
@@ -295,7 +304,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     };
 
     const { access_token, refresh_token, scope } = await (
-      await this.fetch('https://open.tiktokapis.com/v2/oauth/token/', {
+      await fetch('https://open.tiktokapis.com/v2/oauth/token/', {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
@@ -338,7 +347,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     const {
       data: { max_video_post_duration_sec },
     } = await (
-      await this.fetch(
+      await fetch(
         'https://open.tiktokapis.com/v2/post/publish/creator_info/query/',
         {
           method: 'POST',
@@ -374,11 +383,21 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
             body: JSON.stringify({
               publish_id: publishId,
             }),
-          }
+          },
+          '',
+          0,
+          true
         )
       ).json();
 
       const { status, publicaly_available_post_id } = post.data;
+
+      if (status === 'SEND_TO_USER_INBOX') {
+        return {
+          url: 'https://www.tiktok.com/tiktokstudio/content?tab=post',
+          id: Math.floor(Math.random() * 1000000 + 100000),
+        };
+      }
 
       if (status === 'PUBLISH_COMPLETE') {
         return {
@@ -398,11 +417,11 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
           'titok-error-upload',
           JSON.stringify(post),
           Buffer.from(JSON.stringify(post)),
-          handleError?.value || '',
+          handleError?.value || ''
         );
       }
 
-      await timer(3000);
+      await timer(10000);
     }
   }
 
@@ -426,7 +445,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     integration: Integration
   ): Promise<PostResponse[]> {
     const [firstPost] = postDetails;
-
+    console.log('hello');
     const isPhoto = (firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) === -1;
     const {
       data: { publish_id },
@@ -461,6 +480,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
                     disable_duet: !firstPost.settings.duet || false,
                     disable_comment: !firstPost.settings.comment || false,
                     disable_stitch: !firstPost.settings.stitch || false,
+                    is_aigc: firstPost.settings.video_made_with_ai || false,
                     brand_content_toggle:
                       firstPost.settings.brand_content_toggle || false,
                     brand_organic_toggle:
@@ -494,7 +514,11 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
                     photo_cover_index: 0,
                     photo_images: firstPost.media?.map((p) => p.path),
                   },
-                  post_mode: firstPost?.settings?.content_posting_method === 'DIRECT_POST' ? 'DIRECT_POST' : 'MEDIA_UPLOAD',
+                  post_mode:
+                    firstPost?.settings?.content_posting_method ===
+                    'DIRECT_POST'
+                      ? 'DIRECT_POST'
+                      : 'MEDIA_UPLOAD',
                   media_type: 'PHOTO',
                 }),
           }),

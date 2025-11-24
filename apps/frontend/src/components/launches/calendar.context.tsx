@@ -20,12 +20,13 @@ import isoWeek from 'dayjs/plugin/isoWeek';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 import { extend } from 'dayjs';
 import useCookie from 'react-use-cookie';
+import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 extend(isoWeek);
 extend(weekOfYear);
 
 export const CalendarContext = createContext({
-  startDate: dayjs().startOf('isoWeek').format('YYYY-MM-DD'),
-  endDate: dayjs().endOf('isoWeek').format('YYYY-MM-DD'),
+  startDate: newDayjs().startOf('isoWeek').format('YYYY-MM-DD'),
+  endDate: newDayjs().endOf('isoWeek').format('YYYY-MM-DD'),
   customer: null as string | null,
   sets: [] as { name: string; id: string; content: string[] }[],
   signature: undefined as any,
@@ -86,7 +87,7 @@ export interface Integrations {
 
 // Helper function to get start and end dates based on display type
 function getDateRange(display: string, referenceDate?: string) {
-  const date = referenceDate ? dayjs(referenceDate) : dayjs();
+  const date = referenceDate ? newDayjs(referenceDate) : newDayjs();
 
   switch (display) {
     case 'day':
@@ -153,8 +154,8 @@ export const CalendarWeekProvider: FC<{
     const modifiedParams = new URLSearchParams({
       display: filters.display,
       customer: filters?.customer?.toString() || '',
-      startDate: dayjs(filters.startDate).startOf('day').utc().format(),
-      endDate: dayjs(filters.endDate).endOf('day').utc().format(),
+      startDate: newDayjs(filters.startDate).startOf('day').utc().format(),
+      endDate: newDayjs(filters.endDate).endOf('day').utc().format(),
     }).toString();
 
     const data = (await fetch(`/posts?${modifiedParams}`)).json();
@@ -176,8 +177,22 @@ export const CalendarWeekProvider: FC<{
     return (await fetch('/sets')).json();
   }, []);
 
-  const { data: sets, mutate } = useSWR('sets', setList);
-  const { data: sign } = useSWR('default-sign', defaultSign);
+  const { data: sets, mutate } = useSWR('sets', setList, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    revalidateOnMount: true,
+    refreshWhenHidden: false,
+    refreshWhenOffline: false,
+  });
+  const { data: sign } = useSWR('default-sign', defaultSign, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    revalidateOnMount: true,
+    refreshWhenHidden: false,
+    refreshWhenOffline: false,
+  });
 
   const setFiltersWrapper = useCallback(
     (filters: {

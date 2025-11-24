@@ -38,6 +38,7 @@ import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 dayjs.extend(utc);
+import * as Sentry from '@sentry/nestjs';
 
 type PostWithConditionals = Post & {
   integration?: Integration;
@@ -60,6 +61,13 @@ export class PostsService {
     private _webhookService: WebhooksService,
     private openaiService: OpenaiService
   ) {}
+
+  checkPending15minutesBack() {
+    return this._postRepository.checkPending15minutesBack();
+  }
+  searchForMissingThreeHoursPosts() {
+    return this._postRepository.searchForMissingThreeHoursPosts();
+  }
 
   async getStatistics(orgId: string, id: string) {
     const getPost = await this.getPostsRecursively(id, true, orgId, true);
@@ -378,7 +386,9 @@ export class PostsService {
       return post;
     }
 
-    const ids = (extract || []).map((e) => e.replace('(post:', '').replace(')', ''));
+    const ids = (extract || []).map((e) =>
+      e.replace('(post:', '').replace(')', '')
+    );
     const urls = await this._postRepository.getPostUrls(orgId, ids);
     const newPlainText = ids.reduce((acc, value) => {
       const findUrl = urls?.find?.((u) => u.id === value)?.releaseURL || '';
@@ -467,7 +477,14 @@ export class PostsService {
         await Promise.all(
           (newPosts || []).map(async (p) => ({
             id: p.id,
-            message: stripHtmlValidation(getIntegration.editor, p.content, true),
+            message: stripHtmlValidation(
+              getIntegration.editor,
+              p.content,
+              true,
+              false,
+              !/<\/?[a-z][\s\S]*>/i.test(p.content),
+              getIntegration.mentionFormat
+            ),
             settings: JSON.parse(p.settings || '{}'),
             media: await this.updateMedia(
               p.id,
@@ -535,7 +552,12 @@ export class PostsService {
         throw err;
       }
 
-      throw new BadBody(integration.providerIdentifier, JSON.stringify(err), {} as any, '');
+      throw new BadBody(
+        integration.providerIdentifier,
+        JSON.stringify(err),
+        {} as any,
+        ''
+      );
     }
   }
 
@@ -640,42 +662,6 @@ export class PostsService {
     return this._postRepository.countPostsFromDay(orgId, date);
   }
 
-  async submit(
-    id: string,
-    order: string,
-    message: string,
-    integrationId: string
-  ) {
-    if (!(await this._messagesService.canAddPost(id, order, integrationId))) {
-      throw new Error('You can not add a post to this publication');
-    }
-    const getOrgByOrder = await this._messagesService.getOrgByOrder(order);
-    const submit = await this._postRepository.submit(
-      id,
-      order,
-      getOrgByOrder?.messageGroup?.buyerOrganizationId!
-    );
-    const messageModel = await this._messagesService.createNewMessage(
-      submit?.submittedForOrder?.messageGroupId || '',
-      From.SELLER,
-      '',
-      {
-        type: 'post',
-        data: {
-          id: order,
-          postId: id,
-          status: 'PENDING',
-          integration: integrationId,
-          description: message.slice(0, 300) + '...',
-        },
-      }
-    );
-
-    await this._postRepository.updateMessage(id, messageModel.id);
-
-    return messageModel;
-  }
-
   async createPost(orgId: string, body: CreatePostDto): Promise<any[]> {
     const postList = [];
     for (const post of body.posts) {
@@ -710,16 +696,6 @@ export class PostsService {
         previousPost ? previousPost : posts?.[0]?.id
       );
 
-      if (body.order && body.type !== 'draft') {
-        await this.submit(
-          posts[0].id,
-          body.order,
-          post.value[0].content,
-          post.integration.id
-        );
-        continue;
-      }
-
       if (
         body.type === 'now' ||
         (body.type === 'schedule' && dayjs(body.date).isAfter(dayjs()))
@@ -742,6 +718,7 @@ export class PostsService {
         });
       }
 
+      Sentry.metrics.count("post_created", 1);
       postList.push({
         postId: posts[0].id,
         integration: post.integration.id,
@@ -757,17 +734,9 @@ export class PostsService {
 
   async changeDate(orgId: string, id: string, date: string) {
     const getPostById = await this._postRepository.getPostById(id, orgId);
-    if (
-      getPostById?.submittedForOrderId &&
-      getPostById.approvedSubmitForOrder !== 'NO'
-    ) {
-      throw new Error(
-        'You can not change the date of a post that has been submitted'
-      );
-    }
 
     await this._workerServiceProducer.delete('post', id);
-    if (getPostById?.state !== 'DRAFT' && !getPostById?.submittedForOrderId) {
+    if (getPostById?.state !== 'DRAFT') {
       this._workerServiceProducer.emit('post', {
         id: id,
         options: {

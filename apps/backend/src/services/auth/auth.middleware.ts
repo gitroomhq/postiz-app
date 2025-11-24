@@ -7,6 +7,7 @@ import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/us
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
 import { HttpForbiddenException } from '@gitroom/nestjs-libraries/services/exception.filter';
 import { setSentryUserContext } from '@gitroom/nestjs-libraries/sentry/sentry.user.context';
+import { MastraService } from '@gitroom/nestjs-libraries/chat/mastra.service';
 
 export const removeAuth = (res: Response) => {
   res.cookie('auth', '', {
@@ -21,7 +22,6 @@ export const removeAuth = (res: Response) => {
     expires: new Date(0),
     maxAge: -1,
   });
-
   res.header('logout', 'true');
 };
 

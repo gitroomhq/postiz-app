@@ -160,6 +160,12 @@ export const ConnectChannels: FC = () => {
   }, []);
 
   const { data: integrations, mutate } = useSWR('/integrations/list', load, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    revalidateOnMount: true,
+    refreshWhenHidden: false,
+    refreshWhenOffline: false,
     fallbackData: [],
   });
 
@@ -223,7 +229,10 @@ export const ConnectChannels: FC = () => {
         <div className="absolute w-full h-full top-0 start-0 z-[400]">
           <div className="absolute w-full h-full bg-primary/80 start-0 top-0 z-[200] p-[50px] flex justify-center">
             <div className="w-[400px]">
-              <ModalWrapperComponent title="" customClose={() => setShowCustom(undefined)}>
+              <ModalWrapperComponent
+                title=""
+                customClose={() => setShowCustom(undefined)}
+              >
                 {showCustom}
               </ModalWrapperComponent>
             </div>

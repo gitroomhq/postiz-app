@@ -3,6 +3,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  runtime  = "nodejs"
 }
 
 datasource db {
@@ -338,9 +339,14 @@ model Integration {
   @@unique([organizationId, internalId])
   @@index([rootInternalId])
   @@index([organizationId])
+  @@index([providerIdentifier])
   @@index([updatedAt])
+  @@index([createdAt])
   @@index([deletedAt])
   @@index([customerId])
+  @@index([inBetweenSteps])
+  @@index([refreshNeeded])
+  @@index([disabled])
 }
 
 model Signatures {
@@ -655,6 +661,18 @@ model Errors {
   updatedAt      DateTime     @updatedAt
 
   @@index([organizationId])
+  @@index([createdAt])
+}
+
+model Mentions {
+  name      String
+  username  String
+  platform  String
+  image     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([name, username, platform, image])
   @@index([createdAt])
 }
 

@@ -11,11 +11,17 @@ import { NeynarAPIClient } from '@neynar/nodejs-sdk';
 import { Integration } from '@prisma/client';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { groupBy } from 'lodash';
+import { FarcasterDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/farcaster.dto';
+import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
+import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
 const client = new NeynarAPIClient({
   apiKey: process.env.NEYNAR_SECRET_KEY || '00000000-000-0000-000-000000000000',
 });
 
+@Rules(
+  'Farcaster/Warpcast can only accept pictures'
+)
 export class FarcasterProvider
   extends SocialAbstract
   implements SocialProvider
@@ -25,7 +31,12 @@ export class FarcasterProvider
   isBetweenSteps = false;
   isWeb3 = true;
   scopes = [] as string[];
+  override maxConcurrentJob = 3; // Farcaster has moderate limits
   editor = 'normal' as const;
+  maxLength() {
+    return 800;
+  }
+  dto = FarcasterDto;
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     return {
@@ -60,7 +71,7 @@ export class FarcasterProvider
       accessToken: data.signer_uuid,
       refreshToken: '',
       expiresIn: dayjs().add(200, 'year').unix() - dayjs().unix(),
-      picture: data.pfp_url,
+      picture: data?.pfp_url || '',
       username: data.username,
     };
   }
@@ -68,7 +79,7 @@ export class FarcasterProvider
   async post(
     id: string,
     accessToken: string,
-    postDetails: PostDetails[]
+    postDetails: PostDetails<FarcasterDto>[]
   ): Promise<PostResponse[]> {
     const ids = [];
     const subreddit =
@@ -114,6 +125,10 @@ export class FarcasterProvider
     return list;
   }
 
+  @Tool({
+    description: 'Search channels',
+    dataSchema: [{ key: 'word', type: 'string', description: 'Search word' }],
+  })
   async subreddits(
     accessToken: string,
     data: any,

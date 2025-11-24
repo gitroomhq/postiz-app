@@ -1,6 +1,6 @@
 <p align="center">
-  <a href="https://affiliate.postiz.com">
-    <img src="https://github.com/user-attachments/assets/af9f47b3-e20c-402b-bd11-02f39248d738" />
+  <a href="https://github.com/growchief/growchief">
+    <img alt="automate" src="https://github.com/user-attachments/assets/d760188d-8d56-4b05-a6c1-c57e67ef25cd" />
   </a>
 </p>
 

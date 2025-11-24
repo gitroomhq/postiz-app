@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
   Param,
   Post,
   Put,
@@ -15,7 +16,6 @@ import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integ
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization, User } from '@prisma/client';
-import { ApiKeyDto } from '@gitroom/nestjs-libraries/dtos/integrations/api.key.dto';
 import { IntegrationFunctionDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.function.dto';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
@@ -37,6 +37,7 @@ import {
   AuthorizationActions,
   Sections,
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
+import { uniqBy } from 'lodash';
 
 @ApiTags('Integrations')
 @Controller('/integrations')
@@ -246,11 +247,68 @@ export class IntegrationsController {
   ) {
     return this._integrationService.setTimes(org.id, id, body);
   }
+
+  @Post('/mentions')
+  async mentions(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: IntegrationFunctionDto
+  ) {
+    const getIntegration = await this._integrationService.getIntegrationById(
+      org.id,
+      body.id
+    );
+    if (!getIntegration) {
+      throw new Error('Invalid integration');
+    }
+
+    let newList: any[] | { none: true } = [];
+    try {
+      newList = (await this.functionIntegration(org, body)) || [];
+    } catch (err) {
+      console.log(err);
+    }
+
+    if (!Array.isArray(newList) && newList?.none) {
+      return newList;
+    }
+
+    const list = await this._integrationService.getMentions(
+      getIntegration.providerIdentifier,
+      body?.data?.query
+    );
+
+    if (Array.isArray(newList) && newList.length) {
+      await this._integrationService.insertMentions(
+        getIntegration.providerIdentifier,
+        newList
+          .map((p: any) => ({
+            name: p.label || '',
+            username: p.id || '',
+            image: p.image || '',
+            doNotCache: p.doNotCache || false,
+          }))
+          .filter((f: any) => f.name && !f.doNotCache)
+      );
+    }
+
+    return uniqBy(
+      [
+        ...list.map((p) => ({
+          id: p.username,
+          image: p.image,
+          label: p.name,
+        })),
+        ...(newList as any[]),
+      ],
+      (p) => p.id
+    ).filter((f) => f.label && f.id);
+  }
+
   @Post('/function')
   async functionIntegration(
     @GetOrgFromRequest() org: Organization,
     @Body() body: IntegrationFunctionDto
-  ) {
+  ): Promise<any> {
     const getIntegration = await this._integrationService.getIntegrationById(
       org.id,
       body.id
@@ -266,8 +324,10 @@ export class IntegrationsController {
       throw new Error('Invalid provider');
     }
 
+    // @ts-ignore
     if (integrationProvider[body.name]) {
       try {
+        // @ts-ignore
         const load = await integrationProvider[body.name](
           getIntegration.token,
           body.data,
@@ -427,6 +487,18 @@ export class IntegrationsController {
         validName = `Channel_${String(id).slice(0, 8)}`;
       }
     }
+
+    if (
+      process.env.STRIPE_PUBLISHABLE_KEY &&
+      org.isTrailing &&
+      (await this._integrationService.checkPreviousConnections(
+        org.id,
+        String(id)
+      ))
+    ) {
+      throw new HttpException('', 412);
+    }
+
     return this._integrationService.createOrUpdateIntegration(
       additionalSettings,
       !!integrationProvider.oneTimeToken,

@@ -357,6 +357,10 @@ body * {
 //  /*right: -5rem !important;*/
 //}
 
+.trz {
+  transform: translateZ(0);
+}
+
 .uppy-FileInput-container {
   @apply cursor-pointer font-[500] flex justify-center items-center gap-[4px] text-[12px] rounded-[4px] w-[107px] h-[25px] text-textColor border-[2px];
   @apply bg-customColor3 border-customColor21;
@@ -625,4 +629,78 @@ html[dir='rtl'] [dir='ltr'] {
 
 .mantine-Overlay-root {
   background: rgba(65, 64, 66, 0.3) !important;
+}
+
+.dropdown-menu {
+  @apply shadow-menu;
+  background: var(--new-bgColorInner);
+  border: 1px solid var(--new-bgLineColor);
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  position: relative;
+
+  button {
+    align-items: center;
+    background-color: transparent;
+    display: flex;
+    text-align: left;
+    width: 100%;
+    padding: 10px;
+
+    &:hover,
+    &:hover.is-selected {
+      background-color: var(--new-bgLineColor);
+    }
+  }
+}
+
+.tiptap {
+  a {
+    @apply underline;
+  }
+}
+.tiptap {
+  :first-child {
+    margin-top: 0;
+  }
+
+  .mention {
+    background-color: var(--purple-light);
+    border-radius: 0.4rem;
+    box-decoration-break: clone;
+    color: #ae8afc;
+    &::after {
+      content: '\200B';
+    }
+  }
+}
+.blur-xs {
+  filter: blur(4px);
+}
+
+.agent {
+  .copilotKitInputContainer {
+    padding: 0 24px !important;
+  }
+
+  .copilotKitInput {
+    width: 100% !important;
+  }
+}
+.rm-bg .b2 {
+  padding-top: 0 !important;
+}
+.rm-bg .b1 {
+  background: transparent !important;
+  gap: 0 !important;
+}
+
+.copilotKitMessage img {
+  width: 200px;
+}
+
+.copilotKitMessage a {
+  color: var(--new-btn-text) !important;
 }

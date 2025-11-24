@@ -14,7 +14,7 @@ class Image {
   @IsString()
   path: string;
 }
-class Params {
+class Veo3Params {
   @IsString()
   prompt: string;
 
@@ -30,14 +30,16 @@ class Params {
   title: 'Veo3 (Audio + Video)',
   description: 'Generate videos with the most advanced video model.',
   placement: 'text-to-image',
+  dto: Veo3Params,
+  tools: [],
   trial: false,
   available: !!process.env.KIEAI_API_KEY,
 })
-export class Veo3 extends VideoAbstract<Params> {
-  override dto = Params;
+export class Veo3 extends VideoAbstract<Veo3Params> {
+  override dto = Veo3Params;
   async process(
     output: 'vertical' | 'horizontal',
-    customParams: Params
+    customParams: Veo3Params
   ): Promise<URL> {
     const value = await (
       await fetch('https://api.kie.ai/api/v1/veo/generate', {

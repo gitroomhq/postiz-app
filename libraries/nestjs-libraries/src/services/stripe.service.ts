@@ -395,7 +395,7 @@ export class StripeService {
             },
           }
         : {}),
-      allow_promotion_codes: true,
+      allow_promotion_codes: body.period === 'MONTHLY',
       line_items: [
         {
           price,

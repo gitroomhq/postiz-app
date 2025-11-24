@@ -27,6 +27,7 @@ import { TelegramProvider } from '@gitroom/nestjs-libraries/integrations/social/
 import { NostrProvider } from '@gitroom/nestjs-libraries/integrations/social/nostr.provider';
 import { VkProvider } from '@gitroom/nestjs-libraries/integrations/social/vk.provider';
 import { WordpressProvider } from '@gitroom/nestjs-libraries/integrations/social/wordpress.provider';
+import { ListmonkProvider } from '@gitroom/nestjs-libraries/integrations/social/listmonk.provider';
 
 export const socialIntegrationList: SocialProvider[] = [
   new XProvider(),
@@ -54,6 +55,7 @@ export const socialIntegrationList: SocialProvider[] = [
   new DevToProvider(),
   new HashnodeProvider(),
   new WordpressProvider(),
+  new ListmonkProvider(),
   // new MastodonCustomProvider(),
 ];
 
@@ -74,6 +76,40 @@ export class IntegrationManager {
       ),
       article: [] as any[],
     };
+  }
+
+  getAllTools(): {
+    [key: string]: {
+      description: string;
+      dataSchema: any;
+      methodName: string;
+    }[];
+  } {
+    return socialIntegrationList.reduce(
+      (all, current) => ({
+        ...all,
+        [current.identifier]:
+          Reflect.getMetadata('custom:tool', current.constructor.prototype) ||
+          [],
+      }),
+      {}
+    );
+  }
+
+  getAllRulesDescription(): {
+    [key: string]: string;
+  } {
+    return socialIntegrationList.reduce(
+      (all, current) => ({
+        ...all,
+        [current.identifier]:
+          Reflect.getMetadata(
+            'custom:rules:description',
+            current.constructor
+          ) || '',
+      }),
+      {}
+    );
   }
 
   getAllPlugs() {

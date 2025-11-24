@@ -8,8 +8,11 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
+import { SlackDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/slack.dto';
+import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 
 export class SlackProvider extends SocialAbstract implements SocialProvider {
+  override maxConcurrentJob = 3; // Slack has moderate API limits
   identifier = 'slack';
   name = 'Slack';
   isBetweenSteps = false;
@@ -22,6 +25,12 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
     'channels:join',
     'chat:write.customize',
   ];
+  dto = SlackDto;
+
+  maxLength() {
+    return 400000;
+  }
+
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     return {
       refreshToken: '',
@@ -94,11 +103,15 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
       accessToken: access_token,
       refreshToken: 'null',
       expiresIn: dayjs().add(100, 'years').unix() - dayjs().unix(),
-      picture: user.profile.image_original,
+      picture: user?.profile?.image_original || '',
       username: user.name,
     };
   }
 
+  @Tool({
+    description: 'Get list of channels',
+    dataSchema: [],
+  })
   async channels(accessToken: string, params: any, id: string) {
     const list = await (
       await fetch(

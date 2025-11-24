@@ -40,8 +40,13 @@ export const ContinueIntegration: FC<{
 
       const data = await fetch(`/integrations/social/${provider}/connect`, {
         method: 'POST',
-        body: JSON.stringify({...modifiedParams, timezone}),
+        body: JSON.stringify({ ...modifiedParams, timezone }),
       });
+
+      if (data.status === HttpStatusCode.PreconditionFailed) {
+        push(`/launches?precondition=true`);
+        return ;
+      }
 
       if (data.status === HttpStatusCode.NotAcceptable) {
         const { msg } = await data.json();

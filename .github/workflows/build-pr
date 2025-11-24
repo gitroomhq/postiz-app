@@ -1,0 +1,71 @@
+---
+name: Build
+
+on:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: ['20.17.0']
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+
+    environment: 
+      name: build-pr
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.STORE_PATH }}
+            ${{ github.workspace }}/.next/cache
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}-
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Get Commit SHA (short)
+        id: get_version
+        run: |
+          # Get the short 8-character commit SHA
+          VERSION=$(git rev-parse --short=8 HEAD)
+          echo "Commit SHA is $VERSION"
+          echo "tag=$VERSION" >> $GITHUB_OUTPUT
+      
+      - name: SonarQube Analysis (Pull Request)
+        uses: SonarSource/sonarqube-scan-action@v6
+        with: 
+          args: >
+            -Dsonar.projectVersion=${{ steps.get_version.outputs.tag }}
+            -Dsonar.pullrequest.key=${{ github.event.pull_request.number }}
+            -Dsonar.pullrequest.branch=${{ github.event.pull_request.head.ref }}
+            -Dsonar.pullrequest.base=${{ github.event.pull_request.base.ref }}

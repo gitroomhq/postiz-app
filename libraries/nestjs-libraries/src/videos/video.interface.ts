@@ -30,18 +30,24 @@ export interface VideoParams {
   identifier: string;
   title: string;
   description: string;
+  dto: any;
   placement: 'text-to-image' | 'image-to-video' | 'video-to-video';
+  tools: { functionName: string; output: string }[];
   available: boolean;
   trial: boolean;
 }
 
-export function ExposeVideoFunction() {
+export function ExposeVideoFunction(description?: string) {
   return function (
     target: any,
     propertyKey: string,
     descriptor: PropertyDescriptor
   ) {
-    Reflect.defineMetadata('video-function', 'true', descriptor.value);
+    Reflect.defineMetadata(
+      'video-function',
+      description || 'true',
+      descriptor.value
+    );
   };
 }
 

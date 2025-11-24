@@ -18,6 +18,7 @@ import * as process from 'node:process';
 import dayjs from 'dayjs';
 import { GaxiosResponse } from 'gaxios/build/src/common';
 import Schema$Video = youtube_v3.Schema$Video;
+import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
 const clientAndYoutube = () => {
   const client = new google.auth.OAuth2({
@@ -47,10 +48,13 @@ const clientAndYoutube = () => {
   return { client, youtube, oauth2, youtubeAnalytics };
 };
 
+@Rules('YouTube must have on video attachment, it cannot be empty')
 export class YoutubeProvider extends SocialAbstract implements SocialProvider {
+  override maxConcurrentJob = 1; // YouTube has strict upload quotas
   identifier = 'youtube';
   name = 'YouTube';
   isBetweenSteps = false;
+  dto = YoutubeSettingsDto;
   scopes = [
     'https://www.googleapis.com/auth/userinfo.profile',
     'https://www.googleapis.com/auth/userinfo.email',
@@ -63,6 +67,58 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
   ];
 
   editor = 'normal' as const;
+  maxLength() {
+    return 5000;
+  }
+
+  override handleErrors(body: string):
+    | {
+        type: 'refresh-token' | 'bad-body';
+        value: string;
+      }
+    | undefined {
+    if (body.includes('invalidTitle')) {
+      return {
+        type: 'bad-body',
+        value:
+          'We have uploaded your video but we could not set the title. Title is too long.',
+      };
+    }
+
+    if (body.includes('failedPrecondition')) {
+      return {
+        type: 'bad-body',
+        value:
+          'We have uploaded your video but we could not set the thumbnail. Thumbnail size is too large.',
+      };
+    }
+
+    if (body.includes('uploadLimitExceeded')) {
+      return {
+        type: 'bad-body',
+        value:
+          'You have reached your daily upload limit, please try again tomorrow.',
+      };
+    }
+
+    if (body.includes('youtubeSignupRequired')) {
+      return {
+        type: 'bad-body',
+        value:
+          'You have to link your youtube account to your google account first.',
+      };
+    }
+
+    if (body.includes('youtube.thumbnail')) {
+      return {
+        type: 'bad-body',
+        value:
+          'Your account is not verified, we have uploaded your video but we could not set the thumbnail. Please verify your account and try again.',
+      };
+    }
+
+    return undefined;
+  }
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     const { client, oauth2 } = clientAndYoutube();
@@ -82,7 +138,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       refreshToken: credentials.refresh_token!,
       id: data.id!,
       name: data.name!,
-      picture: data.picture!,
+      picture: data?.picture || '',
       username: '',
     };
   }
@@ -128,7 +184,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       refreshToken: tokens.refresh_token!,
       id: data.id!,
       name: data.name!,
-      picture: data.picture!,
+      picture: data?.picture || '',
       username: '',
     };
   }
@@ -152,9 +208,8 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       responseType: 'stream',
     });
 
-    let all: GaxiosResponse<Schema$Video>;
-    try {
-      all = await this.runInConcurrent(async () =>
+    const all: GaxiosResponse<Schema$Video> = await this.runInConcurrent(
+      async () =>
         youtubeClient.videos.insert({
           part: ['id', 'snippet', 'status'],
           notifySubscribers: true,
@@ -168,82 +223,32 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
             },
             status: {
               privacyStatus: settings.type,
+              selfDeclaredMadeForKids:
+                settings.selfDeclaredMadeForKids === 'yes',
             },
           },
           media: {
             body: response.data,
           },
-        })
-      );
-    } catch (err: any) {
-      if (
-        err.response?.data?.error?.errors?.[0]?.reason === 'failedPrecondition'
-      ) {
-        throw new BadBody(
-          'youtube',
-          JSON.stringify(err.response.data),
-          JSON.stringify(err.response.data),
-          'We have uploaded your video but we could not set the thumbnail. Thumbnail size is too large.'
-        );
-      }
-      if (
-        err.response?.data?.error?.errors?.[0]?.reason === 'uploadLimitExceeded'
-      ) {
-        throw new BadBody(
-          'youtube',
-          JSON.stringify(err.response.data),
-          JSON.stringify(err.response.data),
-          'You have reached your daily upload limit, please try again tomorrow.'
-        );
-      }
-      if (
-        err.response?.data?.error?.errors?.[0]?.reason ===
-        'youtubeSignupRequired'
-      ) {
-        throw new BadBody(
-          'youtube',
-          JSON.stringify(err.response.data),
-          JSON.stringify(err.response.data),
-          'You have to link your youtube account to your google account first.'
-        );
-      }
-
-      throw new BadBody(
-        'youtube',
-        JSON.stringify(err.response.data),
-        JSON.stringify(err.response.data),
-        'An error occurred while uploading your video, please try again later.'
-      );
-    }
+        }),
+      true
+    );
 
     if (settings?.thumbnail?.path) {
-      try {
-        await this.runInConcurrent(async () =>
-          youtubeClient.thumbnails.set({
-            videoId: all?.data?.id!,
-            media: {
-              body: (
-                await axios({
-                  url: settings?.thumbnail?.path,
-                  method: 'GET',
-                  responseType: 'stream',
-                })
-              ).data,
-            },
-          })
-        );
-      } catch (err: any) {
-        if (
-          err.response?.data?.error?.errors?.[0]?.domain === 'youtube.thumbnail'
-        ) {
-          throw new BadBody(
-            '',
-            JSON.stringify(err.response.data),
-            JSON.stringify(err.response.data),
-            'Your account is not verified, we have uploaded your video but we could not set the thumbnail. Please verify your account and try again.'
-          );
-        }
-      }
+      await this.runInConcurrent(async () =>
+        youtubeClient.thumbnails.set({
+          videoId: all?.data?.id!,
+          media: {
+            body: (
+              await axios({
+                url: settings?.thumbnail?.path,
+                method: 'GET',
+                responseType: 'stream',
+              })
+            ).data,
+          },
+        })
+      );
     }
 
     return [

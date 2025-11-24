@@ -13,6 +13,7 @@ import FormDataNew from 'form-data';
 import mime from 'mime-types';
 
 export class VkProvider extends SocialAbstract implements SocialProvider {
+  override maxConcurrentJob = 2; // VK has moderate API limits
   identifier = 'vk';
   name = 'VK';
   isBetweenSteps = false;
@@ -27,6 +28,9 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
   ];
 
   editor = 'normal' as const;
+  maxLength() {
+    return 2048;
+  }
 
   async refreshToken(refresh: string): Promise<AuthTokenDetails> {
     const [oldRefreshToken, device_id] = refresh.split('&&&&');
@@ -64,7 +68,7 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
       accessToken: access_token,
       refreshToken: refresh_token + '&&&&' + device_id,
       expiresIn: dayjs().add(expires_in, 'seconds').unix() - dayjs().unix(),
-      picture: avatar,
+      picture: avatar || '',
       username: first_name.toLowerCase(),
     };
   }
@@ -149,7 +153,7 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
       accessToken: access_token,
       refreshToken: refresh_token + '&&&&' + device_id,
       expiresIn: dayjs().add(expires_in, 'seconds').unix() - dayjs().unix(),
-      picture: avatar,
+      picture: avatar || '',
       username: first_name.toLowerCase(),
     };
   }

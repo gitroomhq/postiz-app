@@ -203,6 +203,7 @@ export class UsersController {
     // Clear Sentry user context on logout
     clearSentryUserContext();
 
+    response.header('logout', 'true');
     response.cookie('auth', '', {
       domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
       ...(!process.env.NOT_SECURED
