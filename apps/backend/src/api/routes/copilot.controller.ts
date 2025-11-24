@@ -50,7 +50,8 @@ export class CopilotController {
       endpoint: '/copilot/chat',
       runtime: new CopilotRuntime(),
       serviceAdapter: new OpenAIAdapter({
-        model: 'gpt-4.1',
+        model: process.env.OPENAI_CHAT_MODEL || 'gpt-4.1',
+        baseURL: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
       }),
     });
 
@@ -97,7 +98,8 @@ export class CopilotController {
       runtime,
       // properties: req.body.variables.properties,
       serviceAdapter: new OpenAIAdapter({
-        model: 'gpt-4.1',
+        model: process.env.OPENAI_CHAT_MODEL || 'gpt-4.1',
+        baseURL: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
       }),
     });
 
