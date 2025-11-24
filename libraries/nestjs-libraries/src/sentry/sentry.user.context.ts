@@ -54,9 +54,9 @@ export const clearSentryUserContext = () => {
 
   try {
     Sentry.setUser(null);
-    Sentry.setTag('user.activated', '');
-    Sentry.setTag('user.provider', '');
-    Sentry.setTag('user.super_admin', '');
+    Sentry.setTag('user.activated', null);
+    Sentry.setTag('user.provider', null);
+    Sentry.setTag('user.super_admin', null);
   } catch {
     // Silently fail if Sentry throws an error - we don't want to break the app
   }
