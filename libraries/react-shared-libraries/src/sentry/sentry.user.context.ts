@@ -23,29 +23,33 @@ export const setSentryUserContext = (user: UserInfo | null) => {
     return;
   }
 
-  if (!user) {
-    // Clear user context when no user is present
-    Sentry.setUser(null);
-    return;
-  }
+  try {
+    if (!user) {
+      // Clear user context when no user is present
+      Sentry.setUser(null);
+      return;
+    }
 
-  Sentry.setUser({
-    id: user.id,
-    email: user.email,
-    username: user.email, // Use email as username since that's the primary identifier
-  });
+    Sentry.setUser({
+      id: user.id,
+      email: user.email,
+      username: user.email, // Use email as username since that's the primary identifier
+    });
 
-  // Also set additional tags for better filtering in Sentry
-  if (user.orgId) {
-    Sentry.setTag('user.org_id', user.orgId);
-  }
-  
-  if (user.role) {
-    Sentry.setTag('user.role', user.role);
-  }
-  
-  if (user.tier) {
-    Sentry.setTag('user.tier', user.tier);
+    // Also set additional tags for better filtering in Sentry
+    if (user.orgId) {
+      Sentry.setTag('user.org_id', user.orgId);
+    }
+    
+    if (user.role) {
+      Sentry.setTag('user.role', user.role);
+    }
+    
+    if (user.tier) {
+      Sentry.setTag('user.tier', user.tier);
+    }
+  } catch {
+    // Silently fail if Sentry throws an error - we don't want to break the app
   }
 };
 
@@ -60,8 +64,12 @@ export const clearSentryUserContext = () => {
     return;
   }
 
-  Sentry.setUser(null);
-  Sentry.setTag('user.org_id', '');
-  Sentry.setTag('user.role', '');
-  Sentry.setTag('user.tier', '');
+  try {
+    Sentry.setUser(null);
+    Sentry.setTag('user.org_id', null);
+    Sentry.setTag('user.role', null);
+    Sentry.setTag('user.tier', null);
+  } catch {
+    // Silently fail if Sentry throws an error - we don't want to break the app
+  }
 };

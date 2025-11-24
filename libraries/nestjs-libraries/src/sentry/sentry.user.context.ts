@@ -14,26 +14,30 @@ export const setSentryUserContext = (user: User | null) => {
     return;
   }
 
-  if (!user) {
-    // Clear user context when no user is present
-    Sentry.setUser(null);
-    return;
-  }
+  try {
+    if (!user) {
+      // Clear user context when no user is present
+      Sentry.setUser(null);
+      return;
+    }
 
-  Sentry.setUser({
-    id: user.id,
-    email: user.email,
-    username: user.email, // Use email as username since that's the primary identifier
-    // Add additional useful context
-    ip_address: undefined, // Let Sentry auto-detect IP
-  });
+    Sentry.setUser({
+      id: user.id,
+      email: user.email,
+      username: user.email, // Use email as username since that's the primary identifier
+      // Add additional useful context
+      ip_address: undefined, // Let Sentry auto-detect IP
+    });
 
-  // Also set additional tags for better filtering in Sentry
-  Sentry.setTag('user.activated', user.activated);
-  Sentry.setTag('user.provider', user.providerName || 'local');
-  
-  if (user.isSuperAdmin) {
-    Sentry.setTag('user.super_admin', true);
+    // Also set additional tags for better filtering in Sentry
+    Sentry.setTag('user.activated', user.activated);
+    Sentry.setTag('user.provider', user.providerName || 'local');
+    
+    if (user.isSuperAdmin) {
+      Sentry.setTag('user.super_admin', true);
+    }
+  } catch {
+    // Silently fail if Sentry throws an error - we don't want to break the app
   }
 };
 
@@ -48,8 +52,12 @@ export const clearSentryUserContext = () => {
     return;
   }
 
-  Sentry.setUser(null);
-  Sentry.setTag('user.activated', null);
-  Sentry.setTag('user.provider', null);
-  Sentry.setTag('user.super_admin', null);
+  try {
+    Sentry.setUser(null);
+    Sentry.setTag('user.activated', null);
+    Sentry.setTag('user.provider', null);
+    Sentry.setTag('user.super_admin', null);
+  } catch {
+    // Silently fail if Sentry throws an error - we don't want to break the app
+  }
 };
