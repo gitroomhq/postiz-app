@@ -22,7 +22,8 @@
     --new-col-color: #2c2b2b;
     --new-menu-dots: #696868;
     --new-menu-hover: #fff;
-    --menu-shadow: 0 8px 30px 0 rgba(0, 0, 0, 0.50);
+    --menu-shadow: 0 8px 30px 0 rgba(0, 0, 0, 0.5);
+    --popup-color: rgba(65, 64, 66, 0.3);
   }
   .light {
     --new-bgColor: #f0f2f4;
@@ -33,8 +34,8 @@
     --new-boxFocused: #ebe8ff;
     --new-textColor: 14 14 14;
     --new-blockSeparator: #f2f2f4;
-    --new-btn-simple: #ECEEF1;
-    --new-btn-text: #0E0E0E;
+    --new-btn-simple: #eceef1;
+    --new-btn-text: #0e0e0e;
     --new-btn-primary: #612bd3;
     --new-ai-btn: #d82d7e;
     --new-box-hover: #f4f6f8;
@@ -43,14 +44,18 @@
     --new-table-text: #777b7f;
     --new-table-text-focused: #fc69ff;
     --new-small-strips: #191818;
-    --new-big-strips: #F5F7F9;
-    --new-col-color: #EFF1F3;
+    --new-big-strips: #f5f7f9;
+    --new-col-color: #eff1f3;
     --new-menu-dots: #696868;
     --new-menu-hover: #000;
-    --menu-shadow: -22px 83px 24px 0 rgba(55, 52, 75, 0.00), -14px 53px 22px 0 rgba(55, 52, 75, 0.01), -8px 30px 19px 0 rgba(55, 52, 75, 0.05), -3px 13px 14px 0 rgba(55, 52, 75, 0.09), -1px 3px 8px 0 rgba(55, 52, 75, 0.10);
+    --menu-shadow: -22px 83px 24px 0 rgba(55, 52, 75, 0),
+      -14px 53px 22px 0 rgba(55, 52, 75, 0.01),
+      -8px 30px 19px 0 rgba(55, 52, 75, 0.05),
+      -3px 13px 14px 0 rgba(55, 52, 75, 0.09),
+      -1px 3px 8px 0 rgba(55, 52, 75, 0.1);
+    --popup-color: rgba(55, 37, 97, 0.2);
   }
 }
-
 
 :root {
   .dark {

@@ -30,3 +30,4 @@ export const agentCategories = [
   'Update',
   'Trend',
 ];
+

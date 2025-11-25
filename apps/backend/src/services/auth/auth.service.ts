@@ -7,10 +7,10 @@ import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/o
 import { AuthService as AuthChecker } from '@gitroom/helpers/auth/auth.service';
 import { ProvidersFactory } from '@gitroom/backend/services/auth/providers/providers.factory';
 import dayjs from 'dayjs';
-import { NewsletterService } from '@gitroom/nestjs-libraries/services/newsletter.service';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { ForgotReturnPasswordDto } from '@gitroom/nestjs-libraries/dtos/auth/forgot-return.password.dto';
 import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
+import { NewsletterService } from '@gitroom/nestjs-libraries/newsletter/newsletter.service';
 
 @Injectable()
 export class AuthService {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useModals } from '@mantine/modals';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import React, {
   FC,
   Ref,
