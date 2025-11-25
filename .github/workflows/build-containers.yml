@@ -10,18 +10,21 @@ permissions:
   contents: read
   packages: write
 
-env:
-  IMAGE: ghcr.io/gitroomhq/postiz-app
-
 jobs:
   build-containers-common:
     runs-on: ubuntu-latest
     outputs:
       containerver: ${{ steps.getcontainerver.outputs.containerver }}
+      image: ${{ steps.imagepath.outputs.image }}
     steps:
       - name: Get Container Version
         id: getcontainerver
         run: echo "containerver=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+      - name: Compute image name (lowercase owner)
+        id: imagepath
+        run: |
+          OWNER_LOWER=$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')
+          echo "image=ghcr.io/${OWNER_LOWER}/postiz-app" >> "$GITHUB_OUTPUT"
 
   build-containers:
     needs: build-containers-common
@@ -33,6 +36,8 @@ jobs:
           - arch: arm64
             platform: linux/arm64
     runs-on: ubuntu-latest
+    env:
+      IMAGE: ${{ needs.build-containers-common.outputs.image }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -67,6 +72,8 @@ jobs:
   build-container-manifest:
     needs: [build-containers, build-containers-common]
     runs-on: ubuntu-latest
+    env:
+      IMAGE: ${{ needs.build-containers-common.outputs.image }}
     steps:
       - name: Login to ghcr
         uses: docker/login-action@v3
