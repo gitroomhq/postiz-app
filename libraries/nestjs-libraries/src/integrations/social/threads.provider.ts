@@ -144,15 +144,15 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
   }
 
   async fetchPageInformation(accessToken: string) {
-    const { id, username, threads_profile_picture_url, access_token } = await (
+    const { id, name, username, threads_profile_picture_url, access_token } = await (
       await this.fetch(
-        `https://graph.threads.net/v1.0/me?fields=id,username,threads_profile_picture_url&access_token=${accessToken}`
+        `https://graph.threads.net/v1.0/me?fields=id,name,username,threads_profile_picture_url&access_token=${accessToken}`
       )
     ).json();
 
     return {
       id,
-      name: username,
+      name,
       access_token,
       picture: { data: { url: threads_profile_picture_url } },
       username,
