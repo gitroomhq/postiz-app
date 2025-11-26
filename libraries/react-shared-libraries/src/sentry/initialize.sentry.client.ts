@@ -20,6 +20,7 @@ export const initializeSentryClient = (environment: string, dsn: string) =>
         // Disable the injection of the default widget
         autoInject: false,
       }),
+      Sentry.replayCanvasIntegration(),
     ],
     replaysSessionSampleRate: 1.0,
     replaysOnErrorSampleRate: 1.0,
