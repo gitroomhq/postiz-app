@@ -17,6 +17,7 @@ import {
   AppBskyVideoDefs,
   AtpAgent,
   BlobRef,
+  AppBskyEmbedExternal,
 } from '@atproto/api';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
@@ -59,6 +60,124 @@ async function reduceImageBySize(url: string, maxSizeKB = 976) {
     console.error('Error processing image:', error);
     throw error;
   }
+}
+
+interface OpenGraphData {
+  title: string;
+  description: string;
+  image?: string;
+}
+
+async function fetchOpenGraphData(url: string): Promise<OpenGraphData | null> {
+  try {
+    const response = await axios.get(url, {
+      timeout: 10000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; Postiz/1.0; +https://postiz.com)',
+        'Accept': 'text/html,application/xhtml+xml',
+      },
+      maxRedirects: 5,
+    });
+
+    const html = response.data as string;
+
+    // Extract Open Graph tags or fallback to standard meta tags
+    const getMetaContent = (property: string): string | undefined => {
+      // Try og: tags first
+      const ogMatch = html.match(
+        new RegExp(`<meta[^>]*property=["']og:${property}["'][^>]*content=["']([^"']*)["']`, 'i')
+      ) || html.match(
+        new RegExp(`<meta[^>]*content=["']([^"']*)["'][^>]*property=["']og:${property}["']`, 'i')
+      );
+      if (ogMatch) return ogMatch[1];
+
+      // Try twitter: tags
+      const twitterMatch = html.match(
+        new RegExp(`<meta[^>]*name=["']twitter:${property}["'][^>]*content=["']([^"']*)["']`, 'i')
+      ) || html.match(
+        new RegExp(`<meta[^>]*content=["']([^"']*)["'][^>]*name=["']twitter:${property}["']`, 'i')
+      );
+      if (twitterMatch) return twitterMatch[1];
+
+      // Fallback for description
+      if (property === 'description') {
+        const descMatch = html.match(
+          /<meta[^>]*name=["']description["'][^>]*content=["']([^"']*)["']/i
+        ) || html.match(
+          /<meta[^>]*content=["']([^"']*)["'][^>]*name=["']description["']/i
+        );
+        if (descMatch) return descMatch[1];
+      }
+
+      return undefined;
+    };
+
+    // Get title from og:title or <title> tag
+    let title = getMetaContent('title');
+    if (!title) {
+      const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
+      title = titleMatch ? titleMatch[1].trim() : url;
+    }
+
+    const description = getMetaContent('description') || '';
+    const image = getMetaContent('image');
+
+    return {
+      title: title.substring(0, 300), // Limit title length
+      description: description.substring(0, 1000), // Limit description length
+      image,
+    };
+  } catch (error) {
+    console.error('Error fetching Open Graph data:', error);
+    return null;
+  }
+}
+
+function extractFirstUrl(text: string): string | null {
+  const urlRegex = /https?:\/\/[^\s<>\[\]()]+/gi;
+  const match = text.match(urlRegex);
+  return match ? match[0] : null;
+}
+
+async function createExternalEmbed(
+  agent: BskyAgent,
+  url: string
+): Promise<AppBskyEmbedExternal.Main | null> {
+  const ogData = await fetchOpenGraphData(url);
+  if (!ogData) return null;
+
+  let thumbBlob: BlobRef | undefined;
+
+  // Try to upload the thumbnail image if available
+  if (ogData.image) {
+    try {
+      // Handle relative URLs
+      let imageUrl = ogData.image;
+      if (imageUrl.startsWith('//')) {
+        imageUrl = 'https:' + imageUrl;
+      } else if (imageUrl.startsWith('/')) {
+        const urlObj = new URL(url);
+        imageUrl = urlObj.origin + imageUrl;
+      }
+
+      const { buffer } = await reduceImageBySize(imageUrl);
+      const uploadResponse = await agent.uploadBlob(new Blob([buffer]));
+      thumbBlob = uploadResponse.data.blob;
+    } catch (error) {
+      console.error('Error uploading thumbnail for embed card:', error);
+      // Continue without thumbnail
+    }
+  }
+
+  return {
+    $type: 'app.bsky.embed.external',
+    external: {
+      uri: url,
+      title: ogData.title,
+      description: ogData.description,
+      ...(thumbBlob ? { thumb: thumbBlob } : {}),
+    },
+  } satisfies AppBskyEmbedExternal.Main;
 }
 
 async function uploadVideo(
@@ -315,6 +434,15 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
             },
           })),
         };
+      } else {
+        // No media - check for URLs to create an external embed card
+        const firstUrl = extractFirstUrl(post.message);
+        if (firstUrl) {
+          const externalEmbed = await createExternalEmbed(agent, firstUrl);
+          if (externalEmbed) {
+            embed = externalEmbed;
+          }
+        }
       }
 
       // @ts-ignore
