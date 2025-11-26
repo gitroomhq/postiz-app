@@ -64,7 +64,6 @@ export class FarcasterProvider
     codeVerifier: string;
     refresh?: string;
   }) {
-    console.log(Buffer.from(params.code, 'base64').toString());
     const data = JSON.parse(Buffer.from(params.code, 'base64').toString());
     return {
       id: String(data.fid),
