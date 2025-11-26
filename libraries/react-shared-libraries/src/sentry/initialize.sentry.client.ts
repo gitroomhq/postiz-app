@@ -10,7 +10,6 @@ export const initializeSentryClient = (environment: string, dsn: string) =>
       Sentry.replayIntegration({
         maskAllText: false,
         maskAllInputs: true,
-        blockAllMedia: true,
 
         // Manual Masking
         mask: ['.sentry-mask', '[data-sentry-mask]'],
