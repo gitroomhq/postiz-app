@@ -11,6 +11,7 @@ import { Integration } from '@prisma/client';
 import { ListmonkDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/listmonk.dto';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import slugify from 'slugify';
+import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 
 export class ListmonkProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 100; // Bluesky has moderate rate limits
@@ -19,6 +20,11 @@ export class ListmonkProvider extends SocialAbstract implements SocialProvider {
   isBetweenSteps = false;
   scopes = [] as string[];
   editor = 'html' as const;
+  dto = ListmonkDto;
+
+  maxLength() {
+    return 100000000;
+  }
 
   async customFields() {
     return [
@@ -104,6 +110,7 @@ export class ListmonkProvider extends SocialAbstract implements SocialProvider {
     }
   }
 
+  @Tool({ description: 'List of available lists', dataSchema: [] })
   async list(
     token: string,
     data: any,
@@ -130,6 +137,7 @@ export class ListmonkProvider extends SocialAbstract implements SocialProvider {
     return postTypes.data.results.map((p: any) => ({ id: p.id, name: p.name }));
   }
 
+  @Tool({ description: 'List of available templates', dataSchema: [] })
   async templates(
     token: string,
     data: any,

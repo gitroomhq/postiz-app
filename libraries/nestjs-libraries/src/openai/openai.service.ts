@@ -227,34 +227,45 @@ export class OpenaiService {
   }
 
   async generateSlidesFromText(text: string) {
-    const message = `You are an assistant that takes a text and break it into slides, each slide should have an image prompt and voice text to be later used to generate a video and voice, image prompt should capture the essence of the slide and also have a back dark gradient on top, image prompt should not contain text in the picture, generate between 3-5 slides maximum`;
-    return (
-      (
-        await openai.chat.completions.parse({
-          model: 'gpt-4.1',
-          messages: [
-            {
-              role: 'system',
-              content: message,
-            },
-            {
-              role: 'user',
-              content: text,
-            },
-          ],
-          response_format: zodResponseFormat(
-            z.object({
-              slides: z.array(
+    for (let i = 0; i < 3; i++) {
+      try {
+        const message = `You are an assistant that takes a text and break it into slides, each slide should have an image prompt and voice text to be later used to generate a video and voice, image prompt should capture the essence of the slide and also have a back dark gradient on top, image prompt should not contain text in the picture, generate between 3-5 slides maximum`;
+        const parse =
+          (
+            await openai.chat.completions.parse({
+              model: 'gpt-4.1',
+              messages: [
+                {
+                  role: 'system',
+                  content: message,
+                },
+                {
+                  role: 'user',
+                  content: text,
+                },
+              ],
+              response_format: zodResponseFormat(
                 z.object({
-                  imagePrompt: z.string(),
-                  voiceText: z.string(),
-                })
+                  slides: z
+                    .array(
+                      z.object({
+                        imagePrompt: z.string(),
+                        voiceText: z.string(),
+                      })
+                    )
+                    .describe('an array of slides'),
+                }),
+                'slides'
               ),
-            }),
-            'slides'
-          ),
-        })
-      ).choices[0].message.parsed?.slides || []
-    );
+            })
+          ).choices[0].message.parsed?.slides || [];
+
+        return parse;
+      } catch (err) {
+        console.log(err);
+      }
+    }
+
+    return [];
   }
 }

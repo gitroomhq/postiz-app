@@ -271,7 +271,7 @@ export const AddOrEditWebhook: FC<{
         await fetch(`/autopost/send?url=${encodeURIComponent(url)}`, {
           method: 'POST',
           headers: {
-            contentType: 'application/json',
+            'Content-Type': 'application/json',
           },
         })
       ).json();

@@ -160,7 +160,6 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           return;
         }
 
-        console.log(checkAllValid);
         for (const item of checkAllValid) {
           if (item.valid === false) {
             toaster.show('Some fields are not valid', 'warning');

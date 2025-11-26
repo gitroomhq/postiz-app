@@ -17,6 +17,7 @@ checksums:
     video_made_with_ai: c37747aaf8107d339d6238a0463f7096
     please_add_at_least: 90d3c0237b56e57c7a58d5decf6e9d3c
     send_invitation_via_email: 9275e0b85147a931421b3bf6c3083cb4
+    global_settings: ba55734261d6bc26e792fda32de3e7ec
     copy_id: 831147124db35832872f8470c577e440
     team_members: 61333c4a765e10b2ad46774951725233
     invite_your_assistant_or_team_member_to_manage_your_account: dadd50655759ac32b9ed62e60f8acb1d
@@ -45,7 +46,7 @@ checksums:
     reveal: 3f7302cc2e097266e447b3e18f1b9ab7
     copy_key: 8f4f13acec7abf7c3aa6e680b6da99f8
     mcp: 62c2c8e6703c9e5224e98294a53e1884
-    connect_your_mcp_client_to_postiz_to_schedule_your_posts_faster: 55b92dd743d32bfe04b69c6ec9406e1f
+    connect_your_mcp_client_to_postiz_to_schedule_your_posts_faster: bb53d1093a6ab977f2eee0bbc7e0248c
     share_with_a_client: 8e27f69c841a9dda635f34fb1b38ad99
     post: 0beafa0cd18d45690b9b07104eb2c1b8
     comments: 502237cd1044491c48494aa60967a985
