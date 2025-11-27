@@ -165,7 +165,7 @@ export default withProvider({
   SettingsComponent: GmbSettings,
   CustomPreviewComponent: undefined,
   dto: GmbSettingsDto,
-  checkValidity: async (items, settings) => {
+  checkValidity: async (items, settings: any) => {
     // GMB posts can have text only, or text with one image
     if (items.length > 0 && items[0].length > 1) {
       return 'Google My Business posts can only have one image';
