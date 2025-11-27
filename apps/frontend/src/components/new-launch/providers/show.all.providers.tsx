@@ -32,6 +32,7 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { PostComment } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 import WordpressProvider from '@gitroom/frontend/components/new-launch/providers/wordpress/wordpress.provider';
 import ListmonkProvider from '@gitroom/frontend/components/new-launch/providers/listmonk/listmonk.provider';
+import GmbProvider from '@gitroom/frontend/components/new-launch/providers/gmb/gmb.provider';
 
 export const Providers = [
   {
@@ -137,6 +138,10 @@ export const Providers = [
   {
     identifier: 'listmonk',
     component: ListmonkProvider,
+  },
+  {
+    identifier: 'gmb',
+    component: GmbProvider,
   },
 ];
 export const ShowAllProviders = forwardRef((props, ref) => {
