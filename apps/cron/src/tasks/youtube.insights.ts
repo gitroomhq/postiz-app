@@ -10,7 +10,7 @@ export class YoutubeInsightsTask {
 		private _socialTokenRepo : PrismaRepository<'socialToken'> 
 	) { }
 
-  	@Cron('20 0 * * *') // Runs at 12:20 AM IST daily
+  	@Cron('0 7 * * *') // Runs at 7:00 AM IST daily
 	async handleYoutubeInsights() {
 		console.log('⏰ YouTube insights cron job triggered');
 

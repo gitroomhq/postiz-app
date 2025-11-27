@@ -732,6 +732,7 @@ model SocialToken {
   updatedAt      DateTime  @updatedAt @db.Timestamptz(6)
 
   @@unique([identifier, businessId])
+  @@index([identifier, businessId])
 }
 
 enum SocialMediaPlatform {

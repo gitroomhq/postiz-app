@@ -147,31 +147,45 @@ export class IntegrationService {
       : undefined;
 
     try {
-      await this._socialTokenRepo.model.socialToken.upsert({
+      // First try to find existing record
+      const existingToken = await this._socialTokenRepo.model.socialToken.findUnique({
         where: {
           identifier_businessId: {
             identifier: provider,
             businessId: internalId,
           }
-        },
-        create: {
-          identifier: provider,
-          name: name,
-          businessId: internalId,
-          organizationId: orgId,
-          accessToken: accessToken || null,
-          refreshToken: refreshToken || null,
-          tokenExpiry: tokenExpiry,
-        },
-        update: {
-          name: name,
-          organizationId: orgId,
-          accessToken: accessToken || null,
-          refreshToken: refreshToken || null,
-          tokenExpiry: tokenExpiry,
-          updatedAt: new Date(),
-        },
+        }
       });
+
+      if (existingToken) {
+        // Update existing record
+        await this._socialTokenRepo.model.socialToken.update({
+          where: {
+            id: existingToken.id
+          },
+          data: {
+            name: name,
+            organizationId: orgId,
+            accessToken: accessToken || null,
+            refreshToken: refreshToken || null,
+            tokenExpiry: tokenExpiry,
+            updatedAt: new Date(),
+          },
+        });
+      } else {
+        // Create new record
+        await this._socialTokenRepo.model.socialToken.create({
+          data: {
+            identifier: provider,
+            name: name,
+            businessId: internalId,
+            organizationId: orgId,
+            accessToken: accessToken || null,
+            refreshToken: refreshToken || null,
+            tokenExpiry: tokenExpiry,
+          },
+        });
+      }
     } catch (error) {
       console.error(`Failed to sync tokens for provider ${provider}:`, error);
     }
@@ -217,6 +231,7 @@ export class IntegrationService {
 
       return { refreshToken, accessToken, expiresIn };
     } catch (e) {
+      console.error('Token refresh failed:', e);
       return false;
     }
   }
@@ -242,15 +257,45 @@ export class IntegrationService {
   async refreshTokens() {
     const integrations = await this._integrationRepository.needsToBeRefreshed();
     for (const integration of integrations) {
-      const provider = await this._integrationManager.getSocialIntegration(
-        integration.providerIdentifier,
-        integration.organizationId,
-        integration.customerId
-      );
+      try {
+        const provider = await this._integrationManager.getSocialIntegration(
+          integration.providerIdentifier,
+          integration.organizationId,
+          integration.customerId
+        );
 
-      const data = await this.refreshToken(provider, integration.refreshToken!);
+        const data = await this.refreshToken(provider, integration.refreshToken!);
 
-      if (!data) {
+        if (!data) {
+          await this.informAboutRefreshError(
+            integration.organizationId,
+            integration
+          );
+          await this._integrationRepository.refreshNeeded(
+            integration.organizationId,
+            integration.id
+          );
+          continue; // Continue with next integration instead of returning
+        }
+
+        const { refreshToken, accessToken, expiresIn } = data;
+
+        await this.createOrUpdateIntegration(
+          undefined,
+          !!provider.oneTimeToken,
+          integration.organizationId,
+          integration.customerId,
+          integration.name,
+          undefined,
+          'social',
+          integration.internalId,
+          integration.providerIdentifier,
+          accessToken,
+          refreshToken,
+          expiresIn
+        );
+      } catch (error) {
+        console.error(`Failed to refresh token for integration ${integration.id}:`, error);
         await this.informAboutRefreshError(
           integration.organizationId,
           integration
@@ -259,25 +304,7 @@ export class IntegrationService {
           integration.organizationId,
           integration.id
         );
-        return;
       }
-
-      const { refreshToken, accessToken, expiresIn } = data;
-
-      await this.createOrUpdateIntegration(
-        undefined,
-        !!provider.oneTimeToken,
-        integration.organizationId,
-        integration.customerId,
-        integration.name,
-        undefined,
-        'social',
-        integration.internalId,
-        integration.providerIdentifier,
-        accessToken,
-        refreshToken,
-        expiresIn
-      );
     }
   }
 
@@ -405,12 +432,19 @@ export class IntegrationService {
     );
 
     await this.checkForDeletedOnceAndUpdate(org, getIntegrationInformation.id);
+
+    // Store user token with page ID in refresh token format: userToken::pageId
+    const userToken = getIntegration?.token!; // This is the user token
+    const pageId = getIntegrationInformation.id;
+    const formattedRefreshToken = `${userToken}::${pageId}`;
+
     await this._integrationRepository.updateIntegration(id, {
       picture: getIntegrationInformation.picture,
       internalId: getIntegrationInformation.id,
       name: getIntegrationInformation.name,
       inBetweenSteps: false,
-      token: getIntegrationInformation.access_token,
+      token: getIntegrationInformation.access_token, // Page token
+      refreshToken: formattedRefreshToken, // User token with page ID
       profile: getIntegrationInformation.username,
     });
 
@@ -523,6 +557,10 @@ export class IntegrationService {
 
   customers(orgId: string) {
     return this._integrationRepository.customers(orgId);
+  }
+
+  getRefreshTokenIntegration(orgId: string, refreshToken: string) {
+    return this._integrationRepository.getRefreshTokenIntegration(orgId, refreshToken);
   }
 
   getPlugsByIntegrationId(org: string, integrationId: string) {

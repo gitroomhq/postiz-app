@@ -11,7 +11,7 @@ export class InstagramInsightsTask {
     private _socialTokenRepo: PrismaRepository<'socialToken'> 
   ) { }
 
-  @Cron('0 0 * * *') // for midnight
+  @Cron('0 2 * * *') // Runs at 2:00 AM IST daily
   async handleInstagramInsights() {
     console.log('⏰ Cron job triggered');
 

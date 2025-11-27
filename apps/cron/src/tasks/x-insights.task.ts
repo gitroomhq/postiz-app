@@ -12,9 +12,9 @@ export class XInsightsTask {
     private _socialTokenRepo: PrismaRepository<'socialToken'> 
   ) { }
 
-  @Cron('0 0 * * *') // for midnight
+  @Cron('0 4 * * *') // Runs at 4:00 AM IST daily
   async handleXInsights() {
-    console.log('⏰ Twitter/X cron triggered');
+    console.log('⏰ X (Twitter) Insights - TEST RUN');
 
     try {
 

@@ -93,11 +93,33 @@ export class GbpProvider implements SocialProvider {
   async authenticate(params: {
     code: string;
     codeVerifier: string;
-    state: string;
+    state?: string;
     refresh?: string;
+    customerId?: string;
   }): Promise<AuthTokenDetails | string> {
     if (!params.code) {
       return 'Missing authorization code';
+    }
+
+    console.log('🔍 GBP Authenticate - Received customerId:', params.customerId);
+
+    // If customerId is provided in params, update the class property
+    if (params.customerId) {
+      this.currentCustomerId = params.customerId;
+
+      // Fetch customer details to get the name for location matching
+      try {
+        const customer = await this._customersRepository.getCustomerByPKId(params.customerId);
+        this.currentOrgId = customer?.orgId || '';
+        this.currentCustomerName = customer?.name || 'GBP User';
+        console.log('✅ Using customer name for location matching:', this.currentCustomerName);
+      } catch (e) {
+        console.error('❌ Error fetching customer details:', e);
+        this.currentOrgId = '';
+        this.currentCustomerName = 'GBP User';
+      }
+    } else {
+      console.warn('⚠️ No customerId provided in authenticate params');
     }
 
     // Add delay to avoid rate limiting (10 seconds)
@@ -238,6 +260,11 @@ export class GbpProvider implements SocialProvider {
   ): Promise<AuthTokenDetails> {
     console.log('🔄 GBP reConnect: Refreshing token for integration:', integrationId);
     
+    // Validate inputs
+    if (!refreshToken) {
+      throw new Error('Refresh token is required for reconnection');
+    }
+
     try {
       const oauth2Client = new google.auth.OAuth2(
         this.config.GOOGLE_CLIENT_ID,
@@ -265,9 +292,15 @@ export class GbpProvider implements SocialProvider {
         username: '',
         additionalSettings: [],
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ GBP reConnect failed:', error);
-      throw error;
+      
+      // Handle specific error cases
+      if (error.response?.data?.error === 'invalid_grant') {
+        throw new Error('Refresh token is invalid or expired. Please reconnect your Google Business Profile account.');
+      }
+      
+      throw new Error(`Failed to refresh token: ${error.message || 'Unknown error'}`);
     }
   }
 

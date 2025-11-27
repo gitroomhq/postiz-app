@@ -12,9 +12,9 @@ export class FacebookInsightsTask {
 		private _socialTokenRepo: PrismaRepository<'socialToken'> 
 	) { }
 
-	@Cron('0 0 * * *') // Runs every day at midnight
+	@Cron('0 1 * * *') // Runs at 1:00 AM IST daily
 	async handleFacebookInsights() {
-		console.log('⏰ Facebook Insights Cron job triggered');
+		console.log('⏰ Facebook Insights - TEST RUN');
 
 		try {
 

@@ -387,6 +387,15 @@ export class IntegrationRepository {
     });
   }
 
+  getRefreshTokenIntegration(orgId: string, refreshToken: string) {
+    return this._integration.model.integration.findFirst({
+      where: {
+        organizationId: orgId,
+        refreshToken,
+      },
+    });
+  }
+
   getIntegrationsList(org: string) {
     return this._integration.model.integration.findMany({
       where: {

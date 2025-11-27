@@ -11,7 +11,7 @@ export class LinkedInInsightsTask {
 		private _socialTokenRepo: PrismaRepository<'socialToken'> 
 	) { }
 
-	@Cron('0 0 * * *') // for midnight
+	@Cron('0 5 * * *') // Runs at 5:00 AM IST daily
 	async handleLinkedInInsights() {
 		console.log('⏰ LinkedIn Insights Cron job triggered');
 

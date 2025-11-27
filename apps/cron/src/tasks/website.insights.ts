@@ -12,7 +12,7 @@ export class WebsiteInsightsTask {
     private _socialTokenRepo: PrismaRepository<'socialToken'> 
   ) {}
 
-  @Cron('20 0 * * *') // Runs at 12:20 AM IST daily
+  @Cron('0 8 * * *') // Runs at 8:00 AM IST daily
   async handleWebsiteInsights() {
     console.log('⏰ Website Analytics Cron job triggered');
 

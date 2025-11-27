@@ -36,10 +36,43 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
   }
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
+    // Parse refresh token to extract user token and page ID
+    // Format: userToken::pageId
+    const parts = refresh_token.split('::');
+    const userToken = parts[0];
+    const pageId = parts[1];
+
+    // Exchange long-lived user token for a new long-lived user token (extends expiry)
+    const { access_token, expires_in } = await (
+      await this.fetch(
+        'https://graph.facebook.com/v20.0/oauth/access_token' +
+        '?grant_type=fb_exchange_token' +
+        `&client_id=${this.config.FACEBOOK_APP_ID}` +
+        `&client_secret=${this.config.FACEBOOK_APP_SECRET}` +
+        `&fb_exchange_token=${userToken}`
+      )
+    ).json();
+
+    // If we have a page ID, fetch the page access token
+    if (pageId) {
+      const pageInfo = await this.fetchPageInformation(access_token, pageId);
+
+      return {
+        accessToken: pageInfo.access_token, // Page token
+        refreshToken: `${access_token}::${pageId}`, // Store new user token with page ID
+        expiresIn: expires_in || (60 * 24 * 60 * 60), // 60 days in seconds
+        id: pageInfo.id,
+        name: pageInfo.name,
+        picture: pageInfo.picture,
+        username: pageInfo.username,
+      };
+    }
+
+    // Fallback for tokens without page ID (shouldn't happen for pages)
     return {
-      refreshToken: '',
-      expiresIn: 0,
-      accessToken: '',
+      accessToken: access_token,
+      refreshToken: access_token,
+      expiresIn: expires_in || (60 * 24 * 60 * 60),
       id: '',
       name: '',
       picture: '',
@@ -79,8 +112,8 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     return {
       id: information.id,
       name: information.name,
-      accessToken: information.access_token,
-      refreshToken: information.access_token,
+      accessToken: information.access_token, // Page token
+      refreshToken: `${accessToken}::${requiredId}`, // User token with page ID
       expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
       picture: information.picture,
       username: information.username,

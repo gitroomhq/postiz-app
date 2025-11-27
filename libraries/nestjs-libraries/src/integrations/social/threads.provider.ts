@@ -39,10 +39,19 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
   }
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
+    // Refresh Threads long-lived token (extends expiry for another 60 days)
+    const { access_token, expires_in } = await (
+      await this.fetch(
+        'https://graph.threads.net/refresh_access_token' +
+        '?grant_type=th_refresh_token' +
+        `&access_token=${refresh_token}`
+      )
+    ).json();
+
     return {
-      refreshToken: '',
-      expiresIn: 0,
-      accessToken: '',
+      accessToken: access_token,
+      refreshToken: access_token, // Threads uses same token
+      expiresIn: expires_in || (60 * 24 * 60 * 60), // 60 days in seconds
       id: '',
       name: '',
       picture: '',

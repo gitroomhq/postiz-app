@@ -10,110 +10,118 @@ export class ThreadsInsightsTask {
 		private _threadsInsightsRepository: PrismaRepository<'threadsInsight'>,
 	) { }
 
-    // @Cron('0 0 * * *') // for midnight
-	// async handleThreadsInsights() {
-	// 	console.log('⏰ Threads Insights Cron job triggered');
+    @Cron('0 3 * * *') // Runs at 3:00 AM IST daily
+	async handleThreadsInsights() {
+		console.log('⏰ Threads Insights - TEST RUN');
 
-	// 	try {
-	// 		// Get all Threads integrations
-	// 		const integrationsRes = await axios.get(`${process.env.BACKEND_INTERNAL_URL}/integrations/list`, {
-	// 			headers: {
-	// 				'cookie': process.env.INTERNEL_TOKEN,
-	// 				'Content-Type': 'application/json'
-	// 			}
-	// 		});
+		try {
+			// Get all Threads integrations
+			const integrationsRes = await axios.get(`${process.env.BACKEND_INTERNAL_URL}/integrations/list`, {
+				headers: {
+					'cookie': process.env.INTERNEL_TOKEN,
+					'Content-Type': 'application/json'
+				}
+			});
 
-	// 		const integrations = integrationsRes.data?.integrations || [];
-	// 		const threadsAccounts = integrations.filter(
-	// 			(i) => i.identifier === 'threads' && i.internalId
-	// 		);
+			const integrations = integrationsRes.data?.integrations || [];
+			const threadsAccounts = integrations.filter(
+				(i) => i.identifier === 'threads' && i.internalId
+			);
 
-	// 		if (!threadsAccounts.length) {
-	// 			console.log('❌ No Threads accounts found.');
-	// 			return;
-	// 		}
-	// 		console.log('threadsAccounts', threadsAccounts)
+			if (!threadsAccounts.length) {
+				console.log('❌ No Threads accounts found.');
+				return;
+			}
+			console.log('threadsAccounts', threadsAccounts)
 
-	// 		for (const account of threadsAccounts) {
-	// 			const accountId = account.internalId;
-	// 			const accessToken = process.env.THREADS_ACCESS_TOKEN
-	// 			const organizationId = account.customer?.orgId;
+			for (const account of threadsAccounts) {
+				const accountId = account.internalId;
+				const accessToken = account.token; // Use the token from the integration
+				const organizationId = account.customer?.orgId;
+				const customerId = account.customerId;
 
-	// 			console.log('Using Threads Access Token:', process.env.THREADS_ACCESS_TOKEN);
+				try {
+					// Get yesterday's date range
+					const yesterday = subDays(new Date(), 1);
+					const since = Math.floor(startOfDay(yesterday).getTime() / 1000);
+					const until = Math.floor(endOfDay(yesterday).getTime() / 1000);
 
-	// 			try {
-	// 				// Get yesterday's date range
-	// 				const yesterday = subDays(new Date(), 1);
-	// 				const dayStart = format(startOfDay(yesterday), 'yyyy-MM-dd');
-	// 				const dayEnd = format(endOfDay(yesterday), 'yyyy-MM-dd');
+					// Get account info (followers, username, etc.)
+					const accountInfoRes = await axios.get(
+						`https://graph.threads.net/v1.0/me?fields=id,username,threads_profile_picture_url&access_token=${accessToken}`
+					);
+					const username = accountInfoRes.data?.username || '';
 
-	// 				// Note: Threads API endpoints are hypothetical - may need adjustment
-	// 				// 1. Get account info (followers)
-	// 				const accountInfoRes = await axios.get(
-	// 					`https://graph.facebook.com/v19.0/${accountId}?fields=followers_count&access_token=${accessToken}`
-	// 				);
-	// 				const followers = accountInfoRes.data?.followers_count || 0;
+					// Get insights metrics from the Threads API
+					const insightsRes = await axios.get(
+						`https://graph.threads.net/v1.0/${accountId}/threads_insights?metric=views,likes,replies,reposts,quotes&access_token=${accessToken}&period=day&since=${since}&until=${until}`
+					);
 
-	// 				// 2. Get posts count
-	// 				const postsRes = await axios.get(
-	// 					`https://graph.facebook.com/v19.0/${accountId}/media?fields=id&since=${dayStart}&until=${dayEnd}&access_token=${accessToken}`
-	// 				);
-	// 				const posts = postsRes.data?.data?.length || 0;
+					// Process insights data
+					let views = 0;
+					let likes = 0;
+					let replies = 0;
+					let reposts = 0;
+					let quotes = 0;
 
-	// 				// 3. Get engagement metrics (hypothetical endpoint)
-	// 				let engagement = 0;
-	// 				let interactions = 0;
-	// 				let impressions = 0;
+					insightsRes.data?.data?.forEach((metric: any) => {
+						const value = metric.total_value?.value || metric.values?.[0]?.value || 0;
+						switch (metric.name) {
+							case 'views':
+								views = value;
+								break;
+							case 'likes':
+								likes = value;
+								break;
+							case 'replies':
+								replies = value;
+								break;
+							case 'reposts':
+								reposts = value;
+								break;
+							case 'quotes':
+								quotes = value;
+								break;
+						}
+					});
 
-	// 				try {
-	// 					const insightsRes = await axios.get(
-	// 						`https://graph.facebook.com/v19.0/${accountId}/insights?metric=engagement,impressions&period=day&since=${dayStart}&until=${dayEnd}&access_token=${accessToken}`
-	// 					);
+					// Calculate engagement and interactions
+					const engagement = likes + replies + reposts + quotes;
+					const interactions = engagement;
+					const impressions = views;
 
-	// 					// Process insights data
-	// 					insightsRes.data?.data?.forEach(metric => {
-	// 						if (metric.name === 'engagement') {
-	// 							engagement = metric.values[0]?.value || 0;
-	// 							interactions = metric.values[0]?.value || 0; // Adjust based on actual API
-	// 						} else if (metric.name === 'impressions') {
-	// 							impressions = metric.values[0]?.value || 0;
-	// 						}
-	// 					});
-	// 				} catch (e) {
-	// 					console.error(`⚠️ Failed to get insights for ${account.name}: ${e.message}`);
-	// 				}
+					const month = format(yesterday, 'yyyy-MM');
 
-	// 				const month = new Date().toISOString().slice(0, 7);
+					console.log(`📤 Inserting Threads insights for account ${accountId}`);
 
-	// 				console.log(`📤 Inserting Threads insights for account ${accountId}`);
+					await this._threadsInsightsRepository.model.threadsInsight.create({
+						data: {
+							businessId: accountId,
+							organizationId,
+							customerId,
+							month,
+							followers: 0, // Threads API doesn't provide followers in insights
+							totalContent: 0, // Would need to fetch posts count separately
+							engagement,
+							interactions,
+							impressions
+						},
+					});
 
-	// 				await this._threadsInsightsRepository.model.threadsInsight.create({
-	// 					data: {
-	// 						accountId,
-	// 						organizationId,
-	// 						month,
-	// 						followers,
-	// 						posts,
-	// 						engagement,
-	// 						interactions,
-	// 						impressions
-	// 					},
-	// 				});
-
-	// 				console.log(`✅ Inserted Threads insight for ${account.name}`);
-	// 			} catch (innerError) {
-	// 				const error = innerError as AxiosError;
-	// 				console.error(`⚠️ Failed to process ${account.name}: ${error.message}`);
-	// 				if (error.response) {
-	// 					console.error('Threads API error:', {
-	// 						status: error.response.status,
-	// 						data: error.response.data
-	// 					});
-	// 				}
-	// 			}
-	// 		}
-	// 	} catch (error) {
-	// 		console.error(`❌ Failed to fetch integrations or process Threads insights: ${error.message}`);
-	// 	}
-	// }
+					console.log(`✅ Inserted Threads insight for ${username || accountId}`);
+				} catch (innerError) {
+					const error = innerError as AxiosError;
+					console.error(`⚠️ Failed to process ${account.name}: ${error.message}`);
+					if (error.response) {
+						console.error('Threads API error:', {
+							status: error.response.status,
+							data: error.response.data
+						});
+					}
+				}
+			}
+		} catch (error) {
+			console.error(`❌ Failed to fetch integrations or process Threads insights: ${error.message}`);
+		}
+	}
 }

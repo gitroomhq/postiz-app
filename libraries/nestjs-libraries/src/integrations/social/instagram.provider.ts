@@ -43,10 +43,21 @@ export class InstagramProvider
   }
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
+    // Exchange long-lived token for a new long-lived token (extends expiry)
+    const { access_token, expires_in } = await (
+      await this.fetch(
+        'https://graph.facebook.com/v20.0/oauth/access_token' +
+        '?grant_type=fb_exchange_token' +
+        `&client_id=${this.config.FACEBOOK_APP_ID}` +
+        `&client_secret=${this.config.FACEBOOK_APP_SECRET}` +
+        `&fb_exchange_token=${refresh_token}`
+      )
+    ).json();
+
     return {
-      refreshToken: '',
-      expiresIn: 0,
-      accessToken: '',
+      accessToken: access_token,
+      refreshToken: access_token, // Instagram uses same token
+      expiresIn: expires_in || (60 * 24 * 60 * 60), // 60 days in seconds
       id: '',
       name: '',
       picture: '',

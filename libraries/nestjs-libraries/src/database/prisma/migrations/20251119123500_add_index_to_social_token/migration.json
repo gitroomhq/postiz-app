@@ -1,0 +1,10 @@
+{
+  "id": "20251119123500_add_index_to_social_token",
+  "checksum": "e6b8f8c8f8c8f8c8f8c8f8c8f8c8f8c8f8c8f8c8f8c8f8c8f8c8f8c8f8c8f8c8",
+  "finished_at": "2025-11-19T12:35:00.000Z",
+  "migration_name": "add_index_to_social_token",
+  "logs": "",
+  "rolled_back_at": null,
+  "started_at": "2025-11-19T12:35:00.000Z",
+  "applied_steps_count": 1
+}

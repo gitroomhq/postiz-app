@@ -412,11 +412,28 @@ export class IntegrationsController {
     }
 
     if (!body.customerId) {
-      // Use a regular expression to extract the values
-      const customerIdMatch = body.state.match(/customerId:([^,]+)/);
+      // Decode the state parameter (may be double-encoded)
+      let decodedState = body.state;
+      try {
+        // Try decoding once
+        decodedState = decodeURIComponent(body.state);
+        // If still encoded, decode again
+        if (decodedState.includes('%')) {
+          decodedState = decodeURIComponent(decodedState);
+        }
+      } catch (e) {
+        console.error('Error decoding state:', e);
+      }
 
-      // Extract the values or assign null if not found
+      console.log('🔍 Decoded state:', decodedState);
+
+      // Use a regular expression to extract the customerId
+      const customerIdMatch = decodedState.match(/customerId:([^,]+)/);
+
+      // Extract the value or assign null if not found
       body.customerId = customerIdMatch ? customerIdMatch[1] : null;
+
+      console.log('✅ Extracted customerId:', body.customerId);
     }
 
     Logger.log(" ==> body::", body)
@@ -489,9 +506,9 @@ export class IntegrationsController {
 
       if (refresh && integrationProvider.reConnect) {
         const newAuth = await integrationProvider.reConnect(
-          auth.id,
-          refresh,
-          auth.accessToken
+          auth.refreshToken || auth.accessToken, // refreshToken
+          refresh, // connectionId
+          auth.id // integrationId
         );
         return res(newAuth);
       }
@@ -650,10 +667,65 @@ export class IntegrationsController {
     return this._integrationService.changePlugActivation(org.id, id, status);
   }
 
-  @Get('/telegram/updates')
-  async getUpdates(
-    @Query() query: { word: string; id?: number },
+  @Post('/refresh-token')
+  @CheckPolicies([AuthorizationActions.Create, Sections.CHANNEL])
+  async refreshToken(
+    @Body('refreshToken') refreshToken: string,
+    @GetOrgFromRequest() org: Organization
   ) {
-    return new TelegramProvider().getBotId(query);
+    if (!refreshToken) {
+      throw new Error('Refresh token is required');
+    }
+
+    try {
+      // Find the integration that uses this refresh token
+      const integration = await this._integrationService.getRefreshTokenIntegration(org.id, refreshToken);
+      if (!integration) {
+        throw new Error('No integration found for this refresh token');
+      }
+
+      const integrationProvider = await this._integrationManager.getSocialIntegration(
+        integration.providerIdentifier,
+        integration.organizationId,
+        integration.customerId
+      );
+
+      if (!integrationProvider || !integrationProvider.refreshToken) {
+        throw new Error('Provider does not support token refresh');
+      }
+
+      const tokenDetails = await integrationProvider.refreshToken(refreshToken);
+      
+      if (!tokenDetails.accessToken) {
+        throw new Error('Failed to refresh token');
+      }
+
+      // Update the integration with new tokens
+      await this._integrationService.createOrUpdateIntegration(
+        integration.additionalSettings ? JSON.parse(integration.additionalSettings) : undefined,
+        !!integrationProvider.oneTimeToken,
+        integration.organizationId,
+        integration.customerId,
+        integration.name,
+        integration.picture || undefined,
+        integration.type as 'article' | 'social',
+        integration.internalId,
+        integration.providerIdentifier,
+        tokenDetails.accessToken,
+        tokenDetails.refreshToken || refreshToken,
+        tokenDetails.expiresIn,
+        integration.profile || undefined,
+        integration.inBetweenSteps
+      );
+
+      return {
+        accessToken: tokenDetails.accessToken,
+        refreshToken: tokenDetails.refreshToken || refreshToken,
+        expiresIn: tokenDetails.expiresIn
+      };
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+      throw new Error(`Failed to refresh token: ${error.message}`);
+    }
   }
 }
