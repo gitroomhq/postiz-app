@@ -563,7 +563,7 @@ export class IntegrationsController {
   @Post('/gmb/:id')
   async saveGmb(
     @Param('id') id: string,
-    @Body() body: { id: string; accountId: string; locationName: string },
+    @Body() body: { id: string; accountName: string; locationName: string },
     @GetOrgFromRequest() org: Organization
   ) {
     return this._integrationService.saveGmb(org.id, id, body);

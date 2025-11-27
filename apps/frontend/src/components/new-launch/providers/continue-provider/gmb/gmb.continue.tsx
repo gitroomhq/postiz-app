@@ -18,7 +18,7 @@ export const GmbContinue: FC<{
   const { integration } = useIntegration();
   const [location, setSelectedLocation] = useState<null | {
     id: string;
-    accountId: string;
+    accountName: string;
     locationName: string;
   }>(null);
   const fetch = useFetch();
@@ -34,7 +34,7 @@ export const GmbContinue: FC<{
   }, []);
 
   const setLocation = useCallback(
-    (param: { id: string; accountId: string; locationName: string }) => () => {
+    (param: { id: string; accountName: string; locationName: string }) => () => {
       setSelectedLocation(param);
     },
     []
@@ -95,7 +95,7 @@ export const GmbContinue: FC<{
           (p: {
             id: string;
             name: string;
-            accountId: string;
+            accountName: string;
             locationName: string;
             picture: {
               data: {
@@ -111,7 +111,7 @@ export const GmbContinue: FC<{
               )}
               onClick={setLocation({
                 id: p.id,
-                accountId: p.accountId,
+                accountName: p.accountName,
                 locationName: p.locationName,
               })}
             >

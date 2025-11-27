@@ -29,7 +29,7 @@ const topicTypes = [
 const callToActionTypes = [
   {
     label: 'None',
-    value: '',
+    value: 'NONE',
   },
   {
     label: 'Book',
@@ -84,7 +84,7 @@ const GmbSettings: FC = () => {
       <Select
         label="Call to Action"
         {...register('callToActionType', {
-          value: '',
+          value: 'NONE',
         })}
       >
         {callToActionTypes.map((t) => (
@@ -94,13 +94,15 @@ const GmbSettings: FC = () => {
         ))}
       </Select>
 
-      {callToActionType && callToActionType !== 'CALL' && (
-        <Input
-          label="Call to Action URL"
-          placeholder="https://example.com"
-          {...register('callToActionUrl')}
-        />
-      )}
+      {callToActionType &&
+        callToActionType !== 'NONE' &&
+        callToActionType !== 'CALL' && (
+          <Input
+            label="Call to Action URL"
+            placeholder="https://example.com"
+            {...register('callToActionUrl')}
+          />
+        )}
 
       {topicType === 'EVENT' && (
         <div className="flex flex-col gap-[10px] mt-[10px] p-[15px] border border-input rounded-[8px]">
@@ -116,11 +118,7 @@ const GmbSettings: FC = () => {
               type="date"
               {...register('eventStartDate')}
             />
-            <Input
-              label="End Date"
-              type="date"
-              {...register('eventEndDate')}
-            />
+            <Input label="End Date" type="date" {...register('eventEndDate')} />
           </div>
           <div className="grid grid-cols-2 gap-[10px]">
             <Input
@@ -172,7 +170,7 @@ export default withProvider({
     if (items.length > 0 && items[0].length > 1) {
       return 'Google My Business posts can only have one image';
     }
-    
+
     // Check for video - GMB doesn't support video in local posts
     if (items.length > 0 && items[0].length > 0) {
       const media = items[0][0];
@@ -190,4 +188,3 @@ export default withProvider({
   },
   maximumCharacters: 1500,
 });
-

@@ -7,6 +7,7 @@ export class GmbSettingsDto {
 
   @IsOptional()
   @IsIn([
+    'NONE',
     'BOOK',
     'ORDER',
     'SHOP',
@@ -16,6 +17,7 @@ export class GmbSettingsDto {
     'CALL',
   ])
   callToActionType?:
+    | 'NONE'
     | 'BOOK'
     | 'ORDER'
     | 'SHOP'
@@ -65,4 +67,3 @@ export class GmbSettingsDto {
   @IsString()
   offerTerms?: string;
 }
-

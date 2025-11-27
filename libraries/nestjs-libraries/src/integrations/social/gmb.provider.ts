@@ -186,7 +186,7 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
       id: string;
       name: string;
       picture: { data: { url: string } };
-      accountId: string;
+      accountName: string;
       locationName: string;
     }> = [];
 
@@ -206,6 +206,11 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
 
         if (locationsData.locations) {
           for (const location of locationsData.locations) {
+            // location.name is in format: locations/{locationId}
+            // We need the full path: accounts/{accountId}/locations/{locationId}
+            const locationId = location.name.replace('locations/', '');
+            const fullResourceName = `${accountName}/locations/${locationId}`;
+
             // Get profile photo if available
             let photoUrl = '';
             try {
@@ -235,17 +240,21 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
             }
 
             allLocations.push({
-              id: location.name, // format: locations/{locationId}
+              // id is the full resource path for the v4 API: accounts/{accountId}/locations/{locationId}
+              id: fullResourceName,
               name: location.title || 'Unnamed Location',
               picture: { data: { url: photoUrl } },
-              accountId: accountName,
+              accountName: accountName,
               locationName: location.name,
             });
           }
         }
       } catch (error) {
         // Continue with other accounts if one fails
-        console.error(`Failed to fetch locations for account ${accountName}:`, error);
+        console.error(
+          `Failed to fetch locations for account ${accountName}:`,
+          error
+        );
       }
     }
 
@@ -254,11 +263,13 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
 
   async fetchPageInformation(
     accessToken: string,
-    data: { id: string; accountId: string; locationName: string }
+    data: { id: string; accountName: string; locationName: string }
   ) {
-    // Fetch location details
+    // data.id is the full resource path: accounts/{accountId}/locations/{locationId}
+    // data.locationName is the v1 API format: locations/{locationId}
+    // Fetch location details using the v1 API format
     const locationResponse = await fetch(
-      `https://mybusinessbusinessinformation.googleapis.com/v1/${data.id}?readMask=name,title,storefrontAddress,metadata`,
+      `https://mybusinessbusinessinformation.googleapis.com/v1/${data.locationName}?readMask=name,title,storefrontAddress,metadata`,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -271,7 +282,7 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
     let photoUrl = '';
     try {
       const mediaResponse = await fetch(
-        `https://mybusinessbusinessinformation.googleapis.com/v1/${data.id}/media`,
+        `https://mybusinessbusinessinformation.googleapis.com/v1/${data.locationName}/media`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -296,6 +307,7 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
     }
 
     return {
+      // Return the full resource path as id (for v4 Local Posts API)
       id: data.id,
       name: locationData.title || 'Unnamed Location',
       access_token: accessToken,
@@ -318,7 +330,7 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
 
     const information = await this.fetchPageInformation(accessToken, {
       id: requiredId,
-      accountId: findPage.accountId,
+      accountName: findPage.accountName,
       locationName: findPage.locationName,
     });
 
@@ -348,8 +360,12 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
       topicType: settings?.topicType || 'STANDARD',
     };
 
-    // Add call to action if provided
-    if (settings?.callToActionType && settings?.callToActionUrl) {
+    // Add call to action if provided (and not NONE)
+    if (
+      settings?.callToActionType &&
+      settings.callToActionType !== 'NONE' &&
+      settings?.callToActionUrl
+    ) {
       postBody.callToAction = {
         actionType: settings.callToActionType,
         url: settings.callToActionUrl,
@@ -466,7 +482,17 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
 
       // Use the Business Profile Performance API
       const response = await fetch(
-        `https://businessprofileperformance.googleapis.com/v1/${id}:getDailyMetricsTimeSeries?dailyMetric=WEBSITE_CLICKS&dailyMetric=CALL_CLICKS&dailyMetric=BUSINESS_DIRECTION_REQUESTS&dailyMetric=BUSINESS_IMPRESSIONS_DESKTOP_MAPS&dailyMetric=BUSINESS_IMPRESSIONS_MOBILE_MAPS&dailyRange.startDate.year=${dayjs(startDate).year()}&dailyRange.startDate.month=${dayjs(startDate).month() + 1}&dailyRange.startDate.day=${dayjs(startDate).date()}&dailyRange.endDate.year=${dayjs(endDate).year()}&dailyRange.endDate.month=${dayjs(endDate).month() + 1}&dailyRange.endDate.day=${dayjs(endDate).date()}`,
+        `https://businessprofileperformance.googleapis.com/v1/${id}:getDailyMetricsTimeSeries?dailyMetric=WEBSITE_CLICKS&dailyMetric=CALL_CLICKS&dailyMetric=BUSINESS_DIRECTION_REQUESTS&dailyMetric=BUSINESS_IMPRESSIONS_DESKTOP_MAPS&dailyMetric=BUSINESS_IMPRESSIONS_MOBILE_MAPS&dailyRange.startDate.year=${dayjs(
+          startDate
+        ).year()}&dailyRange.startDate.month=${
+          dayjs(startDate).month() + 1
+        }&dailyRange.startDate.day=${dayjs(
+          startDate
+        ).date()}&dailyRange.endDate.year=${dayjs(
+          endDate
+        ).year()}&dailyRange.endDate.month=${
+          dayjs(endDate).month() + 1
+        }&dailyRange.endDate.day=${dayjs(endDate).date()}`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -497,7 +523,10 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
         const dataPoints =
           series.timeSeries?.datedValues?.map((dv: any) => ({
             total: dv.value || 0,
-            date: `${dv.date.year}-${String(dv.date.month).padStart(2, '0')}-${String(dv.date.day).padStart(2, '0')}`,
+            date: `${dv.date.year}-${String(dv.date.month).padStart(
+              2,
+              '0'
+            )}-${String(dv.date.day).padStart(2, '0')}`,
           })) || [];
 
         if (dataPoints.length > 0) {

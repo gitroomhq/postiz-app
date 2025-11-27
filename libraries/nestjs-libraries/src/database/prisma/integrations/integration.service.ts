@@ -371,7 +371,7 @@ export class IntegrationService {
   async saveGmb(
     org: string,
     id: string,
-    data: { id: string; accountId: string; locationName: string }
+    data: { id: string; accountName: string; locationName: string }
   ) {
     const getIntegration = await this._integrationRepository.getIntegrationById(
       org,
