@@ -11,7 +11,11 @@ import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { InstagramDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/instagram.dto';
 import { Integration } from '@prisma/client';
+import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
+@Rules(
+  "Instagram should have at least one attachment, if it's a story, it can have only one picture"
+)
 export class InstagramProvider
   extends SocialAbstract
   implements SocialProvider
@@ -31,6 +35,10 @@ export class InstagramProvider
   ];
   override maxConcurrentJob = 10;
   editor = 'normal' as const;
+  dto = InstagramDto;
+  maxLength() {
+    return 2200;
+  }
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     return {
@@ -50,7 +58,6 @@ export class InstagramProvider
         value: string;
       }
     | undefined {
-
     if (body.indexOf('An unknown error occurred') > -1) {
       return {
         type: 'retry' as const,
@@ -66,7 +73,9 @@ export class InstagramProvider
       };
     }
 
-    if (body.toLowerCase().indexOf('the user is not an instagram business') > -1) {
+    if (
+      body.toLowerCase().indexOf('the user is not an instagram business') > -1
+    ) {
       return {
         type: 'refresh-token' as const,
         value:
@@ -368,11 +377,7 @@ export class InstagramProvider
       .map((p: any) => p.permission);
     this.checkScopes(this.scopes, permissions);
 
-    const {
-      id,
-      name,
-      picture
-    } = await (
+    const { id, name, picture } = await (
       await fetch(
         `https://graph.facebook.com/v20.0/me?fields=id,name,picture&access_token=${access_token}`
       )
@@ -507,7 +512,7 @@ export class InstagramProvider
               undefined,
               '',
               0,
-              true,
+              true
             )
           ).json();
           await timer(30000);
@@ -630,44 +635,44 @@ export class InstagramProvider
 
   private setTitle(name: string) {
     switch (name) {
-      case "likes": {
+      case 'likes': {
         return 'Likes';
       }
 
-      case "followers": {
+      case 'followers': {
         return 'Followers';
       }
 
-      case "reach": {
+      case 'reach': {
         return 'Reach';
       }
 
-      case "follower_count": {
+      case 'follower_count': {
         return 'Follower Count';
       }
 
-      case "views": {
+      case 'views': {
         return 'Views';
       }
 
-      case "comments": {
+      case 'comments': {
         return 'Comments';
       }
 
-      case "shares": {
+      case 'shares': {
         return 'Shares';
       }
 
-      case "saves": {
+      case 'saves': {
         return 'Saves';
       }
 
-      case "replies": {
+      case 'replies': {
         return 'Replies';
       }
     }
 
-    return "";
+    return '';
   }
 
   async analytics(

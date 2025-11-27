@@ -11,6 +11,8 @@ import FormData from 'form-data';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { DribbbleDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dribbble.dto';
 import mime from 'mime-types';
+import { DiscordDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/discord.dto';
+import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 
 export class DribbbleProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 3; // Dribbble has moderate API limits
@@ -19,6 +21,10 @@ export class DribbbleProvider extends SocialAbstract implements SocialProvider {
   isBetweenSteps = false;
   scopes = ['public', 'upload'];
   editor = 'normal' as const;
+  maxLength() {
+    return 40000;
+  }
+  dto = DribbbleDto;
 
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const { access_token, expires_in } = await (
@@ -59,6 +65,7 @@ export class DribbbleProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
+  @Tool({ description: 'Teams list', dataSchema: [] })
   async teams(accessToken: string) {
     const { teams } = await (
       await this.fetch('https://api.dribbble.com/v2/user', {

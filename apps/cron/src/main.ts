@@ -1,12 +1,12 @@
-import { NestFactory } from '@nestjs/core';
-import { CronModule } from './cron.module';
-
 import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
 initializeSentry('cron');
 
-async function bootstrap() {
+import { NestFactory } from '@nestjs/core';
+import { CronModule } from './cron.module';
+
+async function start() {
   // some comment again
   await NestFactory.createApplicationContext(CronModule);
 }
 
-bootstrap();
+start();

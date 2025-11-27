@@ -643,7 +643,7 @@ export const MultiMediaComponent: FC<{
 
   return (
     <>
-      <div className="flex flex-col gap-[8px] bg-bigStrip rounded-bl-[8px] select-none w-full">
+      <div className="b1 flex flex-col gap-[8px] bg-bigStrip rounded-bl-[8px] select-none w-full">
         <div className="flex gap-[10px]">
           <Button
             onClick={showModal}
@@ -757,8 +757,8 @@ export const MultiMediaComponent: FC<{
           )}
         </div>
         {!dummy && (
-          <div className="flex gap-[10px] bg-newBgLineColor w-full">
-            <div className="flex py-[10px]">
+          <div className="flex gap-[10px] bg-newBgLineColor w-full b1">
+            <div className="flex py-[10px] b2">
               <Button
                 onClick={designMedia}
                 className="ms-[10px] rounded-[4px] gap-[8px] !text-primary justify-center items-center w-[127px] flex border border-dashed border-newBgLineColor bg-newColColor"

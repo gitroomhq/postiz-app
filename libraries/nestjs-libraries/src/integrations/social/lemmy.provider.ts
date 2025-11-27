@@ -11,6 +11,7 @@ import { Integration } from '@prisma/client';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { LemmySettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/lemmy.dto';
 import { groupBy } from 'lodash';
+import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 
 export class LemmyProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 3; // Lemmy instances typically have moderate limits
@@ -19,6 +20,10 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
   isBetweenSteps = false;
   scopes = [] as string[];
   editor = 'normal' as const;
+  maxLength() {
+    return 10000;
+  }
+  dto = LemmySettingsDto;
 
   async customFields() {
     return [
@@ -144,13 +149,30 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
     const valueArray: PostResponse[] = [];
 
     for (const lemmy of firstPost.settings.subreddit) {
+      console.log({
+        community_id: +lemmy.value.id,
+        name: lemmy.value.title,
+        body: firstPost.message,
+        ...(lemmy.value.url ? { url: lemmy.value.url } : {}),
+        ...(firstPost.media?.length
+          ? { custom_thumbnail: firstPost.media[0].path }
+          : {}),
+        nsfw: false,
+      });
       const { post_view, ...all } = await (
         await fetch(body.service + '/api/v3/post', {
           body: JSON.stringify({
             community_id: +lemmy.value.id,
             name: lemmy.value.title,
             body: firstPost.message,
-            ...(lemmy.value.url ? { url: lemmy.value.url } : {}),
+            ...(lemmy.value.url
+              ? {
+                  url:
+                    lemmy.value.url.indexOf('http') === -1
+                      ? `https://${lemmy.value.url}`
+                      : lemmy.value.url,
+                }
+              : {}),
             ...(firstPost.media?.length
               ? { custom_thumbnail: firstPost.media[0].path }
               : {}),
@@ -203,6 +225,16 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
     }));
   }
 
+  @Tool({
+    description: 'Search for Lemmy communities by keyword',
+    dataSchema: [
+      {
+        key: 'word',
+        type: 'string',
+        description: 'Keyword to search for',
+      },
+    ],
+  })
   async subreddits(
     accessToken: string,
     data: any,

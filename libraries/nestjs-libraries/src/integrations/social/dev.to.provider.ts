@@ -8,6 +8,8 @@ import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.ab
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { DevToSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dev.to.settings.dto';
+import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 
 export class DevToProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 3; // Dev.to has moderate publishing limits
@@ -16,6 +18,10 @@ export class DevToProvider extends SocialAbstract implements SocialProvider {
   isBetweenSteps = false;
   editor = 'markdown' as const;
   scopes = [] as string[];
+  maxLength() {
+    return 100000;
+  }
+  dto = DevToSettingsDto;
 
   async generateAuthUrl() {
     const state = makeId(6);
@@ -30,7 +36,7 @@ export class DevToProvider extends SocialAbstract implements SocialProvider {
     if (body.indexOf('Canonical url has already been taken') > -1) {
       return {
         type: 'bad-body' as const,
-        value: 'Canonical URL already exists'
+        value: 'Canonical URL already exists',
       };
     }
 
@@ -89,6 +95,7 @@ export class DevToProvider extends SocialAbstract implements SocialProvider {
     }
   }
 
+  @Tool({ description: 'Tag list', dataSchema: [] })
   async tags(token: string) {
     const tags = await (
       await fetch('https://dev.to/api/tags?per_page=1000&page=1', {
@@ -101,6 +108,7 @@ export class DevToProvider extends SocialAbstract implements SocialProvider {
     return tags.map((p: any) => ({ value: p.id, label: p.name }));
   }
 
+  @Tool({ description: 'Organization list', dataSchema: [] })
   async organizations(token: string) {
     const orgs = await (
       await fetch('https://dev.to/api/articles/me/all?per_page=1000', {
