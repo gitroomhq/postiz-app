@@ -560,6 +560,15 @@ export class IntegrationsController {
     return this._integrationService.saveLinkedin(org.id, id, body.page);
   }
 
+  @Post('/gmb/:id')
+  async saveGmb(
+    @Param('id') id: string,
+    @Body() body: { id: string; accountName: string; locationName: string },
+    @GetOrgFromRequest() org: Organization
+  ) {
+    return this._integrationService.saveGmb(org.id, id, body);
+  }
+
   @Post('/enable')
   enableChannel(
     @GetOrgFromRequest() org: Organization,
