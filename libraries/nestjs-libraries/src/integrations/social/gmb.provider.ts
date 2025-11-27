@@ -480,9 +480,14 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
       const endDate = dayjs().format('YYYY-MM-DD');
       const startDate = dayjs().subtract(date, 'day').format('YYYY-MM-DD');
 
+      // id is in format: accounts/{accountId}/locations/{locationId}
+      // Business Profile Performance API expects: locations/{locationId}
+      const locationId = id.split('/locations/')[1];
+      const locationPath = `locations/${locationId}`;
+
       // Use the Business Profile Performance API
       const response = await fetch(
-        `https://businessprofileperformance.googleapis.com/v1/${id}:getDailyMetricsTimeSeries?dailyMetric=WEBSITE_CLICKS&dailyMetric=CALL_CLICKS&dailyMetric=BUSINESS_DIRECTION_REQUESTS&dailyMetric=BUSINESS_IMPRESSIONS_DESKTOP_MAPS&dailyMetric=BUSINESS_IMPRESSIONS_MOBILE_MAPS&dailyRange.startDate.year=${dayjs(
+        `https://businessprofileperformance.googleapis.com/v1/${locationPath}:fetchMultiDailyMetricsTimeSeries?dailyMetrics=WEBSITE_CLICKS&dailyMetrics=CALL_CLICKS&dailyMetrics=BUSINESS_DIRECTION_REQUESTS&dailyMetrics=BUSINESS_IMPRESSIONS_DESKTOP_MAPS&dailyMetrics=BUSINESS_IMPRESSIONS_MOBILE_MAPS&dailyRange.startDate.year=${dayjs(
           startDate
         ).year()}&dailyRange.startDate.month=${
           dayjs(startDate).month() + 1
@@ -502,7 +507,11 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
 
       const data = await response.json();
 
-      if (!data.timeSeries || data.timeSeries.length === 0) {
+      // Response structure: { multiDailyMetricTimeSeries: [{ dailyMetricTimeSeries: [...] }] }
+      const dailyMetricTimeSeries =
+        data.multiDailyMetricTimeSeries?.[0]?.dailyMetricTimeSeries;
+
+      if (!dailyMetricTimeSeries || dailyMetricTimeSeries.length === 0) {
         return [];
       }
 
@@ -516,18 +525,19 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
 
       const analytics: AnalyticsData[] = [];
 
-      for (const series of data.timeSeries) {
+      for (const series of dailyMetricTimeSeries) {
         const metricName = series.dailyMetric;
         const label = metricLabels[metricName] || metricName;
 
-        const dataPoints =
-          series.timeSeries?.datedValues?.map((dv: any) => ({
-            total: dv.value || 0,
-            date: `${dv.date.year}-${String(dv.date.month).padStart(
-              2,
-              '0'
-            )}-${String(dv.date.day).padStart(2, '0')}`,
-          })) || [];
+        const datedValues = series.timeSeries?.datedValues || [];
+
+        const dataPoints = datedValues.map((dv: any) => ({
+          total: parseInt(dv.value || '0', 10),
+          date: `${dv.date.year}-${String(dv.date.month).padStart(
+            2,
+            '0'
+          )}-${String(dv.date.day).padStart(2, '0')}`,
+        }));
 
         if (dataPoints.length > 0) {
           analytics.push({
