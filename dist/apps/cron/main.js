@@ -2648,31 +2648,45 @@ let IntegrationService = class IntegrationService {
             ? new Date(Date.now() + expiresIn * 1000)
             : undefined;
         try {
-            await this._socialTokenRepo.model.socialToken.upsert({
+            // First try to find existing record
+            const existingToken = await this._socialTokenRepo.model.socialToken.findUnique({
                 where: {
                     identifier_businessId: {
                         identifier: provider,
                         businessId: internalId,
                     }
-                },
-                create: {
-                    identifier: provider,
-                    name: name,
-                    businessId: internalId,
-                    organizationId: orgId,
-                    accessToken: accessToken || null,
-                    refreshToken: refreshToken || null,
-                    tokenExpiry: tokenExpiry,
-                },
-                update: {
-                    name: name,
-                    organizationId: orgId,
-                    accessToken: accessToken || null,
-                    refreshToken: refreshToken || null,
-                    tokenExpiry: tokenExpiry,
-                    updatedAt: new Date(),
-                },
+                }
             });
+            if (existingToken) {
+                // Update existing record
+                await this._socialTokenRepo.model.socialToken.update({
+                    where: {
+                        id: existingToken.id
+                    },
+                    data: {
+                        name: name,
+                        organizationId: orgId,
+                        accessToken: accessToken || null,
+                        refreshToken: refreshToken || null,
+                        tokenExpiry: tokenExpiry,
+                        updatedAt: new Date(),
+                    },
+                });
+            }
+            else {
+                // Create new record
+                await this._socialTokenRepo.model.socialToken.create({
+                    data: {
+                        identifier: provider,
+                        name: name,
+                        businessId: internalId,
+                        organizationId: orgId,
+                        accessToken: accessToken || null,
+                        refreshToken: refreshToken || null,
+                        tokenExpiry: tokenExpiry,
+                    },
+                });
+            }
         }
         catch (error) {
             console.error(`Failed to sync tokens for provider ${provider}:`, error);
@@ -2705,6 +2719,7 @@ let IntegrationService = class IntegrationService {
             return { refreshToken, accessToken, expiresIn };
         }
         catch (e) {
+            console.error('Token refresh failed:', e);
             return false;
         }
     }
@@ -2721,15 +2736,22 @@ let IntegrationService = class IntegrationService {
     async refreshTokens() {
         const integrations = await this._integrationRepository.needsToBeRefreshed();
         for (const integration of integrations) {
-            const provider = await this._integrationManager.getSocialIntegration(integration.providerIdentifier, integration.organizationId, integration.customerId);
-            const data = await this.refreshToken(provider, integration.refreshToken);
-            if (!data) {
+            try {
+                const provider = await this._integrationManager.getSocialIntegration(integration.providerIdentifier, integration.organizationId, integration.customerId);
+                const data = await this.refreshToken(provider, integration.refreshToken);
+                if (!data) {
+                    await this.informAboutRefreshError(integration.organizationId, integration);
+                    await this._integrationRepository.refreshNeeded(integration.organizationId, integration.id);
+                    continue; // Continue with next integration instead of returning
+                }
+                const { refreshToken, accessToken, expiresIn } = data;
+                await this.createOrUpdateIntegration(undefined, !!provider.oneTimeToken, integration.organizationId, integration.customerId, integration.name, undefined, 'social', integration.internalId, integration.providerIdentifier, accessToken, refreshToken, expiresIn);
+            }
+            catch (error) {
+                console.error(`Failed to refresh token for integration ${integration.id}:`, error);
                 await this.informAboutRefreshError(integration.organizationId, integration);
                 await this._integrationRepository.refreshNeeded(integration.organizationId, integration.id);
-                return;
             }
-            const { refreshToken, accessToken, expiresIn } = data;
-            await this.createOrUpdateIntegration(undefined, !!provider.oneTimeToken, integration.organizationId, integration.customerId, integration.name, undefined, 'social', integration.internalId, integration.providerIdentifier, accessToken, refreshToken, expiresIn);
         }
     }
     async disableChannel(org, id) {
@@ -2798,12 +2820,17 @@ let IntegrationService = class IntegrationService {
         const facebook = await this._integrationManager.getSocialIntegration('facebook', getIntegration?.organizationId, getIntegration?.customerId);
         const getIntegrationInformation = await facebook.fetchPageInformation(getIntegration?.token, page);
         await this.checkForDeletedOnceAndUpdate(org, getIntegrationInformation.id);
+        // Store user token with page ID in refresh token format: userToken::pageId
+        const userToken = getIntegration?.token; // This is the user token
+        const pageId = getIntegrationInformation.id;
+        const formattedRefreshToken = `${userToken}::${pageId}`;
         await this._integrationRepository.updateIntegration(id, {
             picture: getIntegrationInformation.picture,
             internalId: getIntegrationInformation.id,
             name: getIntegrationInformation.name,
             inBetweenSteps: false,
-            token: getIntegrationInformation.access_token,
+            token: getIntegrationInformation.access_token, // Page token
+            refreshToken: formattedRefreshToken, // User token with page ID
             profile: getIntegrationInformation.username,
         });
         return { success: true };
@@ -2869,6 +2896,9 @@ let IntegrationService = class IntegrationService {
     }
     customers(orgId) {
         return this._integrationRepository.customers(orgId);
+    }
+    getRefreshTokenIntegration(orgId, refreshToken) {
+        return this._integrationRepository.getRefreshTokenIntegration(orgId, refreshToken);
     }
     getPlugsByIntegrationId(org, integrationId) {
         return this._integrationRepository.getPlugsByIntegrationId(org, integrationId);
@@ -3292,6 +3322,14 @@ let IntegrationRepository = class IntegrationRepository {
             where: {
                 orgId,
                 deletedAt: null,
+            },
+        });
+    }
+    getRefreshTokenIntegration(orgId, refreshToken) {
+        return this._integration.model.integration.findFirst({
+            where: {
+                organizationId: orgId,
+                refreshToken,
             },
         });
     }
@@ -4552,7 +4590,7 @@ class LinkedinProvider extends social_abstract_1.SocialAbstract {
             headers: {
                 'Content-Type': 'application/json',
                 'X-Restli-Protocol-Version': '2.0.0',
-                'LinkedIn-Version': '202410',
+                'LinkedIn-Version': '202501',
                 Authorization: `Bearer ${token}`,
             },
         })).json();
@@ -4569,7 +4607,7 @@ class LinkedinProvider extends social_abstract_1.SocialAbstract {
             headers: {
                 'Content-Type': 'application/json',
                 'X-Restli-Protocol-Version': '2.0.0',
-                'LinkedIn-Version': '202410',
+                'LinkedIn-Version': '202501',
                 Authorization: `Bearer ${accessToken}`,
             },
             body: JSON.stringify({
@@ -4617,7 +4655,7 @@ class LinkedinProvider extends social_abstract_1.SocialAbstract {
                 }),
                 headers: {
                     'X-Restli-Protocol-Version': '2.0.0',
-                    'LinkedIn-Version': '202410',
+                    'LinkedIn-Version': '202501',
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${accessToken}`,
                 },
@@ -10583,10 +10621,35 @@ class FacebookProvider extends social_abstract_1.SocialAbstract {
         return this.config;
     }
     async refreshToken(refresh_token) {
+        // Parse refresh token to extract user token and page ID
+        // Format: userToken::pageId
+        const parts = refresh_token.split('::');
+        const userToken = parts[0];
+        const pageId = parts[1];
+        // Exchange long-lived user token for a new long-lived user token (extends expiry)
+        const { access_token, expires_in } = await (await this.fetch('https://graph.facebook.com/v20.0/oauth/access_token' +
+            '?grant_type=fb_exchange_token' +
+            `&client_id=${this.config.FACEBOOK_APP_ID}` +
+            `&client_secret=${this.config.FACEBOOK_APP_SECRET}` +
+            `&fb_exchange_token=${userToken}`)).json();
+        // If we have a page ID, fetch the page access token
+        if (pageId) {
+            const pageInfo = await this.fetchPageInformation(access_token, pageId);
+            return {
+                accessToken: pageInfo.access_token, // Page token
+                refreshToken: `${access_token}::${pageId}`, // Store new user token with page ID
+                expiresIn: expires_in || (60 * 24 * 60 * 60), // 60 days in seconds
+                id: pageInfo.id,
+                name: pageInfo.name,
+                picture: pageInfo.picture,
+                username: pageInfo.username,
+            };
+        }
+        // Fallback for tokens without page ID (shouldn't happen for pages)
         return {
-            refreshToken: '',
-            expiresIn: 0,
-            accessToken: '',
+            accessToken: access_token,
+            refreshToken: access_token,
+            expiresIn: expires_in || (60 * 24 * 60 * 60),
             id: '',
             name: '',
             picture: '',
@@ -10612,8 +10675,8 @@ class FacebookProvider extends social_abstract_1.SocialAbstract {
         return {
             id: information.id,
             name: information.name,
-            accessToken: information.access_token,
-            refreshToken: information.access_token,
+            accessToken: information.access_token, // Page token
+            refreshToken: `${accessToken}::${requiredId}`, // User token with page ID
             expiresIn: (0, dayjs_1.default)().add(59, 'days').unix() - (0, dayjs_1.default)().unix(),
             picture: information.picture,
             username: information.username,
@@ -10810,10 +10873,16 @@ class InstagramProvider extends social_abstract_1.SocialAbstract {
         return this.config;
     }
     async refreshToken(refresh_token) {
+        // Exchange long-lived token for a new long-lived token (extends expiry)
+        const { access_token, expires_in } = await (await this.fetch('https://graph.facebook.com/v20.0/oauth/access_token' +
+            '?grant_type=fb_exchange_token' +
+            `&client_id=${this.config.FACEBOOK_APP_ID}` +
+            `&client_secret=${this.config.FACEBOOK_APP_SECRET}` +
+            `&fb_exchange_token=${refresh_token}`)).json();
         return {
-            refreshToken: '',
-            expiresIn: 0,
-            accessToken: '',
+            accessToken: access_token,
+            refreshToken: access_token, // Instagram uses same token
+            expiresIn: expires_in || (60 * 24 * 60 * 60), // 60 days in seconds
             id: '',
             name: '',
             picture: '',
@@ -11990,7 +12059,7 @@ class LinkedinPageProvider extends linkedin_provider_1.LinkedinProvider {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
                 'X-Restli-Protocol-Version': '2.0.0',
-                'LinkedIn-Version': '202410',
+                'LinkedIn-Version': '202501',
             },
         })).json();
         return (elements || []).map((e) => ({
@@ -12150,7 +12219,7 @@ class LinkedinPageProvider extends linkedin_provider_1.LinkedinProvider {
             headers: {
                 'X-Restli-Protocol-Version': '2.0.0',
                 'Content-Type': 'application/json',
-                'LinkedIn-Version': '202410',
+                'LinkedIn-Version': '202501',
                 Authorization: `Bearer ${integration.token}`,
             },
         })).json();
@@ -12190,7 +12259,7 @@ class LinkedinPageProvider extends linkedin_provider_1.LinkedinProvider {
             headers: {
                 'X-Restli-Protocol-Version': '2.0.0',
                 'Content-Type': 'application/json',
-                'LinkedIn-Version': '202410',
+                'LinkedIn-Version': '202501',
                 Authorization: `Bearer ${integration.token}`,
             },
         })).json();
@@ -12307,10 +12376,14 @@ class ThreadsProvider extends social_abstract_1.SocialAbstract {
         return this.config;
     }
     async refreshToken(refresh_token) {
+        // Refresh Threads long-lived token (extends expiry for another 60 days)
+        const { access_token, expires_in } = await (await this.fetch('https://graph.threads.net/refresh_access_token' +
+            '?grant_type=th_refresh_token' +
+            `&access_token=${refresh_token}`)).json();
         return {
-            refreshToken: '',
-            expiresIn: 0,
-            accessToken: '',
+            accessToken: access_token,
+            refreshToken: access_token, // Threads uses same token
+            expiresIn: expires_in || (60 * 24 * 60 * 60), // 60 days in seconds
             id: '',
             name: '',
             picture: '',
@@ -14118,6 +14191,26 @@ let GbpProvider = class GbpProvider {
         if (!params.code) {
             return 'Missing authorization code';
         }
+        console.log('🔍 GBP Authenticate - Received customerId:', params.customerId);
+        // If customerId is provided in params, update the class property
+        if (params.customerId) {
+            this.currentCustomerId = params.customerId;
+            // Fetch customer details to get the name for location matching
+            try {
+                const customer = await this._customersRepository.getCustomerByPKId(params.customerId);
+                this.currentOrgId = customer?.orgId || '';
+                this.currentCustomerName = customer?.name || 'GBP User';
+                console.log('✅ Using customer name for location matching:', this.currentCustomerName);
+            }
+            catch (e) {
+                console.error('❌ Error fetching customer details:', e);
+                this.currentOrgId = '';
+                this.currentCustomerName = 'GBP User';
+            }
+        }
+        else {
+            console.warn('⚠️ No customerId provided in authenticate params');
+        }
         // Add delay to avoid rate limiting (10 seconds)
         console.log('⏳ Waiting 10 seconds to avoid rate limiting...');
         await new Promise(resolve => setTimeout(resolve, 10000));
@@ -14228,6 +14321,10 @@ let GbpProvider = class GbpProvider {
     }
     async reConnect(refreshToken, connectionId, integrationId) {
         console.log('🔄 GBP reConnect: Refreshing token for integration:', integrationId);
+        // Validate inputs
+        if (!refreshToken) {
+            throw new Error('Refresh token is required for reconnection');
+        }
         try {
             const oauth2Client = new googleapis_1.google.auth.OAuth2(this.config.GOOGLE_CLIENT_ID, this.config.GOOGLE_CLIENT_SECRET);
             oauth2Client.setCredentials({ refresh_token: refreshToken });
@@ -14251,7 +14348,11 @@ let GbpProvider = class GbpProvider {
         }
         catch (error) {
             console.error('❌ GBP reConnect failed:', error);
-            throw error;
+            // Handle specific error cases
+            if (error.response?.data?.error === 'invalid_grant') {
+                throw new Error('Refresh token is invalid or expired. Please reconnect your Google Business Profile account.');
+            }
+            throw new Error(`Failed to refresh token: ${error.message || 'Unknown error'}`);
         }
     }
     async post(id, accessToken, postDetails, integration) {
@@ -18428,7 +18529,7 @@ let InstagramInsightsTask = class InstagramInsightsTask {
 };
 exports.InstagramInsightsTask = InstagramInsightsTask;
 tslib_1.__decorate([
-    (0, schedule_1.Cron)('0 0 * * *') // for midnight
+    (0, schedule_1.Cron)('0 2 * * *') // Runs at 2:00 AM IST daily
     ,
     tslib_1.__metadata("design:type", Function),
     tslib_1.__metadata("design:paramtypes", []),
@@ -18535,7 +18636,7 @@ let YoutubeInsightsTask = class YoutubeInsightsTask {
 };
 exports.YoutubeInsightsTask = YoutubeInsightsTask;
 tslib_1.__decorate([
-    (0, schedule_1.Cron)('20 0 * * *') // Runs at 12:20 AM IST daily
+    (0, schedule_1.Cron)('0 7 * * *') // Runs at 7:00 AM IST daily
     ,
     tslib_1.__metadata("design:type", Function),
     tslib_1.__metadata("design:paramtypes", []),
@@ -18567,7 +18668,7 @@ let FacebookInsightsTask = class FacebookInsightsTask {
         this._socialTokenRepo = _socialTokenRepo;
     }
     async handleFacebookInsights() {
-        console.log('⏰ Facebook Insights Cron job triggered');
+        console.log('⏰ Facebook Insights - TEST RUN');
         try {
             const tokenEntry = await this._socialTokenRepo.model.socialToken.findFirst({
                 where: {
@@ -18675,7 +18776,7 @@ let FacebookInsightsTask = class FacebookInsightsTask {
 };
 exports.FacebookInsightsTask = FacebookInsightsTask;
 tslib_1.__decorate([
-    (0, schedule_1.Cron)('0 0 * * *') // Runs every day at midnight
+    (0, schedule_1.Cron)('0 1 * * *') // Runs at 1:00 AM IST daily
     ,
     tslib_1.__metadata("design:type", Function),
     tslib_1.__metadata("design:paramtypes", []),
@@ -18842,7 +18943,7 @@ let LinkedInInsightsTask = class LinkedInInsightsTask {
 };
 exports.LinkedInInsightsTask = LinkedInInsightsTask;
 tslib_1.__decorate([
-    (0, schedule_1.Cron)('0 0 * * *') // for midnight
+    (0, schedule_1.Cron)('0 5 * * *') // Runs at 5:00 AM IST daily
     ,
     tslib_1.__metadata("design:type", Function),
     tslib_1.__metadata("design:paramtypes", []),
@@ -18874,7 +18975,7 @@ let XInsightsTask = class XInsightsTask {
         this._socialTokenRepo = _socialTokenRepo;
     }
     async handleXInsights() {
-        console.log('⏰ Twitter/X cron triggered');
+        console.log('⏰ X (Twitter) Insights - TEST RUN');
         try {
             console.log("STEP 1: Fetching X integrations...");
             const integrationsRes = await axios_1.default.get(`${process.env.BACKEND_INTERNAL_URL}/integrations/list`, {
@@ -18991,7 +19092,7 @@ let XInsightsTask = class XInsightsTask {
 };
 exports.XInsightsTask = XInsightsTask;
 tslib_1.__decorate([
-    (0, schedule_1.Cron)('0 0 * * *') // for midnight
+    (0, schedule_1.Cron)('0 4 * * *') // Runs at 4:00 AM IST daily
     ,
     tslib_1.__metadata("design:type", Function),
     tslib_1.__metadata("design:paramtypes", []),
@@ -19024,7 +19125,7 @@ let GBPInsightsTask = class GBPInsightsTask {
         this._socialTokenRepo = _socialTokenRepo;
     }
     async handleGBPInsights() {
-        console.log('⏰ GBP Cron job triggered');
+        console.log('⏰ GBP Insights - TEST RUN');
         try {
             // 1️⃣ Get GBP integrations
             const integrationsRes = await axios_1.default.get(`${process.env.BACKEND_INTERNAL_URL}/integrations/list`, {
@@ -19051,11 +19152,71 @@ let GBPInsightsTask = class GBPInsightsTask {
                 console.log('❌ No valid GBP access token found.');
                 return;
             }
-            const accessToken = tokenEntry.accessToken;
+            // Log token status for debugging
+            if (tokenEntry.tokenExpiry) {
+                const timeUntilExpiry = (tokenEntry.tokenExpiry.getTime() - Date.now()) / 1000 / 60;
+                if (timeUntilExpiry > 0) {
+                    console.log(`🕐 Token expires in ${timeUntilExpiry.toFixed(2)} minutes`);
+                }
+                else {
+                    console.log(`⏰ Token expired ${Math.abs(timeUntilExpiry).toFixed(2)} minutes ago`);
+                }
+            }
+            else {
+                console.log('⚠️ No token expiry information available');
+            }
+            // Check if token is expired or expires soon (with 5-minute buffer)
+            // This prevents race conditions where token expires during API calls
+            const bufferTime = 5 * 60 * 1000; // 5 minutes in milliseconds
+            const expiryThreshold = new Date(Date.now() + bufferTime);
+            let accessToken = tokenEntry.accessToken;
+            if (tokenEntry.tokenExpiry && tokenEntry.tokenExpiry < expiryThreshold) {
+                console.log('⚠️ Access token expired or expiring soon (within 5 minutes), attempting to refresh...');
+                try {
+                    // Call the backend API to refresh the token
+                    const refreshRes = await axios_1.default.post(`${process.env.BACKEND_INTERNAL_URL}/integrations/refresh-token`, { refreshToken: tokenEntry.refreshToken }, {
+                        headers: {
+                            cookie: process.env.INTERNEL_TOKEN,
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                    if (refreshRes.data?.accessToken) {
+                        accessToken = refreshRes.data.accessToken;
+                        console.log('✅ Token refreshed successfully - valid for next 60 minutes');
+                    }
+                    else {
+                        console.log('❌ Failed to refresh token');
+                        return;
+                    }
+                }
+                catch (refreshError) {
+                    console.log('❌ Error refreshing token:', refreshError.message);
+                    return;
+                }
+            }
+            else {
+                console.log('✅ Token is valid and fresh - no refresh needed');
+            }
             for (const account of gbpAccounts) {
                 const locationId = account?.internalId;
                 const orgId = account.customer?.orgId;
                 const customerId = account?.customerId;
+                // Validate required fields
+                if (!locationId) {
+                    console.log('⚠️ Skipping account with missing internalId');
+                    continue;
+                }
+                if (!locationId.startsWith('locations/')) {
+                    console.log(`⚠️ Skipping invalid locationId format: ${locationId} (should start with "locations/")`);
+                    continue;
+                }
+                if (!orgId) {
+                    console.log(`⚠️ Skipping ${locationId} - missing organizationId`);
+                    continue;
+                }
+                console.log(`\n📍 Processing location: ${locationId}`);
+                console.log(`   Organization: ${orgId}`);
+                console.log(`   Customer: ${customerId || 'none'}`);
                 // 2️⃣ Date range: use YESTERDAY only!
                 const yesterday = (0, date_fns_1.subDays)(new Date(), 1);
                 const start_date = {
@@ -19080,110 +19241,133 @@ let GBPInsightsTask = class GBPInsightsTask {
                     continue;
                 }
                 // 4️⃣ Fetch Impressions - All devices & surfaces
-                const impressionsRes = await axios_1.default.get(`https://businessprofileperformance.googleapis.com/v1/${locationId}:fetchMultiDailyMetricsTimeSeries`, {
-                    params: {
-                        dailyMetrics: [
-                            'BUSINESS_IMPRESSIONS_DESKTOP_SEARCH',
-                            'BUSINESS_IMPRESSIONS_MOBILE_SEARCH',
-                            'BUSINESS_IMPRESSIONS_DESKTOP_MAPS',
-                            'BUSINESS_IMPRESSIONS_MOBILE_MAPS'
-                        ],
-                        'dailyRange.start_date.year': start_date.year,
-                        'dailyRange.start_date.month': start_date.month,
-                        'dailyRange.start_date.day': start_date.day,
-                        'dailyRange.end_date.year': end_date.year,
-                        'dailyRange.end_date.month': end_date.month,
-                        'dailyRange.end_date.day': end_date.day,
-                    },
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                    },
-                    paramsSerializer: params => {
-                        return qs_1.default.stringify(params, { arrayFormat: 'repeat' });
-                    }
-                });
-                const impressionsData = impressionsRes.data?.timeSeries || [];
                 let impressionsDesktopSearch = 0;
                 let impressionsMobileSearch = 0;
                 let impressionsDesktopMaps = 0;
                 let impressionsMobileMaps = 0;
-                for (const metric of impressionsData) {
-                    const total = metric?.timeSeries?.reduce((sum, d) => sum + d.value, 0);
-                    switch (metric.metric) {
-                        case 'BUSINESS_IMPRESSIONS_DESKTOP_SEARCH':
-                            impressionsDesktopSearch = total;
-                            break;
-                        case 'BUSINESS_IMPRESSIONS_MOBILE_SEARCH':
-                            impressionsMobileSearch = total;
-                            break;
-                        case 'BUSINESS_IMPRESSIONS_DESKTOP_MAPS':
-                            impressionsDesktopMaps = total;
-                            break;
-                        case 'BUSINESS_IMPRESSIONS_MOBILE_MAPS':
-                            impressionsMobileMaps = total;
-                            break;
+                let impressionsSearch = 0;
+                let impressionsMaps = 0;
+                try {
+                    const impressionsRes = await axios_1.default.get(`https://businessprofileperformance.googleapis.com/v1/${locationId}:fetchMultiDailyMetricsTimeSeries`, {
+                        params: {
+                            dailyMetrics: [
+                                'BUSINESS_IMPRESSIONS_DESKTOP_SEARCH',
+                                'BUSINESS_IMPRESSIONS_MOBILE_SEARCH',
+                                'BUSINESS_IMPRESSIONS_DESKTOP_MAPS',
+                                'BUSINESS_IMPRESSIONS_MOBILE_MAPS'
+                            ],
+                            'dailyRange.start_date.year': start_date.year,
+                            'dailyRange.start_date.month': start_date.month,
+                            'dailyRange.start_date.day': start_date.day,
+                            'dailyRange.end_date.year': end_date.year,
+                            'dailyRange.end_date.month': end_date.month,
+                            'dailyRange.end_date.day': end_date.day,
+                        },
+                        headers: {
+                            Authorization: `Bearer ${accessToken}`,
+                        },
+                        paramsSerializer: params => {
+                            return qs_1.default.stringify(params, { arrayFormat: 'repeat' });
+                        }
+                    });
+                    const impressionsData = impressionsRes.data?.timeSeries || [];
+                    for (const metric of impressionsData) {
+                        const total = metric?.timeSeries?.reduce((sum, d) => sum + d.value, 0);
+                        switch (metric.metric) {
+                            case 'BUSINESS_IMPRESSIONS_DESKTOP_SEARCH':
+                                impressionsDesktopSearch = total;
+                                break;
+                            case 'BUSINESS_IMPRESSIONS_MOBILE_SEARCH':
+                                impressionsMobileSearch = total;
+                                break;
+                            case 'BUSINESS_IMPRESSIONS_DESKTOP_MAPS':
+                                impressionsDesktopMaps = total;
+                                break;
+                            case 'BUSINESS_IMPRESSIONS_MOBILE_MAPS':
+                                impressionsMobileMaps = total;
+                                break;
+                        }
                     }
+                    impressionsSearch = impressionsDesktopSearch + impressionsMobileSearch;
+                    impressionsMaps = impressionsDesktopMaps + impressionsMobileMaps;
+                    console.log({
+                        impressionsDesktopSearch,
+                        impressionsMobileSearch,
+                        impressionsDesktopMaps,
+                        impressionsMobileMaps,
+                        impressionsSearch,
+                        impressionsMaps,
+                    });
                 }
-                const impressionsSearch = impressionsDesktopSearch + impressionsMobileSearch;
-                const impressionsMaps = impressionsDesktopMaps + impressionsMobileMaps;
-                const impressionsAll = impressionsSearch + impressionsMaps;
-                console.log({
-                    impressionsDesktopSearch,
-                    impressionsMobileSearch,
-                    impressionsDesktopMaps,
-                    impressionsMobileMaps,
-                    impressionsSearch,
-                    impressionsMaps,
-                    impressionsAll,
-                });
+                catch (impressionsError) {
+                    console.log(`⚠️ Could not fetch impressions for ${locationId}: ${impressionsError?.response?.data?.error?.message || impressionsError.message}`);
+                    // Continue with zero values if permission denied
+                }
                 // 5️⃣ Fetch Clicks
-                const clicksRes = await axios_1.default.get(`https://businessprofileperformance.googleapis.com/v1/${locationId}:fetchMultiDailyMetricsTimeSeries`, {
-                    params: {
-                        dailyMetrics: [
-                            'WEBSITE_CLICKS',
-                            'CALL_CLICKS',
-                            'BUSINESS_DIRECTION_REQUESTS',
-                        ],
-                        'dailyRange.start_date.year': start_date.year,
-                        'dailyRange.start_date.month': start_date.month,
-                        'dailyRange.start_date.day': start_date.day,
-                        'dailyRange.end_date.year': end_date.year,
-                        'dailyRange.end_date.month': end_date.month,
-                        'dailyRange.end_date.day': end_date.day,
-                    },
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                    },
-                    paramsSerializer: params => {
-                        return qs_1.default.stringify(params, { arrayFormat: 'repeat' });
-                    }
-                });
-                const clicksData = clicksRes.data?.timeSeries || [];
                 let websiteClicks = 0;
                 let phoneClicks = 0;
                 let directionRequests = 0;
-                for (const metric of clicksData) {
-                    if (metric.metric === 'WEBSITE_CLICKS') {
-                        websiteClicks = metric?.timeSeries?.reduce((sum, d) => sum + d.value, 0);
-                    }
-                    if (metric.metric === 'CALL_CLICKS') {
-                        phoneClicks = metric?.timeSeries?.reduce((sum, d) => sum + d.value, 0);
-                    }
-                    if (metric.metric === 'BUSINESS_DIRECTION_REQUESTS') {
-                        directionRequests = metric?.timeSeries?.reduce((sum, d) => sum + d.value, 0);
+                try {
+                    const clicksRes = await axios_1.default.get(`https://businessprofileperformance.googleapis.com/v1/${locationId}:fetchMultiDailyMetricsTimeSeries`, {
+                        params: {
+                            dailyMetrics: [
+                                'WEBSITE_CLICKS',
+                                'CALL_CLICKS',
+                                'BUSINESS_DIRECTION_REQUESTS',
+                            ],
+                            'dailyRange.start_date.year': start_date.year,
+                            'dailyRange.start_date.month': start_date.month,
+                            'dailyRange.start_date.day': start_date.day,
+                            'dailyRange.end_date.year': end_date.year,
+                            'dailyRange.end_date.month': end_date.month,
+                            'dailyRange.end_date.day': end_date.day,
+                        },
+                        headers: {
+                            Authorization: `Bearer ${accessToken}`,
+                        },
+                        paramsSerializer: params => {
+                            return qs_1.default.stringify(params, { arrayFormat: 'repeat' });
+                        }
+                    });
+                    const clicksData = clicksRes.data?.timeSeries || [];
+                    for (const metric of clicksData) {
+                        if (metric.metric === 'WEBSITE_CLICKS') {
+                            websiteClicks = metric?.timeSeries?.reduce((sum, d) => sum + d.value, 0);
+                        }
+                        if (metric.metric === 'CALL_CLICKS') {
+                            phoneClicks = metric?.timeSeries?.reduce((sum, d) => sum + d.value, 0);
+                        }
+                        if (metric.metric === 'BUSINESS_DIRECTION_REQUESTS') {
+                            directionRequests = metric?.timeSeries?.reduce((sum, d) => sum + d.value, 0);
+                        }
                     }
                 }
+                catch (clicksError) {
+                    console.log(`⚠️ Could not fetch clicks for ${locationId}: ${clicksError?.response?.data?.error?.message || clicksError.message}`);
+                    // Continue with zero values if permission denied
+                }
                 // 6️⃣ Fetch Reviews
-                const reviewsRes = await axios_1.default.get(`https://mybusiness.googleapis.com/v4/accounts/${process.env.GBP_ACCOUNT_ID}/${locationId}/reviews`, {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                    },
-                });
-                const reviews = reviewsRes.data?.reviews || [];
-                const totalReviews = reviews.length;
-                const avgRating = reviews.length
-                    ? reviews.reduce((sum, r) => sum + (Number(r.starRating) || 0), 0) / reviews.length
-                    : 0;
+                // Note: Reviews endpoint requires the full location path (e.g., accounts/12345/locations/67890)
+                // The locationId already contains the full path like "locations/1234567890"
+                let reviews = [];
+                let totalReviews = 0;
+                let avgRating = 0;
+                try {
+                    const reviewsRes = await axios_1.default.get(`https://mybusiness.googleapis.com/v4/${locationId}/reviews`, {
+                        headers: {
+                            Authorization: `Bearer ${accessToken}`,
+                        },
+                    });
+                    reviews = reviewsRes.data?.reviews || [];
+                    totalReviews = reviews.length;
+                    avgRating = reviews.length
+                        ? reviews.reduce((sum, r) => sum + (Number(r.starRating) || 0), 0) / reviews.length
+                        : 0;
+                }
+                catch (reviewError) {
+                    console.log(`⚠️ Could not fetch reviews for ${locationId}: ${reviewError?.response?.data?.error?.message || reviewError.message}`);
+                    // Continue without reviews data if permission denied
+                }
                 // 7️⃣ Insert daily record
                 await this._gbpInsightsRepository.model.gbpInsight.create({
                     data: {
@@ -19211,7 +19395,7 @@ let GBPInsightsTask = class GBPInsightsTask {
 };
 exports.GBPInsightsTask = GBPInsightsTask;
 tslib_1.__decorate([
-    (0, schedule_1.Cron)('20 0 * * *') // Runs at 12:20 AM IST daily
+    (0, schedule_1.Cron)('0 6 * * *') // Runs at 6:00 AM IST daily
     ,
     tslib_1.__metadata("design:type", Function),
     tslib_1.__metadata("design:paramtypes", []),
@@ -19419,7 +19603,7 @@ let WebsiteInsightsTask = class WebsiteInsightsTask {
 };
 exports.WebsiteInsightsTask = WebsiteInsightsTask;
 tslib_1.__decorate([
-    (0, schedule_1.Cron)('20 0 * * *') // Runs at 12:20 AM IST daily
+    (0, schedule_1.Cron)('0 8 * * *') // Runs at 8:00 AM IST daily
     ,
     tslib_1.__metadata("design:type", Function),
     tslib_1.__metadata("design:paramtypes", []),
@@ -19436,7 +19620,7 @@ exports.WebsiteInsightsTask = WebsiteInsightsTask = tslib_1.__decorate([
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 
-var _a, _b;
+var _a, _b, _c;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.SocialTokenRefreshTask = void 0;
 const tslib_1 = __webpack_require__(3);
@@ -19448,109 +19632,81 @@ const axios_1 = tslib_1.__importDefault(__webpack_require__(50));
 const dayjs = __webpack_require__(12);
 const qs = tslib_1.__importStar(__webpack_require__(100));
 let SocialTokenRefreshTask = class SocialTokenRefreshTask {
-    constructor(_socialTokenRepo, _notificationService) {
+    constructor(_socialTokenRepo, _notificationService, _integrationRepo) {
         this._socialTokenRepo = _socialTokenRepo;
         this._notificationService = _notificationService;
+        this._integrationRepo = _integrationRepo;
     }
     async handleGbpTokenRefresh() {
-        console.log('⏰ SocialToken refresh cron triggered!');
+        console.log('⏰ GBP Token Refresh - TEST RUN');
         const tokens = await this._socialTokenRepo.model.socialToken.findMany({
             where: {
                 refreshToken: { not: null },
                 identifier: 'gbp'
             },
         });
+        console.log(`📊 Found ${tokens.length} GBP tokens to refresh`);
         for (const token of tokens) {
-            console.log(`♻️ Refreshing token for ${token.identifier}...`);
+            // Log current token status before refresh
+            if (token.tokenExpiry) {
+                const timeUntilExpiry = (token.tokenExpiry.getTime() - Date.now()) / 1000 / 60;
+                if (timeUntilExpiry > 0) {
+                    console.log(`🕐 Token for ${token.businessId} expires in ${timeUntilExpiry.toFixed(2)} minutes`);
+                }
+                else {
+                    console.log(`⏰ Token for ${token.businessId} expired ${Math.abs(timeUntilExpiry).toFixed(2)} minutes ago`);
+                }
+            }
+            console.log(`♻️ Refreshing token for ${token.identifier} ${token.businessId}...`);
             try {
-                const clientId = process.env.GOOGLE_CLIENT_ID;
-                const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-                const response = await axios_1.default.post('https://oauth2.googleapis.com/token', qs.stringify({
-                    client_id: clientId,
-                    client_secret: clientSecret,
-                    refresh_token: token.refreshToken,
-                    grant_type: 'refresh_token',
-                }), {
+                // Use backend API for token refresh (same method as GBP Insights)
+                const response = await axios_1.default.post(`${process.env.BACKEND_INTERNAL_URL}/integrations/refresh-token`, { refreshToken: token.refreshToken }, {
                     headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
+                        'cookie': process.env.INTERNEL_TOKEN,
+                        'Content-Type': 'application/json'
+                    }
                 });
-                const { access_token, expires_in, refresh_token: newRefreshToken } = response.data;
-                console.log("✅ New access token:", access_token);
-                console.log("✅ New refresh token:", newRefreshToken);
-                console.log("✅ Token expiry in seconds:", expires_in);
+                const { accessToken: access_token, expiresIn: expires_in, refreshToken: newRefreshToken } = response.data;
+                // Calculate new expiry time
+                const newExpiryDate = dayjs().add(expires_in, 'seconds').toDate();
+                const expiryMinutes = expires_in / 60;
+                console.log(`✅ New access token received (first 20 chars): ${access_token.substring(0, 20)}...`);
+                console.log(`✅ Token will be valid for ${expiryMinutes} minutes (until ${dayjs(newExpiryDate).format('HH:mm:ss')})`);
+                if (newRefreshToken) {
+                    console.log(`✅ New refresh token received`);
+                }
+                else {
+                    console.log(`✅ Using existing refresh token`);
+                }
                 // ✅ Always upsert with same fields
                 await this._socialTokenRepo.model.socialToken.upsert({
                     where: { id: token.id },
                     update: {
                         accessToken: access_token,
                         refreshToken: newRefreshToken || token.refreshToken,
-                        tokenExpiry: dayjs().add(expires_in, 'seconds').toDate(),
+                        tokenExpiry: newExpiryDate,
                     },
                     create: {
                         identifier: 'gbp',
                         businessId: 'locations/1151483555897051544',
                         accessToken: access_token,
                         refreshToken: newRefreshToken || token.refreshToken,
-                        tokenExpiry: dayjs().add(expires_in, 'seconds').toDate(),
+                        tokenExpiry: newExpiryDate,
                     },
                 });
-                console.log(`✅ Refreshed ${token.identifier} ${token.businessId}`);
+                console.log(`✅ Successfully refreshed token for ${token.identifier} ${token.businessId}`);
             }
             catch (err) {
                 console.error(`❌ Failed to refresh ${token.identifier} ${token.businessId}: ${err.message}`);
+                if (err.response?.data) {
+                    console.error(`❌ Error details:`, err.response.data);
+                }
             }
         }
-    }
-    async handleInstagramTokenRefresh() {
-        console.log('⏰ Instagram Token Refresh Cron Triggered');
-        const thresholdDays = parseInt('10', 10);
-        const tokens = await this._socialTokenRepo.model.socialToken.findMany({
-            where: {
-                identifier: 'instagram',
-                tokenExpiry: {
-                    lte: dayjs().add(thresholdDays, 'days').toDate()
-                },
-            },
-        });
-        if (!tokens.length) {
-            console.log(`✅ No Instagram tokens need refresh (within next ${thresholdDays} days).`);
-            return;
-        }
-        for (const token of tokens) {
-            console.log(`♻️ Refreshing Instagram token (ID: ${token.identifier})`);
-            try {
-                const appId = process.env.INSTAGRAM_CLIENT_ID;
-                const appSecret = process.env.INSTAGRAM_CLIENT_SECRET;
-                const response = await axios_1.default.get('https://graph.facebook.com/v19.0/oauth/access_token', {
-                    params: {
-                        grant_type: 'fb_exchange_token',
-                        client_id: appId,
-                        client_secret: appSecret,
-                        fb_exchange_token: token.accessToken
-                    },
-                });
-                const { access_token, expires_in } = response.data;
-                console.log(`✅ New Instagram token: ${access_token}`);
-                console.log(`✅ Expires in: ${expires_in} seconds`);
-                // Instagram Long-Lived Tokens usually expire in 60 days
-                const safeExpiresIn = expires_in || (60 * 24 * 60 * 60); // 60 days in seconds
-                await this._socialTokenRepo.model.socialToken.update({
-                    where: { id: token.id },
-                    data: {
-                        accessToken: access_token,
-                        tokenExpiry: dayjs().add(safeExpiresIn, 'seconds').toDate(),
-                    },
-                });
-                console.log(`✅ Refreshed Instagram token for ID: ${token.identifier}`);
-            }
-            catch (err) {
-                console.error(`❌ Failed to refresh Instagram token ID ${token.identifier}: ${err.message}`);
-            }
-        }
+        console.log(`✅ GBP token refresh completed - processed ${tokens.length} tokens`);
     }
     async handleWebsiteTokenRefresh() {
-        console.log('⏰ Website token refresh cron triggered!');
+        console.log('⏰ Website Token Refresh - TEST RUN');
         const token = await this._socialTokenRepo.model.socialToken.findFirst({
             where: {
                 identifier: 'website',
@@ -19596,28 +19752,116 @@ let SocialTokenRefreshTask = class SocialTokenRefreshTask {
             console.error(`❌ Failed to refresh Website token: ${err.message}`);
         }
     }
-    async checkLinkedInTokenExpiry() {
-        console.log('⏰ Checking LinkedIn Token Expiry...');
+    async handleLinkedInTokenRefresh() {
+        console.log('⏰ LinkedIn Token Refresh - TEST RUN');
+        // Refresh tokens expiring within 10 days proactively
         const thresholdDays = 10;
-        const tokens = await this._socialTokenRepo.model.socialToken.findMany({
+        // Read from Integration table instead of SocialToken
+        const integrations = await this._integrationRepo.model.integration.findMany({
             where: {
-                identifier: 'linkedin',
-                tokenExpiry: {
+                providerIdentifier: { in: ['linkedin', 'linkedin-page'] },
+                refreshToken: { not: null },
+                tokenExpiration: {
                     lte: dayjs().add(thresholdDays, 'days').toDate(),
                 },
+                deletedAt: null,
             },
         });
-        if (!tokens.length) {
-            console.log(`✅ No LinkedIn tokens expiring within ${thresholdDays} days.`);
+        if (!integrations.length) {
+            console.log(`✅ No LinkedIn integrations need refresh (within next ${thresholdDays} days).`);
             return;
         }
-        for (const token of tokens) {
-            console.log(`⚠️ LinkedIn token expiring soon for businessId ${token.businessId}`);
-            await this.sendExpiryEmail(token);
+        console.log(`📊 Found ${integrations.length} LinkedIn integrations to refresh`);
+        for (const integration of integrations) {
+            // Log current token status before refresh
+            if (integration.tokenExpiration) {
+                const daysUntilExpiry = dayjs(integration.tokenExpiration).diff(dayjs(), 'days');
+                const hoursUntilExpiry = dayjs(integration.tokenExpiration).diff(dayjs(), 'hours');
+                console.log(`🕐 Token for ${integration.name} (${integration.providerIdentifier}) expires in ${daysUntilExpiry} days (${hoursUntilExpiry} hours)`);
+            }
+            console.log(`♻️ Refreshing LinkedIn token for ${integration.name}...`);
+            try {
+                const clientId = process.env.LINKEDIN_CLIENT_ID;
+                const clientSecret = process.env.LINKEDIN_CLIENT_SECRET;
+                if (!clientId || !clientSecret) {
+                    console.error('❌ LinkedIn credentials not configured');
+                    continue;
+                }
+                const response = await axios_1.default.post('https://www.linkedin.com/oauth/v2/accessToken', qs.stringify({
+                    grant_type: 'refresh_token',
+                    refresh_token: integration.refreshToken,
+                    client_id: clientId,
+                    client_secret: clientSecret,
+                }), {
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                });
+                const { access_token, refresh_token: newRefreshToken, expires_in } = response.data;
+                // Calculate new expiry time
+                const newExpiryDate = dayjs().add(expires_in, 'seconds').toDate();
+                const expiryDays = expires_in / (60 * 60 * 24);
+                console.log(`✅ New access token received (first 20 chars): ${access_token.substring(0, 20)}...`);
+                console.log(`✅ Token will be valid for ${expiryDays.toFixed(1)} days (until ${dayjs(newExpiryDate).format('YYYY-MM-DD HH:mm:ss')})`);
+                if (newRefreshToken) {
+                    console.log(`✅ New refresh token received`);
+                }
+                else {
+                    console.log(`✅ Using existing refresh token`);
+                }
+                await this._integrationRepo.model.integration.update({
+                    where: { id: integration.id },
+                    data: {
+                        token: access_token,
+                        refreshToken: newRefreshToken || integration.refreshToken,
+                        tokenExpiration: newExpiryDate,
+                    },
+                });
+                console.log(`✅ Successfully refreshed LinkedIn token for ${integration.name}\n`);
+            }
+            catch (err) {
+                console.error(`❌ Failed to refresh LinkedIn token ${integration.name}: ${err.message}`);
+                if (err.response?.data) {
+                    console.error(`❌ Error details:`, err.response.data);
+                }
+                // Send email notification if refresh fails
+                await this.sendExpiryEmail({
+                    businessId: integration.internalId,
+                    name: integration.name,
+                    tokenExpiry: integration.tokenExpiration,
+                });
+            }
+        }
+        console.log(`✅ LinkedIn token refresh completed - processed ${integrations.length} integrations`);
+    }
+    async checkLinkedInTokenExpiry() {
+        console.log('⏰ LinkedIn Backup Check - TEST RUN');
+        // This is now a backup - only sends email if automatic refresh failed
+        const thresholdDays = 5; // Reduced from 10 since we have automatic refresh
+        const integrations = await this._integrationRepo.model.integration.findMany({
+            where: {
+                providerIdentifier: { in: ['linkedin', 'linkedin-page'] },
+                tokenExpiration: {
+                    lte: dayjs().add(thresholdDays, 'days').toDate(),
+                },
+                deletedAt: null,
+            },
+        });
+        if (!integrations.length) {
+            console.log(`✅ No LinkedIn integrations expiring within ${thresholdDays} days.`);
+            return;
+        }
+        for (const integration of integrations) {
+            console.log(`⚠️ LinkedIn integration still expiring soon for ${integration.name} - automatic refresh may have failed`);
+            await this.sendExpiryEmail({
+                businessId: integration.internalId,
+                name: integration.name,
+                tokenExpiry: integration.tokenExpiration,
+            });
         }
     }
     async handleYouTubeTokenRefresh() {
-        console.log('⏰ YouTube token refresh cron triggered!');
+        console.log('⏰ YouTube Token Refresh - TEST RUN');
         const token = await this._socialTokenRepo.model.socialToken.findFirst({
             where: {
                 identifier: 'youtube',
@@ -19663,6 +19907,153 @@ let SocialTokenRefreshTask = class SocialTokenRefreshTask {
             console.error(`❌ Failed to refresh YouTube token: ${err.message}`);
         }
     }
+    async handleInstagramTokenRefresh() {
+        console.log('⏰ Instagram Token Refresh Cron Triggered');
+        const thresholdDays = 10;
+        const integrations = await this._integrationRepo.model.integration.findMany({
+            where: {
+                providerIdentifier: 'instagram',
+                refreshToken: { not: null },
+                tokenExpiration: {
+                    lte: dayjs().add(thresholdDays, 'days').toDate(),
+                },
+                deletedAt: null,
+            },
+        });
+        if (!integrations.length) {
+            console.log(`✅ No Instagram integrations need refresh (within next ${thresholdDays} days).`);
+            return;
+        }
+        console.log(`📊 Found ${integrations.length} Instagram integrations to refresh`);
+        for (const integration of integrations) {
+            if (integration.tokenExpiration) {
+                const daysUntilExpiry = dayjs(integration.tokenExpiration).diff(dayjs(), 'days');
+                console.log(`🕐 Token for ${integration.name} expires in ${daysUntilExpiry} days`);
+            }
+            console.log(`♻️ Refreshing Instagram token for ${integration.name}...`);
+            try {
+                const response = await axios_1.default.post(`${process.env.BACKEND_INTERNAL_URL}/integrations/refresh-token`, { refreshToken: integration.refreshToken }, {
+                    headers: {
+                        'cookie': process.env.INTERNEL_TOKEN,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const { accessToken, refreshToken: newRefreshToken, expiresIn } = response.data;
+                const newExpiryDate = dayjs().add(expiresIn, 'seconds').toDate();
+                await this._integrationRepo.model.integration.update({
+                    where: { id: integration.id },
+                    data: {
+                        token: accessToken,
+                        refreshToken: newRefreshToken || integration.refreshToken,
+                        tokenExpiration: newExpiryDate,
+                    },
+                });
+                console.log(`✅ Successfully refreshed Instagram token for ${integration.name}\n`);
+            }
+            catch (err) {
+                console.error(`❌ Failed to refresh Instagram token ${integration.name}: ${err.message}`);
+            }
+        }
+        console.log(`✅ Instagram token refresh completed - processed ${integrations.length} integrations`);
+    }
+    async handleFacebookTokenRefresh() {
+        console.log('⏰ Facebook Token Refresh Cron Triggered');
+        const thresholdDays = 10;
+        const integrations = await this._integrationRepo.model.integration.findMany({
+            where: {
+                providerIdentifier: 'facebook',
+                refreshToken: { not: null },
+                tokenExpiration: {
+                    lte: dayjs().add(thresholdDays, 'days').toDate(),
+                },
+                deletedAt: null,
+            },
+        });
+        if (!integrations.length) {
+            console.log(`✅ No Facebook integrations need refresh (within next ${thresholdDays} days).`);
+            return;
+        }
+        console.log(`📊 Found ${integrations.length} Facebook integrations to refresh`);
+        for (const integration of integrations) {
+            if (integration.tokenExpiration) {
+                const daysUntilExpiry = dayjs(integration.tokenExpiration).diff(dayjs(), 'days');
+                console.log(`🕐 Token for ${integration.name} expires in ${daysUntilExpiry} days`);
+            }
+            console.log(`♻️ Refreshing Facebook token for ${integration.name}...`);
+            try {
+                const response = await axios_1.default.post(`${process.env.BACKEND_INTERNAL_URL}/integrations/refresh-token`, { refreshToken: integration.refreshToken }, {
+                    headers: {
+                        'cookie': process.env.INTERNEL_TOKEN,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const { accessToken, refreshToken: newRefreshToken, expiresIn } = response.data;
+                const newExpiryDate = dayjs().add(expiresIn, 'seconds').toDate();
+                await this._integrationRepo.model.integration.update({
+                    where: { id: integration.id },
+                    data: {
+                        token: accessToken,
+                        refreshToken: newRefreshToken || integration.refreshToken,
+                        tokenExpiration: newExpiryDate,
+                    },
+                });
+                console.log(`✅ Successfully refreshed Facebook token for ${integration.name}\n`);
+            }
+            catch (err) {
+                console.error(`❌ Failed to refresh Facebook token ${integration.name}: ${err.message}`);
+            }
+        }
+        console.log(`✅ Facebook token refresh completed - processed ${integrations.length} integrations`);
+    }
+    async handleThreadsTokenRefresh() {
+        console.log('⏰ Threads Token Refresh Cron Triggered');
+        const thresholdDays = 10;
+        const integrations = await this._integrationRepo.model.integration.findMany({
+            where: {
+                providerIdentifier: 'threads',
+                refreshToken: { not: null },
+                tokenExpiration: {
+                    lte: dayjs().add(thresholdDays, 'days').toDate(),
+                },
+                deletedAt: null,
+            },
+        });
+        if (!integrations.length) {
+            console.log(`✅ No Threads integrations need refresh (within next ${thresholdDays} days).`);
+            return;
+        }
+        console.log(`📊 Found ${integrations.length} Threads integrations to refresh`);
+        for (const integration of integrations) {
+            if (integration.tokenExpiration) {
+                const daysUntilExpiry = dayjs(integration.tokenExpiration).diff(dayjs(), 'days');
+                console.log(`🕐 Token for ${integration.name} expires in ${daysUntilExpiry} days`);
+            }
+            console.log(`♻️ Refreshing Threads token for ${integration.name}...`);
+            try {
+                const response = await axios_1.default.post(`${process.env.BACKEND_INTERNAL_URL}/integrations/refresh-token`, { refreshToken: integration.refreshToken }, {
+                    headers: {
+                        'cookie': process.env.INTERNEL_TOKEN,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const { accessToken, refreshToken: newRefreshToken, expiresIn } = response.data;
+                const newExpiryDate = dayjs().add(expiresIn, 'seconds').toDate();
+                await this._integrationRepo.model.integration.update({
+                    where: { id: integration.id },
+                    data: {
+                        token: accessToken,
+                        refreshToken: newRefreshToken || integration.refreshToken,
+                        tokenExpiration: newExpiryDate,
+                    },
+                });
+                console.log(`✅ Successfully refreshed Threads token for ${integration.name}\n`);
+            }
+            catch (err) {
+                console.error(`❌ Failed to refresh Threads token ${integration.name}: ${err.message}`);
+            }
+        }
+        console.log(`✅ Threads token refresh completed - processed ${integrations.length} integrations`);
+    }
     async sendExpiryEmail(token) {
         const message = `
       Hello,
@@ -19676,43 +20067,64 @@ let SocialTokenRefreshTask = class SocialTokenRefreshTask {
 };
 exports.SocialTokenRefreshTask = SocialTokenRefreshTask;
 tslib_1.__decorate([
-    (0, schedule_1.Cron)('5 0 * * *') // Runs at 12:05 AM IST daily
+    (0, schedule_1.Cron)('30 6 * * *') // Runs at 6:30 AM IST daily
     ,
     tslib_1.__metadata("design:type", Function),
     tslib_1.__metadata("design:paramtypes", []),
     tslib_1.__metadata("design:returntype", Promise)
 ], SocialTokenRefreshTask.prototype, "handleGbpTokenRefresh", null);
 tslib_1.__decorate([
-    (0, schedule_1.Cron)('0 0 * * *') // Runs daily at midnight UTC
-    ,
-    tslib_1.__metadata("design:type", Function),
-    tslib_1.__metadata("design:paramtypes", []),
-    tslib_1.__metadata("design:returntype", Promise)
-], SocialTokenRefreshTask.prototype, "handleInstagramTokenRefresh", null);
-tslib_1.__decorate([
-    (0, schedule_1.Cron)('5 0 * * *') // Example: 12:05 AM daily IST
+    (0, schedule_1.Cron)('30 8 * * *') // Runs at 8:30 AM IST daily
     ,
     tslib_1.__metadata("design:type", Function),
     tslib_1.__metadata("design:paramtypes", []),
     tslib_1.__metadata("design:returntype", Promise)
 ], SocialTokenRefreshTask.prototype, "handleWebsiteTokenRefresh", null);
 tslib_1.__decorate([
-    (0, schedule_1.Cron)('0 0 * * *') // Runs daily at midnight UTC
+    (0, schedule_1.Cron)('30 5 * * *') // Runs at 5:30 AM IST daily
+    ,
+    tslib_1.__metadata("design:type", Function),
+    tslib_1.__metadata("design:paramtypes", []),
+    tslib_1.__metadata("design:returntype", Promise)
+], SocialTokenRefreshTask.prototype, "handleLinkedInTokenRefresh", null);
+tslib_1.__decorate([
+    (0, schedule_1.Cron)('0 0 * * *') // Runs daily at midnight UTC - BACKUP CHECK
     ,
     tslib_1.__metadata("design:type", Function),
     tslib_1.__metadata("design:paramtypes", []),
     tslib_1.__metadata("design:returntype", Promise)
 ], SocialTokenRefreshTask.prototype, "checkLinkedInTokenExpiry", null);
 tslib_1.__decorate([
-    (0, schedule_1.Cron)('10 0 * * *') // e.g., 12:10 AM IST daily
+    (0, schedule_1.Cron)('30 7 * * *') // Runs at 7:30 AM IST daily
     ,
     tslib_1.__metadata("design:type", Function),
     tslib_1.__metadata("design:paramtypes", []),
     tslib_1.__metadata("design:returntype", Promise)
 ], SocialTokenRefreshTask.prototype, "handleYouTubeTokenRefresh", null);
+tslib_1.__decorate([
+    (0, schedule_1.Cron)('30 2 * * *') // Runs at 2:30 AM IST daily
+    ,
+    tslib_1.__metadata("design:type", Function),
+    tslib_1.__metadata("design:paramtypes", []),
+    tslib_1.__metadata("design:returntype", Promise)
+], SocialTokenRefreshTask.prototype, "handleInstagramTokenRefresh", null);
+tslib_1.__decorate([
+    (0, schedule_1.Cron)('30 1 * * *') // Runs at 1:30 AM IST daily
+    ,
+    tslib_1.__metadata("design:type", Function),
+    tslib_1.__metadata("design:paramtypes", []),
+    tslib_1.__metadata("design:returntype", Promise)
+], SocialTokenRefreshTask.prototype, "handleFacebookTokenRefresh", null);
+tslib_1.__decorate([
+    (0, schedule_1.Cron)('30 3 * * *') // Runs at 3:30 AM IST daily
+    ,
+    tslib_1.__metadata("design:type", Function),
+    tslib_1.__metadata("design:paramtypes", []),
+    tslib_1.__metadata("design:returntype", Promise)
+], SocialTokenRefreshTask.prototype, "handleThreadsTokenRefresh", null);
 exports.SocialTokenRefreshTask = SocialTokenRefreshTask = tslib_1.__decorate([
     (0, common_1.Injectable)(),
-    tslib_1.__metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaRepository !== "undefined" && prisma_service_1.PrismaRepository) === "function" ? _a : Object, typeof (_b = typeof notification_service_1.NotificationService !== "undefined" && notification_service_1.NotificationService) === "function" ? _b : Object])
+    tslib_1.__metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaRepository !== "undefined" && prisma_service_1.PrismaRepository) === "function" ? _a : Object, typeof (_b = typeof notification_service_1.NotificationService !== "undefined" && notification_service_1.NotificationService) === "function" ? _b : Object, typeof (_c = typeof prisma_service_1.PrismaRepository !== "undefined" && prisma_service_1.PrismaRepository) === "function" ? _c : Object])
 ], SocialTokenRefreshTask);
 
 

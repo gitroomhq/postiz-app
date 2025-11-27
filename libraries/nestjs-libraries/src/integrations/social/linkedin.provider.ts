@@ -315,6 +315,9 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
         .replace(/@/g, '\\@');
     });
 
+
+
+    
     const connectAll = splitTextReformat.reduce((all, current) => {
       const match = matches.shift();
       all.push(current);
