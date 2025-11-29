@@ -104,11 +104,23 @@ export class IntegrationService {
     timezone?: number,
     customInstanceDetails?: string
   ) {
-    const uploadedPicture = picture
-      ? picture?.indexOf('imagedelivery.net') > -1
-        ? picture
-        : await this.storage.uploadSimple(picture)
-      : undefined;
+    let uploadedPicture = undefined;
+
+    if (picture) {
+      if (picture?.indexOf('imagedelivery.net') > -1) {
+        uploadedPicture = picture;
+      } else {
+        try {
+          uploadedPicture = await this.storage.uploadSimple(picture);
+        } catch (error) {
+          console.error(
+            'Failed to upload profile picture, continuing without it:',
+            error.message || error
+          );
+          // uploadedPicture remains undefined - integration continues
+        }
+      }
+    }
 
     return this._integrationRepository.createOrUpdateIntegration(
       additionalSettings,
