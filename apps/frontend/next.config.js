@@ -1,8 +1,20 @@
 // @ts-check
+import fs from 'fs';
+import path from 'path';
 import { withSentryConfig } from '@sentry/nextjs';
+
+const versionFile = path.join(process.cwd(), 'version.txt');
+const appVersion = process.env.NEXT_PUBLIC_APP_VERSION
+  ? process.env.NEXT_PUBLIC_APP_VERSION
+  : fs.existsSync(versionFile)
+    ? fs.readFileSync(versionFile, 'utf8').trim()
+    : '0.0.0';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  env: {
+    NEXT_PUBLIC_APP_VERSION: appVersion,
+  },
   experimental: {
     proxyTimeout: 90_000,
   },
