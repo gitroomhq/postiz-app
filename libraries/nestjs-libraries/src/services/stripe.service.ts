@@ -475,6 +475,72 @@ export class StripeService {
     });
   }
 
+  async checkDiscount(customer: string) {
+    if (!process.env.STRIPE_DISCOUNT_ID) {
+      return false;
+    }
+
+    const list = await stripe.charges.list({
+      customer,
+      limit: 1,
+    });
+
+    if (!list.data.filter(f => f.amount > 1000).length) {
+      return false;
+    }
+
+    const currentUserSubscription = {
+      data: (
+        await stripe.subscriptions.list({
+          customer,
+          status: 'all',
+          expand: ['data.discounts'],
+        })
+      ).data.find((f) => f.status === 'active' || f.status === 'trialing'),
+    };
+
+    if (!currentUserSubscription) {
+      return false;
+    }
+
+    if (
+      currentUserSubscription.data?.items.data[0]?.price.recurring?.interval ===
+        'year' ||
+      currentUserSubscription.data?.discounts.length
+    ) {
+      return false;
+    }
+
+    return true;
+  }
+
+  async applyDiscount(customer: string) {
+    const check = this.checkDiscount(customer);
+    if (!check) {
+      return false;
+    }
+
+    const currentUserSubscription = {
+      data: (
+        await stripe.subscriptions.list({
+          customer,
+          status: 'all',
+          expand: ['data.discounts'],
+        })
+      ).data.find((f) => f.status === 'active' || f.status === 'trialing'),
+    };
+
+    await stripe.subscriptions.update(currentUserSubscription.data.id, {
+      discounts: [
+        {
+          coupon: process.env.STRIPE_DISCOUNT_ID!,
+        },
+      ],
+    });
+
+    return true;
+  }
+
   async checkSubscription(organizationId: string, subscriptionId: string) {
     const orgValue = await this._subscriptionService.checkSubscription(
       organizationId,
