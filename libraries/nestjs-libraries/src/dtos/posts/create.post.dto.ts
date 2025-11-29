@@ -83,6 +83,10 @@ export class CreatePostDto {
   @IsNumber()
   inter?: number;
 
+  @IsOptional()
+  @IsBoolean()
+  randomizeMinute?: boolean;
+
   @IsDefined()
   @IsDateString()
   date: string;
