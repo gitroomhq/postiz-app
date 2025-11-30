@@ -34,9 +34,9 @@
     "commands:build:development": "pnpm --filter ./apps/commands run build",
     "workers": "rm -rf dist/workers && pnpm --filter ./apps/workers run dev",
     "cron": "rm -rf dist/cron && pnpm --filter ./apps/cron run dev",
-    "prisma-generate": "pnpm dlx prisma@6.5.0 generate --schema ./libraries/nestjs-libraries/src/database/prisma/schema.prisma",
-    "prisma-db-push": "pnpm dlx prisma@6.5.0 db push --schema ./libraries/nestjs-libraries/src/database/prisma/schema.prisma",
-    "prisma-reset": "cd ./libraries/nestjs-libraries/src/database/prisma && pnpm dlx prisma@6.5.0 db push --force-reset && pnpx prisma@6.5.0 db push",
+    "prisma-generate": "prisma generate --schema ./libraries/nestjs-libraries/src/database/prisma/schema.prisma",
+    "prisma-db-push": "prisma db push --schema ./libraries/nestjs-libraries/src/database/prisma/schema.prisma",
+    "prisma-reset": "cd ./libraries/nestjs-libraries/src/database/prisma && prisma db push --force-reset && npx prisma db push",
     "docker-build": "./var/docker/docker-build.sh",
     "docker-create": "./var/docker/docker-create.sh",
     "postinstall": "pnpm run prisma-generate",
@@ -307,7 +307,30 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "bcrypt"
+      "@prisma/client",
+      "@prisma/engines",
+      "bcrypt",
+      "prisma"
+    ],
+    "ignoredBuiltDependencies": [
+      "@nestjs/core",
+      "@openapitools/openapi-generator-cli",
+      "@parcel/watcher",
+      "@scarf/scarf",
+      "@sentry-internal/node-cpu-profiler",
+      "@sentry/cli",
+      "@swc/core",
+      "@tailwindcss/oxide",
+      "bufferutil",
+      "canvas",
+      "core-js",
+      "core-js-pure",
+      "esbuild",
+      "msgpackr-extract",
+      "protobufjs",
+      "sharp",
+      "unrs-resolver",
+      "utf-8-validate"
     ]
   }
 }
