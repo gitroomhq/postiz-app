@@ -311,26 +311,6 @@
       "@prisma/engines",
       "bcrypt",
       "prisma"
-    ],
-    "ignoredBuiltDependencies": [
-      "@nestjs/core",
-      "@openapitools/openapi-generator-cli",
-      "@parcel/watcher",
-      "@scarf/scarf",
-      "@sentry-internal/node-cpu-profiler",
-      "@sentry/cli",
-      "@swc/core",
-      "@tailwindcss/oxide",
-      "bufferutil",
-      "canvas",
-      "core-js",
-      "core-js-pure",
-      "esbuild",
-      "msgpackr-extract",
-      "protobufjs",
-      "sharp",
-      "unrs-resolver",
-      "utf-8-validate"
     ]
   }
 }
