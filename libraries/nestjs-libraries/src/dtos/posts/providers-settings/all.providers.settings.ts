@@ -40,11 +40,11 @@ export type AllProvidersSettings =
   | ProviderExtension<'wordpress', WordpressDto>
   | ProviderExtension<'listmonk', ListmonkDto>
   | ProviderExtension<'gmb', GmbSettingsDto>
-  | ProviderExtension<'facebook', None>
+  | ProviderExtension<'facebook', FacebookDto>
+  | ProviderExtension<'wrapcast', FarcasterDto>
   | ProviderExtension<'threads', None>
   | ProviderExtension<'mastodon', None>
   | ProviderExtension<'bluesky', None>
-  | ProviderExtension<'wrapcast', None>
   | ProviderExtension<'telegram', None>
   | ProviderExtension<'nostr', None>
   | ProviderExtension<'vk', None>;
