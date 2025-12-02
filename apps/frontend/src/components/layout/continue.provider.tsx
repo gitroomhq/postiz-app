@@ -32,7 +32,7 @@ export const ContinueProvider: FC = () => {
     refreshWhenOffline: false,
     fallbackData: [],
   });
-  const closeModal = useCallback(() => {
+  const refreshList = useCallback(() => {
     mutate('/integrations/list');
     const url = new URL(window.location.href);
     url.searchParams.delete('added');
@@ -54,6 +54,7 @@ export const ContinueProvider: FC = () => {
 
   return (
     <ContinueModal
+      refreshList={refreshList}
       added={added}
       continueId={continueId}
       integrations={integrations.map((p: any) => p.internalId)}
@@ -105,13 +106,22 @@ const ContinueModal: FC<{
   added: any;
   provider: any;
   integrations: string[];
+  refreshList: () => void;
 }> = (props) => {
   const modals = useModals();
 
   useEffect(() => {
     modals.openModal({
       title: 'Configure Channel',
-      children: (close) => <ModalContent {...props} closeModal={close} />,
+      children: (close) => (
+        <ModalContent
+          {...props}
+          closeModal={() => {
+            props.refreshList();
+            close();
+          }}
+        />
+      ),
     });
   }, []);
 
