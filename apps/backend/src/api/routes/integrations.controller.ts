@@ -533,49 +533,13 @@ export class IntegrationsController {
     return this._integrationService.disableChannel(org.id, id);
   }
 
-  @Post('/instagram/:id')
-  async saveInstagram(
+  @Post('/provider/:id/connect')
+  async saveProviderPage(
     @Param('id') id: string,
-    @Body() body: { pageId: string; id: string },
+    @Body() body: any,
     @GetOrgFromRequest() org: Organization
   ) {
-    return this._integrationService.saveInstagram(org.id, id, body);
-  }
-
-  @Post('/facebook/:id')
-  async saveFacebook(
-    @Param('id') id: string,
-    @Body() body: { page: string },
-    @GetOrgFromRequest() org: Organization
-  ) {
-    return this._integrationService.saveFacebook(org.id, id, body.page);
-  }
-
-  @Post('/linkedin-page/:id')
-  async saveLinkedin(
-    @Param('id') id: string,
-    @Body() body: { page: string },
-    @GetOrgFromRequest() org: Organization
-  ) {
-    return this._integrationService.saveLinkedin(org.id, id, body.page);
-  }
-
-  @Post('/gmb/:id')
-  async saveGmb(
-    @Param('id') id: string,
-    @Body() body: { id: string; accountName: string; locationName: string },
-    @GetOrgFromRequest() org: Organization
-  ) {
-    return this._integrationService.saveGmb(org.id, id, body);
-  }
-
-  @Post('/youtube/:id')
-  async saveYoutube(
-    @Param('id') id: string,
-    @Body() body: { id: string },
-    @GetOrgFromRequest() org: Organization
-  ) {
-    return this._integrationService.saveYoutube(org.id, id, body);
+    return this._integrationService.saveProviderPage(org.id, id, body);
   }
 
   @Post('/enable')

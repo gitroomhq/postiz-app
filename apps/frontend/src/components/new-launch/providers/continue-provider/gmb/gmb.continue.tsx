@@ -4,24 +4,20 @@ import { FC, useCallback, useMemo, useState } from 'react';
 import useSWR from 'swr';
 import clsx from 'clsx';
 import { Button } from '@gitroom/react/form/button';
-import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useCustomProviderFunction } from '@gitroom/frontend/components/launches/helpers/use.custom.provider.function';
-import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 
 export const GmbContinue: FC<{
-  closeModal: () => void;
+  onSave: (data: any) => Promise<void>;
   existingId: string[];
 }> = (props) => {
-  const { closeModal, existingId } = props;
+  const { onSave, existingId } = props;
   const call = useCustomProviderFunction();
-  const { integration } = useIntegration();
   const [location, setSelectedLocation] = useState<null | {
     id: string;
     accountName: string;
     locationName: string;
   }>(null);
-  const fetch = useFetch();
   const t = useT();
 
   const loadPages = useCallback(async () => {
@@ -29,7 +25,7 @@ export const GmbContinue: FC<{
       const pages = await call.get('pages');
       return pages;
     } catch (e) {
-      closeModal();
+      // Handle error silently
     }
   }, []);
 
@@ -51,12 +47,8 @@ export const GmbContinue: FC<{
   });
 
   const saveGmb = useCallback(async () => {
-    await fetch(`/integrations/gmb/${integration?.id}`, {
-      method: 'POST',
-      body: JSON.stringify(location),
-    });
-    closeModal();
-  }, [integration, location]);
+    await onSave(location);
+  }, [onSave, location]);
 
   const filteredData = useMemo(() => {
     return (

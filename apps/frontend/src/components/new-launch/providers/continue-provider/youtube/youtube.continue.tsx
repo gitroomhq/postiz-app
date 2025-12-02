@@ -4,20 +4,16 @@ import { FC, useCallback, useMemo, useState } from 'react';
 import useSWR from 'swr';
 import clsx from 'clsx';
 import { Button } from '@gitroom/react/form/button';
-import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useCustomProviderFunction } from '@gitroom/frontend/components/launches/helpers/use.custom.provider.function';
-import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 
 export const YoutubeContinue: FC<{
-  closeModal: () => void;
+  onSave: (data: any) => Promise<void>;
   existingId: string[];
 }> = (props) => {
-  const { closeModal, existingId } = props;
+  const { onSave, existingId } = props;
   const call = useCustomProviderFunction();
-  const { integration } = useIntegration();
   const [channel, setSelectedChannel] = useState<null | { id: string }>(null);
-  const fetch = useFetch();
   const t = useT();
 
   const loadChannels = useCallback(async () => {
@@ -25,7 +21,7 @@ export const YoutubeContinue: FC<{
       const channels = await call.get('pages');
       return channels;
     } catch (e) {
-      closeModal();
+      // Handle error silently
     }
   }, []);
 
@@ -47,12 +43,8 @@ export const YoutubeContinue: FC<{
   });
 
   const saveYoutube = useCallback(async () => {
-    await fetch(`/integrations/youtube/${integration?.id}`, {
-      method: 'POST',
-      body: JSON.stringify(channel),
-    });
-    closeModal();
-  }, [integration, channel]);
+    await onSave(channel);
+  }, [onSave, channel]);
 
   const filteredData = useMemo(() => {
     return (

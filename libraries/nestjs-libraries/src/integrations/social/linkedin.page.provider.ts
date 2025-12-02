@@ -150,10 +150,9 @@ export class LinkedinPageProvider
     requiredId: string,
     accessToken: string
   ): Promise<AuthTokenDetails> {
-    const information = await this.fetchPageInformation(
-      accessToken,
-      requiredId
-    );
+    const information = await this.fetchPageInformation(accessToken, {
+      page: requiredId,
+    });
 
     return {
       id: information.id,
@@ -166,7 +165,8 @@ export class LinkedinPageProvider
     };
   }
 
-  async fetchPageInformation(accessToken: string, pageId: string) {
+  async fetchPageInformation(accessToken: string, params: { page: string }) {
+    const pageId = params.page;
     const data = await (
       await fetch(
         `https://api.linkedin.com/v2/organizations/${pageId}?projection=(id,localizedName,vanityName,logoV2(original~:playableStreams))`,

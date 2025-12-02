@@ -1,8 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { IntegrationRepository } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.repository';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
-import { InstagramProvider } from '@gitroom/nestjs-libraries/integrations/social/instagram.provider';
-import { FacebookProvider } from '@gitroom/nestjs-libraries/integrations/social/facebook.provider';
 import {
   AnalyticsData,
   AuthTokenDetails,
@@ -10,9 +8,6 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { Integration, Organization } from '@prisma/client';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
-import { LinkedinPageProvider } from '@gitroom/nestjs-libraries/integrations/social/linkedin.page.provider';
-import { GmbProvider } from '@gitroom/nestjs-libraries/integrations/social/gmb.provider';
-import { YoutubeProvider } from '@gitroom/nestjs-libraries/integrations/social/youtube.provider';
 import dayjs from 'dayjs';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
@@ -270,163 +265,44 @@ export class IntegrationService {
     return this._integrationRepository.checkForDeletedOnceAndUpdate(org, page);
   }
 
-  async saveInstagram(
-    org: string,
-    id: string,
-    data: { pageId: string; id: string }
-  ) {
+  async saveProviderPage(org: string, id: string, data: any) {
     const getIntegration = await this._integrationRepository.getIntegrationById(
       org,
       id
     );
-    if (getIntegration && !getIntegration.inBetweenSteps) {
+    if (!getIntegration) {
+      throw new HttpException('Integration not found', HttpStatus.NOT_FOUND);
+    }
+    if (!getIntegration.inBetweenSteps) {
       throw new HttpException('Invalid request', HttpStatus.BAD_REQUEST);
     }
 
-    const instagram = this._integrationManager.getSocialIntegration(
-      'instagram'
-    ) as InstagramProvider;
-    const getIntegrationInformation = await instagram.fetchPageInformation(
-      getIntegration?.token!,
+    const provider = this._integrationManager.getSocialIntegration(
+      getIntegration.providerIdentifier
+    );
+
+    if (!provider.fetchPageInformation) {
+      throw new HttpException(
+        'Provider does not support page selection',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    const getIntegrationInformation = await provider.fetchPageInformation(
+      getIntegration.token,
       data
-    );
-
-    await this.checkForDeletedOnceAndUpdate(org, getIntegrationInformation.id);
-    await this._integrationRepository.updateIntegration(id, {
-      picture: getIntegrationInformation.picture,
-      internalId: getIntegrationInformation.id,
-      name: getIntegrationInformation.name,
-      inBetweenSteps: false,
-      token: getIntegrationInformation.access_token,
-      profile: getIntegrationInformation.username,
-    });
-
-    return { success: true };
-  }
-
-  async saveLinkedin(org: string, id: string, page: string) {
-    const getIntegration = await this._integrationRepository.getIntegrationById(
-      org,
-      id
-    );
-    if (getIntegration && !getIntegration.inBetweenSteps) {
-      throw new HttpException('Invalid request', HttpStatus.BAD_REQUEST);
-    }
-
-    const linkedin = this._integrationManager.getSocialIntegration(
-      'linkedin-page'
-    ) as LinkedinPageProvider;
-
-    const getIntegrationInformation = await linkedin.fetchPageInformation(
-      getIntegration?.token!,
-      page
     );
 
     await this.checkForDeletedOnceAndUpdate(
       org,
       String(getIntegrationInformation.id)
     );
-
-    await this._integrationRepository.updateIntegration(String(id), {
+    await this._integrationRepository.updateIntegration(id, {
       picture: getIntegrationInformation.picture,
       internalId: String(getIntegrationInformation.id),
       name: getIntegrationInformation.name,
       inBetweenSteps: false,
       token: getIntegrationInformation.access_token,
-      profile: getIntegrationInformation.username,
-    });
-
-    return { success: true };
-  }
-
-  async saveFacebook(org: string, id: string, page: string) {
-    const getIntegration = await this._integrationRepository.getIntegrationById(
-      org,
-      id
-    );
-    if (getIntegration && !getIntegration.inBetweenSteps) {
-      throw new HttpException('Invalid request', HttpStatus.BAD_REQUEST);
-    }
-
-    const facebook = this._integrationManager.getSocialIntegration(
-      'facebook'
-    ) as FacebookProvider;
-    const getIntegrationInformation = await facebook.fetchPageInformation(
-      getIntegration?.token!,
-      page
-    );
-
-    await this.checkForDeletedOnceAndUpdate(org, getIntegrationInformation.id);
-    await this._integrationRepository.updateIntegration(id, {
-      picture: getIntegrationInformation.picture,
-      internalId: getIntegrationInformation.id,
-      name: getIntegrationInformation.name,
-      inBetweenSteps: false,
-      token: getIntegrationInformation.access_token,
-      profile: getIntegrationInformation.username,
-    });
-
-    return { success: true };
-  }
-
-  async saveGmb(
-    org: string,
-    id: string,
-    data: { id: string; accountName: string; locationName: string }
-  ) {
-    const getIntegration = await this._integrationRepository.getIntegrationById(
-      org,
-      id
-    );
-    if (getIntegration && !getIntegration.inBetweenSteps) {
-      throw new HttpException('Invalid request', HttpStatus.BAD_REQUEST);
-    }
-
-    const gmb = this._integrationManager.getSocialIntegration(
-      'gmb'
-    ) as GmbProvider;
-    const getIntegrationInformation = await gmb.fetchPageInformation(
-      getIntegration?.token!,
-      data
-    );
-
-    await this.checkForDeletedOnceAndUpdate(org, getIntegrationInformation.id);
-    await this._integrationRepository.updateIntegration(id, {
-      picture: getIntegrationInformation.picture,
-      internalId: getIntegrationInformation.id,
-      name: getIntegrationInformation.name,
-      inBetweenSteps: false,
-      token: getIntegration?.token!,
-      profile: getIntegrationInformation.username,
-    });
-
-    return { success: true };
-  }
-
-  async saveYoutube(org: string, id: string, data: { id: string }) {
-    const getIntegration = await this._integrationRepository.getIntegrationById(
-      org,
-      id
-    );
-    if (getIntegration && !getIntegration.inBetweenSteps) {
-      throw new HttpException('Invalid request', HttpStatus.BAD_REQUEST);
-    }
-
-    const youtube = this._integrationManager.getSocialIntegration(
-      'youtube'
-    ) as YoutubeProvider;
-    const getIntegrationInformation = await youtube.fetchPageInformation(
-      getIntegration?.token!,
-      data
-    );
-
-    await this.checkForDeletedOnceAndUpdate(org, getIntegrationInformation.id);
-    await this._integrationRepository.updateIntegration(id, {
-      picture: getIntegrationInformation.picture,
-      internalId: getIntegrationInformation.id,
-      name: getIntegrationInformation.name,
-      inBetweenSteps: false,
-      token: getIntegration?.token!,
       profile: getIntegrationInformation.username,
     });
 

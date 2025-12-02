@@ -9,7 +9,7 @@ import { continueProviderList } from '@gitroom/frontend/components/new-launch/pr
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 export const Null: FC<{
-  closeModal: () => void;
+  onSave: (data: any) => Promise<void>;
   existingId: string[];
 }> = () => null;
 export const ContinueProvider: FC = () => {
@@ -70,6 +70,19 @@ const ModalContent: FC<{
   closeModal: () => void;
   integrations: string[];
 }> = ({ continueId, added, provider: Provider, closeModal, integrations }) => {
+  const fetch = useFetch();
+
+  const onSave = useCallback(
+    async (data: any) => {
+      await fetch(`/integrations/provider/${continueId}/connect`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      closeModal();
+    },
+    [continueId, closeModal]
+  );
+
   return (
     <IntegrationContext.Provider
       value={{
@@ -96,7 +109,7 @@ const ModalContent: FC<{
         },
       }}
     >
-      <Provider closeModal={closeModal} existingId={integrations} />
+      <Provider onSave={onSave} existingId={integrations} />
     </IntegrationContext.Provider>
   );
 };
