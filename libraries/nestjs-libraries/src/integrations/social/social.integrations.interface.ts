@@ -107,6 +107,14 @@ export type MediaContent = {
   thumbnailTimestamp?: number;
 };
 
+export type FetchPageInformationResult = {
+  id: string;
+  name: string;
+  access_token: string;
+  picture: string;
+  username: string;
+};
+
 export interface SocialProvider
   extends IAuthenticator,
     ISocialMediaIntegration {
@@ -138,4 +146,8 @@ export interface SocialProvider
     token: string, data: { query: string }, id: string, integration: Integration
   ) => Promise<{ id: string; label: string; image: string, doNotCache?: boolean }[] | {none: true}>;
   mentionFormat?(idOrHandle: string, name: string): string;
+  fetchPageInformation?(
+    accessToken: string,
+    data: any
+  ): Promise<FetchPageInformationResult>;
 }

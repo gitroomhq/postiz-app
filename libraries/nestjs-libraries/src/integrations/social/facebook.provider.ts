@@ -183,10 +183,9 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     requiredId: string,
     accessToken: string
   ): Promise<AuthTokenDetails> {
-    const information = await this.fetchPageInformation(
-      accessToken,
-      requiredId
-    );
+    const information = await this.fetchPageInformation(accessToken, {
+      page: requiredId,
+    });
 
     return {
       id: information.id,
@@ -266,7 +265,8 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     return data;
   }
 
-  async fetchPageInformation(accessToken: string, pageId: string) {
+  async fetchPageInformation(accessToken: string, data: { page: string }) {
+    const pageId = data.page;
     const {
       id,
       name,

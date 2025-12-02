@@ -16,7 +16,7 @@ import { HttpExceptionFilter } from '@gitroom/nestjs-libraries/services/exceptio
 import { ConfigurationChecker } from '@gitroom/helpers/configuration/configuration.checker';
 import { startMcp } from '@gitroom/nestjs-libraries/chat/start.mcp';
 
-async function bootstrap() {
+async function start() {
   const app = await NestFactory.create(AppModule, {
     rawBody: true,
     cors: {
@@ -80,8 +80,8 @@ function checkConfiguration() {
 
     Logger.warn('Configuration issues found: ' + checker.getIssuesCount());
   } else {
-    Logger.log('Configuration check completed without any issues.');
+    Logger.log('Configuration check completed without any issues');
   }
 }
 
-bootstrap();
+start();
