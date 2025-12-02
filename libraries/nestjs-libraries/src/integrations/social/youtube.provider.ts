@@ -53,7 +53,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 1; // YouTube has strict upload quotas
   identifier = 'youtube';
   name = 'YouTube';
-  isBetweenSteps = false;
+  isBetweenSteps = true;
   dto = YoutubeSettingsDto;
   scopes = [
     'https://www.googleapis.com/auth/userinfo.profile',
@@ -186,6 +186,97 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       name: data.name!,
       picture: data?.picture || '',
       username: '',
+    };
+  }
+
+  async pages(accessToken: string) {
+    const { client, youtube } = clientAndYoutube();
+    client.setCredentials({ access_token: accessToken });
+    const youtubeClient = youtube(client);
+
+    try {
+      // Get all channels the user has access to
+      const response = await youtubeClient.channels.list({
+        part: ['snippet', 'contentDetails', 'statistics'],
+        mine: true,
+      });
+
+      const channels = response.data.items || [];
+
+      return channels.map((channel) => ({
+        id: channel.id!,
+        name: channel.snippet?.title || 'Unnamed Channel',
+        picture: {
+          data: {
+            url: channel.snippet?.thumbnails?.default?.url || '',
+          },
+        },
+        username: channel.snippet?.customUrl || '',
+        subscriberCount: channel.statistics?.subscriberCount || '0',
+      }));
+    } catch (error) {
+      console.error('Failed to fetch YouTube channels:', error);
+      return [];
+    }
+  }
+
+  async fetchPageInformation(
+    accessToken: string,
+    data: { id: string }
+  ) {
+    const { client, youtube } = clientAndYoutube();
+    client.setCredentials({ access_token: accessToken });
+    const youtubeClient = youtube(client);
+
+    try {
+      const response = await youtubeClient.channels.list({
+        part: ['snippet', 'contentDetails', 'statistics'],
+        id: [data.id],
+      });
+
+      const channel = response.data.items?.[0];
+
+      if (!channel) {
+        throw new Error('Channel not found');
+      }
+
+      return {
+        id: channel.id!,
+        name: channel.snippet?.title || 'Unnamed Channel',
+        access_token: accessToken,
+        picture: channel.snippet?.thumbnails?.default?.url || '',
+        username: channel.snippet?.customUrl || '',
+      };
+    } catch (error) {
+      console.error('Failed to fetch YouTube channel information:', error);
+      throw error;
+    }
+  }
+
+  async reConnect(
+    id: string,
+    requiredId: string,
+    accessToken: string
+  ): Promise<AuthTokenDetails> {
+    const pages = await this.pages(accessToken);
+    const findPage = pages.find((p) => p.id === requiredId);
+
+    if (!findPage) {
+      throw new Error('Channel not found');
+    }
+
+    const information = await this.fetchPageInformation(accessToken, {
+      id: requiredId,
+    });
+
+    return {
+      id: information.id,
+      name: information.name,
+      accessToken: information.access_token,
+      refreshToken: information.access_token,
+      expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
+      picture: information.picture,
+      username: information.username,
     };
   }
 
