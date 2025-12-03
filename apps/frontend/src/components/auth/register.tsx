@@ -64,8 +64,10 @@ export function Register() {
     ).json();
 
     // Handle existing user login - backend already set auth cookie
+    // Use window.location.href instead of router.push to do a full page reload
+    // This clears the OAuth code from the URL and ensures cookies are properly read
     if (login) {
-      router.push('/');
+      window.location.href = '/';
       return;
     }
 
