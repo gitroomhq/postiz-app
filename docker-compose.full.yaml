@@ -1,0 +1,199 @@
+# Full Docker Compose setup for Postiz development
+# This includes all services: database, redis, backend, frontend, workers, and cron
+#
+# Usage:
+#   1. Copy .env.example to .env and configure it
+#   2. Run: docker compose -f docker-compose.full.yaml up -d
+#   3. Access:
+#      - Frontend: http://localhost:4200
+#      - Backend API: http://localhost:3000
+#      - pgAdmin: http://localhost:8081
+#      - RedisInsight: http://localhost:5540
+
+
+services:
+  # Database
+  postiz-postgres:
+    image: postgres:17-alpine
+    container_name: postiz-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: postiz-local-pwd
+      POSTGRES_USER: postiz-local
+      POSTGRES_DB: postiz-db-local
+    volumes:
+      - postgres-volume:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - postiz-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postiz-local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis
+  postiz-redis:
+    image: redis:7-alpine
+    container_name: postiz-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - postiz-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # pgAdmin (Database Management)
+  postiz-pg-admin:
+    image: dpage/pgadmin4:latest
+    container_name: postiz-pg-admin
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    networks:
+      - postiz-network
+    depends_on:
+      - postiz-postgres
+
+  # RedisInsight (Redis Management)
+  postiz-redisinsight:
+    image: redis/redisinsight:latest
+    container_name: postiz-redisinsight
+    restart: unless-stopped
+    ports:
+      - "5540:5540"
+    volumes:
+      - redisinsight:/data
+    networks:
+      - postiz-network
+    depends_on:
+      - postiz-redis
+
+  # Backend API
+  postiz-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.devcontainer
+    container_name: postiz-backend
+    restart: unless-stopped
+    command: sh -c "pnpm run prisma-db-push && pnpm --filter ./apps/backend run dev"
+    environment:
+      - DATABASE_URL=postgresql://postiz-local:postiz-local-pwd@postiz-postgres:5432/postiz-db-local
+      - REDIS_URL=redis://postiz-redis:6379
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:4200}
+      - NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL:-http://localhost:3000}
+      - BACKEND_INTERNAL_URL=${BACKEND_INTERNAL_URL:-http://localhost:3000}
+      # TikTok Configuration
+      - TIKTOK_CLIENT_ID=${TIKTOK_CLIENT_ID}
+      - TIKTOK_CLIENT_SECRET=${TIKTOK_CLIENT_SECRET}
+      # Add other environment variables as needed
+      - STORAGE_PROVIDER=${STORAGE_PROVIDER:-local}
+      - NOT_SECURED=${NOT_SECURED:-true}
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/apps/backend/dist
+    ports:
+      - "3000:3000"
+    networks:
+      - postiz-network
+    depends_on:
+      postiz-postgres:
+        condition: service_healthy
+      postiz-redis:
+        condition: service_healthy
+
+  # Frontend
+  postiz-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.devcontainer
+    container_name: postiz-frontend
+    restart: unless-stopped
+    command: sh -c "pnpm --filter ./apps/frontend run dev"
+    environment:
+      - NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL:-http://localhost:3000}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:4200}
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/apps/frontend/.next
+    ports:
+      - "4200:4200"
+    networks:
+      - postiz-network
+    depends_on:
+      - postiz-backend
+
+  # Workers (for processing posts)
+  postiz-workers:
+    build:
+      context: .
+      dockerfile: Dockerfile.devcontainer
+    container_name: postiz-workers
+    restart: unless-stopped
+    command: sh -c "pnpm --filter ./apps/workers run dev"
+    environment:
+      - DATABASE_URL=postgresql://postiz-local:postiz-local-pwd@postiz-postgres:5432/postiz-db-local
+      - REDIS_URL=redis://postiz-redis:6379
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:4200}
+      - TIKTOK_CLIENT_ID=${TIKTOK_CLIENT_ID}
+      - TIKTOK_CLIENT_SECRET=${TIKTOK_CLIENT_SECRET}
+      - STORAGE_PROVIDER=${STORAGE_PROVIDER:-local}
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/apps/workers/dist
+    networks:
+      - postiz-network
+    depends_on:
+      postiz-postgres:
+        condition: service_healthy
+      postiz-redis:
+        condition: service_healthy
+      - postiz-backend
+
+  # Cron (for scheduled tasks)
+  postiz-cron:
+    build:
+      context: .
+      dockerfile: Dockerfile.devcontainer
+    container_name: postiz-cron
+    restart: unless-stopped
+    command: sh -c "pnpm --filter ./apps/cron run dev"
+    environment:
+      - DATABASE_URL=postgresql://postiz-local:postiz-local-pwd@postiz-postgres:5432/postiz-db-local
+      - REDIS_URL=redis://postiz-redis:6379
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - TIKTOK_CLIENT_ID=${TIKTOK_CLIENT_ID}
+      - TIKTOK_CLIENT_SECRET=${TIKTOK_CLIENT_SECRET}
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/apps/cron/dist
+    networks:
+      - postiz-network
+    depends_on:
+      postiz-postgres:
+        condition: service_healthy
+      postiz-redis:
+        condition: service_healthy
+
+volumes:
+  redisinsight:
+  postgres-volume:
+    external: false
+
+networks:
+  postiz-network:
+    external: false

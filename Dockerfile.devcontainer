@@ -1,0 +1,32 @@
+# Development container for Postiz
+# This is used for development with hot-reload
+
+FROM node:22.20-alpine
+
+# Install dependencies
+RUN apk add --no-cache bash git python3 make g++
+
+# Install pnpm globally
+RUN npm --no-update-notifier --no-fund --global install pnpm@10.6.1
+
+WORKDIR /app
+
+# Copy package files first for better caching
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/*/package.json ./apps/*/
+COPY libraries/*/package.json ./libraries/*/
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile
+
+# Copy the rest of the application
+COPY . .
+
+# Generate Prisma client
+RUN pnpm run prisma-generate
+
+# Expose ports
+EXPOSE 3000 4200
+
+# Default command (can be overridden in docker-compose)
+CMD ["sh", "-c", "pnpm run dev"]
