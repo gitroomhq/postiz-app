@@ -13,5 +13,8 @@ export class SkoolSettingsDto {
   @IsString()
   @IsOptional()
   label?: string;
+
+  @IsOptional()
+  notify?: boolean;
 }
 
