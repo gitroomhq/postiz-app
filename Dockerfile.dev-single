@@ -1,0 +1,41 @@
+# Development Dockerfile - Single container (matches production pattern)
+# Runs all services (backend, frontend, workers, cron) in one container via PM2
+
+FROM node:22.20-alpine
+
+# Install dependencies
+RUN apk add --no-cache g++ make py3-pip bash git python3
+
+# Install pnpm and pm2 globally
+RUN npm --no-update-notifier --no-fund --global install pnpm@10.6.1 pm2
+
+WORKDIR /app
+
+# Copy package files and pnpm config first for better caching
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY .npmrc ./
+COPY apps/*/package.json ./apps/*/
+COPY libraries/*/package.json ./libraries/*/
+
+# Copy Prisma schema before install (needed for postinstall script)
+COPY libraries/nestjs-libraries/src/database/prisma/schema.prisma ./libraries/nestjs-libraries/src/database/prisma/
+
+# Install dependencies
+# Using --no-frozen-lockfile for development to handle config mismatches
+RUN pnpm install --no-frozen-lockfile
+
+# Copy the rest of the application
+COPY . .
+
+# Regenerate Prisma client (in case schema changed)
+RUN pnpm run prisma-generate
+
+# Expose ports
+# Port 5000 for nginx (if you want to use it in dev)
+# Port 3000 for backend API
+# Port 4200 for frontend
+EXPOSE 5000 3000 4200
+
+# For development, we'll run dev mode directly (not via PM2)
+# PM2 is used in production, but for dev we want hot-reload
+CMD ["sh", "-c", "pnpm run prisma-db-push && pnpm run dev"]
