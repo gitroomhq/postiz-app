@@ -142,37 +142,39 @@ export const DayView = () => {
   }, [integrations, posts]);
 
   return (
-    <div className="flex flex-col gap-[10px] flex-1">
-      {options.map((option) => (
-        <Fragment key={option[0].time}>
-          <div className="text-center text-[14px]">
-            {newDayjs()
-              .utc()
-              .startOf('day')
-              .add(option[0].time, 'minute')
-              .local()
-              .format(isUSCitizen() ? 'hh:mm A' : 'LT')}
-          </div>
-          <div
-            key={option[0].time}
-            className="min-h-[60px] rounded-[10px] flex justify-center items-center gap-[10px] mb-[20px]"
-          >
-            <CalendarContext.Provider
-              value={{
-                ...calendar,
-                integrations: option.flatMap((p) => p.integration),
-              }}
+    <div className="flex flex-col gap-[10px] flex-1 relative">
+      <div className="absolute start-0 top-0 w-full h-full flex flex-col overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
+        {options.map((option) => (
+          <Fragment key={option[0].time}>
+            <div className="text-center text-[14px] min-h-[21px]">
+              {newDayjs()
+                .utc()
+                .startOf('day')
+                .add(option[0].time, 'minute')
+                .local()
+                .format(isUSCitizen() ? 'hh:mm A' : 'LT')}
+            </div>
+            <div
+              key={option[0].time}
+              className="min-h-[60px] rounded-[10px] flex justify-center items-center gap-[10px] mb-[20px]"
             >
-              <CalendarColumn
-                getDate={currentDay
-                  .startOf('day')
-                  .add(option[0].time, 'minute')
-                  .local()}
-              />
-            </CalendarContext.Provider>
-          </div>
-        </Fragment>
-      ))}
+              <CalendarContext.Provider
+                value={{
+                  ...calendar,
+                  integrations: option.flatMap((p) => p.integration),
+                }}
+              >
+                <CalendarColumn
+                  getDate={currentDay
+                    .startOf('day')
+                    .add(option[0].time, 'minute')
+                    .local()}
+                />
+              </CalendarContext.Provider>
+            </div>
+          </Fragment>
+        ))}
+      </div>
     </div>
   );
 };
@@ -200,13 +202,13 @@ export const WeekView = () => {
 
   return (
     <div className="flex flex-col text-textColor flex-1">
-      <div className="flex-1">
-        <div className="grid [grid-template-columns:136px_repeat(7,_minmax(0,_1fr))] gap-[4px] rounded-[10px]">
-          <div className="z-10 bg-newTableHeader flex justify-center items-center flex-col h-[62px] rounded-[8px]"></div>
+      <div className="flex-1 relative">
+        <div className="grid [grid-template-columns:136px_repeat(7,_minmax(0,_1fr))] gap-[4px] rounded-[10px] absolute h-full start-0 top-0 w-full overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
+          <div className="z-10 bg-newTableHeader flex justify-center items-center flex-col h-[62px] rounded-[8px] sticky top-0"></div>
           {localizedDays.map((day, index) => (
             <div
               key={day.name}
-              className="z-10 p-2 text-center bg-newTableHeader flex justify-center items-center flex-col h-[62px] rounded-[8px]"
+              className="z-10 p-2 text-center bg-newTableHeader flex justify-center items-center flex-col h-[62px] rounded-[8px] sticky top-0"
             >
               <div className="text-[14px] font-[500] text-newTableText">
                 {day.name}
@@ -299,12 +301,12 @@ export const MonthView = () => {
 
   return (
     <div className="flex flex-col text-textColor flex-1">
-      <div className="flex-1 flex">
-        <div className="grid grid-cols-7 grid-rows-[62px_auto] gap-[4px] rounded-[10px] flex-1">
+      <div className="flex-1 flex relative">
+        <div className="grid grid-cols-7 grid-rows-[62px_auto] gap-[4px] rounded-[10px] absolute start-0 top-0 overflow-auto w-full h-full scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary">
           {localizedDays.map((day) => (
             <div
               key={day}
-              className="z-10 p-2 bg-newTableHeader flex justify-center items-center flex-col h-[62px] rounded-[8px]"
+              className="z-10 p-2 bg-newTableHeader flex justify-center items-center flex-col h-[62px] rounded-[8px] sticky top-0"
             >
               <div>{day}</div>
             </div>
