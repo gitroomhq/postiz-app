@@ -6,6 +6,12 @@ import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/cl
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import dayjs from 'dayjs';
 
+export enum NotificationType {
+  FAILED_POST = 'FAILED_POST',
+  SUCCESSFUL_POST = 'SUCCESSFUL_POST',
+  GENERAL = 'GENERAL',
+}
+
 @Injectable()
 export class NotificationService {
   constructor(
@@ -41,10 +47,24 @@ export class NotificationService {
     subject: string,
     message: string,
     sendEmail = false,
-    digest = false
+    digest = false,
+    notificationType: NotificationType = NotificationType.GENERAL
   ) {
     const date = new Date().toISOString();
-    await this._notificationRepository.createNotification(orgId, message);
+
+    // Get all users in the organization with their preferences
+    const userOrg = await this._organizationRepository.getAllUsersOrgs(orgId);
+
+    // Check if any user has in-app notifications enabled
+    const usersWithInAppEnabled = userOrg?.users?.filter(
+      (u) => u.user.inAppNotifications !== false
+    );
+
+    // Only create in-app notification if at least one user has it enabled
+    if (usersWithInAppEnabled && usersWithInAppEnabled.length > 0) {
+      await this._notificationRepository.createNotification(orgId, message);
+    }
+
     if (!sendEmail) {
       return;
     }
@@ -77,13 +97,31 @@ export class NotificationService {
       return;
     }
 
-    await this.sendEmailsToOrg(orgId, subject, message);
+    await this.sendEmailsToOrg(orgId, subject, message, notificationType);
   }
 
-  async sendEmailsToOrg(orgId: string, subject: string, message: string) {
+  async sendEmailsToOrg(
+    orgId: string,
+    subject: string,
+    message: string,
+    notificationType: NotificationType = NotificationType.GENERAL
+  ) {
     const userOrg = await this._organizationRepository.getAllUsersOrgs(orgId);
     for (const user of userOrg?.users || []) {
-      await this.sendEmail(user.user.email, subject, message);
+      // Check user's email notification preferences based on notification type
+      let shouldSendEmail = true;
+
+      if (notificationType === NotificationType.FAILED_POST) {
+        shouldSendEmail =
+          user.user.emailNotificationsFailedPosts !== false;
+      } else if (notificationType === NotificationType.SUCCESSFUL_POST) {
+        shouldSendEmail =
+          user.user.emailNotificationsSuccessfulPosts !== false;
+      }
+
+      if (shouldSendEmail) {
+        await this.sendEmail(user.user.email, subject, message);
+      }
     }
   }
 

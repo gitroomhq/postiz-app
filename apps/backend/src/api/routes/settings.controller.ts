@@ -1,9 +1,11 @@
 import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
-import { Organization } from '@prisma/client';
+import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
+import { Organization, User } from '@prisma/client';
 import { StarsService } from '@gitroom/nestjs-libraries/database/prisma/stars/stars.service';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
+import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { AddTeamMemberDto } from '@gitroom/nestjs-libraries/dtos/settings/add.team.member.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
@@ -13,7 +15,8 @@ import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/p
 export class SettingsController {
   constructor(
     private _starsService: StarsService,
-    private _organizationService: OrganizationService
+    private _organizationService: OrganizationService,
+    private _usersService: UsersService
   ) {}
 
   @Get('/github')
@@ -132,5 +135,23 @@ export class SettingsController {
     @Param('id') id: string
   ) {
     return this._organizationService.deleteTeamMember(org, id);
+  }
+
+  @Get('/notifications')
+  async getNotificationPreferences(@GetUserFromRequest() user: User) {
+    return this._usersService.getNotificationPreferences(user.id);
+  }
+
+  @Post('/notifications')
+  async updateNotificationPreferences(
+    @GetUserFromRequest() user: User,
+    @Body()
+    body: {
+      emailNotificationsFailedPosts?: boolean;
+      emailNotificationsSuccessfulPosts?: boolean;
+      inAppNotifications?: boolean;
+    }
+  ) {
+    return this._usersService.updateNotificationPreferences(user.id, body);
   }
 }

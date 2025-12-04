@@ -55,4 +55,22 @@ export class UsersService {
   changePersonal(userId: string, body: UserDetailDto) {
     return this._usersRepository.changePersonal(userId, body);
   }
+
+  getNotificationPreferences(userId: string) {
+    return this._usersRepository.getNotificationPreferences(userId);
+  }
+
+  updateNotificationPreferences(
+    userId: string,
+    preferences: {
+      emailNotificationsFailedPosts?: boolean;
+      emailNotificationsSuccessfulPosts?: boolean;
+      inAppNotifications?: boolean;
+    }
+  ) {
+    return this._usersRepository.updateNotificationPreferences(
+      userId,
+      preferences
+    );
+  }
 }

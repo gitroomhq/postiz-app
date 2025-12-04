@@ -72,39 +72,42 @@ model TagsPosts {
 }
 
 model User {
-  id                    String              @id @default(uuid())
-  email                 String
-  password              String?
-  providerName          Provider
-  name                  String?
-  lastName              String?
-  isSuperAdmin          Boolean             @default(false)
-  bio                   String?
-  audience              Int                 @default(0)
-  pictureId             String?
-  picture               Media?              @relation(fields: [pictureId], references: [id])
-  providerId            String?
-  organizations         UserOrganization[]
-  timezone              Int
-  comments              Comments[]
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
-  lastReadNotifications DateTime            @default(now())
-  inviteId              String?
-  activated             Boolean             @default(true)
-  items                 ItemUser[]
-  marketplace           Boolean             @default(true)
-  account               String?
-  connectedAccount      Boolean             @default(false)
-  groupBuyer            MessagesGroup[]     @relation("groupBuyer")
-  groupSeller           MessagesGroup[]     @relation("groupSeller")
-  orderBuyer            Orders[]            @relation("orderBuyer")
-  orderSeller           Orders[]            @relation("orderSeller")
-  payoutProblems        PayoutProblems[]
-  lastOnline            DateTime            @default(now())
-  agencies              SocialMediaAgency[]
-  ip                    String?
-  agent                 String?
+  id                                String              @id @default(uuid())
+  email                             String
+  password                          String?
+  providerName                      Provider
+  name                              String?
+  lastName                          String?
+  isSuperAdmin                      Boolean             @default(false)
+  bio                               String?
+  audience                          Int                 @default(0)
+  pictureId                         String?
+  picture                           Media?              @relation(fields: [pictureId], references: [id])
+  providerId                        String?
+  organizations                     UserOrganization[]
+  timezone                          Int
+  comments                          Comments[]
+  createdAt                         DateTime            @default(now())
+  updatedAt                         DateTime            @updatedAt
+  lastReadNotifications             DateTime            @default(now())
+  inviteId                          String?
+  activated                         Boolean             @default(true)
+  items                             ItemUser[]
+  marketplace                       Boolean             @default(true)
+  account                           String?
+  connectedAccount                  Boolean             @default(false)
+  groupBuyer                        MessagesGroup[]     @relation("groupBuyer")
+  groupSeller                       MessagesGroup[]     @relation("groupSeller")
+  orderBuyer                        Orders[]            @relation("orderBuyer")
+  orderSeller                       Orders[]            @relation("orderSeller")
+  payoutProblems                    PayoutProblems[]
+  lastOnline                        DateTime            @default(now())
+  agencies                          SocialMediaAgency[]
+  ip                                String?
+  agent                             String?
+  emailNotificationsFailedPosts     Boolean             @default(true)
+  emailNotificationsSuccessfulPosts Boolean             @default(true)
+  inAppNotifications                Boolean             @default(true)
 
   @@unique([email, providerName])
   @@index([lastReadNotifications])

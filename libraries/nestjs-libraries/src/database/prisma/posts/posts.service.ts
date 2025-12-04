@@ -10,7 +10,10 @@ import dayjs from 'dayjs';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { Integration, Post, Media, From } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
-import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
+import {
+  NotificationService,
+  NotificationType,
+} from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { capitalize, shuffle, uniq } from 'lodash';
 import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
 import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
@@ -343,7 +346,9 @@ export class PostsService {
           firstPost.organizationId,
           `Error posting on ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
           `An error occurred while posting on ${firstPost.integration?.providerIdentifier}`,
-          true
+          true,
+          false,
+          NotificationType.FAILED_POST
         );
 
         return;
@@ -362,7 +367,9 @@ export class PostsService {
           `An error occurred while posting on ${
             firstPost.integration?.providerIdentifier
           }${err?.message ? `: ${err?.message}` : ``}`,
-          true
+          true,
+          false,
+          NotificationType.FAILED_POST
         );
 
         console.error(
@@ -478,7 +485,8 @@ export class PostsService {
             integration.providerIdentifier
           )} at ${publishedPosts[0].releaseURL}`,
           true,
-          true
+          true,
+          NotificationType.SUCCESSFUL_POST
         );
 
         await this._webhookService.digestWebhooks(

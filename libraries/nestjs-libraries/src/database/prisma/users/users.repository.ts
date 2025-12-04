@@ -161,6 +161,40 @@ export class UsersRepository {
     });
   }
 
+  async getNotificationPreferences(userId: string) {
+    return this._user.model.user.findUnique({
+      where: {
+        id: userId,
+      },
+      select: {
+        emailNotificationsFailedPosts: true,
+        emailNotificationsSuccessfulPosts: true,
+        inAppNotifications: true,
+      },
+    });
+  }
+
+  async updateNotificationPreferences(
+    userId: string,
+    preferences: {
+      emailNotificationsFailedPosts?: boolean;
+      emailNotificationsSuccessfulPosts?: boolean;
+      inAppNotifications?: boolean;
+    }
+  ) {
+    return this._user.model.user.update({
+      where: {
+        id: userId,
+      },
+      data: preferences,
+      select: {
+        emailNotificationsFailedPosts: true,
+        emailNotificationsSuccessfulPosts: true,
+        inAppNotifications: true,
+      },
+    });
+  }
+
   async getMarketplacePeople(orgId: string, userId: string, items: ItemsDto) {
     const info = {
       id: {
