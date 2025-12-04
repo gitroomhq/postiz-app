@@ -182,18 +182,15 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     id: string,
     requiredId: string,
     accessToken: string
-  ): Promise<AuthTokenDetails> {
-    const information = await this.fetchPageInformation(
-      accessToken,
-      requiredId
-    );
+  ): Promise<Omit<AuthTokenDetails, 'refreshToken' | 'expiresIn'>> {
+    const information = await this.fetchPageInformation(accessToken, {
+      page: requiredId,
+    });
 
     return {
       id: information.id,
       name: information.name,
       accessToken: information.access_token,
-      refreshToken: information.access_token,
-      expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
       picture: information.picture,
       username: information.username,
     };
@@ -266,7 +263,8 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     return data;
   }
 
-  async fetchPageInformation(accessToken: string, pageId: string) {
+  async fetchPageInformation(accessToken: string, data: { page: string }) {
+    const pageId = data.page;
     const {
       id,
       name,

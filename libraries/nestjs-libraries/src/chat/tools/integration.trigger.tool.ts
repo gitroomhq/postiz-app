@@ -11,12 +11,14 @@ import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/in
 import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { checkAuth } from '@gitroom/nestjs-libraries/chat/auth.context';
+import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
 
 @Injectable()
 export class IntegrationTriggerTool implements AgentToolInterface {
   constructor(
     private _integrationManager: IntegrationManager,
-    private _integrationService: IntegrationService
+    private _integrationService: IntegrationService,
+    private _refreshIntegrationService: RefreshIntegrationService
   ) {}
   name = 'triggerTool';
 
@@ -103,40 +105,12 @@ export class IntegrationTriggerTool implements AgentToolInterface {
 
             return { output: load };
           } catch (err) {
-            console.log(err);
             if (err instanceof RefreshToken) {
-              const {
-                accessToken,
-                refreshToken,
-                expiresIn,
-                additionalSettings,
-              } = await integrationProvider.refreshToken(
-                getIntegration.refreshToken
+              const data = await this._refreshIntegrationService.refresh(
+                getIntegration
               );
 
-              if (accessToken) {
-                await this._integrationService.createOrUpdateIntegration(
-                  additionalSettings,
-                  !!integrationProvider.oneTimeToken,
-                  getIntegration.organizationId,
-                  getIntegration.name,
-                  getIntegration.picture!,
-                  'social',
-                  getIntegration.internalId,
-                  getIntegration.providerIdentifier,
-                  accessToken,
-                  refreshToken,
-                  expiresIn
-                );
-
-                getIntegration.token = accessToken;
-
-                if (integrationProvider.refreshWait) {
-                  await timer(10000);
-                }
-
-                continue;
-              } else {
+              if (!data) {
                 await this._integrationService.disconnectChannel(
                   organizationId,
                   getIntegration
@@ -145,6 +119,19 @@ export class IntegrationTriggerTool implements AgentToolInterface {
                   output:
                     'We had to disconnect the channel as the token expired',
                 };
+              }
+
+              const { accessToken } = data;
+
+              if (accessToken) {
+                getIntegration.token = accessToken;
+
+                if (integrationProvider.refreshWait) {
+                  await timer(10000);
+                }
+
+                continue;
+              } else {
               }
             }
             return { output: 'Unexpected error' };

@@ -79,6 +79,7 @@
     "@postiz/wallets": "^0.0.1",
     "@prisma/client": "6.5.0",
     "@sentry/nestjs": "^10.25.0",
+    "@sentry/react": "^10.25.0",
     "@sentry/nextjs": "^10.25.0",
     "@sentry/profiling-node": "^10.25.0",
     "@solana/wallet-adapter-react": "^0.15.35",

@@ -19,7 +19,7 @@ export interface IAuthenticator {
     id: string,
     requiredId: string,
     accessToken: string
-  ): Promise<AuthTokenDetails>;
+  ): Promise<Omit<AuthTokenDetails, 'refreshToken' | 'expiresIn'>>;
   generateAuthUrl(
     clientInformation?: ClientInformation
   ): Promise<GenerateAuthUrlResponse>;
@@ -107,6 +107,14 @@ export type MediaContent = {
   thumbnailTimestamp?: number;
 };
 
+export type FetchPageInformationResult = {
+  id: string;
+  name: string;
+  access_token: string;
+  picture: string;
+  username: string;
+};
+
 export interface SocialProvider
   extends IAuthenticator,
     ISocialMediaIntegration {
@@ -139,4 +147,8 @@ export interface SocialProvider
   ) => Promise<{ id: string; label: string; image: string, doNotCache?: boolean }[] | {none: true}>;
   mentionFormat?(idOrHandle: string, name: string): string;
   deletePost?(id: string, accessToken: string): Promise<void>;
+  fetchPageInformation?(
+    accessToken: string,
+    data: any
+  ): Promise<FetchPageInformationResult>;
 }

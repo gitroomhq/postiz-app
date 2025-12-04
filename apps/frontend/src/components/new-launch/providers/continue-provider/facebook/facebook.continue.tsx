@@ -4,25 +4,22 @@ import { FC, useCallback, useMemo, useState } from 'react';
 import useSWR from 'swr';
 import clsx from 'clsx';
 import { Button } from '@gitroom/react/form/button';
-import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useCustomProviderFunction } from '@gitroom/frontend/components/launches/helpers/use.custom.provider.function';
-import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
+
 export const FacebookContinue: FC<{
-  closeModal: () => void;
+  onSave: (data: any) => Promise<void>;
   existingId: string[];
 }> = (props) => {
-  const { closeModal, existingId } = props;
+  const { onSave, existingId } = props;
   const call = useCustomProviderFunction();
-  const { integration } = useIntegration();
   const [page, setSelectedPage] = useState<null | string>(null);
-  const fetch = useFetch();
   const loadPages = useCallback(async () => {
     try {
       const pages = await call.get('pages');
       return pages;
     } catch (e) {
-      closeModal();
+      // Handle error silently
     }
   }, []);
   const setPage = useCallback(
@@ -42,15 +39,9 @@ export const FacebookContinue: FC<{
   });
   const t = useT();
 
-  const saveInstagram = useCallback(async () => {
-    await fetch(`/integrations/facebook/${integration?.id}`, {
-      method: 'POST',
-      body: JSON.stringify({
-        page,
-      }),
-    });
-    closeModal();
-  }, [integration, page]);
+  const saveFacebook = useCallback(async () => {
+    await onSave({ page });
+  }, [onSave, page]);
   const filteredData = useMemo(() => {
     return (
       data?.filter((p: { id: string }) => !existingId.includes(p.id)) || []
@@ -112,7 +103,7 @@ export const FacebookContinue: FC<{
         )}
       </div>
       <div>
-        <Button disabled={!page} onClick={saveInstagram}>
+        <Button disabled={!page} onClick={saveFacebook}>
           {t('save', 'Save')}
         </Button>
       </div>

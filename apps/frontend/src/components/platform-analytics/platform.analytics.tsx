@@ -24,6 +24,7 @@ const allowedIntegrations = [
   'linkedin-page',
   // 'tiktok',
   'youtube',
+  'gmb',
   'pinterest',
   'threads',
   'x',
@@ -83,6 +84,7 @@ export const PlatformAnalytics = () => {
         'pinterest',
         'youtube',
         'threads',
+        'gmb',
         'x',
       ].indexOf(currentIntegration.identifier) !== -1
     ) {
@@ -100,6 +102,7 @@ export const PlatformAnalytics = () => {
         'pinterest',
         'youtube',
         'threads',
+        'gmb',
         'x',
       ].indexOf(currentIntegration.identifier) !== -1
     ) {
@@ -109,7 +112,7 @@ export const PlatformAnalytics = () => {
       });
     }
     if (
-      ['facebook', 'linkedin-page', 'pinterest', 'youtube', 'x'].indexOf(
+      ['facebook', 'linkedin-page', 'pinterest', 'youtube', 'x', 'gmb'].indexOf(
         currentIntegration.identifier
       ) !== -1
     ) {
