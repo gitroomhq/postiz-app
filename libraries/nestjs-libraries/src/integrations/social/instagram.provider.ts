@@ -292,7 +292,6 @@ export class InstagramProvider
       };
     }
 
-    console.log('err', body);
     return undefined;
   }
 
@@ -300,7 +299,7 @@ export class InstagramProvider
     id: string,
     requiredId: string,
     accessToken: string
-  ): Promise<AuthTokenDetails> {
+  ): Promise<Omit<AuthTokenDetails, 'refreshToken' | 'expiresIn'>> {
     const findPage = (await this.pages(accessToken)).find(
       (p) => p.id === requiredId
     );
@@ -314,8 +313,6 @@ export class InstagramProvider
       id: information.id,
       name: information.name,
       accessToken: information.access_token,
-      refreshToken: information.access_token,
-      expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
       picture: information.picture,
       username: information.username,
     };

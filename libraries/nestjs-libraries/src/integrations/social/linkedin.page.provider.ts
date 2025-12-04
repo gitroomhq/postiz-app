@@ -149,7 +149,7 @@ export class LinkedinPageProvider
     id: string,
     requiredId: string,
     accessToken: string
-  ): Promise<AuthTokenDetails> {
+  ): Promise<Omit<AuthTokenDetails, 'refreshToken' | 'expiresIn'>> {
     const information = await this.fetchPageInformation(accessToken, {
       page: requiredId,
     });
@@ -158,8 +158,6 @@ export class LinkedinPageProvider
       id: information.id,
       name: information.name,
       accessToken: information.access_token,
-      refreshToken: information.access_token,
-      expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
       picture: information.picture,
       username: information.username,
     };

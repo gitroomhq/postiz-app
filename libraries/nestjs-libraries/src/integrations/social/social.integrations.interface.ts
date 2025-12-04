@@ -19,7 +19,7 @@ export interface IAuthenticator {
     id: string,
     requiredId: string,
     accessToken: string
-  ): Promise<AuthTokenDetails>;
+  ): Promise<Omit<AuthTokenDetails, 'refreshToken' | 'expiresIn'>>;
   generateAuthUrl(
     clientInformation?: ClientInformation
   ): Promise<GenerateAuthUrlResponse>;

@@ -257,7 +257,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     id: string,
     requiredId: string,
     accessToken: string
-  ): Promise<AuthTokenDetails> {
+  ): Promise<Omit<AuthTokenDetails, 'refreshToken' | 'expiresIn'>> {
     const pages = await this.pages(accessToken);
     const findPage = pages.find((p) => p.id === requiredId);
 
@@ -273,8 +273,6 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       id: information.id,
       name: information.name,
       accessToken: information.access_token,
-      refreshToken: information.access_token,
-      expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
       picture: information.picture,
       username: information.username,
     };
