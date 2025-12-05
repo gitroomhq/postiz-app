@@ -49,11 +49,13 @@ export class OauthProvider implements ProvidersInterface {
   }
 
   generateLink(): string {
+    const state = Math.random().toString(36).substring(2, 15);
     const params = new URLSearchParams({
       client_id: this.clientId,
       scope: 'openid profile email',
       response_type: 'code',
-      redirect_uri: `${this.frontendUrl}/settings`,
+      redirect_uri: `${this.frontendUrl}/auth?provider=GENERIC`,
+      state,
     });
 
     return `${this.authUrl}?${params.toString()}`;
@@ -71,7 +73,7 @@ export class OauthProvider implements ProvidersInterface {
         client_id: this.clientId,
         client_secret: this.clientSecret,
         code,
-        redirect_uri: `${this.frontendUrl}/settings`,
+        redirect_uri: `${this.frontendUrl}/auth?provider=GENERIC`,
       }),
     });
 
