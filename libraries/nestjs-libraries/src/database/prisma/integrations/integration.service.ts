@@ -187,7 +187,9 @@ export class IntegrationService {
       orgId,
       `Could not refresh your ${integration.providerIdentifier} channel ${err}`,
       `Could not refresh your ${integration.providerIdentifier} channel ${err}. Please go back to the system and connect it again ${process.env.FRONTEND_URL}/launches`,
-      true
+      true,
+      false,
+      'info'
     );
   }
 

@@ -304,7 +304,9 @@ export class PostsService {
         firstPost.organizationId,
         `We couldn't post to ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
         `We couldn't post to ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name} because you need to reconnect it. Please enable it and try again.`,
-        true
+        true,
+        false,
+        'info'
       );
       return;
     }
@@ -314,7 +316,9 @@ export class PostsService {
         firstPost.organizationId,
         `We couldn't post to ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
         `We couldn't post to ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name} because it's disabled. Please enable it and try again.`,
-        true
+        true,
+        false,
+        'info'
       );
       return;
     }
@@ -343,7 +347,9 @@ export class PostsService {
           firstPost.organizationId,
           `Error posting on ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
           `An error occurred while posting on ${firstPost.integration?.providerIdentifier}`,
-          true
+          true,
+          false,
+          'fail'
         );
 
         return;
@@ -362,7 +368,9 @@ export class PostsService {
           `An error occurred while posting on ${
             firstPost.integration?.providerIdentifier
           }${err?.message ? `: ${err?.message}` : ``}`,
-          true
+          true,
+          false,
+          'fail'
         );
 
         console.error(
@@ -959,15 +967,20 @@ export class PostsService {
       return;
     }
 
+    // Get the types of notifications in this digest
+    const types = await this._notificationService.getDigestTypes(orgId);
+
     const message = getNotificationsForOrgSince
       .map((p) => p.content)
       .join('<br />');
-    await this._notificationService.sendEmailsToOrg(
+
+    await this._notificationService.sendDigestEmailsToOrg(
       orgId,
       getNotificationsForOrgSince.length === 1
         ? subject
         : '[Postiz] Your latest notifications',
-      message
+      message,
+      types.length > 0 ? types : ['success'] // Default to success if no types tracked
     );
   }
 }
