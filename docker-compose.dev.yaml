@@ -5,7 +5,7 @@
 services:
   postiz-postgres:
     # ref: https://hub.docker.com/_/postgres
-    image: postgres:17-alpine # 17.0
+    image: postgres:15
     container_name: postiz-postgres
     restart: always
     environment:

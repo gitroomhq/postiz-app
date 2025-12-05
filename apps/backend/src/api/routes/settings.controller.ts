@@ -1,19 +1,25 @@
 import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
-import { Organization } from '@prisma/client';
+import { Organization, User } from '@prisma/client';
 import { StarsService } from '@gitroom/nestjs-libraries/database/prisma/stars/stars.service';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { AddTeamMemberDto } from '@gitroom/nestjs-libraries/dtos/settings/add.team.member.dto';
 import { ApiTags } from '@nestjs/swagger';
-import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
+import {
+  AuthorizationActions,
+  Sections,
+} from '@gitroom/backend/services/auth/permissions/permission.exception.class';
+import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
+import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 
 @ApiTags('Settings')
 @Controller('/settings')
 export class SettingsController {
   constructor(
     private _starsService: StarsService,
-    private _organizationService: OrganizationService
+    private _organizationService: OrganizationService,
+    private _usersService: UsersService
   ) {}
 
   @Get('/github')
@@ -132,5 +138,26 @@ export class SettingsController {
     @Param('id') id: string
   ) {
     return this._organizationService.deleteTeamMember(org, id);
+  }
+
+  @Get('/email-notifications')
+  async getEmailNotifications(@GetUserFromRequest() user: User) {
+    const userValue = await this._usersService.getEmailNotifications(user.id);
+    if (!userValue) {
+      return { enabled: false };
+    }
+    return { enabled: userValue.emailNotifications };
+  }
+
+  @Post('/email-notifications')
+  @CheckPolicies(
+    [AuthorizationActions.Create, Sections.TEAM_MEMBERS],
+    [AuthorizationActions.Create, Sections.ADMIN]
+  )
+  async updateEmailNotifications(
+    @GetUserFromRequest() user: User,
+    @Body('enabled') enabled: boolean
+  ) {
+    return this._usersService.updateEmailNotifications(user.id, enabled);
   }
 }
