@@ -145,7 +145,7 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
 
       return {
         id: pubkey,
-        name: user.display_name || user.displayName || 'No Name',
+        name: user.display_name || user.displayName || user.name || 'No Name',
         accessToken: AuthService.signJWT({ password: body.password }),
         refreshToken: '',
         expiresIn: dayjs().add(200, 'year').unix() - dayjs().unix(),
