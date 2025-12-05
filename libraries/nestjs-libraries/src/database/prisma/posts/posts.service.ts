@@ -307,7 +307,9 @@ export class PostsService {
         firstPost.organizationId,
         `We couldn't post to ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
         `We couldn't post to ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name} because you need to reconnect it. Please enable it and try again.`,
-        true
+        true,
+        false,
+        NotificationType.FAILED_POST
       );
       return;
     }
@@ -317,7 +319,9 @@ export class PostsService {
         firstPost.organizationId,
         `We couldn't post to ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
         `We couldn't post to ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name} because it's disabled. Please enable it and try again.`,
-        true
+        true,
+        false,
+        NotificationType.FAILED_POST
       );
       return;
     }

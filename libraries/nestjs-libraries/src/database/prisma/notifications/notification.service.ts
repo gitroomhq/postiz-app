@@ -117,6 +117,12 @@ export class NotificationService {
       } else if (notificationType === NotificationType.SUCCESSFUL_POST) {
         shouldSendEmail =
           user.user.emailNotificationsSuccessfulPosts !== false;
+      } else if (notificationType === NotificationType.GENERAL) {
+        // For GENERAL notifications (like digest emails), only send if user has
+        // at least one email notification type enabled
+        shouldSendEmail =
+          user.user.emailNotificationsFailedPosts !== false ||
+          user.user.emailNotificationsSuccessfulPosts !== false;
       }
 
       if (shouldSendEmail) {
