@@ -41,18 +41,20 @@ export function Register() {
   const fetch = useFetch();
   const [provider] = useState(getQuery?.get('provider')?.toUpperCase());
   const [code, setCode] = useState(getQuery?.get('code') || '');
+  const [state] = useState(getQuery?.get('state') || '');
   const [show, setShow] = useState(false);
   useEffect(() => {
     if (provider && code) {
       load();
     }
-  }, []);
+  }, [provider, code, state]);
   const load = useCallback(async () => {
     const { token } = await (
       await fetch(`/auth/oauth/${provider?.toUpperCase() || 'LOCAL'}/exists`, {
         method: 'POST',
         body: JSON.stringify({
           code,
+          state,
         }),
       })
     ).json();
@@ -60,7 +62,7 @@ export function Register() {
       setCode(token);
       setShow(true);
     }
-  }, [provider, code]);
+  }, [provider, code, state]);
   if (!code && !provider) {
     return <RegisterAfter token="" provider="LOCAL" />;
   }
