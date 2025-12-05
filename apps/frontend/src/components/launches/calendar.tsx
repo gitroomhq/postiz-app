@@ -314,7 +314,7 @@ export const MonthView = () => {
           {calendarDays.map((date, index) => (
             <div
               key={index}
-              className="text-center items-center justify-center flex min-h-[100px]"
+              className="text-center items-center justify-center flex"
             >
               <CalendarColumn
                 getDate={newDayjs(date.day).endOf('day')}
