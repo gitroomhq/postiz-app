@@ -9,6 +9,7 @@ import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.req
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { Request } from 'express';
 import { Nowpayments } from '@gitroom/nestjs-libraries/crypto/nowpayments';
+import { AuthService } from '@gitroom/helpers/auth/auth.service';
 
 @ApiTags('Billing')
 @Controller('/billing')
@@ -28,6 +29,20 @@ export class BillingController {
     return {
       status: await this._stripeService.checkSubscription(org.id, body),
     };
+  }
+
+  @Get('/check-discount')
+  async checkDiscount(@GetOrgFromRequest() org: Organization) {
+    return {
+      offerCoupon: !(await this._stripeService.checkDiscount(org.paymentId))
+        ? false
+        : AuthService.signJWT({ discount: true }),
+    };
+  }
+
+  @Post('/apply-discount')
+  async applyDiscount(@GetOrgFromRequest() org: Organization) {
+    await this._stripeService.applyDiscount(org.paymentId);
   }
 
   @Post('/finish-trial')

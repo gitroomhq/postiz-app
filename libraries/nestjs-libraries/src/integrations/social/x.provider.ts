@@ -405,7 +405,11 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         await this.runInConcurrent(async () =>
           client.v2.tweet({
             text:
-              postDetails?.[0]?.settings?.thread_finisher! +
+              stripHtmlValidation(
+                'normal',
+                postDetails?.[0]?.settings?.thread_finisher!,
+                true
+              ) +
               '\n' +
               ids[0].releaseURL,
             reply: { in_reply_to_tweet_id: ids[ids.length - 1].postId },

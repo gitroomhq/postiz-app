@@ -22,6 +22,7 @@ import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions
 import { ApiTags } from '@nestjs/swagger';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
+import { EmailNotificationsDto } from '@gitroom/nestjs-libraries/dtos/users/email-notifications.dto';
 import { HttpForbiddenException } from '@gitroom/nestjs-libraries/services/exception.filter';
 import { RealIP } from 'nestjs-real-ip';
 import { UserAgent } from '@gitroom/nestjs-libraries/user/user.agent';
@@ -125,6 +126,19 @@ export class UsersController {
     return this._userService.changePersonal(user.id, body);
   }
 
+  @Get('/email-notifications')
+  async getEmailNotifications(@GetUserFromRequest() user: User) {
+    return this._userService.getEmailNotifications(user.id);
+  }
+
+  @Post('/email-notifications')
+  async updateEmailNotifications(
+    @GetUserFromRequest() user: User,
+    @Body() body: EmailNotificationsDto
+  ) {
+    return this._userService.updateEmailNotifications(user.id, body);
+  }
+
   @Get('/subscription')
   @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
   async getSubscription(@GetOrgFromRequest() organization: Organization) {
@@ -199,6 +213,7 @@ export class UsersController {
 
   @Post('/logout')
   logout(@Res({ passthrough: true }) response: Response) {
+    response.header('logout', 'true');
     response.cookie('auth', '', {
       domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
       ...(!process.env.NOT_SECURED

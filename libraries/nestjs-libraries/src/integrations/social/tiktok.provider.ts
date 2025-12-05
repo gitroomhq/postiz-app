@@ -13,6 +13,7 @@ import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settin
 import { timer } from '@gitroom/helpers/utils/timer';
 import { Integration } from '@prisma/client';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 
 @Rules(
   'TikTok can have one video or one picture or multiple pictures, it cannot be without an attachment'
@@ -391,6 +392,13 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
       const { status, publicaly_available_post_id } = post.data;
 
+      if (status === 'SEND_TO_USER_INBOX') {
+        return {
+          url: 'https://www.tiktok.com/tiktokstudio/content?tab=post',
+          id: Math.floor(Math.random() * 1000000 + 100000),
+        };
+      }
+
       if (status === 'PUBLISH_COMPLETE') {
         return {
           url: !publicaly_available_post_id
@@ -437,7 +445,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     integration: Integration
   ): Promise<PostResponse[]> {
     const [firstPost] = postDetails;
-
+    console.log('hello');
     const isPhoto = (firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) === -1;
     const {
       data: { publish_id },

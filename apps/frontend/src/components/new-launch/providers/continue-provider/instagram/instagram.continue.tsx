@@ -4,28 +4,25 @@ import { FC, useCallback, useMemo, useState } from 'react';
 import useSWR from 'swr';
 import clsx from 'clsx';
 import { Button } from '@gitroom/react/form/button';
-import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useCustomProviderFunction } from '@gitroom/frontend/components/launches/helpers/use.custom.provider.function';
-import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
+
 export const InstagramContinue: FC<{
-  closeModal: () => void;
+  onSave: (data: any) => Promise<void>;
   existingId: string[];
 }> = (props) => {
-  const { closeModal, existingId } = props;
+  const { onSave, existingId } = props;
   const call = useCustomProviderFunction();
-  const { integration } = useIntegration();
   const [page, setSelectedPage] = useState<null | {
     id: string;
     pageId: string;
   }>(null);
-  const fetch = useFetch();
   const loadPages = useCallback(async () => {
     try {
       const pages = await call.get('pages');
       return pages;
     } catch (e) {
-      closeModal();
+      // Handle error silently
     }
   }, []);
   const t = useT();
@@ -46,12 +43,8 @@ export const InstagramContinue: FC<{
     refreshInterval: 0,
   });
   const saveInstagram = useCallback(async () => {
-    await fetch(`/integrations/instagram/${integration?.id}`, {
-      method: 'POST',
-      body: JSON.stringify(page),
-    });
-    closeModal();
-  }, [integration, page]);
+    await onSave(page);
+  }, [onSave, page]);
   const filteredData = useMemo(() => {
     return (
       data?.filter((p: { id: string }) => !existingId.includes(p.id)) || []
@@ -103,7 +96,7 @@ export const InstagramContinue: FC<{
             >
               <div>
                 <img
-                  className="w-full"
+                  className="w-full max-w-[156px]"
                   src={p.picture.data.url}
                   alt="profile"
                 />

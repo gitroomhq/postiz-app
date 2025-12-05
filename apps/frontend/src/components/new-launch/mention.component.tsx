@@ -148,6 +148,7 @@ export const suggestion = (
   let component: any;
 
   return {
+    allowSpaces: true,
     items: async ({ query }: { query: string }) => {
       if (!query || query.length < 2) {
         component.updateProps({ loading: true, stop: true });

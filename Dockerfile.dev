@@ -1,4 +1,4 @@
-FROM node:22-alpine
+FROM node:22.20-alpine
 ARG NEXT_PUBLIC_VERSION
 ENV NEXT_PUBLIC_VERSION=$NEXT_PUBLIC_VERSION
 RUN apk add --no-cache g++ make py3-pip bash nginx

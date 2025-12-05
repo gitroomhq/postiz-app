@@ -31,6 +31,7 @@ export const NeynarAuthButton: FC<{
       ) {
         authWindowRef.current?.close();
         window.removeEventListener('message', handleMessage); // Remove listener here
+        delete event.data.user.profile;
         const _user = {
           signer_uuid: event.data.signer_uuid,
           ...event.data.user,

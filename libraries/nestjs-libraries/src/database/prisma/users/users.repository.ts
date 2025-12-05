@@ -5,6 +5,7 @@ import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { ItemsDto } from '@gitroom/nestjs-libraries/dtos/marketplace/items.dto';
 import { allTagsOptions } from '@gitroom/nestjs-libraries/database/prisma/marketplace/tags.list';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
+import { EmailNotificationsDto } from '@gitroom/nestjs-libraries/dtos/users/email-notifications.dto';
 
 @Injectable()
 export class UsersRepository {
@@ -157,6 +158,30 @@ export class UsersRepository {
           : {
               disconnect: true,
             },
+      },
+    });
+  }
+
+  async getEmailNotifications(userId: string) {
+    return this._user.model.user.findUnique({
+      where: {
+        id: userId,
+      },
+      select: {
+        sendSuccessEmails: true,
+        sendFailureEmails: true,
+      },
+    });
+  }
+
+  async updateEmailNotifications(userId: string, body: EmailNotificationsDto) {
+    await this._user.model.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        sendSuccessEmails: body.sendSuccessEmails,
+        sendFailureEmails: body.sendFailureEmails,
       },
     });
   }

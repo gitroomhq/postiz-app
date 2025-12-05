@@ -1,11 +1,7 @@
 'use client';
 
 import React, {
-  FC,
-  MouseEventHandler,
-  useCallback,
-  useMemo,
-  useState,
+  FC, MouseEventHandler, useCallback, useLayoutEffect, useMemo, useRef, useState
 } from 'react';
 import { useClickOutside } from '@mantine/hooks';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
@@ -60,17 +56,39 @@ export const Menu: FC<{
   const { integrations, reloadCalendarView } = useCalendar();
   const toast = useToaster();
   const modal = useModals();
-  const [show, setShow] = useState(false);
+  const [show, setShow] = useState<false | {x: number, y: number}>(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const ref = useClickOutside<HTMLDivElement>(() => {
     setShow(false);
   });
+  const showRef = useRef();
+
+  // Adjust menu position if it would overflow viewport
+  useLayoutEffect(() => {
+    if (show && menuRef.current) {
+      const menuRect = menuRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const padding = 10;
+      
+      // Check if menu overflows bottom of viewport
+      if (menuRect.bottom > viewportHeight - padding) {
+        const newY = Math.max(padding, viewportHeight - menuRect.height - padding);
+        // Only update if position actually changed significantly to avoid infinite loop
+        if (Math.abs(show.y - newY) > 1) {
+          setShow(prev => prev ? { ...prev, y: newY } : false);
+        }
+      }
+    }
+  }, [show]);
   const findIntegration: any = useMemo(() => {
     return integrations.find((integration) => integration.id === id);
   }, [integrations, id]);
   const changeShow: MouseEventHandler<HTMLDivElement> = useCallback(
     (e) => {
       e.stopPropagation();
-      setShow(!show);
+      // @ts-ignore
+      const boundBox = showRef?.current?.getBoundingClientRect();
+      setShow(show ? false : { x: boundBox?.left, y: boundBox?.top + boundBox?.height });
     },
     [show]
   );
@@ -284,9 +302,10 @@ export const Menu: FC<{
       ),
     });
   }, []);
+
   return (
     <div
-      className="cursor-pointer relative select-none"
+      className="cursor-pointer relative select-none flex"
       onClick={changeShow}
       ref={ref}
     >
@@ -303,10 +322,15 @@ export const Menu: FC<{
           fill="currentColor"
         />
       </svg>
+      <div>
+        <div ref={showRef} />
+      </div>
       {show && (
         <div
+          ref={menuRef}
           onClick={(e) => e.stopPropagation()}
-          className={`absolute top-[100%] start-0 p-[12px] bg-newBgColorInner shadow-menu flex flex-col gap-[16px] z-[100] rounded-[8px] border border-tableBorder text-nowrap`}
+          style={{left: show.x, top: show.y}}
+          className={`fixed p-[12px] bg-newBgColorInner shadow-menu flex flex-col gap-[16px] z-[100] rounded-[8px] border border-tableBorder text-nowrap`}
         >
           {canDisable && !findIntegration?.refreshNeeded && (
             <div

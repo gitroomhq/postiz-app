@@ -30,12 +30,13 @@ import { UploadDto } from '@gitroom/nestjs-libraries/dtos/media/upload.dto';
 import axios from 'axios';
 import { Readable } from 'stream';
 import { lookup } from 'mime-types';
+import * as Sentry from '@sentry/nestjs';
 
 @ApiTags('Public API')
 @Controller('/public/v1')
 export class PublicIntegrationsController {
   private storage = UploadFactory.createStorage();
-
+  
   constructor(
     private _integrationService: IntegrationService,
     private _postsService: PostsService,
@@ -48,6 +49,7 @@ export class PublicIntegrationsController {
     @GetOrgFromRequest() org: Organization,
     @UploadedFile('file') file: Express.Multer.File
   ) {
+    Sentry.metrics.count("public_api-request", 1);
     if (!file) {
       throw new HttpException({ msg: 'No file provided' }, 400);
     }
@@ -65,6 +67,7 @@ export class PublicIntegrationsController {
     @GetOrgFromRequest() org: Organization,
     @Body() body: UploadDto
   ) {
+    Sentry.metrics.count("public_api-request", 1);
     const response = await axios.get(body.url, {
       responseType: 'arraybuffer',
     });
@@ -96,6 +99,7 @@ export class PublicIntegrationsController {
     @GetOrgFromRequest() org: Organization,
     @Param('id') id?: string
   ) {
+    Sentry.metrics.count("public_api-request", 1);
     return { date: await this._postsService.findFreeDateTime(org.id, id) };
   }
 
@@ -104,6 +108,7 @@ export class PublicIntegrationsController {
     @GetOrgFromRequest() org: Organization,
     @Query() query: GetPostsDto
   ) {
+    Sentry.metrics.count("public_api-request", 1);
     const posts = await this._postsService.getPosts(org.id, query);
     return {
       posts,
@@ -117,6 +122,7 @@ export class PublicIntegrationsController {
     @GetOrgFromRequest() org: Organization,
     @Body() rawBody: any
   ) {
+    Sentry.metrics.count("public_api-request", 1);
     const body = await this._postsService.mapTypeToPost(
       rawBody,
       org.id,
@@ -133,17 +139,20 @@ export class PublicIntegrationsController {
     @GetOrgFromRequest() org: Organization,
     @Param() body: { id: string }
   ) {
+    Sentry.metrics.count("public_api-request", 1);
     const getPostById = await this._postsService.getPost(org.id, body.id);
     return this._postsService.deletePost(org.id, getPostById.group);
   }
 
   @Get('/is-connected')
   async getActiveIntegrations(@GetOrgFromRequest() org: Organization) {
+    Sentry.metrics.count("public_api-request", 1);
     return { connected: true };
   }
 
   @Get('/integrations')
   async listIntegration(@GetOrgFromRequest() org: Organization) {
+    Sentry.metrics.count("public_api-request", 1);
     return (await this._integrationService.getIntegrationsList(org.id)).map(
       (org) => ({
         id: org.id,
@@ -167,11 +176,13 @@ export class PublicIntegrationsController {
     @GetOrgFromRequest() org: Organization,
     @Body() body: VideoDto
   ) {
+    Sentry.metrics.count("public_api-request", 1);
     return this._mediaService.generateVideo(org, body);
   }
 
   @Post('/video/function')
   videoFunction(@Body() body: VideoFunctionDto) {
+    Sentry.metrics.count("public_api-request", 1);
     return this._mediaService.videoFunction(
       body.identifier,
       body.functionName,
