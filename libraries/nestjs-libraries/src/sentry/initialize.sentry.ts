@@ -1,6 +1,14 @@
 import * as Sentry from '@sentry/nestjs';
-import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import { capitalize } from 'lodash';
+
+// Try to import profiling integration, but skip if not available (Node version incompatibility)
+let nodeProfilingIntegration: any = null;
+try {
+  const profilingModule = require('@sentry/profiling-node');
+  nodeProfilingIntegration = profilingModule.nodeProfilingIntegration;
+} catch (err) {
+  console.log('[Sentry] Profiling integration not available for this Node version, skipping...');
+}
 
 export const initializeSentry = (appName: string, allowLogs = false) => {
   if (!process.env.NEXT_PUBLIC_SENTRY_DSN) {
@@ -8,6 +16,19 @@ export const initializeSentry = (appName: string, allowLogs = false) => {
   }
 
   try {
+    const integrations = [
+      Sentry.consoleLoggingIntegration({ levels: ['log', 'info', 'warn', 'error', 'debug', 'assert', 'trace'] }),
+      Sentry.openAIIntegration({
+        recordInputs: true,
+        recordOutputs: true,
+      }),
+    ];
+
+    // Add profiling integration only if available
+    if (nodeProfilingIntegration) {
+      integrations.unshift(nodeProfilingIntegration());
+    }
+
     Sentry.init({
       initialScope: {
         tags: {
@@ -22,15 +43,7 @@ export const initializeSentry = (appName: string, allowLogs = false) => {
       },
       environment: process.env.NODE_ENV || 'development',
       dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-      integrations: [
-        // Add our Profiling integration
-        nodeProfilingIntegration(),
-        Sentry.consoleLoggingIntegration({ levels: ['log', 'info', 'warn', 'error', 'debug', 'assert', 'trace'] }),
-        Sentry.openAIIntegration({
-          recordInputs: true,
-          recordOutputs: true,
-        }),
-      ],
+      integrations,
       tracesSampleRate: 1.0,
       enableLogs: true,
 

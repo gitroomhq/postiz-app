@@ -293,6 +293,9 @@ export class OrganizationRepository {
               select: {
                 email: true,
                 id: true,
+                emailNotificationsFailedPosts: true,
+                emailNotificationsSuccessfulPosts: true,
+                inAppNotifications: true,
               },
             },
           },

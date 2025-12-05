@@ -3,9 +3,15 @@ import Bottleneck from 'bottleneck';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { BadBody } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
-const connection = new Bottleneck.IORedisConnection({
-  client: ioRedis,
-});
+// Try to create Redis connection for Bottleneck, but fall back to local if it fails
+let connection: Bottleneck.IORedisConnection | null = null;
+try {
+  connection = new Bottleneck.IORedisConnection({
+    client: ioRedis,
+  });
+} catch (err) {
+  console.log('[Bottleneck] Could not create Redis connection, using local datastore:', err instanceof Error ? err.message : String(err));
+}
 
 const mapper = {} as Record<string, Bottleneck>;
 
@@ -19,8 +25,7 @@ export const concurrency = async <T>(
   mapper[strippedIdentifier] ??= new Bottleneck({
     id: strippedIdentifier + '-concurrency-new',
     maxConcurrent,
-    datastore: 'ioredis',
-    connection,
+    ...(connection ? { datastore: 'ioredis', connection } : {}),
     minTime: 1000,
   });
   let load: T;
