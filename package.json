@@ -257,7 +257,7 @@
     "@types/chrome": "^0.0.319",
     "@types/cookie-parser": "^1.4.6",
     "@types/jest": "29.5.12",
-    "@types/node": "18.16.9",
+    "@types/node": "24.10.1",
     "@types/node-telegram-bot-api": "^0.64.7",
     "@types/react": "18.3.1",
     "@types/react-dom": "18.3.0",
