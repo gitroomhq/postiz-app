@@ -289,7 +289,7 @@
     "nodemon": "^3.1.9",
     "postcss": "8.4.38",
     "prettier": "^2.6.2",
-    "prisma": "6.5.0",
+    "prisma": "7.1.0",
     "react-refresh": "^0.10.0",
     "ts-jest": "^29.1.0",
     "ts-node": "10.9.2",
