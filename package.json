@@ -169,7 +169,7 @@
     "json-to-graphql-query": "^2.2.5",
     "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21",
-    "mastra": "^0.13.2",
+    "mastra": "^0.18.6",
     "md5": "^2.3.0",
     "mime": "^3.0.0",
     "mime-types": "^2.1.35",
