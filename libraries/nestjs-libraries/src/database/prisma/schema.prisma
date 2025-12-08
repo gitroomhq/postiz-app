@@ -713,6 +713,7 @@ enum Provider {
   GOOGLE
   FARCASTER
   WALLET
+  FUSIONAUTH
   GENERIC
 }
 

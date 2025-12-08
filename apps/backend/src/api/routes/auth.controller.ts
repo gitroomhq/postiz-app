@@ -268,4 +268,97 @@ export class AuthController {
       login: true,
     });
   }
+
+  @Get('/sso/fusionauth')
+  async ssoFusionAuthGet(
+    @Query('code') code: string,
+    @Query('redirect') redirect: string,
+    @Res({ passthrough: false }) response: Response,
+    @RealIP() ip: string,
+    @UserAgent() userAgent: string
+  ) {
+    return this.handleFusionAuthSso({
+      token: code,
+      response,
+      ip,
+      userAgent,
+      redirect: redirect || process.env.FRONTEND_URL || '/',
+    });
+  }
+
+  private async handleFusionAuthSso({
+    token,
+    response,
+    ip,
+    userAgent,
+    redirect,
+  }: {
+    token: string;
+    response: Response;
+    ip: string;
+    userAgent: string;
+    redirect?: string;
+  }) {
+    try {
+      if (!token) {
+        return response.status(400).send('Missing code');
+      }
+
+      const { jwt, addedOrg } = await this._authService.sso(
+        Provider.FUSIONAUTH as unknown as string,
+        token,
+        ip,
+        userAgent
+      );
+
+      response.cookie('auth', jwt, {
+        domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+        ...(!process.env.NOT_SECURED
+          ? {
+              secure: true,
+              httpOnly: true,
+              sameSite: 'none',
+            }
+          : {}),
+        expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
+      });
+
+      if (process.env.NOT_SECURED) {
+        response.header('auth', jwt);
+      }
+
+      if (typeof addedOrg !== 'boolean' && addedOrg?.organizationId) {
+        response.cookie('showorg', addedOrg.organizationId, {
+          domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+          ...(!process.env.NOT_SECURED
+            ? {
+                secure: true,
+                httpOnly: true,
+                sameSite: 'none',
+              }
+            : {}),
+          expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
+        });
+
+        if (process.env.NOT_SECURED) {
+          response.header('showorg', addedOrg.organizationId);
+        }
+      }
+
+      if (redirect) {
+        return response.redirect(302, redirect);
+      }
+
+      response.header('reload', 'true');
+      return response.status(200).json({ login: true });
+    } catch (e: any) {
+      if (redirect) {
+        const url = new URL(redirect, process.env.FRONTEND_URL || undefined);
+        url.searchParams.set('sso', 'failed');
+        return response.redirect(302, url.toString());
+      }
+
+      return response.status(400).send(e.message || 'SSO failed');
+    }
+  }
 }

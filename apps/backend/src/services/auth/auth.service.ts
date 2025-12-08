@@ -245,6 +245,53 @@ export class AuthService {
     return { token };
   }
 
+  /**
+   * Server-to-server SSO / assertion handler that verifies the incoming assertion
+   * with the configured provider, performs JIT provisioning if needed, and
+   * returns a local JWT.
+   */
+  async sso(provider: string, assertion: string, ip: string, userAgent: string) {
+    const providerInstance = ProvidersFactory.loadProvider(provider as Provider);
+    const token = await providerInstance.getToken(assertion);
+    const providerUser = await providerInstance.getUser(token);
+
+    if (!providerUser) {
+      throw new Error('Invalid provider token');
+    }
+
+    const user = await this._userService.getUserByProvider(
+      providerUser.id,
+      provider as Provider
+    );
+
+    if (user) {
+      return { addedOrg: false, jwt: await this.jwt(user) };
+    }
+
+    if (!(await this.canRegister(provider))) {
+      throw new Error('Registration is disabled');
+    }
+
+    const create = await this._organizationService.createOrgAndUser(
+      {
+        company: '',
+        email: providerUser.email,
+        password: '',
+        provider: provider as unknown as Provider,
+        providerId: providerUser.id,
+      },
+      ip,
+      userAgent
+    );
+
+    await NewsletterService.register(providerUser.email);
+
+    const createdUser = create.users?.[0]?.user;
+    const addedOrg = { organizationId: create.id };
+
+    return { addedOrg, jwt: await this.jwt(createdUser as any) };
+  }
+
   private async jwt(user: User) {
     return AuthChecker.signJWT(user);
   }
