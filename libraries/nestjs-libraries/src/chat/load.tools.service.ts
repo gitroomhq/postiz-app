@@ -85,7 +85,7 @@ export class LoadToolsService {
       )}
 `;
       },
-      model: openai('gpt-4.1'),
+      model: openai(process.env.OPENAI_CHAT_MODEL || 'gpt-4.1'),
       tools,
       memory: new Memory({
         storage: pStore,
