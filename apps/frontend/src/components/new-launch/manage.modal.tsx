@@ -453,7 +453,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           <div>
             <TopTitle title="" removeTitle={true} extraClass="h-[75px]">
               <div className="flex flex-1 gap-[10px]">
-                <div>
+                <div data-sentry-mask>
                   {!dummy && (
                     <TagsComponent
                       name="tags"
