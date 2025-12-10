@@ -308,7 +308,10 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "bcrypt"
+      "@prisma/client",
+      "@prisma/engines",
+      "bcrypt",
+      "prisma"
     ]
   }
 }

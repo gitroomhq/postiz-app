@@ -20,8 +20,8 @@ async function start() {
   const app = await NestFactory.create(AppModule, {
     rawBody: true,
     cors: {
-      ...(!process.env.NOT_SECURED ? { credentials: true } : {}),
-      allowedHeaders: ['Content-Type', 'Authorization', 'x-copilotkit-runtime-client-gql-version'],
+      credentials: true,
+      allowedHeaders: ['Content-Type', 'Authorization', 'x-copilotkit-runtime-client-gql-version', ...(process.env.NOT_SECURED ? ['auth', 'showorg', 'impersonate'] : [])],
       exposedHeaders: [
         'reload',
         'onboarding',
