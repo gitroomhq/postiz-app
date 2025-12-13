@@ -23,11 +23,8 @@ export const startMcp = async (app: INestApplication) => {
   app.use(
     '/mcp/:id',
     async (req: Request, res: Response) => {
-      // @ts-ignore
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Access-Control-Allow-Methods', '*');
-      res.setHeader('Access-Control-Allow-Headers', '*');
-      res.setHeader('Access-Control-Expose-Headers', '*');
+      // Use the main app's CORS settings instead of setting headers manually
+      // The main CORS configuration in main.ts will handle this properly
 
       if (req.method === 'OPTIONS') {
         res.sendStatus(200);

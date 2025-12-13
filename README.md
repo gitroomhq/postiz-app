@@ -104,6 +104,21 @@
 
 To have the project up and running, please follow the [Quick Start Guide](https://docs.postiz.com/quickstart)
 
+### Local Docker Deployment
+
+You can run Postiz locally using Docker Compose:
+
+1. Make sure you have Docker installed
+2. Run the following command in the project root:
+
+```bash
+docker-compose -f docker-compose.local.yaml up --build
+```
+
+3. Access the application at http://localhost:5000
+
+For more detailed instructions, see [README.DOCKER.md](README.DOCKER.md)
+
 ## Sponsor Postiz
 
 We now give a few options to Sponsor Postiz:

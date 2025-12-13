@@ -21,7 +21,7 @@ async function start() {
     rawBody: true,
     cors: {
       ...(!process.env.NOT_SECURED ? { credentials: true } : {}),
-      allowedHeaders: ['Content-Type', 'Authorization', 'x-copilotkit-runtime-client-gql-version'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'x-copilotkit-runtime-client-gql-version', 'auth'],
       exposedHeaders: [
         'reload',
         'onboarding',
@@ -32,7 +32,8 @@ async function start() {
       origin: [
         process.env.FRONTEND_URL,
         'http://localhost:6274',
-        ...(process.env.MAIN_URL ? [process.env.MAIN_URL] : []),
+        ...(process.env.MAIN_URL && process.env.MAIN_URL !== process.env.FRONTEND_URL ? [process.env.MAIN_URL] : []),
+        ...(process.env.X_URL && process.env.X_URL !== process.env.FRONTEND_URL ? [process.env.X_URL] : []),
       ],
     },
   });
