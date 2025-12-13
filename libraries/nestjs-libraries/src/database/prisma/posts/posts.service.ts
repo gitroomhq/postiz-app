@@ -39,6 +39,7 @@ import { validate } from 'class-validator';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 dayjs.extend(utc);
 import * as Sentry from '@sentry/nestjs';
+import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
 
 type PostWithConditionals = Post & {
   integration?: Integration;
@@ -59,7 +60,8 @@ export class PostsService {
     private _mediaService: MediaService,
     private _shortLinkService: ShortLinkService,
     private _webhookService: WebhooksService,
-    private openaiService: OpenaiService
+    private openaiService: OpenaiService,
+    private _refreshIntegrationService: RefreshIntegrationService
   ) {}
 
   checkPending15minutesBack() {
@@ -302,7 +304,9 @@ export class PostsService {
         firstPost.organizationId,
         `We couldn't post to ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
         `We couldn't post to ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name} because you need to reconnect it. Please enable it and try again.`,
-        true
+        true,
+        false,
+        'info'
       );
       return;
     }
@@ -312,7 +316,9 @@ export class PostsService {
         firstPost.organizationId,
         `We couldn't post to ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
         `We couldn't post to ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name} because it's disabled. Please enable it and try again.`,
-        true
+        true,
+        false,
+        'info'
       );
       return;
     }
@@ -341,7 +347,9 @@ export class PostsService {
           firstPost.organizationId,
           `Error posting on ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
           `An error occurred while posting on ${firstPost.integration?.providerIdentifier}`,
-          true
+          true,
+          false,
+          'fail'
         );
 
         return;
@@ -360,7 +368,9 @@ export class PostsService {
           `An error occurred while posting on ${
             firstPost.integration?.providerIdentifier
           }${err?.message ? `: ${err?.message}` : ``}`,
-          true
+          true,
+          false,
+          'fail'
         );
 
         console.error(
@@ -405,7 +415,7 @@ export class PostsService {
     integration: Integration,
     posts: Post[],
     forceRefresh = false
-  ): Promise<Partial<{ postId: string; releaseURL: string }>> {
+  ): Promise<Partial<{ postId: string; releaseURL: string }> | undefined> {
     const getIntegration = this._integrationManager.getSocialIntegration(
       integration.providerIdentifier
     );
@@ -415,53 +425,13 @@ export class PostsService {
     }
 
     if (dayjs(integration?.tokenExpiration).isBefore(dayjs()) || forceRefresh) {
-      const { accessToken, expiresIn, refreshToken, additionalSettings } =
-        await new Promise<AuthTokenDetails>((res) => {
-          getIntegration
-            .refreshToken(integration.refreshToken!)
-            .then((r) => res(r))
-            .catch(() =>
-              res({
-                accessToken: '',
-                expiresIn: 0,
-                refreshToken: '',
-                id: '',
-                name: '',
-                username: '',
-                picture: '',
-                additionalSettings: undefined,
-              })
-            );
-        });
+      const data = await this._refreshIntegrationService.refresh(integration);
 
-      if (!accessToken) {
-        await this._integrationService.refreshNeeded(
-          integration.organizationId,
-          integration.id
-        );
-
-        await this._integrationService.informAboutRefreshError(
-          integration.organizationId,
-          integration
-        );
-        return {};
+      if (!data) {
+        return undefined;
       }
 
-      await this._integrationService.createOrUpdateIntegration(
-        additionalSettings,
-        !!getIntegration.oneTimeToken,
-        integration.organizationId,
-        integration.name,
-        integration.picture!,
-        'social',
-        integration.internalId,
-        integration.providerIdentifier,
-        accessToken,
-        refreshToken,
-        expiresIn
-      );
-
-      integration.token = accessToken;
+      integration.token = data.accessToken;
 
       if (getIntegration.refreshWait) {
         await timer(10000);
@@ -718,7 +688,7 @@ export class PostsService {
         });
       }
 
-      Sentry.metrics.count("post_created", 1);
+      Sentry.metrics.count('post_created', 1);
       postList.push({
         postId: posts[0].id,
         integration: post.integration.id,
@@ -997,15 +967,20 @@ export class PostsService {
       return;
     }
 
+    // Get the types of notifications in this digest
+    const types = await this._notificationService.getDigestTypes(orgId);
+
     const message = getNotificationsForOrgSince
       .map((p) => p.content)
       .join('<br />');
-    await this._notificationService.sendEmailsToOrg(
+
+    await this._notificationService.sendDigestEmailsToOrg(
       orgId,
       getNotificationsForOrgSince.length === 1
         ? subject
         : '[Postiz] Your latest notifications',
-      message
+      message,
+      types.length > 0 ? types : ['success'] // Default to success if no types tracked
     );
   }
 }

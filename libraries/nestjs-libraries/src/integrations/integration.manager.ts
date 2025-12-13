@@ -28,6 +28,7 @@ import { NostrProvider } from '@gitroom/nestjs-libraries/integrations/social/nos
 import { VkProvider } from '@gitroom/nestjs-libraries/integrations/social/vk.provider';
 import { WordpressProvider } from '@gitroom/nestjs-libraries/integrations/social/wordpress.provider';
 import { ListmonkProvider } from '@gitroom/nestjs-libraries/integrations/social/listmonk.provider';
+import { GmbProvider } from '@gitroom/nestjs-libraries/integrations/social/gmb.provider';
 
 export const socialIntegrationList: SocialProvider[] = [
   new XProvider(),
@@ -39,6 +40,7 @@ export const socialIntegrationList: SocialProvider[] = [
   new FacebookProvider(),
   new ThreadsProvider(),
   new YoutubeProvider(),
+  new GmbProvider(),
   new TiktokProvider(),
   new PinterestProvider(),
   new DribbbleProvider(),

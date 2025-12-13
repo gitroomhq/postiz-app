@@ -135,6 +135,38 @@ export const Features: FC<{
     </div>
   );
 };
+
+const Accept: FC<{ resolve: (res: boolean) => void }> = ({ resolve }) => {
+  const [loading, setLoading] = useState(false);
+  const fetch = useFetch();
+  const toaster = useToaster();
+
+  const apply = useCallback(async () => {
+    setLoading(true);
+    await fetch('/billing/apply-discount', {
+      method: 'POST',
+    });
+
+    resolve(true);
+    toaster.show('50% discount applied successfully');
+  }, []);
+
+  return (
+    <div>
+      <div className="mb-[20px]">
+        Would you accept 50% discount for 3 months instead? 🙏🏻
+      </div>
+      <div className="flex gap-[10px]">
+        <Button loading={loading} onClick={apply}>
+          Apply 50% discount for 3 months
+        </Button>
+        <Button onClick={() => resolve(false)} className="!bg-red-800">
+          Cancel my subscription
+        </Button>
+      </div>
+    </div>
+  );
+};
 const Info: FC<{
   proceed: (feedback: string) => void;
 }> = (props) => {
@@ -239,46 +271,15 @@ export const MainBillingComponent: FC<{
     return subscription?.subscriptionTier;
   }, [subscription, initialChannels, monthlyOrYearly, period]);
   const moveToCheckout = useCallback(
-    (billing: 'STANDARD' | 'PRO' | 'FREE') => async () => {
-      const messages = [];
-      if (
-        !pricing[billing].team_members &&
-        pricing[subscription?.subscriptionTier!]?.team_members
-      ) {
-        messages.push(
-          `Your team members will be removed from your organization`
-        );
-      }
-      if (billing === 'FREE') {
-        if (
-          subscription?.cancelAt ||
-          (await deleteDialog(
-            `Are you sure you want to cancel your subscription? ${messages.join(
-              ', '
-            )}`,
-            'Yes, cancel',
-            'Cancel Subscription'
-          ))
-        ) {
-          const info = await new Promise((res) => {
-            modal.openModal({
-              title: t(
-                'we_are_sorry_to_see_you_go',
-                'We are sorry to see you go :('
-              ),
-              withCloseButton: true,
-              classNames: {
-                modal: 'bg-transparent text-textColor',
-              },
-              children: <Info proceed={(e) => res(e)} />,
-            });
-          });
+    (billing: 'STANDARD' | 'PRO' | 'FREE', reactivate = false) =>
+      async () => {
+        if (reactivate) {
           setLoading(true);
           const { cancel_at } = await (
             await fetch('/billing/cancel', {
               method: 'POST',
               body: JSON.stringify({
-                feedback: info,
+                feedback: '',
               }),
               headers: {
                 'Content-Type': 'application/json',
@@ -289,72 +290,148 @@ export const MainBillingComponent: FC<{
             ...subs!,
             cancelAt: cancel_at,
           }));
-          if (cancel_at)
-            toast.show('Subscription set to canceled successfully');
-          if (!cancel_at) toast.show('Subscription reactivated successfully');
+
+          toast.show('Subscription reactivated successfully');
           setLoading(false);
+          return;
         }
-        return;
-      }
-      if (
-        messages.length &&
-        !(await deleteDialog(messages.join(', '), 'Yes, continue'))
-      ) {
-        return;
-      }
-      setLoading(true);
-      const { url, portal } = await (
-        await fetch('/billing/subscribe', {
-          method: 'POST',
-          body: JSON.stringify({
-            period: monthlyOrYearly === 'on' ? 'YEARLY' : 'MONTHLY',
-            utm,
-            billing,
-            tolt: tolt(),
-          }),
-        })
-      ).json();
-      if (url) {
-        await track(TrackEnum.InitiateCheckout, {
-          value:
-            pricing[billing][
-              monthlyOrYearly === 'on' ? 'year_price' : 'month_price'
-            ],
-        });
-        window.location.href = url;
-        return;
-      }
-      if (portal) {
+
+        const messages = [];
         if (
-          await deleteDialog(
-            'We could not charge your credit card, please update your payment method',
-            'Update',
-            'Payment Method Required'
-          )
+          !pricing[billing].team_members &&
+          pricing[subscription?.subscriptionTier!]?.team_members
         ) {
-          window.open(portal);
+          messages.push(
+            `Your team members will be removed from your organization`
+          );
         }
-      } else {
-        setPeriod(monthlyOrYearly === 'on' ? 'YEARLY' : 'MONTHLY');
-        setSubscription((subs) => ({
-          ...subs!,
-          subscriptionTier: billing,
-          cancelAt: null,
-        }));
-        mutate(
-          '/user/self',
-          {
-            ...user,
-            tier: billing,
-          },
-          {
-            revalidate: false,
+        if (billing === 'FREE') {
+          if (
+            subscription?.cancelAt ||
+            (await deleteDialog(
+              `Are you sure you want to cancel your subscription?
+              ${messages.join(', ')}`,
+              'Yes, cancel',
+              'Cancel Subscription'
+            ))
+          ) {
+            const checkDiscount = await (
+              await fetch('/billing/check-discount')
+            ).json();
+            if (checkDiscount.offerCoupon) {
+              const info = await new Promise((res) => {
+                modal.openModal({
+                  title: 'Before you cancel',
+                  withCloseButton: true,
+                  classNames: {
+                    modal: 'bg-transparent text-textColor',
+                  },
+                  children: <Accept resolve={res} />,
+                });
+              });
+
+              modal.closeAll();
+
+              if (info) {
+                return;
+              }
+            }
+
+            const info = await new Promise((res) => {
+              modal.openModal({
+                title: t(
+                  'we_are_sorry_to_see_you_go',
+                  'We are sorry to see you go :('
+                ),
+                withCloseButton: true,
+                classNames: {
+                  modal: 'bg-transparent text-textColor',
+                },
+                children: <Info proceed={(e) => res(e)} />,
+              });
+            });
+
+            setLoading(true);
+            const { cancel_at } = await (
+              await fetch('/billing/cancel', {
+                method: 'POST',
+                body: JSON.stringify({
+                  feedback: info,
+                }),
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+              })
+            ).json();
+            setSubscription((subs) => ({
+              ...subs!,
+              cancelAt: cancel_at,
+            }));
+            if (cancel_at)
+              toast.show('Subscription set to canceled successfully');
+            setLoading(false);
           }
-        );
-        toast.show('Subscription updated successfully');
-      }
-      setLoading(false);
-    },
+          return;
+        }
+        if (
+          messages.length &&
+          !(await deleteDialog(messages.join(', '), 'Yes, continue'))
+        ) {
+          return;
+        }
+        setLoading(true);
+        const { url, portal } = await (
+          await fetch('/billing/subscribe', {
+            method: 'POST',
+            body: JSON.stringify({
+              period: monthlyOrYearly === 'on' ? 'YEARLY' : 'MONTHLY',
+              utm,
+              billing,
+              tolt: tolt(),
+            }),
+          })
+        ).json();
+        if (url) {
+          await track(TrackEnum.InitiateCheckout, {
+            value:
+              pricing[billing][
+                monthlyOrYearly === 'on' ? 'year_price' : 'month_price'
+              ],
+          });
+          window.location.href = url;
+          return;
+        }
+        if (portal) {
+          if (
+            await deleteDialog(
+              'We could not charge your credit card, please update your payment method',
+              'Update',
+              'Payment Method Required'
+            )
+          ) {
+            window.open(portal);
+          }
+        } else {
+          setPeriod(monthlyOrYearly === 'on' ? 'YEARLY' : 'MONTHLY');
+          setSubscription((subs) => ({
+            ...subs!,
+            subscriptionTier: billing,
+            cancelAt: null,
+          }));
+          mutate(
+            '/user/self',
+            {
+              ...user,
+              tier: billing,
+            },
+            {
+              revalidate: false,
+            }
+          );
+          toast.show('Subscription updated successfully');
+        }
+        setLoading(false);
+      },
     [monthlyOrYearly, subscription, user, utm]
   );
   if (user?.isLifetime) {
@@ -401,7 +478,7 @@ export const MainBillingComponent: FC<{
                   <div className="gap-[3px] flex flex-col">
                     <div>
                       <Button
-                        onClick={moveToCheckout('FREE')}
+                        onClick={moveToCheckout('FREE', true)}
                         loading={loading}
                       >
                         {t(
