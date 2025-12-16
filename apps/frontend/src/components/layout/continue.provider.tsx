@@ -9,7 +9,7 @@ import { continueProviderList } from '@gitroom/frontend/components/new-launch/pr
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 export const Null: FC<{
-  closeModal: () => void;
+  onSave: (data: any) => Promise<void>;
   existingId: string[];
 }> = () => null;
 export const ContinueProvider: FC = () => {
@@ -32,7 +32,7 @@ export const ContinueProvider: FC = () => {
     refreshWhenOffline: false,
     fallbackData: [],
   });
-  const closeModal = useCallback(() => {
+  const refreshList = useCallback(() => {
     mutate('/integrations/list');
     const url = new URL(window.location.href);
     url.searchParams.delete('added');
@@ -54,6 +54,7 @@ export const ContinueProvider: FC = () => {
 
   return (
     <ContinueModal
+      refreshList={refreshList}
       added={added}
       continueId={continueId}
       integrations={integrations.map((p: any) => p.internalId)}
@@ -69,6 +70,19 @@ const ModalContent: FC<{
   closeModal: () => void;
   integrations: string[];
 }> = ({ continueId, added, provider: Provider, closeModal, integrations }) => {
+  const fetch = useFetch();
+
+  const onSave = useCallback(
+    async (data: any) => {
+      await fetch(`/integrations/provider/${continueId}/connect`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      closeModal();
+    },
+    [continueId, closeModal]
+  );
+
   return (
     <IntegrationContext.Provider
       value={{
@@ -95,7 +109,7 @@ const ModalContent: FC<{
         },
       }}
     >
-      <Provider closeModal={closeModal} existingId={integrations} />
+      <Provider onSave={onSave} existingId={integrations} />
     </IntegrationContext.Provider>
   );
 };
@@ -105,13 +119,22 @@ const ContinueModal: FC<{
   added: any;
   provider: any;
   integrations: string[];
+  refreshList: () => void;
 }> = (props) => {
   const modals = useModals();
 
   useEffect(() => {
     modals.openModal({
       title: 'Configure Channel',
-      children: (close) => <ModalContent {...props} closeModal={close} />,
+      children: (close) => (
+        <ModalContent
+          {...props}
+          closeModal={() => {
+            props.refreshList();
+            close();
+          }}
+        />
+      ),
     });
   }, []);
 

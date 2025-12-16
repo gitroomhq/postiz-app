@@ -53,6 +53,8 @@ jobs:
             -f Dockerfile.dev \
             -t ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }}-${{ matrix.arch }} \
             --build-arg NEXT_PUBLIC_VERSION=${{ env.NEXT_PUBLIC_VERSION }} \
+            --pull \
+            --no-cache \
             --provenance=false --sbom=false \
             --output "type=registry,name=ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }}-${{ matrix.arch }}" .
 
