@@ -86,6 +86,22 @@ export class UsersRepository {
     });
   }
 
+  getUserByEmailAnyProvider(email: string) {
+    return this._user.model.user.findFirst({
+      where: {
+        email,
+      },
+      include: {
+        picture: {
+          select: {
+            id: true,
+            path: true,
+          },
+        },
+      },
+    });
+  }
+
   updatePassword(id: string, password: string) {
     return this._user.model.user.update({
       where: {
@@ -94,6 +110,28 @@ export class UsersRepository {
       },
       data: {
         password: AuthService.hashPassword(password),
+      },
+    });
+  }
+
+  setPassword(id: string, password: string) {
+    return this._user.model.user.update({
+      where: {
+        id,
+      },
+      data: {
+        password: AuthService.hashPassword(password),
+      },
+    });
+  }
+
+  setPasswordHash(id: string, passwordHash: string) {
+    return this._user.model.user.update({
+      where: {
+        id,
+      },
+      data: {
+        password: passwordHash,
       },
     });
   }
