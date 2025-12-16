@@ -75,7 +75,8 @@ export async function simpleUpload(
   const command = new PutObjectCommand({ ...params });
   await R2.send(command);
 
-  return CLOUDFLARE_BUCKET_URL + '/' + randomFilename;
+  const bucketUrl = (CLOUDFLARE_BUCKET_URL || '').replace(/\/$/, '');
+  return `${bucketUrl}/${randomFilename}`;
 }
 
 export async function createMultipartUpload(req: Request, res: Response) {
@@ -159,13 +160,6 @@ export async function completeMultipartUpload(req: Request, res: Response) {
   const { key, uploadId, parts } = req.body;
 
   try {
-    const params = {
-      Bucket: CLOUDFLARE_BUCKETNAME,
-      Key: key,
-      UploadId: uploadId,
-      MultipartUpload: { Parts: parts },
-    };
-
     const command = new CompleteMultipartUploadCommand({
       Bucket: CLOUDFLARE_BUCKETNAME,
       Key: key,
@@ -173,10 +167,9 @@ export async function completeMultipartUpload(req: Request, res: Response) {
       MultipartUpload: { Parts: parts },
     });
     const response = await R2.send(command);
-    response.Location =
-      process.env.CLOUDFLARE_BUCKET_URL +
-      '/' +
-      response?.Location?.split('/').at(-1);
+    // Use the key from request (reliable) instead of parsing Location (fragile)
+    const bucketUrl = (process.env.CLOUDFLARE_BUCKET_URL || '').replace(/\/$/, '');
+    response.Location = `${bucketUrl}/${key}`;
     return response;
   } catch (err) {
     console.log('Error', err);

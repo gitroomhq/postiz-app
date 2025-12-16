@@ -192,8 +192,11 @@ export function useUppyUploader(props: {
     uppy2.on('file-added', (file) => {
       setLocked(true);
       uppy2.setFileMeta(file.id, {
-        useCloudflare: storageProvider === 'cloudflare' ? 'true' : 'false', // Example of adding a custom field
-        // Add more fields as needed
+        // Both cloudflare and s3 use multipart upload
+        useCloudflare:
+          storageProvider === 'cloudflare' || storageProvider === 's3'
+            ? 'true'
+            : 'false',
       });
     });
     uppy2.on('error', (result) => {
