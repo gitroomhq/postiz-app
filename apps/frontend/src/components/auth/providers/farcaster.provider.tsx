@@ -26,7 +26,7 @@ export const ButtonCaster: FC<{
     >
       <NeynarAuthButton onLogin={login}>
         <div
-          className={`cursor-pointer bg-white h-[52px] flex-1 rounded-[10px] flex justify-center items-center text-[#0E0E0E] gap-[4px]`}
+          className={`cursor-pointer bg-white h-[52px] flex-1 rounded-[10px] flex justify-center items-center text-[#0E0E0E] gap-[10px]`}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
