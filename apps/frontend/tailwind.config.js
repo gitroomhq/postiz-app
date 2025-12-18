@@ -116,6 +116,8 @@ module.exports = {
         fadeDown: 'fadeDown 4s ease-in-out forwards',
         normalFadeDown: 'normalFadeDown 0.5s ease-in-out forwards',
         newMessages: 'newMessages 1s ease-in-out 4s forwards',
+        marqueeUp: 'marquee-up 10s linear infinite',
+        marqueeDown: 'marquee-down 10s linear infinite',
       },
       boxShadow: {
         yellow: '0 0 60px 20px #6b6237',

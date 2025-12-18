@@ -704,3 +704,30 @@ html[dir='rtl'] [dir='ltr'] {
 .copilotKitMessage a {
   color: var(--new-btn-text) !important;
 }
+
+@keyframes marquee-up {
+  //0% {
+  //  transform: translateY(0);
+  //}
+  //100% {
+  //  transform: translateY(-50%);
+  //}
+}
+
+@keyframes marquee-down {
+  //0% {
+  //  transform: translateY(-50%);
+  //}
+  //100% {
+  //  transform: translateY(0%);
+  //}
+}
+
+.blackGradBottomBg {
+  background: linear-gradient(180deg, #0e0e0e 0%, rgba(14, 14, 14, 0) 100%);
+  rotate: 180deg;
+}
+
+.blackGradTopBg {
+  background: linear-gradient(180deg, #0e0e0e 0%, rgba(14, 14, 14, 0) 100%);
+}

@@ -11,7 +11,7 @@ export const GoogleProvider = () => {
   return (
     <div
       onClick={gotoLogin}
-      className={`cursor-pointer bg-white h-[44px] rounded-[4px] flex justify-center items-center text-customColor16 gap-[4px]`}
+      className={`cursor-pointer flex-1 bg-white h-[52px] rounded-[10px] flex justify-center items-center text-[#0E0E0E] gap-[4px]`}
     >
       <div>
         <svg
@@ -38,7 +38,7 @@ export const GoogleProvider = () => {
           />
         </svg>
       </div>
-      <div>{t('continue_with_google', 'Continue with Google')}</div>
+      <div>Google</div>
     </div>
   );
 };
