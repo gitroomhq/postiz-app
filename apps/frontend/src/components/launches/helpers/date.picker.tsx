@@ -38,7 +38,7 @@ export const DatePicker: FC<{
       onClick={changeShow}
       ref={ref}
     >
-      <div className="cursor-pointer">
+      <div className="cursor-pointer tabular-nums">
         {date.format(isUSCitizen() ? 'MM/DD/YYYY hh:mm A' : 'DD/MM/YYYY HH:mm')}
       </div>
       <div className="cursor-pointer">
