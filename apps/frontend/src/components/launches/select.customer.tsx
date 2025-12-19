@@ -18,7 +18,7 @@ export const SelectCustomer: FC<{
     return null;
   }
   return (
-    <Select
+    <Select data-sentry-mask
       hideErrors={true}
       label=""
       name="customer"
@@ -33,7 +33,7 @@ export const SelectCustomer: FC<{
       {uniqBy(integrations, (u) => u?.customer?.name)
         .filter((f) => f.customer?.name)
         .map((p) => (
-          <option key={p.customer?.id} value={p.customer?.id}>
+          <option key={p.customer?.id} value={p.customer?.id} data-sentry-mask>
             {t('customer', 'Customer:')}
             {p.customer?.name}
           </option>
