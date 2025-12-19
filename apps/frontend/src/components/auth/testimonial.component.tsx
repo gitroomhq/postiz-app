@@ -8,7 +8,7 @@ import { Testimonial } from '@gitroom/frontend/components/auth/testimonial';
 
 export const TestimonialComponent = () => {
   return (
-    <div className="flex-1 relative w-full my-[30px]">
+    <div className="flex-1 relative w-full my-[30px] max-w-[850px]">
       <div className="absolute w-full h-full left-0 top-0 px-[40px] overflow-hidden">
         <div className="absolute w-full h-[120px] left-0 top-0 blackGradTopBg z-[100]" />
         <div className="absolute w-full h-[120px] left-0 bottom-0 blackGradBottomBg z-[100]" />
