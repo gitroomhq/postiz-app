@@ -1,4 +1,6 @@
 import { ProvidersInterface } from '@gitroom/backend/services/auth/providers.interface';
+import { randomBytes } from 'crypto';
+import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 
 export class OauthProvider implements ProvidersInterface {
   private readonly authUrl: string;
@@ -48,18 +50,42 @@ export class OauthProvider implements ProvidersInterface {
     this.userInfoUrl = POSTIZ_OAUTH_USERINFO_URL;
   }
 
-  generateLink(): string {
+  async generateLink(): Promise<string> {
+    const state = randomBytes(32).toString('hex');
+    
+    await ioRedis.set(`oauth_state:${state}`, '1', 'EX', 600);
+    
     const params = new URLSearchParams({
       client_id: this.clientId,
       scope: 'openid profile email',
       response_type: 'code',
       redirect_uri: `${this.frontendUrl}/settings`,
+      state,
     });
 
     return `${this.authUrl}?${params.toString()}`;
   }
 
-  async getToken(code: string): Promise<string> {
+  private async validateState(state: string): Promise<boolean> {
+    if (!state) {
+      return false;
+    }
+    
+    const key = `oauth_state:${state}`;
+    const exists = await ioRedis.get(key);
+    
+    if (!exists) {
+      return false;
+    }
+    
+    await ioRedis.del(key);
+    return true;
+  }
+
+  async getToken(code: string, state?: string): Promise<string> {
+    if (state && !(await this.validateState(state))) {
+      throw new Error('Invalid or expired state parameter');
+    }
     const response = await fetch(`${this.tokenUrl}`, {
       method: 'POST',
       headers: {

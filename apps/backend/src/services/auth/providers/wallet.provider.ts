@@ -40,7 +40,7 @@ export class WalletProvider implements ProvidersInterface {
     return challenge;
   }
 
-  async getToken(code: string) {
+  async getToken(code: string, state?: string) {
     const { publicKey, challenge, signature } = JSON.parse(
       Buffer.from(code, 'base64').toString()
     );
