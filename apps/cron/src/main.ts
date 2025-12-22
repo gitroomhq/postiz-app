@@ -4,9 +4,9 @@ initializeSentry('cron');
 import { NestFactory } from '@nestjs/core';
 import { CronModule } from './cron.module';
 
-async function start() {
+async function bootstrap() {
   // some comment again
   await NestFactory.createApplicationContext(CronModule);
 }
 
-start();
+bootstrap();

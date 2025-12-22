@@ -179,7 +179,7 @@
     "music-metadata": "^7.14.0",
     "nestjs-command": "^3.1.4",
     "nestjs-real-ip": "^3.0.1",
-    "next": "^14.2.35",
+    "next": "14.2.35",
     "next-plausible": "^3.12.0",
     "node-fetch": "^3.3.2",
     "node-telegram-bot-api": "^0.66.0",

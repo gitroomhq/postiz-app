@@ -415,7 +415,7 @@ importers:
         specifier: ^3.0.1
         version: 3.0.1(@nestjs/common@10.4.20(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))
       next:
-        specifier: ^14.2.35
+        specifier: 14.2.35
         version: 14.2.35(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.56.1)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(sass@1.94.1)
       next-plausible:
         specifier: ^3.12.0
