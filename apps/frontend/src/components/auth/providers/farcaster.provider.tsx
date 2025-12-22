@@ -35,7 +35,7 @@ export const ButtonCaster: FC<{
             viewBox="0 0 24 24"
             fill="none"
           >
-            <g clip-path="url(#clip0_2026_31786)">
+            <g clipPath="url(#clip0_2026_31786)">
               <path
                 d="M18.75 0H5.25C2.35051 0 0 2.35051 0 5.25V18.75C0 21.6495 2.35051 24 5.25 24H18.75C21.6495 24 24 21.6495 24 18.75V5.25C24 2.35051 21.6495 0 18.75 0Z"
                 fill="#7C65C1"
