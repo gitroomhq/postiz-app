@@ -77,7 +77,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
         <MantineWrapper>
           <ToolTip />
           <Toaster />
-          <CheckPayment check={searchParams.get('check')!} mutate={mutate}>
+          <CheckPayment check={searchParams.get('check') || ''} mutate={mutate}>
             <ShowMediaBoxModal />
             <ShowLinkedinCompany />
             <MediaSettingsLayout />

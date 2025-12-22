@@ -9,6 +9,17 @@ export const CheckPayment: FC<{
   mutate: () => void;
   children: ReactNode;
 }> = (props) => {
+  if (!props.check) {
+    return <>{props.children}</>;
+  }
+  return <CheckPaymentInner {...props} />;
+};
+
+export const CheckPaymentInner: FC<{
+  check: string;
+  mutate: () => void;
+  children: ReactNode;
+}> = (props) => {
   const [showLoader, setShowLoader] = useState(true);
   const fetch = useFetch();
   const toaster = useToaster();
