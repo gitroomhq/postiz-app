@@ -85,6 +85,8 @@
     "@sentry/react": "^10.25.0",
     "@solana/wallet-adapter-react": "^0.15.35",
     "@solana/wallet-adapter-react-ui": "^0.9.35",
+    "@stripe/react-stripe-js": "^5.4.1",
+    "@stripe/stripe-js": "^8.6.0",
     "@swc/helpers": "0.5.13",
     "@sweetalert2/theme-dark": "^5.0.16",
     "@tailwindcss/postcss": "^4.1.7",

@@ -731,3 +731,12 @@ html[dir='rtl'] [dir='ltr'] {
 .blackGradTopBg {
   background: linear-gradient(180deg, #0e0e0e 0%, rgba(14, 14, 14, 0) 100%);
 }
+
+.billing-form input {
+  background: transparent !important;
+}
+
+//html body iframe[title="Stripe developer tools frame"] {
+//  display: none !important;
+//  height: 0 !important;
+//}

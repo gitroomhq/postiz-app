@@ -69,7 +69,7 @@ export const FAQSection: FC<{
   }, [show]);
   return (
     <div
-      className="bg-sixth p-[24px] border border-tableBorder rounded-[4px] flex flex-col"
+      className="bg-sixth p-[24px] border border-tableBorder rounded-[8px] flex flex-col"
       onClick={changeShow}
     >
       <div
@@ -116,7 +116,7 @@ export const FAQSection: FC<{
           !show ? 'max-h-[0]' : 'max-h-[500px]'
         )}
       >
-        <pre
+        <div
           onClick={(e) => {
             e.stopPropagation();
           }}
@@ -134,7 +134,7 @@ export const FAQComponent: FC = () => {
   const list = useFaqList();
   return (
     <div>
-      <h3 className="text-[24px] text-center mt-[81px] mb-[40px]">
+      <h3 className="text-[24px] mt-[81px] mb-[40px]">
         {t('frequently_asked_questions', 'Frequently Asked Questions')}
       </h3>
       <div className="gap-[24px] flex-col flex select-none">
