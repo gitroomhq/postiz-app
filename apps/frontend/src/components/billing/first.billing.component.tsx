@@ -23,6 +23,7 @@ import {
 } from '@gitroom/frontend/components/billing/faq.component';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { useTolt } from '@gitroom/frontend/components/layout/tolt.script';
 
 const ModeComponent = dynamic(
   () => import('@gitroom/frontend/components/layout/mode.component'),
@@ -49,6 +50,7 @@ export const FirstBillingComponent = () => {
   const [period, setPeriod] = useState('MONTHLY');
   const fetch = useFetch();
   const t = useT();
+  const tolt = useTolt();
 
   useEffect(() => {
     setStripe(loadStripe(stripeClient));
@@ -61,6 +63,7 @@ export const FirstBillingComponent = () => {
         body: JSON.stringify({
           billing: tier,
           period: period,
+          tolt: tolt(),
         }),
       })
     ).json();
