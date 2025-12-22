@@ -15,7 +15,7 @@ checksums:
     send_test: 6252eb4669859b7f7db4cdbc227580e1
     select_role: 406451b1c9a26f1484164b8b71c1bd7e
     video_made_with_ai: c37747aaf8107d339d6238a0463f7096
-    please_add_at_least: 90d3c0237b56e57c7a58d5decf6e9d3c
+    please_add_at_least: 776aa47593c7961b69172b49f49dc304
     send_invitation_via_email: 9275e0b85147a931421b3bf6c3083cb4
     global_settings: ba55734261d6bc26e792fda32de3e7ec
     copy_id: 831147124db35832872f8470c577e440
@@ -94,6 +94,7 @@ checksums:
     you_can_also_drag_drop_pictures: 40cc62ceac0cde30c1218c48796eb202
     you_don_t_have_any_assets_yet: ec8d0dc0a7ebf4c2437afb95f0e4cdb5
     click_the_button_below_to_upload_one: e2fb4d45f48de2277a0d71b9dd2c08ee
+    click_the_button_below_to_upload_other: 8999406064d8cb19c648097db01f1b1a
     add_selected_media: 0f1bf2187f3df8d3b90df1895c6e530b
     insert_media: 15267304e6c6b2c19fc7d1941b2a6a11
     design_media: fee3bbf1846d9e5f4a1af783b9e3fc90
@@ -506,3 +507,36 @@ checksums:
     label_who_can_reply_to_this_post: 4d8913296a1fc3f197cb0aead34af73d
     delete_integration: ccc879ccfcf7f85bcfe09f2bc3fa0dd3
     start_writing_your_post: 471efc4f2a7e2cf02a065a2de34e7213
+    billing_join_over: 6e1c237241ba00ddbb07fd603344c5c3
+    billing_entrepreneurs_count: 05164f2ca2e8e20de3f63977c07d39fe
+    billing_who_use: 63bdc59ef443e193eca87889e83ea07a
+    billing_postiz_grow_social: 3cf5ab166df9cb65e17b9a039ccbbbad
+    billing_no_risk_trial: 6e5c60d9ddf3affa8ba8870272f9f9ab
+    billing_pay_nothing_7_days: 2db15615cad39981069b65e6a0852b18
+    billing_cancel_anytime: f69ae39eec3fb9eb6114481d67c8481e
+    billing_choose_plan: 6eacca8177c43945435ac9c97a1e9734
+    billing_monthly: 818f1192e32bb855597f930d3e78806e
+    billing_yearly: 87f43e016c19cb25860f456549a2f431
+    billing_20_percent_off: 2d643feeaf30cafb2dd864b90f5c014b
+    billing_features: 341ff316a339b106a178f0b8d362951b
+    billing_channel: 7f661d461a99f05a2d57195fc3d262c3
+    billing_channels: f6cd2d03caa496e649e95df2d6610879
+    billing_unlimited: e1a92523172cd1bdde5550689840e42d
+    billing_posts_per_month: ca72453dbacbffceddb12b41e3d1f559
+    billing_unlimited_team_members: 254b7e4f144033e09d0127f50cd0422e
+    billing_ai_auto_complete: 91eab83ad474698d10e25fbde8b8ffce
+    billing_ai_copilots: 00054c5d5fe79ed4bb7e6decaa9f6608
+    billing_ai_autocomplete: 25c332479a2cfa33c6f8a1548b58199f
+    billing_advanced_picture_editor: 329a6c2e8b2685f81609859a4de07b0f
+    billing_ai_images_per_month: 5073aa90b32654abe6200d426a97f03e
+    billing_ai_videos_per_month: c786199d8dc9bded54fab8f92c350b19
+    billing_billing_address: 48980a775bfc7292b0c4f9b74b4d352e
+    billing_payment: 95142d3fd8b6a6f551aba771842e9c11
+    billing_powered_by_stripe: 4b1f500613fe28f3cc17cb003ed0caf6
+    billing_your_7_day_trial_is: 4b59fb559f5fd520668974e909e3479c
+    billing_100_percent_free: 6616fd6ee152264c06dd2537f6347e66
+    billing_ending: f66133a14aa7d86ea2453df97de12cd5
+    billing_cancel_anytime_short: 5b1b4a998fd56b18e4153dd83c84022c
+    billing_pay_0_start_trial: 28e72154e6cce7541e707b35f3a67309
+    billing_pay_now: 50cb14454e1b2df4a2f83bf1ac799819
+    billing_per_month: 6293d01c3d13f6938d47285122bd1a48

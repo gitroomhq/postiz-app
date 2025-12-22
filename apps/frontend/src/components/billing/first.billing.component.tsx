@@ -21,6 +21,7 @@ import {
   FAQComponent,
   FAQSection,
 } from '@gitroom/frontend/components/billing/faq.component';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 const ModeComponent = dynamic(
   () => import('@gitroom/frontend/components/layout/mode.component'),
@@ -45,6 +46,7 @@ export const FirstBillingComponent = () => {
   const [tier, setTier] = useState('STANDARD');
   const [period, setPeriod] = useState('MONTHLY');
   const fetch = useFetch();
+  const t = useT();
 
   useEffect(() => {
     setStripe(loadStripe(stripeClient));
@@ -102,9 +104,8 @@ export const FirstBillingComponent = () => {
       <div className="flex px-[80px] flex-1">
         <div className="flex-1 py-[40px] flex flex-col pe-[40px]">
           <div className="text-[36px] font-[600] leading-[110%] whitespace-pre-line">
-            Join Over{' '}
-            <span className="text-[#FC69FF]">18,000+ Entrepreneurs</span> who
-            use{'\n'}Postiz To Grow Their Social Presence
+            {t('billing_join_over', 'Join Over')}{' '}
+            <span className="text-[#FC69FF]">{t('billing_entrepreneurs_count', '18,000+ Entrepreneurs')}</span> {t('billing_who_use', 'who use')}{'\n'}{t('billing_postiz_grow_social', 'Postiz To Grow Their Social Presence')}
           </div>
 
           <div className="flex mt-[34px] mb-[10px]">
@@ -112,19 +113,19 @@ export const FirstBillingComponent = () => {
               <div>
                 <CheckIconComponent />
               </div>
-              <div>100% No-Risk Free Trial</div>
+              <div>{t('billing_no_risk_trial', '100% No-Risk Free Trial')}</div>
             </div>
             <div className="flex-1 flex gap-[8px] justify-center">
               <div>
                 <CheckIconComponent />
               </div>
-              <div>Pay NOTHING for the first 7-days</div>
+              <div>{t('billing_pay_nothing_7_days', 'Pay NOTHING for the first 7-days')}</div>
             </div>
             <div className="flex gap-[8px]">
               <div>
                 <CheckIconComponent />
               </div>
-              <div>Cancel anytime, hassle-free</div>
+              <div>{t('billing_cancel_anytime', 'Cancel anytime, hassle-free')}</div>
             </div>
           </div>
 
@@ -140,7 +141,7 @@ export const FirstBillingComponent = () => {
         <div className="flex flex-col ps-[40px] border-l border-newColColor py-[40px]">
           <div className="top-[20px] sticky">
             <div className="flex mb-[24px]">
-              <div className="flex-1 text-[24px] font-[700]">Choose a Plan</div>
+              <div className="flex-1 text-[24px] font-[700]">{t('billing_choose_plan', 'Choose a Plan')}</div>
               <div className="h-[44px] px-[6px] flex items-center justify-center gap-[12px] border border-newColColor rounded-[12px] select-none">
                 <div
                   className={clsx(
@@ -151,7 +152,7 @@ export const FirstBillingComponent = () => {
                   )}
                   onClick={() => setPeriod('MONTHLY')}
                 >
-                  Monthly
+                  {t('billing_monthly', 'Monthly')}
                 </div>
                 <div
                   className={clsx(
@@ -162,9 +163,9 @@ export const FirstBillingComponent = () => {
                   )}
                   onClick={() => setPeriod('YEARLY')}
                 >
-                  <div>Yearly</div>
+                  <div>{t('billing_yearly', 'Yearly')}</div>
                   <div className="bg-[#AA0FA4] text-[white] px-[8px] rounded-[4px]">
-                    20% Off
+                    {t('billing_20_percent_off', '20% Off')}
                   </div>
                 </div>
               </div>
@@ -194,7 +195,7 @@ export const FirstBillingComponent = () => {
                           ]
                         }
                       </span>{' '}
-                      / month
+                      {t('billing_per_month', '/ month')}
                     </div>
                   </div>
                 ),
@@ -202,7 +203,7 @@ export const FirstBillingComponent = () => {
               )}
             </div>
             <div className="flex flex-col mt-[54px] gap-[24px]">
-              <div className="text-[24px] font-[700]">Features</div>
+              <div className="text-[24px] font-[700]">{t('billing_features', 'Features')}</div>
               <BillingFeatures tier={tier} />
             </div>
           </div>
@@ -212,43 +213,72 @@ export const FirstBillingComponent = () => {
   );
 };
 
+type FeatureItem = {
+  key: string;
+  defaultValue: string;
+  prefix?: string | number;
+};
+
 export const BillingFeatures: FC<{ tier: string }> = ({ tier }) => {
-  const render = useMemo(() => {
+  const t = useT();
+  const features = useMemo(() => {
     const currentPricing = pricing[tier];
     const channelsOr = currentPricing.channel;
-    const list = [];
-    list.push(`${channelsOr} ${channelsOr === 1 ? 'channel' : 'channels'}`);
-    list.push(
-      `${
-        currentPricing.posts_per_month > 10000
-          ? 'Unlimited'
-          : currentPricing.posts_per_month
-      } posts per month`
-    );
+    const list: FeatureItem[] = [];
+    
+    list.push({
+      key: channelsOr === 1 ? 'billing_channel' : 'billing_channels',
+      defaultValue: channelsOr === 1 ? 'channel' : 'channels',
+      prefix: channelsOr,
+    });
+    
+    list.push({
+      key: 'billing_posts_per_month',
+      defaultValue: 'posts per month',
+      prefix: currentPricing.posts_per_month > 10000 ? 'unlimited' : currentPricing.posts_per_month,
+    });
+    
     if (currentPricing.team_members) {
-      list.push(`Unlimited team members`);
+      list.push({ key: 'billing_unlimited_team_members', defaultValue: 'Unlimited team members' });
     }
     if (currentPricing?.ai) {
-      list.push(`AI auto-complete`);
-      list.push(`AI copilots`);
-      list.push(`AI Autocomplete`);
+      list.push({ key: 'billing_ai_auto_complete', defaultValue: 'AI auto-complete' });
+      list.push({ key: 'billing_ai_copilots', defaultValue: 'AI copilots' });
+      list.push({ key: 'billing_ai_autocomplete', defaultValue: 'AI Autocomplete' });
     }
-    list.push(`Advanced Picture Editor`);
+    list.push({ key: 'billing_advanced_picture_editor', defaultValue: 'Advanced Picture Editor' });
     if (currentPricing?.image_generator) {
-      list.push(
-        `${currentPricing?.image_generation_count} AI Images per month`
-      );
+      list.push({
+        key: 'billing_ai_images_per_month',
+        defaultValue: 'AI Images per month',
+        prefix: currentPricing?.image_generation_count,
+      });
     }
     if (currentPricing?.generate_videos) {
-      list.push(`${currentPricing?.generate_videos} AI Videos per month`);
+      list.push({
+        key: 'billing_ai_videos_per_month',
+        defaultValue: 'AI Videos per month',
+        prefix: currentPricing?.generate_videos,
+      });
     }
     return list;
   }, [tier]);
 
+  const renderFeature = (feature: FeatureItem) => {
+    const translatedText = t(feature.key, feature.defaultValue);
+    if (feature.prefix === 'unlimited') {
+      return `${t('billing_unlimited', 'Unlimited')} ${translatedText}`;
+    }
+    if (feature.prefix !== undefined) {
+      return `${feature.prefix} ${translatedText}`;
+    }
+    return translatedText;
+  };
+
   return (
     <div className="grid grid-cols-2 gap-y-[8px] gap-x-[32px]">
-      {render.map((p) => (
-        <div key={p} className="flex items-center gap-[8px]">
+      {features.map((feature) => (
+        <div key={feature.key} className="flex items-center gap-[8px]">
           <div>
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -263,7 +293,7 @@ export const BillingFeatures: FC<{ tier: string }> = ({ tier }) => {
               />
             </svg>
           </div>
-          <div>{p}</div>
+          <div>{renderFeature(feature)}</div>
         </div>
       ))}
     </div>
