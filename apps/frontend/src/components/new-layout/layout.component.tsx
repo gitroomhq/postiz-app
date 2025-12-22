@@ -96,6 +96,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                 <FirstBillingComponent />
               ) : (
                 <div className="flex-1 flex gap-[8px]">
+                  <Support />
                   <div className="flex flex-col bg-newBgColorInner w-[80px] rounded-[12px]">
                     <div
                       className={clsx(
@@ -106,7 +107,6 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                       <div className="flex flex-col h-full gap-[32px] flex-1 py-[12px]">
                         <Logo />
                         <TopMenu />
-                        <Support />
                       </div>
                     </div>
                   </div>
