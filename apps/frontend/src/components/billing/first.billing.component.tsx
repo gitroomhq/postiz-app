@@ -22,6 +22,7 @@ import {
   FAQSection,
 } from '@gitroom/frontend/components/billing/faq.component';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
 
 const ModeComponent = dynamic(
   () => import('@gitroom/frontend/components/layout/mode.component'),
@@ -42,6 +43,7 @@ const EmbeddedBilling = dynamic(
 
 export const FirstBillingComponent = () => {
   const { stripeClient } = useVariables();
+  const user = useUser();
   const [stripe, setStripe] = useState<null | Promise<Stripe>>(null);
   const [tier, setTier] = useState('STANDARD');
   const [period, setPeriod] = useState('MONTHLY');
@@ -105,29 +107,48 @@ export const FirstBillingComponent = () => {
         <div className="flex-1 py-[40px] flex flex-col pe-[40px]">
           <div className="text-[36px] font-[600] leading-[110%] whitespace-pre-line">
             {t('billing_join_over', 'Join Over')}{' '}
-            <span className="text-[#FC69FF]">{t('billing_entrepreneurs_count', '18,000+ Entrepreneurs')}</span> {t('billing_who_use', 'who use')}{'\n'}{t('billing_postiz_grow_social', 'Postiz To Grow Their Social Presence')}
+            <span className="text-[#FC69FF]">
+              {t('billing_entrepreneurs_count', '18,000+ Entrepreneurs')}
+            </span>{' '}
+            {t('billing_who_use', 'who use')}
+            {'\n'}
+            {t(
+              'billing_postiz_grow_social',
+              'Postiz To Grow Their Social Presence'
+            )}
           </div>
 
-          <div className="flex mt-[34px] mb-[10px]">
-            <div className="flex gap-[8px]">
-              <div>
-                <CheckIconComponent />
+          {!!user?.allowTrial && (
+            <div className="flex mt-[34px] mb-[10px]">
+              <div className="flex gap-[8px]">
+                <div>
+                  <CheckIconComponent />
+                </div>
+                <div>
+                  {t('billing_no_risk_trial', '100% No-Risk Free Trial')}
+                </div>
               </div>
-              <div>{t('billing_no_risk_trial', '100% No-Risk Free Trial')}</div>
-            </div>
-            <div className="flex-1 flex gap-[8px] justify-center">
-              <div>
-                <CheckIconComponent />
+              <div className="flex-1 flex gap-[8px] justify-center">
+                <div>
+                  <CheckIconComponent />
+                </div>
+                <div>
+                  {t(
+                    'billing_pay_nothing_7_days',
+                    'Pay NOTHING for the first 7-days'
+                  )}
+                </div>
               </div>
-              <div>{t('billing_pay_nothing_7_days', 'Pay NOTHING for the first 7-days')}</div>
-            </div>
-            <div className="flex gap-[8px]">
-              <div>
-                <CheckIconComponent />
+              <div className="flex gap-[8px]">
+                <div>
+                  <CheckIconComponent />
+                </div>
+                <div>
+                  {t('billing_cancel_anytime', 'Cancel anytime, hassle-free')}
+                </div>
               </div>
-              <div>{t('billing_cancel_anytime', 'Cancel anytime, hassle-free')}</div>
             </div>
-          </div>
+          )}
 
           {!isLoading && data && stripe ? (
             <>
@@ -141,7 +162,9 @@ export const FirstBillingComponent = () => {
         <div className="flex flex-col ps-[40px] border-l border-newColColor py-[40px]">
           <div className="top-[20px] sticky">
             <div className="flex mb-[24px]">
-              <div className="flex-1 text-[24px] font-[700]">{t('billing_choose_plan', 'Choose a Plan')}</div>
+              <div className="flex-1 text-[24px] font-[700]">
+                {t('billing_choose_plan', 'Choose a Plan')}
+              </div>
               <div className="h-[44px] px-[6px] flex items-center justify-center gap-[12px] border border-newColColor rounded-[12px] select-none">
                 <div
                   className={clsx(
@@ -203,7 +226,9 @@ export const FirstBillingComponent = () => {
               )}
             </div>
             <div className="flex flex-col mt-[54px] gap-[24px]">
-              <div className="text-[24px] font-[700]">{t('billing_features', 'Features')}</div>
+              <div className="text-[24px] font-[700]">
+                {t('billing_features', 'Features')}
+              </div>
               <BillingFeatures tier={tier} />
             </div>
           </div>
@@ -225,28 +250,43 @@ export const BillingFeatures: FC<{ tier: string }> = ({ tier }) => {
     const currentPricing = pricing[tier];
     const channelsOr = currentPricing.channel;
     const list: FeatureItem[] = [];
-    
+
     list.push({
       key: channelsOr === 1 ? 'billing_channel' : 'billing_channels',
       defaultValue: channelsOr === 1 ? 'channel' : 'channels',
       prefix: channelsOr,
     });
-    
+
     list.push({
       key: 'billing_posts_per_month',
       defaultValue: 'posts per month',
-      prefix: currentPricing.posts_per_month > 10000 ? 'unlimited' : currentPricing.posts_per_month,
+      prefix:
+        currentPricing.posts_per_month > 10000
+          ? 'unlimited'
+          : currentPricing.posts_per_month,
     });
-    
+
     if (currentPricing.team_members) {
-      list.push({ key: 'billing_unlimited_team_members', defaultValue: 'Unlimited team members' });
+      list.push({
+        key: 'billing_unlimited_team_members',
+        defaultValue: 'Unlimited team members',
+      });
     }
     if (currentPricing?.ai) {
-      list.push({ key: 'billing_ai_auto_complete', defaultValue: 'AI auto-complete' });
+      list.push({
+        key: 'billing_ai_auto_complete',
+        defaultValue: 'AI auto-complete',
+      });
       list.push({ key: 'billing_ai_copilots', defaultValue: 'AI copilots' });
-      list.push({ key: 'billing_ai_autocomplete', defaultValue: 'AI Autocomplete' });
+      list.push({
+        key: 'billing_ai_autocomplete',
+        defaultValue: 'AI Autocomplete',
+      });
     }
-    list.push({ key: 'billing_advanced_picture_editor', defaultValue: 'Advanced Picture Editor' });
+    list.push({
+      key: 'billing_advanced_picture_editor',
+      defaultValue: 'Advanced Picture Editor',
+    });
     if (currentPricing?.image_generator) {
       list.push({
         key: 'billing_ai_images_per_month',
