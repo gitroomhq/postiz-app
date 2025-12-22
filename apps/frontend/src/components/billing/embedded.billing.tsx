@@ -136,7 +136,7 @@ const StripeInputs = () => {
         <PaymentElement id="payment-element" options={{ layout: 'tabs' }} />
         {checkout.type === 'loading' ? null : (
           <div className="mt-[24px] flex gap-[10px]">
-            <div>{t('billing_powered_by_stripe', 'Powered by Stripe')}</div>
+            <div>{t('billing_powered_by_stripe', 'Secure payments processed by Stripe')}</div>
             <Image src="/stripe.svg" alt="Stripe" width={20} height={20} />
           </div>
         )}
