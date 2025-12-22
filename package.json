@@ -76,7 +76,7 @@
     "@nestjs/swagger": "^7.3.0",
     "@nestjs/throttler": "^6.3.0",
     "@neynar/nodejs-sdk": "^3.112.0",
-    "@neynar/react": "^1.2.22",
+    "@neynar/react": "^0.9.7",
     "@pigment-css/react": "^0.0.30",
     "@postiz/wallets": "^0.0.1",
     "@prisma/client": "6.5.0",
@@ -310,6 +310,9 @@
     "outputName": "junit.xml"
   },
   "pnpm": {
+    "overrides": {
+      "next": "14.2.35"
+    },
     "onlyBuiltDependencies": [
       "bcrypt"
     ]
