@@ -58,7 +58,8 @@ import Mention from '@tiptap/extension-mention';
 import { suggestion } from '@gitroom/frontend/components/new-launch/mention.component';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { AComponent } from '@gitroom/frontend/components/new-launch/a.component';
-import { capitalize } from 'lodash';
+import { Placeholder } from '@tiptap/extensions';
+import { InformationComponent } from '@gitroom/frontend/components/launches/information.component';
 
 const InterceptBoldShortcut = Extension.create({
   name: 'preventBoldWithUnderline',
@@ -91,7 +92,7 @@ const InterceptUnderlineShortcut = Extension.create({
 export const EditorWrapper: FC<{
   totalPosts: number;
   value: string;
-}> = (props) => {
+}> = () => {
   const {
     setGlobalValueText,
     setInternalValueText,
@@ -278,6 +279,12 @@ export const EditorWrapper: FC<{
 
   const addValue = useCallback(
     (index: number) => () => {
+      setTimeout(() => {
+        // scroll the the bottom
+        document.querySelector('#social-content').scrollTo({
+          top: document.querySelector('#social-content').scrollHeight,
+        });
+      }, 20);
       if (internal) {
         return addInternalValue(index, current, [
           {
@@ -326,30 +333,116 @@ export const EditorWrapper: FC<{
   }
 
   return (
-    <div className="relative flex flex-col gap-[20px]">
+    <div
+      className={clsx(
+        'relative flex-col gap-[20px] flex-1',
+        items.length === 1 && 'flex',
+        !canEdit && !isCreateSet && 'bg-newSettings rounded-[12px]'
+      )}
+    >
+      {isCreateSet && current !== 'global' && (
+        <>
+          <div className="text-center absolute w-full h-full left-0 top-0 items-center justify-center flex z-[101] flex-col gap-[16px]">
+            <div>
+              <div className="w-[54px] h-[54px] rounded-full absolute z-[101] flex justify-center items-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="32"
+                  height="32"
+                  viewBox="0 0 32 32"
+                  fill="none"
+                >
+                  <path
+                    d="M22.6673 13.3333V10.6667C22.6673 6.98477 19.6825 4 16.0007 4C12.3188 4 9.33398 6.98477 9.33398 10.6667V13.3333M16.0007 19.3333V22M11.734 28H20.2673C22.5075 28 23.6276 28 24.4833 27.564C25.2359 27.1805 25.8479 26.5686 26.2313 25.816C26.6673 24.9603 26.6673 23.8402 26.6673 21.6V19.7333C26.6673 17.4931 26.6673 16.373 26.2313 15.5174C25.8479 14.7647 25.2359 14.1528 24.4833 13.7693C23.6276 13.3333 22.5075 13.3333 20.2673 13.3333H11.734C9.49377 13.3333 8.37367 13.3333 7.51802 13.7693C6.76537 14.1528 6.15345 14.7647 5.76996 15.5174C5.33398 16.373 5.33398 17.4931 5.33398 19.7333V21.6C5.33398 23.8402 5.33398 24.9603 5.76996 25.816C6.15345 26.5686 6.76537 27.1805 7.51802 27.564C8.37367 28 9.49377 28 11.734 28Z"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+              <div className="w-[54px] h-[54px] rounded-full bg-newSettings opacity-80" />
+            </div>
+            <div className="text-[14px] font-[600] text-white">
+              You can't edit networks when creating a set
+            </div>
+          </div>
+          <div className="absolute w-full h-full left-0 top-0 bg-newBackdrop opacity-60 z-[100] rounded-[12px]" />
+        </>
+      )}
+      {!canEdit && !isCreateSet && (
+        <>
+          <div
+            onClick={() => {
+              setLoaded(false);
+              addRemoveInternal(current);
+            }}
+            className="text-center absolute w-full h-full left-0 top-0 items-center justify-center flex z-[101] flex-col gap-[16px]"
+          >
+            <div>
+              <div className="w-[54px] h-[54px] rounded-full absolute z-[101] flex justify-center items-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="32"
+                  height="32"
+                  viewBox="0 0 32 32"
+                  fill="none"
+                >
+                  <path
+                    d="M22.6673 13.3333V10.6667C22.6673 6.98477 19.6825 4 16.0007 4C12.3188 4 9.33398 6.98477 9.33398 10.6667V13.3333M16.0007 19.3333V22M11.734 28H20.2673C22.5075 28 23.6276 28 24.4833 27.564C25.2359 27.1805 25.8479 26.5686 26.2313 25.816C26.6673 24.9603 26.6673 23.8402 26.6673 21.6V19.7333C26.6673 17.4931 26.6673 16.373 26.2313 15.5174C25.8479 14.7647 25.2359 14.1528 24.4833 13.7693C23.6276 13.3333 22.5075 13.3333 20.2673 13.3333H11.734C9.49377 13.3333 8.37367 13.3333 7.51802 13.7693C6.76537 14.1528 6.15345 14.7647 5.76996 15.5174C5.33398 16.373 5.33398 17.4931 5.33398 19.7333V21.6C5.33398 23.8402 5.33398 24.9603 5.76996 25.816C6.15345 26.5686 6.76537 27.1805 7.51802 27.564C8.37367 28 9.49377 28 11.734 28Z"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+              <div className="w-[54px] h-[54px] rounded-full bg-newSettings opacity-80" />
+            </div>
+            <div className="text-[14px] font-[600] text-white">
+              Click this button to exit global editing
+              <br />
+              and customize the post for this channel
+            </div>
+            <div>
+              <div className="text-white rounded-[8px] h-[44px] px-[20px] bg-[#D82D7E] cursor-pointer flex justify-center items-center">
+                Edit content
+              </div>
+            </div>
+          </div>
+          <div className="absolute w-full h-full left-0 top-0 bg-newBackdrop opacity-60 z-[100] rounded-[12px]" />
+        </>
+      )}
       {items.map((g, index) => (
-        <div key={g.id} className="relative flex flex-col gap-[20px]">
-          {!canEdit && !isCreateSet && (
-            <div
-              onClick={() => {
-                if (index !== 0) {
-                  return;
-                }
-
-                setLoaded(false);
-                addRemoveInternal(current);
-              }}
-              className="select-none cursor-pointer absolute w-full h-full left-0 top-0 bg-red-600/10 z-[100]"
-            >
-              {index === 0 && (
-                <div className="absolute left-[50%] top-[50%] bg-red-400 -translate-x-[50%] z-[101] -translate-y-[50%] border-dashed border p-[10px] border-black">
-                  Edit
+        <div
+          key={g.id}
+          className={clsx(
+            'relative flex flex-col gap-[20px] flex-1 bg-newSettings',
+            index === 0 && 'rounded-t-[12px]',
+            index === items.length - 1 && 'rounded-b-[12px]',
+            !canEdit && !isCreateSet && 'blur-s'
+          )}
+        >
+          <div className="flex gap-[5px] flex-1 w-full">
+            <div className="flex-1 flex w-full">
+              {index > 0 && (
+                <div className="flex justify-center pl-[12px] text-newSep">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="87"
+                    viewBox="0 0 18 87"
+                    fill="none"
+                  >
+                    <path
+                      d="M0.75 0.75V79.75C0.75 83.0637 3.43629 85.75 6.75 85.75H16.75"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                    />
+                  </svg>
                 </div>
               )}
-            </div>
-          )}
-          <div className="flex gap-[5px]">
-            <div className="flex-1">
               <Editor
                 editorType={editor}
                 allValues={items}
@@ -370,61 +463,80 @@ export const EditorWrapper: FC<{
                 chars={chars}
                 childButton={
                   <>
-                    {canEdit ? (
-                      <AddPostButton
-                        num={index}
-                        onClick={addValue(index)}
-                        postComment={postComment}
-                      />
-                    ) : (
-                      <div className="h-[25px]" />
-                    )}
+                    {canEdit && items.length - 1 === index ? (
+                      <div className="flex items-center">
+                        <div className="flex-1">
+                          <AddPostButton
+                            num={index}
+                            onClick={addValue(index)}
+                            postComment={postComment}
+                          />
+                        </div>
+                        {!!internal && !existingData?.integration && (
+                          <div
+                            className="mt-[12px] flex gap-[20px] items-center cursor-pointer select-none"
+                            onClick={goBackToGlobal}
+                          >
+                            <div className="flex gap-[6px] items-center">
+                              <div className="w-[8px] h-[8px] rounded-full bg-[#FC69FF]" />
+                              <div className="text-[14px] font-[600]">
+                                Editing a Specific Network
+                              </div>
+                            </div>
+                            <div className="flex gap-[6px] items-center">
+                              <div>
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="16"
+                                  height="16"
+                                  viewBox="0 0 16 16"
+                                  fill="none"
+                                >
+                                  <path
+                                    d="M1.33398 6.66667C1.33398 6.66667 2.67064 4.84548 3.75654 3.75883C4.84244 2.67218 6.34305 2 8.00065 2C11.3144 2 14.0007 4.68629 14.0007 8C14.0007 11.3137 11.3144 14 8.00065 14C5.26526 14 2.95739 12.1695 2.23516 9.66667M1.33398 6.66667V2.66667M1.33398 6.66667H5.33398"
+                                    stroke="currentColor"
+                                    strokeWidth="1.5"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                </svg>
+                              </div>
+                              <div className="text-[13px] font-[600]">
+                                Back to global
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
                   </>
                 }
               />
             </div>
-            <div className="flex flex-col items-center gap-[10px]">
+            <div className="flex flex-col items-center gap-[10px] pe-[12px]">
               <UpDownArrow
                 isUp={index !== 0}
                 isDown={index !== items.length - 1}
                 onChange={changeOrder(index)}
               />
-              {index === 0 &&
-                current !== 'global' &&
-                canEdit &&
-                !existingData.integration && (
-                  <svg
-                    onClick={goBackToGlobal}
-                    className="cursor-pointer"
-                    data-tooltip-id="tooltip"
-                    data-tooltip-content="Go back to global mode"
-                    width="20"
-                    height="20"
-                    viewBox="0 0 32 32"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M16 3C13.4288 3 10.9154 3.76244 8.77759 5.1909C6.63975 6.61935 4.97351 8.64968 3.98957 11.0251C3.00563 13.4006 2.74819 16.0144 3.2498 18.5362C3.75141 21.0579 4.98953 23.3743 6.80762 25.1924C8.6257 27.0105 10.9421 28.2486 13.4638 28.7502C15.9856 29.2518 18.5995 28.9944 20.9749 28.0104C23.3503 27.0265 25.3807 25.3603 26.8091 23.2224C28.2376 21.0846 29 18.5712 29 16C28.9964 12.5533 27.6256 9.24882 25.1884 6.81163C22.7512 4.37445 19.4467 3.00364 16 3ZM12.7038 21H19.2963C18.625 23.2925 17.5 25.3587 16 26.9862C14.5 25.3587 13.375 23.2925 12.7038 21ZM12.25 19C11.9183 17.0138 11.9183 14.9862 12.25 13H19.75C20.0817 14.9862 20.0817 17.0138 19.75 19H12.25ZM5.00001 16C4.99914 14.9855 5.13923 13.9759 5.41626 13H10.2238C9.92542 14.9889 9.92542 17.0111 10.2238 19H5.41626C5.13923 18.0241 4.99914 17.0145 5.00001 16ZM19.2963 11H12.7038C13.375 8.7075 14.5 6.64125 16 5.01375C17.5 6.64125 18.625 8.7075 19.2963 11ZM21.7763 13H26.5838C27.1388 14.9615 27.1388 17.0385 26.5838 19H21.7763C22.0746 17.0111 22.0746 14.9889 21.7763 13ZM25.7963 11H21.3675C20.8572 8.99189 20.0001 7.0883 18.835 5.375C20.3236 5.77503 21.7119 6.48215 22.9108 7.45091C24.1097 8.41967 25.0926 9.62861 25.7963 11ZM13.165 5.375C11.9999 7.0883 11.1428 8.99189 10.6325 11H6.20376C6.90741 9.62861 7.89029 8.41967 9.08918 7.45091C10.2881 6.48215 11.6764 5.77503 13.165 5.375ZM6.20376 21H10.6325C11.1428 23.0081 11.9999 24.9117 13.165 26.625C11.6764 26.225 10.2881 25.5178 9.08918 24.5491C7.89029 23.5803 6.90741 22.3714 6.20376 21ZM18.835 26.625C20.0001 24.9117 20.8572 23.0081 21.3675 21H25.7963C25.0926 22.3714 24.1097 23.5803 22.9108 24.5491C21.7119 25.5178 20.3236 26.225 18.835 26.625Z"
-                      fill="#ef4444"
-                    />
-                  </svg>
-                )}
               {items.length > 1 && (
                 <svg
                   onClick={deletePost(index)}
-                  className="cursor-pointer"
+                  xmlns="http://www.w3.org/2000/svg"
                   data-tooltip-id="tooltip"
                   data-tooltip-content="Delete Post"
-                  xmlns="http://www.w3.org/2000/svg"
+                  className="cursor-pointer"
                   width="20"
                   height="20"
-                  viewBox="0 0 14 14"
-                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                  fill="none"
                 >
                   <path
-                    d="M11.8125 2.625H9.625V2.1875C9.625 1.8394 9.48672 1.50556 9.24058 1.25942C8.99444 1.01328 8.6606 0.875 8.3125 0.875H5.6875C5.3394 0.875 5.00556 1.01328 4.75942 1.25942C4.51328 1.50556 4.375 1.8394 4.375 2.1875V2.625H2.1875C2.07147 2.625 1.96019 2.67109 1.87814 2.75314C1.79609 2.83519 1.75 2.94647 1.75 3.0625C1.75 3.17853 1.79609 3.28981 1.87814 3.37186C1.96019 3.45391 2.07147 3.5 2.1875 3.5H2.625V11.375C2.625 11.6071 2.71719 11.8296 2.88128 11.9937C3.04538 12.1578 3.26794 12.25 3.5 12.25H10.5C10.7321 12.25 10.9546 12.1578 11.1187 11.9937C11.2828 11.8296 11.375 11.6071 11.375 11.375V3.5H11.8125C11.9285 3.5 12.0398 3.45391 12.1219 3.37186C12.2039 3.28981 12.25 3.17853 12.25 3.0625C12.25 2.94647 12.2039 2.83519 12.1219 2.75314C12.0398 2.67109 11.9285 2.625 11.8125 2.625ZM5.25 2.1875C5.25 2.07147 5.29609 1.96019 5.37814 1.87814C5.46019 1.79609 5.57147 1.75 5.6875 1.75H8.3125C8.42853 1.75 8.53981 1.79609 8.62186 1.87814C8.70391 1.96019 8.75 2.07147 8.75 2.1875V2.625H5.25V2.1875ZM10.5 11.375H3.5V3.5H10.5V11.375ZM6.125 5.6875V9.1875C6.125 9.30353 6.07891 9.41481 5.99686 9.49686C5.91481 9.57891 5.80353 9.625 5.6875 9.625C5.57147 9.625 5.46019 9.57891 5.37814 9.49686C5.29609 9.41481 5.25 9.30353 5.25 9.1875V5.6875C5.25 5.57147 5.29609 5.46019 5.37814 5.37814C5.46019 5.29609 5.57147 5.25 5.6875 5.25C5.80353 5.25 5.91481 5.29609 5.99686 5.37814C6.07891 5.46019 6.125 5.57147 6.125 5.6875ZM8.75 5.6875V9.1875C8.75 9.30353 8.70391 9.41481 8.62186 9.49686C8.53981 9.57891 8.42853 9.625 8.3125 9.625C8.19647 9.625 8.08519 9.57891 8.00314 9.49686C7.92109 9.41481 7.875 9.30353 7.875 9.1875V5.6875C7.875 5.57147 7.92109 5.46019 8.00314 5.37814C8.08519 5.29609 8.19647 5.25 8.3125 5.25C8.42853 5.25 8.53981 5.29609 8.62186 5.37814C8.70391 5.46019 8.75 5.57147 8.75 5.6875Z"
-                    fill="#ef4444"
+                    d="M7.5 2.5L12.5 2.5M2.5 5L17.5 5M15.8333 5L15.2489 13.7661C15.1612 15.0813 15.1174 15.7389 14.8333 16.2375C14.5833 16.6765 14.206 17.0294 13.7514 17.2497C13.235 17.5 12.5759 17.5 11.2578 17.5H8.74221C7.42409 17.5 6.76503 17.5 6.24861 17.2497C5.79396 17.0294 5.41674 16.6765 5.16665 16.2375C4.88259 15.7389 4.83875 15.0813 4.75107 13.7661L4.16667 5M8.33333 8.75V12.9167M11.6667 8.75L11.6667 12.9167"
+                    stroke="#FF3F3F"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   />
                 </svg>
               )}
@@ -528,64 +640,47 @@ export const Editor: FC<{
     [props.value, id]
   );
 
+  const [loadedEditor, setLoadedEditor] = useState(editorType);
+  const [showEditor, setShowEditor] = useState(true);
+  useEffect(() => {
+    if (editorType === loadedEditor) {
+      return;
+    }
+    setLoadedEditor(editorType);
+    setShowEditor(false);
+  }, [editorType]);
+
+  useEffect(() => {
+    if (showEditor) {
+      return;
+    }
+    setTimeout(() => {
+      setShowEditor(true);
+    }, 20);
+  }, [showEditor]);
+
+  if (!showEditor) {
+    return null;
+  }
+
   return (
-    <div className="flex flex-col gap-[20px]">
-      <div className="relative bg-bigStrip" id={id}>
-        <div className="flex gap-[5px] bg-newBgLineColor border-b border-t border-customColor3 justify-center items-center p-[5px]">
-          <SignatureBox editor={editorRef?.current?.editor} />
-          <UText
-            editor={editorRef?.current?.editor}
-            currentValue={props.value!}
-          />
-          <BoldText
-            editor={editorRef?.current?.editor}
-            currentValue={props.value!}
-          />
-          {(editorType === 'markdown' || editorType === 'html') &&
-            identifier !== 'telegram' && (
-              <>
-                <AComponent
-                  editor={editorRef?.current?.editor}
-                  currentValue={props.value!}
-                />
-                <Bullets
-                  editor={editorRef?.current?.editor}
-                  currentValue={props.value!}
-                />
-                <HeadingComponent
-                  editor={editorRef?.current?.editor}
-                  currentValue={props.value!}
-                />
-              </>
-            )}
-          <div
-            className="select-none cursor-pointer w-[40px] p-[5px] text-center"
-            onClick={() => setEmojiPickerOpen(!emojiPickerOpen)}
-          >
-            {'\uD83D\uDE00'}
-          </div>
-          <div className="relative">
-            <div className="absolute z-[200] top-[35px] -start-[50px]">
-              <EmojiPicker
-                theme={(localStorage.getItem('mode') as Theme) || Theme.DARK}
-                onEmojiClick={(e) => {
-                  addText(e.emoji);
-                  setEmojiPickerOpen(false);
-                }}
-                open={emojiPickerOpen}
-              />
-            </div>
-          </div>
-        </div>
-        <div className="relative cursor-text">
-          {validateChars &&
-            props.value.length === 0 &&
-            pictures?.length === 0 && (
-              <div className="px-3 text-sm bg-red-600 !text-white mb-[4px]">
-                Your post should have at least one character or one image.
-              </div>
-            )}
-          <div {...getRootProps()}>
+    <div className="flex flex-col gap-[20px] flex-1">
+      <div
+        className={clsx(
+          'relative flex-1 px-[12px] pt-[12px] pb-[12px] flex flex-col',
+          num > 0 && '!rounded-bs-[0]'
+        )}
+        id={id}
+      >
+        <div className="relative cursor-text flex flex-1 flex-col">
+          {/*{validateChars &&*/}
+          {/*  props.value.length === 0 &&*/}
+          {/*  pictures?.length === 0 && (*/}
+          {/*    <div className="px-3 text-sm bg-red-600 !text-white mb-[4px]">*/}
+          {/*      Your post should have at least one character or one image.*/}
+          {/*    </div>*/}
+          {/*  )}*/}
+          <div {...getRootProps()} className="flex flex-1 flex-col">
             <div
               className={clsx(
                 'absolute left-0 top-0 w-full h-full bg-black/70 z-[300] transition-all items-center justify-center flex text-white text-sm',
@@ -594,7 +689,7 @@ export const Editor: FC<{
             >
               Drop your files here to upload
             </div>
-            <div className="px-[10px] pt-[10px]">
+            <div className="px-[10px] pt-[10px] bg-newBgColorInner rounded-t-[6px] relative z-[99]">
               <OnlyEditor
                 value={props.value}
                 editorType={editorType}
@@ -603,38 +698,40 @@ export const Editor: FC<{
                 ref={editorRef}
               />
             </div>
-
             <div
-              className="w-full h-[46px] overflow-hidden absolute left-0"
+              className="bg-newBgColorInner flex-1"
               onClick={() => {
                 if (editorRef?.current?.editor?.isFocused) {
                   return;
                 }
                 editorRef?.current?.editor?.commands?.focus('end');
               }}
-            >
-              <Dashboard
-                height={46}
-                uppy={uppy}
-                id={`prog-${num}`}
-                showProgressDetails={true}
-                hideUploadButton={true}
-                hideRetryButton={true}
-                hidePauseResumeButton={true}
-                hideCancelButton={true}
-                hideProgressAfterFinish={true}
-              />
+            />
+            <div className="w-full pointer-events-none">
+              <div className="w-full h-[46px] overflow-hidden absolute left-0 bg-newBgColorInner uppyChange">
+                <Dashboard
+                  height={46}
+                  uppy={uppy}
+                  id={`prog-${num}`}
+                  showProgressDetails={true}
+                  hideUploadButton={true}
+                  hideRetryButton={true}
+                  hidePauseResumeButton={true}
+                  hideCancelButton={true}
+                  hideProgressAfterFinish={true}
+                />
+              </div>
             </div>
-            <div className="w-full h-[46px] pointer-events-none" />
             <div
-              className="flex bg-newBgLineColor"
+              className="w-full h-[46px] bg-newBgColorInner cursor-text"
               onClick={() => {
                 if (editorRef?.current?.editor?.isFocused) {
                   return;
                 }
                 editorRef?.current?.editor?.commands?.focus('end');
               }}
-            >
+            />
+            <div className="flex bg-newBgColorInner rounded-b-[6px] cursor-default">
               {setImages && (
                 <MultiMediaComponent
                   allData={allValues}
@@ -644,6 +741,112 @@ export const Editor: FC<{
                   value={props.pictures}
                   dummy={dummy}
                   name="image"
+                  information={
+                    <InformationComponent
+                      isPicture={pictures?.length > 0}
+                      chars={chars}
+                      totalChars={valueWithoutHtml.length}
+                      totalAllowedChars={props.totalChars}
+                    />
+                  }
+                  toolBar={
+                    <div className="flex gap-[5px]">
+                      <SignatureBox editor={editorRef?.current?.editor} />
+                      <UText
+                        editor={editorRef?.current?.editor}
+                        currentValue={props.value!}
+                      />
+                      <BoldText
+                        editor={editorRef?.current?.editor}
+                        currentValue={props.value!}
+                      />
+                      {(editorType === 'markdown' || editorType === 'html') &&
+                        identifier !== 'telegram' && (
+                          <>
+                            <AComponent
+                              editor={editorRef?.current?.editor}
+                              currentValue={props.value!}
+                            />
+                            <Bullets
+                              editor={editorRef?.current?.editor}
+                              currentValue={props.value!}
+                            />
+                            <HeadingComponent
+                              editor={editorRef?.current?.editor}
+                              currentValue={props.value!}
+                            />
+                          </>
+                        )}
+                      <div
+                        data-tooltip-id="tooltip"
+                        data-tooltip-content="Insert Emoji"
+                        className="select-none cursor-pointer rounded-[6px] w-[30px] h-[30px] bg-newColColor flex justify-center items-center"
+                        onClick={() => setEmojiPickerOpen(!emojiPickerOpen)}
+                      >
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 16 16"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M7.97917 14.6663C11.6611 14.6663 14.6458 11.6816 14.6458 7.99967C14.6458 4.31778 11.6611 1.33301 7.97917 1.33301C4.29727 1.33301 1.3125 4.31778 1.3125 7.99967C1.3125 11.6816 4.29727 14.6663 7.97917 14.6663Z"
+                            stroke="currentColor"
+                            strokeWidth="1.2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                          <path
+                            d="M4.80664 10C5.50664 11.0067 6.67997 11.6667 7.99997 11.6667C9.31997 11.6667 10.4866 11.0067 11.1933 10"
+                            stroke="currentColor"
+                            strokeWidth="1.2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                          <path
+                            d="M4.66602 6.16699C5.33268 6.83366 6.41935 6.83366 7.09268 6.16699"
+                            stroke="currentColor"
+                            strokeWidth="1.2"
+                            strokeMiterlimit="10"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                          <path
+                            d="M8.90625 6.16699C9.57292 6.83366 10.6596 6.83366 11.3329 6.16699"
+                            stroke="currentColor"
+                            strokeWidth="1.2"
+                            strokeMiterlimit="10"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </div>
+                      <div className="relative">
+                        <div
+                          className={clsx(
+                            'absolute z-[500] -start-[50px]',
+                            num === 0 && allValues?.length > 1
+                              ? 'top-[35px]'
+                              : 'bottom-[35px]'
+                          )}
+                        >
+                          <EmojiPicker
+                            height={400}
+                            theme={
+                              (localStorage.getItem('mode') as Theme) ||
+                              Theme.DARK
+                            }
+                            onEmojiClick={(e) => {
+                              addText(e.emoji);
+                              setEmojiPickerOpen(false);
+                            }}
+                            open={emojiPickerOpen}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  }
                   onChange={(value) => {
                     setImages(value.target.value);
                   }}
@@ -652,52 +855,52 @@ export const Editor: FC<{
                 />
               )}
             </div>
+            <div>{childButton}</div>
           </div>
         </div>
       </div>
-      <div className="flex">
-        <div className="flex-1">{childButton}</div>
-        <div className="bottom-10px end-[25px]">
-          {(props?.totalChars || 0) > 0 ? (
-            <div
-              className={clsx(
-                'text-end text-sm mt-1',
-                valueWithoutHtml.length > props.totalChars && '!text-red-500'
-              )}
-            >
-              {valueWithoutHtml.length}/{props.totalChars}
-            </div>
-          ) : (
-            <div
-              className={clsx(
-                'text-end text-sm mt-1 grid grid-cols-[max-content_max-content] gap-x-[5px]'
-              )}
-            >
-              {selectedIntegration?.map((p) => (
-                <Fragment key={p.integration.id}>
-                  <div
-                    className={
-                      valueWithoutHtml.length > chars?.[p.integration.id] &&
-                      '!text-red-500'
-                    }
-                  >
-                    {p.integration.name} ({capitalize(p.integration.identifier)}
-                    ):
-                  </div>
-                  <div
-                    className={
-                      valueWithoutHtml.length > chars?.[p.integration.id] &&
-                      '!text-red-500'
-                    }
-                  >
-                    {valueWithoutHtml.length}/{chars?.[p.integration.id]}
-                  </div>
-                </Fragment>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+      {/*<div className="flex">*/}
+      {/*  <div className="bottom-10px end-[25px]">*/}
+      {/*    {(props?.totalChars || 0) > 0 ? (*/}
+      {/*      <div*/}
+      {/*        className={clsx(*/}
+      {/*          'text-end text-sm mt-1',*/}
+      {/*          valueWithoutHtml.length > props.totalChars && '!text-red-500'*/}
+      {/*        )}*/}
+      {/*      >*/}
+      {/*        {valueWithoutHtml.length}/{props.totalChars}*/}
+      {/*      </div>*/}
+      {/*    ) : (*/}
+      {/*      <div*/}
+      {/*        className={clsx(*/}
+      {/*          'text-end text-sm mt-1 grid grid-cols-[max-content_max-content] gap-x-[5px]'*/}
+      {/*        )}*/}
+      {/*      >*/}
+      {/*        {selectedIntegration?.map((p) => (*/}
+      {/*          <Fragment key={p.integration.id}>*/}
+      {/*            <div*/}
+      {/*              className={*/}
+      {/*                valueWithoutHtml.length > chars?.[p.integration.id] &&*/}
+      {/*                '!text-red-500'*/}
+      {/*              }*/}
+      {/*            >*/}
+      {/*              {p.integration.name} ({capitalize(p.integration.identifier)}*/}
+      {/*              ):*/}
+      {/*            </div>*/}
+      {/*            <div*/}
+      {/*              className={*/}
+      {/*                valueWithoutHtml.length > chars?.[p.integration.id] &&*/}
+      {/*                '!text-red-500'*/}
+      {/*              }*/}
+      {/*            >*/}
+      {/*              {valueWithoutHtml.length}/{chars?.[p.integration.id]}*/}
+      {/*            </div>*/}
+      {/*          </Fragment>*/}
+      {/*        ))}*/}
+      {/*      </div>*/}
+      {/*    )}*/}
+      {/*  </div>*/}
+      {/*</div>*/}
     </div>
   );
 };
@@ -712,6 +915,7 @@ export const OnlyEditor = forwardRef<
   }
 >(({ editorType, value, onChange, paste }, ref) => {
   const fetch = useFetch();
+
   const { internal } = useLaunchStore(
     useShallow((state) => ({
       internal: state.internal.find((p) => p.integration.id === state.current),
@@ -759,6 +963,10 @@ export const OnlyEditor = forwardRef<
       InterceptUnderlineShortcut,
       BulletList,
       ListItem,
+      Placeholder.configure({
+        placeholder: 'Write something …',
+        emptyEditorClass: 'is-editor-empty',
+      }),
       ...(editorType === 'html' || editorType === 'markdown'
         ? [
             Link.configure({

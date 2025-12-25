@@ -1,6 +1,7 @@
 'use client';
 
 import React, {
+  ChangeEvent,
   ClipboardEvent,
   FC,
   Fragment,
@@ -20,7 +21,10 @@ import EventEmitter from 'events';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import clsx from 'clsx';
 import { VideoFrame } from '@gitroom/react/helpers/video.frame';
-import { MultipartFileUploader } from '@gitroom/frontend/components/media/new.uploader';
+import {
+  MultipartFileUploader,
+  useUppyUploader,
+} from '@gitroom/frontend/components/media/new.uploader';
 import dynamic from 'next/dynamic';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { AiImage } from '@gitroom/frontend/components/launches/ai.image';
@@ -37,6 +41,8 @@ import {
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { AiVideo } from '@gitroom/frontend/components/launches/ai.video';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
+import { Dashboard } from '@uppy/react';
+import { timer } from '@gitroom/helpers/utils/timer';
 const Polonto = dynamic(
   () => import('@gitroom/frontend/components/launches/polonto')
 );
@@ -88,7 +94,7 @@ export const Pagination: FC<{
             aria-current="page"
             onClick={() => setPage(page)}
             className={clsx(
-              'cursor-pointer inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border hover:bg-forth h-10 w-10 hover:text-white border-[#1F1F1F]',
+              'cursor-pointer inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border hover:bg-forth h-10 w-10 hover:text-white border-newBorder',
               current === page
                 ? 'bg-forth !text-white'
                 : 'text-textColor hover:text-white'
@@ -163,96 +169,71 @@ export const MediaBox: FC<{
   standalone?: boolean;
   type?: 'image' | 'video';
   closeModal: () => void;
-}> = (props) => {
-  const { setMedia, type, closeModal } = props;
-  const [mediaList, setListMedia] = useState<Media[]>([]);
-  const setActivateExitButton = useLaunchStore((e) => e.setActivateExitButton);
-  const fetch = useFetch();
-  const mediaDirectory = useMediaDirectory();
+}> = ({ type, standalone, setMedia }) => {
   const [page, setPage] = useState(0);
-  const [pages, setPages] = useState(0);
-  const [selectedMedia, setSelectedMedia] = useState<Media[]>([]);
-  const ref = useRef<any>(null);
-
-  useEffect(() => {
-    setActivateExitButton(false);
-    return () => {
-      setActivateExitButton(true);
-    };
-  }, []);
-
+  const fetch = useFetch();
+  const modals = useModals();
   const loadMedia = useCallback(async () => {
     return (await fetch(`/media?page=${page + 1}`)).json();
   }, [page]);
+  const { data, mutate, isLoading } = useSWR(`get-media-${page}`, loadMedia);
+  const [selected, setSelected] = useState([]);
+  const t = useT();
+  const uploaderRef = useRef<any>(null);
+  const mediaDirectory = useMediaDirectory();
 
-  const setNewMedia = useCallback(
-    (media: Media) => () => {
-      if (props.standalone) {
+  const uppy = useUppyUploader({
+    allowedFileTypes:
+      type == 'image'
+        ? 'image/*'
+        : type == 'video'
+        ? 'video/mp4'
+        : 'image/*,video/mp4',
+    onUploadSuccess: async (arr) => {
+      uppy.clear();
+      await mutate();
+      if (standalone) {
         return;
       }
-      setSelectedMedia(
-        selectedMedia.find((p) => p.id === media.id)
-          ? selectedMedia.filter((f) => f.id !== media.id)
-          : [
-              ...selectedMedia.map((p) => ({
-                ...p,
-              })),
-              {
-                ...media,
-              },
-            ]
-      );
+      setSelected((prevSelected) => {
+        return [...prevSelected, ...arr];
+      });
     },
-    [selectedMedia]
-  );
+  });
 
-  const addNewMedia = useCallback(
-    (media: Media[]) => () => {
-      if (props.standalone) {
+  const addRemoveSelected = useCallback(
+    (media: any) => () => {
+      if (standalone) {
         return;
       }
-      setSelectedMedia((currentMedia) => [...currentMedia, ...media]);
-      // closeModal();
+      const exists = selected.find((p: any) => p.id === media.id);
+      if (exists) {
+        setSelected(selected.filter((f: any) => f.id !== media.id));
+        return;
+      }
+      setSelected([...selected, media]);
     },
-    [selectedMedia]
+    [selected]
   );
+
   const addMedia = useCallback(async () => {
-    if (props.standalone) {
+    if (standalone) {
       return;
     }
     // @ts-ignore
-    setMedia(selectedMedia);
-    closeModal();
-  }, [selectedMedia]);
-  const { data, mutate } = useSWR(`get-media-${page}`, loadMedia);
+    setMedia(selected);
+    modals.closeCurrent();
+  }, [selected]);
 
-  const finishUpload = useCallback(
-    async (res: any) => {
-      const lastMedia = mediaList?.[0]?.id;
-      const newData = await mutate();
-      const untilLastMedia = newData.results.findIndex(
-        (f: any) => f.id === lastMedia
-      );
-      const onlyNewMedia = newData.results.slice(
-        0,
-        untilLastMedia === -1 ? newData.results.length : untilLastMedia
-      );
-
-      if (props.standalone) {
-        return;
-      }
-
-      addNewMedia(onlyNewMedia)();
-    },
-    [mutate, addNewMedia, mediaList, selectedMedia]
-  );
+  const addToUpload = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files).slice(0, 5);
+    for (const file of files) {
+      uppy.addFile(file);
+    }
+  }, []);
 
   const dragAndDrop = useCallback(
     async (event: ClipboardEvent<HTMLDivElement> | File[]) => {
-      if (!ref?.current?.setOptions) {
-        return;
-      }
-
       // @ts-ignore
       const clipboardItems = event.map((p) => ({
         kind: 'file',
@@ -261,39 +242,26 @@ export const MediaBox: FC<{
       if (!clipboardItems) {
         return;
       }
-      const files: File[] = [];
 
+      const files = [];
       // @ts-ignore
       for (const item of clipboardItems) {
         if (item.kind === 'file') {
           const file = item.getAsFile();
           if (file) {
-            const isImage = file.type.startsWith('image/');
-            const isVideo = file.type.startsWith('video/');
-            if (isImage || isVideo) {
-              files.push(file); // Collect images or videos
-            }
+            files.push(file);
           }
         }
       }
-      if (files.length === 0) {
-        return;
+
+      for (const file of files.slice(0, 5)) {
+        uppy.addFile(file);
       }
-      ref.current.setOptions({
-        autoProceed: false,
-      });
-      for (const file of files) {
-        ref.current.addFile(file);
-        await ref.current.upload();
-        ref.current.clear();
-      }
-      ref.current.setOptions({
-        autoProceed: true,
-      });
     },
-    [mutate, addNewMedia, mediaList, selectedMedia]
+    []
   );
-  const removeItem = useCallback(
+
+  const deleteImage = useCallback(
     (media: Media) => async (e: any) => {
       e.stopPropagation();
       if (
@@ -314,212 +282,270 @@ export const MediaBox: FC<{
     [mutate]
   );
 
-  const refNew = useRef(null);
-
-  useEffect(() => {
-    if (data?.pages) {
-      setPages(data.pages);
-    }
-    if (data?.results && data?.results?.length) {
-      setListMedia([...data.results]);
-    }
-  }, [data]);
-
-  useEffect(() => {
-    refNew?.current?.scrollIntoView({
-      behavior: 'smooth',
-    });
+  const btn = useMemo(() => {
+    return (
+      <button
+        onClick={() => uploaderRef?.current?.click()}
+        className="cursor-pointer bg-btnSimple changeColor flex gap-[8px] h-[44px] px-[18px] justify-center items-center rounded-[8px]"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="14"
+          height="14"
+          viewBox="0 0 14 14"
+          fill="none"
+        >
+          <path
+            d="M6.58333 0.75V12.4167M0.75 6.58333H12.4167"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        <div>Upload</div>
+      </button>
+    );
   }, []);
 
-  const t = useT();
-
   return (
-    <div
-      {...(props.standalone
-        ? {
-            className:
-              'bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all',
-          }
-        : {
-            ref: refNew,
-            className:
-              'removeEditor fixed start-0 top-0 bg-primary/80 z-[300] w-full min-h-full p-4 md:p-[60px] animate-fade',
-          })}
-    >
-      <div
-        {...(props.standalone
-          ? {}
-          : {
-              className:
-                'max-w-[1000px] w-full h-full bg-newBgColorInner border-tableBorder border-2 rounded-xl relative mx-auto',
-            })}
-      >
-        <DropFiles onDrop={dragAndDrop}>
-          <div className="pb-[20px] px-[20px] w-full h-full">
-            <div className="flex flex-col">
-              <div className="flex-1">
-                {!props.standalone ? (
-                  <TopTitle title="Media Library" />
-                ) : (
-                  <div className="h-[100px]" />
-                )}
-              </div>
-              {!props.standalone ? (
-                <button
-                  onClick={closeModal}
-                  className="outline-none z-[300] absolute end-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root bg-primary hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
-                  type="button"
-                >
-                  <svg
-                    viewBox="0 0 15 15"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                  >
-                    <path
-                      d="M11.7816 4.03157C12.0062 3.80702 12.0062 3.44295 11.7816 3.2184C11.5571 2.99385 11.193 2.99385 10.9685 3.2184L7.50005 6.68682L4.03164 3.2184C3.80708 2.99385 3.44301 2.99385 3.21846 3.2184C2.99391 3.44295 2.99391 3.80702 3.21846 4.03157L6.68688 7.49999L3.21846 10.9684C2.99391 11.193 2.99391 11.557 3.21846 11.7816C3.44301 12.0061 3.80708 12.0061 4.03164 11.7816L7.50005 8.31316L10.9685 11.7816C11.193 12.0061 11.5571 12.0061 11.7816 11.7816C12.0062 11.557 12.0062 11.193 11.7816 10.9684L8.31322 7.49999L11.7816 4.03157Z"
-                      fill="currentColor"
-                      fillRule="evenodd"
-                      clipRule="evenodd"
-                    ></path>
-                  </svg>
-                </button>
-              ) : (
-                <div />
-              )}
-
-              <div className="absolute flex justify-center mt-[55px] items-center pointer-events-none text-center h-[57px] w-full start-0 rounded-lg transition-all group text-sm font-semibold bg-transparent text-gray-800 hover:bg-gray-100 focus:text-primary-500">
-                {t(
-                  'select_or_upload_pictures_maximum_5_at_a_time',
-                  'Select or upload pictures (maximum 5 at a time)'
-                )}
-                <br />
-                {t(
-                  'you_can_also_drag_drop_pictures',
-                  'You can also drag & drop pictures'
-                )}
-              </div>
-
-              {!!mediaList.length && (
-                <>
-                  <div className="flex absolute h-[57px] w-full start-0 top-0 rounded-lg transition-all group text-sm font-semibold bg-transparent text-gray-800 hover:bg-gray-100 focus:text-primary-500">
-                    <div className="relative flex flex-1 pe-[55px] gap-2 items-center justify-center">
-                      <div className="flex-1" />
-                      <MultipartFileUploader
-                        uppRef={ref}
-                        onUploadSuccess={finishUpload}
-                        allowedFileTypes={
-                          type === 'video'
-                            ? 'video/mp4'
-                            : type === 'image'
-                            ? 'image/*'
-                            : 'image/*,video/mp4'
-                        }
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
+    <DropFiles className="flex flex-col flex-1" onDrop={dragAndDrop}>
+      <div className="flex flex-col flex-1">
+        <div
+          className={clsx(
+            'flex',
+            !isLoading && !data?.results?.length && 'hidden'
+          )}
+        >
+          {!isLoading && !!data?.results?.length && (
+            <div className="flex-1 text-[14px] font-[600] whitespace-pre-line">
+              Select or upload pictures (maximum 5 at a time).{'\n'}
+              You can also drag & drop pictures.
             </div>
-            <div
-              className={clsx(
-                'flex flex-wrap gap-[10px] mt-[35px] pt-[20px]',
-                !!mediaList.length &&
-                  'justify-center items-center text-textColor'
-              )}
-            >
-              {!mediaList.length ? (
-                <div className="flex flex-col text-center items-center justify-center mx-auto">
-                  <div>
-                    {t(
-                      'you_don_t_have_any_assets_yet',
-                      "You don't have any assets yet."
-                    )}
-                  </div>
-                  <div>
-                    {t(
-                      'click_the_button_below_to_upload_one',
-                      'Click the button below to upload one'
-                    )}
-                  </div>
-                  <div className="mt-[10px] justify-center items-center flex flex-col-reverse gap-[10px]">
-                    <MultipartFileUploader
-                      onUploadSuccess={finishUpload}
-                      allowedFileTypes={
-                        type === 'video'
-                          ? 'video/mp4'
-                          : type === 'image'
-                          ? 'image/*'
-                          : 'image/*,video/mp4'
-                      }
-                    />
-                  </div>
+          )}
+          <input
+            type="file"
+            ref={uploaderRef}
+            onChange={addToUpload}
+            className="hidden"
+            multiple={true}
+          />
+          {!isLoading && !!data?.results?.length && btn}
+        </div>
+        <div className="w-full pointer-events-none relative mt-[5px] mb-[5px]">
+          <div className="w-full h-[46px] overflow-hidden absolute left-0 bg-newBgColorInner uppyChange">
+            <Dashboard
+              height={46}
+              uppy={uppy}
+              id={`uploader`}
+              showProgressDetails={true}
+              hideUploadButton={true}
+              hideRetryButton={true}
+              hidePauseResumeButton={true}
+              hideCancelButton={true}
+              hideProgressAfterFinish={true}
+            />
+          </div>
+          <div className="w-full h-[46px] uppyChange" />
+        </div>
+        <div
+          className={clsx(
+            'flex-1 relative',
+            !isLoading &&
+              !data?.results?.length &&
+              'bg-newTextColor/[0.02] rounded-[12px]'
+          )}
+        >
+          <div
+            className={clsx(
+              'absolute -left-[3px] -top-[3px] withp3 h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newColColor scrollbar-track-newBgColorInner',
+              !isLoading &&
+                !data?.results?.length &&
+                'flex justify-center items-center gap-[20px] flex-col'
+            )}
+          >
+            {!isLoading && !data?.results?.length && (
+              <>
+                <svg
+                  width="192"
+                  height="151"
+                  viewBox="0 0 192 151"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M109.75 59.0141C104.489 59.0141 113.46 -5.73557 91.0289 1.57563C69.7021 8.5269 99.5229 59.0141 94.5119 59.0141C89.5009 59.0141 54.4775 56.107 52.1458 71.9377C49.5418 89.6178 95.4225 79.7216 96.7894 81.9895C98.1563 84.2573 78.775 111.109 91.0289 119.324C103.724 127.835 119.934 96.3491 122.711 96.3491C125.489 96.3491 139.845 147.93 151.514 133.684C160.997 122.106 138.391 96.3491 142.873 96.3491C147.355 96.3491 180.793 98.9658 186.076 81.9895C192.534 61.2424 134.828 76.0575 131.352 71.9377C127.876 67.818 159.167 34.7484 142.873 25.987C126.785 17.3361 115.012 59.0141 109.75 59.0141Z"
+                    stroke="white"
+                    strokeOpacity="0.08"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                  <rect
+                    x="22.6328"
+                    y="62.541"
+                    width="49.2079"
+                    height="49.2079"
+                    rx="12.6792"
+                    transform="rotate(-16.275 22.6328 62.541)"
+                    fill="#232222"
+                  />
+                  <path
+                    d="M66.8573 81.5379L60.538 73.8505C59.3847 72.4421 58.0986 71.8279 56.9172 72.1076C55.7477 72.3838 54.8664 73.5134 54.4627 75.298L53.377 80.0552C53.1492 81.0592 52.6158 81.7748 51.8894 82.0519C51.1544 82.3446 50.2829 82.1692 49.4433 81.5678L49.0813 81.3089C47.9176 80.4896 46.7111 80.2818 45.6626 80.705C44.6142 81.1282 43.9074 82.1418 43.6491 83.5323L42.7814 88.278C42.4752 89.995 43.055 91.7139 44.3442 92.8742C45.6334 94.0345 47.406 94.4417 49.0739 93.9549L64.3851 89.4863C65.9931 89.017 67.2584 87.7753 67.7541 86.1722C68.2738 84.5621 67.924 82.8282 66.8573 81.5379Z"
+                    fill="white"
+                    fillOpacity="0.4"
+                  />
+                  <path
+                    d="M45.8412 76.6818C48.0811 76.0281 49.367 73.6823 48.7133 71.4423C48.0595 69.2024 45.7137 67.9165 43.4738 68.5702C41.2338 69.2239 39.9479 71.5697 40.6017 73.8097C41.2554 76.0497 43.6012 77.3355 45.8412 76.6818Z"
+                    fill="white"
+                    fillOpacity="0.4"
+                  />
+                  <rect
+                    x="64.8125"
+                    y="70.6133"
+                    width="66.3578"
+                    height="66.3578"
+                    rx="18.1132"
+                    fill="#2C2B2B"
+                  />
+                  <path
+                    d="M80.1261 117.087L80.0882 117.125C79.5762 116.006 79.2538 114.735 79.1211 113.332C79.2538 114.716 79.6141 115.968 80.1261 117.087Z"
+                    fill="white"
+                    fillOpacity="0.4"
+                  />
+                  <path
+                    d="M92.3022 100.72C94.7948 100.72 96.8154 98.6991 96.8154 96.2065C96.8154 93.714 94.7948 91.6934 92.3022 91.6934C89.8097 91.6934 87.7891 93.714 87.7891 96.2065C87.7891 98.6991 89.8097 100.72 92.3022 100.72Z"
+                    fill="white"
+                    fillOpacity="0.4"
+                  />
+                  <path
+                    d="M105.936 84.8301H90.0448C83.1423 84.8301 79.0273 88.945 79.0273 95.8476V111.739C79.0273 113.805 79.3876 115.607 80.0893 117.124C81.7201 120.727 85.2093 122.756 90.0448 122.756H105.936C112.838 122.756 116.953 118.641 116.953 111.739V107.396V95.8476C116.953 88.945 112.838 84.8301 105.936 84.8301ZM113.862 104.741C112.383 103.471 109.994 103.471 108.515 104.741L100.626 111.511C99.147 112.781 96.7577 112.781 95.2786 111.511L94.6339 110.98C93.2875 109.804 91.1447 109.691 89.6276 110.715L82.5355 115.474C82.1183 114.412 81.8718 113.18 81.8718 111.739V95.8476C81.8718 90.5 84.6973 87.6745 90.0448 87.6745H105.936C111.283 87.6745 114.109 90.5 114.109 95.8476V104.95L113.862 104.741Z"
+                    fill="white"
+                    fillOpacity="0.4"
+                  />
+                </svg>
+                <div className="text-[20px] font-[600]">
+                  You don't have any media yet
                 </div>
-              ) : (
-                <>
-                  {selectedMedia.length > 0 && (
-                    <div className="flex justify-center absolute top-[7px] text-white">
-                      <Button
-                        onClick={props.standalone ? () => {} : addMedia}
-                        className="!text-white"
-                      >
-                        <span className="!text-white">
-                          {t('add_selected_media', 'Add selected media')}
-                        </span>
-                      </Button>
-                    </div>
-                  )}
-                </>
-              )}
-              {mediaList
-                .filter((f) => {
-                  if (type === 'video') {
-                    return f.path.indexOf('mp4') > -1;
-                  } else if (type === 'image') {
-                    return f.path.indexOf('mp4') === -1;
-                  }
-                  return true;
-                })
-                .map((media) => (
+                <div className="whitespace-pre-line text-newTextColor/[0.6] text-center">
+                  Select or upload pictures (maximum 5 at a time). {'\n'}
+                  You can also drag & drop pictures.
+                </div>
+                <div className="forceChange">{btn}</div>
+              </>
+            )}
+            {isLoading && (
+              <>
+                {[...new Array(16)].map((_, i) => (
                   <div
-                    key={media.id}
                     className={clsx(
-                      'w-[120px] h-[120px] flex select-none relative cursor-pointer',
-                      selectedMedia.find((p) => p.id === media.id)
-                        ? 'border-4 border-forth'
-                        : 'border-tableBorder border-2'
+                      'px-[3px] py-[3px] float-left rounded-[6px] cursor-pointer w8-max aspect-square'
                     )}
-                    onClick={props.standalone ? () => {} : setNewMedia(media)}
+                    key={i}
                   >
-                    <div
-                      onClick={removeItem(media)}
-                      className="border border-red-400 !text-white flex justify-center items-center absolute w-[20px] z-[100] h-[20px] rounded-full bg-red-700 -top-[5px] -end-[5px]"
-                    >
-                      X
-                    </div>
-
-                    {media.path.indexOf('mp4') > -1 ? (
-                      <VideoFrame url={mediaDirectory.set(media.path)} />
-                    ) : (
-                      <Image
-                        width={120}
-                        height={120}
-                        className="w-full h-full object-cover"
-                        src={mediaDirectory.set(media.path)}
-                        alt="media"
-                      />
-                    )}
+                    <div className="w-full h-full bg-newSep rounded-[6px] animate-pulse" />
                   </div>
                 ))}
-            </div>
-            {(pages || 0) > 1 && (
-              <Pagination current={page} totalPages={pages} setPage={setPage} />
+              </>
+            )}
+            {data?.results
+              ?.filter((f: any) => {
+                if (type === 'video') {
+                  return f.path.indexOf('mp4') > -1;
+                } else if (type === 'image') {
+                  return f.path.indexOf('mp4') === -1;
+                }
+                return true;
+              })
+              .map((media: any) => (
+                <div
+                  className={clsx(
+                    'group px-[3px] py-[3px] float-left rounded-[6px] w8-max aspect-square',
+                    !standalone && 'cursor-pointer'
+                  )}
+                  key={media.id}
+                >
+                  <div
+                    className={clsx(
+                      'w-full h-full rounded-[6px] border-[4px] relative',
+                      !!selected.find((p) => p.id === media.id)
+                        ? 'border-[#612BD3]'
+                        : 'border-transparent'
+                    )}
+                    onClick={addRemoveSelected(media)}
+                  >
+                    {!!selected.find((p: any) => p.id === media.id) ? (
+                      <div className="flex justify-center items-center text-[14px] font-[500] w-[24px] h-[24px] rounded-full bg-[#612BD3] absolute -bottom-[10px] -end-[10px]">
+                        {selected.findIndex((z: any) => z.id === media.id) + 1}
+                      </div>
+                    ) : (
+                      <svg
+                        className="cursor-pointer hidden z-[100] group-hover:block absolute -top-[5px] -end-[5px]"
+                        onClick={deleteImage(media)}
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="18"
+                        height="18"
+                        viewBox="0 0 18 18"
+                        fill="none"
+                      >
+                        <ellipse
+                          cx="9.96484"
+                          cy="9.10742"
+                          rx="6"
+                          ry="5.5"
+                          fill="white"
+                        />
+                        <path
+                          d="M9 1.5C4.8675 1.5 1.5 4.8675 1.5 9C1.5 13.1325 4.8675 16.5 9 16.5C13.1325 16.5 16.5 13.1325 16.5 9C16.5 4.8675 13.1325 1.5 9 1.5ZM11.52 10.725C11.7375 10.9425 11.7375 11.3025 11.52 11.52C11.4075 11.6325 11.265 11.685 11.1225 11.685C10.98 11.685 10.8375 11.6325 10.725 11.52L9 9.795L7.275 11.52C7.1625 11.6325 7.02 11.685 6.8775 11.685C6.735 11.685 6.5925 11.6325 6.48 11.52C6.2625 11.3025 6.2625 10.9425 6.48 10.725L8.205 9L6.48 7.275C6.2625 7.0575 6.2625 6.6975 6.48 6.48C6.6975 6.2625 7.0575 6.2625 7.275 6.48L9 8.205L10.725 6.48C10.9425 6.2625 11.3025 6.2625 11.52 6.48C11.7375 6.6975 11.7375 7.0575 11.52 7.275L9.795 9L11.52 10.725Z"
+                          fill="#FF3535"
+                        />
+                      </svg>
+                    )}
+                    <div className="w-full h-full rounded-[6px] overflow-hidden">
+                      {media.path.indexOf('mp4') > -1 ? (
+                        <VideoFrame url={mediaDirectory.set(media.path)} />
+                      ) : (
+                        <img
+                          width="100%"
+                          height="100%"
+                          className="w-full h-full object-cover"
+                          src={mediaDirectory.set(media.path)}
+                          alt="media"
+                        />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
+        {(data?.pages || 0) > 1 && (
+          <Pagination
+            current={page}
+            totalPages={data?.pages}
+            setPage={setPage}
+          />
+        )}
+        {!standalone && (
+          <div className="flex justify-end mt-[32px] gap-[8px]">
+            <button
+              onClick={() => modals.closeCurrent()}
+              className="cursor-pointer h-[52px] px-[20px] items-center justify-center border border-newTextColor/10 flex rounded-[10px]"
+            >
+              Cancel
+            </button>
+            {!isLoading && !!data?.results?.length && (
+              <button
+                onClick={standalone ? () => {} : addMedia}
+                disabled={selected.length === 0}
+                className="cursor-pointer text-white disabled:opacity-80 disabled:cursor-not-allowed h-[52px] px-[20px] items-center justify-center bg-[#612BD3] flex rounded-[10px]"
+              >
+                {t('add_selected_media', 'Add selected media')}
+              </button>
             )}
           </div>
-        </DropFiles>
+        )}
       </div>
-    </div>
+    </DropFiles>
   );
 };
 export const MultiMediaComponent: FC<{
@@ -543,6 +569,8 @@ export const MultiMediaComponent: FC<{
   error?: any;
   onOpen?: () => void;
   onClose?: () => void;
+  toolBar?: React.ReactNode;
+  information?: React.ReactNode;
   onChange: (event: {
     target: {
       name: string;
@@ -557,8 +585,6 @@ export const MultiMediaComponent: FC<{
   }) => void;
 }> = (props) => {
   const {
-    onOpen,
-    onClose,
     name,
     error,
     text,
@@ -566,6 +592,8 @@ export const MultiMediaComponent: FC<{
     value,
     allData,
     dummy,
+    toolBar,
+    information,
   } = props;
   const user = useUser();
   const modals = useModals();
@@ -574,7 +602,7 @@ export const MultiMediaComponent: FC<{
       setCurrentMedia(value);
     }
   }, [value]);
-  const [mediaModal, setMediaModal] = useState(false);
+
   const [currentMedia, setCurrentMedia] = useState(value);
   const mediaDirectory = useMediaDirectory();
   const changeMedia = useCallback(
@@ -603,7 +631,12 @@ export const MultiMediaComponent: FC<{
   );
   const showModal = useCallback(() => {
     modals.openModal({
+      title: 'Media Library',
       askClose: false,
+      closeOnEscape: true,
+      fullScreen: true,
+      size: 'calc(100% - 80px)',
+      height: 'calc(100% - 80px)',
       children: (close) => (
         <MediaBox setMedia={changeMedia} closeModal={close} />
       ),
@@ -637,40 +670,12 @@ export const MultiMediaComponent: FC<{
     }
   }, [changeMedia]);
 
-  const mediaSettings = useMediaSettings();
-
   const t = useT();
 
   return (
     <>
-      <div className="b1 flex flex-col gap-[8px] bg-bigStrip rounded-bl-[8px] select-none w-full">
-        <div className="flex gap-[10px]">
-          <Button
-            onClick={showModal}
-            className="ms-[10px] !px-[0] !h-[80px] w-[80px] rounded-[4px] mb-[10px] gap-[8px] !text-primary justify-center items-center flex border border-dashed border-newBgLineColor bg-newColColor"
-          >
-            <div className="flex flex-col gap-[5px] items-center">
-              <div>
-                <svg
-                  className="!text-primary"
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <path
-                    d="M19.5 3H7.5C7.10218 3 6.72064 3.15804 6.43934 3.43934C6.15804 3.72064 6 4.10218 6 4.5V6H4.5C4.10218 6 3.72064 6.15804 3.43934 6.43934C3.15804 6.72064 3 7.10218 3 7.5V19.5C3 19.8978 3.15804 20.2794 3.43934 20.5607C3.72064 20.842 4.10218 21 4.5 21H16.5C16.8978 21 17.2794 20.842 17.5607 20.5607C17.842 20.2794 18 19.8978 18 19.5V18H19.5C19.8978 18 20.2794 17.842 20.5607 17.5607C20.842 17.2794 21 16.8978 21 16.5V4.5C21 4.10218 20.842 3.72064 20.5607 3.43934C20.2794 3.15804 19.8978 3 19.5 3ZM7.5 4.5H19.5V11.0044L17.9344 9.43875C17.6531 9.15766 17.2717 8.99976 16.8741 8.99976C16.4764 8.99976 16.095 9.15766 15.8137 9.43875L8.75344 16.5H7.5V4.5ZM16.5 19.5H4.5V7.5H6V16.5C6 16.8978 6.15804 17.2794 6.43934 17.5607C6.72064 17.842 7.10218 18 7.5 18H16.5V19.5ZM19.5 16.5H10.875L16.875 10.5L19.5 13.125V16.5ZM11.25 10.5C11.695 10.5 12.13 10.368 12.5 10.1208C12.87 9.87357 13.1584 9.52217 13.3287 9.11104C13.499 8.6999 13.5436 8.2475 13.4568 7.81105C13.37 7.37459 13.1557 6.97368 12.841 6.65901C12.5263 6.34434 12.1254 6.13005 11.689 6.04323C11.2525 5.95642 10.8001 6.00097 10.389 6.17127C9.97783 6.34157 9.62643 6.62996 9.37919 6.99997C9.13196 7.36998 9 7.80499 9 8.25C9 8.84674 9.23705 9.41903 9.65901 9.84099C10.081 10.2629 10.6533 10.5 11.25 10.5ZM11.25 7.5C11.3983 7.5 11.5433 7.54399 11.6667 7.6264C11.79 7.70881 11.8861 7.82594 11.9429 7.96299C11.9997 8.10003 12.0145 8.25083 11.9856 8.39632C11.9566 8.5418 11.8852 8.67544 11.7803 8.78033C11.6754 8.88522 11.5418 8.95665 11.3963 8.98559C11.2508 9.01453 11.1 8.99968 10.963 8.94291C10.8259 8.88614 10.7088 8.79001 10.6264 8.66668C10.544 8.54334 10.5 8.39834 10.5 8.25C10.5 8.05109 10.579 7.86032 10.7197 7.71967C10.8603 7.57902 11.0511 7.5 11.25 7.5Z"
-                    fill="currentColor"
-                  />
-                </svg>
-              </div>
-              <div className="text-[12px] font-[500] !text-current">
-                {t('insert_media', 'Insert Media')}
-              </div>
-            </div>
-          </Button>
-
+      <div className="b1 flex flex-col gap-[8px] rounded-bl-[8px] select-none w-full">
+        <div className="flex gap-[10px] px-[12px]">
           {!!currentMedia && (
             <ReactSortable
               list={currentMedia}
@@ -684,10 +689,27 @@ export const MultiMediaComponent: FC<{
             >
               {currentMedia.map((media, index) => (
                 <Fragment key={media.id}>
-                  <div className="cursor-pointer rounded-[4px] w-[80px] h-[80px] border-2 border-tableBorder relative flex transition-all">
-                    <div className="dragging text-sm absolute pe-[1px] z-[10] pb-[3px] -start-[4px] -top-[4px] bg-blue-700 cursor-move rounded-full w-[15px] h-[15px] text-white flex justify-center items-center">
-                      ::
-                    </div>
+                  <div className="cursor-pointer rounded-[5px] w-[40px] h-[40px] border-2 border-tableBorder relative flex transition-all">
+                    <svg
+                      className="z-[20] dragging absolute pe-[1px] pb-[3px] -start-[4px] -top-[4px] cursor-move"
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="15"
+                      height="15"
+                      viewBox="0 0 15 15"
+                      fill="none"
+                    >
+                      <ellipse
+                        cx="8.23242"
+                        cy="7.5"
+                        rx="6"
+                        ry="5.5"
+                        fill="white"
+                      />
+                      <path
+                        d="M7.5 0C11.6421 0 15 3.35786 15 7.5C14.9998 11.642 11.642 15 7.5 15C3.35799 15 0.000197912 11.642 0 7.5C0 3.35786 3.35786 0 7.5 0ZM5.55566 8.38867C4.97286 8.38867 4.50026 8.86159 4.5 9.44434C4.5 10.0273 4.9727 10.5 5.55566 10.5C6.13858 10.4999 6.61133 10.0273 6.61133 9.44434C6.61107 8.86162 6.13842 8.38873 5.55566 8.38867ZM9.44434 8.38867C8.86158 8.38873 8.38893 8.86162 8.38867 9.44434C8.38867 10.0273 8.86142 10.4999 9.44434 10.5C10.0273 10.5 10.5 10.0273 10.5 9.44434C10.4997 8.86159 10.0271 8.38867 9.44434 8.38867ZM5.55566 9.38867C5.58614 9.38873 5.61107 9.41391 5.61133 9.44434C5.61133 9.47498 5.5863 9.49994 5.55566 9.5C5.52498 9.5 5.5 9.47502 5.5 9.44434C5.50026 9.41387 5.52514 9.38867 5.55566 9.38867ZM9.44434 9.38867C9.47486 9.38867 9.49974 9.41387 9.5 9.44434C9.5 9.47502 9.47502 9.5 9.44434 9.5C9.4137 9.49994 9.38867 9.47498 9.38867 9.44434C9.38893 9.41391 9.41386 9.38873 9.44434 9.38867ZM5.55566 4.5C4.97282 4.5 4.5002 4.97287 4.5 5.55566C4.50006 6.13858 4.97273 6.61133 5.55566 6.61133C6.13855 6.61127 6.61127 6.13855 6.61133 5.55566C6.61113 4.9729 6.13846 4.50006 5.55566 4.5ZM9.44434 4.5C8.86154 4.50006 8.38887 4.9729 8.38867 5.55566C8.38873 6.13855 8.86145 6.61127 9.44434 6.61133C10.0273 6.61133 10.4999 6.13858 10.5 5.55566C10.4998 4.97287 10.0272 4.5 9.44434 4.5ZM5.55566 5.5C5.58617 5.50006 5.61113 5.52519 5.61133 5.55566C5.61127 5.58626 5.58626 5.61127 5.55566 5.61133C5.52502 5.61133 5.50006 5.5863 5.5 5.55566C5.5002 5.52515 5.5251 5.5 5.55566 5.5ZM9.44434 5.5C9.4749 5.5 9.4998 5.52515 9.5 5.55566C9.49994 5.5863 9.47498 5.61133 9.44434 5.61133C9.41374 5.61127 9.38873 5.58626 9.38867 5.55566C9.38887 5.52519 9.41383 5.50006 9.44434 5.5Z"
+                        fill="#618DFF"
+                      />
+                    </svg>
 
                     <div className="w-full h-full relative group">
                       <div
@@ -699,7 +721,6 @@ export const MultiMediaComponent: FC<{
                                 media={media as any}
                                 onClose={close}
                                 onSelect={(value: any) => {
-                                  console.log(value);
                                   onChange({
                                     target: {
                                       name: 'upload',
@@ -719,7 +740,7 @@ export const MultiMediaComponent: FC<{
                             ),
                           });
                         }}
-                        className="absolute top-[50%] left-[50%] -translate-x-[50%] -translate-y-[50%] bg-black/80 rounded-[10px] opacity-0 group-hover:opacity-100 transition-opacity z-[100]"
+                        className="absolute top-[50%] left-[50%] -translate-x-[50%] -translate-y-[50%] bg-black/80 rounded-[10px] opacity-0 group-hover:opacity-100 transition-opacity z-[9]"
                       >
                         <svg
                           width="40"
@@ -744,12 +765,21 @@ export const MultiMediaComponent: FC<{
                         />
                       )}
                     </div>
-                    <div
+
+                    <svg
                       onClick={clearMedia(index)}
-                      className="rounded-full w-[15px] h-[15px] bg-red-800 text-white flex justify-center items-center absolute -end-[4px] -top-[4px]"
+                      className="absolute -end-[4px] -top-[4px] z-[20] rounded-full bg-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="15"
+                      height="15"
+                      viewBox="0 0 15 15"
+                      fill="none"
                     >
-                      x
-                    </div>
+                      <path
+                        d="M7.5 0C3.3675 0 0 3.3675 0 7.5C0 11.6325 3.3675 15 7.5 15C11.6325 15 15 11.6325 15 7.5C15 3.3675 11.6325 0 7.5 0ZM10.02 9.225C10.2375 9.4425 10.2375 9.8025 10.02 10.02C9.9075 10.1325 9.765 10.185 9.6225 10.185C9.48 10.185 9.3375 10.1325 9.225 10.02L7.5 8.295L5.775 10.02C5.6625 10.1325 5.52 10.185 5.3775 10.185C5.235 10.185 5.0925 10.1325 4.98 10.02C4.7625 9.8025 4.7625 9.4425 4.98 9.225L6.705 7.5L4.98 5.775C4.7625 5.5575 4.7625 5.1975 4.98 4.98C5.1975 4.7625 5.5575 4.7625 5.775 4.98L7.5 6.705L9.225 4.98C9.4425 4.7625 9.8025 4.7625 10.02 4.98C10.2375 5.1975 10.2375 5.5575 10.02 5.775L8.295 7.5L10.02 9.225Z"
+                        fill="#FF3535"
+                      />
+                    </svg>
                   </div>
                 </Fragment>
               ))}
@@ -757,32 +787,76 @@ export const MultiMediaComponent: FC<{
           )}
         </div>
         {!dummy && (
-          <div className="flex gap-[10px] bg-newBgLineColor w-full b1">
-            <div className="flex py-[10px] b2">
-              <Button
+          <div className="flex gap-[8px] px-[12px] border-t border-newColColor w-full b1 text-textColor">
+            <div className="flex py-[10px] b2 items-center gap-[4px]">
+              <div
+                onClick={showModal}
+                className="cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]"
+              >
+                <div className="flex gap-[8px] items-center">
+                  <div>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                    >
+                      <g clip-path="url(#clip0_2352_53043)">
+                        <path
+                          d="M8.33333 1.99967H5.2C4.0799 1.99967 3.51984 1.99967 3.09202 2.21766C2.71569 2.40941 2.40973 2.71537 2.21799 3.09169C2 3.51952 2 4.07957 2 5.19967V10.7997C2 11.9198 2 12.4798 2.21799 12.9077C2.40973 13.284 2.71569 13.5899 3.09202 13.7817C3.51984 13.9997 4.07989 13.9997 5.2 13.9997H11.3333C11.9533 13.9997 12.2633 13.9997 12.5176 13.9315C13.2078 13.7466 13.7469 13.2075 13.9319 12.5173C14 12.263 14 11.953 14 11.333M12.6667 5.33301V1.33301M10.6667 3.33301H14.6667M7 5.66634C7 6.40272 6.40305 6.99967 5.66667 6.99967C4.93029 6.99967 4.33333 6.40272 4.33333 5.66634C4.33333 4.92996 4.93029 4.33301 5.66667 4.33301C6.40305 4.33301 7 4.92996 7 5.66634ZM9.99336 7.94511L4.3541 13.0717C4.03691 13.3601 3.87831 13.5042 3.86429 13.6291C3.85213 13.7374 3.89364 13.8448 3.97546 13.9167C4.06985 13.9997 4.28419 13.9997 4.71286 13.9997H10.9707C11.9301 13.9997 12.4098 13.9997 12.7866 13.8385C13.2596 13.6361 13.6365 13.2593 13.8388 12.7863C14 12.4095 14 11.9298 14 10.9703C14 10.6475 14 10.4861 13.9647 10.3358C13.9204 10.1469 13.8353 9.96991 13.7155 9.81727C13.6202 9.69581 13.4941 9.59497 13.242 9.39331L11.3772 7.90145C11.1249 7.69961 10.9988 7.5987 10.8599 7.56308C10.7374 7.53169 10.6086 7.53575 10.4884 7.5748C10.352 7.6191 10.2324 7.72777 9.99336 7.94511Z"
+                          stroke="currentColor"
+                          strokeWidth="1.2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </g>
+                      <defs>
+                        <clipPath id="clip0_2352_53043">
+                          <rect width="16" height="16" fill="currentColor" />
+                        </clipPath>
+                      </defs>
+                    </svg>
+                  </div>
+                  <div className="text-[10px] font-[600] maxMedia:hidden block">
+                    {t('insert_media', 'Insert Media')}
+                  </div>
+                </div>
+              </div>
+              <div
                 onClick={designMedia}
-                className="ms-[10px] rounded-[4px] gap-[8px] !text-primary justify-center items-center w-[127px] flex border border-dashed border-newBgLineColor bg-newColColor"
+                className="cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]"
               >
                 <div className="flex gap-[5px] items-center">
                   <div>
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
                       fill="none"
                     >
-                      <path
-                        d="M19.5 3H7.5C7.10218 3 6.72064 3.15804 6.43934 3.43934C6.15804 3.72064 6 4.10218 6 4.5V6H4.5C4.10218 6 3.72064 6.15804 3.43934 6.43934C3.15804 6.72064 3 7.10218 3 7.5V19.5C3 19.8978 3.15804 20.2794 3.43934 20.5607C3.72064 20.842 4.10218 21 4.5 21H16.5C16.8978 21 17.2794 20.842 17.5607 20.5607C17.842 20.2794 18 19.8978 18 19.5V18H19.5C19.8978 18 20.2794 17.842 20.5607 17.5607C20.842 17.2794 21 16.8978 21 16.5V4.5C21 4.10218 20.842 3.72064 20.5607 3.43934C20.2794 3.15804 19.8978 3 19.5 3ZM7.5 4.5H19.5V11.0044L17.9344 9.43875C17.6531 9.15766 17.2717 8.99976 16.8741 8.99976C16.4764 8.99976 16.095 9.15766 15.8137 9.43875L8.75344 16.5H7.5V4.5ZM16.5 19.5H4.5V7.5H6V16.5C6 16.8978 6.15804 17.2794 6.43934 17.5607C6.72064 17.842 7.10218 18 7.5 18H16.5V19.5ZM19.5 16.5H10.875L16.875 10.5L19.5 13.125V16.5ZM11.25 10.5C11.695 10.5 12.13 10.368 12.5 10.1208C12.87 9.87357 13.1584 9.52217 13.3287 9.11104C13.499 8.6999 13.5436 8.2475 13.4568 7.81105C13.37 7.37459 13.1557 6.97368 12.841 6.65901C12.5263 6.34434 12.1254 6.13005 11.689 6.04323C11.2525 5.95642 10.8001 6.00097 10.389 6.17127C9.97783 6.34157 9.62643 6.62996 9.37919 6.99997C9.13196 7.36998 9 7.80499 9 8.25C9 8.84674 9.23705 9.41903 9.65901 9.84099C10.081 10.2629 10.6533 10.5 11.25 10.5ZM11.25 7.5C11.3983 7.5 11.5433 7.54399 11.6667 7.6264C11.79 7.70881 11.8861 7.82594 11.9429 7.96299C11.9997 8.10003 12.0145 8.25083 11.9856 8.39632C11.9566 8.5418 11.8852 8.67544 11.7803 8.78033C11.6754 8.88522 11.5418 8.95665 11.3963 8.98559C11.2508 9.01453 11.1 8.99968 10.963 8.94291C10.8259 8.88614 10.7088 8.79001 10.6264 8.66668C10.544 8.54334 10.5 8.39834 10.5 8.25C10.5 8.05109 10.579 7.86032 10.7197 7.71967C10.8603 7.57902 11.0511 7.5 11.25 7.5Z"
-                        fill="currentColor"
-                      />
+                      <g clip-path="url(#clip0_2352_53048)">
+                        <path
+                          d="M7.79167 1.99984H5.2C4.07989 1.99984 3.51984 1.99984 3.09202 2.21782C2.71569 2.40957 2.40973 2.71553 2.21799 3.09186C2 3.51968 2 4.07973 2 5.19984V10.7998C2 11.9199 2 12.48 2.21799 12.9078C2.40973 13.2841 2.71569 13.5901 3.09202 13.7818C3.51984 13.9998 4.07989 13.9998 5.2 13.9998H11.3333C11.9533 13.9998 12.2633 13.9998 12.5176 13.9317C13.2078 13.7468 13.7469 13.2077 13.9319 12.5175C14 12.2631 14 11.9532 14 11.3332M7 5.6665C7 6.40288 6.40305 6.99984 5.66667 6.99984C4.93029 6.99984 4.33333 6.40288 4.33333 5.6665C4.33333 4.93012 4.93029 4.33317 5.66667 4.33317C6.40305 4.33317 7 4.93012 7 5.6665ZM9.99336 7.94527L4.3541 13.0719C4.03691 13.3602 3.87831 13.5044 3.86429 13.6293C3.85213 13.7376 3.89364 13.8449 3.97546 13.9169C4.06985 13.9998 4.28419 13.9998 4.71286 13.9998H10.9707C11.9301 13.9998 12.4098 13.9998 12.7866 13.8387C13.2596 13.6363 13.6365 13.2595 13.8388 12.7864C14 12.4097 14 11.9299 14 10.9705C14 10.6477 14 10.4863 13.9647 10.3359C13.9204 10.147 13.8353 9.97007 13.7155 9.81743C13.6202 9.69597 13.4941 9.59514 13.242 9.39348L11.3772 7.90161C11.1249 7.69978 10.9988 7.59886 10.8599 7.56324C10.7374 7.53185 10.6086 7.53592 10.4884 7.57496C10.352 7.61926 10.2324 7.72794 9.99336 7.94527ZM15.0951 6.49981L13.0275 5.90908C12.9285 5.88079 12.879 5.86664 12.8328 5.84544C12.7918 5.82662 12.7528 5.80368 12.7164 5.77698C12.6755 5.74692 12.6391 5.71051 12.5663 5.6377L10.2617 3.33317C9.80143 2.87292 9.80144 2.1267 10.2617 1.66646C10.7219 1.20623 11.4681 1.20623 11.9284 1.66647L14.2329 3.97103C14.3058 4.04384 14.3422 4.08025 14.3722 4.12121C14.3989 4.15757 14.4219 4.19655 14.4407 4.23755C14.4619 4.28373 14.476 4.33323 14.5043 4.43224L15.0951 6.49981Z"
+                          stroke="currentColor"
+                          strokeWidth="1.2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </g>
+                      <defs>
+                        <clipPath id="clip0_2352_53048">
+                          <rect width="16" height="16" fill="currentColor" />
+                        </clipPath>
+                      </defs>
                     </svg>
                   </div>
-                  <div className="text-[12px] font-[500] !text-current">
+                  <div className="text-[10px] font-[600] iconBreak:hidden block">
                     {t('design_media', 'Design Media')}
                   </div>
                 </div>
-              </Button>
+              </div>
 
               <ThirdPartyMedia allData={allData} onChange={changeMedia} />
 
@@ -793,6 +867,32 @@ export const MultiMediaComponent: FC<{
                 </>
               )}
             </div>
+            <div className="text-newColColor h-full flex items-center">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="2"
+                height="17"
+                viewBox="0 0 2 17"
+                fill="none"
+              >
+                <path
+                  d="M0.75 0.75V16"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </div>
+            {!!toolBar && (
+              <div className="flex py-[10px] b2 items-center gap-[4px]">
+                {toolBar}
+              </div>
+            )}
+            {information && (
+              <div className="flex-1 justify-end flex py-[10px] b2 items-center gap-[4px]">
+                {information}
+              </div>
+            )}
           </div>
         )}
       </div>

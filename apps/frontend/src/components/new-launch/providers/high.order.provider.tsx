@@ -22,6 +22,7 @@ import useSWR from 'swr';
 import { InternalChannels } from '@gitroom/frontend/components/launches/internal.channels';
 import { capitalize } from 'lodash';
 import clsx from 'clsx';
+import { createPortal } from 'react-dom';
 
 class Empty {
   @IsOptional()
@@ -255,40 +256,6 @@ export const withProvider = function <T extends object>(params: {
       >
         <FormProvider {...form}>
           <div className={current ? '' : 'hidden'}>
-            <div className="flex gap-[4px] mb-[20px] p-[4px] border border-newTableBorder rounded-[8px]">
-              <div className="flex-1 flex">
-                <div
-                  onClick={() => setTab(0)}
-                  className={clsx(
-                    'cursor-pointer rounded-[4px] flex-1 overflow-hidden whitespace-nowrap text-center pt-[6px] pb-[5px]',
-                    tab !== 0 && !!SettingsComponent
-                      ? ''
-                      : 'text-textItemFocused bg-boxFocused'
-                  )}
-                >
-                  {t('preview', 'Preview')}
-                </div>
-              </div>
-              {current &&
-                (!!SettingsComponent || !!data?.internalPlugs?.length) && (
-                  <div className="flex-1 flex">
-                    <div
-                      onClick={() => setTab(1)}
-                      className={clsx(
-                        'cursor-pointer rounded-[4px] flex-1 overflow-hidden whitespace-nowrap text-center pt-[6px] pb-[5px]',
-                        tab !== 1 ? '' : 'text-textItemFocused bg-boxFocused'
-                      )}
-                    >
-                      {t('settings', 'Settings')} (
-                      {capitalize(
-                        selectedIntegration.integration.identifier.split('-')[0]
-                      )}
-                      )
-                    </div>
-                  </div>
-                )}
-            </div>
-
             {current &&
               (tab === 0 ||
                 (!SettingsComponent && !data?.internalPlugs?.length)) &&
@@ -331,14 +298,22 @@ export const withProvider = function <T extends object>(params: {
                   }
                 />
               ))}
-            {(SettingsComponent || !!data?.internalPlugs?.length) && (
-              <div className={tab === 1 ? '' : 'hidden'}>
-                <SettingsComponent />
-                {!!data?.internalPlugs?.length && !dummy && (
-                  <InternalChannels plugs={data?.internalPlugs} />
-                )}
-              </div>
-            )}
+            {(SettingsComponent || !!data?.internalPlugs?.length) &&
+              createPortal(
+                <div data-id={props.id} className="hidden">
+                  <SettingsComponent />
+                  {!!data?.internalPlugs?.length && !dummy && (
+                    <InternalChannels plugs={data?.internalPlugs} />
+                  )}
+                </div>,
+                document.querySelector('#social-settings') || document.createElement('div')
+              )}
+            {current &&
+              !SettingsComponent &&
+              createPortal(
+                <style>{`#wrapper-settings {display: none !important;} #social-empty {display: block !important;}`}</style>,
+                document.querySelector('#social-settings')!
+              )}
           </div>
         </FormProvider>
       </IntegrationContext.Provider>

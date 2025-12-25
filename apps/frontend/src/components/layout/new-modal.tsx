@@ -20,6 +20,7 @@ interface OpenModalInterface {
   title?: string;
   closeOnClickOutside?: boolean;
   removeLayout?: boolean;
+  fullScreen?: boolean;
   closeOnEscape?: boolean;
   withCloseButton?: boolean;
   askClose?: boolean;
@@ -131,14 +132,25 @@ export const Component: FC<{
       <div
         style={{ zIndex }}
         className={clsx(
-          'fixed flex left-0 top-0 min-w-full min-h-full bg-popup transition-all animate-fadeIn overflow-y-auto pb-[50px] text-newTextColor',
+          !modal.fullScreen
+            ? 'pb-[50px] min-w-full min-h-full'
+            : 'w-full h-full',
+          'fixed flex left-0 top-0 bg-popup transition-all animate-fadeIn overflow-y-auto text-newTextColor',
           !isLast && '!overflow-hidden'
         )}
       >
-        <div className="relative flex-1">
-          <div className="absolute top-0 left-0 min-w-full min-h-full">
+        <div className={clsx(modal.fullScreen && 'flex', 'relative flex-1')}>
+          <div
+            className={clsx(
+              modal.fullScreen
+                ? 'flex flex-1'
+                : 'absolute top-0 left-0 min-w-full min-h-full'
+            )}
+          >
             <div
-              className="mx-auto py-[48px]"
+              className={clsx(
+                modal.fullScreen ? 'w-full h-full flex-1' : 'mx-auto py-[48px]'
+              )}
               {...(modal.size && { style: { width: modal.size } })}
             >
               {typeof modal.children === 'function'
@@ -156,17 +168,34 @@ export const Component: FC<{
       <div
         onClick={closeModalFunction}
         style={{ zIndex }}
-        className="fixed flex left-0 top-0 min-w-full min-h-full bg-popup transition-all animate-fadeIn overflow-y-auto pb-[50px] text-newTextColor"
+        className={clsx(
+          'fixed flex left-0 top-0 min-w-full min-h-full bg-popup transition-all animate-fadeIn overflow-y-auto text-newTextColor',
+          !modal.fullScreen && 'pb-[50px]'
+        )}
       >
         <div className="relative flex-1">
-          <div className="absolute top-0 left-0 min-w-full min-h-full pt-[100px] pb-[100px]">
+          <div
+            className={clsx(
+              'absolute min-w-full',
+              !modal.fullScreen
+                ? 'min-h-full pt-[100px] pb-[100px]'
+                : 'h-screen',
+                modal.size && modal.height ? 'flex justify-center items-center' : 'top-0 left-0'
+            )}
+          >
             <div
               className={clsx(
                 !modal.removeLayout && 'gap-[40px] p-[32px]',
                 'bg-newBgColorInner mx-auto flex flex-col w-fit rounded-[24px] relative',
-                modal.size ? '' : 'min-w-[600px]'
+                modal.size ? '' : 'min-w-[600px]',
+                modal.fullScreen && 'h-full',
               )}
-              {...(modal.size && { style: { width: modal.size } })}
+              {...((!!modal.size || !!modal.height) && {
+                style: {
+                  ...(modal.size ? { width: modal.size } : {}),
+                  ...(modal.height ? { height: modal.height } : {}),
+                },
+              })}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center">
@@ -199,7 +228,7 @@ export const Component: FC<{
                   </div>
                 ) : null}
               </div>
-              <div className="whitespace-pre-line">{RenderComponent}</div>
+              <div className={clsx("whitespace-pre-line", !!modal.height && !!modal.size && 'flex flex-1 flex-col')}>{RenderComponent}</div>
             </div>
           </div>
         </div>

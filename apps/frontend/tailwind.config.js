@@ -74,6 +74,9 @@ module.exports = {
         modalCustom: 'var(--color-modalCustom)',
 
         newBgColor: 'var(--new-bgColor)',
+        newBackdrop: 'var(--new-back-drop)',
+        newSep: 'var(--new-sep)',
+        newBorder: 'var(--new-border)',
         newBgColorInner: 'var(--new-bgColorInner)',
         newBgLineColor: 'var(--new-bgLineColor)',
         textItemFocused: 'var(--new-textItemFocused)',
@@ -91,6 +94,7 @@ module.exports = {
         newTableText: 'var(--new-table-text)',
         newTableTextFocused: 'var(--new-table-text-focused)',
         newColColor: 'var(--new-col-color)',
+        newSettings: 'var(--new-settings)',
         menuDots: 'var(--new-menu-dots)',
         menuDotsHover: 'var(--new-menu-hover)',
         bigStrip: 'var(--new-big-strips)',
@@ -223,6 +227,12 @@ module.exports = {
         },
       }),
       screens: {
+        iconBreak: {
+          raw: '(max-width: 1560px)',
+        },
+        maxMedia: {
+          raw: '(max-width: 1400px)',
+        },
         custom: {
           raw: '(max-height: 800px)',
         },

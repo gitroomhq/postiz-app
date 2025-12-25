@@ -1,12 +1,6 @@
 'use client';
 
-import {
-  FC,
-  RefObject,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { FC, RefObject, useEffect, useRef, useState } from 'react';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import clsx from 'clsx';
 import Image from 'next/image';
@@ -72,11 +66,11 @@ export const SelectCurrent: FC = () => {
 
   return (
     <>
-      <div className="left-0 absolute w-full z-[100] px-[24px]">
+      <div className="select-none left-0 absolute w-full z-[100] px-[20px]">
         <div
           ref={contentRef}
           className={clsx(
-            'flex gap-[3px] w-full overflow-x-auto scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary',
+            'flex gap-[6px] w-full overflow-x-auto scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary',
             locked && 'opacity-50 pointer-events-none'
           )}
         >
@@ -85,19 +79,27 @@ export const SelectCurrent: FC = () => {
               setHide(true);
               setCurrent('global');
             }}
-            className="cursor-pointer flex gap-[8px] items-center bg-newBgLineColor p-[10px] rounded-tl-[4px] rounded-tr-[4px]"
+            className={clsx(
+              'cursor-pointer flex gap-[8px] rounded-[8px] w-[40px] h-[40px] justify-center items-center bg-newBgLineColor',
+              current !== 'global'
+                ? 'text-[#A3A3A3]'
+                : 'border border-[#FC69FF] text-[#FC69FF]'
+            )}
           >
-            <div className={clsx(current !== 'global' ? 'opacity-40' : '')}>
+            <div>
               <svg
+                xmlns="http://www.w3.org/2000/svg"
                 width="20"
                 height="20"
-                viewBox="0 0 32 32"
+                viewBox="0 0 20 20"
                 fill="none"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <path
-                  d="M16 3C13.4288 3 10.9154 3.76244 8.77759 5.1909C6.63975 6.61935 4.97351 8.64968 3.98957 11.0251C3.00563 13.4006 2.74819 16.0144 3.2498 18.5362C3.75141 21.0579 4.98953 23.3743 6.80762 25.1924C8.6257 27.0105 10.9421 28.2486 13.4638 28.7502C15.9856 29.2518 18.5995 28.9944 20.9749 28.0104C23.3503 27.0265 25.3807 25.3603 26.8091 23.2224C28.2376 21.0846 29 18.5712 29 16C28.9964 12.5533 27.6256 9.24882 25.1884 6.81163C22.7512 4.37445 19.4467 3.00364 16 3ZM12.7038 21H19.2963C18.625 23.2925 17.5 25.3587 16 26.9862C14.5 25.3587 13.375 23.2925 12.7038 21ZM12.25 19C11.9183 17.0138 11.9183 14.9862 12.25 13H19.75C20.0817 14.9862 20.0817 17.0138 19.75 19H12.25ZM5.00001 16C4.99914 14.9855 5.13923 13.9759 5.41626 13H10.2238C9.92542 14.9889 9.92542 17.0111 10.2238 19H5.41626C5.13923 18.0241 4.99914 17.0145 5.00001 16ZM19.2963 11H12.7038C13.375 8.7075 14.5 6.64125 16 5.01375C17.5 6.64125 18.625 8.7075 19.2963 11ZM21.7763 13H26.5838C27.1388 14.9615 27.1388 17.0385 26.5838 19H21.7763C22.0746 17.0111 22.0746 14.9889 21.7763 13ZM25.7963 11H21.3675C20.8572 8.99189 20.0001 7.0883 18.835 5.375C20.3236 5.77503 21.7119 6.48215 22.9108 7.45091C24.1097 8.41967 25.0926 9.62861 25.7963 11ZM13.165 5.375C11.9999 7.0883 11.1428 8.99189 10.6325 11H6.20376C6.90741 9.62861 7.89029 8.41967 9.08918 7.45091C10.2881 6.48215 11.6764 5.77503 13.165 5.375ZM6.20376 21H10.6325C11.1428 23.0081 11.9999 24.9117 13.165 26.625C11.6764 26.225 10.2881 25.5178 9.08918 24.5491C7.89029 23.5803 6.90741 22.3714 6.20376 21ZM18.835 26.625C20.0001 24.9117 20.8572 23.0081 21.3675 21H25.7963C25.0926 22.3714 24.1097 23.5803 22.9108 24.5491C21.7119 25.5178 20.3236 26.225 18.835 26.625Z"
-                  fill="currentColor"
+                  d="M2.56267 6.23601L6.13604 8.78837C6.32197 8.92118 6.41494 8.98759 6.51225 9.00289C6.59786 9.01635 6.68554 9.00278 6.76309 8.96407C6.85121 8.92008 6.91976 8.82868 7.05686 8.64588L7.81194 7.63909C7.85071 7.5874 7.8701 7.56155 7.89288 7.53925C7.91311 7.51945 7.93531 7.50177 7.95913 7.48647C7.98595 7.46924 8.01547 7.45612 8.07452 7.42988L11.2983 5.99707C11.432 5.93767 11.4988 5.90798 11.5492 5.8616C11.5938 5.82057 11.6288 5.77033 11.652 5.71436C11.6782 5.65108 11.6831 5.57812 11.6928 5.4322L11.9288 1.8915M11.2493 11.2503L13.4294 12.1846C13.6823 12.293 13.8088 12.3472 13.8757 12.4372C13.9345 12.5162 13.9634 12.6135 13.9573 12.7117C13.9504 12.8237 13.8741 12.9382 13.7214 13.1672L12.6973 14.7035C12.6249 14.812 12.5887 14.8663 12.5409 14.9056C12.4986 14.9403 12.4498 14.9664 12.3974 14.9824C12.3382 15.0003 12.273 15.0003 12.1426 15.0003H10.4799C10.3071 15.0003 10.2207 15.0003 10.1472 14.9714C10.0822 14.9459 10.0248 14.9045 9.98003 14.851C9.92936 14.7904 9.90204 14.7084 9.8474 14.5445L9.25334 12.7623C9.22111 12.6656 9.205 12.6173 9.20076 12.5681C9.19699 12.5246 9.20011 12.4807 9.21 12.4381C9.22114 12.3901 9.24393 12.3445 9.28951 12.2533L9.74077 11.3508C9.83246 11.1674 9.8783 11.0758 9.94891 11.0188C10.0111 10.9687 10.0865 10.9375 10.166 10.9289C10.2561 10.9193 10.3534 10.9517 10.5479 11.0165L11.2493 11.2503ZM18.3327 10.0003C18.3327 14.6027 14.6017 18.3337 9.99935 18.3337C5.39698 18.3337 1.66602 14.6027 1.66602 10.0003C1.66602 5.39795 5.39698 1.66699 9.99935 1.66699C14.6017 1.66699 18.3327 5.39795 18.3327 10.0003Z"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 />
               </svg>
             </div>
@@ -109,34 +111,39 @@ export const SelectCurrent: FC = () => {
                 setCurrent(integration.id);
               }}
               key={integration.id}
-              className="cursor-pointer flex gap-[8px] items-center bg-newBgLineColor p-[10px] rounded-tl-[4px] rounded-tr-[4px]"
+              className={clsx(
+                'border cursor-pointer relative flex gap-[8px] w-[40px] h-[40px] rounded-[8px] items-center bg-newBgLineColor justify-center',
+                current === integration.id
+                  ? 'border-[#FC69FF] text-[#FC69FF]'
+                  : 'border-transparent'
+              )}
             >
+              <IsGlobal id={integration.id} />
               <div
                 className={clsx(
-                  'relative w-[20px] h-[20px] rounded-full flex justify-center items-center bg-fifth filter transition-all duration-500',
-                  current !== integration.id ? 'opacity-40' : ''
+                  'relative w-full h-full rounded-full flex justify-center items-center filter transition-all duration-500'
                 )}
               >
                 <Image
                   src={integration.picture || '/no-picture.jpg'}
-                  className="rounded-full"
+                  className="rounded-full min-w-[26px]"
                   alt={integration.identifier}
-                  width={20}
-                  height={20}
+                  width={26}
+                  height={26}
                 />
                 {integration.identifier === 'youtube' ? (
                   <img
                     src="/icons/platforms/youtube.svg"
-                    className="absolute z-10 -bottom-[5px] -end-[5px]"
-                    width={20}
+                    className="absolute z-10 bottom-[2px] end-[2px] min-w-[12px]"
+                    width={12}
                   />
                 ) : (
                   <Image
                     src={`/icons/platforms/${integration.identifier}.png`}
-                    className="rounded-full absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
+                    className="min-w-[12px] min-h-[12px] rounded-[3px] absolute z-10 bottom-[6px] end-[6px]"
                     alt={integration.identifier}
-                    width={15}
-                    height={15}
+                    width={12}
+                    height={12}
                   />
                 )}
               </div>
@@ -146,5 +153,26 @@ export const SelectCurrent: FC = () => {
       </div>
       <div className={clsx(hasScroll ? 'h-[55px]' : 'h-[40px]')} />
     </>
+  );
+};
+
+export const IsGlobal: FC<{ id: string }> = ({ id }) => {
+  const { isInternal } =
+    useLaunchStore(
+      useShallow((state) => ({
+        isInternal: !!state.internal.find(p => p.integration.id === id),
+      }))
+    );
+
+  if (!isInternal) {
+    return null;
+  }
+
+  return (
+    <div
+      data-tooltip-id="tooltip"
+      data-tooltip-content="No longer in global mode"
+      className="w-[8px] h-[8px] bg-[#FC69FF] -top-[1px] -end-[3px] absolute rounded-full"
+    />
   );
 };

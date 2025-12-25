@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 
 export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
   toolTip,
@@ -26,13 +27,13 @@ export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
     }))
   );
 
+
   return (
     <div className={clsx('flex', locked && 'opacity-50 pointer-events-none')}>
-      <div className="flex">
-        <div className="innerComponent">
-          <div className="grid grid-cols-13 gap-[10px]">
-            {integrations
-              .filter((f) => {
+      <div className="flex flex-1">
+        <div className="innerComponent flex-1 flex">
+          <div className="flex flex-wrap gap-[12px] flex-1">
+            {integrations.filter((f) => {
                 if (exising.integration) {
                   return f.id === exising.integration;
                 }
@@ -55,34 +56,41 @@ export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
                       addOrRemoveSelectedIntegration(integration, {});
                     }}
                     className={clsx(
-                      'cursor-pointer relative w-[34px] h-[34px] rounded-full flex justify-center items-center bg-fifth filter transition-all duration-500',
+                      'cursor-pointer border-[1.5px] relative rounded-full flex justify-center items-center bg-fifth filter transition-all duration-500',
                       selectedIntegrations.findIndex(
                         (p) => p.integration.id === integration.id
                       ) === -1
-                        ? 'opacity-40'
-                        : ''
+                        ? 'grayscale border-transparent'
+                        : 'border-[#622FF6]'
                     )}
                   >
                     <Image
                       src={integration.picture || '/no-picture.jpg'}
-                      className="rounded-full"
+                      className={clsx(
+                        'rounded-full transition-all min-w-[42px] border-[1.5px] min-h-[42px]',
+                        selectedIntegrations.findIndex(
+                          (p) => p.integration.id === integration.id
+                        ) === -1
+                          ? 'border-transparent'
+                          : 'border-[#000]'
+                      )}
                       alt={integration.identifier}
-                      width={32}
-                      height={32}
+                      width={42}
+                      height={42}
                     />
                     {integration.identifier === 'youtube' ? (
                       <img
                         src="/icons/platforms/youtube.svg"
-                        className="absolute z-10 -bottom-[5px] -end-[5px]"
-                        width={20}
+                        className="absolute z-10 -bottom-[5px] -end-[5px] min-w-[16px]"
+                        width={16}
                       />
                     ) : (
                       <Image
                         src={`/icons/platforms/${integration.identifier}.png`}
-                        className="rounded-full absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
+                        className="rounded-[4px] absolute z-10 bottom-0 -end-[5px] min-w-[16px] min-h-[16px]"
                         alt={integration.identifier}
-                        width={20}
-                        height={20}
+                        width={16}
+                        height={16}
                       />
                     )}
                   </div>

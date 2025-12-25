@@ -116,7 +116,8 @@ export function useUppyUploader(props: {
               uppy2.log(error.message, 'error');
               uppy2.info(error.message, 'error', 5000);
               toast.show(
-                `File type "${fileType}" is not allowed. Allowed types: ${allowedFileTypes}`
+                `File type "${fileType}" is not allowed. Allowed types: ${allowedFileTypes}`,
+                'warning'
               );
               uppy2.removeFile(file.id);
               return reject(error);
@@ -197,6 +198,7 @@ export function useUppyUploader(props: {
       });
     });
     uppy2.on('error', (result) => {
+      uppy2.clear();
       setLocked(false);
     });
     uppy2.on('complete', async (result) => {

@@ -471,6 +471,7 @@ export const CalendarColumn: FC<{
           closeOnEscape: false,
           withCloseButton: false,
           askClose: true,
+          fullScreen: true,
           classNames: {
             modal: 'w-[100%] max-w-[1400px] text-textColor',
           },
@@ -551,9 +552,10 @@ export const CalendarColumn: FC<{
       closeOnEscape: false,
       withCloseButton: false,
       removeLayout: true,
+      fullScreen: true,
       askClose: true,
       classNames: {
-        modal: 'w-[100%] max-w-[1400px] text-textColor',
+        modal: 'fixed left-0 top-0 w-full h-full',
       },
       id: 'add-edit-modal',
       children: (

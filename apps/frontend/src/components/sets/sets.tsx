@@ -94,10 +94,13 @@ export const Sets: FC = () => {
     (params?: { id?: string; name?: string; content?: string }) => () => {
       modal.openModal({
         closeOnClickOutside: false,
+        removeLayout: true,
         closeOnEscape: false,
         withCloseButton: false,
-        removeLayout: true,
-        askClose: true,
+        fullScreen: true,
+        classNames: {
+          modal: 'w-[100%] max-w-[1400px] text-textColor',
+        },
         id: 'add-edit-modal',
         children: (
           <AddEditModal

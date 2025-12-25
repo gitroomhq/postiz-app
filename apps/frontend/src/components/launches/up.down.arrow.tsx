@@ -7,17 +7,20 @@ const Arrow: FC<{
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width="16"
-      height="16"
-      viewBox="0 0 16 16"
-      fill="currentColor"
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
       style={{
-        transform: flip ? 'rotate(180deg)' : '',
+        transform: !flip ? 'rotate(180deg)' : '',
       }}
     >
       <path
-        d="M13.354 6.35378L8.35403 11.3538C8.30759 11.4003 8.25245 11.4372 8.19175 11.4623C8.13105 11.4875 8.06599 11.5004 8.00028 11.5004C7.93457 11.5004 7.86951 11.4875 7.80881 11.4623C7.74811 11.4372 7.69296 11.4003 7.64653 11.3538L2.64653 6.35378C2.55271 6.25996 2.5 6.13272 2.5 6.00003C2.5 5.86735 2.55271 5.7401 2.64653 5.64628C2.74035 5.55246 2.8676 5.49976 3.00028 5.49976C3.13296 5.49976 3.26021 5.55246 3.35403 5.64628L8.00028 10.2932L12.6465 5.64628C12.693 5.59983 12.7481 5.56298 12.8088 5.53784C12.8695 5.5127 12.9346 5.49976 13.0003 5.49976C13.066 5.49976 13.131 5.5127 13.1917 5.53784C13.2524 5.56298 13.3076 5.59983 13.354 5.64628C13.4005 5.69274 13.4373 5.74789 13.4625 5.80859C13.4876 5.86928 13.5006 5.93434 13.5006 6.00003C13.5006 6.06573 13.4876 6.13079 13.4625 6.19148C13.4373 6.25218 13.4005 6.30733 13.354 6.35378Z"
-        fill="currentColor"
+        d="M15 12.5L10 7.5L5 12.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );
@@ -35,14 +38,14 @@ export const UpDownArrow: FC<{
     []
   );
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col gap-[8px] pt-[8px]">
       <button
         onClick={changePosition('up')}
         className={clsx(
-          'outline-none rounded-tl-[20px] rounded-tr-[20px] w-[24px] h-[24px] flex justify-center items-center',
+          'outline-none w-[20px] h-[20px] flex justify-center items-center',
           isUp
-            ? 'bg-input hover:bg-seventh cursor-pointer'
-            : 'bg-customColor8 pointer-events-none text-textColor'
+            ? 'cursor-pointer'
+            : 'pointer-events-none text-textColor opacity-50'
         )}
       >
         <Arrow flip={true} />
@@ -50,10 +53,10 @@ export const UpDownArrow: FC<{
       <button
         onClick={changePosition('down')}
         className={clsx(
-          'outline-none rounded-bl-[20px] rounded-br-[20px] w-[24px] h-[24px] flex justify-center items-center',
+          'outline-none rounded-bl-[20px] w-[20px] h-[20px] flex justify-center items-center',
           isDown
-            ? 'bg-input hover:bg-seventh cursor-pointer'
-            : 'bg-customColor8 pointer-events-none text-textColor'
+            ? 'cursor-pointer'
+            : 'pointer-events-none text-textColor opacity-50'
         )}
       >
         <Arrow flip={false} />

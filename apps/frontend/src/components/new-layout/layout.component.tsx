@@ -35,7 +35,6 @@ import { TopMenu } from '@gitroom/frontend/components/layout/top.menu';
 import { LanguageComponent } from '@gitroom/frontend/components/layout/language.component';
 import { ChromeExtensionComponent } from '@gitroom/frontend/components/layout/chrome.extension.component';
 import NotificationComponent from '@gitroom/frontend/components/notifications/notification.component';
-import { BillingAfter } from '@gitroom/frontend/components/new-layout/billing.after';
 import { OrganizationSelector } from '@gitroom/frontend/components/layout/organization.selector';
 import { PreConditionComponent } from '@gitroom/frontend/components/layout/pre-condition.component';
 import { AttachToFeedbackIcon } from '@gitroom/frontend/components/new-layout/sentry.feedback.component';

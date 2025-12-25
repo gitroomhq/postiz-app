@@ -679,6 +679,9 @@ html[dir='rtl'] [dir='ltr'] {
 .blur-xs {
   filter: blur(4px);
 }
+.blur-s {
+  filter: blur(5px);
+}
 
 .agent {
   .copilotKitInputContainer {
@@ -736,7 +739,45 @@ html[dir='rtl'] [dir='ltr'] {
   background: transparent !important;
 }
 
-//html body iframe[title="Stripe developer tools frame"] {
-//  display: none !important;
-//  height: 0 !important;
-//}
+.menu-shadow {
+  border-radius: 12px;
+  box-shadow: 0 8px 30px 0 rgba(0, 0, 0, 0.5);
+}
+
+.post-now {
+  box-shadow: -33px 57px 18px 0 rgba(0, 0, 0, 0.01), -21px 36px 17px 0 rgba(0, 0, 0, 0.06), -12px 20px 14px 0 rgba(0, 0, 0, 0.20), -5px 9px 11px 0 rgba(0, 0, 0, 0.34), -1px 2px 6px 0 rgba(0, 0, 0, 0.39);
+}
+
+.uppyChange .uppy-Dashboard-inner {
+  width: 100% !important;
+}
+
+.btnSub:disabled .arrow-change {
+  display: none !important;
+}
+.btnSub:disabled + button {
+  display: none !important;
+}
+
+.tiptap p.is-editor-empty:first-child::before {
+  color: #adb5bd;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.w8-max {
+  width: calc(100% / 6);
+  max-width: calc(100% / 6);
+}
+
+.withp3 {
+  width: calc(100% + 9px);
+  height: calc(100% + 6px);
+}
+
+.forceChange .changeColor {
+  background: var(--new-btn-primary) !important;
+  color: #fff !important;
+}
