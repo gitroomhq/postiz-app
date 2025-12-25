@@ -1,5 +1,6 @@
 const { join } = require('path');
 module.exports = {
+  darkMode: 'class',
   content: ['./src/**/*.{ts,tsx,html}', '../../libraries/**/*.{ts,tsx,html}'],
   theme: {
     extend: {

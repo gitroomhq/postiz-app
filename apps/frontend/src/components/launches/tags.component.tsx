@@ -11,6 +11,7 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useClickOutside } from '@mantine/hooks';
 import clsx from 'clsx';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
+import { TagIcon, DropdownArrowIcon, PlusIcon, CheckmarkIcon } from '@gitroom/frontend/components/ui/icons';
 
 export const TagsComponent: FC<{
   name: string;
@@ -109,21 +110,7 @@ export const TagsComponentInner: FC<{
         className="px-[16px] justify-center flex gap-[8px] items-center h-full select-none flex-1"
       >
         <div className="cursor-pointer">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="17"
-            height="19"
-            viewBox="0 0 17 19"
-            fill="none"
-          >
-            <path
-              d="M15.75 8.25L9.42157 1.92157C8.98919 1.48919 8.773 1.273 8.52071 1.1184C8.29703 0.981328 8.05317 0.880317 7.79808 0.819075C7.51036 0.75 7.20462 0.75 6.59314 0.75L3.25 0.75M0.75 6.33333L0.75 7.97876C0.75 8.38641 0.75 8.59024 0.79605 8.78205C0.836878 8.95211 0.904218 9.11469 0.9956 9.26381C1.09867 9.432 1.2428 9.57613 1.53105 9.86438L8.03105 16.3644C8.69108 17.0244 9.02109 17.3544 9.40164 17.4781C9.73638 17.5868 10.097 17.5868 10.4317 17.4781C10.8122 17.3544 11.1423 17.0244 11.8023 16.3644L13.8644 14.3023C14.5244 13.6423 14.8544 13.3122 14.9781 12.9317C15.0868 12.597 15.0868 12.2364 14.9781 11.9016C14.8544 11.5211 14.5244 11.1911 13.8644 10.531L7.78105 4.44772C7.4928 4.15946 7.34867 4.01534 7.18048 3.91227C7.03135 3.82089 6.86878 3.75354 6.69872 3.71272C6.50691 3.66667 6.30308 3.66667 5.89543 3.66667H3.41667C2.48325 3.66667 2.01654 3.66667 1.66002 3.84832C1.34641 4.00811 1.09145 4.26308 0.931656 4.57668C0.75 4.9332 0.75 5.39991 0.75 6.33333Z"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <TagIcon />
         </div>
         <div className="cursor-pointer flex gap-[4px]">
           {tagValue.length === 0 ? (
@@ -143,19 +130,7 @@ export const TagsComponentInner: FC<{
           )}
         </div>
         <div className="cursor-pointer">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 20 20"
-            fill="none"
-            className={isOpen ? 'rotate-180' : ''}
-          >
-            <path
-              d="M7.4563 8L12.5437 8C12.9494 8 13.1526 8.56798 12.8657 8.90016L10.322 11.8456C10.1442 12.0515 9.85583 12.0515 9.67799 11.8456L7.13429 8.90016C6.84741 8.56798 7.05059 8 7.4563 8Z"
-              fill="currentColor"
-            />
-          </svg>
+          <DropdownArrowIcon rotated={isOpen} />
         </div>
       </div>
       {isOpen && (
@@ -203,21 +178,7 @@ export const TagsComponentInner: FC<{
             className="cursor-pointer gap-[8px] flex w-full h-[34px] rounded-[8px] mt-[12px] px-[16px] justify-center items-center bg-[#612BD3] text-white"
           >
             <div>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none"
-              >
-                <path
-                  d="M8.00065 3.33301V12.6663M3.33398 7.99967H12.6673"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <PlusIcon />
             </div>
             <div className="text-[13px] font-[600]">Add New Tag</div>
           </div>
@@ -239,24 +200,7 @@ const Check: FC<{ value: boolean; onChange: (value: boolean) => void }> = ({
         value && 'bg-[#612BD3]'
       )}
     >
-      {value ? (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="11"
-          height="8"
-          viewBox="0 0 11 8"
-          fill="none"
-        >
-          <path
-            fillRule="evenodd"
-            clipRule="evenodd"
-            d="M10.7071 0.292893C11.0976 0.683417 11.0976 1.31658 10.7071 1.70711L4.70711 7.70711C4.31658 8.09763 3.68342 8.09763 3.29289 7.70711L0.292893 4.70711C-0.0976311 4.31658 -0.0976311 3.68342 0.292893 3.29289C0.683417 2.90237 1.31658 2.90237 1.70711 3.29289L4 5.58579L9.29289 0.292893C9.68342 -0.0976311 10.3166 -0.0976311 10.7071 0.292893Z"
-            fill="white"
-          />
-        </svg>
-      ) : (
-        ''
-      )}
+      {value ? <CheckmarkIcon className="text-white" /> : ''}
     </div>
   );
 };

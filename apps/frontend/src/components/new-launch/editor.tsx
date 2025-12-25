@@ -60,6 +60,13 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { AComponent } from '@gitroom/frontend/components/new-launch/a.component';
 import { Placeholder } from '@tiptap/extensions';
 import { InformationComponent } from '@gitroom/frontend/components/launches/information.component';
+import {
+  LockIcon,
+  ConnectionLineIcon,
+  ResetIcon,
+  TrashIcon,
+  EmojiIcon,
+} from '@gitroom/frontend/components/ui/icons';
 
 const InterceptBoldShortcut = Extension.create({
   name: 'preventBoldWithUnderline',
@@ -345,21 +352,7 @@ export const EditorWrapper: FC<{
           <div className="text-center absolute w-full h-full left-0 top-0 items-center justify-center flex z-[101] flex-col gap-[16px]">
             <div>
               <div className="w-[54px] h-[54px] rounded-full absolute z-[101] flex justify-center items-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="32"
-                  height="32"
-                  viewBox="0 0 32 32"
-                  fill="none"
-                >
-                  <path
-                    d="M22.6673 13.3333V10.6667C22.6673 6.98477 19.6825 4 16.0007 4C12.3188 4 9.33398 6.98477 9.33398 10.6667V13.3333M16.0007 19.3333V22M11.734 28H20.2673C22.5075 28 23.6276 28 24.4833 27.564C25.2359 27.1805 25.8479 26.5686 26.2313 25.816C26.6673 24.9603 26.6673 23.8402 26.6673 21.6V19.7333C26.6673 17.4931 26.6673 16.373 26.2313 15.5174C25.8479 14.7647 25.2359 14.1528 24.4833 13.7693C23.6276 13.3333 22.5075 13.3333 20.2673 13.3333H11.734C9.49377 13.3333 8.37367 13.3333 7.51802 13.7693C6.76537 14.1528 6.15345 14.7647 5.76996 15.5174C5.33398 16.373 5.33398 17.4931 5.33398 19.7333V21.6C5.33398 23.8402 5.33398 24.9603 5.76996 25.816C6.15345 26.5686 6.76537 27.1805 7.51802 27.564C8.37367 28 9.49377 28 11.734 28Z"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                <LockIcon />
               </div>
               <div className="w-[54px] h-[54px] rounded-full bg-newSettings opacity-80" />
             </div>
@@ -381,21 +374,7 @@ export const EditorWrapper: FC<{
           >
             <div>
               <div className="w-[54px] h-[54px] rounded-full absolute z-[101] flex justify-center items-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="32"
-                  height="32"
-                  viewBox="0 0 32 32"
-                  fill="none"
-                >
-                  <path
-                    d="M22.6673 13.3333V10.6667C22.6673 6.98477 19.6825 4 16.0007 4C12.3188 4 9.33398 6.98477 9.33398 10.6667V13.3333M16.0007 19.3333V22M11.734 28H20.2673C22.5075 28 23.6276 28 24.4833 27.564C25.2359 27.1805 25.8479 26.5686 26.2313 25.816C26.6673 24.9603 26.6673 23.8402 26.6673 21.6V19.7333C26.6673 17.4931 26.6673 16.373 26.2313 15.5174C25.8479 14.7647 25.2359 14.1528 24.4833 13.7693C23.6276 13.3333 22.5075 13.3333 20.2673 13.3333H11.734C9.49377 13.3333 8.37367 13.3333 7.51802 13.7693C6.76537 14.1528 6.15345 14.7647 5.76996 15.5174C5.33398 16.373 5.33398 17.4931 5.33398 19.7333V21.6C5.33398 23.8402 5.33398 24.9603 5.76996 25.816C6.15345 26.5686 6.76537 27.1805 7.51802 27.564C8.37367 28 9.49377 28 11.734 28Z"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                <LockIcon />
               </div>
               <div className="w-[54px] h-[54px] rounded-full bg-newSettings opacity-80" />
             </div>
@@ -427,20 +406,7 @@ export const EditorWrapper: FC<{
             <div className="flex-1 flex w-full">
               {index > 0 && (
                 <div className="flex justify-center pl-[12px] text-newSep">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="18"
-                    height="87"
-                    viewBox="0 0 18 87"
-                    fill="none"
-                  >
-                    <path
-                      d="M0.75 0.75V79.75C0.75 83.0637 3.43629 85.75 6.75 85.75H16.75"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                    />
-                  </svg>
+                  <ConnectionLineIcon />
                 </div>
               )}
               <Editor
@@ -485,21 +451,7 @@ export const EditorWrapper: FC<{
                             </div>
                             <div className="flex gap-[6px] items-center">
                               <div>
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  width="16"
-                                  height="16"
-                                  viewBox="0 0 16 16"
-                                  fill="none"
-                                >
-                                  <path
-                                    d="M1.33398 6.66667C1.33398 6.66667 2.67064 4.84548 3.75654 3.75883C4.84244 2.67218 6.34305 2 8.00065 2C11.3144 2 14.0007 4.68629 14.0007 8C14.0007 11.3137 11.3144 14 8.00065 14C5.26526 14 2.95739 12.1695 2.23516 9.66667M1.33398 6.66667V2.66667M1.33398 6.66667H5.33398"
-                                    stroke="currentColor"
-                                    strokeWidth="1.5"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                  />
-                                </svg>
+                                <ResetIcon />
                               </div>
                               <div className="text-[13px] font-[600]">
                                 Back to global
@@ -520,25 +472,12 @@ export const EditorWrapper: FC<{
                 onChange={changeOrder(index)}
               />
               {items.length > 1 && (
-                <svg
+                <TrashIcon
                   onClick={deletePost(index)}
-                  xmlns="http://www.w3.org/2000/svg"
                   data-tooltip-id="tooltip"
                   data-tooltip-content="Delete Post"
-                  className="cursor-pointer"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 20 20"
-                  fill="none"
-                >
-                  <path
-                    d="M7.5 2.5L12.5 2.5M2.5 5L17.5 5M15.8333 5L15.2489 13.7661C15.1612 15.0813 15.1174 15.7389 14.8333 16.2375C14.5833 16.6765 14.206 17.0294 13.7514 17.2497C13.235 17.5 12.5759 17.5 11.2578 17.5H8.74221C7.42409 17.5 6.76503 17.5 6.24861 17.2497C5.79396 17.0294 5.41674 16.6765 5.16665 16.2375C4.88259 15.7389 4.83875 15.0813 4.75107 13.7661L4.16667 5M8.33333 8.75V12.9167M11.6667 8.75L11.6667 12.9167"
-                    stroke="#FF3F3F"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                  className="cursor-pointer text-[#FF3F3F]"
+                />
               )}
             </div>
           </div>
@@ -783,44 +722,7 @@ export const Editor: FC<{
                         className="select-none cursor-pointer rounded-[6px] w-[30px] h-[30px] bg-newColColor flex justify-center items-center"
                         onClick={() => setEmojiPickerOpen(!emojiPickerOpen)}
                       >
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 16 16"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="M7.97917 14.6663C11.6611 14.6663 14.6458 11.6816 14.6458 7.99967C14.6458 4.31778 11.6611 1.33301 7.97917 1.33301C4.29727 1.33301 1.3125 4.31778 1.3125 7.99967C1.3125 11.6816 4.29727 14.6663 7.97917 14.6663Z"
-                            stroke="currentColor"
-                            strokeWidth="1.2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                          <path
-                            d="M4.80664 10C5.50664 11.0067 6.67997 11.6667 7.99997 11.6667C9.31997 11.6667 10.4866 11.0067 11.1933 10"
-                            stroke="currentColor"
-                            strokeWidth="1.2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                          <path
-                            d="M4.66602 6.16699C5.33268 6.83366 6.41935 6.83366 7.09268 6.16699"
-                            stroke="currentColor"
-                            strokeWidth="1.2"
-                            strokeMiterlimit="10"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                          <path
-                            d="M8.90625 6.16699C9.57292 6.83366 10.6596 6.83366 11.3329 6.16699"
-                            stroke="currentColor"
-                            strokeWidth="1.2"
-                            strokeMiterlimit="10"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
+                        <EmojiIcon />
                       </div>
                       <div className="relative">
                         <div
