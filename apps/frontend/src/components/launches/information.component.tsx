@@ -104,7 +104,7 @@ export const InformationComponent: FC<{
     }
 
     return true;
-  }, [totalAllowedChars, totalChars, isInternal, isPicture]);
+  }, [totalAllowedChars, totalChars, isInternal, isPicture, chars]);
 
   return (
     <div
