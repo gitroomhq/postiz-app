@@ -221,7 +221,9 @@ export const FirstBillingComponent = () => {
                           ]
                         }
                       </span>{' '}
-                      {t('billing_per_month', '/ month')}
+                      {period === 'MONTHLY'
+                        ? t('billing_per_month', '/ month')
+                        : t('billing_per_year', '/ year')}
                     </div>
                   </div>
                 ),
