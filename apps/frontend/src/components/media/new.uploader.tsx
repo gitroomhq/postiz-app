@@ -88,7 +88,7 @@ export function useUppyUploader(props: {
         // Expand generic types to specific ones
         const expandedTypes = allowedTypes.flatMap((type) => {
           if (type === 'image/*') {
-            return ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
+            return ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'];
           }
           if (type === 'video/*') {
             return ['video/mp4', 'video/mpeg'];
