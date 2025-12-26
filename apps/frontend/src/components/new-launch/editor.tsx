@@ -343,7 +343,7 @@ export const EditorWrapper: FC<{
     <div
       className={clsx(
         'relative flex-col gap-[20px] flex-1',
-        items.length === 1 && 'flex',
+        (items.length === 1 || !canEdit) && 'flex',
         !canEdit && !isCreateSet && 'bg-newSettings rounded-[12px]'
       )}
     >
@@ -399,7 +399,8 @@ export const EditorWrapper: FC<{
             'relative flex flex-col gap-[20px] flex-1 bg-newSettings',
             index === 0 && 'rounded-t-[12px]',
             index === items.length - 1 && 'rounded-b-[12px]',
-            !canEdit && !isCreateSet && 'blur-s'
+            !canEdit && !isCreateSet && 'blur-s',
+            !canEdit && index > 0 && 'hidden'
           )}
         >
           <div className="flex gap-[5px] flex-1 w-full">
