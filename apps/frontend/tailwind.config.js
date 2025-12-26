@@ -228,6 +228,12 @@ module.exports = {
         },
       }),
       screens: {
+        mobile: {
+          raw: '(max-width: 1025px)',
+        },
+        tablet: {
+          raw: '(max-width: 1300px)',
+        },
         iconBreak: {
           raw: '(max-width: 1560px)',
         },
