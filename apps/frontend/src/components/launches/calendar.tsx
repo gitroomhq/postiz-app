@@ -110,10 +110,10 @@ export const DayView = () => {
   const options = useMemo(() => {
     const createdPosts = posts.map((post) => ({
       integration: [integrations.find((i) => i.id === post.integration.id)!],
-      image: post.integration.picture,
-      identifier: post.integration.providerIdentifier,
-      id: post.integration.id,
-      name: post.integration.name,
+      image: post?.integration?.picture || '',
+      identifier: post?.integration?.providerIdentifier || '',
+      id: post?.integration?.id || '',
+      name: post?.integration?.name || '',
       time: dayjs
         .utc(post.publishDate)
         .diff(dayjs.utc(post.publishDate).startOf('day'), 'minute'),
@@ -126,11 +126,11 @@ export const DayView = () => {
             ...integrations.flatMap((p) =>
               p.time.flatMap((t) => ({
                 integration: p,
-                identifier: p.identifier,
-                name: p.name,
-                id: p.id,
-                image: p.picture,
-                time: t.time,
+                identifier: p?.identifier,
+                name: p?.name,
+                id: p?.id,
+                image: p?.picture,
+                time: t?.time,
               }))
             ),
           ],
