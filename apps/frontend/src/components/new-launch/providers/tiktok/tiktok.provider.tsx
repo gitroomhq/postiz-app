@@ -2,11 +2,7 @@
 
 import {
   FC,
-  ReactEventHandler,
-  useCallback,
-  useEffect,
   useMemo,
-  useState,
 } from 'react';
 import {
   PostComment,
@@ -15,75 +11,13 @@ import {
 import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { Select } from '@gitroom/react/form/select';
-import { useCustomProviderFunction } from '@gitroom/frontend/components/launches/helpers/use.custom.provider.function';
 import { Checkbox } from '@gitroom/react/form/checkbox';
 import clsx from 'clsx';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { Input } from '@gitroom/react/form/input';
+import { TiktokPreview } from '@gitroom/frontend/components/new-launch/providers/tiktok/tiktok.preview';
 
-const CheckTikTokValidity: FC<{
-  picture: string;
-}> = (props) => {
-  const { register } = useSettings();
-  const t = useT();
-
-  const func = useCustomProviderFunction();
-  const [maxVideoLength, setMaxVideoLength] = useState(0);
-  const [isValidVideo, setIsValidVideo] = useState<undefined | boolean>(
-    undefined
-  );
-  const registerVideo = register('isValidVideo');
-  const video = useMemo(() => {
-    return props.picture;
-  }, [props.picture]);
-  useEffect(() => {
-    loadStats();
-  }, []);
-  const loadStats = useCallback(async () => {
-    const { maxDurationSeconds } = await func.get('maxVideoLength');
-    // setMaxVideoLength(5);
-    setMaxVideoLength(maxDurationSeconds);
-  }, []);
-  const loadVideo: ReactEventHandler<HTMLVideoElement> = useCallback(
-    (e) => {
-      // @ts-ignore
-      setIsValidVideo(e.target.duration <= maxVideoLength);
-      registerVideo.onChange({
-        target: {
-          name: 'isValidVideo',
-          // @ts-ignore
-          value: String(e.target.duration <= maxVideoLength),
-        },
-      });
-    },
-    [maxVideoLength, registerVideo]
-  );
-  if (!maxVideoLength || !video || video.indexOf('mp4') === -1) {
-    return null;
-  }
-  return (
-    <>
-      {isValidVideo === false && (
-        <div className="text-red-600 my-[20px]">
-          {t(
-            'video_length_is_invalid_must_be_up_to',
-            'Video length is invalid, must be up to'
-          )}
-          {maxVideoLength}
-          {t('seconds', 'seconds')}
-        </div>
-      )}
-      <video
-        controls
-        onLoadedMetadata={loadVideo}
-        className="w-0 h-0 overflow-hidden pointer-events-none"
-      >
-        <source src={video} type="video/mp4" />
-      </video>
-    </>
-  );
-};
 const TikTokSettings: FC<{
   values?: any;
 }> = (props) => {
@@ -288,7 +222,7 @@ const TikTokSettings: FC<{
           )}
         </div>
       </div>
-      <div className={clsx(!disclose && 'invisible', 'mt-[20px]')}>
+      <div className={clsx(!disclose && 'invisible h-0 overflow-hidden', 'mt-[20px]')}>
         <Checkbox
           variant="hollow"
           label={t('label_your_brand', 'Your brand')}
@@ -364,13 +298,11 @@ export default withProvider({
   postComment: PostComment.COMMENT,
   minimumCharacters: [],
   SettingsComponent: TikTokSettings,
-  CustomPreviewComponent: undefined,
+  comments: false,
+  CustomPreviewComponent: TiktokPreview,
   dto: TikTokDto,
   checkValidity: async (items) => {
     const [firstItems] = items;
-    if (items.length !== 1) {
-      return 'Should have one item';
-    }
     if (firstItems.length === 0) {
       return 'No video / images selected';
     }

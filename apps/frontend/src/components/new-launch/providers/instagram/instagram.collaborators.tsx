@@ -10,6 +10,7 @@ import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.v
 import { InstagramDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/instagram.dto';
 import { InstagramCollaboratorsTags } from '@gitroom/frontend/components/new-launch/providers/instagram/instagram.tags';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { InstagramPreview } from '@gitroom/frontend/components/new-launch/providers/instagram/instagram.preview';
 const postType = [
   {
     value: 'post',
@@ -57,7 +58,7 @@ export default withProvider<InstagramDto>({
   postComment: PostComment.COMMENT,
   minimumCharacters: [],
   SettingsComponent: InstagramCollaborators,
-  CustomPreviewComponent: undefined,
+  CustomPreviewComponent: InstagramPreview,
   dto: InstagramDto,
   checkValidity: async ([firstPost, ...otherPosts], settings) => {
     if (!firstPost.length) {
@@ -92,4 +93,5 @@ export default withProvider<InstagramDto>({
     return true;
   },
   maximumCharacters: 2200,
+  comments: 'no-media'
 });

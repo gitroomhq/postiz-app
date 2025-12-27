@@ -8,6 +8,7 @@ import { Checkbox } from '@gitroom/react/form/checkbox';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { LinkedinDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/linkedin.dto';
+import { LinkedinPreview } from '@gitroom/frontend/components/new-launch/providers/linkedin/linkedin.preview';
 
 const LinkedInSettings = () => {
   const t = useT();
@@ -29,7 +30,7 @@ export default withProvider<LinkedinDto>({
   postComment: PostComment.COMMENT,
   minimumCharacters: [],
   SettingsComponent: LinkedInSettings,
-  CustomPreviewComponent: undefined,
+  CustomPreviewComponent: LinkedinPreview,
   dto: LinkedinDto,
   checkValidity: async (posts, vals) => {
     const [firstPost, ...restPosts] = posts;

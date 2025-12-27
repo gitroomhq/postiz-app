@@ -42,6 +42,7 @@ interface CharacterCondition {
 }
 
 export const withProvider = function <T extends object>(params: {
+  comments?: boolean | 'no-media';
   postComment: PostComment;
   minimumCharacters: CharacterCondition[];
   SettingsComponent: FC<{
@@ -84,7 +85,6 @@ export const withProvider = function <T extends object>(params: {
       date,
       isGlobal,
       tab,
-      setTab,
       setTotalChars,
       justCurrent,
       allIntegrations,
@@ -92,20 +92,23 @@ export const withProvider = function <T extends object>(params: {
       setEditor,
       dummy,
       setChars,
+      setComments,
+      setHide
     } = useLaunchStore(
       useShallow((state) => ({
         date: state.date,
         tab: state.tab,
-        setTab: state.setTab,
         global: state.global,
         dummy: state.dummy,
         internal: state.internal.find((p) => p.integration.id === props.id),
         integrations: state.selectedIntegrations,
+        setHide: state.setHide,
         allIntegrations: state.integrations,
         justCurrent: state.current,
         current: state.current === props.id,
         isGlobal: state.current === 'global',
         setCurrent: state.setCurrent,
+        setComments: state.setComments,
         setTotalChars: state.setTotalChars,
         setPostComment: state.setPostComment,
         setEditor: state.setEditor,
@@ -133,12 +136,14 @@ export const withProvider = function <T extends object>(params: {
       );
 
       if (isGlobal) {
+        setComments(true);
         setPostComment(PostComment.ALL);
         setTotalChars(0);
         setEditor('normal');
       }
 
       if (current) {
+        setComments(typeof params.comments === 'undefined' ? true : params.comments);
         setEditor(selectedIntegration?.integration.editor);
         setPostComment(postComment);
         setTotalChars(
@@ -217,12 +222,12 @@ export const withProvider = function <T extends object>(params: {
                     )
                   ),
             fix: () => {
-              setTab(1);
               setCurrent(props.id);
+              setHide(true);
             },
             preview: () => {
-              setTab(0);
               setCurrent(props.id);
+              setHide(true);
             },
           };
         },
@@ -255,7 +260,7 @@ export const withProvider = function <T extends object>(params: {
         }}
       >
         <FormProvider {...form}>
-          <div className={current ? '' : 'hidden'}>
+          <div className={clsx('border border-borderPreview rounded-[12px] shadow-previewShadow', !current && 'hidden')}>
             {current &&
               (tab === 0 ||
                 (!SettingsComponent && !data?.internalPlugs?.length)) &&

@@ -288,7 +288,7 @@ export const MenuComponent: FC<
         <ImageWithFallback
           fallbackSrc={`/icons/platforms/${integration.identifier}.png`}
           src={integration.picture || '/no-picture.jpg'}
-          className="rounded-[8px]"
+          className="rounded-[8px] min-w-[36px] min-h-[36px]"
           alt={integration.identifier}
           width={36}
           height={36}
@@ -499,7 +499,7 @@ export const LaunchesComponent = () => {
         >
           <div
             className={clsx(
-              'bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all absolute start-0 top-0 w-full h-full overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor'
+              'bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all absolute start-0 top-0 w-full h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor'
             )}
           >
             <div className="flex items-center">

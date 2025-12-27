@@ -1,6 +1,13 @@
 'use client';
 
-import React, { FC, useCallback, useMemo, useRef, useState } from 'react';
+import React, {
+  FC,
+  ReactNode,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { AddEditModalProps } from '@gitroom/frontend/components/new-launch/add.edit.modal';
 import clsx from 'clsx';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -32,6 +39,7 @@ import {
   TrashIcon,
   DropdownArrowSmallIcon,
 } from '@gitroom/frontend/components/ui/icons';
+import { useHasScroll } from '@gitroom/frontend/components/ui/is.scroll.hook';
 
 function countCharacters(text: string, type: string): number {
   if (type !== 'x') {
@@ -388,14 +396,17 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                       {currentIntegrationText} Settings
                     </div>
                     <div>
-                      <ChevronDownIcon rotated={showSettings} className="text-white" />
+                      <ChevronDownIcon
+                        rotated={showSettings}
+                        className="text-white"
+                      />
                     </div>
                   </div>
                   <div
                     id="social-settings"
                     className={clsx(
                       !showSettings && 'hidden',
-                      'px-[12px] pb-[12px] text-[14px] text-textColor font-[500] max-h-[400px] overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newColColor scrollbar-track-newBgColorInner'
+                      'px-[12px] pb-[12px] text-[14px] text-textColor font-[500] max-h-[300px] overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newBgColorInner scrollbar-track-newColColor'
                     )}
                   />
                   <style>
@@ -413,9 +424,12 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               </div>
             </div>
             <div className="flex-1 relative">
-              <div className="absolute top-0 p-[20px] left-0 w-full h-full overflow-x-hidden overflow-y-scroll scrollbar scrollbar-thumb-newColColor scrollbar-track-newBgColorInner">
+              <Scrollable
+                scrollClasses="!pr-[20px]"
+                className="absolute top-0 p-[20px] pr-[8px] left-0 w-full h-full overflow-x-hidden overflow-y-scroll scrollbar scrollbar-thumb-newColColor scrollbar-track-newBgColorInner"
+              >
                 <ShowAllProviders ref={ref} />
-              </div>
+              </Scrollable>
             </div>
           </div>
         </div>
@@ -438,7 +452,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           </div>
           <div className="pr-[20px] flex items-center justify-end gap-[8px]">
             {existingData?.integration && (
-              <button onClick={deletePost} className="cursor-pointer flex text-[#FF3F3F] gap-[8px] items-center text-[15px] font-[600]">
+              <button
+                onClick={deletePost}
+                className="cursor-pointer flex text-[#FF3F3F] gap-[8px] items-center text-[15px] font-[600]"
+              >
                 <div>
                   <TrashIcon />
                 </div>
@@ -498,7 +515,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                   disabled={
                     selectedIntegrations.length === 0 || loading || locked
                   }
-                  className="disabled:cursor-not-allowed disabled:opacity-80 hidden group-hover:flex absolute bottom-[100%] -left-[12px] p-[12px] w-[206px] bg-newBgColorInner"
+                  className="rounded-[8px] z-[300] disabled:cursor-not-allowed disabled:opacity-80 hidden group-hover:flex absolute bottom-[100%] -left-[12px] p-[12px] w-[206px] bg-newBgColorInner"
                 >
                   <div className="text-white rounded-[8px] bg-[#D82D7E] h-[44px] w-full flex justify-center items-center post-now">
                     Post Now
@@ -528,6 +545,20 @@ After using the addPostFor{num} it will create a new addPostContentFor{num+ 1} f
           initial: 'Hi! I can help you to refine your social media posts.',
         }}
       />
+    </div>
+  );
+};
+
+const Scrollable: FC<{
+  className: string;
+  scrollClasses: string;
+  children: ReactNode;
+}> = ({ className, scrollClasses, children }) => {
+  const ref = useRef();
+  const hasScroll = useHasScroll(ref);
+  return (
+    <div className={clsx(className, hasScroll && scrollClasses)} ref={ref}>
+      {children}
     </div>
   );
 };

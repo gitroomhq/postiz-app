@@ -129,11 +129,13 @@ export const EditorWrapper: FC<{
     setLoadedState,
     selectedIntegration,
     chars,
+    comments,
   } = useLaunchStore(
     useShallow((state) => ({
       internal: state.internal.find((p) => p.integration.id === state.current),
       internalFromAll: state.integrations.find((p) => p.id === state.current),
       global: state.global,
+      comments: state.comments,
       current: state.current,
       addRemoveInternal: state.addRemoveInternal,
       dummy: state.dummy,
@@ -343,8 +345,9 @@ export const EditorWrapper: FC<{
     <div
       className={clsx(
         'relative flex-col gap-[20px] flex-1',
-        (items.length === 1 || !canEdit) && 'flex',
-        !canEdit && !isCreateSet && 'bg-newSettings rounded-[12px]'
+        (items.length === 1 || !canEdit || !comments) && 'flex',
+        ((!canEdit && !isCreateSet) || !comments) &&
+          'bg-newSettings rounded-[12px]'
       )}
     >
       {isCreateSet && current !== 'global' && (
@@ -370,7 +373,7 @@ export const EditorWrapper: FC<{
               setLoaded(false);
               addRemoveInternal(current);
             }}
-            className="text-center absolute w-full h-full left-0 top-0 items-center justify-center flex z-[101] flex-col gap-[16px]"
+            className="text-center absolute w-full h-full p-[20px] left-0 top-0 items-center justify-center flex z-[101] flex-col gap-[16px]"
           >
             <div>
               <div className="w-[54px] h-[54px] rounded-full absolute z-[101] flex justify-center items-center">
@@ -398,9 +401,9 @@ export const EditorWrapper: FC<{
           className={clsx(
             'relative flex flex-col gap-[20px] flex-1 bg-newSettings',
             index === 0 && 'rounded-t-[12px]',
-            index === items.length - 1 && 'rounded-b-[12px]',
+            (index === items.length - 1 || !comments) && 'rounded-b-[12px]',
             !canEdit && !isCreateSet && 'blur-s',
-            !canEdit && index > 0 && 'hidden'
+            ((!canEdit && index > 0) || (!comments && index > 0)) && 'hidden'
           )}
         >
           <div className="flex gap-[5px] flex-1 w-full">
@@ -411,6 +414,7 @@ export const EditorWrapper: FC<{
                 </div>
               )}
               <Editor
+                comments={comments}
                 editorType={editor}
                 allValues={items}
                 onChange={changeValue(index)}
@@ -430,14 +434,16 @@ export const EditorWrapper: FC<{
                 chars={chars}
                 childButton={
                   <>
-                    {canEdit && items.length - 1 === index ? (
+                    {((canEdit && items.length - 1 === index) || !comments) ? (
                       <div className="flex items-center">
                         <div className="flex-1">
-                          <AddPostButton
-                            num={index}
-                            onClick={addValue(index)}
-                            postComment={postComment}
-                          />
+                          {comments && (
+                            <AddPostButton
+                              num={index}
+                              onClick={addValue(index)}
+                              postComment={postComment}
+                            />
+                          )}
                         </div>
                         {!!internal && !existingData?.integration && (
                           <div
@@ -466,21 +472,23 @@ export const EditorWrapper: FC<{
                 }
               />
             </div>
-            <div className="flex flex-col items-center gap-[10px] pe-[12px]">
-              <UpDownArrow
-                isUp={index !== 0}
-                isDown={index !== items.length - 1}
-                onChange={changeOrder(index)}
-              />
-              {items.length > 1 && (
-                <TrashIcon
-                  onClick={deletePost(index)}
-                  data-tooltip-id="tooltip"
-                  data-tooltip-content="Delete Post"
-                  className="cursor-pointer text-[#FF3F3F]"
+            {comments && (
+              <div className="flex flex-col items-center gap-[10px] pe-[12px]">
+                <UpDownArrow
+                  isUp={index !== 0}
+                  isDown={index !== items.length - 1}
+                  onChange={changeOrder(index)}
                 />
-              )}
-            </div>
+                {items.length > 1 && (
+                  <TrashIcon
+                    onClick={deletePost(index)}
+                    data-tooltip-id="tooltip"
+                    data-tooltip-content="Delete Post"
+                    className="cursor-pointer text-[#FF3F3F]"
+                  />
+                )}
+              </div>
+            )}
           </div>
         </div>
       ))}
@@ -500,6 +508,7 @@ export const Editor: FC<{
   appendImages?: (value: any[]) => void;
   autoComplete?: boolean;
   validateChars?: boolean;
+  comments: boolean | 'no-media';
   identifier?: string;
   totalChars?: number;
   selectedIntegration: SelectedIntegrations[];
@@ -513,17 +522,14 @@ export const Editor: FC<{
     pictures,
     setImages,
     num,
-    validateChars,
     identifier,
     appendImages,
-    selectedIntegration,
     dummy,
     chars,
     childButton,
+    comments,
   } = props;
-  const user = useUser();
   const [id] = useState(makeId(10));
-  const newRef = useRef<any>(null);
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const t = useT();
   const editorRef = useRef<undefined | { editor: any }>();
@@ -547,6 +553,9 @@ export const Editor: FC<{
 
   const paste = useCallback(
     async (event: ClipboardEvent | File[]) => {
+      if (num > 0 && comments === 'no-media') {
+        return;
+      }
       // @ts-ignore
       const clipboardItems = event.clipboardData?.items;
       if (!clipboardItems) {
@@ -563,10 +572,13 @@ export const Editor: FC<{
         }
       }
     },
-    [uppy]
+    [uppy, num, comments]
   );
 
-  const { getRootProps, isDragActive } = useDropzone({ onDrop });
+  const { getRootProps, isDragActive } = useDropzone({
+    onDrop,
+    noDrag: num > 0 && comments === 'no-media',
+  });
 
   const valueWithoutHtml = useMemo(() => {
     return stripHtmlValidation('normal', props.value || '', true);
@@ -667,6 +679,7 @@ export const Editor: FC<{
             <div className="flex bg-newBgColorInner rounded-b-[6px] cursor-default">
               {setImages && (
                 <MultiMediaComponent
+                  mediaNotAvailable={num > 0 && comments === 'no-media'}
                   allData={allValues}
                   text={valueWithoutHtml}
                   label={t('attachments', 'Attachments')}

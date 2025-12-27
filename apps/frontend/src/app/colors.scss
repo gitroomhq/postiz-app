@@ -28,12 +28,26 @@
     --new-menu-hover: #fff;
     --menu-shadow: 0 8px 30px 0 rgba(0, 0, 0, 0.5);
     --popup-color: rgba(65, 64, 66, 0.3);
+    --border-preview: transparent;
+    --preview-box-shadow: none;
+    --linkedin-border: #2e3438;
+    --linkedin-bg: #1b1f23;
+    --linkedin-text: #c6c7c8;
+    --facebook-bg: #242526;
+    --facebook-bg-comment: #333334;
+    --instagram-bg: #0b1014;
+    --tiktok-item-bg: #2a2a2a;
+    --tiktok-item-icon-bg: #FFF;
+    --youtube-bg: #0F0F0F;
+    --youtube-button: #F1F1F1;
+    --youtube-action-color: #272727;
+    --youtube-svg-border: #A0A0A0;
   }
   .light {
     --new-back-drop: #2d1b57;
-    --new-settings: #ECEEF1;
-    --new-sep: #D5D9DD;
-    --new-border: #EAECEE;
+    --new-settings: #eceef1;
+    --new-sep: #d5d9dd;
+    --new-border: #eaecee;
     --new-bgColor: #f0f2f4;
     --new-bgColorInner: #ffffff;
     --new-bgLineColor: #e7e9eb;
@@ -62,6 +76,23 @@
       -3px 13px 14px 0 rgba(55, 52, 75, 0.09),
       -1px 3px 8px 0 rgba(55, 52, 75, 0.1);
     --popup-color: rgba(55, 37, 97, 0.2);
+    --border-preview: #f1f0f3;
+    --preview-box-shadow: 0 386px 108px 0 rgba(38, 32, 64, 0),
+      0 247px 99px 0 rgba(38, 32, 64, 0.01),
+      0 139px 83px 0 rgba(38, 32, 64, 0.03),
+      0 62px 62px 0 rgba(38, 32, 64, 0.04), 0 15px 34px 0 rgba(38, 32, 64, 0.05);
+    --linkedin-border: #e9e5df;
+    --linkedin-bg: #fff;
+    --linkedin-text: #707070;
+    --facebook-bg: #f1f0f3;
+    --facebook-bg-comment: #f6f6f6;
+    --instagram-bg: #fff;
+    --tiktok-item-bg: #EEF1F0;
+    --tiktok-item-icon-bg: #454645;
+    --youtube-bg: #FFF;
+    --youtube-button: #000;
+    --youtube-action-color: #F1F1F1;
+    --youtube-svg-border: #1A1A1A;
   }
 }
 

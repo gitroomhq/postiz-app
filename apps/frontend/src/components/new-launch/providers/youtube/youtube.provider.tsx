@@ -11,6 +11,7 @@ import { Input } from '@gitroom/react/form/input';
 import { MediumTags } from '@gitroom/frontend/components/new-launch/providers/medium/medium.tags';
 import { MediaComponent } from '@gitroom/frontend/components/media/media.component';
 import { Select } from '@gitroom/react/form/select';
+import { YoutubePreview } from '@gitroom/frontend/components/new-launch/providers/youtube/youtube.preview';
 const type = [
   {
     label: 'Public',
@@ -81,15 +82,13 @@ const YoutubeSettings: FC = () => {
 };
 export default withProvider({
   postComment: PostComment.COMMENT,
+  comments: false,
   minimumCharacters: [],
   SettingsComponent: YoutubeSettings,
-  CustomPreviewComponent: undefined,
+  CustomPreviewComponent: YoutubePreview,
   dto: YoutubeSettingsDto,
   checkValidity: async (items) => {
     const [firstItems] = items;
-    if (items.length !== 1) {
-      return 'Should have one item';
-    }
     if (items[0].length !== 1) {
       return 'You need one media';
     }

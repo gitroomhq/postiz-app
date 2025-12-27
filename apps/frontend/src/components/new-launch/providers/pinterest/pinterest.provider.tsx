@@ -10,6 +10,7 @@ import { PinterestBoard } from '@gitroom/frontend/components/new-launch/provider
 import { PinterestSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/pinterest.dto';
 import { Input } from '@gitroom/react/form/input';
 import { ColorPicker } from '@gitroom/react/form/color.picker';
+import { PinterestPreview } from '@gitroom/frontend/components/new-launch/providers/pinterest/pinterest.preview';
 const PinterestSettings: FC = () => {
   const { register, control } = useSettings();
   return (
@@ -29,8 +30,9 @@ const PinterestSettings: FC = () => {
 export default withProvider({
   postComment: PostComment.COMMENT,
   minimumCharacters: [],
+  comments: false,
   SettingsComponent: PinterestSettings,
-  CustomPreviewComponent: undefined,
+  CustomPreviewComponent: PinterestPreview,
   dto: PinterestSettingsDto,
   checkValidity: async ([firstItem, ...otherItems]) => {
     const isMp4 = firstItem?.find((item) => item.path.indexOf('mp4') > -1);
@@ -46,9 +48,7 @@ export default withProvider({
     if (isMp4 && firstItem.length > 2) {
       return 'If posting a video you can only have two media items';
     }
-    if (otherItems.length) {
-      return 'Can only have one post';
-    }
+
     if (
       firstItem.length > 1 &&
       firstItem.every((p) => p.path.indexOf('mp4') == -1)
