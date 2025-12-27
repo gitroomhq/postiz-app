@@ -93,12 +93,16 @@ export const Sets: FC = () => {
   const addSet = useCallback(
     (params?: { id?: string; name?: string; content?: string }) => () => {
       modal.openModal({
+        id: 'add-edit-modal',
         closeOnClickOutside: false,
+        removeLayout: true,
         closeOnEscape: false,
         withCloseButton: false,
-        removeLayout: true,
         askClose: true,
-        id: 'add-edit-modal',
+        fullScreen: true,
+        classNames: {
+          modal: 'w-[100%] max-w-[1400px] text-textColor',
+        },
         children: (
           <AddEditModal
             allIntegrations={integrations.map((p: any) => ({

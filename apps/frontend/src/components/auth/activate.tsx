@@ -5,7 +5,7 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export function Activate() {
   const t = useT();
   return (
-    <>
+    <div className="flex flex-col">
       <div>
         <h1 className="text-3xl font-bold text-start mb-4 cursor-pointer">
           {t('activate_your_account', 'Activate your account')}
@@ -19,6 +19,6 @@ export function Activate() {
           'Please check your email to activate your account.'
         )}
       </div>
-    </>
+    </div>
   );
 }

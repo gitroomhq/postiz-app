@@ -192,13 +192,6 @@ export const ShowAllProviders = forwardRef((props, ref) => {
             })),
           }}
         >
-          <div className="flex gap-[4px] mb-[20px]">
-            <div className="flex-1 flex p-[4px] border border-newTableBorder rounded-[8px]">
-              <div className="rounded-[4px] flex-1 overflow-hidden whitespace-nowrap text-center pt-[6px] pb-[5px] text-textItemFocused bg-boxFocused">
-                {t('preview', 'Preview')}
-              </div>
-            </div>
-          </div>
           {global?.[0]?.content?.length === 0 ? (
             <div>
               {t(

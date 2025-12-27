@@ -49,7 +49,7 @@ export const GeneralPreviewComponent: FC<{
   });
 
   return (
-    <div className={clsx('w-full md:w-[555px] px-[16px]')}>
+    <div className={clsx('w-full md:w-[555px]')}>
       <div className="w-full h-full relative flex flex-col">
         {renderContent.map((value, index) => (
           <div

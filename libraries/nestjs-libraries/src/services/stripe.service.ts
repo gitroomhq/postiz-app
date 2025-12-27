@@ -23,7 +23,6 @@ export class StripeService {
     private _subscriptionService: SubscriptionService,
     private _organizationService: OrganizationService,
     private _userService: UsersService,
-    private _messagesService: MessagesService,
     private _trackService: TrackService
   ) {}
   validateRequest(rawBody: Buffer, signature: string, endpointSecret: string) {
@@ -190,7 +189,9 @@ export class StripeService {
       return organization.paymentId;
     }
 
+    const users = await this._organizationService.getTeam(organization.id);
     const customer = await stripe.customers.create({
+      email: users.users[0].user.email,
       name: organization.name,
     });
     await this._subscriptionService.updateCustomerId(
@@ -361,6 +362,57 @@ export class StripeService {
     });
   }
 
+  private async createEmbeddedCheckout(
+    ud: string,
+    uniqueId: string,
+    customer: string,
+    body: BillingSubscribeDto,
+    price: string,
+    userId: string,
+    allowTrial: boolean
+  ) {
+    const stripeCustom = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+      // @ts-ignore
+      apiVersion: '2025-03-31.basil',
+    });
+    const isUtm = body.utm ? `&utm_source=${body.utm}` : '';
+    // @ts-ignore
+    const { client_secret } = await stripeCustom.checkout.sessions.create({
+      ui_mode: 'custom',
+      customer,
+      return_url:
+        process.env['FRONTEND_URL'] +
+        `/launches?onboarding=true&check=${uniqueId}${isUtm}`,
+      mode: 'subscription',
+      subscription_data: {
+        ...(allowTrial ? { trial_period_days: 7 } : {}),
+        metadata: {
+          service: 'gitroom',
+          ...body,
+          userId,
+          uniqueId,
+          ud,
+        },
+      },
+      ...(body.tolt
+        ? {
+            metadata: {
+              tolt_referral: body.tolt,
+            },
+          }
+        : {}),
+      allow_promotion_codes: body.period === 'MONTHLY',
+      line_items: [
+        {
+          price,
+          quantity: 1,
+        },
+      ],
+    });
+
+    return { client_secret };
+  }
+
   private async createCheckoutSession(
     ud: string,
     uniqueId: string,
@@ -485,7 +537,7 @@ export class StripeService {
       limit: 1,
     });
 
-    if (!list.data.filter(f => f.amount > 1000).length) {
+    if (!list.data.filter((f) => f.amount > 1000).length) {
       return false;
     }
 
@@ -624,6 +676,72 @@ export class StripeService {
     });
 
     return { url };
+  }
+
+  async embedded(
+    uniqueId: string,
+    organizationId: string,
+    userId: string,
+    body: BillingSubscribeDto,
+    allowTrial: boolean
+  ) {
+    const id = makeId(10);
+    const priceData = pricing[body.billing];
+    const org = await this._organizationService.getOrgById(organizationId);
+    const customer = await this.createOrGetCustomer(org!);
+    const allProducts = await stripe.products.list({
+      active: true,
+      expand: ['data.prices'],
+    });
+
+    const findProduct =
+      allProducts.data.find(
+        (product) => product.name.toUpperCase() === body.billing.toUpperCase()
+      ) ||
+      (await stripe.products.create({
+        active: true,
+        name: body.billing,
+      }));
+
+    const pricesList = await stripe.prices.list({
+      active: true,
+      product: findProduct!.id,
+    });
+
+    const findPrice =
+      pricesList.data.find(
+        (p) =>
+          p?.recurring?.interval?.toLowerCase() ===
+            (body.period === 'MONTHLY' ? 'month' : 'year') &&
+          p?.unit_amount ===
+            (body.period === 'MONTHLY'
+              ? priceData.month_price
+              : priceData.year_price) *
+              100
+      ) ||
+      (await stripe.prices.create({
+        active: true,
+        product: findProduct!.id,
+        currency: 'usd',
+        nickname: body.billing + ' ' + body.period,
+        unit_amount:
+          (body.period === 'MONTHLY'
+            ? priceData.month_price
+            : priceData.year_price) * 100,
+        recurring: {
+          interval: body.period === 'MONTHLY' ? 'month' : 'year',
+        },
+      }));
+
+    return this.createEmbeddedCheckout(
+      uniqueId,
+      id,
+      customer,
+      body,
+      findPrice!.id,
+      userId,
+      allowTrial
+    );
   }
 
   async subscribe(

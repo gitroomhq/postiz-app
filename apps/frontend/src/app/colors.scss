@@ -1,7 +1,11 @@
 :root {
   .dark {
+    --new-back-drop: #000;
+    --new-settings: #242323;
+    --new-border: #252525;
     --new-bgColor: #0e0e0e;
     --new-bgColorInner: #1a1919;
+    --new-sep: #454444;
     --new-bgLineColor: #212121;
     --new-textItemFocused: #1a1919;
     --new-textItemBlur: #999999;
@@ -26,6 +30,10 @@
     --popup-color: rgba(65, 64, 66, 0.3);
   }
   .light {
+    --new-back-drop: #2d1b57;
+    --new-settings: #ECEEF1;
+    --new-sep: #D5D9DD;
+    --new-border: #EAECEE;
     --new-bgColor: #f0f2f4;
     --new-bgColorInner: #ffffff;
     --new-bgLineColor: #e7e9eb;

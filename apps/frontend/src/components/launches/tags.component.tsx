@@ -8,7 +8,203 @@ import { ColorPicker } from '@gitroom/react/form/color.picker';
 import { Button } from '@gitroom/react/form/button';
 import { uniqBy } from 'lodash';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useClickOutside } from '@mantine/hooks';
+import clsx from 'clsx';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
+import { TagIcon, DropdownArrowIcon, PlusIcon, CheckmarkIcon } from '@gitroom/frontend/components/ui/icons';
+
 export const TagsComponent: FC<{
+  name: string;
+  label: string;
+  initial: any[];
+  onChange: (event: {
+    target: {
+      value: any[];
+      name: string;
+    };
+  }) => void;
+}> = (props) => {
+  const fetch = useFetch();
+
+  const loadTags = useCallback(async () => {
+    return (await fetch('/posts/tags')).json();
+  }, []);
+
+  const { data, isLoading, mutate } = useSWR('load-tags', loadTags);
+
+  if (isLoading) {
+    return null;
+  }
+
+  return <TagsComponentInner {...props} allTags={data} mutate={mutate} />;
+};
+
+export const TagsComponentInner: FC<{
+  name: string;
+  label: string;
+  initial: any[];
+  allTags: any;
+  mutate: () => Promise<any>;
+  onChange: (event: {
+    target: {
+      value: any[];
+      name: string;
+    };
+  }) => void;
+}> = ({ initial, onChange, name, mutate, allTags: data }) => {
+  const t = useT();
+  const [isOpen, setIsOpen] = useState(false);
+  const [tagValue, setTagValue] = useState<any[]>(
+    (initial?.slice(0) || []).map((p: any) => {
+      return data?.tags.find((a: any) => a.name === p.value) || p;
+    })
+  );
+  const modals = useModals();
+
+  const ref = useClickOutside(() => {
+    if (!isOpen) {
+      return;
+    }
+    setIsOpen(false);
+  });
+
+  const addTag = useCallback(async () => {
+    const val: string | undefined = await new Promise((resolve) => {
+      modals.openModal({
+        title: 'Add new tag',
+        children: (close) => (
+          <ShowModal tag="" close={close} resolve={resolve} />
+        ),
+      });
+    });
+
+    const newValues = await mutate();
+
+    if (!val) {
+      return;
+    }
+
+    const newTag = newValues.tags.find((p: any) => p.name === val);
+    if (newTag) {
+      const modify = [...tagValue, newTag];
+      setTagValue(modify);
+      onChange({
+        target: {
+          value: modify,
+          name,
+        },
+      });
+    }
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className={clsx(
+        'border rounded-[8px] justify-center flex items-center relative h-[44px] text-[15px] font-[600] select-none',
+        isOpen ? 'border-[#612BD3]' : 'border-newTextColor/10'
+      )}
+    >
+      <div
+        onClick={() => setIsOpen(!isOpen)}
+        className="px-[16px] justify-center flex gap-[8px] items-center h-full select-none flex-1"
+      >
+        <div className="cursor-pointer">
+          <TagIcon />
+        </div>
+        <div className="cursor-pointer flex gap-[4px]">
+          {tagValue.length === 0 ? (
+            'Add New Tag'
+          ) : (
+            <>
+              <div
+                className="h-full flex justify-center items-center px-[8px] rounded-[4px]"
+                style={{ backgroundColor: tagValue[0].color }}
+              >
+                <span className="mix-blend-difference text-[#fff]">
+                  {tagValue[0].name}
+                </span>
+              </div>
+              {tagValue.length > 1 ? <span>+{tagValue.length - 1}</span> : null}
+            </>
+          )}
+        </div>
+        <div className="cursor-pointer">
+          <DropdownArrowIcon rotated={isOpen} />
+        </div>
+      </div>
+      {isOpen && (
+        <div className="z-[300] absolute left-0 bottom-[100%] w-[240px] bg-newBgColorInner p-[12px] menu-shadow -translate-y-[10px] flex flex-col">
+          {(data?.tags || []).map((p: any) => (
+            <div
+              onClick={() => {
+                const exists = !!tagValue.find((a) => a.id === p.id);
+                let modify = [];
+                if (exists) {
+                  modify = tagValue.filter((a) => a.id !== p.id);
+                } else {
+                  modify = [...tagValue, p];
+                }
+                setTagValue(modify);
+                onChange({
+                  target: {
+                    value: modify.map((p: any) => ({
+                      label: p.name,
+                      value: p.name,
+                    })),
+                    name,
+                  },
+                });
+              }}
+              key={p.name}
+              className="h-[40px] py-[8px] px-[20px] -mx-[12px] flex gap-[8px]"
+            >
+              <Check
+                onChange={() => {}}
+                value={!!tagValue.find((a) => a.id === p.id)}
+              />
+              <div
+                className="h-full flex justify-center items-center px-[8px] rounded-[8px]"
+                style={{ backgroundColor: p.color }}
+              >
+                <span className="mix-blend-difference text-[#fff]">
+                  {p.name}
+                </span>
+              </div>
+            </div>
+          ))}
+          <div
+            onClick={addTag}
+            className="cursor-pointer gap-[8px] flex w-full h-[34px] rounded-[8px] mt-[12px] px-[16px] justify-center items-center bg-[#612BD3] text-white"
+          >
+            <div>
+              <PlusIcon />
+            </div>
+            <div className="text-[13px] font-[600]">Add New Tag</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const Check: FC<{ value: boolean; onChange: (value: boolean) => void }> = ({
+  value,
+  onChange,
+}) => {
+  return (
+    <div
+      onClick={() => onChange(!value)}
+      className={clsx(
+        'text-[10px] font-[500] text-center flex border border-btnSimple rounded-[6px] w-[20px] h-[20px] justify-center items-center',
+        value && 'bg-[#612BD3]'
+      )}
+    >
+      {value ? <CheckmarkIcon className="text-white" /> : ''}
+    </div>
+  );
+};
+export const TagsComponentA: FC<{
   name: string;
   label: string;
   initial: any[];
@@ -228,53 +424,28 @@ const ShowModal: FC<{
       }),
     });
     resolve(tagName);
+    close();
   }, [tagName, color, id]);
   return (
-    <div className="bg-black/40 fixed start-0 top-0 w-full h-full z-[500]">
-      <div className="relative w-[500px] mx-auto flex gap-[20px] flex-col flex-1 rounded-[4px] border border-customColor6 bg-sixth p-[16px] pt-0">
-        <TopTitle title={`Create a new tag`} />
-        <button
-          className="outline-none absolute end-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
-          type="button"
-        >
-          <svg
-            viewBox="0 0 15 15"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            onClick={close}
-          >
-            <path
-              d="M11.7816 4.03157C12.0062 3.80702 12.0062 3.44295 11.7816 3.2184C11.5571 2.99385 11.193 2.99385 10.9685 3.2184L7.50005 6.68682L4.03164 3.2184C3.80708 2.99385 3.44301 2.99385 3.21846 3.2184C2.99391 3.44295 2.99391 3.80702 3.21846 4.03157L6.68688 7.49999L3.21846 10.9684C2.99391 11.193 2.99391 11.557 3.21846 11.7816C3.44301 12.0061 3.80708 12.0061 4.03164 11.7816L7.50005 8.31316L10.9685 11.7816C11.193 12.0061 11.5571 12.0061 11.7816 11.7816C12.0062 11.557 12.0062 11.193 11.7816 10.9684L8.31322 7.49999L11.7816 4.03157Z"
-              fill="currentColor"
-              fillRule="evenodd"
-              clipRule="evenodd"
-            ></path>
-          </svg>
-        </button>
-
-        <div>
-          <Input
-            name="name"
-            disableForm={true}
-            label="Name"
-            value={tagName}
-            onChange={(e) => setTagName(e.target.value)}
-          />
-          <ColorPicker
-            onChange={(e) => setColor(e.target.value)}
-            label="Tag Color"
-            name="color"
-            value={color}
-            enabled={true}
-            canBeCancelled={false}
-          />
-          <Button onClick={save} className="mt-[16px]">
-            {t('save', 'Save')}
-          </Button>
-        </div>
-      </div>
+    <div>
+      <Input
+        name="name"
+        disableForm={true}
+        label="Name"
+        value={tagName}
+        onChange={(e) => setTagName(e.target.value)}
+      />
+      <ColorPicker
+        onChange={(e) => setColor(e.target.value)}
+        label="Tag Color"
+        name="color"
+        value={color}
+        enabled={true}
+        canBeCancelled={false}
+      />
+      <Button onClick={save} className="mt-[16px]">
+        {t('save', 'Save')}
+      </Button>
     </div>
   );
 };

@@ -1,5 +1,6 @@
 const { join } = require('path');
 module.exports = {
+  darkMode: 'class',
   content: ['./src/**/*.{ts,tsx,html}', '../../libraries/**/*.{ts,tsx,html}'],
   theme: {
     extend: {
@@ -74,6 +75,9 @@ module.exports = {
         modalCustom: 'var(--color-modalCustom)',
 
         newBgColor: 'var(--new-bgColor)',
+        newBackdrop: 'var(--new-back-drop)',
+        newSep: 'var(--new-sep)',
+        newBorder: 'var(--new-border)',
         newBgColorInner: 'var(--new-bgColorInner)',
         newBgLineColor: 'var(--new-bgLineColor)',
         textItemFocused: 'var(--new-textItemFocused)',
@@ -91,6 +95,7 @@ module.exports = {
         newTableText: 'var(--new-table-text)',
         newTableTextFocused: 'var(--new-table-text-focused)',
         newColColor: 'var(--new-col-color)',
+        newSettings: 'var(--new-settings)',
         menuDots: 'var(--new-menu-dots)',
         menuDotsHover: 'var(--new-menu-hover)',
         bigStrip: 'var(--new-big-strips)',
@@ -116,6 +121,8 @@ module.exports = {
         fadeDown: 'fadeDown 4s ease-in-out forwards',
         normalFadeDown: 'normalFadeDown 0.5s ease-in-out forwards',
         newMessages: 'newMessages 1s ease-in-out 4s forwards',
+        marqueeUp: 'marquee-up 100s linear infinite',
+        marqueeDown: 'marquee-down 100s linear infinite',
       },
       boxShadow: {
         yellow: '0 0 60px 20px #6b6237',
@@ -221,6 +228,18 @@ module.exports = {
         },
       }),
       screens: {
+        mobile: {
+          raw: '(max-width: 1025px)',
+        },
+        tablet: {
+          raw: '(max-width: 1300px)',
+        },
+        iconBreak: {
+          raw: '(max-width: 1560px)',
+        },
+        maxMedia: {
+          raw: '(max-width: 1400px)',
+        },
         custom: {
           raw: '(max-height: 800px)',
         },

@@ -21,12 +21,15 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
-      <body className={clsx(jakartaSans.className, 'dark text-primary !bg-primary')}>
+      <body
+        className={clsx(jakartaSans.className, 'dark text-primary !bg-primary')}
+      >
         <VariableContextComponent
           language="en"
           storageProvider={
             process.env.STORAGE_PROVIDER! as 'local' | 'cloudflare'
           }
+          stripeClient=""
           environment={process.env.NODE_ENV!}
           backendUrl={process.env.NEXT_PUBLIC_BACKEND_URL!}
           plontoKey={process.env.NEXT_PUBLIC_POLOTNO!}
