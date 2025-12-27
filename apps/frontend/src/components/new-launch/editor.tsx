@@ -343,7 +343,7 @@ export const EditorWrapper: FC<{
     <div
       className={clsx(
         'relative flex-col gap-[20px] flex-1',
-        items.length === 1 && 'flex',
+        (items.length === 1 || !canEdit) && 'flex',
         !canEdit && !isCreateSet && 'bg-newSettings rounded-[12px]'
       )}
     >
@@ -399,7 +399,8 @@ export const EditorWrapper: FC<{
             'relative flex flex-col gap-[20px] flex-1 bg-newSettings',
             index === 0 && 'rounded-t-[12px]',
             index === items.length - 1 && 'rounded-b-[12px]',
-            !canEdit && !isCreateSet && 'blur-s'
+            !canEdit && !isCreateSet && 'blur-s',
+            !canEdit && index > 0 && 'hidden'
           )}
         >
           <div className="flex gap-[5px] flex-1 w-full">
@@ -612,13 +613,6 @@ export const Editor: FC<{
         id={id}
       >
         <div className="relative cursor-text flex flex-1 flex-col">
-          {/*{validateChars &&*/}
-          {/*  props.value.length === 0 &&*/}
-          {/*  pictures?.length === 0 && (*/}
-          {/*    <div className="px-3 text-sm bg-red-600 !text-white mb-[4px]">*/}
-          {/*      Your post should have at least one character or one image.*/}
-          {/*    </div>*/}
-          {/*  )}*/}
           <div {...getRootProps()} className="flex flex-1 flex-col">
             <div
               className={clsx(
@@ -761,48 +755,6 @@ export const Editor: FC<{
           </div>
         </div>
       </div>
-      {/*<div className="flex">*/}
-      {/*  <div className="bottom-10px end-[25px]">*/}
-      {/*    {(props?.totalChars || 0) > 0 ? (*/}
-      {/*      <div*/}
-      {/*        className={clsx(*/}
-      {/*          'text-end text-sm mt-1',*/}
-      {/*          valueWithoutHtml.length > props.totalChars && '!text-red-500'*/}
-      {/*        )}*/}
-      {/*      >*/}
-      {/*        {valueWithoutHtml.length}/{props.totalChars}*/}
-      {/*      </div>*/}
-      {/*    ) : (*/}
-      {/*      <div*/}
-      {/*        className={clsx(*/}
-      {/*          'text-end text-sm mt-1 grid grid-cols-[max-content_max-content] gap-x-[5px]'*/}
-      {/*        )}*/}
-      {/*      >*/}
-      {/*        {selectedIntegration?.map((p) => (*/}
-      {/*          <Fragment key={p.integration.id}>*/}
-      {/*            <div*/}
-      {/*              className={*/}
-      {/*                valueWithoutHtml.length > chars?.[p.integration.id] &&*/}
-      {/*                '!text-red-500'*/}
-      {/*              }*/}
-      {/*            >*/}
-      {/*              {p.integration.name} ({capitalize(p.integration.identifier)}*/}
-      {/*              ):*/}
-      {/*            </div>*/}
-      {/*            <div*/}
-      {/*              className={*/}
-      {/*                valueWithoutHtml.length > chars?.[p.integration.id] &&*/}
-      {/*                '!text-red-500'*/}
-      {/*              }*/}
-      {/*            >*/}
-      {/*              {valueWithoutHtml.length}/{chars?.[p.integration.id]}*/}
-      {/*            </div>*/}
-      {/*          </Fragment>*/}
-      {/*        ))}*/}
-      {/*      </div>*/}
-      {/*    )}*/}
-      {/*  </div>*/}
-      {/*</div>*/}
     </div>
   );
 };

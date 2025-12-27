@@ -528,7 +528,7 @@
   "billing_ai_videos_per_month": "月あたりのAI動画数",
   "billing_billing_address": "請求先住所",
   "billing_payment": "支払い",
-  "billing_powered_by_stripe": "Stripeによって処理される安全な支払い",
+  "billing_powered_by_stripe": "安全な支払いはによって処理されています",
   "billing_your_7_day_trial_is": "7日間の無料トライアルは",
   "billing_100_percent_free": "完全に無料",
   "billing_ending": "終了します",

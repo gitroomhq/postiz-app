@@ -48,15 +48,16 @@ export const NewPost = () => {
     if (set === 'exit') return;
 
     modal.openModal({
+      id: 'add-edit-modal',
       closeOnClickOutside: false,
+      removeLayout: true,
       closeOnEscape: false,
       withCloseButton: false,
-      removeLayout: true,
       askClose: true,
+      fullScreen: true,
       classNames: {
-        modal: 'w-[100%] max-w-[1400px] bg-transparent text-textColor',
+        modal: 'w-[100%] max-w-[1400px] text-textColor',
       },
-      id: 'add-edit-modal',
       children: (
         <AddEditModal
           allIntegrations={integrations.map((p) => ({

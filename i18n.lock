@@ -532,7 +532,7 @@ checksums:
     billing_ai_videos_per_month: c786199d8dc9bded54fab8f92c350b19
     billing_billing_address: 48980a775bfc7292b0c4f9b74b4d352e
     billing_payment: 95142d3fd8b6a6f551aba771842e9c11
-    billing_powered_by_stripe: c7c2723003ae04f17ae0c5bee195aeb6
+    billing_powered_by_stripe: f2767a22c2cd93d4e8fe5c5d6ee05ad1
     billing_your_7_day_trial_is: 4b59fb559f5fd520668974e909e3479c
     billing_100_percent_free: 6616fd6ee152264c06dd2537f6347e66
     billing_ending: f66133a14aa7d86ea2453df97de12cd5
