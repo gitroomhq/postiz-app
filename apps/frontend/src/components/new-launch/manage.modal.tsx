@@ -206,7 +206,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             );
             item.preview();
             setLoading(false);
-            setShowSettings(true);
+            setShowSettings(false);
             return;
           }
         }
@@ -341,7 +341,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               Create Post
             </div>
             <div className="flex-1 flex flex-col gap-[16px]">
-              <div className="flex-1 relative">
+              <div className={clsx("flex-1 relative", showSettings && 'hidden')}>
                 <div
                   id="social-content"
                   className="gap-[32px] flex flex-col pr-[8px] pt-[20px] pl-[20px] absolute top-0 left-0 w-full h-full overflow-x-hidden overflow-y-scroll scrollbar scrollbar-thumb-newColColor scrollbar-track-newBgColorInner"
@@ -378,10 +378,11 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 id="wrapper-settings"
                 className={clsx(
                   'pb-[20px] px-[20px] select-none',
-                  current === 'global' && 'hidden'
+                  current === 'global' && 'hidden',
+                  showSettings && 'flex-1 flex pt-[20px]'
                 )}
               >
-                <div className="bg-newSettings flex flex-col rounded-[12px] gap-[12px]">
+                <div className="bg-newSettings flex-1 flex flex-col rounded-[12px] gap-[12px] overflow-hidden">
                   <div
                     onClick={() => setShowSettings(!showSettings)}
                     className={clsx(
@@ -403,12 +404,13 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                     </div>
                   </div>
                   <div
-                    id="social-settings"
                     className={clsx(
-                      !showSettings && 'hidden',
-                      'px-[12px] pb-[12px] text-[14px] text-textColor font-[500] max-h-[300px] overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newBgColorInner scrollbar-track-newColColor'
+                      !showSettings ? 'hidden' : 'flex-1',
+                      'text-[14px] text-textColor font-[500] relative'
                     )}
-                  />
+                  >
+                    <div id="social-settings" className="px-[12px] pb-[12px] absolute left-0 top-0 w-full h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newBgColorInner scrollbar-track-newColColor" />
+                  </div>
                   <style>
                     {`#social-settings [data-id="${current}"] {display: block !important;}`}
                   </style>

@@ -86,7 +86,6 @@ const TikTokSettings: FC<{
       {isTitle && <Input label="Title" {...register('title')} maxLength={90} />}
       <Select
         label={t('label_who_can_see_this_video', 'Who can see this video?')}
-        hideErrors={true}
         disabled={isUploadMode}
         {...register('privacy_level', {
           value: 'PUBLIC_TO_EVERYONE',
@@ -120,7 +119,6 @@ const TikTokSettings: FC<{
         ))}
       </Select>
       <Select
-        hideErrors={true}
         label={t('label_auto_add_music', 'Auto add music')}
         {...register('autoAddMusic', {
           value: 'no',
