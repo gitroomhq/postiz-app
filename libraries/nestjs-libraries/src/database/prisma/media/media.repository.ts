@@ -4,7 +4,10 @@ import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/sa
 
 @Injectable()
 export class MediaRepository {
-  constructor(private _media: PrismaRepository<'media'>) {}
+  constructor(
+    private _media: PrismaRepository<'media'>,
+    private _post: PrismaRepository<'post'>
+  ) { }
 
   saveFile(org: string, fileName: string, filePath: string) {
     return this._media.model.media.create({
@@ -36,10 +39,11 @@ export class MediaRepository {
   }
 
   deleteMedia(org: string, id: string) {
-    return this._media.model.media.update({
+    return this._media.model.media.updateMany({
       where: {
         id,
         organizationId: org,
+        deletedAt: null,
       },
       data: {
         deletedAt: new Date(),
@@ -106,5 +110,69 @@ export class MediaRepository {
       pages,
       results,
     };
+  }
+
+  async getMediaIdsFromUnpublishedPosts(orgId: string): Promise<Set<string>> {
+    const unpublishedPosts = await this._post.model.post.findMany({
+      where: {
+        organizationId: orgId,
+        state: {
+          in: ['QUEUE', 'DRAFT'],
+        },
+        deletedAt: null,
+      },
+      select: {
+        image: true,
+      },
+    });
+
+    const mediaIds = new Set<string>();
+    for (const post of unpublishedPosts) {
+      if (post.image) {
+        try {
+          const images = JSON.parse(post.image);
+          for (const img of images) {
+            if (img?.id) {
+              mediaIds.add(img.id);
+            }
+          }
+        } catch { }
+      }
+    }
+    return mediaIds;
+  }
+
+  async getMediaByIds(ids: string[]) {
+    return this._media.model.media.findMany({
+      where: {
+        id: { in: ids },
+      },
+    });
+  }
+
+  async bulkDeleteMedia(orgId: string, ids: string[]) {
+    return this._media.model.media.updateMany({
+      where: {
+        id: { in: ids },
+        organizationId: orgId,
+      },
+      data: {
+        deletedAt: new Date(),
+      },
+    });
+  }
+
+  async getAllMedia(orgId: string) {
+    return this._media.model.media.findMany({
+      where: {
+        organizationId: orgId,
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+        name: true,
+        path: true,
+      },
+    });
   }
 }

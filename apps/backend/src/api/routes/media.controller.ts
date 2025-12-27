@@ -41,10 +41,22 @@ export class MediaController {
     private _mediaService: MediaService,
     private _subscriptionService: SubscriptionService
   ) {
-    // Initialize S3 uploader if using S3 provider
     if (process.env.STORAGE_PROVIDER === 's3') {
       this.s3Uploader = createS3Uploader();
     }
+  }
+
+  @Get('/deletable')
+  getDeletableMedia(@GetOrgFromRequest() org: Organization) {
+    return this._mediaService.getDeletableMedia(org.id);
+  }
+
+  @Delete('/bulk')
+  bulkDeleteMedia(
+    @GetOrgFromRequest() org: Organization,
+    @Body('mediaIds') mediaIds: string[]
+  ) {
+    return this._mediaService.bulkDeleteMedia(org.id, mediaIds);
   }
 
   @Delete('/:id')
@@ -120,7 +132,6 @@ export class MediaController {
     if (!name) {
       return false;
     }
-    // Use appropriate bucket URL based on storage provider
     const bucketUrl = getCurrentBucketUrl();
     return this._mediaService.saveFile(org.id, name, bucketUrl + '/' + name);
   }
@@ -161,7 +172,6 @@ export class MediaController {
     @Res() res: Response,
     @Param('endpoint') endpoint: string
   ) {
-    // Route to appropriate handler based on storage provider
     let upload;
     if (process.env.STORAGE_PROVIDER === 's3' && this.s3Uploader) {
       upload = await this.s3Uploader.handleUpload(endpoint, req, res);
@@ -173,12 +183,11 @@ export class MediaController {
       return upload;
     }
 
-    // Check if response was already sent (e.g., error handler sent it)
     if (res.headersSent) {
       return;
     }
 
-    // @ts-ignore - upload is CompleteMultipartUploadCommandOutput here
+    // @ts-ignore
     if (!upload?.Location) {
       return res.status(500).json({ error: 'Upload failed - no location returned' });
     }

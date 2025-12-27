@@ -22,19 +22,22 @@ export class MediaService {
     private _openAi: OpenaiService,
     private _subscriptionService: SubscriptionService,
     private _videoManager: VideoManager
-  ) {}
+  ) { }
 
   async deleteMedia(org: string, id: string) {
-    // Get the media record to get the file path
     const media = await this._mediaRepository.getMediaById(id);
+    const hardDeleteEnabled = process.env.HARD_DELETE_MEDIA === 'true';
 
-    // Delete from storage if file path exists
-    if (media?.path) {
-      try {
-        await this.storage.removeFile(media.path);
-      } catch (err) {
-        console.error('Error removing file from storage:', err);
-        // Continue with soft delete even if storage removal fails
+    if (hardDeleteEnabled && media?.path) {
+      const unpublishedMediaIds = await this._mediaRepository.getMediaIdsFromUnpublishedPosts(org);
+      const isInUnpublishedPost = unpublishedMediaIds.has(id);
+
+      if (!isInUnpublishedPost) {
+        try {
+          await this.storage.removeFile(media.path);
+        } catch (err) {
+          console.error('Error removing file from storage:', err);
+        }
       }
     }
 
@@ -154,5 +157,51 @@ export class MediaService {
     }
 
     return functionToCall(body);
+  }
+
+  async getDeletableMedia(orgId: string) {
+    const allMedia = await this._mediaRepository.getAllMedia(orgId);
+    const unpublishedMediaIds = await this._mediaRepository.getMediaIdsFromUnpublishedPosts(orgId);
+
+    return {
+      media: allMedia,
+      undeletableIds: Array.from(unpublishedMediaIds),
+    };
+  }
+
+  async bulkDeleteMedia(orgId: string, mediaIds: string[]): Promise<{
+    deletedCount: number;
+    skippedIds: string[];
+  }> {
+    const unpublishedMediaIds = await this._mediaRepository.getMediaIdsFromUnpublishedPosts(orgId);
+    const deletableIds = mediaIds.filter(id => !unpublishedMediaIds.has(id));
+    const skippedIds = mediaIds.filter(id => unpublishedMediaIds.has(id));
+
+    if (deletableIds.length === 0) {
+      return { deletedCount: 0, skippedIds };
+    }
+
+    const hardDeleteEnabled = process.env.HARD_DELETE_MEDIA === 'true';
+
+    if (hardDeleteEnabled) {
+      const mediaRecords = await this._mediaRepository.getMediaByIds(deletableIds);
+
+      for (const media of mediaRecords) {
+        if (media.path) {
+          try {
+            await this.storage.removeFile(media.path);
+          } catch (error) {
+            console.error(`Error deleting file ${media.path} from storage:`, error);
+          }
+        }
+      }
+    }
+
+    const result = await this._mediaRepository.bulkDeleteMedia(orgId, deletableIds);
+
+    return {
+      deletedCount: result.count,
+      skippedIds,
+    };
   }
 }
