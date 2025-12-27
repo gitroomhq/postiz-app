@@ -51,16 +51,13 @@ export class AuthController {
         req?.cookies?.org
       );
 
-      const { jwt, addedOrg } = await this._authService.routeAuth(
+      const { jwt, addedOrg, activationRequired } = await this._authService.routeAuth(
         body.provider,
         body,
         ip,
         userAgent,
         getOrgFromCookie
       );
-
-      const activationRequired =
-        body.provider === 'LOCAL' && this._emailService.hasProvider();
 
       if (activationRequired) {
         response.header('activate', 'true');
@@ -179,7 +176,16 @@ export class AuthController {
   @Post('/forgot')
   async forgot(@Body() body: ForgotPasswordDto) {
     try {
-      await this._authService.forgot(body.email);
+      const result = await this._authService.forgot(body.email);
+
+      if (!result.success && result.message) {
+        // OAuth user without password - return specific message
+        return {
+          forgot: false,
+          message: result.message,
+        };
+      }
+
       return {
         forgot: true,
       };
@@ -240,32 +246,36 @@ export class AuthController {
     @Param('provider') provider: string,
     @Res({ passthrough: false }) response: Response
   ) {
-    const { jwt, token } = await this._authService.checkExists(provider, code);
+    try {
+      const { jwt, token } = await this._authService.checkExists(provider, code);
 
-    if (token) {
-      return response.json({ token });
+      if (token) {
+        return response.json({ token });
+      }
+
+      response.cookie('auth', jwt, {
+        domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+        ...(!process.env.NOT_SECURED
+          ? {
+              secure: true,
+              httpOnly: true,
+              sameSite: 'none',
+            }
+          : {}),
+        expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
+      });
+
+      if (process.env.NOT_SECURED) {
+        response.header('auth', jwt);
+      }
+
+      response.header('reload', 'true');
+
+      response.status(200).json({
+        login: true,
+      });
+    } catch (e: any) {
+      response.status(400).send(e.message);
     }
-
-    response.cookie('auth', jwt, {
-      domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-      ...(!process.env.NOT_SECURED
-        ? {
-            secure: true,
-            httpOnly: true,
-            sameSite: 'none',
-          }
-        : {}),
-      expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
-    });
-
-    if (process.env.NOT_SECURED) {
-      response.header('auth', jwt);
-    }
-
-    response.header('reload', 'true');
-
-    response.status(200).json({
-      login: true,
-    });
   }
 }

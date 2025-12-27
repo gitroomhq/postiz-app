@@ -20,6 +20,10 @@ export class AuthService {
     private _notificationService: NotificationService,
     private _emailService: EmailService
   ) {}
+
+  private isUnifiedEmailEnabled(): boolean {
+    return process.env.UNIFIED_EMAIL_ACCOUNTS === 'true';
+  }
   async canRegister(provider: string) {
     if (process.env.DISABLE_REGISTRATION !== 'true' || provider === Provider.GENERIC) {
       return true;
@@ -45,6 +49,30 @@ export class AuthService {
           throw new Error('Email already exists');
         }
 
+        // Check if email exists with any other provider (e.g., Google, GitHub)
+        // If UNIFIED_EMAIL_ACCOUNTS is enabled, require email verification before adding password
+        if (this.isUnifiedEmailEnabled()) {
+          const existingUserAnyProvider = await this._userService.getUserByEmailAnyProvider(body.email);
+          if (existingUserAnyProvider) {
+            // Don't set password immediately - require email verification first
+            // This prevents account hijacking by someone who knows an email
+            const addPasswordToken = AuthChecker.signJWT({
+              id: existingUserAnyProvider.id,
+              email: existingUserAnyProvider.email,
+              passwordHash: AuthChecker.hashPassword(body.password),
+              type: 'add-password',
+            });
+
+            await this._emailService.sendEmail(
+              existingUserAnyProvider.email,
+              'Verify to add password to your account',
+              `Someone is trying to add a password to your account. If this was you, click <a href="${process.env.FRONTEND_URL}/auth/activate/${addPasswordToken}">here</a> to verify and set your password. If you did not request this, please ignore this email.`
+            );
+
+            return { addedOrg: false, jwt: '', activationRequired: true };
+          }
+        }
+
         if (!(await this.canRegister(provider))) {
           throw new Error('Registration is disabled');
         }
@@ -65,24 +93,36 @@ export class AuthService {
               )
             : false;
 
-        const obj = { addedOrg, jwt: await this.jwt(create.users[0].user) };
+        const jwt = await this.jwt(create.users[0].user);
         await this._emailService.sendEmail(
           body.email,
           'Activate your account',
-          `Click <a href="${process.env.FRONTEND_URL}/auth/activate/${obj.jwt}">here</a> to activate your account`
+          `Click <a href="${process.env.FRONTEND_URL}/auth/activate/${jwt}">here</a> to activate your account`
         );
-        return obj;
+        // Activation required if email provider is configured
+        const activationRequired = this._emailService.hasProvider();
+        return { addedOrg, jwt, activationRequired };
       }
 
-      if (!user || !AuthChecker.comparePassword(body.password, user.password)) {
+      // For login: check LOCAL account first, then any provider with password (if unified emails enabled)
+      let loginUser = user;
+      if (!loginUser && this.isUnifiedEmailEnabled()) {
+        // Check if there's an OAuth account with this email that has a password set
+        const oauthUser = await this._userService.getUserByEmailAnyProvider(body.email);
+        if (oauthUser && oauthUser.password) {
+          loginUser = oauthUser;
+        }
+      }
+
+      if (!loginUser || !loginUser.password || !AuthChecker.comparePassword(body.password, loginUser.password)) {
         throw new Error('Invalid user name or password');
       }
 
-      if (!user.activated) {
+      if (!loginUser.activated) {
         throw new Error('User is not activated');
       }
 
-      return { addedOrg: false, jwt: await this.jwt(user) };
+      return { addedOrg: false, jwt: await this.jwt(loginUser), activationRequired: false };
     }
 
     const user = await this.loginOrRegisterProvider(
@@ -101,7 +141,7 @@ export class AuthService {
             addToOrg.role
           )
         : false;
-    return { addedOrg, jwt: await this.jwt(user) };
+    return { addedOrg, jwt: await this.jwt(user), activationRequired: false };
   }
 
   public getOrgFromCookie(cookie?: string) {
@@ -147,6 +187,21 @@ export class AuthService {
       return user;
     }
 
+    // Check if there's an existing account with the same email (any provider)
+    // This allows users with email/password accounts to also sign in via OAuth (if unified emails enabled)
+    if (this.isUnifiedEmailEnabled()) {
+      const existingUserByEmail = await this._userService.getUserByEmailAnyProvider(
+        providerUser.email
+      );
+      if (existingUserByEmail) {
+        // If user is not activated, activate them now since OAuth provider verified the email
+        if (!existingUserByEmail.activated) {
+          await this._userService.activateUser(existingUserByEmail.id);
+        }
+        return existingUserByEmail;
+      }
+    }
+
     if (!(await this.canRegister(provider))) {
       throw new Error('Registration is disabled');
     }
@@ -168,10 +223,24 @@ export class AuthService {
     return create.users[0].user;
   }
 
-  async forgot(email: string) {
-    const user = await this._userService.getUserByEmail(email);
-    if (!user || user.providerName !== Provider.LOCAL) {
-      return false;
+  async forgot(email: string): Promise<{ success: boolean; message?: string }> {
+    // Check for user with this email
+    const user = this.isUnifiedEmailEnabled()
+      ? await this._userService.getUserByEmailAnyProvider(email)
+      : await this._userService.getUserByEmail(email);
+
+    if (!user) {
+      // Don't reveal if email exists for security
+      return { success: true };
+    }
+
+    // Check if user has a password set (only relevant when unified emails enabled)
+    if (this.isUnifiedEmailEnabled() && !user.password) {
+      // User registered with OAuth and hasn't set a password
+      return {
+        success: false,
+        message: 'This account was registered with OAuth (Google, GitHub, etc.). Please sign in using your OAuth provider, or register with email/password to set a password.'
+      };
     }
 
     const resetValues = AuthChecker.signJWT({
@@ -182,8 +251,10 @@ export class AuthService {
     await this._notificationService.sendEmail(
       user.email,
       'Reset your password',
-      `You have requested to reset your passsord. <br />Click <a href="${process.env.FRONTEND_URL}/auth/forgot/${resetValues}">here</a> to reset your password<br />The link will expire in 20 minutes`
+      `You have requested to reset your password. <br />Click <a href="${process.env.FRONTEND_URL}/auth/forgot/${resetValues}">here</a> to reset your password<br />The link will expire in 20 minutes`
     );
+
+    return { success: true };
   }
 
   forgotReturn(body: ForgotReturnPasswordDto) {
@@ -195,24 +266,42 @@ export class AuthService {
       return false;
     }
 
-    return this._userService.updatePassword(user.id, body.password);
+    // Use setPassword (works with any provider) if unified emails enabled, otherwise updatePassword (LOCAL only)
+    return this.isUnifiedEmailEnabled()
+      ? this._userService.setPassword(user.id, body.password)
+      : this._userService.updatePassword(user.id, body.password);
   }
 
   async activate(code: string) {
-    const user = AuthChecker.verifyJWT(code) as {
+    const tokenData = AuthChecker.verifyJWT(code) as {
       id: string;
       activated: boolean;
       email: string;
+      passwordHash?: string;
+      type?: string;
     };
-    if (user.id && !user.activated) {
-      const getUserAgain = await this._userService.getUserByEmail(user.email);
-      if (getUserAgain.activated) {
+
+    // Handle add-password flow (OAuth user adding password) - only when unified emails enabled
+    if (this.isUnifiedEmailEnabled() && tokenData.type === 'add-password' && tokenData.passwordHash) {
+      const user = await this._userService.getUserById(tokenData.id);
+      if (!user) {
         return false;
       }
-      await this._userService.activateUser(user.id);
-      user.activated = true;
-      await NewsletterService.register(user.email);
-      return this.jwt(user as any);
+      // Set the password (passwordHash is already hashed)
+      await this._userService.setPasswordHash(tokenData.id, tokenData.passwordHash);
+      return this.jwt(user);
+    }
+
+    // Handle normal activation flow (new LOCAL user)
+    if (tokenData.id && !tokenData.activated && tokenData.email) {
+      const getUserAgain = await this._userService.getUserByEmail(tokenData.email);
+      if (!getUserAgain || getUserAgain.activated) {
+        return false;
+      }
+      await this._userService.activateUser(tokenData.id);
+      getUserAgain.activated = true; // Reflect DB change in local object
+      await NewsletterService.register(tokenData.email);
+      return this.jwt(getUserAgain);
     }
 
     return false;
@@ -240,6 +329,21 @@ export class AuthService {
     );
     if (checkExists) {
       return { jwt: await this.jwt(checkExists) };
+    }
+
+    // Check if there's an existing account with the same email (any provider) - only when unified emails enabled
+    // This allows users with email/password accounts to also sign in via OAuth
+    if (this.isUnifiedEmailEnabled()) {
+      const existingUserByEmail = await this._userService.getUserByEmailAnyProvider(
+        user.email
+      );
+      if (existingUserByEmail) {
+        // If user is not activated, activate them now since OAuth provider verified the email
+        if (!existingUserByEmail.activated) {
+          await this._userService.activateUser(existingUserByEmail.id);
+        }
+        return { jwt: await this.jwt(existingUserByEmail) };
+      }
     }
 
     return { token };
