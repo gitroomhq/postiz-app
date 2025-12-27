@@ -25,6 +25,9 @@ export class LinkedinPageProvider
   override isBetweenSteps = true;
   override refreshWait = true;
   override maxConcurrentJob = 2; // LinkedIn Page has professional posting limits
+  // Organization pages require full scopes including org-specific permissions.
+  // These scopes require LinkedIn Advertising API or Community Management API access.
+  // Parent LinkedinProvider uses minimal scopes for personal profiles only.
   override scopes = [
     'openid',
     'profile',
