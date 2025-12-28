@@ -11,7 +11,7 @@ export class ThrottlerBehindProxyGuard extends ThrottlerGuard {
       return super.canActivate(context);
     }
 
-    return super.canActivate(context);
+    return true;
   }
 
   protected override async getTracker(
