@@ -376,14 +376,22 @@ export class StripeService {
       apiVersion: '2025-03-31.basil',
     });
 
-    if (body.dub) {
+    const user = await this._userService.getUserById(userId);
+
+    try {
       await stripeCustom.customers.update(customer, {
-        metadata: {
-          dubCustomerExternalId: userId,
-          dubClickId: body.dub,
-        },
+        email: user.email,
+        ...(body.dub
+          ? {
+              metadata: {
+                dubCustomerExternalId: userId,
+                dubClickId: body.dub,
+              },
+            }
+          : {}),
       });
-    }
+    } catch (err) {}
+
     const isUtm = body.utm ? `&utm_source=${body.utm}` : '';
     // @ts-ignore
     const { client_secret } = await stripeCustom.checkout.sessions.create({
