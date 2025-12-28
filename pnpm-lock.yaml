@@ -42,6 +42,9 @@ importers:
       '@copilotkit/runtime':
         specifier: 1.10.6
         version: 1.10.6(c9e743140f0883eda50bf44e0628c06c)
+      '@dub/analytics':
+        specifier: ^0.0.32
+        version: 0.0.32
       '@hookform/resolvers':
         specifier: ^3.3.4
         version: 3.10.0(react-hook-form@7.69.0(react@18.3.1))
@@ -1973,6 +1976,9 @@ packages:
   '@cypress/request@3.0.9':
     resolution: {integrity: sha512-I3l7FdGRXluAS44/0NguwWlO83J18p0vlr2FYHrJkWdNYhgVoiYo61IXPqaOsL+vNxU1ZqMACzItGK3/KKDsdw==}
     engines: {node: '>= 6'}
+
+  '@dub/analytics@0.0.32':
+    resolution: {integrity: sha512-jmZrgbArOX08/kz+hi1s9ggt0k64WzRErt6jM6TfuqUHlXQYNNNRcefvKrmd9vwmbvNGR/GxZnYeyco6Zyw4fg==}
 
   '@emnapi/core@1.7.1':
     resolution: {integrity: sha512-o1uhUASyo921r2XtHYOHy7gdkGLge8ghBEQHMWmyJFoXlpU58kIrhhN3w26lpQb6dspetweapMn2CSNwQ8I4wg==}
@@ -14998,6 +15004,9 @@ packages:
     resolution: {integrity: sha512-xRXBn0pPqQTVQiC8wyQrKs2MOlX24zQ0POGaj0kultvoOCstBQM5yvOhAVSUwOMjQtTvsPWoNCHfPGwaaQJhTw==}
     engines: {node: '>= 18'}
 
+  server-only@0.0.1:
+    resolution: {integrity: sha512-qepMx2JxAa5jjfzxG79yPPq+8BuFToHd1hm7kI+Z4zAq1ftQiP7HcxMhDDItrbtwVeLg/cY2JnKnrcFkmiswNA==}
+
   set-blocking@2.0.0:
     resolution: {integrity: sha512-KiKBS8AnWGEyLzofFfmvKwpdPzqiy16LvQfK3yv/fVH7Bj13/wl3JSR1J+rfgRE9q7xUJK4qvgS8raSOeLUehw==}
 
@@ -19139,6 +19148,10 @@ snapshots:
       tough-cookie: 5.1.2
       tunnel-agent: 0.6.0
       uuid: 8.3.2
+
+  '@dub/analytics@0.0.32':
+    dependencies:
+      server-only: 0.0.1
 
   '@emnapi/core@1.7.1':
     dependencies:
@@ -35802,6 +35815,8 @@ snapshots:
       send: 1.2.1
     transitivePeerDependencies:
       - supports-color
+
+  server-only@0.0.1: {}
 
   set-blocking@2.0.0: {}
 
