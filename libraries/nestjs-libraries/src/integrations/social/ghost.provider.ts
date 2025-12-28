@@ -102,7 +102,9 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
       const token = this.generateGhostJWT(credentials.apiKey);
       const apiUrl = this.getApiUrl(credentials.domain);
 
-      const response = await fetch(`${apiUrl}/users/me/`, {
+      // Use /site/ endpoint instead of /users/me/ because integrations
+      // don't have a "me" user context - they authenticate as the integration itself
+      const response = await fetch(`${apiUrl}/site/`, {
         headers: {
           Authorization: `Ghost ${token}`,
           'Content-Type': 'application/json',
@@ -116,20 +118,20 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
       }
 
       const data = await response.json();
-      const user = data.users?.[0];
+      const site = data.site;
 
-      if (!user) {
-        return 'Could not retrieve user information';
+      if (!site) {
+        return 'Could not retrieve site information';
       }
 
       return {
         refreshToken: '',
         expiresIn: dayjs().add(100, 'years').unix() - dayjs().unix(),
         accessToken: params.code,
-        id: `${credentials.domain}_${user.id}`,
-        name: user.name || user.email,
-        picture: user.profile_image || '',
-        username: user.slug || user.email,
+        id: `ghost_${site.title?.toLowerCase().replace(/\s+/g, '_') || 'site'}`,
+        name: site.title || 'Ghost Site',
+        picture: site.logo || site.icon || '',
+        username: new URL(credentials.domain).hostname,
       };
     } catch (err) {
       console.error('Ghost authentication error:', err);
