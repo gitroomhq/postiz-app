@@ -353,12 +353,12 @@ export const CalendarColumn: FC<{
   const {
     integrations,
     posts,
-    trendings,
     changeDate,
     display,
     reloadCalendarView,
     sets,
     signature,
+    loading,
   } = useCalendar();
   const toaster = useToaster();
   const modal = useModals();
@@ -642,6 +642,7 @@ export const CalendarColumn: FC<{
       className={clsx(
         'flex flex-col w-full min-h-full relative',
         isBeforeNow && 'repeated-strip',
+        loading && 'animate-pulse',
         isBeforeNow
           ? 'cursor-not-allowed'
           : 'border border-newTextColor/5 rounded-[8px]'
@@ -664,6 +665,11 @@ export const CalendarColumn: FC<{
             isBeforeNow && postList.length === 0 && 'col-calendar'
           )}
         >
+          {loading && (
+            <div className="h-full w-full p-[5px] animate-pulse absolute left-0 top-0 z-[50]">
+              <div className="h-full w-full bg-newSettings rounded-[10px]" />
+            </div>
+          )}
           {list.map((post) => (
             <div
               key={post.id}

@@ -21,6 +21,7 @@ import weekOfYear from 'dayjs/plugin/weekOfYear';
 import { extend } from 'dayjs';
 import useCookie from 'react-use-cookie';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import { timer } from '@gitroom/helpers/utils/timer';
 extend(isoWeek);
 extend(weekOfYear);
 
@@ -28,6 +29,7 @@ export const CalendarContext = createContext({
   startDate: newDayjs().startOf('isoWeek').format('YYYY-MM-DD'),
   endDate: newDayjs().endOf('isoWeek').format('YYYY-MM-DD'),
   customer: null as string | null,
+  loading: true,
   sets: [] as { name: string; id: string; content: string[] }[],
   signature: undefined as any,
   comments: [] as Array<{
@@ -251,6 +253,7 @@ export const CalendarWeekProvider: FC<{
         reloadCalendarView: swr.mutate,
         ...filters,
         posts: isLoading ? [] : internalData,
+        loading: swr.isLoading,
         integrations,
         setFilters: setFiltersWrapper,
         changeDate,
