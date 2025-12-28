@@ -40,6 +40,16 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   maxLength() {
     return 3000;
   }
+
+  public override handleErrors(body: string):
+    | {
+        type: 'refresh-token' | 'bad-body' | 'retry';
+        value: string;
+      }
+    | undefined {
+
+    return undefined;
+  }
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     const {
       access_token: accessToken,
@@ -380,16 +390,33 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       })
     );
 
-    // Use the dimensions of the first image for the PDF page size
-    // You could also use the largest dimensions if you prefer
-    const firstImageDimensions = imageData[0];
-    const pageSize = [firstImageDimensions.width, firstImageDimensions.height];
+    // Find the maximum dimensions across all images to use as page size
+    const maxWidth = Math.max(...imageData.map((data) => data.width));
+    const maxHeight = Math.max(...imageData.map((data) => data.height));
+    const pageSize = [maxWidth, maxHeight];
 
-    // Convert images to PDF with exact image dimensions
-    const pdfStream = imageToPDF(
-      imageData.map((data) => data.buffer),
-      pageSize
+    // Resize all images to fit within the page size while maintaining aspect ratio
+    // and centering them on a white background
+    const resizedImageBuffers = await Promise.all(
+      imageData.map(async (data) => {
+        // If image already matches page size, return as-is but convert to JPEG for consistency
+        if (data.width === maxWidth && data.height === maxHeight) {
+          return await sharp(data.buffer).jpeg({ quality: 95 }).toBuffer();
+        }
+
+        // Resize image to fit within page dimensions, then extend with white background to fill page
+        return await sharp(data.buffer)
+          .resize(maxWidth, maxHeight, {
+            fit: 'contain',
+            background: { r: 255, g: 255, b: 255, alpha: 1 },
+          })
+          .jpeg({ quality: 95 })
+          .toBuffer();
+      })
     );
+
+    // Convert images to PDF with consistent page dimensions
+    const pdfStream = imageToPDF(resizedImageBuffers, pageSize);
 
     // Convert stream to buffer
     const pdfBuffer = await this.streamToBuffer(pdfStream);
