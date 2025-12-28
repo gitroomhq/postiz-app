@@ -199,16 +199,23 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
       }
     }
 
+    // Extract title from first line of message if not provided in settings
+    // This handles cases where frontend doesn't pass Ghost-specific settings
+    const messageLines = firstPost.message.split('\n').filter((l) => l.trim());
+    const extractedTitle =
+      messageLines[0]?.replace(/<[^>]*>/g, '').trim() || 'Untitled';
+    const postTitle = settings?.title || extractedTitle;
+
     const postSlug = settings?.slug
       ? slugify(settings.slug, { lower: true, strict: true, trim: true })
-      : slugify(settings?.title || 'untitled', {
+      : slugify(postTitle, {
           lower: true,
           strict: true,
           trim: true,
         });
 
     const ghostPost: Record<string, any> = {
-      title: settings?.title || 'Untitled',
+      title: postTitle,
       html: firstPost.message,
       slug: postSlug,
       status: settings?.status || 'published',
