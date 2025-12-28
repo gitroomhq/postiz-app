@@ -99,9 +99,19 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
     const currentIntegration = integrations.find((p) => p.id === current)!;
 
-    return `${currentIntegration.name} (${capitalize(
-      currentIntegration.identifier.split('-').shift()
-    )})`;
+    return (
+      <div className="flex items-center gap-[10px]">
+        <div className="relative">
+          <img
+            src={`/icons/platforms/${currentIntegration.identifier}.png`}
+            className="w-[20px] h-[20px] rounded-[4px]"
+            alt={currentIntegration.identifier}
+          />
+          <SettingsIcon size={15} className="text-white absolute -end-[5px] -bottom-[5px]" />
+        </div>
+        <div>{currentIntegration.name} Settings</div>
+      </div>
+    );
   }, [current]);
 
   const changeCustomer = useCallback(
@@ -341,7 +351,9 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               Create Post
             </div>
             <div className="flex-1 flex flex-col gap-[16px]">
-              <div className={clsx("flex-1 relative", showSettings && 'hidden')}>
+              <div
+                className={clsx('flex-1 relative', showSettings && 'hidden')}
+              >
                 <div
                   id="social-content"
                   className="gap-[32px] flex flex-col pr-[8px] pt-[20px] pl-[20px] absolute top-0 left-0 w-full h-full overflow-x-hidden overflow-y-scroll scrollbar scrollbar-thumb-newColColor scrollbar-track-newBgColorInner"
@@ -390,11 +402,8 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                       showSettings ? '!rounded-b-none' : ''
                     )}
                   >
-                    <div className="flex">
-                      <SettingsIcon className="text-white" />
-                    </div>
                     <div className="flex-1 text-[14px] font-[600] text-white">
-                      {currentIntegrationText} Settings
+                      {currentIntegrationText}
                     </div>
                     <div>
                       <ChevronDownIcon
@@ -409,7 +418,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                       'text-[14px] text-textColor font-[500] relative'
                     )}
                   >
-                    <div id="social-settings" className="px-[12px] pb-[12px] absolute left-0 top-0 w-full h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newBgColorInner scrollbar-track-newColColor" />
+                    <div
+                      id="social-settings"
+                      className="px-[12px] pb-[12px] absolute left-0 top-0 w-full h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newBgColorInner scrollbar-track-newColColor"
+                    />
                   </div>
                   <style>
                     {`#social-settings [data-id="${current}"] {display: block !important;}`}
