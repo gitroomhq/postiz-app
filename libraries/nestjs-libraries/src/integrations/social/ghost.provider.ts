@@ -11,6 +11,7 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { GhostDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/ghost.dto';
 import slugify from 'slugify';
 import { sign } from 'jsonwebtoken';
+import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 
 interface GhostCredentials {
   domain: string;
@@ -136,6 +137,38 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
     } catch (err) {
       console.error('Ghost authentication error:', err);
       return 'Invalid credentials or connection error';
+    }
+  }
+
+  @Tool({ description: 'Get Ghost tags', dataSchema: [] })
+  async tags(token: string): Promise<Array<{ value: string; label: string }>> {
+    try {
+      const credentials = this.parseCredentials(token);
+      const jwtToken = this.generateGhostJWT(credentials.apiKey);
+      const apiUrl = this.getApiUrl(credentials.domain);
+
+      const response = await fetch(`${apiUrl}/tags/?limit=all`, {
+        headers: {
+          Authorization: `Ghost ${jwtToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        console.error('Failed to fetch Ghost tags:', await response.text());
+        return [];
+      }
+
+      const data = await response.json();
+      return (
+        data.tags?.map((tag: { slug: string; name: string }) => ({
+          value: tag.slug,
+          label: tag.name,
+        })) || []
+      );
+    } catch (err) {
+      console.error('Ghost tags fetch error:', err);
+      return [];
     }
   }
 

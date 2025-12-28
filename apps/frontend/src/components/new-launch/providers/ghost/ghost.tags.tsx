@@ -3,6 +3,12 @@
 import { FC, useCallback, useEffect, useState } from 'react';
 import { ReactTags, Tag, TagSelected } from 'react-tag-autocomplete';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
+import { useCustomProviderFunction } from '@gitroom/frontend/components/launches/helpers/use.custom.provider.function';
+
+interface GhostTag {
+  value: string;
+  label: string;
+}
 
 export const GhostTags: FC<{
   name: string;
@@ -17,6 +23,8 @@ export const GhostTags: FC<{
   const { name, label } = props;
   const form = useSettings();
   const { getValues } = useSettings();
+  const customFunc = useCustomProviderFunction();
+  const [suggestions, setSuggestions] = useState<GhostTag[]>([]);
   const [tagValue, setTagValue] = useState<TagSelected[]>([]);
 
   const onDelete = useCallback(
@@ -44,11 +52,15 @@ export const GhostTags: FC<{
   );
 
   useEffect(() => {
+    // Fetch existing tags from Ghost
+    customFunc.get('tags').then((data: GhostTag[]) => {
+      setSuggestions(data || []);
+    });
+
+    // Load existing values
     const settings = getValues()[name];
     if (settings && Array.isArray(settings)) {
-      setTagValue(
-        settings.map((t: string) => ({ value: t, label: t }))
-      );
+      setTagValue(settings.map((t: string) => ({ value: t, label: t })));
     }
   }, []);
 
@@ -57,7 +69,7 @@ export const GhostTags: FC<{
       <div className="text-[14px] mb-[6px]">{label}</div>
       <ReactTags
         allowNew
-        suggestions={[]}
+        suggestions={suggestions}
         selected={tagValue}
         onAdd={onAddition}
         onDelete={onDelete}
