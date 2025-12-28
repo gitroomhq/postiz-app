@@ -11,12 +11,14 @@ export class ThrottlerBehindProxyGuard extends ThrottlerGuard {
       return super.canActivate(context);
     }
 
-    return true;
+    return super.canActivate(context);
   }
 
   protected override async getTracker(
     req: Record<string, any>
   ): Promise<string> {
-    return req.org.id;
+    return (
+      req.org.id + '_' + (req.url.indexOf('/posts') > -1 ? 'posts' : 'other')
+    );
   }
 }
