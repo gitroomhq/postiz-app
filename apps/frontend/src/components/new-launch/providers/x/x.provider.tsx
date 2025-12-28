@@ -80,18 +80,18 @@ export default withProvider({
     const premium =
       additionalSettings?.find((p: any) => p?.title === 'Verified')?.value ||
       false;
-    if (posts.some((p) => p.length > 4)) {
+    if (posts?.some((p) => (p?.length ?? 0) > 4)) {
       return 'There can be maximum 4 pictures in a post.';
     }
     if (
-      posts.some(
-        (p) => p.some((m) => m.path.indexOf('mp4') > -1) && p.length > 1
+      posts?.some(
+        (p) => p?.some((m) => (m?.path?.indexOf?.('mp4') ?? -1) > -1) && (p?.length ?? 0) > 1
       )
     ) {
       return 'There can be maximum 1 video in a post.';
     }
-    for (const load of posts.flatMap((p) => p.flatMap((a) => a.path))) {
-      if (load.indexOf('mp4') > -1) {
+    for (const load of posts?.flatMap((p) => p?.flatMap((a) => a?.path)) ?? []) {
+      if ((load?.indexOf?.('mp4') ?? -1) > -1) {
         const isValid = await checkVideoDuration(load, premium);
         if (!isValid) {
           return 'Video duration must be less than or equal to 140 seconds.';

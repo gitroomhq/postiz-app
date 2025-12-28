@@ -88,11 +88,11 @@ export default withProvider({
   CustomPreviewComponent: YoutubePreview,
   dto: YoutubeSettingsDto,
   checkValidity: async (items) => {
-    const [firstItems] = items;
-    if (items[0].length !== 1) {
+    const [firstItems] = items ?? [];
+    if (items?.[0]?.length !== 1) {
       return 'You need one media';
     }
-    if (firstItems[0].path.indexOf('mp4') === -1) {
+    if ((firstItems?.[0]?.path?.indexOf?.('mp4') ?? -1) === -1) {
       return 'Item must be a video';
     }
     return true;

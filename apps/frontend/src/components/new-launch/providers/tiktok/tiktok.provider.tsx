@@ -26,7 +26,7 @@ const TikTokSettings: FC<{
   const t = useT();
 
   const isTitle = useMemo(() => {
-    return value?.[0].image.some((p) => p.path.indexOf('mp4') === -1);
+    return value?.[0]?.image?.some((p) => (p?.path?.indexOf?.('mp4') ?? -1) === -1);
   }, [value]);
 
   const disclose = watch('disclose');
@@ -300,18 +300,18 @@ export default withProvider({
   CustomPreviewComponent: TiktokPreview,
   dto: TikTokDto,
   checkValidity: async (items) => {
-    const [firstItems] = items;
-    if (firstItems.length === 0) {
+    const [firstItems] = items ?? [];
+    if ((firstItems?.length ?? 0) === 0) {
       return 'No video / images selected';
     }
     if (
-      firstItems.length > 1 &&
-      firstItems?.some((p) => p?.path?.indexOf('mp4') > -1)
+      (firstItems?.length ?? 0) > 1 &&
+      firstItems?.some((p) => (p?.path?.indexOf?.('mp4') ?? -1) > -1)
     ) {
       return 'Only pictures are supported when selecting multiple items';
     } else if (
       firstItems?.length !== 1 &&
-      firstItems?.[0]?.path?.indexOf('mp4') > -1
+      (firstItems?.[0]?.path?.indexOf?.('mp4') ?? -1) > -1
     ) {
       return 'You need one media';
     }
