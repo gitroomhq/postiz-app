@@ -15,13 +15,10 @@ import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useShallow } from 'zustand/react/shallow';
 import { GeneralPreviewComponent } from '@gitroom/frontend/components/launches/general.preview.component';
 import { IntegrationContext } from '@gitroom/frontend/components/launches/helpers/use.integration';
-import { Button } from '@gitroom/react/form/button';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { InternalChannels } from '@gitroom/frontend/components/launches/internal.channels';
-import { capitalize } from 'lodash';
-import clsx from 'clsx';
 import { createPortal } from 'react-dom';
 
 class Empty {
@@ -317,7 +314,7 @@ export const withProvider = function <T extends object>(params: {
               !SettingsComponent &&
               createPortal(
                 <style>{`#wrapper-settings {display: none !important;} #social-empty {display: block !important;}`}</style>,
-                document.querySelector('#social-settings')!
+                document.querySelector('#social-settings') || document.createElement('div')
               )}
           </div>
         </FormProvider>
