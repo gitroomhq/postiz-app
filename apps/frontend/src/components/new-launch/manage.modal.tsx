@@ -107,7 +107,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             className="w-[20px] h-[20px] rounded-[4px]"
             alt={currentIntegration.identifier}
           />
-          <SettingsIcon size={15} className="text-white absolute -end-[5px] -bottom-[5px]" />
+          <SettingsIcon
+            size={15}
+            className="text-white absolute -end-[5px] -bottom-[5px]"
+          />
         </div>
         <div>{currentIntegration.name} Settings</div>
       </div>
@@ -519,22 +522,26 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                       ? t('schedule', 'Schedule')
                       : t('update', 'Update')}
                   </div>
-                  <div className="flex justify-center items-center h-[20px] w-[20px] pt-[4px] arrow-change">
-                    <DropdownArrowSmallIcon className="group-hover:rotate-180 text-white" />
-                  </div>
+                  {!dummy && (
+                    <div className="flex justify-center items-center h-[20px] w-[20px] pt-[4px] arrow-change">
+                      <DropdownArrowSmallIcon className="group-hover:rotate-180 text-white" />
+                    </div>
+                  )}
                 </button>
 
-                <button
-                  onClick={schedule('now')}
-                  disabled={
-                    selectedIntegrations.length === 0 || loading || locked
-                  }
-                  className="rounded-[8px] z-[300] disabled:cursor-not-allowed disabled:opacity-80 hidden group-hover:flex absolute bottom-[100%] -left-[12px] p-[12px] w-[206px] bg-newBgColorInner"
-                >
-                  <div className="text-white rounded-[8px] bg-[#D82D7E] h-[44px] w-full flex justify-center items-center post-now">
-                    Post Now
-                  </div>
-                </button>
+                {!dummy && (
+                  <button
+                    onClick={schedule('now')}
+                    disabled={
+                      selectedIntegrations.length === 0 || loading || locked
+                    }
+                    className="rounded-[8px] z-[300] disabled:cursor-not-allowed disabled:opacity-80 hidden group-hover:flex absolute bottom-[100%] -left-[12px] p-[12px] w-[206px] bg-newBgColorInner"
+                  >
+                    <div className="text-white rounded-[8px] bg-[#D82D7E] h-[44px] w-full flex justify-center items-center post-now">
+                      Post Now
+                    </div>
+                  </button>
+                )}
               </div>
             )}
           </div>

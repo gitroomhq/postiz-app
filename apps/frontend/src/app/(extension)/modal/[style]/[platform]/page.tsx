@@ -4,7 +4,7 @@ import { StandaloneModal } from '@gitroom/frontend/components/standalone-modal/s
 import { usePathname } from 'next/navigation';
 export default async function Modal() {
   return (
-    <div className="text-textColor">
+    <div className="text-textColor h-screen w-screen">
       <StandaloneModal />
     </div>
   );

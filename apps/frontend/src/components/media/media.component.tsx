@@ -690,64 +690,62 @@ export const MultiMediaComponent: FC<{
             </ReactSortable>
           )}
         </div>
-        {!dummy && (
-          <div className="flex gap-[8px] px-[12px] border-t border-newColColor w-full b1 text-textColor">
-            {!mediaNotAvailable && (
-              <div className="flex py-[10px] b2 items-center gap-[4px]">
-                <div
-                  onClick={showModal}
-                  className="cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]"
-                >
-                  <div className="flex gap-[8px] items-center">
-                    <div>
-                      <InsertMediaIcon />
-                    </div>
-                    <div className="text-[10px] font-[600] maxMedia:hidden block">
-                      {t('insert_media', 'Insert Media')}
-                    </div>
+        <div className="flex gap-[8px] px-[12px] border-t border-newColColor w-full b1 text-textColor">
+          {!mediaNotAvailable && (
+            <div className="flex py-[10px] b2 items-center gap-[4px]">
+              <div
+                onClick={showModal}
+                className="cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]"
+              >
+                <div className="flex gap-[8px] items-center">
+                  <div>
+                    <InsertMediaIcon />
+                  </div>
+                  <div className="text-[10px] font-[600] maxMedia:hidden block">
+                    {t('insert_media', 'Insert Media')}
                   </div>
                 </div>
-                <div
-                  onClick={designMedia}
-                  className="cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]"
-                >
-                  <div className="flex gap-[5px] items-center">
-                    <div>
-                      <DesignMediaIcon />
-                    </div>
-                    <div className="text-[10px] font-[600] iconBreak:hidden block">
-                      {t('design_media', 'Design Media')}
-                    </div>
+              </div>
+              <div
+                onClick={designMedia}
+                className="cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]"
+              >
+                <div className="flex gap-[5px] items-center">
+                  <div>
+                    <DesignMediaIcon />
+                  </div>
+                  <div className="text-[10px] font-[600] iconBreak:hidden block">
+                    {t('design_media', 'Design Media')}
                   </div>
                 </div>
+              </div>
 
-                <ThirdPartyMedia allData={allData} onChange={changeMedia} />
+              <ThirdPartyMedia allData={allData} onChange={changeMedia} />
 
-                {!!user?.tier?.ai && (
-                  <>
-                    <AiImage value={text} onChange={changeMedia} />
-                    <AiVideo value={text} onChange={changeMedia} />
-                  </>
-                )}
-              </div>
-            )}
-            {!mediaNotAvailable && (
-              <div className="text-newColColor h-full flex items-center">
-                <VerticalDividerIcon />
-              </div>
-            )}
-            {!!toolBar && (
-              <div className="flex py-[10px] b2 items-center gap-[4px]">
-                {toolBar}
-              </div>
-            )}
-            {information && (
-              <div className="flex-1 justify-end flex py-[10px] b2 items-center gap-[4px]">
-                {information}
-              </div>
-            )}
-          </div>
-        )}
+              {!!user?.tier?.ai && (
+                <>
+                  <AiImage value={text} onChange={changeMedia} />
+                  <AiVideo value={text} onChange={changeMedia} />
+                </>
+              )}
+            </div>
+          )}
+          {!mediaNotAvailable && (
+            <div className="text-newColColor h-full flex items-center">
+              <VerticalDividerIcon />
+            </div>
+          )}
+          {!!toolBar && (
+            <div className="flex py-[10px] b2 items-center gap-[4px]">
+              {toolBar}
+            </div>
+          )}
+          {information && (
+            <div className="flex-1 justify-end flex py-[10px] b2 items-center gap-[4px]">
+              {information}
+            </div>
+          )}
+        </div>
       </div>
       <div className="text-[12px] text-red-400">{error}</div>
     </>
