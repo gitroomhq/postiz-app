@@ -108,8 +108,8 @@ export const Menu: FC<{
   const disableChannel = useCallback(async () => {
     if (
       !(await deleteDialog(
-        'Are you sure you want to disable this channel?',
-        'Disable Channel'
+        t('are_you_sure_disable_channel', 'Are you sure you want to disable this channel?'),
+        t('disable_channel_title', 'Disable Channel')
       ))
     ) {
       return;
@@ -120,15 +120,15 @@ export const Menu: FC<{
         id,
       }),
     });
-    toast.show('Channel Disabled', 'success');
+    toast.show(t('channel_disabled', 'Channel Disabled'), 'success');
     setShow(false);
     onChange(false);
-  }, []);
+  }, [t]);
   const deleteChannel = useCallback(async () => {
     if (
       !(await deleteDialog(
-        'Are you sure you want to delete this channel?',
-        'Delete Channel'
+        t('are_you_sure_delete_channel', 'Are you sure you want to delete this channel?'),
+        t('delete_channel_title', 'Delete Channel')
       ))
     ) {
       return;
@@ -141,15 +141,15 @@ export const Menu: FC<{
     });
     if (deleteIntegration.status === 406) {
       toast.show(
-        'You have to delete all the posts associated with this channel before deleting it',
+        t('delete_posts_before_channel', 'You have to delete all the posts associated with this channel before deleting it'),
         'warning'
       );
       return;
     }
-    toast.show('Channel Deleted', 'success');
+    toast.show(t('channel_deleted', 'Channel Deleted'), 'success');
     setShow(false);
     onChange(true);
-  }, []);
+  }, [t]);
 
   const enableChannel = useCallback(async () => {
     await fetch('/integrations/enable', {
@@ -158,10 +158,10 @@ export const Menu: FC<{
         id,
       }),
     });
-    toast.show('Channel Enabled', 'success');
+    toast.show(t('channel_enabled', 'Channel Enabled'), 'success');
     setShow(false);
     onChange(false);
-  }, []);
+  }, [t]);
 
   const editTimeTable = useCallback(() => {
     const findIntegration = integrations.find(
@@ -172,20 +172,20 @@ export const Menu: FC<{
       closeOnEscape: false,
       closeOnClickOutside: false,
       askClose: true,
-      title: 'Time Table Slots',
+      title: t('time_table_slots', 'Time Table Slots'),
       children: <TimeTable integration={findIntegration!} mutate={mutate} />,
     });
     setShow(false);
-  }, [integrations]);
+  }, [integrations, t]);
 
   const copyChannelId = useCallback(
     (integration: Integrations) => async () => {
       setShow(false);
       const channelId = integration.id;
       copy(channelId);
-      toast.show(`Channel ID ${channelId} copied to clipboard`, 'success');
+      toast.show(t('channel_id_copied', 'Channel ID copied to clipboard'), 'success');
     },
-    []
+    [t]
   );
 
   const createPost = useCallback(
@@ -255,20 +255,20 @@ export const Menu: FC<{
       (integration) => integration.id === id
     );
     modal.openModal({
-      title: 'Additional Settings',
+      title: t('additional_settings', 'Additional Settings'),
       children: (
         <SettingsModal
           // @ts-ignore
           integration={findIntegration}
           onClose={() => {
             mutate();
-            toast.show('Settings Updated', 'success');
+            toast.show(t('settings_updated', 'Settings Updated'), 'success');
           }}
         />
       ),
     });
     setShow(false);
-  }, [integrations]);
+  }, [integrations, t]);
   const addToCustomer = useCallback(() => {
     const findIntegration = integrations.find(
       (integration) => integration.id === id
@@ -277,7 +277,7 @@ export const Menu: FC<{
       classNames: {
         modal: 'md',
       },
-      title: 'Move / Add to customer',
+      title: t('move_add_to_customer', 'Move / Add to customer'),
       withCloseButton: false,
       closeOnEscape: true,
       closeOnClickOutside: true,
@@ -287,16 +287,16 @@ export const Menu: FC<{
           integration={findIntegration}
           onClose={() => {
             mutate();
-            toast.show('Customer Updated', 'success');
+            toast.show(t('customer_updated', 'Customer Updated'), 'success');
           }}
         />
       ),
     });
     setShow(false);
-  }, [integrations]);
+  }, [integrations, t]);
   const updateCredentials = useCallback(() => {
     modal.openModal({
-      title: 'Custom URL',
+      title: t('custom_url', 'Custom URL'),
       withCloseButton: false,
       classNames: {
         modal: 'md',
@@ -309,7 +309,7 @@ export const Menu: FC<{
         />
       ),
     });
-  }, []);
+  }, [t]);
 
   return (
     <div
@@ -488,8 +488,8 @@ export const Menu: FC<{
               <div className="text-[14px]">
                 {t('change_bot', 'Change Bot')}
                 {[
-                  canChangeProfilePicture && 'Picture',
-                  canChangeNickName && 'Nickname',
+                  canChangeProfilePicture && t('picture', 'Picture'),
+                  canChangeNickName && t('label_nickname', 'Nickname'),
                 ]
                   .filter((f) => f)
                   .join(' / ')}

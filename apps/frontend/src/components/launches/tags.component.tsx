@@ -1,8 +1,9 @@
+'use client';
+
 import { FC, useCallback, useMemo, useState } from 'react';
 import { ReactTags } from 'react-tag-autocomplete';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
-import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { Input } from '@gitroom/react/form/input';
 import { ColorPicker } from '@gitroom/react/form/color.picker';
 import { Button } from '@gitroom/react/form/button';
@@ -71,7 +72,7 @@ export const TagsComponentInner: FC<{
   const addTag = useCallback(async () => {
     const val: string | undefined = await new Promise((resolve) => {
       modals.openModal({
-        title: 'Add new tag',
+        title: t('add_new_tag', 'Add New Tag'),
         children: (close) => (
           <ShowModal tag="" close={close} resolve={resolve} />
         ),
@@ -114,7 +115,7 @@ export const TagsComponentInner: FC<{
         </div>
         <div className="cursor-pointer flex gap-[4px]">
           {tagValue.length === 0 ? (
-            'Add New Tag'
+            t('add_new_tag', 'Add New Tag')
           ) : (
             <>
               <div
@@ -134,7 +135,7 @@ export const TagsComponentInner: FC<{
         </div>
       </div>
       {isOpen && (
-        <div className="z-[300] absolute left-0 bottom-[100%] w-[240px] bg-newBgColorInner p-[12px] menu-shadow -translate-y-[10px] flex flex-col">
+        <div className="z-[300] absolute start-0 bottom-[100%] w-[240px] bg-newBgColorInner p-[12px] menu-shadow -translate-y-[10px] flex flex-col">
           {(data?.tags || []).map((p: any) => (
             <div
               onClick={() => {
@@ -180,7 +181,7 @@ export const TagsComponentInner: FC<{
             <div>
               <PlusIcon />
             </div>
-            <div className="text-[13px] font-[600]">Add New Tag</div>
+            <div className="text-[13px] font-[600]">{t('add_new_tag', 'Add New Tag')}</div>
           </div>
         </div>
       )}
@@ -431,13 +432,13 @@ const ShowModal: FC<{
       <Input
         name="name"
         disableForm={true}
-        label="Name"
+        label={t('tag_name', 'Name')}
         value={tagName}
         onChange={(e) => setTagName(e.target.value)}
       />
       <ColorPicker
         onChange={(e) => setColor(e.target.value)}
-        label="Tag Color"
+        label={t('label_tag_color', 'Tag Color')}
         name="color"
         value={color}
         enabled={true}

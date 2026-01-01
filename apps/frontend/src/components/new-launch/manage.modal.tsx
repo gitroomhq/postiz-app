@@ -100,20 +100,20 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
     const currentIntegration = integrations.find((p) => p.id === current)!;
 
     return (
-      <div className="flex items-center gap-[10px]">
-        <div className="relative">
-          <img
-            src={`/icons/platforms/${currentIntegration.identifier}.png`}
-            className="w-[20px] h-[20px] rounded-[4px]"
-            alt={currentIntegration.identifier}
-          />
-          <SettingsIcon
-            size={15}
-            className="text-white absolute -end-[5px] -bottom-[5px]"
-          />
+        <div className="flex items-center gap-[10px]">
+          <div className="relative">
+            <img
+              src={`/icons/platforms/${currentIntegration.identifier}.png`}
+              className="w-[20px] h-[20px] rounded-[4px]"
+              alt={currentIntegration.identifier}
+            />
+            <SettingsIcon
+              size={15}
+              className="text-white absolute -end-[5px] -bottom-[5px]"
+            />
+          </div>
+          <div>{currentIntegration.name} {t('channel_settings', 'Settings')}</div>
         </div>
-        <div>{currentIntegration.name} Settings</div>
-      </div>
     );
   }, [current]);
 
@@ -158,8 +158,8 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
     setLoading(true);
     if (
       !(await deleteDialog(
-        'Are you sure you want to delete this post?',
-        'Yes, delete it!'
+        t('are_you_sure_you_want_to_delete_post', 'Are you sure you want to delete this post?'),
+        t('yes_delete_it', 'Yes, delete it!')
       ))
     ) {
       setLoading(false);
@@ -193,7 +193,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           toaster.show(
             '' +
               item.integration.name +
-              ' Your post should have at least one character or one image.',
+              ' ' + t('post_needs_content_or_image', 'Your post should have at least one character or one image.'),
             'warning'
           );
           setLoading(false);
@@ -203,7 +203,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
         for (const item of checkAllValid) {
           if (item.valid === false) {
-            toaster.show('Please fix your settings', 'warning');
+            toaster.show(t('please_fix_your_settings', 'Please fix your settings'), 'warning');
             item.fix();
             setLoading(false);
             setShowSettings(true);
@@ -240,7 +240,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
         for (const item of sliceNeeded) {
           toaster.show(
-            `${item?.integration?.name} (${item?.integration?.identifier}) post is too long, please fix it`,
+            `${item?.integration?.name} (${item?.integration?.identifier}) ${t('post_is_too_long', 'post is too long, please fix it')}`,
             'warning'
           );
           item.preview();
@@ -265,8 +265,8 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       const shortLink = !shortLinkUrl.ask
         ? false
         : await deleteDialog(
-            'Do you want to shortlink the URLs? it will let you get statistics over clicks',
-            'Yes, shortlink it!'
+            t('shortlink_urls_question', 'Do you want to shortlink the URLs? it will let you get statistics over clicks'),
+            t('yes_shortlink_it', 'Yes, shortlink it!')
           );
 
       const group = existingData.group || makeId(10);
@@ -327,8 +327,8 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           mutate();
           toaster.show(
             !existingData.integration
-              ? 'Added successfully'
-              : 'Updated successfully'
+              ? t('added_successfully', 'Added successfully')
+              : t('updated_successfully', 'Updated successfully')
           );
         }
         if (customClose) {
@@ -349,9 +349,9 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
     <div className="w-full h-full flex-1 p-[40px] flex relative">
       <div className="flex flex-1 bg-newBgColorInner rounded-[20px] flex-col">
         <div className="flex-1 flex">
-          <div className="flex flex-col flex-1 border-r border-newBorder">
-            <div className="bg-newBgColor h-[65px] rounded-tl-[20px] flex items-center px-[20px] text-[20px] font-[600]">
-              Create Post
+          <div className="flex flex-col flex-1 border-e border-newBorder">
+            <div className="bg-newBgColor h-[65px] rounded-s-[20px] !rounded-b-[0] flex items-center px-[20px] text-[20px] font-[600]">
+              {t('create_post_title', 'Create Post')}
             </div>
             <div className="flex-1 flex flex-col gap-[16px]">
               <div
@@ -359,7 +359,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               >
                 <div
                   id="social-content"
-                  className="gap-[32px] flex flex-col pr-[8px] pt-[20px] pl-[20px] absolute top-0 left-0 w-full h-full overflow-x-hidden overflow-y-scroll scrollbar scrollbar-thumb-newColColor scrollbar-track-newBgColorInner"
+                  className="gap-[32px] flex flex-col pe-[8px] pt-[20px] ps-[20px] absolute top-0 left-0 w-full h-full overflow-x-hidden overflow-y-scroll scrollbar scrollbar-thumb-newColColor scrollbar-track-newBgColorInner"
                 >
                   <div className="flex w-full">
                     <div className="flex flex-1">
@@ -434,16 +434,16 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             </div>
           </div>
           <div className="w-[580px] flex flex-col">
-            <div className="bg-newBgColor h-[65px] rounded-tr-[20px] flex items-center px-[20px] text-[20px] font-[600]">
-              <div className="flex-1">Post Preview</div>
+            <div className="bg-newBgColor h-[65px] rounded-e-[20px] !rounded-b-[0] flex items-center px-[20px] text-[20px] font-[600]">
+              <div className="flex-1">{t('post_preview', 'Post Preview')}</div>
               <div className="cursor-pointer">
                 <CloseIcon onClick={askClose} className="text-[#A3A3A3]" />
               </div>
             </div>
             <div className="flex-1 relative">
               <Scrollable
-                scrollClasses="!pr-[20px]"
-                className="absolute top-0 p-[20px] pr-[8px] left-0 w-full h-full overflow-x-hidden overflow-y-scroll scrollbar scrollbar-thumb-newColColor scrollbar-track-newBgColorInner"
+                scrollClasses="!pe-[20px]"
+                className="absolute top-0 p-[20px] pe-[8px] left-0 w-full h-full overflow-x-hidden overflow-y-scroll scrollbar scrollbar-thumb-newColColor scrollbar-track-newBgColorInner"
               >
                 <ShowAllProviders ref={ref} />
               </Scrollable>
@@ -451,7 +451,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           </div>
         </div>
         <div className="select-none h-[84px] py-[20px] border-t border-newBorder flex items-center">
-          <div className="flex-1 flex pl-[20px] gap-[8px]">
+          <div className="flex-1 flex ps-[20px] gap-[8px]">
             {!dummy && (
               <TagsComponent
                 name="tags"
@@ -467,7 +467,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               <RepeatComponent repeat={repeater} onChange={setRepeater} />
             )}
           </div>
-          <div className="pr-[20px] flex items-center justify-end gap-[8px]">
+          <div className="pe-[20px] flex items-center justify-end gap-[8px]">
             {existingData?.integration && (
               <button
                 onClick={deletePost}
@@ -476,7 +476,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 <div>
                   <TrashIcon />
                 </div>
-                <div>Delete Post</div>
+                <div>{t('delete_post', 'Delete Post')}</div>
               </button>
             )}
             <DatePicker onChange={setDate} date={date} />
@@ -488,12 +488,12 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 onClick={schedule('draft')}
                 className="cursor-pointer disabled:cursor-not-allowed px-[20px] h-[44px] bg-btnSimple justify-center items-center flex rounded-[8px] text-[15px] font-[600]"
               >
-                Save as Draft
+                {t('save_as_draft', 'Save as Draft')}
               </button>
             )}
             {addEditSets && (
               <button
-                className="text-white text-[15px] font-[600] min-w-[180px] btnSub disabled:cursor-not-allowed disabled:opacity-80 outline-none gap-[8px] flex justify-center items-center h-[44px] rounded-[8px] bg-[#612BD3] pl-[20px] pr-[16px]"
+                className="text-white text-[15px] font-[600] min-w-[180px] btnSub disabled:cursor-not-allowed disabled:opacity-80 outline-none gap-[8px] flex justify-center items-center h-[44px] rounded-[8px] bg-[#612BD3] ps-[20px] pe-[16px]"
                 disabled={
                   selectedIntegrations.length === 0 || loading || locked
                 }
@@ -509,13 +509,13 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                     selectedIntegrations.length === 0 || loading || locked
                   }
                   onClick={schedule('schedule')}
-                  className="text-white min-w-[180px] btnSub disabled:cursor-not-allowed disabled:opacity-80 outline-none gap-[8px] flex justify-center items-center h-[44px] rounded-[8px] bg-[#612BD3] pl-[20px] pr-[16px]"
+                  className="text-white min-w-[180px] btnSub disabled:cursor-not-allowed disabled:opacity-80 outline-none gap-[8px] flex justify-center items-center h-[44px] rounded-[8px] bg-[#612BD3] ps-[20px] pe-[16px]"
                 >
                   <div className="text-[15px] font-[600]">
                     {selectedIntegrations.length === 0
-                      ? 'Check the circles above'
+                      ? t('check_circles_above', 'Check the circles above')
                       : dummy
-                      ? 'Create output'
+                      ? t('create_output', 'Create output')
                       : !existingData?.integration
                       ? t('add_to_calendar', 'Add to calendar')
                       : existingData?.posts?.[0]?.state === 'DRAFT'
@@ -538,7 +538,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                     className="rounded-[8px] z-[300] disabled:cursor-not-allowed disabled:opacity-80 hidden group-hover:flex absolute bottom-[100%] -left-[12px] p-[12px] w-[206px] bg-newBgColorInner"
                   >
                     <div className="text-white rounded-[8px] bg-[#D82D7E] h-[44px] w-full flex justify-center items-center post-now">
-                      Post Now
+                      {t('post_now', 'Post Now')}
                     </div>
                   </button>
                 )}
@@ -562,8 +562,8 @@ Post content can be added using the addPostContentFor{num} function.
 After using the addPostFor{num} it will create a new addPostContentFor{num+ 1} function.
 `}
         labels={{
-          title: 'Your Assistant',
-          initial: 'Hi! I can help you to refine your social media posts.',
+          title: t('your_assistant', 'Your Assistant'),
+          initial: t('assistant_initial_message', 'Hi! I can help you to refine your social media posts.'),
         }}
       />
     </div>

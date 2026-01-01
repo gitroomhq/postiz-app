@@ -76,7 +76,7 @@ export const SettingsPopup: FC<{
     if (getRef) {
       return;
     }
-    toast.show('Profile updated');
+    toast.show(t('profile_updated', 'Profile updated'));
     swr.mutate('/marketplace/account');
     close();
   }, []);

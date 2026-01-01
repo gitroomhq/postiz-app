@@ -1,3 +1,5 @@
+'use client';
+
 import { useCallback } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -38,7 +40,7 @@ export const GoogleProvider = () => {
           />
         </svg>
       </div>
-      <div className="block xs:hidden">Google</div>
+      <div className="block xs:hidden">{t('google', 'Google')}</div>
     </div>
   );
 };

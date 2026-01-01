@@ -1,3 +1,5 @@
+'use client';
+
 import { FC, useMemo, useState } from 'react';
 import { Select } from '@gitroom/react/form/select';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -5,46 +7,46 @@ import { useClickOutside } from '@mantine/hooks';
 import { isUSCitizen } from '@gitroom/frontend/components/launches/helpers/isuscitizen.utils';
 import clsx from 'clsx';
 import { RepeatIcon, DropdownArrowIcon } from '@gitroom/frontend/components/ui/icons';
-const list = [
+const getList = (t: (key: string, fallback: string) => string) => [
   {
     value: 1,
-    label: 'Day',
+    label: t('day', 'Day'),
   },
   {
     value: 2,
-    label: 'Two Days',
+    label: t('two_days', 'Two Days'),
   },
   {
     value: 3,
-    label: 'Three Days',
+    label: t('three_days', 'Three Days'),
   },
   {
     value: 4,
-    label: 'Four Days',
+    label: t('four_days', 'Four Days'),
   },
   {
     value: 5,
-    label: 'Five Days',
+    label: t('five_days', 'Five Days'),
   },
   {
     value: 6,
-    label: 'Six Days',
+    label: t('six_days', 'Six Days'),
   },
   {
     value: 7,
-    label: 'Week',
+    label: t('week', 'Week'),
   },
   {
     value: 14,
-    label: 'Two Weeks',
+    label: t('two_weeks', 'Two Weeks'),
   },
   {
     value: 30,
-    label: 'Month',
+    label: t('month', 'Month'),
   },
   {
     value: null,
-    label: 'Cancel',
+    label: t('cancel', 'Cancel'),
   },
 ];
 export const RepeatComponent: FC<{
@@ -53,6 +55,7 @@ export const RepeatComponent: FC<{
 }> = (props) => {
   const { repeat } = props;
   const t = useT();
+  const list = getList(t);
   const [isOpen, setIsOpen] = useState(false);
 
   const ref = useClickOutside(() => {
@@ -67,7 +70,7 @@ export const RepeatComponent: FC<{
       return '';
     }
     return list.find((p) => p.value === repeat)?.label;
-  }, [repeat]);
+  }, [repeat, list]);
 
   return (
     <div
@@ -86,7 +89,7 @@ export const RepeatComponent: FC<{
         </div>
         <div className="cursor-pointer">
           {repeat
-            ? `Repeat Post Every ${everyLabel}`
+            ? `${t('repeat_post_every_label', 'Repeat Post Every')} ${everyLabel}`
             : t('repeat_post_every', 'Repeat Post Every...')}
         </div>
         <div className="cursor-pointer">
@@ -94,7 +97,7 @@ export const RepeatComponent: FC<{
         </div>
       </div>
       {isOpen && (
-        <div className="z-[300] absolute left-0 bottom-[100%] w-[240px] bg-newBgColorInner p-[12px] menu-shadow -translate-y-[10px] flex flex-col">
+        <div className="z-[300] absolute start-0 bottom-[100%] w-[240px] bg-newBgColorInner p-[12px] menu-shadow -translate-y-[10px] flex flex-col">
           {list.map((p) => (
             <div
               onClick={() => {

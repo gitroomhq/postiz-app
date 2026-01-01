@@ -51,7 +51,7 @@ export const ButtonCaster: FC<{
               </clipPath>
             </defs>
           </svg>
-          <div className="block xs:hidden">Farcaster</div>
+          <div className="block xs:hidden">{t('farcaster', 'Farcaster')}</div>
         </div>
       </NeynarAuthButton>
     </NeynarContextProvider>

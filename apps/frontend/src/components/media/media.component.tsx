@@ -319,10 +319,10 @@ export const MediaBox: FC<{
         className="cursor-pointer bg-btnSimple changeColor flex gap-[8px] h-[44px] px-[18px] justify-center items-center rounded-[8px]"
       >
         <PlusIcon size={14} />
-        <div>Upload</div>
+        <div>{t('upload', 'Upload')}</div>
       </button>
     );
-  }, []);
+  }, [t]);
 
   return (
     <DropFiles className="flex flex-col flex-1" onDrop={dragAndDrop}>
@@ -335,8 +335,8 @@ export const MediaBox: FC<{
         >
           {!isLoading && !!data?.results?.length && (
             <div className="flex-1 text-[14px] font-[600] whitespace-pre-line">
-              Select or upload pictures (maximum 5 at a time).{'\n'}
-              You can also drag & drop pictures.
+              {t('select_or_upload_pictures_max_5', 'Select or upload pictures (maximum 5 at a time).')}{'\n'}
+              {t('you_can_drag_drop_pictures', 'You can also drag & drop pictures.')}
             </div>
           )}
           <input
@@ -384,11 +384,11 @@ export const MediaBox: FC<{
               <>
                 <NoMediaIcon />
                 <div className="text-[20px] font-[600]">
-                  You don't have any media yet
+                  {t('you_dont_have_any_media_yet', "You don't have any media yet")}
                 </div>
                 <div className="whitespace-pre-line text-newTextColor/[0.6] text-center">
-                  Select or upload pictures (maximum 5 at a time). {'\n'}
-                  You can also drag & drop pictures.
+                  {t('select_or_upload_pictures_max_5', 'Select or upload pictures (maximum 5 at a time).')} {'\n'}
+                  {t('you_can_drag_drop_pictures', 'You can also drag & drop pictures.')}
                 </div>
                 <div className="forceChange">{btn}</div>
               </>
@@ -474,7 +474,7 @@ export const MediaBox: FC<{
               onClick={() => modals.closeCurrent()}
               className="cursor-pointer h-[52px] px-[20px] items-center justify-center border border-newTextColor/10 flex rounded-[10px]"
             >
-              Cancel
+              {t('cancel', 'Cancel')}
             </button>
             {!isLoading && !!data?.results?.length && (
               <button
@@ -542,6 +542,7 @@ export const MultiMediaComponent: FC<{
   } = props;
   const user = useUser();
   const modals = useModals();
+  const t = useT();
   useEffect(() => {
     if (value) {
       setCurrentMedia(value);
@@ -576,7 +577,7 @@ export const MultiMediaComponent: FC<{
   );
   const showModal = useCallback(() => {
     modals.openModal({
-      title: 'Media Library',
+      title: t('media_library', 'Media Library'),
       askClose: false,
       closeOnEscape: true,
       fullScreen: true,
@@ -586,7 +587,7 @@ export const MultiMediaComponent: FC<{
         <MediaBox setMedia={changeMedia} closeModal={close} />
       ),
     });
-  }, [changeMedia]);
+  }, [changeMedia, t]);
 
   const clearMedia = useCallback(
     (topIndex: number) => () => {
@@ -606,16 +607,15 @@ export const MultiMediaComponent: FC<{
     if (!!user?.tier?.ai && !dummy) {
       modals.openModal({
         askClose: false,
-        title: 'Design Media',
+        title: t('design_media', 'Design Media'),
         size: '80%',
         children: (close) => (
           <Polonto setMedia={changeMedia} closeModal={close} />
         ),
       });
     }
-  }, [changeMedia]);
+  }, [changeMedia, t]);
 
-  const t = useT();
 
   return (
     <>
@@ -641,7 +641,7 @@ export const MultiMediaComponent: FC<{
                       <div
                         onClick={async () => {
                           modals.openModal({
-                            title: 'Media Settings',
+                            title: t('media_settings', 'Media Settings'),
                             children: (close) => (
                               <MediaComponentInner
                                 media={media as any}
@@ -790,7 +790,7 @@ export const MediaComponent: FC<{
 
   const showDesignModal = useCallback(() => {
     modals.openModal({
-      title: 'Media Editor',
+      title: t('media_editor', 'Media Editor'),
       askClose: false,
       closeOnEscape: true,
       fullScreen: true,
@@ -805,7 +805,7 @@ export const MediaComponent: FC<{
         />
       ),
     });
-  }, []);
+  }, [t]);
   const changeMedia = useCallback((m: { path: string; id: string }[]) => {
     setCurrentMedia(m[0]);
     onChange({
@@ -817,7 +817,7 @@ export const MediaComponent: FC<{
   }, []);
   const showModal = useCallback(() => {
     modals.openModal({
-      title: 'Media Library',
+      title: t('media_library', 'Media Library'),
       askClose: false,
       closeOnEscape: true,
       fullScreen: true,
@@ -827,7 +827,7 @@ export const MediaComponent: FC<{
         <MediaBox setMedia={changeMedia} closeModal={close} type={type} />
       ),
     });
-  }, []);
+  }, [t]);
   const clearMedia = useCallback(() => {
     setCurrentMedia(undefined);
     onChange({

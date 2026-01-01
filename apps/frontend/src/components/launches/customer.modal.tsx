@@ -1,4 +1,5 @@
-import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
+'use client';
+
 import React, { FC, useCallback, useEffect, useState } from 'react';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { Integration } from '@prisma/client';
@@ -56,8 +57,8 @@ export const CustomerModal: FC<{
           classNames={{
             label: 'text-white',
           }}
-          label="Select Customer"
-          placeholder="Start typing..."
+          label={t('select_customer_label', 'Select Customer')}
+          placeholder={t('start_typing', 'Start typing...')}
           data={data?.map((p: any) => p.name) || []}
         />
       </div>

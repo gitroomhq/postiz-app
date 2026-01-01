@@ -1,4 +1,5 @@
-import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
+'use client';
+
 import React, { FC, Fragment, useCallback, useMemo, useState } from 'react';
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
 import dayjs from 'dayjs';
@@ -118,7 +119,7 @@ export const TimeTable: FC<{
           <div className="mt-[16px] flex justify-center gap-[16px]">
             <div className="w-[100px]">
               <Select
-                label="Hour"
+                label={t('hour', 'Hour')}
                 name="hour"
                 disableForm={true}
                 className="w-[100px] mt-[8px]"
@@ -135,7 +136,7 @@ export const TimeTable: FC<{
             </div>
             <div className="w-[100px]">
               <Select
-                label="Minutes"
+                label={t('minutes', 'Minutes')}
                 name="minutes"
                 disableForm={true}
                 className="w-[100px] mt-[8px]"

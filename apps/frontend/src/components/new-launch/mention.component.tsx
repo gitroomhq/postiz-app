@@ -1,7 +1,8 @@
+'use client';
+
 import React, { FC, useEffect, useImperativeHandle, useState } from 'react';
 import { computePosition, flip, shift } from '@floating-ui/dom';
 import { posToDOMRect, ReactRenderer } from '@tiptap/react';
-import { timer } from '@gitroom/helpers/utils/timer';
 
 // Debounce utility for TipTap
 const debounce = <T extends any[]>(
@@ -93,7 +94,7 @@ const MentionList: FC = (props: any) => {
         ) : (
           props?.items?.map((item: any, index: any) => (
             <button
-              className={`flex gap-[10px] w-full p-2 text-left rounded hover:bg-gray-100 ${
+              className={`flex gap-[10px] w-full p-2 text-start rounded hover:bg-gray-100 ${
                 index === selectedIndex ? 'bg-blue-100' : ''
               }`}
               key={item.id || index}

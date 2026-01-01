@@ -114,7 +114,7 @@ export const ApiModal: FC<{
       return;
     }
     methods.setError('api', {
-      message: 'Invalid API key',
+      message: t('invalid_api_key', 'Invalid API key'),
     });
   }, []);
 
@@ -343,7 +343,7 @@ export const AddProviderComponent: FC<{
             await fetch(`/integrations/social/${identifier}`)
           ).json();
           modal.openModal({
-            title: 'Web3 provider',
+            title: t('web3_provider', 'Web3 provider'),
             withCloseButton: false,
             classNames: {
               modal: 'bg-transparent text-textColor',
@@ -368,7 +368,7 @@ export const AddProviderComponent: FC<{
             )
           ).json();
           if (err) {
-            toaster.show('Could not connect to the platform', 'warning');
+            toaster.show(t('could_not_connect_to_platform', 'Could not connect to the platform'), 'warning');
             return;
           }
           window.location.href = url;
@@ -392,7 +392,7 @@ export const AddProviderComponent: FC<{
         if (customFields) {
           modal.closeAll();
           modal.openModal({
-            title: 'Add Provider',
+            title: t('add_provider_title', 'Add Provider'),
             withCloseButton: false,
             classNames: {
               modal: 'bg-transparent text-textColor',
