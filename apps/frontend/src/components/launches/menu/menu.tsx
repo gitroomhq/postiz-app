@@ -255,13 +255,7 @@ export const Menu: FC<{
       (integration) => integration.id === id
     );
     modal.openModal({
-      classNames: {
-        modal: 'w-[100%] max-w-[600px] bg-transparent text-textColor',
-      },
-      size: '100%',
-      withCloseButton: false,
-      closeOnEscape: true,
-      closeOnClickOutside: true,
+      title: 'Additional Settings',
       children: (
         <SettingsModal
           // @ts-ignore
