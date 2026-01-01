@@ -315,7 +315,10 @@
       "next": "14.2.35"
     },
     "onlyBuiltDependencies": [
-      "bcrypt"
+      "@prisma/client",
+      "@prisma/engines",
+      "bcrypt",
+      "prisma"
     ]
   }
 }
