@@ -10,10 +10,8 @@ import React, {
   ClipboardEvent,
   forwardRef,
   useImperativeHandle,
-  Fragment,
 } from 'react';
 import clsx from 'clsx';
-import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import EmojiPicker from 'emoji-picker-react';
 import { Theme } from 'emoji-picker-react';
@@ -41,7 +39,6 @@ import {
   EditorContent,
   Extension,
   mergeAttributes,
-  Node,
 } from '@tiptap/react';
 import Document from '@tiptap/extension-document';
 import Bold from '@tiptap/extension-bold';
@@ -100,6 +97,7 @@ export const EditorWrapper: FC<{
   totalPosts: number;
   value: string;
 }> = () => {
+  const t = useT();
   const {
     setGlobalValueText,
     setInternalValueText,
@@ -129,11 +127,13 @@ export const EditorWrapper: FC<{
     setLoadedState,
     selectedIntegration,
     chars,
+    comments,
   } = useLaunchStore(
     useShallow((state) => ({
       internal: state.internal.find((p) => p.integration.id === state.current),
       internalFromAll: state.integrations.find((p) => p.id === state.current),
       global: state.global,
+      comments: state.comments,
       current: state.current,
       addRemoveInternal: state.addRemoveInternal,
       dummy: state.dummy,
@@ -275,14 +275,14 @@ export const EditorWrapper: FC<{
   const goBackToGlobal = useCallback(async () => {
     if (
       await deleteDialog(
-        'This action is irreversible. Are you sure you want to go back to global mode?',
-        'Yes, go back to global mode'
+        t('are_you_sure_go_back_to_global_mode', 'This action is irreversible. Are you sure you want to go back to global mode?'),
+        t('yes_go_back_to_global_mode', 'Yes, go back to global mode')
       )
     ) {
       setLoaded(false);
       addRemoveInternal(current);
     }
-  }, [addRemoveInternal, current]);
+  }, [addRemoveInternal, current, t]);
 
   const addValue = useCallback(
     (index: number) => () => {
@@ -317,8 +317,8 @@ export const EditorWrapper: FC<{
     (index: number) => async () => {
       if (
         !(await deleteDialog(
-          'Are you sure you want to delete this post?',
-          'Yes, delete it!'
+          t('are_you_sure_delete_this_post', 'Are you sure you want to delete this post?'),
+          t('yes_delete_it', 'Yes, delete it!')
         ))
       ) {
         return;
@@ -332,7 +332,7 @@ export const EditorWrapper: FC<{
       deleteGlobalValue(index);
       setLoaded(false);
     },
-    [current, global, internal]
+    [current, global, internal, t]
   );
 
   if (!loaded || !loadedState) {
@@ -343,8 +343,9 @@ export const EditorWrapper: FC<{
     <div
       className={clsx(
         'relative flex-col gap-[20px] flex-1',
-        (items.length === 1 || !canEdit) && 'flex',
-        !canEdit && !isCreateSet && 'bg-newSettings rounded-[12px]'
+        (items.length === 1 || !canEdit || !comments) && 'flex',
+        ((!canEdit && !isCreateSet) || !comments) &&
+          'bg-newSettings rounded-[12px]'
       )}
     >
       {isCreateSet && current !== 'global' && (
@@ -357,7 +358,7 @@ export const EditorWrapper: FC<{
               <div className="w-[54px] h-[54px] rounded-full bg-newSettings opacity-80" />
             </div>
             <div className="text-[14px] font-[600] text-white">
-              You can't edit networks when creating a set
+              {t('cant_edit_networks_when_creating_set', "You can't edit networks when creating a set")}
             </div>
           </div>
           <div className="absolute w-full h-full left-0 top-0 bg-newBackdrop opacity-60 z-[100] rounded-[12px]" />
@@ -370,7 +371,7 @@ export const EditorWrapper: FC<{
               setLoaded(false);
               addRemoveInternal(current);
             }}
-            className="text-center absolute w-full h-full left-0 top-0 items-center justify-center flex z-[101] flex-col gap-[16px]"
+            className="text-center absolute w-full h-full p-[20px] left-0 top-0 items-center justify-center flex z-[101] flex-col gap-[16px]"
           >
             <div>
               <div className="w-[54px] h-[54px] rounded-full absolute z-[101] flex justify-center items-center">
@@ -379,13 +380,11 @@ export const EditorWrapper: FC<{
               <div className="w-[54px] h-[54px] rounded-full bg-newSettings opacity-80" />
             </div>
             <div className="text-[14px] font-[600] text-white">
-              Click this button to exit global editing
-              <br />
-              and customize the post for this channel
+              {t('click_to_exit_global_editing', 'Click this button to exit global editing and customize the post for this channel')}
             </div>
             <div>
               <div className="text-white rounded-[8px] h-[44px] px-[20px] bg-[#D82D7E] cursor-pointer flex justify-center items-center">
-                Edit content
+                {t('edit_content', 'Edit content')}
               </div>
             </div>
           </div>
@@ -398,9 +397,9 @@ export const EditorWrapper: FC<{
           className={clsx(
             'relative flex flex-col gap-[20px] flex-1 bg-newSettings',
             index === 0 && 'rounded-t-[12px]',
-            index === items.length - 1 && 'rounded-b-[12px]',
+            (index === items.length - 1 || !comments) && 'rounded-b-[12px]',
             !canEdit && !isCreateSet && 'blur-s',
-            !canEdit && index > 0 && 'hidden'
+            ((!canEdit && index > 0) || (!comments && index > 0)) && 'hidden'
           )}
         >
           <div className="flex gap-[5px] flex-1 w-full">
@@ -411,6 +410,7 @@ export const EditorWrapper: FC<{
                 </div>
               )}
               <Editor
+                comments={comments}
                 editorType={editor}
                 allValues={items}
                 onChange={changeValue(index)}
@@ -430,14 +430,16 @@ export const EditorWrapper: FC<{
                 chars={chars}
                 childButton={
                   <>
-                    {canEdit && items.length - 1 === index ? (
+                    {((canEdit && items.length - 1 === index) || !comments) ? (
                       <div className="flex items-center">
                         <div className="flex-1">
-                          <AddPostButton
-                            num={index}
-                            onClick={addValue(index)}
-                            postComment={postComment}
-                          />
+                          {comments && (
+                            <AddPostButton
+                              num={index}
+                              onClick={addValue(index)}
+                              postComment={postComment}
+                            />
+                          )}
                         </div>
                         {!!internal && !existingData?.integration && (
                           <div
@@ -447,7 +449,7 @@ export const EditorWrapper: FC<{
                             <div className="flex gap-[6px] items-center">
                               <div className="w-[8px] h-[8px] rounded-full bg-[#FC69FF]" />
                               <div className="text-[14px] font-[600]">
-                                Editing a Specific Network
+                                {t('editing_a_specific_network', 'Editing a Specific Network')}
                               </div>
                             </div>
                             <div className="flex gap-[6px] items-center">
@@ -455,7 +457,7 @@ export const EditorWrapper: FC<{
                                 <ResetIcon />
                               </div>
                               <div className="text-[13px] font-[600]">
-                                Back to global
+                                {t('back_to_global', 'Back to global')}
                               </div>
                             </div>
                           </div>
@@ -466,21 +468,23 @@ export const EditorWrapper: FC<{
                 }
               />
             </div>
-            <div className="flex flex-col items-center gap-[10px] pe-[12px]">
-              <UpDownArrow
-                isUp={index !== 0}
-                isDown={index !== items.length - 1}
-                onChange={changeOrder(index)}
-              />
-              {items.length > 1 && (
-                <TrashIcon
-                  onClick={deletePost(index)}
-                  data-tooltip-id="tooltip"
-                  data-tooltip-content="Delete Post"
-                  className="cursor-pointer text-[#FF3F3F]"
+            {comments && (
+              <div className="flex flex-col items-center gap-[10px] pe-[12px]">
+                <UpDownArrow
+                  isUp={index !== 0}
+                  isDown={index !== items.length - 1}
+                  onChange={changeOrder(index)}
                 />
-              )}
-            </div>
+                {items.length > 1 && (
+                  <TrashIcon
+                    onClick={deletePost(index)}
+                    data-tooltip-id="tooltip"
+                    data-tooltip-content={t('delete_post_tooltip', 'Delete Post')}
+                    className="cursor-pointer text-[#FF3F3F]"
+                  />
+                )}
+              </div>
+            )}
           </div>
         </div>
       ))}
@@ -500,6 +504,7 @@ export const Editor: FC<{
   appendImages?: (value: any[]) => void;
   autoComplete?: boolean;
   validateChars?: boolean;
+  comments: boolean | 'no-media';
   identifier?: string;
   totalChars?: number;
   selectedIntegration: SelectedIntegrations[];
@@ -513,17 +518,14 @@ export const Editor: FC<{
     pictures,
     setImages,
     num,
-    validateChars,
     identifier,
     appendImages,
-    selectedIntegration,
     dummy,
     chars,
     childButton,
+    comments,
   } = props;
-  const user = useUser();
   const [id] = useState(makeId(10));
-  const newRef = useRef<any>(null);
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const t = useT();
   const editorRef = useRef<undefined | { editor: any }>();
@@ -547,6 +549,9 @@ export const Editor: FC<{
 
   const paste = useCallback(
     async (event: ClipboardEvent | File[]) => {
+      if (num > 0 && comments === 'no-media') {
+        return;
+      }
       // @ts-ignore
       const clipboardItems = event.clipboardData?.items;
       if (!clipboardItems) {
@@ -563,10 +568,13 @@ export const Editor: FC<{
         }
       }
     },
-    [uppy]
+    [uppy, num, comments]
   );
 
-  const { getRootProps, isDragActive } = useDropzone({ onDrop });
+  const { getRootProps, isDragActive } = useDropzone({
+    onDrop,
+    noDrag: num > 0 && comments === 'no-media',
+  });
 
   const valueWithoutHtml = useMemo(() => {
     return stripHtmlValidation('normal', props.value || '', true);
@@ -614,14 +622,14 @@ export const Editor: FC<{
       >
         <div className="relative cursor-text flex flex-1 flex-col">
           <div {...getRootProps()} className="flex flex-1 flex-col">
-            <div
-              className={clsx(
-                'absolute left-0 top-0 w-full h-full bg-black/70 z-[300] transition-all items-center justify-center flex text-white text-sm',
-                !isDragActive ? 'pointer-events-none opacity-0' : 'opacity-100'
-              )}
-            >
-              Drop your files here to upload
-            </div>
+<div
+                className={clsx(
+                  'absolute left-0 top-0 w-full h-full bg-black/70 z-[300] transition-all items-center justify-center flex text-white text-sm',
+                  !isDragActive ? 'pointer-events-none opacity-0' : 'opacity-100'
+                )}
+              >
+                {t('drop_files_here_to_upload', 'Drop your files here to upload')}
+              </div>
             <div className="px-[10px] pt-[10px] bg-newBgColorInner rounded-t-[6px] relative z-[99]">
               <OnlyEditor
                 value={props.value}
@@ -667,6 +675,7 @@ export const Editor: FC<{
             <div className="flex bg-newBgColorInner rounded-b-[6px] cursor-default">
               {setImages && (
                 <MultiMediaComponent
+                  mediaNotAvailable={num > 0 && comments === 'no-media'}
                   allData={allValues}
                   text={valueWithoutHtml}
                   label={t('attachments', 'Attachments')}
@@ -712,7 +721,7 @@ export const Editor: FC<{
                         )}
                       <div
                         data-tooltip-id="tooltip"
-                        data-tooltip-content="Insert Emoji"
+                        data-tooltip-content={t('insert_emoji', 'Insert Emoji')}
                         className="select-none cursor-pointer rounded-[6px] w-[30px] h-[30px] bg-newColColor flex justify-center items-center"
                         onClick={() => setEmojiPickerOpen(!emojiPickerOpen)}
                       >
@@ -768,6 +777,7 @@ export const OnlyEditor = forwardRef<
     paste?: (event: ClipboardEvent | File[]) => void;
   }
 >(({ editorType, value, onChange, paste }, ref) => {
+  const t = useT();
   const fetch = useFetch();
 
   const { internal } = useLaunchStore(
@@ -818,7 +828,7 @@ export const OnlyEditor = forwardRef<
       BulletList,
       ListItem,
       Placeholder.configure({
-        placeholder: 'Write something …',
+        placeholder: t('write_something', 'Write something …'),
         emptyEditorClass: 'is-editor-empty',
       }),
       ...(editorType === 'html' || editorType === 'markdown'

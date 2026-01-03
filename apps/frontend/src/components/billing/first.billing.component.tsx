@@ -23,7 +23,7 @@ import {
 } from '@gitroom/frontend/components/billing/faq.component';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
-import { useTolt } from '@gitroom/frontend/components/layout/tolt.script';
+import { useDubClickId } from '@gitroom/frontend/components/layout/dubAnalytics';
 
 const ModeComponent = dynamic(
   () => import('@gitroom/frontend/components/layout/mode.component'),
@@ -45,12 +45,12 @@ const EmbeddedBilling = dynamic(
 export const FirstBillingComponent = () => {
   const { stripeClient } = useVariables();
   const user = useUser();
+  const dub = useDubClickId();
   const [stripe, setStripe] = useState<null | Promise<Stripe>>(null);
   const [tier, setTier] = useState('STANDARD');
   const [period, setPeriod] = useState('MONTHLY');
   const fetch = useFetch();
   const t = useT();
-  const tolt = useTolt();
 
   useEffect(() => {
     setStripe(loadStripe(stripeClient));
@@ -63,7 +63,7 @@ export const FirstBillingComponent = () => {
         body: JSON.stringify({
           billing: tier,
           period: period,
-          tolt: tolt(),
+          ...(dub ? { dub } : {}),
         }),
       })
     ).json();
@@ -156,7 +156,9 @@ export const FirstBillingComponent = () => {
       </div>
       <div className="flex px-[80px] tablet:px-[32px] mobile:!px-[16px] flex-1 flex-row tablet:flex-none tablet:flex-col-reverse">
         <div className="flex-1 py-[40px] tablet:pt-[80px] flex flex-col pe-[40px] tablet:pe-0">
-          <div className="block tablet:hidden"><JoinOver /></div>
+          <div className="block tablet:hidden">
+            <JoinOver />
+          </div>
           {!isLoading && data && stripe ? (
             <>
               <EmbeddedBilling stripe={stripe} secret={data.client_secret} />
@@ -168,7 +170,9 @@ export const FirstBillingComponent = () => {
         </div>
         <div className="flex flex-col ps-[40px] tablet:!ps-[0] border-l border-newColColor py-[40px] mobile:!pt-[24px] tablet:border-none tablet:pb-0">
           <div className="top-[20px] sticky">
-            <div className="hidden tablet:block"><JoinOver /></div>
+            <div className="hidden tablet:block">
+              <JoinOver />
+            </div>
             <div className="flex mb-[24px] mobile:flex-col">
               <div className="flex-1 text-[24px] font-[700]">
                 {t('billing_choose_plan', 'Choose a Plan')}

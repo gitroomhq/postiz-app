@@ -6,6 +6,7 @@ import clsx from 'clsx';
 import Image from 'next/image';
 import { useShallow } from 'zustand/react/shallow';
 import { GlobalIcon } from '@gitroom/frontend/components/ui/icons';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 export function useHasScroll(ref: RefObject<HTMLElement>): boolean {
   const [hasHorizontalScroll, setHasHorizontalScroll] = useState(false);
@@ -144,6 +145,7 @@ export const SelectCurrent: FC = () => {
 };
 
 export const IsGlobal: FC<{ id: string }> = ({ id }) => {
+  const t = useT();
   const { isInternal } =
     useLaunchStore(
       useShallow((state) => ({
@@ -158,7 +160,7 @@ export const IsGlobal: FC<{ id: string }> = ({ id }) => {
   return (
     <div
       data-tooltip-id="tooltip"
-      data-tooltip-content="No longer in global mode"
+      data-tooltip-content={t('no_longer_global_mode', 'No longer in global mode')}
       className="w-[8px] h-[8px] bg-[#FC69FF] -top-[1px] -end-[3px] absolute rounded-full"
     />
   );

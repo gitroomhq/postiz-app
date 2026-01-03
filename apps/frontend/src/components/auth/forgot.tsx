@@ -49,9 +49,10 @@ export function Forgot() {
               <div className="space-y-4 text-textColor">
                 <Input
                   label="Email"
+                  translationKey="label_email"
                   {...form.register('email')}
                   type="email"
-                  placeholder="Email Address"
+                  placeholder={t('email_address', 'Email Address')}
                 />
               </div>
               <div className="text-center mt-6">

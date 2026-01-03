@@ -280,7 +280,7 @@ export const Filters = () => {
               onClick={setToday}
               className="hover:text-textItemFocused hover:bg-boxFocused py-[3px] px-[9px] flex justify-center items-center rounded-[8px] transition-all cursor-pointer text-[14px] bg-newBgColorInner border border-newTableBorder"
             >
-              Today
+              {t('today', 'Today')}
             </div>
           </div>
         </div>

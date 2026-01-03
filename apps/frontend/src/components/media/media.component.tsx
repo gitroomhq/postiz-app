@@ -46,6 +46,8 @@ import {
   VerticalDividerIcon,
   NoMediaIcon,
 } from '@gitroom/frontend/components/ui/icons';
+import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
+import { useShallow } from 'zustand/react/shallow';
 const Polonto = dynamic(
   () => import('@gitroom/frontend/components/launches/polonto')
 );
@@ -255,9 +257,8 @@ export const MediaBox: FC<{
 
   const addToUpload = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files).slice(0, 5);
-    for (const file of files) {
-      uppy.addFile(file);
-    }
+    // @ts-ignore
+    uppy.addFiles(files);
   }, []);
 
   const dragAndDrop = useCallback(
@@ -317,10 +318,10 @@ export const MediaBox: FC<{
         className="cursor-pointer bg-btnSimple changeColor flex gap-[8px] h-[44px] px-[18px] justify-center items-center rounded-[8px]"
       >
         <PlusIcon size={14} />
-        <div>Upload</div>
+        <div>{t('upload', 'Upload')}</div>
       </button>
     );
-  }, []);
+  }, [t]);
 
   return (
     <DropFiles className="flex flex-col flex-1" onDrop={dragAndDrop}>
@@ -333,8 +334,15 @@ export const MediaBox: FC<{
         >
           {!isLoading && !!data?.results?.length && (
             <div className="flex-1 text-[14px] font-[600] whitespace-pre-line">
-              Select or upload pictures (maximum 5 at a time).{'\n'}
-              You can also drag & drop pictures.
+              {t(
+                'select_or_upload_pictures_max_5',
+                'Select or upload pictures (maximum 5 at a time).'
+              )}
+              {'\n'}
+              {t(
+                'you_can_drag_drop_pictures',
+                'You can also drag & drop pictures.'
+              )}
             </div>
           )}
           <input
@@ -382,11 +390,21 @@ export const MediaBox: FC<{
               <>
                 <NoMediaIcon />
                 <div className="text-[20px] font-[600]">
-                  You don't have any media yet
+                  {t(
+                    'you_dont_have_any_media_yet',
+                    "You don't have any media yet"
+                  )}
                 </div>
                 <div className="whitespace-pre-line text-newTextColor/[0.6] text-center">
-                  Select or upload pictures (maximum 5 at a time). {'\n'}
-                  You can also drag & drop pictures.
+                  {t(
+                    'select_or_upload_pictures_max_5',
+                    'Select or upload pictures (maximum 5 at a time).'
+                  )}{' '}
+                  {'\n'}
+                  {t(
+                    'you_can_drag_drop_pictures',
+                    'You can also drag & drop pictures.'
+                  )}
                 </div>
                 <div className="forceChange">{btn}</div>
               </>
@@ -432,7 +450,7 @@ export const MediaBox: FC<{
                     onClick={addRemoveSelected(media)}
                   >
                     {!!selected.find((p: any) => p.id === media.id) ? (
-                      <div className="flex justify-center items-center text-[14px] font-[500] w-[24px] h-[24px] rounded-full bg-[#612BD3] absolute -bottom-[10px] -end-[10px]">
+                      <div className="text-white flex justify-center items-center text-[14px] font-[500] w-[24px] h-[24px] rounded-full bg-[#612BD3] absolute -bottom-[10px] -end-[10px]">
                         {selected.findIndex((z: any) => z.id === media.id) + 1}
                       </div>
                     ) : (
@@ -472,7 +490,7 @@ export const MediaBox: FC<{
               onClick={() => modals.closeCurrent()}
               className="cursor-pointer h-[52px] px-[20px] items-center justify-center border border-newTextColor/10 flex rounded-[10px]"
             >
-              Cancel
+              {t('cancel', 'Cancel')}
             </button>
             {!isLoading && !!data?.results?.length && (
               <button
@@ -492,6 +510,7 @@ export const MediaBox: FC<{
 export const MultiMediaComponent: FC<{
   label: string;
   description: string;
+  mediaNotAvailable?: boolean;
   dummy: boolean;
   allData: {
     content: string;
@@ -535,9 +554,11 @@ export const MultiMediaComponent: FC<{
     dummy,
     toolBar,
     information,
+    mediaNotAvailable,
   } = props;
   const user = useUser();
   const modals = useModals();
+  const t = useT();
   useEffect(() => {
     if (value) {
       setCurrentMedia(value);
@@ -572,7 +593,7 @@ export const MultiMediaComponent: FC<{
   );
   const showModal = useCallback(() => {
     modals.openModal({
-      title: 'Media Library',
+      title: t('media_library', 'Media Library'),
       askClose: false,
       closeOnEscape: true,
       fullScreen: true,
@@ -582,7 +603,7 @@ export const MultiMediaComponent: FC<{
         <MediaBox setMedia={changeMedia} closeModal={close} />
       ),
     });
-  }, [changeMedia]);
+  }, [changeMedia, t]);
 
   const clearMedia = useCallback(
     (topIndex: number) => () => {
@@ -602,16 +623,14 @@ export const MultiMediaComponent: FC<{
     if (!!user?.tier?.ai && !dummy) {
       modals.openModal({
         askClose: false,
-        title: 'Design Media',
+        title: t('design_media', 'Design Media'),
         size: '80%',
         children: (close) => (
           <Polonto setMedia={changeMedia} closeModal={close} />
         ),
       });
     }
-  }, [changeMedia]);
-
-  const t = useT();
+  }, [changeMedia, t]);
 
   return (
     <>
@@ -637,7 +656,7 @@ export const MultiMediaComponent: FC<{
                       <div
                         onClick={async () => {
                           modals.openModal({
-                            title: 'Media Settings',
+                            title: t('media_settings', 'Media Settings'),
                             children: (close) => (
                               <MediaComponentInner
                                 media={media as any}
@@ -686,8 +705,8 @@ export const MultiMediaComponent: FC<{
             </ReactSortable>
           )}
         </div>
-        {!dummy && (
-          <div className="flex gap-[8px] px-[12px] border-t border-newColColor w-full b1 text-textColor">
+        <div className="flex gap-[8px] px-[12px] border-t border-newColColor w-full b1 text-textColor">
+          {!mediaNotAvailable && (
             <div className="flex py-[10px] b2 items-center gap-[4px]">
               <div
                 onClick={showModal}
@@ -725,21 +744,23 @@ export const MultiMediaComponent: FC<{
                 </>
               )}
             </div>
+          )}
+          {!mediaNotAvailable && (
             <div className="text-newColColor h-full flex items-center">
               <VerticalDividerIcon />
             </div>
-            {!!toolBar && (
-              <div className="flex py-[10px] b2 items-center gap-[4px]">
-                {toolBar}
-              </div>
-            )}
-            {information && (
-              <div className="flex-1 justify-end flex py-[10px] b2 items-center gap-[4px]">
-                {information}
-              </div>
-            )}
-          </div>
-        )}
+          )}
+          {!!toolBar && (
+            <div className="flex py-[10px] b2 items-center gap-[4px]">
+              {toolBar}
+            </div>
+          )}
+          {information && (
+            <div className="flex-1 justify-end flex py-[10px] b2 items-center gap-[4px]">
+              {information}
+            </div>
+          )}
+        </div>
       </div>
       <div className="text-[12px] text-red-400">{error}</div>
     </>
@@ -778,16 +799,28 @@ export const MediaComponent: FC<{
       setCurrentMedia(settings);
     }
   }, []);
-  const [modal, setShowModal] = useState(false);
-  const [mediaModal, setMediaModal] = useState(false);
   const [currentMedia, setCurrentMedia] = useState(value);
+  const modals = useModals();
   const mediaDirectory = useMediaDirectory();
-  const closeDesignModal = useCallback(() => {
-    setMediaModal(false);
-  }, [modal]);
+
   const showDesignModal = useCallback(() => {
-    setMediaModal(true);
-  }, [modal]);
+    modals.openModal({
+      title: t('media_editor', 'Media Editor'),
+      askClose: false,
+      closeOnEscape: true,
+      fullScreen: true,
+      size: 'calc(100% - 80px)',
+      height: 'calc(100% - 80px)',
+      children: (close) => (
+        <Polonto
+          width={width}
+          height={height}
+          setMedia={changeMedia}
+          closeModal={close}
+        />
+      ),
+    });
+  }, [t]);
   const changeMedia = useCallback((m: { path: string; id: string }[]) => {
     setCurrentMedia(m[0]);
     onChange({
@@ -798,8 +831,18 @@ export const MediaComponent: FC<{
     });
   }, []);
   const showModal = useCallback(() => {
-    setShowModal(!modal);
-  }, [modal]);
+    modals.openModal({
+      title: t('media_library', 'Media Library'),
+      askClose: false,
+      closeOnEscape: true,
+      fullScreen: true,
+      size: 'calc(100% - 80px)',
+      height: 'calc(100% - 80px)',
+      children: (close) => (
+        <MediaBox setMedia={changeMedia} closeModal={close} type={type} />
+      ),
+    });
+  }, [t]);
   const clearMedia = useCallback(() => {
     setCurrentMedia(undefined);
     onChange({
@@ -811,17 +854,6 @@ export const MediaComponent: FC<{
   }, [value]);
   return (
     <div className="flex flex-col gap-[8px]">
-      {modal && (
-        <MediaBox setMedia={changeMedia} closeModal={showModal} type={type} />
-      )}
-      {mediaModal && !!user?.tier?.ai && (
-        <Polonto
-          width={width}
-          height={height}
-          setMedia={changeMedia}
-          closeModal={closeDesignModal}
-        />
-      )}
       <div className="text-[14px]">{label}</div>
       <div className="text-[12px]">{description}</div>
       {!!currentMedia && (

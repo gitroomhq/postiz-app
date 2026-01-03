@@ -7,6 +7,7 @@ import {
 import { FacebookDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/facebook.dto';
 import { Input } from '@gitroom/react/form/input';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
+import { FacebookPreview } from '@gitroom/frontend/components/new-launch/providers/facebook/facebook.preview';
 
 export const FacebookSettings = () => {
   const { register } = useSettings();
@@ -25,7 +26,7 @@ export default withProvider({
   postComment: PostComment.COMMENT,
   minimumCharacters: [],
   SettingsComponent: FacebookSettings,
-  CustomPreviewComponent: undefined,
+  CustomPreviewComponent: FacebookPreview,
   dto: FacebookDto,
   checkValidity: undefined,
   maximumCharacters: 63206,

@@ -13,7 +13,7 @@ import { VariableContextComponent } from '@gitroom/react/helpers/variable.contex
 import { Fragment } from 'react';
 import { PHProvider } from '@gitroom/react/helpers/posthog';
 import UtmSaver from '@gitroom/helpers/utils/utm.saver';
-import { ToltScript } from '@gitroom/frontend/components/layout/tolt.script';
+import { DubAnalytics } from '@gitroom/frontend/components/layout/dubAnalytics';
 import { FacebookComponent } from '@gitroom/frontend/components/layout/facebook.component';
 import { headers } from 'next/headers';
 import { headerName } from '@gitroom/react/translation/i18n.config';
@@ -61,7 +61,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           oauthLogoUrl={process.env.NEXT_PUBLIC_POSTIZ_OAUTH_LOGO_URL!}
           oauthDisplayName={process.env.NEXT_PUBLIC_POSTIZ_OAUTH_DISPLAY_NAME!}
           uploadDirectory={process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY!}
-          tolt={process.env.NEXT_PUBLIC_TOLT!}
+          dub={!!process.env.STRIPE_PUBLISHABLE_KEY}
           facebookPixel={process.env.NEXT_PUBLIC_FACEBOOK_PIXEL!}
           telegramBotName={process.env.TELEGRAM_BOT_NAME!}
           neynarClientId={process.env.NEYNAR_CLIENT_ID!}
@@ -82,7 +82,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           <SentryComponent>
             {/*<SetTimezone />*/}
             <HtmlComponent />
-            <ToltScript />
+            <DubAnalytics />
             <FacebookComponent />
             <Plausible
               domain={!!process.env.IS_GENERAL ? 'postiz.com' : 'gitroom.com'}

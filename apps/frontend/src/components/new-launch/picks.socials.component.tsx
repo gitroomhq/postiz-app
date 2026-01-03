@@ -56,7 +56,7 @@ export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
                       addOrRemoveSelectedIntegration(integration, {});
                     }}
                     className={clsx(
-                      'cursor-pointer border-[1.5px] relative rounded-full flex justify-center items-center bg-fifth filter transition-all duration-500',
+                      'cursor-pointer border-[2px] relative rounded-full flex justify-center items-center bg-fifth filter transition-all duration-500',
                       selectedIntegrations.findIndex(
                         (p) => p.integration.id === integration.id
                       ) === -1
@@ -81,7 +81,7 @@ export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
                     {integration.identifier === 'youtube' ? (
                       <img
                         src="/icons/platforms/youtube.svg"
-                        className="absolute z-10 -bottom-[5px] -end-[5px] min-w-[16px]"
+                        className="absolute z-10 bottom-0 -end-[5px] min-w-[16px]"
                         width={16}
                       />
                     ) : (

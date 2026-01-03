@@ -1,9 +1,10 @@
+'use client';
+
 import React, { FC, Fragment, useCallback, useMemo, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { Button } from '@gitroom/react/form/button';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
-import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { Input } from '@gitroom/react/form/input';
 import { FormProvider, useForm } from 'react-hook-form';
 import { array, boolean, object, string } from 'yup';
@@ -28,7 +29,7 @@ export const Autopost: FC = () => {
   const addWebhook = useCallback(
     (data?: any) => () => {
       modal.openModal({
-        title: data ? 'Edit Autopost' : 'Add Autopost',
+        title: data ? t('edit_autopost', 'Edit Autopost') : t('add_autopost_title', 'Add Autopost'),
         withCloseButton: true,
         children: <AddOrEditWebhook data={data} reload={mutate} />,
       });
@@ -50,7 +51,7 @@ export const Autopost: FC = () => {
           method: 'DELETE',
         });
         mutate();
-        toaster.show('Webhook deleted successfully', 'success');
+        toaster.show(t('webhook_deleted_successfully', 'Webhook deleted successfully'), 'success');
       }
     },
     []
@@ -142,33 +143,33 @@ const details = object().shape({
     })
   ),
 });
-const options = [
+const getOptions = (t: (key: string, fallback: string) => string) => [
   {
-    label: 'All integrations',
+    label: t('all_integrations', 'All integrations'),
     value: 'all',
   },
   {
-    label: 'Specific integrations',
+    label: t('specific_integrations', 'Specific integrations'),
     value: 'specific',
   },
 ];
-const optionsChoose = [
+const getOptionsChoose = (t: (key: string, fallback: string) => string) => [
   {
-    label: 'Yes',
+    label: t('yes', 'Yes'),
     value: true,
   },
   {
-    label: 'No',
+    label: t('no', 'No'),
     value: false,
   },
 ];
-const postImmediately = [
+const getPostImmediately = (t: (key: string, fallback: string) => string) => [
   {
-    label: 'Post on the next available slot',
+    label: t('post_on_next_available_slot', 'Post on the next available slot'),
     value: true,
   },
   {
-    label: 'Post Immediately',
+    label: t('post_immediately', 'Post Immediately'),
     value: false,
   },
 ];
@@ -178,6 +179,10 @@ export const AddOrEditWebhook: FC<{
 }> = (props) => {
   const { data, reload } = props;
   const fetch = useFetch();
+  const t = useT();
+  const options = getOptions(t);
+  const optionsChoose = getOptionsChoose(t);
+  const postImmediately = getPostImmediately(t);
   const [allIntegrations, setAllIntegrations] = useState(
     (JSON.parse(data?.integrations || '[]')?.length || 0) > 0
       ? options[1]
@@ -255,8 +260,8 @@ export const AddOrEditWebhook: FC<{
       });
       toast.show(
         data?.id
-          ? 'Autopost updated successfully'
-          : 'Autopost added successfully',
+          ? t('autopost_updated_successfully', 'Autopost updated successfully')
+          : t('autopost_added_successfully', 'Autopost added successfully'),
         'success'
       );
       modal.closeAll();
@@ -277,18 +282,16 @@ export const AddOrEditWebhook: FC<{
       ).json();
       if (!success) {
         setValid('');
-        toast.show('Could not use this RSS feed', 'warning');
+        toast.show(t('could_not_use_rss_feed', 'Could not use this RSS feed'), 'warning');
         return;
       }
-      toast.show('RSS valid!', 'success');
+      toast.show(t('rss_valid', 'RSS valid!'), 'success');
       setValid(url);
       setLastUrl(newUrl);
     } catch (e: any) {
       /** empty **/
     }
   }, []);
-
-  const t = useT();
 
   return (
     <FormProvider {...form}>
@@ -360,7 +363,7 @@ export const AddOrEditWebhook: FC<{
                   onChange={(e) => {
                     form.setValue('content', e.target.value);
                   }}
-                  placeholder="Write your post..."
+                  placeholder={t('write_your_post_placeholder', 'Write your post...')}
                   autosuggestionsConfig={{
                     textareaPurpose: `Assist me in writing social media post`,
                     chatApiConfigs: {},

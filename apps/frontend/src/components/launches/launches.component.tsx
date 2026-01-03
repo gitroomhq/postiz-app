@@ -7,7 +7,6 @@ import { groupBy, orderBy } from 'lodash';
 import { CalendarWeekProvider } from '@gitroom/frontend/components/launches/calendar.context';
 import { Filters } from '@gitroom/frontend/components/launches/filters';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import useSWR from 'swr';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import clsx from 'clsx';
 import { useUser } from '../layout/user.context';
@@ -234,6 +233,7 @@ export const MenuComponent: FC<
     collapsed,
   } = props;
   const user = useUser();
+  const t = useT();
   const [collected, drag, dragPreview] = useDrag(() => ({
     type: 'menu',
     item: {
@@ -247,7 +247,7 @@ export const MenuComponent: FC<
       {...(integration.refreshNeeded && {
         onClick: refreshChannel(integration),
         'data-tooltip-id': 'tooltip',
-        'data-tooltip-content': 'Channel disconnected, click to reconnect.',
+        'data-tooltip-content': t('channel_disconnected_click_to_reconnect', 'Channel disconnected, click to reconnect.'),
       })}
       {...(collapsed
         ? {
@@ -288,7 +288,7 @@ export const MenuComponent: FC<
         <ImageWithFallback
           fallbackSrc={`/icons/platforms/${integration.identifier}.png`}
           src={integration.picture || '/no-picture.jpg'}
-          className="rounded-[8px]"
+          className="rounded-[8px] min-w-[36px] min-h-[36px]"
           alt={integration.identifier}
           width={36}
           height={36}
@@ -317,7 +317,7 @@ export const MenuComponent: FC<
           ? {
               'data-tooltip-id': 'tooltip',
               'data-tooltip-content':
-                'This channel is disabled, please upgrade your plan to enable it.',
+                t('channel_disabled_upgrade_plan', 'This channel is disabled, please upgrade your plan to enable it.'),
             }
           : {})}
         role="Handle"
@@ -469,7 +469,7 @@ export const LaunchesComponent = () => {
       fireEvents('channel_added');
       window?.opener?.postMessage(
         {
-          msg: 'Channel added',
+          msg: t('channel_added', 'Channel added'),
           success: true,
         },
         '*'
@@ -499,7 +499,7 @@ export const LaunchesComponent = () => {
         >
           <div
             className={clsx(
-              'bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all absolute start-0 top-0 w-full h-full overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor'
+              'bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all absolute start-0 top-0 w-full h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor'
             )}
           >
             <div className="flex items-center">

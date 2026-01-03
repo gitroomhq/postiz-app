@@ -1,3 +1,5 @@
+'use client';
+
 import React, { FC, useCallback, useMemo, useState } from 'react';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useRouter } from 'next/navigation';
@@ -19,7 +21,7 @@ import dayjs from 'dayjs';
 import { Select } from '@gitroom/react/form/select';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
-import { ModalWrapperComponent } from '@gitroom/frontend/components/new-launch/modal.wrapper.component';
+
 const FirstStep: FC = (props) => {
   const { integrations, reloadCalendarView } = useCalendar();
   const modal = useModals();
@@ -295,9 +297,9 @@ export const GeneratorComponent = () => {
     if (!user?.tier?.ai) {
       if (
         await deleteDialog(
-          'You need to upgrade to use this feature',
-          'Move to billing',
-          'Payment Required'
+          t('upgrade_required', 'You need to upgrade to use this feature'),
+          t('move_to_billing', 'Move to billing'),
+          t('payment_required', 'Payment Required')
         )
       ) {
         router.push('/billing');
@@ -305,7 +307,7 @@ export const GeneratorComponent = () => {
       return;
     }
     modal.openModal({
-      title: 'Generate Posts',
+      title: t('generate_posts', 'Generate Posts'),
       withCloseButton: false,
       classNames: {
         modal: 'bg-transparent text-textColor',

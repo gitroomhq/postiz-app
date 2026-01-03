@@ -10,6 +10,7 @@ import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.v
 import { InstagramDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/instagram.dto';
 import { InstagramCollaboratorsTags } from '@gitroom/frontend/components/new-launch/providers/instagram/instagram.tags';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { InstagramPreview } from '@gitroom/frontend/components/new-launch/providers/instagram/instagram.preview';
 const postType = [
   {
     value: 'post',
@@ -57,20 +58,20 @@ export default withProvider<InstagramDto>({
   postComment: PostComment.COMMENT,
   minimumCharacters: [],
   SettingsComponent: InstagramCollaborators,
-  CustomPreviewComponent: undefined,
+  CustomPreviewComponent: InstagramPreview,
   dto: InstagramDto,
-  checkValidity: async ([firstPost, ...otherPosts], settings) => {
-    if (!firstPost.length) {
+  checkValidity: async ([firstPost, ...otherPosts] = [], settings) => {
+    if (!firstPost?.length) {
       return 'Should have at least one media';
     }
-    if (firstPost.length > 1 && settings.post_type === 'story') {
+    if ((firstPost?.length ?? 0) > 1 && settings?.post_type === 'story') {
       return 'Stories can only have one media';
     }
     const checkVideosLength = await Promise.all(
       firstPost
-        .filter((f) => f.path.indexOf('mp4') > -1)
-        .flatMap((p) => p.path)
-        .map((p) => {
+        ?.filter((f) => (f?.path?.indexOf?.('mp4') ?? -1) > -1)
+        ?.flatMap((p) => p?.path)
+        ?.map((p) => {
           return new Promise<number>((res) => {
             const video = document.createElement('video');
             video.preload = 'metadata';
@@ -79,17 +80,18 @@ export default withProvider<InstagramDto>({
               res(video.duration);
             });
           });
-        })
+        }) ?? []
     );
     for (const video of checkVideosLength) {
-      if (video > 60 && settings.post_type === 'story') {
+      if (video > 60 && settings?.post_type === 'story') {
         return 'Stories should be maximum 60 seconds';
       }
-      if (video > 180 && settings.post_type === 'post') {
+      if (video > 180 && settings?.post_type === 'post') {
         return 'Reel should be maximum 180 seconds';
       }
     }
     return true;
   },
   maximumCharacters: 2200,
+  comments: 'no-media'
 });

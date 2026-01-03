@@ -1,6 +1,5 @@
 'use client';
 
-import dayjs from 'dayjs';
 export interface Root {
   id: string;
   buyerId: string;
@@ -63,6 +62,7 @@ export const Message: FC<{
 }> = (props) => {
   const { message, seller, buyer, scrollDown } = props;
   const user = useUser();
+  const t = useT();
   const amITheBuyerOrSeller = useMemo(() => {
     return user?.id === buyer?.id ? 'BUYER' : 'SELLER';
   }, [buyer, user]);
@@ -107,7 +107,7 @@ export const Message: FC<{
       </div>
       <div className="flex-1 flex flex-col max-w-[534px] gap-[10px]">
         <div className="flex gap-[10px] items-center">
-          <div>{isMe ? 'Me' : person?.name}</div>
+          <div>{isMe ? t('me', 'Me') : person?.name}</div>
           <div className="w-[6px] h-[6px] bg-customColor34 rounded-full" />
           <div className="text-[14px] text-inputText">{time}</div>
         </div>
@@ -235,7 +235,7 @@ export const Messages = () => {
               )}
             </div>
             <div className="text-[20px] flex-1">
-              {showFrom?.name || 'Noname'}
+              {showFrom?.name || t('noname', 'Noname')}
             </div>
             <div>
               <OrderTopActions />

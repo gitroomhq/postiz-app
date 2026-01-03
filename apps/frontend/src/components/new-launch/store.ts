@@ -38,6 +38,7 @@ interface StoreState {
   tags: { label: string; value: string }[];
   tab: 0 | 1;
   current: string;
+  comments: boolean | 'no-media';
   locked: boolean;
   hide: boolean;
   setLocked: (locked: boolean) => void;
@@ -125,12 +126,14 @@ interface StoreState {
   setLoaded?: (loaded: boolean) => void;
   setChars: (id: string, chars: number) => void;
   chars: Record<string, number>;
+  setComments: (comments: boolean | 'no-media') => void;
 }
 
 const initialState = {
   editor: undefined as undefined,
   loaded: true,
   dummy: false,
+  comments: true,
   activateExitButton: true,
   date: newDayjs(),
   postComment: PostComment.ALL,
@@ -549,5 +552,9 @@ export const useLaunchStore = create<StoreState>()((set) => ({
         ...state.chars,
         [id]: chars,
       },
+    })),
+  setComments: (comments: boolean | 'no-media') =>
+    set((state) => ({
+      comments,
     })),
 }));

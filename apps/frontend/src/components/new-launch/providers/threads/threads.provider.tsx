@@ -15,12 +15,12 @@ export default withProvider({
   SettingsComponent: SettingsComponent,
   CustomPreviewComponent: undefined,
   dto: undefined,
-  checkValidity: async ([firstPost, ...otherPosts], settings) => {
+  checkValidity: async ([firstPost, ...otherPosts] = [], settings) => {
     const checkVideosLength = await Promise.all(
       firstPost
-        .filter((f) => f.path.indexOf('mp4') > -1)
-        .flatMap((p) => p.path)
-        .map((p) => {
+        ?.filter((f) => (f?.path?.indexOf?.('mp4') ?? -1) > -1)
+        ?.flatMap((p) => p?.path)
+        ?.map((p) => {
           return new Promise<number>((res) => {
             const video = document.createElement('video');
             video.preload = 'metadata';
@@ -29,7 +29,7 @@ export default withProvider({
               res(video.duration);
             });
           });
-        })
+        }) ?? []
     );
 
     for (const video of checkVideosLength) {

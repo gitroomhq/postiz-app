@@ -22,7 +22,7 @@ interface VariableContextInterface {
   disableImageCompression: boolean;
   disableXAnalytics: boolean;
   language: string;
-  tolt: string;
+  dub: boolean;
   transloadit: string[];
   sentryDsn: string;
 }
@@ -46,7 +46,7 @@ const VariableContext = createContext({
   disableImageCompression: false,
   disableXAnalytics: false,
   language: '',
-  tolt: '',
+  dub: false,
   transloadit: [],
   sentryDsn: '',
 } as VariableContextInterface);

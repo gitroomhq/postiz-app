@@ -1,9 +1,12 @@
+'use client';
+
 import React, { FC, Fragment, useMemo } from 'react';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useShallow } from 'zustand/react/shallow';
 import clsx from 'clsx';
 import Image from 'next/image';
 import { capitalize } from 'lodash';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 const Valid: FC = () => {
   return (
@@ -57,6 +60,7 @@ export const InformationComponent: FC<{
   totalAllowedChars: number;
   isPicture: boolean;
 }> = ({ totalChars, totalAllowedChars, chars, isPicture }) => {
+  const t = useT();
   const { isGlobal, selectedIntegrations, internal } = useLaunchStore(
     useShallow((state) => ({
       isGlobal: state.current === 'global',
@@ -149,9 +153,7 @@ export const InformationComponent: FC<{
                 isGlobal && selectedIntegrations.length && 'mb-[12px]'
               )}
             >
-              Your post should have at least
-              <br />
-              one character or one image.
+              {t('your_post_should_have_at_least_one_character_or_one_image', 'Your post should have at least one character or one image.')}
             </div>
           )}
           {isGlobal && (
@@ -191,7 +193,7 @@ export const InformationComponent: FC<{
                     )}
                   >
                     {isInternal?.[index]
-                      ? 'Internal Edit'
+                      ? t('internal_edit', 'Internal Edit')
                       : `${totalChars}/${chars?.[p.integration.id] || 0}`}
                   </div>
                 </Fragment>

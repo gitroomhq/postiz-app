@@ -375,9 +375,27 @@ export class StripeService {
       // @ts-ignore
       apiVersion: '2025-03-31.basil',
     });
+
+    const user = await this._userService.getUserById(userId);
+
+    try {
+      await stripeCustom.customers.update(customer, {
+        email: user.email,
+        ...(body.dub
+          ? {
+              metadata: {
+                dubCustomerExternalId: userId,
+                dubClickId: body.dub,
+              },
+            }
+          : {}),
+      });
+    } catch (err) {}
+
     const isUtm = body.utm ? `&utm_source=${body.utm}` : '';
     // @ts-ignore
     const { client_secret } = await stripeCustom.checkout.sessions.create({
+      // @ts-ignore
       ui_mode: 'custom',
       customer,
       return_url:
@@ -394,13 +412,6 @@ export class StripeService {
           ud,
         },
       },
-      ...(body.tolt
-        ? {
-            metadata: {
-              tolt_referral: body.tolt,
-            },
-          }
-        : {}),
       allow_promotion_codes: body.period === 'MONTHLY',
       line_items: [
         {
@@ -423,6 +434,16 @@ export class StripeService {
     allowTrial: boolean
   ) {
     const isUtm = body.utm ? `&utm_source=${body.utm}` : '';
+
+    if (body.dub) {
+      await stripe.customers.update(customer, {
+        metadata: {
+          dubCustomerExternalId: userId,
+          dubClickId: body.dub,
+        },
+      });
+    }
+
     const { url } = await stripe.checkout.sessions.create({
       customer,
       cancel_url: process.env['FRONTEND_URL'] + `/billing?cancel=true${isUtm}`,
@@ -440,13 +461,6 @@ export class StripeService {
           ud,
         },
       },
-      ...(body.tolt
-        ? {
-            metadata: {
-              tolt_referral: body.tolt,
-            },
-          }
-        : {}),
       allow_promotion_codes: body.period === 'MONTHLY',
       line_items: [
         {
