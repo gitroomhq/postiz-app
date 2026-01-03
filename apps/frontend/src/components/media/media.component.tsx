@@ -257,9 +257,8 @@ export const MediaBox: FC<{
 
   const addToUpload = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files).slice(0, 5);
-    for (const file of files) {
-      uppy.addFile(file);
-    }
+    // @ts-ignore
+    uppy.addFiles(files);
   }, []);
 
   const dragAndDrop = useCallback(
@@ -335,8 +334,15 @@ export const MediaBox: FC<{
         >
           {!isLoading && !!data?.results?.length && (
             <div className="flex-1 text-[14px] font-[600] whitespace-pre-line">
-              {t('select_or_upload_pictures_max_5', 'Select or upload pictures (maximum 5 at a time).')}{'\n'}
-              {t('you_can_drag_drop_pictures', 'You can also drag & drop pictures.')}
+              {t(
+                'select_or_upload_pictures_max_5',
+                'Select or upload pictures (maximum 5 at a time).'
+              )}
+              {'\n'}
+              {t(
+                'you_can_drag_drop_pictures',
+                'You can also drag & drop pictures.'
+              )}
             </div>
           )}
           <input
@@ -384,11 +390,21 @@ export const MediaBox: FC<{
               <>
                 <NoMediaIcon />
                 <div className="text-[20px] font-[600]">
-                  {t('you_dont_have_any_media_yet', "You don't have any media yet")}
+                  {t(
+                    'you_dont_have_any_media_yet',
+                    "You don't have any media yet"
+                  )}
                 </div>
                 <div className="whitespace-pre-line text-newTextColor/[0.6] text-center">
-                  {t('select_or_upload_pictures_max_5', 'Select or upload pictures (maximum 5 at a time).')} {'\n'}
-                  {t('you_can_drag_drop_pictures', 'You can also drag & drop pictures.')}
+                  {t(
+                    'select_or_upload_pictures_max_5',
+                    'Select or upload pictures (maximum 5 at a time).'
+                  )}{' '}
+                  {'\n'}
+                  {t(
+                    'you_can_drag_drop_pictures',
+                    'You can also drag & drop pictures.'
+                  )}
                 </div>
                 <div className="forceChange">{btn}</div>
               </>
@@ -615,7 +631,6 @@ export const MultiMediaComponent: FC<{
       });
     }
   }, [changeMedia, t]);
-
 
   return (
     <>
