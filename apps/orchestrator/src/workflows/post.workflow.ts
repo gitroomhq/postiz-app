@@ -173,6 +173,7 @@ export async function postWorkflow({
         ) {
           const refresh = await refreshToken(post.integration);
           if (!refresh || !refresh.accessToken) {
+            await changeState(postsList[0].id, 'ERROR', err, postsList);
             return false;
           }
 
@@ -287,6 +288,7 @@ export async function postWorkflow({
           ) {
             const refresh = await refreshToken(post.integration);
             if (!refresh || !refresh.accessToken) {
+              await changeState(postsList[0].id, 'ERROR', err, postsList);
               return false;
             }
 
@@ -329,6 +331,7 @@ export async function postWorkflow({
           ) {
             const refresh = await refreshToken(post.integration);
             if (!refresh || !refresh.accessToken) {
+              await changeState(postsList[0].id, 'ERROR', err, postsList);
               return false;
             }
 
