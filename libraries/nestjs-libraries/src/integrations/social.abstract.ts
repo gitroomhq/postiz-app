@@ -135,8 +135,9 @@ export abstract class SocialAbstract {
     }
 
     if (
-      request.status === 401 &&
-      (handleError?.type === 'refresh-token' || !handleError)
+      (request.status === 401 &&
+        (handleError?.type === 'refresh-token' || !handleError)) ||
+      handleError?.type === 'refresh-token'
     ) {
       throw new RefreshToken(
         identifier,

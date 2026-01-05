@@ -32,6 +32,19 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     return 500;
   }
 
+  override handleErrors(body: string):
+    | {
+        type: 'refresh-token' | 'bad-body';
+        value: string;
+      }
+    | undefined {
+    if (body.includes('Error validating access token')) {
+      return { type: 'refresh-token', value: 'Threads access token expired' };
+    }
+
+    return undefined;
+  }
+
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     const { access_token } = await (
       await this.fetch(
