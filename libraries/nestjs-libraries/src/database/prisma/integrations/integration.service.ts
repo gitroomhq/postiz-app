@@ -204,6 +204,10 @@ export class IntegrationService {
     return this._integrationRepository.refreshNeeded(org, id);
   }
 
+  async setBetweenRefreshSteps(id: string) {
+    return this._integrationRepository.setBetweenRefreshSteps(id);
+  }
+
   async refreshTokens() {
     const integrations = await this._integrationRepository.needsToBeRefreshed();
     for (const integration of integrations) {

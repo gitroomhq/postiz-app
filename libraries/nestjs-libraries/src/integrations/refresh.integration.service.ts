@@ -42,6 +42,14 @@ export class RefreshIntegrationService {
     return refresh;
   }
 
+  public async setBetweenSteps(integration: Integration) {
+    await this._integrationService.setBetweenRefreshSteps(integration.id);
+    await this._integrationService.informAboutRefreshError(
+      integration.organizationId,
+      integration
+    );
+  }
+
   private async refreshProcess(
     integration: Integration,
     socialProvider: SocialProvider
@@ -61,12 +69,18 @@ export class RefreshIntegrationService {
         integration
       );
 
-      await this._integrationService.disconnectChannel(integration.organizationId, integration);
+      await this._integrationService.disconnectChannel(
+        integration.organizationId,
+        integration
+      );
 
       return false;
     }
 
-    if (!socialProvider.reConnect) {
+    if (
+      !socialProvider.reConnect ||
+      integration.rootInternalId === integration.internalId
+    ) {
       return refresh;
     }
 
