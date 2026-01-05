@@ -79,7 +79,7 @@ export async function postWorkflow({
   const [post] = postsList;
 
   // in case doesn't exists for some reason, fail it
-  if (!post) {
+  if (!post || (!postNow && post.state !== 'QUEUE')) {
     return;
   }
 
