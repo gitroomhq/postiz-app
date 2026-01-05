@@ -1,4 +1,10 @@
-import { forwardRef, HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import {
+  forwardRef,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { IntegrationRepository } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.repository';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import {
@@ -442,40 +448,15 @@ export class IntegrationService {
       getIntegration.providerIdentifier
     );
 
-    if (
-      dayjs(getIntegration?.tokenExpiration).isBefore(dayjs()) ||
-      forceRefresh
-    ) {
-      const data = await this._refreshIntegrationService.refresh(
-        getIntegration
-      );
-      if (!data) {
-        return;
-      }
-      const { accessToken } = data;
+    // @ts-ignore
+    await getSocialIntegration?.[getAllInternalPlugs.methodName]?.(
+      getIntegration,
+      originalIntegration,
+      data.post,
+      data.information
+    );
 
-      getIntegration.token = accessToken;
-
-      if (getSocialIntegration.refreshWait) {
-        await timer(10000);
-      }
-    }
-
-    try {
-      // @ts-ignore
-      await getSocialIntegration?.[getAllInternalPlugs.methodName]?.(
-        getIntegration,
-        originalIntegration,
-        data.post,
-        data.information
-      );
-    } catch (err) {
-      if (err instanceof RefreshToken) {
-        return this.processInternalPlug(data, true);
-      }
-
-      return;
-    }
+    return;
   }
 
   async processPlugs(data: {
@@ -487,18 +468,12 @@ export class IntegrationService {
   }) {
     const getPlugById = await this._integrationRepository.getPlug(data.plugId);
     if (!getPlugById) {
-      return;
+      return true;
     }
 
     const integration = this._integrationManager.getSocialIntegration(
       getPlugById.integration.providerIdentifier
     );
-
-    const findPlug = this._integrationManager
-      .getAllPlugs()
-      .find(
-        (p) => p.identifier === getPlugById.integration.providerIdentifier
-      )!;
 
     // @ts-ignore
     const process = await integration[getPlugById.plugFunction](
@@ -511,26 +486,14 @@ export class IntegrationService {
     );
 
     if (process) {
-      return;
+      return true;
     }
 
     if (data.totalRuns === data.currentRun) {
-      return;
+      return true;
     }
 
-    this._workerServiceProducer.emit('plugs', {
-      id: 'plug_' + data.postId + '_' + findPlug.identifier,
-      options: {
-        delay: data.delay,
-      },
-      payload: {
-        plugId: data.plugId,
-        postId: data.postId,
-        delay: data.delay,
-        totalRuns: data.totalRuns,
-        currentRun: data.currentRun + 1,
-      },
-    });
+    return false;
   }
 
   async createOrUpdatePlug(

@@ -1,6 +1,5 @@
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import Bottleneck from 'bottleneck';
-import { timer } from '@gitroom/helpers/utils/timer';
 import { BadBody } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
 const connection = new Bottleneck.IORedisConnection({
@@ -35,11 +34,12 @@ export const concurrency = async <T>(
       async () => {
         try {
           return await func();
-        } catch (err) {}
+        } catch (err) {
+          console.log(err);
+        }
       }
     );
   } catch (err) {
-    console.log(err);
     throw new BadBody(
       identifier,
       JSON.stringify({}),

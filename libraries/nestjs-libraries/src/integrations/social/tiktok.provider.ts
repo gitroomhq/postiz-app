@@ -13,7 +13,6 @@ import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settin
 import { timer } from '@gitroom/helpers/utils/timer';
 import { Integration } from '@prisma/client';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 
 @Rules(
   'TikTok can have one video or one picture or multiple pictures, it cannot be without an attachment'

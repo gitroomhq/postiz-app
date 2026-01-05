@@ -554,6 +554,17 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       isPdf
     );
 
+    console.log({
+      method: 'POST',
+      headers: {
+        'LinkedIn-Version': '202501',
+        'X-Restli-Protocol-Version': '2.0.0',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(postPayload),
+    });
+
     const response = await this.fetch('https://api.linkedin.com/rest/posts', {
       method: 'POST',
       headers: {
@@ -723,7 +734,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       headers: {
         'X-Restli-Protocol-Version': '2.0.0',
         'Content-Type': 'application/json',
-        'LinkedIn-Version': '202504',
+        'LinkedIn-Version': '202511',
         Authorization: `Bearer ${integration.token}`,
       },
     });
@@ -739,7 +750,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           headers: {
             'X-Restli-Protocol-Version': '2.0.0',
             'Content-Type': 'application/json',
-            'LinkedIn-Version': '202504',
+            'LinkedIn-Version': '202511',
             Authorization: `Bearer ${token}`,
           },
         }

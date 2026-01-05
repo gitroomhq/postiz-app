@@ -694,6 +694,32 @@ export class PostsRepository {
     });
   }
 
+  async getPostByForWebhookId(postId: string) {
+    return this._post.model.post.findMany({
+      where: {
+        id: postId,
+        deletedAt: null,
+        parentPostId: null,
+      },
+      select: {
+        id: true,
+        content: true,
+        publishDate: true,
+        releaseURL: true,
+        state: true,
+        integration: {
+          select: {
+            id: true,
+            name: true,
+            providerIdentifier: true,
+            picture: true,
+            type: true,
+          },
+        },
+      },
+    });
+  }
+
   async getPostsSince(orgId: string, since: string) {
     return this._post.model.post.findMany({
       where: {

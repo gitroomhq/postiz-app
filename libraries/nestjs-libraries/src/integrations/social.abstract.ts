@@ -1,22 +1,30 @@
 import { timer } from '@gitroom/helpers/utils/timer';
 import { concurrency } from '@gitroom/helpers/utils/concurrency.service';
 import { Integration } from '@prisma/client';
+import { ApplicationFailure } from '@temporalio/activity';
 
-export class RefreshToken {
-  constructor(
-    public identifier: string,
-    public json: string,
-    public body: BodyInit,
-    public message = ''
-  ) {}
+export class RefreshToken extends ApplicationFailure {
+  constructor(identifier: string, json: string, body: BodyInit, message = '') {
+    super(message, 'refresh_token', true, [
+      {
+        identifier,
+        json,
+        body,
+      },
+    ]);
+  }
 }
-export class BadBody {
-  constructor(
-    public identifier: string,
-    public json: string,
-    public body: BodyInit,
-    public message = ''
-  ) {}
+
+export class BadBody extends ApplicationFailure {
+  constructor(identifier: string, json: string, body: BodyInit, message = '') {
+    super(message, 'bad_body', true, [
+      {
+        identifier,
+        json,
+        body,
+      },
+    ]);
+  }
 }
 
 export class NotEnoughScopes {
@@ -58,7 +66,6 @@ export abstract class SocialAbstract {
         try {
           return await func();
         } catch (err) {
-          console.log(err);
           const handle = this.handleErrors(JSON.stringify(err));
           return { err: true, ...(handle || {}) };
         }
@@ -109,34 +116,36 @@ export abstract class SocialAbstract {
       json.includes('Rate limit')
     ) {
       await timer(5000);
-      return this.fetch(url, options, identifier, totalRetries + 1, ignoreConcurrency);
+      return this.fetch(
+        url,
+        options,
+        identifier,
+        totalRetries + 1,
+        ignoreConcurrency
+      );
     }
 
     const handleError = this.handleErrors(json || '{}');
 
     if (handleError?.type === 'retry') {
       await timer(5000);
-      return this.fetch(url, options, identifier, totalRetries + 1, ignoreConcurrency);
+      return this.fetch(
+        url,
+        options,
+        identifier,
+        totalRetries + 1,
+        ignoreConcurrency
+      );
     }
 
     if (
       request.status === 401 &&
       (handleError?.type === 'refresh-token' || !handleError)
     ) {
-      throw new RefreshToken(
-        identifier,
-        json,
-        options.body!,
-        handleError?.value
-      );
+      throw new RefreshToken(identifier, json, options.body!, handleError?.value);
     }
 
-    throw new BadBody(
-      identifier,
-      json,
-      options.body!,
-      handleError?.value || ''
-    );
+    throw new BadBody(identifier, json, options.body!, handleError?.value || '');
   }
 
   checkScopes(required: string[], got: string | string[]) {

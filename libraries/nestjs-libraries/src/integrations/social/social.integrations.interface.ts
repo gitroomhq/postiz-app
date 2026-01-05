@@ -77,6 +77,15 @@ export interface ISocialMediaIntegration {
     postDetails: PostDetails[],
     integration: Integration
   ): Promise<PostResponse[]>; // Schedules a new post
+
+  comment?(
+    id: string,
+    postId: string,
+    lastCommentId: string | undefined,
+    accessToken: string,
+    postDetails: PostDetails[],
+    integration: Integration
+  ): Promise<PostResponse[]>; // Schedules a new post
 }
 
 export type PostResponse = {
@@ -143,8 +152,14 @@ export interface SocialProvider
     url: string
   ) => Promise<{ client_id: string; client_secret: string }>;
   mention?: (
-    token: string, data: { query: string }, id: string, integration: Integration
-  ) => Promise<{ id: string; label: string; image: string, doNotCache?: boolean }[] | {none: true}>;
+    token: string,
+    data: { query: string },
+    id: string,
+    integration: Integration
+  ) => Promise<
+    | { id: string; label: string; image: string; doNotCache?: boolean }[]
+    | { none: true }
+  >;
   mentionFormat?(idOrHandle: string, name: string): string;
   fetchPageInformation?(
     accessToken: string,

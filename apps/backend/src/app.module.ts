@@ -13,6 +13,8 @@ import { VideoModule } from '@gitroom/nestjs-libraries/videos/video.module';
 import { SentryModule } from '@sentry/nestjs/setup';
 import { FILTER } from '@gitroom/nestjs-libraries/sentry/sentry.exception';
 import { ChatModule } from '@gitroom/nestjs-libraries/chat/chat.module';
+import { getTemporalModule } from '@gitroom/nestjs-libraries/temporal/temporal.module';
+import { TemporalRegisterMissingSearchAttributesModule } from '@gitroom/nestjs-libraries/temporal/temporal.register';
 
 @Global()
 @Module({
@@ -26,6 +28,8 @@ import { ChatModule } from '@gitroom/nestjs-libraries/chat/chat.module';
     ThirdPartyModule,
     VideoModule,
     ChatModule,
+    getTemporalModule(false),
+    TemporalRegisterMissingSearchAttributesModule,
     ThrottlerModule.forRoot([
       {
         ttl: 3600000,

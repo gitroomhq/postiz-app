@@ -12,28 +12,6 @@ export class PostsController {
     private _autopostsService: AutopostService
   ) {}
 
-  @EventPattern('post', Transport.REDIS)
-  async post(data: { id: string }) {
-    console.log('processing', data);
-    try {
-      return await this._postsService.post(data.id);
-    } catch (err) {
-      console.log("Unhandled error, let's avoid crashing the post worker", err);
-    }
-  }
-
-  @EventPattern('submit', Transport.REDIS)
-  async payout(data: { id: string; releaseURL: string }) {
-    try {
-      return await this._postsService.payout(data.id, data.releaseURL);
-    } catch (err) {
-      console.log(
-        "Unhandled error, let's avoid crashing the submit worker",
-        err
-      );
-    }
-  }
-
   @EventPattern('sendDigestEmail', Transport.REDIS)
   async sendDigestEmail(data: { subject: string; org: string; since: string }) {
     try {
