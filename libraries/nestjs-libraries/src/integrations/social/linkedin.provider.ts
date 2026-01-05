@@ -554,6 +554,17 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       isPdf
     );
 
+    console.log({
+      method: 'POST',
+      headers: {
+        'LinkedIn-Version': '202501',
+        'X-Restli-Protocol-Version': '2.0.0',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(postPayload),
+    });
+
     const response = await this.fetch('https://api.linkedin.com/rest/posts', {
       method: 'POST',
       headers: {
@@ -641,11 +652,11 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       );
     }
 
-    const [processedFirstPost, ...restPosts] = processedPostDetails;
+    const [processedFirstPost] = processedPostDetails;
 
-    // Process and upload media for all posts
+    // Process and upload media for the first post only
     const uploadedMedia = await this.processMediaForPosts(
-      processedPostDetails,
+      [processedFirstPost],
       accessToken,
       id,
       type
@@ -666,25 +677,30 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       !!firstPost.settings?.post_as_images_carousel
     );
 
-    // Build response array starting with main post
-    const responses: PostResponse[] = [
-      this.createPostResponse(mainPostId, processedFirstPost.id, true),
-    ];
+    // Return response for main post only
+    return [this.createPostResponse(mainPostId, processedFirstPost.id, true)];
+  }
 
-    // Create comment posts for remaining posts
-    for (const post of restPosts) {
-      const commentPostId = await this.createCommentPost(
-        id,
-        accessToken,
-        post,
-        mainPostId,
-        type
-      );
+  async comment(
+    id: string,
+    postId: string,
+    lastCommentId: string | undefined,
+    accessToken: string,
+    postDetails: PostDetails<LinkedinDto>[],
+    integration: Integration,
+    type = 'personal' as 'company' | 'personal'
+  ): Promise<PostResponse[]> {
+    const [commentPost] = postDetails;
 
-      responses.push(this.createPostResponse(commentPostId, post.id, false));
-    }
+    const commentPostId = await this.createCommentPost(
+      id,
+      accessToken,
+      commentPost,
+      postId,
+      type
+    );
 
-    return responses;
+    return [this.createPostResponse(commentPostId, commentPost.id, false)];
   }
 
   @PostPlug({
@@ -723,7 +739,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       headers: {
         'X-Restli-Protocol-Version': '2.0.0',
         'Content-Type': 'application/json',
-        'LinkedIn-Version': '202504',
+        'LinkedIn-Version': '202511',
         Authorization: `Bearer ${integration.token}`,
       },
     });
@@ -739,7 +755,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           headers: {
             'X-Restli-Protocol-Version': '2.0.0',
             'Content-Type': 'application/json',
-            'LinkedIn-Version': '202504',
+            'LinkedIn-Version': '202511',
             Authorization: `Bearer ${token}`,
           },
         }

@@ -3,7 +3,6 @@ import { DatabaseModule } from '@gitroom/nestjs-libraries/database/prisma/databa
 import { ApiModule } from '@gitroom/backend/api/api.module';
 import { APP_GUARD } from '@nestjs/core';
 import { PoliciesGuard } from '@gitroom/backend/services/auth/permissions/permissions.guard';
-import { BullMqModule } from '@gitroom/nestjs-libraries/bull-mq-transport-new/bull.mq.module';
 import { PublicApiModule } from '@gitroom/backend/public-api/public.api.module';
 import { ThrottlerBehindProxyGuard } from '@gitroom/nestjs-libraries/throttler/throttler.provider';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -13,12 +12,14 @@ import { VideoModule } from '@gitroom/nestjs-libraries/videos/video.module';
 import { SentryModule } from '@sentry/nestjs/setup';
 import { FILTER } from '@gitroom/nestjs-libraries/sentry/sentry.exception';
 import { ChatModule } from '@gitroom/nestjs-libraries/chat/chat.module';
+import { getTemporalModule } from '@gitroom/nestjs-libraries/temporal/temporal.module';
+import { TemporalRegisterMissingSearchAttributesModule } from '@gitroom/nestjs-libraries/temporal/temporal.register';
+import { InfiniteWorkflowRegisterModule } from '@gitroom/nestjs-libraries/temporal/infinite.workflow.register';
 
 @Global()
 @Module({
   imports: [
     SentryModule.forRoot(),
-    BullMqModule,
     DatabaseModule,
     ApiModule,
     PublicApiModule,
@@ -26,6 +27,9 @@ import { ChatModule } from '@gitroom/nestjs-libraries/chat/chat.module';
     ThirdPartyModule,
     VideoModule,
     ChatModule,
+    getTemporalModule(false),
+    TemporalRegisterMissingSearchAttributesModule,
+    InfiniteWorkflowRegisterModule,
     ThrottlerModule.forRoot([
       {
         ttl: 3600000,
@@ -46,7 +50,6 @@ import { ChatModule } from '@gitroom/nestjs-libraries/chat/chat.module';
     },
   ],
   exports: [
-    BullMqModule,
     DatabaseModule,
     ApiModule,
     PublicApiModule,

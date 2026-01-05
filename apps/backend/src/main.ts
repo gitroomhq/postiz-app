@@ -3,6 +3,8 @@ initializeSentry('backend', true);
 
 import { loadSwagger } from '@gitroom/helpers/swagger/load.swagger';
 import { json } from 'express';
+import { Runtime } from '@temporalio/worker';
+Runtime.install({ shutdownSignals: [] });
 
 process.env.TZ = 'UTC';
 
@@ -21,7 +23,11 @@ async function start() {
     rawBody: true,
     cors: {
       ...(!process.env.NOT_SECURED ? { credentials: true } : {}),
-      allowedHeaders: ['Content-Type', 'Authorization', 'x-copilotkit-runtime-client-gql-version'],
+      allowedHeaders: [
+        'Content-Type',
+        'Authorization',
+        'x-copilotkit-runtime-client-gql-version',
+      ],
       exposedHeaders: [
         'reload',
         'onboarding',

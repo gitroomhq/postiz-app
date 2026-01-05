@@ -10,6 +10,7 @@ import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { FacebookDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/facebook.dto';
 import { DribbbleDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dribbble.dto';
+import { Integration } from '@prisma/client';
 
 export class FacebookProvider extends SocialAbstract implements SocialProvider {
   identifier = 'facebook';
@@ -293,7 +294,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     accessToken: string,
     postDetails: PostDetails<FacebookDto>[]
   ): Promise<PostResponse[]> {
-    const [firstPost, ...comments] = postDetails;
+    const [firstPost] = postDetails;
 
     let finalId = '';
     let finalUrl = '';
@@ -377,36 +378,6 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       finalId = postId;
     }
 
-    const postsArray = [];
-    let commentId = finalId;
-    for (const comment of comments) {
-      const data = await (
-        await this.fetch(
-          `https://graph.facebook.com/v20.0/${commentId}/comments?access_token=${accessToken}&fields=id,permalink_url`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              ...(comment.media?.length
-                ? { attachment_url: comment.media[0].path }
-                : {}),
-              message: comment.message,
-            }),
-          },
-          'add comment'
-        )
-      ).json();
-
-      commentId = data.id;
-      postsArray.push({
-        id: comment.id,
-        postId: data.id,
-        releaseURL: data.permalink_url,
-        status: 'success',
-      });
-    }
     return [
       {
         id: firstPost.id,
@@ -414,7 +385,46 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
         releaseURL: finalUrl,
         status: 'success',
       },
-      ...postsArray,
+    ];
+  }
+
+  async comment(
+    id: string,
+    postId: string,
+    lastCommentId: string | undefined,
+    accessToken: string,
+    postDetails: PostDetails<FacebookDto>[],
+    integration: Integration
+  ): Promise<PostResponse[]> {
+    const [commentPost] = postDetails;
+    const replyToId = lastCommentId || postId;
+
+    const data = await (
+      await this.fetch(
+        `https://graph.facebook.com/v20.0/${replyToId}/comments?access_token=${accessToken}&fields=id,permalink_url`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...(commentPost.media?.length
+              ? { attachment_url: commentPost.media[0].path }
+              : {}),
+            message: commentPost.message,
+          }),
+        },
+        'add comment'
+      )
+    ).json();
+
+    return [
+      {
+        id: commentPost.id,
+        postId: data.id,
+        releaseURL: data.permalink_url,
+        status: 'success',
+      },
     ];
   }
 

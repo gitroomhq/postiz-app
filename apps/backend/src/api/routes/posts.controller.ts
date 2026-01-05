@@ -13,10 +13,8 @@ import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/po
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization, User } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
-import { StarsService } from '@gitroom/nestjs-libraries/database/prisma/stars/stars.service';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import { ApiTags } from '@nestjs/swagger';
-import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
 import { GeneratorDto } from '@gitroom/nestjs-libraries/dtos/generator/generator.dto';
 import { CreateGeneratedPostsDto } from '@gitroom/nestjs-libraries/dtos/generator/create.generated.posts.dto';
 import { AgentGraphService } from '@gitroom/nestjs-libraries/agent/agent.graph.service';
@@ -31,8 +29,6 @@ import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/p
 export class PostsController {
   constructor(
     private _postsService: PostsService,
-    private _starsService: StarsService,
-    private _messagesService: MessagesService,
     private _agentGraphService: AgentGraphService,
     private _shortLinkService: ShortLinkService
   ) {}
@@ -48,14 +44,6 @@ export class PostsController {
   @Post('/should-shortlink')
   async shouldShortlink(@Body() body: { messages: string[] }) {
     return { ask: this._shortLinkService.askShortLinkedin(body.messages) };
-  }
-
-  @Get('/marketplace/:id')
-  async getMarketplacePosts(
-    @GetOrgFromRequest() org: Organization,
-    @Param('id') id: string
-  ) {
-    return this._messagesService.getMarketplaceAvailableOffers(org.id, id);
   }
 
   @Post('/:id/comments')
@@ -113,11 +101,6 @@ export class PostsController {
     @Param('id') id?: string
   ) {
     return { date: await this._postsService.findFreeDateTime(org.id, id) };
-  }
-
-  @Get('/predict-trending')
-  predictTrending() {
-    return this._starsService.predictTrending();
   }
 
   @Get('/old')

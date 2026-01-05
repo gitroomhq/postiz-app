@@ -86,7 +86,6 @@ model User {
   lastReadNotifications DateTime           @default(now())
   inviteId              String?
   activated             Boolean            @default(true)
-  marketplace           Boolean            @default(true)
   account               String?
   connectedAccount      Boolean            @default(false)
   lastOnline            DateTime           @default(now())

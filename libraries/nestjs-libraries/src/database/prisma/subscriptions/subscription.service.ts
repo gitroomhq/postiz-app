@@ -29,14 +29,6 @@ export class SubscriptionService {
     return this._subscriptionRepository.getCode(code);
   }
 
-  updateAccount(userId: string, account: string) {
-    return this._subscriptionRepository.updateAccount(userId, account);
-  }
-
-  getUserAccount(userId: string) {
-    return this._subscriptionRepository.getUserAccount(userId);
-  }
-
   async deleteSubscription(customerId: string) {
     await this.modifySubscription(
       customerId,
@@ -61,14 +53,6 @@ export class SubscriptionService {
       subscriptionId
     );
   }
-
-  updateConnectedStatus(account: string, accountCharges: boolean) {
-    return this._subscriptionRepository.updateConnectedStatus(
-      account,
-      accountCharges
-    );
-  }
-
   async modifySubscription(
     customerId: string,
     totalChannels: number,
@@ -130,23 +114,6 @@ export class SubscriptionService {
     }
 
     return true;
-
-    // if (to.faq < from.faq) {
-    //   await this._faqRepository.deleteFAQs(getCurrentSubscription?.organizationId, from.faq - to.faq);
-    // }
-    // if (to.categories < from.categories) {
-    //   await this._categoriesRepository.deleteCategories(getCurrentSubscription?.organizationId, from.categories - to.categories);
-    // }
-    // if (to.integrations < from.integrations) {
-    //   await this._integrationsRepository.deleteIntegrations(getCurrentSubscription?.organizationId, from.integrations - to.integrations);
-    // }
-    // if (to.user < from.user) {
-    //   await this._integrationsRepository.deleteUsers(getCurrentSubscription?.organizationId, from.user - to.user);
-    // }
-    // if (to.domains < from.domains) {
-    //   await this._settingsService.deleteDomainByOrg(getCurrentSubscription?.organizationId);
-    //   await this._organizationRepository.changePowered(getCurrentSubscription?.organizationId);
-    // }
   }
 
   async createOrUpdateSubscription(

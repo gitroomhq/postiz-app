@@ -258,6 +258,25 @@ export class LinkedinPageProvider
     return super.post(id, accessToken, postDetails, integration, 'company');
   }
 
+  override async comment(
+    id: string,
+    postId: string,
+    lastCommentId: string | undefined,
+    accessToken: string,
+    postDetails: PostDetails[],
+    integration: Integration
+  ): Promise<PostResponse[]> {
+    return super.comment(
+      id,
+      postId,
+      lastCommentId,
+      accessToken,
+      postDetails,
+      integration,
+      'company'
+    );
+  }
+
   async analytics(
     id: string,
     accessToken: string,

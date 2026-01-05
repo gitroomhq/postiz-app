@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  ForbiddenException,
   Injectable,
   ValidationPipe,
 } from '@nestjs/common';
@@ -8,38 +7,29 @@ import { PostsRepository } from '@gitroom/nestjs-libraries/database/prisma/posts
 import { CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
 import dayjs from 'dayjs';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
-import { Integration, Post, Media, From } from '@prisma/client';
+import { Integration, Post, Media, From, State } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
-import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
-import { capitalize, shuffle, uniq } from 'lodash';
-import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
-import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
+import { shuffle } from 'lodash';
 import { CreateGeneratedPostsDto } from '@gitroom/nestjs-libraries/dtos/generator/create.generated.posts.dto';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import {
-  BadBody,
-  RefreshToken,
-} from '@gitroom/nestjs-libraries/integrations/social.abstract';
-import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/client';
-import { timer } from '@gitroom/helpers/utils/timer';
-import { AuthTokenDetails } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import utc from 'dayjs/plugin/utc';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.link.service';
-import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
 import { CreateTagDto } from '@gitroom/nestjs-libraries/dtos/posts/create.tag.dto';
 import axios from 'axios';
 import sharp from 'sharp';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { Readable } from 'stream';
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
-import { plainToInstance } from 'class-transformer';
-import { validate } from 'class-validator';
-import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 dayjs.extend(utc);
 import * as Sentry from '@sentry/nestjs';
-import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
+import { TemporalService } from 'nestjs-temporal-core';
+import { TypedSearchAttributes } from '@temporalio/common';
+import {
+  organizationId,
+  postId as postIdSearchParam,
+} from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
 
 type PostWithConditionals = Post & {
   integration?: Integration;
@@ -51,24 +41,20 @@ export class PostsService {
   private storage = UploadFactory.createStorage();
   constructor(
     private _postRepository: PostsRepository,
-    private _workerServiceProducer: BullMqClient,
     private _integrationManager: IntegrationManager,
-    private _notificationService: NotificationService,
-    private _messagesService: MessagesService,
-    private _stripeService: StripeService,
     private _integrationService: IntegrationService,
     private _mediaService: MediaService,
     private _shortLinkService: ShortLinkService,
-    private _webhookService: WebhooksService,
-    private openaiService: OpenaiService,
-    private _refreshIntegrationService: RefreshIntegrationService
+    private _openaiService: OpenaiService,
+    private _temporalService: TemporalService
   ) {}
 
-  checkPending15minutesBack() {
-    return this._postRepository.checkPending15minutesBack();
-  }
   searchForMissingThreeHoursPosts() {
     return this._postRepository.searchForMissingThreeHoursPosts();
+  }
+
+  updatePost(id: string, postId: string, releaseURL: string) {
+    return this._postRepository.updatePost(id, postId, releaseURL);
   }
 
   async getStatistics(orgId: string, id: string) {
@@ -292,102 +278,7 @@ export class PostsService {
     return this._postRepository.getOldPosts(orgId, date);
   }
 
-  async post(id: string) {
-    const allPosts = await this.getPostsRecursively(id, true);
-    const [firstPost, ...morePosts] = allPosts;
-    if (!firstPost) {
-      return;
-    }
-
-    if (firstPost.integration?.refreshNeeded) {
-      await this._notificationService.inAppNotification(
-        firstPost.organizationId,
-        `We couldn't post to ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
-        `We couldn't post to ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name} because you need to reconnect it. Please enable it and try again.`,
-        true,
-        false,
-        'info'
-      );
-      return;
-    }
-
-    if (firstPost.integration?.disabled) {
-      await this._notificationService.inAppNotification(
-        firstPost.organizationId,
-        `We couldn't post to ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
-        `We couldn't post to ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name} because it's disabled. Please enable it and try again.`,
-        true,
-        false,
-        'info'
-      );
-      return;
-    }
-
-    try {
-      const finalPost = await this.postSocial(firstPost.integration!, [
-        firstPost,
-        ...morePosts,
-      ]);
-
-      if (firstPost?.intervalInDays) {
-        this._workerServiceProducer.emit('post', {
-          id,
-          options: {
-            delay: firstPost.intervalInDays * 86400000,
-          },
-          payload: {
-            id: id,
-          },
-        });
-      }
-
-      if (!finalPost?.postId || !finalPost?.releaseURL) {
-        await this._postRepository.changeState(firstPost.id, 'ERROR');
-        await this._notificationService.inAppNotification(
-          firstPost.organizationId,
-          `Error posting on ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
-          `An error occurred while posting on ${firstPost.integration?.providerIdentifier}`,
-          true,
-          false,
-          'fail'
-        );
-
-        return;
-      }
-    } catch (err: any) {
-      await this._postRepository.changeState(
-        firstPost.id,
-        'ERROR',
-        err,
-        allPosts
-      );
-      if (err instanceof BadBody) {
-        await this._notificationService.inAppNotification(
-          firstPost.organizationId,
-          `Error posting on ${firstPost.integration?.providerIdentifier} for ${firstPost?.integration?.name}`,
-          `An error occurred while posting on ${
-            firstPost.integration?.providerIdentifier
-          }${err?.message ? `: ${err?.message}` : ``}`,
-          true,
-          false,
-          'fail'
-        );
-
-        console.error(
-          '[Error] posting on',
-          firstPost.integration?.providerIdentifier,
-          err.identifier,
-          err.json,
-          err.body,
-          err
-        );
-      }
-
-      return;
-    }
-  }
-
-  private async updateTags(orgId: string, post: Post[]): Promise<Post[]> {
+  public async updateTags(orgId: string, post: Post[]): Promise<Post[]> {
     const plainText = JSON.stringify(post);
     const extract = Array.from(
       plainText.match(/\(post:[a-zA-Z0-9-_]+\)/g) || []
@@ -411,127 +302,7 @@ export class PostsService {
     return this.updateTags(orgId, JSON.parse(newPlainText) as Post[]);
   }
 
-  private async postSocial(
-    integration: Integration,
-    posts: Post[],
-    forceRefresh = false
-  ): Promise<Partial<{ postId: string; releaseURL: string }> | undefined> {
-    const getIntegration = this._integrationManager.getSocialIntegration(
-      integration.providerIdentifier
-    );
-
-    if (!getIntegration) {
-      return {};
-    }
-
-    if (dayjs(integration?.tokenExpiration).isBefore(dayjs()) || forceRefresh) {
-      const data = await this._refreshIntegrationService.refresh(integration);
-
-      if (!data) {
-        return undefined;
-      }
-
-      integration.token = data.accessToken;
-
-      if (getIntegration.refreshWait) {
-        await timer(10000);
-      }
-    }
-
-    const newPosts = await this.updateTags(integration.organizationId, posts);
-
-    try {
-      const publishedPosts = await getIntegration.post(
-        integration.internalId,
-        integration.token,
-        await Promise.all(
-          (newPosts || []).map(async (p) => ({
-            id: p.id,
-            message: stripHtmlValidation(
-              getIntegration.editor,
-              p.content,
-              true,
-              false,
-              !/<\/?[a-z][\s\S]*>/i.test(p.content),
-              getIntegration.mentionFormat
-            ),
-            settings: JSON.parse(p.settings || '{}'),
-            media: await this.updateMedia(
-              p.id,
-              JSON.parse(p.image || '[]'),
-              getIntegration?.convertToJPEG || false
-            ),
-          }))
-        ),
-        integration
-      );
-
-      for (const post of publishedPosts) {
-        try {
-          await this._postRepository.updatePost(
-            post.id,
-            post.postId,
-            post.releaseURL
-          );
-        } catch (err) {}
-      }
-
-      try {
-        await this._notificationService.inAppNotification(
-          integration.organizationId,
-          `Your post has been published on ${capitalize(
-            integration.providerIdentifier
-          )}`,
-          `Your post has been published on ${capitalize(
-            integration.providerIdentifier
-          )} at ${publishedPosts[0].releaseURL}`,
-          true,
-          true
-        );
-
-        await this._webhookService.digestWebhooks(
-          integration.organizationId,
-          dayjs(newPosts[0].publishDate).format('YYYY-MM-DDTHH:mm:00')
-        );
-
-        await this.checkPlugs(
-          integration.organizationId,
-          getIntegration.identifier,
-          integration.id,
-          publishedPosts[0].postId
-        );
-
-        await this.checkInternalPlug(
-          integration,
-          integration.organizationId,
-          publishedPosts[0].postId,
-          JSON.parse(newPosts[0].settings || '{}')
-        );
-      } catch (err) {}
-
-      return {
-        postId: publishedPosts[0].postId,
-        releaseURL: publishedPosts[0].releaseURL,
-      };
-    } catch (err) {
-      if (err instanceof RefreshToken) {
-        return this.postSocial(integration, posts, true);
-      }
-
-      if (err instanceof BadBody) {
-        throw err;
-      }
-
-      throw new BadBody(
-        integration.providerIdentifier,
-        JSON.stringify(err),
-        {} as any,
-        ''
-      );
-    }
-  }
-
-  private async checkInternalPlug(
+  public async checkInternalPlug(
     integration: Integration,
     orgId: string,
     id: string,
@@ -542,7 +313,7 @@ export class PostsService {
     });
 
     if (plugs.length === 0) {
-      return;
+      return [];
     }
 
     const parsePlugs = plugs.reduce((all, [key, value]) => {
@@ -559,32 +330,24 @@ export class PostsService {
       active: boolean;
     }[] = Object.values(parsePlugs);
 
-    for (const trigger of list || []) {
-      for (const int of trigger?.integrations || []) {
-        this._workerServiceProducer.emit('internal-plugs', {
-          id: 'plug_' + id + '_' + trigger.name + '_' + int.id,
-          options: {
-            delay: +trigger.delay,
-          },
-          payload: {
-            post: id,
-            originalIntegration: integration.id,
-            integration: int.id,
-            plugName: trigger.name,
-            orgId: orgId,
-            delay: +trigger.delay,
-            information: trigger,
-          },
-        });
-      }
-    }
+    return (list || []).flatMap((trigger) => {
+      return (trigger?.integrations || []).flatMap((int) => ({
+        type: 'internal-plug',
+        post: id,
+        originalIntegration: integration.id,
+        integration: int.id,
+        plugName: trigger.name,
+        orgId: orgId,
+        delay: +trigger.delay,
+        information: trigger,
+      }));
+    });
   }
 
-  private async checkPlugs(
+  public async checkPlugs(
     orgId: string,
     providerName: string,
-    integrationId: string,
-    postId: string
+    integrationId: string
   ) {
     const loadAllPlugs = this._integrationManager.getAllPlugs();
     const getPlugs = await this._integrationService.getPlugs(
@@ -594,35 +357,51 @@ export class PostsService {
 
     const currentPlug = loadAllPlugs.find((p) => p.identifier === providerName);
 
-    for (const plug of getPlugs) {
-      const runPlug = currentPlug?.plugs?.find(
-        (p: any) => p.methodName === plug.plugFunction
-      )!;
-      if (!runPlug) {
-        continue;
-      }
-
-      this._workerServiceProducer.emit('plugs', {
-        id: 'plug_' + postId + '_' + runPlug.identifier,
-        options: {
-          delay: runPlug.runEveryMilliseconds,
-        },
-        payload: {
+    return getPlugs
+      .filter((plug) => {
+        return currentPlug?.plugs?.some(
+          (p: any) => p.methodName === plug.plugFunction
+        );
+      })
+      .map((plug) => {
+        const runPlug = currentPlug?.plugs?.find(
+          (p: any) => p.methodName === plug.plugFunction
+        )!;
+        return {
+          type: 'global',
           plugId: plug.id,
-          postId,
           delay: runPlug.runEveryMilliseconds,
           totalRuns: runPlug.totalRuns,
-          currentRun: 1,
-        },
+        };
       });
-    }
   }
 
   async deletePost(orgId: string, group: string) {
     const post = await this._postRepository.deletePost(orgId, group);
+
     if (post?.id) {
-      await this._workerServiceProducer.delete('post', post.id);
-      return { id: post.id };
+      try {
+        const workflows = this._temporalService.client
+          .getRawClient()
+          ?.workflow.list({
+            query: `WorkflowType="postWorkflow" AND postId="${post.id}" AND ExecutionStatus="Running"`,
+          });
+
+        for await (const executionInfo of workflows) {
+          try {
+            const workflow =
+              await this._temporalService.client.getWorkflowHandle(
+                executionInfo.workflowId
+              );
+            if (
+              workflow &&
+              (await workflow.describe()).status.name !== 'TERMINATED'
+            ) {
+              await workflow.terminate();
+            }
+          } catch (err) {}
+        }
+      } catch (err) {}
     }
 
     return { error: true };
@@ -632,6 +411,9 @@ export class PostsService {
     return this._postRepository.countPostsFromDay(orgId, date);
   }
 
+  getPostByForWebhookId(id: string) {
+    return this._postRepository.getPostByForWebhookId(id);
+  }
   async createPost(orgId: string, body: CreatePostDto): Promise<any[]> {
     const postList = [];
     for (const post of body.posts) {
@@ -645,48 +427,65 @@ export class PostsService {
         content: updateContent[i],
       }));
 
-      const { previousPost, posts } =
-        await this._postRepository.createOrUpdatePost(
-          body.type,
-          orgId,
-          body.type === 'now'
-            ? dayjs().format('YYYY-MM-DDTHH:mm:00')
-            : body.date,
-          post,
-          body.tags,
-          body.inter
-        );
+      const { posts } = await this._postRepository.createOrUpdatePost(
+        body.type,
+        orgId,
+        body.type === 'now' ? dayjs().format('YYYY-MM-DDTHH:mm:00') : body.date,
+        post,
+        body.tags,
+        body.inter
+      );
 
       if (!posts?.length) {
         return [] as any[];
       }
 
-      await this._workerServiceProducer.delete(
-        'post',
-        previousPost ? previousPost : posts?.[0]?.id
-      );
+      try {
+        const workflows = this._temporalService.client
+          .getRawClient()
+          ?.workflow.list({
+            query: `WorkflowType="postWorkflow" AND postId="${posts[0].id}" AND ExecutionStatus="Running"`,
+          });
 
-      if (
-        body.type === 'now' ||
-        (body.type === 'schedule' && dayjs(body.date).isAfter(dayjs()))
-      ) {
-        this._workerServiceProducer.emit('post', {
-          id: posts[0].id,
-          options: {
-            delay:
-              body.type === 'now'
-                ? 0
-                : dayjs(posts[0].publishDate).diff(dayjs(), 'millisecond'),
-          },
-          payload: {
-            id: posts[0].id,
-            delay:
-              body.type === 'now'
-                ? 0
-                : dayjs(posts[0].publishDate).diff(dayjs(), 'millisecond'),
-          },
+        for await (const executionInfo of workflows) {
+          try {
+            const workflow =
+              await this._temporalService.client.getWorkflowHandle(
+                executionInfo.workflowId
+              );
+            if (
+              workflow &&
+              (await workflow.describe()).status.name !== 'TERMINATED'
+            ) {
+              await workflow.terminate();
+            }
+          } catch (err) {}
+        }
+      } catch (err) {}
+
+      await this._temporalService.client
+        .getRawClient()
+        ?.workflow.start('postWorkflow', {
+          workflowId: `post_${posts[0].id}`,
+          taskQueue: 'main',
+          args: [
+            {
+              taskQueue: post.settings.__type.split('-')[0].toLowerCase(),
+              postId: posts[0].id,
+              organizationId: orgId,
+            },
+          ],
+          typedSearchAttributes: new TypedSearchAttributes([
+            {
+              key: postIdSearchParam,
+              value: posts[0].id,
+            },
+            {
+              key: organizationId,
+              value: orgId,
+            },
+          ]),
         });
-      }
 
       Sentry.metrics.count('post_created', 1);
       postList.push({
@@ -699,103 +498,66 @@ export class PostsService {
   }
 
   async separatePosts(content: string, len: number) {
-    return this.openaiService.separatePosts(content, len);
+    return this._openaiService.separatePosts(content, len);
+  }
+
+  async changeState(id: string, state: State, err?: any, body?: any) {
+    return this._postRepository.changeState(id, state, err, body);
   }
 
   async changeDate(orgId: string, id: string, date: string) {
     const getPostById = await this._postRepository.getPostById(id, orgId);
-
-    await this._workerServiceProducer.delete('post', id);
-    if (getPostById?.state !== 'DRAFT') {
-      this._workerServiceProducer.emit('post', {
-        id: id,
-        options: {
-          delay: dayjs(date).diff(dayjs(), 'millisecond'),
-        },
-        payload: {
-          id: id,
-          delay: dayjs(date).diff(dayjs(), 'millisecond'),
-        },
-      });
-    }
-
-    return this._postRepository.changeDate(orgId, id, date);
-  }
-
-  async payout(id: string, url: string) {
-    const getPost = await this._postRepository.getPostById(id);
-    if (!getPost || !getPost.submittedForOrder) {
-      return;
-    }
-
-    const findPrice = getPost.submittedForOrder.ordersItems.find(
-      (orderItem) => orderItem.integrationId === getPost.integrationId
-    )!;
-
-    await this._messagesService.createNewMessage(
-      getPost.submittedForOrder.messageGroupId,
-      From.SELLER,
-      '',
-      {
-        type: 'published',
-        data: {
-          id: getPost.submittedForOrder.id,
-          postId: id,
-          status: 'PUBLISHED',
-          integrationId: getPost.integrationId,
-          integration: getPost.integration.providerIdentifier,
-          picture: getPost.integration.picture,
-          name: getPost.integration.name,
-          url,
-        },
-      }
-    );
-
-    const totalItems = getPost.submittedForOrder.ordersItems.reduce(
-      (all, p) => all + p.quantity,
-      0
-    );
-    const totalPosts = getPost.submittedForOrder.posts.length;
-
-    if (totalItems === totalPosts) {
-      await this._messagesService.completeOrder(getPost.submittedForOrder.id);
-      await this._messagesService.createNewMessage(
-        getPost.submittedForOrder.messageGroupId,
-        From.SELLER,
-        '',
-        {
-          type: 'order-completed',
-          data: {
-            id: getPost.submittedForOrder.id,
-            postId: id,
-            status: 'PUBLISHED',
-          },
-        }
-      );
-    }
+    const newDate = await this._postRepository.changeDate(orgId, id, date);
 
     try {
-      await this._stripeService.payout(
-        getPost.submittedForOrder.id,
-        getPost.submittedForOrder.captureId!,
-        getPost.submittedForOrder.seller.account!,
-        findPrice.price
-      );
+      const workflows = this._temporalService.client
+        .getRawClient()
+        ?.workflow.list({
+          query: `WorkflowType="postWorkflow" AND postId="${getPostById.id}" AND ExecutionStatus="Running"`,
+        });
 
-      return this._notificationService.inAppNotification(
-        getPost.integration.organizationId,
-        'Payout completed',
-        `You have received a payout of $${findPrice.price}`,
-        true
-      );
-    } catch (err) {
-      await this._messagesService.payoutProblem(
-        getPost.submittedForOrder.id,
-        getPost.submittedForOrder.seller.id,
-        findPrice.price,
-        id
-      );
-    }
+      for await (const executionInfo of workflows) {
+        try {
+          const workflow = await this._temporalService.client.getWorkflowHandle(
+            executionInfo.workflowId
+          );
+          if (
+            workflow &&
+            (await workflow.describe()).status.name !== 'TERMINATED'
+          ) {
+            await workflow.terminate();
+          }
+        } catch (err) {}
+      }
+    } catch (err) {}
+
+    await this._temporalService.client
+      .getRawClient()
+      ?.workflow.start('postWorkflow', {
+        workflowId: `post_${getPostById.id}`,
+        taskQueue: 'main',
+        args: [
+          {
+            taskQueue: getPostById.integration.providerIdentifier
+              .split('-')[0]
+              .toLowerCase(),
+            postId: getPostById.id,
+            organizationId: orgId,
+          },
+        ],
+        typedSearchAttributes: new TypedSearchAttributes([
+          {
+            key: postIdSearchParam,
+            value: getPostById.id,
+          },
+          {
+            key: organizationId,
+            value: orgId,
+          },
+        ]),
+      });
+
+    return newDate;
   }
 
   async generatePostsDraft(orgId: string, body: CreateGeneratedPostsDto) {
@@ -958,29 +720,5 @@ export class PostsService {
     comment: string
   ) {
     return this._postRepository.createComment(orgId, userId, postId, comment);
-  }
-
-  async sendDigestEmail(subject: string, orgId: string, since: string) {
-    const getNotificationsForOrgSince =
-      await this._notificationService.getNotificationsSince(orgId, since);
-    if (getNotificationsForOrgSince.length === 0) {
-      return;
-    }
-
-    // Get the types of notifications in this digest
-    const types = await this._notificationService.getDigestTypes(orgId);
-
-    const message = getNotificationsForOrgSince
-      .map((p) => p.content)
-      .join('<br />');
-
-    await this._notificationService.sendDigestEmailsToOrg(
-      orgId,
-      getNotificationsForOrgSince.length === 1
-        ? subject
-        : '[Postiz] Your latest notifications',
-      message,
-      types.length > 0 ? types : ['success'] // Default to success if no types tracked
-    );
   }
 }
