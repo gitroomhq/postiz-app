@@ -85,9 +85,6 @@ export async function postWorkflow({
 
   // if it's a repeatable post, we should ignore this.
   if (!postNow) {
-    if (dayjs(post.publishDate).isBefore(dayjs())) {
-      return;
-    }
     await sleep(dayjs(post.publishDate).diff(dayjs(), 'millisecond'));
   }
 
