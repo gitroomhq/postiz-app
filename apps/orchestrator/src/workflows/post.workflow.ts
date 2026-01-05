@@ -5,6 +5,8 @@ import {
   startChild,
   proxyActivities,
   sleep,
+  defineSignal,
+  setHandler,
 } from '@temporalio/workflow';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
@@ -42,6 +44,8 @@ const {
   },
 });
 
+const poke = defineSignal('poke');
+
 export async function postWorkflow({
   taskQueue,
   postId,
@@ -53,7 +57,6 @@ export async function postWorkflow({
   organizationId: string;
   postNow?: boolean;
 }) {
-
   // Dynamic task queue, for concurrency
   const {
     postSocial,
@@ -64,6 +67,11 @@ export async function postWorkflow({
     processInternalPlug,
     processPlug,
   } = proxyTaskQueue(taskQueue);
+
+  let poked = false;
+  setHandler(poke, () => {
+    poked = true;
+  });
 
   const startTime = new Date();
   // get all the posts and comments to post
@@ -77,6 +85,9 @@ export async function postWorkflow({
 
   // if it's a repeatable post, we should ignore this
   if (!postNow) {
+    if (dayjs(post.publishDate).isBefore(dayjs())) {
+      return;
+    }
     await sleep(dayjs(post.publishDate).diff(dayjs(), 'millisecond'));
   }
 

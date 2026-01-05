@@ -14,6 +14,7 @@ import { FILTER } from '@gitroom/nestjs-libraries/sentry/sentry.exception';
 import { ChatModule } from '@gitroom/nestjs-libraries/chat/chat.module';
 import { getTemporalModule } from '@gitroom/nestjs-libraries/temporal/temporal.module';
 import { TemporalRegisterMissingSearchAttributesModule } from '@gitroom/nestjs-libraries/temporal/temporal.register';
+import { InfiniteWorkflowRegisterModule } from '@gitroom/nestjs-libraries/temporal/infinite.workflow.register';
 
 @Global()
 @Module({
@@ -28,6 +29,7 @@ import { TemporalRegisterMissingSearchAttributesModule } from '@gitroom/nestjs-l
     ChatModule,
     getTemporalModule(false),
     TemporalRegisterMissingSearchAttributesModule,
+    InfiniteWorkflowRegisterModule,
     ThrottlerModule.forRoot([
       {
         ttl: 3600000,

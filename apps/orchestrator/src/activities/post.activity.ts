@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { Activity, ActivityMethod } from 'nestjs-temporal-core';
+import {
+  Activity,
+  ActivityMethod,
+  TemporalService,
+} from 'nestjs-temporal-core';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import {
   NotificationService,
@@ -13,6 +17,12 @@ import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integration
 import { timer } from '@gitroom/helpers/utils/timer';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
+import { TypedSearchAttributes } from '@temporalio/common';
+import {
+  organizationId,
+  postId as postIdSearchParam,
+} from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
+import { postWorkflow } from '@gitroom/orchestrator/workflows';
 
 @Injectable()
 @Activity()
@@ -23,8 +33,43 @@ export class PostActivity {
     private _integrationManager: IntegrationManager,
     private _integrationService: IntegrationService,
     private _refreshIntegrationService: RefreshIntegrationService,
-    private _webhookService: WebhooksService
+    private _webhookService: WebhooksService,
+    private _temporalService: TemporalService
   ) {}
+
+  @ActivityMethod()
+  async searchForMissingThreeHoursPosts() {
+    const list = await this._postService.searchForMissingThreeHoursPosts();
+    for (const post of list) {
+      await this._temporalService.client
+        .getRawClient()
+        .workflow.signalWithStart('postWorkflow', {
+          workflowId: `post_${post.id}`,
+          taskQueue: 'main',
+          signal: 'poke',
+          signalArgs: [],
+          args: [
+            {
+              taskQueue: post.integration.providerIdentifier
+                .split('-')[0]
+                .toLowerCase(),
+              postId: post.id,
+              organizationId: post.organizationId,
+            },
+          ],
+          typedSearchAttributes: new TypedSearchAttributes([
+            {
+              key: postIdSearchParam,
+              value: post.id,
+            },
+            {
+              key: organizationId,
+              value: post.organizationId,
+            },
+          ]),
+        });
+    }
+  }
 
   @ActivityMethod()
   async updatePost(id: string, postId: string, releaseURL: string) {

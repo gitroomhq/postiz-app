@@ -49,6 +49,10 @@ export class PostsService {
     private _temporalService: TemporalService
   ) {}
 
+  searchForMissingThreeHoursPosts() {
+    return this._postRepository.searchForMissingThreeHoursPosts();
+  }
+
   updatePost(id: string, postId: string, releaseURL: string) {
     return this._postRepository.updatePost(id, postId, releaseURL);
   }
