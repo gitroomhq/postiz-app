@@ -125,6 +125,13 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
+    if (body.includes('UNAUTHENTICATED') || body.includes('invalid_grant')) {
+      return {
+        type: 'refresh-token',
+        value: 'Please re-authenticate your YouTube account',
+      };
+    }
+
     return undefined;
   }
 
@@ -228,10 +235,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     }
   }
 
-  async fetchPageInformation(
-    accessToken: string,
-    data: { id: string }
-  ) {
+  async fetchPageInformation(accessToken: string, data: { id: string }) {
     const { client, youtube } = clientAndYoutube();
     client.setCredentials({ access_token: accessToken });
     const youtubeClient = youtube(client);

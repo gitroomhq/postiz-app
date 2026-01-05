@@ -64,6 +64,14 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
+    if (body.includes('Unauthorized')) {
+      return {
+        type: 'refresh-token',
+        value:
+          'Token expired or invalid, please reconnect your YouTube account.',
+      };
+    }
+
     if (body.includes('PERMISSION_DENIED')) {
       return {
         type: 'refresh-token',
