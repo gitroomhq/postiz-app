@@ -172,7 +172,7 @@ export async function postWorkflow({
           err.cause.type === 'refresh_token'
         ) {
           const refresh = await refreshToken(post.integration);
-          if (!refresh) {
+          if (!refresh || !refresh.accessToken) {
             return false;
           }
 
@@ -286,7 +286,7 @@ export async function postWorkflow({
             err.cause.type === 'refresh_token'
           ) {
             const refresh = await refreshToken(post.integration);
-            if (!refresh) {
+            if (!refresh || !refresh.accessToken) {
               return false;
             }
 
@@ -328,7 +328,7 @@ export async function postWorkflow({
             err.cause.type === 'refresh_token'
           ) {
             const refresh = await refreshToken(post.integration);
-            if (!refresh) {
+            if (!refresh || !refresh.accessToken) {
               return false;
             }
 

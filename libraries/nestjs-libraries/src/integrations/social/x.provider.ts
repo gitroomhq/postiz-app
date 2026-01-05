@@ -45,15 +45,22 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         value: string;
       }
     | undefined {
-    if (body.includes('usage-capped')) {
+    if (body.includes('Unsupported Authentication')) {
       return {
         type: 'refresh-token',
+        value: 'X authentication has expired, please reconnect your account',
+      };
+    }
+
+    if (body.includes('usage-capped')) {
+      return {
+        type: 'bad-body',
         value: 'Posting failed - capped reached. Please try again later',
       };
     }
     if (body.includes('duplicate-rules')) {
       return {
-        type: 'refresh-token',
+        type: 'bad-body',
         value:
           'You have already posted this post, please wait before posting again',
       };

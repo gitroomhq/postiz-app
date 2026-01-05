@@ -50,7 +50,7 @@ export class RefreshIntegrationService {
       .refreshToken(integration.refreshToken)
       .catch((err) => false);
 
-    if (!refresh) {
+    if (!refresh || !refresh.accessToken) {
       await this._integrationService.refreshNeeded(
         integration.organizationId,
         integration.id
