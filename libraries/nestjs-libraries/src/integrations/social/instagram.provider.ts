@@ -454,7 +454,7 @@ export class InstagramProvider
     integration: Integration,
     type = 'graph.facebook.com'
   ): Promise<PostResponse[]> {
-    const [firstPost, ...theRest] = postDetails;
+    const [firstPost] = postDetails;
     console.log('in progress', id);
     const isStory = firstPost.settings.post_type === 'story';
     const medias = await Promise.all(
@@ -521,10 +521,6 @@ export class InstagramProvider
       }) || []
     );
 
-    const arr = [];
-
-    let containerIdGlobal = '';
-    let linkGlobal = '';
     if (medias.length === 1) {
       const { id: mediaId } = await (
         await this.fetch(
@@ -535,22 +531,20 @@ export class InstagramProvider
         )
       ).json();
 
-      containerIdGlobal = mediaId;
-
       const { permalink } = await (
         await this.fetch(
           `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${accessToken}`
         )
       ).json();
 
-      arr.push({
-        id: firstPost.id,
-        postId: mediaId,
-        releaseURL: permalink,
-        status: 'success',
-      });
-
-      linkGlobal = permalink;
+      return [
+        {
+          id: firstPost.id,
+          postId: mediaId,
+          releaseURL: permalink,
+          status: 'success',
+        },
+      ];
     } else {
       const { id: containerId, ...all3 } = await (
         await this.fetch(
@@ -589,45 +583,60 @@ export class InstagramProvider
         )
       ).json();
 
-      containerIdGlobal = mediaId;
-
       const { permalink } = await (
         await this.fetch(
           `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${accessToken}`
         )
       ).json();
 
-      arr.push({
-        id: firstPost.id,
-        postId: mediaId,
+      return [
+        {
+          id: firstPost.id,
+          postId: mediaId,
+          releaseURL: permalink,
+          status: 'success',
+        },
+      ];
+    }
+  }
+
+  async comment(
+    id: string,
+    postId: string,
+    lastCommentId: string | undefined,
+    accessToken: string,
+    postDetails: PostDetails<InstagramDto>[],
+    integration: Integration,
+    type = 'graph.facebook.com'
+  ): Promise<PostResponse[]> {
+    const [commentPost] = postDetails;
+
+    const { id: commentId } = await (
+      await this.fetch(
+        `https://${type}/v20.0/${postId}/comments?message=${encodeURIComponent(
+          commentPost.message
+        )}&access_token=${accessToken}`,
+        {
+          method: 'POST',
+        }
+      )
+    ).json();
+
+    // Get the permalink from the parent post
+    const { permalink } = await (
+      await this.fetch(
+        `https://${type}/v20.0/${postId}?fields=permalink&access_token=${accessToken}`
+      )
+    ).json();
+
+    return [
+      {
+        id: commentPost.id,
+        postId: commentId,
         releaseURL: permalink,
         status: 'success',
-      });
-
-      linkGlobal = permalink;
-    }
-
-    for (const post of theRest) {
-      const { id: commentId } = await (
-        await this.fetch(
-          `https://${type}/v20.0/${containerIdGlobal}/comments?message=${encodeURIComponent(
-            post.message
-          )}&access_token=${accessToken}`,
-          {
-            method: 'POST',
-          }
-        )
-      ).json();
-
-      arr.push({
-        id: post.id,
-        postId: commentId,
-        releaseURL: linkGlobal,
-        status: 'success',
-      });
-    }
-
-    return arr;
+      },
+    ];
   }
 
   private setTitle(name: string) {

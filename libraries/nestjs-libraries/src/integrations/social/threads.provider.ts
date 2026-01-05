@@ -342,7 +342,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       return [];
     }
 
-    const [firstPost, ...replies] = postDetails;
+    const [firstPost] = postDetails;
 
     // Create the initial thread
     const initialContentId = await this.createThreadContent(
@@ -358,8 +358,8 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       initialContentId
     );
 
-    // Track the responses
-    const responses: PostResponse[] = [
+    // Return the main post response
+    return [
       {
         id: firstPost.id,
         postId: threadId,
@@ -367,60 +367,49 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
         releaseURL: permalink,
       },
     ];
+  }
 
-    // Handle replies if any
-    let lastReplyId = threadId;
+  async comment(
+    userId: string,
+    postId: string,
+    lastCommentId: string | undefined,
+    accessToken: string,
+    postDetails: PostDetails<{
+      active_thread_finisher: boolean;
+      thread_finisher: string;
+    }>[],
+    integration: Integration
+  ): Promise<PostResponse[]> {
+    if (!postDetails.length) {
+      return [];
+    }
 
-    for (const reply of replies) {
-      // Create reply content
-      const replyContentId = await this.createThreadContent(
-        userId,
-        accessToken,
-        reply,
-        lastReplyId
-      );
+    const [commentPost] = postDetails;
+    const replyToId = lastCommentId || postId;
 
-      // Publish the reply
-      const { threadId: replyThreadId } = await this.publishThread(
-        userId,
-        accessToken,
-        replyContentId
-      );
+    // Create reply content
+    const replyContentId = await this.createThreadContent(
+      userId,
+      accessToken,
+      commentPost,
+      replyToId
+    );
 
-      // Update the last reply ID for chaining
-      lastReplyId = replyThreadId;
+    // Publish the reply
+    const { threadId: replyThreadId, permalink } = await this.publishThread(
+      userId,
+      accessToken,
+      replyContentId
+    );
 
-      // Add to responses
-      responses.push({
-        id: reply.id,
-        postId: threadId, // Main thread ID
+    return [
+      {
+        id: commentPost.id,
+        postId: replyThreadId,
         status: 'success',
-        releaseURL: permalink, // Main thread URL
-      });
-    }
-
-    if (postDetails?.[0]?.settings?.active_thread_finisher) {
-      try {
-        const replyContentId = await this.createThreadContent(
-          userId,
-          accessToken,
-          {
-            id: makeId(10),
-            media: [],
-            message: postDetails?.[0]?.settings?.thread_finisher,
-            settings: {},
-          },
-          lastReplyId,
-          threadId
-        );
-
-        await this.publishThread(userId, accessToken, replyContentId);
-      } catch (err) {
-        console.log(err);
-      }
-    }
-
-    return responses;
+        releaseURL: permalink,
+      },
+    ];
   }
 
   async analytics(

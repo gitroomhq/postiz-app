@@ -16,13 +16,10 @@ import { MediaController } from '@gitroom/backend/api/routes/media.controller';
 import { UploadModule } from '@gitroom/nestjs-libraries/upload/upload.module';
 import { BillingController } from '@gitroom/backend/api/routes/billing.controller';
 import { NotificationsController } from '@gitroom/backend/api/routes/notifications.controller';
-import { MarketplaceController } from '@gitroom/backend/api/routes/marketplace.controller';
-import { MessagesController } from '@gitroom/backend/api/routes/messages.controller';
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { ExtractContentService } from '@gitroom/nestjs-libraries/openai/extract.content.service';
 import { CodesService } from '@gitroom/nestjs-libraries/services/codes.service';
 import { CopilotController } from '@gitroom/backend/api/routes/copilot.controller';
-import { AgenciesController } from '@gitroom/backend/api/routes/agencies.controller';
 import { PublicController } from '@gitroom/backend/api/routes/public.controller';
 import { RootController } from '@gitroom/backend/api/routes/root.controller';
 import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
@@ -44,10 +41,7 @@ const authenticatedController = [
   MediaController,
   BillingController,
   NotificationsController,
-  MarketplaceController,
-  MessagesController,
   CopilotController,
-  AgenciesController,
   WebhookController,
   SignatureController,
   AutopostController,

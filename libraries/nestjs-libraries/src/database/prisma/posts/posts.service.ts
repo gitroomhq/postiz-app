@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  ForbiddenException,
   Injectable,
   ValidationPipe,
 } from '@nestjs/common';
@@ -10,10 +9,7 @@ import dayjs from 'dayjs';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { Integration, Post, Media, From, State } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
-import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { shuffle } from 'lodash';
-import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
-import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
 import { CreateGeneratedPostsDto } from '@gitroom/nestjs-libraries/dtos/generator/create.generated.posts.dto';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
@@ -30,7 +26,10 @@ dayjs.extend(utc);
 import * as Sentry from '@sentry/nestjs';
 import { TemporalService } from 'nestjs-temporal-core';
 import { TypedSearchAttributes } from '@temporalio/common';
-import { postId as postIdSearchParam } from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
+import {
+  organizationId,
+  postId as postIdSearchParam,
+} from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
 
 type PostWithConditionals = Post & {
   integration?: Integration;
@@ -43,22 +42,12 @@ export class PostsService {
   constructor(
     private _postRepository: PostsRepository,
     private _integrationManager: IntegrationManager,
-    private _notificationService: NotificationService,
-    private _messagesService: MessagesService,
-    private _stripeService: StripeService,
     private _integrationService: IntegrationService,
     private _mediaService: MediaService,
     private _shortLinkService: ShortLinkService,
-    private openaiService: OpenaiService,
+    private _openaiService: OpenaiService,
     private _temporalService: TemporalService
   ) {}
-
-  checkPending15minutesBack() {
-    return this._postRepository.checkPending15minutesBack();
-  }
-  searchForMissingThreeHoursPosts() {
-    return this._postRepository.searchForMissingThreeHoursPosts();
-  }
 
   updatePost(id: string, postId: string, releaseURL: string) {
     return this._postRepository.updatePost(id, postId, releaseURL);
@@ -434,17 +423,14 @@ export class PostsService {
         content: updateContent[i],
       }));
 
-      const { previousPost, posts } =
-        await this._postRepository.createOrUpdatePost(
-          body.type,
-          orgId,
-          body.type === 'now'
-            ? dayjs().format('YYYY-MM-DDTHH:mm:00')
-            : body.date,
-          post,
-          body.tags,
-          body.inter
-        );
+      const { posts } = await this._postRepository.createOrUpdatePost(
+        body.type,
+        orgId,
+        body.type === 'now' ? dayjs().format('YYYY-MM-DDTHH:mm:00') : body.date,
+        post,
+        body.tags,
+        body.inter
+      );
 
       if (!posts?.length) {
         return [] as any[];
@@ -478,11 +464,21 @@ export class PostsService {
         ?.workflow.start('postWorkflow', {
           workflowId: `post_${posts[0].id}`,
           taskQueue: 'main',
-          args: [{ postId: posts[0].id, organizationId: orgId }],
+          args: [
+            {
+              taskQueue: post.settings.__type.split('-')[0].toLowerCase(),
+              postId: posts[0].id,
+              organizationId: orgId,
+            },
+          ],
           typedSearchAttributes: new TypedSearchAttributes([
             {
               key: postIdSearchParam,
               value: posts[0].id,
+            },
+            {
+              key: organizationId,
+              value: orgId,
             },
           ]),
         });
@@ -498,7 +494,7 @@ export class PostsService {
   }
 
   async separatePosts(content: string, len: number) {
-    return this.openaiService.separatePosts(content, len);
+    return this._openaiService.separatePosts(content, len);
   }
 
   async changeState(id: string, state: State, err?: any, body?: any) {
@@ -536,92 +532,28 @@ export class PostsService {
       ?.workflow.start('postWorkflow', {
         workflowId: `post_${getPostById.id}`,
         taskQueue: 'main',
-        args: [{ postId: getPostById.id, organizationId: orgId }],
+        args: [
+          {
+            taskQueue: getPostById.integration.providerIdentifier
+              .split('-')[0]
+              .toLowerCase(),
+            postId: getPostById.id,
+            organizationId: orgId,
+          },
+        ],
         typedSearchAttributes: new TypedSearchAttributes([
           {
             key: postIdSearchParam,
             value: getPostById.id,
           },
+          {
+            key: organizationId,
+            value: orgId,
+          },
         ]),
       });
 
     return newDate;
-  }
-
-  async payout(id: string, url: string) {
-    const getPost = await this._postRepository.getPostById(id);
-    if (!getPost || !getPost.submittedForOrder) {
-      return;
-    }
-
-    const findPrice = getPost.submittedForOrder.ordersItems.find(
-      (orderItem) => orderItem.integrationId === getPost.integrationId
-    )!;
-
-    await this._messagesService.createNewMessage(
-      getPost.submittedForOrder.messageGroupId,
-      From.SELLER,
-      '',
-      {
-        type: 'published',
-        data: {
-          id: getPost.submittedForOrder.id,
-          postId: id,
-          status: 'PUBLISHED',
-          integrationId: getPost.integrationId,
-          integration: getPost.integration.providerIdentifier,
-          picture: getPost.integration.picture,
-          name: getPost.integration.name,
-          url,
-        },
-      }
-    );
-
-    const totalItems = getPost.submittedForOrder.ordersItems.reduce(
-      (all, p) => all + p.quantity,
-      0
-    );
-    const totalPosts = getPost.submittedForOrder.posts.length;
-
-    if (totalItems === totalPosts) {
-      await this._messagesService.completeOrder(getPost.submittedForOrder.id);
-      await this._messagesService.createNewMessage(
-        getPost.submittedForOrder.messageGroupId,
-        From.SELLER,
-        '',
-        {
-          type: 'order-completed',
-          data: {
-            id: getPost.submittedForOrder.id,
-            postId: id,
-            status: 'PUBLISHED',
-          },
-        }
-      );
-    }
-
-    try {
-      await this._stripeService.payout(
-        getPost.submittedForOrder.id,
-        getPost.submittedForOrder.captureId!,
-        getPost.submittedForOrder.seller.account!,
-        findPrice.price
-      );
-
-      return this._notificationService.inAppNotification(
-        getPost.integration.organizationId,
-        'Payout completed',
-        `You have received a payout of $${findPrice.price}`,
-        true
-      );
-    } catch (err) {
-      await this._messagesService.payoutProblem(
-        getPost.submittedForOrder.id,
-        getPost.submittedForOrder.seller.id,
-        findPrice.price,
-        id
-      );
-    }
   }
 
   async generatePostsDraft(orgId: string, body: CreateGeneratedPostsDto) {
@@ -784,29 +716,5 @@ export class PostsService {
     comment: string
   ) {
     return this._postRepository.createComment(orgId, userId, postId, comment);
-  }
-
-  async sendDigestEmail(subject: string, orgId: string, since: string) {
-    const getNotificationsForOrgSince =
-      await this._notificationService.getNotificationsSince(orgId, since);
-    if (getNotificationsForOrgSince.length === 0) {
-      return;
-    }
-
-    // Get the types of notifications in this digest
-    const types = await this._notificationService.getDigestTypes(orgId);
-
-    const message = getNotificationsForOrgSince
-      .map((p) => p.content)
-      .join('<br />');
-
-    await this._notificationService.sendDigestEmailsToOrg(
-      orgId,
-      getNotificationsForOrgSince.length === 1
-        ? subject
-        : '[Postiz] Your latest notifications',
-      message,
-      types.length > 0 ? types : ['success'] // Default to success if no types tracked
-    );
   }
 }

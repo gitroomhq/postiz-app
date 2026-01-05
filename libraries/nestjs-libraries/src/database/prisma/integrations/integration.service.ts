@@ -9,7 +9,6 @@ import { IntegrationRepository } from '@gitroom/nestjs-libraries/database/prisma
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import {
   AnalyticsData,
-  AuthTokenDetails,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { Integration, Organization } from '@prisma/client';
@@ -21,11 +20,11 @@ import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abst
 import { IntegrationTimeDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.time.dto';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { PlugDto } from '@gitroom/nestjs-libraries/dtos/plugs/plug.dto';
-import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/client';
 import { difference, uniq } from 'lodash';
 import utc from 'dayjs/plugin/utc';
 import { AutopostRepository } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.repository';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
+import { TemporalService } from 'nestjs-temporal-core';
 
 dayjs.extend(utc);
 
@@ -37,16 +36,18 @@ export class IntegrationService {
     private _autopostsRepository: AutopostRepository,
     private _integrationManager: IntegrationManager,
     private _notificationService: NotificationService,
-    private _workerServiceProducer: BullMqClient,
     @Inject(forwardRef(() => RefreshIntegrationService))
-    private _refreshIntegrationService: RefreshIntegrationService
+    private _refreshIntegrationService: RefreshIntegrationService,
+    private _temporalService: TemporalService
   ) {}
 
   async changeActiveCron(orgId: string) {
     const data = await this._autopostsRepository.getAutoposts(orgId);
 
     for (const item of data.filter((f) => f.active)) {
-      await this._workerServiceProducer.deleteScheduler('cron', item.id);
+      try {
+        await this._temporalService.terminateWorkflow(`autopost-${item.id}`);
+      } catch (err) {}
     }
 
     return true;

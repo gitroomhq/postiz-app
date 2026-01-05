@@ -128,7 +128,7 @@ importers:
         version: 10.32.1(@nestjs/common@10.4.20(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@10.4.20)
       '@sentry/nextjs':
         specifier: ^10.26.0
-        version: 10.32.1(@opentelemetry/context-async-hooks@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/core@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(next@14.2.35(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.57.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(sass@1.97.1))(react@18.3.1)(webpack@5.87.0(@swc/core@1.5.7(@swc/helpers@0.5.13))(esbuild@0.25.12))
+        version: 10.32.1(@opentelemetry/context-async-hooks@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/core@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(next@14.2.35(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.57.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(sass@1.97.1))(react@18.3.1)(webpack@5.104.1(@swc/core@1.5.7(@swc/helpers@0.5.13))(esbuild@0.25.12))
       '@sentry/profiling-node':
         specifier: ^10.25.0
         version: 10.32.1
@@ -309,6 +309,9 @@ importers:
       array-move:
         specifier: ^4.0.0
         version: 4.0.0
+      async-mutex:
+        specifier: ^0.5.0
+        version: 0.5.0
       axios:
         specifier: ^1.7.7
         version: 1.13.2(debug@4.4.3)
@@ -645,7 +648,7 @@ importers:
         version: 10.4.20(@nestjs/common@10.4.20(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@10.4.20)(@nestjs/microservices@10.4.20)(@nestjs/platform-express@10.4.20)
       '@pmmmwh/react-refresh-webpack-plugin':
         specifier: ^0.5.7
-        version: 0.5.17(react-refresh@0.10.0)(type-fest@4.41.0)(webpack@5.87.0(@swc/core@1.5.7(@swc/helpers@0.5.13))(esbuild@0.25.12))
+        version: 0.5.17(react-refresh@0.10.0)(type-fest@4.41.0)(webpack@5.104.1(@swc/core@1.5.7(@swc/helpers@0.5.13))(esbuild@0.25.12))
       '@svgr/webpack':
         specifier: ^8.0.1
         version: 8.1.0(typescript@5.5.4)
@@ -22508,7 +22511,7 @@ snapshots:
     dependencies:
       playwright: 1.57.0
 
-  '@pmmmwh/react-refresh-webpack-plugin@0.5.17(react-refresh@0.10.0)(type-fest@4.41.0)(webpack@5.87.0(@swc/core@1.5.7(@swc/helpers@0.5.13))(esbuild@0.25.12))':
+  '@pmmmwh/react-refresh-webpack-plugin@0.5.17(react-refresh@0.10.0)(type-fest@4.41.0)(webpack@5.104.1(@swc/core@1.5.7(@swc/helpers@0.5.13))(esbuild@0.25.12))':
     dependencies:
       ansi-html: 0.0.9
       core-js-pure: 3.47.0
@@ -22518,7 +22521,7 @@ snapshots:
       react-refresh: 0.10.0
       schema-utils: 4.3.3
       source-map: 0.7.6
-      webpack: 5.87.0(@swc/core@1.5.7(@swc/helpers@0.5.13))(esbuild@0.25.12)
+      webpack: 5.104.1(@swc/core@1.5.7(@swc/helpers@0.5.13))(esbuild@0.25.12)
     optionalDependencies:
       type-fest: 4.41.0
 
@@ -23813,7 +23816,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@sentry/nextjs@10.32.1(@opentelemetry/context-async-hooks@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/core@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(next@14.2.35(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.57.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(sass@1.97.1))(react@18.3.1)(webpack@5.87.0(@swc/core@1.5.7(@swc/helpers@0.5.13))(esbuild@0.25.12))':
+  '@sentry/nextjs@10.32.1(@opentelemetry/context-async-hooks@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/core@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(next@14.2.35(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.57.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(sass@1.97.1))(react@18.3.1)(webpack@5.104.1(@swc/core@1.5.7(@swc/helpers@0.5.13))(esbuild@0.25.12))':
     dependencies:
       '@opentelemetry/api': 1.9.0
       '@opentelemetry/semantic-conventions': 1.38.0
@@ -23825,7 +23828,7 @@ snapshots:
       '@sentry/opentelemetry': 10.32.1(@opentelemetry/api@1.9.0)(@opentelemetry/context-async-hooks@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/core@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/semantic-conventions@1.38.0)
       '@sentry/react': 10.32.1(react@18.3.1)
       '@sentry/vercel-edge': 10.32.1
-      '@sentry/webpack-plugin': 4.6.1(webpack@5.87.0(@swc/core@1.5.7(@swc/helpers@0.5.13))(esbuild@0.25.12))
+      '@sentry/webpack-plugin': 4.6.1(webpack@5.104.1(@swc/core@1.5.7(@swc/helpers@0.5.13))(esbuild@0.25.12))
       next: 14.2.35(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.57.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(sass@1.97.1)
       resolve: 1.22.8
       rollup: 4.54.0
@@ -23925,12 +23928,12 @@ snapshots:
       '@opentelemetry/resources': 2.2.0(@opentelemetry/api@1.9.0)
       '@sentry/core': 10.32.1
 
-  '@sentry/webpack-plugin@4.6.1(webpack@5.87.0(@swc/core@1.5.7(@swc/helpers@0.5.13))(esbuild@0.25.12))':
+  '@sentry/webpack-plugin@4.6.1(webpack@5.104.1(@swc/core@1.5.7(@swc/helpers@0.5.13))(esbuild@0.25.12))':
     dependencies:
       '@sentry/bundler-plugin-core': 4.6.1
       unplugin: 1.0.1
       uuid: 9.0.1
-      webpack: 5.87.0(@swc/core@1.5.7(@swc/helpers@0.5.13))(esbuild@0.25.12)
+      webpack: 5.104.1(@swc/core@1.5.7(@swc/helpers@0.5.13))(esbuild@0.25.12)
     transitivePeerDependencies:
       - encoding
       - supports-color

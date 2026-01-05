@@ -14,18 +14,23 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { TypedSearchAttributes } from '@temporalio/common';
 import { postId as postIdSearchParam } from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
 
+const proxyTaskQueue = (taskQueue: string) => {
+  return proxyActivities<PostActivity>({
+    startToCloseTimeout: '10 minute',
+    taskQueue,
+    retry: {
+      maximumAttempts: 3,
+      backoffCoefficient: 1,
+      initialInterval: '2 minutes',
+    },
+  });
+};
+
 const {
   getPostsList,
   inAppNotification,
-  postSocial,
-  postComment,
-  refreshToken,
-  internalPlugs,
   changeState,
-  globalPlugs,
   updatePost,
-  processInternalPlug,
-  processPlug,
   sendWebhooks,
   isCommentable,
 } = proxyActivities<PostActivity>({
@@ -38,14 +43,28 @@ const {
 });
 
 export async function postWorkflow({
+  taskQueue,
   postId,
   organizationId,
   postNow = false,
 }: {
+  taskQueue: string;
   postId: string;
   organizationId: string;
   postNow?: boolean;
 }) {
+
+  // Dynamic task queue, for concurrency
+  const {
+    postSocial,
+    postComment,
+    refreshToken,
+    internalPlugs,
+    globalPlugs,
+    processInternalPlug,
+    processPlug,
+  } = proxyTaskQueue(taskQueue);
+
   const startTime = new Date();
   // get all the posts and comments to post
   const postsList = await getPostsList(organizationId, postId);
@@ -115,7 +134,9 @@ export async function postWorkflow({
           postsResults.push(
             ...(await postComment(
               postsResults[0].postId,
-              postsResults.length === 1 ? undefined : postsResults[i - 1].id,
+              postsResults.length === 1
+                ? undefined
+                : postsResults[i - 1].postId,
               post.integration,
               [postsList[i]]
             ))
@@ -313,6 +334,7 @@ export async function postWorkflow({
         parentClosePolicy: 'ABANDON',
         args: [
           {
+            taskQueue,
             postId,
             organizationId,
             postNow: true,

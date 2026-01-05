@@ -3,7 +3,6 @@ import { DatabaseModule } from '@gitroom/nestjs-libraries/database/prisma/databa
 import { ApiModule } from '@gitroom/backend/api/api.module';
 import { APP_GUARD } from '@nestjs/core';
 import { PoliciesGuard } from '@gitroom/backend/services/auth/permissions/permissions.guard';
-import { BullMqModule } from '@gitroom/nestjs-libraries/bull-mq-transport-new/bull.mq.module';
 import { PublicApiModule } from '@gitroom/backend/public-api/public.api.module';
 import { ThrottlerBehindProxyGuard } from '@gitroom/nestjs-libraries/throttler/throttler.provider';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -20,7 +19,6 @@ import { TemporalRegisterMissingSearchAttributesModule } from '@gitroom/nestjs-l
 @Module({
   imports: [
     SentryModule.forRoot(),
-    BullMqModule,
     DatabaseModule,
     ApiModule,
     PublicApiModule,
@@ -50,7 +48,6 @@ import { TemporalRegisterMissingSearchAttributesModule } from '@gitroom/nestjs-l
     },
   ],
   exports: [
-    BullMqModule,
     DatabaseModule,
     ApiModule,
     PublicApiModule,

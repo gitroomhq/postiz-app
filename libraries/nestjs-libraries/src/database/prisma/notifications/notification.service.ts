@@ -2,9 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { NotificationsRepository } from '@gitroom/nestjs-libraries/database/prisma/notifications/notifications.repository';
 import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 import { OrganizationRepository } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.repository';
-import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/client';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
-import dayjs from 'dayjs';
+import { TemporalService } from 'nestjs-temporal-core';
+import { TypedSearchAttributes } from '@temporalio/common';
+import { organizationId } from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
 
 export type NotificationType = 'success' | 'fail' | 'info';
 
@@ -14,7 +15,7 @@ export class NotificationService {
     private _notificationRepository: NotificationsRepository,
     private _emailService: EmailService,
     private _organizationRepository: OrganizationRepository,
-    private _workerServiceProducer: BullMqClient
+    private _temporalService: TemporalService
   ) {}
 
   getMainPageCount(organizationId: string, userId: string) {
@@ -46,42 +47,41 @@ export class NotificationService {
     digest = false,
     type: NotificationType = 'success'
   ) {
-    const date = new Date().toISOString();
     await this._notificationRepository.createNotification(orgId, message);
     if (!sendEmail) {
       return;
     }
 
     if (digest) {
-      await ioRedis.watch('digest_' + orgId);
-      const value = await ioRedis.get('digest_' + orgId);
+      try {
+        await this._temporalService.client
+          .getRawClient()
+          ?.workflow.start('digestEmailWorkflow', {
+            workflowId: 'digest_email_workflow_' + orgId,
+            taskQueue: 'main',
+            args: [{ organizationId: orgId }],
+            typedSearchAttributes: new TypedSearchAttributes([
+              {
+                key: organizationId,
+                value: orgId,
+              },
+            ]),
+          });
+      } catch (err) {}
 
-      // Track notification types in the digest
-      const typesKey = 'digest_types_' + orgId;
-      await ioRedis.sadd(typesKey, type);
-      await ioRedis.expire(typesKey, 120); // Slightly longer than digest window
-
-      if (value) {
-        return;
-      }
-
-      await ioRedis
-        .multi()
-        .set('digest_' + orgId, date)
-        .expire('digest_' + orgId, 60)
-        .exec();
-
-      this._workerServiceProducer.emit('sendDigestEmail', {
-        id: 'digest_' + orgId,
-        options: {
-          delay: 60000,
-        },
-        payload: {
-          subject,
-          org: orgId,
-          since: date,
-        },
-      });
+      await this._temporalService.signalWorkflow(
+        'digest_email_workflow_' + orgId,
+        'email',
+        [
+          [
+            {
+              title: subject,
+              message,
+              type,
+            },
+          ],
+        ]
+      );
 
       return;
     }

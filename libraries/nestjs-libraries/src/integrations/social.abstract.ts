@@ -1,5 +1,4 @@
 import { timer } from '@gitroom/helpers/utils/timer';
-import { concurrency } from '@gitroom/helpers/utils/concurrency.service';
 import { Integration } from '@prisma/client';
 import { ApplicationFailure } from '@temporalio/activity';
 
@@ -59,19 +58,13 @@ export abstract class SocialAbstract {
     func: (...args: any[]) => Promise<T>,
     ignoreConcurrency?: boolean
   ) {
-    const value = await concurrency<any>(
-      this.identifier,
-      this.maxConcurrentJob,
-      async () => {
-        try {
-          return await func();
-        } catch (err) {
-          const handle = this.handleErrors(JSON.stringify(err));
-          return { err: true, ...(handle || {}) };
-        }
-      },
-      ignoreConcurrency
-    );
+    let value: any;
+    try {
+      value = await func();
+    } catch (err) {
+      const handle = this.handleErrors(JSON.stringify(err));
+      value = { err: true, ...(handle || {}) };
+    }
 
     if (value && value?.err && value?.value) {
       throw new BadBody('', JSON.stringify({}), {} as any, value.value || '');
@@ -87,12 +80,7 @@ export abstract class SocialAbstract {
     totalRetries = 0,
     ignoreConcurrency = false
   ): Promise<Response> {
-    const request = await concurrency(
-      this.identifier,
-      this.maxConcurrentJob,
-      () => fetch(url, options),
-      ignoreConcurrency
-    );
+    const request = await fetch(url, options);
 
     if (request.status === 200 || request.status === 201) {
       return request;
@@ -142,10 +130,20 @@ export abstract class SocialAbstract {
       request.status === 401 &&
       (handleError?.type === 'refresh-token' || !handleError)
     ) {
-      throw new RefreshToken(identifier, json, options.body!, handleError?.value);
+      throw new RefreshToken(
+        identifier,
+        json,
+        options.body!,
+        handleError?.value
+      );
     }
 
-    throw new BadBody(identifier, json, options.body!, handleError?.value || '');
+    throw new BadBody(
+      identifier,
+      json,
+      options.body!,
+      handleError?.value || ''
+    );
   }
 
   checkScopes(required: string[], got: string | string[]) {
