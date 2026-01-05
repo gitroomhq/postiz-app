@@ -75,7 +75,7 @@ export class UsersController {
   }
 
   @Get('/personal')
-  async getPersonal(@GetUserFromRequest() user: User) {
+  async getPersonalInformation(@GetUserFromRequest() user: User) {
     return this._userService.getPersonal(user.id);
   }
 

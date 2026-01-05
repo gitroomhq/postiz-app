@@ -83,7 +83,7 @@ export async function postWorkflow({
     return;
   }
 
-  // if it's a repeatable post, we should ignore this
+  // if it's a repeatable post, we should ignore this.
   if (!postNow) {
     if (dayjs(post.publishDate).isBefore(dayjs())) {
       return;
