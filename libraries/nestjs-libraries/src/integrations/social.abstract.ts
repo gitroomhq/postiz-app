@@ -63,10 +63,18 @@ export abstract class SocialAbstract {
       value = await func();
     } catch (err) {
       const handle = this.handleErrors(JSON.stringify(err));
-      value = { err: true, ...(handle || {}) };
+      value = { err: true, value: 'Unknown Error', ...(handle || {}) };
     }
 
     if (value && value?.err && value?.value) {
+      if (value.type === 'refresh-token') {
+        throw new RefreshToken(
+          '',
+          JSON.stringify({}),
+          {} as any,
+          value.value || ''
+        );
+      }
       throw new BadBody('', JSON.stringify({}), {} as any, value.value || '');
     }
 

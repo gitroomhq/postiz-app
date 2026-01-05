@@ -117,6 +117,14 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
+    if (body.includes('Unauthorized')) {
+      return {
+        type: 'refresh-token',
+        value:
+          'Token expired or invalid, please reconnect your YouTube account.',
+      };
+    }
+
     return undefined;
   }
 

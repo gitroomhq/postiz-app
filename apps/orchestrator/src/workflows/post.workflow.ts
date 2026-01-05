@@ -194,7 +194,7 @@ export async function postWorkflow({
             `Error posting on ${post.integration?.providerIdentifier} for ${post?.integration?.name}`,
             `An error occurred while posting on ${
               post.integration?.providerIdentifier
-            }${err?.message ? `: ${err?.message}` : ``}`,
+            }${err?.cause?.message ? `: ${err?.cause?.message}` : ``}`,
             true,
             false,
             'fail'
