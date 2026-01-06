@@ -69,8 +69,8 @@ services:
       POSTIZ_OAUTH_AUTH_URL: "https://auth.example.com/application/o/authorize"
       POSTIZ_OAUTH_TOKEN_URL: "https://auth.example.com/application/o/token"
       POSTIZ_OAUTH_USERINFO_URL: "https://authentik.example.com/application/o/userinfo"
-      POSTIZ_OAUTH_CLIENT_ID: ""
-      POSTIZ_OAUTH_CLIENT_SECRET: ""
+      POSTIZ_OAUTH_CLIENT_ID: "dashbrew-sso"
+      POSTIZ_OAUTH_CLIENT_SECRET: "69745a7a-17db-4447-8a26-d21dbecc8de2"
       # POSTIZ_OAUTH_SCOPE: "openid profile email"  # Optional: uncomment to override default scope
 
       NEXT_PUBLIC_SENTRY_DSN: "http://spotlight:8969/stream"
