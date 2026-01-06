@@ -4,7 +4,7 @@ services:
     container_name: postiz
     restart: always
     environment:
-      # === Required Settings
+    # === Required Settings
       MAIN_URL: "https://social.dashbrew.app"
       FRONTEND_URL: "https://social.dashbrew.app"
       NEXT_PUBLIC_BACKEND_URL: "https://social.dashbrew.app/api"
@@ -12,7 +12,6 @@ services:
       DATABASE_URL: "postgresql://postiz-user:postiz-password@postiz-postgres:5432/postiz-db-local"
       REDIS_URL: "redis://postiz-redis:6379"
       BACKEND_INTERNAL_URL: "http://localhost:3000"
-      PORT: "5000"
       IS_GENERAL: "true"
       DISABLE_REGISTRATION: "false"
 
@@ -21,15 +20,15 @@ services:
       UPLOAD_DIRECTORY: "/uploads"
       NEXT_PUBLIC_UPLOAD_DIRECTORY: "/uploads"
 
-      # === Cloudflare (R2) Settings (if needed later)
-      CLOUDFLARE_ACCOUNT_ID: ""
-      CLOUDFLARE_ACCESS_KEY: ""
-      CLOUDFLARE_SECRET_ACCESS_KEY: ""
-      CLOUDFLARE_BUCKETNAME: ""
-      CLOUDFLARE_BUCKET_URL: ""
+         # === Cloudflare (R2) Settings
+      CLOUDFLARE_ACCOUNT_ID: "c0b34fa4b8a7cc6a3a189551994912b5"
+      CLOUDFLARE_ACCESS_KEY: "a54c3dc3809c2d1e0345d630b102ad84"
+      CLOUDFLARE_SECRET_ACCESS_KEY: "2303d661a210551cc650b7296804c92c2705aa1664c2f4f1528fc0d1fe7d7887"
+      CLOUDFLARE_BUCKETNAME: "postiz-uploads"
+      CLOUDFLARE_BUCKET_URL: "https://c0b34fa4b8a7cc6a3a189551994912b5.r2.cloudflarestorage.com/postiz-uploads"
       CLOUDFLARE_REGION: "auto"
 
-      # === Social Media API Settings (add as needed)
+      # === Social Media API Settings
       X_API_KEY: ""
       X_API_SECRET: ""
       LINKEDIN_CLIENT_ID: ""
@@ -38,24 +37,72 @@ services:
       REDDIT_CLIENT_SECRET: ""
       GITHUB_CLIENT_ID: ""
       GITHUB_CLIENT_SECRET: ""
+      BEEHIIVE_API_KEY: ""
+      BEEHIIVE_PUBLICATION_ID: ""
+      THREADS_APP_ID: ""
+      THREADS_APP_SECRET: ""
+      FACEBOOK_APP_ID: ""
+      FACEBOOK_APP_SECRET: ""
+      YOUTUBE_CLIENT_ID: ""
+      YOUTUBE_CLIENT_SECRET: ""
+      TIKTOK_CLIENT_ID: ""
+      TIKTOK_CLIENT_SECRET: ""
+      PINTEREST_CLIENT_ID: ""
+      PINTEREST_CLIENT_SECRET: ""
+      DRIBBBLE_CLIENT_ID: ""
+      DRIBBBLE_CLIENT_SECRET: ""
+      DISCORD_CLIENT_ID: ""
+      DISCORD_CLIENT_SECRET: ""
+      DISCORD_BOT_TOKEN_ID: ""
+      SLACK_ID: ""
+      SLACK_SECRET: ""
+      SLACK_SIGNING_SECRET: ""
+      MASTODON_URL: "https://mastodon.social"
+      MASTODON_CLIENT_ID: ""
+      MASTODON_CLIENT_SECRET: ""
 
-      # === OAuth & SSO Settings
-      NEXT_PUBLIC_POSTIZ_OAUTH_DISPLAY_NAME: "DashBrew"
-      NEXT_PUBLIC_POSTIZ_OAUTH_LOGO_URL: "https://dashbrew.app/logo.png"
-      POSTIZ_GENERIC_OAUTH: "true"
-      POSTIZ_OAUTH_URL: "https://auth.dashbrew.app"
-      POSTIZ_OAUTH_AUTH_URL: "https://auth.dashbrew.app/application/o/authorize"
-      POSTIZ_OAUTH_TOKEN_URL: "https://auth.dashbrew.app/application/o/token"
-      POSTIZ_OAUTH_USERINFO_URL: "https://auth.dashbrew.app/application/o/userinfo"
-      POSTIZ_OAUTH_CLIENT_ID: "dashbrew-sso"
-      POSTIZ_OAUTH_CLIENT_SECRET: "kweDonYq224GQ+i4EpNSMa9/4QhQK4PnshhlBurD"
+      # === OAuth & Authentik Settings
+      NEXT_PUBLIC_POSTIZ_OAUTH_DISPLAY_NAME: "Authentik"
+      NEXT_PUBLIC_POSTIZ_OAUTH_LOGO_URL: "https://raw.githubusercontent.com/walkxcode/dashboard-icons/master/png/authentik.png"
+      POSTIZ_GENERIC_OAUTH: "false"
+      POSTIZ_OAUTH_URL: "https://auth.example.com"
+      POSTIZ_OAUTH_AUTH_URL: "https://auth.example.com/application/o/authorize"
+      POSTIZ_OAUTH_TOKEN_URL: "https://auth.example.com/application/o/token"
+      POSTIZ_OAUTH_USERINFO_URL: "https://authentik.example.com/application/o/userinfo"
+      POSTIZ_OAUTH_CLIENT_ID: ""
+      POSTIZ_OAUTH_CLIENT_SECRET: ""
+      # POSTIZ_OAUTH_SCOPE: "openid profile email"  # Optional: uncomment to override default scope
+
+      NEXT_PUBLIC_SENTRY_DSN: "http://spotlight:8969/stream"
+      SENTRY_SPOTLIGHT: "1"
 
       # === Misc Settings
       OPENAI_API_KEY: ""
+      NEXT_PUBLIC_DISCORD_SUPPORT: ""
+      NEXT_PUBLIC_POLOTNO: ""
       API_LIMIT: 30
+
+      # === Payment / Stripe Settings
+      FEE_AMOUNT: 0.05
+      STRIPE_PUBLISHABLE_KEY: ""
+      STRIPE_SECRET_KEY: ""
+      STRIPE_SIGNING_KEY: ""
+      STRIPE_SIGNING_KEY_CONNECT: ""
 
       # === Developer Settings
       NX_ADD_PLUGINS: false
+
+      # === Short Link Service Settings (Optional - leave blank if unused)
+      # DUB_TOKEN: ""
+      # DUB_API_ENDPOINT: "https://api.dub.co"
+      # DUB_SHORT_LINK_DOMAIN: "dub.sh"
+      # SHORT_IO_SECRET_KEY: ""
+      # KUTT_API_KEY: ""
+      # KUTT_API_ENDPOINT: "https://kutt.it/api/v2"
+      # KUTT_SHORT_LINK_DOMAIN: "kutt.it"
+      # LINK_DRIP_API_KEY: ""
+      # LINK_DRIP_API_ENDPOINT: "https://api.linkdrip.com/v1/"
+      # LINK_DRIP_SHORT_LINK_DOMAIN: "dripl.ink"
 
     volumes:
       - postiz-config:/config/
@@ -87,7 +134,6 @@ services:
       interval: 10s
       timeout: 3s
       retries: 3
-      
   postiz-redis:
     image: redis:7.2
     container_name: postiz-redis
@@ -102,13 +148,27 @@ services:
     networks:
       - postiz-network
 
+# For Application Monitoring / Debugging
+  spotlight:
+    pull_policy: always
+    container_name: spotlight
+    ports:
+      - 8969:8969/tcp
+    image: ghcr.io/getsentry/spotlight:latest
+    networks:
+      - postiz-network
+
+
 volumes:
   postgres-volume:
     external: false
+
   postiz-redis-data:
     external: false
+
   postiz-config:
     external: false
+
   postiz-uploads:
     external: false
 
