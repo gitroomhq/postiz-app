@@ -32,7 +32,7 @@ export async function digestEmailWorkflow({
 
   while (true) {
     await condition(() => queue.length > 0);
-    await sleep(60000);
+    await sleep(3600000);
 
     // Take a snapshot batch and immediately clear queue.
     const batch = queue.splice(0, queue.length);
