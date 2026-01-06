@@ -14,11 +14,7 @@ import {
 const { sendEmail } = proxyActivities<EmailActivity>({
   startToCloseTimeout: '10 minute',
   taskQueue: 'main',
-  retry: {
-    maximumAttempts: 3,
-    backoffCoefficient: 1,
-    initialInterval: '2 minutes',
-  },
+  cancellationType: 'ABANDON',
 });
 
 const RATE_LIMIT_MS = 700;
@@ -30,8 +26,10 @@ export async function sendEmailWorkflow({
 }) {
   let processedThisRun = 0;
   // Handle incoming email signals
-  setHandler(sendEmailSignal, (email: SendEmail) => {
-    queue.push(email);
+  setHandler(sendEmailSignal, (addEmail: SendEmail) => {
+    if (addEmail.to && addEmail.subject) {
+      queue.push(addEmail);
+    }
   });
 
   // Process emails with rate limiting
@@ -39,12 +37,14 @@ export async function sendEmailWorkflow({
     // Wait until there's an email in the queue or timeout after 1 hour of inactivity
     const waitForQueue = await condition(() => queue.length > 0, '1 hour');
     if (!waitForQueue) {
-      break;
+      return;
     }
 
     try {
       const email = queue.shift()!;
-
+      if (!email) {
+        continue;
+      }
       await sendEmail(email.to, email.subject, email.html, email.replyTo);
       processedThisRun++;
     } catch (err) {}
