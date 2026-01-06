@@ -64,7 +64,7 @@ services:
       # === OAuth & Authentik Settings
       NEXT_PUBLIC_POSTIZ_OAUTH_DISPLAY_NAME: "Authentik"
       NEXT_PUBLIC_POSTIZ_OAUTH_LOGO_URL: "https://raw.githubusercontent.com/walkxcode/dashboard-icons/master/png/authentik.png"
-      POSTIZ_GENERIC_OAUTH: "false"
+      POSTIZ_GENERIC_OAUTH: "true"
       POSTIZ_OAUTH_URL: "https://auth.example.com"
       POSTIZ_OAUTH_AUTH_URL: "https://auth.example.com/application/o/authorize"
       POSTIZ_OAUTH_TOKEN_URL: "https://auth.example.com/application/o/token"
