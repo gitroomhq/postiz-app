@@ -42,6 +42,7 @@ export class EmailService {
         signal: 'sendEmail',
         args: [{ queue: [] }],
         signalArgs: [{ to, subject, html, replyTo }],
+        workflowIdConflictPolicy: 'USE_EXISTING',
       });
   }
 

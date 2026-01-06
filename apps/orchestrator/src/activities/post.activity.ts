@@ -47,6 +47,7 @@ export class PostActivity {
           workflowId: `post_${post.id}`,
           taskQueue: 'main',
           signal: 'poke',
+          workflowIdConflictPolicy: 'USE_EXISTING',
           signalArgs: [],
           args: [
             {

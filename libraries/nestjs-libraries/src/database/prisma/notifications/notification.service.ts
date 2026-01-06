@@ -61,6 +61,7 @@ export class NotificationService {
               ],
             ],
             taskQueue: 'main',
+            workflowIdConflictPolicy: 'USE_EXISTING',
             args: [{ organizationId: orgId }],
             typedSearchAttributes: new TypedSearchAttributes([
               {
