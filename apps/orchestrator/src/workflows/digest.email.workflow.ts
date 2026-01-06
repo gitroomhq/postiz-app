@@ -11,6 +11,7 @@ import { EmailActivity } from '@gitroom/orchestrator/activities/email.activity';
 const { getUserOrgs, sendEmailAsync } = proxyActivities<EmailActivity>({
   startToCloseTimeout: '10 minute',
   taskQueue: 'main',
+  cancellationType: 'ABANDON',
   retry: {
     maximumAttempts: 3,
     backoffCoefficient: 1,
