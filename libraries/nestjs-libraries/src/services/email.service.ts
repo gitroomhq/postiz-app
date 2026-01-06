@@ -3,11 +3,12 @@ import { EmailInterface } from '@gitroom/nestjs-libraries/emails/email.interface
 import { ResendProvider } from '@gitroom/nestjs-libraries/emails/resend.provider';
 import { EmptyProvider } from '@gitroom/nestjs-libraries/emails/empty.provider';
 import { NodeMailerProvider } from '@gitroom/nestjs-libraries/emails/node.mailer.provider';
+import { TemporalService } from 'nestjs-temporal-core';
 
 @Injectable()
 export class EmailService {
   emailService: EmailInterface;
-  constructor() {
+  constructor(private _temporalService: TemporalService) {
     this.emailService = this.selectProvider(process.env.EMAIL_PROVIDER!);
     console.log('Email service provider:', this.emailService.name);
     for (const key of this.emailService.validateEnvKeys) {
@@ -33,6 +34,23 @@ export class EmailService {
   }
 
   async sendEmail(to: string, subject: string, html: string, replyTo?: string) {
+    return this._temporalService.client
+      .getRawClient()
+      ?.workflow.signalWithStart('sendEmailWorkflow', {
+        taskQueue: 'main',
+        workflowId: 'send_email',
+        signal: 'sendEmail',
+        args: [{ queue: [] }],
+        signalArgs: [{ to, subject, html, replyTo }],
+      });
+  }
+
+  async sendEmailSync(
+    to: string,
+    subject: string,
+    html: string,
+    replyTo?: string
+  ) {
     if (to.indexOf('@') === -1) {
       return;
     }

@@ -61,7 +61,7 @@ export async function digestEmailWorkflow({
       );
     }
 
-    return continueAsNew({
+    return await continueAsNew({
       organizationId,
       queue,
     });

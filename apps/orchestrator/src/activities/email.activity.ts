@@ -13,7 +13,7 @@ export class EmailActivity {
 
   @ActivityMethod()
   async sendEmail(to: string, subject: string, html: string, replyTo?: string) {
-    return this._emailService.sendEmail(to, subject, html, replyTo);
+    return this._emailService.sendEmailSync(to, subject, html, replyTo);
   }
 
   @ActivityMethod()
