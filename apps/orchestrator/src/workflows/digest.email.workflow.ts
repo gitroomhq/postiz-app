@@ -8,7 +8,7 @@ import {
 import { Email, emailSignal } from '@gitroom/orchestrator/signals/email.signal';
 import { EmailActivity } from '@gitroom/orchestrator/activities/email.activity';
 
-const { sendEmail, getUserOrgs } = proxyActivities<EmailActivity>({
+const { getUserOrgs, sendEmailAsync } = proxyActivities<EmailActivity>({
   startToCloseTimeout: '10 minute',
   taskQueue: 'main',
   retry: {
@@ -52,7 +52,7 @@ export async function digestEmailWorkflow({
 
       if (toSend.length === 0) continue;
 
-      await sendEmail(
+      await sendEmailAsync(
         user.user.email,
         toSend.length === 1
           ? toSend[0].title

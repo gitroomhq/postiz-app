@@ -17,6 +17,11 @@ export class EmailActivity {
   }
 
   @ActivityMethod()
+  async sendEmailAsync(to: string, subject: string, html: string, replyTo?: string) {
+    return this._emailService.sendEmail(to, subject, html, replyTo);
+  }
+
+  @ActivityMethod()
   async getUserOrgs(id: string) {
     return this._organizationService.getTeam(id);
   }

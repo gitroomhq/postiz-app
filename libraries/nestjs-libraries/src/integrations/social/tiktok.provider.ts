@@ -444,7 +444,6 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     integration: Integration
   ): Promise<PostResponse[]> {
     const [firstPost] = postDetails;
-    console.log('hello');
     const isPhoto = (firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) === -1;
     const {
       data: { publish_id },

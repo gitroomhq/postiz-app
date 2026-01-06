@@ -21,8 +21,7 @@ const { sendEmail } = proxyActivities<EmailActivity>({
   },
 });
 
-// Rate limit: 2 requests per second = 500ms between requests
-const RATE_LIMIT_MS = 500;
+const RATE_LIMIT_MS = 700;
 
 export async function sendEmailWorkflow({
   queue = [],
