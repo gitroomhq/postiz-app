@@ -62,8 +62,8 @@ services:
       MASTODON_CLIENT_SECRET: ""
 
       # === OAuth & Authentik Settings
-      NEXT_PUBLIC_POSTIZ_OAUTH_DISPLAY_NAME: "Authentik"
-      NEXT_PUBLIC_POSTIZ_OAUTH_LOGO_URL: "https://raw.githubusercontent.com/walkxcode/dashboard-icons/master/png/authentik.png"
+      NEXT_PUBLIC_POSTIZ_OAUTH_DISPLAY_NAME: "DashBrew"
+      NEXT_PUBLIC_POSTIZ_OAUTH_LOGO_URL: "https://dashbrew.s3.us-east-2.amazonaws.com/brokerage/logos/3311feac-ee41-4113-910e-685855244a6f/4d4d4a24-75f1-441a-8d85-e0f5c78c820d.webp"
       POSTIZ_GENERIC_OAUTH: "true"
       POSTIZ_OAUTH_URL: "https://dashbrew.app"
       POSTIZ_OAUTH_AUTH_URL: "https://dashbrew.app/api/oauth/authorize"
