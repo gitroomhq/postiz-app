@@ -9,7 +9,7 @@ services:
       FRONTEND_URL: "https://social.dashbrew.app"
       NEXT_PUBLIC_BACKEND_URL: "https://social.dashbrew.app/api"
       JWT_SECRET: "69745a7a-17db-4447-8a26-d21dbecc8de2"
-      DATABASE_URL: "postgresql://postiz-user:UyHQP2H2cggUnSzPsN5DQGSZM9hPIbfI@postiz-postgres:5432/postiz-db-local"
+      DATABASE_URL: "postgresql://postiz-user:postiz-password@postiz-postgres:5432/postiz-db-local"
       REDIS_URL: "redis://postiz-redis:6379"
       BACKEND_INTERNAL_URL: "http://localhost:3000"
       IS_GENERAL: "true"
