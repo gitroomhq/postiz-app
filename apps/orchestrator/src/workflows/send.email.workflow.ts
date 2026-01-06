@@ -35,10 +35,7 @@ export async function sendEmailWorkflow({
   // Process emails with rate limiting
   while (true) {
     // Wait until there's an email in the queue or timeout after 1 hour of inactivity
-    const waitForQueue = await condition(() => queue.length > 0, '1 hour');
-    if (!waitForQueue) {
-      return;
-    }
+    await condition(() => queue.length > 0);
 
     try {
       const email = queue.shift()!;
@@ -53,7 +50,7 @@ export async function sendEmailWorkflow({
 
     await sleep(RATE_LIMIT_MS);
 
-    if (processedThisRun >= 100) {
+    if (processedThisRun >= 30) {
       return await continueAsNew({ queue });
     }
   }
