@@ -47,7 +47,9 @@ export async function sendEmailWorkflow({
       }
       await sendEmail(email.to, email.subject, email.html, email.replyTo);
       processedThisRun++;
-    } catch (err) {}
+    } catch (err) {
+      console.log(err);
+    }
 
     await sleep(RATE_LIMIT_MS);
 
