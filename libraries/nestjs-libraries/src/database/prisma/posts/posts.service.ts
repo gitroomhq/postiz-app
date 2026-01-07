@@ -440,52 +440,54 @@ export class PostsService {
         return [] as any[];
       }
 
-      try {
-        const workflows = this._temporalService.client
+      new Promise(async () => {
+        try {
+          const workflows = this._temporalService.client
+            .getRawClient()
+            ?.workflow.list({
+              query: `postId="${posts[0].id}" AND ExecutionStatus="Running"`,
+            });
+
+          for await (const executionInfo of workflows) {
+            try {
+              const workflow =
+                await this._temporalService.client.getWorkflowHandle(
+                  executionInfo.workflowId
+                );
+              if (
+                workflow &&
+                (await workflow.describe()).status.name !== 'TERMINATED'
+              ) {
+                await workflow.terminate();
+              }
+            } catch (err) {}
+          }
+        } catch (err) {}
+
+        await this._temporalService.client
           .getRawClient()
-          ?.workflow.list({
-            query: `postId="${posts[0].id}" AND ExecutionStatus="Running"`,
+          ?.workflow.start('postWorkflowV101', {
+            workflowId: `post_${posts[0].id}`,
+            taskQueue: 'main',
+            args: [
+              {
+                taskQueue: post.settings.__type.split('-')[0].toLowerCase(),
+                postId: posts[0].id,
+                organizationId: orgId,
+              },
+            ],
+            typedSearchAttributes: new TypedSearchAttributes([
+              {
+                key: postIdSearchParam,
+                value: posts[0].id,
+              },
+              {
+                key: organizationId,
+                value: orgId,
+              },
+            ]),
           });
-
-        for await (const executionInfo of workflows) {
-          try {
-            const workflow =
-              await this._temporalService.client.getWorkflowHandle(
-                executionInfo.workflowId
-              );
-            if (
-              workflow &&
-              (await workflow.describe()).status.name !== 'TERMINATED'
-            ) {
-              await workflow.terminate();
-            }
-          } catch (err) {}
-        }
-      } catch (err) {}
-
-      await this._temporalService.client
-        .getRawClient()
-        ?.workflow.start('postWorkflowV101', {
-          workflowId: `post_${posts[0].id}`,
-          taskQueue: 'main',
-          args: [
-            {
-              taskQueue: post.settings.__type.split('-')[0].toLowerCase(),
-              postId: posts[0].id,
-              organizationId: orgId,
-            },
-          ],
-          typedSearchAttributes: new TypedSearchAttributes([
-            {
-              key: postIdSearchParam,
-              value: posts[0].id,
-            },
-            {
-              key: organizationId,
-              value: orgId,
-            },
-          ]),
-        });
+      }).catch((err) => {});
 
       Sentry.metrics.count('post_created', 1);
       postList.push({
