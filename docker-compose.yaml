@@ -1,9 +1,6 @@
 services:
   postiz:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: postiz-custom:latest
+    image: ghcr.io/gitroomhq/postiz-app:latest
     container_name: postiz
     restart: always
     environment:
