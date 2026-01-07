@@ -252,6 +252,47 @@ export class PostsService {
     }
   }
 
+  async getPostsByGroup(orgId: string, group: string) {
+    const convertToJPEG = false;
+    const loadAll = await this._postRepository.getPostsByGroup(orgId, group);
+    const posts = this.arrangePostsByGroup(loadAll, undefined);
+
+    return {
+      group: posts?.[0]?.group,
+      posts: await Promise.all(
+        (posts || []).map(async (post) => ({
+          ...post,
+          image: await this.updateMedia(
+            post.id,
+            JSON.parse(post.image || '[]'),
+            convertToJPEG
+          ),
+        }))
+      ),
+      integrationPicture: posts[0]?.integration?.picture,
+      integration: posts[0].integrationId,
+      settings: JSON.parse(posts[0].settings || '{}'),
+    };
+  }
+
+  arrangePostsByGroup(all: any, parent?: string): PostWithConditionals[] {
+    const findAll = all
+      .filter((p: any) =>
+        !parent ? !p.parentPostId : p.parentPostId === parent
+      )
+      .map(({ integration, ...all }: any) => ({
+        ...all,
+        ...(!parent ? { integration } : {}),
+      }));
+
+    return [
+      ...findAll,
+      ...(findAll.length
+        ? findAll.flatMap((p: any) => this.arrangePostsByGroup(all, p.id))
+        : []),
+    ];
+  }
+
   async getPost(orgId: string, id: string, convertToJPEG = false) {
     const posts = await this.getPostsRecursively(id, true, orgId, true);
     const list = {

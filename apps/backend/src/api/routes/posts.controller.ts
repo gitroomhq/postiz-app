@@ -22,7 +22,10 @@ import { Response } from 'express';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.link.service';
 import { CreateTagDto } from '@gitroom/nestjs-libraries/dtos/posts/create.tag.dto';
-import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
+import {
+  AuthorizationActions,
+  Sections,
+} from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 
 @ApiTags('Posts')
 @Controller('/posts')
@@ -109,6 +112,11 @@ export class PostsController {
     @Query('date') date: string
   ) {
     return this._postsService.getOldPosts(org.id, date);
+  }
+
+  @Get('/group/:group')
+  getPostsByGroup(@GetOrgFromRequest() org: Organization, @Param('group') group: string) {
+    return this._postsService.getPostsByGroup(org.id, group);
   }
 
   @Get('/:id')

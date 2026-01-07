@@ -49,7 +49,7 @@ export class PostsRepository {
         integration: {
           select: {
             providerIdentifier: true,
-          }
+          },
         },
         publishDate: true,
       },
@@ -231,6 +231,24 @@ export class PostsRepository {
       },
       select: {
         id: true,
+      },
+    });
+  }
+
+  getPostsByGroup(orgId: string, group: string) {
+    return this._post.model.post.findMany({
+      where: {
+        group,
+        ...(orgId ? { organizationId: orgId } : {}),
+        deletedAt: null,
+      },
+      include: {
+        integration: true,
+        tags: {
+          select: {
+            tag: true,
+          },
+        },
       },
     });
   }
