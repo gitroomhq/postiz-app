@@ -58,7 +58,8 @@ export async function digestEmailWorkflow({
         toSend.length === 1
           ? toSend[0].title
           : `[Postiz] Your latest notifications`,
-        toSend.map((p) => p.message).join('<br/>')
+        toSend.map((p) => p.message).join('<br/>'),
+        'bottom'
       );
     }
 
