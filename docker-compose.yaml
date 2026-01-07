@@ -2,7 +2,7 @@ services:
   postiz:
     build:
       context: .
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
     image: postiz-custom:latest
     container_name: postiz
     restart: always
