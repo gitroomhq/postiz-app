@@ -22,7 +22,6 @@ import {
   organizationId,
   postId as postIdSearchParam,
 } from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
-import { postWorkflow } from '@gitroom/orchestrator/workflows';
 
 @Injectable()
 @Activity()
@@ -43,7 +42,7 @@ export class PostActivity {
     for (const post of list) {
       await this._temporalService.client
         .getRawClient()
-        .workflow.signalWithStart('postWorkflow', {
+        .workflow.signalWithStart('postWorkflowV101', {
           workflowId: `post_${post.id}`,
           taskQueue: 'main',
           signal: 'poke',

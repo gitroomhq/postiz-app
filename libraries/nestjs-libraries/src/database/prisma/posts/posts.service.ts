@@ -465,7 +465,7 @@ export class PostsService {
 
       await this._temporalService.client
         .getRawClient()
-        ?.workflow.start('postWorkflow', {
+        ?.workflow.start('postWorkflowV101', {
           workflowId: `post_${posts[0].id}`,
           taskQueue: 'main',
           args: [
@@ -533,7 +533,7 @@ export class PostsService {
 
     await this._temporalService.client
       .getRawClient()
-      ?.workflow.start('postWorkflow', {
+      ?.workflow.start('postWorkflowV101', {
         workflowId: `post_${getPostById.id}`,
         taskQueue: 'main',
         args: [
@@ -622,10 +622,12 @@ export class PostsService {
                 ...toPost.list.map((l) => ({
                   id: '',
                   content: l.post,
+                  delay: 0,
                   image: [],
                 })),
                 {
                   id: '',
+                  delay: 0,
                   content: `Check out the full story here:\n${
                     body.postId || body.url
                   }`,

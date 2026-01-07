@@ -385,6 +385,7 @@ model Post {
   organizationId             String
   integrationId              String
   content                    String
+  delay                      Int                       @default(0)
   group                      String
   title                      String?
   description                String?

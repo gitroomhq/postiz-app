@@ -148,7 +148,7 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
         0,
         existingData.integration,
         existingData.posts.map((post) => ({
-          delay: 0,
+          delay: post.delay,
           content:
             post.content.indexOf('<p>') > -1
               ? post.content

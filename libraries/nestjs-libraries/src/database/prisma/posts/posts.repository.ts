@@ -383,6 +383,7 @@ export class PostsRepository {
             }
           : {}),
         content: value.content,
+        delay: value.delay || 0,
         group: uuid,
         intervalInDays: inter ? +inter : null,
         approvedSubmitForOrder: APPROVED_SUBMIT_FOR_ORDER.NO,

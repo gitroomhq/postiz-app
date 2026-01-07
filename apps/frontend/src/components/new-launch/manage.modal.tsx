@@ -315,6 +315,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           value: post.values.map((value: any) => ({
             ...(value.id ? { id: value.id } : {}),
             content: value.content,
+            delay: value.delay || 0,
             image:
               (value?.media || []).map(
                 ({ id, path, alt, thumbnail, thumbnailTimestamp }: any) => ({

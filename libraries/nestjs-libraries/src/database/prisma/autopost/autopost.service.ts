@@ -18,7 +18,6 @@ import { TemporalService } from 'nestjs-temporal-core';
 import { TypedSearchAttributes } from '@temporalio/common';
 import {
   organizationId,
-  postId as postIdSearchParam,
 } from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
 const parser = new Parser();
 
@@ -106,7 +105,7 @@ export class AutopostService {
       try {
         return this._temporalService.client
           .getRawClient()
-          ?.workflow.start('postWorkflow', {
+          ?.workflow.start('postWorkflowV101', {
             workflowId: `autopost-${id}`,
             taskQueue: 'main',
             args: [{ id, immediately: true }],
@@ -286,6 +285,7 @@ export class AutopostService {
         value: [
           {
             id: makeId(10),
+            delay: 0,
             content:
               state.description.replace(/\n/g, '\n\n') +
               '\n\n' +
