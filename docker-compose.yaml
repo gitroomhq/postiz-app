@@ -3,17 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        NEXT_PUBLIC_BACKEND_URL: "${NEXT_PUBLIC_BACKEND_URL}"
-        NEXT_PUBLIC_SENTRY_DSN: "${NEXT_PUBLIC_SENTRY_DSN}"
-        NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY: "${NEXT_PUBLIC_UPLOAD_DIRECTORY}"
-        NEXT_PUBLIC_POSTIZ_OAUTH_LOGO_URL: "${NEXT_PUBLIC_POSTIZ_OAUTH_LOGO_URL}"
-        NEXT_PUBLIC_POSTIZ_OAUTH_DISPLAY_NAME: "${NEXT_PUBLIC_POSTIZ_OAUTH_DISPLAY_NAME}"
-        NEXT_PUBLIC_POLOTNO: "${NEXT_PUBLIC_POLOTNO}"
-        NEXT_PUBLIC_DISCORD_SUPPORT: "${NEXT_PUBLIC_DISCORD_SUPPORT}"
-        NEXT_PUBLIC_FACEBOOK_PIXEL: "${NEXT_PUBLIC_FACEBOOK_PIXEL:-}"
-        NEXT_PUBLIC_POSTHOG_KEY: "${NEXT_PUBLIC_POSTHOG_KEY:-}"
-        NEXT_PUBLIC_POSTHOG_HOST: "${NEXT_PUBLIC_POSTHOG_HOST:-}"
+    image: postiz-app:custom  # Tag the built image with this name
     container_name: postiz
     restart: always
     environment:
