@@ -105,7 +105,7 @@ export class AutopostService {
       try {
         return this._temporalService.client
           .getRawClient()
-          ?.workflow.start('postWorkflowV101', {
+          ?.workflow.start('autoPostWorkflow', {
             workflowId: `autopost-${id}`,
             taskQueue: 'main',
             args: [{ id, immediately: true }],

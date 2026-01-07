@@ -384,7 +384,7 @@ export class PostsService {
         const workflows = this._temporalService.client
           .getRawClient()
           ?.workflow.list({
-            query: `WorkflowType="postWorkflow" AND postId="${post.id}" AND ExecutionStatus="Running"`,
+            query: `postId="${post.id}" AND ExecutionStatus="Running"`,
           });
 
         for await (const executionInfo of workflows) {
@@ -444,7 +444,7 @@ export class PostsService {
         const workflows = this._temporalService.client
           .getRawClient()
           ?.workflow.list({
-            query: `WorkflowType="postWorkflow" AND postId="${posts[0].id}" AND ExecutionStatus="Running"`,
+            query: `postId="${posts[0].id}" AND ExecutionStatus="Running"`,
           });
 
         for await (const executionInfo of workflows) {
@@ -513,7 +513,7 @@ export class PostsService {
       const workflows = this._temporalService.client
         .getRawClient()
         ?.workflow.list({
-          query: `WorkflowType="postWorkflow" AND postId="${getPostById.id}" AND ExecutionStatus="Running"`,
+          query: `postId="${getPostById.id}" AND ExecutionStatus="Running"`,
         });
 
       for await (const executionInfo of workflows) {
