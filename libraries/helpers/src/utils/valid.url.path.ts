@@ -40,7 +40,7 @@ export class ValidUrlPath implements ValidatorConstraintInterface {
   defaultMessage(args: ValidationArguments) {
     // here you can provide default error message if validation failed
     return (
-      'URL must contain the domain: ' + process.env.RESTRICT_UPLOAD_DOMAINS
+      'URL must contain the domain: ' + process.env.RESTRICT_UPLOAD_DOMAINS + ' Make sure you first use the upload API route.'
     );
   }
 }
