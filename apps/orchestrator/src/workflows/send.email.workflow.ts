@@ -28,7 +28,11 @@ export async function sendEmailWorkflow({
   // Handle incoming email signals
   setHandler(sendEmailSignal, (addEmail: SendEmail) => {
     if (addEmail.to && addEmail.subject) {
-      queue.push(addEmail);
+      if (addEmail.addTo === 'top') {
+        queue.unshift(addEmail);
+      } else {
+        queue.push(addEmail);
+      }
     }
   });
 

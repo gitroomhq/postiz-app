@@ -17,8 +17,8 @@ export class EmailActivity {
   }
 
   @ActivityMethod()
-  async sendEmailAsync(to: string, subject: string, html: string, replyTo?: string) {
-    return await this._emailService.sendEmail(to, subject, html, replyTo);
+  async sendEmailAsync(to: string, subject: string, html: string, sendTo: 'top' | 'bottom', replyTo?: string) {
+    return await this._emailService.sendEmail(to, subject, html, sendTo, replyTo);
   }
 
   @ActivityMethod()

@@ -5,5 +5,6 @@ export type SendEmail = {
   subject: string;
   html: string;
   replyTo?: string;
+  addTo: 'top' | 'bottom';
 };
 export const sendEmailSignal = defineSignal<[SendEmail]>('sendEmail');

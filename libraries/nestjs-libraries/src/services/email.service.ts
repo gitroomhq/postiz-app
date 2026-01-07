@@ -33,7 +33,7 @@ export class EmailService {
     }
   }
 
-  async sendEmail(to: string, subject: string, html: string, replyTo?: string) {
+  async sendEmail(to: string, subject: string, html: string,  sendTo: 'top' | 'bottom', replyTo?: string) {
     return this._temporalService.client
       .getRawClient()
       ?.workflow.signalWithStart('sendEmailWorkflow', {
@@ -41,7 +41,7 @@ export class EmailService {
         workflowId: 'send_email',
         signal: 'sendEmail',
         args: [{ queue: [] }],
-        signalArgs: [{ to, subject, html, replyTo }],
+        signalArgs: [{ to, subject, html, replyTo, sendTo }],
         workflowIdConflictPolicy: 'USE_EXISTING',
       });
   }

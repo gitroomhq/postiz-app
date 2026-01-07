@@ -101,7 +101,7 @@ export class NotificationService {
   }
 
   async sendEmail(to: string, subject: string, html: string, replyTo?: string) {
-    await this._emailService.sendEmail(to, subject, html, replyTo);
+    await this._emailService.sendEmail(to, subject, html, 'bottom', replyTo);
   }
 
   hasEmailProvider() {
