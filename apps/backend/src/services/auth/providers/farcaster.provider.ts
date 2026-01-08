@@ -10,7 +10,7 @@ export class FarcasterProvider implements ProvidersInterface {
     return '';
   }
 
-  async getToken(code: string) {
+  async getToken(code: string, state?: string) {
     const data = JSON.parse(Buffer.from(code, 'base64').toString());
     const status = await client.lookupSigner({ signerUuid: data.signer_uuid });
     if (status.status === 'approved') {
