@@ -37,6 +37,11 @@ export class PostActivity {
   ) {}
 
   @ActivityMethod()
+  async getIntegrationById(orgId: string, id: string) {
+    return this._integrationService.getIntegrationById(orgId, id);
+  }
+
+  @ActivityMethod()
   async searchForMissingThreeHoursPosts() {
     const list = await this._postService.searchForMissingThreeHoursPosts();
     for (const post of list) {
