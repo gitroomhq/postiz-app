@@ -11,10 +11,11 @@ import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 interface Values {
   id: string;
   content: string;
+  delay: number;
   media: { id: string; path: string; thumbnail?: string }[];
 }
 
-interface Internal {
+export interface Internal {
   integration: Integrations;
   integrationValue: Values[];
 }
@@ -47,6 +48,12 @@ interface StoreState {
   global: Values[];
   internal: Internal[];
   addGlobalValue: (index: number, value: Values[]) => void;
+  setGlobalDelay: (index: number, minutes: number) => void;
+  setInternalDelay: (
+    integrationId: string,
+    index: number,
+    minutes: number
+  ) => void;
   addInternalValue: (
     index: number,
     integrationId: string,
@@ -556,5 +563,24 @@ export const useLaunchStore = create<StoreState>()((set) => ({
   setComments: (comments: boolean | 'no-media') =>
     set((state) => ({
       comments,
+    })),
+  setGlobalDelay: (index: number, minutes: number) =>
+    set((state) => ({
+      global: state.global.map((item, i) =>
+        i === index ? { ...item, delay: minutes } : item
+      ),
+    })),
+  setInternalDelay: (integrationId: string, index: number, minutes: number) =>
+    set((state) => ({
+      internal: state.internal.map((item) =>
+        item.integration.id === integrationId
+          ? {
+              ...item,
+              integrationValue: item.integrationValue.map((v, i) =>
+                i === index ? { ...v, delay: minutes } : v
+              ),
+            }
+          : item
+      ),
     })),
 }));

@@ -1,9 +1,14 @@
-import { forwardRef, HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import {
+  forwardRef,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { IntegrationRepository } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.repository';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import {
   AnalyticsData,
-  AuthTokenDetails,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { Integration, Organization } from '@prisma/client';
@@ -15,11 +20,11 @@ import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abst
 import { IntegrationTimeDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.time.dto';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { PlugDto } from '@gitroom/nestjs-libraries/dtos/plugs/plug.dto';
-import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/client';
 import { difference, uniq } from 'lodash';
 import utc from 'dayjs/plugin/utc';
 import { AutopostRepository } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.repository';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
+import { TemporalService } from 'nestjs-temporal-core';
 
 dayjs.extend(utc);
 
@@ -31,16 +36,18 @@ export class IntegrationService {
     private _autopostsRepository: AutopostRepository,
     private _integrationManager: IntegrationManager,
     private _notificationService: NotificationService,
-    private _workerServiceProducer: BullMqClient,
     @Inject(forwardRef(() => RefreshIntegrationService))
-    private _refreshIntegrationService: RefreshIntegrationService
+    private _refreshIntegrationService: RefreshIntegrationService,
+    private _temporalService: TemporalService
   ) {}
 
   async changeActiveCron(orgId: string) {
     const data = await this._autopostsRepository.getAutoposts(orgId);
 
     for (const item of data.filter((f) => f.active)) {
-      await this._workerServiceProducer.deleteScheduler('cron', item.id);
+      try {
+        await this._temporalService.terminateWorkflow(`autopost-${item.id}`);
+      } catch (err) {}
     }
 
     return true;
@@ -195,6 +202,10 @@ export class IntegrationService {
 
   async refreshNeeded(org: string, id: string) {
     return this._integrationRepository.refreshNeeded(org, id);
+  }
+
+  async setBetweenRefreshSteps(id: string) {
+    return this._integrationRepository.setBetweenRefreshSteps(id);
   }
 
   async refreshTokens() {
@@ -442,40 +453,15 @@ export class IntegrationService {
       getIntegration.providerIdentifier
     );
 
-    if (
-      dayjs(getIntegration?.tokenExpiration).isBefore(dayjs()) ||
-      forceRefresh
-    ) {
-      const data = await this._refreshIntegrationService.refresh(
-        getIntegration
-      );
-      if (!data) {
-        return;
-      }
-      const { accessToken } = data;
+    // @ts-ignore
+    await getSocialIntegration?.[getAllInternalPlugs.methodName]?.(
+      getIntegration,
+      originalIntegration,
+      data.post,
+      data.information
+    );
 
-      getIntegration.token = accessToken;
-
-      if (getSocialIntegration.refreshWait) {
-        await timer(10000);
-      }
-    }
-
-    try {
-      // @ts-ignore
-      await getSocialIntegration?.[getAllInternalPlugs.methodName]?.(
-        getIntegration,
-        originalIntegration,
-        data.post,
-        data.information
-      );
-    } catch (err) {
-      if (err instanceof RefreshToken) {
-        return this.processInternalPlug(data, true);
-      }
-
-      return;
-    }
+    return;
   }
 
   async processPlugs(data: {
@@ -487,18 +473,12 @@ export class IntegrationService {
   }) {
     const getPlugById = await this._integrationRepository.getPlug(data.plugId);
     if (!getPlugById) {
-      return;
+      return true;
     }
 
     const integration = this._integrationManager.getSocialIntegration(
       getPlugById.integration.providerIdentifier
     );
-
-    const findPlug = this._integrationManager
-      .getAllPlugs()
-      .find(
-        (p) => p.identifier === getPlugById.integration.providerIdentifier
-      )!;
 
     // @ts-ignore
     const process = await integration[getPlugById.plugFunction](
@@ -511,26 +491,14 @@ export class IntegrationService {
     );
 
     if (process) {
-      return;
+      return true;
     }
 
     if (data.totalRuns === data.currentRun) {
-      return;
+      return true;
     }
 
-    this._workerServiceProducer.emit('plugs', {
-      id: 'plug_' + data.postId + '_' + findPlug.identifier,
-      options: {
-        delay: data.delay,
-      },
-      payload: {
-        plugId: data.plugId,
-        postId: data.postId,
-        delay: data.delay,
-        totalRuns: data.totalRuns,
-        currentRun: data.currentRun + 1,
-      },
-    });
+    return false;
   }
 
   async createOrUpdatePlug(

@@ -77,7 +77,6 @@ export const SettingsPopup: FC<{
       return;
     }
     toast.show(t('profile_updated', 'Profile updated'));
-    swr.mutate('/marketplace/account');
     close();
   }, []);
 

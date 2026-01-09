@@ -43,28 +43,19 @@ export function useHasScroll(ref: RefObject<HTMLElement>): boolean {
 }
 
 export const SelectCurrent: FC = () => {
-  const { selectedIntegrations, current, setCurrent, locked, setHide, hide } =
+  const { selectedIntegrations, current, setCurrent, locked, setHide } =
     useLaunchStore(
       useShallow((state) => ({
         selectedIntegrations: state.selectedIntegrations,
         current: state.current,
         setCurrent: state.setCurrent,
         locked: state.locked,
-        hide: state.hide,
         setHide: state.setHide,
       }))
     );
 
   const contentRef = useRef<HTMLDivElement>(null);
   const hasScroll = useHasScroll(contentRef);
-
-  useEffect(() => {
-    if (!hide) {
-      return;
-    }
-
-    setHide(false);
-  }, [hide]);
 
   return (
     <>
@@ -146,12 +137,11 @@ export const SelectCurrent: FC = () => {
 
 export const IsGlobal: FC<{ id: string }> = ({ id }) => {
   const t = useT();
-  const { isInternal } =
-    useLaunchStore(
-      useShallow((state) => ({
-        isInternal: !!state.internal.find(p => p.integration.id === id),
-      }))
-    );
+  const { isInternal } = useLaunchStore(
+    useShallow((state) => ({
+      isInternal: !!state.internal.find((p) => p.integration.id === id),
+    }))
+  );
 
   if (!isInternal) {
     return null;
@@ -160,7 +150,10 @@ export const IsGlobal: FC<{ id: string }> = ({ id }) => {
   return (
     <div
       data-tooltip-id="tooltip"
-      data-tooltip-content={t('no_longer_global_mode', 'No longer in global mode')}
+      data-tooltip-content={t(
+        'no_longer_global_mode',
+        'No longer in global mode'
+      )}
       className="w-[8px] h-[8px] bg-[#FC69FF] -top-[1px] -end-[3px] absolute rounded-full"
     />
   );

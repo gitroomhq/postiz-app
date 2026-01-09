@@ -6,7 +6,6 @@ import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/o
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.subscribe.dto';
 import { capitalize, groupBy } from 'lodash';
-import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
@@ -27,21 +26,6 @@ export class StripeService {
   ) {}
   validateRequest(rawBody: Buffer, signature: string, endpointSecret: string) {
     return stripe.webhooks.constructEvent(rawBody, signature, endpointSecret);
-  }
-
-  async updateAccount(event: Stripe.AccountUpdatedEvent) {
-    if (!event.account) {
-      return;
-    }
-
-    const accountCharges =
-      event.data.object.payouts_enabled &&
-      event.data.object.charges_enabled &&
-      !event?.data?.object?.requirements?.disabled_reason;
-    await this._subscriptionService.updateConnectedStatus(
-      event.account!,
-      accountCharges
-    );
   }
 
   async checkValidCard(
@@ -473,62 +457,6 @@ export class StripeService {
     return { url };
   }
 
-  async createAccountProcess(userId: string, email: string, country: string) {
-    const account = await this._subscriptionService.getUserAccount(userId);
-
-    if (account?.account && account?.connectedAccount) {
-      return { url: await this.addBankAccount(account.account) };
-    }
-
-    if (account?.account && !account?.connectedAccount) {
-      await stripe.accounts.del(account.account);
-    }
-
-    const createAccount = await this.createAccount(userId, email, country);
-
-    return { url: await this.addBankAccount(createAccount) };
-  }
-
-  async createAccount(userId: string, email: string, country: string) {
-    const account = await stripe.accounts.create({
-      type: 'custom',
-      capabilities: {
-        transfers: {
-          requested: true,
-        },
-        card_payments: {
-          requested: true,
-        },
-      },
-      tos_acceptance: {
-        service_agreement: 'full',
-      },
-      metadata: {
-        service: 'gitroom',
-      },
-      country,
-      email,
-    });
-
-    await this._subscriptionService.updateAccount(userId, account.id);
-
-    return account.id;
-  }
-
-  async addBankAccount(userId: string) {
-    const accountLink = await stripe.accountLinks.create({
-      account: userId,
-      refresh_url: process.env['FRONTEND_URL'] + '/marketplace/seller',
-      return_url: process.env['FRONTEND_URL'] + '/marketplace/seller',
-      type: 'account_onboarding',
-      collection_options: {
-        fields: 'eventually_due',
-      },
-    });
-
-    return accountLink.url;
-  }
-
   async finishTrial(paymentId: string) {
     const list = (
       await stripe.subscriptions.list({
@@ -633,63 +561,6 @@ export class StripeService {
     }
 
     return 0;
-  }
-
-  async payAccountStepOne(
-    userId: string,
-    organization: Organization,
-    seller: User,
-    orderId: string,
-    ordersItems: Array<{
-      integrationType: string;
-      quantity: number;
-      price: number;
-    }>,
-    groupId: string
-  ) {
-    const customer = (await this.createOrGetCustomer(organization))!;
-
-    const price = ordersItems.reduce((all, current) => {
-      return all + current.price * current.quantity;
-    }, 0);
-
-    const { url } = await stripe.checkout.sessions.create({
-      customer,
-      mode: 'payment',
-      currency: 'usd',
-      success_url: process.env['FRONTEND_URL'] + `/messages/${groupId}`,
-      metadata: {
-        orderId,
-        service: 'gitroom',
-        type: 'marketplace',
-      },
-      line_items: [
-        ...ordersItems,
-        {
-          integrationType: `Gitroom Fee (${+process.env.FEE_AMOUNT! * 100}%)`,
-          quantity: 1,
-          price: price * +process.env.FEE_AMOUNT!,
-        },
-      ].map((item) => ({
-        price_data: {
-          currency: 'usd',
-          product_data: {
-            // @ts-ignore
-            name:
-              (!item.price ? 'Platform: ' : '') +
-              capitalize(item.integrationType),
-          },
-          // @ts-ignore
-          unit_amount: item.price * 100,
-        },
-        quantity: item.quantity,
-      })),
-      payment_intent_data: {
-        transfer_group: orderId,
-      },
-    });
-
-    return { url };
   }
 
   async embedded(
@@ -881,21 +752,6 @@ export class StripeService {
     }
 
     return { ok: true };
-  }
-
-  async payout(
-    orderId: string,
-    charge: string,
-    account: string,
-    price: number
-  ) {
-    return stripe.transfers.create({
-      amount: price * 100,
-      currency: 'usd',
-      destination: account,
-      source_transaction: charge,
-      transfer_group: orderId,
-    });
   }
 
   async lifetimeDeal(organizationId: string, code: string) {

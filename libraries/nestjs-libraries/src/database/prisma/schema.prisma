@@ -86,7 +86,6 @@ model User {
   lastReadNotifications DateTime           @default(now())
   inviteId              String?
   activated             Boolean            @default(true)
-  marketplace           Boolean            @default(true)
   account               String?
   connectedAccount      Boolean            @default(false)
   lastOnline            DateTime           @default(now())
@@ -386,6 +385,7 @@ model Post {
   organizationId             String
   integrationId              String
   content                    String
+  delay                      Int                       @default(0)
   group                      String
   title                      String?
   description                String?
