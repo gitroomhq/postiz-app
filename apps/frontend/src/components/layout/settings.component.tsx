@@ -65,17 +65,6 @@ export const SettingsPopup: FC<{
   const provider = searchParams?.provider?.toUpperCase();
   const code = searchParams?.code;
 
-  useEffect(() => {
-    // Handle OAuth callback with code
-    if (provider && code && genericOauth && isGeneral) {
-      handleOAuthCallback();
-    }
-    // Handle OAuth initiation (provider without code)
-    else if (provider && !code && genericOauth && isGeneral) {
-      initiateOAuthFlow();
-    }
-  }, []);
-
   const initiateOAuthFlow = useCallback(async () => {
     try {
       setOauthLoading(true);
@@ -128,6 +117,19 @@ export const SettingsPopup: FC<{
       setTimeout(() => router.push('/auth/login'), 2000);
     }
   }, [provider, code, fetch, router, toast]);
+
+  // Trigger OAuth flow when component mounts with provider parameter
+  useEffect(() => {
+    // Handle OAuth callback with code
+    if (provider && code && genericOauth && isGeneral) {
+      handleOAuthCallback();
+    }
+    // Handle OAuth initiation (provider without code)
+    else if (provider && !code && genericOauth && isGeneral) {
+      initiateOAuthFlow();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Show loading state during OAuth processing
   if (oauthLoading || (provider && genericOauth && isGeneral)) {
