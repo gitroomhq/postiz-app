@@ -10,9 +10,8 @@ export default async function Index({
   searchParams,
 }: {
   searchParams: {
-    code?: string;
-    provider?: string;
+    code: string;
   };
 }) {
-  return <SettingsPopup searchParams={searchParams} />;
+  return <SettingsPopup />;
 }
