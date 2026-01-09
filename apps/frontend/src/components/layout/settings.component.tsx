@@ -90,7 +90,7 @@ export const SettingsPopup: FC<{
       setOauthLoading(false);
       toast.show('Failed to initiate login. Please try again.', 'error');
     }
-  }, [provider, fetch]);
+  }, [provider, fetch, toast]);
 
   const handleOAuthCallback = useCallback(async () => {
     try {
@@ -127,7 +127,7 @@ export const SettingsPopup: FC<{
       // Redirect to login page on error
       setTimeout(() => router.push('/auth/login'), 2000);
     }
-  }, [provider, code, fetch, router]);
+  }, [provider, code, fetch, router, toast]);
 
   // Show loading state during OAuth processing
   if (oauthLoading || (provider && genericOauth && isGeneral)) {
