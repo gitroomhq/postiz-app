@@ -188,7 +188,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           headers: {
             'Content-Type': 'application/json',
             'X-Restli-Protocol-Version': '2.0.0',
-            'LinkedIn-Version': '202501',
+            'LinkedIn-Version': '202511',
             Authorization: `Bearer ${token}`,
           },
         }
@@ -233,7 +233,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           headers: {
             'Content-Type': 'application/json',
             'X-Restli-Protocol-Version': '2.0.0',
-            'LinkedIn-Version': '202501',
+            'LinkedIn-Version': '202511',
             Authorization: `Bearer ${accessToken}`,
           },
           body: JSON.stringify({
@@ -266,7 +266,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           method: 'PUT',
           headers: {
             'X-Restli-Protocol-Version': '2.0.0',
-            'LinkedIn-Version': '202501',
+            'LinkedIn-Version': '202511',
             Authorization: `Bearer ${accessToken}`,
             ...(isVideo
               ? { 'Content-Type': 'application/octet-stream' }
@@ -298,7 +298,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           }),
           headers: {
             'X-Restli-Protocol-Version': '2.0.0',
-            'LinkedIn-Version': '202501',
+            'LinkedIn-Version': '202511',
             'Content-Type': 'application/json',
             Authorization: `Bearer ${accessToken}`,
           },
@@ -554,21 +554,10 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       isPdf
     );
 
-    console.log({
+    const response = await this.fetch(`https://api.linkedin.com/rest/posts`, {
       method: 'POST',
       headers: {
-        'LinkedIn-Version': '202501',
-        'X-Restli-Protocol-Version': '2.0.0',
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify(postPayload),
-    });
-
-    const response = await this.fetch('https://api.linkedin.com/rest/posts', {
-      method: 'POST',
-      headers: {
-        'LinkedIn-Version': '202501',
+        'LinkedIn-Version': '202511',
         'X-Restli-Protocol-Version': '2.0.0',
         'Content-Type': 'application/json',
         Authorization: `Bearer ${accessToken}`,
@@ -701,6 +690,47 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     );
 
     return [this.createPostResponse(commentPostId, commentPost.id, false)];
+  }
+
+  @PostPlug({
+    identifier: 'linkedin-add-comment',
+    title: 'Add comments by a different account',
+    description: 'Add accounts to comment on your post',
+    pickIntegration: ['linkedin', 'linkedin-page'],
+    fields: [
+      {
+        name: 'comment',
+        description: 'The comment to add to the post',
+        type: 'textarea',
+        placeholder: 'Enter your comment here',
+      },
+    ],
+  })
+  async addComment(
+    integration: Integration,
+    originalIntegration: Integration,
+    postId: string,
+    information: any,
+    isPersonal = true
+  ) {
+    return this.comment(
+      integration.internalId,
+      postId,
+      undefined,
+      integration.token,
+      [
+        {
+          id: makeId(10),
+          message: information.comment,
+          media: [],
+          settings: {
+            post_as_images_carousel: false,
+          },
+        },
+      ],
+      integration,
+      isPersonal ? 'personal' : 'company'
+    );
   }
 
   @PostPlug({

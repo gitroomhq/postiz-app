@@ -90,6 +90,21 @@ export class LinkedinPageProvider
     };
   }
 
+  override async addComment(
+    integration: Integration,
+    originalIntegration: Integration,
+    postId: string,
+    information: any,
+  ) {
+    return super.addComment(
+      integration,
+      originalIntegration,
+      postId,
+      information,
+      false
+    );
+  }
+
   override async repostPostUsers(
     integration: Integration,
     originalIntegration: Integration,
@@ -293,7 +308,7 @@ export class LinkedinPageProvider
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
-            'Linkedin-Version': '202405',
+            'Linkedin-Version': '202511',
             'X-Restli-Protocol-Version': '2.0.0',
           },
         }
@@ -308,7 +323,7 @@ export class LinkedinPageProvider
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
-            'Linkedin-Version': '202405',
+            'Linkedin-Version': '202511',
             'X-Restli-Protocol-Version': '2.0.0',
           },
         }
@@ -323,7 +338,7 @@ export class LinkedinPageProvider
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
-            'Linkedin-Version': '202405',
+            'Linkedin-Version': '202511',
             'X-Restli-Protocol-Version': '2.0.0',
           },
         }
