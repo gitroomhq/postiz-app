@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import 'multer';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import mime from 'mime-types';
@@ -9,6 +9,7 @@ import axios from 'axios';
 
 class CloudflareStorage implements IUploadProvider {
   private _client: S3Client;
+  private _uploadUrl: string;
 
   constructor(
     accountID: string,
@@ -16,8 +17,11 @@ class CloudflareStorage implements IUploadProvider {
     secretKey: string,
     private region: string,
     private _bucketName: string,
-    private _uploadUrl: string
+    uploadUrl: string
   ) {
+    // Normalize URL to remove trailing slash
+    this._uploadUrl = uploadUrl.replace(/\/$/, '');
+
     this._client = new S3Client({
       endpoint: `https://${accountID}.r2.cloudflarestorage.com`,
       region,
@@ -62,7 +66,8 @@ class CloudflareStorage implements IUploadProvider {
     const contentType =
       loadImage?.headers?.get('content-type') ||
       loadImage?.headers?.get('Content-Type');
-    const extension = getExtension(contentType)!;
+    // Fallback to 'bin' if MIME type is unrecognized, or try to extract from URL
+    const extension = getExtension(contentType) || path.split('.').pop()?.split('?')[0] || 'bin';
     const id = makeId(10);
 
     const params = {
@@ -112,14 +117,15 @@ class CloudflareStorage implements IUploadProvider {
     }
   }
 
-  // Implement the removeFile method from IUploadProvider
   async removeFile(filePath: string): Promise<void> {
-    // const fileName = filePath.split('/').pop(); // Extract the filename from the path
-    // const command = new DeleteObjectCommand({
-    //   Bucket: this._bucketName,
-    //   Key: fileName,
-    // });
-    // await this._client.send(command);
+    const fileName = filePath.split('/').pop();
+    if (!fileName) return;
+
+    const command = new DeleteObjectCommand({
+      Bucket: this._bucketName,
+      Key: fileName,
+    });
+    await this._client.send(command);
   }
 }
 
