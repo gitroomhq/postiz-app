@@ -46,7 +46,7 @@ const {
 
 const poke = defineSignal('poke');
 
-const iterate = ['post', 'afterRefresh', 'retry1', 'retry2', 'retry3'];
+const iterate = Array.from({ length: 5 });
 
 export async function postWorkflowV101({
   taskQueue,
@@ -78,8 +78,8 @@ export async function postWorkflowV101({
 
   const startTime = new Date();
   // get all the posts and comments to post
-  const postsList = await getPostsList(organizationId, postId);
-  const [post] = postsList;
+  const postsListBefore = await getPostsList(organizationId, postId);
+  const [post] = postsListBefore;
 
   // in case doesn't exists for some reason, fail it
   if (!post || (!postNow && post.state !== 'QUEUE')) {
@@ -122,14 +122,19 @@ export async function postWorkflowV101({
   }
 
   // Do we need to post comment for this social?
-  const toComment =
-    postsList.length === 1 ? false : await isCommentable(post.integration);
+  const toComment: boolean =
+    postsListBefore.length === 1
+      ? false
+      : await isCommentable(post.integration);
+
+  const postsList = toComment ? postsListBefore : [postsListBefore[0]];
 
   // list of all the saved results
   const postsResults: PostResponse[] = [];
 
   // iterate over the posts
   for (let i = 0; i < postsList.length; i++) {
+    const before = postsResults.length;
     // this is a small trick to repeat an action in case of token refresh
     for (const _ of iterate) {
       try {
@@ -143,12 +148,8 @@ export async function postWorkflowV101({
 
           // then post the comments if any
         } else {
-          if (!toComment) {
-            break;
-          }
-
           if (postsList[i].delay) {
-            await sleep(60000 * postsList[i].delay);
+            await sleep(60000 * Math.max(0, Number(postsList[i].delay ?? 0)));
           }
 
           postsResults.push(
@@ -229,6 +230,11 @@ export async function postWorkflowV101({
         }
       }
     }
+
+    if (postsResults.length === before) {
+      // all retries exhausted without success
+      return false;
+    }
   }
 
   // send webhooks for the post
@@ -283,7 +289,7 @@ export async function postWorkflowV101({
     const todo = list.shift();
 
     // wait for the delay
-    await sleep(todo.delay);
+    await sleep(Math.max(0, Number(todo.delay ?? 0)));
 
     // process internal plug
     if (todo.type === 'internal-plug') {
