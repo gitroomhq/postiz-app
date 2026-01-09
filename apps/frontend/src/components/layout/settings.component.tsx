@@ -20,7 +20,7 @@ import clsx from 'clsx';
 import { TeamsComponent } from '@gitroom/frontend/components/settings/teams.component';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { PublicComponent } from '@gitroom/frontend/components/public-api/public.component';
 import Link from 'next/link';
@@ -31,15 +31,21 @@ import { Autopost } from '@gitroom/frontend/components/autopost/autopost';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { SVGLine } from '@gitroom/frontend/components/launches/launches.component';
 import { GlobalSettings } from '@gitroom/frontend/components/settings/global.settings';
+import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 export const SettingsPopup: FC<{
   getRef?: Ref<any>;
+  searchParams?: {
+    code?: string;
+    provider?: string;
+  };
 }> = (props) => {
-  const { isGeneral } = useVariables();
-  const { getRef } = props;
+  const { isGeneral, genericOauth } = useVariables();
+  const { getRef, searchParams } = props;
   const fetch = useFetch();
   const toast = useToaster();
   const swr = useSWRConfig();
   const user = useUser();
+  const router = useRouter();
   const resolver = useMemo(() => {
     return classValidatorResolver(UserDetailDto);
   }, []);
@@ -53,6 +59,80 @@ export const SettingsPopup: FC<{
   }, []);
   const url = useSearchParams();
   const showLogout = !url.get('onboarding') || user?.tier?.current === 'FREE';
+  
+  // OAuth SSO handling
+  const [oauthLoading, setOauthLoading] = useState(false);
+  const provider = searchParams?.provider?.toUpperCase();
+  const code = searchParams?.code;
+
+  useEffect(() => {
+    // Handle OAuth callback with code
+    if (provider && code && genericOauth && isGeneral) {
+      handleOAuthCallback();
+    }
+    // Handle OAuth initiation (provider without code)
+    else if (provider && !code && genericOauth && isGeneral) {
+      initiateOAuthFlow();
+    }
+  }, []);
+
+  const initiateOAuthFlow = useCallback(async () => {
+    try {
+      setOauthLoading(true);
+      const response = await fetch(`/auth/oauth/${provider}`);
+      if (!response.ok) {
+        throw new Error(`OAuth link request failed with status ${response.status}`);
+      }
+      const link = await response.text();
+      window.location.href = link;
+    } catch (error) {
+      console.error('Failed to initiate OAuth flow:', error);
+      setOauthLoading(false);
+      toast.show('Failed to initiate login. Please try again.', 'error');
+    }
+  }, [provider, fetch]);
+
+  const handleOAuthCallback = useCallback(async () => {
+    try {
+      setOauthLoading(true);
+      // Exchange code for token
+      const response = await fetch(`/auth/oauth/${provider}/exists`, {
+        method: 'POST',
+        body: JSON.stringify({ code }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to authenticate');
+      }
+
+      const data = await response.json();
+      
+      // If we got a JWT, the user already exists - redirect to dashboard
+      if (data.jwt) {
+        router.push('/');
+        return;
+      }
+
+      // If we got a token, user needs to complete registration
+      if (data.token) {
+        router.push(`/auth?provider=${provider.toLowerCase()}&code=${data.token}`);
+        return;
+      }
+
+      throw new Error('Invalid response from server');
+    } catch (error) {
+      console.error('OAuth callback error:', error);
+      setOauthLoading(false);
+      toast.show('Authentication failed. Please try again.', 'error');
+      // Redirect to login page on error
+      setTimeout(() => router.push('/auth/login'), 2000);
+    }
+  }, [provider, code, fetch, router]);
+
+  // Show loading state during OAuth processing
+  if (oauthLoading || (provider && genericOauth && isGeneral)) {
+    return <LoadingComponent />;
+  }
   const loadProfile = useCallback(async () => {
     const personal = await (await fetch('/user/personal')).json();
     form.setValue('fullname', personal.name || '');
