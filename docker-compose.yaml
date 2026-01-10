@@ -1,11 +1,10 @@
 services:
   postiz:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: postiz-app:custom  # Tag the built image with this name
-    container_name: postiz
+    # REPLACE 'yourusername' with your actual GitHub username (must be lowercase)
+    image: ghcr.io/pedrobando/postiz-app:latest 
     restart: always
+    # Keep your environment variables and volumes as they were
+    container_name: postiz
     environment:
     # === Required Settings
       MAIN_URL: "https://social.dashbrew.app"
