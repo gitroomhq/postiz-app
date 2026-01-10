@@ -48,7 +48,7 @@ export function Register() {
     }
   }, []);
   const load = useCallback(async () => {
-    const { token } = await (
+    const { token, login } = await (
       await fetch(`/auth/oauth/${provider?.toUpperCase() || 'LOCAL'}/exists`, {
         method: 'POST',
         body: JSON.stringify({
@@ -56,6 +56,14 @@ export function Register() {
         }),
       })
     ).json();
+
+    // User already exists - redirect to dashboard (auth cookie is already set)
+    if (login) {
+      window.location.href = '/';
+      return;
+    }
+
+    // New user - show registration form
     if (token) {
       setCode(token);
       setShow(true);
