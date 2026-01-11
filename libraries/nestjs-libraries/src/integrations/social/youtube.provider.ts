@@ -50,7 +50,7 @@ const clientAndYoutube = () => {
 
 @Rules('YouTube must have on video attachment, it cannot be empty')
 export class YoutubeProvider extends SocialAbstract implements SocialProvider {
-  override maxConcurrentJob = 1; // YouTube has strict upload quotas
+  override maxConcurrentJob = 200; // YouTube has strict upload quotas
   identifier = 'youtube';
   name = 'YouTube';
   isBetweenSteps = true;
