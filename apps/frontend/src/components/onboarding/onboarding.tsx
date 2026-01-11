@@ -7,12 +7,12 @@ import { Button } from '@gitroom/react/form/button';
 import { ConnectChannels } from '@gitroom/frontend/components/onboarding/connect.channels';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-import { ModalWrapperComponent } from '@gitroom/frontend/components/new-launch/modal.wrapper.component';
 
 const Welcome: FC = () => {
   const { isGeneral } = useVariables();
   const [step, setStep] = useState(1);
   const router = useRouter();
+  const t = useT();
 
   const goToLaunches = useCallback(() => {
     router.push('/launches');
@@ -24,7 +24,7 @@ const Welcome: FC = () => {
         <div>
           <ConnectChannels />
           <div className="flex justify-end gap-[8px]">
-            <Button onClick={goToLaunches}>Close</Button>
+            <Button onClick={goToLaunches}>{t('close', 'Close')}</Button>
           </div>
         </div>
       )}

@@ -15,12 +15,11 @@ import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useShallow } from 'zustand/react/shallow';
 import { GeneralPreviewComponent } from '@gitroom/frontend/components/launches/general.preview.component';
 import { IntegrationContext } from '@gitroom/frontend/components/launches/helpers/use.integration';
-import { Button } from '@gitroom/react/form/button';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { InternalChannels } from '@gitroom/frontend/components/launches/internal.channels';
-import { capitalize } from 'lodash';
+import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 
 class Empty {
@@ -41,6 +40,7 @@ interface CharacterCondition {
 }
 
 export const withProvider = function <T extends object>(params: {
+  comments?: boolean | 'no-media';
   postComment: PostComment;
   minimumCharacters: CharacterCondition[];
   SettingsComponent: FC<{
@@ -83,7 +83,6 @@ export const withProvider = function <T extends object>(params: {
       date,
       isGlobal,
       tab,
-      setTab,
       setTotalChars,
       justCurrent,
       allIntegrations,
@@ -91,20 +90,23 @@ export const withProvider = function <T extends object>(params: {
       setEditor,
       dummy,
       setChars,
+      setComments,
+      setHide
     } = useLaunchStore(
       useShallow((state) => ({
         date: state.date,
         tab: state.tab,
-        setTab: state.setTab,
         global: state.global,
         dummy: state.dummy,
         internal: state.internal.find((p) => p.integration.id === props.id),
         integrations: state.selectedIntegrations,
+        setHide: state.setHide,
         allIntegrations: state.integrations,
         justCurrent: state.current,
         current: state.current === props.id,
         isGlobal: state.current === 'global',
         setCurrent: state.setCurrent,
+        setComments: state.setComments,
         setTotalChars: state.setTotalChars,
         setPostComment: state.setPostComment,
         setEditor: state.setEditor,
@@ -132,12 +134,14 @@ export const withProvider = function <T extends object>(params: {
       );
 
       if (isGlobal) {
+        setComments(true);
         setPostComment(PostComment.ALL);
         setTotalChars(0);
         setEditor('normal');
       }
 
       if (current) {
+        setComments(typeof params.comments === 'undefined' ? true : params.comments);
         setEditor(selectedIntegration?.integration.editor);
         setPostComment(postComment);
         setTotalChars(
@@ -216,12 +220,12 @@ export const withProvider = function <T extends object>(params: {
                     )
                   ),
             fix: () => {
-              setTab(1);
               setCurrent(props.id);
+              setHide(true);
             },
             preview: () => {
-              setTab(0);
               setCurrent(props.id);
+              setHide(true);
             },
           };
         },
@@ -254,41 +258,7 @@ export const withProvider = function <T extends object>(params: {
         }}
       >
         <FormProvider {...form}>
-          <div className={current ? '' : 'hidden'}>
-            <div className="flex gap-[4px] mb-[20px] p-[4px] border border-newTableBorder rounded-[8px]">
-              <div className="flex-1 flex">
-                <div
-                  onClick={() => setTab(0)}
-                  className={clsx(
-                    'cursor-pointer rounded-[4px] flex-1 overflow-hidden whitespace-nowrap text-center pt-[6px] pb-[5px]',
-                    tab !== 0 && !!SettingsComponent
-                      ? ''
-                      : 'text-textItemFocused bg-boxFocused'
-                  )}
-                >
-                  {t('preview', 'Preview')}
-                </div>
-              </div>
-              {current &&
-                (!!SettingsComponent || !!data?.internalPlugs?.length) && (
-                  <div className="flex-1 flex">
-                    <div
-                      onClick={() => setTab(1)}
-                      className={clsx(
-                        'cursor-pointer rounded-[4px] flex-1 overflow-hidden whitespace-nowrap text-center pt-[6px] pb-[5px]',
-                        tab !== 1 ? '' : 'text-textItemFocused bg-boxFocused'
-                      )}
-                    >
-                      {t('settings', 'Settings')} (
-                      {capitalize(
-                        selectedIntegration.integration.identifier.split('-')[0]
-                      )}
-                      )
-                    </div>
-                  </div>
-                )}
-            </div>
-
+          <div className={clsx('border border-borderPreview rounded-[12px] shadow-previewShadow', !current && 'hidden')}>
             {current &&
               (tab === 0 ||
                 (!SettingsComponent && !data?.internalPlugs?.length)) &&
@@ -331,14 +301,22 @@ export const withProvider = function <T extends object>(params: {
                   }
                 />
               ))}
-            {(SettingsComponent || !!data?.internalPlugs?.length) && (
-              <div className={tab === 1 ? '' : 'hidden'}>
-                <SettingsComponent />
-                {!!data?.internalPlugs?.length && !dummy && (
-                  <InternalChannels plugs={data?.internalPlugs} />
-                )}
-              </div>
-            )}
+            {(SettingsComponent || !!data?.internalPlugs?.length) &&
+              createPortal(
+                <div data-id={props.id} className="hidden">
+                  <SettingsComponent />
+                  {!!data?.internalPlugs?.length && !dummy && (
+                    <InternalChannels plugs={data?.internalPlugs} />
+                  )}
+                </div>,
+                document.querySelector('#social-settings') || document.createElement('div')
+              )}
+            {current &&
+              !SettingsComponent &&
+              createPortal(
+                <style>{`#wrapper-settings {display: none !important;} #social-empty {display: block !important;}`}</style>,
+                document.querySelector('#social-settings') || document.createElement('div')
+              )}
           </div>
         </FormProvider>
       </IntegrationContext.Provider>

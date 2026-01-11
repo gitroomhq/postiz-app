@@ -9,5 +9,5 @@ export class BillingSubscribeDto {
 
   utm: string;
 
-  tolt: string;
+  dub: string;
 }

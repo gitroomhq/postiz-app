@@ -4,17 +4,17 @@ import { create } from 'zustand';
 import dayjs from 'dayjs';
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
 import { createRef, RefObject } from 'react';
-import { arrayMoveImmutable } from 'array-move';
 import { PostComment } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 
 interface Values {
   id: string;
   content: string;
+  delay: number;
   media: { id: string; path: string; thumbnail?: string }[];
 }
 
-interface Internal {
+export interface Internal {
   integration: Integrations;
   integrationValue: Values[];
 }
@@ -38,6 +38,7 @@ interface StoreState {
   tags: { label: string; value: string }[];
   tab: 0 | 1;
   current: string;
+  comments: boolean | 'no-media';
   locked: boolean;
   hide: boolean;
   setLocked: (locked: boolean) => void;
@@ -46,6 +47,12 @@ interface StoreState {
   global: Values[];
   internal: Internal[];
   addGlobalValue: (index: number, value: Values[]) => void;
+  setGlobalDelay: (index: number, minutes: number) => void;
+  setInternalDelay: (
+    integrationId: string,
+    index: number,
+    minutes: number
+  ) => void;
   addInternalValue: (
     index: number,
     integrationId: string,
@@ -125,12 +132,14 @@ interface StoreState {
   setLoaded?: (loaded: boolean) => void;
   setChars: (id: string, chars: number) => void;
   chars: Record<string, number>;
+  setComments: (comments: boolean | 'no-media') => void;
 }
 
 const initialState = {
   editor: undefined as undefined,
   loaded: true,
   dummy: false,
+  comments: true,
   activateExitButton: true,
   date: newDayjs(),
   postComment: PostComment.ALL,
@@ -247,22 +256,45 @@ export const useLaunchStore = create<StoreState>()((set) => ({
       };
     }),
   deleteGlobalValue: (index: number) =>
-    set((state) => ({
-      global: state.global.filter((_, i) => i !== index),
-    })),
+    set((state) => {
+      // Preserve the IDs at their current positions
+      const ids = state.global.map((item) => item.id);
+
+      // Get remaining data (content, delay, media) after filtering out deleted index
+      const remainingData = state.global
+        .filter((_, i) => i !== index)
+        .map(({ id, ...rest }) => rest);
+
+      // Reconstruct with preserved IDs
+      return {
+        global: remainingData.map((data, i) => ({
+          id: ids[i],
+          ...data,
+        })),
+      };
+    }),
   deleteInternalValue: (integrationId: string, index: number) =>
     set((state) => {
       return {
-        internal: state.internal.map((i) => {
-          if (i.integration.id === integrationId) {
+        internal: state.internal.map((item) => {
+          if (item.integration.id === integrationId) {
+            // Preserve the IDs at their current positions
+            const ids = item.integrationValue.map((v) => v.id);
+
+            // Get remaining data after filtering out deleted index
+            const remainingData = item.integrationValue
+              .filter((_, idx) => idx !== index)
+              .map(({ id, ...rest }) => rest);
+
             return {
-              ...i,
-              integrationValue: i.integrationValue.filter(
-                (_, idx) => idx !== index
-              ),
+              ...item,
+              integrationValue: remainingData.map((data, i) => ({
+                id: ids[i],
+                ...data,
+              })),
             };
           }
-          return i;
+          return item;
         }),
       };
     }),
@@ -295,12 +327,35 @@ export const useLaunchStore = create<StoreState>()((set) => ({
     }),
   changeOrderGlobal: (index: number, direction: 'up' | 'down') =>
     set((state) => {
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+
+      if (targetIndex < 0 || targetIndex >= state.global.length) {
+        return { global: state.global };
+      }
+
+      const currentItem = state.global[index];
+      const targetItem = state.global[targetIndex];
+
       return {
-        global: arrayMoveImmutable(
-          state.global,
-          index,
-          direction === 'up' ? index - 1 : index + 1
-        ),
+        global: state.global.map((item, i) => {
+          if (i === index) {
+            return {
+              id: item.id,
+              content: targetItem.content,
+              delay: targetItem.delay,
+              media: targetItem.media,
+            };
+          }
+          if (i === targetIndex) {
+            return {
+              id: item.id,
+              content: currentItem.content,
+              delay: currentItem.delay,
+              media: currentItem.media,
+            };
+          }
+          return item;
+        }),
       };
     }),
   changeOrderInternal: (
@@ -312,13 +367,36 @@ export const useLaunchStore = create<StoreState>()((set) => ({
       return {
         internal: state.internal.map((item) => {
           if (item.integration.id === integrationId) {
+            const targetIndex = direction === 'up' ? index - 1 : index + 1;
+
+            if (targetIndex < 0 || targetIndex >= item.integrationValue.length) {
+              return item;
+            }
+
+            const currentValue = item.integrationValue[index];
+            const targetValue = item.integrationValue[targetIndex];
+
             return {
               ...item,
-              integrationValue: arrayMoveImmutable(
-                item.integrationValue,
-                index,
-                direction === 'up' ? index - 1 : index + 1
-              ),
+              integrationValue: item.integrationValue.map((v, i) => {
+                if (i === index) {
+                  return {
+                    id: v.id,
+                    content: targetValue.content,
+                    delay: targetValue.delay,
+                    media: targetValue.media,
+                  };
+                }
+                if (i === targetIndex) {
+                  return {
+                    id: v.id,
+                    content: currentValue.content,
+                    delay: currentValue.delay,
+                    media: currentValue.media,
+                  };
+                }
+                return v;
+              }),
             };
           }
 
@@ -549,5 +627,28 @@ export const useLaunchStore = create<StoreState>()((set) => ({
         ...state.chars,
         [id]: chars,
       },
+    })),
+  setComments: (comments: boolean | 'no-media') =>
+    set((state) => ({
+      comments,
+    })),
+  setGlobalDelay: (index: number, minutes: number) =>
+    set((state) => ({
+      global: state.global.map((item, i) =>
+        i === index ? { ...item, delay: minutes } : item
+      ),
+    })),
+  setInternalDelay: (integrationId: string, index: number, minutes: number) =>
+    set((state) => ({
+      internal: state.internal.map((item) =>
+        item.integration.id === integrationId
+          ? {
+              ...item,
+              integrationValue: item.integrationValue.map((v, i) =>
+                i === index ? { ...v, delay: minutes } : v
+              ),
+            }
+          : item
+      ),
     })),
 }));

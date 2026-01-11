@@ -27,24 +27,6 @@ export class PostsRepository {
     private _errors: PrismaRepository<'errors'>
   ) {}
 
-  checkPending15minutesBack() {
-    return this._post.model.post.findMany({
-      where: {
-        publishDate: {
-          lte: dayjs.utc().subtract(15, 'minute').toDate(),
-          gte: dayjs.utc().subtract(30, 'minute').toDate(),
-        },
-        state: 'QUEUE',
-        deletedAt: null,
-        parentPostId: null,
-      },
-      select: {
-        id: true,
-        publishDate: true,
-      },
-    });
-  }
-
   searchForMissingThreeHoursPosts() {
     return this._post.model.post.findMany({
       where: {
@@ -54,8 +36,8 @@ export class PostsRepository {
           disabled: false,
         },
         publishDate: {
-          gte: dayjs.utc().toDate(),
-          lt: dayjs.utc().add(3, 'hour').toDate(),
+          gte: dayjs.utc().subtract(2, 'hour').toDate(),
+          lt: dayjs.utc().add(2, 'hour').toDate(),
         },
         state: 'QUEUE',
         deletedAt: null,
@@ -63,6 +45,12 @@ export class PostsRepository {
       },
       select: {
         id: true,
+        organizationId: true,
+        integration: {
+          select: {
+            providerIdentifier: true,
+          },
+        },
         publishDate: true,
       },
     });
@@ -247,6 +235,24 @@ export class PostsRepository {
     });
   }
 
+  getPostsByGroup(orgId: string, group: string) {
+    return this._post.model.post.findMany({
+      where: {
+        group,
+        ...(orgId ? { organizationId: orgId } : {}),
+        deletedAt: null,
+      },
+      include: {
+        integration: true,
+        tags: {
+          select: {
+            tag: true,
+          },
+        },
+      },
+    });
+  }
+
   getPost(
     id: string,
     includeIntegration = false,
@@ -395,6 +401,7 @@ export class PostsRepository {
             }
           : {}),
         content: value.content,
+        delay: value.delay || 0,
         group: uuid,
         intervalInDays: inter ? +inter : null,
         approvedSubmitForOrder: APPROVED_SUBMIT_FOR_ORDER.NO,
@@ -690,6 +697,32 @@ export class PostsRepository {
         userId,
         postId,
         content,
+      },
+    });
+  }
+
+  async getPostByForWebhookId(postId: string) {
+    return this._post.model.post.findMany({
+      where: {
+        id: postId,
+        deletedAt: null,
+        parentPostId: null,
+      },
+      select: {
+        id: true,
+        content: true,
+        publishDate: true,
+        releaseURL: true,
+        state: true,
+        integration: {
+          select: {
+            id: true,
+            name: true,
+            providerIdentifier: true,
+            picture: true,
+            type: true,
+          },
+        },
       },
     });
   }

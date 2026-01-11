@@ -30,7 +30,7 @@ export class InstagramStandaloneProvider
     'instagram_business_manage_comments',
     'instagram_business_manage_insights',
   ];
-  override maxConcurrentJob = 10; // Instagram standalone has stricter limits
+    override maxConcurrentJob = 200; // Instagram standalone has stricter limits
   dto = InstagramDto;
 
   editor = 'normal' as const;
@@ -158,6 +158,25 @@ export class InstagramStandaloneProvider
   ): Promise<PostResponse[]> {
     return instagramProvider.post(
       id,
+      accessToken,
+      postDetails,
+      integration,
+      'graph.instagram.com'
+    );
+  }
+
+  async comment(
+    id: string,
+    postId: string,
+    lastCommentId: string | undefined,
+    accessToken: string,
+    postDetails: PostDetails<InstagramDto>[],
+    integration: Integration
+  ): Promise<PostResponse[]> {
+    return instagramProvider.comment(
+      id,
+      postId,
+      lastCommentId,
       accessToken,
       postDetails,
       integration,

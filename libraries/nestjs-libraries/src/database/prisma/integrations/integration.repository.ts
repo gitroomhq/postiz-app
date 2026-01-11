@@ -309,6 +309,16 @@ export class IntegrationRepository {
     });
   }
 
+  async setBetweenRefreshSteps(id: string) {
+    return this._integration.model.integration.update({
+      where: {
+        id,
+      },
+      data: {
+        inBetweenSteps: true,
+      },
+    });
+  }
   refreshNeeded(org: string, id: string) {
     return this._integration.model.integration.update({
       where: {

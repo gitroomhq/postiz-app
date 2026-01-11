@@ -19,6 +19,7 @@ export const Support = () => {
   if (!discordUrl || !show) return null;
   return (
     <div
+      id="support-discord"
       className="bg-customColor39 w-[194px] h-[58px] fixed end-[20px] bottom-[20px] z-[500] text-[16px] text-customColor40 rounded-[30px] !rounded-br-[0] cursor-pointer flex justify-center items-center gap-[10px]"
       onClick={() => window.open(discordUrl)}
     >

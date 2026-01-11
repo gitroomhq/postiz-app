@@ -151,7 +151,7 @@ export function RegisterAfter({
               {t('sign_up', 'Sign Up')}
             </h1>
           </div>
-          <div className="text-[14px] mt-[32px] mb-[12px]">Continue With</div>
+          <div className="text-[14px] mt-[32px] mb-[12px]">{t('continue_with', 'Continue With')}</div>
           <div className="flex flex-col">
             {!isAfterProvider &&
               (!isGeneral ? (
@@ -174,7 +174,7 @@ export function RegisterAfter({
                   className={`absolute z-[1] justify-center items-center w-full start-0 -top-[4px] flex`}
                 >
                   <div className="px-[16px]">
-                    or
+                    {t('or', 'or')}
                   </div>
                 </div>
               </div>
@@ -185,25 +185,28 @@ export function RegisterAfter({
                   <>
                     <Input
                       label="Email"
+                      translationKey="label_email"
                       {...form.register('email')}
                       type="email"
-                      placeholder="Email Address"
+                      placeholder={t('email_address', 'Email Address')}
                     />
                     <Input
                       label="Password"
+                      translationKey="label_password"
                       {...form.register('password')}
                       autoComplete="off"
                       type="password"
-                      placeholder="Password"
+                      placeholder={t('label_password', 'Password')}
                     />
                   </>
                 )}
                 <Input
                   label="Company"
+                  translationKey="label_company"
                   {...form.register('company')}
                   autoComplete="off"
                   type="text"
-                  placeholder="Company"
+                  placeholder={t('label_company', 'Company')}
                 />
               </div>
               <div className={clsx('text-[12px]')}>

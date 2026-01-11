@@ -45,15 +45,22 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         value: string;
       }
     | undefined {
-    if (body.includes('usage-capped')) {
+    if (body.includes('Unsupported Authentication')) {
       return {
         type: 'refresh-token',
+        value: 'X authentication has expired, please reconnect your account',
+      };
+    }
+
+    if (body.includes('usage-capped')) {
+      return {
+        type: 'bad-body',
         value: 'Posting failed - capped reached. Please try again later',
       };
     }
     if (body.includes('duplicate-rules')) {
       return {
-        type: 'refresh-token',
+        type: 'bad-body',
         value:
           'You have already posted this post, please wait before posting again',
       };
@@ -291,38 +298,21 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
-  async post(
-    id: string,
-    accessToken: string,
-    postDetails: PostDetails<{
-      active_thread_finisher: boolean;
-      thread_finisher: string;
-      community?: string;
-      who_can_reply_post:
-        | 'everyone'
-        | 'following'
-        | 'mentionedUsers'
-        | 'subscribers'
-        | 'verified';
-    }>[]
-  ): Promise<PostResponse[]> {
+  private async getClient(accessToken: string) {
     const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
-    const client = new TwitterApi({
+    return new TwitterApi({
       appKey: process.env.X_API_KEY!,
       appSecret: process.env.X_API_SECRET!,
       accessToken: accessTokenSplit,
       accessSecret: accessSecretSplit,
     });
-    const {
-      data: { username },
-    } = await this.runInConcurrent(async () =>
-      client.v2.me({
-        'user.fields': 'username',
-      })
-    );
+  }
 
-    // upload everything before, you don't want it to fail between the posts
-    const uploadAll = (
+  private async uploadMedia(
+    client: TwitterApi,
+    postDetails: PostDetails<any>[]
+  ) {
+    return (
       await Promise.all(
         postDetails.flatMap((p) =>
           p?.media?.flatMap(async (m) => {
@@ -361,67 +351,119 @@ export class XProvider extends SocialAbstract implements SocialProvider {
 
       return acc;
     }, {} as Record<string, string[]>);
+  }
 
-    const ids: Array<{ postId: string; id: string; releaseURL: string }> = [];
-    for (const post of postDetails) {
-      const media_ids = (uploadAll[post.id] || []).filter((f) => f);
+  async post(
+    id: string,
+    accessToken: string,
+    postDetails: PostDetails<{
+      active_thread_finisher: boolean;
+      thread_finisher: string;
+      community?: string;
+      who_can_reply_post:
+        | 'everyone'
+        | 'following'
+        | 'mentionedUsers'
+        | 'subscribers'
+        | 'verified';
+    }>[]
+  ): Promise<PostResponse[]> {
+    const client = await this.getClient(accessToken);
+    const {
+      data: { username },
+    } = await this.runInConcurrent(async () =>
+      client.v2.me({
+        'user.fields': 'username',
+      })
+    );
 
-      // @ts-ignore
-      const { data }: { data: { id: string } } = await this.runInConcurrent(
-        async () =>
-          // @ts-ignore
-          client.v2.tweet({
-            ...(!postDetails?.[0]?.settings?.who_can_reply_post ||
-            postDetails?.[0]?.settings?.who_can_reply_post === 'everyone'
-              ? {}
-              : {
-                  reply_settings:
-                    postDetails?.[0]?.settings?.who_can_reply_post,
-                }),
-            ...(postDetails?.[0]?.settings?.community
-              ? {
-                  community_id:
-                    postDetails?.[0]?.settings?.community?.split('/').pop() ||
-                    '',
-                }
-              : {}),
-            text: post.message,
-            ...(media_ids.length ? { media: { media_ids } } : {}),
-            ...(ids.length
-              ? { reply: { in_reply_to_tweet_id: ids[ids.length - 1].postId } }
-              : {}),
-          })
-      );
+    const [firstPost] = postDetails;
 
-      ids.push({
+    // upload media for the first post
+    const uploadAll = await this.uploadMedia(client, [firstPost]);
+
+    const media_ids = (uploadAll[firstPost.id] || []).filter((f) => f);
+
+    // @ts-ignore
+    const { data }: { data: { id: string } } = await this.runInConcurrent(
+      async () =>
+        // @ts-ignore
+        client.v2.tweet({
+          ...(!firstPost?.settings?.who_can_reply_post ||
+          firstPost?.settings?.who_can_reply_post === 'everyone'
+            ? {}
+            : {
+                reply_settings: firstPost?.settings?.who_can_reply_post,
+              }),
+          ...(firstPost?.settings?.community
+            ? {
+                community_id:
+                  firstPost?.settings?.community?.split('/').pop() || '',
+              }
+            : {}),
+          text: firstPost.message,
+          ...(media_ids.length ? { media: { media_ids } } : {}),
+        })
+    );
+
+    return [
+      {
         postId: data.id,
-        id: post.id,
+        id: firstPost.id,
         releaseURL: `https://twitter.com/${username}/status/${data.id}`,
-      });
-    }
+        status: 'posted',
+      },
+    ];
+  }
 
-    if (postDetails?.[0]?.settings?.active_thread_finisher) {
-      try {
-        await this.runInConcurrent(async () =>
-          client.v2.tweet({
-            text:
-              stripHtmlValidation(
-                'normal',
-                postDetails?.[0]?.settings?.thread_finisher!,
-                true
-              ) +
-              '\n' +
-              ids[0].releaseURL,
-            reply: { in_reply_to_tweet_id: ids[ids.length - 1].postId },
-          })
-        );
-      } catch (err) {}
-    }
+  async comment(
+    id: string,
+    postId: string,
+    lastCommentId: string | undefined,
+    accessToken: string,
+    postDetails: PostDetails<{
+      active_thread_finisher: boolean;
+      thread_finisher: string;
+    }>[],
+    integration: Integration
+  ): Promise<PostResponse[]> {
+    const client = await this.getClient(accessToken);
+    const {
+      data: { username },
+    } = await this.runInConcurrent(async () =>
+      client.v2.me({
+        'user.fields': 'username',
+      })
+    );
 
-    return ids.map((p) => ({
-      ...p,
-      status: 'posted',
-    }));
+    const [commentPost] = postDetails;
+
+    // upload media for the comment
+    const uploadAll = await this.uploadMedia(client, [commentPost]);
+
+    const media_ids = (uploadAll[commentPost.id] || []).filter((f) => f);
+
+    const replyToId = lastCommentId || postId;
+
+    // @ts-ignore
+    const { data }: { data: { id: string } } = await this.runInConcurrent(
+      async () =>
+        // @ts-ignore
+        client.v2.tweet({
+          text: commentPost.message,
+          ...(media_ids.length ? { media: { media_ids } } : {}),
+          reply: { in_reply_to_tweet_id: replyToId },
+        })
+    );
+
+    return [
+      {
+        postId: data.id,
+        id: commentPost.id,
+        releaseURL: `https://twitter.com/${username}/status/${data.id}`,
+        status: 'posted',
+      },
+    ];
   }
 
   private loadAllTweets = async (

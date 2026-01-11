@@ -1,5 +1,6 @@
 const { join } = require('path');
 module.exports = {
+  darkMode: 'class',
   content: ['./src/**/*.{ts,tsx,html}', '../../libraries/**/*.{ts,tsx,html}'],
   theme: {
     extend: {
@@ -74,6 +75,9 @@ module.exports = {
         modalCustom: 'var(--color-modalCustom)',
 
         newBgColor: 'var(--new-bgColor)',
+        newBackdrop: 'var(--new-back-drop)',
+        newSep: 'var(--new-sep)',
+        newBorder: 'var(--new-border)',
         newBgColorInner: 'var(--new-bgColorInner)',
         newBgLineColor: 'var(--new-bgLineColor)',
         textItemFocused: 'var(--new-textItemFocused)',
@@ -91,10 +95,24 @@ module.exports = {
         newTableText: 'var(--new-table-text)',
         newTableTextFocused: 'var(--new-table-text-focused)',
         newColColor: 'var(--new-col-color)',
+        newSettings: 'var(--new-settings)',
         menuDots: 'var(--new-menu-dots)',
         menuDotsHover: 'var(--new-menu-hover)',
         bigStrip: 'var(--new-big-strips)',
         popup: 'var(--popup-color)',
+        bgLinkedin: 'var(--linkedin-bg)',
+        bgFacebook: 'var(--facebook-bg)',
+        bgInstagram: 'var(--instagram-bg)',
+        bgTiktokItem: 'var(--tiktok-item-bg)',
+        bgTiktokItemIcon: 'var(--tiktok-item-icon-bg)',
+        bgYoutube: 'var(--youtube-bg)',
+        bgCommentFacebook: 'var(--facebook-bg-comment)',
+        textLinkedin: 'var(--linkedin-text)',
+        borderPreview: 'var(--border-preview)',
+        borderLinkedin: 'var(--linkedin-border)',
+        youtubeButton: 'var(--youtube-button)',
+        youtubeBgAction: 'var(--youtube-action-color)',
+        youtubeSvg: 'var(--youtube-svg-border)',
       },
       gridTemplateColumns: {
         13: 'repeat(13, minmax(0, 1fr));',
@@ -124,6 +142,7 @@ module.exports = {
         yellowToast: '0px 0px 50px rgba(252, 186, 3, 0.3)',
         greenToast: '0px 0px 50px rgba(60, 124, 90, 0.3)',
         menu: 'var(--menu-shadow)',
+        previewShadow: 'var(--preview-box-shadow)',
       },
       // that is actual animation
       keyframes: (theme) => ({
@@ -223,6 +242,18 @@ module.exports = {
         },
       }),
       screens: {
+        mobile: {
+          raw: '(max-width: 1025px)',
+        },
+        tablet: {
+          raw: '(max-width: 1300px)',
+        },
+        iconBreak: {
+          raw: '(max-width: 1560px)',
+        },
+        maxMedia: {
+          raw: '(max-width: 1400px)',
+        },
         custom: {
           raw: '(max-height: 800px)',
         },

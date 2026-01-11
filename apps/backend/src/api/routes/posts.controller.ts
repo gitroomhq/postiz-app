@@ -13,10 +13,8 @@ import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/po
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization, User } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
-import { StarsService } from '@gitroom/nestjs-libraries/database/prisma/stars/stars.service';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import { ApiTags } from '@nestjs/swagger';
-import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
 import { GeneratorDto } from '@gitroom/nestjs-libraries/dtos/generator/generator.dto';
 import { CreateGeneratedPostsDto } from '@gitroom/nestjs-libraries/dtos/generator/create.generated.posts.dto';
 import { AgentGraphService } from '@gitroom/nestjs-libraries/agent/agent.graph.service';
@@ -24,15 +22,16 @@ import { Response } from 'express';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.link.service';
 import { CreateTagDto } from '@gitroom/nestjs-libraries/dtos/posts/create.tag.dto';
-import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
+import {
+  AuthorizationActions,
+  Sections,
+} from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 
 @ApiTags('Posts')
 @Controller('/posts')
 export class PostsController {
   constructor(
     private _postsService: PostsService,
-    private _starsService: StarsService,
-    private _messagesService: MessagesService,
     private _agentGraphService: AgentGraphService,
     private _shortLinkService: ShortLinkService
   ) {}
@@ -48,14 +47,6 @@ export class PostsController {
   @Post('/should-shortlink')
   async shouldShortlink(@Body() body: { messages: string[] }) {
     return { ask: this._shortLinkService.askShortLinkedin(body.messages) };
-  }
-
-  @Get('/marketplace/:id')
-  async getMarketplacePosts(
-    @GetOrgFromRequest() org: Organization,
-    @Param('id') id: string
-  ) {
-    return this._messagesService.getMarketplaceAvailableOffers(org.id, id);
   }
 
   @Post('/:id/comments')
@@ -115,17 +106,17 @@ export class PostsController {
     return { date: await this._postsService.findFreeDateTime(org.id, id) };
   }
 
-  @Get('/predict-trending')
-  predictTrending() {
-    return this._starsService.predictTrending();
-  }
-
   @Get('/old')
   oldPosts(
     @GetOrgFromRequest() org: Organization,
     @Query('date') date: string
   ) {
     return this._postsService.getOldPosts(org.id, date);
+  }
+
+  @Get('/group/:group')
+  getPostsByGroup(@GetOrgFromRequest() org: Organization, @Param('group') group: string) {
+    return this._postsService.getPostsByGroup(org.id, group);
   }
 
   @Get('/:id')

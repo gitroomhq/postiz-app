@@ -110,10 +110,10 @@ export const DayView = () => {
   const options = useMemo(() => {
     const createdPosts = posts.map((post) => ({
       integration: [integrations.find((i) => i.id === post.integration.id)!],
-      image: post.integration.picture,
-      identifier: post.integration.providerIdentifier,
-      id: post.integration.id,
-      name: post.integration.name,
+      image: post?.integration?.picture || '',
+      identifier: post?.integration?.providerIdentifier || '',
+      id: post?.integration?.id || '',
+      name: post?.integration?.name || '',
       time: dayjs
         .utc(post.publishDate)
         .diff(dayjs.utc(post.publishDate).startOf('day'), 'minute'),
@@ -126,11 +126,11 @@ export const DayView = () => {
             ...integrations.flatMap((p) =>
               p.time.flatMap((t) => ({
                 integration: p,
-                identifier: p.identifier,
-                name: p.name,
-                id: p.id,
-                image: p.picture,
-                time: t.time,
+                identifier: p?.identifier,
+                name: p?.name,
+                id: p?.id,
+                image: p?.picture,
+                time: t?.time,
               }))
             ),
           ],
@@ -353,12 +353,12 @@ export const CalendarColumn: FC<{
   const {
     integrations,
     posts,
-    trendings,
     changeDate,
     display,
     reloadCalendarView,
     sets,
     signature,
+    loading,
   } = useCalendar();
   const toaster = useToaster();
   const modal = useModals();
@@ -454,7 +454,7 @@ export const CalendarColumn: FC<{
           publishDate: loadPost.actualDate || loadPost.publishDate,
         };
 
-        const data = await (await fetch(`/posts/${post.id}`)).json();
+        const data = await (await fetch(`/posts/group/${post.group}`)).json();
         const date = !isDuplicate
           ? null
           : (await (await fetch('/posts/find-slot')).json()).date;
@@ -471,6 +471,7 @@ export const CalendarColumn: FC<{
           closeOnEscape: false,
           withCloseButton: false,
           askClose: true,
+          fullScreen: true,
           classNames: {
             modal: 'w-[100%] max-w-[1400px] text-textColor',
           },
@@ -547,15 +548,16 @@ export const CalendarColumn: FC<{
     if (set === 'exit') return;
 
     modal.openModal({
+      id: 'add-edit-modal',
       closeOnClickOutside: false,
+      removeLayout: true,
       closeOnEscape: false,
       withCloseButton: false,
-      removeLayout: true,
       askClose: true,
+      fullScreen: true,
       classNames: {
         modal: 'w-[100%] max-w-[1400px] text-textColor',
       },
-      id: 'add-edit-modal',
       children: (
         <AddEditModal
           allIntegrations={integrations.map((p) => ({
@@ -640,6 +642,7 @@ export const CalendarColumn: FC<{
       className={clsx(
         'flex flex-col w-full min-h-full relative',
         isBeforeNow && 'repeated-strip',
+        loading && 'animate-pulse',
         isBeforeNow
           ? 'cursor-not-allowed'
           : 'border border-newTextColor/5 rounded-[8px]'
@@ -662,6 +665,11 @@ export const CalendarColumn: FC<{
             isBeforeNow && postList.length === 0 && 'col-calendar'
           )}
         >
+          {loading && (
+            <div className="h-full w-full p-[5px] animate-pulse absolute left-0 top-0 z-[50]">
+              <div className="h-full w-full bg-newSettings rounded-[10px]" />
+            </div>
+          )}
           {list.map((post) => (
             <div
               key={post.id}
@@ -913,12 +921,12 @@ const CalendarItem: FC<{
           <div className="text-start">
             {state === 'DRAFT' ? t('draft', 'Draft') + ': ' : ''}
           </div>
-          <div className="w-full relative">
-            <div className="absolute top-0 start-0 w-full text-ellipsis break-words line-clamp-1 text-left">
-              {stripHtmlValidation('none', post.content, false, true, false) ||
-                'no content'}
+            <div className="w-full relative">
+              <div className="absolute top-0 start-0 w-full text-ellipsis break-words line-clamp-1 text-start">
+                {stripHtmlValidation('none', post.content, false, true, false) ||
+                  t('no_content', 'no content')}
+              </div>
             </div>
-          </div>
         </div>
       </div>
     </div>

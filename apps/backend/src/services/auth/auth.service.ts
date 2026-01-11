@@ -21,7 +21,10 @@ export class AuthService {
     private _emailService: EmailService
   ) {}
   async canRegister(provider: string) {
-    if (process.env.DISABLE_REGISTRATION !== 'true' || provider === Provider.GENERIC) {
+    if (
+      process.env.DISABLE_REGISTRATION !== 'true' ||
+      provider === Provider.GENERIC
+    ) {
       return true;
     }
 
@@ -69,7 +72,8 @@ export class AuthService {
         await this._emailService.sendEmail(
           body.email,
           'Activate your account',
-          `Click <a href="${process.env.FRONTEND_URL}/auth/activate/${obj.jwt}">here</a> to activate your account`
+          `Click <a href="${process.env.FRONTEND_URL}/auth/activate/${obj.jwt}">here</a> to activate your account`,
+          'top'
         );
         return obj;
       }

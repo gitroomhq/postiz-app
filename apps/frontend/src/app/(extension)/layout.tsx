@@ -21,12 +21,15 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
-      <body className={clsx(jakartaSans.className, 'dark text-primary !bg-primary')}>
+      <body
+        className={clsx(jakartaSans.className, 'dark text-primary !bg-primary')}
+      >
         <VariableContextComponent
           language="en"
           storageProvider={
             process.env.STORAGE_PROVIDER! as 'local' | 'cloudflare'
           }
+          stripeClient=""
           environment={process.env.NODE_ENV!}
           backendUrl={process.env.NEXT_PUBLIC_BACKEND_URL!}
           plontoKey={process.env.NEXT_PUBLIC_POLOTNO!}
@@ -38,7 +41,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           oauthLogoUrl={process.env.NEXT_PUBLIC_POSTIZ_OAUTH_LOGO_URL!}
           oauthDisplayName={process.env.NEXT_PUBLIC_POSTIZ_OAUTH_DISPLAY_NAME!}
           uploadDirectory={process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY!}
-          tolt={process.env.NEXT_PUBLIC_TOLT!}
+          dub={false}
           facebookPixel={process.env.NEXT_PUBLIC_FACEBOOK_PIXEL!}
           telegramBotName={process.env.TELEGRAM_BOT_NAME!}
           neynarClientId={process.env.NEYNAR_CLIENT_ID!}
