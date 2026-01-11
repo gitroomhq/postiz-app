@@ -83,7 +83,12 @@ export class PostActivity {
 
   @ActivityMethod()
   async getPostsList(orgId: string, postId: string) {
-    return this._postService.getPostsRecursively(postId, true, orgId);
+    const getPosts = await this._postService.getPostsRecursively(postId, true, orgId);
+    if (!getPosts || getPosts.length === 0 || getPosts[0].parentPostId) {
+      return [];
+    }
+
+    return getPosts;
   }
 
   @ActivityMethod()
