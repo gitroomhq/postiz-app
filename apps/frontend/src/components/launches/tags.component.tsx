@@ -103,7 +103,7 @@ export const TagsComponentInner: FC<{
       ref={ref}
       className={clsx(
         'border rounded-[8px] justify-center flex items-center relative h-[44px] text-[15px] font-[600] select-none',
-        isOpen ? 'border-[#612BD3]' : 'border-newTextColor/10'
+        isOpen ? 'border-[#8CC94C]' : 'border-newTextColor/10'
       )}
     >
       <div
@@ -176,7 +176,7 @@ export const TagsComponentInner: FC<{
           ))}
           <div
             onClick={addTag}
-            className="cursor-pointer gap-[8px] flex w-full h-[34px] rounded-[8px] mt-[12px] px-[16px] justify-center items-center bg-[#612BD3] text-white"
+            className="cursor-pointer gap-[8px] flex w-full h-[34px] rounded-[8px] mt-[12px] px-[16px] justify-center items-center bg-[#8CC94C] text-white"
           >
             <div>
               <PlusIcon />
@@ -198,7 +198,7 @@ const Check: FC<{ value: boolean; onChange: (value: boolean) => void }> = ({
       onClick={() => onChange(!value)}
       className={clsx(
         'text-[10px] font-[500] text-center flex border border-btnSimple rounded-[6px] w-[20px] h-[20px] justify-center items-center',
-        value && 'bg-[#612BD3]'
+        value && 'bg-[#8CC94C]'
       )}
     >
       {value ? <CheckmarkIcon className="text-white" /> : ''}
