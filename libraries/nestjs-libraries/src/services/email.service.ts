@@ -33,7 +33,13 @@ export class EmailService {
     }
   }
 
-  async sendEmail(to: string, subject: string, html: string,  sendTo: 'top' | 'bottom', replyTo?: string) {
+  async sendEmail(
+    to: string,
+    subject: string,
+    html: string,
+    sendTo: 'top' | 'bottom',
+    replyTo?: string
+  ) {
     return this._temporalService.client
       .getRawClient()
       ?.workflow.signalWithStart('sendEmailWorkflow', {
@@ -108,6 +114,9 @@ export class EmailService {
                         color: #1f2937;
                         margin: 0;
                     ">${process.env.EMAIL_FROM_NAME}</h2>
+                    <div style="font-size: 12px">
+                      You can change your notification preferences in your <a href="${process.env.FRONTEND_URL}/settings">account settings.</a>
+                     </div>
                 </div>
             </div>
         </div>
