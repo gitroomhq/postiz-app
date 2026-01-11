@@ -583,7 +583,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       type === 'personal' ? `urn:li:person:${id}` : `urn:li:organization:${id}`;
 
     const response = await this.fetch(
-      `https://api.linkedin.com/v2/socialActions/${decodeURIComponent(
+      `https://api.linkedin.com/v2/socialActions/${encodeURIComponent(
         parentPostId
       )}/comments`,
       {
