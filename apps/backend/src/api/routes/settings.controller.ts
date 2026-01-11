@@ -6,12 +6,18 @@ import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/o
 import { AddTeamMemberDto } from '@gitroom/nestjs-libraries/dtos/settings/add.team.member.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
+import { User } from 'facebook-nodejs-business-sdk';
+import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
+import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
+import { ChangePasswordDto } from '@gitroom/nestjs-libraries/dtos/settings/change.password.dto';
+import { AuthService as AuthChecker } from '@gitroom/helpers/auth/auth.service';
 
 @ApiTags('Settings')
 @Controller('/settings')
 export class SettingsController {
   constructor(
-    private _organizationService: OrganizationService
+    private _organizationService: OrganizationService,
+    private _userService: UsersService
   ) {}
 
   @Get('/team')
@@ -45,5 +51,17 @@ export class SettingsController {
     @Param('id') id: string
   ) {
     return this._organizationService.deleteTeamMember(org, id);
+  }
+
+  @Post('/change-password')
+  async changePassword(
+    @GetUserFromRequest() user: User,
+    @Body() body: ChangePasswordDto
+  ) {
+    const userWithPassword = await this._userService.getUserById(user.id);
+    if(!userWithPassword || !AuthChecker.comparePassword(body.oldPassword, userWithPassword.password)) {
+      return false;
+    }
+    return  this._userService.updatePassword(user.id, body.password);
   }
 }

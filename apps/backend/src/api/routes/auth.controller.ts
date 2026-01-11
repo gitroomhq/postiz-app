@@ -26,7 +26,7 @@ import * as Sentry from '@sentry/nestjs';
 @ApiTags('Auth')
 @Controller('/auth')
 export class AuthController {
-  constructor(
+  constructor(    
     private _authService: AuthService,
     private _emailService: EmailService
   ) {}
