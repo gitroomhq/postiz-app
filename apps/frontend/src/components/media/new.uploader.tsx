@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 // @ts-ignore
-import Uppy, { UploadResult } from '@uppy/core';
+import Uppy, { BasePlugin, UploadResult, UppyFile } from '@uppy/core';
 // @ts-ignore
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { getUppyUploadPlugin } from '@gitroom/react/helpers/uppy.upload';
@@ -13,6 +13,27 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { uniq } from 'lodash';
+
+export class CompressionWrapper<M = any, B = any> extends Compressor<M, B> {
+  override async prepareUpload(fileIDs: string[]) {
+    const { files } = this.uppy.getState();
+
+    // 1) Skip GIFs (and anything missing)
+    const filteredIDs = fileIDs.filter((id) => {
+      const f = files[id];
+      if (!f) return false;
+
+      const type = f.type ?? '';
+      const name = (f.name ?? '').toLowerCase();
+      const isGif = type === 'image/gif' || name.endsWith('.gif');
+
+      return !isGif;
+    });
+
+    // 2) Let @uppy/compressor do its work (convert/resize/etc)
+    return super.prepareUpload(filteredIDs);
+  }
+}
 
 export function MultipartFileUploader({
   onUploadSuccess,
@@ -88,7 +109,13 @@ export function useUppyUploader(props: {
         // Expand generic types to specific ones
         const expandedTypes = allowedTypes.flatMap((type) => {
           if (type === 'image/*') {
-            return ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'];
+            return [
+              'image/png',
+              'image/jpeg',
+              'image/jpg',
+              'image/gif',
+              'image/webp',
+            ];
           }
           if (type === 'video/*') {
             return ['video/mp4', 'video/mpeg'];
@@ -182,8 +209,8 @@ export function useUppyUploader(props: {
 
     uppy2.use(plugin, options);
     if (!disableImageCompression) {
-      uppy2.use(Compressor, {
-        convertTypes: ['image/jpeg'],
+      uppy2.use(CompressionWrapper, {
+        convertTypes: ['image/jpeg', 'image/png', 'image/webp'],
         maxWidth: 1000,
         maxHeight: 1000,
         quality: 1,
