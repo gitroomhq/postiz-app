@@ -15,6 +15,7 @@ import { LoginUserDto } from '@gitroom/nestjs-libraries/dtos/auth/login.user.dto
 import { AuthService } from '@gitroom/backend/services/auth/auth.service';
 import { ForgotReturnPasswordDto } from '@gitroom/nestjs-libraries/dtos/auth/forgot-return.password.dto';
 import { ForgotPasswordDto } from '@gitroom/nestjs-libraries/dtos/auth/forgot.password.dto';
+import { ResendActivationDto } from '@gitroom/nestjs-libraries/dtos/auth/resend-activation.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
 import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
@@ -232,6 +233,21 @@ export class AuthController {
     response.header('onboarding', 'true');
 
     return response.status(200).json({ can: true });
+  }
+
+  @Post('/resend-activation')
+  async resendActivation(@Body() body: ResendActivationDto) {
+    try {
+      await this._authService.resendActivationEmail(body.email);
+      return {
+        success: true,
+      };
+    } catch (e: any) {
+      return {
+        success: false,
+        message: e.message,
+      };
+    }
   }
 
   @Post('/oauth/:provider/exists')
