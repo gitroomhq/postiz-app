@@ -14,7 +14,7 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { uniq } from 'lodash';
 
-export class CompressionWrapper<M = any, B = any> extends Compressor<M, B> {
+export class CompressionWrapper<M = any, B = any> extends Compressor<any, any> {
   override async prepareUpload(fileIDs: string[]) {
     const { files } = this.uppy.getState();
 
