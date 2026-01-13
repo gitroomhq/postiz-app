@@ -272,6 +272,31 @@ export class AuthService {
     return { token };
   }
 
+  async validateAndRefreshToken(token: string): Promise<string | null> {
+    try {
+      const decoded = AuthChecker.verifyJWT(token) as {
+        id: string;
+        email: string;
+        activated: boolean;
+      };
+
+      if (!decoded || !decoded.id) {
+        return null;
+      }
+
+      // Get fresh user data from database
+      const user = await this._userService.getUserById(decoded.id);
+      if (!user || !user.activated) {
+        return null;
+      }
+
+      // Generate a fresh token
+      return this.jwt(user);
+    } catch (e) {
+      return null;
+    }
+  }
+
   private async jwt(user: User) {
     return AuthChecker.signJWT(user);
   }

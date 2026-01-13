@@ -284,4 +284,37 @@ export class AuthController {
       login: true,
     });
   }
+
+  @Post('/token')
+  async tokenLogin(
+    @Body('token') token: string,
+    @Res({ passthrough: false }) response: Response
+  ) {
+    try {
+      const valid = await this._authService.validateAndRefreshToken(token);
+      if (!valid) {
+        return response.status(401).json({ error: 'Invalid token' });
+      }
+
+      response.cookie('auth', valid, {
+        domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+        ...(!process.env.NOT_SECURED
+          ? {
+              secure: true,
+              httpOnly: true,
+              sameSite: 'none',
+            }
+          : {}),
+        expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
+      });
+
+      if (process.env.NOT_SECURED) {
+        response.header('auth', valid);
+      }
+
+      response.status(200).json({ login: true });
+    } catch (e: any) {
+      response.status(401).json({ error: 'Invalid token' });
+    }
+  }
 }

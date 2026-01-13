@@ -42,13 +42,48 @@ export function Register() {
   const [provider] = useState(getQuery?.get('provider')?.toUpperCase());
   const [code, setCode] = useState(getQuery?.get('code') || '');
   const [show, setShow] = useState(false);
+
+  // Check for direct JWT token (SSO from external systems like Dashbrew)
+  const directToken = getQuery?.get('token');
+
+  // Handle direct token login (SSO callback)
+  const handleDirectToken = useCallback(async () => {
+    if (!directToken) return;
+
+    try {
+      const response = await fetch('/auth/token', {
+        method: 'POST',
+        body: JSON.stringify({ token: directToken }),
+      });
+
+      if (response.ok) {
+        // Token validated and cookie set - redirect to dashboard
+        window.location.href = '/';
+      } else {
+        // Token invalid - show registration form
+        setShow(true);
+      }
+    } catch (e) {
+      console.error('Token login failed:', e);
+      setShow(true);
+    }
+  }, [directToken, fetch]);
+
   useEffect(() => {
+    // Handle direct JWT token from SSO
+    if (directToken) {
+      handleDirectToken();
+      return;
+    }
+
+    // Handle OAuth code flow
     if (provider && code) {
       load();
     }
   }, []);
+
   const load = useCallback(async () => {
-    const { token } = await (
+    const { token, login } = await (
       await fetch(`/auth/oauth/${provider?.toUpperCase() || 'LOCAL'}/exists`, {
         method: 'POST',
         body: JSON.stringify({
@@ -56,12 +91,26 @@ export function Register() {
         }),
       })
     ).json();
+
+    // User already exists - redirect to dashboard (auth cookie is already set)
+    if (login) {
+      window.location.href = '/';
+      return;
+    }
+
+    // New user - show registration form
     if (token) {
       setCode(token);
       setShow(true);
     }
-  }, [provider, code]);
-  if (!code && !provider) {
+  }, [provider, code, fetch]);
+
+  // Show loading while processing direct token
+  if (directToken && !show) {
+    return <LoadingComponent />;
+  }
+
+  if (!code && !provider && !directToken) {
     return <RegisterAfter token="" provider="LOCAL" />;
   }
   if (!show) {

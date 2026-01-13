@@ -53,7 +53,7 @@ export class OauthProvider implements ProvidersInterface {
       client_id: this.clientId,
       scope: 'openid profile email',
       response_type: 'code',
-      redirect_uri: `${this.frontendUrl}/settings`,
+      redirect_uri: `${this.frontendUrl}/auth?provider=generic`,
     });
 
     return `${this.authUrl}?${params.toString()}`;
@@ -71,7 +71,7 @@ export class OauthProvider implements ProvidersInterface {
         client_id: this.clientId,
         client_secret: this.clientSecret,
         code,
-        redirect_uri: `${this.frontendUrl}/settings`,
+        redirect_uri: `${this.frontendUrl}/auth?provider=generic`,
       }),
     });
 
