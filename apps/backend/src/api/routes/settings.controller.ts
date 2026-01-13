@@ -58,10 +58,10 @@ export class SettingsController {
     @Body() body: ChangePasswordDto
   ) {
     const userWithPassword = await this._userService.getUserById(user.id);
-    if(userWithPassword.providerName !== 'LOCAL') {
+    if(!userWithPassword || userWithPassword.providerName !== 'LOCAL') {
       return false;
     }
-    if(!userWithPassword || !AuthChecker.comparePassword(body.oldPassword, userWithPassword.password)) {
+    if(!AuthChecker.comparePassword(body.oldPassword, userWithPassword.password)) {
       return false;
     }
     return  this._userService.updatePassword(user.id, body.password);
