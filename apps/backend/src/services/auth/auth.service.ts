@@ -222,6 +222,29 @@ export class AuthService {
     return false;
   }
 
+  async resendActivationEmail(email: string) {
+    const user = await this._userService.getUserByEmail(email);
+    
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    if (user.activated) {
+      throw new Error('Account is already activated');
+    }
+
+    const jwt = await this.jwt(user);
+    
+    await this._emailService.sendEmail(
+      user.email,
+      'Activate your account',
+      `Click <a href="${process.env.FRONTEND_URL}/auth/activate/${jwt}">here</a> to activate your account`,
+      'top'
+    );
+
+    return true;
+  }
+
   oauthLink(provider: string, query?: any) {
     const providerInstance = ProvidersFactory.loadProvider(
       provider as Provider

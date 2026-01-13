@@ -15,6 +15,7 @@ import { LinkedinDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-sett
 import imageToPDF from 'image-to-pdf';
 import { Readable } from 'stream';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
+import { string } from 'yup';
 
 @Rules(
   'LinkedIn can have maximum one attachment when selecting video, when choosing a carousel on LinkedIn minimum amount of attachment must be two, and only pictures, if uploading a video, LinkedIn can have only one attachment'
@@ -40,6 +41,22 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   maxLength() {
     return 3000;
   }
+
+  override handleErrors(
+    body: string
+  ):
+    | { type: 'refresh-token' | 'bad-body' | 'retry'; value: string }
+    | undefined {
+    if (body.indexOf('Unable to obtain activity') > -1) {
+      return {
+        type: 'retry',
+        value: 'Unable to obtain activity',
+      };
+    }
+
+    return undefined;
+  }
+
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     const {
       access_token: accessToken,
@@ -583,7 +600,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       type === 'personal' ? `urn:li:person:${id}` : `urn:li:organization:${id}`;
 
     const response = await this.fetch(
-      `https://api.linkedin.com/v2/socialActions/${decodeURIComponent(
+      `https://api.linkedin.com/v2/socialActions/${encodeURIComponent(
         parentPostId
       )}/comments`,
       {

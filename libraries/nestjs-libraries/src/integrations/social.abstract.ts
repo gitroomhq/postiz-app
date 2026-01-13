@@ -30,6 +30,20 @@ export class NotEnoughScopes {
   constructor(public message = 'Not enough scopes') {}
 }
 
+function safeStringify(obj: any) {
+  const seen = new WeakSet();
+
+  return JSON.stringify(obj, (key, value) => {
+    if (typeof value === 'object' && value !== null) {
+      if (seen.has(value)) {
+        return '[Circular]';
+      }
+      seen.add(value);
+    }
+    return value;
+  });
+}
+
 export abstract class SocialAbstract {
   abstract identifier: string;
   maxConcurrentJob = 1;
@@ -62,7 +76,7 @@ export abstract class SocialAbstract {
     try {
       value = await func();
     } catch (err) {
-      const handle = this.handleErrors(JSON.stringify(err));
+      const handle = this.handleErrors(safeStringify(err));
       value = { err: true, value: 'Unknown Error', ...(handle || {}) };
     }
 
@@ -70,12 +84,12 @@ export abstract class SocialAbstract {
       if (value.type === 'refresh-token') {
         throw new RefreshToken(
           '',
-          JSON.stringify({}),
+          safeStringify({}),
           {} as any,
           value.value || ''
         );
       }
-      throw new BadBody('', JSON.stringify({}), {} as any, value.value || '');
+      throw new BadBody('', safeStringify({}), {} as any, value.value || '');
     }
 
     return value;
