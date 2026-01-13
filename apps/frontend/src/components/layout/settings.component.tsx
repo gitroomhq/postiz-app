@@ -106,7 +106,7 @@ export const SettingsPopup: FC<{
     if (user?.tier?.public_api && isGeneral && showLogout) {
       arr.push({ tab: 'api', label: t('public_api', 'Public API') });
     }
-    if(showLogout) {
+    if(user.providerName == 'LOCAL' && showLogout) {
       arr.push({ tab: 'change_password', label: t('change_password', 'Change Password') });
     }
 
