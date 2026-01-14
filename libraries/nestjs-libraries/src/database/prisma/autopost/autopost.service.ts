@@ -47,9 +47,7 @@ const model = new ChatOpenAI({
 const dalle = new DallEAPIWrapper({
   apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
   model: 'gpt-image-1',
-  ...(process.env.OPENAI_BASE_URL && {
-    configuration: { baseURL: process.env.OPENAI_BASE_URL },
-  }),
+  ...(process.env.OPENAI_BASE_URL && { baseUrl: process.env.OPENAI_BASE_URL }),
 });
 
 const generateContent = z.object({
