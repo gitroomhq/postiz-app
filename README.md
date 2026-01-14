@@ -88,11 +88,11 @@
 
 ## Tech Stack
 
-- NX (Monorepo)
+- Pnpm workspaces (Monorepo)
 - NextJS (React)
 - NestJS
 - Prisma (Default to PostgreSQL)
-- Redis (BullMQ)
+- Temporal
 - Resend (email notifications)
 
 ## Quick Start
