@@ -130,6 +130,7 @@ export interface SocialProvider
   identifier: string;
   refreshWait?: boolean;
   convertToJPEG?: boolean;
+  refreshCron?: boolean;
   dto?: any;
   maxLength: (additionalSettings?: any) => number;
   isWeb3?: boolean;

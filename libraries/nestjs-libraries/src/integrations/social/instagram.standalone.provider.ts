@@ -24,6 +24,7 @@ export class InstagramStandaloneProvider
   identifier = 'instagram-standalone';
   name = 'Instagram\n(Standalone)';
   isBetweenSteps = false;
+  refreshCron = true;
   scopes = [
     'instagram_business_basic',
     'instagram_business_content_publish',
@@ -69,7 +70,7 @@ export class InstagramStandaloneProvider
       name,
       accessToken: access_token,
       refreshToken: access_token,
-      expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
+      expiresIn: dayjs().add(58, 'days').unix() - dayjs().unix(),
       picture: profile_picture_url || '',
       username,
     };
@@ -144,7 +145,7 @@ export class InstagramStandaloneProvider
       name,
       accessToken: access_token,
       refreshToken: access_token,
-      expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
+      expiresIn: dayjs().add(58, 'days').unix() - dayjs().unix(),
       picture: profile_picture_url,
       username,
     };

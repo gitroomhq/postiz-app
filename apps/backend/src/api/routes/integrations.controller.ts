@@ -488,30 +488,39 @@ export class IntegrationsController {
       throw new HttpException('', 412);
     }
 
-    return this._integrationService.createOrUpdateIntegration(
-      additionalSettings,
-      !!integrationProvider.oneTimeToken,
-      org.id,
-      validName.trim(),
-      picture,
-      'social',
-      String(id),
-      integration,
-      accessToken,
-      refreshToken,
-      expiresIn,
-      username,
-      refresh ? false : integrationProvider.isBetweenSteps,
-      body.refresh,
-      +body.timezone,
-      details
-        ? AuthService.fixedEncryption(details)
-        : integrationProvider.customFields
-        ? AuthService.fixedEncryption(
-            Buffer.from(body.code, 'base64').toString()
-          )
-        : undefined
-    );
+    const createUpdate =
+      await this._integrationService.createOrUpdateIntegration(
+        additionalSettings,
+        !!integrationProvider.oneTimeToken,
+        org.id,
+        validName.trim(),
+        picture,
+        'social',
+        String(id),
+        integration,
+        accessToken,
+        refreshToken,
+        expiresIn,
+        username,
+        refresh ? false : integrationProvider.isBetweenSteps,
+        body.refresh,
+        +body.timezone,
+        details
+          ? AuthService.fixedEncryption(details)
+          : integrationProvider.customFields
+          ? AuthService.fixedEncryption(
+              Buffer.from(body.code, 'base64').toString()
+            )
+          : undefined
+      );
+
+    this._refreshIntegrationService
+      .startRefreshWorkflow(org.id, createUpdate.id, integrationProvider)
+      .catch((err) => {
+        console.log(err);
+      });
+
+    return createUpdate;
   }
 
   @Post('/disable')
