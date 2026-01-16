@@ -191,7 +191,7 @@ const SubmitBar: FC<{ loading: boolean }> = ({ loading }) => {
               —{' '}
             </span>
             <span className="text-textColor font-[600]">
-              {t('billing_cancel_anytime_short', 'Cancel anytime.')}
+              {t('billing_cancel_anytime_short', 'Cancel anytime from settings')}
             </span>
           </div>
         ) : null}

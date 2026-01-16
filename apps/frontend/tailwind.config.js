@@ -254,6 +254,9 @@ module.exports = {
         maxMedia: {
           raw: '(max-width: 1400px)',
         },
+        minCustom: {
+          raw: '(min-height: 800px)',
+        },
         custom: {
           raw: '(max-height: 800px)',
         },

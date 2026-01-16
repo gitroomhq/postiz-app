@@ -125,7 +125,7 @@ export const FirstBillingComponent = () => {
                 <CheckIconComponent />
               </div>
               <div>
-                {t('billing_cancel_anytime', 'Cancel anytime, hassle-free')}
+                {t('billing_cancel_anytime', 'Cancel anytime, from settings')}
               </div>
             </div>
           </div>

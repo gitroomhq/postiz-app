@@ -26,6 +26,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     // 'threads_profile_discovery',
   ];
   override maxConcurrentJob = 2; // Threads has moderate rate limits
+  refreshCron = true;
 
   editor = 'normal' as const;
   maxLength() {
@@ -61,7 +62,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       name,
       accessToken: access_token,
       refreshToken: access_token,
-      expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
+      expiresIn: dayjs().add(58, 'days').unix() - dayjs().unix(),
       picture: picture || '',
       username: '',
     };
@@ -114,7 +115,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
         'https://graph.threads.net/access_token' +
           '?grant_type=th_exchange_token' +
           `&client_secret=${process.env.THREADS_APP_SECRET}` +
-          `&access_token=${getAccessToken.access_token}&fields=access_token,expires_in`
+          `&access_token=${getAccessToken.access_token}`
       )
     ).json();
 
@@ -127,7 +128,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       name,
       accessToken: access_token,
       refreshToken: access_token,
-      expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
+      expiresIn: dayjs().add(58, 'days').unix() - dayjs().unix(),
       picture: picture || '',
       username: username,
     };

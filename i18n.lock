@@ -27,6 +27,7 @@ checksums:
     you_can_add_signatures_to_your_account_to_be_used_in_your_posts: 14ee7a89e90ddbca11da6abf70a25ab0
     content: 669b337031ef165af577f04f2b7fd54f
     auto_add: 35002db73ce495c51c5e7ebb9ea6c480
+    delay_comment: 1e29aaf362d5a0b52c57b692f3c18064
     actions: c46571856723b03262fd33f511116298
     use_signature: 362135c08a0566c7cbfdf331c67c0b21
     add_a_signature: 341a71b74ca1907f7d87a4a34232e95d
@@ -154,7 +155,7 @@ checksums:
     to_manage_all_your_social_media_channels: 155f69562b7a791691489f6c13f8ce50
     100_no_risk_trial: 4d8cf3bef45c64d898a678c8d2d7e32f
     pay_nothing_for_the_first_7_days: f85904a77eed00c8009f59b214e15ea1
-    cancel_anytime_hassle_free: f69ae39eec3fb9eb6114481d67c8481e
+    cancel_anytime_hassle_free: 91355fdc2e1f62fcb28b1d74ed342a90
     add_free_subscription: 3cf6d7072004d151e88aafd3f227d9dd
     currently_impersonating: a116d1c0c69a389131357a418589f372
     user_1: aaf867586dbad4bbeb4af66612694ca7
@@ -513,7 +514,7 @@ checksums:
     billing_postiz_grow_social: 3cf5ab166df9cb65e17b9a039ccbbbad
     billing_no_risk_trial: 6e5c60d9ddf3affa8ba8870272f9f9ab
     billing_pay_nothing_7_days: 2db15615cad39981069b65e6a0852b18
-    billing_cancel_anytime: f69ae39eec3fb9eb6114481d67c8481e
+    billing_cancel_anytime: 91355fdc2e1f62fcb28b1d74ed342a90
     billing_choose_plan: 6eacca8177c43945435ac9c97a1e9734
     billing_monthly: 818f1192e32bb855597f930d3e78806e
     billing_yearly: 87f43e016c19cb25860f456549a2f431
@@ -536,7 +537,7 @@ checksums:
     billing_your_7_day_trial_is: 4b59fb559f5fd520668974e909e3479c
     billing_100_percent_free: 6616fd6ee152264c06dd2537f6347e66
     billing_ending: f66133a14aa7d86ea2453df97de12cd5
-    billing_cancel_anytime_short: 5b1b4a998fd56b18e4153dd83c84022c
+    billing_cancel_anytime_short: b170ff9c26b8f0263a11f8e292d43da3
     billing_pay_0_start_trial: 28e72154e6cce7541e707b35f3a67309
     billing_pay_now: 50cb14454e1b2df4a2f83bf1ac799819
     billing_per_month: 6293d01c3d13f6938d47285122bd1a48

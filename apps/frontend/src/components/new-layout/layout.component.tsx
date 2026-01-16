@@ -100,7 +100,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                     <div
                       className={clsx(
                         'fixed h-full w-[64px] start-[17px] flex flex-1 top-0',
-                        user?.admin && 'pt-[60px]'
+                        user?.admin && 'pt-[60px] max-h-[1000px]:w-[500px]'
                       )}
                     >
                       <div className="flex flex-col h-full gap-[32px] flex-1 py-[12px]">
