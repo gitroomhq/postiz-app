@@ -4,6 +4,7 @@ import {
 } from '@gitroom/nestjs-libraries/3rdparties/thirdparty.interface';
 import { AIService } from '@gitroom/nestjs-libraries/ai/ai.service';
 import { timer } from '@gitroom/helpers/utils/timer';
+import { isLLMConfigured } from '@gitroom/nestjs-libraries/ai/llm/llm.config';
 
 @ThirdParty({
   identifier: 'heygen',
@@ -48,6 +49,9 @@ export class HeygenProvider extends ThirdPartyAbstract<{
   }
 
   async generateVoice(apiKey: string, data: { text: string }) {
+    if (!isLLMConfigured()) {
+      throw new Error('LLM is not configured');
+    }
     return {
       voice: await this._aiService.generateVoiceFromText(data.text),
     };
