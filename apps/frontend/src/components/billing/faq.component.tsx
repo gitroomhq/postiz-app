@@ -19,7 +19,7 @@ const useFaqList = () => {
             ),
             description: t(
               'faq_to_confirm_credit_card_information_postiz_will_hold',
-              'To confirm credit card information Postiz will hold $2 and release it immediately'
+              'To confirm credit card information Postiz will hold $2 and release it immediately, you can cancel your subscription anytime from settings without talking to a person'
             ),
           },
         ]
@@ -72,9 +72,7 @@ export const FAQSection: FC<{
       className="bg-sixth p-[24px] border border-tableBorder rounded-[8px] flex flex-col"
       onClick={changeShow}
     >
-      <div
-        className={`text-[20px] cursor-pointer flex justify-center`}
-      >
+      <div className={`text-[20px] cursor-pointer flex justify-center`}>
         <div className="flex-1">{title}</div>
         <div className="flex items-center justify-center w-[32px]">
           {!show ? (

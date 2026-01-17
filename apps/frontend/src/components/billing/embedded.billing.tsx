@@ -120,16 +120,20 @@ const FormWrapper: FC<{ showCoupon?: boolean; autoApplyCoupon?: string }> = ({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col flex-1">
-      <StripeInputs showCoupon={showCoupon} autoApplyCoupon={autoApplyCoupon} />
-      <SubmitBar loading={loading} />
+      <StripeInputs
+        showCoupon={showCoupon}
+        autoApplyCoupon={autoApplyCoupon}
+        loading={loading}
+      />
     </form>
   );
 };
 
-const StripeInputs: FC<{ showCoupon: boolean; autoApplyCoupon?: string }> = ({
-  showCoupon,
-  autoApplyCoupon,
-}) => {
+const StripeInputs: FC<{
+  showCoupon: boolean;
+  autoApplyCoupon?: string;
+  loading: boolean;
+}> = ({ showCoupon, autoApplyCoupon, loading }) => {
   const checkout = useCheckout();
   const t = useT();
   const [ready, setReady] = useState(false);
@@ -147,8 +151,16 @@ const StripeInputs: FC<{ showCoupon: boolean; autoApplyCoupon?: string }> = ({
         <h4 className="mt-[40px] mb-[32px] text-[24px] font-[700]">
           {checkout.type === 'loading' ? '' : t('billing_payment', 'Payment')}
         </h4>
-        <PaymentElement id="payment-element" options={{ layout: 'tabs' }} onReady={() => setReady(true)} />
-        {showCoupon && ready && <CouponInput autoApplyCoupon={autoApplyCoupon} />}
+        <PaymentElement
+          id="payment-element"
+          options={{ layout: 'tabs' }}
+          onReady={() => setReady(true)}
+        />
+        {ready && <PriceBreakdown />}
+        {showCoupon && ready && (
+          <CouponInput autoApplyCoupon={autoApplyCoupon} />
+        )}
+        {ready && <SubmitBar loading={loading} />}
         {checkout.type === 'loading' ? null : (
           <div className="mt-[24px] text-[16px] font-[600] flex gap-[4px] items-center">
             <div>
@@ -173,6 +185,119 @@ const StripeInputs: FC<{ showCoupon: boolean; autoApplyCoupon?: string }> = ({
         )}
       </div>
     </>
+  );
+};
+
+const PriceBreakdown: FC = () => {
+  const checkoutState = useCheckout();
+  const t = useT();
+
+  if (checkoutState.type !== 'success') {
+    return null;
+  }
+
+  const { checkout } = checkoutState;
+  const lineItem = checkout?.lineItems?.[0];
+  const recurring = checkout?.recurring;
+  const discountAmounts = checkout?.discountAmounts;
+  const hasDiscount = discountAmounts && discountAmounts.length > 0;
+
+  // Get values
+  const planName = lineItem?.name || t('billing_subscription', 'Subscription');
+  const unitAmount = lineItem?.unitAmount?.amount || '$0.00';
+  const discountDisplay = hasDiscount ? discountAmounts[0] : null;
+  const dueToday = checkout?.total?.total?.amount || '$0.00';
+  const nextBillingTotal = recurring?.dueNext?.total?.amount;
+  const nextBillingDate = recurring?.trial?.trialEnd
+    ? dayjs(recurring.trial.trialEnd * 1000).format('MMMM D, YYYY')
+    : null;
+  const billingInterval =
+    recurring?.interval === 'month'
+      ? t('billing_monthly', 'Monthly')
+      : t('billing_yearly', 'Yearly');
+
+  return (
+    <div className="mt-[40px]">
+      <h4 className="mb-[16px] text-[24px] font-[700]">
+        {t('billing_order_summary', 'Order Summary')}
+      </h4>
+      <div className="rounded-[12px] border border-newColColor p-[20px] flex flex-col gap-[12px]">
+        {/* Plan */}
+        <div className="flex justify-between items-center">
+          <div className="flex flex-col">
+            <span className="font-[600] text-textColor">{planName}</span>
+            <span className="text-[13px] text-textColor/60">
+              {billingInterval}
+            </span>
+          </div>
+          <span className="font-[500] text-textColor">{unitAmount}</span>
+        </div>
+
+        {/* Discount */}
+        {discountDisplay && (
+          <div className="flex justify-between items-center font-[600]">
+            <div className="flex items-center gap-[6px]">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                <line x1="7" y1="7" x2="7.01" y2="7" />
+              </svg>
+              <span className="font-[500]">
+                {discountDisplay.displayName || discountDisplay.promotionCode}
+                {discountDisplay.percentOff &&
+                  ` (${discountDisplay.percentOff}% off)`}
+              </span>
+            </div>
+            <span className="font-[500]">
+              {discountDisplay.amount !== '$0.00'
+                ? `-${discountDisplay.amount}`
+                : t('billing_applied', 'Applied')}
+            </span>
+          </div>
+        )}
+
+        {/* Divider */}
+        <div className="border-t border-newColColor my-[4px]" />
+
+        {/* Due today */}
+        <div className="flex justify-between items-center">
+          <span className="font-[600] text-textColor">
+            {t('billing_due_today', 'Due today')}
+          </span>
+          <span className="font-[700] text-[18px] text-textColor">
+            {dueToday}
+          </span>
+        </div>
+
+        {/* Next billing info */}
+        {nextBillingTotal && nextBillingDate && (
+          <div className="flex justify-between items-center text-[13px] text-textColor/60">
+            <span>
+              {t('billing_then', 'Then')} {nextBillingTotal}{' '}
+              {t('billing_on', 'on')} {nextBillingDate}
+            </span>
+          </div>
+        )}
+
+        <div className="text-[12px]">
+          <strong>
+            {t(
+              'billing_cancel_notice',
+              'Cancel anytime from settings without talking to a person and never be charged.'
+            )}
+          </strong>
+        </div>
+      </div>
+    </div>
   );
 };
 
