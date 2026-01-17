@@ -344,7 +344,7 @@ export const AddProviderComponent: FC<{
           ).json();
           modal.openModal({
             title: t('web3_provider', 'Web3 provider'),
-            withCloseButton: false,
+            withCloseButton: true,
             classNames: {
               modal: 'bg-transparent text-textColor',
             },
