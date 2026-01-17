@@ -160,10 +160,12 @@ export const FirstBillingComponent = () => {
             <JoinOver />
           </div>
           {!isLoading && data && stripe ? (
-            <>
-              <EmbeddedBilling stripe={stripe} secret={data.client_secret} />
-              <FAQComponent />
-            </>
+            <EmbeddedBilling
+              stripe={stripe}
+              secret={data.client_secret}
+              showCoupon={period === 'MONTHLY'}
+              autoApplyCoupon={data.auto_apply_coupon}
+            />
           ) : (
             <LoadingComponent />
           )}
@@ -244,6 +246,10 @@ export const FirstBillingComponent = () => {
                 {t('billing_features', 'Features')}
               </div>
               <BillingFeatures tier={tier} />
+            </div>
+            <div className="flex flex-col mobile:hidden tablet:hidden">
+              {/*<div>asd</div>*/}
+              <FAQComponent />
             </div>
           </div>
         </div>

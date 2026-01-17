@@ -20,7 +20,9 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const EmbeddedBilling: FC<{
   stripe: Promise<Stripe>;
   secret: string;
-}> = ({ stripe, secret }) => {
+  showCoupon?: boolean;
+  autoApplyCoupon?: string;
+}> = ({ stripe, secret, showCoupon = false, autoApplyCoupon }) => {
   const [saveSecret, setSaveSecret] = useState(secret);
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useCookie('mode', 'dark');
@@ -80,18 +82,24 @@ export const EmbeddedBilling: FC<{
           },
         }}
       >
-        <FormWrapper />
+        <FormWrapper
+          showCoupon={showCoupon}
+          autoApplyCoupon={autoApplyCoupon}
+        />
       </CheckoutProvider>
     </div>
   );
 };
 
-const FormWrapper = () => {
+const FormWrapper: FC<{ showCoupon?: boolean; autoApplyCoupon?: string }> = ({
+  showCoupon = false,
+  autoApplyCoupon,
+}) => {
   const checkoutState = useCheckout();
   const toaster = useToaster();
   const [loading, setLoading] = useState(false);
 
-  if (checkoutState.type === 'loading' || checkoutState.type === 'error') {
+  if (checkoutState.type !== 'success') {
     return null;
   }
 
@@ -112,15 +120,19 @@ const FormWrapper = () => {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col flex-1">
-      <StripeInputs />
+      <StripeInputs showCoupon={showCoupon} autoApplyCoupon={autoApplyCoupon} />
       <SubmitBar loading={loading} />
     </form>
   );
 };
 
-const StripeInputs = () => {
+const StripeInputs: FC<{ showCoupon: boolean; autoApplyCoupon?: string }> = ({
+  showCoupon,
+  autoApplyCoupon,
+}) => {
   const checkout = useCheckout();
   const t = useT();
+  const [ready, setReady] = useState(false);
   return (
     <>
       <div>
@@ -135,14 +147,12 @@ const StripeInputs = () => {
         <h4 className="mt-[40px] mb-[32px] text-[24px] font-[700]">
           {checkout.type === 'loading' ? '' : t('billing_payment', 'Payment')}
         </h4>
-        <PaymentElement id="payment-element" options={{ layout: 'tabs' }} />
+        <PaymentElement id="payment-element" options={{ layout: 'tabs' }} onReady={() => setReady(true)} />
+        {showCoupon && ready && <CouponInput autoApplyCoupon={autoApplyCoupon} />}
         {checkout.type === 'loading' ? null : (
           <div className="mt-[24px] text-[16px] font-[600] flex gap-[4px] items-center">
             <div>
-              {t(
-                'billing_powered_by_stripe',
-                'Secure payments processed by'
-              )}
+              {t('billing_powered_by_stripe', 'Secure payments processed by')}
             </div>
             <svg
               className="mt-[4px]"
@@ -163,6 +173,302 @@ const StripeInputs = () => {
         )}
       </div>
     </>
+  );
+};
+
+const AppliedCouponDisplay: FC<{
+  appliedCode: string;
+  checkout: any;
+  isApplying: boolean;
+  onRemove: () => void;
+}> = ({ appliedCode, checkout, isApplying, onRemove }) => {
+  const t = useT();
+
+  // Get discount display from checkout state
+  const getDiscountDisplay = (): string | null => {
+    // Try to get percentage from discountAmounts
+    const percentOff = checkout?.discountAmounts?.[0]?.percentOff;
+    if (percentOff && typeof percentOff === 'number' && percentOff > 0) {
+      return `-${percentOff}%`;
+    }
+
+    // Try to get actual discount amount from recurring.dueNext.discount
+    const recurringDiscount =
+      checkout?.recurring?.dueNext?.discount?.minorUnitsAmount;
+    if (
+      recurringDiscount &&
+      typeof recurringDiscount === 'number' &&
+      recurringDiscount > 0
+    ) {
+      return `-$${(recurringDiscount / 100).toFixed(2)}`;
+    }
+
+    // Try lineItems discount
+    const lineItemDiscount =
+      checkout?.lineItems?.[0]?.discountAmounts?.[0]?.percentOff;
+    if (
+      lineItemDiscount &&
+      typeof lineItemDiscount === 'number' &&
+      lineItemDiscount > 0
+    ) {
+      return `-${lineItemDiscount}%`;
+    }
+
+    return null;
+  };
+
+  // Get expiration date from checkout state (if available)
+  const getExpirationDate = (): string | null => {
+    const discount = checkout?.discountAmounts?.[0];
+    const lineItemDiscount = checkout?.lineItems?.[0]?.discountAmounts?.[0];
+
+    // Check for expiresAt in various locations (Unix timestamp)
+    const expiresAt =
+      discount?.expiresAt ||
+      discount?.expires_at ||
+      lineItemDiscount?.expiresAt ||
+      lineItemDiscount?.expires_at ||
+      checkout?.promotionCode?.expiresAt ||
+      checkout?.promotionCode?.expires_at;
+
+    if (expiresAt && typeof expiresAt === 'number') {
+      const date = new Date(expiresAt * 1000);
+      return dayjs(date).format('MMMM D, YYYY');
+    }
+
+    if (expiresAt && typeof expiresAt === 'string') {
+      return dayjs(expiresAt).format('MMMM D, YYYY');
+    }
+
+    return null;
+  };
+
+  const discountDisplay = getDiscountDisplay();
+  const expirationDate = getExpirationDate();
+
+  return (
+    <div className="flex flex-col gap-[8px]">
+      <div className="flex items-center gap-[12px] p-[16px] rounded-[12px] border border-[#AA0FA4]/30 bg-[#AA0FA4]/10">
+        <div className="flex-1">
+          <div className="flex items-center gap-[8px] flex-wrap">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#FC69FF"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+              <polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
+            <span className="font-[600] text-[#FC69FF]">{appliedCode}</span>
+            <span className="text-[14px] text-textColor/70">
+              {t('billing_discount_applied', 'applied')}
+              {discountDisplay && ` (${discountDisplay})`}
+            </span>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onRemove}
+          disabled={isApplying}
+          className="text-[14px] text-textColor/50 hover:text-textColor font-[500] disabled:opacity-50"
+        >
+          {t('billing_remove', 'Remove')}
+        </button>
+      </div>
+      {expirationDate && (
+        <p className="text-[13px] text-textColor/50 flex items-center gap-[6px]">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+          {t('billing_coupon_expires', 'Coupon expires on')} {expirationDate}
+        </p>
+      )}
+    </div>
+  );
+};
+
+export const CouponInput: FC<{ autoApplyCoupon?: string }> = ({
+  autoApplyCoupon,
+}) => {
+  const checkoutState = useCheckout();
+  const t = useT();
+  const toaster = useToaster();
+  const [couponCode, setCouponCode] = useState('');
+  const [isApplying, setIsApplying] = useState(false);
+  const [appliedCode, setAppliedCode] = useState<string | null>(null);
+  const [showInput, setShowInput] = useState(false);
+
+  const { checkout } =
+    checkoutState.type === 'success' ? checkoutState : { checkout: null };
+
+  // Auto-apply coupon from backend when checkout is ready
+  useEffect(() => {
+    if (autoApplyCoupon) {
+      handleApplyCoupon(undefined, autoApplyCoupon);
+    }
+  }, []);
+
+  // Check if a coupon is already pre-applied (e.g., auto-apply coupon from backend)
+  const preAppliedCode = checkout?.discountAmounts?.[0]?.promotionCode;
+  const effectiveAppliedCode = appliedCode || preAppliedCode || null;
+
+  const handleApplyCoupon = async (e?: any, coupon?: string) => {
+    if (!coupon && !couponCode.trim()) return;
+
+    setIsApplying(true);
+    try {
+      const result = await checkout.applyPromotionCode(
+        coupon || couponCode.trim()
+      );
+      if (result.type === 'error') {
+        toaster.show(
+          result.error.message ||
+            t('billing_invalid_coupon', 'Invalid coupon code'),
+          'warning'
+        );
+      } else {
+        setAppliedCode(coupon || couponCode.trim());
+        setCouponCode('');
+        setShowInput(false);
+        toaster.show(
+          t('billing_coupon_applied', 'Coupon applied successfully!'),
+          'success'
+        );
+      }
+    } catch (err: any) {
+      toaster.show(
+        err.message || t('billing_invalid_coupon', 'Invalid coupon code'),
+        'warning'
+      );
+    }
+    setIsApplying(false);
+  };
+
+  const handleRemoveCoupon = async () => {
+    setIsApplying(true);
+    try {
+      await checkout.removePromotionCode();
+      setAppliedCode(null);
+      toaster.show(t('billing_coupon_removed', 'Coupon removed'), 'success');
+    } catch (err: any) {
+      toaster.show(
+        err.message ||
+          t('billing_error_removing_coupon', 'Error removing coupon'),
+        'warning'
+      );
+    }
+    setIsApplying(false);
+  };
+
+  // Show applied coupon (either manually applied or pre-applied from backend)
+  if (effectiveAppliedCode) {
+    return (
+      <div className="mt-[40px]">
+        <AppliedCouponDisplay
+          appliedCode={effectiveAppliedCode}
+          checkout={checkout}
+          isApplying={isApplying}
+          onRemove={handleRemoveCoupon}
+        />
+      </div>
+    );
+  }
+
+  // Show "Have a promo code?" link
+  if (!showInput) {
+    return (
+      <div className="mt-[40px]">
+        <button
+          type="button"
+          onClick={() => setShowInput(true)}
+          className="text-[16px] text-textColor/60 hover:text-textColor font-[500] flex items-center gap-[8px] transition-colors"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+          </svg>
+          {t('billing_have_discount_coupon', 'Have a discount coupon?')}
+        </button>
+      </div>
+    );
+  }
+
+  // Show input field
+  return (
+    <div className="mt-[40px]">
+      <div className="flex items-center gap-[12px] mb-[12px]">
+        <h4 className="text-[18px] font-[600] text-textColor">
+          {t('billing_discount_coupon', 'Discount Coupon')}
+        </h4>
+        <button
+          type="button"
+          onClick={() => {
+            setShowInput(false);
+            setCouponCode('');
+          }}
+          className="text-[14px] text-textColor/50 hover:text-textColor transition-colors"
+        >
+          {t('billing_cancel', 'Cancel')}
+        </button>
+      </div>
+      <div className="flex gap-[12px]">
+        <input
+          type="text"
+          value={couponCode}
+          onChange={(e) => setCouponCode(e.target.value)}
+          placeholder={t('billing_enter_coupon_code', 'Enter coupon code')}
+          disabled={isApplying}
+          autoFocus
+          className="flex-1 h-[44px] px-[16px] rounded-[8px] border border-newColColor bg-newBgColor text-textColor placeholder:text-textColor/50 focus:outline-none focus:border-boxFocused disabled:opacity-50"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              handleApplyCoupon();
+            }
+            if (e.key === 'Escape') {
+              setShowInput(false);
+              setCouponCode('');
+            }
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => handleApplyCoupon()}
+          disabled={isApplying || !couponCode.trim()}
+          className="h-[44px] px-[24px] rounded-[8px] bg-boxFocused text-textItemFocused font-[600] hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+        >
+          {isApplying
+            ? t('billing_applying', 'Applying...')
+            : t('billing_apply', 'Apply')}
+        </button>
+      </div>
+    </div>
   );
 };
 
@@ -191,7 +497,10 @@ const SubmitBar: FC<{ loading: boolean }> = ({ loading }) => {
               —{' '}
             </span>
             <span className="text-textColor font-[600]">
-              {t('billing_cancel_anytime_short', 'Cancel anytime from settings')}
+              {t(
+                'billing_cancel_anytime_short',
+                'Cancel anytime from settings'
+              )}
             </span>
           </div>
         ) : null}

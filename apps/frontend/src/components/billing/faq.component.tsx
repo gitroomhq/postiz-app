@@ -120,7 +120,7 @@ export const FAQSection: FC<{
           onClick={(e) => {
             e.stopPropagation();
           }}
-          className={`mt-[16px] w-full text-wrap font-[400] text-[16px] text-customColor17 select-text`}
+          className={`mt-[16px] w-full text-wrap font-[400] text-[16px] text-customColor17 select-text max-w-[450px]`}
           dangerouslySetInnerHTML={{
             __html: description,
           }}
@@ -134,10 +134,10 @@ export const FAQComponent: FC = () => {
   const list = useFaqList();
   return (
     <div>
-      <h3 className="text-[24px] mt-[48px] mb-[40px] tablet:mt-[80px]">
-        {t('frequently_asked_questions', 'Frequently Asked Questions')}
-      </h3>
-      <div className="gap-[24px] flex-col flex select-none">
+      {/*<h3 className="text-[24px] mt-[48px] mb-[40px] tablet:mt-[80px]">*/}
+      {/*  {t('frequently_asked_questions', 'Frequently Asked Questions')}*/}
+      {/*</h3>*/}
+      <div className="gap-[24px] flex-col flex select-none  mt-[48px] mb-[40px] tablet:mt-[80px]">
         {list.map((item, index) => (
           <FAQSection key={index} {...item} />
         ))}
