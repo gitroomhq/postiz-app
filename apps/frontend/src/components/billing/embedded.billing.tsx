@@ -139,21 +139,24 @@ const StripeInputs: FC<{
   const [ready, setReady] = useState(false);
   return (
     <>
+      {/*<div>*/}
+      {/*  <h4 className="mb-[32px] text-[24px] font-[700]">*/}
+      {/*    {checkout.type === 'loading'*/}
+      {/*      ? ''*/}
+      {/*      : t('billing_billing_address', 'Billing Address')}*/}
+      {/*  </h4>*/}
+      {/*  <BillingAddressElement />*/}
+      {/*</div>*/}
       <div>
         <h4 className="mb-[32px] text-[24px] font-[700]">
-          {checkout.type === 'loading'
-            ? ''
-            : t('billing_billing_address', 'Billing Address')}
-        </h4>
-        <BillingAddressElement />
-      </div>
-      <div>
-        <h4 className="mt-[40px] mb-[32px] text-[24px] font-[700]">
           {checkout.type === 'loading' ? '' : t('billing_payment', 'Payment')}
         </h4>
         <PaymentElement
           id="payment-element"
-          options={{ layout: 'tabs' }}
+          options={{
+            fields: { billingDetails: { address: 'if_required' } },
+            layout: 'tabs',
+          }}
           onReady={() => setReady(true)}
         />
         {ready && <PriceBreakdown />}
