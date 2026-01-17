@@ -11,6 +11,7 @@ import { getPublicKey, Relay, finalizeEvent, SimplePool } from 'nostr-tools';
 
 import WebSocket from 'ws';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
+import { Integration } from '@prisma/client';
 
 // @ts-ignore
 global.WebSocket = WebSocket;
@@ -158,43 +159,77 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
     }
   }
 
+  private buildContent(post: PostDetails): string {
+    const mediaContent = post.media?.map((m) => m.path).join('\n\n') || '';
+    return mediaContent
+      ? `${post.message}\n\n${mediaContent}`
+      : post.message;
+  }
+
   async post(
     id: string,
     accessToken: string,
     postDetails: PostDetails[]
   ): Promise<PostResponse[]> {
     const { password } = AuthService.verifyJWT(accessToken) as any;
+    const [firstPost] = postDetails;
 
-    let lastId = '';
-    const ids: PostResponse[] = [];
-    for (const post of postDetails) {
-      const textEvent = finalizeEvent(
-        {
-          kind: 1, // Text note
-          content:
-            post.message + '\n\n' + post.media?.map((m) => m.path).join('\n\n'),
-          tags: [
-            ...(lastId
-              ? [
-                  ['e', lastId, '', 'reply'],
-                  ['p', id],
-                ]
-              : []),
-          ], // Include delegation token in the event
-          created_at: Math.floor(Date.now() / 1000),
-        },
-        password
-      );
+    const textEvent = finalizeEvent(
+      {
+        kind: 1, // Text note
+        content: this.buildContent(firstPost),
+        tags: [],
+        created_at: Math.floor(Date.now() / 1000),
+      },
+      password
+    );
 
-      lastId = await this.publish(id, textEvent);
-      ids.push({
-        id: post.id,
-        postId: String(lastId),
-        releaseURL: `https://primal.net/e/${lastId}`,
+    const eventId = await this.publish(id, textEvent);
+
+    return [
+      {
+        id: firstPost.id,
+        postId: String(eventId),
+        releaseURL: `https://primal.net/e/${eventId}`,
         status: 'completed',
-      });
-    }
+      },
+    ];
+  }
 
-    return ids;
+  async comment(
+    id: string,
+    postId: string,
+    lastCommentId: string | undefined,
+    accessToken: string,
+    postDetails: PostDetails[],
+    integration: Integration
+  ): Promise<PostResponse[]> {
+    const { password } = AuthService.verifyJWT(accessToken) as any;
+    const [commentPost] = postDetails;
+    const replyToId = lastCommentId || postId;
+
+    const textEvent = finalizeEvent(
+      {
+        kind: 1, // Text note
+        content: this.buildContent(commentPost),
+        tags: [
+          ['e', replyToId, '', 'reply'],
+          ['p', id],
+        ],
+        created_at: Math.floor(Date.now() / 1000),
+      },
+      password
+    );
+
+    const eventId = await this.publish(id, textEvent);
+
+    return [
+      {
+        id: commentPost.id,
+        postId: String(eventId),
+        releaseURL: `https://primal.net/e/${eventId}`,
+        status: 'completed',
+      },
+    ];
   }
 }
