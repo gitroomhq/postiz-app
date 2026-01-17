@@ -143,6 +143,7 @@ async function generateWithStability(options: ImageGenerationOptions): Promise<s
         width: options.isVertical ? 1024 : 1536,
         steps: 30,
         samples: 1,
+        aspect_ratio: aspectRatio,
       }),
     }
   );
