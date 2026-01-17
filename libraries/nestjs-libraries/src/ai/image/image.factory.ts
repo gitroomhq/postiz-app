@@ -164,6 +164,8 @@ async function generateWithStability(options: ImageGenerationOptions): Promise<s
  */
 async function generateWithReplicate(options: ImageGenerationOptions): Promise<string> {
   const model = options.model || 'black-forest-labs/flux-schnell';
+  const MAX_POLL_ATTEMPTS = 120; // 2 minutes max (120 * 1 second)
+  const POLL_INTERVAL_MS = 1000;
 
   // Start the prediction
   const response = await fetch('https://api.replicate.com/v1/predictions', {
@@ -183,9 +185,14 @@ async function generateWithReplicate(options: ImageGenerationOptions): Promise<s
 
   let prediction = await response.json();
 
-  // Poll for completion
+  // Poll for completion with timeout
+  let attempts = 0;
   while (prediction.status !== 'succeeded' && prediction.status !== 'failed') {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    if (attempts >= MAX_POLL_ATTEMPTS) {
+      throw new Error('Replicate prediction timed out after ' + MAX_POLL_ATTEMPTS + ' seconds');
+    }
+    attempts++;
+    await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
     const pollResponse = await fetch(prediction.urls.get, {
       headers: {
         Authorization: `Token ${process.env.REPLICATE_API_TOKEN}`,

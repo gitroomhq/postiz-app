@@ -171,7 +171,10 @@ export class HeygenProvider extends ThirdPartyAbstract<{
       })
     ).json();
 
-    while (true) {
+    const MAX_POLL_ATTEMPTS = 200; // 10 minutes max (200 * 3 seconds) - video generation takes longer
+    let attempts = 0;
+
+    while (attempts < MAX_POLL_ATTEMPTS) {
       const {
         data: { status, video_url },
       } = await (
@@ -193,7 +196,10 @@ export class HeygenProvider extends ThirdPartyAbstract<{
         throw new Error('Video generation failed');
       }
 
+      attempts++;
       await timer(3000);
     }
+
+    throw new Error('Video generation timed out after 10 minutes');
   }
 }
