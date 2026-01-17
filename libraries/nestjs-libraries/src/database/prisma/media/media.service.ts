@@ -1,6 +1,6 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { MediaRepository } from '@gitroom/nestjs-libraries/database/prisma/media/media.repository';
-import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
+import { AIService } from '@gitroom/nestjs-libraries/ai/ai.service';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { Organization } from '@prisma/client';
 import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/save.media.information.dto';
@@ -19,7 +19,7 @@ export class MediaService {
 
   constructor(
     private _mediaRepository: MediaRepository,
-    private _openAi: OpenaiService,
+    private _aiService: AIService,
     private _subscriptionService: SubscriptionService,
     private _videoManager: VideoManager
   ) {}
@@ -42,10 +42,10 @@ export class MediaService {
       'ai_images',
       async () => {
         if (generatePromptFirst) {
-          prompt = await this._openAi.generatePromptForPicture(prompt);
+          prompt = await this._aiService.generatePromptForPicture(prompt);
           console.log('Prompt:', prompt);
         }
-        return this._openAi.generateImage(prompt, !!generatePromptFirst);
+        return this._aiService.generateImage(prompt, !!generatePromptFirst);
       }
     );
 

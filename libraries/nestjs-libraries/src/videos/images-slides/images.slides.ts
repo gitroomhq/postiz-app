@@ -1,4 +1,5 @@
-import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
+import { AIService } from '@gitroom/nestjs-libraries/ai/ai.service';
+import { isLLMConfigured } from '@gitroom/nestjs-libraries/ai/llm/llm.config';
 import {
   ExposeVideoFunction,
   URL,
@@ -54,14 +55,14 @@ class ImagesSlidesParams {
     !!process.env.ELEVENSLABS_API_KEY &&
     !!process.env.TRANSLOADIT_AUTH &&
     !!process.env.TRANSLOADIT_SECRET &&
-    !!process.env.OPENAI_API_KEY &&
+    isLLMConfigured() &&
     !!process.env.FAL_KEY,
 })
 export class ImagesSlides extends VideoAbstract<ImagesSlidesParams> {
   override dto = ImagesSlidesParams;
   private storage = UploadFactory.createStorage();
   constructor(
-    private _openaiService: OpenaiService,
+    private _aiService: AIService,
     private _falService: FalService
   ) {
     super();
@@ -71,7 +72,7 @@ export class ImagesSlides extends VideoAbstract<ImagesSlidesParams> {
     output: 'vertical' | 'horizontal',
     customParams: ImagesSlidesParams
   ): Promise<URL> {
-    const list = await this._openaiService.generateSlidesFromText(
+    const list = await this._aiService.generateSlidesFromText(
       customParams.prompt
     );
 

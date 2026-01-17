@@ -16,7 +16,7 @@ import { MediaController } from '@gitroom/backend/api/routes/media.controller';
 import { UploadModule } from '@gitroom/nestjs-libraries/upload/upload.module';
 import { BillingController } from '@gitroom/backend/api/routes/billing.controller';
 import { NotificationsController } from '@gitroom/backend/api/routes/notifications.controller';
-import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
+import { AIService } from '@gitroom/nestjs-libraries/ai/ai.service';
 import { ExtractContentService } from '@gitroom/nestjs-libraries/openai/extract.content.service';
 import { CodesService } from '@gitroom/nestjs-libraries/services/codes.service';
 import { CopilotController } from '@gitroom/backend/api/routes/copilot.controller';
@@ -61,7 +61,7 @@ const authenticatedController = [
   providers: [
     AuthService,
     StripeService,
-    OpenaiService,
+    AIService,
     ExtractContentService,
     AuthMiddleware,
     PoliciesGuard,

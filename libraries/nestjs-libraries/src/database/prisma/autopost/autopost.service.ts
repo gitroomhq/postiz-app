@@ -6,7 +6,6 @@ import { END, START, StateGraph } from '@langchain/langgraph';
 import { AutoPost, Integration } from '@prisma/client';
 import { BaseMessage } from '@langchain/core/messages';
 import striptags from 'striptags';
-import { ChatOpenAI, DallEAPIWrapper } from '@langchain/openai';
 import { JSDOM } from 'jsdom';
 import { z } from 'zod';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
@@ -19,6 +18,9 @@ import { TypedSearchAttributes } from '@temporalio/common';
 import {
   organizationId,
 } from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
+import { createLLMSync } from '@gitroom/nestjs-libraries/ai/llm/llm.factory';
+import { ImageFactory } from '@gitroom/nestjs-libraries/ai/image/image.factory';
+
 const parser = new Parser();
 
 interface WorkflowChannelsState {
@@ -35,16 +37,7 @@ interface WorkflowChannelsState {
   };
 }
 
-const model = new ChatOpenAI({
-  apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
-  model: 'gpt-4.1',
-  temperature: 0.7,
-});
-
-const dalle = new DallEAPIWrapper({
-  apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
-  model: 'gpt-image-1',
-});
+const model = createLLMSync();
 
 const generateContent = z.object({
   socialMediaPostContent: z
@@ -257,7 +250,7 @@ export class AutopostService {
           content: state.load.description || state.description,
         });
 
-    const image = await dalle.invoke(generatedTextToBeSentToDallE);
+    const image = await ImageFactory.generate(generatedTextToBeSentToDallE);
 
     return { ...state, image };
   }

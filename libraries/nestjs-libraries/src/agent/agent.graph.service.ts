@@ -5,7 +5,6 @@ import {
   ToolMessage,
 } from '@langchain/core/messages';
 import { END, START, StateGraph } from '@langchain/langgraph';
-import { ChatOpenAI, DallEAPIWrapper } from '@langchain/openai';
 import { TavilySearchResults } from '@langchain/community/tools/tavily_search';
 import { ToolNode } from '@langchain/langgraph/prebuilt';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
@@ -15,22 +14,15 @@ import { z } from 'zod';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { GeneratorDto } from '@gitroom/nestjs-libraries/dtos/generator/generator.dto';
+import { createLLMSync } from '@gitroom/nestjs-libraries/ai/llm/llm.factory';
+import { ImageFactory } from '@gitroom/nestjs-libraries/ai/image/image.factory';
 
 const tools = !process.env.TAVILY_API_KEY
   ? []
   : [new TavilySearchResults({ maxResults: 3 })];
 const toolNode = new ToolNode(tools);
 
-const model = new ChatOpenAI({
-  apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
-  model: 'gpt-4.1',
-  temperature: 0.7,
-});
-
-const dalle = new DallEAPIWrapper({
-  apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
-  model: 'dall-e-3',
-});
+const model = createLLMSync();
 
 interface WorkflowChannelsState {
   messages: BaseMessage[];
@@ -320,7 +312,7 @@ export class AgentGraphService {
 
     const newContent = await Promise.all(
       (state.content || []).map(async (p) => {
-        const image = await dalle.invoke(p.prompt!);
+        const image = await ImageFactory.generate(p.prompt!);
         return {
           ...p,
           image,
