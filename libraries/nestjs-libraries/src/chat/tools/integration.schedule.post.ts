@@ -201,11 +201,14 @@ If the tools return errors, you would need to rerun it with the right parameters
                     ...acc,
                     [s.key]: s.value,
                   }),
-                  {} as AllProvidersSettings
+                  {
+                    __type: integration.providerIdentifier,
+                  } as AllProvidersSettings
                 ),
                 value: post.postsAndComments.map((p) => ({
                   content: p.content,
                   id: makeId(10),
+                  delay: 0,
                   image: p.attachments.map((p) => ({
                     id: makeId(10),
                     path: p,
