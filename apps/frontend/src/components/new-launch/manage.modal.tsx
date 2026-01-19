@@ -41,6 +41,7 @@ import {
   DropdownArrowSmallIcon,
 } from '@gitroom/frontend/components/ui/icons';
 import { useHasScroll } from '@gitroom/frontend/components/ui/is.scroll.hook';
+import { useShortlinkPreference } from '@gitroom/frontend/components/settings/shortlink-preference.component';
 
 function countCharacters(text: string, type: string): number {
   if (type !== 'x') {
@@ -58,6 +59,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   const toaster = useToaster();
   const modal = useModals();
   const [showSettings, setShowSettings] = useState(false);
+  const { data: shortlinkPreferenceData } = useShortlinkPreference();
 
   const { addEditSets, mutate, customClose, dummy } = props;
 
@@ -276,28 +278,38 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         }
       }
 
-      const shortLinkUrl = dummy
-        ? { ask: false }
-        : await (
-            await fetch('/posts/should-shortlink', {
-              method: 'POST',
-              body: JSON.stringify({
-                messages: checkAllValid.flatMap((p: any) =>
-                  p.values.flatMap((a: any) => a.content)
-                ),
-              }),
-            })
-          ).json();
+      const shortlinkPreference = shortlinkPreferenceData?.shortlink || 'ASK';
 
-      const shortLink = !shortLinkUrl.ask
-        ? false
-        : await deleteDialog(
-            t(
-              'shortlink_urls_question',
-              'Do you want to shortlink the URLs? it will let you get statistics over clicks'
-            ),
-            t('yes_shortlink_it', 'Yes, shortlink it!')
-          );
+      let shortLink = false;
+
+      if (!dummy && shortlinkPreference !== 'NO') {
+        const shortLinkUrl = await (
+          await fetch('/posts/should-shortlink', {
+            method: 'POST',
+            body: JSON.stringify({
+              messages: checkAllValid.flatMap((p: any) =>
+                p.values.flatMap((a: any) => a.content)
+              ),
+            }),
+          })
+        ).json();
+
+        if (shortLinkUrl.ask) {
+          if (shortlinkPreference === 'YES') {
+            // Automatically shortlink without asking
+            shortLink = true;
+          } else {
+            // ASK: Show the dialog
+            shortLink = await deleteDialog(
+              t(
+                'shortlink_urls_question',
+                'Do you want to shortlink the URLs? it will let you get statistics over clicks'
+              ),
+              t('yes_shortlink_it', 'Yes, shortlink it!')
+            );
+          }
+        }
+      }
 
       const group = existingData.group || makeId(10);
       const data = {
@@ -373,7 +385,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         }
       }
     },
-    [ref, repeater, tags, date, addEditSets, dummy]
+    [ref, repeater, tags, date, addEditSets, dummy, shortlinkPreferenceData]
   );
 
   return (
