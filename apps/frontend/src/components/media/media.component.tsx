@@ -299,7 +299,7 @@ export const MediaBox: FC<{
         children: (
           <div className="w-full h-full p-[50px]">
             {media.path.indexOf('mp4') > -1 ? (
-              <VideoFrame url={mediaDirectory.set(media.path)} />
+              <VideoFrame autoplay={true} url={mediaDirectory.set(media.path)} />
             ) : (
               <img
                 width="100%"
