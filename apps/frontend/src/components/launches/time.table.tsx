@@ -1,6 +1,6 @@
 'use client';
 
-import React, { FC, Fragment, useCallback, useMemo, useState } from 'react';
+import React, { FC, useCallback, useMemo, useState } from 'react';
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
 import dayjs from 'dayjs';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
@@ -16,14 +16,24 @@ import { sortBy } from 'lodash';
 import { usePreventWindowUnload } from '@gitroom/react/helpers/use.prevent.window.unload';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import clsx from 'clsx';
+import {
+  TrashIcon,
+  PlusIcon,
+  DelayIcon,
+} from '@gitroom/frontend/components/ui/icons';
+
 dayjs.extend(utc);
 dayjs.extend(timezone);
-const hours = [...Array(24).keys()].map((i, index) => ({
-  value: index,
+
+const hours = [...Array(24).keys()].map((i) => ({
+  value: i,
 }));
-const minutes = [...Array(60).keys()].map((i, index) => ({
-  value: index,
+
+const minutes = [...Array(60).keys()].map((i) => ({
+  value: i,
 }));
+
 export const TimeTable: FC<{
   integration: Integrations;
   mutate: () => void;
@@ -39,6 +49,7 @@ export const TimeTable: FC<{
   const fetch = useFetch();
   const modal = useModals();
   usePreventWindowUnload(true);
+
   const askClose = useCallback(async () => {
     if (
       !(await deleteDialog(
@@ -53,7 +64,9 @@ export const TimeTable: FC<{
     }
     modal.closeAll();
   }, []);
+
   useKeypress('Escape', askClose);
+
   const removeSlot = useCallback(
     (index: number) => async () => {
       if (
@@ -70,6 +83,7 @@ export const TimeTable: FC<{
     },
     []
   );
+
   const addHour = useCallback(() => {
     const calculateMinutes =
       newDayjs()
@@ -77,7 +91,8 @@ export const TimeTable: FC<{
         .startOf('day')
         .add(hour, 'hours')
         .add(minute, 'minutes')
-        .diff(newDayjs().utc().startOf('day'), 'minutes') - dayjs.tz().utcOffset();
+        .diff(newDayjs().utc().startOf('day'), 'minutes') -
+      dayjs.tz().utcOffset();
     setCurrentTimes((prev) => [
       ...prev,
       {
@@ -85,6 +100,7 @@ export const TimeTable: FC<{
       },
     ]);
   }, [hour, minute]);
+
   const times = useMemo(() => {
     return sortBy(
       currentTimes.map(({ time }) => ({
@@ -99,6 +115,7 @@ export const TimeTable: FC<{
       (p) => p.value
     );
   }, [currentTimes]);
+
   const save = useCallback(async () => {
     await fetch(`/integrations/${props.integration.id}/time`, {
       method: 'POST',
@@ -109,72 +126,105 @@ export const TimeTable: FC<{
     mutate();
     modal.closeAll();
   }, [currentTimes]);
+
   return (
-    <div className="relative w-full">
-      <div>
-        <div className="text-[16px] font-bold mt-[16px]">
+    <div className="relative w-full max-w-[400px] mx-auto">
+      {/* Add Time Slot Section */}
+      <div className="bg-newBgColorInner rounded-[12px] p-[20px] border border-newTableBorder">
+        <div className="text-[15px] font-semibold mb-[16px] flex items-center gap-[8px]">
+          <DelayIcon size={18} className="text-[#612BD3]" />
           {t('add_time_slot', 'Add Time Slot')}
         </div>
-        <div className="flex flex-col">
-          <div className="mt-[16px] flex justify-center gap-[16px]">
-            <div className="w-[100px]">
-              <Select
-                label={t('hour', 'Hour')}
-                name="hour"
-                disableForm={true}
-                className="w-[100px] mt-[8px]"
-                value={hour}
-                onChange={(e) => setHour(Number(e.target.value))}
-              >
-                {hours.map((hour) => (
-                  <option key={hour.value} value={hour.value}>
-                    {hour.value.toString().length === 1 ? '0' : ''}
-                    {hour.value}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <div className="w-[100px]">
-              <Select
-                label={t('minutes', 'Minutes')}
-                name="minutes"
-                disableForm={true}
-                className="w-[100px] mt-[8px]"
-                value={minute}
-                onChange={(e) => setMinute(Number(e.target.value))}
-              >
-                {minutes.map((minute) => (
-                  <option key={minute.value} value={minute.value}>
-                    {minute.value.toString().length === 1 ? '0' : ''}
-                    {minute.value}
-                  </option>
-                ))}
-              </Select>
-            </div>
+
+        <div className="flex gap-[12px] items-end">
+          <div className="flex-1">
+            <Select
+              label={t('hour', 'Hour')}
+              name="hour"
+              disableForm={true}
+              hideErrors={true}
+              value={hour}
+              onChange={(e) => setHour(Number(e.target.value))}
+            >
+              {hours.map((h) => (
+                <option key={h.value} value={h.value}>
+                  {h.value.toString().padStart(2, '0')}
+                </option>
+              ))}
+            </Select>
           </div>
-          <div className="flex w-[215px] mx-auto justify-center mb-[50px]">
-            <Button type="button" className="w-full" onClick={addHour}>
-              {t('add_slot', 'Add Slot')}
-            </Button>
+          <div className="flex-1">
+            <Select
+              label={t('minutes', 'Minutes')}
+              name="minutes"
+              disableForm={true}
+              hideErrors={true}
+              value={minute}
+              onChange={(e) => setMinute(Number(e.target.value))}
+            >
+              {minutes.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.value.toString().padStart(2, '0')}
+                </option>
+              ))}
+            </Select>
           </div>
+          <button
+            type="button"
+            onClick={addHour}
+            className="h-[42px] px-[16px] bg-[#612BD3] hover:bg-[#7640e0] transition-colors rounded-[8px] flex items-center gap-[6px] text-white text-[14px] font-medium"
+          >
+            <PlusIcon size={14} />
+            {t('add', 'Add')}
+          </button>
         </div>
       </div>
-      <div className="mt-[16px] grid grid-cols-2 place-items-center w-[100px] mx-auto">
-        {times.map((timeSlot, index) => (
-          <Fragment key={timeSlot.formatted}>
-            <div className="text-start w-full">{timeSlot.formatted}</div>
-            <div
-              className="cursor-pointer text-red-400 text-start w-full"
-              onClick={removeSlot(index)}
-            >
-              X
-            </div>
-          </Fragment>
-        ))}
+
+      {/* Time Slots List */}
+      <div className="mt-[20px]">
+        <div className="text-[14px] text-newTextColor/60 mb-[12px]">
+          {t('scheduled_times', 'Scheduled Times')} ({times.length})
+        </div>
+
+        {times.length === 0 ? (
+          <div className="text-center py-[32px] text-newTextColor/40 text-[14px] border border-dashed border-newTableBorder rounded-[12px]">
+            {t('no_time_slots', 'No time slots added yet')}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-[8px]">
+            {times.map((timeSlot, index) => (
+              <div
+                key={`${timeSlot.value}-${index}`}
+                className={clsx(
+                  'group flex items-center justify-between',
+                  'h-[48px] px-[16px] rounded-[8px]',
+                  'bg-newBgColorInner border border-newTableBorder',
+                  'hover:border-[#612BD3]/40 transition-colors'
+                )}
+              >
+                <div className="flex items-center gap-[12px]">
+                  <div className="w-[8px] h-[8px] rounded-full bg-[#612BD3]" />
+                  <span className="text-[15px] font-medium tabular-nums">
+                    {timeSlot.formatted}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={removeSlot(index)}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity p-[8px] hover:bg-red-500/10 rounded-[6px] text-red-400 hover:text-red-500"
+                >
+                  <TrashIcon size={16} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-      <div className="flex w-[215px] mx-auto justify-center mb-[50px]">
-        <Button type="button" className="w-full" onClick={save}>
-          {t('save', 'Save')}
+
+      {/* Save Button */}
+      <div className="mt-[24px]">
+        <Button type="button" className="w-full rounded-[8px]" onClick={save}>
+          {t('save_changes', 'Save Changes')}
         </Button>
       </div>
     </div>
