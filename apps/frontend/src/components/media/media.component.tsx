@@ -290,6 +290,32 @@ export const MediaBox: FC<{
     []
   );
 
+  const maximize = useCallback(
+    (media: Media) => async (e: any) => {
+      e.stopPropagation();
+      modals.openModal({
+        title: '',
+        top: 10,
+        children: (
+          <div className="w-full h-full p-[50px]">
+            {media.path.indexOf('mp4') > -1 ? (
+              <VideoFrame url={mediaDirectory.set(media.path)} />
+            ) : (
+              <img
+                width="100%"
+                height="100%"
+                className="w-full h-full max-h-[100%] max-w-[100%] object-cover"
+                src={mediaDirectory.set(media.path)}
+                alt="media"
+              />
+            )}
+          </div>
+        ),
+      });
+    },
+    []
+  );
+
   const deleteImage = useCallback(
     (media: Media) => async (e: any) => {
       e.stopPropagation();
@@ -459,7 +485,26 @@ export const MediaBox: FC<{
                         onClick={deleteImage(media)}
                       />
                     )}
-                    <div className="w-full h-full rounded-[6px] overflow-hidden">
+                    <div className="w-full h-full rounded-[6px] overflow-hidden relative">
+                      <div className="absolute left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%]">
+                        <div
+                          onClick={maximize(media)}
+                          className="cursor-pointer p-[4px] bg-black/40 hidden group-hover:block hover:scale-150 transition-all"
+                        >
+                          <svg
+                            width="30"
+                            height="30"
+                            viewBox="0 0 14 14"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              d="M2 9H0V14H5V12H2V9ZM0 5H2V2H5V0H0V5ZM12 12H9V14H14V9H12V12ZM9 0V2H12V5H14V0H9Z"
+                              fill="#F1F5F9"
+                            />
+                          </svg>
+                        </div>
+                      </div>
                       {media.path.indexOf('mp4') > -1 ? (
                         <VideoFrame url={mediaDirectory.set(media.path)} />
                       ) : (
