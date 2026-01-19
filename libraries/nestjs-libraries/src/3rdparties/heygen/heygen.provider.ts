@@ -2,8 +2,9 @@ import {
   ThirdParty,
   ThirdPartyAbstract,
 } from '@gitroom/nestjs-libraries/3rdparties/thirdparty.interface';
-import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
+import { AIService } from '@gitroom/nestjs-libraries/ai/ai.service';
 import { timer } from '@gitroom/helpers/utils/timer';
+import { isLLMConfigured } from '@gitroom/nestjs-libraries/ai/llm/llm.config';
 
 @ThirdParty({
   identifier: 'heygen',
@@ -19,7 +20,7 @@ export class HeygenProvider extends ThirdPartyAbstract<{
   captions: string;
 }> {
   // @ts-ignore
-  constructor(private _openaiService: OpenaiService) {
+  constructor(private _aiService: AIService) {
     super();
   }
 
@@ -48,8 +49,11 @@ export class HeygenProvider extends ThirdPartyAbstract<{
   }
 
   async generateVoice(apiKey: string, data: { text: string }) {
+    if (!isLLMConfigured()) {
+      throw new Error('LLM is not configured');
+    }
     return {
-      voice: await this._openaiService.generateVoiceFromText(data.text),
+      voice: await this._aiService.generateVoiceFromText(data.text),
     };
   }
 
@@ -167,7 +171,10 @@ export class HeygenProvider extends ThirdPartyAbstract<{
       })
     ).json();
 
-    while (true) {
+    const MAX_POLL_ATTEMPTS = 200; // 10 minutes max (200 * 3 seconds) - video generation takes longer
+    let attempts = 0;
+
+    while (attempts < MAX_POLL_ATTEMPTS) {
       const {
         data: { status, video_url },
       } = await (
@@ -189,7 +196,10 @@ export class HeygenProvider extends ThirdPartyAbstract<{
         throw new Error('Video generation failed');
       }
 
+      attempts++;
       await timer(3000);
     }
+
+    throw new Error('Video generation timed out after 10 minutes');
   }
 }

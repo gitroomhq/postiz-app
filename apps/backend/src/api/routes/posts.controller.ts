@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
   Param,
   Post,
   Put,
@@ -26,6 +27,7 @@ import {
   AuthorizationActions,
   Sections,
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
+import { isLLMConfigured } from '@gitroom/nestjs-libraries/ai/llm/llm.config';
 
 @ApiTags('Posts')
 @Controller('/posts')
@@ -181,6 +183,9 @@ export class PostsController {
     @GetOrgFromRequest() org: Organization,
     @Body() body: { content: string; len: number }
   ) {
+    if (!isLLMConfigured()) {
+      throw new HttpException('LLM is not configured', 400);
+    }
     return this._postsService.separatePosts(body.content, body.len);
   }
 }
