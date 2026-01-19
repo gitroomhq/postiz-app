@@ -31,6 +31,7 @@ import { Autopost } from '@gitroom/frontend/components/autopost/autopost';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { SVGLine } from '@gitroom/frontend/components/launches/launches.component';
 import { GlobalSettings } from '@gitroom/frontend/components/settings/global.settings';
+import { ChangePassword } from '../settings/change-password.component';
 export const SettingsPopup: FC<{
   getRef?: Ref<any>;
 }> = (props) => {
@@ -104,6 +105,9 @@ export const SettingsPopup: FC<{
     }
     if (user?.tier?.public_api && isGeneral && showLogout) {
       arr.push({ tab: 'api', label: t('public_api', 'Public API') });
+    }
+    if(user.providerName == 'LOCAL' && showLogout) {
+      arr.push({ tab: 'change_password', label: t('change_password', 'Change Password') });
     }
 
     return arr;
@@ -190,6 +194,12 @@ export const SettingsPopup: FC<{
               {tab === 'signatures' && user?.tier.current !== 'FREE' && (
                 <div>
                   <SignaturesComponent />
+                </div>
+              )}
+
+              {tab === 'change_password' && showLogout && (
+                <div>
+                  <ChangePassword />
                 </div>
               )}
 
