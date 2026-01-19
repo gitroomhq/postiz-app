@@ -486,7 +486,7 @@ export const MediaBox: FC<{
                       />
                     )}
                     <div className="w-full h-full rounded-[6px] overflow-hidden relative">
-                      <div className="absolute left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%]">
+                      <div className="absolute z-[20] left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%]">
                         <div
                           onClick={maximize(media)}
                           className="cursor-pointer p-[4px] bg-black/40 hidden group-hover:block hover:scale-150 transition-all"
