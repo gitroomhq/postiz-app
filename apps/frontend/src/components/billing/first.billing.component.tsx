@@ -92,7 +92,7 @@ export const FirstBillingComponent = () => {
         <div className="text-[46px] font-[600] leading-[110%] tablet:text-[36px] mobile:!text-[30px] whitespace-pre-line text-balance">
           {t('billing_join_over', 'Join Over')}{' '}
           <span className="text-[#FC69FF]">
-            {t('billing_entrepreneurs_count', '18,000+ Entrepreneurs')}
+            {t('billing_entrepreneurs_count', '20,000+ Entrepreneurs')}
           </span>{' '}
           {t('billing_who_use', 'who use')}{' '}
           {t(
@@ -160,10 +160,12 @@ export const FirstBillingComponent = () => {
             <JoinOver />
           </div>
           {!isLoading && data && stripe ? (
-            <>
-              <EmbeddedBilling stripe={stripe} secret={data.client_secret} />
-              <FAQComponent />
-            </>
+            <EmbeddedBilling
+              stripe={stripe}
+              secret={data.client_secret}
+              showCoupon={period === 'MONTHLY'}
+              autoApplyCoupon={data.auto_apply_coupon}
+            />
           ) : (
             <LoadingComponent />
           )}
@@ -244,6 +246,10 @@ export const FirstBillingComponent = () => {
                 {t('billing_features', 'Features')}
               </div>
               <BillingFeatures tier={tier} />
+            </div>
+            <div className="flex flex-col mobile:hidden tablet:hidden">
+              {/*<div>asd</div>*/}
+              <FAQComponent />
             </div>
           </div>
         </div>

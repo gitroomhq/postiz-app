@@ -9,15 +9,16 @@ datasource db {
 }
 
 model Organization {
-  id                String             @id @default(uuid())
+  id                String              @id @default(uuid())
   name              String
   description       String?
   apiKey            String?
   paymentId         String?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  allowTrial        Boolean            @default(false)
-  isTrailing        Boolean            @default(false)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  allowTrial        Boolean             @default(false)
+  isTrailing        Boolean             @default(false)
+  shortlink         ShortLinkPreference @default(ASK)
   autoPost          AutoPost[]
   Comments          Comments[]
   credits           Credits[]
@@ -878,4 +879,10 @@ enum APPROVED_SUBMIT_FOR_ORDER {
   NO
   WAITING_CONFIRMATION
   YES
+}
+
+enum ShortLinkPreference {
+  ASK
+  YES
+  NO
 }

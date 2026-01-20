@@ -168,7 +168,7 @@ export const Menu: FC<{
       (integration) => integration.id === id
     );
     modal.openModal({
-      withCloseButton: false,
+      withCloseButton: true,
       closeOnEscape: false,
       closeOnClickOutside: false,
       askClose: true,

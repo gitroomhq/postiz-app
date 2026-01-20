@@ -19,7 +19,7 @@ const useFaqList = () => {
             ),
             description: t(
               'faq_to_confirm_credit_card_information_postiz_will_hold',
-              'To confirm credit card information Postiz will hold $2 and release it immediately'
+              'To confirm credit card information Postiz will hold $2 and release it immediately, you can cancel your subscription anytime from settings without talking to a person'
             ),
           },
         ]
@@ -72,9 +72,7 @@ export const FAQSection: FC<{
       className="bg-sixth p-[24px] border border-tableBorder rounded-[8px] flex flex-col"
       onClick={changeShow}
     >
-      <div
-        className={`text-[20px] cursor-pointer flex justify-center`}
-      >
+      <div className={`text-[20px] cursor-pointer flex justify-center`}>
         <div className="flex-1">{title}</div>
         <div className="flex items-center justify-center w-[32px]">
           {!show ? (
@@ -120,7 +118,7 @@ export const FAQSection: FC<{
           onClick={(e) => {
             e.stopPropagation();
           }}
-          className={`mt-[16px] w-full text-wrap font-[400] text-[16px] text-customColor17 select-text`}
+          className={`mt-[16px] w-full text-wrap font-[400] text-[16px] text-customColor17 select-text max-w-[450px]`}
           dangerouslySetInnerHTML={{
             __html: description,
           }}
@@ -134,10 +132,10 @@ export const FAQComponent: FC = () => {
   const list = useFaqList();
   return (
     <div>
-      <h3 className="text-[24px] mt-[48px] mb-[40px] tablet:mt-[80px]">
-        {t('frequently_asked_questions', 'Frequently Asked Questions')}
-      </h3>
-      <div className="gap-[24px] flex-col flex select-none">
+      {/*<h3 className="text-[24px] mt-[48px] mb-[40px] tablet:mt-[80px]">*/}
+      {/*  {t('frequently_asked_questions', 'Frequently Asked Questions')}*/}
+      {/*</h3>*/}
+      <div className="gap-[24px] flex-col flex select-none  mt-[48px] mb-[40px] tablet:mt-[80px]">
         {list.map((item, index) => (
           <FAQSection key={index} {...item} />
         ))}

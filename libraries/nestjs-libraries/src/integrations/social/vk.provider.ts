@@ -11,6 +11,7 @@ import { createHash, randomBytes } from 'crypto';
 import axios from 'axios';
 import FormDataNew from 'form-data';
 import mime from 'mime-types';
+import { Integration } from '@prisma/client';
 
 export class VkProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 2; // VK has moderate API limits
@@ -158,123 +159,153 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
+  private async uploadMedia(
+    userId: string,
+    accessToken: string,
+    post: PostDetails
+  ): Promise<{ id: string; type: string }[]> {
+    return await Promise.all(
+      (post?.media || []).map(async (media) => {
+        const all = await (
+          await this.fetch(
+            media.path.indexOf('mp4') > -1
+              ? `https://api.vk.com/method/video.save?access_token=${accessToken}&v=5.251`
+              : `https://api.vk.com/method/photos.getWallUploadServer?owner_id=${userId}&access_token=${accessToken}&v=5.251`
+          )
+        ).json();
+
+        const { data } = await axios.get(media.path!, {
+          responseType: 'stream',
+        });
+
+        const slash = media.path.split('/').at(-1);
+
+        const formData = new FormDataNew();
+        formData.append('photo', data, {
+          filename: slash,
+          contentType: mime.lookup(slash!) || '',
+        });
+        const value = (
+          await axios.post(all.response.upload_url, formData, {
+            headers: {
+              ...formData.getHeaders(),
+            },
+          })
+        ).data;
+
+        if (media.path.indexOf('mp4') > -1) {
+          return {
+            id: all.response.video_id,
+            type: 'video',
+          };
+        }
+
+        const formSend = new FormData();
+        formSend.append('photo', value.photo);
+        formSend.append('server', value.server);
+        formSend.append('hash', value.hash);
+
+        const { id } = (
+          await (
+            await fetch(
+              `https://api.vk.com/method/photos.saveWallPhoto?access_token=${accessToken}&v=5.251`,
+              {
+                method: 'POST',
+                body: formSend,
+              }
+            )
+          ).json()
+        ).response[0];
+
+        return {
+          id,
+          type: 'photo',
+        };
+      })
+    );
+  }
+
   async post(
     userId: string,
     accessToken: string,
     postDetails: PostDetails[]
   ): Promise<PostResponse[]> {
-    let replyTo = '';
-    const values: PostResponse[] = [];
+    const [firstPost] = postDetails;
 
-    const uploading = await Promise.all(
-      postDetails.map(async (post) => {
-        return await Promise.all(
-          (post?.media || []).map(async (media) => {
-            const all = await (
-              await this.fetch(
-                media.path.indexOf('mp4') > -1
-                  ? `https://api.vk.com/method/video.save?access_token=${accessToken}&v=5.251`
-                  : `https://api.vk.com/method/photos.getWallUploadServer?owner_id=${userId}&access_token=${accessToken}&v=5.251`
-              )
-            ).json();
+    // Upload media for the first post
+    const mediaList = await this.uploadMedia(userId, accessToken, firstPost);
 
-            const { data } = await axios.get(media.path!, {
-              responseType: 'stream',
-            });
+    const body = new FormData();
+    body.append('message', firstPost.message);
 
-            const slash = media.path.split('/').at(-1);
-
-            const formData = new FormDataNew();
-            formData.append('photo', data, {
-              filename: slash,
-              contentType: mime.lookup(slash!) || '',
-            });
-            const value = (
-              await axios.post(all.response.upload_url, formData, {
-                headers: {
-                  ...formData.getHeaders(),
-                },
-              })
-            ).data;
-
-            if (media.path.indexOf('mp4') > -1) {
-              return {
-                id: all.response.video_id,
-                type: 'video',
-              };
-            }
-
-            const formSend = new FormData();
-            formSend.append('photo', value.photo);
-            formSend.append('server', value.server);
-            formSend.append('hash', value.hash);
-
-            const { id } = (
-              await (
-                await fetch(
-                  `https://api.vk.com/method/photos.saveWallPhoto?access_token=${accessToken}&v=5.251`,
-                  {
-                    method: 'POST',
-                    body: formSend,
-                  }
-                )
-              ).json()
-            ).response[0];
-
-            return {
-              id,
-              type: 'photo',
-            };
-          })
-        );
-      })
-    );
-
-    let i = 0;
-    for (const post of postDetails) {
-      const list = uploading?.[i] || [];
-
-      const body = new FormData();
-      body.append('message', post.message);
-      if (replyTo) {
-        body.append('post_id', replyTo);
-      }
-
-      if (list.length) {
-        body.append(
-          'attachments',
-          list.map((p) => `${p.type}${userId}_${p.id}`).join(',')
-        );
-      }
-
-      const { response, ...all } = await (
-        await this.fetch(
-          `https://api.vk.com/method/${
-            replyTo ? 'wall.createComment' : 'wall.post'
-          }?v=5.251&access_token=${accessToken}&client_id=${process.env.VK_ID}`,
-          {
-            method: 'POST',
-            body,
-          }
-        )
-      ).json();
-
-      values.push({
-        id: post.id,
-        postId: String(response?.post_id || response?.comment_id),
-        releaseURL: `https://vk.com/feed?w=wall${userId}_${
-          response?.post_id || replyTo
-        }`,
-        status: 'completed',
-      });
-
-      if (!replyTo) {
-        replyTo = response.post_id;
-      }
-
-      i++;
+    if (mediaList.length) {
+      body.append(
+        'attachments',
+        mediaList.map((p) => `${p.type}${userId}_${p.id}`).join(',')
+      );
     }
 
-    return values;
+    const { response } = await (
+      await this.fetch(
+        `https://api.vk.com/method/wall.post?v=5.251&access_token=${accessToken}&client_id=${process.env.VK_ID}`,
+        {
+          method: 'POST',
+          body,
+        }
+      )
+    ).json();
+
+    return [
+      {
+        id: firstPost.id,
+        postId: String(response?.post_id),
+        releaseURL: `https://vk.com/feed?w=wall${userId}_${response?.post_id}`,
+        status: 'completed',
+      },
+    ];
+  }
+
+  async comment(
+    userId: string,
+    postId: string,
+    lastCommentId: string | undefined,
+    accessToken: string,
+    postDetails: PostDetails[],
+    integration: Integration
+  ): Promise<PostResponse[]> {
+    const [commentPost] = postDetails;
+
+    // Upload media for the comment
+    const mediaList = await this.uploadMedia(userId, accessToken, commentPost);
+
+    const body = new FormData();
+    body.append('message', commentPost.message);
+    body.append('post_id', postId);
+
+    if (mediaList.length) {
+      body.append(
+        'attachments',
+        mediaList.map((p) => `${p.type}${userId}_${p.id}`).join(',')
+      );
+    }
+
+    const { response } = await (
+      await this.fetch(
+        `https://api.vk.com/method/wall.createComment?v=5.251&access_token=${accessToken}&client_id=${process.env.VK_ID}`,
+        {
+          method: 'POST',
+          body,
+        }
+      )
+    ).json();
+
+    return [
+      {
+        id: commentPost.id,
+        postId: String(response?.comment_id),
+        releaseURL: `https://vk.com/feed?w=wall${userId}_${postId}`,
+        status: 'completed',
+      },
+    ];
   }
 }

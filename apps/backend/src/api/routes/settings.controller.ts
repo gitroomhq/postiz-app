@@ -4,6 +4,7 @@ import { Organization } from '@prisma/client';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { AddTeamMemberDto } from '@gitroom/nestjs-libraries/dtos/settings/add.team.member.dto';
+import { ShortlinkPreferenceDto } from '@gitroom/nestjs-libraries/dtos/settings/shortlink-preference.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 
@@ -45,5 +46,22 @@ export class SettingsController {
     @Param('id') id: string
   ) {
     return this._organizationService.deleteTeamMember(org, id);
+  }
+
+  @Get('/shortlink')
+  async getShortlinkPreference(@GetOrgFromRequest() org: Organization) {
+    return this._organizationService.getShortlinkPreference(org.id);
+  }
+
+  @Post('/shortlink')
+  @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
+  async updateShortlinkPreference(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: ShortlinkPreferenceDto
+  ) {
+    return this._organizationService.updateShortlinkPreference(
+      org.id,
+      body.shortlink
+    );
   }
 }
