@@ -462,4 +462,79 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       })) || []
     );
   }
+
+  async postAnalytics(
+    integrationId: string,
+    accessToken: string,
+    postId: string,
+    date: number
+  ): Promise<AnalyticsData[]> {
+    const today = dayjs().format('YYYY-MM-DD');
+
+    try {
+      // Fetch post insights from Facebook Graph API
+      const { data } = await (
+        await this.fetch(
+          `https://graph.facebook.com/v20.0/${postId}/insights?metric=post_impressions,post_impressions_unique,post_engaged_users,post_clicks,post_reactions_by_type_total&access_token=${accessToken}`
+        )
+      ).json();
+
+      if (!data || data.length === 0) {
+        return [];
+      }
+
+      const result: AnalyticsData[] = [];
+
+      for (const metric of data) {
+        const value = metric.values?.[0]?.value;
+        if (value === undefined) continue;
+
+        let label = '';
+        let total = '';
+
+        switch (metric.name) {
+          case 'post_impressions':
+            label = 'Impressions';
+            total = String(value);
+            break;
+          case 'post_impressions_unique':
+            label = 'Reach';
+            total = String(value);
+            break;
+          case 'post_engaged_users':
+            label = 'Engaged Users';
+            total = String(value);
+            break;
+          case 'post_clicks':
+            label = 'Clicks';
+            total = String(value);
+            break;
+          case 'post_reactions_by_type_total':
+            // This returns an object with reaction types
+            if (typeof value === 'object') {
+              const totalReactions = Object.values(value as Record<string, number>).reduce(
+                (sum: number, v: number) => sum + v,
+                0
+              );
+              label = 'Reactions';
+              total = String(totalReactions);
+            }
+            break;
+        }
+
+        if (label) {
+          result.push({
+            label,
+            percentageChange: 0,
+            data: [{ total, date: today }],
+          });
+        }
+      }
+
+      return result;
+    } catch (err) {
+      console.error('Error fetching Facebook post analytics:', err);
+      return [];
+    }
+  }
 }

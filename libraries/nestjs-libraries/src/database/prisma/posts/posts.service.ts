@@ -30,6 +30,11 @@ import {
   organizationId,
   postId as postIdSearchParam,
 } from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
+import { AnalyticsData } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { timer } from '@gitroom/helpers/utils/timer';
+import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
+import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
 
 type PostWithConditionals = Post & {
   integration?: Integration;
@@ -46,7 +51,8 @@ export class PostsService {
     private _mediaService: MediaService,
     private _shortLinkService: ShortLinkService,
     private _openaiService: OpenaiService,
-    private _temporalService: TemporalService
+    private _temporalService: TemporalService,
+    private _refreshIntegrationService: RefreshIntegrationService
   ) {}
 
   searchForMissingThreeHoursPosts() {
@@ -55,6 +61,85 @@ export class PostsService {
 
   updatePost(id: string, postId: string, releaseURL: string) {
     return this._postRepository.updatePost(id, postId, releaseURL);
+  }
+
+  async checkPostAnalytics(
+    orgId: string,
+    postId: string,
+    date: number,
+    forceRefresh = false
+  ): Promise<AnalyticsData[]> {
+    const post = await this._postRepository.getPostById(postId, orgId);
+    if (!post || !post.releaseId) {
+      return [];
+    }
+
+    const integrationProvider = this._integrationManager.getSocialIntegration(
+      post.integration.providerIdentifier
+    );
+
+    if (!integrationProvider.postAnalytics) {
+      return [];
+    }
+
+    const getIntegration = post.integration!;
+
+    if (
+      dayjs(getIntegration?.tokenExpiration).isBefore(dayjs()) ||
+      forceRefresh
+    ) {
+      const data = await this._refreshIntegrationService.refresh(
+        getIntegration
+      );
+      if (!data) {
+        return [];
+      }
+
+      const { accessToken } = data;
+
+      if (accessToken) {
+        getIntegration.token = accessToken;
+
+        if (integrationProvider.refreshWait) {
+          await timer(10000);
+        }
+      } else {
+        await this._integrationService.disconnectChannel(orgId, getIntegration);
+        return [];
+      }
+    }
+
+    const getIntegrationData = await ioRedis.get(
+      `integration:${orgId}:${post.id}:${date}`
+    );
+    if (getIntegrationData) {
+      return JSON.parse(getIntegrationData);
+    }
+
+    try {
+      const loadAnalytics = await integrationProvider.postAnalytics(
+        getIntegration.internalId,
+        getIntegration.token,
+        post.releaseId,
+        date
+      );
+      await ioRedis.set(
+        `integration:${orgId}:${post.id}:${date}`,
+        JSON.stringify(loadAnalytics),
+        'EX',
+        !process.env.NODE_ENV || process.env.NODE_ENV === 'development'
+          ? 1
+          : 3600
+      );
+      return loadAnalytics;
+    } catch (e) {
+      console.log(e);
+      if (e instanceof RefreshToken) {
+        return this.checkPostAnalytics(orgId, postId, date, true);
+      }
+    }
+
+    return [];
   }
 
   async getStatistics(orgId: string, id: string) {

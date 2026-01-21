@@ -417,6 +417,132 @@ export class LinkedinPageProvider
     }));
   }
 
+  async postAnalytics(
+    integrationId: string,
+    accessToken: string,
+    postId: string,
+    date: number
+  ): Promise<AnalyticsData[]> {
+    const endDate = dayjs().unix() * 1000;
+    const startDate = dayjs().subtract(date, 'days').unix() * 1000;
+
+    // Fetch share statistics for the specific post
+    const shareStatsUrl = `https://api.linkedin.com/v2/organizationalEntityShareStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(
+      `urn:li:organization:${integrationId}`
+    )}&shares=List(${encodeURIComponent(postId)})&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`;
+
+    const { elements: shareElements }: { elements: PostShareStatElement[] } =
+      await (
+        await this.fetch(shareStatsUrl, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'LinkedIn-Version': '202511',
+            'X-Restli-Protocol-Version': '2.0.0',
+          },
+        })
+      ).json();
+
+    // Also fetch social actions (likes, comments, shares) for the specific post
+    let socialActions: SocialActionsResponse | null = null;
+    try {
+      const socialActionsUrl = `https://api.linkedin.com/v2/socialActions/${encodeURIComponent(
+        postId
+      )}`;
+      socialActions = await (
+        await this.fetch(socialActionsUrl, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'LinkedIn-Version': '202511',
+            'X-Restli-Protocol-Version': '2.0.0',
+          },
+        })
+      ).json();
+    } catch (e) {
+      // Social actions may not be available for all posts
+    }
+
+    // Process share statistics into time series data
+    const analytics = (shareElements || []).reduce(
+      (all, current) => {
+        if (typeof current?.totalShareStatistics !== 'undefined') {
+          const dateStr = dayjs(current.timeRange.start).format('YYYY-MM-DD');
+
+          all['Impressions'].push({
+            total: current.totalShareStatistics.impressionCount || 0,
+            date: dateStr,
+          });
+
+          all['Unique Impressions'].push({
+            total: current.totalShareStatistics.uniqueImpressionsCount || 0,
+            date: dateStr,
+          });
+
+          all['Clicks'].push({
+            total: current.totalShareStatistics.clickCount || 0,
+            date: dateStr,
+          });
+
+          all['Likes'].push({
+            total: current.totalShareStatistics.likeCount || 0,
+            date: dateStr,
+          });
+
+          all['Comments'].push({
+            total: current.totalShareStatistics.commentCount || 0,
+            date: dateStr,
+          });
+
+          all['Shares'].push({
+            total: current.totalShareStatistics.shareCount || 0,
+            date: dateStr,
+          });
+
+          all['Engagement'].push({
+            total: current.totalShareStatistics.engagement || 0,
+            date: dateStr,
+          });
+        }
+        return all;
+      },
+      {
+        Impressions: [] as { total: number; date: string }[],
+        'Unique Impressions': [] as { total: number; date: string }[],
+        Clicks: [] as { total: number; date: string }[],
+        Likes: [] as { total: number; date: string }[],
+        Comments: [] as { total: number; date: string }[],
+        Shares: [] as { total: number; date: string }[],
+        Engagement: [] as { total: number; date: string }[],
+      }
+    );
+
+    // If no time series data but we have social actions, create a single data point
+    if (
+      Object.values(analytics).every((arr) => arr.length === 0) &&
+      socialActions
+    ) {
+      const today = dayjs().format('YYYY-MM-DD');
+      analytics['Likes'].push({
+        total: socialActions.likesSummary?.totalLikes || 0,
+        date: today,
+      });
+      analytics['Comments'].push({
+        total: socialActions.commentsSummary?.totalFirstLevelComments || 0,
+        date: today,
+      });
+    }
+
+    // Filter out empty analytics
+    const result = Object.entries(analytics)
+      .filter(([_, data]) => data.length > 0)
+      .map(([label, data]) => ({
+        label,
+        data,
+        percentageChange: 0,
+      }));
+
+    return result as any;
+  }
+
   @Plug({
     identifier: 'linkedin-page-autoRepostPost',
     title: 'Auto Repost Posts',
@@ -763,4 +889,31 @@ export interface MobileInsightsPageViews {
 export interface TimeRange {
   start: number;
   end: number;
+}
+
+// Post analytics interfaces
+export interface PostShareStatElement {
+  organizationalEntity: string;
+  share: string;
+  totalShareStatistics: {
+    uniqueImpressionsCount: number;
+    shareCount: number;
+    engagement: number;
+    clickCount: number;
+    likeCount: number;
+    impressionCount: number;
+    commentCount: number;
+  };
+  timeRange: TimeRange;
+}
+
+export interface SocialActionsResponse {
+  likesSummary?: {
+    totalLikes: number;
+    likedByCurrentUser: boolean;
+  };
+  commentsSummary?: {
+    totalFirstLevelComments: number;
+    commentsState: string;
+  };
 }

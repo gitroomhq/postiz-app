@@ -560,4 +560,15 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
       return [];
     }
   }
+
+  async postAnalytics(
+    integrationId: string,
+    accessToken: string,
+    postId: string,
+    date: number
+  ): Promise<AnalyticsData[]> {
+    // Google My Business local posts don't have detailed individual post analytics
+    // The API focuses on location-level metrics rather than post-level metrics
+    return [];
+  }
 }

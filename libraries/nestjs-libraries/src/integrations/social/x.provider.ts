@@ -590,6 +590,96 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     return [];
   }
 
+  async postAnalytics(
+    integrationId: string,
+    accessToken: string,
+    postId: string,
+    date: number
+  ): Promise<AnalyticsData[]> {
+    if (process.env.DISABLE_X_ANALYTICS) {
+      return [];
+    }
+
+    const today = dayjs().format('YYYY-MM-DD');
+
+    const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
+    const client = new TwitterApi({
+      appKey: process.env.X_API_KEY!,
+      appSecret: process.env.X_API_SECRET!,
+      accessToken: accessTokenSplit,
+      accessSecret: accessSecretSplit,
+    });
+
+    try {
+      // Fetch the specific tweet with public metrics
+      const tweet = await client.v2.singleTweet(postId, {
+        'tweet.fields': ['public_metrics', 'created_at'],
+      });
+
+      if (!tweet?.data?.public_metrics) {
+        return [];
+      }
+
+      const metrics = tweet.data.public_metrics;
+
+      const result: AnalyticsData[] = [];
+
+      if (metrics.impression_count !== undefined) {
+        result.push({
+          label: 'Impressions',
+          percentageChange: 0,
+          data: [{ total: String(metrics.impression_count), date: today }],
+        });
+      }
+
+      if (metrics.like_count !== undefined) {
+        result.push({
+          label: 'Likes',
+          percentageChange: 0,
+          data: [{ total: String(metrics.like_count), date: today }],
+        });
+      }
+
+      if (metrics.retweet_count !== undefined) {
+        result.push({
+          label: 'Retweets',
+          percentageChange: 0,
+          data: [{ total: String(metrics.retweet_count), date: today }],
+        });
+      }
+
+      if (metrics.reply_count !== undefined) {
+        result.push({
+          label: 'Replies',
+          percentageChange: 0,
+          data: [{ total: String(metrics.reply_count), date: today }],
+        });
+      }
+
+      if (metrics.quote_count !== undefined) {
+        result.push({
+          label: 'Quotes',
+          percentageChange: 0,
+          data: [{ total: String(metrics.quote_count), date: today }],
+        });
+      }
+
+      if (metrics.bookmark_count !== undefined) {
+        result.push({
+          label: 'Bookmarks',
+          percentageChange: 0,
+          data: [{ total: String(metrics.bookmark_count), date: today }],
+        });
+      }
+
+      return result;
+    } catch (err) {
+      console.log('Error fetching X post analytics:', err);
+    }
+
+    return [];
+  }
+
   override async mention(token: string, d: { query: string }) {
     const [accessTokenSplit, accessSecretSplit] = token.split(':');
     const client = new TwitterApi({

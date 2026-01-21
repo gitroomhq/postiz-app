@@ -523,6 +523,68 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     return false;
   }
 
+  async postAnalytics(
+    integrationId: string,
+    accessToken: string,
+    postId: string,
+    date: number
+  ): Promise<AnalyticsData[]> {
+    const today = dayjs().format('YYYY-MM-DD');
+
+    try {
+      // Fetch thread insights from Threads API
+      const { data } = await (
+        await this.fetch(
+          `https://graph.threads.net/v1.0/${postId}/insights?metric=views,likes,replies,reposts,quotes&access_token=${accessToken}`
+        )
+      ).json();
+
+      if (!data || data.length === 0) {
+        return [];
+      }
+
+      const result: AnalyticsData[] = [];
+
+      for (const metric of data) {
+        const value = metric.values?.[0]?.value ?? metric.total_value?.value;
+        if (value === undefined) continue;
+
+        let label = '';
+
+        switch (metric.name) {
+          case 'views':
+            label = 'Views';
+            break;
+          case 'likes':
+            label = 'Likes';
+            break;
+          case 'replies':
+            label = 'Replies';
+            break;
+          case 'reposts':
+            label = 'Reposts';
+            break;
+          case 'quotes':
+            label = 'Quotes';
+            break;
+        }
+
+        if (label) {
+          result.push({
+            label,
+            percentageChange: 0,
+            data: [{ total: String(value), date: today }],
+          });
+        }
+      }
+
+      return result;
+    } catch (err) {
+      console.error('Error fetching Threads post analytics:', err);
+      return [];
+    }
+  }
+
   // override async mention(
   //   token: string,
   //   data: { query: string },

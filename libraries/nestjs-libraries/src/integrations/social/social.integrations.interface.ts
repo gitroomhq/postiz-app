@@ -28,6 +28,12 @@ export interface IAuthenticator {
     accessToken: string,
     date: number
   ): Promise<AnalyticsData[]>;
+  postAnalytics?(
+    integrationId: string,
+    accessToken: string,
+    postId: string,
+    fromDate: number,
+  ): Promise<AnalyticsData[]>;
   changeNickname?(
     id: string,
     accessToken: string,
@@ -45,6 +51,7 @@ export interface AnalyticsData {
   data: Array<{ total: string; date: string }>;
   percentageChange: number;
 }
+
 
 export type GenerateAuthUrlResponse = {
   url: string;

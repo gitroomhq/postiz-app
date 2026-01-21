@@ -876,7 +876,7 @@ const CalendarItem: FC<{
         >
           <Preview />
         </div>{' '}
-        {post.integration.providerIdentifier === 'x' && disableXAnalytics ? (
+        {((post.integration.providerIdentifier === 'x' && disableXAnalytics) || !post.releaseId) ? (
           <></>
         ) : (
           <div
