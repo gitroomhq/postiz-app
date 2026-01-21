@@ -105,7 +105,19 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
   const currentIntegrationText = useMemo(() => {
     if (current === 'global') {
-      return '';
+      return (
+        <div className="flex items-center gap-[10px]">
+          <div className="relative">
+            <SettingsIcon
+              size={15}
+              className="text-white"
+            />
+          </div>
+          <div>
+            Settings
+          </div>
+        </div>
+      );
     }
 
     const currentIntegration = integrations.find((p) => p.id === current)!;
@@ -425,8 +437,8 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                     <div
                       id="social-empty"
                       className={clsx(
-                        'pb-[16px]',
-                        current !== 'global' && 'hidden'
+                        'pb-[16px]'
+                        // current !== 'global' && 'hidden'
                       )}
                     />
                   </div>
@@ -436,11 +448,11 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 id="wrapper-settings"
                 className={clsx(
                   'pb-[20px] px-[20px] select-none',
-                  current === 'global' && 'hidden',
-                  showSettings && 'flex-1 flex pt-[20px]'
+                  showSettings && 'flex-1 flex pt-[20px]',
+                  current === 'global' && 'hidden'
                 )}
               >
-                <div className="bg-newSettings flex-1 flex flex-col rounded-[12px] gap-[12px] overflow-hidden">
+                <div className="flex-1 flex flex-col rounded-[12px] gap-[12px] overflow-hidden bg-newSettings">
                   <div
                     onClick={() => setShowSettings(!showSettings)}
                     className={clsx(
@@ -465,9 +477,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                     )}
                   >
                     <div
-                      id="social-settings"
-                      className="px-[12px] pb-[12px] absolute left-0 top-0 w-full h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newBgColorInner scrollbar-track-newColColor"
-                    />
+                      className="absolute left-0 top-0 w-full h-full flex flex-col overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newBgColorInner scrollbar-track-newColColor"
+                    >
+                      <div id="social-settings" className="flex flex-col gap-[20px] bg-newBgColor" />
+                    </div>
                   </div>
                   <style>
                     {`#social-settings [data-id="${current}"] {display: block !important;}`}
