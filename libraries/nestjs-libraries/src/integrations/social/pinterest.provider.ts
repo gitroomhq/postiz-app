@@ -366,7 +366,8 @@ export class PinterestProvider
     date: number
   ): Promise<AnalyticsData[]> {
     const today = dayjs().format('YYYY-MM-DD');
-    const since = dayjs().subtract(date, 'day').format('YYYY-MM-DD');
+    // Use a very long date range (2 years) to capture lifetime metrics for older posts
+    const since = dayjs().subtract(2, 'year').format('YYYY-MM-DD');
 
     try {
       // Fetch pin analytics from Pinterest API

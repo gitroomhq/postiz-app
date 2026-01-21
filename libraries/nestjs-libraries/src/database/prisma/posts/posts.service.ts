@@ -109,12 +109,12 @@ export class PostsService {
       }
     }
 
-    const getIntegrationData = await ioRedis.get(
-      `integration:${orgId}:${post.id}:${date}`
-    );
-    if (getIntegrationData) {
-      return JSON.parse(getIntegrationData);
-    }
+    // const getIntegrationData = await ioRedis.get(
+    //   `integration:${orgId}:${post.id}:${date}`
+    // );
+    // if (getIntegrationData) {
+    //   return JSON.parse(getIntegrationData);
+    // }
 
     try {
       const loadAnalytics = await integrationProvider.postAnalytics(
