@@ -475,7 +475,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       // Fetch post insights from Facebook Graph API
       const { data } = await (
         await this.fetch(
-          `https://graph.facebook.com/v20.0/${postId}/insights?metric=post_impressions,post_impressions_unique,post_engaged_users,post_clicks,post_reactions_by_type_total&access_token=${accessToken}`
+          `https://graph.facebook.com/v20.0/${postId}/insights?metric=post_impressions_unique,post_reactions_by_type_total,post_clicks,post_clicks_by_type&access_token=${accessToken}`
         )
       ).json();
 
@@ -493,21 +493,24 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
         let total = '';
 
         switch (metric.name) {
-          case 'post_impressions':
-            label = 'Impressions';
-            total = String(value);
-            break;
           case 'post_impressions_unique':
-            label = 'Reach';
-            total = String(value);
-            break;
-          case 'post_engaged_users':
-            label = 'Engaged Users';
+            label = 'Impressions';
             total = String(value);
             break;
           case 'post_clicks':
             label = 'Clicks';
             total = String(value);
+            break;
+          case 'post_clicks_by_type':
+            // This returns an object with click types
+            if (typeof value === 'object') {
+              const totalClicks = Object.values(value as Record<string, number>).reduce(
+                (sum: number, v: number) => sum + v,
+                0
+              );
+              label = 'Clicks by Type';
+              total = String(totalClicks);
+            }
             break;
           case 'post_reactions_by_type_total':
             // This returns an object with reaction types
