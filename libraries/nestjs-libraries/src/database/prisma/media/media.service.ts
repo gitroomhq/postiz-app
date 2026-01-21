@@ -25,6 +25,19 @@ export class MediaService {
   ) {}
 
   async deleteMedia(org: string, id: string) {
+    // Get the media record to get the file path
+    const media = await this._mediaRepository.getMediaById(id);
+
+    // Delete from storage if file path exists
+    if (media?.path) {
+      try {
+        await this.storage.removeFile(media.path);
+      } catch (err) {
+        console.error('Error removing file from storage:', err);
+        // Continue with soft delete even if storage removal fails
+      }
+    }
+
     return this._mediaRepository.deleteMedia(org, id);
   }
 

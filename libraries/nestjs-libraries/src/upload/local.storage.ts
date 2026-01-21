@@ -13,7 +13,8 @@ export class LocalStorage implements IUploadProvider {
     const contentType =
       loadImage?.headers?.['content-type'] ||
       loadImage?.headers?.['Content-Type'];
-    const findExtension = mime.getExtension(contentType)!;
+    // Fallback to 'bin' if MIME type is unrecognized, or try to extract from URL
+    const findExtension = mime.getExtension(contentType) || path.split('.').pop()?.split('?')[0] || 'bin';
 
     const now = new Date();
     const year = now.getFullYear();
@@ -74,15 +75,44 @@ export class LocalStorage implements IUploadProvider {
   }
 
   async removeFile(filePath: string): Promise<void> {
-    // Logic to remove the file from the filesystem goes here
-    return new Promise((resolve, reject) => {
-      unlink(filePath, (err) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve();
-        }
+    // Convert URL to filesystem path
+    // Input: http://localhost:4200/uploads/2025/01/15/abc123.png
+    // Output: /upload-directory/2025/01/15/abc123.png
+    try {
+      const url = new URL(filePath);
+      const pathAfterUploads = url.pathname.replace(/^\/uploads/, '');
+      const fsPath = `${this.uploadDirectory}${pathAfterUploads}`;
+
+      return new Promise((resolve, reject) => {
+        unlink(fsPath, (err) => {
+          if (err) {
+            // Don't reject if file doesn't exist
+            if (err.code === 'ENOENT') {
+              console.log(`File not found (already deleted?): ${fsPath}`);
+              resolve();
+            } else {
+              console.error(`Error deleting file from local storage: ${fsPath}`, err);
+              reject(err);
+            }
+          } else {
+            console.log(`Successfully deleted file: ${fsPath}`);
+            resolve();
+          }
+        });
       });
-    });
+    } catch (parseError) {
+      console.error(`Error parsing file URL: ${filePath}`, parseError);
+      // If filePath is not a valid URL, try it as a direct path
+      return new Promise((resolve, reject) => {
+        unlink(filePath, (err) => {
+          if (err && err.code !== 'ENOENT') {
+            console.error(`Error deleting file: ${filePath}`, err);
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
+      });
+    }
   }
 }
