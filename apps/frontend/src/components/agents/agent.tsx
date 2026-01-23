@@ -43,7 +43,7 @@ export const MediaPortal: FC<{
   const t = useT();
   if (!waitForClass) return null;
   return (
-    <div className="pl-[14px] pr-[24px] whitespace-nowrap editor rm-bg">
+    <div className="pl-[14px] pr-[24px] whitespace-nowrap editor rm-bg overflow-x-auto scrollbar-hide">
       <MultiMediaComponent
         allData={[{ content: value }]}
         text={value}
@@ -53,8 +53,8 @@ export const MediaPortal: FC<{
         dummy={false}
         name="image"
         onChange={setMedia}
-        onOpen={() => {}}
-        onClose={() => {}}
+        onOpen={() => { }}
+        onClose={() => { }}
       />
     </div>
   );
@@ -107,13 +107,13 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
   return (
     <div
       className={clsx(
-        'trz bg-newBgColorInner flex flex-col gap-[15px] transition-all relative',
-        collapseMenu === '1' ? 'group sidebar w-[100px]' : 'w-[260px]'
+        'trz bg-newBgColorInner flex md:flex-col flex-row gap-[16px] md:gap-[15px] transition-all relative overflow-x-auto md:overflow-x-visible md:overflow-y-auto scrollbar-hide shrink-0 items-center md:items-stretch md:p-0 md:bg-transparent shadow-sm md:shadow-none',
+        collapseMenu === '1' ? 'group sidebar w-full md:w-[100px]' : 'w-full md:w-[260px]'
       )}
     >
-      <div className="absolute top-0 start-0 w-full h-full p-[20px] overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
-        <div className="flex items-center">
-          <h2 className="group-[.sidebar]:hidden flex-1 text-[20px] font-[500] mb-[15px]">
+      <div className="md:absolute md:top-0 md:start-0 w-full md:h-full p-[16px] md:p-[20px] md:overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor flex flex-row md:flex-col gap-[12px] md:gap-0">
+        <div className="flex items-center hidden md:flex">
+          <h2 className="group-[.sidebar]:hidden flex-1 text-[16px] md:text-[20px] font-[500] mb-[12px] md:mb-[15px]">
             {t('select_channels', 'Select Channels')}
           </h2>
           <div
@@ -137,14 +137,15 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
             </svg>
           </div>
         </div>
-        <div className={clsx('flex flex-col gap-[15px]')}>
+        <div className={clsx('flex flex-row md:flex-col gap-[12px] md:gap-[15px] flex-1')}>
           {sortedIntegrations.map((integration, index) => (
             <div
               onClick={setIntegration(integration)}
               key={integration.id}
               className={clsx(
-                'flex gap-[12px] items-center group/profile justify-center hover:bg-boxHover rounded-e-[8px] hover:opacity-100 cursor-pointer',
-                !selected.some((p) => p.id === integration.id) && 'opacity-20'
+                'flex gap-[10px] md:gap-[12px] items-center group/profile justify-center hover:bg-boxHover rounded-[8px] md:rounded-s-none md:rounded-e-[8px] hover:opacity-100 cursor-pointer px-4 md:px-0 py-2 md:py-0 bg-sixth md:bg-transparent min-w-fit md:min-w-0 transition-all',
+                !selected.some((p) => p.id === integration.id) && 'opacity-50 md:opacity-20',
+                selected.some((p) => p.id === integration.id) && 'bg-boxHover md:bg-transparent shadow-sm md:shadow-none'
               )}
             >
               <div
@@ -161,7 +162,7 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
                     <div className="bg-primary/60 w-[39px] h-[46px] start-0 top-0 absolute rounded-full z-[199]" />
                   </div>
                 )}
-                <div className="h-full w-[4px] -ms-[12px] rounded-s-[3px] opacity-0 group-hover/profile:opacity-100 transition-opacity">
+                <div className="h-full w-[4px] -ms-[12px] rounded-s-[3px] opacity-0 group-hover/profile:opacity-100 transition-opacity hidden md:block">
                   <SVGLine />
                 </div>
                 <ImageWithFallback
@@ -202,9 +203,11 @@ export const Agent: FC<{ children: ReactNode }> = ({ children }) => {
 
   return (
     <PropertiesContext.Provider value={{ properties }}>
-      <AgentList onChange={setProperties} />
-      <div className="bg-newBgColorInner flex flex-1">{children}</div>
-      <Threads />
+      <div className="flex flex-col md:flex-row w-full h-full overflow-hidden">
+        <AgentList onChange={setProperties} />
+        <div className="bg-newBgColorInner flex flex-1 overflow-hidden relative">{children}</div>
+        <Threads />
+      </div>
     </PropertiesContext.Provider>
   );
 };
@@ -224,12 +227,11 @@ const Threads: FC = () => {
   return (
     <div
       className={clsx(
-        'trz bg-newBgColorInner flex flex-col gap-[15px] transition-all relative',
-        'w-[260px]'
+        'trz bg-newBgColorInner flex md:flex-col flex-row gap-[16px] md:gap-[15px] transition-all relative w-full md:w-[260px] md:p-0 overflow-x-auto md:overflow-x-visible md:overflow-y-auto scrollbar-hide shrink-0 items-center md:items-stretch md:bg-transparent shadow-sm md:shadow-none'
       )}
     >
-      <div className="absolute top-0 start-0 w-full h-full p-[20px] overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
-        <div className="mb-[15px] justify-center flex group-[.sidebar]:pb-[15px]">
+      <div className="md:absolute md:top-0 md:start-0 w-full md:h-full p-[16px] md:p-[20px] md:overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor flex flex-row md:flex-col gap-[12px] md:gap-[15px]">
+        <div className="mb-[15px] justify-center flex group-[.sidebar]:pb-[15px] hidden md:flex">
           <Link
             href={`/agents`}
             className="text-white whitespace-nowrap flex-1 pt-[12px] pb-[14px] ps-[16px] pe-[20px] group-[.sidebar]:p-0 min-h-[44px] max-h-[44px] rounded-md bg-btnPrimary flex justify-center items-center gap-[5px] outline-none"
@@ -255,12 +257,37 @@ const Threads: FC = () => {
             </div>
           </Link>
         </div>
-        <div className="flex flex-col gap-[1px]">
+
+        {/* Mobile New Chat Button */}
+        <Link
+          href={`/agents`}
+          className="text-white whitespace-nowrap min-w-[44px] min-h-[44px] rounded-md bg-btnPrimary flex justify-center items-center gap-[5px] outline-none md:hidden px-4"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="21"
+            height="20"
+            viewBox="0 0 21 20"
+            fill="none"
+            className="min-w-[21px] min-h-[20px]"
+          >
+            <path
+              d="M10.5001 4.16699V15.8337M4.66675 10.0003H16.3334"
+              stroke="white"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <div className="text-[14px]">New Chat</div>
+        </Link>
+
+        <div className="flex flex-row md:flex-col gap-[10px] md:gap-[1px] shrink-0">
           {data?.threads?.map((p: any) => (
             <Link
               className={clsx(
-                'overflow-ellipsis overflow-hidden whitespace-nowrap hover:bg-newBgColor px-[10px] py-[6px] rounded-[10px] cursor-pointer',
-                p.id === id && 'bg-newBgColor'
+                'overflow-ellipsis overflow-hidden whitespace-nowrap hover:bg-newBgColor px-[10px] py-[6px] rounded-[10px] cursor-pointer min-w-fit md:min-w-0 bg-sixth md:bg-transparent',
+                p.id === id && 'bg-newBgColor text-white'
               )}
               href={`/agents/${p.id}`}
               key={p.id}

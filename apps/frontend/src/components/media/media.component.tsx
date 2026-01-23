@@ -464,13 +464,13 @@ export const MediaBox: FC<{
             {!isLoading && !data?.results?.length && (
               <>
                 <NoMediaIcon />
-                <div className="text-[20px] font-[600]">
+                <div className="text-[16px] md:text-[20px] font-[600]">
                   {t(
                     'you_dont_have_any_media_yet',
                     "You don't have any media yet"
                   )}
                 </div>
-                <div className="whitespace-pre-line text-newTextColor/[0.6] text-center">
+                <div className="whitespace-pre-line text-newTextColor/[0.6] text-center text-[12px] md:text-[14px]">
                   {t(
                     'select_or_upload_pictures_max_1gb',
                     'Select or upload pictures (maximum 1 GB per upload).'

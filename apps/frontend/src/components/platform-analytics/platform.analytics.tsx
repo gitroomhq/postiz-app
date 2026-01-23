@@ -143,11 +143,11 @@ export const PlatformAnalytics = () => {
 
   if (!sortedIntegrations.length && !isLoading) {
     return (
-      <div className="bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all flex-1 justify-center items-center text-center">
+      <div className="bg-newBgColorInner p-[16px] md:p-[20px] flex flex-col gap-[12px] md:gap-[15px] transition-all flex-1 justify-center items-center text-center">
         <div>
-          <img src="/peoplemarketplace.svg" />
+          <img className="w-[120px] md:w-auto" src="/peoplemarketplace.svg" />
         </div>
-        <div className="text-[48px]">
+        <div className="text-[24px] md:text-[36px] lg:text-[48px] font-[600]">
           {t('can_t_show_analytics_yet', "Can't show analytics yet")}
           <br />
           {t(
@@ -155,7 +155,7 @@ export const PlatformAnalytics = () => {
             'You have to add Social Media channels'
           )}
         </div>
-        <div className="text-[20px]">
+        <div className="text-[14px] md:text-[18px]">
           {t('supported', 'Supported:')}
           {allowedIntegrations.map((p) => capitalize(p)).join(', ')}
         </div>
@@ -169,16 +169,16 @@ export const PlatformAnalytics = () => {
     );
   }
   return (
-    <>
+    <div className="flex flex-col md:flex-row w-full h-full overflow-hidden">
       <div
         className={clsx(
-          'bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all',
-          collapseMenu === '1' ? 'group sidebar w-[100px]' : 'w-[260px]'
+          'bg-newBgColorInner flex md:flex-col flex-row gap-[12px] md:gap-[15px] transition-all overflow-x-auto md:overflow-x-visible items-center md:items-stretch scrollbar-hide shrink-0',
+          collapseMenu === '1' ? 'group sidebar w-full md:w-[100px]' : 'w-full md:w-[260px]'
         )}
       >
-        <div className="flex gap-[12px] flex-col">
-          <div className="flex items-center">
-            <h2 className="group-[.sidebar]:hidden flex-1 text-[20px] font-[500]">
+        <div className="flex gap-[8px] md:gap-[12px] flex-row md:flex-col flex-1 p-[16px] md:p-[20px]">
+          <div className="flex items-center hidden md:flex">
+            <h2 className="group-[.sidebar]:hidden flex-1 text-[16px] md:text-[20px] font-[500]">
               {t('channels')}
             </h2>
             <div
@@ -220,9 +220,10 @@ export const PlatformAnalytics = () => {
                 setCurrent(index);
               }}
               className={clsx(
-                'flex gap-[12px] items-center group/profile justify-center hover:bg-boxHover rounded-e-[8px]',
+                'flex gap-[12px] items-center group/profile justify-center hover:bg-boxHover rounded-[8px] md:rounded-e-[8px] px-3 md:px-0 py-2 md:py-0 bg-sixth md:bg-transparent min-w-fit md:min-w-0',
                 currentIntegration.id !== integration.id &&
-                  'opacity-20 hover:opacity-100 cursor-pointer'
+                'opacity-50 md:opacity-20 hover:opacity-100 cursor-pointer',
+                currentIntegration.id === integration.id && 'bg-boxHover md:bg-transparent'
               )}
             >
               <div
@@ -239,7 +240,7 @@ export const PlatformAnalytics = () => {
                     <div className="bg-primary/60 w-[39px] h-[46px] start-0 top-0 absolute rounded-full z-[199]" />
                   </div>
                 )}
-                <div className="h-full w-[4px] -ms-[12px] rounded-s-[3px] opacity-0 group-hover/profile:opacity-100 transition-opacity">
+                <div className="h-full w-[4px] -ms-[12px] rounded-s-[3px] opacity-0 group-hover/profile:opacity-100 transition-opacity hidden md:block">
                   <SVGLine />
                 </div>
                 <ImageWithFallback
@@ -270,10 +271,10 @@ export const PlatformAnalytics = () => {
           ))}
         </div>
       </div>
-      <div className="bg-newBgColorInner flex-1 flex-col flex p-[20px] gap-[12px]">
+      <div className="bg-newBgColorInner flex-1 flex-col flex p-[16px] md:p-[20px] gap-[8px] md:gap-[12px] overflow-y-auto w-full md:w-auto">
         {!!options.length && (
-          <div className="flex-1 flex flex-col gap-[14px]">
-            <div className="max-w-[200px]">
+          <div className="flex-1 flex flex-col gap-[10px] md:gap-[14px]">
+            <div className="max-w-[150px] md:max-w-[200px]">
               <Select
                 label=""
                 name="date"
@@ -296,6 +297,6 @@ export const PlatformAnalytics = () => {
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 };

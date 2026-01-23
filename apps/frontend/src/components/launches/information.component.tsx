@@ -142,15 +142,16 @@ export const InformationComponent: FC<{
       {((isGlobal && selectedIntegrations.length) || !isValid) && (
         <div
           className={clsx(
-            'z-[300] hidden rounded-[12px] bg-newBgColorInner group-hover:flex absolute end-0 bottom-[100%] mb-[5px] p-[12px] flex-col',
+            'z-[300] hidden rounded-[12px] bg-newBgColorInner group-hover:flex absolute end-0 bottom-[calc(100%+8px)] p-[12px] flex-col shadow-2xl min-w-[200px] max-w-[280px] md:max-w-[320px]',
             isValid ? 'border border-newColColor' : 'border border-[#FF3F3F]'
           )}
         >
+          <div className="absolute -bottom-1.5 end-3 w-3 h-3 bg-newBgColorInner rotate-45 border-b border-e border-inherit" />
           {!isPicture && !totalChars && (
             <div
               className={clsx(
-                'text-sm text-[#FF3F3F] whitespace-nowrap',
-                isGlobal && selectedIntegrations.length && 'mb-[12px]'
+                'text-[13px] text-[#FF3F3F] font-medium leading-tight',
+                isGlobal && selectedIntegrations.length && 'mb-[10px]'
               )}
             >
               {t('your_post_should_have_at_least_one_character_or_one_image', 'Your post should have at least one character or one image.')}
@@ -175,8 +176,8 @@ export const InformationComponent: FC<{
                       isInternal?.[index]
                         ? ''
                         : totalChars > (chars?.[p.integration.id] || 0)
-                        ? 'text-[#FF3F3F]'
-                        : ''
+                          ? 'text-[#FF3F3F]'
+                          : ''
                     )}
                   >
                     {p.integration.name} (
@@ -188,8 +189,8 @@ export const InformationComponent: FC<{
                       isInternal?.[index]
                         ? ''
                         : totalChars > (chars?.[p.integration.id] || 0)
-                        ? 'text-[#FF3F3F]'
-                        : ''
+                          ? 'text-[#FF3F3F]'
+                          : ''
                     )}
                   >
                     {isInternal?.[index]

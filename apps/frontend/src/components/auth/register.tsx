@@ -147,7 +147,7 @@ export function RegisterAfter({
       <form className="flex-1 flex" onSubmit={form.handleSubmit(onSubmit)}>
         <div className="flex flex-col flex-1">
           <div>
-            <h1 className="text-[40px] font-[500] -tracking-[0.8px] text-start cursor-pointer">
+            <h1 className="text-[28px] md:text-[40px] font-[500] -tracking-[0.8px] text-start cursor-pointer">
               {t('sign_up', 'Sign Up')}
             </h1>
           </div>

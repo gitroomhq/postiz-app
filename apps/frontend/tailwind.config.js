@@ -242,6 +242,14 @@ module.exports = {
         },
       }),
       screens: {
+        // Standard Tailwind breakpoints
+        xs: '320px',
+        sm: '640px',
+        md: '768px',
+        lg: '1024px',
+        xl: '1280px',
+        '2xl': '1536px',
+        // Custom breakpoints for app
         mobile: {
           raw: '(max-width: 1025px)',
         },
@@ -260,14 +268,29 @@ module.exports = {
         custom: {
           raw: '(max-height: 800px)',
         },
-        xs: {
-          max: '401px',
+        // Mobile-first breakpoints
+        'max-xs': {
+          raw: '(max-width: 319px)',
+        },
+        'max-sm': {
+          raw: '(max-width: 639px)',
+        },
+        'max-md': {
+          raw: '(max-width: 767px)',
+        },
+        'max-lg': {
+          raw: '(max-width: 1023px)',
+        },
+        // Touch devices
+        touch: {
+          raw: '(hover: none) and (pointer: coarse)',
         },
       },
     },
   },
   plugins: [
     require('tailwind-scrollbar'),
+    require('tailwind-scrollbar-hide'),
     require('tailwindcss-rtl'),
     function ({ addVariant }) {
       addVariant('child', '& > *');

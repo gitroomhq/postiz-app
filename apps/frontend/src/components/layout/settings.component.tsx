@@ -114,21 +114,21 @@ export const SettingsPopup: FC<{
   }, []);
 
   return (
-    <>
-      <div className="bg-newBgColorInner p-[20px] flex flex-col transition-all w-[260px]">
-        <div className="flex flex-1 flex-col gap-[15px]">
+    <div className="flex flex-col md:flex-row w-full h-full overflow-hidden">
+      <div className="bg-newBgColorInner flex md:flex-col flex-row transition-all w-full md:w-[260px] overflow-x-auto md:overflow-x-visible items-center md:items-stretch scrollbar-hide shrink-0">
+        <div className="flex flex-row md:flex-col gap-[10px] md:gap-[15px] flex-1 p-[16px] md:p-[20px]">
           {list.map(({ tab: tabKey, label }) => (
             <div
               key={tabKey}
               className={clsx(
-                'cursor-pointer flex items-center gap-[12px] group/profile hover:bg-boxHover rounded-e-[8px]',
+                'cursor-pointer flex items-center gap-[8px] md:gap-[12px] group/profile hover:bg-boxHover rounded-[8px] md:rounded-e-[8px] whitespace-nowrap px-3 md:px-0 py-2 md:py-0 bg-sixth md:bg-transparent',
                 tabKey === tab && 'bg-boxHover'
               )}
               onClick={() => setTab(tabKey)}
             >
               <div
                 className={clsx(
-                  'h-full w-[4px] rounded-s-[3px] opacity-0 group-hover/profile:opacity-100 transition-opacity',
+                  'h-full w-[4px] rounded-s-[3px] opacity-0 group-hover/profile:opacity-100 transition-opacity hidden md:block',
                   tabKey === tab && 'opacity-100'
                 )}
               >
@@ -140,15 +140,15 @@ export const SettingsPopup: FC<{
         </div>
         <div>
           {showLogout && (
-            <div className="mt-4">
+            <div className="md:mt-4 ml-2 md:ml-0">
               <LogoutComponent />
             </div>
           )}
         </div>
       </div>
-      <div className="bg-newBgColorInner flex-1 flex-col flex p-[20px] gap-[12px]">
+      <div className="bg-newBgColorInner flex-1 flex-col flex p-[16px] md:p-[20px] gap-[8px] md:gap-[12px] overflow-y-auto w-full md:w-auto">
         <FormProvider {...form}>
-          <form onSubmit={form.handleSubmit(submit)}>
+          <form onSubmit={form.handleSubmit(submit)} className="w-full">
             {!!getRef && (
               <button type="submit" className="hidden" ref={getRef}></button>
             )}
@@ -205,7 +205,7 @@ export const SettingsPopup: FC<{
           </form>
         </FormProvider>
       </div>
-    </>
+    </div>
   );
 };
 export const SettingsComponent = () => {

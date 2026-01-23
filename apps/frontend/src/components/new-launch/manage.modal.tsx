@@ -219,14 +219,13 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
         for (const item of notEnoughChars) {
           toaster.show(
-            `${capitalize(item.integration.identifier.split('-')[0])} (${
-              item.integration.name
+            `${capitalize(item.integration.identifier.split('-')[0])} (${item.integration.name
             }):` +
-              ' ' +
-              t(
-                'post_needs_content_or_image',
-                'Your post should have at least one character or one image.'
-              ),
+            ' ' +
+            t(
+              'post_needs_content_or_image',
+              'Your post should have at least one character or one image.'
+            ),
             'warning'
           );
           setLoading(false);
@@ -237,8 +236,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         for (const item of checkAllValid) {
           if (item.valid === false) {
             toaster.show(
-              `${capitalize(item.integration.identifier.split('-')[0])} (${
-                item.integration.name
+              `${capitalize(item.integration.identifier.split('-')[0])} (${item.integration.name
               }): ${t('please_fix_your_settings', 'Please fix your settings')}`,
               'warning'
             );
@@ -250,8 +248,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
           if (item.errors !== true) {
             toaster.show(
-              `${capitalize(item.integration.identifier.split('-')[0])} (${
-                item.integration.name
+              `${capitalize(item.integration.identifier.split('-')[0])} (${item.integration.name
               }): ${item.errors}`,
               'warning'
             );
@@ -374,9 +371,9 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         addEditSets
           ? addEditSets(data)
           : await fetch('/posts', {
-              method: 'POST',
-              body: JSON.stringify(data),
-            });
+            method: 'POST',
+            body: JSON.stringify(data),
+          });
 
         if (!addEditSets) {
           mutate();
@@ -401,14 +398,17 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   );
 
   return (
-    <div className="w-full h-full flex-1 p-[40px] flex relative">
-      <div className="flex flex-1 bg-newBgColorInner rounded-[20px] flex-col">
-        <div className="flex-1 flex">
-          <div className="flex flex-col flex-1 border-e border-newBorder">
-            <div className="bg-newBgColor h-[65px] rounded-s-[20px] !rounded-b-[0] flex items-center px-[20px] text-[20px] font-[600]">
-              {t('create_post_title', 'Create Post')}
+    <div className="w-full h-full flex-1 p-0 md:p-[20px] lg:p-[40px] flex relative overflow-hidden">
+      <div className="flex flex-1 bg-newBgColorInner md:rounded-[20px] flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+          <div className="flex flex-col flex-1 border-e border-newBorder overflow-hidden">
+            <div className="bg-newBgColor h-[60px] md:h-[65px] md:rounded-s-[20px] flex items-center px-[20px] text-[18px] md:text-[20px] font-[600] shrink-0">
+              <div className="flex-1">{t('create_post_title', 'Create Post')}</div>
+              <div className="md:hidden cursor-pointer">
+                <CloseIcon onClick={askClose} className="text-[#A3A3A3]" />
+              </div>
             </div>
-            <div className="flex-1 flex flex-col gap-[16px]">
+            <div className="flex-1 flex flex-col gap-[16px] overflow-hidden">
               <div
                 className={clsx('flex-1 relative', showSettings && 'hidden')}
               >
@@ -489,10 +489,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               </div>
             </div>
           </div>
-          <div className="w-[580px] flex flex-col">
-            <div className="bg-newBgColor h-[65px] rounded-e-[20px] !rounded-b-[0] flex items-center px-[20px] text-[20px] font-[600]">
+          <div className="w-full md:w-[580px] flex flex-col border-t md:border-t-0 md:border-s border-newBorder overflow-hidden">
+            <div className="bg-newBgColor h-[60px] md:h-[65px] md:rounded-e-[20px] flex items-center px-[20px] text-[18px] md:text-[20px] font-[600] shrink-0">
               <div className="flex-1">{t('post_preview', 'Post Preview')}</div>
-              <div className="cursor-pointer">
+              <div className="hidden md:block cursor-pointer">
                 <CloseIcon onClick={askClose} className="text-[#A3A3A3]" />
               </div>
             </div>
@@ -506,8 +506,8 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             </div>
           </div>
         </div>
-        <div className="select-none h-[84px] py-[20px] border-t border-newBorder flex items-center">
-          <div className="flex-1 flex ps-[20px] gap-[8px]">
+        <div className="select-none py-[15px] md:py-[20px] border-t border-newBorder flex flex-col md:flex-row items-stretch md:items-center gap-[12px] px-[20px]">
+          <div className="flex-1 flex flex-wrap gap-[8px]">
             {!dummy && (
               <TagsComponent
                 name="tags"
@@ -523,7 +523,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               <RepeatComponent repeat={repeater} onChange={setRepeater} />
             )}
           </div>
-          <div className="pe-[20px] flex items-center justify-end gap-[8px]">
+          <div className="flex items-center justify-end gap-[8px] flex-wrap">
             {existingData?.integration && (
               <button
                 onClick={deletePost}
@@ -588,12 +588,12 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                     {selectedIntegrations.length === 0
                       ? t('check_circles_above', 'Check the circles above')
                       : dummy
-                      ? t('create_output', 'Create output')
-                      : !existingData?.integration
-                      ? t('add_to_calendar', 'Add to calendar')
-                      : existingData?.posts?.[0]?.state === 'DRAFT'
-                      ? t('schedule', 'Schedule')
-                      : t('update', 'Update')}
+                        ? t('create_output', 'Create output')
+                        : !existingData?.integration
+                          ? t('add_to_calendar', 'Add to calendar')
+                          : existingData?.posts?.[0]?.state === 'DRAFT'
+                            ? t('schedule', 'Schedule')
+                            : t('update', 'Update')}
                   </div>
                   {!dummy && (
                     <div className="flex justify-center items-center h-[20px] w-[20px] pt-[4px] arrow-change">

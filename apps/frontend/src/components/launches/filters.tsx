@@ -225,12 +225,12 @@ export const Filters = () => {
   );
 
   return (
-    <div className="text-textColor flex flex-col md:flex-row gap-[8px] items-center select-none">
-      <div className="flex flex-grow flex-row items-center gap-[10px]">
-        <div className="border h-[42px] border-newTableBorder bg-newTableBorder gap-[1px] flex items-center rounded-[8px] overflow-hidden">
+    <div className="text-textColor flex flex-col xl:flex-row gap-[12px] items-stretch xl:items-center select-none w-full overflow-x-hidden">
+      <div className="flex flex-row items-center gap-[8px] w-full xl:w-auto min-w-0">
+        <div className="border h-[42px] border-newTableBorder bg-newTableBorder gap-[1px] flex flex-1 xl:flex-none items-center rounded-[8px] overflow-hidden">
           <div
             onClick={previous}
-            className="cursor-pointer text-textColor rtl:rotate-180 px-[9px] bg-newBgColorInner h-full flex items-center justify-center hover:text-textItemFocused hover:bg-boxFocused"
+            className="cursor-pointer text-textColor rtl:rotate-180 px-[12px] bg-newBgColorInner h-full flex items-center justify-center hover:text-textItemFocused hover:bg-boxFocused transition-colors shrink-0"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -248,14 +248,14 @@ export const Filters = () => {
               />
             </svg>
           </div>
-          <div className="w-[200px] text-center bg-newBgColorInner h-full flex items-center justify-center">
-            <div className="py-[3px] px-[9px] rounded-[5px] transition-all text-[14px]">
+          <div className="flex-1 xl:w-[220px] text-center bg-newBgColorInner h-full flex items-center justify-center truncate px-2">
+            <div className="py-[3px] rounded-[5px] transition-all text-[13px] md:text-[14px] font-[500] truncate">
               {getDisplayText()}
             </div>
           </div>
           <div
             onClick={next}
-            className="cursor-pointer text-textColor rtl:rotate-180 px-[9px] bg-newBgColorInner h-full flex items-center justify-center hover:text-textItemFocused hover:bg-boxFocused"
+            className="cursor-pointer text-textColor rtl:rotate-180 px-[12px] bg-newBgColorInner h-full flex items-center justify-center hover:text-textItemFocused hover:bg-boxFocused transition-colors shrink-0"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -274,26 +274,24 @@ export const Filters = () => {
             </svg>
           </div>
         </div>
-        <div className="flex-1 text-[14px] font-[500]">
-          <div className="text-center flex h-[42px]">
-            <div
-              onClick={setToday}
-              className="hover:text-textItemFocused hover:bg-boxFocused py-[3px] px-[9px] flex justify-center items-center rounded-[8px] transition-all cursor-pointer text-[14px] bg-newBgColorInner border border-newTableBorder"
-            >
-              {t('today', 'Today')}
-            </div>
-          </div>
+        <div
+          onClick={setToday}
+          className="hover:text-textItemFocused hover:bg-boxFocused h-[42px] px-[16px] flex justify-center items-center rounded-[8px] transition-all cursor-pointer text-[13px] md:text-[14px] font-[500] bg-newBgColorInner border border-newTableBorder shrink-0"
+        >
+          {t('today', 'Today')}
         </div>
       </div>
-      <SelectCustomer
-        customer={calendar.customer as string}
-        onChange={(customer: string) => setCustomer(customer)}
-        integrations={calendar.integrations}
-      />
-      <div className="flex flex-row p-[4px] border border-newTableBorder rounded-[8px] text-[14px] font-[500]">
+      <div className="flex flex-row gap-[8px] items-center w-full xl:w-auto">
+        <SelectCustomer
+          customer={calendar.customer as string}
+          onChange={(customer: string) => setCustomer(customer)}
+          integrations={calendar.integrations}
+        />
+      </div>
+      <div className="flex flex-row p-[4px] border border-newTableBorder rounded-[8px] text-[13px] md:text-[14px] font-[500] shrink-0 bg-newBgColorInner justify-center md:justify-start">
         <div
           className={clsx(
-            'pt-[6px] pb-[5px] cursor-pointer w-[74px] text-center rounded-[6px]',
+            'pt-[6px] pb-[5px] cursor-pointer px-[8px] md:w-[74px] text-center rounded-[6px] transition-colors',
             calendar.display === 'day' && 'text-textItemFocused bg-boxFocused'
           )}
           onClick={setDay}
@@ -302,7 +300,7 @@ export const Filters = () => {
         </div>
         <div
           className={clsx(
-            'pt-[6px] pb-[5px] cursor-pointer w-[74px] text-center rounded-[6px]',
+            'pt-[6px] pb-[5px] cursor-pointer px-[8px] md:w-[74px] text-center rounded-[6px] transition-colors',
             calendar.display === 'week' && 'text-textItemFocused bg-boxFocused'
           )}
           onClick={setWeek}
@@ -311,7 +309,7 @@ export const Filters = () => {
         </div>
         <div
           className={clsx(
-            'pt-[6px] pb-[5px] cursor-pointer w-[74px] text-center rounded-[6px]',
+            'pt-[6px] pb-[5px] cursor-pointer px-[8px] md:w-[74px] text-center rounded-[6px] transition-colors',
             calendar.display === 'month' && 'text-textItemFocused bg-boxFocused'
           )}
           onClick={setMonth}

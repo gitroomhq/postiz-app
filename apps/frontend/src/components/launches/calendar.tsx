@@ -142,38 +142,39 @@ export const DayView = () => {
   }, [integrations, posts]);
 
   return (
-    <div className="flex flex-col gap-[10px] flex-1 relative">
-      <div className="absolute start-0 top-0 w-full h-full flex flex-col overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
-        {options.map((option) => (
-          <Fragment key={option[0].time}>
-            <div className="text-center text-[14px] min-h-[21px]">
-              {newDayjs()
-                .utc()
-                .startOf('day')
-                .add(option[0].time, 'minute')
-                .local()
-                .format(isUSCitizen() ? 'hh:mm A' : 'LT')}
-            </div>
-            <div
-              key={option[0].time}
-              className="min-h-[60px] rounded-[10px] flex justify-center items-center gap-[10px] mb-[20px]"
-            >
-              <CalendarContext.Provider
-                value={{
-                  ...calendar,
-                  integrations: option.flatMap((p) => p.integration),
-                }}
-              >
-                <CalendarColumn
-                  getDate={currentDay
+    <div className="flex flex-col gap-[10px] flex-1 relative bg-newBgColorInner/20 rounded-[12px] overflow-hidden border border-newTableBorder/10">
+      <div className="absolute start-0 top-0 w-full h-full flex flex-col overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor p-[12px] md:p-[20px]">
+        <div className="flex flex-col gap-[1px] bg-newTableBorder/10 rounded-[8px] overflow-hidden">
+          {options.map((option) => (
+            <div key={option[0].time} className="flex bg-newBgColorInner group hover:bg-newBgColorInner/80 transition-colors">
+              <div className="w-[80px] md:w-[120px] py-[20px] px-[12px] flex items-center justify-center border-e border-newTableBorder/10 bg-newTableHeader/30">
+                <span className="text-[12px] md:text-[14px] font-medium text-newTableText">
+                  {newDayjs()
+                    .utc()
                     .startOf('day')
                     .add(option[0].time, 'minute')
-                    .local()}
-                />
-              </CalendarContext.Provider>
+                    .local()
+                    .format(isUSCitizen() ? 'hh:mm A' : 'LT')}
+                </span>
+              </div>
+              <div className="flex-1 p-[12px] flex items-center gap-[12px] min-h-[80px]">
+                <CalendarContext.Provider
+                  value={{
+                    ...calendar,
+                    integrations: option.flatMap((p) => p.integration),
+                  }}
+                >
+                  <CalendarColumn
+                    getDate={currentDay
+                      .startOf('day')
+                      .add(option[0].time, 'minute')
+                      .local()}
+                  />
+                </CalendarContext.Provider>
+              </div>
             </div>
-          </Fragment>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -201,47 +202,45 @@ export const WeekView = () => {
   }, [i18next.resolvedLanguage, startDate]);
 
   return (
-    <div className="flex flex-col text-textColor flex-1">
-      <div className="flex-1 relative">
-        <div className="grid [grid-template-columns:136px_repeat(7,_minmax(0,_1fr))] gap-[4px] rounded-[10px] absolute h-full start-0 top-0 w-full overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
-          <div className="z-10 bg-newTableHeader flex justify-center items-center flex-col h-[62px] rounded-[8px] sticky top-0"></div>
+    <div className="flex flex-col text-textColor flex-1 min-w-0 bg-newBgColorInner/20 rounded-[12px] overflow-hidden border border-newTableBorder/10">
+      <div className="flex-1 relative overflow-hidden">
+        <div className="calendar-week-grid gap-[1px] bg-newTableBorder/10 rounded-[10px] absolute h-full start-0 top-0 w-full overflow-auto scrollbar-hide md:scrollbar md:scrollbar-thumb-fifth md:scrollbar-track-newBgColor">
+          <div className="z-[40] bg-newTableHeader flex justify-center items-center flex-col h-[40px] xs:h-[50px] md:h-[62px] sticky top-0 left-0 border-b border-e border-newTableBorder/20 shadow-[2px_0_4px_rgba(0,0,0,0.1)]"></div>
           {localizedDays.map((day, index) => (
             <div
               key={day.name}
-              className="p-2 text-center bg-newTableHeader flex justify-center items-center flex-col h-[62px] rounded-[8px] sticky top-0 z-[20]"
+              className="p-1 xs:p-2 text-center bg-newTableHeader flex justify-center items-center flex-col h-[40px] xs:h-[50px] md:h-[62px] sticky top-0 z-[30] border-b border-newTableBorder/20 shadow-sm"
             >
-              <div className="text-[14px] font-[500] text-newTableText">
-                {day.name}
+              <div className="text-[10px] xs:text-[11px] md:text-[13px] font-[500] text-newTableText/70 uppercase tracking-wider">
+                {day.name.substring(0, 3)}
               </div>
               <div
                 className={clsx(
-                  'text-[14px] font-[600] flex items-center justify-center gap-[6px]',
-                  day.day === newDayjs().format('L') &&
-                    'text-newTableTextFocused'
+                  'text-[12px] xs:text-[14px] md:text-[16px] font-[600] flex items-center justify-center gap-[2px] xs:gap-[4px] md:gap-[6px]',
+                  day.day === newDayjs().format('L') ? 'text-newTableTextFocused' : 'text-newTableText'
                 )}
               >
                 {day.day === newDayjs().format('L') && (
-                  <div className="w-[6px] h-[6px] bg-newTableTextFocused rounded-full" />
+                  <div className="w-[4px] h-[4px] md:w-[6px] md:h-[6px] bg-newTableTextFocused rounded-full" />
                 )}
-                {day.day}
+                <span>{day.date.date()}</span>
               </div>
             </div>
           ))}
           {hours.map((hour) => (
             <Fragment key={hour}>
-              <div className="p-2 pe-4 text-center items-center justify-center flex text-[14px] text-newTableText">
+              <div className="p-1 xs:p-2 pe-2 xs:pe-4 text-center items-center justify-center flex text-[10px] xs:text-[12px] md:text-[14px] text-newTableText/80 h-[100px] md:h-[120px] sticky left-0 bg-newTableHeader z-[25] border-e border-newTableBorder/10 transition-colors hover:bg-newTableHeader/80">
                 {convertTimeFormatBasedOnLocality(hour)}
               </div>
               {localizedDays.map((day, indexDay) => (
-                <Fragment
+                <div
                   key={`${startDate}-${day.date.format('YYYY-MM-DD')}-${hour}`}
+                  className="relative group border-b border-newTableBorder/5 h-[100px] md:h-[120px] bg-newBgColorInner/40 hover:bg-newBgColorInner/60 transition-colors"
                 >
-                  <div className="relative">
-                    <CalendarColumn
-                      getDate={day.date.hour(hour).startOf('hour')}
-                    />
-                  </div>
-                </Fragment>
+                  <CalendarColumn
+                    getDate={day.date.hour(hour).startOf('hour')}
+                  />
+                </div>
               ))}
             </Fragment>
           ))}
@@ -300,21 +299,24 @@ export const MonthView = () => {
   }, [startDate]);
 
   return (
-    <div className="flex flex-col text-textColor flex-1">
-      <div className="flex-1 flex relative">
-        <div className="grid grid-cols-7 grid-rows-[62px_auto] gap-[4px] rounded-[10px] absolute start-0 top-0 overflow-auto w-full h-full scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary">
+    <div className="flex flex-col text-textColor flex-1 min-w-0 bg-newBgColorInner/20 rounded-[12px] overflow-hidden border border-newTableBorder/10">
+      <div className="flex-1 flex relative overflow-hidden">
+        <div className="grid grid-cols-[repeat(7,minmax(120px,1fr))] gap-[1px] bg-newTableBorder/10 rounded-[10px] absolute start-0 top-0 overflow-auto w-full h-full scrollbar-hide md:scrollbar md:scrollbar-thumb-tableBorder md:scrollbar-track-secondary">
           {localizedDays.map((day) => (
             <div
               key={day}
-              className="z-[20] p-2 bg-newTableHeader flex justify-center items-center flex-col h-[62px] rounded-[8px] sticky top-0"
+              className="z-[20] p-1 md:p-2 bg-newTableHeader flex justify-center items-center flex-col h-[40px] md:h-[62px] sticky top-0 text-[10px] md:text-[11px] lg:text-[13px] font-semibold text-newTableText/70 uppercase tracking-widest shadow-sm border-b border-newTableBorder/10"
             >
-              <div>{day}</div>
+              <div className="truncate">{day}</div>
             </div>
           ))}
           {calendarDays.map((date, index) => (
             <div
               key={index}
-              className="text-center items-center justify-center flex"
+              className={clsx(
+                "relative group min-h-[100px] md:min-h-[140px] transition-colors hover:bg-newBgColorInner/60",
+                date.label === 'current-month' ? 'bg-newBgColorInner/40' : 'bg-newBgColorInner/10 opacity-50'
+              )}
             >
               <CalendarColumn
                 getDate={newDayjs(date.day).endOf('day')}
@@ -369,11 +371,11 @@ export const CalendarColumn: FC<{
       const check =
         display === 'day'
           ? pList.format('YYYY-MM-DD HH:mm') ===
-            getDate.format('YYYY-MM-DD HH:mm')
+          getDate.format('YYYY-MM-DD HH:mm')
           : display === 'week'
-          ? pList.isSameOrAfter(getDate.startOf('hour')) &&
+            ? pList.isSameOrAfter(getDate.startOf('hour')) &&
             pList.isBefore(getDate.endOf('hour'))
-          : pList.format('DD/MM/YYYY') === getDate.format('DD/MM/YYYY');
+            : pList.format('DD/MM/YYYY') === getDate.format('DD/MM/YYYY');
       return check;
     });
   }, [posts, display, getDate]);
@@ -442,11 +444,11 @@ export const CalendarColumn: FC<{
 
   const editPost = useCallback(
     (
-        loadPost: Post & {
-          integration: Integration;
-        },
-        isDuplicate?: boolean
-      ) =>
+      loadPost: Post & {
+        integration: Integration;
+      },
+      isDuplicate?: boolean
+    ) =>
       async () => {
         const post = {
           ...loadPost,
@@ -480,16 +482,16 @@ export const CalendarColumn: FC<{
               <AddEditModal
                 {...(isDuplicate
                   ? {
-                      onlyValues: data.posts.map(
-                        ({ image, settings, content }: any) => {
-                          return {
-                            image,
-                            settings,
-                            content,
-                          };
-                        }
-                      ),
-                    }
+                    onlyValues: data.posts.map(
+                      ({ image, settings, content }: any) => {
+                        return {
+                          image,
+                          settings,
+                          content,
+                        };
+                      }
+                    ),
+                  }
                   : {})}
                 allIntegrations={integrations.map((p) => ({
                   ...p,
@@ -500,12 +502,12 @@ export const CalendarColumn: FC<{
                   isDuplicate
                     ? integrations
                     : integrations
-                        .slice(0)
-                        .filter((f) => f.id === data.integration)
-                        .map((p) => ({
-                          ...p,
-                          picture: data.integrationPicture,
-                        }))
+                      .slice(0)
+                      .filter((f) => f.id === data.integration)
+                      .map((p) => ({
+                        ...p,
+                        picture: data.integrationPicture,
+                      }))
                 }
                 date={publishDate}
               />
@@ -522,28 +524,28 @@ export const CalendarColumn: FC<{
     const set: any = !sets.length
       ? undefined
       : await new Promise((resolve) => {
-          modal.openModal({
-            title: t('select_set', 'Select a Set'),
-            closeOnClickOutside: true,
-            askClose: true,
-            closeOnEscape: true,
-            withCloseButton: true,
-            onClose: () => resolve('exit'),
-            children: (
-              <SetSelectionModal
-                sets={sets}
-                onSelect={(selectedSet) => {
-                  resolve(selectedSet);
-                  modal.closeAll();
-                }}
-                onContinueWithoutSet={() => {
-                  resolve(undefined);
-                  modal.closeAll();
-                }}
-              />
-            ),
-          });
+        modal.openModal({
+          title: t('select_set', 'Select a Set'),
+          closeOnClickOutside: true,
+          askClose: true,
+          closeOnEscape: true,
+          withCloseButton: true,
+          onClose: () => resolve('exit'),
+          children: (
+            <SetSelectionModal
+              sets={sets}
+              onSelect={(selectedSet) => {
+                resolve(selectedSet);
+                modal.closeAll();
+              }}
+              onContinueWithoutSet={() => {
+                resolve(undefined);
+                modal.closeAll();
+              }}
+            />
+          ),
         });
+      });
 
     if (set === 'exit') return;
 
@@ -569,20 +571,20 @@ export const CalendarColumn: FC<{
           mutate={reloadCalendarView}
           {...(signature?.id && !set
             ? {
-                onlyValues: [
-                  {
-                    content: '\n' + signature.content,
-                  },
-                ],
-              }
+              onlyValues: [
+                {
+                  content: '\n' + signature.content,
+                },
+              ],
+            }
             : {})}
           date={
             randomHour
               ? getDate.hour(Math.floor(Math.random() * 24))
               : getDate.format('YYYY-MM-DDTHH:mm:ss') ===
                 newDayjs().startOf('hour').format('YYYY-MM-DDTHH:mm:ss')
-              ? newDayjs().add(10, 'minute')
-              : getDate
+                ? newDayjs().add(10, 'minute')
+                : getDate
           }
           {...(set?.content ? { set: JSON.parse(set.content) } : {})}
           reopenModal={() => ({})}
@@ -640,17 +642,17 @@ export const CalendarColumn: FC<{
   return (
     <div
       className={clsx(
-        'flex flex-col w-full min-h-full relative',
+        'flex flex-col w-full min-h-full relative transition-all duration-200',
         isBeforeNow && 'repeated-strip',
         loading && 'animate-pulse',
-        isBeforeNow
-          ? 'cursor-not-allowed'
-          : 'border border-newTextColor/5 rounded-[8px]'
+        isBeforeNow ? 'cursor-not-allowed' : 'hover:z-10'
       )}
       ref={drop as any}
     >
       {display === 'month' && (
-        <div className={clsx('pt-[6px] text-[14px]')}>{getDate.date()}</div>
+        <div className={clsx('absolute top-2 right-2 text-[12px] md:text-[14px] font-semibold text-newTableText/50 group-hover:text-newTableTextFocused transition-colors')}>
+          {getDate.date()}
+        </div>
       )}
       <div
         className={clsx(
@@ -695,7 +697,7 @@ export const CalendarColumn: FC<{
           ))}
           {!showAll && postList.length > 3 && (
             <div
-              className="text-center hover:underline py-[5px] text-textColor"
+              className="mt-2 mx-2 p-1.5 bg-newTableBorder/10 rounded-md text-center text-[11px] font-medium text-newTableText hover:bg-newTableBorder/20 hover:text-newTableTextFocused transition-all cursor-pointer shadow-sm"
               onClick={showAllFunc}
             >
               {t('show_more', '+ Show more')} ({postList.length - 3})
@@ -703,7 +705,7 @@ export const CalendarColumn: FC<{
           )}
           {showAll && postList.length > 3 && (
             <div
-              className="text-center hover:underline py-[5px]"
+              className="mt-2 mx-2 p-1.5 bg-newTableBorder/10 rounded-md text-center text-[11px] font-medium text-newTableText hover:bg-newTableBorder/20 hover:text-newTableTextFocused transition-all cursor-pointer shadow-sm"
               onClick={showLessFunc}
             >
               {t('show_less', '- Show less')}
@@ -720,20 +722,25 @@ export const CalendarColumn: FC<{
                 display === ('month' as any)
                   ? 'flex-1 min-h-[40px] w-full'
                   : !postList.length
-                  ? 'min-h-full w-full p-[5px]'
-                  : 'min-h-[40px] w-full',
+                    ? 'min-h-full w-full p-[5px]'
+                    : 'min-h-[40px] w-full',
                 'flex items-center justify-center cursor-pointer pb-[2.5px]'
               )}
             >
               {display !== 'day' && (
                 <div
                   className={clsx(
-                    'group hover:before:h-[30px] w-full h-full rounded-[10px] flex justify-center items-center text-white'
+                    'group/add flex-1 min-h-[40px] w-full flex justify-center items-center'
                   )}
                 >
                   <div
-                    className={`group-hover:before:content-["+"] pb-[5px] flex justify-center items-center rounded-[8px] transition-all group-hover:bg-btnPrimary w-full h-full max-w-[40px] max-h-[40px]`}
-                  />
+                    className="w-8 h-8 rounded-full border border-dashed border-newTableBorder/40 flex items-center justify-center text-newTableBorder/40 group-hover/add:border-btnPrimary group-hover/add:bg-btnPrimary group-hover/add:text-white transition-all duration-300"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                  </div>
                 </div>
               )}
               {display === 'day' && (
@@ -844,7 +851,7 @@ const CalendarItem: FC<{
     >
       <div
         className={clsx(
-          'text-white text-[11px] max-h-[24px] h-[24px] min-h-[24px] w-full rounded-tr-[10px] rounded-tl-[10px] flex items-center justify-center gap-[10px] px-[5px] bg-btnPrimary'
+          'text-white text-[11px] max-h-[24px] h-[24px] min-h-[24px] w-full rounded-tr-[10px] rounded-tl-[10px] flex items-center justify-between gap-[5px] px-[8px] bg-btnPrimary shadow-sm transition-all duration-200 group-hover:max-h-[32px] group-hover:h-[32px]'
         )}
         style={{
           backgroundColor: post?.tags?.[0]?.tag?.color,
@@ -852,81 +859,83 @@ const CalendarItem: FC<{
       >
         <div
           className={clsx(
-            post?.tags?.[0]?.tag?.color ? 'mix-blend-difference' : '',
-            'group-hover:hidden cursor-pointer'
+            'group-hover:hidden truncate text-[10px] font-bold tracking-tight',
+            post?.tags?.[0]?.tag?.color ? 'mix-blend-difference' : ''
           )}
         >
           {post.tags.map((p) => p.tag.name).join(', ')}
         </div>
-        <div
-          className={clsx(
-            'hidden group-hover:block hover:underline cursor-pointer',
-            post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
-          )}
-          onClick={duplicatePost}
-        >
-          <Duplicate />
-        </div>
-        <div
-          className={clsx(
-            'hidden group-hover:block hover:underline cursor-pointer',
-            post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
-          )}
-          onClick={preview}
-        >
-          <Preview />
-        </div>{' '}
-        {((post.integration.providerIdentifier === 'x' && disableXAnalytics) || !post.releaseId) ? (
-          <></>
-        ) : (
+        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
           <div
             className={clsx(
-              'hidden group-hover:block hover:underline cursor-pointer',
+              'hover:scale-110 transition-transform cursor-pointer',
               post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
             )}
-            onClick={statistics}
+            onClick={duplicatePost}
           >
-            <Statistics />
+            <Duplicate />
           </div>
-        )}{' '}
-        <div
-          className={clsx(
-            'hidden group-hover:block hover:underline cursor-pointer',
-            post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
+          <div
+            className={clsx(
+              'hover:scale-110 transition-transform cursor-pointer',
+              post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
+            )}
+            onClick={preview}
+          >
+            <Preview />
+          </div>
+          {((post.integration.providerIdentifier === 'x' && disableXAnalytics) || !post.releaseId) ? null : (
+            <div
+              className={clsx(
+                'hover:scale-110 transition-transform cursor-pointer',
+                post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
+              )}
+              onClick={statistics}
+            >
+              <Statistics />
+            </div>
           )}
-          onClick={deletePost}
-        >
-          <DeletePost />
+          <div
+            className={clsx(
+              'hover:scale-110 transition-transform cursor-pointer',
+              post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
+            )}
+            onClick={deletePost}
+          >
+            <DeletePost />
+          </div>
         </div>
       </div>
       <div
         onClick={editPost}
         className={clsx(
-          'gap-[5px] w-full flex h-full flex-1 rounded-br-[10px] rounded-bl-[10px] p-[8px] text-[14px] bg-newColColor',
+          'gap-[8px] w-full flex h-full flex-1 rounded-br-[10px] rounded-bl-[10px] p-[10px] text-[13px] bg-newColColor border-x border-b border-newTableBorder/5 hover:bg-newColColor/80 transition-colors',
           'relative',
-          isBeforeNow && '!grayscale'
+          isBeforeNow && '!grayscale opacity-70'
         )}
       >
-        <div className={clsx('relative min-w-[20px]')}>
+        <div className={clsx('relative min-w-[24px]')}>
           <img
-            className="w-[20px] h-[20px] rounded-[8px]"
+            className="w-[24px] h-[24px] rounded-[8px] shadow-sm"
             src={post.integration.picture! || '/no-picture.jpg'}
           />
-          <img
-            className="w-[12px] h-[12px] rounded-[8px] absolute z-10 top-[10px] end-0 border border-fifth"
-            src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
-          />
-        </div>
-        <div className="w-full flex-1 flex flex-col min-h-[40px]">
-          <div className="text-start">
-            {state === 'DRAFT' ? t('draft', 'Draft') + ': ' : ''}
+          <div className="absolute -bottom-1 -right-1 z-10 w-[14px] h-[14px] rounded-full bg-white p-[1px] shadow-sm">
+            <img
+              className="w-full h-full rounded-full"
+              src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
+            />
           </div>
-            <div className="w-full relative">
-              <div className="absolute top-0 start-0 w-full text-ellipsis break-words line-clamp-1 text-start">
-                {stripHtmlValidation('none', post.content, false, true, false) ||
-                  t('no_content', 'no content')}
-              </div>
+        </div>
+        <div className="w-full flex-1 flex flex-col min-h-[40px] overflow-hidden">
+          <div className="text-[11px] font-semibold text-newTableText/60 uppercase tracking-tighter">
+            {state === 'DRAFT' ? t('draft', 'Draft') : ''}
+          </div>
+          <div className="w-full relative mt-0.5">
+            <div className="text-ellipsis break-words line-clamp-2 text-start leading-snug font-medium text-newTableText/90">
+              {stripHtmlValidation('none', post.content, false, true, false) ||
+                t('no_content', 'no content')}
             </div>
+          </div>
         </div>
       </div>
     </div>

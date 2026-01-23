@@ -59,75 +59,77 @@ export const SelectCurrent: FC = () => {
 
   return (
     <>
-      <div className="select-none left-0 absolute w-full z-[100] px-[20px]">
+      <div className="select-none left-0 absolute w-full z-[100]">
         <div
           ref={contentRef}
           className={clsx(
-            'flex gap-[6px] w-full overflow-x-auto scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary',
+            'flex w-full overflow-x-auto scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary',
             locked && 'opacity-50 pointer-events-none'
           )}
         >
-          <div
-            onClick={() => {
-              setHide(true);
-              setCurrent('global');
-            }}
-            className={clsx(
-              'cursor-pointer flex gap-[8px] rounded-[8px] w-[40px] h-[40px] justify-center items-center bg-newBgLineColor',
-              current !== 'global'
-                ? 'text-[#A3A3A3]'
-                : 'border border-[#FC69FF] text-[#FC69FF]'
-            )}
-          >
-            <div>
-              <GlobalIcon />
-            </div>
-          </div>
-          {selectedIntegrations.map(({ integration }) => (
+          <div className="flex gap-[6px] px-[20px] py-[2px]">
             <div
               onClick={() => {
                 setHide(true);
-                setCurrent(integration.id);
+                setCurrent('global');
               }}
-              key={integration.id}
               className={clsx(
-                'border cursor-pointer relative flex gap-[8px] w-[40px] h-[40px] rounded-[8px] items-center bg-newBgLineColor justify-center',
-                current === integration.id
-                  ? 'border-[#FC69FF] text-[#FC69FF]'
-                  : 'border-transparent'
+                'cursor-pointer flex gap-[8px] rounded-[8px] w-[40px] h-[40px] justify-center items-center bg-newBgLineColor',
+                current !== 'global'
+                  ? 'text-[#A3A3A3]'
+                  : 'border border-[#FC69FF] text-[#FC69FF]'
               )}
             >
-              <IsGlobal id={integration.id} />
-              <div
-                className={clsx(
-                  'relative w-full h-full rounded-full flex justify-center items-center filter transition-all duration-500'
-                )}
-              >
-                <Image
-                  src={integration.picture || '/no-picture.jpg'}
-                  className="rounded-full min-w-[26px]"
-                  alt={integration.identifier}
-                  width={26}
-                  height={26}
-                />
-                {integration.identifier === 'youtube' ? (
-                  <img
-                    src="/icons/platforms/youtube.svg"
-                    className="absolute z-10 bottom-[2px] end-[2px] min-w-[12px]"
-                    width={12}
-                  />
-                ) : (
-                  <Image
-                    src={`/icons/platforms/${integration.identifier}.png`}
-                    className="min-w-[12px] min-h-[12px] rounded-[3px] absolute z-10 bottom-[6px] end-[6px]"
-                    alt={integration.identifier}
-                    width={12}
-                    height={12}
-                  />
-                )}
+              <div>
+                <GlobalIcon />
               </div>
             </div>
-          ))}
+            {selectedIntegrations.map(({ integration }) => (
+              <div
+                onClick={() => {
+                  setHide(true);
+                  setCurrent(integration.id);
+                }}
+                key={integration.id}
+                className={clsx(
+                  'border cursor-pointer relative flex gap-[8px] w-[40px] h-[40px] rounded-[8px] items-center bg-newBgLineColor justify-center',
+                  current === integration.id
+                    ? 'border-[#FC69FF] text-[#FC69FF]'
+                    : 'border-transparent'
+                )}
+              >
+                <IsGlobal id={integration.id} />
+                <div
+                  className={clsx(
+                    'relative w-full h-full rounded-full flex justify-center items-center filter transition-all duration-500'
+                  )}
+                >
+                  <Image
+                    src={integration.picture || '/no-picture.jpg'}
+                    className="rounded-full min-w-[26px]"
+                    alt={integration.identifier}
+                    width={26}
+                    height={26}
+                  />
+                  {integration.identifier === 'youtube' ? (
+                    <img
+                      src="/icons/platforms/youtube.svg"
+                      className="absolute z-10 bottom-[2px] end-[2px] min-w-[12px]"
+                      width={12}
+                    />
+                  ) : (
+                    <Image
+                      src={`/icons/platforms/${integration.identifier}.png`}
+                      className="min-w-[12px] min-h-[12px] rounded-[3px] absolute z-10 bottom-[6px] end-[6px]"
+                      alt={integration.identifier}
+                      width={12}
+                      height={12}
+                    />
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
       <div className={clsx(hasScroll ? 'h-[55px]' : 'h-[40px]')} />

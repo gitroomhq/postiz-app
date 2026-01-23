@@ -31,11 +31,11 @@ export const TopTitle: FC<{
   return (
     <div
       className={clsx(
-        'border-b flex items-center border-newBgLineColor -mx-[24px]',
+        'border-b flex items-center border-newBgLineColor -mx-[16px] md:-mx-[24px]',
         props.extraClass ? props.extraClass : 'h-[57px]'
       )}
     >
-      <div className="px-[24px] flex flex-1 items-center">
+      <div className="px-[16px] md:px-[24px] flex flex-1 items-center">
         {!removeTitle && (
           <div className={clsx('flex-1', props.titleSize)}>
             {translatedTitle}
