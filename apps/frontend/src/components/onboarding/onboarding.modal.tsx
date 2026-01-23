@@ -54,8 +54,8 @@ export const OnboardingModal: FC<OnboardingModalProps> = ({ onClose }) => {
                   className={clsx(
                     'w-[32px] h-[32px] rounded-full flex items-center justify-center text-[14px] font-semibold transition-colors',
                     step === 1
-                      ? 'bg-primary text-white'
-                      : 'bg-customColor47 text-customColor18'
+                      ? 'bg-boxFocused text-textItemFocused'
+                      : 'bg-newTableHeader'
                   )}
                 >
                   1
@@ -63,20 +63,20 @@ export const OnboardingModal: FC<OnboardingModalProps> = ({ onClose }) => {
                 <span
                   className={clsx(
                     'text-[14px]',
-                    step === 1 ? 'text-white font-medium' : 'text-customColor18'
+                    step === 1 ? 'font-medium' : 'text-textColor'
                   )}
                 >
                   {t('connect_channels', 'Connect Channels')}
                 </span>
               </div>
-              <div className="w-[40px] h-[2px] bg-customColor47" />
+              <div className="w-[40px] h-[2px] bg-boxFocused" />
               <div className="flex items-center gap-[8px]">
                 <div
                   className={clsx(
                     'w-[32px] h-[32px] rounded-full flex items-center justify-center text-[14px] font-semibold transition-colors',
                     step === 2
-                      ? 'bg-primary text-white'
-                      : 'bg-customColor47 text-customColor18'
+                      ? 'bg-boxFocused text-textItemFocused'
+                      : 'bg-newTableHeader'
                   )}
                 >
                   2
@@ -84,7 +84,7 @@ export const OnboardingModal: FC<OnboardingModalProps> = ({ onClose }) => {
                 <span
                   className={clsx(
                     'text-[14px]',
-                    step === 2 ? 'text-white font-medium' : 'text-customColor18'
+                    step === 2 ? 'font-medium' : 'text-textColor'
                   )}
                 >
                   {t('watch_tutorial', 'Watch Tutorial')}
@@ -161,7 +161,7 @@ const OnboardingStep1: FC<{ onNext: () => void; onSkip: () => void }> = ({
 
       {/* Connected channels */}
       {sortedIntegrations.length > 0 && (
-        <div className="border border-customColor47 rounded-[8px] p-[16px]">
+        <div className="bg-newTableHeader rounded-[8px] p-[16px]">
           <div className="text-[14px] font-medium mb-[12px]">
             {t('connected_channels', 'Connected Channels')} (
             {sortedIntegrations.length})
@@ -276,7 +276,7 @@ const OnboardingStep2: FC<{ onBack: () => void; onFinish: () => void }> = ({
       <div className="flex justify-between pt-[24px] mt-[8px]">
         <button
           onClick={onBack}
-          className="group flex items-center gap-[8px] bg-transparent border-2 border-customColor47 hover:border-white/50 hover:bg-white/5 text-white/80 hover:text-white font-medium px-[24px] py-[12px] rounded-[12px] text-[15px] transition-all"
+          className="group flex items-center gap-[8px] bg-transparent border-2 border-boxFocused font-medium px-[24px] py-[12px] rounded-[12px] text-[15px] transition-all"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
