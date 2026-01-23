@@ -319,7 +319,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
             return {
               id: await this.runInConcurrent(
                 async () =>
-                  client.v1.uploadMedia(
+                  client.v2.uploadMedia(
                     m.path.indexOf('mp4') > -1
                       ? Buffer.from(await readOrFetch(m.path))
                       : await sharp(await readOrFetch(m.path), {
@@ -331,7 +331,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
                           .gif()
                           .toBuffer(),
                     {
-                      mimeType: lookup(m.path) || '',
+                      media_type: (lookup(m.path) || '') as any,
                     }
                   ),
                 true
