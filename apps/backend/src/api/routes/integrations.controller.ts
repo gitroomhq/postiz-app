@@ -195,7 +195,8 @@ export class IntegrationsController {
   async getIntegrationUrl(
     @Param('integration') integration: string,
     @Query('refresh') refresh: string,
-    @Query('externalUrl') externalUrl: string
+    @Query('externalUrl') externalUrl: string,
+    @Query('onboarding') onboarding: string
   ) {
     if (
       !this._integrationManager
@@ -225,6 +226,10 @@ export class IntegrationsController {
 
       if (refresh) {
         await ioRedis.set(`refresh:${state}`, refresh, 'EX', 300);
+      }
+
+      if (onboarding === 'true') {
+        await ioRedis.set(`onboarding:${state}`, 'true', 'EX', 300);
       }
 
       await ioRedis.set(`login:${state}`, codeVerifier, 'EX', 300);
@@ -409,6 +414,11 @@ export class IntegrationsController {
       await ioRedis.del(`refresh:${body.state}`);
     }
 
+    const onboarding = await ioRedis.get(`onboarding:${body.state}`);
+    if (onboarding) {
+      await ioRedis.del(`onboarding:${body.state}`);
+    }
+
     const {
       error,
       accessToken,
@@ -520,7 +530,10 @@ export class IntegrationsController {
         console.log(err);
       });
 
-    return createUpdate;
+    return {
+      ...createUpdate,
+      onboarding: onboarding === 'true',
+    };
   }
 
   @Post('/disable')

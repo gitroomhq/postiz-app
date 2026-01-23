@@ -1,14 +1,14 @@
 'use client';
 
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
-import React, { FC, useCallback, useEffect, useMemo } from 'react';
+import React, { FC, useCallback, useMemo } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Input } from '@gitroom/react/form/input';
 import { FieldValues, FormProvider, useForm } from 'react-hook-form';
 import { Button } from '@gitroom/react/form/button';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { ApiKeyDto } from '@gitroom/nestjs-libraries/dtos/integrations/api.key.dto';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useToaster } from '@gitroom/react/toaster/toaster';
@@ -35,15 +35,8 @@ export const AddProviderButton: FC<{
   update?: () => void;
 }> = (props) => {
   const { update } = props;
-  const query = useSearchParams();
   const add = useAddProvider(update);
   const t = useT();
-
-  useEffect(() => {
-    if (query.get('onboarding')) {
-      add();
-    }
-  }, []);
 
   return (
     <button
@@ -222,8 +215,9 @@ export const CustomVariables: FC<{
   close?: () => void;
   identifier: string;
   gotoUrl(url: string): void;
+  onboarding?: boolean;
 }> = (props) => {
-  const { close, gotoUrl, identifier, variables } = props;
+  const { close, gotoUrl, identifier, variables, onboarding } = props;
   const modals = useModals();
   const schema = useMemo(() => {
     return object({
@@ -263,10 +257,10 @@ export const CustomVariables: FC<{
       gotoUrl(
         `/integrations/social/${identifier}?state=nostate&code=${Buffer.from(
           JSON.stringify(data)
-        ).toString('base64')}`
+        ).toString('base64')}${onboarding ? '&onboarding=true' : ''}`
       );
     },
-    [variables]
+    [variables, onboarding]
   );
 
   const t = useT();
@@ -314,8 +308,9 @@ export const AddProviderComponent: FC<{
     name: string;
   }>;
   update?: () => void;
+  onboarding?: boolean;
 }> = (props) => {
-  const { update, social, article } = props;
+  const { update, social, article, onboarding } = props;
   const { isGeneral } = useVariables();
   const toaster = useToaster();
   const router = useRouter();
@@ -335,12 +330,13 @@ export const AddProviderComponent: FC<{
         }>
       ) =>
       async () => {
+        const onboardingParam = onboarding ? 'onboarding=true' : '';
         const openWeb3 = async () => {
           const { component: Web3Providers } = web3List.find(
             (item) => item.identifier === identifier
           )!;
           const { url } = await (
-            await fetch(`/integrations/social/${identifier}`)
+            await fetch(`/integrations/social/${identifier}${onboarding ? '?onboarding=true' : ''}`)
           ).json();
           modal.openModal({
             title: t('web3_provider', 'Web3 provider'),
@@ -351,7 +347,7 @@ export const AddProviderComponent: FC<{
             children: (
               <Web3Providers
                 onComplete={(code, newState) => {
-                  window.location.href = `/integrations/social/${identifier}?code=${code}&state=${newState}`;
+                  window.location.href = `/integrations/social/${identifier}?code=${code}&state=${newState}${onboarding ? '&onboarding=true' : ''}`;
                 }}
                 nonce={url}
               />
@@ -360,11 +356,13 @@ export const AddProviderComponent: FC<{
           return;
         };
         const gotoIntegration = async (externalUrl?: string) => {
+          const params = [
+            externalUrl ? `externalUrl=${externalUrl}` : '',
+            onboardingParam,
+          ].filter(Boolean).join('&');
           const { url, err } = await (
             await fetch(
-              `/integrations/social/${identifier}${
-                externalUrl ? `?externalUrl=${externalUrl}` : ``
-              }`
+              `/integrations/social/${identifier}${params ? `?${params}` : ''}`
             )
           ).json();
           if (err) {
@@ -378,10 +376,9 @@ export const AddProviderComponent: FC<{
           return;
         }
         if (isExternal) {
-          modal.closeAll();
           modal.openModal({
             title: 'URL',
-            withCloseButton: false,
+            withCloseButton: true,
             classNames: {
               modal: 'bg-transparent text-textColor',
             },
@@ -390,10 +387,9 @@ export const AddProviderComponent: FC<{
           return;
         }
         if (customFields) {
-          modal.closeAll();
           modal.openModal({
             title: t('add_provider_title', 'Add Provider'),
-            withCloseButton: false,
+            withCloseButton: true,
             classNames: {
               modal: 'bg-transparent text-textColor',
             },
@@ -402,6 +398,7 @@ export const AddProviderComponent: FC<{
                 identifier={identifier}
                 gotoUrl={(url: string) => router.push(url)}
                 variables={customFields}
+                onboarding={onboarding}
               />
             ),
           });
@@ -409,14 +406,14 @@ export const AddProviderComponent: FC<{
         }
         await gotoIntegration();
       },
-    []
+    [onboarding]
   );
 
   const showApiButton = useCallback(
     (identifier: string, name: string) => async () => {
       modal.openModal({
         title: '',
-        withCloseButton: false,
+        withCloseButton: true,
         classNames: {
           modal: 'bg-transparent text-textColor',
         },
@@ -431,9 +428,9 @@ export const AddProviderComponent: FC<{
   const t = useT();
 
   return (
-    <div className="w-full flex flex-col gap-[20px] rounded-[4px] relative">
+    <div className="w-full flex flex-col gap-[20px] rounded-[4px] relative]">
       <div className="flex flex-col">
-        <div className="grid grid-cols-5 gap-[10px] justify-items-center justify-center">
+        <div className={clsx("grid grid-cols-5 gap-[10px] justify-items-center justify-center", onboarding ? 'grid-cols-8' : 'grid-cols-5')}>
           {social.map((item) => (
             <div
               key={item.identifier}

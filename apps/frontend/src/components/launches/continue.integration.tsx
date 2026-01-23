@@ -62,12 +62,13 @@ export const ContinueIntegration: FC<{
         return;
       }
 
-      const { inBetweenSteps, id } = await data.json();
+      const { inBetweenSteps, id, onboarding: resOnboarding } = await data.json();
+      const onboarding = resOnboarding || searchParams.onboarding === 'true';
       if (inBetweenSteps && !searchParams.refresh) {
-        push(`/launches?added=${provider}&continue=${id}`);
+        push(`/launches?added=${provider}&continue=${id}${onboarding ? '&onboarding=true' : ''}`);
         return;
       }
-      push(`/launches?added=${provider}&msg=Channel Updated`);
+      push(`/launches?added=${provider}&msg=Channel Updated${onboarding ? '&onboarding=true' : ''}`);
     })();
   }, [provider, searchParams]);
 
