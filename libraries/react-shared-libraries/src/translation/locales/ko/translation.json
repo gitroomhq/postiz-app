@@ -681,5 +681,16 @@
   "delete_post_tooltip": "게시물 삭제",
   "drop_files_here_to_upload": "여기에 파일을 끌어다 놓아 업로드하세요",
   "insert_emoji": "이모지 삽입",
-  "write_something": "무엇인가를 작성하세요 …"
+  "write_something": "무엇인가를 작성하세요 …",
+  "click_channel_to_add": "채널을 추가하려면 클릭하세요",
+  "connect_your_channels": "채널 연결하기",
+  "connect_social_media_to_start": "게시물 예약을 시작하려면 소셜 미디어 계정을 연결하세요",
+  "connected_channels": "연결된 채널",
+  "continue": "계속하기",
+  "continue_without_channels": "채널 없이 계속하기",
+  "watch_tutorial": "튜토리얼 보기",
+  "watch_tutorial_title": "Postiz 사용법 배우기",
+  "watch_tutorial_description": "이 짧은 영상을 통해 Postiz를 최대한 활용하는 방법을 알아보세요",
+  "back": "뒤로가기",
+  "get_started": "시작하기"
 }

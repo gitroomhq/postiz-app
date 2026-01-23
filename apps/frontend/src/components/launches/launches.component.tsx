@@ -457,7 +457,7 @@ export const LaunchesComponent = () => {
       return;
     }
     if (search.get('msg')) {
-      toast.show(search.get('msg')!, 'warning');
+      toast.show(search.get('msg')!, 'success');
       window?.opener?.postMessage(
         {
           msg: search.get('msg')!,

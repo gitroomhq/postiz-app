@@ -681,5 +681,16 @@
   "delete_post_tooltip": "Gönderiyi Sil",
   "drop_files_here_to_upload": "Yüklemek için dosyalarınızı buraya bırakın",
   "insert_emoji": "Emoji Ekle",
-  "write_something": "Bir şeyler yazın …"
+  "write_something": "Bir şeyler yazın …",
+  "click_channel_to_add": "Eklemek için bir kanal seçin",
+  "connect_your_channels": "Kanallarınızı Bağlayın",
+  "connect_social_media_to_start": "Gönderi planlamaya başlamak için sosyal medya hesaplarınızı bağlayın",
+  "connected_channels": "Bağlı Kanallar",
+  "continue": "Devam Et",
+  "continue_without_channels": "Kanallar olmadan devam et",
+  "watch_tutorial": "Eğitimi İzle",
+  "watch_tutorial_title": "Postiz'i Nasıl Kullanacağınızı Öğrenin",
+  "watch_tutorial_description": "Postiz'den en iyi şekilde yararlanmayı öğrenmek için bu kısa videoyu izleyin",
+  "back": "Geri",
+  "get_started": "Başlayın"
 }

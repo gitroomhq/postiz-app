@@ -430,7 +430,7 @@ export const AddProviderComponent: FC<{
   return (
     <div className="w-full flex flex-col gap-[20px] rounded-[4px] relative]">
       <div className="flex flex-col">
-        <div className={clsx("grid grid-cols-5 gap-[10px] justify-items-center justify-center", onboarding ? 'grid-cols-8' : 'grid-cols-5')}>
+        <div className={clsx("grid grid-cols-5 gap-[10px] justify-items-center justify-center", onboarding ? 'grid-cols-9' : 'grid-cols-5')}>
           {social.map((item) => (
             <div
               key={item.identifier}

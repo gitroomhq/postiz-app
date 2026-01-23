@@ -681,5 +681,16 @@
   "delete_post_tooltip": "حذف المنشور",
   "drop_files_here_to_upload": "أسقط ملفاتك هنا للتحميل",
   "insert_emoji": "إدراج رمز تعبيري",
-  "write_something": "اكتب شيئًا …"
+  "write_something": "اكتب شيئًا …",
+  "click_channel_to_add": "انقر على قناة لإضافتها",
+  "connect_your_channels": "قم بتوصيل قنواتك",
+  "connect_social_media_to_start": "قم بتوصيل حسابات التواصل الاجتماعي لبدء جدولة المنشورات",
+  "connected_channels": "القنوات المتصلة",
+  "continue": "متابعة",
+  "continue_without_channels": "متابعة بدون قنوات",
+  "watch_tutorial": "مشاهدة الدليل",
+  "watch_tutorial_title": "تعلم كيفية استخدام Postiz",
+  "watch_tutorial_description": "شاهد هذا الفيديو القصير لتتعلم كيف تستفيد من Postiz بأفضل شكل",
+  "back": "رجوع",
+  "get_started": "ابدأ"
 }

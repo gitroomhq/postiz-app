@@ -681,5 +681,16 @@
   "delete_post_tooltip": "投稿を削除",
   "drop_files_here_to_upload": "ここにファイルをドロップしてアップロード",
   "insert_emoji": "絵文字を挿入",
-  "write_something": "何かを書いてください…"
+  "write_something": "何かを書いてください…",
+  "click_channel_to_add": "追加するチャンネルをクリック",
+  "connect_your_channels": "チャンネルを接続する",
+  "connect_social_media_to_start": "ソーシャルメディアアカウントを接続して投稿の予約を始めましょう",
+  "connected_channels": "接続済みチャンネル",
+  "continue": "続行",
+  "continue_without_channels": "チャンネルなしで続行",
+  "watch_tutorial": "チュートリアルを見る",
+  "watch_tutorial_title": "Postizの使い方を学ぶ",
+  "watch_tutorial_description": "この短い動画を見て、Postizを最大限に活用する方法を学びましょう",
+  "back": "戻る",
+  "get_started": "開始"
 }

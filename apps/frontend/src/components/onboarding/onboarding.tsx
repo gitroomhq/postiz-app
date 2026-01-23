@@ -36,6 +36,7 @@ export const Onboarding: FC = () => {
       withCloseButton: true,
       closeOnEscape: false,
       removeLayout: true,
+      askClose: true,
       fullScreen: true,
       onClose: handleClose,
       children: <OnboardingModal onClose={handleClose} />,

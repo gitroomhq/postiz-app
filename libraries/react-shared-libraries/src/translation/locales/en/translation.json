@@ -683,5 +683,16 @@
   "delete_post_tooltip": "Delete Post",
   "drop_files_here_to_upload": "Drop your files here to upload",
   "insert_emoji": "Insert Emoji",
-  "write_something": "Write something …"
+  "write_something": "Write something …",
+  "click_channel_to_add": "Click a channel to add it",
+  "connect_your_channels": "Connect Your Channels",
+  "connect_social_media_to_start": "Connect your social media accounts to start scheduling posts",
+  "connected_channels": "Connected Channels",
+  "continue": "Continue",
+  "continue_without_channels": "Continue without channels",
+  "watch_tutorial": "Watch Tutorial",
+  "watch_tutorial_title": "Learn How to Use Postiz",
+  "watch_tutorial_description": "Watch this short video to learn how to get the most out of Postiz",
+  "back": "Back",
+  "get_started": "Get Started"
 }
