@@ -18,6 +18,7 @@ import { Media } from '@prisma/client';
 import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import EventEmitter from 'events';
+import { useToaster } from '@gitroom/react/toaster/toaster';
 import clsx from 'clsx';
 import { VideoFrame } from '@gitroom/react/helpers/video.frame';
 import { useUppyUploader } from '@gitroom/frontend/components/media/new.uploader';
@@ -48,6 +49,7 @@ import {
 } from '@gitroom/frontend/components/ui/icons';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useShallow } from 'zustand/react/shallow';
+import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 const Polonto = dynamic(
   () => import('@gitroom/frontend/components/launches/polonto')
 );
@@ -194,6 +196,7 @@ export const showMediaBox = (
   showModalEmitter.emit('show-modal', callback);
 };
 const CHUNK_SIZE = 1024 * 1024;
+const MAX_UPLOAD_SIZE = 1024 * 1024 * 1024; // 1 GB
 export const MediaBox: FC<{
   setMedia: (params: { id: string; path: string }[]) => void;
   standalone?: boolean;
@@ -203,6 +206,7 @@ export const MediaBox: FC<{
   const [page, setPage] = useState(0);
   const fetch = useFetch();
   const modals = useModals();
+  const toaster = useToaster();
   const loadMedia = useCallback(async () => {
     return (await fetch(`/media?page=${page + 1}`)).json();
   }, [page]);
@@ -211,6 +215,7 @@ export const MediaBox: FC<{
   const t = useT();
   const uploaderRef = useRef<any>(null);
   const mediaDirectory = useMediaDirectory();
+  const [loading, setLoading] = useState(false);
 
   const uppy = useUppyUploader({
     allowedFileTypes:
@@ -220,7 +225,6 @@ export const MediaBox: FC<{
         ? 'video/mp4'
         : 'image/*,video/mp4',
     onUploadSuccess: async (arr) => {
-      uppy.clear();
       await mutate();
       if (standalone) {
         return;
@@ -229,6 +233,8 @@ export const MediaBox: FC<{
         return [...prevSelected, ...arr];
       });
     },
+    onStart: () => setLoading(true),
+    onEnd: () => setLoading(false),
   });
 
   const addRemoveSelected = useCallback(
@@ -255,11 +261,29 @@ export const MediaBox: FC<{
     modals.closeCurrent();
   }, [selected]);
 
-  const addToUpload = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files).slice(0, 5);
-    // @ts-ignore
-    uppy.addFiles(files);
-  }, []);
+  const addToUpload = useCallback(
+    async (e: ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(e.target.files || []);
+      const totalSize = files.reduce((acc, file) => acc + file.size, 0);
+
+      if (totalSize > MAX_UPLOAD_SIZE) {
+        toaster.show(
+          t(
+            'upload_size_limit_exceeded',
+            'Upload size limit exceeded. Maximum 1 GB per upload session.'
+          ),
+          'warning'
+        );
+        return;
+      }
+
+      setLoading(true);
+
+      // @ts-ignore
+      uppy.addFiles(files);
+    },
+    [toaster, t]
+  );
 
   const dragAndDrop = useCallback(
     async (event: ClipboardEvent<HTMLDivElement> | File[]) => {
@@ -272,7 +296,7 @@ export const MediaBox: FC<{
         return;
       }
 
-      const files = [];
+      const files: File[] = [];
       // @ts-ignore
       for (const item of clipboardItems) {
         if (item.kind === 'file') {
@@ -283,11 +307,26 @@ export const MediaBox: FC<{
         }
       }
 
-      for (const file of files.slice(0, 5)) {
+      const totalSize = files.reduce((acc, file) => acc + file.size, 0);
+
+      if (totalSize > MAX_UPLOAD_SIZE) {
+        toaster.show(
+          t(
+            'upload_size_limit_exceeded',
+            'Upload size limit exceeded. Maximum 1 GB per upload session.'
+          ),
+          'warning'
+        );
+        return;
+      }
+
+      setLoading(true);
+
+      for (const file of files) {
         uppy.addFile(file);
       }
     },
-    []
+    [toaster, t]
   );
 
   const maximize = useCallback(
@@ -299,7 +338,10 @@ export const MediaBox: FC<{
         children: (
           <div className="w-full h-full p-[50px]">
             {media.path.indexOf('mp4') > -1 ? (
-              <VideoFrame autoplay={true} url={mediaDirectory.set(media.path)} />
+              <VideoFrame
+                autoplay={true}
+                url={mediaDirectory.set(media.path)}
+              />
             ) : (
               <img
                 width="100%"
@@ -340,17 +382,24 @@ export const MediaBox: FC<{
   const btn = useMemo(() => {
     return (
       <button
+        disabled={loading}
         onClick={() => uploaderRef?.current?.click()}
-        className="cursor-pointer bg-btnSimple changeColor flex gap-[8px] h-[44px] px-[18px] justify-center items-center rounded-[8px]"
+        className="relative cursor-pointer bg-btnSimple changeColor flex gap-[8px] h-[44px] px-[18px] justify-center items-center rounded-[8px]"
       >
-        <PlusIcon size={14} />
-        <div>{t('upload', 'Upload')}</div>
+        {loading ? (
+          <div className="absolute left-[50%] top-[50%] -translate-y-[50%] -translate-x-[50%]">
+            <div className="animate-spin h-[20px] w-[20px] border-4 border-white border-t-transparent rounded-full" />
+          </div>
+        ) : (
+          <PlusIcon size={14} />
+        )}
+        <div className={loading && 'invisible'}>{t('upload', 'Upload')}</div>
       </button>
     );
-  }, [t]);
+  }, [t, loading]);
 
   return (
-    <DropFiles className="flex flex-col flex-1" onDrop={dragAndDrop}>
+    <DropFiles disabled={loading} className="flex flex-col flex-1" onDrop={dragAndDrop}>
       <div className="flex flex-col flex-1">
         <div
           className={clsx(
@@ -361,8 +410,8 @@ export const MediaBox: FC<{
           {!isLoading && !!data?.results?.length && (
             <div className="flex-1 text-[14px] font-[600] whitespace-pre-line">
               {t(
-                'select_or_upload_pictures_max_5',
-                'Select or upload pictures (maximum 5 at a time).'
+                'select_or_upload_pictures_max_1gb',
+                'Select or upload pictures (maximum 1 GB per upload).'
               )}
               {'\n'}
               {t(
@@ -423,8 +472,8 @@ export const MediaBox: FC<{
                 </div>
                 <div className="whitespace-pre-line text-newTextColor/[0.6] text-center">
                   {t(
-                    'select_or_upload_pictures_max_5',
-                    'Select or upload pictures (maximum 5 at a time).'
+                    'select_or_upload_pictures_max_1gb',
+                    'Select or upload pictures (maximum 1 GB per upload).'
                   )}{' '}
                   {'\n'}
                   {t(
@@ -476,7 +525,7 @@ export const MediaBox: FC<{
                     onClick={addRemoveSelected(media)}
                   >
                     {!!selected.find((p: any) => p.id === media.id) ? (
-                      <div className="text-white flex justify-center items-center text-[14px] font-[500] w-[24px] h-[24px] rounded-full bg-[#612BD3] absolute -bottom-[10px] -end-[10px]">
+                      <div className="text-white flex z-[101] justify-center items-center text-[14px] font-[500] w-[24px] h-[24px] rounded-full bg-[#612BD3] absolute -bottom-[10px] -end-[10px]">
                         {selected.findIndex((z: any) => z.id === media.id) + 1}
                       </div>
                     ) : (

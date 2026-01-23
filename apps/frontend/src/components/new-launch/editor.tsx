@@ -56,6 +56,7 @@ import { suggestion } from '@gitroom/frontend/components/new-launch/mention.comp
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { AComponent } from '@gitroom/frontend/components/new-launch/a.component';
 import { Placeholder } from '@tiptap/extensions';
+import { useToaster } from '@gitroom/react/toaster/toaster';
 import { InformationComponent } from '@gitroom/frontend/components/launches/information.component';
 import {
   LockIcon,
@@ -66,6 +67,8 @@ import {
   DelayIcon,
 } from '@gitroom/frontend/components/ui/icons';
 import { DelayComponent } from '@gitroom/frontend/components/new-launch/delay.component';
+
+const MAX_UPLOAD_SIZE = 1024 * 1024 * 1024; // 1 GB
 
 const InterceptBoldShortcut = Extension.create({
   name: 'preventBoldWithUnderline',
@@ -558,7 +561,9 @@ export const Editor: FC<{
   const [id] = useState(makeId(10));
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const t = useT();
+  const toaster = useToaster();
   const editorRef = useRef<undefined | { editor: any }>();
+  const [loading, setLoading] = useState(false);
 
   const uppy = useUppyUploader({
     onUploadSuccess: (result: any) => {
@@ -566,15 +571,32 @@ export const Editor: FC<{
       uppy.clear();
     },
     allowedFileTypes: 'image/*,video/mp4',
+    onStart: () => setLoading(true),
+    onEnd: () => setLoading(false),
   });
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
+      const totalSize = acceptedFiles.reduce((acc, file) => acc + file.size, 0);
+
+      if (totalSize > MAX_UPLOAD_SIZE) {
+        toaster.show(
+          t(
+            'upload_size_limit_exceeded',
+            'Upload size limit exceeded. Maximum 1 GB per upload session.'
+          ),
+          'warning'
+        );
+        return;
+      }
+
+      setLoading(true);
+
       for (const file of acceptedFiles) {
         uppy.addFile(file);
       }
     },
-    [uppy]
+    [uppy, toaster, t]
   );
 
   const paste = useCallback(
@@ -588,21 +610,47 @@ export const Editor: FC<{
         return;
       }
 
+      const files: File[] = [];
       // @ts-ignore
       for (const item of clipboardItems) {
         if (item.kind === 'file') {
           const file = item.getAsFile();
           if (file) {
-            uppy.addFile(file);
+            files.push(file);
           }
         }
       }
+
+      const totalSize = files.reduce((acc, file) => acc + file.size, 0);
+
+      if (totalSize > MAX_UPLOAD_SIZE) {
+        toaster.show(
+          t(
+            'upload_size_limit_exceeded',
+            'Upload size limit exceeded. Maximum 1 GB per upload session.'
+          ),
+          'warning'
+        );
+        return;
+      }
+
+      setLoading(true);
+
+      for (const file of files) {
+        uppy.addFile(file);
+      }
     },
-    [uppy, num, comments]
+    [uppy, num, comments, toaster, t]
   );
 
   const { getRootProps, isDragActive } = useDropzone({
-    onDrop,
+    onDrop: (files) => {
+      if (loading) {
+        toaster.show('Upload current in progress, please wait and then try again.', 'warning');
+        return ;
+      }
+      onDrop(files);
+    },
     noDrag: num > 0 && comments === 'no-media',
   });
 
