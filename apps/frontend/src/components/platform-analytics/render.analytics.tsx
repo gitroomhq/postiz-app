@@ -70,9 +70,9 @@ export const RenderAnalytics: FC<{
     );
   }
   return (
-    <div className="grid grid-cols-3 gap-[20px]">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[12px] md:gap-[16px] lg:gap-[20px]">
       {data?.length === 0 && (
-        <div>
+        <div className="text-[12px] md:text-[14px]">
           {t(
             'this_channel_needs_to_be_refreshed',
             'This channel needs to be refreshed,'
@@ -87,16 +87,16 @@ export const RenderAnalytics: FC<{
       )}
       {data?.map((p: any, index: number) => (
         <div key={`pl-${index}`} className="flex">
-          <div className="flex-1 bg-newTableHeader rounded-[8px] py-[10px] px-[16px] gap-[10px] flex flex-col">
-            <div className="flex items-center gap-[14px]">
-              <div className="text-[20px]">{p.label}</div>
+          <div className="flex-1 bg-newTableHeader rounded-[8px] py-[8px] md:py-[10px] px-[12px] md:px-[16px] gap-[8px] md:gap-[10px] flex flex-col">
+            <div className="flex items-center gap-[10px] md:gap-[14px]">
+              <div className="text-[14px] md:text-[18px] lg:text-[20px] font-[500]">{p.label}</div>
             </div>
             <div className="flex-1">
-              <div className="h-[156px] relative">
+              <div className="h-[120px] md:h-[140px] lg:h-[156px] relative">
                 <ChartSocial {...p} key={`p-${index}`} />
               </div>
             </div>
-            <div className="text-[50px] leading-[60px]">{total[index]}</div>
+            <div className="text-[28px] md:text-[36px] lg:text-[50px] leading-[32px] md:leading-[40px] lg:leading-[60px] font-[600]">{total[index]}</div>
           </div>
         </div>
       ))}

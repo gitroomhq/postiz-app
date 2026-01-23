@@ -102,8 +102,8 @@ export const PlugPop: FC<{
           ...acc,
           [field.name]: field.validation
             ? string().matches(convertBackRegex(field.validation), {
-                message: 'Invalid value',
-              })
+              message: 'Invalid value',
+            })
             : null,
         };
       }, {})
@@ -174,6 +174,7 @@ export const PlugItem: FC<{
   };
 }> = (props) => {
   const { plug, addPlug, data } = props;
+  const t = useT();
   const [activated, setActivated] = useState(!!data?.activated);
   useEffect(() => {
     setActivated(!!data?.activated);
@@ -198,13 +199,13 @@ export const PlugItem: FC<{
     <div
       onClick={() => addPlug(data)}
       key={plug.title}
-      className="w-full h-[300px] rounded-[8px] bg-newTableHeader hover:bg-newTableBorder"
+      className="w-full min-h-[220px] md:h-[280px] rounded-[12px] bg-newBgColor border border-newBorder hover:border-newTableBorder transition-all cursor-pointer overflow-hidden flex flex-col"
     >
-      <div key={plug.title} className="p-[16px] h-full flex flex-col flex-1">
-        <div className="flex">
-          <div className="text-[20px] mb-[8px] flex-1">{plug.title}</div>
+      <div key={plug.title} className="p-[20px] h-full flex flex-col flex-1 gap-[12px]">
+        <div className="flex items-start justify-between">
+          <div className="text-[18px] md:text-[20px] flex-1 font-[600] leading-tight">{plug.title}</div>
           {!!data && (
-            <div onClick={(e) => e.stopPropagation()}>
+            <div onClick={(e) => e.stopPropagation()} className="shrink-0 scale-90 md:scale-100 origin-right">
               <Slider
                 value={activated ? 'on' : 'off'}
                 onChange={changeActivated}
@@ -213,8 +214,12 @@ export const PlugItem: FC<{
             </div>
           )}
         </div>
-        <div className="flex-1">{plug.description}</div>
-        <Button>{!data ? 'Set Plug' : 'Edit Plug'}</Button>
+        <div className="flex-1 text-[14px] md:text-[15px] text-textItemBlur line-clamp-4 md:line-clamp-none">
+          {plug.description}
+        </div>
+        <div className="mt-auto">
+          <Button className="w-full md:w-auto">{!data ? t('set_plug', 'Set Plug') : t('edit_plug', 'Edit Plug')}</Button>
+        </div>
       </div>
     </div>
   );
@@ -263,7 +268,7 @@ export const Plug = () => {
     return null;
   }
   return (
-    <div className="grid grid-cols-3 gap-[30px]">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-[16px] md:gap-[24px]">
       {plug.plugs.map((p) => (
         <PlugItem
           key={p.title + '-' + plug.providerId}

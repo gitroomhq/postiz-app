@@ -1,6 +1,6 @@
 'use client';
 
-import React, { ReactNode, useCallback } from 'react';
+import React, { ReactNode, useCallback, useState } from 'react';
 import { Logo } from '@gitroom/frontend/components/new-layout/logo';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 const ModeComponent = dynamic(
@@ -50,6 +50,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
   const fetch = useFetch();
 
   const { backendUrl, billingEnabled, isGeneral } = useVariables();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // Feedback icon component attaches Sentry feedback to a top-bar icon when DSN is present
   const searchParams = useSearchParams();
@@ -86,7 +87,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
             <ContinueProvider />
             <div
               className={clsx(
-                'flex flex-col min-h-screen min-w-screen text-newTextColor p-[12px]',
+                'flex flex-col min-h-screen w-full text-newTextColor p-[16px] md:p-[12px] overflow-x-hidden',
                 jakartaSans.className
               )}
             >
@@ -94,9 +95,9 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
               {user.tier === 'FREE' && isGeneral && billingEnabled ? (
                 <FirstBillingComponent />
               ) : (
-                <div className="flex-1 flex gap-[8px]">
+                <div className="flex-1 flex gap-[8px] flex-col md:flex-row">
                   <Support />
-                  <div className="flex flex-col bg-newBgColorInner w-[80px] rounded-[12px]">
+                  <div className="hidden md:flex flex-col bg-newBgColorInner w-[80px] rounded-[12px]">
                     <div
                       className={clsx(
                         'fixed h-full w-[64px] start-[17px] flex flex-1 top-0',
@@ -110,24 +111,84 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                     </div>
                   </div>
                   <div className="flex-1 bg-newBgLineColor rounded-[12px] overflow-hidden flex flex-col gap-[1px] blurMe">
-                    <div className="flex bg-newBgColorInner h-[80px] px-[20px] items-center">
-                      <div className="text-[24px] font-[600] flex flex-1">
+                    <div className="flex bg-newBgColorInner h-[60px] md:h-[80px] px-[12px] md:px-[20px] items-center gap-[12px] md:gap-[0]">
+                      <div className="md:hidden flex items-center gap-[12px] flex-1">
+                        <div
+                          onClick={() => setIsMenuOpen(!isMenuOpen)}
+                          className="cursor-pointer text-textItemBlur hover:text-newTextColor"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            {isMenuOpen ? (
+                              <>
+                                <line x1="18" y1="6" x2="6" y2="18" />
+                                <line x1="6" y1="6" x2="18" y2="18" />
+                              </>
+                            ) : (
+                              <>
+                                <line x1="3" y1="12" x2="21" y2="12" />
+                                <line x1="3" y1="6" x2="21" y2="6" />
+                                <line x1="3" y1="18" x2="21" y2="18" />
+                              </>
+                            )}
+                          </svg>
+                        </div>
+                        <Logo />
+                      </div>
+                      <div className="text-[18px] md:text-[24px] font-[600] flex flex-1 md:flex-1">
                         <Title />
                       </div>
-                      <div className="flex gap-[20px] text-textItemBlur">
-                        <OrganizationSelector />
+                      <div className="flex gap-[12px] md:gap-[20px] text-textItemBlur text-[12px] md:text-base">
+                        <div className="hidden lg:block">
+                          <OrganizationSelector />
+                        </div>
                         <div className="hover:text-newTextColor">
                           <ModeComponent />
                         </div>
-                        <div className="w-[1px] h-[20px] bg-blockSeparator" />
-                        <LanguageComponent />
-                        <ChromeExtensionComponent />
-                        <div className="w-[1px] h-[20px] bg-blockSeparator" />
+                        <div className="w-[1px] h-[20px] bg-blockSeparator hidden md:block" />
+                        <div className="hidden md:block">
+                          <LanguageComponent />
+                        </div>
+                        <div className="w-[1px] h-[20px] bg-blockSeparator hidden lg:block" />
+                        <div className="hidden lg:block">
+                          <ChromeExtensionComponent />
+                        </div>
+                        <div className="w-[1px] h-[20px] bg-blockSeparator hidden lg:block" />
                         <AttachToFeedbackIcon />
                         <NotificationComponent />
                       </div>
                     </div>
-                    <div className="flex flex-1 gap-[1px]">{children}</div>
+                    <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden relative p-[4px] lg:p-0">
+                      {isMenuOpen && (
+                        <div
+                          className="md:hidden fixed inset-0 z-[200] bg-black/50 backdrop-blur-sm"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          <div
+                            className="absolute start-0 top-0 bottom-0 w-[280px] bg-newBgColorInner p-[20px] flex flex-col gap-[32px] overflow-y-auto z-[201]"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Logo />
+                            <div
+                              onClick={() => setIsMenuOpen(false)}
+                              className="flex flex-col gap-[16px]"
+                            >
+                              <TopMenu />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {children}
+                    </div>
                   </div>
                 </div>
               )}
@@ -138,3 +199,4 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
     </ContextWrapper>
   );
 };
+

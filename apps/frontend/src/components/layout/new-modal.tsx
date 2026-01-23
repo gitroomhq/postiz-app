@@ -182,7 +182,7 @@ export const Component: FC<{
                 : {}
             }
             className={clsx(
-              'absolute min-w-full',
+              'absolute min-w-full px-[16px] md:px-0',
               !modal.fullScreen
                 ? modal.top
                   ? ''
@@ -195,9 +195,9 @@ export const Component: FC<{
           >
             <div
               className={clsx(
-                !modal.removeLayout && 'gap-[40px] p-[32px]',
-                'bg-newBgColorInner mx-auto flex flex-col w-fit rounded-[24px] relative',
-                modal.size ? '' : 'min-w-[600px]',
+                !modal.removeLayout && 'gap-[20px] p-[20px] md:gap-[40px] md:p-[32px]',
+                'bg-newBgColorInner mx-auto flex flex-col w-full md:w-fit rounded-[24px] relative overflow-hidden',
+                modal.size ? '' : 'w-full md:min-w-[600px] max-w-full',
                 modal.fullScreen && 'h-full'
               )}
               {...((!!modal.size || !!modal.height) && {
@@ -213,7 +213,7 @@ export const Component: FC<{
                   {modal.title}
                 </div>
                 {typeof modal.withCloseButton === 'undefined' ||
-                modal.withCloseButton ? (
+                  modal.withCloseButton ? (
                   <div className="cursor-pointer">
                     <button
                       className="outline-none absolute end-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"

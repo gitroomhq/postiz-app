@@ -58,12 +58,15 @@ export const SelectCustomer: FC<{
         data-tooltip-content={t('select_customer_tooltip', 'Select Customer')}
         onClick={openClose}
         className={clsx(
-          'relative z-[20] cursor-pointer h-[42px] rounded-[8px] pl-[16px] pr-[12px] gap-[8px] border flex items-center',
+          'relative z-[20] cursor-pointer h-[42px] rounded-[8px] pl-[16px] pr-[12px] gap-[8px] border flex items-center min-w-0 md:min-w-[120px] flex-1 md:flex-none justify-between',
           open ? 'border-[#612BD3]' : 'border-newColColor'
         )}
       >
-        <div>
+        <div className="flex items-center gap-[8px] truncate">
           <UserIcon />
+          <div className="text-[14px] font-[500] truncate">
+            {uniqBy(integrations, (i) => i?.customer?.id).find((f) => f.customer?.id === customer)?.customer?.name || t('select_customer', 'Select Customer')}
+          </div>
         </div>
         <div>
           <DropdownArrowIcon rotated={open} />
@@ -72,7 +75,7 @@ export const SelectCustomer: FC<{
       {open && (
         <div
           style={pos}
-          className="flex flex-col fixed pt-[12px] bg-newBgColorInner menu-shadow min-w-[250px]"
+          className="flex flex-col fixed pt-[12px] bg-newBgColorInner menu-shadow min-w-[200px] max-w-[calc(100vw-32px)]"
         >
           <div className="text-[14px] font-[600] px-[12px] mb-[5px]">
             {t('customers', 'Customers')}
@@ -92,7 +95,7 @@ export const SelectCustomer: FC<{
                   setCurrent('global')
                 }}
                 key={p.customer?.id}
-                className="p-[12px] hover:bg-newBgColor text-[14px] font-[500] h-[32px] flex items-center"
+                className="p-[12px] hover:bg-newBgColor text-[14px] font-[500] flex items-center cursor-pointer"
               >
                 {p.customer?.name}
               </div>

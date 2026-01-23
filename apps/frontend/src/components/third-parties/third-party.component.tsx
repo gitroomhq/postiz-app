@@ -113,16 +113,16 @@ export const ThirdPartyComponent = () => {
   const [collapseMenu, setCollapseMenu] = useCookie('collapseMenu', '0');
 
   return (
-    <>
+    <div className="flex flex-col md:flex-row w-full h-full overflow-hidden">
       <div
         className={clsx(
-          'bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all',
-          collapseMenu === '1' ? 'group sidebar w-[100px]' : 'w-[260px]'
+          'bg-newBgColorInner flex md:flex-col flex-row transition-all overflow-x-auto md:overflow-x-visible items-center md:items-stretch scrollbar-hide shrink-0',
+          collapseMenu === '1' ? 'group sidebar w-full md:w-[100px]' : 'w-full md:w-[260px]'
         )}
       >
-        <div className="flex gap-[12px] flex-col">
-          <div className="flex items-center">
-            <h2 className="group-[.sidebar]:hidden flex-1 text-[20px] font-[500]">
+        <div className="flex gap-[8px] md:gap-[12px] flex-row md:flex-col flex-1 p-[16px] md:p-[20px]">
+          <div className="flex items-center hidden md:flex">
+            <h2 className="group-[.sidebar]:hidden flex-1 text-[16px] md:text-[20px] font-[500]">
               {t('integrations')}
             </h2>
             <div
@@ -146,27 +146,29 @@ export const ThirdPartyComponent = () => {
               </svg>
             </div>
           </div>
-          <div className="flex flex-col gap-[10px]">
-            <div className="flex-1 flex flex-col gap-[14px]">
+          <div className="flex flex-col gap-[10px] flex-1">
+            <div className="flex-1 flex flex-row md:flex-col gap-[14px]">
               <div
                 className={clsx(
-                  'gap-[16px] flex flex-col relative justify-center group/profile hover:bg-boxHover rounded-e-[8px]'
+                  'gap-[8px] md:gap-[16px] flex flex-row md:flex-col relative md:justify-center rounded-[8px] md:rounded-e-[8px]'
                 )}
               >
                 {!isLoading && !data?.length ? (
-                  <div>No Integrations Yet</div>
+                  <div className="whitespace-nowrap px-2">No Integrations Yet</div>
                 ) : (
                   data?.map((p: any) => (
                     <div
                       key={p.id}
-                      className={clsx('flex gap-[8px] items-center')}
+                      className={clsx(
+                        'flex gap-[12px] items-center group/profile justify-center hover:bg-boxHover rounded-[8px] md:rounded-e-[8px] px-3 md:px-0 py-2 md:py-0 bg-sixth md:bg-transparent min-w-fit md:min-w-0'
+                      )}
                     >
-                      <div className="h-full w-[4px] -ms-[12px] rounded-s-[3px] opacity-0 group-hover/profile:opacity-100 transition-opacity">
+                      <div className="h-full w-[4px] -ms-[12px] rounded-s-[3px] opacity-0 group-hover/profile:opacity-100 transition-opacity hidden md:block">
                         <SVGLine />
                       </div>
                       <div
                         className={clsx(
-                          'relative rounded-full flex justify-center items-center bg-fifth'
+                          'relative rounded-full flex justify-center items-center bg-fifth shrink-0'
                         )}
                         data-tooltip-id="tooltip"
                         data-tooltip-content={p.title}
@@ -200,9 +202,9 @@ export const ThirdPartyComponent = () => {
           </div>
         </div>
       </div>
-      <div className="bg-newBgColorInner flex-1 flex-col flex p-[20px] gap-[12px]">
+      <div className="bg-newBgColorInner flex-1 flex-col flex p-[12px] md:p-[20px] gap-[8px] md:gap-[12px] overflow-y-auto w-full md:w-auto">
         <ThirdPartyListComponent reload={mutate} />
       </div>
-    </>
+    </div>
   );
 };

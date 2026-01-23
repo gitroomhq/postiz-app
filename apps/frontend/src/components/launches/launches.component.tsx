@@ -160,7 +160,7 @@ export const MenuGroupComponent: FC<
   }));
   return (
     <div
-      className="gap-[16px] flex flex-col relative"
+      className="gap-[12px] md:gap-[16px] flex lg:flex-col flex-row relative"
       // @ts-ignore
       ref={drop}
     >
@@ -183,9 +183,9 @@ export const MenuGroupComponent: FC<
             className="line-clamp-1"
             {...(collapsed
               ? {
-                  'data-tooltip-id': 'tooltip',
-                  'data-tooltip-content': group.name,
-                }
+                'data-tooltip-id': 'tooltip',
+                'data-tooltip-content': group.name,
+              }
               : {})}
           >
             {group.name}
@@ -194,7 +194,7 @@ export const MenuGroupComponent: FC<
       )}
       <div
         className={clsx(
-          'gap-[12px] flex flex-col relative',
+          'gap-[10px] md:gap-[12px] flex lg:flex-col flex-row relative',
           !isOpen && 'hidden'
         )}
       >
@@ -252,13 +252,13 @@ export const MenuComponent: FC<
       })}
       {...(collapsed
         ? {
-            'data-tooltip-id': 'tooltip',
-            'data-tooltip-content': integration.name,
-          }
+          'data-tooltip-id': 'tooltip',
+          'data-tooltip-content': integration.name,
+        }
         : {})}
       key={integration.id}
       className={clsx(
-        'flex gap-[12px] items-center bg-newBgColorInner hover:bg-boxHover group/profile transition-all rounded-e-[8px]',
+        'flex gap-[10px] md:gap-[12px] items-center bg-newBgColorInner hover:bg-boxHover group/profile transition-all rounded-[8px] lg:rounded-s-none lg:rounded-e-[8px] shrink-0 min-w-fit pr-4 md:pr-4 ps-2 md:ps-0',
         integration.refreshNeeded && 'cursor-pointer'
       )}
     >
@@ -268,7 +268,7 @@ export const MenuComponent: FC<
           integration.disabled && 'opacity-50'
         )}
       >
-        <div className="h-full w-[4px] -ms-[12px] rounded-s-[3px] opacity-0 group-hover/profile:opacity-100 transition-opacity">
+        <div className="h-full w-[4px] -ms-[12px] rounded-s-[3px] opacity-0 group-hover/profile:opacity-100 transition-opacity hidden lg:block">
           <SVGLine />
         </div>
         {(integration.inBetweenSteps || integration.refreshNeeded) && (
@@ -314,12 +314,12 @@ export const MenuComponent: FC<
         // @ts-ignore
         ref={drag}
         {...(integration.disabled &&
-        totalNonDisabledChannels === user?.totalChannels
+          totalNonDisabledChannels === user?.totalChannels
           ? {
-              'data-tooltip-id': 'tooltip',
-              'data-tooltip-content':
-                t('channel_disabled_upgrade_plan', 'This channel is disabled, please upgrade your plan to enable it.'),
-            }
+            'data-tooltip-id': 'tooltip',
+            'data-tooltip-content':
+              t('channel_disabled_upgrade_plan', 'This channel is disabled, please upgrade your plan to enable it.'),
+          }
           : {})}
         role="Handle"
         className={clsx(
@@ -435,10 +435,10 @@ export const LaunchesComponent = () => {
   );
   const refreshChannel = useCallback(
     (
-        integration: Integration & {
-          identifier: string;
-        }
-      ) =>
+      integration: Integration & {
+        identifier: string;
+      }
+    ) =>
       async () => {
         const { url } = await (
           await fetch(
@@ -482,7 +482,7 @@ export const LaunchesComponent = () => {
   }, []);
   if (isLoading || reload) {
     return (
-      <div className="bg-newBgColorInner p-[20px] flex flex-1 flex-col gap-[15px] transition-all items-center justify-center">
+      <div className="bg-newBgColorInner p-[12px] md:p-[20px] flex flex-1 flex-col gap-[12px] md:gap-[15px] transition-all items-center justify-center">
         <LoadingComponent />
       </div>
     );
@@ -495,101 +495,103 @@ export const LaunchesComponent = () => {
       <CalendarWeekProvider integrations={sortedIntegrations}>
         <div
           className={clsx(
-            'flex relative flex-col',
-            collapseMenu === '1' ? 'group sidebar w-[100px]' : 'w-[260px]'
+            'flex relative lg:flex-col lg:shrink-0',
+            collapseMenu === '1' ? 'group sidebar w-full lg:w-[100px]' : 'w-full lg:w-[260px]'
           )}
         >
           <div
             className={clsx(
-              'bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all absolute start-0 top-0 w-full h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor'
+              'bg-newBgColorInner transition-all lg:absolute start-0 top-0 w-full h-fit lg:h-full overflow-x-auto lg:overflow-x-hidden lg:overflow-y-auto scrollbar-hide lg:scrollbar lg:scrollbar-thumb-fifth lg:scrollbar-track-newBgColor shadow-sm lg:shadow-none'
             )}
           >
-            <div className="flex items-center">
-              <h2 className="group-[.sidebar]:hidden flex-1 text-[20px] font-[500]">
-                {t('channels')}
-              </h2>
-              <div
-                onClick={() =>
-                  setCollapseMenu(collapseMenu === '1' ? '0' : '1')
-                }
-                className="group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-btnText bg-btnSimple rounded-[6px] w-[24px] h-[24px] flex items-center justify-center cursor-pointer select-none"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="7"
-                  height="13"
-                  viewBox="0 0 7 13"
-                  fill="none"
+            <div className="flex lg:flex-col flex-row gap-[16px] md:gap-[15px] items-center lg:items-stretch p-[16px] lg:p-[20px] w-full lg:min-h-full">
+              <div className="flex items-center">
+                <h2 className="group-[.sidebar]:hidden flex-1 text-[20px] font-[500]">
+                  {t('channels')}
+                </h2>
+                <div
+                  onClick={() =>
+                    setCollapseMenu(collapseMenu === '1' ? '0' : '1')
+                  }
+                  className="group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-btnText bg-btnSimple rounded-[6px] w-[24px] h-[24px] flex items-center justify-center cursor-pointer select-none"
                 >
-                  <path
-                    d="M6 11.5L1 6.5L6 1.5"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
-            </div>
-            <div className="flex flex-col gap-[8px] group-[.sidebar]:mx-auto group-[.sidebar]:w-[44px]">
-              <AddProviderButton update={() => update(true)} />
-              <div className="flex gap-[8px] group-[.sidebar]:flex-col">
-                {sortedIntegrations?.length > 0 && <NewPost />}
-                {sortedIntegrations?.length > 0 &&
-                  user?.tier?.ai &&
-                  billingEnabled && <GeneratorComponent />}
-              </div>
-            </div>
-            <div className="gap-[32px] flex flex-col select-none flex-1">
-              {sortedIntegrations.length === 0 && collapseMenu === '0' && (
-                <div className="flex-1 max-h-[500px] justify-center items-center flex">
-                  <div className="flex flex-col gap-[12px] text-center">
-                    <img
-                      src={
-                        mode === 'dark'
-                          ? '/no-channels.svg'
-                          : '/no-channels-colors.svg'
-                      }
-                      alt="No channels"
-                      className="mx-auto min-w-[100%]"
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="7"
+                    height="13"
+                    viewBox="0 0 7 13"
+                    fill="none"
+                  >
+                    <path
+                      d="M6 11.5L1 6.5L6 1.5"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                     />
-                    <div className="font-[600] text-[20px]">
-                      {t('no_channels', 'No channels yet')}
-                    </div>
-                    <div className="text-[14px]">
-                      {t('connect_your_accounts')}
+                  </svg>
+                </div>
+              </div>
+              <div className="flex lg:flex-col flex-row gap-[10px] md:gap-[8px] group-[.sidebar]:mx-auto group-[.sidebar]:w-[44px] shrink-0">
+                <div className="flex gap-[8px] group-[.sidebar]:flex-col">
+                  {sortedIntegrations?.length > 0 && <NewPost />}
+                  {sortedIntegrations?.length > 0 &&
+                    user?.tier?.ai &&
+                    billingEnabled && <GeneratorComponent />}
+                </div>
+                <AddProviderButton update={() => update(true)} />
+              </div>
+              <div className="gap-[32px] flex flex-col select-none flex-1">
+                {sortedIntegrations.length === 0 && collapseMenu === '0' && (
+                  <div className="hidden lg:flex flex-1 max-h-[500px] justify-center items-center">
+                    <div className="flex flex-col gap-[12px] text-center">
+                      <img
+                        src={
+                          mode === 'dark'
+                            ? '/no-channels.svg'
+                            : '/no-channels-colors.svg'
+                        }
+                        alt="No channels"
+                        className="mx-auto max-w-[200px] w-full h-auto"
+                      />
+                      <div className="font-[600] text-[20px]">
+                        {t('no_channels', 'No channels yet')}
+                      </div>
+                      <div className="text-[14px]">
+                        {t('connect_your_accounts')}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
-              {menuIntegrations.map((menu) => (
-                <MenuGroupComponent
-                  collapsed={collapseMenu === '1'}
-                  changeItemGroup={changeItemGroup}
-                  key={menu.name}
-                  group={menu}
-                  mutate={mutate}
-                  continueIntegration={continueIntegration}
-                  update={update}
-                  refreshChannel={refreshChannel}
-                  totalNonDisabledChannels={totalNonDisabledChannels}
-                />
-              ))}
-            </div>
-            <div className="mt-[5px] text-center">
-              {process.env.NEXT_PUBLIC_VERSION
-                ? process.env.NEXT_PUBLIC_VERSION
-                : ''}
+                )}
+                {menuIntegrations.map((menu) => (
+                  <MenuGroupComponent
+                    collapsed={collapseMenu === '1'}
+                    changeItemGroup={changeItemGroup}
+                    key={menu.name}
+                    group={menu}
+                    mutate={mutate}
+                    continueIntegration={continueIntegration}
+                    update={update}
+                    refreshChannel={refreshChannel}
+                    totalNonDisabledChannels={totalNonDisabledChannels}
+                  />
+                ))}
+              </div>
+              <div className="mt-[5px] text-center">
+                {process.env.NEXT_PUBLIC_VERSION
+                  ? process.env.NEXT_PUBLIC_VERSION
+                  : ''}
+              </div>
             </div>
           </div>
         </div>
-        <div className="bg-newBgColorInner flex-1 flex-col flex p-[20px] gap-[12px]">
+        <div className="bg-newBgColorInner flex-1 flex-col flex p-[16px] md:p-[20px] gap-[16px] md:gap-[20px] min-w-0 overflow-hidden shadow-sm">
           <Filters />
-          <div className="flex-1 flex">
+          <div className="flex-1 flex min-h-0">
             <Calendar />
           </div>
         </div>
       </CalendarWeekProvider>
-    </DNDProvider>
+    </DNDProvider >
   );
 };

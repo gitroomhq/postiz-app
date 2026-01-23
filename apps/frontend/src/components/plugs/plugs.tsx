@@ -86,7 +86,7 @@ export const Plugs = () => {
 
   if (isLoading || plugLoading) {
     return (
-      <div className="bg-newBgColorInner p-[20px] flex flex-1 flex-col gap-[15px] transition-all items-center justify-center">
+      <div className="bg-newBgColorInner p-[12px] md:p-[20px] flex flex-1 flex-col gap-[12px] md:gap-[15px] transition-all items-center justify-center">
         <LoadingComponent />
       </div>
     );
@@ -94,11 +94,11 @@ export const Plugs = () => {
 
   if (!sortedIntegrations.length && !isLoading) {
     return (
-      <div className="bg-newBgColorInner p-[20px] flex flex-1 flex-col gap-[15px] transition-all items-center justify-center">
+      <div className="bg-newBgColorInner p-[12px] md:p-[20px] flex flex-1 flex-col gap-[12px] md:gap-[15px] transition-all items-center justify-center">
         <div>
-          <img src="/peoplemarketplace.svg" />
+          <img className="w-[120px] md:w-auto" src="/peoplemarketplace.svg" />
         </div>
-        <div className="text-[48px]">
+        <div className="text-[20px] md:text-[32px] lg:text-[48px] font-[600] text-center leading-[1.2]">
           {t(
             'there_are_not_plugs_matching_your_channels',
             'There are not plugs matching your channels'
@@ -119,21 +119,21 @@ export const Plugs = () => {
     );
   }
   return (
-    <>
+    <div className="flex flex-col md:flex-row w-full h-full overflow-hidden">
       <div
         className={clsx(
-          'bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all',
-          collapseMenu === '1' ? 'group sidebar w-[100px]' : 'w-[260px]'
+          'bg-newBgColorInner flex md:flex-col flex-row gap-[16px] md:gap-[15px] transition-all overflow-x-auto md:overflow-x-visible items-center md:items-stretch scrollbar-hide shrink-0 shadow-sm md:shadow-none',
+          collapseMenu === '1' ? 'group sidebar w-full md:w-[100px]' : 'w-full md:w-[260px]'
         )}
       >
-        <div className="flex gap-[12px] flex-col">
+        <div className="flex gap-[8px] md:gap-[12px] flex-row md:flex-col flex-1 p-[16px] md:p-[20px]">
           <div className="flex items-center">
-            <h2 className="group-[.sidebar]:hidden flex-1 text-[20px] font-[500]">
+            <h2 className="group-[.sidebar]:hidden flex-1 text-[18px] md:text-[20px] font-[600]">
               {t('channels')}
             </h2>
             <div
               onClick={() => setCollapseMenu(collapseMenu === '1' ? '0' : '1')}
-              className="group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-btnText bg-btnSimple rounded-[6px] w-[24px] h-[24px] flex items-center justify-center cursor-pointer select-none"
+              className="group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-btnText bg-btnSimple rounded-[6px] w-[24px] h-[24px] flex items-center justify-center cursor-pointer select-none hidden md:flex"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -170,9 +170,10 @@ export const Plugs = () => {
                 setCurrent(index);
               }}
               className={clsx(
-                'flex gap-[8px] items-center justify-center group/profile hover:bg-boxHover rounded-e-[8px]',
+                'flex gap-[12px] items-center group/profile justify-center hover:bg-boxHover rounded-[8px] md:rounded-e-[8px] px-3 md:px-0 py-2 md:py-0 bg-sixth md:bg-transparent min-w-fit md:min-w-0',
                 currentIntegration.id !== integration.id &&
-                  'opacity-20 hover:opacity-100 cursor-pointer'
+                'opacity-50 md:opacity-20 hover:opacity-100 cursor-pointer',
+                currentIntegration.id === integration.id && 'bg-boxHover md:bg-transparent'
               )}
             >
               <div
@@ -189,7 +190,7 @@ export const Plugs = () => {
                     <div className="bg-primary/60 w-[39px] h-[46px] start-0 top-0 absolute rounded-full z-[199]" />
                   </div>
                 )}
-                <div className="h-full w-[4px] -ms-[12px] rounded-s-[3px] opacity-0 group-hover/profile:opacity-100 transition-opacity">
+                <div className="h-full w-[4px] -ms-[12px] rounded-s-[3px] opacity-0 group-hover/profile:opacity-100 transition-opacity hidden md:block">
                   <SVGLine />
                 </div>
                 <ImageWithFallback
@@ -220,11 +221,11 @@ export const Plugs = () => {
           ))}
         </div>
       </div>
-      <div className="bg-newBgColorInner flex-1 flex-col flex p-[20px] gap-[12px]">
+      <div className="bg-newBgColorInner flex-1 flex-col flex p-[16px] md:p-[20px] gap-[16px] md:gap-[20px] overflow-y-auto w-full md:w-auto shadow-sm">
         <PlugsContext.Provider value={currentIntegrationPlug}>
           <Plug />
         </PlugsContext.Provider>
       </div>
-    </>
+    </div>
   );
 };
