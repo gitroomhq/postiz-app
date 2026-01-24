@@ -397,6 +397,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
               }),
           ...(firstPost?.settings?.community
             ? {
+                share_with_followers: true,
                 community_id:
                   firstPost?.settings?.community?.split('/').pop() || '',
               }
