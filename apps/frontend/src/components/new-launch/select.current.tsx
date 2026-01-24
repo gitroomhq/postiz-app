@@ -99,6 +99,10 @@ export const SelectCurrent: FC = () => {
             >
               <IsGlobal id={integration.id} />
               <div
+                {...{
+                  'data-tooltip-id': 'tooltip',
+                  'data-tooltip-content': integration.name,
+                }}
                 className={clsx(
                   'relative w-full h-full rounded-full flex justify-center items-center filter transition-all duration-500'
                 )}
@@ -109,6 +113,10 @@ export const SelectCurrent: FC = () => {
                   alt={integration.identifier}
                   width={26}
                   height={26}
+                  onError={(e) => {
+                    e.currentTarget.src = '/no-picture.jpg';
+                    e.currentTarget.srcset = '/no-picture.jpg';
+                  }}
                 />
                 {integration.identifier === 'youtube' ? (
                   <img

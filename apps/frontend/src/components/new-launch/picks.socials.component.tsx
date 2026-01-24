@@ -27,13 +27,13 @@ export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
     }))
   );
 
-
   return (
     <div className={clsx('flex', locked && 'opacity-50 pointer-events-none')}>
       <div className="flex flex-1">
         <div className="innerComponent flex-1 flex">
           <div className="flex flex-wrap gap-[12px] flex-1">
-            {integrations.filter((f) => {
+            {integrations
+              .filter((f) => {
                 if (exising.integration) {
                   return f.id === exising.integration;
                 }
@@ -64,20 +64,28 @@ export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
                         : 'border-[#622FF6]'
                     )}
                   >
-                    <Image
-                      src={integration.picture || '/no-picture.jpg'}
-                      className={clsx(
-                        'rounded-full transition-all min-w-[42px] border-[1.5px] min-h-[42px]',
-                        selectedIntegrations.findIndex(
-                          (p) => p.integration.id === integration.id
-                        ) === -1
-                          ? 'border-transparent'
-                          : 'border-[#000]'
-                      )}
-                      alt={integration.identifier}
-                      width={42}
-                      height={42}
-                    />
+                    <div
+                      className="rounded-full min-w-[42px] min-h-[42px] bg-contain bg-center bg-no-repeat"
+                      style={{ backgroundImage: `url(/no-picture.jpg)` }}
+                    >
+                      <Image
+                        src={integration.picture || '/no-picture.jpg'}
+                        className={clsx(
+                          'rounded-full transition-all min-w-[42px] border-[1.5px] min-h-[42px]',
+                          selectedIntegrations.findIndex(
+                            (p) => p.integration.id === integration.id
+                          ) === -1
+                            ? 'border-transparent'
+                            : 'border-[#000]'
+                        )}
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                        alt={integration.identifier}
+                        width={42}
+                        height={42}
+                      />
+                    </div>
                     {integration.identifier === 'youtube' ? (
                       <img
                         src="/icons/platforms/youtube.svg"

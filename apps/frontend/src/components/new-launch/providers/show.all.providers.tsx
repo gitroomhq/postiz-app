@@ -15,6 +15,7 @@ import DribbbleProvider from '@gitroom/frontend/components/new-launch/providers/
 import ThreadsProvider from '@gitroom/frontend/components/new-launch/providers/threads/threads.provider';
 import DiscordProvider from '@gitroom/frontend/components/new-launch/providers/discord/discord.provider';
 import SlackProvider from '@gitroom/frontend/components/new-launch/providers/slack/slack.provider';
+import KickProvider from '@gitroom/frontend/components/new-launch/providers/kick/kick.provider';
 import MastodonProvider from '@gitroom/frontend/components/new-launch/providers/mastodon/mastodon.provider';
 import BlueskyProvider from '@gitroom/frontend/components/new-launch/providers/bluesky/bluesky.provider';
 import LemmyProvider from '@gitroom/frontend/components/new-launch/providers/lemmy/lemmy.provider';
@@ -102,6 +103,10 @@ export const Providers = [
   {
     identifier: 'slack',
     component: SlackProvider,
+  },
+  {
+    identifier: 'kick',
+    component: KickProvider,
   },
   {
     identifier: 'mastodon',
