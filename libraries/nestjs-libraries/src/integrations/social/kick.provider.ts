@@ -9,7 +9,6 @@ import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.ab
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 import { KickDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/kick.dto';
-import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 import { createHash, randomBytes } from 'crypto';
 
 export class KickProvider extends SocialAbstract implements SocialProvider {
@@ -154,47 +153,6 @@ export class KickProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
-  @Tool({
-    description: 'Get list of channels/broadcasters the user can post to',
-    dataSchema: [],
-  })
-  async channels(accessToken: string, params: any, id: string) {
-    // For Kick, when using a user token, we need to know which broadcaster to post to
-    // The user posting as themselves would post to their own channel
-    // Try to get channels the user has access to
-
-    try {
-      const response = await fetch('https://api.kick.com/public/v1/channels', {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const channels = data.data || [];
-        return channels.map((channel: any) => ({
-          id: String(
-            channel.broadcaster_user_id || channel.user_id || channel.id
-          ),
-          name: channel.slug || channel.username || channel.name,
-        }));
-      }
-    } catch (e) {
-      // Fall back to returning the authenticated user's info
-    }
-
-    // If no channels found, return the user's own channel
-    // The id parameter is the user's own ID from authentication
-    return [
-      {
-        id: id,
-        name: 'My Channel',
-      },
-    ];
-  }
-
   async post(
     id: string,
     accessToken: string,
@@ -202,7 +160,6 @@ export class KickProvider extends SocialAbstract implements SocialProvider {
     integration: Integration
   ): Promise<PostResponse[]> {
     const [firstPost] = postDetails;
-    const broadcasterUserId = firstPost.settings.broadcasterUserId;
 
     // Post chat message to Kick
     // Note: Kick chat doesn't support media attachments directly in messages
@@ -215,7 +172,7 @@ export class KickProvider extends SocialAbstract implements SocialProvider {
       body: JSON.stringify({
         type: 'user',
         content: firstPost.message.substring(0, 500), // Ensure max length
-        broadcaster_user_id: parseInt(broadcasterUserId, 10),
+        broadcaster_user_id: parseInt(id, 10),
       }),
     });
 
@@ -240,7 +197,6 @@ export class KickProvider extends SocialAbstract implements SocialProvider {
     integration: Integration
   ): Promise<PostResponse[]> {
     const [commentPost] = postDetails;
-    const broadcasterUserId = commentPost.settings.broadcasterUserId;
 
     // Kick supports reply_to_message_id for replies
     const response = await this.fetch('https://api.kick.com/public/v1/chat', {
@@ -252,7 +208,7 @@ export class KickProvider extends SocialAbstract implements SocialProvider {
       body: JSON.stringify({
         type: 'user',
         content: commentPost.message.substring(0, 500),
-        broadcaster_user_id: parseInt(broadcasterUserId, 10),
+        broadcaster_user_id: parseInt(id, 10),
         reply_to_message_id: lastCommentId || postId,
       }),
     });
