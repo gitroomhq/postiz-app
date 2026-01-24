@@ -16,6 +16,7 @@ import ThreadsProvider from '@gitroom/frontend/components/new-launch/providers/t
 import DiscordProvider from '@gitroom/frontend/components/new-launch/providers/discord/discord.provider';
 import SlackProvider from '@gitroom/frontend/components/new-launch/providers/slack/slack.provider';
 import KickProvider from '@gitroom/frontend/components/new-launch/providers/kick/kick.provider';
+import TwitchProvider from '@gitroom/frontend/components/new-launch/providers/twitch/twitch.provider';
 import MastodonProvider from '@gitroom/frontend/components/new-launch/providers/mastodon/mastodon.provider';
 import BlueskyProvider from '@gitroom/frontend/components/new-launch/providers/bluesky/bluesky.provider';
 import LemmyProvider from '@gitroom/frontend/components/new-launch/providers/lemmy/lemmy.provider';
@@ -107,6 +108,10 @@ export const Providers = [
   {
     identifier: 'kick',
     component: KickProvider,
+  },
+  {
+    identifier: 'twitch',
+    component: TwitchProvider,
   },
   {
     identifier: 'mastodon',

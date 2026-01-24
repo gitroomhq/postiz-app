@@ -8,6 +8,7 @@ import { DribbbleDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-sett
 import { DiscordDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/discord.dto';
 import { SlackDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/slack.dto';
 import { KickDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/kick.dto';
+import { TwitchDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/twitch.dto';
 import { InstagramDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/instagram.dto';
 import { LinkedinDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/linkedin.dto';
 import { IsIn } from 'class-validator';
@@ -31,6 +32,7 @@ export type AllProvidersSettings =
   | ProviderExtension<'discord', DiscordDto>
   | ProviderExtension<'slack', SlackDto>
   | ProviderExtension<'kick', KickDto>
+  | ProviderExtension<'twitch', TwitchDto>
   | ProviderExtension<'x', XDto>
   | ProviderExtension<'linkedin', LinkedinDto>
   | ProviderExtension<'linkedin-page', LinkedinDto>
@@ -64,6 +66,7 @@ export const allProviders = (setEmpty?: any) => {
     { value: DiscordDto, name: 'discord' },
     { value: SlackDto, name: 'slack' },
     { value: KickDto, name: 'kick' },
+    { value: TwitchDto, name: 'twitch' },
     { value: XDto, name: 'x' },
     { value: LinkedinDto, name: 'linkedin' },
     { value: LinkedinDto, name: 'linkedin-page' },
