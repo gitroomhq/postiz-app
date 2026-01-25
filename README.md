@@ -62,6 +62,8 @@
   <a href="https://www.npmjs.com/package/n8n-nodes-postiz">N8N custom node</a>
   ·
   <a href="https://apps.make.com/postiz">Make.com integration</a>
+  ·
+  <a href="apps/desktop/README.md">Desktop App (macOS)</a>
 </p>
 
 

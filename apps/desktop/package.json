@@ -1,0 +1,23 @@
+{
+  "name": "@gitroom/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Postiz Desktop App - Social media scheduling without Docker",
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "start": "ts-node src/main.ts",
+    "start:services": "ts-node src/main.ts"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "^0.2.0",
+    "@tauri-apps/api": "^2.0.0",
+    "dotenv": "^16.5.0"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0",
+    "@types/node": "^18.16.9",
+    "typescript": "^5.0.0",
+    "ts-node": "^10.9.0"
+  }
+}
