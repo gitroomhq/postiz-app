@@ -102,6 +102,75 @@ Output files:
 - `target/release/bundle/macos/Postiz.app` - Native macOS app bundle
 - `target/release/bundle/dmg/Postiz_0.1.0_aarch64.dmg` - DMG installer
 
+## Building a Self-Contained DMG
+
+To create a fully self-contained DMG (~950MB) that bundles all services and requires no external dependencies:
+
+### 1. Build all services
+
+```bash
+# From the repository root
+pnpm run build:backend
+pnpm run build:frontend
+cd apps/orchestrator && pnpm run build && cd ../..
+```
+
+### 2. Prepare sidecars and resources
+
+This downloads Node.js, deploys production dependencies, and prunes unnecessary packages:
+
+```bash
+cd apps/desktop
+npx ts-node scripts/prepare-sidecars.ts
+```
+
+The script:
+- Downloads Node.js binary for the target platform (~116MB)
+- Uses `pnpm deploy` to create minimal production deployments
+- Copies compiled dist folders from NestJS builds
+- Prunes ~975MB of dev-only packages per service
+- Removes symlinks that break Tauri bundling
+
+### 3. Build the Tauri app
+
+```bash
+pnpm run build
+```
+
+Build time is ~8 minutes (mostly due to resource enumeration).
+
+### Output
+
+| Artifact | Size |
+|----------|------|
+| `Postiz.app` (uncompressed) | ~5GB |
+| `Postiz_0.1.0_aarch64.dmg` (compressed) | ~950MB |
+
+### Bundle Contents
+
+```
+Postiz.app/Contents/
+├── MacOS/
+│   ├── postiz-desktop    # Tauri binary (Rust)
+│   ├── node              # Node.js runtime (sidecar)
+│   └── temporal          # Temporal CLI (sidecar)
+└── Resources/
+    └── resources/
+        ├── backend/      # NestJS backend + dependencies
+        ├── orchestrator/ # Temporal worker + dependencies
+        └── frontend/     # Next.js standalone
+```
+
+### Cross-Platform Builds
+
+The `prepare-sidecars.ts` script auto-detects the target platform. Supported targets:
+
+- `aarch64-apple-darwin` (macOS Apple Silicon)
+- `x86_64-apple-darwin` (macOS Intel)
+- `x86_64-unknown-linux-gnu` (Linux x64)
+- `aarch64-unknown-linux-gnu` (Linux ARM64)
+- `x86_64-pc-windows-msvc` (Windows x64)
+
 ## Configuration
 
 See `.env.desktop.example` for all configuration options.

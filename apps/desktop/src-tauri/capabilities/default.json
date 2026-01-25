@@ -1,0 +1,35 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Default capabilities for the Postiz desktop app",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "shell:allow-spawn",
+    "shell:allow-execute",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "binaries/node",
+          "sidecar": true,
+          "args": true
+        },
+        {
+          "name": "binaries/temporal",
+          "sidecar": true,
+          "args": [
+            "server",
+            "start-dev",
+            { "validator": "\\A--db-filename\\z" },
+            { "validator": "\\A[^-].*\\z" },
+            { "validator": "\\A--port\\z" },
+            { "validator": "\\A\\d+\\z" },
+            { "validator": "\\A--ui-port\\z" },
+            { "validator": "\\A\\d+\\z" }
+          ]
+        }
+      ]
+    }
+  ]
+}
