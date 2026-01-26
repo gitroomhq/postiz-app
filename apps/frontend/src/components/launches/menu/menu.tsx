@@ -216,7 +216,7 @@ export const Menu: FC<{
             mutate={reloadCalendarView}
             integrations={integrations}
             selectedChannels={[integration.id]}
-            focusedChannel={integration.id}
+            // focusedChannel={integration.id}
             date={dayjs.utc(date).local()}
           />
         ),
