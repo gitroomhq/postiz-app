@@ -89,6 +89,19 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
       })
     ).json();
 
+    let maxCharacters = 500;
+    try {
+      const instanceInfo = await (
+        await this.fetch(`${url}/api/v1/instance`, {
+          method: 'GET',
+        })
+      ).json();
+      maxCharacters =
+        instanceInfo?.configuration?.statuses?.max_characters ?? 500;
+    } catch {
+      // Keep default maxCharacters = 500 on failure
+    }
+
     return {
       id: personalInformation.id,
       name: personalInformation.display_name || personalInformation.acct,
@@ -97,6 +110,14 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
       expiresIn: dayjs().add(100, 'years').unix() - dayjs().unix(),
       picture: personalInformation?.avatar || '',
       username: personalInformation.username,
+      additionalSettings: [
+        {
+          title: 'Max characters',
+          description: 'Maximum characters per post for this instance',
+          type: 'text' as const,
+          value: maxCharacters,
+        },
+      ],
     };
   }
 
