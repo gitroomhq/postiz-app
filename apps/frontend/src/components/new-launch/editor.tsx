@@ -571,7 +571,7 @@ export const Editor: FC<{
       uppy.clear();
     },
     allowedFileTypes: 'image/*,video/mp4',
-    onStart: () => setLoading(true),
+    onStart: () => {},
     onEnd: () => setLoading(false),
   });
 
@@ -634,7 +634,9 @@ export const Editor: FC<{
         return;
       }
 
-      setLoading(true);
+      if (files.length > 0) {
+        setLoading(true);
+      }
 
       for (const file of files) {
         uppy.addFile(file);
@@ -646,8 +648,11 @@ export const Editor: FC<{
   const { getRootProps, isDragActive } = useDropzone({
     onDrop: (files) => {
       if (loading) {
-        toaster.show('Upload current in progress, please wait and then try again.', 'warning');
-        return ;
+        toaster.show(
+          'Upload current in progress, please wait and then try again.',
+          'warning'
+        );
+        return;
       }
       onDrop(files);
     },

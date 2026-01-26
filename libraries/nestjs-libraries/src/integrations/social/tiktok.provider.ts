@@ -52,7 +52,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
     if (body.indexOf('scope_not_authorized') > -1) {
       return {
-        type: 'refresh-token' as const,
+        type: 'bad-body' as const,
         value:
           'Missing required permissions, please re-authenticate with all scopes',
       };
@@ -60,7 +60,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
     if (body.indexOf('scope_permission_missed') > -1) {
       return {
-        type: 'refresh-token' as const,
+        type: 'bad-body' as const,
         value: 'Additional permissions required, please re-authenticate',
       };
     }
