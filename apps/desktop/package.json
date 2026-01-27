@@ -11,9 +11,7 @@
     "help": "npx ts-node scripts/build-desktop.ts --help"
   },
   "dependencies": {
-    "@electric-sql/pglite": "^0.2.0",
-    "@tauri-apps/api": "^2.0.0",
-    "dotenv": "^16.5.0"
+    "@tauri-apps/api": "^2.0.0"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.0.0",

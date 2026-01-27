@@ -206,10 +206,10 @@ apps/desktop/
 ├── src-tauri/           # Tauri/Rust native app
 │   ├── tauri.conf.json  # Window config, CSP, bundling
 │   ├── icons/           # macOS app icons (.icns, iconset)
-│   └── src/main.rs      # Rust entry point
-├── src/
-│   ├── main.ts          # Service orchestration
-│   └── service-manager.ts  # Process lifecycle
+│   └── src/main.rs      # Service orchestration & process lifecycle
+├── scripts/
+│   ├── build-desktop.ts # Build script for bundling sidecars
+│   └── download-temporal.sh
 └── package.json
 ```
 
