@@ -570,6 +570,7 @@ export class PostsService {
         ?.workflow.start('postWorkflowV101', {
           workflowId: `post_${postId}`,
           taskQueue: 'main',
+          workflowIdConflictPolicy: 'TERMINATE_EXISTING',
           args: [
             {
               taskQueue: taskQueue,
