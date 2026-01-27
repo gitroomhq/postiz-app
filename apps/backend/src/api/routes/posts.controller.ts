@@ -171,9 +171,10 @@ export class PostsController {
   changeDate(
     @GetOrgFromRequest() org: Organization,
     @Param('id') id: string,
-    @Body('date') date: string
+    @Body('date') date: string,
+    @Body('action') action: 'schedule' | 'update' = 'schedule'
   ) {
-    return this._postsService.changeDate(org.id, id, date);
+    return this._postsService.changeDate(org.id, id, date, action);
   }
 
   @Post('/separate-posts')

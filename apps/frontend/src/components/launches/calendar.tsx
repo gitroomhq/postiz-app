@@ -54,6 +54,7 @@ import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import { Button } from '@gitroom/react/form/button';
 
 // Extend dayjs with necessary plugins
 extend(isSameOrAfter);
@@ -418,6 +419,68 @@ export const CalendarColumn: FC<{
     accept: 'post',
     drop: async (item: any) => {
       if (isBeforeNow) return;
+
+      // Find the post to check its state
+      const post = posts.find((p) => p.id === item.id);
+      let action: 'schedule' | 'update' = 'schedule';
+
+      // Check if post is already published or queued in the past
+      if (
+        post &&
+        (post.state === 'PUBLISHED' ||
+          (post.state === 'QUEUE' && dayjs().isAfter(dayjs.utc(post.publishDate))))
+      ) {
+        const whatToDo = await new Promise<'schedule' | 'update' | 'cancel'>(
+          (resolve) => {
+            modal.openModal({
+              title: t('what_do_you_want_to_do', 'What do you want to do?'),
+              children: (
+                <div className="flex flex-col">
+                  <div className="text-[20px] mb-[20px]">
+                    {t(
+                      'post_already_published_drag',
+                      'This post was already published, what do you want to do?'
+                    )}
+                  </div>
+                  <div className="flex w-full gap-[10px]">
+                    <div className="flex-1 flex">
+                      <Button
+                        type="button"
+                        className="flex-1"
+                        onClick={() => {
+                          modal.closeAll();
+                          resolve('update');
+                        }}
+                      >
+                        {t('just_update_post_details', 'Just update the post details')}
+                      </Button>
+                    </div>
+                    <div className="flex-1 flex">
+                      <Button
+                        type="button"
+                        className="flex-1"
+                        onClick={() => {
+                          modal.closeAll();
+                          resolve('schedule');
+                        }}
+                      >
+                        {t('reschedule_post', 'Reschedule the post')}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ),
+              onClose: () => resolve('cancel'),
+            });
+          }
+        );
+
+        if (whatToDo === 'cancel') {
+          return;
+        }
+        action = whatToDo;
+      }
+
       if (!item.interval) {
         changeDate(item.id, getDate);
       }
@@ -425,10 +488,11 @@ export const CalendarColumn: FC<{
         method: 'PUT',
         body: JSON.stringify({
           date: getDate.utc().format('YYYY-MM-DDTHH:mm:ss'),
+          action,
         }),
       });
       if (status !== 500) {
-        if (item.interval) {
+        if (item.interval || action === 'schedule') {
           reloadCalendarView();
           return;
         }
@@ -438,7 +502,7 @@ export const CalendarColumn: FC<{
     collect: (monitor) => ({
       canDrop: isBeforeNow ? false : !!monitor.canDrop() && !!monitor.isOver(),
     }),
-  }));
+  }), [posts]);
 
   const editPost = useCallback(
     (

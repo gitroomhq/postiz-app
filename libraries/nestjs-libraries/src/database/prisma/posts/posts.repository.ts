@@ -330,15 +330,29 @@ export class PostsRepository {
     return update;
   }
 
-  async changeDate(orgId: string, id: string, date: string, isDraft: boolean) {
+  async changeDate(
+    orgId: string,
+    id: string,
+    date: string,
+    isDraft: boolean,
+    action: 'schedule' | 'update' = 'schedule'
+  ) {
     return this._post.model.post.update({
       where: {
         organizationId: orgId,
         id,
       },
       data: {
-        state: isDraft ? 'DRAFT' : 'QUEUE',
         publishDate: dayjs(date).toDate(),
+        // schedule: set state to QUEUE (or DRAFT if it was a draft)
+        // update: don't change the state
+        ...(action === 'schedule'
+          ? {
+              state: isDraft ? 'DRAFT' : 'QUEUE',
+              releaseId: null,
+              releaseURL: null,
+            }
+          : {}),
       },
     });
   }
@@ -366,7 +380,7 @@ export class PostsRepository {
   }
 
   async createOrUpdatePost(
-    state: 'draft' | 'schedule' | 'now',
+    state: 'draft' | 'schedule' | 'now' | 'update',
     orgId: string,
     date: string,
     body: PostBody,
@@ -405,7 +419,12 @@ export class PostsRepository {
         group: uuid,
         intervalInDays: inter ? +inter : null,
         approvedSubmitForOrder: APPROVED_SUBMIT_FOR_ORDER.NO,
-        state: state === 'draft' ? ('DRAFT' as const) : ('QUEUE' as const),
+        ...(state === 'update'
+          ? {}
+          : {
+              state:
+                state === 'draft' ? ('DRAFT' as const) : ('QUEUE' as const),
+            }),
         image: JSON.stringify(value.image),
         settings: JSON.stringify(body.settings),
         organization: {

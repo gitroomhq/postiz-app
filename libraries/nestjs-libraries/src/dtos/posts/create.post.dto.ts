@@ -88,8 +88,8 @@ class Tags {
 
 export class CreatePostDto {
   @IsDefined()
-  @IsIn(['draft', 'schedule', 'now'])
-  type: 'draft' | 'schedule' | 'now';
+  @IsIn(['draft', 'schedule', 'now', 'update'])
+  type: 'draft' | 'schedule' | 'now' | 'update';
 
   @IsOptional()
   @IsString()

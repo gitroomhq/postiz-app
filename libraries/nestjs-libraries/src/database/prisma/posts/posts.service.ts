@@ -627,12 +627,14 @@ export class PostsService {
         return [] as any[];
       }
 
-      this.startWorkflow(
-        post.settings.__type.split('-')[0].toLowerCase(),
-        posts[0].id,
-        orgId,
-        posts[0].state
-      ).catch((err) => {});
+      if (body.type !== 'update') {
+        this.startWorkflow(
+          post.settings.__type.split('-')[0].toLowerCase(),
+          posts[0].id,
+          orgId,
+          posts[0].state
+        ).catch((err) => {});
+      }
 
       Sentry.metrics.count('post_created', 1);
       postList.push({
@@ -652,23 +654,34 @@ export class PostsService {
     return this._postRepository.changeState(id, state, err, body);
   }
 
-  async changeDate(orgId: string, id: string, date: string) {
+  async changeDate(
+    orgId: string,
+    id: string,
+    date: string,
+    action: 'schedule' | 'update' = 'schedule'
+  ) {
     const getPostById = await this._postRepository.getPostById(id, orgId);
+
+    // schedule: Set status to QUEUE and change date (reschedule the post)
+    // update: Just change the date without changing the status
     const newDate = await this._postRepository.changeDate(
       orgId,
       id,
       date,
-      getPostById.state === 'DRAFT'
+      getPostById.state === 'DRAFT',
+      action
     );
 
-    try {
-      await this.startWorkflow(
-        getPostById.integration.providerIdentifier.split('-')[0].toLowerCase(),
-        getPostById.id,
-        orgId,
-        getPostById.state
-      );
-    } catch (err) {}
+    if (action === 'schedule') {
+      try {
+        await this.startWorkflow(
+          getPostById.integration.providerIdentifier.split('-')[0].toLowerCase(),
+          getPostById.id,
+          orgId,
+          getPostById.state === 'DRAFT' ? 'DRAFT' : 'QUEUE'
+        );
+      } catch (err) {}
+    }
 
     return newDate;
   }
