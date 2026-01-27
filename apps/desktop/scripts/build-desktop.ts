@@ -171,11 +171,13 @@ function getDirSize(dir: string): string {
 /**
  * Packages that are dev-only or not needed at runtime.
  * These get pulled in via pnpm workspace hoisting but aren't actually used.
+ * NOTE: Keep webpack and webpack-cli - needed by @temporalio/worker for bundling workflows
  */
 const PACKAGES_TO_PRUNE = [
   // Build tools (not needed at runtime)
+  // NOTE: webpack/webpack-cli are NOT pruned - needed by @temporalio/worker at runtime
   'typescript', '@types', 'ts-node', 'ts-loader',
-  'webpack', 'webpack-cli', 'webpack-dev-server', 'webpack-merge',
+  'webpack-dev-server', 'webpack-merge',
   'fork-ts-checker-webpack-plugin', 'terser-webpack-plugin',
   'esbuild', '@esbuild', 'rollup', '@rollup',
   '@swc', 'swc-loader',
@@ -559,11 +561,12 @@ Examples:
 `);
 }
 
-function runCommand(command: string, args: string[], options: { cwd?: string } = {}): boolean {
+function runCommand(command: string, args: string[], options: { cwd?: string; env?: Record<string, string> } = {}): boolean {
   console.log(`  $ ${command} ${args.join(' ')}`);
   const result = spawnSync(command, args, {
     stdio: 'inherit',
     cwd: options.cwd || ROOT_DIR,
+    env: { ...process.env, ...options.env },
   });
   return result.status === 0;
 }
@@ -637,7 +640,8 @@ async function main(): Promise<void> {
   // Full build: Step 2 - Build apps
   if (isFullBuild && !process.env.POSTIZ_SKIP_BUILD) {
     console.log('\n🔨 [2/5] Building backend, frontend, and orchestrator...');
-    if (!runCommand('pnpm', ['run', 'build'])) {
+    // DESKTOP_BUILD=1 enables Next.js standalone output for bundling
+    if (!runCommand('pnpm', ['run', 'build'], { env: { DESKTOP_BUILD: '1' } })) {
       console.log('✗ Failed to build apps');
       process.exit(1);
     }
