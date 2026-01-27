@@ -365,6 +365,15 @@ async function prepareBackendResources(): Promise<void> {
       path.join(backendDir, 'dist')
     );
 
+    // Copy generated Prisma client (prisma generate outputs to root node_modules/.prisma/)
+    console.log('  Copying generated Prisma client...');
+    const prismaClientSrc = path.join(ROOT_DIR, 'node_modules/.prisma/client');
+    const prismaClientDest = path.join(backendDir, 'node_modules/.prisma/client');
+    if (fs.existsSync(prismaClientSrc)) {
+      ensureDir(path.dirname(prismaClientDest));
+      copyDirSync(prismaClientSrc, prismaClientDest);
+    }
+
     // Prune dev-only and unnecessary packages
     pruneNodeModules(path.join(backendDir, 'node_modules'));
 
@@ -437,6 +446,15 @@ async function prepareOrchestratorResources(): Promise<void> {
       path.join(ROOT_DIR, 'apps/orchestrator/dist'),
       path.join(orchestratorDir, 'dist')
     );
+
+    // Copy generated Prisma client (prisma generate outputs to root node_modules/.prisma/)
+    console.log('  Copying generated Prisma client...');
+    const prismaClientSrc = path.join(ROOT_DIR, 'node_modules/.prisma/client');
+    const prismaClientDest = path.join(orchestratorDir, 'node_modules/.prisma/client');
+    if (fs.existsSync(prismaClientSrc)) {
+      ensureDir(path.dirname(prismaClientDest));
+      copyDirSync(prismaClientSrc, prismaClientDest);
+    }
 
     // Prune dev-only and unnecessary packages
     pruneNodeModules(path.join(orchestratorDir, 'node_modules'));
