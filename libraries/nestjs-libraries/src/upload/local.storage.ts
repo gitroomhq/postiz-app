@@ -1,4 +1,4 @@
-import { IUploadProvider } from './upload.interface';
+import { IUploadProvider, UploadSimpleOptions } from './upload.interface';
 import { mkdirSync, unlink, writeFileSync } from 'fs';
 // @ts-ignore
 import mime from 'mime';
@@ -8,8 +8,15 @@ import axios from 'axios';
 export class LocalStorage implements IUploadProvider {
   constructor(private uploadDirectory: string) {}
 
-  async uploadSimple(path: string) {
-    const loadImage = await axios.get(path, { responseType: 'arraybuffer' });
+  async uploadSimple(path: string, options?: UploadSimpleOptions) {
+    const loadImage = await axios.get(path, {
+      responseType: 'arraybuffer',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; Postiz/1.0)',
+        Accept: 'image/*',
+        ...options?.headers,
+      },
+    });
     const contentType =
       loadImage?.headers?.['content-type'] ||
       loadImage?.headers?.['Content-Type'];
