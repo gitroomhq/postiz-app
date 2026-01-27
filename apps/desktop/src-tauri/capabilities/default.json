@@ -11,12 +11,12 @@
       "identifier": "shell:allow-execute",
       "allow": [
         {
-          "name": "binaries/node",
+          "name": "node",
           "sidecar": true,
           "args": true
         },
         {
-          "name": "binaries/temporal",
+          "name": "temporal",
           "sidecar": true,
           "args": [
             "server",

@@ -3,6 +3,9 @@ import { withSentryConfig } from '@sentry/nextjs';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Enable standalone output for desktop builds (creates minimal server for bundling)
+  // This doesn't affect Docker/web deployments when DESKTOP_BUILD is not set
+  ...(process.env.DESKTOP_BUILD ? { output: 'standalone' } : {}),
   experimental: {
     proxyTimeout: 90_000,
   },

@@ -1,18 +1,29 @@
 #!/usr/bin/env ts-node
 /**
- * Prepare sidecars and resources for Postiz desktop app
+ * Postiz Desktop App - Build Script
+ *
+ * Single command to build the complete macOS desktop app:
+ *   pnpm run desktop:build
+ *
+ * Or from this directory:
+ *   npx ts-node scripts/build-desktop.ts           # Prepare resources only
+ *   npx ts-node scripts/build-desktop.ts --full    # Full build + package
  *
  * This script:
  * 1. Downloads Node.js binary for the target platform (sidecar)
- * 2. Uses pnpm deploy to create minimal production deployments
+ * 2. Downloads Temporal CLI (via download-temporal.sh)
+ * 3. Builds backend, frontend, and orchestrator (if --full)
+ * 4. Uses pnpm deploy to create minimal production deployments
+ * 5. Builds Tauri app and creates DMG (if --full)
  *
- * The Tauri app ships:
- * - Node.js as a sidecar (spawned to run JS code)
- * - Temporal CLI as a sidecar
- * - JS code + production dependencies as resources
+ * Configuration:
+ * - POSTIZ_SKIP_DEPS=1    Skip pnpm install
+ * - POSTIZ_SKIP_BUILD=1   Skip app building (use existing dist/)
  *
- * Usage:
- *   npx ts-node scripts/prepare-sidecars.ts
+ * Prerequisites:
+ * - Rust toolchain (rustup)
+ * - Node.js 22+
+ * - pnpm
  */
 
 import { spawnSync } from 'child_process';
@@ -516,35 +527,161 @@ async function prepareFrontendResources(): Promise<void> {
   console.log('✓ Frontend resources ready');
 }
 
+// Parse command line arguments
+const args = process.argv.slice(2);
+const isFullBuild = args.includes('--full') || args.includes('-f');
+const showHelp = args.includes('--help') || args.includes('-h');
+
+function printHelp(): void {
+  console.log(`
+Postiz Desktop App - Build Script
+
+Usage:
+  npx ts-node scripts/build-desktop.ts [options]
+
+Options:
+  --full, -f    Full build: install deps, build apps, prepare resources, build Tauri
+  --help, -h    Show this help message
+
+Environment Variables:
+  POSTIZ_SKIP_DEPS=1    Skip pnpm install (use existing node_modules)
+  POSTIZ_SKIP_BUILD=1   Skip app building (use existing dist/)
+
+Examples:
+  # Prepare resources only (for development)
+  npx ts-node scripts/build-desktop.ts
+
+  # Full build from scratch
+  npx ts-node scripts/build-desktop.ts --full
+
+  # Full build but skip npm install
+  POSTIZ_SKIP_DEPS=1 npx ts-node scripts/build-desktop.ts --full
+`);
+}
+
+function runCommand(command: string, args: string[], options: { cwd?: string } = {}): boolean {
+  console.log(`  $ ${command} ${args.join(' ')}`);
+  const result = spawnSync(command, args, {
+    stdio: 'inherit',
+    cwd: options.cwd || ROOT_DIR,
+  });
+  return result.status === 0;
+}
+
+function checkPrerequisites(): boolean {
+  console.log('\n🔍 Checking prerequisites...');
+  let allGood = true;
+
+  // Check Rust (only needed for --full)
+  if (isFullBuild) {
+    const rustResult = spawnSync('rustc', ['--version'], { encoding: 'utf-8' });
+    if (rustResult.status === 0) {
+      console.log(`  ✓ Rust: ${rustResult.stdout.trim()}`);
+    } else {
+      console.log('  ✗ Rust not found. Install from https://rustup.rs');
+      allGood = false;
+    }
+  }
+
+  // Check pnpm
+  const pnpmResult = spawnSync('pnpm', ['--version'], { encoding: 'utf-8' });
+  if (pnpmResult.status === 0) {
+    console.log(`  ✓ pnpm: ${pnpmResult.stdout.trim()}`);
+  } else {
+    console.log('  ✗ pnpm not found. Install with: npm install -g pnpm');
+    allGood = false;
+  }
+
+  // Check Node.js version
+  const nodeVersion = process.version.match(/^v(\d+)/)?.[1];
+  if (nodeVersion && parseInt(nodeVersion) >= 22) {
+    console.log(`  ✓ Node.js: ${process.version}`);
+  } else {
+    console.log(`  ⚠ Node.js 22+ recommended (found ${process.version})`);
+  }
+
+  return allGood;
+}
+
 async function main(): Promise<void> {
+  if (showHelp) {
+    printHelp();
+    process.exit(0);
+  }
+
+  const startTime = Date.now();
   const targetTriple = detectTargetTriple();
 
   console.log('='.repeat(60));
-  console.log('  Postiz Desktop - Sidecar & Resource Preparation');
+  console.log('  Postiz Desktop - Build Script');
   console.log('='.repeat(60));
   console.log(`Target: ${targetTriple}`);
-  console.log('');
+  console.log(`Mode: ${isFullBuild ? 'Full build (--full)' : 'Prepare resources only'}`);
 
-  // 1. Download Node.js binary
-  console.log('📥 Preparing Node.js sidecar...');
+  // Check prerequisites
+  if (!checkPrerequisites()) {
+    console.log('\n✗ Prerequisites not met. Please install missing tools.');
+    process.exit(1);
+  }
+
+  // Full build: Step 1 - Install dependencies
+  if (isFullBuild && !process.env.POSTIZ_SKIP_DEPS) {
+    console.log('\n📦 [1/5] Installing dependencies...');
+    if (!runCommand('pnpm', ['install'])) {
+      console.log('✗ Failed to install dependencies');
+      process.exit(1);
+    }
+    console.log('✓ Dependencies installed');
+  }
+
+  // Full build: Step 2 - Build apps
+  if (isFullBuild && !process.env.POSTIZ_SKIP_BUILD) {
+    console.log('\n🔨 [2/5] Building backend, frontend, and orchestrator...');
+    if (!runCommand('pnpm', ['run', 'build'])) {
+      console.log('✗ Failed to build apps');
+      process.exit(1);
+    }
+    console.log('✓ Apps built');
+  }
+
+  // Step 3 - Download sidecars
+  console.log(`\n📥 ${isFullBuild ? '[3/5]' : '[1/3]'} Preparing sidecars...`);
+
+  // Download Node.js
+  console.log('  Downloading Node.js sidecar...');
   await downloadNodeBinary(targetTriple);
 
-  // 2. Prepare service resources
+  // Download Temporal (use existing script)
+  const temporalPath = path.join(BINARIES_DIR, `temporal-${targetTriple}`);
+  if (!fs.existsSync(temporalPath)) {
+    console.log('  Downloading Temporal sidecar...');
+    const temporalScript = path.join(DESKTOP_DIR, 'scripts', 'download-temporal.sh');
+    if (fs.existsSync(temporalScript)) {
+      runCommand('bash', [temporalScript], { cwd: DESKTOP_DIR });
+    }
+  } else {
+    console.log('  ✓ Temporal sidecar already exists');
+  }
+
+  // Step 4 - Prepare resources
+  console.log(`\n📦 ${isFullBuild ? '[4/5]' : '[2/3]'} Preparing resources...`);
   await prepareBackendResources();
   await prepareOrchestratorResources();
   await prepareFrontendResources();
 
-  // 3. Report sizes
+  // Report sizes
   console.log('\n' + '='.repeat(60));
-  console.log('✅ All sidecars and resources prepared!');
+  console.log('✅ Sidecars and resources prepared!');
   console.log('');
 
   console.log('Sidecars (binaries/):');
-  const binFiles = fs.readdirSync(BINARIES_DIR);
-  for (const file of binFiles) {
-    const filePath = path.join(BINARIES_DIR, file);
-    const stat = fs.statSync(filePath);
-    console.log(`  - ${file} (${(stat.size / 1024 / 1024).toFixed(1)} MB)`);
+  if (fs.existsSync(BINARIES_DIR)) {
+    const binFiles = fs.readdirSync(BINARIES_DIR);
+    for (const file of binFiles) {
+      const filePath = path.join(BINARIES_DIR, file);
+      const stat = fs.statSync(filePath);
+      console.log(`  - ${file} (${(stat.size / 1024 / 1024).toFixed(1)} MB)`);
+    }
   }
 
   console.log('\nResources (resources/):');
@@ -552,10 +689,53 @@ async function main(): Promise<void> {
   console.log(`  - orchestrator: ${getDirSize(path.join(RESOURCES_DIR, 'orchestrator'))}`);
   console.log(`  - frontend: ${getDirSize(path.join(RESOURCES_DIR, 'frontend'))}`);
 
-  console.log('\nNext steps:');
-  console.log('  1. cd apps/desktop && pnpm run build');
-  console.log('  2. Open target/release/bundle/macos/Postiz.app');
-  console.log('='.repeat(60));
+  // Full build: Step 5 - Build Tauri
+  if (isFullBuild) {
+    console.log(`\n🚀 [5/5] Building Tauri app...`);
+    if (!runCommand('pnpm', ['run', 'build'], { cwd: DESKTOP_DIR })) {
+      console.log('✗ Failed to build Tauri app');
+      process.exit(1);
+    }
+
+    // Show final results
+    const bundleDir = path.join(DESKTOP_DIR, 'src-tauri', 'target', 'release', 'bundle', 'macos');
+    const appPath = path.join(bundleDir, 'Postiz.app');
+
+    if (fs.existsSync(appPath)) {
+      const elapsed = ((Date.now() - startTime) / 1000 / 60).toFixed(1);
+
+      console.log('\n' + '='.repeat(60));
+      console.log('  ✅ BUILD SUCCESSFUL');
+      console.log('='.repeat(60));
+      console.log(`\n  App:  ${appPath}`);
+      console.log(`  Size: ${getDirSize(appPath)}`);
+
+      // Find DMG
+      if (fs.existsSync(bundleDir)) {
+        const dmgFiles = fs.readdirSync(bundleDir).filter(f => f.endsWith('.dmg'));
+        if (dmgFiles.length > 0) {
+          const dmgPath = path.join(bundleDir, dmgFiles[0]);
+          console.log(`\n  DMG:  ${dmgPath}`);
+          console.log(`  Size: ${getDirSize(dmgPath)}`);
+        }
+      }
+
+      console.log(`\n  Build time: ${elapsed} minutes`);
+      console.log('\n  To test:');
+      console.log(`    open "${appPath}"`);
+      console.log('='.repeat(60));
+    } else {
+      console.log('✗ App bundle not found');
+      process.exit(1);
+    }
+  } else {
+    console.log('\nNext steps:');
+    console.log('  pnpm run desktop:build    # or run with --full flag');
+    console.log('='.repeat(60));
+  }
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error('✗ Build failed:', error.message);
+  process.exit(1);
+});

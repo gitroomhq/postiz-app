@@ -4,10 +4,11 @@
   "private": true,
   "description": "Postiz Desktop App - Social media scheduling without Docker",
   "scripts": {
-    "dev": "tauri dev",
     "build": "tauri build",
-    "start": "ts-node src/main.ts",
-    "start:services": "ts-node src/main.ts"
+    "build:full": "npx ts-node scripts/build-desktop.ts --full",
+    "build:prepare": "npx ts-node scripts/build-desktop.ts",
+    "dev": "tauri dev",
+    "help": "npx ts-node scripts/build-desktop.ts --help"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.2.0",
