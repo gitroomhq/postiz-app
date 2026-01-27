@@ -525,7 +525,7 @@ export const CalendarColumn: FC<{
           modal.openModal({
             title: t('select_set', 'Select a Set'),
             closeOnClickOutside: true,
-            askClose: true,
+            askClose: false,
             closeOnEscape: true,
             withCloseButton: true,
             onClose: () => resolve('exit'),

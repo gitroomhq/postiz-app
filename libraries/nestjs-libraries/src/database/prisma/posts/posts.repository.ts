@@ -330,13 +330,14 @@ export class PostsRepository {
     return update;
   }
 
-  async changeDate(orgId: string, id: string, date: string) {
+  async changeDate(orgId: string, id: string, date: string, isDraft: boolean) {
     return this._post.model.post.update({
       where: {
         organizationId: orgId,
         id,
       },
       data: {
+        state: isDraft ? 'DRAFT' : 'QUEUE',
         publishDate: dayjs(date).toDate(),
       },
     });
