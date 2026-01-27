@@ -841,6 +841,10 @@ export class PostsService {
     return this._postRepository.editTag(id, orgId, body);
   }
 
+  deleteTag(id: string, orgId: string) {
+    return this._postRepository.deleteTag(id, orgId);
+  }
+
   createComment(
     orgId: string,
     userId: string,

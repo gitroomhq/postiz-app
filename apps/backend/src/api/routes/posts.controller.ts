@@ -81,6 +81,14 @@ export class PostsController {
     return this._postsService.editTag(id, org.id, body);
   }
 
+  @Delete('/tags/:id')
+  async deleteTag(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string
+  ) {
+    return this._postsService.deleteTag(id, org.id);
+  }
+
   @Get('/')
   async getPosts(
     @GetOrgFromRequest() org: Organization,

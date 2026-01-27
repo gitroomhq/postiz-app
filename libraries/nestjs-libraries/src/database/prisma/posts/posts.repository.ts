@@ -678,6 +678,7 @@ export class PostsRepository {
     return this._tags.model.tags.findMany({
       where: {
         orgId,
+        deletedAt: null,
       },
     });
   }
@@ -700,6 +701,18 @@ export class PostsRepository {
       data: {
         name: body.name,
         color: body.color,
+      },
+    });
+  }
+
+  deleteTag(id: string, orgId: string) {
+    return this._tags.model.tags.update({
+      where: {
+        id,
+        orgId,
+      },
+      data: {
+        deletedAt: new Date(),
       },
     });
   }
