@@ -33,7 +33,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     if (pglitePath) {
       // DATABASE_URL specifies PGlite - use embedded PostgreSQL
       try {
+        // @ts-expect-error - Optional dependency, only installed for desktop builds
         const { PGlite } = await import('@electric-sql/pglite');
+        // @ts-expect-error - Optional dependency, only installed for desktop builds
         const { PrismaPGlite } = await import('pglite-prisma-adapter');
 
         this.pgliteInstance = new PGlite(pglitePath);

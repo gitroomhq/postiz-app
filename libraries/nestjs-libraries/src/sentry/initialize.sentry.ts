@@ -1,8 +1,11 @@
 import * as Sentry from '@sentry/nestjs';
 import { capitalize } from 'lodash';
 
+// Infer Integration type from existing integration function
+type SentryIntegration = ReturnType<typeof Sentry.consoleLoggingIntegration>;
+
 // Lazy-load profiling integration - native module may not be available on all platforms
-let profilingIntegration: (() => Sentry.Integration) | null = null;
+let profilingIntegration: (() => SentryIntegration) | null = null;
 try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   profilingIntegration = require('@sentry/profiling-node').nodeProfilingIntegration;
@@ -15,7 +18,7 @@ export const initializeSentry = (appName: string, allowLogs = false) => {
     return null;
   }
 
-  const integrations: Sentry.Integration[] = [
+  const integrations: SentryIntegration[] = [
     Sentry.consoleLoggingIntegration({ levels: ['log', 'info', 'warn', 'error', 'debug', 'assert', 'trace'] }),
     Sentry.openAIIntegration({
       recordInputs: true,
