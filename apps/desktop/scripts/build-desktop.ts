@@ -30,6 +30,7 @@ import { spawnSync } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as https from 'https';
+import * as crypto from 'crypto';
 
 const NODE_VERSION = '22.13.1'; // LTS version
 
@@ -166,6 +167,162 @@ function getDirSize(dir: string): string {
     return result.stdout.split('\t')[0].trim();
   }
   return 'N/A';
+}
+
+/**
+ * Get directory size in bytes for validation
+ */
+function getDirSizeBytes(dir: string): number {
+  const result = spawnSync('du', ['-sk', dir], { encoding: 'utf-8' });
+  if (result.status === 0 && result.stdout) {
+    return parseInt(result.stdout.split('\t')[0]) * 1024; // Convert KB to bytes
+  }
+  return 0;
+}
+
+// =============================================================================
+// Build Validation & Verification
+// =============================================================================
+
+interface ValidationResult {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+}
+
+/**
+ * Clean all resources directory at start of build
+ */
+function cleanAllResources(): void {
+  console.log('\n🧹 Cleaning previous resources...');
+  const dirs = ['backend', 'orchestrator', 'frontend'];
+  let cleaned = false;
+  for (const dir of dirs) {
+    const fullPath = path.join(RESOURCES_DIR, dir);
+    if (fs.existsSync(fullPath)) {
+      fs.rmSync(fullPath, { recursive: true, force: true });
+      console.log(`  ✓ Removed ${dir}/`);
+      cleaned = true;
+    }
+  }
+  if (!cleaned) {
+    console.log('  (no previous resources to clean)');
+  }
+}
+
+/**
+ * Validate source files exist before build
+ */
+function validateSourceFiles(): ValidationResult {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  const requiredFiles = [
+    { path: 'apps/backend/dist/apps/backend/src/main.js', desc: 'Backend entry' },
+    { path: 'apps/orchestrator/dist/apps/orchestrator/src/main.js', desc: 'Orchestrator entry' },
+    { path: 'apps/frontend/.next/standalone/apps/frontend/server.js', desc: 'Frontend entry' },
+    { path: 'apps/frontend/.next/static', desc: 'Frontend static assets', isDir: true },
+    { path: 'node_modules/.prisma/client', desc: 'Prisma generated client', isDir: true },
+    { path: 'libraries/nestjs-libraries/src/database/prisma/schema.prisma', desc: 'Prisma schema' },
+  ];
+
+  for (const file of requiredFiles) {
+    const fullPath = path.join(ROOT_DIR, file.path);
+    if (!fs.existsSync(fullPath)) {
+      errors.push(`Missing ${file.desc}: ${file.path}`);
+    }
+  }
+
+  // Validate frontend standalone size (should be >100MB with all deps when DESKTOP_BUILD=1)
+  const standalonePath = path.join(ROOT_DIR, 'apps/frontend/.next/standalone');
+  if (fs.existsSync(standalonePath)) {
+    const size = getDirSizeBytes(standalonePath);
+    const sizeMB = size / 1024 / 1024;
+    if (sizeMB < 50) {
+      warnings.push(`Frontend standalone smaller than expected (${sizeMB.toFixed(0)}MB) - verify DESKTOP_BUILD=1 was set`);
+    }
+  }
+
+  return { valid: errors.length === 0, errors, warnings };
+}
+
+/**
+ * Verify build artifacts after resource preparation
+ */
+function verifyBuildArtifacts(): ValidationResult {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  const requiredArtifacts = [
+    { path: 'backend/dist/apps/backend/src/main.js', minSize: 1000, desc: 'Backend entry' },
+    { path: 'backend/node_modules/.prisma/client/index.js', minSize: 1000, desc: 'Backend Prisma client' },
+    { path: 'orchestrator/dist/apps/orchestrator/src/main.js', minSize: 1000, desc: 'Orchestrator entry' },
+    { path: 'orchestrator/node_modules/.prisma/client/index.js', minSize: 1000, desc: 'Orchestrator Prisma client' },
+    { path: 'frontend/standalone/apps/frontend/server.js', minSize: 1000, desc: 'Frontend entry' },
+    { path: 'frontend/standalone/apps/frontend/.next/static', isDir: true, desc: 'Frontend static assets' },
+  ];
+
+  for (const artifact of requiredArtifacts) {
+    const fullPath = path.join(RESOURCES_DIR, artifact.path);
+    if (!fs.existsSync(fullPath)) {
+      errors.push(`Missing artifact: ${artifact.path} (${artifact.desc})`);
+    } else if (!artifact.isDir && artifact.minSize) {
+      const stat = fs.statSync(fullPath);
+      if (stat.size < artifact.minSize) {
+        errors.push(`Artifact too small: ${artifact.path} (${stat.size} bytes, expected >${artifact.minSize})`);
+      }
+    }
+  }
+
+  return { valid: errors.length === 0, errors, warnings };
+}
+
+/**
+ * Generate SHA256 checksums for critical files
+ */
+function generateChecksums(): Map<string, string> {
+  const checksums = new Map<string, string>();
+
+  const criticalFiles = [
+    'backend/dist/apps/backend/src/main.js',
+    'orchestrator/dist/apps/orchestrator/src/main.js',
+    'frontend/standalone/apps/frontend/server.js',
+  ];
+
+  for (const file of criticalFiles) {
+    const fullPath = path.join(RESOURCES_DIR, file);
+    if (fs.existsSync(fullPath)) {
+      const content = fs.readFileSync(fullPath);
+      const hash = crypto.createHash('sha256').update(content).digest('hex').slice(0, 12);
+      checksums.set(file, hash);
+    }
+  }
+
+  return checksums;
+}
+
+/**
+ * Write build manifest with checksums and metadata
+ */
+function writeBuildManifest(): void {
+  const checksums = generateChecksums();
+
+  const manifest = {
+    buildTime: new Date().toISOString(),
+    nodeVersion: NODE_VERSION,
+    platform: process.platform,
+    arch: process.arch,
+    checksums: Object.fromEntries(checksums),
+    sizes: {
+      backend: getDirSize(path.join(RESOURCES_DIR, 'backend')),
+      orchestrator: getDirSize(path.join(RESOURCES_DIR, 'orchestrator')),
+      frontend: getDirSize(path.join(RESOURCES_DIR, 'frontend')),
+    },
+  };
+
+  const manifestPath = path.join(RESOURCES_DIR, 'build-manifest.json');
+  fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+  console.log(`  ✓ Build manifest written to ${manifestPath}`);
 }
 
 /**
@@ -645,11 +802,15 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
+  // Clean previous resources at start
+  cleanAllResources();
+
   // Full build: Step 1 - Install dependencies
   if (isFullBuild && !process.env.POSTIZ_SKIP_DEPS) {
     console.log('\n📦 [1/5] Installing dependencies...');
-    if (!runCommand('pnpm', ['install'])) {
+    if (!runCommand('pnpm', ['install', '--frozen-lockfile'])) {
       console.log('✗ Failed to install dependencies');
+      console.log('  Hint: Run "pnpm install" locally first to update lockfile');
       process.exit(1);
     }
     console.log('✓ Dependencies installed');
@@ -665,6 +826,24 @@ async function main(): Promise<void> {
     }
     console.log('✓ Apps built');
   }
+
+  // Validate source files exist
+  console.log('\n🔍 Validating source files...');
+  const sourceValidation = validateSourceFiles();
+  if (sourceValidation.warnings.length > 0) {
+    for (const warning of sourceValidation.warnings) {
+      console.log(`  ⚠ ${warning}`);
+    }
+  }
+  if (!sourceValidation.valid) {
+    console.log('✗ Source file validation failed:');
+    for (const error of sourceValidation.errors) {
+      console.log(`  ✗ ${error}`);
+    }
+    console.log('\nHint: Run "pnpm run build" first to compile the apps');
+    process.exit(1);
+  }
+  console.log('✓ Source files validated');
 
   // Step 3 - Download sidecars
   console.log(`\n📥 ${isFullBuild ? '[3/5]' : '[1/3]'} Preparing sidecars...`);
@@ -690,6 +869,22 @@ async function main(): Promise<void> {
   await prepareBackendResources();
   await prepareOrchestratorResources();
   await prepareFrontendResources();
+
+  // Verify build artifacts
+  console.log('\n🔍 Verifying build artifacts...');
+  const artifactValidation = verifyBuildArtifacts();
+  if (!artifactValidation.valid) {
+    console.log('✗ Artifact verification failed:');
+    for (const error of artifactValidation.errors) {
+      console.log(`  ✗ ${error}`);
+    }
+    process.exit(1);
+  }
+  console.log('✓ All build artifacts verified');
+
+  // Write build manifest
+  console.log('\n📋 Writing build manifest...');
+  writeBuildManifest();
 
   // Report sizes
   console.log('\n' + '='.repeat(60));

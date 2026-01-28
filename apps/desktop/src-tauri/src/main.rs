@@ -1,12 +1,15 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use rand::Rng;
+use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
 use std::net::TcpListener;
 use std::path::PathBuf;
 use std::sync::Mutex;
+use std::time::{Duration, Instant};
 use tauri::Manager;
 use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
@@ -268,6 +271,255 @@ impl PortConfig {
     }
 }
 
+// =============================================================================
+// Health Check System
+// Implements exponential backoff with jitter for robust service startup
+// =============================================================================
+
+/// Health checker with exponential backoff and jitter
+struct HealthChecker {
+    client: Client,
+    max_retries: u32,
+    base_delay_ms: u64,
+    max_delay_ms: u64,
+}
+
+impl HealthChecker {
+    fn new() -> Self {
+        Self {
+            client: Client::builder()
+                .timeout(Duration::from_secs(5))
+                .build()
+                .unwrap_or_else(|_| Client::new()),
+            max_retries: 30,      // 30 attempts (~45 seconds max)
+            base_delay_ms: 500,   // Start at 500ms
+            max_delay_ms: 3000,   // Cap at 3 seconds
+        }
+    }
+
+    /// Calculate delay with exponential backoff and jitter
+    fn calculate_delay(&self, attempt: u32) -> Duration {
+        let exp_delay = self.base_delay_ms * 2u64.pow(attempt.min(5)); // Cap exponent at 5
+        let capped_delay = exp_delay.min(self.max_delay_ms);
+        // Add jitter: ±20% random
+        let jitter_factor = 0.8 + (rand::thread_rng().gen::<f64>() * 0.4); // 0.8 to 1.2
+        Duration::from_millis((capped_delay as f64 * jitter_factor) as u64)
+    }
+
+    /// Wait for an HTTP endpoint to become available
+    fn wait_for_http(&self, url: &str, service_name: &str) -> Result<(), String> {
+        let start = Instant::now();
+
+        for attempt in 0..self.max_retries {
+            match self.client.get(url).send() {
+                Ok(resp) if resp.status().is_success() => {
+                    println!(
+                        "[{}] Ready after {:.1}s",
+                        service_name,
+                        start.elapsed().as_secs_f64()
+                    );
+                    return Ok(());
+                }
+                Ok(resp) => {
+                    if attempt % 5 == 0 {
+                        println!(
+                            "[{}] Waiting... (status {})",
+                            service_name,
+                            resp.status()
+                        );
+                    }
+                }
+                Err(_) => {
+                    // Connection refused is expected while service starts
+                    if attempt % 5 == 0 && attempt > 0 {
+                        println!(
+                            "[{}] Waiting for startup... ({:.0}s)",
+                            service_name,
+                            start.elapsed().as_secs_f64()
+                        );
+                    }
+                }
+            }
+
+            std::thread::sleep(self.calculate_delay(attempt));
+        }
+
+        Err(format!(
+            "{} failed to become ready after {:.0}s",
+            service_name,
+            start.elapsed().as_secs_f64()
+        ))
+    }
+}
+
+/// Wait for all services to be healthy with proper ordering
+fn wait_for_services_healthy(ports: &PortConfig) -> Result<(), String> {
+    let checker = HealthChecker::new();
+
+    // Phase 1: Wait for Temporal (independent, starts fastest)
+    println!("[postiz] Waiting for Temporal...");
+    checker.wait_for_http(
+        &format!("http://localhost:{}/", ports.temporal_ui),
+        "temporal",
+    )?;
+
+    // Phase 2: Wait for Backend (needs PGlite init, usually slowest)
+    // Uses /monitor/health which returns {healthy: bool, services: {...}, timestamp}
+    println!("[postiz] Waiting for Backend...");
+    checker.wait_for_http(
+        &format!("http://localhost:{}/monitor/health", ports.backend),
+        "backend",
+    )?;
+
+    // Phase 3: Wait for Frontend (fast after build)
+    println!("[postiz] Waiting for Frontend...");
+    checker.wait_for_http(&format!("http://localhost:{}/", ports.frontend), "frontend")?;
+
+    // Note: Orchestrator has no HTTP endpoint - it connects to Temporal
+    // If Temporal and Backend are healthy, Orchestrator should be fine
+
+    println!("[postiz] All services ready!");
+    Ok(())
+}
+
+/// Generate the loading screen HTML
+fn get_loading_html() -> &'static str {
+    r#"<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Starting Postiz</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            text-align: center;
+            padding: 40px;
+        }
+        h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        .spinner {
+            width: 44px;
+            height: 44px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .status {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 16px;
+        }
+        .hint {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-top: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Starting Postiz</h1>
+        <div class="spinner"></div>
+        <p class="status">Initializing services...</p>
+        <p class="hint">This may take a moment on first launch</p>
+    </div>
+</body>
+</html>"#
+}
+
+/// Generate error HTML for display when services fail to start
+fn get_error_html(error: &str) -> String {
+    format!(
+        r#"<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Postiz - Startup Error</title>
+    <style>
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 40px;
+            background: #1a1a2e;
+            color: #eee;
+        }}
+        h1 {{
+            color: #ff6b6b;
+            margin-bottom: 20px;
+        }}
+        pre {{
+            background: #16213e;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 14px;
+            line-height: 1.5;
+        }}
+        .help {{
+            margin-top: 30px;
+            padding: 20px;
+            background: #0f3460;
+            border-radius: 8px;
+        }}
+        .help h2 {{
+            color: #94b8ff;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }}
+        .help ul {{
+            margin-left: 20px;
+        }}
+        .help li {{
+            margin: 8px 0;
+        }}
+    </style>
+</head>
+<body>
+    <h1>Failed to Start Services</h1>
+    <pre>{}</pre>
+    <div class="help">
+        <h2>Troubleshooting</h2>
+        <ul>
+            <li>Check Console.app (macOS) or logs for detailed error messages</li>
+            <li>Verify no other instance of Postiz is running</li>
+            <li>Try quitting and restarting the application</li>
+            <li>If the issue persists, check port availability (3000, 4200, 7233, 8233)</li>
+        </ul>
+    </div>
+</body>
+</html>"#,
+        html_escape(error)
+    )
+}
+
+/// Escape HTML special characters
+fn html_escape(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
+}
+
 fn get_data_dir() -> PathBuf {
     #[cfg(target_os = "macos")]
     {
@@ -524,17 +776,93 @@ fn main() {
             children.push(backend_child);
             children.push(frontend_child);
             children.push(orchestrator_child);
+            drop(children); // Release lock before potentially blocking
+
+            // Get the main window to show loading/error states
+            let window = app.get_webview_window("main");
+
+            // Show loading screen while services start
+            if let Some(ref win) = window {
+                let loading_url = format!(
+                    "data:text/html,{}",
+                    urlencoding::encode(get_loading_html())
+                );
+                if let Ok(url) = tauri::Url::parse(&loading_url) {
+                    let _ = win.navigate(url);
+                }
+            }
+
+            // Clone ports for the health check closure
+            let health_ports = PortConfig {
+                temporal_grpc: ports.temporal_grpc,
+                temporal_ui: ports.temporal_ui,
+                backend: ports.backend,
+                frontend: ports.frontend,
+            };
+
+            // Wait for services to be healthy, then navigate to frontend
+            // This is done in a spawn to not block the setup
+            if let Some(win) = window {
+                let frontend_url_clone = frontend_url.clone();
+                tauri::async_runtime::spawn(async move {
+                    // Run health checks in a blocking context
+                    let result = tauri::async_runtime::spawn_blocking(move || {
+                        wait_for_services_healthy(&health_ports)
+                    })
+                    .await;
+
+                    match result {
+                        Ok(Ok(())) => {
+                            // Services are ready, navigate to frontend
+                            if let Ok(url) = tauri::Url::parse(&frontend_url_clone) {
+                                let _ = win.navigate(url);
+                            }
+                        }
+                        Ok(Err(e)) => {
+                            // Health check failed
+                            eprintln!("[postiz] Service health check failed: {}", e);
+                            let error_url = format!(
+                                "data:text/html,{}",
+                                urlencoding::encode(&get_error_html(&e))
+                            );
+                            if let Ok(url) = tauri::Url::parse(&error_url) {
+                                let _ = win.navigate(url);
+                            }
+                        }
+                        Err(e) => {
+                            // spawn_blocking failed
+                            eprintln!("[postiz] Health check task failed: {}", e);
+                            let error_url = format!(
+                                "data:text/html,{}",
+                                urlencoding::encode(&get_error_html(&format!("Internal error: {}", e)))
+                            );
+                            if let Ok(url) = tauri::Url::parse(&error_url) {
+                                let _ = win.navigate(url);
+                            }
+                        }
+                    }
+                });
+            }
 
             Ok(())
         })
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { .. } = event {
+                println!("[postiz] Shutting down...");
+
                 // Clean up child processes
                 let state = window.state::<AppState>();
                 let mut children = state.children.lock().unwrap();
-                for child in children.drain(..) {
-                    let _ = child.kill();
+                let count = children.len();
+                for (i, child) in children.drain(..).enumerate() {
+                    let pid = child.pid();
+                    match child.kill() {
+                        Ok(_) => println!("[postiz] Stopped process {}/{} (PID {:?})", i + 1, count, pid),
+                        Err(e) => eprintln!("[postiz] Failed to stop PID {:?}: {}", pid, e),
+                    }
                 }
+
+                println!("[postiz] Shutdown complete");
             }
         })
         .run(tauri::generate_context!())
