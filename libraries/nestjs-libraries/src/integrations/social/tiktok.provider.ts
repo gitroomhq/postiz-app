@@ -312,7 +312,6 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       })
     ).json();
 
-    console.log(this.scopes, scope);
     this.checkScopes(this.scopes, scope);
 
     const {
