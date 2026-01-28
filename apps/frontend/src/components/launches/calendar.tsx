@@ -661,7 +661,7 @@ export const CalendarColumn: FC<{
         title: t('statistics', 'Statistics'),
         closeOnClickOutside: true,
         closeOnEscape: true,
-        withCloseButton: false,
+        withCloseButton: true,
         classNames: {
           modal: 'w-[100%] max-w-[1400px]',
         },
