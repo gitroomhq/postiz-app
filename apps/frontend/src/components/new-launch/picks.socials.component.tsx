@@ -76,9 +76,6 @@ export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
                           ? 'border-transparent'
                           : 'border-[#000]'
                       )}
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                      }}
                       alt={integration.identifier}
                       width={42}
                       height={42}
