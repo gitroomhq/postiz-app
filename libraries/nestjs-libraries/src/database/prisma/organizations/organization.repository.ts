@@ -260,6 +260,25 @@ export class OrganizationRepository {
     });
   }
 
+  async setStreak(organizationId: string, type: 'start' | 'end') {
+    try {
+      await this._organization.model.organization.update({
+        where: {
+          id: organizationId,
+          ...(type === 'start'
+            ? {
+                streakSince: null,
+              }
+            : {}),
+        },
+        data: {
+          ...(type === 'end' ? { streakSince: null } : {}),
+          ...(type === 'start' ? { streakSince: new Date() } : {}),
+        },
+      });
+    } catch (err) {}
+  }
+
   async getTeam(orgId: string) {
     return this._organization.model.organization.findUnique({
       where: {
