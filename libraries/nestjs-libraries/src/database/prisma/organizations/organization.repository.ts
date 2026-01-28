@@ -294,6 +294,7 @@ export class OrganizationRepository {
                 id: true,
                 sendSuccessEmails: true,
                 sendFailureEmails: true,
+                sendStreakEmails: true,
               },
             },
           },

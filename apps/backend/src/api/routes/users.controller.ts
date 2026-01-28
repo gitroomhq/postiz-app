@@ -69,6 +69,7 @@ export class UsersController {
       impersonate: !!impersonate,
       isTrailing: !process.env.STRIPE_PUBLISHABLE_KEY ? false : organization?.isTrailing,
       allowTrial: organization?.allowTrial,
+      streakSince: organization?.streakSince || null,
       // @ts-ignore
       publicApi: organization?.users[0]?.role === 'SUPERADMIN' || organization?.users[0]?.role === 'ADMIN' ? organization?.apiKey : '',
     };

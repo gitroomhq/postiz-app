@@ -108,6 +108,7 @@ model User {
   organizations         UserOrganization[]
   sendSuccessEmails     Boolean            @default(true)
   sendFailureEmails     Boolean            @default(true)
+  sendStreakEmails      Boolean            @default(true)
 
   @@unique([email, providerName])
   @@index([lastReadNotifications])
