@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import {
   Activity,
   ActivityMethod,
@@ -16,7 +16,10 @@ import { AuthTokenDetails } from '@gitroom/nestjs-libraries/integrations/social/
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
-import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
+import {
+  PostWebhookEvent,
+  WebhooksService,
+} from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
 import { TypedSearchAttributes } from '@temporalio/common';
 import {
   organizationId,
@@ -26,6 +29,8 @@ import {
 @Injectable()
 @Activity()
 export class PostActivity {
+  private readonly logger = new Logger(PostActivity.name);
+
   constructor(
     private _postService: PostsService,
     private _notificationService: NotificationService,
@@ -246,32 +251,32 @@ export class PostActivity {
   }
 
   @ActivityMethod()
-  async sendWebhooks(postId: string, orgId: string, integrationId: string) {
-    const webhooks = (await this._webhookService.getWebhooks(orgId)).filter(
-      (f) => {
-        return (
-          f.integrations.length === 0 ||
-          f.integrations.some((i) => i.integration.id === integrationId)
-        );
-      }
-    );
-
-    const post = await this._postService.getPostByForWebhookId(postId);
-    return Promise.all(
-      webhooks.map(async (webhook) => {
-        try {
-          await fetch(webhook.url, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(post),
-          });
-        } catch (e) {
-          /**empty**/
-        }
-      })
-    );
+  async sendWebhooks(
+    orgId: string,
+    integrationId: string,
+    event: PostWebhookEvent,
+    postId: string,
+    error?: string
+  ) {
+    try {
+      const postRows = await this._postService.getPostByForWebhookId(postId);
+      const post = Array.isArray(postRows) ? postRows[0] : postRows;
+      const data = post
+        ? { ...post, ...(error ? { error } : {}) }
+        : { postId, ...(error ? { error } : {}) };
+      await this._webhookService.sendPostEvent(
+        orgId,
+        integrationId,
+        event,
+        data as Record<string, unknown>
+      );
+    } catch (err) {
+      this.logger.error(
+        `sendWebhooks failed (event=${event}, postId=${postId}, orgId=${orgId}): ${err instanceof Error ? err.message : String(err)}`,
+        err instanceof Error ? err.stack : undefined
+      );
+      throw err;
+    }
   }
   @ActivityMethod()
   async processPlug(data: {
