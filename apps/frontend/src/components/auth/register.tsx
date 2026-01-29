@@ -90,6 +90,16 @@ export function RegisterAfter({
   const t = useT();
   const { isGeneral, genericOauth, neynarClientId, billingEnabled } =
     useVariables();
+  const termsLink =
+    process.env.TERMS_OF_SERVICE_URL &&
+    process.env.TERMS_OF_SERVICE_URL.trim() !== ''
+      ? process.env.TERMS_OF_SERVICE_URL
+      : 'https://postiz.com/terms';
+  const privacyLink =
+    process.env.PRIVACY_POLICY_URL &&
+    process.env.PRIVACY_POLICY_URL.trim() !== ''
+      ? process.env.PRIVACY_POLICY_URL
+      : 'https://postiz.com/privacy';
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const fireEvents = useFireEvents();
@@ -216,7 +226,7 @@ export function RegisterAfter({
                 )}
                 &nbsp;
                 <a
-                  href={`https://postiz.com/terms`}
+                  href={termsLink}
                   className="underline hover:font-bold"
                   rel="nofollow"
                 >
@@ -225,7 +235,7 @@ export function RegisterAfter({
                 &nbsp;
                 {t('and', 'and')}&nbsp;
                 <a
-                  href={`https://postiz.com/privacy`}
+                  href={privacyLink}
                   rel="nofollow"
                   className="underline hover:font-bold"
                 >
