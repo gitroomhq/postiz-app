@@ -64,6 +64,22 @@ export class UsersRepository {
     });
   }
 
+  getUserByEmailAnyProvider(email: string) {
+    return this._user.model.user.findFirst({
+      where: {
+        email,
+      },
+      include: {
+        picture: {
+          select: {
+            id: true,
+            path: true,
+          },
+        },
+      },
+    });
+  }
+
   activateUser(id: string) {
     return this._user.model.user.update({
       where: {
