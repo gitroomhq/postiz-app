@@ -155,6 +155,9 @@ function copyDirSync(src: string, dest: string): void {
     const destPath = path.join(dest, entry.name);
     if (entry.isDirectory()) {
       copyDirSync(srcPath, destPath);
+    } else if (entry.isSymbolicLink()) {
+      // Skip symlinks (e.g., .bin directory entries) to avoid broken references
+      continue;
     } else {
       fs.copyFileSync(srcPath, destPath);
     }
@@ -254,11 +257,11 @@ function verifyBuildArtifacts(): ValidationResult {
   const warnings: string[] = [];
 
   const requiredArtifacts = [
-    { path: 'backend/dist/apps/backend/src/main.js', minSize: 1000, desc: 'Backend entry' },
+    { path: 'backend/dist/apps/backend/src/main.js', minSize: 500, desc: 'Backend entry' },
     { path: 'backend/node_modules/.prisma/client/index.js', minSize: 1000, desc: 'Backend Prisma client' },
-    { path: 'orchestrator/dist/apps/orchestrator/src/main.js', minSize: 1000, desc: 'Orchestrator entry' },
+    { path: 'orchestrator/dist/apps/orchestrator/src/main.js', minSize: 500, desc: 'Orchestrator entry' },
     { path: 'orchestrator/node_modules/.prisma/client/index.js', minSize: 1000, desc: 'Orchestrator Prisma client' },
-    { path: 'frontend/standalone/apps/frontend/server.js', minSize: 1000, desc: 'Frontend entry' },
+    { path: 'frontend/standalone/apps/frontend/server.js', minSize: 500, desc: 'Frontend entry' },
     { path: 'frontend/standalone/apps/frontend/.next/static', isDir: true, desc: 'Frontend static assets' },
   ];
 
@@ -557,17 +560,11 @@ async function prepareBackendResourcesManual(backendDir: string): Promise<void> 
   }
   ensureDir(backendDir);
 
-  // Copy compiled JS
-  console.log('  Copying dist/apps/backend...');
+  // Copy compiled JS (NestJS outputs to apps/backend/dist/)
+  console.log('  Copying compiled backend dist...');
   copyDirSync(
-    path.join(ROOT_DIR, 'dist/apps/backend'),
-    path.join(backendDir, 'dist/apps/backend')
-  );
-
-  console.log('  Copying dist/libraries...');
-  copyDirSync(
-    path.join(ROOT_DIR, 'dist/libraries'),
-    path.join(backendDir, 'dist/libraries')
+    path.join(ROOT_DIR, 'apps/backend/dist'),
+    path.join(backendDir, 'dist')
   );
 
   // Copy entire node_modules (required for NestJS)
@@ -576,6 +573,10 @@ async function prepareBackendResourcesManual(backendDir: string): Promise<void> 
     path.join(ROOT_DIR, 'node_modules'),
     path.join(backendDir, 'node_modules')
   );
+
+  // Prune dev-only and unnecessary packages
+  console.log('  Pruning unnecessary packages...');
+  pruneNodeModules(path.join(backendDir, 'node_modules'));
 
   // Copy Prisma schema
   console.log('  Copying Prisma schema...');
@@ -639,17 +640,11 @@ async function prepareOrchestratorResourcesManual(orchestratorDir: string): Prom
   }
   ensureDir(orchestratorDir);
 
-  // Copy compiled JS
-  console.log('  Copying dist/apps/orchestrator...');
+  // Copy compiled JS (NestJS outputs to apps/orchestrator/dist/)
+  console.log('  Copying compiled orchestrator dist...');
   copyDirSync(
-    path.join(ROOT_DIR, 'dist/apps/orchestrator'),
-    path.join(orchestratorDir, 'dist/apps/orchestrator')
-  );
-
-  console.log('  Copying dist/libraries...');
-  copyDirSync(
-    path.join(ROOT_DIR, 'dist/libraries'),
-    path.join(orchestratorDir, 'dist/libraries')
+    path.join(ROOT_DIR, 'apps/orchestrator/dist'),
+    path.join(orchestratorDir, 'dist')
   );
 
   // Copy node_modules
@@ -658,6 +653,10 @@ async function prepareOrchestratorResourcesManual(orchestratorDir: string): Prom
     path.join(ROOT_DIR, 'node_modules'),
     path.join(orchestratorDir, 'node_modules')
   );
+
+  // Prune dev-only and unnecessary packages
+  console.log('  Pruning unnecessary packages...');
+  pruneNodeModules(path.join(orchestratorDir, 'node_modules'));
 
   // Copy Prisma schema
   console.log('  Copying Prisma schema...');

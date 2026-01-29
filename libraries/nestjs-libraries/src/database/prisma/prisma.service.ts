@@ -14,7 +14,8 @@ function extractPGlitePath(databaseUrl: string | undefined): string | null {
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
-  private pgliteInstance: { close: () => Promise<void> } | null = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private pgliteInstance: any = null;
 
   constructor() {
     super({
@@ -33,9 +34,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     if (pglitePath) {
       // DATABASE_URL specifies PGlite - use embedded PostgreSQL
       try {
-        // @ts-expect-error - Optional dependency, only installed for desktop builds
+        // @ts-ignore - Optional dependency, only installed for desktop builds
         const { PGlite } = await import('@electric-sql/pglite');
-        // @ts-expect-error - Optional dependency, only installed for desktop builds
+        // @ts-ignore - Optional dependency, only installed for desktop builds
         const { PrismaPGlite } = await import('pglite-prisma-adapter');
 
         this.pgliteInstance = new PGlite(pglitePath);
