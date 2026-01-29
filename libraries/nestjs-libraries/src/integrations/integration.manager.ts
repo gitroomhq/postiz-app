@@ -31,6 +31,7 @@ import { ListmonkProvider } from '@gitroom/nestjs-libraries/integrations/social/
 import { GmbProvider } from '@gitroom/nestjs-libraries/integrations/social/gmb.provider';
 import { KickProvider } from '@gitroom/nestjs-libraries/integrations/social/kick.provider';
 import { TwitchProvider } from '@gitroom/nestjs-libraries/integrations/social/twitch.provider';
+import { WebhookProvider } from '@gitroom/nestjs-libraries/integrations/social/webhook.provider';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
 export const socialIntegrationList: Array<SocialAbstract & SocialProvider> = [
@@ -63,6 +64,7 @@ export const socialIntegrationList: Array<SocialAbstract & SocialProvider> = [
   new HashnodeProvider(),
   new WordpressProvider(),
   new ListmonkProvider(),
+  new WebhookProvider(),
   // new MastodonCustomProvider(),
 ];
 
