@@ -651,7 +651,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
           }
 
           result.push({
-            label: 'Recent Views',
+            label: 'Views',
             percentageChange: 0,
             data: [{ total: String(totalViews), date: today }],
           });
@@ -691,6 +691,29 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   ): Promise<AnalyticsData[]> {
     const today = dayjs().format('YYYY-MM-DD');
 
+    const post = await (
+      await this.fetch(
+        'https://open.tiktokapis.com/v2/post/publish/status/fetch/',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json; charset=UTF-8',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            publish_id: postId,
+          }),
+        },
+        '',
+        0,
+        true
+      )
+    ).json();
+
+    if (!post?.data?.publicaly_available_post_id?.[0]) {
+      return [];
+    }
+
     try {
       // Query video details using the video ID
       const response = await this.fetch(
@@ -702,7 +725,9 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
             Authorization: `Bearer ${accessToken}`,
           },
           body: JSON.stringify({
-            filters: { video_ids: [postId] },
+            filters: {
+              video_ids: post?.data?.publicaly_available_post_id.map(String),
+            },
           }),
         }
       );

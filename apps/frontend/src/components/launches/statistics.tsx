@@ -102,22 +102,41 @@ export const StatisticsModal: FC<{
                   </Select>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-[20px]">
-                {analyticsData.map((p: AnalyticsData, index: number) => (
-                  <div key={`analytics-${index}`} className="flex">
-                    <div className="flex-1 bg-newTableHeader rounded-[8px] py-[10px] px-[16px] gap-[10px] flex flex-col">
-                      <div className="flex items-center gap-[14px]">
-                        <div className="text-[20px]">{p.label}</div>
-                      </div>
-                      <div className="flex-1">
-                        <div className="h-[156px] relative">
-                          <ChartSocial data={p.data} key={`chart-${index}`} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[16px]">
+                {analyticsData.map((p: AnalyticsData, index: number) => {
+                  const colorVariants = ['purple', 'green', 'blue'] as const;
+                  const color = colorVariants[index % colorVariants.length];
+                  return (
+                    <div key={`analytics-${index}`} className="group">
+                      <div className="flex flex-col h-full bg-newTableHeader border border-newTableBorder rounded-[12px] overflow-hidden transition-all duration-200 hover:border-[#612bd3]/50">
+                        <div className="flex items-center justify-between px-[16px] pt-[14px] pb-[8px]">
+                          <div className="flex items-center gap-[10px]">
+                            <div
+                              className={`w-[8px] h-[8px] rounded-full ${
+                                color === 'purple' ? 'bg-[#612bd3]' : ''
+                              } ${color === 'green' ? 'bg-[#32d583]' : ''} ${
+                                color === 'blue' ? 'bg-[#1d9bf0]' : ''
+                              }`}
+                            />
+                            <span className="text-[15px] font-medium text-newTableText">
+                              {p.label}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex-1 px-[12px] py-[8px]">
+                          <div className="h-[120px] relative">
+                            <ChartSocial data={p.data} color={color} key={`chart-${index}`} />
+                          </div>
+                        </div>
+                        <div className="px-[16px] pb-[14px]">
+                          <div className="text-[36px] leading-[42px] font-semibold tracking-tight">
+                            {totals[index]}
+                          </div>
                         </div>
                       </div>
-                      <div className="text-[50px] leading-[60px]">{totals[index]}</div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
