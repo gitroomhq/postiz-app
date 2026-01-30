@@ -91,12 +91,20 @@ export const RenderAnalytics: FC<{
             <div className="flex items-center gap-[14px]">
               <div className="text-[20px]">{p.label}</div>
             </div>
-            <div className="flex-1">
-              <div className="h-[156px] relative">
-                <ChartSocial {...p} key={`p-${index}`} />
+            {p.data.length > 1 ? (
+              <>
+                <div className="flex-1">
+                  <div className="h-[156px] relative">
+                    <ChartSocial {...p} key={`p-${index}`} />
+                  </div>
+                </div>
+                <div className="text-[50px] leading-[60px]">{total[index]}</div>
+              </>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center min-h-[216px]">
+                <div className="text-[64px] leading-[72px] font-medium">{total[index]}</div>
               </div>
-            </div>
-            <div className="text-[50px] leading-[60px]">{total[index]}</div>
+            )}
           </div>
         </div>
       ))}
