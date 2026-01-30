@@ -180,6 +180,7 @@ export class PostsService {
           }
 
           return {
+            type: replaceDraft ? 'schedule' : body.type,
             ...post,
             settings: {
               ...(post.settings || ({} as any)),

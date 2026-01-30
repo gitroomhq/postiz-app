@@ -49,6 +49,8 @@ export class PostContent {
 }
 
 export class Post {
+  type?: string;
+
   @IsDefined()
   @Type(() => Integration)
   @ValidateNested()
@@ -65,6 +67,7 @@ export class Post {
   @IsString()
   group: string;
 
+  @ValidateIf((o) => o.type !== 'draft')
   @ValidateNested()
   @Type(() => EmptySettings, {
     keepDiscriminatorProperty: true,
@@ -112,7 +115,6 @@ export class CreatePostDto {
   @ValidateNested({ each: true })
   tags: Tags[];
 
-  @ValidateIf((o) => o.type !== 'draft')
   @IsDefined()
   @Type(() => Post)
   @IsArray()
