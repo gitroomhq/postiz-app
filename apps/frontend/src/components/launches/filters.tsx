@@ -296,7 +296,7 @@ export const Filters = () => {
                 />
               </svg>
             </div>
-            <div className="w-[200px] text-center bg-newBgColorInner h-full flex items-center justify-center">
+            <div className="min-w-[200px] text-center bg-newBgColorInner h-full flex items-center justify-center">
               <div className="py-[3px] px-[9px] rounded-[5px] transition-all text-[14px]">
                 {getDisplayText()}
               </div>
@@ -362,7 +362,7 @@ export const Filters = () => {
                 />
               </svg>
             </div>
-            <div className="w-[200px] text-center bg-newBgColorInner h-full flex items-center justify-center">
+            <div className="min-w-[200px] text-center bg-newBgColorInner h-full flex items-center justify-center">
               <div className="py-[3px] px-[9px] rounded-[5px] transition-all text-[14px]">
                 {t('page', 'Page')} {calendar.listPage + 1} {t('of', 'of')} {Math.max(1, calendar.listTotalPages)}
               </div>
