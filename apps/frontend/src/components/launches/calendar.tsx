@@ -83,21 +83,140 @@ const convertTimeFormatBasedOnLocality = (time: number) => {
   }
 };
 
-export const days = [
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
-  'Sunday',
-];
 export const hours = Array.from(
   {
     length: 24,
   },
   (_, i) => i
 );
+
+// Shared hook for post actions (edit, delete, statistics)
+const usePostActions = (onMutate?: () => void) => {
+  const t = useT();
+  const fetch = useFetch();
+  const modal = useModals();
+  const toaster = useToaster();
+  const { integrations, reloadCalendarView } = useCalendar();
+
+  const mutate = useCallback(() => {
+    reloadCalendarView();
+    onMutate?.();
+  }, [reloadCalendarView, onMutate]);
+
+  const editPost = useCallback(
+    (loadPost: any, isDuplicate?: boolean) => async () => {
+      const post = {
+        ...loadPost,
+        publishDate: loadPost.actualDate || loadPost.publishDate,
+      };
+
+      const data = await (await fetch(`/posts/group/${post.group}`)).json();
+      const date = !isDuplicate
+        ? null
+        : (await (await fetch('/posts/find-slot')).json()).date;
+      const publishDate = dayjs
+        .utc(date || data.posts[0].publishDate)
+        .local();
+      const ExistingData = !isDuplicate
+        ? ExistingDataContextProvider
+        : Fragment;
+      modal.openModal({
+        id: 'add-edit-modal',
+        closeOnClickOutside: false,
+        removeLayout: true,
+        closeOnEscape: false,
+        withCloseButton: false,
+        askClose: true,
+        fullScreen: true,
+        classNames: {
+          modal: 'w-[100%] max-w-[1400px] text-textColor',
+        },
+        children: (
+          <ExistingData value={data}>
+            <AddEditModal
+              {...(isDuplicate
+                ? {
+                    onlyValues: data.posts.map(
+                      ({ image, settings, content }: any) => ({
+                        image,
+                        settings,
+                        content,
+                      })
+                    ),
+                  }
+                : {})}
+              allIntegrations={integrations.map((p) => ({ ...p }))}
+              reopenModal={editPost(post)}
+              mutate={mutate}
+              integrations={
+                isDuplicate
+                  ? integrations
+                  : integrations
+                      .slice(0)
+                      .filter((f) => f.id === data.integration)
+                      .map((p) => ({
+                        ...p,
+                        picture: data.integrationPicture,
+                      }))
+              }
+              date={publishDate}
+            />
+          </ExistingData>
+        ),
+        size: '80%',
+        title: ``,
+      });
+    },
+    [integrations, fetch, modal, mutate]
+  );
+
+  const deletePost = useCallback(
+    (post: any) => async () => {
+      if (
+        !(await deleteDialog(
+          t(
+            'are_you_sure_you_want_to_delete_post',
+            'Are you sure you want to delete post?'
+          )
+        ))
+      ) {
+        return;
+      }
+
+      await fetch(`/posts/${post.group}`, {
+        method: 'DELETE',
+      });
+
+      toaster.show(
+        t('post_deleted_successfully', 'Post deleted successfully'),
+        'success'
+      );
+
+      mutate();
+    },
+    [toaster, t, fetch, mutate]
+  );
+
+  const openStatistics = useCallback(
+    (id: string) => () => {
+      modal.openModal({
+        title: t('statistics', 'Statistics'),
+        closeOnClickOutside: true,
+        closeOnEscape: true,
+        withCloseButton: true,
+        classNames: {
+          modal: 'w-[100%] max-w-[1400px]',
+        },
+        children: <StatisticsModal postId={id} />,
+        size: '80%',
+      });
+    },
+    [modal, t]
+  );
+
+  return { editPost, deletePost, openStatistics };
+};
+
 export const DayView = () => {
   const calendar = useCalendar();
   const { integrations, posts, startDate } = calendar;
@@ -328,11 +447,84 @@ export const MonthView = () => {
     </div>
   );
 };
+export const ListView = () => {
+  const t = useT();
+  const { integrations, loading, listPosts } = useCalendar();
+
+  // Use shared post actions hook
+  const { editPost, deletePost, openStatistics } = usePostActions();
+
+  // Group posts by date
+  const groupedPosts = useMemo(() => {
+    const groups: { [key: string]: any[] } = {};
+    listPosts.forEach((post) => {
+      const dateKey = newDayjs(post.publishDate).local().format('YYYY-MM-DD');
+      if (!groups[dateKey]) {
+        groups[dateKey] = [];
+      }
+      groups[dateKey].push(post);
+    });
+    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
+  }, [listPosts]);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col flex-1 items-center justify-center">
+        <div className="text-textColor">{t('loading', 'Loading...')}</div>
+      </div>
+    );
+  }
+
+  if (listPosts.length === 0) {
+    return (
+      <div className="flex flex-col flex-1 items-center justify-center">
+        <div className="text-textColor text-[16px]">
+          {t('no_upcoming_posts', 'No upcoming posts scheduled')}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-[10px] flex-1 relative">
+      <div className="absolute start-0 top-0 w-full h-full flex flex-col overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
+        {groupedPosts.map(([dateKey, datePosts]) => (
+          <Fragment key={dateKey}>
+            <div className="text-center text-[14px] min-h-[21px] text-textColor font-[500] mt-[10px]">
+              {newDayjs(dateKey).format(isUSCitizen() ? 'dddd, MMMM D, YYYY' : 'dddd, D MMMM YYYY')}
+            </div>
+            <div className="flex flex-col gap-[10px] mb-[20px] px-[10px]">
+              {datePosts.map((post) => (
+                <CalendarItem
+                  key={post.id}
+                  display="day"
+                  isBeforeNow={false}
+                  date={newDayjs(post.publishDate)}
+                  state={post.state}
+                  statistics={openStatistics(post.id)}
+                  editPost={editPost(post, false)}
+                  duplicatePost={editPost(post, true)}
+                  post={post}
+                  integrations={integrations}
+                  deletePost={deletePost(post)}
+                  showTime={true}
+                />
+              ))}
+            </div>
+          </Fragment>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export const Calendar = () => {
   const { display } = useCalendar();
   return (
     <>
-      {display === 'day' ? (
+      {display === 'list' ? (
+        <ListView />
+      ) : display === 'day' ? (
         <DayView />
       ) : display === 'week' ? (
         <WeekView />
@@ -361,9 +553,11 @@ export const CalendarColumn: FC<{
     signature,
     loading,
   } = useCalendar();
-  const toaster = useToaster();
   const modal = useModals();
   const fetch = useFetch();
+
+  // Use shared post actions hook
+  const { editPost, deletePost, openStatistics } = usePostActions();
   const postList = useMemo(() => {
     return posts.filter((post) => {
       const pList = dayjs.utc(post.publishDate).local();
@@ -504,84 +698,6 @@ export const CalendarColumn: FC<{
     }),
   }), [posts]);
 
-  const editPost = useCallback(
-    (
-        loadPost: Post & {
-          integration: Integration;
-        },
-        isDuplicate?: boolean
-      ) =>
-      async () => {
-        const post = {
-          ...loadPost,
-          // @ts-ignore
-          publishDate: loadPost.actualDate || loadPost.publishDate,
-        };
-
-        const data = await (await fetch(`/posts/group/${post.group}`)).json();
-        const date = !isDuplicate
-          ? null
-          : (await (await fetch('/posts/find-slot')).json()).date;
-        const publishDate = dayjs
-          .utc(date || data.posts[0].publishDate)
-          .local();
-        const ExistingData = !isDuplicate
-          ? ExistingDataContextProvider
-          : Fragment;
-        modal.openModal({
-          id: 'add-edit-modal',
-          closeOnClickOutside: false,
-          removeLayout: true,
-          closeOnEscape: false,
-          withCloseButton: false,
-          askClose: true,
-          fullScreen: true,
-          classNames: {
-            modal: 'w-[100%] max-w-[1400px] text-textColor',
-          },
-          children: (
-            <ExistingData value={data}>
-              <AddEditModal
-                {...(isDuplicate
-                  ? {
-                      onlyValues: data.posts.map(
-                        ({ image, settings, content }: any) => {
-                          return {
-                            image,
-                            settings,
-                            content,
-                          };
-                        }
-                      ),
-                    }
-                  : {})}
-                allIntegrations={integrations.map((p) => ({
-                  ...p,
-                }))}
-                reopenModal={editPost(post)}
-                mutate={reloadCalendarView}
-                integrations={
-                  isDuplicate
-                    ? integrations
-                    : integrations
-                        .slice(0)
-                        .filter((f) => f.id === data.integration)
-                        .map((p) => ({
-                          ...p,
-                          picture: data.integrationPicture,
-                        }))
-                }
-                date={publishDate}
-              />
-            </ExistingData>
-          ),
-          size: '80%',
-          title: ``,
-        });
-      },
-    [integrations]
-  );
-
   const addModal = useCallback(async () => {
     const set: any = !sets.length
       ? undefined
@@ -655,50 +771,6 @@ export const CalendarColumn: FC<{
       size: '80%',
     });
   }, [integrations, getDate, sets, signature]);
-  const openStatistics = useCallback(
-    (id: string) => () => {
-      modal.openModal({
-        title: t('statistics', 'Statistics'),
-        closeOnClickOutside: true,
-        closeOnEscape: true,
-        withCloseButton: true,
-        classNames: {
-          modal: 'w-[100%] max-w-[1400px]',
-        },
-        children: <StatisticsModal postId={id} />,
-        size: '80%',
-        // title: `Adding posts for ${getDate.format('DD/MM/YYYY HH:mm')}`,
-      });
-    },
-    []
-  );
-
-  const deletePost = useCallback(
-    (post: Post) => async () => {
-      if (
-        !(await deleteDialog(
-          t(
-            'are_you_sure_you_want_to_delete_post',
-            'Are you sure you want to delete post?'
-          )
-        ))
-      ) {
-        return;
-      }
-
-      await fetch(`/posts/${post.group}`, {
-        method: 'DELETE',
-      });
-
-      toaster.show(
-        t('post_deleted_successfully', 'Post deleted successfully'),
-        'success'
-      );
-
-      reloadCalendarView();
-    },
-    [toaster, t]
-  );
 
   const addProvider = useAddProvider();
   return (
@@ -860,6 +932,7 @@ const CalendarItem: FC<{
   integrations: Integrations[];
   state: State;
   display: 'day' | 'week' | 'month';
+  showTime?: boolean;
   post: Post & {
     integration: Integration;
     tags: {
@@ -878,6 +951,7 @@ const CalendarItem: FC<{
     state,
     display,
     deletePost,
+    showTime,
   } = props;
   const { disableXAnalytics } = useVariables();
   const preview = useCallback(() => {
@@ -992,6 +1066,11 @@ const CalendarItem: FC<{
               </div>
             </div>
         </div>
+        {showTime && (
+          <div className="text-textColor/50 text-[12px] whitespace-nowrap flex items-center">
+            {newDayjs(post.publishDate).local().format(isUSCitizen() ? 'hh:mm A' : 'HH:mm')}
+          </div>
+        )}
       </div>
     </div>
   );

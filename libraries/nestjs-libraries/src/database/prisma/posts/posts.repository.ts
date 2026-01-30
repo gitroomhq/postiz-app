@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { Post as PostBody } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
 import { APPROVED_SUBMIT_FOR_ORDER, Post, State } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
+import { GetPostsListDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.list.dto';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
@@ -209,6 +210,84 @@ export class PostsRepository {
 
       return [...all, ...addMorePosts];
     }, [] as any[]);
+  }
+
+  async getPostsList(orgId: string, query: GetPostsListDto) {
+    const page = query.page || 0;
+    const limit = query.limit || 20;
+    const skip = page * limit;
+
+    const where = {
+      AND: [
+        {
+          OR: [
+            {
+              organizationId: orgId,
+            },
+            {
+              submittedForOrganizationId: orgId,
+            },
+          ],
+        },
+        {
+          publishDate: {
+            gte: dayjs.utc().toDate(),
+          },
+        },
+      ],
+      deletedAt: null as Date | null,
+      parentPostId: null as string | null,
+      intervalInDays: null as number | null,
+      ...(query.customer
+        ? {
+            integration: {
+              customerId: query.customer,
+            },
+          }
+        : {}),
+    };
+
+    const [posts, total] = await Promise.all([
+      this._post.model.post.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          publishDate: 'asc',
+        },
+        select: {
+          id: true,
+          content: true,
+          publishDate: true,
+          releaseURL: true,
+          releaseId: true,
+          state: true,
+          group: true,
+          tags: {
+            select: {
+              tag: true,
+            },
+          },
+          integration: {
+            select: {
+              id: true,
+              providerIdentifier: true,
+              name: true,
+              picture: true,
+            },
+          },
+        },
+      }),
+      this._post.model.post.count({ where }),
+    ]);
+
+    return {
+      posts,
+      total,
+      page,
+      limit,
+      hasMore: skip + posts.length < total,
+    };
   }
 
   async deletePost(orgId: string, group: string) {

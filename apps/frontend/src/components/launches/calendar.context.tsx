@@ -55,12 +55,26 @@ export const CalendarContext = createContext({
   setFilters: (filters: {
     startDate: string;
     endDate: string;
-    display: 'week' | 'month' | 'day';
+    display: 'week' | 'month' | 'day' | 'list';
     customer: string | null;
   }) => {
     /** empty **/
   },
   changeDate: (id: string, date: dayjs.Dayjs) => {
+    /** empty **/
+  },
+  // List view specific
+  listPosts: [] as Array<
+    Post & {
+      integration: Integration;
+      tags: {
+        tag: Tags;
+      }[];
+    }
+  >,
+  listPage: 0,
+  listTotalPages: 0,
+  setListPage: (page: number) => {
     /** empty **/
   },
 });
@@ -126,6 +140,9 @@ export const CalendarWeekProvider: FC<{
   const [displaySaved, setDisplaySaved] = useCookie('calendar-display', 'week');
   const display = searchParams.get('display') || displaySaved;
 
+  // List view state
+  const [listPage, setListPage] = useState(0);
+
   // Initialize with current date range based on URL params or defaults
   const initStartDate = searchParams.get('startDate');
   const initEndDate = searchParams.get('endDate');
@@ -152,6 +169,7 @@ export const CalendarWeekProvider: FC<{
     }).toString();
   }, [filters]);
 
+  // Calendar view data fetcher
   const loadData = useCallback(async () => {
     const modifiedParams = new URLSearchParams({
       display: filters.display,
@@ -164,12 +182,51 @@ export const CalendarWeekProvider: FC<{
     return data;
   }, [filters, params]);
 
-  const swr = useSWR(`/posts-${params}`, loadData, {
-    refreshInterval: 3600000,
-    refreshWhenOffline: false,
-    refreshWhenHidden: false,
-    revalidateOnFocus: false,
-  });
+  // List view data fetcher
+  const listParams = useMemo(() => {
+    return new URLSearchParams({
+      page: listPage.toString(),
+      limit: '100',
+      customer: filters?.customer?.toString() || '',
+    }).toString();
+  }, [listPage, filters.customer]);
+
+  const loadListData = useCallback(async () => {
+    const response = await fetch(`/posts/list?${listParams}`);
+    return response.json();
+  }, [listParams]);
+
+  // SWR for calendar view
+  const {
+    data: calendarData,
+    isLoading: calendarIsLoading,
+    mutate: mutateCalendar,
+  } = useSWR(
+    filters.display !== 'list' ? `/posts-${params}` : null,
+    loadData,
+    {
+      refreshInterval: 3600000,
+      refreshWhenOffline: false,
+      refreshWhenHidden: false,
+      revalidateOnFocus: false,
+    }
+  );
+
+  // SWR for list view
+  const {
+    data: listData,
+    isLoading: listIsLoading,
+    mutate: mutateList,
+  } = useSWR(
+    filters.display === 'list' ? `/posts-list-${listParams}` : null,
+    loadListData,
+    {
+      refreshInterval: 3600000,
+      refreshWhenOffline: false,
+      refreshWhenHidden: false,
+      revalidateOnFocus: false,
+    }
+  );
 
   const defaultSign = useCallback(async () => {
     return await (await fetch('/signatures/default')).json();
@@ -197,31 +254,39 @@ export const CalendarWeekProvider: FC<{
   });
 
   const setFiltersWrapper = useCallback(
-    (filters: {
+    (newFilters: {
       startDate: string;
       endDate: string;
-      display: 'week' | 'month' | 'day';
+      display: 'week' | 'month' | 'day' | 'list';
       customer: string | null;
     }) => {
-      setDisplaySaved(filters.display);
-      setFilters(filters);
+      setDisplaySaved(newFilters.display);
+      setFilters(newFilters);
       setInternalData([]);
+
+      // Reset page when switching to list view
+      if (newFilters.display === 'list') {
+        setListPage(0);
+      }
+
       const path = [
-        `startDate=${filters.startDate}`,
-        `endDate=${filters.endDate}`,
-        `display=${filters.display}`,
-        filters.customer ? `customer=${filters.customer}` : ``,
+        `startDate=${newFilters.startDate}`,
+        `endDate=${newFilters.endDate}`,
+        `display=${newFilters.display}`,
+        newFilters.customer ? `customer=${newFilters.customer}` : ``,
       ].filter((f) => f);
       window.history.replaceState(null, '', `/launches?${path.join('&')}`);
     },
-    [filters, swr.mutate]
+    []
   );
 
-  const { isLoading } = swr;
-  const { posts, comments } = swr?.data || {
-    posts: [],
-    comments: [],
-  };
+  const posts = useMemo(() => calendarData?.posts || [], [calendarData?.posts]);
+  const comments = useMemo(() => calendarData?.comments || [], [calendarData?.comments]);
+
+  // List view data
+  const listPosts = useMemo(() => listData?.posts || [], [listData?.posts]);
+  const listTotal = listData?.total || 0;
+  const listTotalPages = Math.ceil(listTotal / 100);
 
   const changeDate = useCallback(
     (id: string, date: dayjs.Dayjs) => {
@@ -246,20 +311,34 @@ export const CalendarWeekProvider: FC<{
     }
   }, [posts]);
 
+  // Combined reload function that handles both calendar and list views
+  const reloadCalendarView = useCallback(() => {
+    mutateCalendar();
+    mutateList();
+  }, [mutateCalendar, mutateList]);
+
+  // Determine loading state based on current view
+  const loading = filters.display === 'list' ? listIsLoading : calendarIsLoading;
+
   return (
     <CalendarContext.Provider
       value={{
         trendings,
-        reloadCalendarView: swr.mutate,
+        reloadCalendarView,
         ...filters,
-        posts: isLoading ? [] : internalData,
-        loading: swr.isLoading,
+        posts: calendarIsLoading ? [] : internalData,
+        loading,
         integrations,
         setFilters: setFiltersWrapper,
         changeDate,
         comments,
         sets: sets || [],
         signature: sign,
+        // List view specific
+        listPosts,
+        listPage,
+        listTotalPages,
+        setListPage,
       }}
     >
       {children}
