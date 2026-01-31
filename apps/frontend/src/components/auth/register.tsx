@@ -91,14 +91,14 @@ export function RegisterAfter({
   const { isGeneral, genericOauth, neynarClientId, billingEnabled } =
     useVariables();
   const termsLink =
-    process.env.TERMS_OF_SERVICE_URL &&
-    process.env.TERMS_OF_SERVICE_URL.trim() !== ''
-      ? process.env.TERMS_OF_SERVICE_URL
+    process.env.NEXT_PUBLIC_TERMS_OF_SERVICE_URL &&
+    process.env.NEXT_PUBLIC_TERMS_OF_SERVICE_URL.trim() !== ''
+      ? process.env.NEXT_PUBLIC_TERMS_OF_SERVICE_URL
       : 'https://postiz.com/terms';
   const privacyLink =
-    process.env.PRIVACY_POLICY_URL &&
-    process.env.PRIVACY_POLICY_URL.trim() !== ''
-      ? process.env.PRIVACY_POLICY_URL
+    process.env.NEXT_PUBLIC_PRIVACY_POLICY_URL &&
+    process.env.NEXT_PUBLIC_PRIVACY_POLICY_URL.trim() !== ''
+      ? process.env.NEXT_PUBLIC_PRIVACY_POLICY_URL
       : 'https://postiz.com/privacy';
   const [loading, setLoading] = useState(false);
   const router = useRouter();
