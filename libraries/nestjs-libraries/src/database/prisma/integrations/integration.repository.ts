@@ -151,12 +151,31 @@ export class IntegrationRepository {
       params.picture = await this.storage.uploadSimple(params.picture);
     }
 
+    const existing = await this._integration.model.integration.findUnique({
+      where: {
+        organizationId_internalId: {
+          organizationId: params.organizationId!,
+          internalId: params.internalId,
+        },
+      },
+    });
+
+    if (existing) {
+      await this._integration.model.integration.delete({
+        where: {
+          id,
+        },
+      });
+    }
+
     return this._integration.model.integration.update({
       where: {
-        id,
+        ...(existing ? { id: existing.id } : { id }),
       },
       data: {
         ...params,
+        disabled: false,
+        deletedAt: null,
       },
     });
   }

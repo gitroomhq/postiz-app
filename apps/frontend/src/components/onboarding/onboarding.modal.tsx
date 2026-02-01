@@ -202,6 +202,7 @@ const OnboardingStep1: FC<{ onNext: () => void; onSkip: () => void }> = ({
         </div>
         {data && (
           <AddProviderComponent
+            invite={false}
             social={data.social || []}
             article={data.article || []}
             onboarding={true}

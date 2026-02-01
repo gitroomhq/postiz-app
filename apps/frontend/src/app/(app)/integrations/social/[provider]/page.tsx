@@ -1,5 +1,8 @@
 import { ContinueIntegration } from '@gitroom/frontend/components/launches/continue.integration';
+import { cookies } from 'next/headers';
+
 export const dynamic = 'force-dynamic';
+
 export default async function Page({
   params: { provider },
   searchParams,
@@ -9,5 +12,6 @@ export default async function Page({
   };
   searchParams: any;
 }) {
-  return <ContinueIntegration searchParams={searchParams} provider={provider} />;
+  const get = cookies().get('auth');
+  return <ContinueIntegration searchParams={searchParams} provider={provider} logged={!!get?.name} />;
 }
