@@ -74,7 +74,7 @@ export const AddProviderButton: FC<{
         data-tooltip-id="tooltip"
         data-tooltip-content={t(
           'invite_link',
-          'Send Invite Link to a customer'
+          'Send Invite Link to a customer to add channel'
         )}
         className="group-[.sidebar]:hidden min-h-[44px] min-w-[44px] bg-btnSimple justify-center items-center flex rounded-[8px] cursor-pointer"
       >
