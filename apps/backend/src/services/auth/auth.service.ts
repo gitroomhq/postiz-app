@@ -162,14 +162,41 @@ export class AuthService {
         password: '',
         provider,
         providerId: providerUser.id,
+        datafast_visitor_id: body.datafast_visitor_id,
       },
       ip,
       userAgent
     );
 
+    this._track(providerUser.email, body.datafast_visitor_id).catch(
+      (err) => {}
+    );
+
     await NewsletterService.register(providerUser.email);
 
     return create.users[0].user;
+  }
+
+  private async _track(email: string, datafast_visitor_id: string) {
+    if (email && datafast_visitor_id && process.env.DATAFAST_API_KEY) {
+      try {
+        await fetch('https://datafa.st/api/v1/goals', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${process.env.DATAFAST_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            datafast_visitor_id: datafast_visitor_id,
+            name: 'newsletter_signup',
+            metadata: {
+              name: 'Elon Musk',
+              email: 'musk@x.com',
+            },
+          }),
+        });
+      } catch (err) {}
+    }
   }
 
   async forgot(email: string) {
@@ -224,7 +251,7 @@ export class AuthService {
 
   async resendActivationEmail(email: string) {
     const user = await this._userService.getUserByEmail(email);
-    
+
     if (!user) {
       throw new Error('User not found');
     }
@@ -234,7 +261,7 @@ export class AuthService {
     }
 
     const jwt = await this.jwt(user);
-    
+
     await this._emailService.sendEmail(
       user.email,
       'Activate your account',

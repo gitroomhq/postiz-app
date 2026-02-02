@@ -103,7 +103,7 @@ export class AuthController {
         }
       }
 
-      Sentry.metrics.count("new_user", 1);
+      Sentry.metrics.count('new_user', 1);
       response.header('onboarding', 'true');
       response.status(200).json({
         register: true,

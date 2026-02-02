@@ -10,4 +10,7 @@ export class BillingSubscribeDto {
   utm: string;
 
   dub: string;
+
+  datafast_session_id: string;
+  datafast_visitor_id: string;
 }
