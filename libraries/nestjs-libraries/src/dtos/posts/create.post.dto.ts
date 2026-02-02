@@ -8,7 +8,6 @@ import {
   IsNumber,
   IsOptional,
   IsString,
-  MinLength,
   Validate,
   ValidateIf,
   ValidateNested,

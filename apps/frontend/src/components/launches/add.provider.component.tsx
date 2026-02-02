@@ -18,6 +18,7 @@ import { web3List } from '@gitroom/frontend/components/launches/web3/web3.list';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import clsx from 'clsx';
 import copy from 'copy-to-clipboard';
+import { capitalize } from 'lodash';
 const resolver = classValidatorResolver(ApiKeyDto);
 
 export const useAddProvider = (update?: () => void, invite?: boolean) => {
@@ -306,7 +307,7 @@ export const AddProviderComponent: FC<{
             )
           ).json();
           modal.openModal({
-            title: t('web3_provider', 'Web3 provider'),
+            title: `Add ${capitalize(identifier)}`,
             withCloseButton: true,
             classNames: {
               modal: 'bg-transparent text-textColor',
