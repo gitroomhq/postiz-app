@@ -256,6 +256,7 @@ export const CustomVariables: FC<{
   onboarding?: boolean;
 }> = (props) => {
   const { close, gotoUrl, identifier, variables, onboarding } = props;
+  const fetch = useFetch();
   const modals = useModals();
   const schema = useMemo(() => {
     return object({
@@ -291,9 +292,16 @@ export const CustomVariables: FC<{
   });
   const submit = useCallback(
     async (data: FieldValues) => {
+      const { url } = await (
+        await fetch(
+          `/integrations/social/${identifier}${
+            onboarding ? '?onboarding=true' : ''
+          }`
+        )
+      ).json();
       modals.closeAll();
       gotoUrl(
-        `/integrations/social/${identifier}?state=nostate&code=${Buffer.from(
+        `/integrations/social/${identifier}?state=${url}&code=${Buffer.from(
           JSON.stringify(data)
         ).toString('base64')}${onboarding ? '&onboarding=true' : ''}`
       );
@@ -474,22 +482,6 @@ export const AddProviderComponent: FC<{
     [onboarding]
   );
 
-  const showApiButton = useCallback(
-    (identifier: string, name: string) => async () => {
-      modal.openModal({
-        title: '',
-        withCloseButton: true,
-        classNames: {
-          modal: 'bg-transparent text-textColor',
-        },
-        children: (
-          <ApiModal update={update} name={name} identifier={identifier} />
-        ),
-      });
-    },
-    []
-  );
-
   const t = useT();
 
   return (
@@ -565,28 +557,6 @@ export const AddProviderComponent: FC<{
             ))}
         </div>
       </div>
-      {!isGeneral && (
-        <div className="flex flex-col">
-          <h2 className="pb-[10px]">{t('articles', 'Articles')}</h2>
-          <div className="grid grid-cols-3 gap-[10px]">
-            {article.map((item) => (
-              <div
-                key={item.identifier}
-                onClick={showApiButton(item.identifier, item.name)}
-                className="w-[120px] h-[100px] bg-input text-textColor justify-center items-center flex flex-col gap-[10px] cursor-pointer"
-              >
-                <div>
-                  <img
-                    className="w-[32px] h-[32px] rounded-full"
-                    src={`/icons/platforms/${item.identifier}.png`}
-                  />
-                </div>
-                <div>{item.name}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
