@@ -34,6 +34,7 @@ const jakartaSans = Plus_Jakarta_Sans({
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const allHeaders = headers();
+  const nonce = allHeaders.get('x-nonce') || '';
   const Plausible = !!process.env.STRIPE_PUBLISHABLE_KEY
     ? PlausibleProvider
     : Fragment;
@@ -82,14 +83,18 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           <SentryComponent>
             {/*<SetTimezone />*/}
             <HtmlComponent />
-            <DubAnalytics />
-            <FacebookComponent />
+            <DubAnalytics nonce={nonce} />
+            <FacebookComponent nonce={nonce} />
             <Plausible
               domain={!!process.env.IS_GENERAL ? 'postiz.com' : 'gitroom.com'}
+              integrity="sha384-uVdmUbCT6A1GSGlfv3cA1kbw3z3OFEZnHAk6MeH52jXPty4EKchrY4wPuCZzXjXf"
+              scriptProps={{ crossorigin: 'anonymous' }}
+              customDomain="https://content.boldslate.com"
             >
               <PHProvider
                 phkey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
                 host={process.env.NEXT_PUBLIC_POSTHOG_HOST}
+                nonce={nonce}
               >
                 <LayoutContext>
                   <UtmSaver />

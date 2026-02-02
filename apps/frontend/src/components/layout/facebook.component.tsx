@@ -1,12 +1,16 @@
 'use client';
 
 import Script from 'next/script';
-export const FacebookComponent = () => {
+export const FacebookComponent = ({ nonce }: { nonce: string }) => {
   if (!process.env.NEXT_PUBLIC_FACEBOOK_PIXEL) {
     return null;
   }
   return (
-    <Script strategy="afterInteractive" id="fb-pixel">
+    <Script
+      strategy="afterInteractive"
+      id="fb-pixel"
+      nonce={nonce}
+    >
       {`!function(f,b,e,v,n,t,s)
 {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
 n.callMethod.apply(n,arguments):n.queue.push(arguments)};

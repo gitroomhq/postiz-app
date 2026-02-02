@@ -7,7 +7,8 @@ export const PHProvider: FC<{
   children: ReactNode;
   phkey?: string;
   host?: string;
-}> = ({ children, phkey, host }) => {
+  nonce?: string;
+}> = ({ children, phkey, host, nonce }) => {
   useEffect(() => {
     if (!phkey || !host) {
       return;
@@ -16,6 +17,7 @@ export const PHProvider: FC<{
       api_host: host,
       person_profiles: 'identified_only',
       capture_pageview: false, // Disable automatic pageview capture, as we capture manually
+      script_nonce: nonce,
     });
   }, []);
   if (!phkey || !host) {
