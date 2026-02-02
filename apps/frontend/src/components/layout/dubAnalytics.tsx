@@ -4,7 +4,7 @@ import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { Analytics as DubAnalyticsIn } from '@dub/analytics/react';
 import { getCookie } from 'react-use-cookie';
 
-export const DubAnalytics = ({ nonce }: { nonce: string }) => {
+export const DubAnalytics = () => {
   const { dub } = useVariables();
   if (!dub) return null;
   return (
@@ -12,7 +12,6 @@ export const DubAnalytics = ({ nonce }: { nonce: string }) => {
       domainsConfig={{
         refer: 'affiliate.postiz.com',
       }}
-      scriptProps={{ nonce }}
     />
   );
 };

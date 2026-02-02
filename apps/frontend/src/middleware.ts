@@ -9,12 +9,10 @@ import {
   headerName,
   languages,
 } from '@gitroom/react/translation/i18n.config';
-import { generateNonce } from './utils/nonce';
 acceptLanguage.languages(languages);
 
 // This function can be marked `async` if using `await` inside
 export async function middleware(request: NextRequest) {
-  const nonce = generateNonce();
   const nextUrl = request.nextUrl;
   const authCookie =
     request.cookies.get('auth') ||
@@ -28,26 +26,6 @@ export async function middleware(request: NextRequest) {
       );
 
   const topResponse = NextResponse.next();
-
-  const csp = `
-    default-src 'self';
-    script-src 'self' https://js.stripe.com 'nonce-${nonce}' 'strict-dynamic' ${
-    process.env.NODE_ENV === 'development' ? "'unsafe-eval'" : ''
-  };
-    img-src 'self' data: https:;
-    style-src 'self' 'unsafe-inline';
-    font-src 'self';
-    object-src 'none';
-    base-uri 'self';
-    form-action 'self';
-    frame-ancestors 'none';
-    upgrade-insecure-requests;
-  `
-    .replace(/\s{2,}/g, ' ')
-    .trim();
-
-  topResponse.headers.set('Content-Security-Policy', csp);
-  topResponse.headers.set('x-nonce', nonce);
 
   if (lng) {
     topResponse.headers.set(cookieName, lng);

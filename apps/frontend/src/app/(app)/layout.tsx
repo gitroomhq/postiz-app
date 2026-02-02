@@ -34,7 +34,6 @@ const jakartaSans = Plus_Jakarta_Sans({
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const allHeaders = headers();
-  const nonce = allHeaders.get('x-nonce') || '';
   const Plausible = !!process.env.STRIPE_PUBLISHABLE_KEY
     ? PlausibleProvider
     : Fragment;
@@ -83,8 +82,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           <SentryComponent>
             {/*<SetTimezone />*/}
             <HtmlComponent />
-            <DubAnalytics nonce={nonce} />
-            <FacebookComponent nonce={nonce} />
+            <DubAnalytics />
+            <FacebookComponent />
             <Plausible
               domain={!!process.env.IS_GENERAL ? 'postiz.com' : 'gitroom.com'}
             >
