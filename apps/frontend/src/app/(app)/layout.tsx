@@ -87,9 +87,6 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             <FacebookComponent nonce={nonce} />
             <Plausible
               domain={!!process.env.IS_GENERAL ? 'postiz.com' : 'gitroom.com'}
-              integrity="sha384-uVdmUbCT6A1GSGlfv3cA1kbw3z3OFEZnHAk6MeH52jXPty4EKchrY4wPuCZzXjXf"
-              scriptProps={{ crossorigin: 'anonymous' }}
-              customDomain="https://content.boldslate.com"
             >
               <PHProvider
                 phkey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
