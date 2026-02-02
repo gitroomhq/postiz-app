@@ -7,7 +7,6 @@ import {
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import {
   BadBody,
-  RefreshToken,
   SocialAbstract,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import {
@@ -248,14 +247,13 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
       service: body.service,
     });
 
-    try {
-      await agent.login({
-        identifier: body.identifier,
-        password: body.password,
-      });
-    } catch (err) {
-      throw new RefreshToken('bluesky', JSON.stringify(err), {} as BodyInit);
-    }
+    // Re-authenticate using stored credentials
+    // Unlike OAuth providers, Bluesky uses password-based auth so we login fresh each time
+    // If login fails, it's likely due to invalid credentials, not expired tokens
+    await agent.login({
+      identifier: body.identifier,
+      password: body.password,
+    });
 
     return agent;
   }
