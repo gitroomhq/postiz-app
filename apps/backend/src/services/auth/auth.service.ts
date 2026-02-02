@@ -168,7 +168,7 @@ export class AuthService {
       userAgent
     );
 
-    this._track(providerUser.email, body.datafast_visitor_id).catch(
+    this._track('register', providerUser.email, body.datafast_visitor_id).catch(
       (err) => {}
     );
 
@@ -177,7 +177,11 @@ export class AuthService {
     return create.users[0].user;
   }
 
-  private async _track(email: string, datafast_visitor_id: string) {
+  private async _track(
+    name: string,
+    email: string,
+    datafast_visitor_id: string
+  ) {
     if (email && datafast_visitor_id && process.env.DATAFAST_API_KEY) {
       try {
         await fetch('https://datafa.st/api/v1/goals', {
@@ -188,10 +192,9 @@ export class AuthService {
           },
           body: JSON.stringify({
             datafast_visitor_id: datafast_visitor_id,
-            name: 'newsletter_signup',
+            name: name,
             metadata: {
-              name: 'Elon Musk',
-              email: 'musk@x.com',
+              email,
             },
           }),
         });
@@ -229,7 +232,7 @@ export class AuthService {
     return this._userService.updatePassword(user.id, body.password);
   }
 
-  async activate(code: string) {
+  async activate(code: string, tracking: string) {
     const user = AuthChecker.verifyJWT(code) as {
       id: string;
       activated: boolean;
@@ -242,6 +245,7 @@ export class AuthService {
       }
       await this._userService.activateUser(user.id);
       user.activated = true;
+      this._track('register', user.email, tracking).catch((err) => {});
       await NewsletterService.register(user.email);
       return this.jwt(user as any);
     }
