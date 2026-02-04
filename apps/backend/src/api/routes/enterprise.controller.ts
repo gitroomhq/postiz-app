@@ -23,9 +23,18 @@ export class EnterpriseController {
         saasName: string;
       };
 
-      return this._organizationService.createMaxUser(id, name, saasName, email);
+      try {
+        return await this._organizationService.createMaxUser(
+          id,
+          name,
+          saasName,
+          email
+        );
+      } catch (err) {
+        return { create: false };
+      }
     } catch (err) {
-      return { connection: false };
+      return { success: false };
     }
   }
 
