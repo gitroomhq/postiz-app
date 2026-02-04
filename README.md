@@ -81,6 +81,12 @@
 | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | ![Image 3](https://github.com/user-attachments/assets/d51786ee-ddd8-4ef8-8138-5192e9cfe7c3) | ![Image 4](https://github.com/user-attachments/assets/91f83c89-22f6-43d6-b7aa-d2d3378289fb) |
 
+### Our Sponsors
+
+| Sponsor |                                  Logo                                   | Description     |
+|---------|:-----------------------------------------------------------------------:|-----------------|
+| [Hostinger](https://www.hostinger.com/vps-hosting?ref=dokploy) | <img src=".github/sponsors/hostinger.png" alt="Hostinger" width="200"/> | Hostinger is on a mission to make online success possible for anyone – from developers to aspiring bloggers and business owners |
+
 # Intro
 
 - Schedule all your social media posts (many AI features)
