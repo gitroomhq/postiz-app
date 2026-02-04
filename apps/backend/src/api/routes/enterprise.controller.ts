@@ -46,6 +46,7 @@ export class EnterpriseController {
         apiKey: string;
         refreshId?: string;
         provider: string;
+        webhookUrl: string;
       };
 
       if (!load || !load.redirectUrl || !load.apiKey || !load.provider) {
@@ -77,6 +78,7 @@ export class EnterpriseController {
         await ioRedis.set(`refresh:${state}`, load.refreshId, 'EX', 3600);
       }
 
+      await ioRedis.set(`webhookUrl:${state}`, load.webhookUrl, 'EX', 3600);
       await ioRedis.set(`redirect:${state}`, load.redirectUrl, 'EX', 3600);
       await ioRedis.set(`organization:${state}`, org.id, 'EX', 3600);
       await ioRedis.set(`login:${state}`, codeVerifier, 'EX', 3600);
