@@ -42,10 +42,6 @@ export class IntegrationsController {
     private _postService: PostsService,
     private _refreshIntegrationService: RefreshIntegrationService
   ) {}
-  @Get('/')
-  getIntegrations() {
-    return this._integrationManager.getAllIntegrations();
-  }
 
   @Get('/:identifier/internal-plugs')
   getInternalPlugs(@Param('identifier') identifier: string) {
