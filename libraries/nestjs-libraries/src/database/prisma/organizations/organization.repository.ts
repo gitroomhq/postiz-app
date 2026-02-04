@@ -21,6 +21,7 @@ export class OrganizationRepository {
       },
       data: {
         name: name ? `${name}###${id}` : `Unnamed User###${id}`,
+        apiKey: AuthService.fixedEncryption(makeId(20)),
         isTrailing: false,
         subscription: {
           create: {
