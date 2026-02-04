@@ -13,6 +13,44 @@ export class OrganizationRepository {
     private _user: PrismaRepository<'user'>
   ) {}
 
+  createMaxUser(id: string, name: string, saasName: string, email: string) {
+    return this._organization.model.organization.create({
+      select: {
+        id: true,
+        apiKey: true,
+      },
+      data: {
+        name: name ? `${name}###${id}` : `Unnamed User###${id}`,
+        isTrailing: false,
+        subscription: {
+          create: {
+            totalChannels: 1000000,
+            subscriptionTier: 'ULTIMATE',
+            isLifetime: true,
+            period: 'YEARLY',
+          },
+        },
+        users: {
+          create: {
+            role: Role.SUPERADMIN,
+            user: {
+              create: {
+                activated: true,
+                email: email
+                  ? email.split('@').join(`+${saasName}@`)
+                  : `${saasName}+` + makeId(10) + '@postiz.com',
+                name: name ? `${name}###${id}` : `Unnamed User###${id}`,
+                providerName: 'LOCAL',
+                password: AuthService.hashPassword(makeId(500)),
+                timezone: 0,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
   getOrgByApiKey(api: string) {
     return this._organization.model.organization.findFirst({
       where: {

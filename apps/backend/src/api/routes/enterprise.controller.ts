@@ -13,17 +13,17 @@ export class EnterpriseController {
     private _organizationService: OrganizationService
   ) {}
 
-  @Post('/test')
-  async test(@Body('params') params: string) {
+  @Post('/create-user')
+  async createUser(@Body('params') params: string) {
     try {
-      const load = AuthService.verifyJWT(params) as {
-        apiKey: string;
+      const { id, name, saasName, email } = AuthService.verifyJWT(params) as {
+        id: string;
+        name: string;
+        email: string;
+        saasName: string;
       };
 
-      const org = await this._organizationService.getOrgByApiKey(load.apiKey);
-      return {
-        connection: !!org,
-      };
+      return this._organizationService.createMaxUser(id, name, saasName, email);
     } catch (err) {
       return { connection: false };
     }
