@@ -17,6 +17,7 @@ import {
   AppBskyVideoDefs,
   AtpAgent,
   BlobRef,
+  AppBskyEmbedExternal,
 } from '@atproto/api';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
@@ -59,6 +60,124 @@ async function reduceImageBySize(url: string, maxSizeKB = 976) {
     console.error('Error processing image:', error);
     throw error;
   }
+}
+
+interface OpenGraphData {
+  title: string;
+  description: string;
+  image?: string;
+}
+
+async function fetchOpenGraphData(url: string): Promise<OpenGraphData | null> {
+  try {
+    const response = await axios.get(url, {
+      timeout: 10000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; Postiz/1.0; +https://postiz.com)',
+        'Accept': 'text/html,application/xhtml+xml',
+      },
+      maxRedirects: 5,
+    });
+
+    const html = response.data as string;
+
+    // Extract Open Graph tags or fallback to standard meta tags
+    const getMetaContent = (property: string): string | undefined => {
+      // Try og: tags first
+      const ogMatch = html.match(
+        new RegExp(`<meta[^>]*property=["']og:${property}["'][^>]*content=["']([^"']*)["']`, 'i')
+      ) || html.match(
+        new RegExp(`<meta[^>]*content=["']([^"']*)["'][^>]*property=["']og:${property}["']`, 'i')
+      );
+      if (ogMatch) return ogMatch[1];
+
+      // Try twitter: tags
+      const twitterMatch = html.match(
+        new RegExp(`<meta[^>]*name=["']twitter:${property}["'][^>]*content=["']([^"']*)["']`, 'i')
+      ) || html.match(
+        new RegExp(`<meta[^>]*content=["']([^"']*)["'][^>]*name=["']twitter:${property}["']`, 'i')
+      );
+      if (twitterMatch) return twitterMatch[1];
+
+      // Fallback for description
+      if (property === 'description') {
+        const descMatch = html.match(
+          /<meta[^>]*name=["']description["'][^>]*content=["']([^"']*)["']/i
+        ) || html.match(
+          /<meta[^>]*content=["']([^"']*)["'][^>]*name=["']description["']/i
+        );
+        if (descMatch) return descMatch[1];
+      }
+
+      return undefined;
+    };
+
+    // Get title from og:title or <title> tag
+    let title = getMetaContent('title');
+    if (!title) {
+      const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
+      title = titleMatch ? titleMatch[1].trim() : url;
+    }
+
+    const description = getMetaContent('description') || '';
+    const image = getMetaContent('image');
+
+    return {
+      title: title.substring(0, 300), // Limit title length
+      description: description.substring(0, 1000), // Limit description length
+      image,
+    };
+  } catch (error) {
+    console.error('Error fetching Open Graph data:', error);
+    return null;
+  }
+}
+
+function extractFirstUrl(text: string): string | null {
+  const urlRegex = /https?:\/\/[^\s<>\[\]()]+/gi;
+  const match = text.match(urlRegex);
+  return match ? match[0] : null;
+}
+
+async function createExternalEmbed(
+  agent: BskyAgent,
+  url: string
+): Promise<AppBskyEmbedExternal.Main | null> {
+  const ogData = await fetchOpenGraphData(url);
+  if (!ogData) return null;
+
+  let thumbBlob: BlobRef | undefined;
+
+  // Try to upload the thumbnail image if available
+  if (ogData.image) {
+    try {
+      // Handle relative URLs
+      let imageUrl = ogData.image;
+      if (imageUrl.startsWith('//')) {
+        imageUrl = 'https:' + imageUrl;
+      } else if (imageUrl.startsWith('/')) {
+        const urlObj = new URL(url);
+        imageUrl = urlObj.origin + imageUrl;
+      }
+
+      const { buffer } = await reduceImageBySize(imageUrl);
+      const uploadResponse = await agent.uploadBlob(new Blob([buffer]));
+      thumbBlob = uploadResponse.data.blob;
+    } catch (error) {
+      console.error('Error uploading thumbnail for embed card:', error);
+      // Continue without thumbnail
+    }
+  }
+
+  return {
+    $type: 'app.bsky.embed.external',
+    external: {
+      uri: url,
+      title: ogData.title,
+      description: ogData.description,
+      ...(thumbBlob ? { thumb: thumbBlob } : {}),
+    },
+  } satisfies AppBskyEmbedExternal.Main;
 }
 
 async function uploadVideo(
@@ -149,7 +268,6 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 2; // Bluesky has moderate rate limits
   identifier = 'bluesky';
   name = 'Bluesky';
-  toolTip = "We don’t currently support two-factor authentication. If it’s enabled on Bluesky, you’ll need to disable it."
   isBetweenSteps = false;
   scopes = ['write:statuses', 'profile', 'write:media'];
   editor = 'normal' as const;
@@ -196,7 +314,7 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
   async generateAuthUrl() {
     const state = makeId(6);
     return {
-      url: state,
+      url: '',
       codeVerifier: makeId(10),
       state,
     };
@@ -240,7 +358,12 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
     }
   }
 
-  private async getAgent(integration: Integration) {
+  async post(
+    id: string,
+    accessToken: string,
+    postDetails: PostDetails[],
+    integration: Integration
+  ): Promise<PostResponse[]> {
     const body = JSON.parse(
       AuthService.fixedDecryption(integration.customInstanceDetails!)
     );
@@ -257,154 +380,148 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
       throw new RefreshToken('bluesky', JSON.stringify(err), {} as BodyInit);
     }
 
-    return agent;
-  }
+    let loadCid = '';
+    let loadUri = '';
+    let replyCid = '';
+    let replyUri = '';
+    const cidUrl = [] as { cid: string; url: string; rev: string }[];
+    for (const post of postDetails) {
+      // Separate images and videos
+      const imageMedia =
+        post.media?.filter((p) => p.path.indexOf('mp4') === -1) || [];
+      const videoMedia =
+        post.media?.filter((p) => p.path.indexOf('mp4') !== -1) || [];
 
-  private async uploadMediaForPost(
-    agent: BskyAgent,
-    post: PostDetails
-  ): Promise<{ embed: any; images: any[] }> {
-    // Separate images and videos
-    const imageMedia =
-      post.media?.filter((p) => p.path.indexOf('mp4') === -1) || [];
-    const videoMedia =
-      post.media?.filter((p) => p.path.indexOf('mp4') !== -1) || [];
+      // Upload images
+      const images = await Promise.all(
+        imageMedia.map(async (p) => {
+          const { buffer, width, height } = await reduceImageBySize(p.path);
+          return {
+            width,
+            height,
+            buffer: await agent.uploadBlob(new Blob([buffer])),
+          };
+        })
+      );
 
-    // Upload images
-    const images = await Promise.all(
-      imageMedia.map(async (p) => {
-        const { buffer, width, height } = await reduceImageBySize(p.path);
-        return {
-          width,
-          height,
-          buffer: await agent.uploadBlob(new Blob([buffer])),
+      // Upload videos (only one video per post is supported by Bluesky)
+      let videoEmbed: AppBskyEmbedVideo.Main | null = null;
+      if (videoMedia.length > 0) {
+        videoEmbed = await uploadVideo(agent, videoMedia[0].path);
+      }
+
+      const rt = new RichText({
+        text: post.message,
+      });
+
+      await rt.detectFacets(agent);
+
+      // Determine embed based on media types
+      let embed: any = {};
+      if (videoEmbed) {
+        // If there's a video, use video embed (Bluesky supports only one video per post)
+        embed = videoEmbed;
+      } else if (images.length > 0) {
+        // If there are images but no video, use image embed
+        embed = {
+          $type: 'app.bsky.embed.images',
+          images: images.map((p, index) => ({
+            alt: imageMedia?.[index]?.alt || '',
+            image: p.buffer.data.blob,
+            aspectRatio: {
+              width: p.width,
+              height: p.height,
+            },
+          })),
         };
-      })
-    );
+      } else {
+        // No media - check for URLs to create an external embed card
+        const firstUrl = extractFirstUrl(post.message);
+        if (firstUrl) {
+          const externalEmbed = await createExternalEmbed(agent, firstUrl);
+          if (externalEmbed) {
+            embed = externalEmbed;
+          }
+        }
+      }
 
-    // Upload videos (only one video per post is supported by Bluesky)
-    let videoEmbed: AppBskyEmbedVideo.Main | null = null;
-    if (videoMedia.length > 0) {
-      videoEmbed = await uploadVideo(agent, videoMedia[0].path);
+      // @ts-ignore
+      const { cid, uri, commit } = await agent.post({
+        text: rt.text,
+        facets: rt.facets,
+        createdAt: new Date().toISOString(),
+        ...(Object.keys(embed).length > 0 ? { embed } : {}),
+        ...(loadCid
+          ? {
+              reply: {
+                root: {
+                  uri: replyUri,
+                  cid: replyCid,
+                },
+                parent: {
+                  uri: loadUri,
+                  cid: loadCid,
+                },
+              },
+            }
+          : {}),
+      });
+
+      loadCid = loadCid || cid;
+      loadUri = loadUri || uri;
+      replyCid = cid;
+      replyUri = uri;
+
+      cidUrl.push({ cid, url: uri, rev: commit.rev });
     }
 
-    // Determine embed based on media types
-    let embed: any = {};
-    if (videoEmbed) {
-      embed = videoEmbed;
-    } else if (images.length > 0) {
-      embed = {
-        $type: 'app.bsky.embed.images',
-        images: images.map((p, index) => ({
-          alt: imageMedia?.[index]?.alt || '',
-          image: p.buffer.data.blob,
-          aspectRatio: {
-            width: p.width,
-            height: p.height,
+    if (postDetails?.[0]?.settings?.active_thread_finisher) {
+      const rt = new RichText({
+        text: stripHtmlValidation(
+          'normal',
+          postDetails?.[0]?.settings?.thread_finisher,
+          true
+        ),
+      });
+
+      await rt.detectFacets(agent);
+
+      await agent.post({
+        text: stripHtmlValidation('normal', rt.text, true),
+        facets: rt.facets,
+        createdAt: new Date().toISOString(),
+        embed: {
+          $type: 'app.bsky.embed.record',
+          record: {
+            uri: cidUrl[0].url,
+            cid: cidUrl[0].cid,
           },
-        })),
-      };
+        },
+        ...(loadCid
+          ? {
+              reply: {
+                root: {
+                  uri: loadUri,
+                  cid: loadCid,
+                },
+                parent: {
+                  uri: loadUri,
+                  cid: loadCid,
+                },
+              },
+            }
+          : {}),
+      });
     }
 
-    return { embed, images };
-  }
-
-  async post(
-    id: string,
-    accessToken: string,
-    postDetails: PostDetails[],
-    integration: Integration
-  ): Promise<PostResponse[]> {
-    const agent = await this.getAgent(integration);
-    const [firstPost] = postDetails;
-
-    const { embed } = await this.uploadMediaForPost(agent, firstPost);
-
-    const rt = new RichText({
-      text: firstPost.message,
-    });
-
-    await rt.detectFacets(agent);
-
-    // @ts-ignore
-    const { cid, uri, commit } = await agent.post({
-      text: rt.text,
-      facets: rt.facets,
-      createdAt: new Date().toISOString(),
-      ...(Object.keys(embed).length > 0 ? { embed } : {}),
-    });
-
-    return [
-      {
-        id: firstPost.id,
-        postId: uri,
-        status: 'completed',
-        releaseURL: `https://bsky.app/profile/${id}/post/${uri.split('/').pop()}`,
-      },
-    ];
-  }
-
-  async comment(
-    id: string,
-    postId: string,
-    lastCommentId: string | undefined,
-    accessToken: string,
-    postDetails: PostDetails[],
-    integration: Integration
-  ): Promise<PostResponse[]> {
-    const agent = await this.getAgent(integration);
-    const [commentPost] = postDetails;
-
-    const { embed } = await this.uploadMediaForPost(agent, commentPost);
-
-    const rt = new RichText({
-      text: commentPost.message,
-    });
-
-    await rt.detectFacets(agent);
-
-    // Get the parent post info to get its CID
-    const parentUri = lastCommentId || postId;
-
-    // Fetch the parent post to get its CID
-    const parentThread = await agent.getPostThread({
-      uri: parentUri,
-      depth: 0,
-    });
-
-    // @ts-ignore
-    const parentCid = parentThread.data.thread.post?.cid;
-    // @ts-ignore
-    const rootUri = parentThread.data.thread.post?.record?.reply?.root?.uri || postId;
-    // @ts-ignore
-    const rootCid = parentThread.data.thread.post?.record?.reply?.root?.cid || parentCid;
-
-    // @ts-ignore
-    const { cid, uri, commit } = await agent.post({
-      text: rt.text,
-      facets: rt.facets,
-      createdAt: new Date().toISOString(),
-      ...(Object.keys(embed).length > 0 ? { embed } : {}),
-      reply: {
-        root: {
-          uri: rootUri,
-          cid: rootCid,
-        },
-        parent: {
-          uri: parentUri,
-          cid: parentCid,
-        },
-      },
-    });
-
-    return [
-      {
-        id: commentPost.id,
-        postId: uri,
-        status: 'completed',
-        releaseURL: `https://bsky.app/profile/${id}/post/${uri.split('/').pop()}`,
-      },
-    ];
+    return postDetails.map((p, index) => ({
+      id: p.id,
+      postId: cidUrl[index].url,
+      status: 'completed',
+      releaseURL: `https://bsky.app/profile/${id}/post/${cidUrl[index].url
+        .split('/')
+        .pop()}`,
+    }));
   }
 
   @Plug({
