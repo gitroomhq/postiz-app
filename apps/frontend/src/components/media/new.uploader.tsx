@@ -56,7 +56,7 @@ export function useUppyUploader(props: {
       autoProceed: true,
       restrictions: {
         // maxNumberOfFiles: 5,
-        allowedFileTypes: allowedFileTypes.split(','),
+        // allowedFileTypes: allowedFileTypes.split(','),
         maxFileSize: 1000000000, // Default 1GB, but we'll override with custom validation
       },
     });
@@ -82,7 +82,10 @@ export function useUppyUploader(props: {
             ];
           }
           if (type === 'video/*') {
-            return ['video/mp4', 'video/mpeg'];
+            return ['video/mp4', 'video/mpeg', 'video/quicktime'];
+          }
+          if (type === 'video/mp4' && transloadit && transloadit.length > 0) {
+            return ['video/mp4', 'video/mpeg', 'video/quicktime'];
           }
           return [type];
         });
