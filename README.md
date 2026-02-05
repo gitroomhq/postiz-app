@@ -85,7 +85,7 @@
 
 | Sponsor |                                  Logo                                   | Description     |
 |---------|:-----------------------------------------------------------------------:|-----------------|
-| [Hostinger](https://www.hostinger.com/vps-hosting?ref=dokploy) | <img src=".github/sponsors/hostinger.png" alt="Hostinger" width="200"/> | Hostinger is on a mission to make online success possible for anyone – from developers to aspiring bloggers and business owners |
+| [Hostinger](https://www.hostinger.com/?ref=postiz) | <img src=".github/sponsors/hostinger.png" alt="Hostinger" width="500"/> | Hostinger is on a mission to make online success possible for anyone – from developers to aspiring bloggers and business owners |
 
 # Intro
 
