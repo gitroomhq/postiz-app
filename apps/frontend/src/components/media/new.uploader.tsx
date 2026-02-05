@@ -202,6 +202,7 @@ export function useUppyUploader(props: {
       props.onStart();
     });
     uppy2.on('complete', async (result) => {
+      console.log(result);
       for (const file of [...result.successful]) {
         uppy2.removeFile(file.id);
       }
@@ -225,10 +226,13 @@ export function useUppyUploader(props: {
         // @ts-ignore
         const allRes = result.transloadit[0].results;
         const toSave = uniqBy<{ name: string; order: number }>(
-          (allRes[Object.keys(allRes)[0]] || []).flatMap((item: any) => ({
-            name: item.url.split('/').pop(),
-            order: +item.user_meta.addedOrder,
-          })),
+          // @ts-ignore
+          Object.values(allRes).flatMap((p: any[]) => {
+            return p.flatMap((item) => ({
+              name: item.url.split('/').pop(),
+              order: +item.user_meta.addedOrder,
+            }));
+          }),
           (item) => item.name
         );
 
