@@ -67,6 +67,19 @@
 
 <br />
 
+## New - Postiz-as-a-service - Enterprise (Cloud)
+
+Integrate powerful social media scheduling capabilities into your SaaS. <br />Multi-tenant architecture designed for SaaS companies who want to offer social media management to their users.
+- **Skip App Approvals** - Use Postiz apps directly without going through lengthy social platform approval processes. Get the full power of Postiz instantly.
+- **Multi-Tenant Architecture** - each of your customers gets their own isolated environment with separate accounts, channels, and team management.
+- **Headless API** - Full REST API access to build your own frontend experience. Complete control over the user interface and branding.
+- **Full OAuth Support** - Connect all major social platforms including Facebook, Instagram, Twitter, LinkedIn, TikTok, and more.
+
+
+[Check it here](https://postiz.com/enterprise)
+
+<br /><br />
+
 ## 🔌 See the leading Postiz features
 
 <p align="center">
