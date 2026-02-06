@@ -285,4 +285,20 @@ export class AuthController {
       login: true,
     });
   }
+
+  @Get('/sso-init')
+  async ssoInit(
+    @Query('redirect') redirect: string,
+    @Res({ passthrough: false }) response: Response
+  ) {
+    // This endpoint is protected by the auth middleware, which will:
+    // 1. Process SSO headers if present
+    // 2. Set the auth cookie
+    // 3. Attach user/org to request
+    //
+    // If we reach here, authentication succeeded
+    // Redirect back to the original destination
+    const redirectUrl = redirect || '/';
+    return response.redirect(redirectUrl);
+  }
 }
