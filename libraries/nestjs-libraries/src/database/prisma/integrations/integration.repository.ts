@@ -298,7 +298,6 @@ export class IntegrationRepository {
           id: {
             not: upsert.id,
           },
-          organizationId: org,
           rootInternalId: rootId,
         },
         data: {
