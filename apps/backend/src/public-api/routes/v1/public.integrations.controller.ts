@@ -29,7 +29,7 @@ import { VideoFunctionDto } from '@gitroom/nestjs-libraries/dtos/videos/video.fu
 import { UploadDto } from '@gitroom/nestjs-libraries/dtos/media/upload.dto';
 import axios from 'axios';
 import { Readable } from 'stream';
-import { lookup } from 'mime-types';
+import { lookup, extension } from 'mime-types';
 import * as Sentry from '@sentry/nestjs';
 
 @ApiTags('Public API')
@@ -73,17 +73,21 @@ export class PublicIntegrationsController {
     });
 
     const buffer = Buffer.from(response.data);
+    const responseMime = response.headers?.['content-type']?.split(';')[0]?.trim();
+    const urlMime = lookup(body?.url?.split?.('?')?.[0]);
+    const mimetype = (urlMime || responseMime || 'image/jpeg') as string;
+    const ext = extension(mimetype) || 'jpg';
 
     const getFile = await this.storage.uploadFile({
       buffer,
-      mimetype: lookup(body?.url?.split?.('?')?.[0]) || 'image/jpeg',
+      mimetype,
       size: buffer.length,
       path: '',
       fieldname: '',
       destination: '',
       stream: new Readable(),
       filename: '',
-      originalname: '',
+      originalname: `upload.${ext}`,
       encoding: '',
     });
 
