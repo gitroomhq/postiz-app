@@ -78,9 +78,8 @@ export class NoAuthIntegrationsController {
         throw new Error('Organization not found');
       }
       org = await this._organizationService.getOrgById(organization);
-    }
 
-    if (!integrationProvider.customFields) {
+      // Clean up the OAuth state from Redis
       await ioRedis.del(`login:${body.state}`);
     }
 
