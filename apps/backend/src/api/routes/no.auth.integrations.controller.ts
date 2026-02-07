@@ -23,6 +23,8 @@ import {
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
+import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
+import { Organization } from '@prisma/client';
 
 @ApiTags('Integrations')
 @Controller('/integrations')
@@ -44,7 +46,8 @@ export class NoAuthIntegrationsController {
   @UseFilters(new NotEnoughScopesFilter())
   async connectSocialMedia(
     @Param('integration') integration: string,
-    @Body() body: ConnectIntegrationDto
+    @Body() body: ConnectIntegrationDto,
+    @GetOrgFromRequest() requestOrg: Organization
   ) {
     if (
       !this._integrationManager
@@ -64,12 +67,18 @@ export class NoAuthIntegrationsController {
       throw new Error('Invalid state');
     }
 
-    const organization = await ioRedis.get(`organization:${body.state}`);
-    if (!organization) {
-      throw new Error('Organization not found');
+    // For custom fields integrations (Bluesky, Reddit, etc.), use the organization from the authenticated request
+    // For OAuth integrations, look up the organization from Redis using the state token
+    let org: Organization;
+    if (integrationProvider.customFields) {
+      org = requestOrg;
+    } else {
+      const organization = await ioRedis.get(`organization:${body.state}`);
+      if (!organization) {
+        throw new Error('Organization not found');
+      }
+      org = await this._organizationService.getOrgById(organization);
     }
-
-    const org = await this._organizationService.getOrgById(organization);
 
     if (!integrationProvider.customFields) {
       await ioRedis.del(`login:${body.state}`);
