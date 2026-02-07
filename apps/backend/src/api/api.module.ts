@@ -49,6 +49,7 @@ const authenticatedController = [
   AutopostController,
   SetsController,
   ThirdPartyController,
+  NoAuthIntegrationsController,
 ];
 @Module({
   imports: [UploadModule],
@@ -59,7 +60,6 @@ const authenticatedController = [
     PublicController,
     MonitorController,
     EnterpriseController,
-    NoAuthIntegrationsController,
     ...authenticatedController,
   ],
   providers: [
