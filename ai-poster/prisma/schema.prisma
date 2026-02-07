@@ -1,0 +1,597 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── ENUMS ───
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+enum Platform {
+  TWITTER
+  LINKEDIN
+  LINKEDIN_PAGE
+  FACEBOOK
+  INSTAGRAM
+  YOUTUBE
+  TIKTOK
+  REDDIT
+  PINTEREST
+  THREADS
+  DISCORD
+  SLACK
+  MASTODON
+  BLUESKY
+  DRIBBBLE
+}
+
+enum PostState {
+  DRAFT
+  AI_GENERATED
+  PENDING_APPROVAL
+  APPROVED
+  SCHEDULED
+  PUBLISHING
+  POSTED
+  FAILED
+  REJECTED
+}
+
+enum PostSourceType {
+  MANUAL
+  AI_FULL
+  AI_FROM_IMAGE
+  AI_FROM_URL
+  AI_IMPROVED
+}
+
+enum CampaignMode {
+  FULLY_AUTOMATED
+  SEMI_AUTOMATED
+  MANUAL
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+enum TemplateCategory {
+  BRAND
+  PRODUCT
+  EVENT
+  EDUCATIONAL
+  PROMOTIONAL
+  CUSTOM
+}
+
+enum Tone {
+  CASUAL
+  PROFESSIONAL
+  WITTY
+  INSPIRATIONAL
+  BOLD
+  FRIENDLY
+  AUTHORITATIVE
+  CONVERSATIONAL
+}
+
+enum HashtagStrategy {
+  NONE
+  MINIMAL
+  MODERATE
+  AGGRESSIVE
+}
+
+enum PostStructure {
+  HOOK_BODY_CTA
+  QUESTION_ANSWER
+  STORY
+  LIST_FORMAT
+  QUOTE
+  COMPARISON
+  HOW_TO
+  FREE_FORM
+}
+
+enum EmojiUsage {
+  NONE
+  MINIMAL
+  MODERATE
+  HEAVY
+}
+
+enum ContentLength {
+  SHORT
+  MEDIUM
+  LONG
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  DOCUMENT
+}
+
+enum CalendarSlotStatus {
+  EMPTY
+  FILLED
+  SKIPPED
+}
+
+enum WebhookEvent {
+  POST_CREATED
+  POST_APPROVED
+  POST_REJECTED
+  POST_SCHEDULED
+  POST_PUBLISHED
+  POST_FAILED
+  CAMPAIGN_CREATED
+  CAMPAIGN_COMPLETED
+}
+
+// ─── USER & ORGANIZATION ───
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String?
+  name      String
+  avatar    String?
+  timezone  String   @default("UTC")
+  provider  String   @default("local") // local, google, github
+  activated Boolean  @default(true)
+
+  organizations UserOrganization[]
+  campaigns     Campaign[]
+  templates     Template[]
+  approvals     PostApproval[]
+  notifications Notification[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Organization {
+  id     String  @id @default(uuid())
+  name   String
+  apiKey String? @unique
+
+  members          UserOrganization[]
+  integrations     Integration[]
+  campaigns        Campaign[]
+  posts            Post[]
+  templates        Template[]
+  media            Media[]
+  webhooks         Webhook[]
+  calendarSlots    CalendarSlot[]
+  platformProfiles PlatformProfile[]
+  notifications    Notification[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UserOrganization {
+  id             String @id @default(uuid())
+  userId         String
+  organizationId String
+  role           Role   @default(MEMBER)
+  disabled       Boolean @default(false)
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+}
+
+// ─── INTEGRATIONS (Social Channels) ───
+
+model Integration {
+  id               String   @id @default(uuid())
+  organizationId   String
+  platform         Platform
+  name             String   // Display name (e.g., "@johndoe", "My Page")
+  profilePicture   String?
+  internalId       String   // Platform-specific user/page ID
+  token            String   @db.Text
+  refreshToken     String?  @db.Text
+  tokenExpiration  DateTime?
+  refreshNeeded    Boolean  @default(false)
+  disabled         Boolean  @default(false)
+  metadata         Json?    // Platform-specific extra data
+
+  organization     Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  posts            Post[]
+  platformProfile  PlatformProfile?
+  campaignChannels CampaignChannel[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PlatformProfile {
+  id             String   @id @default(uuid())
+  integrationId  String   @unique
+  organizationId String
+  platform       Platform
+  settings       Json     // Platform-specific settings (channelId, subreddits, boardId, etc.)
+
+  integration  Integration  @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  preferredTimes Int[] // minutes from midnight UTC
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ─── TEMPLATES ───
+
+model Template {
+  id             String           @id @default(uuid())
+  organizationId String
+  createdBy      String
+  name           String
+  description    String?
+  category       TemplateCategory @default(CUSTOM)
+  isGlobal       Boolean          @default(false)
+
+  // Context
+  brandContext    String? @db.Text
+  targetAudience String? @db.Text
+  tone           Tone    @default(PROFESSIONAL)
+  language       String  @default("en")
+  goals          String[]
+  dos            String[]
+  donts          String[]
+
+  // Inspiration
+  inspirationTexts String[] @db.Text
+  referenceUrls    String[]
+  examplePosts     String[] @db.Text
+
+  // Structure
+  defaultHashtags String[]
+  hashtagStrategy HashtagStrategy @default(MODERATE)
+  ctaTemplate     String?
+  postStructure   PostStructure   @default(HOOK_BODY_CTA)
+  emojiUsage      EmojiUsage      @default(MINIMAL)
+  contentLength   ContentLength   @default(MEDIUM)
+
+  // Media preferences
+  imageStyle       String?
+  preferUserImages Boolean @default(true)
+  imageOverlayText Boolean @default(false)
+
+  // Relations
+  organization      Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  creator           User                      @relation(fields: [createdBy], references: [id])
+  platformOverrides TemplatePlatformOverride[]
+  inspirationImages TemplateInspirationImage[]
+  campaigns         Campaign[]
+  posts             Post[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TemplatePlatformOverride {
+  id                     String        @id @default(uuid())
+  templateId             String
+  platform               Platform
+  toneOverride           Tone?
+  hashtagOverride        String[]
+  contentLengthOverride  ContentLength?
+  additionalInstructions String?       @db.Text
+  postTypePreference     String?       // "thread", "carousel", "reel", "story"
+  customCta              String?
+
+  template Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, platform])
+}
+
+model TemplateInspirationImage {
+  id          String  @id @default(uuid())
+  templateId  String
+  mediaId     String
+  description String? // What to take from this image
+
+  template Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  media    Media    @relation(fields: [mediaId], references: [id])
+}
+
+// ─── CAMPAIGNS ───
+
+model Campaign {
+  id             String         @id @default(uuid())
+  organizationId String
+  createdBy      String
+  templateId     String?
+  name           String
+  description    String?
+  mode           CampaignMode
+  status         CampaignStatus @default(DRAFT)
+
+  // Schedule
+  startDate      DateTime
+  endDate        DateTime
+  postsPerWeek   Int       @default(3)
+  preferredTimes Int[]     // minutes from midnight UTC
+
+  // Relations
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  creator      User              @relation(fields: [createdBy], references: [id])
+  template     Template?         @relation(fields: [templateId], references: [id])
+  channels     CampaignChannel[]
+  posts        Post[]
+  calendarSlots CalendarSlot[]
+  assets       CampaignAsset[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CampaignChannel {
+  id            String @id @default(uuid())
+  campaignId    String
+  integrationId String
+
+  campaign    Campaign    @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  integration Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, integrationId])
+}
+
+model CampaignAsset {
+  id             String  @id @default(uuid())
+  campaignId     String
+  mediaId        String?
+  url            String?
+  extractedText  String? @db.Text // AI-extracted content from image/URL
+  processed      Boolean @default(false)
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  media    Media?   @relation(fields: [mediaId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+// ─── CALENDAR SLOTS ───
+
+model CalendarSlot {
+  id             String             @id @default(uuid())
+  campaignId     String
+  organizationId String
+  date           DateTime
+  integrationId  String?
+  topic          String?
+  status         CalendarSlotStatus @default(EMPTY)
+  postId         String?            @unique
+
+  campaign     Campaign     @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  post         Post?        @relation(fields: [postId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ─── POSTS ───
+
+model Post {
+  id             String         @id @default(uuid())
+  campaignId     String?
+  organizationId String
+  integrationId  String
+  templateId     String?
+  group          String         @default(uuid())
+
+  // Content
+  content   String @db.Text // HTML rich text
+  plainText String @db.Text // Stripped version
+
+  // Source tracking
+  sourceType   PostSourceType @default(MANUAL)
+  sourceUrl    String?
+  sourceImages Json?          // Original uploaded images metadata for semi-auto
+
+  // State machine
+  state PostState @default(DRAFT)
+
+  // Schedule
+  publishDate DateTime?
+  publishedAt DateTime?
+  delay       Int       @default(0) // Minutes between thread posts
+
+  // Threading
+  parentPostId String?
+  order        Int     @default(0)
+
+  // AI metadata
+  aiPromptUsed    String? @db.Text
+  regenerationCount Int   @default(0)
+
+  // Published result
+  platformPostId String?
+  platformUrl    String?
+
+  // Platform-specific settings (discriminated JSON)
+  platformSettings Json?
+
+  // Relations
+  campaign     Campaign?     @relation(fields: [campaignId], references: [id])
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  integration  Integration   @relation(fields: [integrationId], references: [id])
+  template     Template?     @relation(fields: [templateId], references: [id])
+  parentPost   Post?         @relation("PostThread", fields: [parentPostId], references: [id])
+  childPosts   Post[]        @relation("PostThread")
+  versions     PostVersion[]
+  approvals    PostApproval[]
+  postMedia    PostMedia[]
+  analytics    Analytics[]
+  tags         PostTag[]
+  calendarSlot CalendarSlot?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PostMedia {
+  id     String @id @default(uuid())
+  postId String
+  mediaId String
+  order   Int    @default(0)
+
+  // Platform-specific media settings
+  altText           String?
+  thumbnailTimestamp Float?  // For video thumbnails
+  cropData          Json?   // {x, y, width, height} per platform
+
+  post  Post  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  media Media @relation(fields: [mediaId], references: [id])
+
+  @@unique([postId, mediaId])
+}
+
+model PostVersion {
+  id       String  @id @default(uuid())
+  postId   String
+  version  Int
+  content  String  @db.Text
+  mediaIds String[]
+  feedback String? @db.Text // User note that triggered this version
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  generatedAt DateTime @default(now())
+}
+
+model PostApproval {
+  id       String @id @default(uuid())
+  postId   String
+  userId   String
+  action   String // APPROVED, REJECTED, REGENERATE
+  feedback String? @db.Text
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+// ─── TAGS ───
+
+model Tag {
+  id             String @id @default(uuid())
+  organizationId String
+  name           String
+  color          String @default("#4c6ef5")
+
+  posts PostTag[]
+
+  @@unique([organizationId, name])
+}
+
+model PostTag {
+  id     String @id @default(uuid())
+  postId String
+  tagId  String
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, tagId])
+}
+
+// ─── MEDIA LIBRARY ───
+
+model Media {
+  id             String    @id @default(uuid())
+  organizationId String
+  name           String
+  path           String
+  type           MediaType
+  fileSize       Int
+  mimeType       String?
+  thumbnail      String?
+  alt            String?
+  width          Int?
+  height         Int?
+  aiGenerated    Boolean   @default(false)
+
+  organization      Organization               @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  postMedia         PostMedia[]
+  inspirationImages TemplateInspirationImage[]
+  campaignAssets    CampaignAsset[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
+// ─── ANALYTICS ───
+
+model Analytics {
+  id            String @id @default(uuid())
+  postId        String
+  integrationId String
+
+  impressions    Int   @default(0)
+  likes          Int   @default(0)
+  comments       Int   @default(0)
+  shares         Int   @default(0)
+  clicks         Int   @default(0)
+  saves          Int   @default(0)
+  engagementRate Float @default(0)
+  reachEstimate  Int   @default(0)
+  extraMetrics   Json? // Platform-specific extra metrics
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  fetchedAt DateTime @default(now())
+}
+
+// ─── WEBHOOKS ───
+
+model Webhook {
+  id             String         @id @default(uuid())
+  organizationId String
+  url            String
+  events         WebhookEvent[]
+  active         Boolean        @default(true)
+  secret         String?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ─── NOTIFICATIONS ───
+
+model Notification {
+  id             String  @id @default(uuid())
+  userId         String
+  organizationId String
+  title          String
+  message        String
+  type           String  @default("info") // info, success, warning, error
+  read           Boolean @default(false)
+  link           String? // Optional link to relevant page
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}

@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ai-poster-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ai_poster
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: ai-poster-redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: ai-poster-backend
+    restart: unless-stopped
+    ports:
+      - '3001:3001'
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: ai-poster-frontend
+    restart: unless-stopped
+    ports:
+      - '5173:5173'
+    env_file:
+      - .env
+    depends_on:
+      - backend
+
+  worker:
+    build:
+      context: .
+      dockerfile: worker/Dockerfile
+    container_name: ai-poster-worker
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+
+volumes:
+  postgres_data:
+  redis_data:

@@ -1,0 +1,41 @@
+{
+  "name": "frontend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5173",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.22.0",
+    "swr": "^2.2.4",
+    "zustand": "^4.5.0",
+    "@tiptap/react": "^2.2.0",
+    "@tiptap/starter-kit": "^2.2.0",
+    "@tiptap/extension-link": "^2.2.0",
+    "@tiptap/extension-underline": "^2.2.0",
+    "@tiptap/extension-placeholder": "^2.2.0",
+    "@tiptap/pm": "^2.2.0",
+    "react-dnd": "^16.0.1",
+    "react-dnd-html5-backend": "^16.0.1",
+    "dayjs": "^1.11.10",
+    "clsx": "^2.1.0",
+    "lucide-react": "^0.312.0",
+    "react-hot-toast": "^2.4.1",
+    "react-dropzone": "^14.2.3"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.17",
+    "postcss": "^8.4.33",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.12"
+  }
+}

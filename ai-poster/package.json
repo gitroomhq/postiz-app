@@ -1,0 +1,25 @@
+{
+  "name": "ai-poster",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI-enabled social media posting application",
+  "scripts": {
+    "dev": "concurrently \"pnpm --filter backend dev\" \"pnpm --filter frontend dev\" \"pnpm --filter worker dev\"",
+    "build": "pnpm --filter backend build && pnpm --filter frontend build && pnpm --filter worker build",
+    "build:backend": "pnpm --filter backend build",
+    "build:frontend": "pnpm --filter frontend build",
+    "build:worker": "pnpm --filter worker build",
+    "prisma:generate": "prisma generate --schema=prisma/schema.prisma",
+    "prisma:migrate": "prisma migrate dev --schema=prisma/schema.prisma",
+    "prisma:push": "prisma db push --schema=prisma/schema.prisma",
+    "prisma:studio": "prisma studio --schema=prisma/schema.prisma",
+    "lint": "eslint . --ext .ts,.tsx",
+    "format": "prettier --write ."
+  },
+  "workspaces": [
+    "backend",
+    "frontend",
+    "worker",
+    "shared"
+  ]
+}
