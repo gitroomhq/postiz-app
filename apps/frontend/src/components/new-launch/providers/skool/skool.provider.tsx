@@ -1,7 +1,7 @@
 'use client';
 
 import {
-  withProvider,
+  PostComment, withProvider
 } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 import { FC, useState } from 'react';
 import { SkoolDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/skool.dto';
@@ -33,5 +33,6 @@ export default withProvider({
   CustomPreviewComponent: undefined,
   dto: SkoolDto,
   checkValidity: undefined,
-  maximumCharacters: 5000,
+  maximumCharacters: 50000,
+  postComment: PostComment.ALL,
 });
