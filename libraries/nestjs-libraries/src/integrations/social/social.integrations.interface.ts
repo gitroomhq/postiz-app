@@ -141,7 +141,9 @@ export interface SocialProvider
   dto?: any;
   maxLength: (additionalSettings?: any) => number;
   isWeb3?: boolean;
-  editor: 'normal' | 'markdown' | 'html';
+  isChromeExtension?: boolean;
+  extensionCookies?: { name: string; domain: string }[];
+  editor: 'none' | 'normal' | 'markdown' | 'html';
   customFields?: () => Promise<
     {
       key: string;

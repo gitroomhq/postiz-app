@@ -251,6 +251,109 @@ export const CustomVariables: FC<{
     </div>
   );
 };
+const ExtensionNotFound: FC = () => {
+  const modals = useModals();
+  const t = useT();
+  return (
+    <div className="flex flex-col gap-[16px] pt-[8px]">
+      <p className="text-[14px] text-textColor/80">
+        {t(
+          'extension_not_available',
+          'The Postiz browser extension is not installed. You need to install it before connecting this channel.'
+        )}
+      </p>
+      <div className="flex gap-[10px]">
+        <Button
+          type="button"
+          className="flex-1"
+          onClick={() => {
+            window.open(
+              'https://chromewebstore.google.com/detail/postiz/cidhffagahknaeodkplfbcpfeielnkjl?hl=en',
+              '_blank'
+            );
+            modals.closeCurrent();
+          }}
+        >
+          {t('install_extension', 'Install Extension')}
+        </Button>
+        <Button
+          type="button"
+          className="flex-1 !bg-transparent border border-tableBorder text-textColor"
+          onClick={() => modals.closeCurrent()}
+        >
+          {t('cancel', 'Cancel')}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+const ChromeExtensionWarning: FC<{
+  onConfirm: () => void;
+  onCancel: () => void;
+}> = ({ onConfirm, onCancel }) => {
+  const modals = useModals();
+  const t = useT();
+  return (
+    <div className="flex flex-col gap-[16px] pt-[8px]">
+      <p className="text-[14px] text-textColor/80">
+        {t(
+          'chrome_extension_warning_intro',
+          'This channel connects via the browser extension. Please be aware of the following:'
+        )}
+      </p>
+      <ul className="flex flex-col gap-[8px] list-disc ps-[20px] text-[14px] text-textColor/80">
+        <li>
+          {t(
+            'chrome_extension_warning_tos',
+            'Using a browser extension to interact with a platform may violate its terms of service and could result in your account being suspended or banned.'
+          )}
+        </li>
+        <li>
+          {t(
+            'chrome_extension_warning_unstable',
+            'This method is not as reliable as native integrations and may experience random disconnections.'
+          )}
+        </li>
+        <li>
+          {t(
+            'chrome_extension_warning_reconnect',
+            'You may need to reconnect periodically if the session expires.'
+          )}
+        </li>
+        <li>
+          We will store your cookies securely to facilitate the connection.
+        </li>
+        <li>
+          Postiz does not take responsibility for any issues arising or account termination due to the use of this method.
+        </li>
+      </ul>
+      <div className="flex gap-[10px] mt-[8px]">
+        <Button
+          type="button"
+          className="flex-1"
+          onClick={() => {
+            modals.closeCurrent();
+            onConfirm();
+          }}
+        >
+          {t('i_understand_continue', 'I understand, continue')}
+        </Button>
+        <Button
+          type="button"
+          className="flex-1 !bg-transparent border border-tableBorder text-textColor"
+          onClick={() => {
+            modals.closeCurrent();
+            onCancel();
+          }}
+        >
+          {t('cancel', 'Cancel')}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 export const AddProviderComponent: FC<{
   social: Array<{
     identifier: string;
@@ -258,6 +361,11 @@ export const AddProviderComponent: FC<{
     toolTip?: string;
     isExternal: boolean;
     isWeb3: boolean;
+    isChromeExtension?: boolean;
+    extensionCookies?: Array<{
+      name: string;
+      domain: string;
+    }>;
     customFields?: Array<{
       key: string;
       label: string;
@@ -274,7 +382,7 @@ export const AddProviderComponent: FC<{
   onboarding?: boolean;
 }> = (props) => {
   const { update, social, article, onboarding } = props;
-  const { isGeneral } = useVariables();
+  const { isGeneral, extensionId } = useVariables();
   const toaster = useToaster();
   const router = useRouter();
   const fetch = useFetch();
@@ -285,6 +393,7 @@ export const AddProviderComponent: FC<{
         identifier: string,
         isExternal: boolean,
         isWeb3: boolean,
+        isChromeExtension?: boolean,
         customFields?: Array<{
           key: string;
           label: string;
@@ -364,6 +473,106 @@ export const AddProviderComponent: FC<{
           openWeb3();
           return;
         }
+        if (isChromeExtension) {
+          const confirmed = await new Promise<boolean>((resolve) => {
+            modal.openModal({
+              title: t('chrome_extension_notice', 'Browser Extension Notice'),
+              withCloseButton: true,
+              onClose: () => resolve(false),
+              children: (
+                <ChromeExtensionWarning
+                  onConfirm={() => {
+                    resolve(true);
+                  }}
+                  onCancel={() => {
+                    resolve(false);
+                  }}
+                />
+              ),
+            });
+          });
+          if (!confirmed) {
+            return;
+          }
+          if (!extensionId || !chrome?.runtime?.sendMessage) {
+            modal.openModal({
+              title: t('extension_not_available_title', 'Extension Not Found'),
+              withCloseButton: true,
+              children: <ExtensionNotFound />,
+            });
+            return;
+          }
+          try {
+            await new Promise<void>((resolve, reject) => {
+              chrome.runtime.sendMessage(
+                extensionId,
+                { type: 'PING' },
+                (response: any) => {
+                  if (chrome.runtime.lastError || !response?.status) {
+                    reject(new Error('Extension not reachable'));
+                  } else {
+                    resolve();
+                  }
+                }
+              );
+            });
+          } catch {
+            toaster.show(
+              t(
+                'extension_not_installed',
+                'Postiz browser extension is not installed or not reachable.'
+              ),
+              'warning'
+            );
+            return;
+          }
+          try {
+            const cookieResponse = await new Promise<any>((resolve, reject) => {
+              chrome.runtime.sendMessage(
+                extensionId,
+                { type: 'GET_COOKIES', provider: identifier },
+                (response: any) => {
+                  if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
+                  } else {
+                    resolve(response);
+                  }
+                }
+              );
+            });
+            if (!cookieResponse.success) {
+              toaster.show(
+                cookieResponse.error ||
+                  t(
+                    'extension_cookies_missing',
+                    'Could not get cookies. Please log in to the platform first.'
+                  ),
+                'warning'
+              );
+              return;
+            }
+            const { url } = await (
+              await fetch(
+                `/integrations/social/${identifier}${
+                  onboarding ? '?onboarding=true' : ''
+                }`
+              )
+            ).json();
+            modal.closeAll();
+            window.location.href = `/integrations/social/${identifier}?state=${url}&code=${Buffer.from(
+              JSON.stringify(cookieResponse.cookies)
+            ).toString('base64')}${onboarding ? '&onboarding=true' : ''}`;
+          } catch {
+            toaster.show(
+              t(
+                'extension_communication_error',
+                'Failed to communicate with the browser extension.'
+              ),
+              'warning'
+            );
+          }
+          return;
+        }
         if (isExternal) {
           modal.openModal({
             title: 'URL',
@@ -415,7 +624,12 @@ export const AddProviderComponent: FC<{
                 return true;
               }
 
-              return !item.isExternal && !item.isWeb3 && !item.customFields;
+              return (
+                !item.isExternal &&
+                !item.isWeb3 &&
+                !item.isChromeExtension &&
+                !item.customFields
+              );
             })
             .map((item) => (
               <div
@@ -425,6 +639,7 @@ export const AddProviderComponent: FC<{
                   item.identifier,
                   item.isExternal,
                   item.isWeb3,
+                  item.isChromeExtension,
                   item.customFields
                 )}
                 {...(!!item.toolTip

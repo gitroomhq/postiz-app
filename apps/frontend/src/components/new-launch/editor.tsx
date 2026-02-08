@@ -526,7 +526,7 @@ export const EditorWrapper: FC<{
 };
 
 export const Editor: FC<{
-  editorType?: 'normal' | 'markdown' | 'html';
+  editorType?: 'none' | 'normal' | 'markdown' | 'html';
   totalPosts: number;
   value: string;
   num?: number;
@@ -777,14 +777,18 @@ export const Editor: FC<{
                   toolBar={
                     <div className="flex gap-[5px]">
                       <SignatureBox editor={editorRef?.current?.editor} />
-                      <UText
-                        editor={editorRef?.current?.editor}
-                        currentValue={props.value!}
-                      />
-                      <BoldText
-                        editor={editorRef?.current?.editor}
-                        currentValue={props.value!}
-                      />
+                      {editorType !== 'none' && (
+                        <>
+                          <UText
+                            editor={editorRef?.current?.editor}
+                            currentValue={props.value!}
+                          />
+                          <BoldText
+                            editor={editorRef?.current?.editor}
+                            currentValue={props.value!}
+                          />
+                        </>
+                      )}
                       {(editorType === 'markdown' || editorType === 'html') &&
                         identifier !== 'telegram' && (
                           <>
@@ -854,7 +858,7 @@ export const Editor: FC<{
 export const OnlyEditor = forwardRef<
   any,
   {
-    editorType: 'normal' | 'markdown' | 'html';
+    editorType: 'none' | 'normal' | 'markdown' | 'html';
     value: string;
     onChange: (value: string) => void;
     paste?: (event: ClipboardEvent | File[]) => void;

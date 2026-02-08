@@ -25,6 +25,7 @@ import { Integration } from '@prisma/client';
 import { SettingsModal } from '@gitroom/frontend/components/launches/settings.modal';
 import { CustomVariables } from '@gitroom/frontend/components/launches/add.provider.component';
 import { useRouter } from 'next/navigation';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
 import dayjs from 'dayjs';
@@ -59,6 +60,7 @@ export const Menu: FC<{
 
   const fetch = useFetch();
   const router = useRouter();
+  const { extensionId } = useVariables();
   const { integrations, reloadCalendarView } = useCalendar();
   const toast = useToaster();
   const modal = useModals();
@@ -146,10 +148,26 @@ export const Menu: FC<{
       );
       return;
     }
+    // Clean up extension refresh token if applicable
+    if (
+      extensionId &&
+      typeof chrome !== 'undefined' &&
+      chrome?.runtime?.sendMessage
+    ) {
+      try {
+        chrome.runtime.sendMessage(
+          extensionId,
+          { type: 'REMOVE_REFRESH_TOKEN', integrationId: id },
+          () => {}
+        );
+      } catch {
+        // Silently ignore
+      }
+    }
     toast.show(t('channel_deleted', 'Channel Deleted'), 'success');
     setShow(false);
     onChange(true);
-  }, [t]);
+  }, [t, extensionId, id]);
 
   const enableChannel = useCallback(async () => {
     await fetch('/integrations/enable', {

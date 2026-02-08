@@ -10,6 +10,7 @@ import dayjs from 'dayjs';
 import { continueProviderList } from '@gitroom/frontend/components/new-launch/providers/continue-provider/list';
 import { IntegrationContext } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 
 interface TwoStepState {
   integrationId: string;
@@ -31,6 +32,7 @@ export const ContinueIntegration: FC<{
   const { push } = useRouter();
   const t = useT();
   const fetch = useFetch();
+  const { extensionId, backendUrl } = useVariables();
   const [error, setError] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [twoStepState, setTwoStepState] = useState<TwoStepState | null>(null);
@@ -135,8 +137,33 @@ export const ContinueIntegration: FC<{
         onboarding: resOnboarding,
         pages,
         returnURL,
+        extensionToken,
       } = await data.json();
       const onboarding = resOnboarding || searchParams.onboarding === 'true';
+
+      // Store refresh token in extension for background cookie refresh
+      if (
+        extensionToken &&
+        extensionId &&
+        typeof chrome !== 'undefined' &&
+        chrome?.runtime?.sendMessage
+      ) {
+        try {
+          chrome.runtime.sendMessage(
+            extensionId,
+            {
+              type: 'STORE_REFRESH_TOKEN',
+              provider,
+              integrationId: id,
+              jwt: extensionToken,
+              backendUrl,
+            },
+            () => {}
+          );
+        } catch {
+          // Silently ignore — extension may not be available
+        }
+      }
 
       // If it's a two-step provider, show the selection UI inline
       if (inBetweenSteps && !searchParams.refresh) {
