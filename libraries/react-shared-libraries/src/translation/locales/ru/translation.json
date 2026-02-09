@@ -681,5 +681,16 @@
   "delete_post_tooltip": "Удалить публикацию",
   "drop_files_here_to_upload": "Перетащите файлы сюда для загрузки",
   "insert_emoji": "Вставить эмодзи",
-  "write_something": "Напишите что-нибудь …"
+  "write_something": "Напишите что-нибудь …",
+  "click_channel_to_add": "Нажмите на канал, чтобы добавить его",
+  "connect_your_channels": "Подключите ваши каналы",
+  "connect_social_media_to_start": "Подключите свои аккаунты в социальных сетях, чтобы начать планировать публикации",
+  "connected_channels": "Подключенные каналы",
+  "continue": "Продолжить",
+  "continue_without_channels": "Продолжить без каналов",
+  "watch_tutorial": "Смотреть обучение",
+  "watch_tutorial_title": "Узнайте, как пользоваться Postiz",
+  "watch_tutorial_description": "Посмотрите это короткое видео, чтобы узнать, как получить максимум от Postiz",
+  "back": "Назад",
+  "get_started": "Начать"
 }

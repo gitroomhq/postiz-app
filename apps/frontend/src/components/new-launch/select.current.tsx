@@ -1,12 +1,20 @@
 'use client';
 
-import { FC, RefObject, useEffect, useRef, useState } from 'react';
-import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
+import { FC, RefObject, useCallback, useEffect, useRef, useState } from 'react';
+import {
+  SelectedIntegrations,
+  useLaunchStore,
+} from '@gitroom/frontend/components/new-launch/store';
 import clsx from 'clsx';
 import Image from 'next/image';
 import { useShallow } from 'zustand/react/shallow';
 import { GlobalIcon } from '@gitroom/frontend/components/ui/icons';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
+import {
+  useDecisionModal,
+  useModals,
+} from '@gitroom/frontend/components/layout/new-modal';
 
 export function useHasScroll(ref: RefObject<HTMLElement>): boolean {
   const [hasHorizontalScroll, setHasHorizontalScroll] = useState(false);
@@ -43,19 +51,46 @@ export function useHasScroll(ref: RefObject<HTMLElement>): boolean {
 }
 
 export const SelectCurrent: FC = () => {
-  const { selectedIntegrations, current, setCurrent, locked, setHide } =
-    useLaunchStore(
-      useShallow((state) => ({
-        selectedIntegrations: state.selectedIntegrations,
-        current: state.current,
-        setCurrent: state.setCurrent,
-        locked: state.locked,
-        setHide: state.setHide,
-      }))
-    );
+  const modals = useDecisionModal();
+  const {
+    selectedIntegrations,
+    current,
+    setCurrent,
+    locked,
+    setHide,
+    addOrRemoveSelectedIntegration,
+  } = useLaunchStore(
+    useShallow((state) => ({
+      selectedIntegrations: state.selectedIntegrations,
+      addOrRemoveSelectedIntegration: state.addOrRemoveSelectedIntegration,
+      current: state.current,
+      setCurrent: state.setCurrent,
+      locked: state.locked,
+      setHide: state.setHide,
+    }))
+  );
 
   const contentRef = useRef<HTMLDivElement>(null);
   const hasScroll = useHasScroll(contentRef);
+
+  const removeSocial = useCallback(
+    (sIntegration: Integrations) => async (e: any) => {
+      e.stopPropagation();
+      e.preventDefault();
+      const open = await modals.open({
+        title: 'Remove Social Account',
+        description:
+          'Are you sure you want to remove this social from scheduling?',
+      });
+
+      if (!open) {
+        return;
+      }
+
+      addOrRemoveSelectedIntegration(sIntegration, {});
+    },
+    []
+  );
 
   return (
     <>
@@ -97,8 +132,18 @@ export const SelectCurrent: FC = () => {
                   : 'border-transparent'
               )}
             >
+              <div
+                onClick={removeSocial(integration)}
+                className="absolute justify-center items-center flex w-[8px] h-[8px] -top-[1px] -start-[3px] bg-red-500 rounded-full text-white text-[8px]"
+              >
+                X
+              </div>
               <IsGlobal id={integration.id} />
               <div
+                {...{
+                  'data-tooltip-id': 'tooltip',
+                  'data-tooltip-content': integration.name,
+                }}
                 className={clsx(
                   'relative w-full h-full rounded-full flex justify-center items-center filter transition-all duration-500'
                 )}
@@ -109,6 +154,10 @@ export const SelectCurrent: FC = () => {
                   alt={integration.identifier}
                   width={26}
                   height={26}
+                  onError={(e) => {
+                    e.currentTarget.src = '/no-picture.jpg';
+                    e.currentTarget.srcset = '/no-picture.jpg';
+                  }}
                 />
                 {integration.identifier === 'youtube' ? (
                   <img

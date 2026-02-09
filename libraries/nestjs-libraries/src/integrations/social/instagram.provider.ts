@@ -741,4 +741,73 @@ export class InstagramProvider
       )}&access_token=${accessToken}`
     );
   }
+
+  async postAnalytics(
+    integrationId: string,
+    accessToken: string,
+    postId: string,
+    date: number,
+    type = 'graph.facebook.com'
+  ): Promise<AnalyticsData[]> {
+    const today = dayjs().format('YYYY-MM-DD');
+
+    try {
+      // Fetch media insights from Instagram Graph API
+      const { data } = await (
+        await this.fetch(
+          `https://${type}/v21.0/${postId}/insights?metric=views,reach,saved,likes,comments,shares&access_token=${accessToken}`
+        )
+      ).json();
+
+      if (!data || data.length === 0) {
+        return [];
+      }
+
+      const result: AnalyticsData[] = [];
+
+      for (const metric of data) {
+        const value = metric.values?.[0]?.value;
+        if (value === undefined) continue;
+
+        let label = '';
+
+        switch (metric.name) {
+          case 'views':
+            label = 'Views';
+            break;
+          case 'reach':
+            label = 'Reach';
+            break;
+          case 'engagement':
+            label = 'Engagement';
+            break;
+          case 'saved':
+            label = 'Saves';
+            break;
+          case 'likes':
+            label = 'Likes';
+            break;
+          case 'comments':
+            label = 'Comments';
+            break;
+          case 'shares':
+            label = 'Shares';
+            break;
+        }
+
+        if (label) {
+          result.push({
+            label,
+            percentageChange: 0,
+            data: [{ total: String(value), date: today }],
+          });
+        }
+      }
+
+      return result;
+    } catch (err) {
+      console.error('Error fetching Instagram post analytics:', err);
+      return [];
+    }
+  }
 }

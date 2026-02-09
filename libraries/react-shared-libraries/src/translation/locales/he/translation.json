@@ -681,5 +681,16 @@
   "delete_post_tooltip": "מחק פוסט",
   "drop_files_here_to_upload": "גרור קבצים לכאן להעלאה",
   "insert_emoji": "הוסף אימוג'י",
-  "write_something": "כתוב משהו…"
+  "write_something": "כתוב משהו…",
+  "click_channel_to_add": "לחץ על ערוץ כדי להוסיף אותו",
+  "connect_your_channels": "חבר את הערוצים שלך",
+  "connect_social_media_to_start": "חבר את חשבונות המדיה החברתית שלך כדי להתחיל לקבוע פוסטים",
+  "connected_channels": "ערוצים מחוברים",
+  "continue": "המשך",
+  "continue_without_channels": "המשך ללא ערוצים",
+  "watch_tutorial": "צפה במדריך",
+  "watch_tutorial_title": "למד כיצד להשתמש ב-Postiz",
+  "watch_tutorial_description": "צפה בסרטון הקצר הזה ולמד כיצד להפיק את המרב מ-Postiz",
+  "back": "חזרה",
+  "get_started": "התחלה"
 }

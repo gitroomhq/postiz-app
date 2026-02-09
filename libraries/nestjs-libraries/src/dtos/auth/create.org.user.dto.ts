@@ -35,4 +35,6 @@ export class CreateOrgUserDto {
   @MinLength(3)
   @MaxLength(128)
   company: string;
+
+  datafast_visitor_id: string;
 }

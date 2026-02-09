@@ -42,6 +42,14 @@ export async function middleware(request: NextRequest) {
   ) {
     return topResponse;
   }
+
+  if (
+    nextUrl.pathname.startsWith('/integrations/social/') &&
+    nextUrl.href.indexOf('state=login') === -1
+  ) {
+    return topResponse;
+  }
+
   // If the URL is logout, delete the cookie and redirect to login
   if (nextUrl.href.indexOf('/auth/logout') > -1) {
     const response = NextResponse.redirect(

@@ -8,7 +8,6 @@ import {
   IsNumber,
   IsOptional,
   IsString,
-  MinLength,
   Validate,
   ValidateIf,
   ValidateNested,
@@ -49,6 +48,8 @@ export class PostContent {
 }
 
 export class Post {
+  type?: string;
+
   @IsDefined()
   @Type(() => Integration)
   @ValidateNested()
@@ -65,6 +66,7 @@ export class Post {
   @IsString()
   group: string;
 
+  @ValidateIf((o) => o.type !== 'draft')
   @ValidateNested()
   @Type(() => EmptySettings, {
     keepDiscriminatorProperty: true,
@@ -88,8 +90,8 @@ class Tags {
 
 export class CreatePostDto {
   @IsDefined()
-  @IsIn(['draft', 'schedule', 'now'])
-  type: 'draft' | 'schedule' | 'now';
+  @IsIn(['draft', 'schedule', 'now', 'update'])
+  type: 'draft' | 'schedule' | 'now' | 'update';
 
   @IsOptional()
   @IsString()
@@ -112,7 +114,6 @@ export class CreatePostDto {
   @ValidateNested({ each: true })
   tags: Tags[];
 
-  @ValidateIf((o) => o.type !== 'draft')
   @IsDefined()
   @Type(() => Post)
   @IsArray()

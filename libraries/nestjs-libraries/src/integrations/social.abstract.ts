@@ -27,7 +27,9 @@ export class BadBody extends ApplicationFailure {
 }
 
 export class NotEnoughScopes {
-  constructor(public message = 'Not enough scopes') {}
+  constructor(
+    public message = 'Not enough scopes, when choosing a provider, please add all the scopes'
+  ) {}
 }
 
 function safeStringify(obj: any) {

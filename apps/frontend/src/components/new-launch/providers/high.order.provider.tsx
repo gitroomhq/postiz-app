@@ -21,6 +21,7 @@ import useSWR from 'swr';
 import { InternalChannels } from '@gitroom/frontend/components/launches/internal.channels';
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
+import Image from 'next/image';
 
 class Empty {
   @IsOptional()
@@ -91,7 +92,7 @@ export const withProvider = function <T extends object>(params: {
       dummy,
       setChars,
       setComments,
-      setHide
+      setHide,
     } = useLaunchStore(
       useShallow((state) => ({
         date: state.date,
@@ -141,7 +142,9 @@ export const withProvider = function <T extends object>(params: {
       }
 
       if (current) {
-        setComments(typeof params.comments === 'undefined' ? true : params.comments);
+        setComments(
+          typeof params.comments === 'undefined' ? true : params.comments
+        );
         setEditor(selectedIntegration?.integration.editor);
         setPostComment(postComment);
         setTotalChars(
@@ -258,7 +261,12 @@ export const withProvider = function <T extends object>(params: {
         }}
       >
         <FormProvider {...form}>
-          <div className={clsx('border border-borderPreview rounded-[12px] shadow-previewShadow', !current && 'hidden')}>
+          <div
+            className={clsx(
+              'border border-borderPreview rounded-[12px] shadow-previewShadow',
+              !current && 'hidden'
+            )}
+          >
             {current &&
               (tab === 0 ||
                 (!SettingsComponent && !data?.internalPlugs?.length)) &&
@@ -303,19 +311,45 @@ export const withProvider = function <T extends object>(params: {
               ))}
             {(SettingsComponent || !!data?.internalPlugs?.length) &&
               createPortal(
-                <div data-id={props.id} className="hidden">
+                <div data-id={props.id} className={isGlobal ? 'bg-newSettings pb-[12px] px-[12px]' : 'hidden bg-newSettings px-[12px] pb-[12px]'}>
+                  {isGlobal && (
+                    <style>{`#wrapper-settings {display: flex !important} #social-empty {display: block !important;}`}</style>
+                  )}
+                  {isGlobal && (
+                    <div className="flex py-[20px] items-center gap-[15px]">
+                      <div className="relative">
+                        <Image
+                          alt={selectedIntegration?.integration.name!}
+                          width={42}
+                          height={42}
+                          className="min-w-[42px] min-h-[42px] w-[42px] h-[42px] rounded-full"
+                          src={selectedIntegration?.integration.picture}
+                        />
+                        <Image
+                          alt={selectedIntegration?.integration.identifier}
+                          width={16}
+                          height={16}
+                          className="rounded-[16px] min-w-[16px] min-h-[16px] w-[16px] h-[16px] absolute bottom-0 end-0"
+                          src={`/icons/platforms/${selectedIntegration?.integration.identifier}.png`}
+                        />
+                      </div>
+                      <div className="text-[20px]">{selectedIntegration?.integration.name}</div>
+                    </div>
+                  )}
                   <SettingsComponent />
                   {!!data?.internalPlugs?.length && !dummy && (
                     <InternalChannels plugs={data?.internalPlugs} />
                   )}
                 </div>,
-                document.querySelector('#social-settings') || document.createElement('div')
+                document.querySelector('#social-settings') ||
+                  document.createElement('div')
               )}
             {current &&
               !SettingsComponent &&
               createPortal(
                 <style>{`#wrapper-settings {display: none !important;} #social-empty {display: block !important;}`}</style>,
-                document.querySelector('#social-settings') || document.createElement('div')
+                document.querySelector('#social-settings') ||
+                  document.createElement('div')
               )}
           </div>
         </FormProvider>

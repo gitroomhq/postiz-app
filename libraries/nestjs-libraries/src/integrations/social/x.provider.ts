@@ -319,7 +319,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
             return {
               id: await this.runInConcurrent(
                 async () =>
-                  client.v1.uploadMedia(
+                  client.v2.uploadMedia(
                     m.path.indexOf('mp4') > -1
                       ? Buffer.from(await readOrFetch(m.path))
                       : await sharp(await readOrFetch(m.path), {
@@ -331,7 +331,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
                           .gif()
                           .toBuffer(),
                     {
-                      mimeType: lookup(m.path) || '',
+                      media_type: (lookup(m.path) || '') as any,
                     }
                   ),
                 true
@@ -397,6 +397,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
               }),
           ...(firstPost?.settings?.community
             ? {
+                share_with_followers: true,
                 community_id:
                   firstPost?.settings?.community?.split('/').pop() || '',
               }
@@ -510,7 +511,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     }
 
     const until = dayjs().endOf('day');
-    const since = dayjs().subtract(date, 'day');
+    const since = dayjs().subtract(date > 100 ? 100 : date, 'day');
 
     const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
     const client = new TwitterApi({
@@ -587,6 +588,96 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     } catch (err) {
       console.log(err);
     }
+    return [];
+  }
+
+  async postAnalytics(
+    integrationId: string,
+    accessToken: string,
+    postId: string,
+    date: number
+  ): Promise<AnalyticsData[]> {
+    if (process.env.DISABLE_X_ANALYTICS) {
+      return [];
+    }
+
+    const today = dayjs().format('YYYY-MM-DD');
+
+    const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
+    const client = new TwitterApi({
+      appKey: process.env.X_API_KEY!,
+      appSecret: process.env.X_API_SECRET!,
+      accessToken: accessTokenSplit,
+      accessSecret: accessSecretSplit,
+    });
+
+    try {
+      // Fetch the specific tweet with public metrics
+      const tweet = await client.v2.singleTweet(postId, {
+        'tweet.fields': ['public_metrics', 'created_at'],
+      });
+
+      if (!tweet?.data?.public_metrics) {
+        return [];
+      }
+
+      const metrics = tweet.data.public_metrics;
+
+      const result: AnalyticsData[] = [];
+
+      if (metrics.impression_count !== undefined) {
+        result.push({
+          label: 'Impressions',
+          percentageChange: 0,
+          data: [{ total: String(metrics.impression_count), date: today }],
+        });
+      }
+
+      if (metrics.like_count !== undefined) {
+        result.push({
+          label: 'Likes',
+          percentageChange: 0,
+          data: [{ total: String(metrics.like_count), date: today }],
+        });
+      }
+
+      if (metrics.retweet_count !== undefined) {
+        result.push({
+          label: 'Retweets',
+          percentageChange: 0,
+          data: [{ total: String(metrics.retweet_count), date: today }],
+        });
+      }
+
+      if (metrics.reply_count !== undefined) {
+        result.push({
+          label: 'Replies',
+          percentageChange: 0,
+          data: [{ total: String(metrics.reply_count), date: today }],
+        });
+      }
+
+      if (metrics.quote_count !== undefined) {
+        result.push({
+          label: 'Quotes',
+          percentageChange: 0,
+          data: [{ total: String(metrics.quote_count), date: today }],
+        });
+      }
+
+      if (metrics.bookmark_count !== undefined) {
+        result.push({
+          label: 'Bookmarks',
+          percentageChange: 0,
+          data: [{ total: String(metrics.bookmark_count), date: today }],
+        });
+      }
+
+      return result;
+    } catch (err) {
+      console.log('Error fetching X post analytics:', err);
+    }
+
     return [];
   }
 

@@ -145,6 +145,16 @@ export const stripHtmlValidation = (
 
   const value = serialize(parseFragment(val));
 
+  if (type === 'none') {
+    return striptags(value)
+      .replace(/&gt;/gi, '>')
+      .replace(/&lt;/gi, '<')
+      .replace(/&amp;/gi, '&')
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/&quot;/gi, '"')
+      .replace(/&#39;/gi, "'");
+  }
+
   if (type === 'html') {
     return striptags(convertMention(value, convertMentionFunction), [
       'ul',

@@ -450,6 +450,14 @@ export class StripeService {
           ud,
         },
       },
+      ...(body.datafast_session_id && body.datafast_visitor_id
+        ? {
+            metadata: {
+              datafast_visitor_id: body.datafast_visitor_id,
+              datafast_session_id: body.datafast_session_id,
+            },
+          }
+        : {}),
       allow_promotion_codes: body.period === 'MONTHLY',
       line_items: [
         {

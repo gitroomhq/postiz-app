@@ -110,6 +110,31 @@ export const InformationComponent: FC<{
     return true;
   }, [totalAllowedChars, totalChars, isInternal, isPicture, chars]);
 
+  const globalDisplayLimit = useMemo(() => {
+    if (!isGlobal || !selectedIntegrations.length) {
+      return null;
+    }
+
+    // Get all limits from non-internal integrations, sorted ascending
+    const limits = selectedIntegrations
+      .map((p, index) => ({
+        limit: chars?.[p.integration.id] || 0,
+        isInternal: isInternal[index],
+      }))
+      .filter((item) => !item.isInternal && item.limit > 0)
+      .map((item) => item.limit)
+      .sort((a, b) => a - b);
+
+    if (!limits.length) {
+      return null;
+    }
+
+    // Find the smallest limit that hasn't been exceeded yet
+    // If all are exceeded, show the smallest one
+    const validLimit = limits.find((limit) => totalChars <= limit);
+    return validLimit ?? limits[0];
+  }, [isGlobal, selectedIntegrations, chars, isInternal, totalChars]);
+
   return (
     <div
       className={clsx(
@@ -122,6 +147,11 @@ export const InformationComponent: FC<{
       {!isGlobal && (
         <div className={clsx("text-[10px] font-[600] flex justify-center items-center", !isValid && 'text-white')}>
           {totalChars}/{totalAllowedChars}
+        </div>
+      )}
+      {isGlobal && globalDisplayLimit !== null && (
+        <div className={clsx("text-[10px] font-[600] flex justify-center items-center", !isValid && 'text-white')}>
+          {totalChars}/{globalDisplayLimit}
         </div>
       )}
       {((isGlobal && selectedIntegrations.length) || !isValid) && (

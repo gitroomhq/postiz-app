@@ -18,6 +18,7 @@ import { FacebookComponent } from '@gitroom/frontend/components/layout/facebook.
 import { headers } from 'next/headers';
 import { headerName } from '@gitroom/react/translation/i18n.config';
 import { HtmlComponent } from '@gitroom/frontend/components/layout/html.component';
+import Script from 'next/script';
 // import dynamicLoad from 'next/dynamic';
 // const SetTimezone = dynamicLoad(
 //   () => import('@gitroom/frontend/components/layout/set.timezone'),
@@ -41,6 +42,14 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     <html>
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
+        {!!process.env.DATAFAST_WEBSITE_ID && (
+          <Script
+            data-website-id={process.env.DATAFAST_WEBSITE_ID}
+            data-domain="postiz.com"
+            src="https://datafa.st/js/script.js"
+            strategy="afterInteractive"
+          />
+        )}
       </head>
       <body
         className={clsx(jakartaSans.className, 'dark text-primary !bg-primary')}
@@ -69,6 +78,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           disableImageCompression={!!process.env.DISABLE_IMAGE_COMPRESSION}
           disableXAnalytics={!!process.env.DISABLE_X_ANALYTICS}
           sentryDsn={process.env.NEXT_PUBLIC_SENTRY_DSN!}
+          extensionId={process.env.EXTENSION_ID || ''}
           language={allHeaders.get(headerName)}
           transloadit={
             process.env.TRANSLOADIT_AUTH && process.env.TRANSLOADIT_TEMPLATE

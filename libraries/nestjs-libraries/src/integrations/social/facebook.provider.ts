@@ -126,6 +126,13 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
+    if (body.indexOf('1404112') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'For security reasons, your account has limited access to the site for a few days',
+      };
+    }
+
     if (body.indexOf('Name parameter too long') > -1) {
       return {
         type: 'bad-body' as const,
@@ -461,5 +468,81 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
         })),
       })) || []
     );
+  }
+
+  async postAnalytics(
+    integrationId: string,
+    accessToken: string,
+    postId: string,
+    date: number
+  ): Promise<AnalyticsData[]> {
+    const today = dayjs().format('YYYY-MM-DD');
+
+    try {
+      // Fetch post insights from Facebook Graph API
+      const { data } = await (
+        await this.fetch(
+          `https://graph.facebook.com/v20.0/${postId}/insights?metric=post_impressions_unique,post_reactions_by_type_total,post_clicks,post_clicks_by_type&access_token=${accessToken}`
+        )
+      ).json();
+
+      if (!data || data.length === 0) {
+        return [];
+      }
+
+      const result: AnalyticsData[] = [];
+
+      for (const metric of data) {
+        const value = metric.values?.[0]?.value;
+        if (value === undefined) continue;
+
+        let label = '';
+        let total = '';
+
+        switch (metric.name) {
+          case 'post_impressions_unique':
+            label = 'Impressions';
+            total = String(value);
+            break;
+          case 'post_clicks':
+            label = 'Clicks';
+            total = String(value);
+            break;
+          case 'post_clicks_by_type':
+            // This returns an object with click types
+            if (typeof value === 'object') {
+              const totalClicks = Object.values(
+                value as Record<string, number>
+              ).reduce((sum: number, v: number) => sum + v, 0);
+              label = 'Clicks by Type';
+              total = String(totalClicks);
+            }
+            break;
+          case 'post_reactions_by_type_total':
+            // This returns an object with reaction types
+            if (typeof value === 'object') {
+              const totalReactions = Object.values(
+                value as Record<string, number>
+              ).reduce((sum: number, v: number) => sum + v, 0);
+              label = 'Reactions';
+              total = String(totalReactions);
+            }
+            break;
+        }
+
+        if (label) {
+          result.push({
+            label,
+            percentageChange: 0,
+            data: [{ total, date: today }],
+          });
+        }
+      }
+
+      return result;
+    } catch (err) {
+      console.error('Error fetching Facebook post analytics:', err);
+      return [];
+    }
   }
 }

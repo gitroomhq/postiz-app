@@ -28,6 +28,12 @@ export interface IAuthenticator {
     accessToken: string,
     date: number
   ): Promise<AnalyticsData[]>;
+  postAnalytics?(
+    integrationId: string,
+    accessToken: string,
+    postId: string,
+    fromDate: number,
+  ): Promise<AnalyticsData[]>;
   changeNickname?(
     id: string,
     accessToken: string,
@@ -45,6 +51,7 @@ export interface AnalyticsData {
   data: Array<{ total: string; date: string }>;
   percentageChange: number;
 }
+
 
 export type GenerateAuthUrlResponse = {
   url: string;
@@ -134,7 +141,9 @@ export interface SocialProvider
   dto?: any;
   maxLength: (additionalSettings?: any) => number;
   isWeb3?: boolean;
-  editor: 'normal' | 'markdown' | 'html';
+  isChromeExtension?: boolean;
+  extensionCookies?: { name: string; domain: string }[];
+  editor: 'none' | 'normal' | 'markdown' | 'html';
   customFields?: () => Promise<
     {
       key: string;

@@ -193,4 +193,19 @@ export class InstagramStandaloneProvider
       'graph.instagram.com'
     );
   }
+
+  async postAnalytics(
+    integrationId: string,
+    accessToken: string,
+    postId: string,
+    date: number
+  ) {
+    return instagramProvider.postAnalytics(
+      integrationId,
+      accessToken,
+      postId,
+      date,
+      'graph.instagram.com'
+    );
+  }
 }

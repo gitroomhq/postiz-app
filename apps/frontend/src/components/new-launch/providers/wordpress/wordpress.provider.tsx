@@ -9,6 +9,7 @@ import { Input } from '@gitroom/react/form/input';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { WordpressPostType } from '@gitroom/frontend/components/new-launch/providers/wordpress/wordpress.post.type';
 import { MediaComponent } from '@gitroom/frontend/components/media/media.component';
+import { WordpressDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/wordpress.dto';
 
 const WordpressSettings: FC = () => {
   const form = useSettings();
@@ -29,7 +30,7 @@ export default withProvider({
   minimumCharacters: [],
   SettingsComponent: WordpressSettings,
   CustomPreviewComponent: undefined, // WordpressPreview,
-  dto: undefined,
+  dto: WordpressDto,
   checkValidity: undefined,
   maximumCharacters: 100000,
 });

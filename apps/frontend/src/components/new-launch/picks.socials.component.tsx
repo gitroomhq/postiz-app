@@ -7,6 +7,7 @@ import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
 
 export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
   toolTip,
@@ -27,13 +28,13 @@ export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
     }))
   );
 
-
   return (
     <div className={clsx('flex', locked && 'opacity-50 pointer-events-none')}>
       <div className="flex flex-1">
         <div className="innerComponent flex-1 flex">
           <div className="flex flex-wrap gap-[12px] flex-1">
-            {integrations.filter((f) => {
+            {integrations
+              .filter((f) => {
                 if (exising.integration) {
                   return f.id === exising.integration;
                 }
@@ -64,7 +65,8 @@ export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
                         : 'border-[#622FF6]'
                     )}
                   >
-                    <Image
+                    <ImageWithFallback
+                      fallbackSrc="/no-picture.jpg"
                       src={integration.picture || '/no-picture.jpg'}
                       className={clsx(
                         'rounded-full transition-all min-w-[42px] border-[1.5px] min-h-[42px]',

@@ -36,6 +36,7 @@ import { LanguageComponent } from '@gitroom/frontend/components/layout/language.
 import { ChromeExtensionComponent } from '@gitroom/frontend/components/layout/chrome.extension.component';
 import NotificationComponent from '@gitroom/frontend/components/notifications/notification.component';
 import { OrganizationSelector } from '@gitroom/frontend/components/layout/organization.selector';
+import { StreakComponent } from '@gitroom/frontend/components/layout/streak.component';
 import { PreConditionComponent } from '@gitroom/frontend/components/layout/pre-condition.component';
 import { AttachToFeedbackIcon } from '@gitroom/frontend/components/new-layout/sentry.feedback.component';
 import { FirstBillingComponent } from '@gitroom/frontend/components/billing/first.billing.component';
@@ -115,6 +116,8 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                         <Title />
                       </div>
                       <div className="flex gap-[20px] text-textItemBlur">
+                        <StreakComponent />
+                        <div className="w-[1px] h-[20px] bg-blockSeparator" />
                         <OrganizationSelector />
                         <div className="hover:text-newTextColor">
                           <ModeComponent />

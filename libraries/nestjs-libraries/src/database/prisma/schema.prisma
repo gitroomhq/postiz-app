@@ -14,6 +14,7 @@ model Organization {
   description       String?
   apiKey            String?
   paymentId         String?
+  streakSince       DateTime?
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
   allowTrial        Boolean             @default(false)
@@ -30,8 +31,8 @@ model Organization {
   buyerOrganization MessagesGroup[]
   notifications     Notifications[]
   plugs             Plugs[]
-  post              Post[]             @relation("organization")
-  submittedPost     Post[]             @relation("submittedForOrg")
+  post              Post[]              @relation("organization")
+  submittedPost     Post[]              @relation("submittedForOrg")
   sets              Sets[]
   signatures        Signatures[]
   subscription      Subscription?
@@ -40,6 +41,9 @@ model Organization {
   usedCodes         UsedCodes[]
   users             UserOrganization[]
   webhooks          Webhooks[]
+
+  @@index([streakSince])
+  @@index([paymentId])
 }
 
 model Tags {
@@ -104,6 +108,7 @@ model User {
   organizations         UserOrganization[]
   sendSuccessEmails     Boolean            @default(true)
   sendFailureEmails     Boolean            @default(true)
+  sendStreakEmails      Boolean            @default(true)
 
   @@unique([email, providerName])
   @@index([lastReadNotifications])
@@ -200,6 +205,7 @@ model Star {
 model Media {
   id                 String              @id @default(uuid())
   name               String
+  originalName       String?
   path               String
   organizationId     String
   createdAt          DateTime            @default(now())
