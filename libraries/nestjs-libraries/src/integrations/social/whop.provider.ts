@@ -18,7 +18,7 @@ export class WhopProvider extends SocialAbstract implements SocialProvider {
   name = 'Whop';
   isBetweenSteps = false;
   scopes = ['openid', 'profile', 'email', 'forum:post:create', 'forum:read', 'company:basic:read'];
-  refreshCron = true;
+  refreshCron = false;
   editor = 'markdown' as const;
   dto = WhopDto;
   toolTip = 'Schedule posts to forums';
