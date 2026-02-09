@@ -371,71 +371,51 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     postDetails: PostDetails<LinkedinDto>[],
     firstPost: PostDetails<LinkedinDto>
   ): Promise<PostDetails<LinkedinDto>[]> {
-    // Collect all images from all posts
-    const allImages = postDetails.flatMap(
-      (post) =>
-        post.media?.filter(
-          (media) =>
-            media.path.toLowerCase().includes('.jpg') ||
-            media.path.toLowerCase().includes('.jpeg') ||
-            media.path.toLowerCase().includes('.png')
-        ) || []
-    );
-
-    if (allImages.length === 0) {
+    if (!firstPost.media?.length) {
       return postDetails;
     }
 
-    // Convert images to buffers and get dimensions
-    const imageData = await Promise.all(
-      allImages.map(async (media) => {
-        const buffer = await readOrFetch(media.path);
-        const image = sharp(buffer, {
-          animated: lookup(media.path) === 'image/gif',
-        });
-        const metadata = await image.metadata();
-
-        return {
-          buffer,
-          width: metadata.width || 0,
-          height: metadata.height || 0,
-        };
+    // Fetch all images and get their dimensions
+    const images = await Promise.all(
+      firstPost.media.map(async (media) => {
+        const raw = await readOrFetch(media.path);
+        const image = sharp(raw, { animated: false }).toFormat('jpeg');
+        const { width, height } = await image.metadata();
+        const buffer = await image.toBuffer();
+        return { buffer, width: width || 0, height: height || 0 };
       })
     );
 
-    // Use the dimensions of the first image for the PDF page size
-    // You could also use the largest dimensions if you prefer
-    const firstImageDimensions = imageData[0];
-    const pageSize = [firstImageDimensions.width, firstImageDimensions.height];
-
-    // Convert images to PDF with exact image dimensions
-    const pdfStream = imageToPDF(
-      imageData.map((data) => data.buffer),
-      pageSize
+    // Find the largest image by area to use as the PDF page size
+    const largest = images.reduce((max, img) =>
+      img.width * img.height > max.width * max.height ? img : max
     );
 
-    // Convert stream to buffer
+    const imageBuffers = images.map((img) => img.buffer);
+
+    // Create a PDF sized to the largest image; it fills the page,
+    // smaller images are fitted and centered within the same dimensions
+    const pdfStream = imageToPDF(
+      imageBuffers,
+      [largest.width, largest.height]
+    ) as unknown as Readable;
     const pdfBuffer = await this.streamToBuffer(pdfStream);
 
-    // Create a temporary file-like object for the PDF
-    const pdfMedia = {
-      path: 'carousel.pdf',
-      buffer: pdfBuffer,
-    };
-
-    // Return modified post details with PDF instead of images
-    const modifiedFirstPost = {
-      ...firstPost,
-      media: [pdfMedia] as any[],
-    };
-
-    // Remove media from other posts since we're combining everything into one PDF
-    const modifiedRestPosts = postDetails.slice(1).map((post) => ({
-      ...post,
-      media: [] as any[],
-    }));
-
-    return [modifiedFirstPost, ...modifiedRestPosts];
+    // Replace the first post's media with the single PDF
+    const [first, ...rest] = postDetails;
+    return [
+      {
+        ...first,
+        media: [
+          {
+            type: 'image' as const,
+            path: 'carousel.pdf',
+            buffer: pdfBuffer,
+          } as any,
+        ],
+      },
+      ...rest,
+    ];
   }
 
   private async streamToBuffer(stream: Readable): Promise<Buffer> {
@@ -511,7 +491,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       .toBuffer();
   }
 
-  private buildPostContent(isPdf: boolean, mediaIds: string[]) {
+  private buildPostContent(isPdf: boolean, mediaIds: string[], pdfTitle?: string) {
     if (mediaIds.length === 0) {
       return {};
     }
@@ -520,7 +500,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       return {
         content: {
           media: {
-            ...(isPdf ? { title: 'slides.pdf' } : {}),
+            ...(isPdf ? { title: pdfTitle || 'slides' } : {}),
             id: mediaIds[0],
           },
         },
@@ -541,7 +521,8 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     type: 'company' | 'personal',
     message: string,
     mediaIds: string[],
-    isPdf: boolean
+    isPdf: boolean,
+    pdfTitle?: string
   ) {
     const author =
       type === 'personal' ? `urn:li:person:${id}` : `urn:li:organization:${id}`;
@@ -555,7 +536,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
         targetEntities: [] as string[],
         thirdPartyDistributionChannels: [] as string[],
       },
-      ...this.buildPostContent(isPdf, mediaIds),
+      ...this.buildPostContent(isPdf, mediaIds, pdfTitle),
       lifecycleState: 'PUBLISHED',
       isReshareDisabledByAuthor: false,
     };
@@ -564,17 +545,22 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   private async createMainPost(
     id: string,
     accessToken: string,
-    firstPost: PostDetails,
+    firstPost: PostDetails<LinkedinDto>,
     mediaIds: string[],
     type: 'company' | 'personal',
     isPdf: boolean
   ): Promise<string> {
+    const pdfTitle = isPdf
+      ? firstPost.settings?.carousel_name || 'slides'
+      : undefined;
+
     const postPayload = this.createLinkedInPostPayload(
       id,
       type,
       firstPost.message,
       mediaIds,
-      isPdf
+      isPdf,
+      pdfTitle
     );
 
     const response = await this.fetch(`https://api.linkedin.com/rest/posts`, {
