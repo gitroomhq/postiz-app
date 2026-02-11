@@ -98,7 +98,7 @@ export class InstagramProvider
 
     if (body.indexOf('2207050') > -1) {
       return {
-        type: 'refresh-token' as const,
+        type: 'bad-body' as const,
         value: 'Instagram user is restricted',
       };
     }
