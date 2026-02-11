@@ -33,7 +33,7 @@ export class InstagramProvider
     'instagram_manage_comments',
     'instagram_manage_insights',
   ];
-  override maxConcurrentJob = 200;
+  override maxConcurrentJob = 400;
   editor = 'normal' as const;
   dto = InstagramDto;
   maxLength() {
@@ -67,7 +67,7 @@ export class InstagramProvider
     if (body.indexOf('2207081') > -1) {
       return {
         type: 'bad-body' as const,
-        value: 'This account doesn\'t support Trial Reels',
+        value: "This account doesn't support Trial Reels",
       };
     }
 
@@ -266,6 +266,13 @@ export class InstagramProvider
       return {
         type: 'bad-body' as const,
         value: 'Aspect ratio not supported, must be between 4:5 to 1.91:1',
+      };
+    }
+
+    if (body.indexOf('190,') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'The account is missing some permissions to perform this action, please re-add the account and allow all permissions',
       };
     }
 
