@@ -13,6 +13,7 @@ import slugify from 'slugify';
 // import FormData from 'form-data';
 import axios from 'axios';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
+import { string } from 'yup';
 
 export class WordpressProvider
   extends SocialAbstract
@@ -48,6 +49,19 @@ export class WordpressProvider
       picture: '',
       username: '',
     };
+  }
+  override handleErrors(
+    body: string
+  ):
+    | { type: 'refresh-token' | 'bad-body' | 'retry'; value: string }
+    | undefined {
+    if (body.indexOf('rest_cannot_create') > -1) {
+      return {
+        type: 'bad-body',
+        value: 'The connect user has insufficient permissions to create posts',
+      };
+    }
+    return undefined;
   }
 
   async customFields() {
