@@ -132,10 +132,7 @@ export class PostsRepository {
             OR: [
               {
                 organizationId: orgId,
-              },
-              {
-                submittedForOrganizationId: orgId,
-              },
+              }
             ],
           },
           {
@@ -154,6 +151,9 @@ export class PostsRepository {
             ],
           },
         ],
+        integration: {
+          deletedAt: null,
+        },
         deletedAt: null,
         parentPostId: null,
         ...(query.customer
