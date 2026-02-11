@@ -101,13 +101,17 @@ export class WordpressProvider
       const auth = Buffer.from(`${body.username}:${body.password}`).toString(
         'base64'
       );
-      const { id, name, avatar_urls } = await (
+      const { id, name, avatar_urls, code } = await (
         await fetch(`${body.domain}/wp-json/wp/v2/users/me`, {
           headers: {
             Authorization: `Basic ${auth}`,
           },
         })
       ).json();
+
+      if (code) {
+        throw "Invalid credentials";
+      }
 
       const biggestImage = Object.entries(avatar_urls || {}).reduce(
         (all, current) => {
